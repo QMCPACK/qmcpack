@@ -79,8 +79,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   bool isPrimary                  = true;
   if (pit == myPool.end())
   {
-    psiFactory = new WaveFunctionFactory(qp, ptcl_pool_->getPool(), myComm);
-    psiFactory->setName(id);
+    psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_->getPool(), myComm);
     isPrimary  = (myPool.empty() || role == "primary");
     myPool[id] = psiFactory;
   }
@@ -91,7 +90,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   bool success = psiFactory->put(cur);
   if (success && isPrimary)
   {
-    primary_psi_ = psiFactory->targetPsi;
+    primary_psi_ = psiFactory->getTWF();
   }
   return success;
 }
@@ -117,11 +116,11 @@ xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
   std::map<std::string, WaveFunctionFactory*>::iterator it(myPool.find(id));
   if (it == myPool.end())
   {
-    return (*myPool.begin()).second->myNode;
+    return (*myPool.begin()).second->getNode();
   }
   else
   {
-    return (*it).second->myNode;
+    return (*it).second->getNode();
   }
 }
 } // namespace qmcplusplus

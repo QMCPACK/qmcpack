@@ -57,15 +57,13 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   hpool.setParticleSetPool(&pp);
 
   WaveFunctionPool wfp(c);
-  TrialWaveFunction psi(c);
   wfp.setParticleSetPool(&pp);
-  wfp.setPrimary(&psi);
 
   WaveFunctionFactory::PtclPoolType ptcl_pool;
   ptcl_pool["e"]                  = qp;
-  WaveFunctionFactory* wf_factory = new WaveFunctionFactory(qp, ptcl_pool, c);
-  wf_factory->setPsi(&psi);
+  WaveFunctionFactory* wf_factory = new WaveFunctionFactory("psi0", *qp, ptcl_pool, c);
   wfp.getPool()["psi0"] = wf_factory;
+  wfp.setPrimary(wf_factory->getTWF());
 
   hpool.setWaveFunctionPool(&wfp);
 

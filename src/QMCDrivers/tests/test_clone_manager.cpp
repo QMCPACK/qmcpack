@@ -63,7 +63,7 @@ TEST_CASE("QMCUpdate", "[drivers]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   FakeUpdate update(elec, psi, h, rg);
 
   update.put(NULL);

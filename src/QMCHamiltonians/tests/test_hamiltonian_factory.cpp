@@ -59,7 +59,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 
   HamiltonianFactory hf(qp, particle_set_map, orbital_map, c);
 
-  WaveFunctionFactory wff(qp, particle_set_map, c);
+  WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);
   orbital_map["psi0"] = &wff;
 
 
@@ -113,7 +113,7 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 
   HamiltonianFactory hf(qp, particle_set_map, orbital_map, c);
 
-  WaveFunctionFactory wff(qp, particle_set_map, c);
+  WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);
   orbital_map["psi0"] = &wff;
 
 

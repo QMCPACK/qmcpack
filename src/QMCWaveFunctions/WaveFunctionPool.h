@@ -58,10 +58,10 @@ public:
       if (myPool.empty())
         return 0;
       else
-        return (*(myPool.begin())).second->targetPsi;
+        return (*(myPool.begin())).second->getTWF();
     }
     else
-      return (*pit).second->targetPsi;
+      return (*pit).second->getTWF();
   }
 
   WaveFunctionFactory* getWaveFunctionFactory(const std::string& pname)

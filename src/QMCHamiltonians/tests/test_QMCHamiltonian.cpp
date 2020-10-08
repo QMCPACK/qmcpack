@@ -32,7 +32,7 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
   MinimalHamiltonianPool mhp;
   HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
 
-  TrialWaveFunction twf(comm);
+  TrialWaveFunction twf;
 
   std::vector<QMCHamiltonian> hamiltonians;
   hamiltonians.emplace_back(*(hamiltonian_pool.getPrimary()));

@@ -209,7 +209,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
     {
       APP_ABORT("Unknown psi \"" + PsiName + "\" for zero-variance force.");
     }
-    TrialWaveFunction& psi = *psi_it->second->targetPsi;
+    TrialWaveFunction& psi = *psi_it->second->getTWF();
     ACForce* acforce       = new ACForce(*source, *target, psi, *targetH);
     targetH->addOperator(acforce, title, false);
   }
@@ -253,11 +253,11 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
       return;
     app_error() << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."
                 << std::endl;
-    psi = (*(psiPool.begin())).second->targetPsi;
+    psi = (*(psiPool.begin())).second->getTWF();
   }
   else
   {
-    psi = (*oit).second->targetPsi;
+    psi = (*oit).second->getTWF();
   }
   //remember the TrialWaveFunction used by this pseudopotential
   psiName = wfname;

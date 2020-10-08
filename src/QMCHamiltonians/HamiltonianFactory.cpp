@@ -127,7 +127,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   OrbitalPoolType::iterator psi_it(psiPool.find(psiName));
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
-  TrialWaveFunction* targetPsi = psi_it->second->targetPsi;
+  TrialWaveFunction* targetPsi = psi_it->second->getTWF();
   xmlNodePtr cur_saved(cur);
   cur = cur->children;
   while (cur != NULL)
@@ -345,7 +345,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for Chiesa correction.");
         }
-        const TrialWaveFunction& psi = *psi_it->second->targetPsi;
+        const TrialWaveFunction& psi = *psi_it->second->getTWF();
         ChiesaCorrection* chiesa     = new ChiesaCorrection(source, psi);
         targetH->addOperator(chiesa, "KEcorr", false);
       }
@@ -399,7 +399,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");
         }
-        TrialWaveFunction* psi = (*psi_it).second->targetPsi;
+        TrialWaveFunction* psi = (*psi_it).second->getTWF();
         MomentumEstimator* ME  = new MomentumEstimator(*targetPtcl, *psi);
         bool rt(myComm->rank() == 0);
         ME->putSpecial(cur, *targetPtcl, rt);
@@ -480,14 +480,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 void HamiltonianFactory::renameProperty(const std::string& a, const std::string& b) { RenamedProperty[a] = b; }
 
 void HamiltonianFactory::setCloneSize(int np) { myClones.resize(np, 0); }
-
-//TrialWaveFunction*
-//HamiltonianFactory::cloneWaveFunction(ParticleSet* qp, int ip) {
-//  HamiltonianFactory* aCopy= new HamiltonianFactory(qp,ptclPool);
-//  aCopy->put(myNode,false);
-//  myClones[ip]=aCopy;
-//  return aCopy->targetPsi;
-//}
 
 void HamiltonianFactory::renameProperty(std::string& aname)
 {

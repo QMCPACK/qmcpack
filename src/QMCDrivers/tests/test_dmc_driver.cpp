@@ -76,7 +76,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   ConstantOrbital* orb = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
@@ -171,7 +171,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   ConstantOrbital* orb = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
