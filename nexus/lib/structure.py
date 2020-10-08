@@ -845,9 +845,6 @@ class Structure(Sobj):
         if kshift is None:
             kshift = 0,0,0
         #end if
-        if mag is None:
-            mag = len(elem)*[None]
-        #end if
         self.scale    = 1.
         self.units    = units
         self.dim      = dim
@@ -856,8 +853,8 @@ class Structure(Sobj):
         self.set_bconds(bconds)
         self.set_elem(elem)
         self.pos      = array(pos,dtype=float)
+        self.mag      = None
         self.frozen   = None
-        self.mag      = array(mag,dtype=object)
         self.kpoints  = empty((0,dim))            
         self.kweights = empty((0,))         
         self.background_charge = background_charge
@@ -869,6 +866,9 @@ class Structure(Sobj):
         #end if
         if posu is not None:
             self.pos_to_cartesian()
+        #end if
+        if mag is not None:
+            self.set_mag(mag)
         #end if
         if frozen is not None:
             self.frozen = array(frozen,dtype=bool)
@@ -950,6 +950,14 @@ class Structure(Sobj):
     def set_pos(self,pos):
         self.pos = array(pos,dtype=float)
     #end def set_pos
+
+
+    def set_mag(self,mag=None):
+        if mag is None:
+            mag = self.size()*[None]
+        #end if
+        self.mag = np.array(mag,dtype=object)
+    #end def set_mag
 
 
     def size(self):
@@ -4603,6 +4611,8 @@ class Structure(Sobj):
         if format is None:
             self.error('file format must be provided')
         #end if
+        self.mag    = None
+        self.frozen = None
         format = format.lower()
         if format=='xyz':
             self.read_xyz(filepath)
@@ -6411,6 +6421,7 @@ class Crystal(Structure):
                  angular_units  = 'degrees',
                  kpoints        = None,
                  kgrid          = None,
+                 mag            = None,
                  frozen         = None,
                  magnetization  = None,
                  magnetic_order = None,
@@ -6443,6 +6454,7 @@ class Crystal(Structure):
             units          = units         ,
             angular_units  = angular_units ,
             frozen         = frozen        ,
+            mag            = mag           ,
             magnetization  = magnetization ,
             magnetic_order = magnetic_order,
             magnetic_prim  = magnetic_prim ,
@@ -7021,6 +7033,7 @@ def generate_crystal_structure(
     magnetization  = None,
     magnetic_order = None,
     magnetic_prim  = True,
+    mag            = None,
     kpoints        = None,
     kweights       = None,
     kgrid          = None,
@@ -7070,6 +7083,7 @@ def generate_crystal_structure(
             elem           = elem,
             pos            = pos,
             units          = units,
+            mag            = mag,
             frozen         = frozen,
             magnetization  = magnetization,
             magnetic_order = magnetic_order,
@@ -7137,6 +7151,7 @@ def generate_crystal_structure(
         units          = units         ,
         angular_units  = angular_units ,
         frozen         = frozen        ,
+        mag            = mag           ,
         magnetization  = magnetization ,
         magnetic_order = magnetic_order,
         magnetic_prim  = magnetic_prim ,

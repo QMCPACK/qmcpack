@@ -915,6 +915,7 @@ def test_generate():
         units     = 'B',
         axes      = 7.8811*np.identity(3),
         elem      = ['O','O','O','O','Ni','Ni','Ni','Ni'],
+        mag       = [0,0,0,0,.25,.25,-.25,-.25],
         posu      = [[0.   , 0. ,   0.5  ],
                      [0.   , 0.5,   0.   ],
                      [0.5  , 0. ,   0.   ],
@@ -923,8 +924,8 @@ def test_generate():
                      [0.5  , 0.5,   0.   ],
                      [0.   , 0.5,   0.5  ],
                      [0.5  , 0. ,   0.5  ]],
-        Ni = 18,
-        O  = 6,
+        Ni        = 18,
+        O         = 6,
         )
     nio8.structure.freeze(negate=True)
     ri = generate_rmg_input(
@@ -935,8 +936,6 @@ def test_generate():
         magnetic     = True,
         **shared_inputs
         )
-    ri.atoms.format = 'movable_moment'
-    ri.atoms.moments = np.array([0,0,0,0,.25,.25,-.25,-.25])
     check_vs_serial_reference(ri,infile)
 
 

@@ -54,7 +54,7 @@ def structure_diff(s1,s2):
 
 def structure_same(s1,s2):
     import numpy as np
-    keys = ('units','elem','axes','kpoints','kweights','kaxes')
+    keys = ('units','elem','axes','kpoints','kweights','kaxes','frozen','mag')
     o1 = s1.obj(keys)
     o2 = s2.obj(keys)
     osame = object_eq(o1,o2)

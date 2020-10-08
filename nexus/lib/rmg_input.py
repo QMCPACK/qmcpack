@@ -3213,6 +3213,9 @@ def generate_any_rmg_input(**kwargs):
             movable = ~s.frozen.any(axis=1)
         #end if
         moments = None
+        if s.mag is not None:
+            moments = np.array(s.mag,dtype=float)
+        #end if
         if movable is not None and moments is not None:
             ri.atoms = obj(
                 format = 'movable_moment',
