@@ -493,6 +493,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
     {
         descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
     }
+
     else
     {
         descentEngineObj->processXML(opt_xml);
@@ -1341,11 +1342,16 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimize::descent_run()
 {
-  //start();
+
+    const bool saved_grads_flag = optTarget->getneedGrads();
+
+    //Make sure needGrads is true before engine_checkConfigurations is called
+    optTarget->setneedGrads(true);
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start(EngineObj, *descentEngineObj, MinMethod);
 
+  
   int descent_num = descentEngineObj->getDescentNum();
 
   if (descent_num == 0)
@@ -1355,6 +1361,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
   descentEngineObj->storeDerivRecord();
 
   descentEngineObj->updateParameters();
+
 
   std::vector<ValueType> results = descentEngineObj->retrieveNewParams();
 
@@ -1376,13 +1383,14 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     }
   }
 
+
   finish();
   return (optTarget->getReportCounter() > 0);
 }
 #endif
 
 
-//Function for controlling the alternation between sections of descent optimization and BLM optimization.
+//Function for controlling the alternation between sections of descent optimization and Blocked LM optimization.
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
@@ -1404,6 +1412,13 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 #endif
     }
     adaptive_three_shift_run();
+ 
+    app_log() << "Update descent engine param values after Blocked LM step" << std::endl;
+    for(int i = 0; i < numParams; i++) 
+    {    
+        ValueType val = optTarget->Params(i);
+        descentEngineObj->setParamVal(i,val);
+    } 
   }
 
   if (current_optimizer_type_ == OptimizerType::DESCENT)

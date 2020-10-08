@@ -45,16 +45,11 @@ private:
 
   //Scalars used in calculation of average energy, variance, and target function for descent
   ValueType w_sum_;
+  
   ValueType e_avg_;
-  ValueType e_sum_;
-  ValueType e_square_sum_;
-  ValueType e_square_avg_;
-
-
   ValueType e_var_;
   ValueType e_sd_;
   ValueType e_err_;
-
 
   ValueType numer_avg_;
   ValueType numer_var_;
@@ -69,59 +64,45 @@ private:
   ValueType target_err_;
 
 
+//history of sampled |value/guiding|^2 ratios for one iteration
+std::vector<ValueType> vg_history_;
+//history of sampled |value/guiding|^2 ratios  during the descent finalization phase
+std::vector<ValueType> final_vg_history_;
 
-//Iteration to start collecting samples for final average and error blocking analysis
-    int collection_step_;
+//history of sampled configuration weights for one iteration
+std::vector<ValueType> w_history_;
+//history of sampled configuration weights during descent finalization phase
+std::vector<ValueType> final_w_history_;
 
-    //Iteration to start computing averages and errors from the stored values during the finalization phase
-      int compute_step_;
+//a history of sampled local energies times the |value/guiding|^2 raitos for one iteration
+std::vector<ValueType> lev_history_;
 
-      //Whether to start collecting samples for the histories in the finalization phase
-      bool collect_count_ = false;
+//history of sampled local energies times the |value/guiding|^2 raitos during the descent finalization phase
+std::vector<ValueType> final_lev_history_;
 
-      //Counter for the number of descent steps taken in the finalization phase
-      int final_descent_num_ = 0;
+//a vector to store the averages of the energy during the descent finalization phase 
+std::vector<ValueType> final_le_avg_history_;
 
-
-    //history of sampled |value/guiding|^2 ratios for one iteration
-    std::vector<ValueType> vg_history_;
-    //history of sampled |value/guiding|^2 ratios  during the descent finalization phase
-    std::vector<ValueType> final_vg_history_;
-
-    //history of sampled configuration weights for one iteration
-    std::vector<ValueType> w_history_;
-    //history of sampled configuration weights during descent finalization phase
-    std::vector<ValueType> final_w_history_;
-
-    //a history of sampled local energies times the |value/guiding|^2 raitos for one iteration
-    std::vector<ValueType> lev_history_;
-    
-    //history of sampled local energies times the |value/guiding|^2 raitos during the descent finalization phase
-    std::vector<ValueType> final_lev_history_;
-    
-   //a vector to store the averages of the energy during the descent finalization phase 
-    std::vector<ValueType> final_le_avg_history_;
-    
-   //a vector to store the variances of the energy during the descent finalization phase 
-    std::vector<ValueType> final_var_avg_history_;
+//a vector to store the variances of the energy during the descent finalization phase 
+std::vector<ValueType> final_var_avg_history_;
 
 
-    // a history of target function numerator times the |value/guiding|^2 ratios for one iteration
-    std::vector<ValueType> tnv_history_;
-    
-    // a history of target function numerator times the |value/guiding|^2 ratios during the descent finalization phase
-    std::vector<ValueType> final_tnv_history_;
+// a history of target function numerator times the |value/guiding|^2 ratios for one iteration
+std::vector<ValueType> tnv_history_;
+
+// a history of target function numerator times the |value/guiding|^2 ratios during the descent finalization phase
+std::vector<ValueType> final_tnv_history_;
 
 
-    //a history of target function denominator times the |value/guiding|^2 ratios for one iteration
-    std::vector<ValueType> tdv_history_;
-    // a history of target function denomerator times the |value/guiding|^2 ratios during the descent finalization phase
-    std::vector<ValueType> final_tdv_history_;
-   
-   //a vector to store the averages of the target function during the descent finalization phase 
-    std::vector<ValueType> final_tar_avg_history_;
-   //a vector to store the variances of the target function during the descent finalization phase 
-    std::vector<ValueType> final_tar_var_history_;
+//a history of target function denominator times the |value/guiding|^2 ratios for one iteration
+std::vector<ValueType> tdv_history_;
+// a history of target function denomerator times the |value/guiding|^2 ratios during the descent finalization phase
+std::vector<ValueType> final_tdv_history_;
+
+//a vector to store the averages of the target function during the descent finalization phase 
+std::vector<ValueType> final_tar_avg_history_;
+//a vector to store the variances of the target function during the descent finalization phase 
+std::vector<ValueType> final_tar_var_history_;
 
 
   //Vector that stores the final averaged derivatives of the cost function
@@ -155,7 +136,7 @@ private:
 
 
   //Parameter for accelerated descent recursion relation
-  ValueType lambda_;
+  ValueType lambda_ = 0.0;
   //Vector for storing step sizes from previous optimization step.
   std::vector<ValueType> taus_;
   //Vector for storing running average of squares of the derivatives
@@ -175,21 +156,17 @@ private:
   ValueType ci_eta_;
   ValueType orb_eta_;
 
-  //Whether to print out derivative terms for each parameter
-  std::string print_deriv_;
-
+  
   //Whether to gradually ramp up step sizes in descent
   bool ramp_eta_;
 
   //Number of steps over which to ramp up step size
   int ramp_num_;
 
-  //Value of omega in excited state functional
-  ValueType omega_;
-
   //Number of parameter difference vectors stored when descent is used in a hybrid optimization
   int store_num_;
 
+    
   //Counter of how many vectors have been stored so far
   int store_count_;
 
@@ -203,7 +180,24 @@ private:
 
   //Vector for storing the input vectors to the BLM steps of hybrid method
   std::vector<std::vector<ValueType>> hybrid_blm_input_;
-
+  
+  //Value of omega in excited state functional
+  ValueType omega_;
+  
+  //Iteration to start collecting samples for final average and error blocking analysis
+  int collection_step_;
+  
+  //Iteration to start computing averages and errors from the stored values during the finalization phase
+  int compute_step_;
+  
+  //Whether to start collecting samples for the histories in the finalization phase
+  bool collect_count_ = false;
+  
+  //Counter for the number of descent steps taken in the finalization phase
+  int final_descent_num_ = 0;
+  
+  //Whether to print out derivative terms for each parameter
+  std::string print_deriv_;
 
 public:
   //Constructor for engine

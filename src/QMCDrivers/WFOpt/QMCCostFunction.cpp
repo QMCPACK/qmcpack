@@ -362,6 +362,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
   {
     //Seem to need this line to get non-zero derivatives for traditional Jastrow parameters when using descent.
     OptVariablesForPsi.setRecompute();
+    //Reset vectors and scalars from any previous iteration
     descentEngineObj.prepareStorage(omp_get_max_threads(), NumOptimizables);
   }
   RealType et_tot = 0.0;

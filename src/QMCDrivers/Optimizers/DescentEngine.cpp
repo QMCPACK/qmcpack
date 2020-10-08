@@ -93,8 +93,36 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
 void DescentEngine::prepareStorage(const int num_replicas, const int num_optimizables)
 {
 
-    if(engine_target_excited_)
-    {
+  lderivs_.resize(num_optimizables);
+
+  //Ground state case
+if(!engine_target_excited_)
+{
+  avg_le_der_samp_.resize(num_optimizables);
+  avg_der_rat_samp_.resize(num_optimizables);
+
+  num_params_ = num_optimizables;
+
+  std::fill(avg_le_der_samp_.begin(), avg_le_der_samp_.end(), 0.0);
+  std::fill(avg_der_rat_samp_.begin(), avg_der_rat_samp_.end(), 0.0);
+
+  replica_le_der_samp_.resize(num_replicas);
+  replica_der_rat_samp_.resize(num_replicas);
+  
+
+  for (int i = 0; i < num_replicas; i++)
+  {
+    replica_le_der_samp_[i].resize(num_optimizables);
+    std::fill(replica_le_der_samp_[i].begin(), replica_le_der_samp_[i].end(), 0.0);
+
+    replica_der_rat_samp_[i].resize(num_optimizables);
+    std::fill(replica_der_rat_samp_[i].begin(), replica_der_rat_samp_[i].end(), 0.0);
+
+  }
+}
+//Excited state case
+else    
+{
 
    replica_numer_der_samp_.resize(num_replicas);
   replica_denom_der_samp_.resize(num_replicas); 
@@ -119,43 +147,25 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
 
     }
     
-    }
-
-  avg_le_der_samp_.resize(num_optimizables);
-  avg_der_rat_samp_.resize(num_optimizables);
-  lderivs_.resize(num_optimizables);
-
-  num_params_ = num_optimizables;
-
-  std::fill(avg_le_der_samp_.begin(), avg_le_der_samp_.end(), 0.0);
-  std::fill(avg_der_rat_samp_.begin(), avg_der_rat_samp_.end(), 0.0);
-
-  replica_le_der_samp_.resize(num_replicas);
-  replica_der_rat_samp_.resize(num_replicas);
-  
-
-  for (int i = 0; i < num_replicas; i++)
-  {
-    replica_le_der_samp_[i].resize(num_optimizables);
-    std::fill(replica_le_der_samp_[i].begin(), replica_le_der_samp_[i].end(), 0.0);
-
-    replica_der_rat_samp_[i].resize(num_optimizables);
-    std::fill(replica_der_rat_samp_[i].begin(), replica_der_rat_samp_[i].end(), 0.0);
-
-  }
+}
 
   w_sum_        = 0;
   e_avg_        = 0;
-  e_sum_        = 0;
-  e_square_sum_ = 0;
-  e_square_avg_ = 0;
+  e_var_        = 0;
+  e_sd_         = 0;
+  e_err_        = 0;
 
-  numer_avg_ = 0;
-  numer_var_ = 0;
-  denom_avg_ = 0;
-  denom_var_ = 0;
-  target_avg_ = 0;
-  target_var_ = 0;
+  numer_avg_    = 0;
+  numer_var_    = 0;
+  numer_err_    = 0;
+
+  denom_avg_    = 0;
+  denom_var_    = 0;
+  denom_err_    = 0;
+
+  target_avg_   = 0;
+  target_var_   = 0;
+  target_err_   = 0;
 
 }
 
@@ -187,10 +197,12 @@ void DescentEngine::takeSample(const int replica_id,
 
 
 
+  //Store a history of samples for the current iteration
     lev_history_.push_back(etmp*vgs_samp);
     vg_history_.push_back(vgs_samp);
     w_history_.push_back(static_cast<ValueType>(1.0));
 
+//If on descent finalizing section and past the collection step, store each local energy for this iteration
 if(final_descent_num_ > collection_step_ && collect_count_ )
 {
     
@@ -199,8 +211,18 @@ if(final_descent_num_ > collection_step_ && collect_count_ )
     final_w_history_.push_back(1.0);
 }
 
-  if(engine_target_excited_)
+//Ground State Case
+if(!engine_target_excited_)
+{
+  for (int i = 0; i < num_optimizables; i++)
   {
+    replica_le_der_samp_[replica_id].at(i) += le_der_samp.at(i + 1)*vgs_samp;
+    replica_der_rat_samp_[replica_id].at(i) += der_rat_samp.at(i + 1)*vgs_samp;
+  }
+}
+//Excited State Case
+else  
+{
       ValueType n;
       ValueType d;
 
@@ -229,25 +251,10 @@ if(final_descent_num_ > collection_step_ && collect_count_ )
     }
  }
 
-  for (int i = 0; i < num_optimizables; i++)
-  {
-    //replica_le_der_samp_[replica_id].at(i) += le_der_samp.at(i + 1)*vgs_samp*weight_samp;
-    replica_le_der_samp_[replica_id].at(i) += le_der_samp.at(i + 1)*vgs_samp;
-    //replica_der_rat_samp_[replica_id].at(i) += der_rat_samp.at(i + 1)*vgs_samp*weight_samp;
-    replica_der_rat_samp_[replica_id].at(i) += der_rat_samp.at(i + 1)*vgs_samp;
-  }
+
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Function that Take Sample Data from the Host Code
-///
-/// \param[in]  local_en       local energy
-/// \param[in]  vgs_samp       |<n|value_fn>/<n|guiding_fn>|^2
-/// \param[in]  weight_samp    weight for this sample
-///
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-//void DescentEngine::takeSample(RealType local_en, RealType vgs_samp, RealType weight_samp) {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Function that reduces all vector information from all processors to the root
@@ -275,8 +282,27 @@ void DescentEngine::sample_finish()
         final_var_avg_history_.push_back(e_var_);
     
     }
-    if(engine_target_excited_)
+
+
+if(!engine_target_excited_)
+{
+  for (int i = 0; i < replica_le_der_samp_.size(); i++)
+  {
+    for (int j = 0; j < lderivs_.size(); j++)
     {
+      avg_le_der_samp_[j] += replica_le_der_samp_[i].at(j);
+      avg_der_rat_samp_[j] += replica_der_rat_samp_[i].at(j);
+    }
+  }
+
+
+  my_comm_->allreduce(avg_le_der_samp_);
+  my_comm_->allreduce(avg_der_rat_samp_);
+
+
+}
+else
+{
 
  
         this->mpi_unbiased_ratio_of_means(numSamples,w_history_,tnv_history_,vg_history_,numer_avg_,numer_var_,numer_err_);
@@ -311,19 +337,7 @@ void DescentEngine::sample_finish()
     
     }
 
-    
-  for (int i = 0; i < replica_le_der_samp_.size(); i++)
-  {
-    for (int j = 0; j < lderivs_.size(); j++)
-    {
-      avg_le_der_samp_[j] += replica_le_der_samp_[i].at(j);
-      avg_der_rat_samp_[j] += replica_der_rat_samp_[i].at(j);
-    }
-  }
-
-
-  my_comm_->allreduce(avg_le_der_samp_);
-  my_comm_->allreduce(avg_der_rat_samp_);
+   
 
   int num_optimizables = lderivs_.size();
 
@@ -334,27 +348,27 @@ void DescentEngine::sample_finish()
 
   ValueType gradNorm = 0.0;
 
-  for (int i = 0; i < lderivs_.size(); i++)
+
+  //Compute contribution to derivatives
+  for (int i = 0; i < num_optimizables; i++)
   {
-    avg_le_der_samp_.at(i)  = avg_le_der_samp_.at(i) / w_sum_;
-    avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / w_sum_;
+    
 
-
-    if(print_deriv_ == "yes")
-    {
-        app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
-        app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
-    }
-
-    //Computation of averaged derivatives for excited state functional will be added in future
     if (!engine_target_excited_)
     {
-      lderivs_.at(i) = 2.0 * (avg_le_der_samp_.at(i) - e_avg_ * avg_der_rat_samp_.at(i));
+        avg_le_der_samp_.at(i)  = avg_le_der_samp_.at(i) / w_sum_;
+         avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / w_sum_;
+
+
       
+      lderivs_.at(i) = 2.0 * (avg_le_der_samp_.at(i) - e_avg_ * avg_der_rat_samp_.at(i));
       if(print_deriv_ == "yes")
-      {
-        app_log() << "Derivative for param # " << i << " : " << lderivs_.at(i) << std::endl;
-      }
+        {
+            app_log() << "Parameter # " << i << " Hamiltonian term: " << avg_le_der_samp_.at(i) << std::endl;
+            app_log() << "Parameter # " << i << " Overlap term: " << avg_der_rat_samp_.at(i) << std::endl;
+            app_log() << "Derivative for param # " << i << " : " << lderivs_.at(i) << std::endl;
+        }
+
 
     }
    
@@ -473,7 +487,6 @@ if (final_descent_num_ > collection_step_ && collect_count_)
   // Get set of derivatives for current (kth) optimization step
   std::vector<ValueType> cur_deriv_set = deriv_records_.at(deriv_records_.size() - 1);
   std::vector<ValueType> prev_deriv_set;
-
   if (!taus_.empty())
   {
     // Get set of derivatives for previous (k-1th) optimization step
@@ -543,18 +556,21 @@ if (final_descent_num_ > collection_step_ && collect_count_)
        //  app_log() << "Final step size for parameter #" << i <<" is: " << tau << std::endl;
       //Update parameter values
       //If case corresponds to being after the first descent step
-      if (taus_.size() >= num_params_)
+      
+      //if (taus_.size() >= num_params_)
+      //if (false)
+      if (descent_num_ > 0)
       {
         ValueType old_tau = taus_.at(i);
-
-        current_params_.at(i) = (static_cast<ValueType>(1.0) - gamma) * (current_params_.at(i) - tau * cur_deriv_set.at(i)) +
-            gamma * (params_copy_.at(i) - old_tau * prev_deriv_set.at(i));
+        
+        current_params_[i] = (static_cast<ValueType>(1.0) - gamma) * (current_params_[i] - tau * cur_deriv_set[i]) + gamma * (params_copy_[i] - old_tau * prev_deriv_set[i]);
       }
       else
       {
+      
         tau = type_eta;
 
-        current_params_.at(i) = current_params_.at(i) - tau * cur_deriv_set.at(i);
+        current_params_[i] = current_params_[i] - tau * cur_deriv_set[i];
       }
 
       if (taus_.size() < num_params_)
@@ -709,7 +725,11 @@ if (final_descent_num_ > collection_step_ && collect_count_)
   descent_num_++;
   if(collect_count_)
   {
+    
     final_descent_num_++;
+
+    //Start computing averages and uncertainties from stored history.
+    //This should be done only near the end of the descent finalization section as it is unnecessary earlier.
     if(final_descent_num_ >= compute_step_)
     {
         app_log() << "Computing average energy and its variance over stored steps and its standard error" << std::endl;
@@ -725,14 +745,15 @@ if (final_descent_num_ > collection_step_ && collect_count_)
         app_log() << "Final varaince: " << final_var_avg << std::endl;
 
         this->computeFinalizationUncertainties(final_w_history_,final_lev_history_,final_vg_history_);
-        
+ 
+        //Do the same for the target function during excited state optimizations.        
         if(engine_target_excited_)
         {
             app_log() << "Computing average target function over stored steps and its standard error" << std::endl;
             
             ValueType final_tar_sum = std::accumulate(final_tar_avg_history_.begin(),final_tar_avg_history_.end(),static_cast<ValueType>(0.0));
              
-            ValueType final_tar_avg = final_e_sum/collected_steps;
+            ValueType final_tar_avg = final_tar_sum/collected_steps;
 
             ValueType final_tar_var_sum = std::accumulate(final_tar_var_history_.begin(),final_tar_var_history_.end(),static_cast<ValueType>(0.0));
             ValueType final_tar_var_avg = final_tar_var_sum/collected_steps;
