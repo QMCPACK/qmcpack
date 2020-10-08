@@ -43,7 +43,7 @@ public:
   WaveFunctionPool(const WaveFunctionPool&) = delete;
   WaveFunctionPool& operator=(const WaveFunctionPool&) = delete;
   WaveFunctionPool(WaveFunctionPool&&)                 = default;
-  WaveFunctionPool& operator=(WaveFunctionPool&&) = default;
+  WaveFunctionPool& operator=(WaveFunctionPool&&) = delete;
 
   ~WaveFunctionPool();
 

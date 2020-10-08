@@ -40,7 +40,7 @@ public:
     xmlNodePtr root = doc.getRoot();
     hpool.put(root);
 
-    return std::move(hpool);
+    return hpool;
   }
 
 private:

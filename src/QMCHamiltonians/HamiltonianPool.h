@@ -49,7 +49,7 @@ public:
   HamiltonianPool(const HamiltonianPool&) = delete;
   HamiltonianPool& operator=(const HamiltonianPool&) = delete;
   HamiltonianPool(HamiltonianPool&&)                 = default;
-  HamiltonianPool& operator=(HamiltonianPool&&) = default;
+  HamiltonianPool& operator=(HamiltonianPool&&) = delete;
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
