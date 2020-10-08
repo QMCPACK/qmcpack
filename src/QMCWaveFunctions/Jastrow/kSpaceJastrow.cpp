@@ -799,7 +799,9 @@ WaveFunctionComponentPtr kSpaceJastrow::makeThrScope(PtclGrpIndexes& pgi) const
 
 /** constructor to initialize Ions
  */
-kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions) : WaveFunctionComponent("kSpaceJastrow", ions.getName()), Ions(ions) {}
+kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions)
+    : WaveFunctionComponent("kSpaceJastrow", ions.getName()), Ions(ions)
+{}
 
 void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
 {

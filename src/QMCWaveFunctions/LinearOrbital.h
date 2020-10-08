@@ -31,8 +31,7 @@ public:
 
   TinyVector<ValueType, 3> coeff;
 
-  LinearOrbital()
-   : WaveFunctionComponent("LinearOrbital")
+  LinearOrbital() : WaveFunctionComponent("LinearOrbital")
   {
     coeff[0] = 1.0;
     coeff[1] = 2.0;

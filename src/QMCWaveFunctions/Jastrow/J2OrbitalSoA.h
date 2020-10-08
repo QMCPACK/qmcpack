@@ -347,12 +347,13 @@ public:
 };
 
 template<typename FT>
-J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p, int tid) : WaveFunctionComponent("J2OrbitalSoA", obj_name), my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
+J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p, int tid)
+    : WaveFunctionComponent("J2OrbitalSoA", obj_name), my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
 {
-  if (obj_name.empty())
+  if (myName.empty())
     throw std::runtime_error("J2OrbitalSoA object name cannot be empty!");
   init(p);
-  KEcorr    = 0.0;
+  KEcorr = 0.0;
 }
 
 template<typename FT>

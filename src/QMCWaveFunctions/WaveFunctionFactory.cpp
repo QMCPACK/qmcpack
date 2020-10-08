@@ -126,7 +126,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     else if (cname == WaveFunctionComponentBuilder::jastrow_tag)
     {
       WaveFunctionComponentBuilder* jbuilder = new JastrowBuilder(myComm, *targetPtcl, ptclPool);
-      targetPsi->addComponent(jbuilder->buildComponent(cur), WaveFunctionComponentBuilder::jastrow_tag);
+      targetPsi->addComponent(jbuilder->buildComponent(cur));
       success = true;
       addNode(jbuilder, cur);
     }
@@ -137,7 +137,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     else if (cname == WaveFunctionComponentBuilder::ionorb_tag)
     {
       LatticeGaussianProductBuilder* builder = new LatticeGaussianProductBuilder(myComm, *targetPtcl, ptclPool);
-      targetPsi->addComponent(builder->buildComponent(cur), WaveFunctionComponentBuilder::ionorb_tag);
+      targetPsi->addComponent(builder->buildComponent(cur));
       success = true;
       addNode(builder, cur);
     }
@@ -149,7 +149,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     else if (cname == "example_he")
     {
       WaveFunctionComponentBuilder* exampleHe_builder = new ExampleHeBuilder(myComm, *targetPtcl, ptclPool);
-      targetPsi->addComponent(exampleHe_builder->buildComponent(cur), "example_he");
+      targetPsi->addComponent(exampleHe_builder->buildComponent(cur));
       success = true;
       addNode(exampleHe_builder, cur);
     }
@@ -157,7 +157,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     else if (cname == "agp")
     {
       AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(myComm, *targetPtcl, ptclPool);
-      targetPsi->addComponent(agpbuilder->buildComponent(cur), "agp");
+      targetPsi->addComponent(agpbuilder->buildComponent(cur));
       success = true;
       addNode(agpbuilder, cur);
     }
@@ -204,7 +204,7 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
   }
   else
     detbuilder = new SlaterDetBuilder(myComm, *targetPtcl, *targetPsi, ptclPool);
-  targetPsi->addComponent(detbuilder->buildComponent(cur), "SlaterDet");
+  targetPsi->addComponent(detbuilder->buildComponent(cur));
   addNode(detbuilder, cur);
   return true;
 }

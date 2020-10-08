@@ -62,9 +62,10 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els) : WaveFunctionComponent("J1OrbitalSoA", obj_name), myTableID(els.addTable(ions)), Ions(ions)
+  J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
+      : WaveFunctionComponent("J1OrbitalSoA", obj_name), myTableID(els.addTable(ions)), Ions(ions)
   {
-    if (obj_name.empty())
+    if (myName.empty())
       throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
     initialize(els);
   }

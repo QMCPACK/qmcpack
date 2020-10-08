@@ -30,7 +30,10 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
       ClassName(class_name),
       myName(obj_name),
       Bytes_in_WFBuffer(0)
-{}
+{
+  if (ClassName.empty())
+    throw std::runtime_error("WaveFunctionComponent ClassName cannot be empty!");
+}
 
 // WaveFunctionComponent::WaveFunctionComponent(const WaveFunctionComponent& old):
 //   Optimizable(old.Optimizable), UseBuffer(old.UseBuffer),

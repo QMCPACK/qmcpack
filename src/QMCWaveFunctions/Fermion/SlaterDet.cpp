@@ -20,8 +20,7 @@
 
 namespace qmcplusplus
 {
-SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) :
-  WaveFunctionComponent(class_name)
+SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) : WaveFunctionComponent(class_name)
 {
   Optimizable  = false;
   is_fermionic = true;

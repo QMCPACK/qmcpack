@@ -111,9 +111,13 @@ public:
   using FuncType = FT;
 
   JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
-      : WaveFunctionComponent("JeeIOrbitalSoA", obj_name), ee_Table_ID_(elecs.addTable(elecs)), ei_Table_ID_(elecs.addTable(ions, true)), Ions(ions), NumVars(0)
+      : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
+        ee_Table_ID_(elecs.addTable(elecs)),
+        ei_Table_ID_(elecs.addTable(ions, true)),
+        Ions(ions),
+        NumVars(0)
   {
-    if (obj_name.empty())
+    if (myName.empty())
       throw std::runtime_error("JeeIOrbitalSoA object name cannot be empty!");
     init(elecs);
   }

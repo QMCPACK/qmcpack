@@ -77,7 +77,7 @@ void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
-  BackflowTransformation* tr = BFTrans->makeClone(tqp);
+  BackflowTransformation* tr     = BFTrans->makeClone(tqp);
   SlaterDetWithBackflow* myclone = new SlaterDetWithBackflow(tqp, tr);
   myclone->Optimizable           = Optimizable;
   for (int i = 0; i < Dets.size(); ++i)

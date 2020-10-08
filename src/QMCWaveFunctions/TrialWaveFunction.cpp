@@ -55,12 +55,7 @@ TrialWaveFunction::TrialWaveFunction(Communicate* c)
 *@warning Have not decided whether Z is cleaned up by TrialWaveFunction
 *  or not. It will depend on I/O implementation.
 */
-TrialWaveFunction::~TrialWaveFunction()
-{
-  delete_iter(Z.begin(), Z.end());
-  //delete_iter(SPOSet.begin(),SPOSet.end());
-  //delete_iter(myTimers.begin(),myTimers.end());
-}
+TrialWaveFunction::~TrialWaveFunction() { delete_iter(Z.begin(), Z.end()); }
 
 void TrialWaveFunction::startOptimization()
 {
@@ -79,9 +74,14 @@ void TrialWaveFunction::stopOptimization()
 
 /** Takes owndership of aterm
  */
-void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm, std::string aname)
+void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm)
 {
   Z.push_back(aterm);
+
+  std::string aname = aterm->ClassName;
+  if (!aterm->myName.empty())
+    aname += "_" + aterm->myName;
+
   if (aterm->is_fermionic)
     app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
 
@@ -95,8 +95,8 @@ void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm, std::string a
   suffixes[6] = "_derivs";
   for (int i = 0; i < suffixes.size(); i++)
   {
-    std::string name = "WaveFunction::" + aname + suffixes[i];
-    myTimers.push_back(timer_manager.createTimer(name));
+    std::string timer_name = "WaveFunction::" + aname + suffixes[i];
+    myTimers.push_back(timer_manager.createTimer(timer_name));
   }
 }
 
@@ -1036,7 +1036,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
-    myclone->addComponent(Z[i]->makeClone(tqp), Z[i]->ClassName);
+    myclone->addComponent(Z[i]->makeClone(tqp));
   myclone->OneOverM = OneOverM;
   return myclone;
 }

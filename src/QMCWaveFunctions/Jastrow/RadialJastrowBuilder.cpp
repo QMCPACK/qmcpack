@@ -87,8 +87,8 @@ template<class RadFuncType>
 class JastrowTypeHelper
 {
 public:
-  using J1OrbitalType = J1OrbitalSoA<RadFuncType>;
-  using J2OrbitalType = J2OrbitalSoA<RadFuncType>;
+  using J1OrbitalType     = J1OrbitalSoA<RadFuncType>;
+  using J2OrbitalType     = J2OrbitalSoA<RadFuncType>;
   using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
@@ -154,7 +154,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   using DiffJ2OrbitalType = typename JastrowTypeHelper<RadFuncType>::DiffJ2OrbitalType;
 
   XMLAttrString input_name(cur, "name");
-  std::string j2name = input_name.empty()? "J2_" + Jastfunction : input_name;
+  std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int taskid = is_manager() ? getGroupID() : -1;
   auto* J2   = new J2OrbitalType(j2name, targetPtcl, taskid);
@@ -386,7 +386,8 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
       {
         char fname[128];
         if (speciesB.size())
-          sprintf(fname, "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), speciesB.c_str(), getGroupID());
+          sprintf(fname, "%s.%s.%s%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), speciesB.c_str(),
+                  getGroupID());
         else
           sprintf(fname, "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), getGroupID());
         std::ofstream os(fname);
@@ -414,12 +415,12 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 template<>
 WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
 {
-  using RT               = RealType;
-  using SplineEngineType = CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>;
-  using RadFunctorType   = CubicSplineSingle<RT, SplineEngineType>;
-  using GridType         = LinearGrid<RT>;
-  using HandlerType      = LRHandlerBase;
-  using J1OrbitalType = J1OrbitalSoA<RadFunctorType>;
+  using RT                = RealType;
+  using SplineEngineType  = CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>;
+  using RadFunctorType    = CubicSplineSingle<RT, SplineEngineType>;
+  using GridType          = LinearGrid<RT>;
+  using HandlerType       = LRHandlerBase;
+  using J1OrbitalType     = J1OrbitalSoA<RadFunctorType>;
   using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFunctorType>;
 
   /*
@@ -486,7 +487,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur
     dJ1->addFunc(ig, nfunc);
   }
 
-  J1->dPsi          = dJ1;
+  J1->dPsi = dJ1;
   J1->setOptimizable(Opt);
   return J1;
 }

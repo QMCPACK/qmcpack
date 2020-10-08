@@ -18,7 +18,10 @@
 
 namespace qmcplusplus
 {
-MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, const std::string& class_name)
+MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
+                                               SPOSetProxyPtr upspo,
+                                               SPOSetProxyPtr dnspo,
+                                               const std::string& class_name)
     : WaveFunctionComponent(class_name),
       RatioTimer(*timer_manager.createTimer("MultiSlaterDeterminant::ratio")),
       RatioGradTimer(*timer_manager.createTimer("MultiSlaterDeterminant::ratioGrad")),
@@ -53,10 +56,10 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
 WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
   typedef DiracDeterminant<> SingleDet_t;
-  SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
-  SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
-  spo_up_C->occup             = spo_up->occup;
-  spo_dn_C->occup             = spo_dn->occup;
+  SPOSetProxyForMSD* spo_up_C   = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
+  SPOSetProxyForMSD* spo_dn_C   = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
+  spo_up_C->occup               = spo_up->occup;
+  spo_dn_C->occup               = spo_dn->occup;
   MultiSlaterDeterminant* clone = new MultiSlaterDeterminant(tqp, spo_up_C, spo_dn_C);
   clone->C2node_up              = C2node_up;
   clone->C2node_dn              = C2node_dn;
