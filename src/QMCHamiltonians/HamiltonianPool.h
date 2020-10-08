@@ -43,6 +43,10 @@ public:
   typedef std::map<std::string, HamiltonianFactory*> PoolType;
 
   HamiltonianPool(ParticleSetPool& pset_pool, WaveFunctionPool& psi_pool, Communicate* c, const char* aname = "hamiltonian");
+  HamiltonianPool(const HamiltonianPool&) = delete;
+  HamiltonianPool& operator=(const HamiltonianPool&) = delete;
+  HamiltonianPool(HamiltonianPool&&) = default;
+  HamiltonianPool& operator=(HamiltonianPool&&) = default;
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;

@@ -40,6 +40,11 @@ public:
   typedef std::map<std::string, WaveFunctionFactory*> PoolType;
 
   WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, const char* aname = "wavefunction");
+  WaveFunctionPool(const WaveFunctionPool&) = delete;
+  WaveFunctionPool& operator=(const WaveFunctionPool&) = delete;
+  WaveFunctionPool(WaveFunctionPool&&) = default;
+  WaveFunctionPool& operator=(WaveFunctionPool&&) = default;
+
   ~WaveFunctionPool();
 
   bool put(xmlNodePtr cur);

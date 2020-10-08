@@ -78,7 +78,7 @@ public:
     pp.put(part_elec);
     pp.randomize();
 
-    return pp;
+    return std::move(pp);
   }
 };
 

@@ -54,7 +54,7 @@ public:
     wp.put(root);
 
     delete doc;
-    return wp;
+    return std::move(wp);
   }
 
 private:
