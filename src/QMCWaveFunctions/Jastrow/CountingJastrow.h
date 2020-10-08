@@ -91,7 +91,7 @@ protected:
 
 public:
   // constructor
-  CountingJastrow(ParticleSet& P, RegionType* c, const Matrix<RealType>& f) : F(f), C(c) { num_els = P.getTotalNum(); }
+  CountingJastrow(ParticleSet& P, RegionType* c, const Matrix<RealType>& f) : WaveFunctionComponent("CountingJastrow"), F(f), C(c) { num_els = P.getTotalNum(); }
 
   void checkInVariables(opt_variables_type& active)
   {

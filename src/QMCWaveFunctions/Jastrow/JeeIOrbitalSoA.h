@@ -110,10 +110,11 @@ public:
   ///alias FuncType
   using FuncType = FT;
 
-  JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
-      : ee_Table_ID_(elecs.addTable(elecs)), ei_Table_ID_(elecs.addTable(ions, true)), Ions(ions), NumVars(0)
+  JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
+      : WaveFunctionComponent("JeeIOrbitalSoA", obj_name), ee_Table_ID_(elecs.addTable(elecs)), ei_Table_ID_(elecs.addTable(ions, true)), Ions(ions), NumVars(0)
   {
-    ClassName = "JeeIOrbitalSoA";
+    if (obj_name.empty())
+      throw std::runtime_error("JeeIOrbitalSoA object name cannot be empty!");
     init(elecs);
   }
 
@@ -121,7 +122,7 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& elecs) const
   {
-    JeeIOrbitalSoA<FT>* eeIcopy = new JeeIOrbitalSoA<FT>(Ions, elecs, false);
+    JeeIOrbitalSoA<FT>* eeIcopy = new JeeIOrbitalSoA<FT>(myName, Ions, elecs, false);
     std::map<const FT*, FT*> fcmap;
     for (int iG = 0; iG < iGroups; iG++)
       for (int eG1 = 0; eG1 < eGroups; eG1++)

@@ -347,7 +347,8 @@ WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) cons
  *@param first index of the first particle
  */
 MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const& spos, int first)
-    : UpdateTimer(*timer_manager.createTimer("MultiDiracDeterminant::update")),
+    : WaveFunctionComponent("MultiDiracDeterminant"),
+      UpdateTimer(*timer_manager.createTimer("MultiDiracDeterminant::update")),
       RatioTimer(*timer_manager.createTimer("MultiDiracDeterminant::ratio")),
       InverseTimer(*timer_manager.createTimer("MultiDiracDeterminant::inverse")),
       buildTableTimer(*timer_manager.createTimer("MultiDiracDeterminant::buildTable")),
@@ -365,7 +366,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const& spos, int first)
       ReferenceDeterminant(0)
 {
   (spos->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
-  ClassName = "MultiDiracDeterminant";
 
   IsCloned = false;
 

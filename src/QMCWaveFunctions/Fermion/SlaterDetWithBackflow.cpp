@@ -19,10 +19,9 @@
 namespace qmcplusplus
 {
 SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation* BF)
-    : SlaterDet(targetPtcl), BFTrans(BF)
+    : SlaterDet(targetPtcl, "SlaterDetWithBackflow"), BFTrans(BF)
 {
   Optimizable = false;
-  ClassName   = "SlaterDetWithBackflow";
 }
 
 ///destructor

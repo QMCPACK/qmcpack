@@ -22,11 +22,10 @@ MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleS
                                                                        SPOSetProxyPtr upspo,
                                                                        SPOSetProxyPtr dnspo,
                                                                        BackflowTransformation* BF)
-    : MultiSlaterDeterminant(targetPtcl, upspo, dnspo), BFTrans(BF)
+    : MultiSlaterDeterminant(targetPtcl, upspo, dnspo, "MultiSlaterDeterminantWithBackflow"), BFTrans(BF)
 {
   Optimizable  = false;
   is_fermionic = true;
-  ClassName    = "MultiSlaterDeterminantWithBackflow";
 }
 
 WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const

@@ -18,8 +18,9 @@
 
 namespace qmcplusplus
 {
-MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo)
-    : RatioTimer(*timer_manager.createTimer("MultiSlaterDeterminant::ratio")),
+MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, const std::string& class_name)
+    : WaveFunctionComponent(class_name),
+      RatioTimer(*timer_manager.createTimer("MultiSlaterDeterminant::ratio")),
       RatioGradTimer(*timer_manager.createTimer("MultiSlaterDeterminant::ratioGrad")),
       RatioAllTimer(*timer_manager.createTimer("MultiSlaterDeterminant::ratio(all)")),
       UpdateTimer(*timer_manager.createTimer("MultiSlaterDeterminant::updateBuffer")),
@@ -36,7 +37,6 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
   //Optimizable=true;
   Optimizable   = false;
   is_fermionic  = true;
-  ClassName     = "MultiSlaterDeterminant";
   usingCSF      = false;
   FirstIndex_up = targetPtcl.first(0);
   LastIndex_up  = targetPtcl.last(0);

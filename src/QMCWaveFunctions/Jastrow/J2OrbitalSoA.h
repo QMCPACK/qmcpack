@@ -157,7 +157,7 @@ protected:
   J2KECorrection<RealType, FT> j2_ke_corr_helper;
 
 public:
-  J2OrbitalSoA(ParticleSet& p, int tid);
+  J2OrbitalSoA(const std::string& obj_name, ParticleSet& p, int tid);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
   ~J2OrbitalSoA();
 
@@ -347,11 +347,12 @@ public:
 };
 
 template<typename FT>
-J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
+J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p, int tid) : WaveFunctionComponent("J2OrbitalSoA", obj_name), my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
 {
+  if (obj_name.empty())
+    throw std::runtime_error("J2OrbitalSoA object name cannot be empty!");
   init(p);
   KEcorr    = 0.0;
-  ClassName = "J2OrbitalSoA";
 }
 
 template<typename FT>
@@ -427,7 +428,7 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
 template<typename FT>
 WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 {
-  J2OrbitalSoA<FT>* j2copy = new J2OrbitalSoA<FT>(tqp, -1);
+  J2OrbitalSoA<FT>* j2copy = new J2OrbitalSoA<FT>(myName, tqp, -1);
   if (dPsi)
     j2copy->dPsi = dPsi->makeClone(tqp);
   std::map<const FT*, FT*> fcmap;

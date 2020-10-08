@@ -20,11 +20,11 @@
 
 namespace qmcplusplus
 {
-SlaterDet::SlaterDet(ParticleSet& targetPtcl)
+SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) :
+  WaveFunctionComponent(class_name)
 {
   Optimizable  = false;
   is_fermionic = true;
-  ClassName    = "SlaterDet";
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)

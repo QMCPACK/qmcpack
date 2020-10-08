@@ -42,7 +42,7 @@ public:
   /**  constructor
    * @param targetPtcl target Particleset
    */
-  SlaterDet(ParticleSet& targetPtcl);
+  SlaterDet(ParticleSet& targetPtcl, const std::string& class_name = "SlaterDet");
 
   ///destructor
   ~SlaterDet();
@@ -350,8 +350,6 @@ public:
 #endif
 
 private:
-  SlaterDet() {}
-
   //get Det ID
   inline int getDetID(const int iat)
   {

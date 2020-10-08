@@ -20,14 +20,15 @@
 
 namespace qmcplusplus
 {
-WaveFunctionComponent::WaveFunctionComponent()
+WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, const std::string& obj_name)
     : IsOptimizing(false),
       Optimizable(true),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
       LogValue(0.0),
       dPsi(nullptr),
-      ClassName("WaveFunctionComponent"),
+      ClassName(class_name),
+      myName(obj_name),
       Bytes_in_WFBuffer(0)
 {}
 

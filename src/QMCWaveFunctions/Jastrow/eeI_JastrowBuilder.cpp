@@ -25,7 +25,7 @@ namespace qmcplusplus
 template<typename J3type>
 bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
 {
-  std::string jname = "JeeI";
+  auto& jname  = J3.myName;
   SpeciesSet& iSet  = sourcePtcl->getSpeciesSet();
   SpeciesSet& eSet  = targetPtcl.getSpeciesSet();
   //read in xml
@@ -113,6 +113,7 @@ WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   xmlNodePtr kids = cur->xmlChildrenNode;
+
   // Create a three-body Jastrow
   if (sourcePtcl)
   {
@@ -120,11 +121,15 @@ WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
     OhmmsAttributeSet tAttrib;
     tAttrib.add(ftype, "function");
     tAttrib.put(cur);
+
+    XMLAttrString input_name(cur, "name");
+    std::string jname = input_name.empty() ? "JeeI_" + ftype : input_name;
+
     SpeciesSet& iSet = sourcePtcl->getSpeciesSet();
     if (ftype == "polynomial")
     {
       typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
-      J3Type* J3 = new J3Type(*sourcePtcl, targetPtcl, true);
+      J3Type* J3 = new J3Type(jname, *sourcePtcl, targetPtcl, true);
       putkids(kids, *J3);
       return J3;
     }

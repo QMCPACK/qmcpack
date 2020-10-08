@@ -31,11 +31,10 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
                                                            SPOSetPtr const spos,
                                                            BackflowTransformation* BF,
                                                            int first)
-    : DiracDeterminantBase(spos, first)
+    : DiracDeterminantBase("DiracDeterminantWithBackflow", spos, first)
 {
   Optimizable  = true;
   is_fermionic = true;
-  ClassName    = "DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans      = BF;
   NumParticles = ptcl.getTotalNum();

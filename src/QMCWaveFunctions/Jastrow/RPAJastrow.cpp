@@ -31,10 +31,9 @@
 
 namespace qmcplusplus
 {
-RPAJastrow::RPAJastrow(ParticleSet& target, bool is_manager) : IsManager(is_manager), targetPtcl(target)
+RPAJastrow::RPAJastrow(ParticleSet& target, bool is_manager) : WaveFunctionComponent("RPAJastrow"), IsManager(is_manager), targetPtcl(target)
 {
   Optimizable = true;
-  ClassName   = "RPAJastrow";
 }
 
 RPAJastrow::~RPAJastrow()
@@ -190,7 +189,7 @@ void RPAJastrow::makeShortRange()
   nfunc = new FuncType;
   SRA   = new ShortRangePartAdapter<RealType>(myHandler);
   SRA->setRmax(Rcut);
-  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>(targetPtcl, IsManager);
+  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl, IsManager);
   size_t nparam  = 12;  // number of Bspline parameters
   size_t npts    = 100; // number of 1D grid points for basis functions
   RealType cusp  = SRA->df(0);

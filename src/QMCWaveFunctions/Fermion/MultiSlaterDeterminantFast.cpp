@@ -22,7 +22,8 @@ namespace qmcplusplus
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
                                                        MultiDiracDeterminant* up,
                                                        MultiDiracDeterminant* dn)
-    : RatioTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratio")),
+    : WaveFunctionComponent("MultiSlaterDeterminantFast"),
+      RatioTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratio")),
       RatioGradTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
       RatioAllTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
       UpdateTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
@@ -44,7 +45,6 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   //Optimizable=true;
   Optimizable   = false;
   is_fermionic  = true;
-  ClassName     = "MultiSlaterDeterminantFast";
   usingCSF      = false;
   NP            = targetPtcl.getTotalNum();
   nels_up       = targetPtcl.last(0) - targetPtcl.first(0);

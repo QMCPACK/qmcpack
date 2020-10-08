@@ -70,7 +70,7 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo);
+  MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, const std::string& class_name = "MultiSlaterDeterminant");
 
   ///destructor
   ~MultiSlaterDeterminant();

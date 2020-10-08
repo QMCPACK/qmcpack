@@ -235,7 +235,7 @@ kSpaceJastrow::kSpaceJastrow(ParticleSet& ions,
                              RealType twoBodyCutoff,
                              std::string twobodyid,
                              bool twoBodySpin)
-    : Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
+    : WaveFunctionComponent("kSpaceJastrow", elecs.getName()), Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
 {
   Optimizable   = true;
   Prefactor     = 1.0 / elecs.Lattice.Volume;
@@ -799,7 +799,7 @@ WaveFunctionComponentPtr kSpaceJastrow::makeThrScope(PtclGrpIndexes& pgi) const
 
 /** constructor to initialize Ions
  */
-kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions) : Ions(ions) {}
+kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions) : WaveFunctionComponent("kSpaceJastrow", ions.getName()), Ions(ions) {}
 
 void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
 {

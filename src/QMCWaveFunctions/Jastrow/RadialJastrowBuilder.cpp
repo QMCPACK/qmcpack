@@ -153,10 +153,11 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   using J2OrbitalType     = typename JastrowTypeHelper<RadFuncType>::J2OrbitalType;
   using DiffJ2OrbitalType = typename JastrowTypeHelper<RadFuncType>::DiffJ2OrbitalType;
 
-  std::string j2name = "J2_" + Jastfunction;
+  XMLAttrString input_name(cur, "name");
+  std::string j2name = input_name.empty()? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int taskid = is_manager() ? getGroupID() : -1;
-  auto* J2   = new J2OrbitalType(targetPtcl, taskid);
+  auto* J2   = new J2OrbitalType(j2name, targetPtcl, taskid);
   auto* dJ2  = new DiffJ2OrbitalType(targetPtcl);
 
   std::string init_mode("0");
@@ -329,7 +330,10 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   using J1OrbitalType     = typename JastrowTypeHelper<RadFuncType>::J1OrbitalType;
   using DiffJ1OrbitalType = typename JastrowTypeHelper<RadFuncType>::DiffJ1OrbitalType;
 
-  J1OrbitalType* J1      = new J1OrbitalType(*SourcePtcl, targetPtcl);
+  XMLAttrString input_name(cur, "name");
+  std::string jname = input_name.empty() ? Jastfunction : input_name;
+
+  J1OrbitalType* J1      = new J1OrbitalType(jname, *SourcePtcl, targetPtcl);
   DiffJ1OrbitalType* dJ1 = new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
 
   xmlNodePtr kids = cur->xmlChildrenNode;
@@ -339,7 +343,6 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1(xmlNodePtr cur)
   SpeciesSet& tSet = targetPtcl.getSpeciesSet();
   bool success     = false;
   bool Opt(true);
-  std::string jname = "J1_" + Jastfunction;
   while (kids != NULL)
   {
     std::string kidsname = (char*)kids->name;
@@ -424,10 +427,10 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur
   using DiffJ1OrbitalType = JastrowTypeHelper<RT, RadFunctorType>::DiffJ1OrbitalType;
   */
 
-  std::string MyName  = "Jep";
+  std::string input_name;
   std::string rpafunc = "RPA";
   OhmmsAttributeSet a;
-  a.add(MyName, "name");
+  a.add(input_name, "name");
   a.add(rpafunc, "function");
   a.put(cur);
   ParameterSet params;
@@ -437,6 +440,8 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur
   params.add(Kc, "kc", "double");
   params.put(cur);
   bool Opt(true);
+
+  std::string jname = input_name.empty() ? Jastfunction : input_name;
 
   HandlerType* myHandler = nullptr;
   if (Rs < 0)
@@ -471,7 +476,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur
   SRA->setRmax(Rcut);
   nfunc->initialize(SRA, myGrid);
 
-  J1OrbitalType* J1      = new J1OrbitalType(*SourcePtcl, targetPtcl);
+  J1OrbitalType* J1      = new J1OrbitalType(jname, *SourcePtcl, targetPtcl);
   DiffJ1OrbitalType* dJ1 = new DiffJ1OrbitalType(*SourcePtcl, targetPtcl);
 
   SpeciesSet& sSet = SourcePtcl->getSpeciesSet();
@@ -482,7 +487,6 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur
   }
 
   J1->dPsi          = dJ1;
-  std::string jname = "J1_" + Jastfunction;
   J1->setOptimizable(Opt);
   return J1;
 }
