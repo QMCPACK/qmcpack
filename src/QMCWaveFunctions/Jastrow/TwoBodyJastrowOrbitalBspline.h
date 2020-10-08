@@ -152,8 +152,8 @@ public:
 
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (pset, is_master),
-  TwoBodyJastrowOrbitalBspline(ParticleSet& pset, int tid)
-      : J2OrbitalSoA<FT>(pset, tid),
+  TwoBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& pset, int tid)
+      : J2OrbitalSoA<FT>(obj_name, pset, tid),
         PtclRef(pset),
         L("TwoBodyJastrowOrbitalBspline::L"),
         Linv("TwoBodyJastrowOrbitalBspline::Linv"),
@@ -209,7 +209,6 @@ public:
       L    = LHost;
       Linv = LinvHost;
     }
-    this->ClassName = "TwoBodyJastrowOrbitalBspline";
   }
 };
 } // namespace qmcplusplus

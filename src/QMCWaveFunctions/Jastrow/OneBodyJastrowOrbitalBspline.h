@@ -140,8 +140,8 @@ public:
                            const opt_variables_type& optvars,
                            RealMatrix_t& dlogpsi,
                            RealMatrix_t& dlapl_over_psi);
-  OneBodyJastrowOrbitalBspline(ParticleSet& centers, ParticleSet& elecs)
-      : J1OrbitalSoA<FT>(centers, elecs),
+  OneBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& centers, ParticleSet& elecs)
+      : J1OrbitalSoA<FT>(obj_name, centers, elecs),
         ElecRef(elecs),
         L("OneBodyJastrowOrbitalBspline::L"),
         Linv("OneBodyJastrowOrbitalBspline::Linv"),
@@ -202,7 +202,6 @@ public:
     // 	for (int dim=0; dim<OHMMS_DIM; dim++)
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
     C               = C_host;
-    this->ClassName = "OneBodyJastrowOrbitalBspline";
   }
 };
 } // namespace qmcplusplus
