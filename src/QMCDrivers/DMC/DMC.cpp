@@ -43,9 +43,8 @@ namespace qmcplusplus
 DMC::DMC(MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "DMC"),
+    : QMCDriver(w, psi, h, comm, "DMC"),
       KillNodeCrossing(0),
       BranchInterval(-1),
       Reconfiguration("no"),

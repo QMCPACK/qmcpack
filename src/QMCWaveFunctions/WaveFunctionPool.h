@@ -39,7 +39,7 @@ class WaveFunctionPool : public MPIObjectBase
 public:
   typedef std::map<std::string, WaveFunctionFactory*> PoolType;
 
-  WaveFunctionPool(Communicate* c, const char* aname = "wavefunction");
+  WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, const char* aname = "wavefunction");
   ~WaveFunctionPool();
 
   bool put(xmlNodePtr cur);
@@ -78,10 +78,6 @@ public:
       return (*pit).second;
   }
 
-  /** assign a pointer of ParticleSetPool
-   */
-  inline void setParticleSetPool(ParticleSetPool* pset) { ptcl_pool_ = pset; }
-
   /** return a xmlNode containing Jastrow
    * @param id name of the wave function
    *
@@ -109,7 +105,7 @@ private:
    * TrialWaveFunction needs to know which ParticleSet object
    * is used as an input object for the evaluations.
    */
-  ParticleSetPool* ptcl_pool_;
+  ParticleSetPool& ptcl_pool_;
 };
 } // namespace qmcplusplus
 #endif

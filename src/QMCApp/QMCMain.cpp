@@ -462,7 +462,7 @@ bool QMCMain::validateXML()
     }
     else if (cname == "init")
     {
-      InitMolecularSystem moinit(ptclPool);
+      InitMolecularSystem moinit(*ptclPool);
       moinit.put(cur);
     }
 #if !defined(REMOVE_TRACEMANAGER)

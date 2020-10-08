@@ -35,10 +35,6 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  HamiltonianPool hpool(c);
-
-  REQUIRE(hpool.empty());
-
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
@@ -54,10 +50,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   ParticleSet* qp = createElectronParticleSet();
   pp.addParticleSet(qp);
 
-  hpool.setParticleSetPool(&pp);
-
-  WaveFunctionPool wfp(c);
-  wfp.setParticleSetPool(&pp);
+  WaveFunctionPool wfp(pp, c);
 
   WaveFunctionFactory::PtclPoolType ptcl_pool;
   ptcl_pool["e"]                  = qp;
@@ -65,12 +58,14 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   wfp.getPool()["psi0"] = wf_factory;
   wfp.setPrimary(wf_factory->getTWF());
 
-  hpool.setWaveFunctionPool(&wfp);
+  HamiltonianPool hpool(pp, wfp, c);
+
+  REQUIRE(hpool.empty());
 
   hpool.put(root);
 
   QMCHamiltonian* h = hpool.getHamiltonian("h0");
-  REQUIRE(h != NULL);
+  REQUIRE(h != nullptr);
 
   // Bare kinetic energy is always added
   REQUIRE(h->size() == 2);

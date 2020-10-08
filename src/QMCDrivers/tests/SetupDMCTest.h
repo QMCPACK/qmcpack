@@ -56,7 +56,6 @@ public:
             population,
             *(wavefunction_pool->getPrimary()),
             *(hamiltonian_pool->getPrimary()),
-            *(wavefunction_pool),
             comm};
   }
 
