@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
@@ -10,6 +10,7 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -17,6 +18,7 @@
 
 #ifndef OHMMS_COMMUNICATE_H
 #define OHMMS_COMMUNICATE_H
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -33,17 +35,6 @@ struct CommunicatorTraits
   typedef MPI_Status status;
   typedef MPI_Request request;
 };
-#define APP_ABORT(msg)                                            \
-  {                                                               \
-    std::cerr << "Fatal Error. Aborting at " << msg << std::endl; \
-    MPI_Abort(MPI_COMM_WORLD, 1);                                 \
-  }
-
-#define APP_ABORT_TRACE(f, l, msg)                                                           \
-  {                                                                                          \
-    std::cerr << "Fatal Error. Aborting at " << l << "::" << f << "\n " << msg << std::endl; \
-    MPI_Abort(MPI_COMM_WORLD, 1);                                                            \
-  }
 
 #else
 struct CommunicatorTraits
@@ -54,20 +45,6 @@ struct CommunicatorTraits
   static const int MPI_COMM_NULL    = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
-
-#define APP_ABORT(msg)                                            \
-  {                                                               \
-    std::cerr << "Fatal Error. Aborting at " << msg << std::endl; \
-    std::cerr.flush();                                            \
-    exit(1);                                                      \
-  }
-
-#define APP_ABORT_TRACE(f, l, msg)                                                           \
-  {                                                                                          \
-    std::cerr << "Fatal Error. Aborting at " << l << "::" << f << "\n " << msg << std::endl; \
-    exit(1);                                                                                 \
-  }
-
 #endif
 
 #include <string>
@@ -75,6 +52,8 @@ struct CommunicatorTraits
 #include <utility>
 #include <unistd.h>
 #include <cstring>
+
+#include "Message/AppAbort.h"
 
 /**@class Communicate
  * @ingroup Message
@@ -98,7 +77,8 @@ public:
   Communicate(const mpi3::communicator& in_comm);
 #endif
 
-  ///constructor with communicator
+  /** constructor that splits in_comm
+   */
   Communicate(const Communicate& in_comm, int nparts);
 
   /**destructor
@@ -184,12 +164,15 @@ public:
   }
 #endif
 
-  // MMORALES:
-  // right now there is no easy way to use Communicate
-  // for generic processor subgroups, so calling split on myMPI
-  // and managing the communicator directly
-  // THIS MUST BE FIXED!!!
 #ifdef HAVE_MPI
+  /** A hack to get around Communicate not supporting flexible processor subgroups
+   *
+   *  MMORALES:
+   *  right now there is no easy way to use Communicate
+   *  for generic processor subgroups, so calling split on myMPI
+   *  and managing the communicator directly
+   *  \todo THIS MUST BE FIXED!!!
+   */
   inline void split_comm(int key, MPI_Comm& comm)
   {
     int myrank = rank();

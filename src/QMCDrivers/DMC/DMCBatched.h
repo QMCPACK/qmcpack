@@ -62,6 +62,14 @@ public:
     {}
   };
 
+  class DMCTimers
+  {
+  public:
+    NewTimer& tmove_timer;
+    DMCTimers(const std::string& prefix) : tmove_timer(*timer_manager.createTimer(prefix + "Tmove", timer_level_medium))
+    {}
+  };
+
   /// Constructor.
   DMCBatched(QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
@@ -94,7 +102,7 @@ public:
   static void runDMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-                         //                         DMCTimers& dmc_timers,
+                         DMCTimers& dmc_timers,
                          UPtrVector<ContextForSteps>& move_context,
                          UPtrVector<Crowd>& crowds);
 
@@ -105,6 +113,10 @@ public:
 
 private:
   DMCDriverInput dmcdriver_input_;
+
+  /** I think its better if these have there own type and variable name
+   */
+  DMCTimers dmc_timers_;
   /// Interval between branching
   IndexType branch_interval_;
   void resetUpdateEngines();
@@ -116,7 +128,7 @@ private:
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
-                             //                             DMCTimers& dmc_timers,
+                             DMCTimers& dmc_timers,
                              ContextForSteps& move_context,
                              bool recompute);
 
@@ -169,7 +181,7 @@ private:
     std::vector<RealType>& gf_accs;
   };
 
-  
+
   /** for the return of DMCPerWalkerRefs split into moved and stalled
    *
    *  until C++17 we need a structure to return the split moved and stalled refs
@@ -181,7 +193,7 @@ private:
     DMCPerWalkerRefs moved;
     DMCPerWalkerRefs stalled;
   };
-  
+
   static MovedStalled buildMovedStalled(const std::vector<int>& did_walker_move, const DMCPerWalkerRefRefs& refs);
 
   static void handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers);
@@ -190,7 +202,7 @@ private:
   // {
   //   NewTimer& dmc_movePbyP;
   //   DriverTimers(const std::string& prefix)
-  //       : dmc_movePbyP(*TimerManager.createTimer(prefix + "DMC_movePbyP", timer_level_medium)),
+  //       : dmc_movePbyP(*timer_manager.createTimer(prefix + "DMC_movePbyP", timer_level_medium)),
   //   {}
   // };
 

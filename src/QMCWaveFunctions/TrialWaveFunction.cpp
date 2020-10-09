@@ -62,12 +62,6 @@ TrialWaveFunction::~TrialWaveFunction()
   //delete_iter(myTimers.begin(),myTimers.end());
 }
 
-void TrialWaveFunction::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int i = 0; i < Z.size(); i++)
-    Z[i]->resetTargetParticleSet(P);
-}
-
 void TrialWaveFunction::startOptimization()
 {
   for (int i = 0; i < Z.size(); i++)
@@ -102,7 +96,7 @@ void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm, std::string a
   for (int i = 0; i < suffixes.size(); i++)
   {
     std::string name = "WaveFunction::" + aname + suffixes[i];
-    myTimers.push_back(TimerManager.createTimer(name));
+    myTimers.push_back(timer_manager.createTimer(name));
   }
 }
 
@@ -119,7 +113,14 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
   for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
   {
     ScopedTimer local_timer(myTimers[ii]);
+#ifndef NDEBUG
+    // Best way I've found yet to quickly see if WFC made it over the wire successfully
+    auto subterm = Z[i]->evaluateLog(P, P.G, P.L);
+    // std::cerr << "evaluate log Z element:" <<  i << "  value: " << subterm << '\n';
+    logpsi += subterm;
+#else
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
+#endif
   }
   LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
@@ -388,7 +389,6 @@ void TrialWaveFunction::flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>
 }
 
 
-
 /*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
 {
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
@@ -577,7 +577,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
                                                                       GradType& grad_iat,
                                                                       ComplexType& spingrad_iat)
 {
-  grad_iat = 0.0;
+  grad_iat     = 0.0;
   spingrad_iat = 0.0;
   PsiValueType r(1.0);
   for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
@@ -836,7 +836,7 @@ void TrialWaveFunction::debugOnlyCheckBuffer(WFBufferType& buffer)
   if (buffer.size() < buffer.current() + buffer.current_scalar() * sizeof(FullPrecRealType))
   {
     std::ostringstream assert_message;
-    assert_message << "On thread:" << Concurrency::getThreadId<>() << "  buf_list[iw].get().size():" << buffer.size()
+    assert_message << "On thread:" << Concurrency::getWorkerId<>() << "  buf_list[iw].get().size():" << buffer.size()
                    << " < buf_list[iw].get().current():" << buffer.current()
                    << " + buf.current_scalar():" << buffer.current_scalar()
                    << " * sizeof(FullPrecRealType):" << sizeof(FullPrecRealType) << '\n';
@@ -877,6 +877,8 @@ void TrialWaveFunction::flex_updateBuffer(const RefVector<TrialWaveFunction>& wf
                                           const RefVector<WFBufferType>& buf_list,
                                           bool fromscratch)
 {
+  if (wf_list.size() == 0)
+    return;
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
     constexpr RealType czero(0);

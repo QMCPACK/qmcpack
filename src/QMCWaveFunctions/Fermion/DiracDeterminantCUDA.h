@@ -24,7 +24,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/determinant_update.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {

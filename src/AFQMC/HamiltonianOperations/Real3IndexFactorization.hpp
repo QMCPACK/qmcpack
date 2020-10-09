@@ -29,6 +29,7 @@
 
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
+#include "AFQMC/Utilities/myTimer.h"
 
 namespace qmcplusplus
 {

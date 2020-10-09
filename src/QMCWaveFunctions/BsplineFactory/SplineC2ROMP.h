@@ -25,7 +25,7 @@
 #include "OpenMP/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Utilities/FairDivide.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
@@ -118,7 +118,7 @@ protected:
 public:
   SplineC2ROMP()
       : BsplineSet(true),
-        offload_timer_(*TimerManager.createTimer("SplineC2ROMP::offload", timer_level_fine)),
+        offload_timer_(*timer_manager.createTimer("SplineC2ROMP::offload", timer_level_fine)),
         nComplexBands(0),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
@@ -297,8 +297,8 @@ public:
                                     ValueMatrix_t& d2logdet) override;
 
   template<class BSPLINESPO>
-  friend class SplineSetReader;
-  friend class BsplineReaderBase;
+  friend struct SplineSetReader;
+  friend struct BsplineReaderBase;
 };
 
 extern template class SplineC2ROMP<float>;

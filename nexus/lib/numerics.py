@@ -1323,3 +1323,151 @@ def convex_hull(points,dimension=None,tol=None):
     verts = list(set(verts))
     return verts
 #end def convex_hull
+
+
+
+
+def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_return=False):
+
+    # Update inputs to be consistent with periodic merge, if requested
+    if merge and periodic:
+        if xmax is None:
+            error('"xmax" must be provided.','layers_1d')
+        elif xmin is None:
+            xmin = 0.0
+        #end if
+    #end if
+
+    # Setup a virtual fine grid along x with grid cell width of tol
+    if xmin is None:
+        xmin = xpoints.min()
+    #end if
+    if xmax is None:
+        xmax = xpoints.max()
+    #end if
+    nbins = np.uint64(np.round(np.ceil((xmax-xmin+tol)/tol)))
+    dx    = (xmax-xmin+tol)/nbins
+
+    # Find the points belonging to each grid cell/layer
+    layers = obj()
+    for i,x in enumerate(xpoints):
+        n = np.uint64(x/dx)
+        if n not in layers:
+            layers[n] = obj(ilist=[i],xsum=x,nsum=1)
+        else:
+            l = layers[n]
+            l.ilist.append(i)
+            l.xsum += x
+            l.nsum += 1
+        #end if
+    #end for
+
+    # Find the mean of each set of points
+    for l in layers:
+        l.xmean = l.xsum/l.nsum
+    #end for
+
+    # Merge neighboring layers if the means are within the tolerance
+    if merge:
+        lprev = None
+        for n in sorted(layers.keys()):
+            l = layers[n]
+            if lprev is not None and np.abs(l.xmean-lprev.xmean)<tol:
+                lprev.ilist.extend(l.ilist)
+                lprev.xsum += l.xsum
+                lprev.nsum += l.nsum
+                lprev.xmean = lprev.xsum/lprev.nsum
+                del layers[n]
+            else:
+                lprev = l
+            #end if
+        #end for
+
+        # Merge around periodic boundary
+        if periodic:
+            nleft  = 0
+            nright = nbins-1
+            if nleft in layers and nright in layers:
+                ll = layers[nleft]
+                lr = layers[nright]
+                L  = xmax-xmin
+                if np.abs(ll.xmean + L - lr.xmean)<tol:
+                    ll.ilist.extend(lr.ilist)
+                    ll.xsum += lr.xsum
+                    ll.nsum += lr.nsum
+                    ll.xmean = ll.xsum/ll.nsum
+                    del layers[nright]
+                #end if
+            #end if
+        #end if
+    #end if
+
+    if not full_return:
+        return layers
+    else:
+        return layers,xmin,xmax
+    #end if
+#end def layers_1d
+
+
+
+def layer_means_1d(xpoints,tol,full_return=False):
+    # Get layer data
+    layers,xmin,xmax = layers_1d(xpoints,tol,full_return=True)
+
+    # Extract and sort layer means
+    xlayers = np.empty((len(layers),),dtype=float)
+    i = 0
+    for n in sorted(layers.keys()):
+        l = layers[n]
+        xlayers[i] = l.xmean
+        i += 1
+    #end for
+    xlayers.sort()
+
+    if not full_return:
+        return xlayers
+    else:
+        return xlayers,xmin,xmax
+    #end if
+#end def layer_means_1d
+
+
+
+def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
+    # Get layer means
+    xlayer,xmin,xmax = layer_means_1d(xpoints,tol,full_return=True)
+
+    # Get layer separations
+    dxlayer = xlayer[1:]-xlayer[:-1]
+
+    # Find appropriate layer separation for indexing
+    if uniform:
+        dxmin   = dxlayer.min()
+        dxmax   = dxlayer.max()
+        if np.abs(dxmax-dxmin)>2*tol:
+            error('Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {}\nMax layer spacing: {}\nSpread   : {}\nTolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol),'index_by_layer_1d')
+        #end if
+        dx = dxlayer.mean()
+    else:
+        dx = dxlayer.min()
+    #end if
+
+    # Find indices for each layer
+    ipoints = np.array(np.around((xpoints-xmin)/dx),dtype=int)
+
+    # Check the layer indices, if requested
+    if check:
+        if np.abs(ipoints*dx+xmin-xpoints).max()>3*tol: # Tolerance accounts for merge
+            error('Layer indexing failed.','index_by_layer_1d')
+        #end if
+    #end if
+
+    if not full_return:
+        return ipoints
+    else:
+        return ipoints,xmin,xmax
+    #end if
+#end def index_by_layer
+
+

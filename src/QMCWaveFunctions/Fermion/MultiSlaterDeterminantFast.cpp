@@ -22,15 +22,15 @@ namespace qmcplusplus
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
                                                        MultiDiracDeterminant* up,
                                                        MultiDiracDeterminant* dn)
-    : RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio")),
-      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
-      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
-      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
-      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::evaluate")),
-      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
-      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
-      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
-      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
+    : RatioTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratio")),
+      RatioGradTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
+      RatioAllTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
+      UpdateTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
+      EvaluateTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::evaluate")),
+      Ratio1Timer(*timer_manager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
+      Ratio1GradTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
+      Ratio1AllTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
+      AccRejTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
       CI_Optimizable(false),
       IsCloned(false),
       C2node_up(nullptr),
@@ -88,7 +88,6 @@ WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp)
     BackflowTransformation* tr = BFTrans->makeClone(tqp);
     clone->setBF(tr);
   }
-  clone->resetTargetParticleSet(tqp);
 
   //Set IsCloned so that only the main object handles the optimizable data
   clone->IsCloned = true;
@@ -127,21 +126,6 @@ MultiSlaterDeterminantFast::~MultiSlaterDeterminantFast()
   }
   //clean up determinants too!
 }
-
-void MultiSlaterDeterminantFast::resetTargetParticleSet(ParticleSet& P)
-{
-  if (usingBF)
-  {
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->resetTargetParticleSet(BFTrans->QP);
-  }
-  else
-  {
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->resetTargetParticleSet(P);
-  }
-}
-
 
 void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
 {

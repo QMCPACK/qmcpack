@@ -21,7 +21,6 @@
 
 namespace qmcplusplus
 {
-
 ///writes info about contained sposets to stdout
 void write_spo_builders(const std::string& pad = "");
 

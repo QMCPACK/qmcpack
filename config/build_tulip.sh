@@ -18,7 +18,7 @@ cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
       -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON \
       -DENABLE_CUDA=ON -DCUDA_ARCH=sm_70 -DCUDA_HOST_COMPILER=`which gcc` \
        -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DCUDA_TOOLKIT_ROOT_DIR=$CUDA_HOME \
-      -DENABLE_TIMERS=1 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
+      -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
       .. && make -j32
 cd ..
 module unload craype-accel-nvidia70
@@ -34,7 +34,7 @@ mkdir $folder
 cd $folder
 cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
       -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON \
-      -DENABLE_TIMERS=1 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
+      -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
       .. && make -j32
 cd ..
 
@@ -47,7 +47,7 @@ mkdir $folder
 cd $folder
 cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
       -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON -DQMC_COMPLEX=1 \
-      -DENABLE_TIMERS=1 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
+      -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
       .. && make -j32
 cd ..
 module unload craype-accel-amd-gfx906
@@ -62,10 +62,7 @@ folder=build_MI60_AOMP_offload_real_MP
 mkdir $folder
 cd $folder
 cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
-      -DQMC_MPI=0 \
-      -DCMAKE_C_FLAGS="-march=native" \
-      -DCMAKE_CXX_FLAGS="-march=native -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906" \
-      -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET="amdgcn-amd-amdhsa" \
-      -DENABLE_TIMERS=1 \
+      -DQMC_MPI=0 -DQMC_MIXED_PRECISION=1 \
+      -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET=amdgcn-amd-amdhsa -DOFFLOAD_ARCH=gfx906 \
       .. && make -j32
 cd ..

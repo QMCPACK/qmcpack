@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {

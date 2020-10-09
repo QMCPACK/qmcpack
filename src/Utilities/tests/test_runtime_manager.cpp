@@ -12,8 +12,6 @@
 
 #include "catch.hpp"
 
-#define USE_FAKE_CLOCK
-#include "Utilities/NewTimer.h"
 #include "Utilities/RunTimeManager.h"
 #include <stdio.h>
 #include <string>
@@ -21,23 +19,18 @@
 
 namespace qmcplusplus
 {
-// Used by fake_cpu_clock in Clock.h if USE_FAKE_CLOCK is defined
-extern double fake_cpu_clock_increment;
-extern double fake_cpu_clock_value;
-
-
 TEST_CASE("test_runtime_manager", "[utilities]")
 {
-  // Use a local version rather than the global TimerManager, otherwise
+  // Use a local version rather than the global timer_manager, otherwise
   //  changes will persist from test to test.
-  RunTimeManagerClass rm;
+  RunTimeManager<FakeCPUClock> rm;
   double e = rm.elapsed();
   REQUIRE(e == Approx(1.0));
 }
 
 TEST_CASE("test_loop_timer", "[utilities]")
 {
-  LoopTimer loop;
+  LoopTimer<FakeCPUClock> loop;
   double it_time = loop.get_time_per_iteration();
   REQUIRE(it_time == Approx(0.0));
 
@@ -46,22 +39,22 @@ TEST_CASE("test_loop_timer", "[utilities]")
   it_time = loop.get_time_per_iteration();
   REQUIRE(it_time == Approx(1.0));
 
-  fake_cpu_clock_increment = 2.0;
+  FakeCPUClock::fake_cpu_clock_increment = 2.0;
   loop.start();
   loop.stop();
   it_time = loop.get_time_per_iteration();
   REQUIRE(it_time == Approx(1.5)); // 2 iterations
   // restore value
-  fake_cpu_clock_increment = 1.0;
+  FakeCPUClock::fake_cpu_clock_increment = 1.0;
 }
 
 TEST_CASE("test_loop_control", "[utilities]")
 {
-  // fake clock advances every time cpu_clock is called
-  LoopTimer loop;
+  // fake clock advances every time CPUClock is called
+  LoopTimer<FakeCPUClock> loop;
   int max_cpu_secs = 9;
-  RunTimeManagerClass rm; // fake clock = 1
-  RunTimeControl rc(rm, max_cpu_secs);
+  RunTimeManager<FakeCPUClock> rm; // fake clock = 1
+  RunTimeControl<FakeCPUClock> rc(rm, max_cpu_secs);
   rc.runtime_padding(1.0);
   bool enough_time = rc.enough_time_for_next_iteration(loop); // fake clock = 2
   REQUIRE(enough_time);

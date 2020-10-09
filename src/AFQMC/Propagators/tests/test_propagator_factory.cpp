@@ -19,6 +19,7 @@
 #include "OhmmsApp/ProjectData.h"
 #include "io/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
+#include <Utilities/TimerManager.h>
 
 #undef APP_ABORT
 #define APP_ABORT(x)             \
@@ -69,7 +70,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
   }
   else
   {
-    TimerManager.set_timer_threshold(timer_level_coarse);
+    timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
 
     // Global Task Group
@@ -77,6 +78,8 @@ void propg_fac_shared(boost::mpi3::communicator& world)
 
     int NMO, NAEA, NAEB;
     std::tie(NMO, NAEA, NAEB) = read_info_from_hdf(UTEST_HAMIL);
+    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL = (type == NONCOLLINEAR) ?  2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -103,7 +106,6 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     // initialize TG buffer
     make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
 
-    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
     const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
       <parameter name=\"walker_type\">closed</parameter>  \
     </WalkerSet> \
@@ -147,7 +149,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NMO);
+    REQUIRE(initial_guess.size(1) == NPOL*NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
     //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
@@ -164,7 +166,6 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     Propagator& prop = PropgFac.getPropagator(TG, prop_name, wfn, &rng);
 
     std::cout << setprecision(12);
-    std::cout << "energy " << std::endl;
     wfn.Energy(wset);
     {
       ComplexType eav = 0, ov = 0;
@@ -236,7 +237,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
       wfn.Orthogonalize(wset, true);
     }
 
-    TimerManager.print(nullptr);
+    timer_manager.print(nullptr);
 
     destroy_shm_buffer_generators();
   }
@@ -251,7 +252,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
   }
   else
   {
-    TimerManager.set_timer_threshold(timer_level_coarse);
+    timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
 
     // Global Task Group
@@ -259,6 +260,8 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
 
     int NMO, NAEA, NAEB;
     std::tie(NMO, NAEA, NAEB) = read_info_from_hdf(UTEST_HAMIL);
+    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL = (type == NONCOLLINEAR) ?  2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -288,7 +291,6 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     // initialize TG buffer
     make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
 
-    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
     const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
       <parameter name=\"walker_type\">closed</parameter>  \
     </WalkerSet> \
@@ -329,7 +331,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NMO);
+    REQUIRE(initial_guess.size(1) == NPOL*NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -423,7 +425,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
       app_log() << " -- " << i << " " << tot_time << " " << (eav / ov).real() << " Time: " << t1 << std::endl;
     }
 
-    TimerManager.print(nullptr);
+    timer_manager.print(nullptr);
 
     destroy_shm_buffer_generators();
   }

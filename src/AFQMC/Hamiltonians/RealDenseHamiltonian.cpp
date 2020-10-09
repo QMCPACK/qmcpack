@@ -71,7 +71,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
     ndown = PsiT[1].size(0);
   int NEL = nup + ndown;
 
-  // distribute work over equivalent nodes in TGprop.TG() accross TG.Global()
+  // distribute work over equivalent nodes in TGprop.TG() across TG.Global()
   auto Qcomm(TG.Global().split(TGprop.getLocalGroupNumber(), TG.Global().rank()));
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   auto distNode(TG.Node().split(TGprop.getLocalGroupNumber(), TG.Node().rank()));
@@ -234,7 +234,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
     CMatrix lak({nup, NMO});
     for (int nd = 0; nd < ndet; nd++)
     {
-      // all nodes accross Qcomm share same segment {nc0,ncN}
+      // all nodes across Qcomm share same segment {nc0,ncN}
       for (int nc = 0; nc < local_ncv; nc++)
       {
         if (nc % Qcomm.size() != Qcomm.rank())

@@ -62,7 +62,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : myTableID(els.addTable(ions, DT_SOA)), Ions(ions)
+  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : myTableID(els.addTable(ions)), Ions(ions)
   {
     initialize(els);
     ClassName = "J1OrbitalSoA";
@@ -381,7 +381,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   }
 
   /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
-  void resetTargetParticleSet(ParticleSet& P) {}
   void reportStatus(std::ostream& os)
   {
     for (size_t i = 0, n = F.size(); i < n; ++i)

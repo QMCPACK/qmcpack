@@ -69,8 +69,6 @@ struct RPAJastrow : public WaveFunctionComponent
     */
   void resetParameters(const opt_variables_type& active);
 
-  void resetTargetParticleSet(ParticleSet& P);
-
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   PsiValueType ratio(ParticleSet& P, int iat);

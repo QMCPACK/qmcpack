@@ -15,7 +15,7 @@
 #include <hip/hip_runtime.h>
 #include "uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -281,8 +281,8 @@ void Auwn_Bun_Cuw(int nu,
                      reinterpret_cast<thrust::complex<double> const*>(A),
                      reinterpret_cast<thrust::complex<double> const*>(B),
                      reinterpret_cast<thrust::complex<double>*>(C));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 
@@ -304,8 +304,8 @@ void Auwn_Bun_Cuw(int nu,
                      static_cast<thrust::complex<float> const>(alpha),
                      reinterpret_cast<thrust::complex<float> const*>(A),
                      reinterpret_cast<thrust::complex<float> const*>(B), reinterpret_cast<thrust::complex<float>*>(C));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 // C[u][w] = alpha * sum_i A[w][i][u] * B[i][u]
@@ -329,8 +329,8 @@ void Awiu_Biu_Cuw(int nu,
                      static_cast<thrust::complex<double> const>(alpha),
                      reinterpret_cast<thrust::complex<double> const*>(A), B, ldb,
                      reinterpret_cast<thrust::complex<double>*>(C), ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 
@@ -354,8 +354,8 @@ void Awiu_Biu_Cuw(int nu,
                      static_cast<thrust::complex<float> const>(alpha),
                      reinterpret_cast<thrust::complex<float> const*>(A), B, ldb,
                      reinterpret_cast<thrust::complex<float>*>(C), ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void Awiu_Biu_Cuw(int nu,
@@ -379,8 +379,8 @@ void Awiu_Biu_Cuw(int nu,
                      reinterpret_cast<thrust::complex<double> const*>(A),
                      reinterpret_cast<thrust::complex<double> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<double>*>(C), ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 
@@ -405,8 +405,8 @@ void Awiu_Biu_Cuw(int nu,
                      reinterpret_cast<thrust::complex<float> const*>(A),
                      reinterpret_cast<thrust::complex<float> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<float>*>(C), ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 
@@ -428,8 +428,8 @@ void Aijk_Bkj_Cik(int ni,
                      reinterpret_cast<thrust::complex<double> const*>(A), lda, stride,
                      reinterpret_cast<thrust::complex<double> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<double>*>(C), ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void Aijk_Bkj_Cik(int ni,
@@ -448,8 +448,8 @@ void Aijk_Bkj_Cik(int ni,
   hipLaunchKernelGGL(kernel_Aijk_Bkj_Cik, dim3(grid_dim), dim3(32), 0, 0, ni, nj, nk,
                      reinterpret_cast<thrust::complex<double> const*>(A), lda, stride, B, ldb,
                      reinterpret_cast<thrust::complex<double>*>(C), ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void Aijk_Bkj_Cik(int ni,
@@ -469,8 +469,8 @@ void Aijk_Bkj_Cik(int ni,
                      reinterpret_cast<thrust::complex<float> const*>(A), lda, stride,
                      reinterpret_cast<thrust::complex<float> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<float>*>(C), ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void Aijk_Bkj_Cik(int ni,
@@ -489,8 +489,8 @@ void Aijk_Bkj_Cik(int ni,
   hipLaunchKernelGGL(kernel_Aijk_Bkj_Cik, dim3(grid_dim), dim3(32), 0, 0, ni, nj, nk,
                      reinterpret_cast<thrust::complex<float> const*>(A), lda, stride, B, ldb,
                      reinterpret_cast<thrust::complex<float>*>(C), ldc);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 // v[w][i][j] = v[i][w][j]
@@ -501,8 +501,8 @@ void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<double> const* B, st
   hipLaunchKernelGGL(kernel_viwj_vwij, dim3(grid_dim), dim3(MAX_THREADS_PER_DIM), 0, 0, nw, ni, i0, iN,
                      reinterpret_cast<thrust::complex<double> const*>(B),
                      reinterpret_cast<thrust::complex<double>*>(A));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<double> const* B, std::complex<float>* A)
@@ -511,8 +511,8 @@ void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<double> const* B, st
   dim3 grid_dim(nw, (iN - i0), 1);
   hipLaunchKernelGGL(kernel_viwj_vwij, dim3(grid_dim), dim3(MAX_THREADS_PER_DIM), 0, 0, nw, ni, i0, iN,
                      reinterpret_cast<thrust::complex<double> const*>(B), reinterpret_cast<thrust::complex<float>*>(A));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<float> const* B, std::complex<double>* A)
@@ -521,8 +521,8 @@ void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<float> const* B, std
   dim3 grid_dim(nw, (iN - i0), 1);
   hipLaunchKernelGGL(kernel_viwj_vwij, dim3(grid_dim), dim3(MAX_THREADS_PER_DIM), 0, 0, nw, ni, i0, iN,
                      reinterpret_cast<thrust::complex<float> const*>(B), reinterpret_cast<thrust::complex<double>*>(A));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<float> const* B, std::complex<float>* A)
@@ -531,8 +531,8 @@ void viwj_vwij(int nw, int ni, int i0, int iN, std::complex<float> const* B, std
   dim3 grid_dim(nw, (iN - i0), 1);
   hipLaunchKernelGGL(kernel_viwj_vwij, dim3(grid_dim), dim3(MAX_THREADS_PER_DIM), 0, 0, nw, ni, i0, iN,
                      reinterpret_cast<thrust::complex<float> const*>(B), reinterpret_cast<thrust::complex<float>*>(A));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 // element-wise C[k][i][j] = A[i][j] * B[j][k]
@@ -554,8 +554,8 @@ void element_wise_Aij_Bjk_Ckij(char transA,
   hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckij, dim3(grid_dim), dim3(MAX_THREADS_PER_DIM), 0, 0, transA, ni, nj,
                      nk, A, lda, reinterpret_cast<thrust::complex<double> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<double>*>(C), ldc1, ldc2);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void element_wise_Aij_Bjk_Ckij(char transA,
@@ -576,8 +576,8 @@ void element_wise_Aij_Bjk_Ckij(char transA,
   hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckij, dim3(grid_dim), dim3(MAX_THREADS_PER_DIM), 0, 0, transA, ni, nj,
                      nk, A, lda, reinterpret_cast<thrust::complex<float> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<float>*>(C), ldc1, ldc2);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void element_wise_Aij_Bjk_Ckij(char transA,
@@ -599,8 +599,8 @@ void element_wise_Aij_Bjk_Ckij(char transA,
                      nk, reinterpret_cast<thrust::complex<double> const*>(A), lda,
                      reinterpret_cast<thrust::complex<double> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<double>*>(C), ldc1, ldc2);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void element_wise_Aij_Bjk_Ckij(char transA,
@@ -622,8 +622,8 @@ void element_wise_Aij_Bjk_Ckij(char transA,
                      nk, reinterpret_cast<thrust::complex<float> const*>(A), lda,
                      reinterpret_cast<thrust::complex<float> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<float>*>(C), ldc1, ldc2);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 
@@ -649,8 +649,8 @@ void element_wise_Aij_Bjk_Ckji(int ni,
   hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), 0, 0, ni, nj, nk, A, lda,
                      reinterpret_cast<thrust::complex<double> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<double>*>(C), ldc, stride);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void element_wise_Aij_Bjk_Ckji(int ni,
@@ -676,8 +676,8 @@ void element_wise_Aij_Bjk_Ckji(int ni,
                      reinterpret_cast<thrust::complex<double> const*>(A), lda,
                      reinterpret_cast<thrust::complex<double> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<double>*>(C), ldc, stride);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void element_wise_Aij_Bjk_Ckji(int ni,
@@ -701,8 +701,8 @@ void element_wise_Aij_Bjk_Ckji(int ni,
   hipLaunchKernelGGL(kernel_element_wise_Aij_Bjk_Ckji, dim3(grid_dim), dim3(block_dim), 0, 0, ni, nj, nk, A, lda,
                      reinterpret_cast<thrust::complex<float> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<float>*>(C), ldc, stride);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void element_wise_Aij_Bjk_Ckji(int ni,
@@ -727,8 +727,8 @@ void element_wise_Aij_Bjk_Ckji(int ni,
                      reinterpret_cast<thrust::complex<float> const*>(A), lda,
                      reinterpret_cast<thrust::complex<float> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<float>*>(C), ldc, stride);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 

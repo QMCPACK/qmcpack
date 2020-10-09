@@ -24,7 +24,7 @@ namespace testing {
 
 bool EstimatorManagerNewTest::testMakeBlockAverages()
 {
-  if(em.myComm->rank() == 1) {
+  if(em.my_comm_->rank() == 1) {
     estimators_[1].scalars[0](3.0);
     estimators_[1].scalars[1](3.0);
     estimators_[1].scalars[2](3.0);
@@ -35,7 +35,7 @@ bool EstimatorManagerNewTest::testMakeBlockAverages()
   // - From EstimatorManagerBase::reset
   em.weightInd = em.BlockProperties.add("BlockWeight");
   em.cpuInd    = em.BlockProperties.add("BlockCPU");
-  em.acceptInd = em.BlockProperties.add("AcceptRatio");
+  em.acceptRatioInd = em.BlockProperties.add("AcceptRatio");
 
   // - From EstimatorManagerBase::start
   em.PropertyCache.resize(em.BlockProperties.size());
@@ -50,18 +50,19 @@ bool EstimatorManagerNewTest::testMakeBlockAverages()
                                                      });
   em.PropertyCache[em.weightInd] = block_weight;
   em.PropertyCache[em.cpuInd]    = 1.0;
-  em.PropertyCache[em.acceptInd] = 1.0;
-
+ 
   RefVector<ScalarEstimatorBase> est_list = makeRefVector<ScalarEstimatorBase>(estimators_);
   em.collectScalarEstimators(est_list);
 
-  em.makeBlockAverages();
+  unsigned long accepts = 4;
+  unsigned long rejects = 1;
+  em.makeBlockAverages(accepts, rejects);
   return true;
 }
 
 }
 
-TEST_CASE("EstimatorManagerBase::makeBlockAverages()", "[estimators]")
+TEST_CASE("EstimatorManagerNew::makeBlockAverages()", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
   int num_ranks = c->size();

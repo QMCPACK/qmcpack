@@ -22,7 +22,7 @@
 #include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
 {
-class CSEnergyEstimator;
+struct CSEnergyEstimator;
 class CSUpdateBase;
 
 /** @ingroup QMCDrivers WalkerByWalker MultiplePsi

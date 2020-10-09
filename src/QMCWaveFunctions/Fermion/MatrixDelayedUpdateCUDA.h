@@ -19,7 +19,6 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "Platforms/OpenMP/ompBLAS.hpp"
-#include "Platforms/OpenMP/ompReduction.hpp"
 #include <cuda_runtime_api.h>
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
@@ -359,7 +358,7 @@ class MatrixDelayedUpdateCUDA
 
 public:
   /// default constructor
-  MatrixDelayedUpdateCUDA() : delay_count(0), invRow_id(-1)
+  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0)
   {
     cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");

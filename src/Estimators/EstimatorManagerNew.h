@@ -21,6 +21,7 @@
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
+#include "type_traits/template_types.hpp"
 #include <bitset>
 
 namespace qmcplusplus
@@ -38,11 +39,12 @@ class EstimatorManagerNewTest;
 class EstimatorManagerNew
 {
 public:
+  /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
   typedef QMCTraits::FullPrecRealType RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
   typedef ScalarEstimatorBase EstimatorType;
-  typedef std::vector<RealType> BufferType;
+  using FPRBuffer =  std::vector<FullPrecRealType>;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///name of the primary estimator name
@@ -63,7 +65,7 @@ public:
 
   /** return the communicator
    */
-  Communicate* getCommunicator() { return myComm; }
+  Communicate* getCommunicator() { return my_comm_; }
 
   ///return the number of ScalarEstimators
   inline int size() const { return Estimators.size(); }
@@ -141,11 +143,12 @@ public:
 
   /** unified: stop a block
    * @param accept acceptance rate of this block
-   * \param[in] accept_ratio
+   * \param[in] accept
+   * \param[in] reject
    * \param[in] block_weight
    * \param[in] cpu_block_time Timer returns double so this is not altered by "mixed" precision
    */
-  void stopBlockNew(RealType accept_ratio, RealType block_weight, double cpu_block_time);
+  void stopBlock(unsigned long accept, unsigned long reject, RealType block_weight, double cpu_block_time);
 
   /** At end of block collect the scalar estimators for the entire rank
    *   
@@ -154,24 +157,10 @@ public:
    */
   RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
 
-  ///** set the cummulative energy and weight
-  void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
-
-  /** Unified walker variant of this method
-   *
-   *  This only makes sense to call on the whole population with the current DMC algorithm
-   *
-   *  This is about to be refactored out of EstimatorManagerBase
-   *
-   *  I think it would probably be cleaner and remove alot of reset issues to have the eavg and var
-   *  from the previous section passed in
-   *  rather than retaining the estimator manager to get them.
+  /** get the average of per-block energy and variance of all the blocks
+   * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
    */
-  static void getCurrentStatistics(const int global_walkers,
-                                   RefVector<MCPWalker>& walkers,
-                                   RealType& eavg,
-                                   RealType& var,
-                                   Communicate* comm);
+  void getApproximateEnergyVariance(RealType& e, RealType& var);
 
   template<class CT>
   void write(CT& anything, bool doappend)
@@ -194,8 +183,8 @@ protected:
   int weightInd;
   ///index for the block cpu PropertyCache(cpuInd)
   int cpuInd;
-  ///index for the acceptance rate PropertyCache(acceptInd)
-  int acceptInd;
+  ///index for the accept counter PropertyCache(acceptInd)
+  int acceptRatioInd;
   ///hdf5 handler
   hid_t h_file;
   ///total weight accumulated in a block
@@ -205,7 +194,7 @@ protected:
   ///file handler to write data for debugging
   std::ofstream* DebugArchive;
   ///communicator to handle communication
-  Communicate* myComm;
+  Communicate* my_comm_;
   /** pointer to the primary ScalarEstimatorBase
    */
   ScalarEstimatorBase* MainEstimator;
@@ -251,11 +240,9 @@ protected:
 private:
   ///number of maximum data for a scalar.dat
   int max4ascii;
-  //Data for communication
-  std::vector<BufferType*> RemoteData;
 
   /// collect data and write
-  void makeBlockAverages();
+  void makeBlockAverages(unsigned long accept, unsigned long reject);
 
   ///add header to an std::ostream
   void addHeader(std::ostream& o);

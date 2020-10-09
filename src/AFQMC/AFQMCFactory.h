@@ -13,6 +13,7 @@
 #include <queue>
 #include <algorithm>
 #include <Message/MPIObjectBase.h>
+#include <Utilities/TimerManager.h>
 #include "OhmmsApp/RandomNumberControl.h"
 
 #include "mpi3/communicator.hpp"
@@ -62,7 +63,7 @@ public:
     RandomNumberControl::PrimeNumbers.get(baseoffset, nprocs, myprimes);
     arch::INIT(gTG.Node(), (unsigned long long int)(myprimes[rank]));
 #endif
-    TimerManager.set_timer_threshold(timer_level_coarse);
+    timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
   }
 

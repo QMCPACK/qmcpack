@@ -27,9 +27,7 @@
 #include "multi/array_ref.hpp"
 #include "multi/memory/fallback.hpp"
 
-#include "Utilities/NewTimer.h"
-#include "AFQMC/Utilities/myTimer.h"
-extern myTimer Timer;
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {

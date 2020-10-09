@@ -22,7 +22,6 @@
 #include <iostream>
 #include <tuple>
 
-#include <Utilities/NewTimer.h>
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/config.h"
 #include "mpi3/shm/mutex.hpp"
@@ -754,7 +753,7 @@ protected:
       return (full) ? (2 * NMO * NMO) : ((NAEA + NAEB) * NMO);
       break;
     case NONCOLLINEAR:
-      return (full) ? (4 * NMO * NMO) : ((NAEA + NAEB) * 2 * NMO);
+      return (full) ? (4 * NMO * NMO) : (NAEA * 2 * NMO);
       break;
     default:
       APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
@@ -774,7 +773,7 @@ protected:
       return (full) ? (arr{NMO, NMO}) : ((sp == Alpha) ? (arr{NAEA, NMO}) : (arr{NAEB, NMO}));
       break;
     case NONCOLLINEAR:
-      return (full) ? (arr{2 * NMO, 2 * NMO}) : (arr{NAEA + NAEB, 2 * NMO});
+      return (full) ? (arr{2 * NMO, 2 * NMO}) : (arr{NAEA, 2 * NMO});
       break;
     default:
       APP_ABORT(" Error: Unknown walker_type in dm_size. \n");

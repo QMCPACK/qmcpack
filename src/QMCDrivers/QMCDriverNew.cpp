@@ -16,7 +16,7 @@
 #include <numeric>
 
 #include "QMCDrivers/QMCDriverNew.h"
-#include "Concurrency/TasksOneToOne.hpp"
+#include "Concurrency/ParallelExecutor.hpp"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -31,6 +31,7 @@
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -46,10 +47,12 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            WaveFunctionPool& ppool,
                            const std::string timer_prefix,
                            Communicate* comm,
+                           const std::string& QMC_driver_type,
                            SetNonLocalMoveHandler snlm_handler)
     : MPIObjectBase(comm),
       qmcdriver_input_(input),
       branch_engine_(nullptr),
+      QMCType(QMC_driver_type),
       population_(population),
       Psi(psi),
       H(h),
@@ -59,7 +62,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       timers_(timer_prefix),
       setNonLocalMoveHandler_(snlm_handler)
 {
-  QMCType  = "invalid";
   rotation = 0;
 
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
@@ -96,12 +98,12 @@ void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
 {
-  int num_threads(Concurrency::maxThreads<>());
+  int num_threads(Concurrency::maxCapacity<>());
   if (num_crowds > num_threads)
   {
     std::stringstream error_msg;
     error_msg << "Bad Input: num_crowds (" << num_crowds << ") > num_threads (" << num_threads << ")\n";
-    throw std::runtime_error(error_msg.str());
+    throw UniformCommunicateError(error_msg.str());
   }
 }
 
@@ -336,8 +338,6 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
 {
   step_contexts_.resize(num_crowds);
 
-  TasksOneToOne<> do_per_crowd(num_crowds);
-
   Rng.resize(num_crowds);
 
   RngCompatibility.resize(num_crowds);
@@ -377,14 +377,20 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (ParticleSet& pset : walker_elecs)
     pset.update();
 
-  // Added to match legacy.
+  // We reuse the DataSet.
   auto cleanDataSet = [](MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& twf) {
     if (walker.DataSet.size())
-      walker.DataSet.clear();
-    walker.DataSet.rewind();
-    walker.registerData();
-    twf.registerData(pset, walker.DataSet);
-    walker.DataSet.allocate();
+    {
+      // These appear to be uneeded and harmful.
+      //walker.DataSet.zero();
+      //walker.DataSet.rewind();
+    }
+    else
+    {
+      walker.registerData();
+      twf.registerData(pset, walker.DataSet);
+      walker.DataSet.allocate();
+    }
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     cleanDataSet(walkers[iw], walker_elecs[iw], walker_twfs[iw]);
@@ -405,7 +411,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
       QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
-  // This is actually only a partial reset of the walkers properties
+
+  // \todo rename these are sets not resets.
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy) {
     walker.resetProperty(twf.getLogPsi(), twf.getPhase(), local_energy);
   };
@@ -476,10 +483,10 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
                                                                          RealType reserve_walkers,
                                                                          int num_crowds)
 {
-  // Step 1. set num_crowds by input and Concurrency::maxThreads<>()
+  // Step 1. set num_crowds by input and Concurrency::maxCapacity<>()
   checkNumCrowdsLTNumThreads(num_crowds);
   if (num_crowds == 0)
-    num_crowds = Concurrency::maxThreads<>();
+    num_crowds = Concurrency::maxCapacity<>();
 
   AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
 
@@ -489,16 +496,16 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
     if (required_total < num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
+      error << "Running on " << num_ranks << " MPI ranks.  The request of " << required_total
             << " global walkers cannot be satisfied! Need at least one walker per MPI rank.";
-      throw std::runtime_error(error.str());
+      throw UniformCommunicateError(error.str());
     }
     if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks and the request of " << required_total
-            << " global walkers and " << walkers_per_rank << " walkers per rank cannot be satisfied!";
-      throw std::runtime_error(error.str());
+      error << "Running on " << num_ranks << " MPI ranks, The request of " << required_total << " global walkers and "
+            << walkers_per_rank << " walkers per rank cannot be satisfied!";
+      throw UniformCommunicateError(error.str());
     }
     awc.global_walkers   = required_total;
     awc.walkers_per_rank = fairDivide(required_total, num_ranks);
@@ -532,9 +539,11 @@ void QMCDriverNew::endBlock()
 {
   RefVector<ScalarEstimatorBase> all_scalar_estimators;
   FullPrecRealType total_block_weight = 0.0;
-  FullPrecRealType total_accept_ratio = 0.0;
   // Collect all the ScalarEstimatorsFrom EMCrowds
-  double cpu_block_time = 0.0;
+  double cpu_block_time      = 0.0;
+  unsigned long block_accept = 0;
+  unsigned long block_reject = 0;
+
   for (const UPtr<Crowd>& crowd : crowds_)
   {
     crowd->stopBlock();
@@ -542,14 +551,21 @@ void QMCDriverNew::endBlock()
     all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
                                  std::make_move_iterator(crowd_sc_est.end()));
     total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
-    total_accept_ratio += crowd->get_accept_ratio() * crowd->get_estimator_manager_crowd().get_block_weight();
+    block_accept += crowd->get_accept();
+    block_reject += crowd->get_reject();
     cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
   }
-  total_accept_ratio /= total_block_weight;
+#ifdef DEBUG_PER_STEP_ACCEPT_REJECT
+  app_warning() << "accept: " << block_accept << "   reject: " << block_reject;
+  FullPrecRealType total_accept_ratio =
+      static_cast<FullPrecRealType>(block_accept) / static_cast<FullPrecRealType>(block_accept + block_reject);
+  std::cerr << "   total_accept_ratio: << " << total_accept_ratio << '\n';
+#endif
   estimator_manager_->collectScalarEstimators(all_scalar_estimators);
-  cpu_block_time /= crowds_.size();
+  /// get the average cpu_block time per crowd
+  /// cpu_block_time /= crowds_.size();
 
-  estimator_manager_->stopBlockNew(total_accept_ratio, total_block_weight, cpu_block_time);
+  estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight, cpu_block_time);
 }
 
 } // namespace qmcplusplus

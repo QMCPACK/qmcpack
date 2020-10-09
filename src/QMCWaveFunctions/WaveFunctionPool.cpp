@@ -22,7 +22,8 @@
 
 namespace qmcplusplus
 {
-WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname) : MPIObjectBase(c), primary_psi_(nullptr), ptcl_pool_(nullptr)
+WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname)
+    : MPIObjectBase(c), primary_psi_(nullptr), ptcl_pool_(nullptr)
 {
   ClassName = "WaveFunctionPool";
   myName    = aname;
@@ -59,9 +60,9 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   { //check ESHDF should be used to initialize both target and associated ionic system
     xmlNodePtr tcur = cur->children;
     while (tcur != NULL)
-    { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
+    { //check <determinantset/> or <sposet_builder/> or <sposet_collection/> to extract the ionic and electronic structure
       std::string cname((const char*)tcur->name);
-      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder")
+      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder" || cname == "sposet_collection")
       {
         qp = ptcl_pool_->createESParticleSet(tcur, target, qp);
       }
@@ -82,9 +83,6 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     psiFactory->setName(id);
     isPrimary  = (myPool.empty() || role == "primary");
     myPool[id] = psiFactory;
-    app_summary() << " Wavefunction setup: " << std::endl;
-    app_summary() << " ------------------- " << std::endl;
-    app_summary() << "  Name: " << psiFactory->getName() << std::endl;
   }
   else
   {

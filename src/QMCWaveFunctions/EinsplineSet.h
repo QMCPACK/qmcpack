@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/MuffinTin.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include <spline/einspline_engine.hpp>
 #ifdef QMC_CUDA
 #include <einspline/multi_bspline_create_cuda.h>
@@ -78,7 +78,6 @@ public:
 public:
   UnitCellType GetLattice();
   virtual void resetParameters(const opt_variables_type& active) {}
-  void resetTargetParticleSet(ParticleSet& e);
   void resetSourceParticleSet(ParticleSet& ions);
   void setOrbitalSetSize(int norbs);
   inline std::string Type() { return "EinsplineSet"; }
@@ -289,7 +288,7 @@ protected:
   // Timers //
   ////////////
   NewTimer &ValueTimer, &VGLTimer, &VGLMatTimer;
-  NewTimer &EinsplineTimer;
+  NewTimer& EinsplineTimer;
 
 #ifdef QMC_CUDA
   // Cuda equivalents of the above
@@ -486,7 +485,6 @@ public:
 #endif
 
   void resetParameters(const opt_variables_type& active);
-  void resetTargetParticleSet(ParticleSet& e);
   void setOrbitalSetSize(int norbs);
   std::string Type();
 
@@ -498,10 +496,10 @@ public:
 
   EinsplineSetExtended()
       : MultiSpline(NULL),
-        ValueTimer(*TimerManager.createTimer("EinsplineSetExtended::ValueOnly")),
-        VGLTimer(*TimerManager.createTimer("EinsplineSetExtended::VGL")),
-        VGLMatTimer(*TimerManager.createTimer("EinsplineSetExtended::VGLMatrix")),
-        EinsplineTimer(*TimerManager.createTimer("libeinspline"))
+        ValueTimer(*timer_manager.createTimer("EinsplineSetExtended::ValueOnly")),
+        VGLTimer(*timer_manager.createTimer("EinsplineSetExtended::VGL")),
+        VGLMatTimer(*timer_manager.createTimer("EinsplineSetExtended::VGLMatrix")),
+        EinsplineTimer(*timer_manager.createTimer("libeinspline"))
 #ifdef QMC_CUDA
         ,
         CudaMultiSpline(NULL),

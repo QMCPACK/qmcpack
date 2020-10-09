@@ -68,6 +68,9 @@ level.
    Python-based environments with graphs produced via matplotlib
    (included with Nexus)
 
+-  Spin-orbit coupling from relativistic pseudopotentials following the 
+   approach of Melton, Bennett, and Mitas. 
+
 SoA optimizations and improved algorithms
 -----------------------------------------
 

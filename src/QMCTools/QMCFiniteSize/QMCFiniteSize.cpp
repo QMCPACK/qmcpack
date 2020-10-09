@@ -13,7 +13,8 @@
 
 namespace qmcplusplus
 {
-QMCFiniteSize::QMCFiniteSize() : skparser(NULL), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0), myGrid(NULL)
+QMCFiniteSize::QMCFiniteSize()
+    : skparser(NULL), ptclPool(NULL), myRcut(0.0), myConst(0.0), P(NULL), h(0.0), sphericalgrid(0), myGrid(NULL)
 {
   IndexType mtheta = 80;
   IndexType mphi   = 80;

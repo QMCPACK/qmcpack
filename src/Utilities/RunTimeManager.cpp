@@ -20,9 +20,13 @@
 
 namespace qmcplusplus
 {
-RunTimeManagerClass RunTimeManager;
+RunTimeManager<CPUClock> run_time_manager;
 
-double LoopTimer::get_time_per_iteration()
+template class RunTimeManager<CPUClock>;
+template class RunTimeManager<FakeCPUClock>;
+
+template<class CLOCK>
+double LoopTimer<CLOCK>::get_time_per_iteration()
 {
   if (nloop > 0)
   {
@@ -31,7 +35,11 @@ double LoopTimer::get_time_per_iteration()
   return 0.0;
 }
 
-bool RunTimeControl::enough_time_for_next_iteration(LoopTimer& loop_timer)
+template class LoopTimer<CPUClock>;
+template class LoopTimer<FakeCPUClock>;
+
+template<class CLOCK>
+bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer)
 {
   m_loop_time      = loop_timer.get_time_per_iteration();
   m_elapsed        = runtimeManager.elapsed();
@@ -43,7 +51,8 @@ bool RunTimeControl::enough_time_for_next_iteration(LoopTimer& loop_timer)
   return enough_time;
 }
 
-std::string RunTimeControl::time_limit_message(const std::string& driverName, int block)
+template<class CLOCK>
+std::string RunTimeControl<CLOCK>::time_limit_message(const std::string& driverName, int block)
 {
   std::stringstream log;
   log << "Time limit reached for " << driverName << ", stopping after block " << block - 1 << std::endl;
@@ -52,5 +61,8 @@ std::string RunTimeControl::time_limit_message(const std::string& driverName, in
   log << "  Remaining time (seconds)      = " << m_remaining << std::endl;
   return log.str();
 }
+
+template class RunTimeControl<CPUClock>;
+template class RunTimeControl<FakeCPUClock>;
 
 } // namespace qmcplusplus

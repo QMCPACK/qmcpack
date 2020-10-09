@@ -78,7 +78,7 @@ void check(M1&& A, M2& B)
 using namespace afqmc;
 using communicator = boost::mpi3::communicator;
 
-void test_basic_walker_features(bool serial)
+void test_basic_walker_features(bool serial, std::string wtype)
 {
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
@@ -92,6 +92,7 @@ void test_basic_walker_features(bool serial)
   //assert(world.size()%2 == 0);
 
   int NMO = 8, NAEA = 2, NAEB = 2, nwalkers = 10;
+  if(wtype=="noncollinear") { NAEA = 4; NAEB = 0; } 
 
   //auto node = world.split_shared();
 
@@ -102,24 +103,24 @@ void test_basic_walker_features(bool serial)
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  boost::multi::array<Type, 2> initA({NMO, NAEA});
-  boost::multi::array<Type, 2> initB({NMO, NAEB});
-  for (int i = 0; i < NAEA; i++)
-    initA[i][i] = Type(0.22);
-  for (int i = 0; i < NAEB; i++)
-    initB[i][i] = Type(0.22);
+  int M( (wtype=="noncollinear")?2*NMO:NMO );
+  boost::multi::array<Type,2> initA({M,NAEA});
+  boost::multi::array<Type,2> initB({M,NAEB});
+  for(int i=0; i<NAEA; i++) initA[i][i] = Type(0.22);
+  for(int i=0; i<NAEB; i++) initB[i][i] = Type(0.22);
   RandomGenerator_t rng;
 
-  const char* xml_block = "<WalkerSet name=\"wset0\">  \
+  std::string xml_block;
+  xml_block = "<WalkerSet name=\"wset0\">  \
   <parameter name=\"min_weight\">0.05</parameter>  \
   <parameter name=\"max_weight\">4</parameter>  \
-  <parameter name=\"walker_type\">closed</parameter>  \
+  <parameter name=\"walker_type\">"+wtype+"</parameter>  \
   <parameter name=\"load_balance\">async</parameter>  \
   <parameter name=\"pop_control\">pair</parameter>  \
 </WalkerSet> \
 ";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml_block);
+  bool okay = doc.parseFromString(xml_block.c_str());
   REQUIRE(okay);
 
   WalkerSet wset(TG, doc.getRoot(), info, &rng);
@@ -277,6 +278,9 @@ void test_hyperslab()
         REQUIRE(imag(DataIn[i][j]) == 0);
       }
   }
+  world.barrier();
+  if (world.root())
+    remove("dummy_walkers.h5");
 }
 
 void test_double_hyperslab()
@@ -354,9 +358,12 @@ void test_double_hyperslab()
 */
     }
   }
+  world.barrier();
+  if (world.root())
+    remove("dummy_walkers.h5");
 }
 
-void test_walker_io()
+void test_walker_io(std::string wtype)
 {
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
@@ -370,6 +377,7 @@ void test_walker_io()
   //assert(world.size()%2 == 0);
 
   int NMO = 8, NAEA = 2, NAEB = 2, nwalkers = 10;
+  if(wtype=="noncollinear") { NAEA = 4; NAEB = 0; }
 
   //auto node = world.split_shared();
 
@@ -380,20 +388,20 @@ void test_walker_io()
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  boost::multi::array<Type, 2> initA({NMO, NAEA});
-  boost::multi::array<Type, 2> initB({NMO, NAEB});
-  for (int i = 0; i < NAEA; i++)
-    initA[i][i] = Type(1.0);
-  for (int i = 0; i < NAEB; i++)
-    initB[i][i] = Type(1.0);
+  int M( (wtype=="noncollinear")?2*NMO:NMO );
+  boost::multi::array<Type,2> initA({M,NAEA});
+  boost::multi::array<Type,2> initB({M,NAEB});
+  for(int i=0; i<NAEA; i++) initA[i][i] = Type(0.22);
+  for(int i=0; i<NAEB; i++) initB[i][i] = Type(0.22);
   RandomGenerator_t rng;
 
-  const char* xml_block = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">closed</parameter>  \
+  std::string xml_block;
+  xml_block = "<WalkerSet name=\"wset0\">  \
+  <parameter name=\"walker_type\">"+wtype+"</parameter>  \
 </WalkerSet> \
 ";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml_block);
+  bool okay = doc.parseFromString(xml_block.c_str());
   REQUIRE(okay);
 
   WalkerSet wset(TG, doc.getRoot(), info, &rng);
@@ -467,12 +475,19 @@ void test_walker_io()
       REQUIRE(*wset[i].EJ() == *wset2[i].EJ());
     }
   }
+  world.barrier();
+  if (world.root())
+    remove("dummy_walkers.h5");
 }
 
 TEST_CASE("swset_test_serial", "[shared_wset]")
 {
-  test_basic_walker_features(true);
-  test_basic_walker_features(false);
+  test_basic_walker_features(true,"closed");
+  test_basic_walker_features(false,"closed");
+  test_basic_walker_features(true,"collinear");
+  test_basic_walker_features(false,"collinear");
+  test_basic_walker_features(true,"noncollinear");
+  test_basic_walker_features(false,"noncollinear");
 }
 /*
 TEST_CASE("hyperslab_tests", "[shared_wset]")
@@ -481,6 +496,10 @@ TEST_CASE("hyperslab_tests", "[shared_wset]")
   test_double_hyperslab();
 }
 */
-TEST_CASE("walker_io", "[shared_wset]") { test_walker_io(); }
+TEST_CASE("walker_io", "[shared_wset]") { 
+  test_walker_io("closed"); 
+  test_walker_io("collinear"); 
+  test_walker_io("noncollinear"); 
+}
 
 } // namespace qmcplusplus

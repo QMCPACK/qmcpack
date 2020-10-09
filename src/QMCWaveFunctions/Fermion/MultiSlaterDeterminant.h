@@ -18,7 +18,7 @@
 #include <Configuration.h>
 #include <QMCWaveFunctions/Fermion/DiracDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
@@ -79,8 +79,6 @@ public:
   virtual void checkOutVariables(const opt_variables_type& active);
   virtual void resetParameters(const opt_variables_type& active);
   virtual void reportStatus(std::ostream& os);
-
-  void resetTargetParticleSet(ParticleSet& P);
 
   ///set BF pointers
   virtual void setBF(BackflowTransformation* BFTrans) {}

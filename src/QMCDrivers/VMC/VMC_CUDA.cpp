@@ -35,7 +35,7 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
                  QMCHamiltonian& h,
                  WaveFunctionPool& ppool,
                  Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, ppool, comm, "VMCcuda"),
       UseDrift("yes"),
       myPeriod4WalkerDump(0),
       w_beta(0.0),
@@ -44,7 +44,6 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
       forOpt(false)
 {
   RootName = "vmc";
-  QMCType  = "VMCcuda";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(UseDrift, "useDrift", "string");
@@ -210,8 +209,8 @@ bool VMCcuda::run()
   Matrix<GradType> grad(nw, nat);
   double Esum;
 
-  LoopTimer vmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> vmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
 
   // First do warmup steps

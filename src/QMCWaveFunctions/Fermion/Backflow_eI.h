@@ -34,15 +34,14 @@ public:
   std::vector<FT*> uniqueRadFun;
   std::vector<int> offsetPrms;
 
-  Backflow_eI(ParticleSet& ions, ParticleSet& els)
-      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions, DT_SOA_PREFERRED))
+  Backflow_eI(ParticleSet& ions, ParticleSet& els) : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions))
   {
     resize(NumTargets, NumCenters);
   }
 
   //  build RadFun manually from builder class
   Backflow_eI(ParticleSet& ions, ParticleSet& els, FT* RF)
-      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions, DT_SOA_PREFERRED))
+      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions))
   {
     // same radial function for all centers by default
     uniqueRadFun.push_back(RF);
@@ -289,7 +288,7 @@ public:
   {
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.sources();
+    int maxI            = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
       RealType uij = RadFun[j]->evaluate(myTable.getTempDists()[j], du, d2u);
@@ -327,7 +326,7 @@ public:
   {
     RealType du, d2u;
     const auto& myTable = P.getDistTable(myTableIndex_);
-    int maxI = myTable.sources();
+    int maxI            = myTable.sources();
     for (int j = 0; j < maxI; j++)
     {
       if (myTable.getTempDists()[j] > 0)

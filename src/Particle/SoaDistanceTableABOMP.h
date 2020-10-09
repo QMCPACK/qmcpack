@@ -53,9 +53,9 @@ public:
       : DTD_BConds<T, D, SC>(source.Lattice),
         DistanceTableData(source, target),
         r_dr_device_ptr_(nullptr),
-        offload_timer_(*TimerManager.createTimer(std::string("SoaDistanceTableABOMP::offload_") + target.getName() + "_" + source.getName(), timer_level_fine)),
-        copy_timer_(*TimerManager.createTimer(std::string("SoaDistanceTableABOMP::copy_") + target.getName() + "_" + source.getName(), timer_level_fine)),
-        eval_timer_(*TimerManager.createTimer(std::string("SoaDistanceTableABOMP::evaluate_") + target.getName() + "_" + source.getName(), timer_level_fine))
+        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMP::offload_") + target.getName() + "_" + source.getName(), timer_level_fine)),
+        copy_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMP::copy_") + target.getName() + "_" + source.getName(), timer_level_fine)),
+        eval_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMP::evaluate_") + target.getName() + "_" + source.getName(), timer_level_fine))
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMP*>(&source.getCoordinates());
     if (!coordinates_soa) throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");

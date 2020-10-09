@@ -209,7 +209,10 @@ SET(QMC_VERBOSE_CONFIGURATION 0 CACHE BOOL "Give details why specific tests are/
 # set debug printout
 # DEBUG_PSIBUFFER_ON keep track buffer's locator
 ######################################################################
-SET(DEBUG_PSIBUFFER_ON 0 CACHE BOOL "Build with GPU support through CUDA")
+SET(DEBUG_PSIBUFFER_ON 0 CACHE BOOL "Debug messages for PSIBUFFER locator")
+MARK_AS_ADVANCED(DEBUG_PSIBUFFER_ON)
+SET(DEBUG_PER_STEP_ACCEPT_REJECT 0 CACHE BOOL "Print accepts and rejects at each step")
+MARK_AS_ADVANCED(DEBUG_PER_STEP_ACCEPT_REJECT)
 
 ######################################################################
 # Standard test
@@ -262,9 +265,9 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
 #SET(BUILD_QMCTOOLS 1)
 #SET(MPIP_PROFILE 0)
-SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
-SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
-SET(ENABLE_STACKTRACE 0 CACHE BOOL "Enable use of boost::stacktrace")
+OPTION(QMC_BUILD_STATIC "Link to static libraries" OFF)
+OPTION(ENABLE_TIMERS "Enable internal timers" ON)
+OPTION(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
 
 ######################################################################
 # Install options
@@ -765,8 +768,8 @@ IF(ENABLE_HIP)
   ADD_LIBRARY(HIP::HIP INTERFACE IMPORTED)
   # temporarily put hipsparse hipblas here for convenience, should be moved to Platforms.
   SET_TARGET_PROPERTIES(HIP::HIP PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${ROCM_ROOT}/include"
-                                            INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP;__HIP_PLATFORM_HCC__"
-                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lhip_hcc")
+                                            INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP"
+                                            INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lamdhip64")
 ENDIF(ENABLE_HIP)
 
 ######################################################
@@ -778,7 +781,7 @@ INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 
 IF (USE_VTUNE_TASKS)
   IF (NOT ENABLE_TIMERS)
-    MESSAGE(FATAL_ERROR "USE_VTUNE_TASKS is set, but timers are not enabled.  Set ENABLE_TIMERS=1.")
+    MESSAGE(FATAL_ERROR "USE_VTUNE_TASKS is set, but timers are not enabled.  Set ENABLE_TIMERS=ON.")
   ENDIF()
   SET(USE_VTUNE_API 1)
 ENDIF()

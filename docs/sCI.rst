@@ -152,7 +152,7 @@ wavefunction.
 
   :math:`C_2O_2H_3N` molecule.
 
-The following steps show how to run from Hartree-Fock to selected CI using QP, convert the wavefunction to a QMCPACK trial wavefunction, and analyze the result.
+The following steps show how to run from Hartree-Fock to selected CI using QP2, convert the wavefunction to a QMCPACK trial wavefunction, and analyze the result.
 
 - Step 1: Generate the QP input file.
   QP takes for input an XYZ file containing the geometry of the molecule such as:
@@ -174,13 +174,12 @@ The following steps show how to run from Hartree-Fock to selected CI using QP, c
 
   ::
 
-    qp_create_ezfio_from_xyz C2O2H3N.xyz -b cc-pvtz
+    qp_create_ezfio C2O2H3N.xyz -b cc-pvtz
 
   This means that we will be simulating the molecule in all electrons
   within the cc-pVTZ basis set. Other options are, of course, possible
   such as using ECPs, different spin multiplicities, etc. For more
-  details, see the QP tutorial at
-  https://github.com/LCPQ/quantum_package/wiki/Tutorial.
+  details, see the QP tutorial at https://quantumpackage.github.io/qp2/
 
   A directory called ``C2O2H3N.ezfio`` is created and contains all the
   relevant data to run the SCF Hartree-Fock calculation. Note that because
@@ -205,20 +204,20 @@ The following steps show how to run from Hartree-Fock to selected CI using QP, c
 
   This will generate a temporary file showing all the contents of the
   simulation and opens an editor to allow modification of their values.
-  Look for ``disk_access_ao_integrals`` and modify its value from ``None``
+  Look for ``io_ao_one_e_integrals`` and modify its value from ``None``
   to ``Write``.
 
-  To run a simulation with QP, use the binary \texttt{qp\_run} with the desired level of theory, in this case Hartree-Fock (SCF).
+  To run a simulation with QP, use the binary \texttt{qp\_run} with the desired level of theory, in this case Hartree-Fock (scf).
 
   ::
 
-    mpirun -np 1 qp_run SCF C2O2H3N.ezfio &> C2O2H3N-SCF.out
+    mpirun -np 1 qp_run scf C2O2H3N.ezfio &> C2O2H3N-SCF.out
 
   If run in serial, the evaluation of the integrals and the Hamiltonian diagonalization would take a substantial amount of computer time. We recommend adding a few more slave nodes to help speed up the calculation.
 
   ::
 
-    mpirun -np 20 qp_run -slave qp_ao_ints C2O2H3N.ezfio &> C2O2H3N-SCF-Slave.out
+    mpirun -np 20 qp_run -s scf C2O2H3N.ezfio &> C2O2H3N-SCF-Slave.out
 
   The total Hartree-Fock energy of the system in cc-pVTZ is
   *:math:`E_{HF}=-283.0992`*\ Ha.
@@ -227,7 +226,7 @@ The following steps show how to run from Hartree-Fock to selected CI using QP, c
 
   ::
 
-    qp_set_frozen_core.py C2O2H3N.ezfio
+    qp_set_frozen_core C2O2H3N.ezfio
 
   This will will automatically freeze the orbitals from 1 to 5, leaving the remaining orbitals active.
 
@@ -259,10 +258,11 @@ The following steps show how to run from Hartree-Fock to selected CI using QP, c
 
   ::
 
-    mpirun -np 1 qp_run fci_zmq C2O2H3N.ezfio &> C2O2H3N-FCI.out
-    mpirun -np 199 qp_run -slave selection_davidson_slave C2O2H3N.ezfio\\
-    &> C2O2H3N-FCI-Slave.out
-
+    mpirun -np 1 qp_run fci C2O2H3N.ezfio &> C2O2H3N-FCI.out &
+    sleep 300
+    mpirun -np 199 qp_run -s fci C2O2H3N.ezfio &> C2O2H3N-FCI-Slave.out
+    wait
+    
 - Step 6 (optional): Natural orbitals
   Although this step is optional, it is important to note that using natural orbitals instead of Hartree-Fock orbitals will always improve the quality of the wavefunction and the nodal surface by reducing the number of needed determinants for the same accuracy. When a full convergence to the FCI limit is attainable, this step will not lead to any change in the energy but will only reduce the total number of determinants. However, if a full convergence is not possible, this step can significantly increase the accuracy of the calculation at the same number of determinants.
 
@@ -336,9 +336,11 @@ The following steps show how to run from Hartree-Fock to selected CI using QP, c
 
   ::
 
-    qp_run save_for_qmcpack C2O2H3N.ezfio &> C2O2H3N.dump
-    convert4qmc -QP C2O2H3N.dump -addCusp -production
+    qp_run save_for_qmcpack C2O2H3N.ezfio 
+    convert4qmc -orbitals QP2QMCPACK.h5 -multidets QP2QMCPACK.h5 -addCusp -production
 
+  Note that QP2 produces an HDF5 file in the QMCPACK format, named QP2QMCPACK. 
+  Such file can be used fir single determinants or multideterminants calculations. 
   Since we are running all-electron calculations, orbitals in QMC need
   to be corrected for the electron-nuclearcusp condition.  This is done
   by adding the option ``-addCusp`` to ``convert4qmc``, which

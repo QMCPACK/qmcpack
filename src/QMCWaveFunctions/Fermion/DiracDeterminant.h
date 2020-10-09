@@ -177,9 +177,13 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
+#ifndef NDEBUG
   /// return  for testing
-  auto& getPsiMinv() const { return psiM; }
-
+  ValueMatrix_t& getPsiMinv() override { return psiM; }
+#else
+  ValueMatrix_t& getPsiMinv() { return psiM; }
+#endif
+  
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM_temp;
 

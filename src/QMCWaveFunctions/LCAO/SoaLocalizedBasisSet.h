@@ -73,7 +73,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param els electronic system
    */
   SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
-      : ions_(ions), myTableIndex(els.addTable(ions, DT_SOA)), SuperTwist(0.0)
+      : ions_(ions), myTableIndex(els.addTable(ions)), SuperTwist(0.0)
   {
     NumCenters = ions.getTotalNum();
     NumTargets = els.getTotalNum();
@@ -148,24 +148,6 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
       }
     }
   }
-
-#if 0
-  inline int getBasisSetSize()
-  {
-    return BasisSetSize;
-  }
-
-  void resetParameters(const opt_variables_type& active)
-  {
-    //reset each unique basis functions
-    for(int i=0; i<LOBasisSet.size(); i++)
-      LOBasisSet[i]->resetParameters(active);
-  }
-
-  /** reset the distance table with a new target P
-   */
-  void resetTargetParticleSet(ParticleSet& P) { }
-#endif
 
   /** compute VGL 
    * @param P quantum particleset

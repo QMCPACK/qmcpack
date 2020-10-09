@@ -25,13 +25,12 @@ namespace qmcplusplus
 class SPOSetScanner
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
-  typedef std::map<std::string, SPOSetPtr> SPOMapType;
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
-  typedef OrbitalSetTraits<ValueType>::HessVector_t HessVector_t;
+  using PtclPoolType  = std::map<std::string, ParticleSet*>;
+  using RealType      = QMCTraits::RealType;
+  using ValueType     = QMCTraits::ValueType;
+  using ValueVector_t = OrbitalSetTraits<ValueType>::ValueVector_t;
+  using GradVector_t  = OrbitalSetTraits<ValueType>::GradVector_t;
+  using HessVector_t  = OrbitalSetTraits<ValueType>::HessVector_t;
 
   RealType myfabs(RealType s) { return std::fabs(s); }
   template<typename T>
@@ -45,14 +44,14 @@ public:
     return TinyVector<T, OHMMS_DIM>(myfabs(s[0]), myfabs(s[1]), myfabs(s[2]));
   }
 
-  SPOMapType& SPOMap;
+  std::vector<SPOSet*>& sposets;
   ParticleSet& target;
   PtclPoolType& PtclPool;
   ParticleSet* ions;
 
   // construction/destruction
-  SPOSetScanner(SPOMapType& spomap, ParticleSet& targetPtcl, PtclPoolType& psets)
-      : SPOMap(spomap), target(targetPtcl), PtclPool(psets), ions(0){};
+  SPOSetScanner(std::vector<SPOSet*>& sposets_in, ParticleSet& targetPtcl, PtclPoolType& psets)
+      : sposets(sposets_in), target(targetPtcl), PtclPool(psets), ions(0){};
   //~SPOSetScanner(){};
 
   // processing scanning
@@ -72,11 +71,9 @@ public:
 
     // scanning the SPO sets
     xmlNodePtr cur_save = cur;
-    SPOSetPtr mySPOSet;
-    for (SPOMapType::iterator spo_iter = SPOMap.begin(); spo_iter != SPOMap.end(); spo_iter++)
+    for (auto* sposet : sposets)
     {
-      app_log() << "  Processing SPO " << spo_iter->first << std::endl;
-      mySPOSet = spo_iter->second;
+      app_log() << "  Processing SPO " << sposet->getName() << std::endl;
       // scanning the paths
       cur = cur_save->children;
       while (cur != NULL)
@@ -87,12 +84,12 @@ public:
         aAttrib.put(cur);
         std::string cname;
         getNodeName(cname, cur);
-        std::string prefix(spo_iter->first + "_" + cname + "_" + trace_name);
+        std::string prefix(sposet->getName() + "_" + cname + "_" + trace_name);
         if (cname == "path")
         {
           app_log() << "    Scanning a " << cname << " called " << trace_name << " and writing to "
                     << prefix + "_v/g/l/report.dat" << std::endl;
-          scan_path(cur, mySPOSet, prefix);
+          scan_path(cur, *sposet, prefix);
         }
         else
         {
@@ -106,7 +103,7 @@ public:
   }
 
   // scanning a path
-  void scan_path(xmlNodePtr cur, SPOSetPtr mySPOSet, std::string prefix)
+  void scan_path(xmlNodePtr cur, SPOSet& sposet, std::string prefix)
   {
     std::string file_name;
     file_name = prefix + "_v.dat";
@@ -147,7 +144,7 @@ public:
     // prepare a fake particle set
     ValueVector_t SPO_v, SPO_l, SPO_v_avg, SPO_l_avg;
     GradVector_t SPO_g, SPO_g_avg;
-    int OrbitalSize(mySPOSet->size());
+    int OrbitalSize(sposet.size());
     SPO_v.resize(OrbitalSize);
     SPO_g.resize(OrbitalSize);
     SPO_l.resize(OrbitalSize);
@@ -159,6 +156,7 @@ public:
     SPO_l_avg      = 0.0;
     double Delta   = 1.0 / (nknots - 1);
     int elec_count = target.R.size();
+    auto R_saved   = target.R;
     ParticleSet::SingleParticlePos_t zero_pos(0.0, 0.0, 0.0);
     for (int icount = 0, ind = 0; icount < nknots; icount++, ind++)
     {
@@ -168,7 +166,7 @@ public:
       target.R[ind][1] = (to_pos[1] - from_pos[1]) * Delta * icount + from_pos[1];
       target.R[ind][2] = (to_pos[2] - from_pos[2]) * Delta * icount + from_pos[2];
       target.makeMove(ind, zero_pos);
-      mySPOSet->evaluateVGL(target, ind, SPO_v, SPO_g, SPO_l);
+      sposet.evaluateVGL(target, ind, SPO_v, SPO_g, SPO_l);
       std::ostringstream o;
       o << "x_y_z  " << std::fixed << std::setprecision(7) << target.R[ind][0] << " " << target.R[ind][1] << " "
         << target.R[ind][2];
@@ -188,6 +186,9 @@ public:
       output_g << std::endl;
       output_l << std::endl;
     }
+    // restore the whole target.
+    target.R = R_saved;
+    target.update();
 #ifdef QMC_COMPLEX
     output_report << "#   Report: Orb   Value_avg I/R  Gradients_avg  Laplacian_avg" << std::endl;
 #else

@@ -204,6 +204,11 @@ def read_command_line():
                               )
         #end for
 
+        # Check arbitrary named values in the scalar.dat file
+        parser.add_option('--name',default=None, help='Name of column to check in the scalar.dat file')
+        parser.add_option('--ref-value',default=None, help='Reference value for <name>')
+        parser.add_option('--ref-error',default=None, help='Reference error for <name>')
+
         options,files_in = parser.parse_args()
 
         if options.help:
@@ -230,6 +235,19 @@ def read_command_line():
                 quants_check.append(q)
             #end if
         #end for
+
+
+        if options.name is not None and (options.ref_value is None or options.ref_error is None):
+            exit_fail("All of --name,--ref-value, and --ref-error options must be present")
+
+        if options.name and options.ref_value:
+            val = float(options.ref_value)
+            if options.ref_error:
+                err = float(options.ref_error)
+                options.__dict__[options.name] = [val,err]
+                quants_check.append(options.name)
+            #end if
+        #end if
     except Exception as e:
         exit_fail('error during command line read:\n'+str(e))
     #end try

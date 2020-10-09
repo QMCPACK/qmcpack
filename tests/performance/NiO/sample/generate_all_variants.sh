@@ -12,7 +12,7 @@ do
   mkdir $new_folder
   ref_file=$name/NiO-fcc-S$size-dmc.xml
   new_file=$new_folder/NiO-fcc-S$size-dmc.xml
-  python ../../adjust_qmcpack_input.py -w 32 $ref_file -o $new_file
+  ../../adjust_qmcpack_input.py -w 32 $ref_file -o $new_file
 
   # bring back the commended lines
   grep '^    <!' $ref_file > commented_lines
@@ -29,7 +29,7 @@ do
     mkdir $new_folder
     ref_file=$name/NiO-fcc-S$size-dmc.xml
     new_file=$new_folder/NiO-fcc-S$size-dmc.xml
-    python ../../adjust_qmcpack_input.py -j $name/J123.xml $ref_file -o $new_file
+    ../../adjust_qmcpack_input.py -j $name/J123.xml $ref_file -o $new_file
 
     # bring back the commended lines
     grep '^    <!' $ref_file > commented_lines

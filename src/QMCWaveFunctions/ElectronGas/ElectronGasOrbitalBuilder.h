@@ -42,7 +42,6 @@ struct RealEGOSet : public SPOSet
   RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
 
   void resetParameters(const opt_variables_type& optVariables) override {}
-  inline void resetTargetParticleSet(ParticleSet& P) override {}
   void setOrbitalSetSize(int norbs) override {}
 
   SPOSet* makeClone() const override { return new RealEGOSet(*this); }

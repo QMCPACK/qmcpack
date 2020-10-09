@@ -18,7 +18,7 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
@@ -31,12 +31,12 @@ public:
    *@param first index of the first particle
    */
   DiracDeterminantBase(SPOSetPtr const spos, int first = 0)
-      : UpdateTimer(*TimerManager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
-        RatioTimer(*TimerManager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
-        InverseTimer(*TimerManager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
-        BufferTimer(*TimerManager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
-        SPOVTimer(*TimerManager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
-        SPOVGLTimer(*TimerManager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
+      : UpdateTimer(*timer_manager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
+        RatioTimer(*timer_manager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
+        InverseTimer(*timer_manager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
+        BufferTimer(*timer_manager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
+        SPOVTimer(*timer_manager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
+        SPOVGLTimer(*timer_manager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
         Phi(spos),
         FirstIndex(first),
         LastIndex(first + spos->size()),
@@ -63,6 +63,10 @@ public:
   inline int getFirstIndex() const { return FirstIndex; }
   inline int getLastIndex() const { return LastIndex; }
 
+#ifndef NDEBUG
+  virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
+#endif
+
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
@@ -78,13 +82,6 @@ public:
   virtual inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
 
   virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
-
-  // To be removed with AoS
-  void resetTargetParticleSet(ParticleSet& P) override final
-  {
-    Phi->resetTargetParticleSet(P);
-    targetPtcl = &P;
-  }
 
   inline void reportStatus(std::ostream& os) override final {}
 
@@ -182,8 +179,10 @@ protected:
   int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
-  /// targetPtcl pointer. YE: to be removed.
-  ParticleSet* targetPtcl;
+
+#ifndef NDEBUG
+  ValueMatrix_t dummy_vmt;
+#endif
 
   /// register all the timers
   void registerTimers()

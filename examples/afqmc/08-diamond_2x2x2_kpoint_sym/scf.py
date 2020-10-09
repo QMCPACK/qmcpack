@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy
 import pyscf.pbc.gto as gto
 from pyscf.pbc import scf, dft

@@ -73,8 +73,6 @@ void read_header(std::ifstream& in, std::string& type, int& wfn_type, bool& full
         }
         case 2: {
           app_log() << "Reading a GHF-type trial wave-function. \n";
-          app_error() << " GHF type not implemented. \n";
-          APP_ABORT(" GHF type not implemented in readWfn.. \n");
           break;
         }
         default: {
@@ -353,15 +351,34 @@ void read_general_wavefunction(std::ifstream& in,
             APP_ABORT(" Error: Expecting Determinant: # tag in wavefunction file. \n");
           read_mat(in, OrbMat, Cstyle, fullMOMat, NMO, NAEA);
         }
-        PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
-        if (walker_type == COLLINEAR)
-          PsiT.emplace_back(
-              csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8,
-                                                                       'H', comm));
+        if(walker_type==CLOSED) {
+          PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        OrbMat,1e-8,'H',comm));
+        } else if(walker_type==COLLINEAR) {
+          PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        OrbMat,1e-8,'H',comm));
+          PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        OrbMat(OrbMat.extension(0),{0,NAEB}),
+                                        1e-8,'H',comm));
+        } else if(walker_type==NONCOLLINEAR) {
+          APP_ABORT(" Error in readWfn: wfn_type==closed with walker_type=noncollinear.\n");
+/*
+          boost::multi::array<ComplexType,2> Mat({2*NMO,NAEA+NAEB});
+          if(comm.rank()==0) {
+            std::fill_n(Mat.origin(),2*NMO*(NAEA+NAEB),ComplexType(0.0));
+            Mat({0,NMO},{0,NAEA}) = OrbMat;
+            Mat({NMO,2*NMO},{NAEA,NAEA+NAEB}) = OrbMat({0,NMO},{0,NAEB});
+          }  
+          PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        OrbMat,1e-8,'H',comm));
+*/
+        }
       }
     }
     else if (wfn_type == 1)
     {
+      if(walker_type != COLLINEAR)
+        APP_ABORT(" Error in readWfn: wfn_type==collinear with walker_type!=collinear.\n");
       boost::multi::array<ComplexType, 2> OrbMat({NMO, NAEA});
       for (int i = 0, q = 0; i < ndets; i++)
       {
@@ -372,16 +389,21 @@ void read_general_wavefunction(std::ifstream& in,
             APP_ABORT(" Error: Expecting Determinant: # tag in wavefunction file. \n");
           read_mat(in, OrbMat, Cstyle, fullMOMat, NMO, NAEA);
         }
+        
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
         if (comm.rank() == 0)
           read_mat(in, OrbMat(OrbMat.extension(0), {0, NAEB}), Cstyle, fullMOMat, NMO, NAEB);
         PsiT.emplace_back(
-            csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8, 'H',
+          csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8, 'H',
                                                                      comm));
       }
     }
     else if (wfn_type == 2)
     {
+      if(walker_type != NONCOLLINEAR)
+        APP_ABORT(" Error in readWfn: wfn_type==collinear with walker_type!=collinear.\n");
+      if(NAEB != 0)  
+        APP_ABORT(" Error in readWfn: walker_type==collinear with NAEB!=0.\n");
       boost::multi::array<ComplexType, 2> OrbMat({2 * NMO, NAEA});
       for (int i = 0, q = 0; i < ndets; i++)
       {
@@ -393,13 +415,7 @@ void read_general_wavefunction(std::ifstream& in,
           read_mat(in, OrbMat, Cstyle, fullMOMat, 2 * NMO, NAEA);
         }
         PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat, 1e-8, 'H', comm));
-        if (comm.rank() == 0)
-          read_mat(in, OrbMat(OrbMat.extension(0), {0, NAEB}), Cstyle, fullMOMat, NMO, NAEB);
-        PsiT.emplace_back(
-            csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(OrbMat(OrbMat.extension(0), {0, NAEB}), 1e-8, 'H',
-                                                                     comm));
       }
-
     } //type
   }
   else
@@ -1020,8 +1036,8 @@ int readWfn(std::string fileName, boost::multi::array<ComplexType, 3>& OrbMat, i
   }
   else if (wfn_type == 2)
   {
-    APP_ABORT(" Error: wfn_type == 2 not implemented. \n");
-
+    OrbMat.reextent({1,2*NMO,NAEA+NAEB});
+    read_mat(in,OrbMat[0],Cstyle,fullMOMat,2*NMO,NAEA+NAEB);
   } //type
 
   in.close();
