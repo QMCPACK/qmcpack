@@ -126,15 +126,19 @@ struct WaveFunctionComponent : public QMCTraits
   ValueVectorType d2LogPsi;
   /** Name of the class derived from WaveFunctionComponent
    */
-  std::string ClassName;
+  const std::string ClassName;
+  /** Name of the object
+   * It is required to be different for objects of the same derived type like multiple J1.
+   * It can be left empty for object which is unique per many-body WF.
+   */
+  const std::string myName;
   ///list of variables this WaveFunctionComponent handles
   opt_variables_type myVars;
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
   /// default constructor
-  WaveFunctionComponent();
-  //WaveFunctionComponent(const WaveFunctionComponent& old);
+  WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
 
   ///default destructor
   virtual ~WaveFunctionComponent() {}

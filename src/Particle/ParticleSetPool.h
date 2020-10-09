@@ -33,7 +33,7 @@ namespace qmcplusplus
 class ParticleSetPool : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PoolType;
+  using PoolType = std::map<std::string, ParticleSet*>;
 
   /** constructor
    * @param aname xml tag

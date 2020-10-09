@@ -122,7 +122,7 @@ public:
    * @param aterm a WaveFunctionComponent pointer
    * @param aname a name to the added WaveFunctionComponent object for printing
    */
-  void addComponent(WaveFunctionComponent* aterm, std::string aname);
+  void addComponent(WaveFunctionComponent* aterm);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);

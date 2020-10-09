@@ -30,13 +30,14 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase(SPOSetPtr const spos, int first = 0)
-      : UpdateTimer(*timer_manager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
-        RatioTimer(*timer_manager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
-        InverseTimer(*timer_manager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
-        BufferTimer(*timer_manager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
-        SPOVTimer(*timer_manager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
-        SPOVGLTimer(*timer_manager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
+  DiracDeterminantBase(const std::string& class_name, SPOSetPtr const spos, int first = 0)
+      : WaveFunctionComponent(class_name),
+        UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
+        RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
+        InverseTimer(*timer_manager.createTimer(class_name + "::inverse", timer_level_fine)),
+        BufferTimer(*timer_manager.createTimer(class_name + "::buffer", timer_level_fine)),
+        SPOVTimer(*timer_manager.createTimer(class_name + "::spoval", timer_level_fine)),
+        SPOVGLTimer(*timer_manager.createTimer(class_name + "::spovgl", timer_level_fine)),
         Phi(spos),
         FirstIndex(first),
         LastIndex(first + spos->size()),
@@ -45,7 +46,6 @@ public:
   {
     Optimizable  = Phi->isOptimizable();
     is_fermionic = true;
-    ClassName    = "DiracDeterminantBase";
     registerTimers();
   }
 
