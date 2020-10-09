@@ -1947,13 +1947,14 @@ class Structure(Sobj):
 
     def is_frozen(self):
         if self.frozen is None:
-            return np.ones((len(self.pos),),dtype=bool)
+            return np.zeros((len(self.pos),),dtype=bool)
         else:
             return self.frozen.sum(1)>0
         #end if
     #end def is_frozen
 
 
+    # test needed
     def magnetize(self,identifiers=None,magnetization='',**mags):
         magsin = None
         if isinstance(identifiers,obj):
@@ -2004,6 +2005,20 @@ class Structure(Sobj):
             self.error('magnetization list and list selected atoms differ in length\n  length of magnetization list: {0}\n  number of atoms selected: {1}\n  magnetization list: {2}\n  atom indices selected: {3}\n  atoms selected: {4}'.format(len(magnetization),len(indices),magnetization,indices,self.elem[indices]))
         #end if
     #end def magnetize
+
+
+    def is_magnetic(self,tol=1e-8):
+        magnetic = False
+        if self.mag is not None:
+            for m in self.mag:
+                if m is not None and abs(m)>tol:
+                    magnetic = True
+                    break
+                #end if
+            #end for
+        #end if
+        return magnetic
+    #end def is_magnetic
 
 
     # test needed
@@ -3769,6 +3784,9 @@ class Structure(Sobj):
         else:
             self.error('primitive source "{0}" is not implemented\nplease contact a developer'.format(source))
         #end if
+        if prim.units!=self.units:
+            prim.change_units(self.units)
+        #end if
         return res
     #end def primitive
 
@@ -5366,6 +5384,11 @@ class Structure(Sobj):
             tmatrix,valid_by_tiling = spt.tilematrix(sp,status=True)
             if not valid_by_tiling:
                 tmatrix = None
+            else:
+                # apply tiling matrix
+                st = sp.copy().tile(tmatrix)
+                # update lattice type
+                rmg_lattice = st.rmg_lattice()
             #end if
         #end if
 
@@ -5388,38 +5411,37 @@ class Structure(Sobj):
     #end def rmg_lattice
 
 
-    def rmg_transform(self,allow_tile=False,exit=False,warn=False):
-        s_trans = None
+    def rmg_transform(self,allow_tile=False,all_results=False):
         rmg_lattice,tmatrix,s,sp = self.rmg_lattice(
             allow_tile  = allow_tile,
-            exit        = exit,
-            warn        = warn,
+            exit        = True,
             all_results = True,
             )
-        if rmg_lattice is not None:
-            # find and apply rotation matrix between current and standard representation
-            R = np.dot(np.linalg.inv(s.axes),sp.axes)
-            s_trans = s.copy()
-            s_trans.matrix_transform(R.T)
-        elif allow_tile:
-            if tmatrix is not None:
-                # apply tiling matrix
-                s_trans = sp.copy().tile(tmatrix)
-                # update lattice type
-                rmg_lattice = s_trans.rmg_lattice()
-                if rmg_lattice is None:
-                    self.error('Transformation to valid RMG cell via tiling failed.\nThis is a developer error.\nPlease contact the developers.')
-                #end if
-            elif exit or warn:
-                msg = 'No valid RMG cell may be obtained by tiling.'
-                if exit:
-                    self.error(msg)
-                elif warn:
-                    self.warn(msg)
-                #end if
-            #end if
+        s_trans = self.copy()
+        R = np.dot(np.linalg.inv(s.axes),sp.axes)
+        s_trans.matrix_transform(R.T)
+        if tmatrix is not None:
+            s_trans = s_trans.tile(tmatrix)
         #end if
-        return s_trans,rmg_lattice
+        if s_trans.units=='A':
+            rmg_units = 'Angstrom'
+        elif s_trans.units=='B':
+            rmg_units = 'Bohr'
+        else:
+            self.error('unrecognized length units in structure "{}"'.format(s_trans.units))
+        #end if
+        rmg_inputs = obj(
+            bravais_lattice_type = self.rmg_lattices[rmg_lattice],
+            a_length             = np.linalg.norm(s_trans.axes[0]),
+            b_length             = np.linalg.norm(s_trans.axes[1]),
+            c_length             = np.linalg.norm(s_trans.axes[2]),
+            length_units         = rmg_units,
+            )
+        if not all_results:
+            return s_trans,rmg_inputs
+        else:
+            return s_trans,rmg_inputs,R,tmatrix
+        #end if
     #end def rmg_transform
 
 #end class Structure

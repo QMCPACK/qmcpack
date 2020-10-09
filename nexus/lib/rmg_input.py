@@ -2655,8 +2655,18 @@ class FormattedTableRmgKeyword(FormattedRmgKeyword):
     exclude_fields = set()
 
     def assign(self,value):
-        # assume the value is ok
-        return value
+        if isinstance(value,str):
+            return value
+        elif isinstance(value,(dict,obj)):
+            for k,v in value.items():
+                if isinstance(v,(tuple,list)):
+                    value[k] = np.array(v)
+                #end if
+            #end for
+            return value
+        else:
+            self.error('cannot assign RMG keyword "{}".\nInvalid type encountered.\nType encoutered: {}\nType(s) expected: str,dict,obj'.format(self.key_name,value.__class__.__name__))
+        #end if
     #end def assign
 
     def valid_no_msg(self,value):
@@ -3140,14 +3150,22 @@ def generate_any_rmg_input(**kwargs):
     kw.set_optional(generate_any_defaults[defaults])
 
     # extract keywords not appearing in RMG input file
-    text            = kw.delete_optional('text'           , None )
-    wf_grid_spacing = kw.delete_optional('wf_grid_spacing', None )
-    pseudos         = kw.delete_optional('pseudos'        , None )
-    system          = kw.delete_optional('system'         , None )
-    copy_system     = kw.delete_optional('copy_system'    , True )
-    use_folded      = kw.delete_optional('use_folded'     , False)
-    virtual_frac    = kw.delete_optional('virtual_frac'   , None )
-    magnetic        = kw.delete_optional('magnetic'       , False )
+    text            = kw.delete_optional('text'           , None   )
+    wf_grid_spacing = kw.delete_optional('wf_grid_spacing', None   )
+    pseudos         = kw.delete_optional('pseudos'        , None   )
+    system          = kw.delete_optional('system'         , None   )
+    copy_system     = kw.delete_optional('copy_system'    , True   )
+    use_folded      = kw.delete_optional('use_folded'     , False  )
+    virtual_frac    = kw.delete_optional('virtual_frac'   , None   )
+    spin_polarized  = kw.delete_optional('spin_polarized' , None   )
+    default_units   = kw.delete_optional('default_units'  , 'bohr' )
+
+    default_units = dict(
+        a        = 'angstrom',
+        b        = 'bohr',
+        angstrom = 'angstrom',
+        bohr     = 'bohr'
+        )[default_units]
 
     # generate RMG input
     ri = RmgInput()
@@ -3183,11 +3201,13 @@ def generate_any_rmg_input(**kwargs):
         #end if
         system.check_folded_system()
         system.update_particles()
+
+        # set atomic species, positions, magnetic moments and mobility
         if 'atomic_coordinate_type' not in ri:
             ri.atomic_coordinate_type = 'Absolute'
         #end if
         if 'crds_units' not in ri:
-            cu = 'bohr'
+            cu = default_units
         else:
             cu = ri.crds_units.lower()
         #end if
@@ -3210,7 +3230,7 @@ def generate_any_rmg_input(**kwargs):
         #end if
         movable = None
         if s.frozen is not None:
-            movable = ~s.frozen.any(axis=1)
+            movable = ~s.is_frozen()
         #end if
         moments = None
         if s.mag is not None:
@@ -3239,6 +3259,21 @@ def generate_any_rmg_input(**kwargs):
                 )
         #end if
 
+        # set wavefunction grid
+        if wf_grid_spacing is not None:
+            wf_grid = []
+            for a in system.structure.axes:
+                g = int(np.ceil(np.linalg.norm(a)/wf_grid_spacing))
+                wf_grid.append(g)
+            #end for
+            ri.assign(wavefunction_grid=wf_grid)
+        #end if
+
+        if spin_polarized is None:
+            spin_polarized = system.spin_polarized_orbitals()
+        #end if
+
+        # set occupations
         if virtual_frac is not None:
             nup,ndn = system.particles.electron_counts()
             nvirt = int(np.ceil(virtual_frac*max(nup,ndn)))
@@ -3247,12 +3282,19 @@ def generate_any_rmg_input(**kwargs):
             ndn_virt = nptot-ndn
             occ_up = '{} 1.0 {} 0.0'.format(nup,nup_virt)
             occ_dn = '{} 1.0 {} 0.0'.format(ndn,ndn_virt)
-            if nup==ndn and not magnetic:
+            if nup==ndn and not spin_polarized:
                 ri.states_count_and_occupation = occ_up
             else:
                 ri.states_count_and_occupation_spin_up   = occ_up
                 ri.states_count_and_occupation_spin_down = occ_dn
             #end if
+        #end if
+
+    #end if
+
+    if spin_polarized is not None and spin_polarized:
+        if 'states_count_and_occupation_spin_up' not in ri:
+            error('System is spin polarized, but occupations not provided for up and down spins.',loc)
         #end if
     #end if
 

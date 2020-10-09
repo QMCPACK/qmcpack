@@ -3,6 +3,7 @@ import testing
 from testing import failed
 from testing import divert_nexus_log,restore_nexus_log
 from testing import value_eq,object_eq,check_object_eq
+import versions
 
 
 associated_files = dict()
@@ -812,12 +813,12 @@ def test_generate():
     ri = generate_rmg_input(
         atoms                     = obj(
             format    = 'movable',
-            atoms     = np.array(['P','P','P','P']),
-            positions = np.array([[0.    ,  0.     , 0.     ],
-                                  [1.6568,  0.     , 1.48364],
-                                  [1.6568,  2.13054, 2.18815],
-                                  [0.    ,  2.13054, 3.67179]]),
-            movable   = np.array([True ,True ,True ,True]),
+            atoms     = ['P','P','P','P'],
+            positions = [[0.    ,  0.     , 0.     ],
+                         [1.6568,  0.     , 1.48364],
+                         [1.6568,  2.13054, 2.18815],
+                         [0.    ,  2.13054, 3.67179]],
+            movable   = [True ,True ,True ,True],
             ),
         **shared_inputs
         )
@@ -890,53 +891,62 @@ def test_generate():
         states_count_and_occupation_spin_up = '48 1.0 8 0.0',
         Hubbard_U                 = 'Ni 6.5',
         pseudopotential           = obj(
-            species = np.array(['Ni','O']),
-            pseudos = np.array(['Ni_oncv.UPF','O_oncv.UPF']),
+            species = ['Ni','O'],
+            pseudos = ['Ni_oncv.UPF','O_oncv.UPF'],
             ),
         atoms                     = obj(
             format    = 'movable_moment',
-            atoms     = np.array(['O','O','O','O','Ni','Ni','Ni','Ni']),
-            positions = np.array([[0.   , 0. ,   0.5  ],
-                                  [0.   , 0.5,   0.   ],
-                                  [0.5  , 0. ,   0.   ],
-                                  [0.5  , 0.5,   0.5  ],
-                                  [0.005, 0. ,   0.   ],
-                                  [0.5  , 0.5,   0.   ],
-                                  [0.   , 0.5,   0.5  ],
-                                  [0.5  , 0. ,   0.5  ]]),
-            movable = np.array([True,True,True,True,True,True,True,True]),
-            moments = np.array([0.,0.,0.,0.,0.25,0.25,-0.25,-0.25]),
+            atoms     = ['O','O','O','O','Ni','Ni','Ni','Ni'],
+            positions = [[0.   , 0. ,   0.5  ],
+                         [0.   , 0.5,   0.   ],
+                         [0.5  , 0. ,   0.   ],
+                         [0.5  , 0.5,   0.5  ],
+                         [0.005, 0. ,   0.   ],
+                         [0.5  , 0.5,   0.   ],
+                         [0.   , 0.5,   0.5  ],
+                         [0.5  , 0. ,   0.5  ]],
+            movable = [True,True,True,True,True,True,True,True],
+            moments = [0.,0.,0.,0.,0.25,0.25,-0.25,-0.25],
             ),
         **shared_inputs
         )
     check_vs_serial_reference(ri,infile)
 
-    nio8 = generate_physical_system(
-        units     = 'B',
-        axes      = 7.8811*np.identity(3),
-        elem      = ['O','O','O','O','Ni','Ni','Ni','Ni'],
-        mag       = [0,0,0,0,.25,.25,-.25,-.25],
-        posu      = [[0.   , 0. ,   0.5  ],
-                     [0.   , 0.5,   0.   ],
-                     [0.5  , 0. ,   0.   ],
-                     [0.5  , 0.5,   0.5  ],
-                     [0.005, 0. ,   0.   ],
-                     [0.5  , 0.5,   0.   ],
-                     [0.   , 0.5,   0.5  ],
-                     [0.5  , 0. ,   0.5  ]],
-        Ni        = 18,
-        O         = 6,
-        )
-    nio8.structure.freeze(negate=True)
-    ri = generate_rmg_input(
-        Hubbard_U    = 'Ni 6.5',
-        virtual_frac = 1./6,
-        pseudos      = ['Ni_oncv.UPF','O_oncv.UPF'],
-        system       = nio8,
-        magnetic     = True,
-        **shared_inputs
-        )
-    check_vs_serial_reference(ri,infile)
+    if versions.spglib_available and versions.seekpath_available:
+        nio8 = generate_physical_system(
+            units     = 'B',
+            axes      = 7.8811*np.identity(3),
+            elem      = ['O','O','O','O','Ni','Ni','Ni','Ni'],
+            mag       = [0,0,0,0,.25,.25,-.25,-.25],
+            posu      = [[0.   , 0. ,   0.5  ],
+                         [0.   , 0.5,   0.   ],
+                         [0.5  , 0. ,   0.   ],
+                         [0.5  , 0.5,   0.5  ],
+                         [0.005, 0. ,   0.   ],
+                         [0.5  , 0.5,   0.   ],
+                         [0.   , 0.5,   0.5  ],
+                         [0.5  , 0. ,   0.5  ]],
+            Ni        = 18,
+            O         = 6,
+            )
+        nio8.structure.freeze(negate=True)
+        s_trans,rmg_inputs,R,tmatrix = nio8.structure.rmg_transform(all_results=True)
+        nio8.structure = s_trans
+        assert(value_eq(R,np.eye(3,dtype=float)))
+        assert(tmatrix is None)
+        shared_inputs.delete('bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid')
+        ri = generate_rmg_input(
+            Hubbard_U       = 'Ni 6.5',
+            virtual_frac    = 1./6,
+            wf_grid_spacing = 0.22,
+            pseudos         = ['Ni_oncv.UPF','O_oncv.UPF'],
+            system          = nio8,
+            **obj(rmg_inputs,shared_inputs)
+            )
+        assert(value_eq(ri.length_units,'Bohr'))
+        del ri.length_units
+        check_vs_serial_reference(ri,infile)
+    #end if
 
 
     # recreate 'Pt_bulk_spinorbit_input_band'
@@ -998,24 +1008,24 @@ def test_generate():
 
     ri = generate_rmg_input(
         states_count_and_occupation = '10 1.0 10 0.0',
-        kpoints_bandstructure     = obj(
-            counts  = np.array([1,10]),
-            kpoints = np.array([[0. , 0. , 0. ],
-                                [0.5, 0.5, 0. ]]),
-            labels  = np.array(['G','X']),
+        kpoints_bandstructure = obj(
+            counts  = [1,10],
+            kpoints = [[0. , 0. , 0. ],
+                       [0.5, 0.5, 0. ]],
+            labels  = ['G','X'],
             ),
-        pseudopotential           = obj(
-            pseudos   = np.array(['Pt.rel-pbe-n-rrkjus.UPF']),
-            species   = np.array(['Pt']),
+        pseudopotential       = obj(
+            pseudos   = ['Pt.rel-pbe-n-rrkjus.UPF'],
+            species   = ['Pt'],
             ),
-        atoms                     = obj(
+        atoms                 = obj(
             format     = 'full_spin',
-            atoms      = np.array(['Pt']),
-            positions  = np.array([[0., 0., 0.]]),
-            movable    = np.array([[ True,  True,  True]]),
-            spin_ratio = np.array([0.]),
-            spin_phi   = np.array([0.]),
-            spin_theta = np.array([90.]),
+            atoms      = ['Pt'],
+            positions  = [[0., 0., 0.]],
+            movable    = [[ True,  True,  True]],
+            spin_ratio = [0.],
+            spin_phi   = [0.],
+            spin_theta = [90.],
             ),
         **shared_inputs
         )
