@@ -236,14 +236,14 @@ void DescentEngine::takeSample(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Function that reduces all vector information from all processors to
-/// the root
-///         processor
+/// the root processor
 ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescentEngine::sample_finish() {
 
   int numSamples = lev_history_.size();
 
+  //Compute average energy and variance for this iteration
   this->mpi_unbiased_ratio_of_means(numSamples, w_history_, lev_history_,
                                     vg_history_, e_avg_, e_var_, e_err_);
 
@@ -258,6 +258,7 @@ void DescentEngine::sample_finish() {
   app_log() << "Energy Standard Error: " << std::setprecision(9) << e_err_
             << std::endl;
 
+  //Store average values during descent finalization
   if (final_descent_num_ > collection_step_ && collect_count_) {
     final_le_avg_history_.push_back(e_avg_);
     final_var_avg_history_.push_back(e_var_);

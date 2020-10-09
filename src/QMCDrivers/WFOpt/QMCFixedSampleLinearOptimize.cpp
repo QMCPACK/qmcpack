@@ -1410,7 +1410,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     }
     adaptive_three_shift_run();
  
-    app_log() << "Update descent engine param values after Blocked LM step" << std::endl;
+    app_log() << "Update descent engine parameter values after Blocked LM step" << std::endl;
     for(int i = 0; i < numParams; i++) 
     {    
         ValueType val = optTarget->Params(i);
