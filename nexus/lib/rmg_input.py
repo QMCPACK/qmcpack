@@ -1568,7 +1568,7 @@ LDAU options
 
     Key name:     Hubbard_U
     Required:     no
-    Key type:     string
+    Key type:     formatted
     Expert:       No
     Experimental: No
     Default:      ""
@@ -2649,6 +2649,7 @@ class FormattedRmgKeyword(RmgKeyword):
 #end class FormattedRmgKeyword
 
 
+
 class FormattedTableRmgKeyword(FormattedRmgKeyword):
     array_options  = None
     array_types    = None
@@ -2943,6 +2944,54 @@ class AtomsKeyword(FormattedTableRmgKeyword):
     #end def write
 #end class AtomsKeyword
 
+
+
+class HubbardUKeyword(RmgKeyword):
+    def read(self,value):
+        v = obj()
+        tokens = read_string(value).split()
+        for a,u in zip(tokens[::2],tokens[1::2]):
+            v[a] = float(u)
+        #end for
+        return v
+    #end def read
+
+    def write(self,value):
+        s = ''
+        for a in sorted(value.keys()):
+            s += ' {} {}'.format(a,value[a])
+        #end for
+        return write_string(s)
+    #end def write
+
+    def assign(self,value):
+        if isinstance(value,str):
+            return value
+        elif isinstance(value,(dict,obj)):
+            return obj(value)
+        else:
+            self.error('cannot assign RMG keyword "{}".\nInvalid type encountered.\nType encoutered: {}\nType(s) expected: str,dict,obj'.format(self.key_name,value.__class__.__name__))
+        #end if
+    #end def assign
+
+    def valid(self,value,message=False):
+        valid = True
+        for k,v in value.items():
+            if not isinstance(k,rmg_value_types.string):
+                valid = False
+                break
+            elif not isinstance(v,rmg_value_types.double):
+                valid = False
+                break
+            #end if
+        #end for
+        if not message:
+            return valid
+        else:
+            return valid,'Data for keyword "{}" is invalid.\nInvalid value: {}'.format(self.key_name,value)
+        #end if
+    #end def valid
+#end class HubbardUKeyword
     
 
 formatted_keywords = obj(
@@ -2950,6 +2999,7 @@ formatted_keywords = obj(
     kpoints               = KpointsKeyword,
     kpoints_bandstructure = KpointsBandstructureKeyword,
     atoms                 = AtomsKeyword,
+    Hubbard_U             = HubbardUKeyword,
     )
 
 
@@ -3280,11 +3330,12 @@ def generate_any_rmg_input(**kwargs):
             nptot = max(nup,ndn) + nvirt
             nup_virt = nptot-nup
             ndn_virt = nptot-ndn
-            occ_up = '{} 1.0 {} 0.0'.format(nup,nup_virt)
-            occ_dn = '{} 1.0 {} 0.0'.format(ndn,ndn_virt)
             if nup==ndn and not spin_polarized:
+                occ    = '{} 2.0 {} 0.0'.format(nup,nup_virt)
                 ri.states_count_and_occupation = occ_up
             else:
+                occ_up = '{} 1.0 {} 0.0'.format(nup,nup_virt)
+                occ_dn = '{} 1.0 {} 0.0'.format(ndn,ndn_virt)
                 ri.states_count_and_occupation_spin_up   = occ_up
                 ri.states_count_and_occupation_spin_down = occ_dn
             #end if

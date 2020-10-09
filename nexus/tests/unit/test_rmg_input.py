@@ -426,7 +426,7 @@ def generate_serial_references():
 
 
     serial_references['NiO8_input'] = {
-        'Hubbard_U' : 'Ni 6.5',
+        'Hubbard_U/Ni' : 6.5,
         'a_length' : 7.8811,
         'alpha' : 0.0,
         'atomic_coordinate_type' : 'Cell Relative',
@@ -889,7 +889,7 @@ def test_generate():
     ri = generate_rmg_input(
         states_count_and_occupation_spin_down = '48 1.0 8 0.0',
         states_count_and_occupation_spin_up = '48 1.0 8 0.0',
-        Hubbard_U                 = 'Ni 6.5',
+        Hubbard_U                 = obj(Ni=6.5),
         pseudopotential           = obj(
             species = ['Ni','O'],
             pseudos = ['Ni_oncv.UPF','O_oncv.UPF'],
@@ -936,7 +936,7 @@ def test_generate():
         assert(tmatrix is None)
         shared_inputs.delete('bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid')
         ri = generate_rmg_input(
-            Hubbard_U       = 'Ni 6.5',
+            Hubbard_U       = obj(Ni=6.5),
             virtual_frac    = 1./6,
             wf_grid_spacing = 0.22,
             pseudos         = ['Ni_oncv.UPF','O_oncv.UPF'],
