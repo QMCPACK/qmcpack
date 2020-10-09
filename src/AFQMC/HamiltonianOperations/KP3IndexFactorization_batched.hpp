@@ -29,8 +29,10 @@
 
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Utilities/Utils.hpp"
+#include "Utilities/Timer.h"
 #include "AFQMC/Numerics/batched_operations.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
+
 
 namespace qmcplusplus
 {
@@ -1195,6 +1197,8 @@ public:
       >
   void vHS(MatA& X, MatB&& v, double a = 1., double c = 0.)
   {
+qmcplusplus::Timer Timet;
+qmcplusplus::Timer Time;
     int nkpts = nopk.size();
     int nwalk = X.size(1);
     assert(v.size(0) == nwalk);
@@ -1209,12 +1213,17 @@ public:
     SPComplexType halfa(0.5 * a, 0.0);
     SPComplexType minusimhalfa(0.0, -0.5 * a);
     SPComplexType imhalfa(0.0, 0.5 * a);
+app_log()<<" setup 0: " <<Time.elapsed() <<std::endl; Time.restart();
 
     Static3Tensor vKK({nkpts + number_of_symmetric_Q, nkpts, nwalk * nmo_max * nmo_max},
                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+app_log()<<" vKK: " <<Time.elapsed() <<std::endl; Time.restart();
     fill_n(vKK.origin(), vKK.num_elements(), SPComplexType(0.0));
+app_log()<<" fill_n: " <<Time.elapsed() <<std::endl; Time.restart();
     Static4Tensor XQnw({nkpts, 2, nchol_max, nwalk}, device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+app_log()<<" xQnw: " <<Time.elapsed() <<std::endl; Time.restart();
     fill_n(XQnw.origin(), XQnw.num_elements(), SPComplexType(0.0));
+app_log()<<" fill_n: " <<Time.elapsed() <<std::endl; Time.restart();
 
     // "rotate" X
     //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
@@ -1224,6 +1233,7 @@ public:
 #else
     SpMatrix_ref Xdev(make_device_ptr(X.origin()), X.extensions());
 #endif
+app_log()<<" Xdev: " <<Time.elapsed() <<std::endl; Time.restart();
     for (int Q = 0; Q < nkpts; ++Q)
     {
       if (Qmap[Q] < 0)
@@ -1235,6 +1245,7 @@ public:
       ma::add(halfa, Xp, imhalfa, Xm, XQnw[Q][1].sliced(0, ncholpQ[Q]));
       nq += 2 * ncholpQ[Q];
     }
+app_log()<<" Xp/Xm: " <<Time.elapsed() <<std::endl; Time.restart();
     //  then combine Q/(-Q) pieces
     //  X(Q)np = (X(Q)np + X(-Q)nm)
     for (int Q = 0; Q < nkpts; ++Q)
@@ -1245,10 +1256,12 @@ public:
         ma::axpy(SPComplexType(1.0), XQnw[Qm][1], XQnw[Q][0]);
       }
     }
+app_log()<<" axpy: " <<Time.elapsed() <<std::endl; Time.restart();
     {
       // assuming contiguous
       ma::scal(c, v);
     }
+app_log()<<" scal: " <<Time.elapsed() <<std::endl; Time.restart();
 
     int nmo_max2 = nmo_max * nmo_max;
     using ma::gemmBatched;
@@ -1258,6 +1271,7 @@ public:
     Aarray.reserve(nkpts * nkpts);
     Barray.reserve(nkpts * nkpts);
     Carray.reserve(nkpts * nkpts);
+app_log()<<" std vector decl/reserve: " <<Time.elapsed() <<std::endl; Time.restart();
     for (int Q = 0; Q < nkpts; ++Q)
     { // momentum conservation index
       if (Qmap[Q] < 0)
@@ -1274,9 +1288,11 @@ public:
         }
       }
     }
+app_log()<<" setup batched gemm: " <<Time.elapsed() <<std::endl; Time.restart();
     // C: v = T(X) * T(Lik) --> F: T(Lik) * T(X) = v
     gemmBatched('T', 'T', nmo_max2, nwalk, nchol_max, SPComplexType(1.0), Aarray.data(), nchol_max, Barray.data(),
                 nwalk, SPComplexType(0.0), Carray.data(), nmo_max2, Aarray.size());
+app_log()<<" batched gemm: " <<Time.elapsed() <<std::endl; Time.restart();
 
 
     Aarray.clear();
@@ -1308,15 +1324,20 @@ public:
         }
       }
     }
+app_log()<<" setup batched gemm: " <<Time.elapsed() <<std::endl; Time.restart();
     // C: v = T(X) * T(Lik) --> F: T(Lik) * T(X) = v
     gemmBatched('C', 'T', nmo_max2, nwalk, nchol_max, SPComplexType(1.0), Aarray.data(), nchol_max, Barray.data(),
                 nwalk, SPComplexType(0.0), Carray.data(), nmo_max2, Aarray.size());
+app_log()<<" batched gemm: " <<Time.elapsed() <<std::endl; Time.restart();
 
 
     using vType = typename std::decay<MatB>::type::element;
     boost::multi::array_ref<vType, 3, decltype(make_device_ptr(v.origin()))> v3D(make_device_ptr(v.origin()),
                                                                                  {nwalk, nmo_tot, nmo_tot});
+app_log()<<" array_ref: " <<Time.elapsed() <<std::endl; Time.restart();
     vKKwij_to_vwKiKj(vKK, v3D);
+app_log()<<" vKKwij_to_vwKiKj: " <<Time.elapsed() <<std::endl;
+app_log()<<" vHS end: " <<Timet.elapsed() <<std::endl;
     // do I need to "rotate" back, can be done if necessary
   }
 
