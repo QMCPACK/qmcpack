@@ -30,9 +30,10 @@ namespace qmcplusplus
 {
 /** constructor
 */
-QMCHamiltonian::QMCHamiltonian()
+QMCHamiltonian::QMCHamiltonian(const std::string& aname)
     : myIndex(0),
       numCollectables(0),
+      myName(aname),
       nlpp_ptr(nullptr)
 #if !defined(REMOVE_TRACEMANAGER)
       ,
@@ -831,7 +832,7 @@ std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(RefVector<QMCHamiltonian
 
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  QMCHamiltonian* myclone = new QMCHamiltonian;
+  QMCHamiltonian* myclone = new QMCHamiltonian(myName);
   for (int i = 0; i < H.size(); ++i)
     H[i]->add2Hamiltonian(qp, psi, *myclone);
   for (int i = 0; i < auxH.size(); ++i)

@@ -22,8 +22,8 @@
 
 namespace qmcplusplus
 {
-WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname)
-    : MPIObjectBase(c), primary_psi_(nullptr), ptcl_pool_(nullptr)
+WaveFunctionPool::WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, const char* aname)
+    : MPIObjectBase(c), primary_psi_(nullptr), ptcl_pool_(pset_pool)
 {
   ClassName = "WaveFunctionPool";
   myName    = aname;
@@ -50,7 +50,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   pAttrib.add(target, "ref");
   pAttrib.add(role, "role");
   pAttrib.put(cur);
-  ParticleSet* qp = ptcl_pool_->getParticleSet(target);
+  ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
   // Ye: the overall logic of the "check" is still not clear to me.
   // The following code path should only be used when there is no cell, ion, electron info provided in the XML input.
@@ -62,9 +62,10 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     while (tcur != NULL)
     { //check <determinantset/> or <sposet_builder/> or <sposet_collection/> to extract the ionic and electronic structure
       std::string cname((const char*)tcur->name);
-      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder" || cname == "sposet_collection")
+      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder" ||
+          cname == "sposet_collection")
       {
-        qp = ptcl_pool_->createESParticleSet(tcur, target, qp);
+        qp = ptcl_pool_.createESParticleSet(tcur, target, qp);
       }
       tcur = tcur->next;
     }
@@ -79,8 +80,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   bool isPrimary                  = true;
   if (pit == myPool.end())
   {
-    psiFactory = new WaveFunctionFactory(qp, ptcl_pool_->getPool(), myComm);
-    psiFactory->setName(id);
+    psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm);
     isPrimary  = (myPool.empty() || role == "primary");
     myPool[id] = psiFactory;
   }
@@ -91,7 +91,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   bool success = psiFactory->put(cur);
   if (success && isPrimary)
   {
-    primary_psi_ = psiFactory->targetPsi;
+    primary_psi_ = psiFactory->getTWF();
   }
   return success;
 }
@@ -117,11 +117,11 @@ xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
   std::map<std::string, WaveFunctionFactory*>::iterator it(myPool.find(id));
   if (it == myPool.end())
   {
-    return (*myPool.begin()).second->myNode;
+    return (*myPool.begin()).second->getNode();
   }
   else
   {
-    return (*it).second->myNode;
+    return (*it).second->getNode();
   }
 }
 } // namespace qmcplusplus

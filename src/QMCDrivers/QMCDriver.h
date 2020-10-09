@@ -97,7 +97,6 @@ public:
   QMCDriver(MCWalkerConfiguration& w,
             TrialWaveFunction& psi,
             QMCHamiltonian& h,
-            WaveFunctionPool& ppool,
             Communicate* comm,
             const std::string& QMC_driver_type);
 
@@ -305,8 +304,6 @@ protected:
 
   ///Hamiltonian
   QMCHamiltonian& H;
-
-  WaveFunctionPool& psiPool;
 
   ///record engine for walkers
   HDFWalkerOutput* wOut;

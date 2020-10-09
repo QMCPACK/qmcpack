@@ -45,7 +45,6 @@ namespace qmcplusplus
 QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
-                     WaveFunctionPool& ppool,
                      Communicate* comm,
                      const std::string& QMC_driver_type)
     : MPIObjectBase(comm),
@@ -58,7 +57,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
       W(w),
       Psi(psi),
       H(h),
-      psiPool(ppool),
       wOut(0)
 {
   ResetRandom  = false;

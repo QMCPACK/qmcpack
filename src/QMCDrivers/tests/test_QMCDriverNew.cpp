@@ -42,16 +42,16 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
 
   MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
   MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                           hamiltonian_pool.getPrimary(), comm->rank());
   SampleStack samples;
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), population, *(wavefunction_pool.getPrimary()),
-                                    *(hamiltonian_pool.getPrimary()), wavefunction_pool, samples, comm);
+                                    *(hamiltonian_pool.getPrimary()), samples, comm);
 
   // setStatus must be called before process
   std::string root_name{"Test"};
@@ -88,11 +88,11 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
 
   MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
 
   int num_crowds = 9;
 
@@ -106,7 +106,7 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   QMCDriverInput qmcdriver_copy(qmcdriver_input);
   SampleStack samples;
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy), population, *(wavefunction_pool.getPrimary()),
-                                      *(hamiltonian_pool.getPrimary()), wavefunction_pool, samples, comm);
+                                      *(hamiltonian_pool.getPrimary()), samples, comm);
   QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<>> testNumCrowds;
   testNumCrowds(9);
   testNumCrowds(8);
@@ -129,11 +129,11 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
 
   MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
 
   int num_crowds = 8;
 
@@ -148,7 +148,7 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   QMCDriverInput qmcdriver_copy(qmcdriver_input);
   SampleStack samples;
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy), population, *(wavefunction_pool.getPrimary()),
-                                      *(hamiltonian_pool.getPrimary()), wavefunction_pool, samples, comm);
+                                      *(hamiltonian_pool.getPrimary()), samples, comm);
 
   qmc_batched.testAdjustGlobalWalkerCount();
 }

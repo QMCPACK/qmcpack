@@ -87,8 +87,8 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory(&elec_, ptcl.getPool(), c);
-  wf_factory.build(ein_xml);
+  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
+  wf_factory.put(ein_xml);
 
   SPOSet* spo_ptr(get_sposet("spo"));
   REQUIRE(spo_ptr);

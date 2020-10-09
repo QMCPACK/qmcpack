@@ -54,10 +54,10 @@ public:
     MinimalParticlePool mpp;
     ParticleSetPool particle_pool = mpp(comm);
     MinimalWaveFunctionPool wfp;
-    WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+    WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
     wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
     MinimalHamiltonianPool mhp;
-    HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+    HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
 
 
       

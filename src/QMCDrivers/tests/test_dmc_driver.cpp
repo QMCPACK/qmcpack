@@ -76,7 +76,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   ConstantOrbital* orb = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
@@ -91,14 +91,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  HamiltonianPool hpool(c);
-
-  WaveFunctionPool wpool(c);
-
-  //EstimatorManagerBase emb(c);
-
-
-  DMC dmc_omp(elec, psi, h, wpool, c);
+  DMC dmc_omp(elec, psi, h, c);
 
   const char* dmc_input = "<qmc method=\"dmc\"> \
    <parameter name=\"steps\">1</parameter> \
@@ -171,7 +164,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   ConstantOrbital* orb = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
@@ -186,14 +179,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  HamiltonianPool hpool(c);
-
-  WaveFunctionPool wpool(c);
-
-  //EstimatorManagerBase emb(c);
-
-
-  DMC dmc_omp(elec, psi, h, wpool, c);
+  DMC dmc_omp(elec, psi, h, c);
 
   const char* dmc_input = "<qmc method=\"dmc\"> \
    <parameter name=\"steps\">1</parameter> \
