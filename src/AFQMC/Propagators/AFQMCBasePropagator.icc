@@ -21,7 +21,6 @@
 
 #include "AFQMC/config.h"
 #include "Utilities/FairDivide.h"
-#include "Utilities/Timer.h"
 #include "AFQMC/Propagators/WalkerSetUpdate.hpp"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
@@ -163,11 +162,9 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     SPCMatrix_ref vsp(sp_pointer(make_device_ptr(vHS.origin())), vhs_ext);
     wfn.vHS(X, vsp, sqrtdt);
     TG.local_barrier();
-qmcplusplus::Timer Time;
     if (TG.TG_local().root())
       inplace_cast<SPComplexType, ComplexType>(vsp.origin(), vsp.num_elements());
     TG.local_barrier();
-std::cout<<"in_place cast: " <<Time.elapsed() <<std::endl;
 #else
     wfn.vHS(X, vHS, sqrtdt);
 #endif
