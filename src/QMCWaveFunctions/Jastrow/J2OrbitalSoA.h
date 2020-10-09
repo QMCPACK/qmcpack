@@ -448,6 +448,7 @@ WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
         fcmap[F[ij]] = fc;
       }
     }
+  j2copy->KEcorr = KEcorr;
   j2copy->Optimizable = Optimizable;
   return j2copy;
 }
