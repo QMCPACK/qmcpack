@@ -40,7 +40,7 @@
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
@@ -58,11 +58,6 @@ extern std::string UTEST_HAMIL, UTEST_WFN;
 namespace qmcplusplus
 {
 using namespace afqmc;
-
-namespace afqmc
-{
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-}
 
 template<class Alloc>
 void ham_ops_basic_serial(boost::mpi3::communicator& world)
@@ -177,8 +172,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
 // NOTE: Make small factory routine!
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     auto SDet(
-        SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>(NPOL*NMO, NAEA,
-                                                                                 afqmc::device_buffer_generator.get()));
+        SlaterDetOperations_serial<ComplexType, DeviceBufferManager>(NPOL*NMO, NAEA,
+                                                DeviceBufferManager{})); 
 #else
     auto SDet(SlaterDetOperations_shared<ComplexType>(NPOL*NMO, NAEA));
 #endif
@@ -384,17 +379,18 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
 TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 {
   auto world = boost::mpi3::environment::get_world_instance();
+  auto node = world.split_shared(world.rank());
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  auto node = world.split_shared(world.rank());
 
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif
-
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
   ham_ops_basic_serial<Alloc>(world);
+  release_memory_managers();
 }
 
 } // namespace qmcplusplus

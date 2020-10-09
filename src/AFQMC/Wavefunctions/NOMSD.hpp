@@ -27,7 +27,7 @@
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
@@ -37,8 +37,6 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
 
 /*
  * Class that implements a multi-Slater determinant trial wave-function.
@@ -64,8 +62,8 @@ class NOMSD : public AFQMCInfo
   using pointer_shared       = typename Allocator_shared::pointer;
   using const_pointer_shared = typename Allocator_shared::const_pointer;
 
-  using buffer_alloc_type     = device_buffer_type<ComplexType>;
-  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
+  using buffer_alloc_type     = DeviceBufferManager::template allocator_t<ComplexType>;
+  using shm_buffer_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>; 
 
   using CVector      = boost::multi::array<ComplexType, 1, Allocator>;
   using CMatrix      = boost::multi::array<ComplexType, 2, Allocator>;
@@ -110,10 +108,10 @@ public:
         int targetNW = 1)
       : AFQMCInfo(info),
         TG(tg_),
-        buffer_allocator(device_buffer_generator.get()),
-        shm_buffer_allocator(localTG_buffer_generator.get()),
         alloc_(), // right now device_allocator is default constructible
         alloc_shared_(make_localTG_allocator<ComplexType>(TG)),
+        buffer_manager(),
+        shm_buffer_manager(),
         SDetOp(std::move(sdet_)),
         HamOp(std::move(hop_)),
         ci(std::move(ci_)),
@@ -308,8 +306,10 @@ public:
   void Energy(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix eloc({nw, 3}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix eloc({nw, 3}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
     Energy(wset, eloc, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -347,7 +347,8 @@ public:
   void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact = true, bool transpose = false)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact, transpose);
   }
 
@@ -436,7 +437,8 @@ public:
   void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact_G_for_vbias, transposed_G_for_vbias_);
   }
 
@@ -459,7 +461,8 @@ public:
   void Overlap(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
     Overlap(wset, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -559,11 +562,11 @@ public:
 protected:
   TaskGroup_& TG;
 
-  device_allocator_generator_type* buffer_allocator;
-  localTG_allocator_generator_type* shm_buffer_allocator;
-
   Allocator alloc_;
   Allocator_shared alloc_shared_;
+
+  DeviceBufferManager buffer_manager;
+  LocalTGBufferManager shm_buffer_manager;
 
   //SlaterDetOperations_shared<ComplexType> SDetOp;
   SlaterDetOperations SDetOp;
