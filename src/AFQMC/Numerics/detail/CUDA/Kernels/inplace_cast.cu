@@ -40,6 +40,9 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
 //                             SM_SIZE_KB*MAX_THREADS_PER_DIM/sizeof(thrust::complex<Q>)> cache;
 // copy and cast into the cache without need to sync, sync when the cache is full, 
 // then copy to B without sync.
+// Alternatively, instead of using shared memory here, you can use the device buffers
+// and get buffer space from there if available. Then just call copy_n_cast followed by memcpy
+// to and from the buffer, instead of using hand written kernels like this.
     for (Size i = 0; i < n; i += nb, ni += nb)
     {
       if (ni < n)
