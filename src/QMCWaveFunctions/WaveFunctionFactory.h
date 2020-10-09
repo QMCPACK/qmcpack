@@ -27,37 +27,26 @@ namespace qmcplusplus
 {
 /** Factory class to build a many-body wavefunction
  */
-struct WaveFunctionFactory : public MPIObjectBase
+class WaveFunctionFactory : public MPIObjectBase
 {
+public:
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
-  ///target ParticleSet
-  ParticleSet* targetPtcl;
-  ///reference to the PtclPoolType
-  PtclPoolType& ptclPool;
-  ///many-body wavefunction object
-  TrialWaveFunction* targetPsi;
-  ///input node for a many-body wavefunction
-  xmlNodePtr myNode;
-  ///builder tree
-  std::vector<WaveFunctionComponentBuilder*> psiBuilder;
 
   /** constructor
    * @param qp quantum particleset
    * @param pset pool of particlesets
    * @param c  communicator
    */
-  WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c);
-
-  ~WaveFunctionFactory();
-
-  void setPsi(TrialWaveFunction* psi);
+  WaveFunctionFactory(const std::string& psiName, ParticleSet& qp, PtclPoolType& pset, Communicate* c);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
+  ///get xmlNode
+  xmlNodePtr getNode() const { return myNode; }
+  ///get targetPsi
+  TrialWaveFunction* getTWF() const { return targetPsi.get(); }
 
-  ///reset member data
-  void reset();
-
+private:
   /** process xmlNode to populate targetPsi
    */
   bool build(xmlNodePtr cur, bool buildtree = true);
@@ -72,11 +61,16 @@ struct WaveFunctionFactory : public MPIObjectBase
    */
   bool addNode(WaveFunctionComponentBuilder* b, xmlNodePtr cur);
 
-  void setCloneSize(int np);
-
-  WaveFunctionFactory* clone(ParticleSet* qp, int ip, const std::string& aname);
-
-  std::vector<WaveFunctionFactory*> myClones;
+  ///many-body wavefunction object
+  std::unique_ptr<TrialWaveFunction> targetPsi;
+  ///target ParticleSet
+  ParticleSet& targetPtcl;
+  ///reference to the PtclPoolType
+  PtclPoolType& ptclPool;
+  ///input node for a many-body wavefunction
+  xmlNodePtr myNode;
+  ///builder tree
+  UPtrVector<WaveFunctionComponentBuilder> psiBuilder;
 };
 
 } // namespace qmcplusplus

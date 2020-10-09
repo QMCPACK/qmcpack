@@ -89,7 +89,7 @@ TEST_CASE("Crowd integration", "[drivers]")
 
   ScalarEstimatorBase* est2 = em.getEstimator("fake");
   FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
-  REQUIRE(fake_est2 != NULL);
+  REQUIRE(fake_est2 != nullptr);
   REQUIRE(fake_est2 == fake_est);
   // The above was required behavior for crowd at one point.
   // TODO: determine whether it still is, I don't think so.

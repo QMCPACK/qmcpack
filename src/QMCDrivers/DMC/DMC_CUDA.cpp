@@ -37,9 +37,8 @@ using WP = WalkerProperties::Indexes;
 DMCcuda::DMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 WaveFunctionPool& ppool,
                  Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "DMCcuda"),
+    : QMCDriver(w, psi, h, comm, "DMCcuda"),
       myWarmupSteps(0),
       Mover(0),
       NLop(w.getTotalNum()),

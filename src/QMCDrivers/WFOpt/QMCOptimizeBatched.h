@@ -49,8 +49,6 @@ public:
   QMCOptimizeBatched(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
-                     HamiltonianPool& hpool,
-                     WaveFunctionPool& ppool,
                      QMCDriverInput&& qmcdriver_input,
                      VMCDriverInput&& vmcdriver_input,
                      MCPopulation& population,
@@ -77,8 +75,6 @@ private:
   int NumParts;
   ///total number of VMC walkers
   int NumOfVMCWalkers;
-  ///need to know HamiltonianPool to use OMP
-  HamiltonianPool& hamPool;
   ///target cost function to optimize
   //QMCCostFunction* optTarget;
   std::unique_ptr<QMCCostFunctionBase> optTarget;

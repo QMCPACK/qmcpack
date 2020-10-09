@@ -67,8 +67,8 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory(&elec, ptcl.getPool(), c);
-  wf_factory.build(ein_xml);
+  WaveFunctionFactory wf_factory("psi0", elec, ptcl.getPool(), c);
+  wf_factory.put(ein_xml);
 
   SPOSet* spo_ptr(get_sposet("spo"));
   REQUIRE(spo_ptr);

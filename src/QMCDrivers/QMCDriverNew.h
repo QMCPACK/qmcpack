@@ -119,7 +119,6 @@ public:
                MCPopulation& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
-               WaveFunctionPool& ppool,
                const std::string timer_prefix,
                Communicate* comm,
                const std::string& QMC_driver_type,
@@ -351,8 +350,6 @@ protected:
 
   ///Hamiltonian
   QMCHamiltonian& H;
-
-  WaveFunctionPool& psiPool;
 
   /** Observables manager
    *  Has very problematic owner ship and life cycle.
