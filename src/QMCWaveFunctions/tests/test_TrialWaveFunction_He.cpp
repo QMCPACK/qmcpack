@@ -74,7 +74,7 @@ void setup_He_wavefunction(Communicate* c,
 
   elec.addTable(ions);
 
-  wff = std::make_unique<WaveFunctionFactory>(&elec, particle_set_map, c);
+  wff = std::make_unique<WaveFunctionFactory>("psi0", elec, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">  \
      <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
@@ -113,8 +113,8 @@ void setup_He_wavefunction(Communicate* c,
   xmlNodePtr root = doc.getRoot();
   wff->put(root);
 
-  REQUIRE(wff->targetPsi != NULL);
-  REQUIRE(wff->targetPsi->size() == 2);
+  REQUIRE(wff->getTWF() != nullptr);
+  REQUIRE(wff->getTWF()->size() == 2);
 }
 
 TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]")
@@ -128,7 +128,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   std::unique_ptr<WaveFunctionFactory> wff;
   WaveFunctionFactory::PtclPoolType particle_set_map;
   setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*(wff->targetPsi));
+  TrialWaveFunction& psi(*wff->getTWF());
 
   ions.update();
   elec.update();
@@ -223,7 +223,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
   setup_He_wavefunction(c, elec1, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*(wff->targetPsi));
+  TrialWaveFunction& psi(*wff->getTWF());
   ions.update();
   elec1.update();
 
@@ -236,7 +236,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ParticleSet elec2b(elec2);
   elec2b.update();
 
-  TrialWaveFunction psi2(c);
+  TrialWaveFunction psi2;
   WaveFunctionComponent* orb1 = psi.getOrbitals()[0]->makeClone(elec2);
   psi2.addComponent(orb1, "orb1");
   WaveFunctionComponent* orb2 = psi.getOrbitals()[1]->makeClone(elec2);

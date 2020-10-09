@@ -36,9 +36,6 @@ namespace qmcplusplus
 QMCDriverInterface* VMCFactory::create(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
-                                       ParticleSetPool& ptclpool,
-                                       HamiltonianPool& hpool,
-                                       WaveFunctionPool& ppool,
                                        Communicate* comm)
 {
   int np = omp_get_max_threads();
@@ -46,12 +43,12 @@ QMCDriverInterface* VMCFactory::create(MCWalkerConfiguration& w,
   QMCDriverInterface* qmc = nullptr;
 #ifdef QMC_CUDA
   if (VMCMode & 16)
-    qmc = new VMCcuda(w, psi, h, ppool, comm);
+    qmc = new VMCcuda(w, psi, h, comm);
   else
 #endif
       if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMC(w, psi, h, ppool, comm);
+    qmc = new VMC(w, psi, h, comm);
   }
   //else if(VMCMode == 2) //(0,1,0)
   //{
@@ -63,7 +60,7 @@ QMCDriverInterface* VMCFactory::create(MCWalkerConfiguration& w,
   //}
   else if (VMCMode == 2 || VMCMode == 3)
   {
-    qmc = new CSVMC(w, psi, h, ppool, comm);
+    qmc = new CSVMC(w, psi, h, comm);
   }
   //#if !defined(QMC_COMPLEX)
   //    else if(VMCMode == 6) //(1,1,0)

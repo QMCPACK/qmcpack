@@ -74,7 +74,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   elec.update();
 
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   ConstantOrbital* orb = new ConstantOrbital;
   psi.addComponent(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
@@ -169,7 +169,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   elec.update();
 
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   LinearOrbital* orb = new LinearOrbital;
   psi.addComponent(orb, "Linear");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
