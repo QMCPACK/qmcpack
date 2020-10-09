@@ -120,7 +120,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   slater_det->add(det_up, 0);
   slater_det->add(det_dn, 1);
 
-  TrialWaveFunction psi{c};
+  TrialWaveFunction psi;
   psi.addComponent(slater_det);
 
   const char* jas_input = "<tmp> \

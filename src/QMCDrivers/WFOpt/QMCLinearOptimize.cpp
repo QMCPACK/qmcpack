@@ -43,14 +43,11 @@ namespace qmcplusplus
 QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi,
                                      QMCHamiltonian& h,
-                                     HamiltonianPool& hpool,
-                                     WaveFunctionPool& ppool,
                                      Communicate* comm,
                                      const std::string& QMC_driver_type)
-    : QMCDriver(w, psi, h, ppool, comm, QMC_driver_type),
+    : QMCDriver(w, psi, h, comm, QMC_driver_type),
       PartID(0),
       NumParts(1),
-      hamPool(hpool),
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
@@ -670,10 +667,10 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
   {
 #if defined(QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, myComm);
     else
 #endif
-      vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMC>(W, Psi, H, myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 

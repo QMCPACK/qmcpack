@@ -67,7 +67,6 @@ public:
              MCPopulation& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
-             WaveFunctionPool& ppool,
              SampleStack& samples_,
              Communicate* comm);
 

@@ -29,12 +29,12 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
 
-  TrialWaveFunction twf(comm);
+  TrialWaveFunction twf;
   MCPopulation population(1, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary(),comm->rank());
 
   population.createWalkers(8, 2.0);
@@ -65,10 +65,10 @@ TEST_CASE("MCPopulation::distributeWalkers", "[particle][population]")
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
   MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
 
   MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                           hamiltonian_pool.getPrimary(), comm->rank());

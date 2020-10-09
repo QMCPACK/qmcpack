@@ -29,7 +29,7 @@ public:
   typedef ParticleSet::ParticlePos_t ParticlePos_t;
   typedef Reptile::ReptileConfig_t ReptileConfig_t;
 
-  RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
+  RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
   bool run();
   bool put(xmlNodePtr cur);
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}

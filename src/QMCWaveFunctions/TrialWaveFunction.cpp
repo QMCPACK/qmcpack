@@ -37,18 +37,15 @@ typedef enum
 } TimerEnum;
 
 
-TrialWaveFunction::TrialWaveFunction(Communicate* c)
-    : MPIObjectBase(c),
+TrialWaveFunction::TrialWaveFunction(const std::string& aname)
+    : myName(aname),
       BufferCursor(0),
       BufferCursor_scalar(0),
       PhaseValue(0.0),
       PhaseDiff(0.0),
       LogValue(0.0),
       OneOverM(1.0)
-{
-  ClassName = "TrialWaveFunction";
-  myName    = "psi0";
-}
+{ }
 
 /** Destructor
 *
@@ -1032,7 +1029,7 @@ void TrialWaveFunction::reset() {}
 
 TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
-  TrialWaveFunction* myclone   = new TrialWaveFunction(myComm);
+  TrialWaveFunction* myclone   = new TrialWaveFunction(myName);
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)

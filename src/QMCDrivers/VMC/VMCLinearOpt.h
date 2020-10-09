@@ -30,8 +30,6 @@ public:
   VMCLinearOpt(MCWalkerConfiguration& w,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
-               HamiltonianPool& hpool,
-               WaveFunctionPool& ppool,
                Communicate* comm);
 
   ~VMCLinearOpt()
