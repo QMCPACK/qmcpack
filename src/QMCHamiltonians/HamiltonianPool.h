@@ -40,7 +40,7 @@ class WaveFunctionPool;
 class HamiltonianPool : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, HamiltonianFactory*> PoolType;
+  using PoolType = std::map<std::string, HamiltonianFactory*>;
 
   HamiltonianPool(ParticleSetPool& pset_pool,
                   WaveFunctionPool& psi_pool,

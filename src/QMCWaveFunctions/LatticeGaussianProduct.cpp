@@ -21,10 +21,10 @@ typedef LatticeGaussianProduct::ValueType ValueType;
 typedef LatticeGaussianProduct::GradType GradType;
 typedef LatticeGaussianProduct::PsiValueType PsiValueType;
 
-LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(centers)
+LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls)
+    : WaveFunctionComponent("LatticeGaussianProduct"), CenterRef(centers)
 {
   Optimizable    = false;
-  ClassName      = "LatticeGaussianProduct";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
   myTableID      = ptcls.addTable(CenterRef);
