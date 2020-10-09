@@ -447,8 +447,6 @@ public:
    */
   void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
-  std::vector<NewTimer*>& get_timers() { return myTimers; }
-
   const std::string& getName() const {return myName;}
 
 private:
@@ -481,7 +479,10 @@ private:
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<WaveFunctionComponent*> Z;
 
-  std::vector<NewTimer*> myTimers;
+  /// timers at TrialWaveFunction function call level
+  std::vector<NewTimer*> TWF_timers_;
+  /// timers at WaveFunctionComponent function call level
+  std::vector<NewTimer*> WFC_timers_;
   std::vector<RealType> myTwist;
 
   /** @{
