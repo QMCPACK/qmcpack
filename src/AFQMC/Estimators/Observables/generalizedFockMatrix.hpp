@@ -28,14 +28,12 @@
 
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
 /* 
  * Observable class that calculates the walker averaged "full" 1 RDM.
  * In this context, "full" means that no contraction over the RDM is
@@ -71,8 +69,8 @@ class generalizedFockMatrix : public AFQMCInfo
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
-  using buffer_alloc_type = device_buffer_type<ComplexType>;
-  using Static3Tensor     = boost::multi::static_array<ComplexType, 3, buffer_alloc_type>;
+  using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
+  using Static3Tensor     = boost::multi::static_array<ComplexType, 3, stack_alloc_type>;
 
 public:
   generalizedFockMatrix(afqmc::TaskGroup_& tg_,
@@ -156,7 +154,9 @@ public:
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
-    Static3Tensor gFock({2, nw, dm_size}, device_buffer_generator->template get_allocator<ComplexType>());
+    DeviceBufferManager buffer_manager;
+    Static3Tensor gFock({2, nw, dm_size}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     HamOp->generalizedFockMatrix(G, gFock[0], gFock[1]);
 

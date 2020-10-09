@@ -25,7 +25,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Utilities/type_conversion.hpp"
 #include "AFQMC/Utilities/Utils.hpp"
@@ -36,8 +36,6 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
 // testing the use of dynamic data transfer during execution to reduce memory in GPU
 // when an approach is found, integrate in original class through additional template parameter
 
@@ -53,8 +51,8 @@ class KP3IndexFactorization_batched
   using SpAllocator_shared = node_allocator<SPComplexType>;
   using IAllocator_shared  = node_allocator<int>;
 
-  using buffer_alloc_type  = device_buffer_type<SPComplexType>;
-  using buffer_alloc_Itype = device_buffer_type<int>;
+  using device_alloc_type     = DeviceBufferManager::template allocator_t<SPComplexType>;
+  using device_alloc_Itype     = DeviceBufferManager::template allocator_t<int>;
 
   // type defs
   using pointer                 = typename Allocator::pointer;
@@ -93,11 +91,11 @@ class KP3IndexFactorization_batched
   using Sp4Tensor_ref = SPComplexArray_ref<4, sp_pointer>;
   using Sp5Tensor_ref = SPComplexArray_ref<5, sp_pointer>;
 
-  using StaticIVector = boost::multi::static_array<int, 1, buffer_alloc_Itype>;
-  using StaticVector  = boost::multi::static_array<SPComplexType, 1, buffer_alloc_type>;
-  using StaticMatrix  = boost::multi::static_array<SPComplexType, 2, buffer_alloc_type>;
-  using Static3Tensor = boost::multi::static_array<SPComplexType, 3, buffer_alloc_type>;
-  using Static4Tensor = boost::multi::static_array<SPComplexType, 4, buffer_alloc_type>;
+  using StaticIVector = boost::multi::static_array<int, 1, device_alloc_Itype>;
+  using StaticVector  = boost::multi::static_array<SPComplexType, 1, device_alloc_type>;
+  using StaticMatrix  = boost::multi::static_array<SPComplexType, 2, device_alloc_type>;
+  using Static3Tensor = boost::multi::static_array<SPComplexType, 3, device_alloc_type>;
+  using Static4Tensor = boost::multi::static_array<SPComplexType, 4, device_alloc_type>;
 
   using shmCVector  = ComplexVector<Allocator_shared>;
   using shmCMatrix  = ComplexMatrix<Allocator_shared>;
@@ -144,7 +142,7 @@ public:
       : TG(tg_),
         allocator_(alloc_),
         sp_allocator_(alloc_),
-        device_buffer_allocator(device_buffer_generator.get()), // hard-wired to device like Allocator
+        device_buffer_manager(),
         walker_type(type),
         global_nCV(gncv),
         global_origin(cv0),
@@ -536,8 +534,8 @@ public:
     {
       APP_ABORT(" Error: Kr and/or Kl can only be calculated with addEJ=true.\n");
     }
-    StaticMatrix Kl({Knr, Knc}, device_buffer_allocator->template get_allocator<SPComplexType>());
-    StaticMatrix Kr({Knr, Knc}, device_buffer_allocator->template get_allocator<SPComplexType>());
+    StaticMatrix Kl({Knr, Knc}, device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticMatrix Kr({Knr, Knc}, device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     fill_n(Kr.origin(), Knr * Knc, SPComplexType(0.0));
     fill_n(Kl.origin(), Knr * Knc, SPComplexType(0.0));
 
@@ -551,7 +549,7 @@ public:
     // later on, rewrite routine to loop over spins, to avoid storage of both spin
     // components simultaneously
     Static4Tensor GKK({nspin, nkpts, nkpts, nwalk  * npol * nmo_max * nocc_max},
-                      device_buffer_allocator->template get_allocator<SPComplexType>());
+                      device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     GKaKjw_to_GKKwaj(G3Da, GKK[0], nelpk[nd].sliced(0, nkpts), dev_nelpk[nd], dev_a0pk[nd]);
     if (walker_type == COLLINEAR)
       GKaKjw_to_GKKwaj(G3Db, GKK[1], nelpk[nd].sliced(nkpts, 2 * nkpts), dev_nelpk[nd].sliced(nkpts, 2 * nkpts),
@@ -622,12 +620,12 @@ public:
       std::vector<int> kdiag;
       kdiag.reserve(batch_size);
 
-      StaticIVector IMats(iextensions<1u>{batch_size}, device_buffer_allocator->template get_allocator<int>());
+      StaticIVector IMats(iextensions<1u>{batch_size}, device_buffer_manager.get_generator().template get_allocator<int>());
       fill_n(IMats.origin(), IMats.num_elements(), 0);
       StaticVector dev_scl_factors(iextensions<1u>{batch_size},
-                                   device_buffer_allocator->template get_allocator<SPComplexType>());
+                                   device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       Static3Tensor T1({batch_size, nwalk * nocc_max, nocc_max * nchol_max},
-                       device_buffer_allocator->template get_allocator<SPComplexType>());
+                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       SPRealType scl = (walker_type == CLOSED ? 2.0 : 1.0);
 
       // I WANT C++17!!!!!!
@@ -635,7 +633,7 @@ public:
       if (needs_copy)
         mem_ank = nkpts * nocc_max * nchol_max * npol * nmo_max;
       StaticVector LBuff(iextensions<1u>{2 * mem_ank},
-                         device_buffer_allocator->template get_allocator<SPComplexType>());
+                         device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       sp_pointer LQptr(nullptr), LQmptr(nullptr);
       if (needs_copy)
       {
@@ -1213,15 +1211,15 @@ public:
     SPComplexType imhalfa(0.0, 0.5 * a);
 
     Static3Tensor vKK({nkpts + number_of_symmetric_Q, nkpts, nwalk * nmo_max * nmo_max},
-                      device_buffer_allocator->template get_allocator<SPComplexType>());
+                      device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     fill_n(vKK.origin(), vKK.num_elements(), SPComplexType(0.0));
-    Static4Tensor XQnw({nkpts, 2, nchol_max, nwalk}, device_buffer_allocator->template get_allocator<SPComplexType>());
+    Static4Tensor XQnw({nkpts, 2, nchol_max, nwalk}, device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     fill_n(XQnw.origin(), XQnw.num_elements(), SPComplexType(0.0));
 
     // "rotate" X
     //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
 #if MIXED_PRECISION
-    StaticMatrix Xdev(X.extensions(), device_buffer_allocator->template get_allocator<SPComplexType>());
+    StaticMatrix Xdev(X.extensions(), device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     copy_n_cast(make_device_ptr(X.origin()), X.num_elements(), Xdev.origin());
 #else
     SpMatrix_ref Xdev(make_device_ptr(X.origin()), X.extensions());
@@ -1409,9 +1407,9 @@ public:
     {
       size_t cnt(0);
       Static3Tensor v1({nkpts + number_of_symmetric_Q, nchol_max, nwalk},
-                       device_buffer_allocator->template get_allocator<SPComplexType>());
+                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       Static3Tensor GQ({nkpts, nkpts * nocc_max * npol * nmo_max, nwalk},
-                       device_buffer_allocator->template get_allocator<SPComplexType>());
+                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       fill_n(v1.origin(), v1.num_elements(), SPComplexType(0.0));
       fill_n(GQ.origin(), GQ.num_elements(), SPComplexType(0.0));
 
@@ -1482,7 +1480,7 @@ private:
 
   Allocator allocator_;
   SpAllocator sp_allocator_;
-  device_allocator_generator_type* device_buffer_allocator;
+  DeviceBufferManager device_buffer_manager;
 
   WALKER_TYPES walker_type;
 

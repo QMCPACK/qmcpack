@@ -98,22 +98,6 @@ public:
   }
 };
 
-
-using host_allocator_generator_type    = BufferAllocatorGenerator<host_memory_resource, host_constructor<char>>;
-using device_allocator_generator_type  = BufferAllocatorGenerator<device_memory_resource, device_constructor<char>>;
-using localTG_allocator_generator_type = BufferAllocatorGenerator<shm_memory_resource, shm_constructor<char>>;
-
-template<class T>
-using host_buffer_type = typename host_allocator_generator_type::template allocator<T>;
-template<class T>
-using device_buffer_type = typename device_allocator_generator_type::template allocator<T>;
-template<class T>
-using localTG_buffer_type = typename localTG_allocator_generator_type::template allocator<T>;
-
-void update_buffer_generators();
-void make_localTG_buffer_generator(mpi3::shared_communicator& local, std::size_t sz = std::size_t(20 * 1024 * 1024));
-void destroy_shm_buffer_generators();
-
 } // namespace afqmc
 } // namespace qmcplusplus
 

@@ -25,6 +25,7 @@
 #include "mpi3/shared_communicator.hpp"
 #include "type_traits/scalar_traits.h"
 #include "AFQMC/Utilities/type_conversion.hpp"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
@@ -32,12 +33,12 @@ namespace afqmc
 {
 // Implementation that doesn't use shared memory
 // This version is designed for GPU and/or threading with OpenMP/libraries
-template<class Type, class buffer_generator_type>
-class SlaterDetOperations_serial : public SlaterDetOperations_base<Type, buffer_generator_type>
+template<class Type, class BufferManager>
+class SlaterDetOperations_serial : public SlaterDetOperations_base<Type, BufferManager>
 {
 public:
   using communicator = boost::mpi3::shared_communicator;
-  using Base         = SlaterDetOperations_base<Type, buffer_generator_type>;
+  using Base         = SlaterDetOperations_base<Type, BufferManager>;
 
   using T             = typename Base::T;
   using buffer_type_T = typename Base::buffer_type_T;
@@ -56,11 +57,11 @@ public:
   using Base::OverlapForWoodbury;
   using Base::Propagate;
 
-  SlaterDetOperations_serial(buffer_generator_type* bgen) : SlaterDetOperations_base<Type, buffer_generator_type>(bgen)
+  SlaterDetOperations_serial(BufferManager b) : SlaterDetOperations_base<Type, BufferManager>(b)
   {}
 
-  SlaterDetOperations_serial(int NMO, int NAEA, buffer_generator_type* bgen)
-      : SlaterDetOperations_base<Type, buffer_generator_type>(NMO, NAEA, bgen)
+  SlaterDetOperations_serial(int NMO, int NAEA, BufferManager b) 
+      : SlaterDetOperations_base<Type, BufferManager>(NMO, NAEA, b)
   {}
 
   ~SlaterDetOperations_serial() {}
@@ -153,9 +154,9 @@ public:
     assert(P1.size(1) == NMO);
     assert(V.size(1) == M);
     assert(V.size(2) == M);
-    TTensor TMN({nbatch, NMO, NAEA}, buffer_generator->template get_allocator<T>());
-    TTensor T1({nbatch, NMO, NAEA}, buffer_generator->template get_allocator<T>());
-    TTensor T2({nbatch, NMO, NAEA}, buffer_generator->template get_allocator<T>());
+    TTensor TMN({nbatch, NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
+    TTensor T1({nbatch, NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
+    TTensor T2({nbatch, NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     // could be batched when csrmm is batched
     if (TA == 'H' || TA == 'h')
     {
@@ -229,9 +230,9 @@ public:
     {
       n1 = n2 = n3 = 0;
     }
-    TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_generator->template get_allocator<T>());
-    TTensor TNM3D({n1, n2, n3}, buffer_generator->template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_generator->template get_allocator<int>());
+    TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
+    TTensor TNM3D({n1, n2, n3}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA, Bi, std::forward<MatC>(C), LogOverlapFactor,
                                                              std::forward<TVec>(ovlp), TNN3D, TNM3D, IWORK, compact,
                                                              herm);
@@ -266,9 +267,9 @@ public:
     {
       n1 = n2 = n3 = 0;
     }
-    TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_generator->template get_allocator<T>());
-    TTensor TNM3D({n1, n2, n3}, buffer_generator->template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_generator->template get_allocator<int>());
+    TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
+    TTensor TNM3D({n1, n2, n3}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     SlaterDeterminantOperations::batched::DensityMatrices(Left, Right, G, LogOverlapFactor, std::forward<TVec>(ovlp),
                                                           TNN3D, TNM3D, IWORK, compact, herm);
   }
@@ -291,8 +292,8 @@ public:
     int NAEA   = (herm ? (*hermA[0]).size(0) : (*hermA[0]).size(1));
     int nbatch = Bi.size();
     assert(ovlp.size() == nbatch);
-    TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_generator->template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_generator->template get_allocator<int>());
+    TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     SlaterDeterminantOperations::batched::Overlap(hermA, Bi, LogOverlapFactor, std::forward<TVec>(ovlp), TNN3D, IWORK,
                                                   herm);
   }
@@ -308,12 +309,12 @@ public:
     int NMO    = (*Ai[0]).size(0);
     int NAEA   = (*Ai[0]).size(1);
     int nbatch = Ai.size();
-    TTensor AT({nbatch, NAEA, NMO}, buffer_generator->template get_allocator<T>());
-    TMatrix T_({nbatch, NMO}, buffer_generator->template get_allocator<T>());
-    TMatrix scl({nbatch, NMO}, buffer_generator->template get_allocator<T>());
+    TTensor AT({nbatch, NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
+    TMatrix T_({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
+    TMatrix scl({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     int sz = ma::gqr_optimal_workspace_size(AT[0]);
-    TVector WORK(iextensions<1u>{nbatch * sz}, buffer_generator->template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_generator->template get_allocator<int>());
+    TVector WORK(iextensions<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     for (int i = 0; i < nbatch; i++)
       ma::transpose(*Ai[i], AT[i]);
     // careful, expects fortran order
@@ -346,12 +347,12 @@ public:
     int NMO    = (*Ai[0]).size(0);
     int NAEA   = (*Ai[0]).size(1);
     int nbatch = Ai.size();
-    TTensor AT({nbatch, NAEA, NMO}, buffer_generator->template get_allocator<T>());
-    TMatrix T_({nbatch, NMO}, buffer_generator->template get_allocator<T>());
-    TMatrix scl({nbatch, NMO}, buffer_generator->template get_allocator<T>());
+    TTensor AT({nbatch, NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
+    TMatrix T_({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
+    TMatrix scl({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     int sz = ma::gqr_optimal_workspace_size(AT[0]);
-    TVector WORK(iextensions<1u>{nbatch * sz}, buffer_generator->template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_generator->template get_allocator<int>());
+    TVector WORK(iextensions<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     for (int i = 0; i < nbatch; i++)
       ma::transpose(*Ai[i], AT[i]);
     // careful, expects fortran order
@@ -375,7 +376,7 @@ public:
   }
 
 protected:
-  using Base::buffer_generator;
+  using Base::buffer_manager;
   using Base::work_size;
 };
 
