@@ -44,8 +44,6 @@ public:
   QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
                                       TrialWaveFunction& psi,
                                       QMCHamiltonian& h,
-                                      HamiltonianPool& hpool,
-                                      WaveFunctionPool& ppool,
                                       QMCDriverInput&& qmcdriver_input,
                                       VMCDriverInput&& vmcdriver_input,
                                       MCPopulation& population,

@@ -35,13 +35,10 @@ namespace qmcplusplus
 QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
-                         HamiltonianPool& hpool,
-                         WaveFunctionPool& ppool,
                          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "QMCOptimize"),
+    : QMCDriver(w, psi, h, comm, "QMCOptimize"),
       PartID(0),
       NumParts(1),
-      hamPool(hpool),
       optSolver(0),
       vmcEngine(0),
       wfNode(NULL),
@@ -188,10 +185,10 @@ bool QMCOptimize::put(xmlNodePtr q)
   {
 #if defined(QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+      vmcEngine = new VMCcuda(W, Psi, H, myComm);
     else
 #endif
-      vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+      vmcEngine = new VMC(W, Psi, H, myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);

@@ -25,14 +25,12 @@
 #include "AFQMC/Wavefunctions/PHMSD.hpp"
 #include "AFQMC/HamiltonianOperations/HamOpsIO.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
 Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
                                             TaskGroup_& TGwfn,
                                             xmlNodePtr cur,
@@ -339,8 +337,8 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
     else
     {
       SlaterDetOperations SDetOp(
-          SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>(
-                NPOL*NMO,NAEA,device_buffer_generator.get()));
+          SlaterDetOperations_serial<ComplexType, DeviceBufferManager>(
+                NPOL*NMO,NAEA,DeviceBufferManager{}));
       return Wavefunction(NOMSD<devcsr_Matrix>(AFinfo, cur, TGwfn, std::move(SDetOp), std::move(HOps), std::move(ci),
                                                std::move(PsiT), walker_type, NCE, targetNW));
     }
@@ -856,8 +854,8 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
     else
     {
       SlaterDetOperations SDetOp(
-          SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>(
-                NPOL*NMO,NAEA,device_buffer_generator.get())); 
+          SlaterDetOperations_serial<ComplexType, DeviceBufferManager>(
+                NPOL*NMO,NAEA,DeviceBufferManager{})); 
       if (dense_trial == "yes")
       {
         using MType = ComplexMatrix<node_allocator<ComplexType>>;

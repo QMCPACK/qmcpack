@@ -26,14 +26,12 @@
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
-
 /*
  * This class manages a list of "full" observables.
  * Full observables are those that have a walker dependent left-hand side, 
@@ -67,9 +65,9 @@ class FullObsHandler : public AFQMCInfo
   using stdCMatrix     = boost::multi::array<ComplexType, 2>;
   using stdCVector_ref = boost::multi::array_ref<ComplexType, 1>;
 
-  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
-  using StaticSHMVector       = boost::multi::static_array<ComplexType, 1, shm_buffer_alloc_type>;
-  using StaticSHM4Tensor      = boost::multi::static_array<ComplexType, 4, shm_buffer_alloc_type>;
+  using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
+  using StaticSHMVector       = boost::multi::static_array<ComplexType, 1, shm_stack_alloc_type>;
+  using StaticSHM4Tensor      = boost::multi::static_array<ComplexType, 4, shm_stack_alloc_type>;
 
 public:
   FullObsHandler(afqmc::TaskGroup_& tg_,
@@ -80,7 +78,6 @@ public:
                  Wavefunction& wfn)
       : AFQMCInfo(info),
         TG(tg_),
-        shm_buffer_allocator(localTG_buffer_generator.get()),
         walker_type(wlk),
         wfn0(wfn),
         writer(false),
@@ -200,9 +197,11 @@ public:
     int nw(wset.size());
     int nrefs(Refs.size(1));
     double LogOverlapFactor(wset.getLogOverlapFactor());
+    LocalTGBufferManager shm_buffer_manager;
     StaticSHM4Tensor G4D({nw, nspins, std::get<0>(Gdims), std::get<1>(Gdims)},
-                         shm_buffer_allocator->template get_allocator<ComplexType>());
-    StaticSHMVector DevOv(iextensions<1u>{2 * nw}, shm_buffer_allocator->template get_allocator<ComplexType>());
+                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticSHMVector DevOv(iextensions<1u>{2 * nw}, 
+                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
     sharedCMatrix_ref G2D(G4D.origin(), {nw, dm_size});
 
     if (G4D_host.num_elements() != G4D.num_elements())
@@ -329,8 +328,6 @@ public:
 
 private:
   TaskGroup_& TG;
-
-  localTG_allocator_generator_type* shm_buffer_allocator;
 
   WALKER_TYPES walker_type;
 

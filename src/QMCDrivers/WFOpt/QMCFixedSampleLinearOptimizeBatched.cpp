@@ -46,8 +46,6 @@ using MatrixOperators::product;
 QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
                                                                          TrialWaveFunction& psi,
                                                                          QMCHamiltonian& h,
-                                                                         HamiltonianPool& hpool,
-                                                                         WaveFunctionPool& ppool,
                                                                          QMCDriverInput&& qmcdriver_input,
                                                                          VMCDriverInput&& vmcdriver_input,
                                                                          MCPopulation& population,
@@ -56,8 +54,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
     : QMCLinearOptimizeBatched(w,
                                psi,
                                h,
-                               hpool,
-                               ppool,
                                std::move(qmcdriver_input),
                                std::move(vmcdriver_input),
                                population,
@@ -564,7 +560,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, cons
   QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
   VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
   vmcEngine = std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
-                                           population_, Psi, H, psiPool, samples_, myComm);
+                                           population_, Psi, H, samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 
