@@ -49,7 +49,7 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname)
 {
   for (auto& suffix : suffixes)
   {
-    std::string timer_name = "WaveFunction::" + myName + "_" + suffix;
+    std::string timer_name = "WaveFunction:" + myName + "::" + suffix;
     TWF_timers_.push_back(timer_manager.createTimer(timer_name));
   }
 }
@@ -82,18 +82,15 @@ void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm)
 {
   Z.push_back(aterm);
 
-  std::string aname = aterm->ClassName + "::";
+  std::string aname = aterm->ClassName;
   if (!aterm->myName.empty())
-    aname += aterm->myName + "_";
+    aname += ":" + aterm->myName;
 
   if (aterm->is_fermionic)
     app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
 
   for (auto& suffix : suffixes)
-  {
-    std::string timer_name = aname + suffix;
-    WFC_timers_.push_back(timer_manager.createTimer(timer_name));
-  }
+    WFC_timers_.push_back(timer_manager.createTimer(aname + "::" + suffix));
 }
 
 
