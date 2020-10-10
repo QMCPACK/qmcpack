@@ -612,7 +612,7 @@ void TrialWaveFunction::flex_calcRatioGrad(const RefVector<TrialWaveFunction>& w
   const int num_wf = wf_list.size();
   grad_new.resize(num_wf);
   std::fill(grad_new.begin(), grad_new.end(), GradType(0));
-  grad_new.resize(num_wf);
+  ratios.resize(num_wf);
   std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
 
   if (wf_list.size() > 1)
@@ -621,14 +621,36 @@ void TrialWaveFunction::flex_calcRatioGrad(const RefVector<TrialWaveFunction>& w
     const int num_wfc             = wf_list[0].get().Z.size();
     auto& wavefunction_components = wf_list[0].get().Z;
 
-    std::vector<PsiValueType> ratios_z(wf_list.size());
-    for (int i = 0, ii = VGL_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
+    if (wf_list[0].get().use_tasking)
     {
-      ScopedTimer z_timer(wf_list[0].get().WFC_timers_[ii]);
-      const auto wfc_list(extractWFCRefList(wf_list, i));
-      wavefunction_components[i]->mw_ratioGrad(wfc_list, p_list, iat, ratios_z, grad_new);
-      for (int iw = 0; iw < wf_list.size(); iw++)
-        ratios[iw] *= ratios_z[iw];
+      std::vector<std::vector<PsiValueType>> ratios_components(num_wfc, std::vector<PsiValueType>(wf_list.size()));
+      std::vector<std::vector<GradType>> grads_components(num_wfc, std::vector<GradType>(wf_list.size()));
+      for (int i = 0, ii = VGL_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
+      {
+        ScopedTimer z_timer(wf_list[0].get().WFC_timers_[ii]);
+        const auto wfc_list(extractWFCRefList(wf_list, i));
+        wavefunction_components[i]->mw_ratioGradAsync(wfc_list, p_list, iat, ratios_components[i], grads_components[i]);
+      }
+
+#pragma omp taskwait
+      for (int i = 0; i < num_wfc; ++i)
+        for (int iw = 0; iw < wf_list.size(); iw++)
+        {
+          ratios[iw] *= ratios_components[i][iw];
+          grad_new[iw] += grads_components[i][iw];
+        }
+    }
+    else
+    {
+      std::vector<PsiValueType> ratios_z(wf_list.size());
+      for (int i = 0, ii = VGL_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
+      {
+        ScopedTimer z_timer(wf_list[0].get().WFC_timers_[ii]);
+        const auto wfc_list(extractWFCRefList(wf_list, i));
+        wavefunction_components[i]->mw_ratioGrad(wfc_list, p_list, iat, ratios_z, grad_new);
+        for (int iw = 0; iw < wf_list.size(); iw++)
+          ratios[iw] *= ratios_z[iw];
+      }
     }
     for (int iw = 0; iw < wf_list.size(); iw++)
       wf_list[iw].get().PhaseDiff = std::imag(std::arg(ratios[iw]));
