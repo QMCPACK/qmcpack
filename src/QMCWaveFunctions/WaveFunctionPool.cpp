@@ -51,6 +51,10 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   pAttrib.add(tasking, "tasking");
   pAttrib.add(role, "role");
   pAttrib.put(cur);
+
+  if (tasking != "yes" && tasking != "no")
+    myComm->barrier_and_abort("Incorrect input value of 'tasking' attribute. It can only be 'yes' or 'no'.");
+
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
   // Ye: the overall logic of the "check" is still not clear to me.
@@ -76,6 +80,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   {
     APP_ABORT("WaveFunctionPool::put Target ParticleSet is not found.");
   }
+
   std::map<std::string, WaveFunctionFactory*>::iterator pit(myPool.find(id));
   WaveFunctionFactory* psiFactory = 0;
   bool isPrimary                  = true;

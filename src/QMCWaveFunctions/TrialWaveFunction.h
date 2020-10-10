@@ -449,6 +449,8 @@ public:
 
   const std::string& getName() const { return myName; }
 
+  const bool use_tasking() const { return use_tasking_; }
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
@@ -474,7 +476,7 @@ private:
   RealType OneOverM;
 
   /// if true, using internal tasking implementation
-  const bool use_tasking;
+  const bool use_tasking_;
 
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<WaveFunctionComponent*> Z;

@@ -46,7 +46,7 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking)
       PhaseDiff(0.0),
       LogValue(0.0),
       OneOverM(1.0),
-      use_tasking(tasking)
+      use_tasking_(tasking)
 {
   for (auto& suffix : suffixes)
   {
@@ -555,7 +555,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   ScopedTimer local_timer(TWF_timers_[VGL_TIMER]);
   grad_iat = 0.0;
   PsiValueType r(1.0);
-  if (use_tasking)
+  if (use_tasking_)
   {
     std::vector<GradType> grad_components(Z.size(), 0.0);
     std::vector<PsiValueType> ratio_components(Z.size(), 0.0);
@@ -621,7 +621,7 @@ void TrialWaveFunction::flex_calcRatioGrad(const RefVector<TrialWaveFunction>& w
     const int num_wfc             = wf_list[0].get().Z.size();
     auto& wavefunction_components = wf_list[0].get().Z;
 
-    if (wf_list[0].get().use_tasking)
+    if (wf_list[0].get().use_tasking_)
     {
       std::vector<std::vector<PsiValueType>> ratios_components(num_wfc, std::vector<PsiValueType>(wf_list.size()));
       std::vector<std::vector<GradType>> grads_components(num_wfc, std::vector<GradType>(wf_list.size()));
@@ -1076,7 +1076,7 @@ void TrialWaveFunction::reset() {}
 
 TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
-  TrialWaveFunction* myclone   = new TrialWaveFunction(myName, use_tasking);
+  TrialWaveFunction* myclone   = new TrialWaveFunction(myName, use_tasking_);
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
