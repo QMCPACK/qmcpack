@@ -72,7 +72,7 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
       coordinates_(createDynamicCoordinates(kind))
 {
   initPropertyList();
-  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_fine);
+  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
@@ -112,7 +112,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     //createSK();
     //SK->DoUpdate=p.SK->DoUpdate;
   }
-  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_fine);
+  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
   myTwist = p.myTwist;
 
   G = p.G;

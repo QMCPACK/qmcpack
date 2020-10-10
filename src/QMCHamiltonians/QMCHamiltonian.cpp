@@ -35,7 +35,7 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       numCollectables(0),
       myName(aname),
       nlpp_ptr(nullptr),
-      ham_timer_(timer_manager.createTimer("Hamiltonian:" + aname, timer_level_fine))
+      ham_timer_(timer_manager.createTimer("Hamiltonian:" + aname, timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),

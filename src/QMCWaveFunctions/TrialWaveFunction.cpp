@@ -50,7 +50,7 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname)
   for (auto& suffix : suffixes)
   {
     std::string timer_name = "WaveFunction:" + myName + "::" + suffix;
-    TWF_timers_.push_back(timer_manager.createTimer(timer_name));
+    TWF_timers_.push_back(timer_manager.createTimer(timer_name, timer_level_medium));
   }
 }
 
