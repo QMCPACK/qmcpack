@@ -32,6 +32,7 @@
 #include "AFQMC/Numerics/batched_operations.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
 
+
 namespace qmcplusplus
 {
 namespace afqmc
