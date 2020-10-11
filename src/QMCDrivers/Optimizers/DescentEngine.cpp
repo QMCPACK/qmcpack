@@ -21,6 +21,7 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <numeric>
 
 namespace qmcplusplus {
 DescentEngine::DescentEngine(Communicate *comm, const xmlNodePtr cur)
@@ -170,12 +171,13 @@ void DescentEngine::takeSample(
     const int replica_id, const std::vector<FullPrecValueType> &der_rat_samp,
     const std::vector<FullPrecValueType> &le_der_samp,
     const std::vector<FullPrecValueType> &ls_der_samp,
-    FullPrecValueType vgs_samp, FullPrecValueType weight_samp) {
+    ValueType vgs_samp, ValueType weight_samp) {
 
   const size_t num_optimizables = der_rat_samp.size() - 1;
 
-  ValueType etmp = le_der_samp.at(0);
+  ValueType etmp = static_cast<ValueType>(le_der_samp.at(0));
 
+  
   // Store a history of samples for the current iteration
   lev_history_.push_back(etmp * vgs_samp);
   vg_history_.push_back(vgs_samp);
@@ -194,9 +196,9 @@ void DescentEngine::takeSample(
   if (!engine_target_excited_) {
     for (int i = 0; i < num_optimizables; i++) {
       replica_le_der_samp_[replica_id].at(i) +=
-          le_der_samp.at(i + 1) * vgs_samp;
+          le_der_samp.at(i + 1) * static_cast<FullPrecValueType>(vgs_samp);
       replica_der_rat_samp_[replica_id].at(i) +=
-          der_rat_samp.at(i + 1) * vgs_samp;
+          der_rat_samp.at(i + 1) * static_cast<FullPrecValueType>(vgs_samp);
     }
   }
   // Excited State Case
@@ -220,16 +222,15 @@ void DescentEngine::takeSample(
       // Combination of derivative ratios for target function numerator <psi |
       // omega -H | psi>/<psi | psi>
       replica_numer_der_samp_[replica_id].at(i) +=
-          static_cast<ValueType>(2) *
-          (omega_ * der_rat_samp.at(i + 1) - le_der_samp.at(i + 1)) * vgs_samp;
+          static_cast<FullPrecValueType>(2) *
+          (static_cast<FullPrecValueType>(omega_) * der_rat_samp.at(i + 1) - le_der_samp.at(i + 1)) * static_cast<FullPrecValueType>(vgs_samp);
 
       // Combination of derivative ratios for target function denominator <psi |
       // (omega -H)^2 | psi>/<psi | psi>
       replica_denom_der_samp_[replica_id].at(i) +=
-          static_cast<ValueType>(2) *
-          ((omega_ * der_rat_samp.at(i + 1) - le_der_samp.at(i + 1)) *
-           (omega_ * der_rat_samp.at(0) - le_der_samp.at(0))) *
-          vgs_samp;
+          static_cast<FullPrecValueType>(2) *
+          ((static_cast<FullPrecValueType>(omega_) * der_rat_samp.at(i + 1) - le_der_samp.at(i + 1)) *
+           (static_cast<FullPrecValueType>(omega_) * der_rat_samp.at(0) - le_der_samp.at(0))) * static_cast<FullPrecValueType>(vgs_samp);
     }
   }
 }
@@ -326,11 +327,11 @@ void DescentEngine::sample_finish() {
 
     // Ground state case
     if (!engine_target_excited_) {
-      avg_le_der_samp_.at(i) = avg_le_der_samp_.at(i) / w_sum_;
-      avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / w_sum_;
+      avg_le_der_samp_.at(i) = avg_le_der_samp_.at(i) / static_cast<FullPrecValueType>(w_sum_);
+      avg_der_rat_samp_.at(i) = avg_der_rat_samp_.at(i) / static_cast<FullPrecValueType>(w_sum_);
 
       lderivs_.at(i) =
-          2.0 * (avg_le_der_samp_.at(i) - e_avg_ * avg_der_rat_samp_.at(i));
+          static_cast<FullPrecValueType>(2.0) * (avg_le_der_samp_.at(i) - static_cast<FullPrecValueType>(e_avg_) * avg_der_rat_samp_.at(i));
       if (print_deriv_ == "yes") {
         app_log() << "Parameter # " << i
                   << " Hamiltonian term: " << avg_le_der_samp_.at(i)
@@ -345,8 +346,8 @@ void DescentEngine::sample_finish() {
     // Excited state case
     else {
 
-      avg_numer_der_samp_.at(i) = avg_numer_der_samp_.at(i) / w_sum_;
-      avg_denom_der_samp_.at(i) = avg_denom_der_samp_.at(i) / w_sum_;
+      avg_numer_der_samp_.at(i) = avg_numer_der_samp_.at(i) / static_cast<FullPrecValueType>(w_sum_);
+      avg_denom_der_samp_.at(i) = avg_denom_der_samp_.at(i) / static_cast<FullPrecValueType>(w_sum_);
 
       if (print_deriv_ == "yes") {
         app_log() << "Parameter # " << i
@@ -355,9 +356,9 @@ void DescentEngine::sample_finish() {
                   << " Denom Deriv: " << avg_denom_der_samp_.at(i) << std::endl;
       }
 
-      numer_term1.at(i) = avg_numer_der_samp_.at(i) * denom_avg_;
+      numer_term1.at(i) = avg_numer_der_samp_.at(i) * static_cast<FullPrecValueType>(denom_avg_);
 
-      numer_term2.at(i) = avg_denom_der_samp_.at(i) * numer_avg_;
+      numer_term2.at(i) = avg_denom_der_samp_.at(i) * static_cast<FullPrecValueType>(numer_avg_);
 
       denom.at(i) = denom_avg_ * denom_avg_;
 
@@ -416,18 +417,17 @@ void DescentEngine::mpi_unbiased_ratio_of_means(
   ValueType mg = y[2] / y[0]; // mean of denominator
   ValueType sf = y[3] / y[0]; // mean of the square of the numerator terms
   ValueType sg = y[4] / y[0]; // mean of the square of the denominator terms
-  ValueType mp =
-      y[5] / y[0];     // mean of the product of numerator times denominator
+  ValueType mp = y[5] / y[0];     // mean of the product of numerator times denominator
   ValueType ns = y[6]; // number of samples
 
-  ValueType vf = (sf - mf * mf) * ns / (ns - 1.0);
-  ValueType vg = (sg - mg * mg) * ns / (ns - 1.0);
-  ValueType cv = (mp - mf * mg) * ns / (ns - 1.0);
+  ValueType vf = (sf - mf * mf) * ns / (ns - static_cast<ValueType>(1.0));
+  ValueType vg = (sg - mg * mg) * ns / (ns - static_cast<ValueType>(1.0));
+  ValueType cv = (mp - mf * mg) * ns / (ns - static_cast<ValueType>(1.0));
 
   w_sum_ = y[0];
-  mean = (mf / mg) / (1.0 + (vg / mg / mg - cv / mf / mg) / ns);
+  mean = (mf / mg) / (static_cast<ValueType>(1.0) + (vg / mg / mg - cv / mf / mg) / ns);
   variance =
-      (mf * mf / mg / mg) * (vf / mf / mf + vg / mg / mg - 2.0 * cv / mf / mg);
+      (mf * mf / mg / mg) * (vf / mf / mf + vg / mg / mg - static_cast<ValueType>(2.0) * cv / mf / mg);
   stdErr = std::sqrt(variance / ns);
 }
 
@@ -926,9 +926,9 @@ void DescentEngine::computeFinalizationUncertainties(
     std::vector<ValueType> tmp1, tmp2, tmp3;
 
     for (int i = 0; i < n; i += 2) {
-      ValueType avgW = (wtv[i] + wtv[i + 1]) / 2.0;
-      ValueType avgNumer = (nmv[i] + nmv[i + 1]) / 2.0;
-      ValueType avgDenom = (dnv[i] + dnv[i + 1]) / 2.0;
+      ValueType avgW = (wtv[i] + wtv[i + 1]) / static_cast<ValueType>(2.0);
+      ValueType avgNumer = (nmv[i] + nmv[i + 1]) / static_cast<ValueType>(2.0);
+      ValueType avgDenom = (dnv[i] + dnv[i + 1]) / static_cast<ValueType>(2.0);
 
       tmp1.push_back(avgW);
       tmp2.push_back(avgNumer);

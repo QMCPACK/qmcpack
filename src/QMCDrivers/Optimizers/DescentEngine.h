@@ -236,7 +236,7 @@ public:
                   const std::vector<FullPrecValueType> &der_rat_samp,
                   const std::vector<FullPrecValueType> &le_der_samp,
                   const std::vector<FullPrecValueType> &ls_der_samp,
-                  FullPrecValueType vgs_samp, FullPrecValueType weight_samp);
+                  ValueType vgs_samp, ValueType weight_samp);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that reduces all vector information from all processors
