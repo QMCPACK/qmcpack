@@ -356,8 +356,10 @@ private:
   NonLocalECPotential* nlpp_ptr;
   ///vector of Hamiltonians
   std::vector<OperatorBase*> auxH;
-  ///timers
-  std::vector<NewTimer*> myTimers;
+  /// Total timer for H evaluation
+  NewTimer* ham_timer_;
+  /// timers for H components
+  std::vector<NewTimer*> my_timers_;
   ///types of component operators
   std::map<std::string, std::string> operator_types;
   ///data
