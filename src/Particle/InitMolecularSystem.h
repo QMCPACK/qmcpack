@@ -30,7 +30,7 @@ class ParticleSetPool;
 class InitMolecularSystem : public OhmmsElementBase
 {
 public:
-  InitMolecularSystem(ParticleSetPool* pset, const char* aname = "mosystem");
+  InitMolecularSystem(ParticleSetPool& pset, const char* aname = "mosystem");
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
@@ -59,7 +59,7 @@ private:
    * Any number of ParticleSet can be used to describe
    * a QMCHamiltonian.
    */
-  ParticleSetPool* ptclPool;
+  ParticleSetPool& ptclPool;
 };
 } // namespace qmcplusplus
 #endif

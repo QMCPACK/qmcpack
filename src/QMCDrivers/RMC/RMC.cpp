@@ -38,9 +38,8 @@ namespace qmcplusplus
 RMC::RMC(MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "RMC"),
+    : QMCDriver(w, psi, h, comm, "RMC"),
       prestepsVMC(-1),
       rescaleDrift("no"),
       beta(-1),

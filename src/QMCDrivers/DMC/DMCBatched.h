@@ -76,7 +76,6 @@ public:
              MCPopulation& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
-             WaveFunctionPool& ppool,
              Communicate* comm);
 
   DMCBatched(DMCBatched&&) = default;

@@ -30,14 +30,12 @@
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
-
 /* 
  * Observable class that calculates the walker averaged on-top pair density 
  * Alloc defines the allocator type used to store the orbital and temporary tensors.
@@ -67,8 +65,8 @@ class realspace_correlators : public AFQMCInfo
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
-  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
-  using StaticMatrix          = boost::multi::static_array<ComplexType, 2, shm_buffer_alloc_type>;
+  using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
+  using StaticMatrix          = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
 
 public:
   realspace_correlators(afqmc::TaskGroup_& tg_,
@@ -273,8 +271,11 @@ public:
     // calculate green functions in real space and send to host for processing/accumulation
     // if memory becomes a problem, then batch over walkers
     {
-      StaticMatrix T({nw * nsp * NMO, npts}, localTG_buffer_generator->template get_allocator<ComplexType>());
-      StaticMatrix Gr({nsp * nw, npts * npts}, localTG_buffer_generator->template get_allocator<ComplexType>());
+      LocalTGBufferManager buffer_manager;
+      StaticMatrix T({nw * nsp * NMO, npts}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
+      StaticMatrix Gr({nsp * nw, npts * npts}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
       CTensor_ref Gr3D(make_device_ptr(Gr.origin()), {nw, nsp, npts * npts});
       CTensor_ref T3D(make_device_ptr(T.origin()), {nw, nsp, NMO * npts});
       CMatrix_ref G2D(make_device_ptr(G.origin()), {nw * nsp * NMO, NMO});

@@ -28,14 +28,12 @@
 
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
 /* 
  * Observable class that calculates the walker averaged 2 RDM.
  * The resulting RDM will be [3*spin][i][k][j][l]  
@@ -70,9 +68,9 @@ class full2rdm : public AFQMCInfo
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
-  using buffer_alloc_type = device_buffer_type<ComplexType>;
-  using StaticVector      = boost::multi::static_array<ComplexType, 1, buffer_alloc_type>;
-  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, buffer_alloc_type>;
+  using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
+  using StaticVector      = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
+  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -317,13 +315,16 @@ private:
     size_t M2(NMO * NMO);
     size_t M4(M2 * M2);
     size_t N = size_t(dN) * M2;
-    StaticMatrix R({dN, NMO * NMO}, device_buffer_generator->template get_allocator<ComplexType>());
+    DeviceBufferManager buffer_manager;
+    StaticMatrix R({dN, NMO * NMO}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref Q(R.origin(), {NMO * NMO, NMO});
     CVector_ref R1D(R.origin(), R.num_elements());
     CVector_ref Q1D(Q.origin(), Q.num_elements());
 
     // put this in shared memory!!!
-    StaticMatrix Gt({NMO, NMO}, device_buffer_generator->template get_allocator<ComplexType>());
+    StaticMatrix Gt({NMO, NMO}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref GtC(Gt.origin(), {NMO * NMO, 1});
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     if (Grot.size() < R.num_elements())

@@ -34,18 +34,15 @@ namespace qmcplusplus
 QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
                                                    TrialWaveFunction& psi,
                                                    QMCHamiltonian& h,
-                                                   HamiltonianPool& hpool,
-                                                   WaveFunctionPool& ppool,
                                                    QMCDriverInput&& qmcdriver_input,
                                                    VMCDriverInput&& vmcdriver_input,
                                                    MCPopulation& population,
                                                    SampleStack& samples,
                                                    Communicate* comm,
                                                    const std::string& QMC_driver_type)
-    : QMCDriver(w, psi, h, ppool, comm, QMC_driver_type),
+    : QMCDriver(w, psi, h, comm, QMC_driver_type),
       PartID(0),
       NumParts(1),
-      hamPool(hpool),
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
@@ -647,7 +644,7 @@ bool QMCLinearOptimizeBatched::put(xmlNodePtr q)
     QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
     VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
     vmcEngine = std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
-                                             population_, Psi, H, psiPool, samples_, myComm);
+                                             population_, Psi, H, samples_, myComm);
 
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);

@@ -257,7 +257,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // 2) The species is active
   CoulombPBCAA noElecForce(elec, true, true);
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   noIonForce.evaluateWithIonDerivs(ions3, ions3, psi, noElecForce.forces, noElecForce.forces);
   noElecForce.evaluateWithIonDerivs(elec, ions3, psi, noIonForce.forces, noIonForce.forces);
 

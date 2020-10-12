@@ -50,10 +50,8 @@ using MatrixOperators::product;
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
                                                            TrialWaveFunction& psi,
                                                            QMCHamiltonian& h,
-                                                           HamiltonianPool& hpool,
-                                                           WaveFunctionPool& ppool,
                                                            Communicate* comm)
-    : QMCLinearOptimize(w, psi, h, hpool, ppool, comm, "QMCFixedSampleLinearOptimize"),
+    : QMCLinearOptimize(w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
@@ -548,10 +546,10 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   // {
 #if defined(QMC_CUDA)
   if (useGPU)
-    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, myComm);
   else
 #endif
-    vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMC>(W, Psi, H, myComm);
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   // }
 

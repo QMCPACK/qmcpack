@@ -39,9 +39,8 @@ namespace qmcplusplus
 VMC::VMC(MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "VMC"), UseDrift("yes")
+    : QMCDriver(w, psi, h, comm, "VMC"), UseDrift("yes")
 {
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);

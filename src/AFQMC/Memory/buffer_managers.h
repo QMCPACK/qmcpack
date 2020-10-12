@@ -12,15 +12,24 @@
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_KERNELS_SETTINGS_HPP
-#define AFQMC_KERNELS_SETTINGS_HPP
+#ifndef BUFFER_MANAGERS_H
+#define BUFFER_MANAGERS_H
 
-#define BOOST_NO_AUTO_PTR
+#include "AFQMC/Memory/host_buffer_manager.hpp"
+#include "AFQMC/Memory/device_buffer_manager.hpp"
+#include "AFQMC/Memory/localTG_buffer_manager.hpp"
 
-static const size_t SM_SIZE_KB  = 64;    // should probably poke the system
-static const size_t DEFAULT_BLOCK_SIZE  = 32;
-static const size_t DOT_BLOCK_SIZE      = 32;
-static const size_t REDUCE_BLOCK_SIZE   = 32;
-static const size_t MAX_THREADS_PER_DIM = 1024;
+namespace qmcplusplus
+{
+namespace afqmc
+{
+
+void setup_memory_managers(mpi3::shared_communicator& local, size_t size); 
+void setup_memory_managers(mpi3::shared_communicator& node, size_t size, int nc);
+void update_memory_managers();
+void release_memory_managers();
+
+}
+}
 
 #endif
