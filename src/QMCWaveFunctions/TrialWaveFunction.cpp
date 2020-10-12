@@ -557,7 +557,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   PsiValueType r(1.0);
   if (use_tasking_)
   {
-    std::vector<GradType> grad_components(Z.size(), 0.0);
+    std::vector<GradType> grad_components(Z.size(), GradType(0.0));
     std::vector<PsiValueType> ratio_components(Z.size(), 0.0);
     for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
     {

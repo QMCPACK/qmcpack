@@ -449,7 +449,7 @@ public:
 
   const std::string& getName() const { return myName; }
 
-  const bool use_tasking() const { return use_tasking_; }
+  bool use_tasking() const { return use_tasking_; }
 
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
