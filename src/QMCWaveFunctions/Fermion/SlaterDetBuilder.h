@@ -106,23 +106,47 @@ private:
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
                             (std::is_floating_point<VT>::value), int> = 0>
-  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets,int ext_level)
   {
-    hin.read(ci_coeff, "Coeff");
+    std::string extVar;
+    extVar="Coeff_"+std::to_string(ext_level-1);
+    ///Determinant coeffs are stored in Coeff_N where N=1 for the ground state and N=2
+    ///Would be the first excited state.
+    ///Backwards compatibility: Old format assums "Coeff"
+    if (!hin.readEntry(ci_coeff,extVar))
+       if(!hin.readEntry(ci_coeff,"Coeff"))
+          APP_ABORT("Could not read CI coefficients from HDF5");
+      
   }
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
                             (std::is_same<VT, std::complex<typename VT::value_type>>::value), int> = 0>
-  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets,int ext_level)
   {
+    std::string extVar;
     std::vector<double> CIcoeff_real;
     std::vector<double> CIcoeff_imag;
     CIcoeff_imag.resize(n_dets);
     CIcoeff_real.resize(n_dets);
 
-    hin.read(CIcoeff_real, "Coeff");
-    hin.read(CIcoeff_imag, "Coeff_imag");
+    std::string ext_var;
+    extVar="Coeff_"+std::to_string(ext_level-1);
+    
+    ///Determinant coeffs are stored in Coeff_N where N=1 for the ground state and N=2
+    ///Would be the first excited state.
+    ///Backwards compatibility: Old format assums "Coeff" or "Coeff_imag"  
 
+    if(!hin.readEntry(CIcoeff_real, extVar))
+       if(!hin.readEntry(CIcoeff_real, "Coeff"))
+          APP_ABORT("Could not read CI coefficients from HDF5")
+       else
+          hin.read(CIcoeff_imag, "Coeff_imag");
+    else
+    {
+      extVar="Coeff_"+std::to_string(ext_level-1)+"_imag";
+      hin.read(CIcoeff_imag, extVar);
+    }
+         
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
   }

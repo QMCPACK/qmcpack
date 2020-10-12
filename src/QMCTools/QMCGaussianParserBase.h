@@ -106,7 +106,7 @@ struct QMCGaussianParserBase
 
   std::vector<int> CIexcitLVL;
 
-  int ci_size, ci_nca, ci_ncb, ci_nea, ci_neb, ci_nstates;
+  int ci_size, ci_nca, ci_ncb, ci_nea, ci_neb, ci_nstates, nbexcitedstates;
   double ci_threshold;
   bool optDetCoeffs;
   bool usingCSF;
