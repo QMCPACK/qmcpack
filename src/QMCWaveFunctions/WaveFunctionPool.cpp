@@ -55,6 +55,14 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   if (tasking != "yes" && tasking != "no")
     myComm->barrier_and_abort("Incorrect input value of 'tasking' attribute. It can only be 'yes' or 'no'.");
 
+#if defined(__INTEL_COMPILER)
+  if (tasking == "yes")
+  {
+    tasking = "no";
+    app_warning() << "Asynchronous tasking has to be turned off on builds using Intel compilers." << std::endl;
+  }
+#endif
+
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
   // Ye: the overall logic of the "check" is still not clear to me.
