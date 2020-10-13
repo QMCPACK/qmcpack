@@ -112,7 +112,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.buffer_timer.stop();
 
-  timers.movepbyp_timer.start();
   const int num_walkers = crowd.size();
   //This generates an entire steps worth of deltas.
   step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
@@ -146,45 +145,45 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<RealType> rr_proposed(num_walkers, 0.0);
   std::vector<RealType> rr_accepted(num_walkers, 0.0);
 
-  //  dmc_timers_.dmc_movePbyP.start();
-
   std::vector<int> did_walker_move(num_walkers, 0);
 
-  for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
   {
-    RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
-    RealType oneover2tau = 0.5 / (tauovermass);
-    RealType sqrttau     = std::sqrt(tauovermass);
-    int start_index      = step_context.getPtclGroupStart(ig);
-    int end_index        = step_context.getPtclGroupEnd(ig);
-    for (int iat = start_index; iat < end_index; ++iat)
+    ScopedTimer pbyp_local_timer(&(timers.movepbyp_timer));
+    for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
     {
-      auto delta_r_start = it_delta_r + iat * num_walkers;
-      auto delta_r_end   = delta_r_start + num_walkers;
-
-      //This is very useful thing to be able to look at in the debugger
-#ifndef NDEBUG
-      std::vector<int> walkers_who_have_been_on_wire(num_walkers, 0);
-      ;
-      for (int iw = 0; iw < walkers.size(); ++iw)
+      RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
+      RealType oneover2tau = 0.5 / (tauovermass);
+      RealType sqrttau     = std::sqrt(tauovermass);
+      int start_index      = step_context.getPtclGroupStart(ig);
+      int end_index        = step_context.getPtclGroupEnd(ig);
+      for (int iat = start_index; iat < end_index; ++iat)
       {
-        walkers[iw].get().get_has_been_on_wire() ? walkers_who_have_been_on_wire[iw] = 1
-                                                 : walkers_who_have_been_on_wire[iw] = 0;
-      }
+        auto delta_r_start = it_delta_r + iat * num_walkers;
+        auto delta_r_end   = delta_r_start + num_walkers;
+
+        //This is very useful thing to be able to look at in the debugger
+#ifndef NDEBUG
+        std::vector<int> walkers_who_have_been_on_wire(num_walkers, 0);
+        ;
+        for (int iw = 0; iw < walkers.size(); ++iw)
+        {
+          walkers[iw].get().get_has_been_on_wire() ? walkers_who_have_been_on_wire[iw] = 1
+                                                   : walkers_who_have_been_on_wire[iw] = 0;
+        }
 #endif
-      //get the displacement
-      TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, grads_now);
-      sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
+        //get the displacement
+        TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, grads_now);
+        sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
 
-      std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
-                     [sqrttau](PosType& drift, PosType& delta_r) { return drift + (sqrttau * delta_r); });
+        std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
+                       [sqrttau](PosType& drift, PosType& delta_r) { return drift + (sqrttau * delta_r); });
 
-      // only DMC does this
-      // TODO: rr needs a real name
-      std::vector<RealType> rr(num_walkers, 0.0);
-      assert(rr.size() == delta_r_end - delta_r_start);
-      std::transform(delta_r_start, delta_r_end, rr.begin(),
-                     [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
+        // only DMC does this
+        // TODO: rr needs a real name
+        std::vector<RealType> rr(num_walkers, 0.0);
+        assert(rr.size() == delta_r_end - delta_r_start);
+        std::transform(delta_r_start, delta_r_end, rr.begin(),
+                       [tauovermass](auto& delta_r) { return tauovermass * dot(delta_r, delta_r); });
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -193,90 +192,90 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 //   continue;
 // }
 #ifndef NDEBUG
-      for (int i = 0; i < rr.size(); ++i)
-        assert(std::isfinite(rr[i]));
+        for (int i = 0; i < rr.size(); ++i)
+          assert(std::isfinite(rr[i]));
 #endif
-      auto elecs = crowd.get_walker_elecs();
-      ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
+        auto elecs = crowd.get_walker_elecs();
+        ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
 
-      TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios, grads_new);
+        TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios,
+                                              grads_new);
 
-      // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
-      auto checkPhaseChanged = [&sft, &iat, &crowd, &nnode_crossing](TrialWaveFunction& twf, ParticleSet& elec,
-                                                                     int& is_reject) {
-        if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
+        // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
+        auto checkPhaseChanged = [&sft, &iat, &crowd, &nnode_crossing](TrialWaveFunction& twf, ParticleSet& elec,
+                                                                       int& is_reject) {
+          if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
+          {
+            crowd.incReject();
+            ++nnode_crossing;
+            elec.rejectMove(iat);
+            twf.rejectMove(iat);
+            is_reject = 1;
+          }
+          else
+            is_reject = 0;
+        };
+
+        // Hopefully a phase change doesn't make any of these transformations fail.
+        std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
+        for (int iw = 0; iw < num_walkers; ++iw)
         {
-          crowd.incReject();
-          ++nnode_crossing;
-          elec.rejectMove(iat);
-          twf.rejectMove(iat);
-          is_reject = 1;
+          checkPhaseChanged(walker_twfs[iw], walker_elecs[iw], rejects[iw]);
+          //This is just convenient to do here
+          rr_proposed[iw] += rr[iw];
         }
-        else
-          is_reject = 0;
-      };
 
-      // Hopefully a phase change doesn't make any of these transformations fail.
-      std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
-      for (int iw = 0; iw < num_walkers; ++iw)
-      {
-        checkPhaseChanged(walker_twfs[iw], walker_elecs[iw], rejects[iw]);
-        //This is just convenient to do here
-        rr_proposed[iw] += rr[iw];
+        std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](auto& delta_r) {
+          constexpr RealType mhalf(-0.5);
+          return mhalf * dot(delta_r, delta_r);
+        });
+
+        sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
+
+        std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
+                       [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().activePos - drift; });
+
+        std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
+                       [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
+
+        for (int iw = 0; iw < num_walkers; ++iw)
+          prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
+
+        isAccepted.clear();
+        elec_accept_list.clear();
+        elec_reject_list.clear();
+
+        for (int iw = 0; iw < num_walkers; ++iw)
+        {
+          if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
+              step_context.get_random_gen()() < prob[iw])
+          {
+            did_walker_move[iw] += 1;
+            crowd.incAccept();
+            isAccepted.push_back(true);
+            elec_accept_list.push_back(crowd.get_walker_elecs()[iw]);
+            rr_accepted[iw] += rr[iw];
+            gf_acc[iw] *= prob[iw];
+          }
+          else
+          {
+            crowd.incReject();
+            isAccepted.push_back(false);
+            elec_reject_list.push_back(crowd.get_walker_elecs()[iw]);
+          }
+        }
+
+        TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted,
+                                                  true);
+
+        ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
+        ParticleSet::flex_rejectMove(elec_reject_list, iat);
       }
-
-      std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](auto& delta_r) {
-        constexpr RealType mhalf(-0.5);
-        return mhalf * dot(delta_r, delta_r);
-      });
-
-      sft.drift_modifier.getDrifts(tauovermass, grads_new, drifts);
-
-      std::transform(crowd.beginElectrons(), crowd.endElectrons(), drifts.begin(), drifts.begin(),
-                     [iat](auto& elecs, auto& drift) { return elecs.get().R[iat] - elecs.get().activePos - drift; });
-
-      std::transform(drifts.begin(), drifts.end(), log_gb.begin(),
-                     [oneover2tau](auto& drift) { return -oneover2tau * dot(drift, drift); });
-
-      for (int iw = 0; iw < num_walkers; ++iw)
-        prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
-
-      isAccepted.clear();
-      elec_accept_list.clear();
-      elec_reject_list.clear();
-
-      for (int iw = 0; iw < num_walkers; ++iw)
-      {
-        if ((!rejects[iw]) && prob[iw] >= std::numeric_limits<RealType>::epsilon() &&
-            step_context.get_random_gen()() < prob[iw])
-        {
-          did_walker_move[iw] += 1;
-          crowd.incAccept();
-          isAccepted.push_back(true);
-          elec_accept_list.push_back(crowd.get_walker_elecs()[iw]);
-          rr_accepted[iw] += rr[iw];
-          gf_acc[iw] *= prob[iw];
-        }
-        else
-        {
-          crowd.incReject();
-          isAccepted.push_back(false);
-          elec_reject_list.push_back(crowd.get_walker_elecs()[iw]);
-        }
-      }
-
-      TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted,
-                                                true);
-
-      ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
-      ParticleSet::flex_rejectMove(elec_reject_list, iat);
     }
-  }
 
-  TrialWaveFunction::flex_completeUpdates(crowd.get_walker_twfs());
-  ParticleSet::flex_donePbyP(crowd.get_walker_elecs());
-  //dmc_timers.dmc_movePbyP.stop();
-  timers.movepbyp_timer.stop();
+    TrialWaveFunction::flex_completeUpdates(crowd.get_walker_twfs());
+    ParticleSet::flex_donePbyP(crowd.get_walker_elecs());
+  }
 
   //To use the flex interfaces we have to build RefVectors for walker that moved and walkers that didn't
 
