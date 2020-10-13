@@ -55,6 +55,8 @@ struct QMCGaussianParserBase
   bool DoCusp;
   bool FixValence;
   bool singledetH5;
+  bool optDetCoeffs;
+  bool usingCSF;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -67,9 +69,13 @@ struct QMCGaussianParserBase
   int SizeOfBasisSet;
   // mmorales: number of Molecular orbitals, not always equal to SizeOfBasisSet
   int numMO, readNO, readGuess, numMO2print;
+  int ci_size, ci_nca, ci_ncb, ci_nea, ci_neb, ci_nstates;
+  int NbKpts;
+  double ci_threshold;
+
 
   std::vector<double> STwist_Coord; //Super Twist Coordinates
-  int NbKpts;
+
 
   std::string Title;
   std::string basisType;
@@ -105,11 +111,6 @@ struct QMCGaussianParserBase
   std::vector<int> Image;
 
   std::vector<int> CIexcitLVL;
-
-  int ci_size, ci_nca, ci_ncb, ci_nea, ci_neb, ci_nstates, nbexcitedstates;
-  double ci_threshold;
-  bool optDetCoeffs;
-  bool usingCSF;
 
   std::vector<std::pair<int, double>> coeff2csf;
 
