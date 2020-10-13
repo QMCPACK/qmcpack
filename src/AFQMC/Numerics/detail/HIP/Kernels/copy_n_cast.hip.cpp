@@ -16,6 +16,7 @@
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 
 namespace kernels
 {

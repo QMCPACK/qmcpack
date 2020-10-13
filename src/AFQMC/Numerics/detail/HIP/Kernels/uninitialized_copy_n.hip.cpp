@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <thrust/complex.h>
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
-#include "AFQMC/Numerics/detail/HIP/hip_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 //#include "AFQMC/Numerics/detail/HIP/Kernels/strided_range.hpp"
 
 namespace kernels
