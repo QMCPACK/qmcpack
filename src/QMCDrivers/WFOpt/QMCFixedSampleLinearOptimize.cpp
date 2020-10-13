@@ -198,19 +198,23 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 bool QMCFixedSampleLinearOptimize::run()
 {
 #ifdef HAVE_LMY_ENGINE
-#if !defined(QMC_COMPLEX)
   if (doHybrid)
   {
+#if !defined(QMC_COMPLEX)
     app_log() << "Doing hybrid run" << std::endl;
     return hybrid_run();
+#else
+APP_ABORT(" Error: Hybrid method does not work with QMC_COMPLEX=1. \n");
+#endif
   }
 
 if (current_optimizer_type_ == OptimizerType::DESCENT)
+#if !defined(QMC_COMPLEX)
     return descent_run();
-
 #else
-APP_ABORT(" Error: Descent method and hybrid method do not work with QMC_COMPLEX=1. \n");
+APP_ABORT(" Error: Descent method does not work with QMC_COMPLEX=1. \n");
 #endif
+
 
 // if requested, perform the update via the adaptive three-shift or single-shift method
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
