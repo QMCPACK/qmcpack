@@ -34,7 +34,7 @@ enum
   DUMMYOPT
 };
 
-SFNBranch::SFNBranch(RealType tau, int nideal) : MyEstimator(0) //, PopHist(5), DMCEnergyHist(5)
+SFNBranch::SFNBranch(RealType tau, int nideal) : MyEstimator(nullptr), debug_disable_branching_(false)
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -75,7 +75,8 @@ SFNBranch::SFNBranch(const SFNBranch& abranch)
       vParam(abranch.vParam),
       MyEstimator(0),
       branching_cutoff_scheme(abranch.branching_cutoff_scheme),
-      sParam(abranch.sParam)
+      sParam(abranch.sParam),
+      debug_disable_branching_(abranch.debug_disable_branching_)
 {
   registerParameters();
   //would like to remove this
@@ -107,6 +108,7 @@ void SFNBranch::registerParameters()
   m_param.add(sParam[USETAUOPT], "useBareTau", "option");
   m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration", "opt");
   m_param.add(branching_cutoff_scheme, "branching_cutoff_scheme", "option");
+  m_param.add(debug_disable_branching_, "debug_disable_branching", "option");
 }
 
 void SFNBranch::start(const std::string& froot, bool append)
@@ -215,7 +217,7 @@ void SFNBranch::branch(int iter, MCPopulation& population)
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population.get_walkers()));
 
   FullPrecRealType pop_now;
-  if (BranchMode[B_DMCSTAGE] || iter)
+  if (!debug_disable_branching_ && (BranchMode[B_DMCSTAGE] || iter))
     pop_now = WalkerController->branch(iter, population);
   else
     pop_now = WalkerController->doNotBranch(iter, population); //do not branch for the first step of a warmup
