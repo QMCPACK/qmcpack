@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="C2_TZ_LONG_EXT2_MSDJ" series="1"/>
+  <project id="C2_DZ_LONG_GROUND_MSD" series="1"/>
 
 
   <!-- input from gaussian converter -->
   <include href="C2.structure.xml"/>
-  <include href="C2.wfj-excited2.xml"/>
+  <include href="C2.wfnoj-ground.xml"/>
 
   <!--  Hamiltonian -->
   <hamiltonian name="h0" type="generic" target="e">
