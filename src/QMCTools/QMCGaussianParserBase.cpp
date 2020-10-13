@@ -75,6 +75,7 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       ci_neb(0),
       ci_nstates(0),
       NbKpts(0),
+      nbexcitedstates(1);
       ci_threshold(1e-20),
       Title("sample"),
       basisType("Gaussian"),
@@ -137,6 +138,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       ci_neb(0),
       ci_nstates(0),
       NbKpts(0),
+      nbexcitedstates(1);
       ci_threshold(1e-20),
       Title("sample"),
       basisType("Gaussian"),
