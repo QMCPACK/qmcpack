@@ -35,9 +35,6 @@ are given in the referenced sections.
 #. Run the tests to verify QMCPACK
    (:ref:`testing`).
 
-#. Build the ppconvert utility in QMCPACK
-   (:ref:`buildppconvert`).
-
 Hints for high performance are in
 :ref:`buildperformance`.
 Troubleshooting suggestions are in
@@ -109,10 +106,9 @@ supercomputers this software is usually installed by default and is
 often accessed via a modules environment—check your system
 documentation.
 
-**Use of the latest versions of all compilers and libraries is strongly
-encouraged** but not absolutely essential. Generally, newer versions are
-faster; see :ref:`buildperformance`
-for performance suggestions.
+**Use of the latest versions of all compilers and libraries is strongly encouraged** but not absolutely essential. Generally,
+newer versions are faster; see :ref:`buildperformance` for performance suggestions. Versions of compilers over two years old are
+unsupported and untested by the developers although they may still work.
 
 -  C/C++ compilers such as GNU, Clang, Intel, and IBM XL. C++ compilers
    are required to support the C++ 14 standard. Use of recent (“current
@@ -143,14 +139,9 @@ NVIDIA CUDA development tools is required. Ensure that this is
 compatible with the C and C++ compiler versions you plan to use.
 Supported versions are included in the NVIDIA release notes.
 
-Many of the utilities provided with QMCPACK use Python (v2). The numpy
+Many of the utilities provided with QMCPACK require Python (v3). The numpy
 and matplotlib libraries are required for full functionality.
 
-Note that the standalone einspline library used by previous versions of
-QMCPACK is no longer required. A more optimized version is included
-inside. The standalone version should *not* be on any standard search
-paths because conflicts between the old and new include files can
-result.
 
 C++ 14 standard library
 -----------------------
@@ -171,14 +162,13 @@ or greater. To avoid these errors occurring at compile time, QMCPACK
 tests for a C++ 14 standard library during configuration and will halt
 with an error if one is not found.
 
-At sites that use modules, running is often sufficient to load a newer
-GCC and resolve the issue.
+At sites that use modules, it is often sufficient to simply load a newer
+GCC.
 
 Intel compiler
 ~~~~~~~~~~~~~~
 
-The Intel compiler version must be 18 or newer. The version 17 compiler
-cannot compile some of the C++ 14 constructs in the code.
+The Intel compiler version must be 19 or newer due to use of C++14 and bugs and limitations in earlier versions.
 
 If a newer GCC is needed, the ``-cxxlib`` option can be used to point to a different
 GCC installation. (Alternately, the ``-gcc-name`` or ``-gxx-name`` options can be used.) Be sure to
@@ -1754,13 +1744,11 @@ with various library versions and different MPI implementations. NVIDIA GPUs are
 Building ppconvert, a pseudopotential format converter
 ------------------------------------------------------
 
-QMCPACK includes a utility---ppconvert---to convert between different
-pseudopotential formats. Examples include effective core potential
-formats (in Gaussians), the UPF format used by QE, and
-the XML format used by QMCPACK itself. The utility also enables the
-atomic orbitals to be recomputed via a numerical density functional
-calculation if they need to be reconstructed for use in an
-electronic structure calculation.
+QMCPACK includes a utility---ppconvert---to convert between different pseudopotential formats. Examples include effective core
+potential formats (in Gaussians), the UPF format used by QE, and the XML format used by QMCPACK itself. The utility also enables
+the atomic orbitals to be recomputed via a numerical density functional calculation if they need to be reconstructed for use in an
+electronic structure calculation. Use of ppconvert is an expert feature and discouraged for casual use: a poor choice of orbitals
+for the creation of projectors in UPF can introduce severe errors and inaccuracies.
 
 .. _fig2:
 .. figure:: /figs/QMCPACK_CDash_CTest_Results_20160129.png
