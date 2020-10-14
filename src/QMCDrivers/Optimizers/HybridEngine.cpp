@@ -91,7 +91,7 @@ bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
   const int tot_micro_it = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
   const int pos          = step_num_ % tot_micro_it;
   //interval is the number of steps between stores based on the number of stores desired
-  int interval =  num_updates_opt_methods_[idx] / store_num;
+  int interval = num_updates_opt_methods_[idx] / store_num;
 
   if (interval == 0)
   {

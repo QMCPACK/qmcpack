@@ -22,8 +22,10 @@
 #include <libxml/tree.h>
 #include <vector>
 
-namespace qmcplusplus {
-class DescentEngine {
+namespace qmcplusplus
+{
+class DescentEngine
+{
   typedef qmcplusplus::QMCTraits::FullPrecValueType FullPrecValueType;
   typedef qmcplusplus::QMCTraits::ValueType ValueType;
   typedef qmcplusplus::QMCTraits::RealType RealType;
@@ -118,7 +120,7 @@ private:
   std::vector<ValueType> lderivs_;
 
   // Communicator handles MPI reduction
-  Communicate *my_comm_;
+  Communicate* my_comm_;
 
   // Whether to target excited state
   bool engine_target_excited_;
@@ -211,7 +213,7 @@ private:
 
 public:
   // Constructor for engine
-  DescentEngine(Communicate *comm, const xmlNodePtr cur);
+  DescentEngine(Communicate* comm, const xmlNodePtr cur);
 
   // process xml node
   bool processXML(const xmlNodePtr cur);
@@ -233,10 +235,11 @@ public:
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   void takeSample(const int replica_id,
-                  const std::vector<FullPrecValueType> &der_rat_samp,
-                  const std::vector<FullPrecValueType> &le_der_samp,
-                  const std::vector<FullPrecValueType> &ls_der_samp,
-                  ValueType vgs_samp, ValueType weight_samp);
+                  const std::vector<FullPrecValueType>& der_rat_samp,
+                  const std::vector<FullPrecValueType>& le_der_samp,
+                  const std::vector<FullPrecValueType>& ls_der_samp,
+                  ValueType vgs_samp,
+                  ValueType weight_samp);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that reduces all vector information from all processors
@@ -249,16 +252,15 @@ public:
   // Function for computing ratios of the form <f>/<g> as well as the associated
   // variance and standard error
   void mpi_unbiased_ratio_of_means(int numSamples,
-                                   std::vector<ValueType> &weights,
-                                   std::vector<ValueType> &numerSamples,
-                                   std::vector<ValueType> &denomSamples,
-                                   ValueType &mean, ValueType &variance,
-                                   ValueType &stdErr);
+                                   std::vector<ValueType>& weights,
+                                   std::vector<ValueType>& numerSamples,
+                                   std::vector<ValueType>& denomSamples,
+                                   ValueType& mean,
+                                   ValueType& variance,
+                                   ValueType& stdErr);
 
   // Returns the derivatives of the cost function we are minimizing
-  const std::vector<ValueType> &getAveragedDerivatives() const {
-    return lderivs_;
-  }
+  const std::vector<ValueType>& getAveragedDerivatives() const { return lderivs_; }
 
   // helper method for updating parameter values with descent
   void updateParameters();
@@ -273,17 +275,17 @@ public:
 
   // helper method for transferring information on parameter names and types to
   // the engine
-  void setupUpdate(const optimize::VariableSet &my_vars);
+  void setupUpdate(const optimize::VariableSet& my_vars);
 
   // Store a vector of parameter differences to be used by the BLM in a hybrid
   // optimization
-  void storeVectors(std::vector<ValueType> &current_params);
+  void storeVectors(std::vector<ValueType>& current_params);
 
   // Compute uncertainties for energy/target function and variance over a
   // history of samples from a set of iterations
-  void computeFinalizationUncertainties(std::vector<ValueType> &weights,
-                                        std::vector<ValueType> &numerSamples,
-                                        std::vector<ValueType> &denomSamples);
+  void computeFinalizationUncertainties(std::vector<ValueType>& weights,
+                                        std::vector<ValueType>& numerSamples,
+                                        std::vector<ValueType>& denomSamples);
 
   // Returns number of times a parameter difference vector will be stored in the
   // optimization
@@ -291,14 +293,10 @@ public:
 
   // Returns the set of stored parameter difference vectors that will be given
   // to the BLM
-  const std::vector<std::vector<ValueType>> &retrieveHybridBLM_Input() const {
-    return hybrid_blm_input_;
-  }
+  const std::vector<std::vector<ValueType>>& retrieveHybridBLM_Input() const { return hybrid_blm_input_; }
 
   // Returns the current set of parameter values
-  const std::vector<ValueType> &retrieveNewParams() const {
-    return current_params_;
-  }
+  const std::vector<ValueType>& retrieveNewParams() const { return current_params_; }
 
   // Returns number of optimization steps that have been taken with descent
   int getDescentNum() const { return descent_num_; }
@@ -327,15 +325,11 @@ public:
 
   // Function for setting averaged derivatives, currently only used as part of a
   // unit test of the engine's parameter update
-  void setDerivs(std::vector<ValueType> &test_derivs) {
-    lderivs_ = test_derivs;
-  }
+  void setDerivs(std::vector<ValueType>& test_derivs) { lderivs_ = test_derivs; }
 
   // Function for setting parameter value, used to keep descent parameter values
   // up to date with changes that occur on BLM steps of hybrid method
-  void setParamVal(int index, ValueType value) {
-    current_params_[index] = value;
-  }
+  void setParamVal(int index, ValueType value) { current_params_[index] = value; }
 };
 
 } // namespace qmcplusplus
