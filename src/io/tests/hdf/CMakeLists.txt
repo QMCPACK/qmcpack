@@ -11,12 +11,12 @@
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR} )
 
-SET(SRC_DIR io)
+SET(SRC_DIR io_hdf5)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 # Directory where input file is copied to, and working directory for unit test
-SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/io/tmp)
+SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/io/hdf)
 
 SET(UTEST_SRC test_hdf_archive.cpp  test_hdf_parallel.cpp test_hdf_reshape.cpp test_hdf_hyperslab.cpp)
 IF(BUILD_AFQMC)
