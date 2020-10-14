@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_HDF5_ARCHIVE_H
 #define QMCPLUSPLUS_HDF5_ARCHIVE_H
 
-#include <Configuration.h>
+#include <config.h>
 #include <io/hdf_datatype.h>
 #include <io/hdf_dataspace.h>
 #include <io/hdf_dataproxy.h>

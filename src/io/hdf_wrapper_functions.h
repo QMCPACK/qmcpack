@@ -21,6 +21,7 @@
  * @brief free template functions wrapping HDF5 calls.
  */
 
+#include <vector>
 #include <io/hdf_dataspace.h>
 
 namespace qmcplusplus
