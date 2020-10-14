@@ -27,7 +27,7 @@
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
-#include "QMCFactory/OneDimGridFactory.h"
+#include "Numerics/OneDimGridFactory.h"
 #include "Message/MPIObjectBase.h"
 
 

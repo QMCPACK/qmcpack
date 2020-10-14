@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCFactory/OneDimGridFactory.h"
+#include "OneDimGridFactory.h"
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus
 {

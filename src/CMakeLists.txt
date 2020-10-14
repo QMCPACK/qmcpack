@@ -140,7 +140,7 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OptimizableFunctorBase.cpp
     Numerics/SmoothFunctions.cpp
-    QMCFactory/OneDimGridFactory.cpp
+    Numerics/OneDimGridFactory.cpp
     Optimize/VariableSet.cpp
     )
 IF (IS_GIT_PROJECT)
