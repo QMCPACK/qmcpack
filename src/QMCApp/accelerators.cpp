@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Platforms/accelerators.hpp"
 #include "config.h"
 #ifdef ENABLE_CUDA
 #include <cuda_runtime_api.h>
@@ -18,6 +17,7 @@
 #endif
 #include <omp.h>
 #include "qmc_common.h"
+#include "accelerators.hpp"
 #include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus

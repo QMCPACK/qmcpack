@@ -15,8 +15,8 @@
 #include <memory>
 #include <vector>
 #include <iostream>
-#include "omp.h"
-#include "OMPallocator.hpp"
+#include <omp.h>
+#include <OpenMP/OMPallocator.hpp>
 
 namespace qmcplusplus
 {

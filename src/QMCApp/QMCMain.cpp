@@ -21,7 +21,7 @@
  * @brief Implments QMCMain operators.
  */
 #include "QMCApp/QMCMain.h"
-#include "Platforms/accelerators.hpp"
+#include "accelerators.hpp"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"

@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #include <string>
-#include "e2iphi.h"
+#include <CPU/e2iphi.h>
 
 using std::string;
 

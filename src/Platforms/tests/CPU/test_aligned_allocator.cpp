@@ -14,7 +14,7 @@
 
 #include <iostream>
 #include "config.h"
-#include "SIMD/aligned_allocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 
 namespace qmcplusplus
 {

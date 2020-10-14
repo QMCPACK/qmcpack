@@ -14,8 +14,8 @@
 
 #include <memory>
 #include <iostream>
-#include "cudaError.h"
-#include "CUDAallocator.hpp"
+#include "CUDA/cudaError.h"
+#include "CUDA/CUDAallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus
