@@ -20,11 +20,13 @@
 
 namespace qmcplusplus
 {
-SlaterDet::SlaterDet(ParticleSet& targetPtcl)
+// for return types
+using PsiValueType = WaveFunctionComponent::PsiValueType;
+
+SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) : WaveFunctionComponent(class_name)
 {
   Optimizable  = false;
   is_fermionic = true;
-  ClassName    = "SlaterDet";
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
@@ -83,6 +85,40 @@ void SlaterDet::resetParameters(const opt_variables_type& active)
 }
 
 void SlaterDet::reportStatus(std::ostream& os) {}
+
+PsiValueType SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+{
+  return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
+}
+void SlaterDet::ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat)
+{
+  Dets[getDetID(iat)]->ratioGradAsync(P, iat, ratio, grad_iat);
+}
+
+PsiValueType SlaterDet::ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat)
+{
+  return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
+}
+
+void SlaterDet::mw_ratioGrad(const RefVector<WaveFunctionComponent>& wfc_list,
+                             const RefVector<ParticleSet>& P_list,
+                             int iat,
+                             std::vector<PsiValueType>& ratios,
+                             std::vector<GradType>& grad_now)
+{
+  const int det_id = getDetID(iat);
+  Dets[det_id]->mw_ratioGrad(extract_DetRef_list(wfc_list, det_id), P_list, iat, ratios, grad_now);
+}
+
+void SlaterDet::mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& wfc_list,
+                                  const RefVector<ParticleSet>& P_list,
+                                  int iat,
+                                  std::vector<PsiValueType>& ratios,
+                                  std::vector<GradType>& grad_now)
+{
+  const int det_id = getDetID(iat);
+  Dets[det_id]->mw_ratioGradAsync(extract_DetRef_list(wfc_list, det_id), P_list, iat, ratios, grad_now);
+}
 
 void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {

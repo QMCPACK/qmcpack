@@ -26,7 +26,7 @@
 #include <AFQMC/Wavefunctions/WavefunctionFactory.h>
 #include <AFQMC/Propagators/PropagatorFactory.h>
 #include <AFQMC/Drivers/DriverFactory.h>
-#include <AFQMC/Memory/buffer_allocators.h>
+#include <AFQMC/Memory/buffer_managers.h>
 
 #include "OhmmsData/libxmldefs.h"
 
@@ -63,12 +63,15 @@ public:
     RandomNumberControl::PrimeNumbers.get(baseoffset, nprocs, myprimes);
     arch::INIT(gTG.Node(), (unsigned long long int)(myprimes[rank]));
 #endif
+    // Global host buffers manager 
+    HostBufferManager host_buffer(10uL * 1024uL * 1024uL); // setup monostate
+    DeviceBufferManager dev_buffer(10uL * 1024uL * 1024uL); // setup monostate
     timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
   }
 
   ///destructor
-  ~AFQMCFactory() { destroy_shm_buffer_generators(); }
+  ~AFQMCFactory() { release_memory_managers(); }
 
   /*
      *  Parses xml input and creates all non-executable objects.

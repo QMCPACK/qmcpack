@@ -120,8 +120,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   slater_det->add(det_up, 0);
   slater_det->add(det_dn, 1);
 
-  TrialWaveFunction psi{c};
-  psi.addComponent(slater_det, "SingleDet");
+  TrialWaveFunction psi;
+  psi.addComponent(slater_det);
 
   const char* jas_input = "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
@@ -139,7 +139,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   xmlNodePtr jas1     = xmlFirstElementChild(jas_root);
 
   RadialJastrowBuilder jb(c, elec_);
-  psi.addComponent(jb.buildComponent(jas1), "RadialJastrow");
+  psi.addComponent(jb.buildComponent(jas1));
 
 #if !defined(QMC_CUDA)
   // initialize distance tables.

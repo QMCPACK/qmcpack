@@ -52,8 +52,6 @@ public:
   QMCLinearOptimize(MCWalkerConfiguration& w,
                     TrialWaveFunction& psi,
                     QMCHamiltonian& h,
-                    HamiltonianPool& hpool,
-                    WaveFunctionPool& ppool,
                     Communicate* comm,
                     const std::string& QMC_driver_type = "QMCLinearOptimize");
 
@@ -77,8 +75,6 @@ public:
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
-  ///need to know HamiltonianPool to use OMP
-  HamiltonianPool& hamPool;
   ///target cost function to optimize
   std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///Dimension of matrix and number of parameters

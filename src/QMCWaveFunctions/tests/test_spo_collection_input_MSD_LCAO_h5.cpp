@@ -70,8 +70,8 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string)
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory(&elec_, ptcl.getPool(), c);
-  wf_factory.build(ein_xml);
+  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
+  wf_factory.put(ein_xml);
 
   SPOSetBuilderFactory::clear();
 }

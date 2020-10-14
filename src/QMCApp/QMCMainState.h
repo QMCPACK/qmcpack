@@ -56,15 +56,15 @@ struct QMCMainState : public MPIObjectBase
 
   /** ParticleSet Pool
    */
-  ParticleSetPool* ptclPool;
+  std::unique_ptr<ParticleSetPool> ptclPool;
 
   /** TrialWaveFunction Pool
    */
-  WaveFunctionPool* psiPool;
+  std::unique_ptr<WaveFunctionPool> psiPool;
 
   /** QMCHamiltonian Pool
    */
-  HamiltonianPool* hamPool;
+  std::unique_ptr<HamiltonianPool> hamPool;
 
   UPtr<MCPopulation> population_;
 

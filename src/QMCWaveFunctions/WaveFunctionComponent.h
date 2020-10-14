@@ -126,15 +126,19 @@ struct WaveFunctionComponent : public QMCTraits
   ValueVectorType d2LogPsi;
   /** Name of the class derived from WaveFunctionComponent
    */
-  std::string ClassName;
+  const std::string ClassName;
+  /** Name of the object
+   * It is required to be different for objects of the same derived type like multiple J1.
+   * It can be left empty for object which is unique per many-body WF.
+   */
+  const std::string myName;
   ///list of variables this WaveFunctionComponent handles
   opt_variables_type myVars;
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
   /// default constructor
-  WaveFunctionComponent();
-  //WaveFunctionComponent(const WaveFunctionComponent& old);
+  WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
 
   ///default destructor
   virtual ~WaveFunctionComponent() {}
@@ -285,11 +289,9 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat the index of a particle
    * @param grad_iat Gradient for the active particle
    */
-  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
-    return ValueType();
-  }
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+
+  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat);
 
   /** evaluate the ratio of the new to old WaveFunctionComponent value and the new spin gradient
    * Default implementation assumes that WaveFunctionComponent does not explicitly depend on Spin.
@@ -314,12 +316,13 @@ struct WaveFunctionComponent : public QMCTraits
                             const RefVector<ParticleSet>& P_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
-                            std::vector<GradType>& grad_new)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      ratios[iw] = WFC_list[iw].get().ratioGrad(P_list[iw], iat, grad_new[iw]);
-  }
+                            std::vector<GradType>& grad_new);
+
+  virtual void mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& WFC_list,
+                                 const RefVector<ParticleSet>& P_list,
+                                 int iat,
+                                 std::vector<PsiValueType>& ratios,
+                                 std::vector<GradType>& grad_new);
 
   /** a move for iat-th particle is accepted. Update the current content.
    * @param P target ParticleSet

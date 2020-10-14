@@ -24,13 +24,11 @@ namespace qmcplusplus
  */
 template<typename DET_ENGINE_TYPE>
 DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase(spos, first),
+    : DiracDeterminantBase("DiracDeterminantBatched", spos, first),
       ndelay(1),
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
       H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
-{
-  ClassName = "DiracDeterminantBatched";
-}
+{}
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle

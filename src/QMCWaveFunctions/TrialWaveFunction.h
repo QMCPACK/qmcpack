@@ -59,7 +59,7 @@ namespace qmcplusplus
  * based on the number of objects WFC in the input. This accomidates openmp's implicit detection
  * of nested parallelism.
  */
-class TrialWaveFunction : public MPIObjectBase
+class TrialWaveFunction
 {
 public:
   // derived types from WaveFunctionComponent
@@ -97,7 +97,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian_t L;
 
-  TrialWaveFunction(Communicate* c);
+  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -122,7 +122,7 @@ public:
    * @param aterm a WaveFunctionComponent pointer
    * @param aname a name to the added WaveFunctionComponent object for printing
    */
-  void addComponent(WaveFunctionComponent* aterm, std::string aname);
+  void addComponent(WaveFunctionComponent* aterm);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -447,10 +447,15 @@ public:
    */
   void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
-  std::vector<NewTimer*>& get_timers() { return myTimers; }
+  const std::string& getName() const { return myName; }
+
+  bool use_tasking() const { return use_tasking_; }
 
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
+
+  ///getName is in the way
+  const std::string myName;
 
   ///starting index of the buffer
   size_t BufferCursor;
@@ -470,10 +475,16 @@ private:
   ///One over mass of target particleset, needed for Local Energy Derivatives
   RealType OneOverM;
 
+  /// if true, using internal tasking implementation
+  const bool use_tasking_;
+
   ///a list of WaveFunctionComponents constituting many-body wave functions
   std::vector<WaveFunctionComponent*> Z;
 
-  std::vector<NewTimer*> myTimers;
+  /// timers at TrialWaveFunction function call level
+  std::vector<NewTimer*> TWF_timers_;
+  /// timers at WaveFunctionComponent function call level
+  std::vector<NewTimer*> WFC_timers_;
   std::vector<RealType> myTwist;
 
   /** @{

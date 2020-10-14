@@ -35,12 +35,6 @@ namespace afqmc
 template<class WlkSet>
 void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt)
 {
-  if (buffer_allocator == nullptr)
-  {
-    app_error() << " Error: localTG_buffer_generator == nullptr. \n" << std::endl;
-    APP_ABORT("");
-  }
-
   AFQMCTimers[setup_timer]->start();
   auto walker_type = wset.getWalkerType();
   int npol = (walker_type==NONCOLLINEAR) ? 2 : 1;
@@ -87,11 +81,11 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     generateP1(dt, walker_type);
   AFQMCTimers[setup_timer]->stop();
 
-  StaticMatrix vHS(vhs_ext, buffer_allocator->template get_allocator<ComplexType>());
+  StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
   { // using scope to control lifetime of StaticArrays, avoiding unnecesary buffer space
 
-    StaticSPMatrix G(G_ext, buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix G(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // 1. Calculate Green function for all walkers
     AFQMCTimers[G_for_vbias_timer]->start();
@@ -99,7 +93,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     {
       int Gak0, GakN;
       std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(G.num_elements()), TG.getNCoresPerTG());
-      StaticMatrix Gc(G_ext, buffer_allocator->template get_allocator<ComplexType>());
+      StaticMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
       wfn.MixedDensityMatrix_for_vbias(wset, Gc);
       copy_n_cast(make_device_ptr(Gc.origin()) + Gak0, GakN - Gak0, make_device_ptr(G.origin()) + Gak0);
     }
@@ -110,7 +104,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     AFQMCTimers[G_for_vbias_timer]->stop();
     //std::cout<<" G: " <<ma::dot(G(G.extension(0),0),G(G.extension(0),0)) <<std::endl;
 
-    StaticSPMatrix vbias({long(localnCV), long(nwalk)}, buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(localnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
     // 2. Calculate vbias for initial configuration
     AFQMCTimers[vbias_timer]->start();
     if (free_projection)
@@ -124,7 +118,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     AFQMCTimers[vbias_timer]->stop();
     //std::cout<<" vbias: " <<ma::sum(vbias) <<std::endl;
 
-    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)}, buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
     // 3. Assemble X(nCV,nsteps,nwalk)
     AFQMCTimers[assemble_X_timer]->start();
     assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor, hybrid_weight);
@@ -278,8 +272,8 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
     vhs3d_ext = iextensions<3u>{nwalk, NMO, NMO};
   }
 
-  StaticMatrix vHS(vhs_ext, buffer_allocator->template get_allocator<ComplexType>());
-  StaticSPMatrix X({long(globalnCV), long(nwalk)}, buffer_allocator->template get_allocator<SPComplexType>());
+  StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+  StaticSPMatrix X({long(globalnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
   C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()), vhs3d_ext);
 
   auto&& Fields(*wset.getFields());

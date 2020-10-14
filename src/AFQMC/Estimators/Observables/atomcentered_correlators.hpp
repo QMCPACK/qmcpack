@@ -30,14 +30,12 @@
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
-
 /* 
  * Observable class that calculates the walker averaged on-top pair density 
  * Alloc defines the allocator type used to store the orbital and temporary tensors.
@@ -73,9 +71,9 @@ class atomcentered_correlators : public AFQMCInfo
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
-  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
-  using StaticMatrix          = boost::multi::static_array<ComplexType, 2, shm_buffer_alloc_type>;
-  using Static3Tensor         = boost::multi::static_array<ComplexType, 3, shm_buffer_alloc_type>;
+  using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
+  using StaticMatrix          = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
+  using Static3Tensor         = boost::multi::static_array<ComplexType, 3, shm_stack_alloc_type>;
 
   // MAM: Note -
   // This class uses lots of memory, but can be safely moved to single precision.
@@ -309,14 +307,19 @@ public:
     Barray.reserve(nwbatch * nsites * nsites);
     std::vector<decltype(ma::pointer_dispatch(S.origin()))> Carray;
     Carray.reserve(nwbatch * nsites * nsites);
+    LocalTGBufferManager buffer_manager;
     while (iw0 < nw)
     {
       int nwlk = std::min(nwbatch, nw - iw0);
 
-      Static3Tensor QwI({nwlk, NAO, NMO}, localTG_buffer_generator->template get_allocator<ComplexType>());
-      Static3Tensor MwIJ({nwlk, NAO, NAO}, localTG_buffer_generator->template get_allocator<ComplexType>());
-      Static3Tensor devNwIJ({nwlk, nsites, nsites}, localTG_buffer_generator->template get_allocator<ComplexType>());
-      StaticMatrix devNwI({nwlk, nsites}, localTG_buffer_generator->template get_allocator<ComplexType>());
+      Static3Tensor QwI({nwlk, NAO, NMO}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Static3Tensor MwIJ({nwlk, NAO, NAO}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Static3Tensor devNwIJ({nwlk, nsites, nsites}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
+      StaticMatrix devNwI({nwlk, nsites}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
 
       for (int is = 0; is < nsp; ++is)
       {
