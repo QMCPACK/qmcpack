@@ -10,15 +10,12 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SET(IO_HDF5_SRC hdf_archive.cpp)
+SET(IO_XML_SRC Libxml2Doc.cpp)
 
-ADD_LIBRARY(qmcio_hdf ${IO_HDF5_SRC})
+ADD_LIBRARY(qmcio_xml ${IO_XML_SRC})
 
-#TARGET_INCLUDE_DIRECTORIES(qmcio_hdf PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(qmcio_hdf PUBLIC containers IO::HDF5 message)
-
-ADD_LIBRARY(qmcio INTERFACE)
-TARGET_LINK_LIBRARIES(qmcio INTERFACE qmcio_hdf qmcio_xml)
+#TARGET_INCLUDE_DIRECTORIES(qmcio_xml PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_LINK_LIBRARIES(qmcio_xml PUBLIC containers LibXml2::LibXml2)
 
 IF(BUILD_UNIT_TESTS)
   SUBDIRS(tests)

@@ -16,7 +16,6 @@
 
 
 #include "OhmmsData/Libxml2Doc.h"
-#include "Message/Communicate.h"
 #include "Utilities/Timer.h"
 #include <fstream>
 #include <iostream>

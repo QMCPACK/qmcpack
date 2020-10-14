@@ -136,7 +136,6 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
     Utilities/unit_conversion.cpp
-    OhmmsData/Libxml2Doc.cpp
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OptimizableFunctorBase.cpp
@@ -169,6 +168,7 @@ ENDIF(USE_OBJECT_TARGET)
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
   SUBDIRS(io)
+  SUBDIRS(OhmmsData)
   SUBDIRS(einspline)
   SUBDIRS(Containers)
   SUBDIRS(Message)
@@ -213,7 +213,6 @@ else() #{{{
     SUBDIRS(einspline/tests)
     SUBDIRS(spline2/tests)
     SUBDIRS(Concurrency/tests)
-    SUBDIRS(OhmmsData/tests)
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)

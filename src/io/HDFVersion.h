@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_HDFWALKERVERSION_H
 #define QMCPLUSPLUS_HDFWALKERVERSION_H
 
-#include <Configuration.h>
+#include <config.h>
 #include <io/hdf_dataproxy.h>
 #include <io/hdf_pete.h>
 #include <io/hdf_stl.h>
