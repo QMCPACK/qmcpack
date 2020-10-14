@@ -21,7 +21,7 @@
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include "Utilities/IteratorUtility.h"
-#include <qmc_common.h>
+#include <Utilities/qmc_common.h>
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else

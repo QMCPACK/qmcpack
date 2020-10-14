@@ -20,7 +20,7 @@
 #include <OhmmsApp/RandomNumberControl.h>
 #include <Utilities/RandomGeneratorIO.h>
 #include <Utilities/Timer.h>
-#include <HDFVersion.h>
+#include <io/HDFVersion.h>
 #include <io/hdf_archive.h>
 #include <mpi/collectives.h>
 #if defined(HAVE_LIBBOOST)

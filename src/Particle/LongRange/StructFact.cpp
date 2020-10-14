@@ -18,7 +18,7 @@
 #include <CPU/e2iphi.h>
 #include <CPU/SIMD/vmath.hpp>
 #include <CPU/BLAS.hpp>
-#include <qmc_common.h>
+#include <Utilities/qmc_common.h>
 
 namespace qmcplusplus
 {

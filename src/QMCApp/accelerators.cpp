@@ -16,7 +16,7 @@
 #include <CUDA/cudaError.h>
 #endif
 #include <omp.h>
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 #include "accelerators.hpp"
 #include "Platforms/Host/OutputManager.h"
 

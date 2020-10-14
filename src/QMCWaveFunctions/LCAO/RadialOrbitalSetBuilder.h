@@ -18,7 +18,7 @@
 
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include <HDFVersion.h>
+#include <io/HDFVersion.h>
 #include "OhmmsData/HDFStringAttrib.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/HDFNumericAttrib.h"

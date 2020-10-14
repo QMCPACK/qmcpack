@@ -125,7 +125,7 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
   # create libqmcutil
   ####################################
   SET(UTILITIES
-    qmc_common.cpp
+    Utilities/qmc_common.cpp
     Utilities/RandomGenerator.cpp
     Utilities/OhmmsObject.cpp
     Utilities/SpeciesSet.cpp

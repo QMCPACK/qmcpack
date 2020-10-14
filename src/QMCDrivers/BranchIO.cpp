@@ -14,7 +14,7 @@
 
 
 #include "QMCDrivers/BranchIO.h"
-#include "HDFVersion.h"
+#include "io/HDFVersion.h"
 #include "Message/CommOperators.h"
 #include "io/hdf_archive.h"
 #if defined(HAVE_LIBBOOST)

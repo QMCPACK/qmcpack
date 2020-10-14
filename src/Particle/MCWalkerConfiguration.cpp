@@ -27,7 +27,7 @@
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/MCSample.h"
 #include <io/hdf_hyperslab.h>
-#include "HDFVersion.h"
+#include "io/HDFVersion.h"
 #include <map>
 
 #ifdef QMC_CUDA

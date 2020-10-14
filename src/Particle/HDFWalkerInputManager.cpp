@@ -21,7 +21,7 @@
 #include "Particle/HDFWalkerInput_0_4.h"
 #endif
 #include "Message/Communicate.h"
-#include "HDFVersion.h"
+#include "io/HDFVersion.h"
 
 namespace qmcplusplus
 {

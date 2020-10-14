@@ -16,7 +16,7 @@
 #include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
-#include <qmc_common.h>
+#include <Utilities/qmc_common.h>
 
 namespace qmcplusplus
 {

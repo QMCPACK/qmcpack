@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 #include "config.h"
 #include "qmcpack_version.h"
 #include "Message/Communicate.h"

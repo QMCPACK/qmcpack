@@ -33,7 +33,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#include "HDFVersion.h"
+#include "io/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
 //leave it for serialization debug

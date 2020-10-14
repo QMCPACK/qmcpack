@@ -37,9 +37,9 @@
 #include "Message/OpenMP.h"
 #include <queue>
 #include <cstring>
-#include "HDFVersion.h"
+#include "io/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif

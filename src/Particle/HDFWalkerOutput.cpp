@@ -20,7 +20,7 @@
 #include "Particle/HDFWalkerOutput.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/FileUtility.h"
-#include "HDFVersion.h"
+#include "io/HDFVersion.h"
 #include <numeric>
 #include <iostream>
 #include <sstream>
