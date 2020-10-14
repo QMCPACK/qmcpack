@@ -56,7 +56,7 @@ It is a small C++ executable that is built alongside the QMCPACK
 executable and can be found in ``build/bin``.
 
 To date, ``convert4qmc`` supports the following codes:
-GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018` and QP2 :cite:`QP2` natively, and NWCHEM :cite:`NWCHEM`, TURBOMOLE :cite:`TURBOMOLE`, PSI4 :cite:`PSI4`, CFOUR 2.0beta :cite:`CFOUR`, ORCA 3.X - 4.X :cite:`ORCA`, DALTON2016 :cite:`DALTON2016`, MOLPRO :cite:`MOLPRO` and QCHEM 4.X:cite:`QCHEM` through the molde2qmc converter (see :ref:`molden2qmc`).
+GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018` and QP2 :cite:`QP2` natively, and NWCHEM :cite:`NWCHEM`, TURBOMOLE :cite:`TURBOMOLE`, PSI4 :cite:`PSI4`, CFOUR 2.0beta :cite:`CFOUR`, ORCA 3.X - 4.X :cite:`ORCA`, DALTON2016 :cite:`DALTON2016`, MOLPRO :cite:`MOLPRO` and QCHEM 4.X :cite:`QCHEM` through the molden2qmc converter (see :ref:`molden2qmc`).
 
 
 
