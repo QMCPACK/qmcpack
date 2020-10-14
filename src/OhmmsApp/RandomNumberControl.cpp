@@ -20,8 +20,8 @@
 #include <OhmmsApp/RandomNumberControl.h>
 #include <Utilities/RandomGeneratorIO.h>
 #include <Utilities/Timer.h>
-#include <io/HDFVersion.h>
-#include <io/hdf_archive.h>
+#include <hdf/HDFVersion.h>
+#include <hdf/hdf_archive.h>
 #include <mpi/collectives.h>
 #if defined(HAVE_LIBBOOST)
 #include <boost/property_tree/ptree.hpp>

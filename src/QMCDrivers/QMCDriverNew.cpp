@@ -26,7 +26,7 @@
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Estimators/EstimatorManagerNew.h"
-#include "io/HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "Utilities/qmc_common.h"
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"

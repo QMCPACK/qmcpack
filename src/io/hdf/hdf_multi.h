@@ -14,8 +14,8 @@
 
 #include <multi/array.hpp>
 #include <multi/array_ref.hpp>
-#include "io/hdf_dataproxy.h"
-#include "io/hdf_hyperslab.h"
+#include "hdf_dataproxy.h"
+#include "hdf_hyperslab.h"
 
 #ifdef BUILD_AFQMC
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)

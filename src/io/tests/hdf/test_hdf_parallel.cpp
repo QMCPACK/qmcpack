@@ -14,7 +14,7 @@
 #include "catch.hpp"
 
 #include <vector>
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include <Message/Communicate.h>
 
 using namespace qmcplusplus;

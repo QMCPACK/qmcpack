@@ -7,7 +7,7 @@
 #include <map>
 #include <fstream>
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"

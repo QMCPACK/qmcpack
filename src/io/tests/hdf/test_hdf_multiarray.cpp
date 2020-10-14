@@ -16,8 +16,8 @@
 #include "boost/version.hpp"
 #include <vector>
 #include "multi/array.hpp"
-#include "io/hdf_archive.h"
-#include "io/hdf_multi.h"
+#include "hdf/hdf_archive.h"
+#include "hdf/hdf_multi.h"
 
 
 using std::vector;

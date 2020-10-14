@@ -15,7 +15,7 @@
 #endif
 
 #include "Configuration.h"
-#include "io/hdf_multi.h"
+#include "hdf/hdf_multi.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"

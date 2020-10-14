@@ -28,8 +28,8 @@
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsApp/ProjectData.h"
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 
 #include <stdio.h>
 #include <string>

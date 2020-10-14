@@ -22,7 +22,8 @@
  */
 
 #include <vector>
-#include <io/hdf_dataspace.h>
+#include "hdf_datatype.h"
+#include "hdf_dataspace.h"
 
 namespace qmcplusplus
 {

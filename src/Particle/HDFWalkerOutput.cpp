@@ -20,13 +20,13 @@
 #include "Particle/HDFWalkerOutput.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/FileUtility.h"
-#include "io/HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include <numeric>
 #include <iostream>
 #include <sstream>
 #include <Message/Communicate.h>
 #include <mpi/collectives.h>
-#include <io/hdf_hyperslab.h>
+#include <hdf/hdf_hyperslab.h>
 
 namespace qmcplusplus
 {

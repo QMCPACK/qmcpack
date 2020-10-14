@@ -16,8 +16,8 @@
 #ifndef QMCPLUSPLUS_HDF_H5_DATAPROXY_H
 #define QMCPLUSPLUS_HDF_H5_DATAPROXY_H
 
-#include <io/hdf_wrapper_functions.h>
-#include <io/hdf_dataspace.h>
+#include "hdf_wrapper_functions.h"
+#include "hdf_dataspace.h"
 
 namespace qmcplusplus
 {

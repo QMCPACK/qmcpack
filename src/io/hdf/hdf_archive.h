@@ -15,14 +15,14 @@
 #define QMCPLUSPLUS_HDF5_ARCHIVE_H
 
 #include <config.h>
-#include <io/hdf_datatype.h>
-#include <io/hdf_dataspace.h>
-#include <io/hdf_dataproxy.h>
+#include "hdf_datatype.h"
+#include "hdf_dataspace.h"
+#include "hdf_dataproxy.h"
 #if defined(HAVE_LIBHDF5)
-#include <io/hdf_pete.h>
-#include <io/hdf_stl.h>
-#include <io/hdf_hyperslab.h>
-//#include <io/hdf_double_hyperslab.h>
+#include "hdf_pete.h"
+#include "hdf_stl.h"
+#include "hdf_hyperslab.h"
+//#include "hdf_double_hyperslab.h"
 #endif
 #include <stack>
 #include <bitset>

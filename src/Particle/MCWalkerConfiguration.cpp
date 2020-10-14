@@ -26,8 +26,8 @@
 #include "LongRange/StructFact.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/MCSample.h"
-#include <io/hdf_hyperslab.h>
-#include "io/HDFVersion.h"
+#include <hdf/hdf_hyperslab.h>
+#include "hdf/HDFVersion.h"
 #include <map>
 
 #ifdef QMC_CUDA

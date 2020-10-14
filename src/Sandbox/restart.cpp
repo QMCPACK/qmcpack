@@ -17,7 +17,7 @@
 #include <Message/CommOperators.h>
 #include <Particle/MCWalkerConfiguration.h>
 #include <Particle/HDFWalkerOutput.h>
-#include <io/HDFVersion.h>
+#include <hdf/HDFVersion.h>
 #include <Particle/HDFWalkerInput_0_4.h>
 #include <OhmmsApp/RandomNumberControl.h>
 #include <Sandbox/input.hpp>

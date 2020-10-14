@@ -15,9 +15,9 @@
 
 #include <array>
 #include <type_traits/container_traits.h>
-#include <io/hdf_datatype.h>
-#include <io/hdf_dataspace.h>
-#include <io/hdf_dataproxy.h>
+#include "hdf_datatype.h"
+#include "hdf_dataspace.h"
+#include "hdf_dataproxy.h"
 
 namespace qmcplusplus
 {

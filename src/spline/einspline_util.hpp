@@ -21,7 +21,7 @@
 #include <mpi/mpi_datatype.h>
 #include <Message/CommOperators.h>
 #include <OhmmsData/FileUtility.h>
-#include <io/hdf_archive.h>
+#include <hdf/hdf_archive.h>
 #include <einspline/multi_bspline_copy.h>
 #include <limits>
 

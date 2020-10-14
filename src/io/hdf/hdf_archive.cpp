@@ -12,7 +12,7 @@
 
 
 #include <config.h>
-#include <io/hdf_archive.h>
+#include "hdf_archive.h"
 #include <Message/Communicate.h>
 
 namespace qmcplusplus

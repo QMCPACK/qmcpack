@@ -32,7 +32,7 @@
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
 #include "QMCWaveFunctions/LCAO/CuspCorrectionConstruction.h"
 #endif
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <config/stdlib/math.hpp>

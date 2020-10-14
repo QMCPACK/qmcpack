@@ -15,9 +15,9 @@
 #define QMCPLUSPLUS_HDFWALKERVERSION_H
 
 #include <config.h>
-#include <io/hdf_dataproxy.h>
-#include <io/hdf_pete.h>
-#include <io/hdf_stl.h>
+#include "hdf_dataproxy.h"
+#include "hdf_pete.h"
+#include "hdf_stl.h"
 
 namespace qmcplusplus
 {

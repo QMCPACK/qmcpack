@@ -26,7 +26,7 @@
  * - h5_space_type<Tensor<std::complex<T>,D>,RANK> // removed, picked up by template recursion
  */
 
-#include <io/hdf_datatype.h>
+#include "hdf_datatype.h"
 #include <complex>
 #include <OhmmsPETE/TinyVector.h>
 #include <OhmmsPETE/Tensor.h>

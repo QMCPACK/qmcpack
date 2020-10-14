@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_HDF_PETE_TRAITS_H
 #define QMCPLUSPLUS_HDF_PETE_TRAITS_H
 
-#include <io/hdf_dataproxy.h>
+#include "hdf_dataproxy.h"
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <OhmmsPETE/OhmmsArray.h>

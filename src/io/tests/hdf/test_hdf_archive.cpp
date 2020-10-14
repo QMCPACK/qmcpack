@@ -12,7 +12,7 @@
 
 #include "catch.hpp"
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include <vector>
 #include <string>
 #include <sstream>
