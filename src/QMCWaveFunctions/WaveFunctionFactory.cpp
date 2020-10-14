@@ -44,9 +44,10 @@ namespace qmcplusplus
 WaveFunctionFactory::WaveFunctionFactory(const std::string& psiName,
                                          ParticleSet& qp,
                                          PtclPoolType& pset,
-                                         Communicate* c)
+                                         Communicate* c,
+                                         bool tasking)
     : MPIObjectBase(c),
-      targetPsi(std::make_unique<TrialWaveFunction>(psiName)),
+      targetPsi(std::make_unique<TrialWaveFunction>(psiName, tasking)),
       targetPtcl(qp),
       ptclPool(pset),
       myNode(NULL)
@@ -61,7 +62,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   app_summary() << std::endl;
   app_summary() << " Many-body wavefunction" << std::endl;
   app_summary() << " -------------------" << std::endl;
-  app_summary() << "  Name: " << myName << std::endl;
+  app_summary() << "  Name: " << myName << "   tasking: " << (targetPsi->use_tasking() ? "yes" : "no") << std::endl;
   app_summary() << std::endl;
 
   ReportEngine PRE(ClassName, "build");

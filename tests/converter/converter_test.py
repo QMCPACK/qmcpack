@@ -45,7 +45,7 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
     okay = True
 
     # Example invocation of converter
-    #convert4qmc -nojastrow -prefix gold -gamessAscii be.out
+    #convert4qmc -nojastrow -prefix gold -gamess be.out
 
     cmd = c4q_exe.split()
     if code=='generic':

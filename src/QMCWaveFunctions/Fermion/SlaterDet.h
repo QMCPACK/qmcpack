@@ -98,28 +98,25 @@ public:
     return Dets[det_id]->mw_evaluateRatios(extract_DetRef_list(wfc_list, det_id), vp_list, ratios);
   }
 
-  virtual inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
-  {
-    return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
-  }
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat) override;
 
-  virtual inline PsiValueType ratioGradWithSpin(ParticleSet& P,
-                                                int iat,
-                                                GradType& grad_iat,
-                                                ComplexType& spingrad_iat) override
-  {
-    return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
-  }
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P,
+                                         int iat,
+                                         GradType& grad_iat,
+                                         ComplexType& spingrad_iat) override;
 
   virtual void mw_ratioGrad(const RefVector<WaveFunctionComponent>& wfc_list,
                             const RefVector<ParticleSet>& P_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
-                            std::vector<GradType>& grad_now) override
-  {
-    const int det_id = getDetID(iat);
-    Dets[det_id]->mw_ratioGrad(extract_DetRef_list(wfc_list, det_id), P_list, iat, ratios, grad_now);
-  }
+                            std::vector<GradType>& grad_now) override;
+
+  void mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& wfc_list,
+                         const RefVector<ParticleSet>& P_list,
+                         int iat,
+                         std::vector<PsiValueType>& ratios,
+                         std::vector<GradType>& grad_now) override;
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 

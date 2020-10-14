@@ -20,6 +20,9 @@
 
 namespace qmcplusplus
 {
+// for return types
+using PsiValueType = WaveFunctionComponent::PsiValueType;
+
 WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, const std::string& obj_name)
     : IsOptimizing(false),
       Optimizable(true),
@@ -45,6 +48,40 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
 //   //if(d2LogPsi.size()) dLogPsi.resize(d2LogPsi.size());
 //   //if(dPsi) dPsi=old.dPsi->makeClone();
 // }
+
+
+PsiValueType WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+{
+  APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
+  return ValueType();
+}
+
+void WaveFunctionComponent::ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat)
+{
+#pragma omp task default(none) firstprivate(iat) shared(P, ratio, grad_iat)
+  ratio = ratioGrad(P, iat, grad_iat);
+}
+
+void WaveFunctionComponent::mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                                         const RefVector<ParticleSet>& P_list,
+                                         int iat,
+                                         std::vector<PsiValueType>& ratios,
+                                         std::vector<GradType>& grad_new)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    ratios[iw] = WFC_list[iw].get().ratioGrad(P_list[iw], iat, grad_new[iw]);
+}
+
+void WaveFunctionComponent::mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& WFC_list,
+                                              const RefVector<ParticleSet>& P_list,
+                                              int iat,
+                                              std::vector<PsiValueType>& ratios,
+                                              std::vector<GradType>& grad_new)
+{
+#pragma omp task default(none) firstprivate(WFC_list, P_list, iat) shared(ratios, grad_new)
+  mw_ratioGrad(WFC_list, P_list, iat, ratios, grad_new);
+}
 
 
 void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d) { dPsi = d; }
