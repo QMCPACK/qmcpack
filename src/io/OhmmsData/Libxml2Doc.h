@@ -18,7 +18,7 @@
 
 #include <libxml/xpath.h>
 #include <string>
-#include "OhmmsData/libxmldefs.h"
+#include "libxmldefs.h"
 
 /** class to handle xmlXPathObject
  */

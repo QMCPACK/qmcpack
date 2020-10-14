@@ -12,4 +12,5 @@
 
 IF(BUILD_UNIT_TESTS)
   SUBDIRS(hdf)
+  SUBDIRS(OhmmsData)
 ENDIF()

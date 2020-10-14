@@ -24,7 +24,7 @@
 #include <vector>
 #include <algorithm>
 #include <typeinfo>
-#include "OhmmsData/XMLParsingString.h"
+#include "XMLParsingString.h"
 
 template<typename _CharT>
 inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur)

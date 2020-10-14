@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "OhmmsData/Libxml2Doc.h"
+#include "Libxml2Doc.h"
 #include "Utilities/Timer.h"
 #include <fstream>
 #include <iostream>

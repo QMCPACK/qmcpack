@@ -168,7 +168,6 @@ ENDIF(USE_OBJECT_TARGET)
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
   SUBDIRS(io)
-  SUBDIRS(OhmmsData)
   SUBDIRS(einspline)
   SUBDIRS(Containers)
   SUBDIRS(Message)
