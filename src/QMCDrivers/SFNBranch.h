@@ -446,8 +446,8 @@ private:
                        FullPrecRealType targetSigma,
                        FullPrecRealType maxSigma,
                        int Nelec = 0);
-  /// if true, disable branching for debugging or benchmarking
-  bool debug_disable_branching_;
+  /// if yes, disable branching for debugging or benchmarking
+  std::string debug_disable_branching_;
 };
 
 std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);

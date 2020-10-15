@@ -34,7 +34,7 @@ enum
   DUMMYOPT
 };
 
-SFNBranch::SFNBranch(RealType tau, int nideal) : MyEstimator(nullptr), debug_disable_branching_(false)
+SFNBranch::SFNBranch(RealType tau, int nideal) : MyEstimator(nullptr), debug_disable_branching_("no")
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -217,7 +217,7 @@ void SFNBranch::branch(int iter, MCPopulation& population)
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population.get_walkers()));
 
   FullPrecRealType pop_now;
-  if (!debug_disable_branching_ && (BranchMode[B_DMCSTAGE] || iter))
+  if (debug_disable_branching_ != "yes" && (BranchMode[B_DMCSTAGE] || iter))
     pop_now = WalkerController->branch(iter, population);
   else
     pop_now = WalkerController->doNotBranch(iter, population); //do not branch for the first step of a warmup
