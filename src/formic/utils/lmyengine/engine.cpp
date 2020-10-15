@@ -15,19 +15,19 @@
 
 #include<boost/shared_ptr.hpp>
 
-#include<formic/utils/openmp.h>
+#include"formic/utils/openmp.h"
 
-#include <formic/utils/zero_one.h>
-#include <formic/utils/lmyengine/engine.h>
-#include <formic/utils/lmyengine/updater.h>
-#include <formic/utils/lmyengine/energy_target.h>
-#include <formic/utils/lmyengine/matrix_builder.h>
-#include <formic/utils/lmyengine/eom.h>
-#include <formic/utils/lmyengine/var_dependencies.h>
-#include <formic/utils/lmyengine/engine_timing.h>
-#include <formic/utils/exception.h>
-#include <formic/utils/lapack_interface.h>
-#include <formic/utils/mpi_interface.h>
+#include "formic/utils/zero_one.h"
+#include "formic/utils/lmyengine/engine.h"
+#include "formic/utils/lmyengine/updater.h"
+#include "formic/utils/lmyengine/energy_target.h"
+#include "formic/utils/lmyengine/matrix_builder.h"
+#include "formic/utils/lmyengine/eom.h"
+#include "formic/utils/lmyengine/var_dependencies.h"
+#include "formic/utils/lmyengine/engine_timing.h"
+#include "formic/utils/exception.h"
+#include "formic/utils/lapack_interface.h"
+#include "formic/utils/mpi_interface.h"
 
 /////////////////////////////////////////////////////////////////////////////////
 /// \brief constructor with given parameters

@@ -12,7 +12,7 @@
 
 #ifndef QMCPLUSPLUS_HDF_DOUBLE_HYPERSLAB_IO_H
 #define QMCPLUSPLUS_HDF_DOUBLE_HYPERSLAB_IO_H
-#include <type_traits/container_proxy.h>
+#include "type_traits/container_proxy.h"
 #include "hdf_datatype.h"
 #include "hdf_dataspace.h"
 #include "hdf_dataproxy.h"

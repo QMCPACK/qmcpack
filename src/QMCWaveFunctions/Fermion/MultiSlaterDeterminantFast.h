@@ -16,10 +16,10 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/WaveFunctionComponent.h>
-#include <QMCWaveFunctions/Fermion/MultiDiracDeterminant.h>
-#include <QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h>
-#include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
+#include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 

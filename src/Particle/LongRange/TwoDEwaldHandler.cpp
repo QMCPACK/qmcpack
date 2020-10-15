@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <LongRange/TwoDEwaldHandler.h>
+#include "LongRange/TwoDEwaldHandler.h"
 
 namespace qmcplusplus
 {

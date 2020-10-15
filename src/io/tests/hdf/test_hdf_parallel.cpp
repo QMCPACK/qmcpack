@@ -15,7 +15,7 @@
 
 #include <vector>
 #include "hdf/hdf_archive.h"
-#include <Message/Communicate.h>
+#include "Message/Communicate.h"
 
 using namespace qmcplusplus;
 

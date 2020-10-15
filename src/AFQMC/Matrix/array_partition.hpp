@@ -29,7 +29,7 @@
 #include "Message/CommOperators.h"
 
 #include "AFQMC/Utilities/Utils.hpp"
-#include <AFQMC/config.0.h>
+#include "AFQMC/config.0.h"
 
 namespace qmcplusplus
 {

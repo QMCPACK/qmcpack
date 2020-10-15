@@ -13,7 +13,7 @@
 
 
 #include "Estimators/LocalEnergyEstimator.h"
-#include <Utilities/IteratorUtility.h>
+#include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus
 {

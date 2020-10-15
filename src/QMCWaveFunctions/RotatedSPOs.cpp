@@ -11,7 +11,7 @@
 //// File created by: Sergio D. Pineda Flores, sergio_pinedaflores@berkeley.edu, University of California, Berkeley
 ////////////////////////////////////////////////////////////////////////////////////////
 #include "QMCWaveFunctions/RotatedSPOs.h"
-#include <Numerics/MatrixOperators.h>
+#include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 

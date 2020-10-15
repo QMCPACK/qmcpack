@@ -5,8 +5,8 @@
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<formic/utils/numeric.h>
-#include<formic/utils/mpi_interface.h>
+#include"formic/utils/numeric.h"
+#include"formic/utils/mpi_interface.h"
 
 #include<boost/scoped_array.hpp>
 #include<boost/format.hpp>

@@ -14,8 +14,8 @@
 #ifndef QMCPLUSPLUS_ORBITAL_IMAGES_H
 #define QMCPLUSPLUS_ORBITAL_IMAGES_H
 
-#include <QMCHamiltonians/OperatorBase.h>
-#include <QMCWaveFunctions/SPOSet.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {

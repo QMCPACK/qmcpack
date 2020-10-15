@@ -24,9 +24,9 @@
 #include <numeric>
 #include <iostream>
 #include <sstream>
-#include <Message/Communicate.h>
-#include <mpi/collectives.h>
-#include <hdf/hdf_hyperslab.h>
+#include "Message/Communicate.h"
+#include "mpi/collectives.h"
+#include "hdf/hdf_hyperslab.h"
 
 namespace qmcplusplus
 {

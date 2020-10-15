@@ -17,7 +17,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
-#include <Numerics/MatrixOperators.h>
+#include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
 
 namespace qmcplusplus

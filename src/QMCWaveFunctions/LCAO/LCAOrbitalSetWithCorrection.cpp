@@ -11,7 +11,7 @@
 
 
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
-#include <Numerics/MatrixOperators.h>
+#include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
 {

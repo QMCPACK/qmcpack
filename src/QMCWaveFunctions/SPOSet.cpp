@@ -19,9 +19,9 @@
 #include "Message/Communicate.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/SIMD/simd.hpp"
 #include "Utilities/ProgressReportEngine.h"
-#include <hdf/hdf_archive.h>
+#include "hdf/hdf_archive.h"
 #include <limits>
 
 namespace qmcplusplus

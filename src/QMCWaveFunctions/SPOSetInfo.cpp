@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/SPOSetInfo.h>
+#include "QMCWaveFunctions/SPOSetInfo.h"
 #include <limits>
 
 

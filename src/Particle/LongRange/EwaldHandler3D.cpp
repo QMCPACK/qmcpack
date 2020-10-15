@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <LongRange/EwaldHandler3D.h>
+#include "LongRange/EwaldHandler3D.h"
 
 namespace qmcplusplus
 {

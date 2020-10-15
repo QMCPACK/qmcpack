@@ -11,7 +11,7 @@
 
 
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
-#include <Numerics/MatrixOperators.h>
+#include "Numerics/MatrixOperators.h"
 #include "CPU/BLAS.hpp"
 
 namespace qmcplusplus

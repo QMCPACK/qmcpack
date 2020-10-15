@@ -23,7 +23,7 @@
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/FairDivide.h"
-#include <Utilities/qmc_common.h>
+#include "Utilities/qmc_common.h"
 //#define ENABLE_VMC_OMP_MASTER
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"

@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCHamiltonians/LatticeDeviationEstimator.h"
-#include <OhmmsData/AttributeSet.h>
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {

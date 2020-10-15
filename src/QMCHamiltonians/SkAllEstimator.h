@@ -18,7 +18,7 @@
  */
 #ifndef QMCPLUSPLUS_SK_ALL_ESTIMATOR_H
 #define QMCPLUSPLUS_SK_ALL_ESTIMATOR_H
-#include <QMCHamiltonians/OperatorBase.h>
+#include "QMCHamiltonians/OperatorBase.h"
 #include <vector>
 namespace qmcplusplus
 {

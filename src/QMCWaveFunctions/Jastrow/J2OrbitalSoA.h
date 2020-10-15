@@ -23,8 +23,8 @@
 #endif
 #include "Particle/DistanceTableData.h"
 #include "LongRange/StructFact.h"
-#include <CPU/SIMD/aligned_allocator.hpp>
-#include <CPU/SIMD/algorithm.hpp>
+#include "CPU/SIMD/aligned_allocator.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus
 {

@@ -11,7 +11,7 @@
 
 #include "QMCHamiltonians/SpeciesKineticEnergy.h"
 #include "QMCHamiltonians/BareKineticEnergy.h" // laplaician() defined here
-#include <OhmmsData/AttributeSet.h>
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {

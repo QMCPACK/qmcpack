@@ -17,7 +17,7 @@
 
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 #include "LongRange/StructFact.h"
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 #include "CPU/e2iphi.h"
 #include <sstream>
 #include <algorithm>

@@ -26,7 +26,7 @@
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "hdf/HDFVersion.h"
-#include <Utilities/qmc_common.h>
+#include "Utilities/qmc_common.h"
 #include <limits>
 #include <typeinfo>
 

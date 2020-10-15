@@ -12,9 +12,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/SkPot.h>
-#include <Utilities/IteratorUtility.h>
-#include <OhmmsData/AttributeSet.h>
+#include "QMCHamiltonians/SkPot.h"
+#include "Utilities/IteratorUtility.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {

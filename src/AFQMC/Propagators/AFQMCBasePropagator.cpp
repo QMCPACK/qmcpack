@@ -1,6 +1,6 @@
 
 #include "Configuration.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Memory/utilities.hpp"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/config.h"

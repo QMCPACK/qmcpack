@@ -11,8 +11,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/HarmonicOscillator/SHOSet.h>
-#include <Utilities/string_utils.h>
+#include "QMCWaveFunctions/HarmonicOscillator/SHOSet.h"
+#include "Utilities/string_utils.h"
 
 
 namespace qmcplusplus

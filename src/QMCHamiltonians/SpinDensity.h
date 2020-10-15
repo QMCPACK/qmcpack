@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_SPIN_DENSITY_H
 #define QMCPLUSPLUS_SPIN_DENSITY_H
 
-#include <QMCHamiltonians/OperatorBase.h>
+#include "QMCHamiltonians/OperatorBase.h"
 
 namespace qmcplusplus
 {

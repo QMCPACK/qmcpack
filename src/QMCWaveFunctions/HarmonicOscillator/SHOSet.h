@@ -14,8 +14,8 @@
 #ifndef QMCPLUSPLUS_SHOSET_H
 #define QMCPLUSPLUS_SHOSET_H
 
-#include <QMCWaveFunctions/SPOSet.h>
-#include <QMCWaveFunctions/SPOInfo.h>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOInfo.h"
 
 
 namespace qmcplusplus

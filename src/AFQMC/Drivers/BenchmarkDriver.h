@@ -1,7 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_BENCHMARKDRIVER_H
 #define QMCPLUSPLUS_AFQMC_BENCHMARKDRIVER_H
 
-#include <Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"
 

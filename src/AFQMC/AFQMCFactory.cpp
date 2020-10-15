@@ -18,7 +18,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Configuration.h"
 #include "OhmmsApp/RandomNumberControl.h"
-#include <Utilities/qmc_common.h>
+#include "Utilities/qmc_common.h"
 
 #include "config.h"
 #include "AFQMC/Utilities/taskgroup.h"

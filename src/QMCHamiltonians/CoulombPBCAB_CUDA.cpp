@@ -18,7 +18,7 @@
 #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {

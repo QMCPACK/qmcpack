@@ -14,7 +14,7 @@
 #if !defined(DISABLE_TRACEMANAGER)
 
 
-#include <Estimators/TraceManager.h>
+#include "Estimators/TraceManager.h"
 
 
 namespace qmcplusplus

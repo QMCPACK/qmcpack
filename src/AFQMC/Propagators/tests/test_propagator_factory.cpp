@@ -19,7 +19,7 @@
 #include "OhmmsApp/ProjectData.h"
 #include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
-#include <Utilities/TimerManager.h>
+#include "Utilities/TimerManager.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x)             \

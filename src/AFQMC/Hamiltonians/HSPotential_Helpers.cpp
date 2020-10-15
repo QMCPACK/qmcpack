@@ -12,7 +12,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Hamiltonians/HSPotential_Helpers.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
