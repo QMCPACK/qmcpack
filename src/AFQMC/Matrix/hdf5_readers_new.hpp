@@ -26,7 +26,7 @@
 
 #include "Configuration.h"
 #include <Utilities/FairDivide.h>
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
 
 #include <AFQMC/config.0.h>

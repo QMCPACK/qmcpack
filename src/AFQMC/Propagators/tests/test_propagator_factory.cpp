@@ -17,7 +17,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include <Utilities/TimerManager.h>
 

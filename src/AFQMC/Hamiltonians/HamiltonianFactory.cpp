@@ -13,8 +13,8 @@
 #endif
 
 #include <boost/version.hpp>
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"

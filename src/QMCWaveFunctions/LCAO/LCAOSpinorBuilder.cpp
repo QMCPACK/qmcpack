@@ -13,7 +13,7 @@
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
 
 namespace qmcplusplus

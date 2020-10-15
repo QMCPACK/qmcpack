@@ -21,7 +21,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include <CPU/SIMD/simd.hpp>
 #include "Utilities/ProgressReportEngine.h"
-#include <io/hdf_archive.h>
+#include <hdf/hdf_archive.h>
 #include <limits>
 
 namespace qmcplusplus

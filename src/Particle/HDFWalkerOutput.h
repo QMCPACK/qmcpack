@@ -19,7 +19,7 @@
 #include <Particle/MCWalkerConfiguration.h>
 // #include <QMCDrivers/ForwardWalking/ForwardWalkingStructure.h>
 #include <utility>
-#include <io/hdf_archive.h>
+#include <hdf/hdf_archive.h>
 
 namespace qmcplusplus
 {

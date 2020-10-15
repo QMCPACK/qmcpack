@@ -27,7 +27,7 @@
 #include "QMCWaveFunctions/SPOSetInfo.h"
 #include <QMCWaveFunctions/SPOSetInputInfo.h>
 #include "QMCWaveFunctions/SPOSet.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {

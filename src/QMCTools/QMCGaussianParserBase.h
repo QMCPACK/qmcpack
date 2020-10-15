@@ -28,7 +28,7 @@
 #include "Particle/ParticleSet.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 using namespace qmcplusplus;
 

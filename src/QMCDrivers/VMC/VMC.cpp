@@ -24,7 +24,7 @@
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RunTimeManager.h"
-#include <qmc_common.h>
+#include <Utilities/qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)

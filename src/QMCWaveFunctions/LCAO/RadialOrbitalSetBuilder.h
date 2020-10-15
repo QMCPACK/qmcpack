@@ -18,7 +18,7 @@
 
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include <HDFVersion.h>
+#include <hdf/HDFVersion.h>
 #include "OhmmsData/HDFStringAttrib.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/HDFNumericAttrib.h"
@@ -27,7 +27,7 @@
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
-#include "QMCFactory/OneDimGridFactory.h"
+#include "Numerics/OneDimGridFactory.h"
 #include "Message/MPIObjectBase.h"
 
 
