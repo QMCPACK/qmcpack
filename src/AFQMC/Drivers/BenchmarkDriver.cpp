@@ -14,7 +14,7 @@
 #include "Utilities/qmc_common.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Drivers/BenchmarkDriver.h"
+#include "BenchmarkDriver.h"
 
 namespace qmcplusplus
 {

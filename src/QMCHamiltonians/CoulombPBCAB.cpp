@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/CoulombPBCAB.h"
+#include "CoulombPBCAB.h"
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"

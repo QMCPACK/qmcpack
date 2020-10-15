@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/HarmonicExternalPotential.h"
+#include "HarmonicExternalPotential.h"
 #include "OhmmsData/AttributeSet.h"
 
 

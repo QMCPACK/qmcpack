@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
+#include "LCAOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/BLAS.hpp"
 

@@ -7,18 +7,18 @@
 ///
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<vector>
-#include<string>
-#include<algorithm>
-#include<utility>
-#include<complex>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <utility>
+#include <complex>
 
-#include<boost/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
-#include"formic/utils/openmp.h"
+#include "formic/utils/openmp.h"
 
 #include "formic/utils/zero_one.h"
-#include "formic/utils/lmyengine/engine.h"
+#include "engine.h"
 #include "formic/utils/lmyengine/updater.h"
 #include "formic/utils/lmyengine/energy_target.h"
 #include "formic/utils/lmyengine/matrix_builder.h"

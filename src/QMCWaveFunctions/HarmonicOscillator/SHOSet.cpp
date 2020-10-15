@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/HarmonicOscillator/SHOSet.h"
+#include "SHOSet.h"
 #include "Utilities/string_utils.h"
 
 

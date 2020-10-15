@@ -17,7 +17,7 @@
 /** @file
  * @brief definition  of HDFWalkerOuput  and other support class and functions
  */
-#include "Particle/HDFWalkerOutput.h"
+#include "HDFWalkerOutput.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/FileUtility.h"
 #include "hdf/HDFVersion.h"

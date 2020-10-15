@@ -16,7 +16,7 @@
 #include <cmath>
 #include <sstream>
 
-#include "QMCDrivers/DMC/WalkerControlMPI.h"
+#include "WalkerControlMPI.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/FairDivide.h"
 

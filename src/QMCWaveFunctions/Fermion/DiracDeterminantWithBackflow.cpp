@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
+#include "DiracDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"

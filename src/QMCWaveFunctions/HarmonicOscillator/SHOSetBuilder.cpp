@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
+#include "SHOSetBuilder.h"
 #include "QMCWaveFunctions/SPOSetInputInfo.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/IteratorUtility.h"

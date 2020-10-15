@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/OrbitalImages.h"
+#include "OrbitalImages.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/unit_conversion.h"

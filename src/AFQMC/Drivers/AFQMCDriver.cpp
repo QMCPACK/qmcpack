@@ -10,7 +10,7 @@
 #include "Utilities/qmc_common.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Drivers/AFQMCDriver.h"
+#include "AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
 #include "AFQMC/Memory/buffer_managers.h"
 

@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "ParticleIO/ParticleIOUtility.h"
+#include "ParticleIOUtility.h"
 #include "Utilities/ProgressReportEngine.h"
 namespace qmcplusplus
 {

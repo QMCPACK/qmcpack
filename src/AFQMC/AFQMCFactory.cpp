@@ -22,7 +22,7 @@
 
 #include "config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/AFQMCFactory.h"
+#include "AFQMCFactory.h"
 #include "AFQMC/Walkers/WalkerSetFactory.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Propagators/PropagatorFactory.h"

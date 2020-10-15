@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/DensityMatrices1B.h"
+#include "DensityMatrices1B.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/MatrixOperators.h"

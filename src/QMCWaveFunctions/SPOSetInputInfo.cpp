@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/SPOSetInputInfo.h"
+#include "SPOSetInputInfo.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/unit_conversion.h"
 #include <limits>

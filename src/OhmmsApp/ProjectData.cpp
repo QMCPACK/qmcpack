@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
 #include "Utilities/qmc_common.h"

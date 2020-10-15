@@ -15,7 +15,7 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
+#include "eeI_JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"

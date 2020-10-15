@@ -18,7 +18,7 @@
 
 #include <stdexcept>
 
-#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "TrialWaveFunction.h"
 #include "Utilities/IteratorUtility.h"
 #include "Concurrency/Info.hpp"
 

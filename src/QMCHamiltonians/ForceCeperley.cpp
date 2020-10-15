@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ForceCeperley.h"
+#include "ForceCeperley.h"
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"

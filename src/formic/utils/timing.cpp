@@ -15,7 +15,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include "formic/utils/timing.h"
+#include "timing.h"
 #include "formic/utils/mpi_interface.h"
 #include "formic/utils/exception.h"
 

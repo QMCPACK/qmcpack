@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
+#include "SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "Message/Communicate.h"
 

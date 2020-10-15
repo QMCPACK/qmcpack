@@ -22,7 +22,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "ParticleIO/ParticleLayoutIO.h"
-#include "ParticleIO/XMLParticleIO.h"
+#include "XMLParticleIO.h"
 #include "ParticleIO/ParticleIOUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"

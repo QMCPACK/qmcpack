@@ -20,7 +20,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/kp_utilities.hpp"
-#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
+#include "KPTHCHamiltonian.h"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
 //#include "AFQMC/HamiltonianOperations/KPTHCOpsIO.hpp"
 

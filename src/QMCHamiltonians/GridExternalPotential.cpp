@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/GridExternalPotential.h"
+#include "GridExternalPotential.h"
 #include "OhmmsData/AttributeSet.h"
 
 

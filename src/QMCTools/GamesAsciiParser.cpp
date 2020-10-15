@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/GamesAsciiParser.h"
+#include "GamesAsciiParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>

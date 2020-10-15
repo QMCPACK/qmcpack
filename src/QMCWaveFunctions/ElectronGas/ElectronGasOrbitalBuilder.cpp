@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
+#include "ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"

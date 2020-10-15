@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
+#include "kSpaceJastrowBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/qmc_common.h"
 

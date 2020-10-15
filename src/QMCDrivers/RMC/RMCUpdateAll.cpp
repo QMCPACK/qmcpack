@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/RMC/RMCUpdateAll.h"
+#include "RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "Message/OpenMP.h"

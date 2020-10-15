@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/EnergyDensityEstimator.h"
+#include "EnergyDensityEstimator.h"
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Particle/DistanceTableData.h"

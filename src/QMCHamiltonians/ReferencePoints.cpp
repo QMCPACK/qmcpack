@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ReferencePoints.h"
+#include "ReferencePoints.h"
 #include "Utilities/string_utils.h"
 #include "OhmmsData/AttributeSet.h"
 

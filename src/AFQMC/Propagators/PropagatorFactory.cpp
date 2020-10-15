@@ -13,7 +13,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Propagators/PropagatorFactory.h"
+#include "PropagatorFactory.h"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
 namespace qmcplusplus

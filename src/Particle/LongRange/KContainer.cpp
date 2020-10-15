@@ -13,7 +13,7 @@
 
 
 #include "Message/Communicate.h"
-#include "LongRange/KContainer.h"
+#include "KContainer.h"
 #include "Utilities/qmc_common.h"
 #include <map>
 

@@ -15,7 +15,7 @@
 #include <sstream>
 #include <numeric>
 
-#include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDriverNew.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"

@@ -17,7 +17,7 @@
  *@brief Definition of OperatorBase
  */
 #include "Message/Communicate.h"
-#include "QMCHamiltonians/OperatorBase.h"
+#include "OperatorBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus

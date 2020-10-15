@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/SpinDensity.h"
+#include "SpinDensity.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/MCWalkerConfiguration.h"
 

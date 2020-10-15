@@ -13,7 +13,7 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/VMC/VMCFactoryNew.h"
+#include "VMCFactoryNew.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 //#include "Message/OpenMP.h"
 #include "Concurrency/Info.hpp"

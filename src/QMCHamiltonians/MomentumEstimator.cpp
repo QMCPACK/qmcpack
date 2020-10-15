@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/MomentumEstimator.h"
+#include "MomentumEstimator.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "CPU/e2iphi.h"
 #include "CPU/BLAS.hpp"

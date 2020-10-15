@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMC.h"
+#include "VMC.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"

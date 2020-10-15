@@ -17,7 +17,7 @@
 #include <Configuration.h>
 #include "Message/OpenMP.h"
 #include "OhmmsData/AttributeSet.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/RandomGeneratorIO.h"
 #include "Utilities/Timer.h"
 #include "hdf/HDFVersion.h"

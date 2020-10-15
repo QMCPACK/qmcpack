@@ -13,7 +13,7 @@
 
 /** @file BandInfo.cpp
  */
-#include "QMCWaveFunctions/BandInfo.h"
+#include "BandInfo.h"
 #include "QMCWaveFunctions/SPOSetInfo.h"
 namespace qmcplusplus
 {

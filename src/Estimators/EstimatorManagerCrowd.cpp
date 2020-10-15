@@ -9,7 +9,7 @@
 // File refactored from: EstimatorManagerBase.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Estimators/EstimatorManagerCrowd.h"
+#include "EstimatorManagerCrowd.h"
 #include "Estimators/CollectablesEstimator.h"
 
 namespace qmcplusplus

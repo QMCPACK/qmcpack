@@ -19,7 +19,7 @@
 
 #include <numeric>
 #include <iomanip>
-#include "Particle/ParticleSet.h"
+#include "ParticleSet.h"
 #include "Particle/DynamicCoordinatesBuilder.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/createDistanceTable.h"

@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/CompositeSPOSet.h"
+#include "CompositeSPOSet.h"
 #include "Utilities/IteratorUtility.h"
 #include <algorithm>
 #include "OhmmsData/AttributeSet.h"

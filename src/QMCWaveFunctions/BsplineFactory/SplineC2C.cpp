@@ -13,7 +13,7 @@
 
 #include <complex>
 #include "Message/OpenMP.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
+#include "SplineC2C.h"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "config/stdlib/math.hpp"

@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
+#include "DriftModifierBuilder.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 #include "OhmmsData/ParameterSet.h"
 

@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Estimators/CollectablesEstimator.h"
+#include "CollectablesEstimator.h"
 #include "QMCHamiltonians/observable_helper.h"
 
 namespace qmcplusplus

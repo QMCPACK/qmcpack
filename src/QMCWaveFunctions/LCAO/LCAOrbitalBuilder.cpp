@@ -26,7 +26,7 @@
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 //#include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/LCAO/AOBasisBuilder.h"
-#include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
+#include "LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/LCAO/MultiFunctorAdapter.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"

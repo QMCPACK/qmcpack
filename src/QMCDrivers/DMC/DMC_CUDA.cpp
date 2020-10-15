@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/DMC_CUDA.h"
+#include "DMC_CUDA.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/QMCUpdateBase.h"
 #include "OhmmsApp/RandomNumberControl.h"

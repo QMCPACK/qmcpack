@@ -21,7 +21,7 @@
 #include "mpi/collectives.h"
 #include <getopt.h>
 using namespace std;
-#include "Sandbox/determinant.hpp"
+#include "determinant.hpp"
 using namespace qmcplusplus;
 
 int main(int argc, char** argv)

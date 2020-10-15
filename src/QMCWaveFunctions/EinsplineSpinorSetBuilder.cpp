@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "EinsplineSpinorSetBuilder.h"
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"

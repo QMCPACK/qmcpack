@@ -22,7 +22,7 @@
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/kp_utilities.hpp"
 #include "AFQMC/Utilities/hdf5_consistency_helper.hpp"
-#include "AFQMC/Hamiltonians/RealDenseHamiltonian.h"
+#include "RealDenseHamiltonian.h"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
 
 

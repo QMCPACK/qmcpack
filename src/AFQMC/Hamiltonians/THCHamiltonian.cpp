@@ -15,7 +15,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
-#include "AFQMC/Hamiltonians/THCHamiltonian.h"
+#include "THCHamiltonian.h"
 #include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
 #include "AFQMC/HamiltonianOperations/THCOpsIO.hpp"
 

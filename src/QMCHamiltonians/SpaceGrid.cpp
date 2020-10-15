@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/SpaceGrid.h"
+#include "SpaceGrid.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/string_utils.h"
 #include <cmath>

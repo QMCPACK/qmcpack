@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/SFNBranch.h"
+#include "SFNBranch.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include <numeric>
 #include "OhmmsData/FileUtility.h"

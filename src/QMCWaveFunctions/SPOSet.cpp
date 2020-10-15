@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/SPOSet.h"
+#include "SPOSet.h"
 #include "Message/Communicate.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"

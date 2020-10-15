@@ -9,7 +9,7 @@
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCWaveFunctions/LCAO/LCAOSpinorBuilder.h"
+#include "LCAOSpinorBuilder.h"
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/ProgressReportEngine.h"

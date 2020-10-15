@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
+#include "CSVMC.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdateAll.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
 #include "Estimators/CSEnergyEstimator.h"

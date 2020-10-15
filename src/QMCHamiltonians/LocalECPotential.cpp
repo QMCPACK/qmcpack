@@ -16,7 +16,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/OperatorBase.h"
-#include "QMCHamiltonians/LocalECPotential.h"
+#include "LocalECPotential.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus

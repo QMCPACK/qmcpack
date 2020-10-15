@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
+#include "CoulombPBCAB_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "config/stdlib/math.hpp"

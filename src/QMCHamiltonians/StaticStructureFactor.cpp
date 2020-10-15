@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/StaticStructureFactor.h"
+#include "StaticStructureFactor.h"
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/KContainer.h"
 #include "LongRange/StructFact.h"

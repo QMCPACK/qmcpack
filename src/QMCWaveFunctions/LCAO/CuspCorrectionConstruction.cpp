@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/LCAO/CuspCorrectionConstruction.h"
+#include "CuspCorrectionConstruction.h"
 #include "Message/Communicate.h"
 #include "Utilities/FairDivide.h"
 

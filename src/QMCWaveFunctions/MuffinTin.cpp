@@ -19,7 +19,7 @@
 #include "einspline/multi_nubspline.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Particle/DistanceTableData.h"
-#include "QMCWaveFunctions/MuffinTin.h"
+#include "MuffinTin.h"
 #include "config/stdlib/math.hpp"
 
 
