@@ -428,7 +428,7 @@ class Convert4qmcInput(SimulationInput):
         casino             = 'casino',
         vsvb               = 'VSVB',
         gamess             = 'gamess',
-        gamess_ascii       = 'gamessAscii',
+        gamess_ascii       = 'gamess',
         gamess_fmo         = 'gamessFMO',
         gamess_xml         = 'gamesxml', # not a typo
         prefix             = 'prefix',

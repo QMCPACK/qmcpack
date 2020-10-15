@@ -52,7 +52,7 @@ contributions are orbitals :math:`\Phi`. In the current implementation,
 the number of periodic images is an input parameter named ``PBCimages``,
 which takes three integers corresponding to the number of periodic
 images along the supercell axes (X, Y and Z axes for a cubic cell). By
-default these parameters are set to ``PBCimages= 5 5 5``, but they
+default these parameters are set to ``PBCimages= 8 8 8``, but they
 **require manual convergence checks**. Convergence checks can be
 performed by checking the total energy convergence with respect to
 ``PBCimages``, similar to checks performed for plane wave cutoff energy

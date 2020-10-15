@@ -22,7 +22,7 @@ Single-Particle Spinors
 The single particle spinors used in QMCPACK take the form 
 
 .. math::
-  :label: eq1
+  :label: seqn1
 
     \phi(\mathbf{r},s) &=& \, \phi^\uparrow(\mathbf{r}) \chi^\uparrow(s) + \phi^{\downarrow}(\mathbf{r})\chi^\downarrow(s) \\
                        &=& \, \phi^\uparrow(\mathbf{r}) e^{i s} + \phi^{\downarrow}(\mathbf{r}) e^{-i s}\:,
@@ -45,7 +45,7 @@ Trial Wavefunction
 Using the generated single particle spinors, we build the many-body wavefunction in a similar fashion to the normal non-relativistic calculations, namely
 
 .. math::
-  :label: eqn2
+  :label: seqn2
 
   \Psi_T(\mathbf{R},\mathbf{S}) = e^J \sum\limits_\alpha c_\alpha \det_\alpha\left[ \phi_i(\mathbf{r}_j, s_j) \right]\:,
 
@@ -53,7 +53,7 @@ where we now utilize determinants of spinors, as opposed to the usual product of
 
 .. code-block::
   :caption: wavefunction specification for a single determinant trial wave funciton
-  :name: Listing 1
+  :name: slisting1
 
   <?xml version="1.0"?>
   <qmcsystem>
@@ -93,7 +93,7 @@ We also make a small modification in the particleset specification:
 
 .. code-block::
   :caption: specification for the electron particle when performing spin-orbit calculations
-  :name: Listing 2
+  :name: slisting2
 
   <particleset name="e" random="yes" randomsrc="ion0">
      <group name="u" size="10" mass="1.0">
@@ -115,7 +115,7 @@ a continuous variable similar to the spatial degrees of freedom.
 In order to sample the spins, we introduce a *spin kinetic energy* operator 
 
 .. math:: 
-  :label: eqn3
+  :label: seqn3
 
   T_s = \sum_{i=1}^{N_e} -\frac{1}{2\mu_s} \left[ \frac{\partial^2}{\partial s_i^2} +  1\right]\:, 
 
@@ -124,7 +124,7 @@ an arbitrary spinor or anti-symmetric product of spinors due to the offset.
 This avoids any unphysical contribution to the local energy. However, this does contribute to the Green's function in DMC, 
 
 .. math::
-  :label: eqn4
+  :label: seqn4
 
   G(\mathbf{R}' \mathbf{S}' \leftarrow \mathbf{R}\mathbf{S}; \tau, \mu_s) \propto G(\mathbf{R}'\leftarrow\mathbf{R}; \tau) \exp\left[ -\frac{\mu_s}{2\tau}\left| \mathbf{S}' - \mathbf{S} - \frac{\tau}{\mu_s}\mathbf{v}_{\mathbf{S}}(\mathbf{S})\right|^2\right] \:,
 
@@ -161,15 +161,15 @@ through the use of Effective Core Potentials (ECPs).
 As described in :cite:`Melton2016-2`, the relativistic (semilocal) ECPs take the general form
 
 .. math::
-  :label: eq5
+  :label: seqn5
   
   W^{\rm RECP} = W_{LJ}(r) + \sum_{\ell j m_j} W_{\ell j}(r) | \ell j m_j \rangle \langle \ell j m_j | \:,
 
-where the projectors :math:`|\ell j m_j\rangle` are the so-called spin spherical haronics. 
+where the projectors :math:`|\ell j m_j\rangle` are the so-called spin spherical harmonics. 
 An equivalent formulation is to decouple the fully relativistic effective core potential (RECP) into *averaged relativistic* (ARECP)  and *spin-orbit* (SORECP) contributions:
 
 .. math::
-  :label: eq6
+  :label: seqn6
 
   W^{\rm RECP} &=& \, W^{\rm ARECP} + W^{\rm SOECP} \\
   W^{\rm ARECP} &=& \, W^{\rm ARECP}_L(r) + \sum_{\ell m_\ell} W_\ell^{ARECP}(r) | \ell m_\ell \rangle \langle \ell m_\ell| \\
@@ -182,7 +182,7 @@ If spin-orbit terms are included in the ``.xml`` file, the file must tabulate th
 We note the following relations between the two representations of the relativistic potentials
 
 .. math::
-  :label: eq7
+  :label: seqn7
 
   W^{\rm ARECP}_\ell(r) &=& \frac{\ell+1}{2\ell+1} W^{\rm RECP}_{\ell,j=\ell+1/2}(r) + \frac{\ell}{2\ell+1} W^{\rm RECP}_{\ell,j=\ell-1/2}(r) \\
   \Delta W^{\rm SORECP}_\ell(r) &=& W^{\rm RECP}_{\ell,j=\ell+1/2}(r) - W^{\rm RECP}_{\ell,j=\ell-1/2}(r)
