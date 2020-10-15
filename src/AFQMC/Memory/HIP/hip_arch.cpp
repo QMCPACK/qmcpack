@@ -106,7 +106,7 @@ void malloc(void** devPtr, size_t size, const std::string& message)
     {
       std::cerr << " Error from : " << message << std::endl;
     }
-    std::cerr << " Error when call hipMalloc " << < hipGetErrorString(status) << std::endl;
+    std::cerr << " Error when call hipMalloc " << hipGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: hipMalloc returned error code.");
   }
 }
