@@ -202,7 +202,7 @@ bool QMCFixedSampleLinearOptimize::run()
     app_log() << "Doing hybrid run" << std::endl;
     return hybrid_run();
 #else
-APP_ABORT(" Error: Hybrid method does not work with QMC_COMPLEX=1. \n");
+myComm->barrier_and_abort(" Error: Hybrid method does not work with QMC_COMPLEX=1. \n");
 #endif
   }
 
@@ -210,7 +210,7 @@ if (current_optimizer_type_ == OptimizerType::DESCENT)
 #if !defined(QMC_COMPLEX)
     return descent_run();
 #else
-APP_ABORT(" Error: Descent method does not work with QMC_COMPLEX=1. \n");
+myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX=1. \n");
 #endif
 
 
@@ -508,7 +508,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
 
   // sanity check
   if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE && current_optimizer_type_ != OptimizerType::DESCENT)
-    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
+     myComm->barrier_and_abort("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
 
 #ifdef ENABLE_OPENMP
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
