@@ -16,7 +16,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
-#include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"
+#include "FactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/HSPotential_Helpers.h"
 #include "AFQMC/Hamiltonians/generateHijkl.hpp"
 #include "AFQMC/Matrix/array_partition.hpp"

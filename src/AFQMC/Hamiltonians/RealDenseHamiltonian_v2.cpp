@@ -21,7 +21,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/kp_utilities.hpp"
-#include "AFQMC/Hamiltonians/RealDenseHamiltonian_v2.h"
+#include "RealDenseHamiltonian_v2.h"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
 
 namespace qmcplusplus

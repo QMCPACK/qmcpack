@@ -19,7 +19,7 @@
 
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInput.h"
-#include "QMCDrivers/tests/test_WalkerControlMPI.h"
+#include "test_WalkerControlMPI.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
 #include "Platforms/Host/OutputManager.h"
 

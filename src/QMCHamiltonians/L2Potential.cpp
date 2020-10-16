@@ -11,7 +11,7 @@
 
 
 #include "Particle/ParticleSet.h"
-#include "QMCHamiltonians/L2Potential.h"
+#include "L2Potential.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus

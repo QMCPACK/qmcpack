@@ -16,12 +16,12 @@
 
 
 #include "Platforms/sysutil.h"
-#include "QMCDrivers/CloneManager.h"
+#include "CloneManager.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include "Utilities/IteratorUtility.h"
-#include <Utilities/qmc_common.h>
+#include "Utilities/qmc_common.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else

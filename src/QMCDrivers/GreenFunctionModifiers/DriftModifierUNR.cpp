@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <sstream>
-#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
+#include "DriftModifierUNR.h"
 #include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus

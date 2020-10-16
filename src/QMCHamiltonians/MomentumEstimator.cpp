@@ -13,14 +13,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/MomentumEstimator.h>
-#include <QMCWaveFunctions/TrialWaveFunction.h>
-#include <CPU/e2iphi.h>
-#include <CPU/BLAS.hpp>
-#include <OhmmsData/AttributeSet.h>
-#include <Utilities/SimpleParser.h>
-#include <Particle/DistanceTableData.h>
-#include <Numerics/DeterminantOperators.h>
+#include "MomentumEstimator.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "CPU/e2iphi.h"
+#include "CPU/BLAS.hpp"
+#include "OhmmsData/AttributeSet.h"
+#include "Utilities/SimpleParser.h"
+#include "Particle/DistanceTableData.h"
+#include "Numerics/DeterminantOperators.h"
 #include <set>
 
 namespace qmcplusplus

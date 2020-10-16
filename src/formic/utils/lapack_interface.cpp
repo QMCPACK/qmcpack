@@ -1,6 +1,6 @@
-#include<formic/utils/lapack_interface.h>
-#include<formic/utils/declare.h>
-#include<formic/utils/mangle.h>
+#include "lapack_interface.h"
+#include "formic/utils/declare.h"
+#include "formic/utils/mangle.h"
 
 // complex conjugate of a vector
 void formic::xconj(const int n, double * const y, const int incy) {

@@ -16,10 +16,10 @@
 #ifndef QMCPLUSPLUS_WALKER_OUTPUT_H
 #define QMCPLUSPLUS_WALKER_OUTPUT_H
 
-#include <Particle/MCWalkerConfiguration.h>
-// #include <QMCDrivers/ForwardWalking/ForwardWalkingStructure.h>
+#include "Particle/MCWalkerConfiguration.h"
+// #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 #include <utility>
-#include <hdf/hdf_archive.h>
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {

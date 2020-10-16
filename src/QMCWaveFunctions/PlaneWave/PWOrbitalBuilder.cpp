@@ -16,7 +16,7 @@
 /** @file
  * @brief Definition of a builder class for PWOrbitalSet
  */
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
+#include "PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"

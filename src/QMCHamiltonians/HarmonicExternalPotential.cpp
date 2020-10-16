@@ -11,8 +11,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/HarmonicExternalPotential.h>
-#include <OhmmsData/AttributeSet.h>
+#include "HarmonicExternalPotential.h"
+#include "OhmmsData/AttributeSet.h"
 
 
 namespace qmcplusplus

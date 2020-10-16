@@ -22,7 +22,7 @@
 #define QMCPLUSPLUS_ACCUMULATORS_H
 
 #include <iostream>
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 
 /** generic accumulator of a scalar type
  *

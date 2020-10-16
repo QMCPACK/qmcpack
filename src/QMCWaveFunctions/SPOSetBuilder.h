@@ -25,7 +25,7 @@
 #include <string>
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/SPOSetInfo.h"
-#include <QMCWaveFunctions/SPOSetInputInfo.h>
+#include "QMCWaveFunctions/SPOSetInputInfo.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "hdf/hdf_archive.h"
 

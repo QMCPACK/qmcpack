@@ -5,15 +5,15 @@
 #include <random>
 
 #include "Configuration.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Propagators/PropagatorFactory.h"
+#include "PropagatorFactory.h"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
 namespace qmcplusplus

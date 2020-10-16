@@ -16,8 +16,8 @@
 #define QMCPLUSPLUS_GRID_EXTERNAL_POTENTIAL_H
 
 #include <memory>
-#include <QMCHamiltonians/OperatorBase.h>
-#include <einspline/bspline.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "einspline/bspline.h"
 
 
 namespace qmcplusplus

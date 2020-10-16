@@ -9,7 +9,7 @@
 #include <ctype.h>
 
 #include "Utilities/SimpleParser.h"
-#include "AFQMC/Utilities/readWfn.h"
+#include "readWfn.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"

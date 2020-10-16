@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/HDFWalkerInputManager.h"
+#include "HDFWalkerInputManager.h"
 #include "OhmmsData/AttributeSet.h"
 #if defined(HAVE_LIBHDF5)
 #include "Particle/HDFWalkerInput_0_0.h"

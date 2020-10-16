@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <type_traits>
-#include "QMCDrivers/ContextForSteps.h"
+#include "ContextForSteps.h"
 #include "QMCDrivers/MCPopulation.h"
 
 namespace qmcplusplus

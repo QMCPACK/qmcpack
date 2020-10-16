@@ -12,12 +12,12 @@
 #ifndef QMCPLUSPLUS_DELAYED_UPDATE_H
 #define QMCPLUSPLUS_DELAYED_UPDATE_H
 
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <CPU/BLAS.hpp>
-#include <CPU/BlasThreadingEnv.h>
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "CPU/BLAS.hpp"
+#include "CPU/BlasThreadingEnv.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include <Message/OpenMP.h>
+#include "Message/OpenMP.h"
 
 namespace qmcplusplus
 {

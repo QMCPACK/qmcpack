@@ -22,7 +22,7 @@
 /**@file HamiltonianFactory.cpp
  *@brief Definition of a HamiltonianFactory
  */
-#include "QMCHamiltonians/HamiltonianFactory.h"
+#include "HamiltonianFactory.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/ConservedEnergy.h"

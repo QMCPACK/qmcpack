@@ -1,7 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_MIXEDRDMESTIMATOR_H
 #define QMCPLUSPLUS_AFQMC_MIXEDRDMESTIMATOR_H
 
-#include <Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 #include "AFQMC/config.h"
 #include <vector>
 #include <queue>

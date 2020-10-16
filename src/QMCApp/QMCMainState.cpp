@@ -20,7 +20,7 @@
 /**@file QMCDriverFactory.cpp
  * @brief Implments QMCMain operators.
  */
-#include "QMCApp/QMCMainState.h"
+#include "QMCMainState.h"
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"

@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/BranchIO.h"
+#include "BranchIO.h"
 #include "hdf/HDFVersion.h"
 #include "Message/CommOperators.h"
 #include "hdf/hdf_archive.h"

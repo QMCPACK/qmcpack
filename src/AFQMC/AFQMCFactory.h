@@ -12,8 +12,8 @@
 #include <map>
 #include <queue>
 #include <algorithm>
-#include <Message/MPIObjectBase.h>
-#include <Utilities/TimerManager.h>
+#include "Message/MPIObjectBase.h"
+#include "Utilities/TimerManager.h"
 #include "OhmmsApp/RandomNumberControl.h"
 
 #include "mpi3/communicator.hpp"
@@ -21,12 +21,12 @@
 #include "config.h"
 
 #include "AFQMC/Utilities/taskgroup.h"
-#include <AFQMC/Walkers/WalkerSetFactory.hpp>
-#include <AFQMC/Hamiltonians/HamiltonianFactory.h>
-#include <AFQMC/Wavefunctions/WavefunctionFactory.h>
-#include <AFQMC/Propagators/PropagatorFactory.h>
-#include <AFQMC/Drivers/DriverFactory.h>
-#include <AFQMC/Memory/buffer_managers.h>
+#include "AFQMC/Walkers/WalkerSetFactory.hpp"
+#include "AFQMC/Hamiltonians/HamiltonianFactory.h"
+#include "AFQMC/Wavefunctions/WavefunctionFactory.h"
+#include "AFQMC/Propagators/PropagatorFactory.h"
+#include "AFQMC/Drivers/DriverFactory.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "OhmmsData/libxmldefs.h"
 

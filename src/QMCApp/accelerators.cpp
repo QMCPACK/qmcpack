@@ -13,7 +13,7 @@
 #include "config.h"
 #ifdef ENABLE_CUDA
 #include <cuda_runtime_api.h>
-#include <CUDA/cudaError.h>
+#include "CUDA/cudaError.h"
 #endif
 #include <omp.h>
 #include "Utilities/qmc_common.h"

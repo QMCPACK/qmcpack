@@ -16,9 +16,9 @@
 
 
 #include "OhmmsData/AttributeSet.h"
-#include <QMCWaveFunctions/SPOSet.h>
-#include <QMCWaveFunctions/LCAO/NGFunctor.h>
-#include <QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/LCAO/NGFunctor.h"
+#include "QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h"
 #include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
 #include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
 #include "QMCWaveFunctions/LCAO/SoaAtomicBasisSet.h"
@@ -26,7 +26,7 @@
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 //#include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/LCAO/AOBasisBuilder.h"
-#include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
+#include "LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/LCAO/MultiFunctorAdapter.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
@@ -35,7 +35,7 @@
 #include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {

@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_RUNTIME_MANAGER_H
 #define QMCPLUSPLUS_RUNTIME_MANAGER_H
 
-#include <Utilities/Clock.h>
+#include "Utilities/Clock.h"
 #include <string>
 
 

@@ -15,8 +15,8 @@
 #define QMCPLUSPLUS_PARTICLE_BCONDS_H
 
 #include <config.h>
-#include <CPU/SIMD/simd.hpp>
-#include <Lattice/CrystalLattice.h>
+#include "CPU/SIMD/simd.hpp"
+#include "Lattice/CrystalLattice.h"
 
 namespace qmcplusplus
 {
@@ -109,9 +109,9 @@ struct DTD_BConds
 } // namespace qmcplusplus
 
 #if OHMMS_DIM == 3
-#include <Lattice/ParticleBConds3D.h>
+#include "Lattice/ParticleBConds3D.h"
 #elif OHMMS_DIM == 2
-#include <Lattice/ParticleBConds2D.h>
+#include "Lattice/ParticleBConds2D.h"
 #endif
 
 #endif // OHMMS_PARTICLE_BCONDS_H

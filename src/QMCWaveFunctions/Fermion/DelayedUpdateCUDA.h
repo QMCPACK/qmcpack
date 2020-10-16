@@ -12,11 +12,11 @@
 #ifndef QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
 #define QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
 
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 #include "CUDA/CUDAallocator.hpp"
-#include <CUDA/cuBLAS.hpp>
-#include <CUDA/cusolver.hpp>
+#include "CUDA/cuBLAS.hpp"
+#include "CUDA/cusolver.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <cuda_runtime_api.h>

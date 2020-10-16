@@ -14,9 +14,9 @@
 #define QMCPLUSPLUS_HDF_PETE_TRAITS_H
 
 #include "hdf_dataproxy.h"
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <OhmmsPETE/OhmmsArray.h>
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
 {

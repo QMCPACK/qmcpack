@@ -16,7 +16,7 @@
  */
 
 #include "Configuration.h"
-#include "Particle/VirtualParticleSet.h"
+#include "VirtualParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/createDistanceTable.h"
 #include "QMCHamiltonians/NLPPJob.h"

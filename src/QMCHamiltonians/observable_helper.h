@@ -18,10 +18,10 @@
 #ifndef QMCPLUSPLUS_OBSERVABLE_TRAITS_H
 #define QMCPLUSPLUS_OBSERVABLE_TRAITS_H
 
-#include <OhmmsData/HDFAttribIO.h>
-#include <Numerics/HDFNumericAttrib.h>
-#include <Numerics/HDFSTLAttrib.h>
-#include <OhmmsData/HDFStringAttrib.h>
+#include "OhmmsData/HDFAttribIO.h"
+#include "Numerics/HDFNumericAttrib.h"
+#include "Numerics/HDFSTLAttrib.h"
+#include "OhmmsData/HDFStringAttrib.h"
 
 namespace qmcplusplus
 {

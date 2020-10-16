@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_HDF_HYPERSLAB_IO_H
 
 #include <array>
-#include <type_traits/container_traits.h>
+#include "type_traits/container_traits.h"
 #include "hdf_datatype.h"
 #include "hdf_dataspace.h"
 #include "hdf_dataproxy.h"

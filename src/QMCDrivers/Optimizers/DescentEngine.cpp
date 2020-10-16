@@ -15,7 +15,7 @@
 #include <cmath>
 #include <vector>
 #include <string>
-#include "QMCDrivers/Optimizers/DescentEngine.h"
+#include "DescentEngine.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
 

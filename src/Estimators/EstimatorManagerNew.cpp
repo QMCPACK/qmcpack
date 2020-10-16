@@ -12,7 +12,7 @@
 #include <functional>
 #include <numeric>
 
-#include "Estimators/EstimatorManagerNew.h"
+#include "EstimatorManagerNew.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"

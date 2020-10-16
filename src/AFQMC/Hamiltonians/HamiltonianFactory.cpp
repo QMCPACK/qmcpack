@@ -17,7 +17,7 @@
 #include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Hamiltonians/HamiltonianFactory.h"
+#include "HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/HamiltonianFactory_Helper.h"
 
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"

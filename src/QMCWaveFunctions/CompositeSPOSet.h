@@ -15,9 +15,9 @@
 #ifndef QMCPLUSPLUS_COMPOSITE_SPOSET_H
 #define QMCPLUSPLUS_COMPOSITE_SPOSET_H
 
-#include <QMCWaveFunctions/SPOSet.h>
-#include <QMCWaveFunctions/BasisSetBase.h>
-#include <QMCWaveFunctions/SPOSetBuilder.h>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus
 {

@@ -12,7 +12,7 @@
 #include <iostream>
 #include <catch.hpp>
 #include "Concurrency/UtilityFunctions.hpp"
-#include "QMCDrivers/tests/SetupPools.h"
+#include "SetupPools.h"
 
 namespace qmcplusplus
 {

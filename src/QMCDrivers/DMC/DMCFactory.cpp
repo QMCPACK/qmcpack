@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/DMCFactory.h"
+#include "DMCFactory.h"
 #include "QMCDrivers/DMC/DMC.h"
 #include "Message/OpenMP.h"
 

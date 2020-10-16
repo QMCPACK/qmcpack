@@ -28,8 +28,8 @@
 
 #include "hdf_datatype.h"
 #include <complex>
-#include <OhmmsPETE/TinyVector.h>
-#include <OhmmsPETE/Tensor.h>
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/Tensor.h"
 
 namespace qmcplusplus
 {

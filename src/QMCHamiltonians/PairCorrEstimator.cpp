@@ -14,10 +14,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/PairCorrEstimator.h>
-#include <Particle/DistanceTableData.h>
-#include <OhmmsData/AttributeSet.h>
-#include <Utilities/SimpleParser.h>
+#include "PairCorrEstimator.h"
+#include "Particle/DistanceTableData.h"
+#include "OhmmsData/AttributeSet.h"
+#include "Utilities/SimpleParser.h"
 #include <set>
 
 namespace qmcplusplus

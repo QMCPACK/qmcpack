@@ -11,7 +11,7 @@
 
 #include <numeric>
 
-#include "QMCDrivers/MCPopulation.h"
+#include "MCPopulation.h"
 #include "Configuration.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/CommOperators.h"
