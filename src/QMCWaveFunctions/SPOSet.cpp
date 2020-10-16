@@ -41,16 +41,6 @@ void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
   APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }
 
-void SPOSet::mw_evaluateValue(const RefVector<SPOSet>& spo_list,
-                              const RefVector<ParticleSet>& P_list,
-                              int iat,
-                              const RefVector<ValueVector_t>& psi_v_list)
-{
-#pragma omp parallel for
-  for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw].get().evaluateValue(P_list[iw], iat, psi_v_list[iw]);
-}
-
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                ValueVector_t& psi,
                                const ValueVector_t& psiinv,

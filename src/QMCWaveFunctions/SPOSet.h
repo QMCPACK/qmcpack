@@ -198,17 +198,6 @@ public:
    */
   virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) = 0;
 
-  /** evaluate the values of this single-particle orbital sets of multiple walkers
-   * @param spo_list the list of SPOSet pointers in a walker batch
-   * @param P_list the list of ParticleSet pointers in a walker batch
-   * @param iat active particle
-   * @param psi_v_list the list of value vector pointers in a walker batch
-   */
-  virtual void mw_evaluateValue(const RefVector<SPOSet>& spo_list,
-                                const RefVector<ParticleSet>& P_list,
-                                int iat,
-                                const RefVector<ValueVector_t>& psi_v_list);
-
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psi values of the SPO, used as a scratch space if needed
