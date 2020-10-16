@@ -30,6 +30,7 @@ TEST_CASE("DescentEngine RMSprop update","[drivers][descent]")
 
   Communicate myComm;
 
+  
   const std::string engine_input("<tmp> </tmp>");
 
   Libxml2Document doc;
@@ -75,6 +76,31 @@ app_log() << "Second parameter: " << results[1] << std::endl;
 REQUIRE(std::real(results[0]) == Approx(.995));
 REQUIRE(std::real(results[1]) == Approx(-2.001));
 
+//Provide fake data to test mpi_unbiased_ratio_of_means
+int n = 2;
+ValueType mean = 0;
+ValueType variance = 0;
+ValueType stdErr = 0;
+
+std::vector<ValueType> weights;
+weights.push_back(1.0);
+weights.push_back(1.0);
+std::vector<ValueType> numerSamples;
+numerSamples.push_back(-2.0);
+numerSamples.push_back(-2.0);
+std::vector<ValueType> denomSamples;
+denomSamples.push_back(1.0);
+denomSamples.push_back(1.0);
+
+descentEngineObj->mpi_unbiased_ratio_of_means(n,weights,numerSamples,denomSamples,mean,variance,stdErr);
+app_log() << "Descent engine test of mpi_unbiased_ratio_of_means" << std::endl;
+app_log() << "Mean: " << mean << std::endl;
+app_log() << "Variance: " << variance << std::endl;
+app_log() << "Standard Error: " << stdErr << std::endl;
+
+REQUIRE(std::real(mean) == Approx(-2.0));
+REQUIRE(std::real(variance) == Approx(0.0));
+REQUIRE(std::real(stdErr) == Approx(0.0));
 }
 
 }

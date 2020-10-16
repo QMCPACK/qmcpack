@@ -422,7 +422,9 @@ void DescentEngine::mpi_unbiased_ratio_of_means(int numSamples,
     y[5] += weight * n * d;
   }
 
-  my_comm_->allreduce(y);
+  //No need to reduce if there is only one MPI process
+  if(my_comm_->size() > 1)
+      my_comm_->allreduce(y);
 
   ValueType mf = y[1] / y[0]; // mean of numerator
   ValueType mg = y[2] / y[0]; // mean of denominator
