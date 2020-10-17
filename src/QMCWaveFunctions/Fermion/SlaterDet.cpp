@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "SlaterDet.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus

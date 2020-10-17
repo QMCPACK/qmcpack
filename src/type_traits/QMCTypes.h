@@ -13,8 +13,8 @@
 #ifndef QMCPLUSPLUS_QMC_TYPES_H
 #define QMCPLUSPLUS_QMC_TYPES_H
 
-#include <OhmmsPETE/TinyVector.h>
-#include <OhmmsPETE/Tensor.h>
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/Tensor.h"
 #include <complex>
 
 namespace qmcplusplus

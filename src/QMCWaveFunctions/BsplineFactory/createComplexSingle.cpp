@@ -13,7 +13,7 @@
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
 #include "CPU/e2iphi.h"
 #include "CPU/SIMD/vmath.hpp"
-#include <Utilities/ProgressReportEngine.h>
+#include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2R.h"
@@ -24,7 +24,7 @@
 #endif
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCplx.h"
 #include <fftw3.h>
-#include <QMCWaveFunctions/einspline_helper.hpp>
+#include "QMCWaveFunctions/einspline_helper.hpp"
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineSetReader.h"
 #include "QMCWaveFunctions/BsplineFactory/HybridRepSetReader.h"

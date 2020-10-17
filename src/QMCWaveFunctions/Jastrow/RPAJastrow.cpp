@@ -16,7 +16,7 @@
  * @brief Definitions of RPAJastrow
  */
 
-#include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
+#include "RPAJastrow.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"

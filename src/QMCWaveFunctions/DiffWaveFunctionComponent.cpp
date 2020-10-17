@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
+#include "DiffWaveFunctionComponent.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 /**@file DiffWaveFunctionComponent.cpp

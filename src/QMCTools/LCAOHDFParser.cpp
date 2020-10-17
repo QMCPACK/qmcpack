@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/LCAOHDFParser.h"
+#include "LCAOHDFParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>

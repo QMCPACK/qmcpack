@@ -16,7 +16,7 @@
 /**@file WaveFunctionPool.cpp
  * @brief Implements WaveFunctionPool operators.
  */
-#include "QMCWaveFunctions/WaveFunctionPool.h"
+#include "WaveFunctionPool.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
 

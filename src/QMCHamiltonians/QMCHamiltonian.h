@@ -21,11 +21,11 @@
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include "Configuration.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include <QMCHamiltonians/OperatorBase.h>
+#include "QMCHamiltonians/OperatorBase.h"
 #if !defined(REMOVE_TRACEMANAGER)
-#include <Estimators/TraceManager.h>
+#include "Estimators/TraceManager.h"
 #endif
-#include <QMCWaveFunctions/OrbitalSetTraits.h>
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
 
 namespace qmcplusplus
 {

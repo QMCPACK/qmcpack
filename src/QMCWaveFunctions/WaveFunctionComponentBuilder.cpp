@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "WaveFunctionComponentBuilder.h"
 
 /**@file WaveFunctionComponentBuilder.cpp
   *@brief Initialization of static data members for wavefunction-related tags.

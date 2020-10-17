@@ -19,7 +19,7 @@
 
 #include <numeric>
 #include "AFQMC/config.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"

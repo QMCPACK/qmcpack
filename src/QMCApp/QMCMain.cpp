@@ -20,8 +20,8 @@
 /**@file QMCMain.cpp
  * @brief Implments QMCMain operators.
  */
-#include "QMCApp/QMCMain.h"
-#include "Platforms/accelerators.hpp"
+#include "QMCMain.h"
+#include "accelerators.hpp"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -37,9 +37,9 @@
 #include "Message/OpenMP.h"
 #include <queue>
 #include <cstring>
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif

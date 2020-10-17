@@ -18,13 +18,13 @@
 #ifndef QMCPLUSPLUS_HYBRIDREP_READER_H
 #define QMCPLUSPLUS_HYBRIDREP_READER_H
 
-#include <Numerics/Quadrature.h>
-#include <Numerics/Bessel.h>
-#include <QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h>
+#include "Numerics/Quadrature.h"
+#include "Numerics/Bessel.h"
+#include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 #include "OhmmsData/AttributeSet.h"
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 
-//#include <QMCHamiltonians/Ylm.h>
+//#include "QMCHamiltonians/Ylm.h"
 //#define PRINT_RADIAL
 
 namespace qmcplusplus

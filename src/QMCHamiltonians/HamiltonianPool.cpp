@@ -17,7 +17,7 @@
 /**@file HamiltonianPool.cpp
  * @brief Implements HamiltonianPool operators.
  */
-#include "QMCHamiltonians/HamiltonianPool.h"
+#include "HamiltonianPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"

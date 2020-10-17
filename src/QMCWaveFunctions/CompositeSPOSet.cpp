@@ -12,11 +12,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/CompositeSPOSet.h>
-#include <Utilities/IteratorUtility.h>
+#include "CompositeSPOSet.h"
+#include "Utilities/IteratorUtility.h"
 #include <algorithm>
-#include <OhmmsData/AttributeSet.h>
-#include <QMCWaveFunctions/SPOSetBuilderFactory.h>
+#include "OhmmsData/AttributeSet.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
 {

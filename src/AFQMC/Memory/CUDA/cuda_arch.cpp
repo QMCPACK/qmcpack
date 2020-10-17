@@ -18,7 +18,7 @@
 #include <stdexcept>
 #include <cuda_runtime.h>
 #include "AFQMC/Memory/CUDA/cuda_init.h"
-#include "AFQMC/Memory/CUDA/cuda_arch.h"
+#include "cuda_arch.h"
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"

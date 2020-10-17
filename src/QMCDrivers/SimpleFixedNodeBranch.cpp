@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "SimpleFixedNodeBranch.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include <numeric>
 #include "OhmmsData/FileUtility.h"

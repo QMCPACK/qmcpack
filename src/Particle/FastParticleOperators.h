@@ -18,7 +18,7 @@
 #ifndef OHMMS_FAST_PARTICLE_OPERATORS_H
 #define OHMMS_FAST_PARTICLE_OPERATORS_H
 
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/SIMD/simd.hpp"
 
 namespace qmcplusplus
 {

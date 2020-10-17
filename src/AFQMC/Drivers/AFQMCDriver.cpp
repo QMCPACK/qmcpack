@@ -7,10 +7,10 @@
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Configuration.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Drivers/AFQMCDriver.h"
+#include "AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
 #include "AFQMC/Memory/buffer_managers.h"
 

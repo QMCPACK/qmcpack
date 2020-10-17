@@ -11,13 +11,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/DensityMatrices1B.h>
-#include <OhmmsData/AttributeSet.h>
-#include <QMCWaveFunctions/TrialWaveFunction.h>
-#include <Numerics/MatrixOperators.h>
-#include <Utilities/IteratorUtility.h>
-#include <Utilities/string_utils.h>
-#include <QMCWaveFunctions/SPOSetBuilderFactory.h>
+#include "DensityMatrices1B.h"
+#include "OhmmsData/AttributeSet.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Numerics/MatrixOperators.h"
+#include "Utilities/IteratorUtility.h"
+#include "Utilities/string_utils.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 
 namespace qmcplusplus

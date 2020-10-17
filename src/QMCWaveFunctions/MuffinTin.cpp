@@ -14,13 +14,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <einspline/bspline_base.h>
-#include <einspline/nubspline.h>
-#include <einspline/multi_nubspline.h>
-#include <Numerics/DeterminantOperators.h>
-#include <Particle/DistanceTableData.h>
-#include <QMCWaveFunctions/MuffinTin.h>
-#include <config/stdlib/math.hpp>
+#include "einspline/bspline_base.h"
+#include "einspline/nubspline.h"
+#include "einspline/multi_nubspline.h"
+#include "Numerics/DeterminantOperators.h"
+#include "Particle/DistanceTableData.h"
+#include "MuffinTin.h"
+#include "config/stdlib/math.hpp"
 
 
 namespace qmcplusplus

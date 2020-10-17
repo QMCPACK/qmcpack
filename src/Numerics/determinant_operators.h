@@ -17,9 +17,9 @@
 #include <complex>
 #include <algorithm>
 #include <cstring>
-#include <OhmmsPETE/TinyVector.h>
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 //extern "C"
 //{
 //  void dger_(const int& m, const int& n, const double& alpha

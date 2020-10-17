@@ -19,7 +19,7 @@
  * Not the most optimized method to use wavefunctions in a plane-wave basis.
  */
 #include "Message/Communicate.h"
-#include "QMCWaveFunctions/PlaneWave/PWRealOrbitalSet.h"
+#include "PWRealOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus

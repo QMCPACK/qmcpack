@@ -13,7 +13,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <memory>
-#include "AFQMC/Memory/buffer_managers.h"
+#include "buffer_managers.h"
 
 namespace qmcplusplus
 {

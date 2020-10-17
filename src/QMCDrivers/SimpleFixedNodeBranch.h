@@ -24,10 +24,10 @@
 
 #include <array>
 #include <Configuration.h>
-#include <OhmmsData/ParameterSet.h>
-#include <Particle/MCWalkerConfiguration.h>
-#include <Estimators/BlockHistogram.h>
-#include <Estimators/accumulators.h>
+#include "OhmmsData/ParameterSet.h"
+#include "Particle/MCWalkerConfiguration.h"
+#include "Estimators/BlockHistogram.h"
+#include "Estimators/accumulators.h"
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
 #include "QMCDrivers/WalkerControlBase.h"

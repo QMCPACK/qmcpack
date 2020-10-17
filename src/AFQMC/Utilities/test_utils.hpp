@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_AFQMC_TEST_UTILS_HPP
 
 #include <complex>
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {

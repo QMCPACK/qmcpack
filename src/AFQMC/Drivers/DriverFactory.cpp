@@ -7,7 +7,7 @@
 #include "mpi3/communicator.hpp"
 
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Drivers/DriverFactory.h"
+#include "DriverFactory.h"
 #include "AFQMC/Drivers/AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
 #include "AFQMC/Memory/buffer_managers.h"

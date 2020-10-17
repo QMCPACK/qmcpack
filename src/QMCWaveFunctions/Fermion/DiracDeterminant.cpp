@@ -15,10 +15,10 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "DiracDeterminant.h"
 #include <stdexcept>
-#include <CPU/BLAS.hpp>
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/BLAS.hpp"
+#include "CPU/SIMD/simd.hpp"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
 

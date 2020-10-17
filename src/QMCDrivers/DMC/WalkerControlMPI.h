@@ -18,7 +18,7 @@
 
 #include "QMCDrivers/WalkerControlBase.h"
 #include "QMCDrivers/WalkerElementsRef.h"
-#include <Utilities/TimerManager.h>
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {

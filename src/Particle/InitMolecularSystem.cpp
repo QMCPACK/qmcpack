@@ -19,7 +19,7 @@
 /**@file InitMolecularSystem.cpp
  * @brief Implements InitMolecuarSystem operators.
  */
-#include "Particle/InitMolecularSystem.h"
+#include "InitMolecularSystem.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/DistanceTableData.h"

@@ -20,8 +20,8 @@
 
 #include <memory>
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
-#include <OhmmsSoA/VectorSoaContainer.h>
-#include <spline2/MultiBspline.hpp>
+#include "OhmmsSoA/VectorSoaContainer.h"
+#include "spline2/MultiBspline.hpp"
 #include "OpenMP/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Utilities/FairDivide.h"

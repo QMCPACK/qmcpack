@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/RMC/RMCFactory.h"
+#include "RMCFactory.h"
 #include "QMCDrivers/RMC/RMC.h"
 #include "Message/OpenMP.h"
 

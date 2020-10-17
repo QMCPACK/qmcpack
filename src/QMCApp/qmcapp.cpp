@@ -28,7 +28,7 @@
 #include "Platforms/devices.h"
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 
 void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr root);
 

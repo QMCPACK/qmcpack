@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
+#include "QMCCostFunctionBatched.h"
 #include "QMCDrivers/WFOpt/CostFunctionCrowdData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"

@@ -1,5 +1,5 @@
 
-#include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
+#include "QMCWFOptFactoryNew.h"
 #include "QMCDrivers/WFOpt/QMCOptimize.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"

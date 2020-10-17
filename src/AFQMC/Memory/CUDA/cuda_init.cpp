@@ -10,7 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include "AFQMC/Memory/CUDA/cuda_init.h"
+#include "cuda_init.h"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "Platforms/Host/OutputManager.h"

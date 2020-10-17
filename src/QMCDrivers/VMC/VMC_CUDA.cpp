@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMC_CUDA.h"
+#include "VMC_CUDA.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -22,7 +22,7 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "type_traits/scalar_traits.h"
 #include "Utilities/RunTimeManager.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 #ifdef USE_NVTX_API
 #include <nvToolsExt.h>
 #endif
