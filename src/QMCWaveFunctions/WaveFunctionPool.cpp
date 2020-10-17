@@ -42,14 +42,27 @@ WaveFunctionPool::~WaveFunctionPool()
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  std::string id("psi0"), target("e"), role("extra");
+  std::string id("psi0"), target("e"), role("extra"), tasking("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
   pAttrib.add(target, "target");
   pAttrib.add(target, "ref");
+  pAttrib.add(tasking, "tasking");
   pAttrib.add(role, "role");
   pAttrib.put(cur);
+
+  if (tasking != "yes" && tasking != "no")
+    myComm->barrier_and_abort("Incorrect input value of 'tasking' attribute. It can only be 'yes' or 'no'.");
+
+#if defined(__INTEL_COMPILER)
+  if (tasking == "yes")
+  {
+    tasking = "no";
+    app_warning() << "Asynchronous tasking has to be turned off on builds using Intel compilers." << std::endl;
+  }
+#endif
+
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
   // Ye: the overall logic of the "check" is still not clear to me.
@@ -75,12 +88,13 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   {
     APP_ABORT("WaveFunctionPool::put Target ParticleSet is not found.");
   }
+
   std::map<std::string, WaveFunctionFactory*>::iterator pit(myPool.find(id));
   WaveFunctionFactory* psiFactory = 0;
   bool isPrimary                  = true;
   if (pit == myPool.end())
   {
-    psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm);
+    psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm, tasking == "yes");
     isPrimary  = (myPool.empty() || role == "primary");
     myPool[id] = psiFactory;
   }
