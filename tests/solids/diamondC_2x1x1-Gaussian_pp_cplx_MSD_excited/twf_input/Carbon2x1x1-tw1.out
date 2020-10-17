@@ -1,0 +1,233 @@
+Discarded 6 diffused primitive functions, 0 contracted functions
+#INFO: **** input file is /home/abenali/Work/Development/QMCPACK-Benali/qmcpack/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited/twf_input/Carbon2x1x1-tw1.py ****
+#! /usr/bin/env python3
+import h5py
+from pyscf.pbc import gto, scf, df
+from numpy import array
+
+cell = gto.Cell()
+cell.a             = '''
+         3.37316115       3.37316115       0.00000000
+         0.00000000       3.37316115       3.37316115
+         3.37316115       0.00000000       3.37316115'''
+cell.atom = '''  
+   C        0.00000000       0.00000000       0.00000000
+   C        1.686580575      1.686580575      1.686580575 
+            ''' 
+cell.basis         = 'bfd-vdz'
+cell.ecp           = 'bfd'
+cell.unit          = 'B'
+cell.drop_exponent = 0.1
+cell.verbose       = 5
+cell.charge        = 0
+cell.spin          = 0
+cell.build()
+
+
+sp_twist=[0.07761248, 0.07761248, -0.07761248]
+
+kmesh=[2,1,1]
+kpts=array([[ 0.07761248,  0.07761248, -0.07761248],[ 0.54328733,  0.54328733, -0.54328733]])
+
+
+
+
+mydf = df.GDF(cell,kpts)
+mydf.auxbasis = 'weigend'
+#mydf._cderi_to_save = 'df_ints.h5'
+#mydf.build()                     
+mf = scf.KROHF(cell,kpts).density_fit()
+mf.exxdiv = 'ewald'
+mf.max_cycle = 200
+mf.with_df = mydf
+mf.chkfile ='diamond-scf.chk'
+mf.with_df._cderi = 'df_ints.h5'
+dm=mf.from_chk('diamond-scf.chk')
+e_scf=mf.kernel(dm)
+#e_scf=mf.kernel()
+
+ener = open('e_scf','w')
+ener.write('%s\n' % (e_scf))
+print('e_scf',e_scf)
+ener.close()
+
+title="C_diamond-twist"
+from PyscfToQmcpack import savetoqmcpack
+savetoqmcpack(cell,mf,title=title,kmesh=kmesh,kpts=kpts,sp_twist=sp_twist)
+
+from MolPyscfToQPkpts import pyscf2QP2
+pyscf2QP2(cell,mf,kpts=kpts,kmesh=kmesh,sp_twist=sp_twist,int_threshold = 1E-15)
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='abenali', release='4.15.0-118-generic', version='#119-Ubuntu SMP Tue Sep 8 12:30:01 UTC 2020', machine='x86_64', processor='x86_64')  Threads 8
+Python 3.6.9 (default, Oct  8 2020, 12:12:24) 
+[GCC 8.4.0]
+numpy 1.15.4  scipy 1.1.0
+Date: Thu Oct 15 20:14:54 2020
+PySCF version 1.7.5
+PySCF path  /usr/local/lib/python3.6/dist-packages/pyscf
+
+[CONFIG] conf_file None
+[INPUT] verbose = 5
+[INPUT] max_memory = 4000 
+[INPUT] num. atoms = 2
+[INPUT] num. electrons = 8
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = B
+[INPUT]  1 C      0.000000000000   0.000000000000   0.000000000000 AA    0.000000000000   0.000000000000   0.000000000000 Bohr
+[INPUT]  2 C      0.892500004670   0.892500004670   0.892500004670 AA    1.686580575000   1.686580575000   1.686580575000 Bohr
+[INPUT] ---------------- BASIS SET ---------------- 
+[INPUT] l, kappa, [nprim/nctr], expnt,             c_1 c_2 ...
+[INPUT] C
+[INPUT] 0    0    [8    /1   ]  13.073594         -0.000705
+                                6.541187          0.015176
+                                3.272791          -0.121499
+                                1.637494          -0.033512
+                                0.819297          0.180113
+                                0.409924          0.380369
+                                0.2051            0.397529
+                                0.102619          0.169852
+[INPUT] 0    0    [1    /1   ]  0.127852             1
+[INPUT] 1    0    [7    /1   ]  7.480076          0.021931
+                                3.741035          0.054425
+                                1.871016          0.112024
+                                0.935757          0.210979
+                                0.468003          0.289868
+                                0.234064          0.302667
+                                0.117063          0.191634
+[INPUT] 1    0    [1    /1   ]  0.149161             1
+[INPUT] 2    0    [1    /1   ]  0.561161             1
+
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.5590124922986
+nuclear repulsion = -12.7756672328593
+number of shells = 10
+number of NR pGTOs = 76
+number of NR cGTOs = 26
+basis = bfd-vdz
+ecp = bfd
+CPU time:         2.11
+lattice vectors  a1 [3.373161150, 3.373161150, 0.000000000]
+                 a2 [0.000000000, 3.373161150, 3.373161150]
+                 a3 [3.373161150, 0.000000000, 3.373161150]
+dimension = 3
+low_dim_ft_type = None
+Cell volume = 76.7611
+exp_to_discard = 0.1
+rcut = 19.243077142883383 (nimgs = [5 5 5])
+lattice sum = 911 cells
+precision = 1e-08
+pseudo = None
+ke_cutoff = 357.28958447816603
+    = [34 34 34] mesh (39304 PWs)
+ew_eta = 2.61119
+ew_cut = 2.673899610122948 (nimgs = [1 1 1])
+
+
+******** <class 'pyscf.pbc.scf.krohf.KROHF'> ********
+method = KROHF-KRHF-KSCF-ROHF-RHF-SCF-ROHF-RHF
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+SCF conv_tol = 1e-07
+SCF conv_tol_grad = None
+SCF max_cycles = 200
+direct_scf = False
+chkfile to save SCF result = diamond-scf.chk
+max_memory 4000 MB (current use 69 MB)
+
+
+******** PBC SCF flags ********
+N kpts = 2
+kpts = [[ 0.07761248  0.07761248 -0.07761248]
+ [ 0.54328733  0.54328733 -0.54328733]]
+Exchange divergence treatment (exxdiv) = ewald
+Ewald components = 1.16914688656015e-69, -1.47470687199088, 1.24004469635362
+    madelung (= occupied orbital energy shift) = 0.46932435127452665
+    Total energy shift due to Ewald probe charge = -1/2 * Nelec*madelung = -1.8772974051
+DF object = <pyscf.pbc.df.df.GDF object at 0x153013139e10>
+number of electrons per unit cell  alpha = 8 beta = 8
+Set gradient conv threshold to 0.000316228
+Ewald components = 1.16914688656015e-69, -1.47470687199088, 1.24004469635362
+    CPU time for vj and vk     19.60 sec, wall time      2.53 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.5590124922986
+E1 = (4.391600358780105-1.4215028893566073e-14j)  E_coul = (-2.268211221767496-4.154723711336655e-14j)
+init E= -10.6522780958467
+cond(S) = [ 64201.47547401 153064.29567142]
+    CPU time for initialize scf    551.60 sec, wall time     73.26 sec
+HOMO = 0.279594082861  LUMO = 1.04587419826
+                  Roothaan           | alpha              | beta
+  kpt  0 ( 0.083  0.000  0.000)
+  Highest 2-occ =  0.279594082861124 |  0.279594082861123 |  0.279594082861123
+  Lowest 0-occ =    1.04587419825731 |   1.04587419825731 |   1.04587419825731
+  kpt  1 ( 0.583  0.000  0.000)
+  Highest 2-occ =  0.167353650084889 |  0.167353650084888 |  0.167353650084888
+  Lowest 0-occ =    1.13823622313999 |   1.13823622313998 |   1.13823622313998
+     k-point                  Roothaan mo_energy
+   0 ( 0.083  0.000  0.000)   [-0.64913976  0.26160284  0.26160284  0.27959408] [1.0458742  1.0458742  1.04721223 1.34425916 1.63535106 1.80036179
+ 1.80036179 2.24877769 2.3024486  2.3024486  2.6876982  2.6876982
+ 2.74896594 3.18348703 3.62449613 3.62449613 3.69131217 3.69131217
+ 3.86069275 4.74525136 4.74525136 5.12235937]
+   1 ( 0.583  0.000  0.000)   [-0.45685519 -0.17633421  0.16735365  0.16735365] [ 1.13823622  1.15885796  1.15885796  1.40458546  1.69145459  1.80343805
+  1.80888763  1.80888763  2.21310291  2.21310291  2.8710483   2.94133963
+  2.94133963  3.29608604  3.29608604  3.33804597  3.790271    3.790271
+  3.83008764  3.86538667  3.86538667 10.76288455]
+Ewald components = 1.16914688656015e-69, -1.47470687199088, 1.24004469635362
+    CPU time for vj and vk     25.62 sec, wall time      3.35 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.5590124922986
+E1 = (4.3916003587801-1.4253572280797933e-14j)  E_coul = (-2.2682112217674915-4.1572261854760234e-14j)
+cycle= 1 E= -10.6522780958467  delta_E=    0  |g|= 1.72e-13  |ddm|= 2.74e-12
+    CPU time for cycle= 1     26.80 sec, wall time      3.51 sec
+HOMO = 0.279594082861  LUMO = 1.04587419826
+                  Roothaan           | alpha              | beta
+  kpt  0 ( 0.083  0.000  0.000)
+  Highest 2-occ =  0.279594082861124 |  0.279594082861124 |  0.279594082861124
+  Lowest 0-occ =    1.04587419825731 |   1.04587419825731 |   1.04587419825731
+  kpt  1 ( 0.583  0.000  0.000)
+  Highest 2-occ =  0.167353650084888 |  0.167353650084888 |  0.167353650084888
+  Lowest 0-occ =    1.13823622313998 |   1.13823622313998 |   1.13823622313998
+     k-point                  Roothaan mo_energy
+   0 ( 0.083  0.000  0.000)   [-0.64913976  0.26160284  0.26160284  0.27959408] [1.0458742  1.0458742  1.04721223 1.34425916 1.63535106 1.80036179
+ 1.80036179 2.24877769 2.3024486  2.3024486  2.6876982  2.6876982
+ 2.74896594 3.18348703 3.62449613 3.62449613 3.69131217 3.69131217
+ 3.86069275 4.74525136 4.74525136 5.12235937]
+   1 ( 0.583  0.000  0.000)   [-0.45685519 -0.17633421  0.16735365  0.16735365] [ 1.13823622  1.15885796  1.15885796  1.40458546  1.69145459  1.80343805
+  1.80888763  1.80888763  2.21310291  2.21310291  2.8710483   2.94133963
+  2.94133963  3.29608604  3.29608604  3.33804597  3.790271    3.790271
+  3.83008764  3.86538667  3.86538667 10.76288455]
+Ewald components = 1.16914688656015e-69, -1.47470687199088, 1.24004469635362
+    CPU time for vj and vk     27.65 sec, wall time      3.62 sec
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.5590124922986
+E1 = (4.391600358780099-1.4207873159227669e-14j)  E_coul = (-2.2682112217674906-4.163345829113346e-14j)
+Extra cycle  E= -10.6522780958467  delta_E=    0  |g|= 1.07e-13  |ddm|= 3.81e-12
+    CPU time for scf_cycle    607.07 sec, wall time     80.53 sec
+    CPU time for SCF    607.57 sec, wall time     80.63 sec
+converged SCF energy = -10.6522780958467
+e_scf -10.652278095846732
+Using Python 3.x
+Wavefunction successfully saved to QMCPACK HDF5 Format
+Use: "convert4qmc -pyscf  C_diamond-twist.h5" to generate QMCPACK input files
+n Kpts 2
+n active Mos per kpt 26
+n AOs per kpt 26
+n_atom per kpt 2
+0 0 0 8 1 0
+0 1 0 1 1 1
+0 2 1 7 1 2
+0 3 1 1 1 3
+0 4 2 1 1 4
+1 5 0 8 1 5
+1 6 0 1 1 6
+1 7 1 7 1 7
+1 8 1 1 1 8
+1 9 2 1 1 9
+num_elec per kpt 8
+Ewald components = 1.16914688656015e-69, -1.47470687199088, 1.24004469635362
+Ewald components = 8.63915484117797e-26, -47.334679725158, 34.5590124922986
+nucl_repul -29.305929275914895
+n df fitting functions 98
