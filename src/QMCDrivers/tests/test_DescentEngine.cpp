@@ -28,7 +28,7 @@ typedef qmcplusplus::QMCTraits::ValueType ValueType;
 TEST_CASE("DescentEngine RMSprop update","[drivers][descent]")
 {
 
-  Communicate myComm;
+  Communicate* c = OHMMS::Controller;
 
   
   const std::string engine_input("<tmp> </tmp>");
@@ -39,7 +39,7 @@ TEST_CASE("DescentEngine RMSprop update","[drivers][descent]")
 
   xmlNodePtr fakeXML = doc.getRoot();
 
-std::unique_ptr<DescentEngine> descentEngineObj = std::make_unique<DescentEngine>(&myComm, fakeXML);
+std::unique_ptr<DescentEngine> descentEngineObj = std::make_unique<DescentEngine>(c, fakeXML);
 
 optimize::VariableSet myVars;
 
@@ -98,6 +98,7 @@ app_log() << "Mean: " << mean << std::endl;
 app_log() << "Variance: " << variance << std::endl;
 app_log() << "Standard Error: " << stdErr << std::endl;
 
+//mpi_unbiased_ratio_of_means should calculate the mean, variance, and standard error and obtain the values below
 REQUIRE(std::real(mean) == Approx(-2.0));
 REQUIRE(std::real(variance) == Approx(0.0));
 REQUIRE(std::real(stdErr) == Approx(0.0));
