@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -18,50 +18,82 @@
 #include "QMCDrivers/tests/SetupDMCTest.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
+#include "Platforms/Host/OutputManager.h"
 
 namespace qmcplusplus
 {
-TEST_CASE("DMCBatched::calc_default_local_walkers", "[drivers]")
+namespace testing
+{
+class DMCBatchedTest
+{
+public:
+  DMCBatchedTest() { up_dtest_ = std::make_unique<SetupDMCTest>(1); }
+
+  void testDependentObjectsValidAfterPopulationChange()
+  {
+    using namespace testing;
+    SetupDMCTest& dtest = get_dtest();
+  }
+
+  SetupDMCTest& get_dtest() { return *up_dtest_; }
+
+private:
+  UPtr<SetupDMCTest> up_dtest_;
+};
+} // namespace testing
+
+/** Since we check the DMC only feature of reserve walkers perhaps this should be
+ *  a DMC integration test.
+ */
+TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
-  Concurrency::OverrideMaxThreads<> override(8);
+  Concurrency::OverrideMaxCapacity<> override(8);
+  Communicate* comm;
+  comm = OHMMS::Controller;
+  outputManager.pause();
 
-  SetupDMCTest dtest(1);
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+  QMCDriverInput qmcdriver_input(3);
+  qmcdriver_input.readXML(node);
+  DMCDriverInput dmcdriver_input;
+  dmcdriver_input.readXML(node);
+  MinimalParticlePool mpp;
+  ParticleSetPool particle_pool = mpp(comm);
+  MinimalWaveFunctionPool wfp;
+  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
+  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
 
+  MinimalHamiltonianPool mhp;
+  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
+  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
+                          hamiltonian_pool.getPrimary(), comm->rank());
+  SampleStack samples;
+  DMCBatched dmcdriver(std::move(qmcdriver_input), std::move(dmcdriver_input), population, *(wavefunction_pool.getPrimary()),
+                                    *(hamiltonian_pool.getPrimary()), comm);
 
-  auto testWRTWalkersPerRank = [&dtest](int walkers_per_rank) {
-                                 DMCBatched dmc_batched = dtest();
-    dmc_batched.set_walkers_per_rank(walkers_per_rank, "testing");
-    if (dtest.num_crowds < 8)
-      dmc_batched.set_num_crowds(Concurrency::maxThreads(), "Insufficient threads available to match test input");
-    DMCBatched::IndexType local_walkers       = dmc_batched.calc_default_local_walkers(walkers_per_rank);
-    QMCDriverNew::IndexType walkers_per_crowd = dmc_batched.get_walkers_per_crowd();
+  // setStatus must be called before process
+  std::string root_name{"Test"};
+  //For later sections this appears to contain important state.
+  std::string prev_config_file{""};
 
-    if (walkers_per_rank < dtest.num_crowds)
-    {
-      CHECK(walkers_per_crowd == 1);
-      CHECK(local_walkers == dtest.num_crowds);
-      CHECK(dtest.population.get_num_local_walkers() == dtest.num_crowds);
-      CHECK(dtest.population.get_num_global_walkers() == dtest.num_crowds * dtest.num_ranks);
-    }
-    else if (walkers_per_rank % dtest.num_crowds)
-    {
-      CHECK(walkers_per_crowd == walkers_per_rank / dtest.num_crowds + 1);
-      CHECK(local_walkers == walkers_per_crowd * dtest.num_crowds);
-      CHECK(dtest.population.get_num_local_walkers() == walkers_per_crowd * dtest.num_crowds);
-      CHECK(dtest.population.get_num_global_walkers() == walkers_per_crowd * dtest.num_crowds * dtest.num_ranks);
-    }
-    else
-    {
-      CHECK(local_walkers == walkers_per_rank);
-      CHECK(dtest.population.get_num_local_walkers() == walkers_per_rank);
-      CHECK(dtest.population.get_num_global_walkers() == walkers_per_rank * dtest.num_ranks);
-    }
-  };
-  testWRTWalkersPerRank(7);
-  testWRTWalkersPerRank(31);
-  testWRTWalkersPerRank(32);
-  testWRTWalkersPerRank(33);
+  dmcdriver.setStatus(root_name, prev_config_file, false);
+  // We want to express out expectations of the QMCDriver state machine so we catch
+  // changes to it over time.
+  CHECK(dmcdriver.getNewBranchEngine() == nullptr);
+  outputManager.resume();
+
+  dmcdriver.process(node);
+  CHECK(dmcdriver.getNewBranchEngine() != nullptr);
+  CHECK(dmcdriver.get_living_walkers() == 32);
+  CHECK(population.get_num_global_walkers() == 32);
+  CHECK(population.get_num_local_walkers() == 32);
+  QMCTraits::IndexType reserved_walkers = population.get_num_local_walkers() + population.get_dead_walkers().size();
+  CHECK(reserved_walkers == 48);
+  // What else should we expect after process
 }
 
 

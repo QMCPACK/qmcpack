@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -10,39 +10,33 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Configuration.h>
-#include "Message/Communicate.h"
-#include "Message/TagMaker.h"
+#include "Communicate.h"
 #include <iostream>
+#include <sstream>
+#include <string>
 #include <cstdio>
-#include <Platforms/sysutil.h>
-#include <Utilities/FairDivide.h>
 #include <fstream>
+#include "config.h"
+#include "Platforms/sysutil.h"
+#include "Utilities/FairDivide.h"
 
 #ifdef HAVE_MPI
 #include "mpi3/shared_communicator.hpp"
 #endif
 
 
-//static data of TagMaker::CurrentTag is initialized.
-int TagMaker::CurrentTag = 1000;
-
 //Global Communicator is created without initialization
 Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
 Communicate::Communicate()
-    : myMPI(MPI_COMM_NULL),
-      d_mycontext(0),
-      d_ncontexts(1),
-      d_groupid(0),
-      d_ngroups(1),
-      GroupLeaderComm(nullptr)
+    : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
 {}
 
 #ifdef HAVE_MPI
@@ -137,7 +131,6 @@ void Communicate::cleanupMessage(void*) {}
 void Communicate::abort() const { comm.abort(1); }
 
 void Communicate::barrier() const { comm.barrier(); }
-
 #else
 
 void Communicate::initialize(int argc, char** argv) { std::string when = "qmc." + getDateAndTime("%Y%m%d_%H%M"); }
@@ -157,7 +150,6 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
   GroupLeaderComm = new Communicate();
 }
-
 #endif // !HAVE_MPI
 
 void Communicate::barrier_and_abort(const std::string& msg) const

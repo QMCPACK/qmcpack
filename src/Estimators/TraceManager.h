@@ -24,13 +24,14 @@
 
 
 #include <Configuration.h>
-#include <OhmmsData/OhmmsElementBase.h>
-#include <OhmmsData/AttributeSet.h>
-#include <OhmmsPETE/OhmmsArray.h>
-#include <Particle/ParticleSet.h>
-#include <Utilities/IteratorUtility.h>
-#include <Message/Communicate.h>
-#include <io/hdf_archive.h>
+#include "OhmmsData/OhmmsElementBase.h"
+#include "OhmmsData/AttributeSet.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "Particle/ParticleSet.h"
+#include "Utilities/IteratorUtility.h"
+#include "Message/Communicate.h"
+#include "hdf/hdf_archive.h"
+#include "Message/OpenMP.h"
 #include <map>
 #include <set>
 #include <algorithm>
@@ -551,6 +552,7 @@ struct TraceSample
     check_shape();
   }
 
+  inline virtual ~TraceSample() = default;
 
   inline void initialize(const std::string& sdomain, const std::string& sname, int sindex, int sdim)
   {
@@ -2118,7 +2120,7 @@ public:
 // make a vacuous class for TraceManager for lighter compilation
 //   disabling TraceManager should not affect other runtime behavior
 
-#include <Particle/ParticleSet.h>
+#include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {

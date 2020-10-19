@@ -1,0 +1,86 @@
+This implements the finite size corrections of Holzmann et al., given in
+PRB 94, 035126 (2016).
+
+Currently, all finite size corrections are computed from the electron-electron
+structure factor, although when appropriate wavefunctions are implemented and
+tested in QMCPACK, this utility will be able to compute the corresponding finite
+size corrections for the kinetic energy.  
+
+2-body Potential Energy Corrections:
+Using the structure factor, this code computes:
+ 1.) V_LO:  The leading order 2-body potential correction, obtained from the k->0 behavior
+     of the structure factor.  
+ 2.) V_INT:  The total 2-body potential energy correction obtained by interpolating the
+     structure factor to the thermodynamic limit, and computing the difference between
+     the thermodynamic limit energy and unit cell energy.  
+ 3.) T_LO:  The leading order kinetic energy correction obtained from the structure factor.  
+     This requires an ansatz u(k) \approx \frac{1}{2\rho S(k)}, where u(k) is the long
+     range Jastrow.
+
+Using qmcfinitesize:
+qmcfinitesize qmcinput.xml --ascii|--scalardat|--hdf5 skfile.dat
+
+qmcinput.xml is the same file used in the initial QMCPACK run.  This is required to reconstruct
+the unit cell volume, obtain the number of particles, and do the long range breakup.
+
+skfile.dat is the file containing the S(k) data.  The two options are as follows:
+
+--ascii:  Assumes the fluctuation structure factor, 
+           $\deltaS(k) = \frac{1}{N_e}\langle (\rho_{-k}-\overline{\rho}_{-k} )(\rho_{k}-\overline{\rho}_k )\rangle$
+           is given.  
+        
+          Header:  "kx ky kz S(k) S(k)_err"
+          Subsequent lines: kx ky kz sk skerr
+
+--scalardat:  If the estimator "skall" is used during the run, then this utility will build the fluctuation
+              structure factor.  USE "skall" ESTIMATOR, and NOT "sk"!!!  This option assumes the same formatting 
+              of the processed scalar.dat file as is generated with the energy.pl utility.  If energy.pl is not used, 
+              then the following fomat must be obeyed:
+    
+              OBSERVABLE  =  VALUE +/-  ERROR  
+   
+              The amount and type of whitespace is not important, so far as there are 5 fields.  OBSERVABLE cannot be 
+              changed from how it appears in the scalar.dat file.  The relevant
+              entries are "rho_e_X_#", where X=e for the <rho_-k*rho_k> piece, X=i for Im(rho_k), and
+              X=r for Re(rho_k).  
+
+--hdf5: If the estiator "skall" is used during the run along with the hdf5="yes" option, then this utility will build 
+        the flucuation structure factor from the particular stat.h5 file which includes S(k) at each block. 
+        A simple equilibration estimate is performed for each k value, and then the block averaged S(k) is stored after
+        throwing out the equilibration blocks. If one is interested in twist averaged data, simply run this utility 
+        for the stat.h5 files for each twist, and twist average the results.
+
+---Output---
+2-body Potential Energy Corrections:
+Using the structure factor, this code computes:
+ 1.) V_LO:  The leading order 2-body potential correction, obtained from the k->0 behavior
+     of the structure factor.  
+ 2.) V_INT:  The total 2-body potential energy correction obtained by interpolating the
+     structure factor to the thermodynamic limit, and computing the difference between
+     the thermodynamic limit energy and unit cell energy.  
+ 3.) T_LO:  The leading order kinetic energy correction obtained from the structure factor.  
+     This requires an ansatz u(k) \approx \frac{1}{2\rho S(k)}, where u(k) is the long
+     range Jastrow.
+
+In addition to the corrections, the code outputs the following:
+ 1.) Spherically averaged dS(k) with optimized breakup fourier components of the coulomb potential vk.  
+     Found between the tags #SK_RAW_START# and #SK_RAW_STOP#.  The columns have the following meanings:
+     Column 1:  "k", the magnitude of the kvector in cartesian units.  
+     Column 2:  "S(k)", the fluctuation structure factor averaged over k-shells.  The way the averaging works
+                is that the k points are grouped into shells with the same |k|.  For each shell, the structure factor
+                is averaged with a discrete sum.  
+     Column 3:  "vk", the fourier component of the coulomb potential after the optimized breakup procedure.
+                This is related to the vk_lr in the Holzmann paper by vk_lr = Volume*vk.  
+
+ 2.) Spherically averaged dS(k) from 3D spline.  This is found between the tags #SK_SPLINE_START# and
+     #SK_SPLINE_STOP#. 
+     Column 1:  magnitude of k vector in cartesian units. 
+     Column 2:  spherically averaged dS(k).  This is done by constructing a uniform spherical grid, and calculating
+                the average of dS(k) over this grid.  
+
+ 3.) "S(k) Anisotropy near k=0": 
+     This assumes that the S(k) near k=0 is given by a quadratic form.  Let A be a 3x3 symmetric matrix, and k be
+     a 3d column vector.  We represent S(k) = k^T*A*k.  The elements of A are given as a_xx, a_yy, etc.
+     These are computed from finite differencing.  
+
+ 

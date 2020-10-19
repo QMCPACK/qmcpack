@@ -17,9 +17,9 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
-#include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
-#include <QMCWaveFunctions/SPOSet.h>
-#include <config/stdlib/math.hpp>
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "config/stdlib/math.hpp"
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
@@ -42,7 +42,6 @@ struct RealEGOSet : public SPOSet
   RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
 
   void resetParameters(const opt_variables_type& optVariables) override {}
-  inline void resetTargetParticleSet(ParticleSet& P) override {}
   void setOrbitalSetSize(int norbs) override {}
 
   SPOSet* makeClone() const override { return new RealEGOSet(*this); }
@@ -88,7 +87,7 @@ struct RealEGOSet : public SPOSet
     psi[0] = 1.0;
     for (int ik = 0, j = 1; ik < KptMax; ik++)
     {
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[j++] = coskr;
       psi[j++] = sinkr;
     }
@@ -111,7 +110,7 @@ struct RealEGOSet : public SPOSet
     for (int ik = 0, j1 = 1; ik < KptMax; ik++, j1 += 2)
     {
       int j2 = j1 + 1;
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[j1]   = coskr;
       psi[j2]   = sinkr;
       dpsi[j1]  = -sinkr * K[ik];
@@ -138,7 +137,7 @@ struct RealEGOSet : public SPOSet
     for (int ik = 0, j1 = 1; ik < KptMax; ik++, j1 += 2)
     {
       int j2 = j1 + 1;
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[j1]  = coskr;
       psi[j2]  = sinkr;
       dpsi[j1] = -sinkr * K[ik];
@@ -193,7 +192,7 @@ struct RealEGOSet : public SPOSet
       for (int ik = 0, j1 = 1; ik < KptMax; ik++, j1 += 2)
       {
         int j2 = j1 + 1;
-        sincos(dot(K[ik], P.R[iat]), &sinkr, &coskr);
+        qmcplusplus::sincos(dot(K[ik], P.R[iat]), &sinkr, &coskr);
         psi[j1]  = coskr;
         psi[j2]  = sinkr;
         dpsi[j1] = -sinkr * K[ik];
@@ -236,7 +235,7 @@ struct RealEGOSet : public SPOSet
       for (int ik = 0, j1 = 1; ik < KptMax; ik++, j1 += 2)
       {
         int j2 = j1 + 1;
-        sincos(dot(K[ik], P.R[iat]), &sinkr, &coskr);
+        qmcplusplus::sincos(dot(K[ik], P.R[iat]), &sinkr, &coskr);
         psi[j1]  = coskr;
         psi[j2]  = sinkr;
         dpsi[j1] = -sinkr * K[ik];

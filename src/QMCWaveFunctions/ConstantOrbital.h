@@ -24,11 +24,10 @@ public:
   virtual void checkOutVariables(const opt_variables_type& active) override {}
   virtual void resetParameters(const opt_variables_type& active) override {}
   virtual void reportStatus(std::ostream& os) override {}
-  virtual void resetTargetParticleSet(ParticleSet& P) override {}
 
   PsiValueType FakeGradRatio;
 
-  ConstantOrbital() : FakeGradRatio(1.0) {}
+  ConstantOrbital() : WaveFunctionComponent("ConstantOrbital"), FakeGradRatio(1.0) {}
 
   virtual LogValueType evaluateLog(ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,

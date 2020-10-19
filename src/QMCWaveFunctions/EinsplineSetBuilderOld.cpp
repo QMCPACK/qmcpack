@@ -25,6 +25,7 @@
 #include "OhmmsData/HDFStringAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {
@@ -585,7 +586,7 @@ EinsplineSetBuilder::ReadBands
           ru[2] = (RealType)iz / (RealType)(nz-1);
           double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
           double s, c;
-          sincos(phi, &s, &c);
+          qmcplusplus::sincos(phi, &s, &c);
           std::complex<double> phase(c,s);
           std::complex<double> z = phase*rawData(ix,iy,iz);
           splineData(ix,iy,iz) = z.imag();
@@ -756,7 +757,7 @@ EinsplineSetBuilder::ReadBands
               ru[2] = (RealType)iz / (RealType)(nz-1);
               double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
               double s, c;
-              sincos(phi, &s, &c);
+              qmcplusplus::sincos(phi, &s, &c);
               std::complex<double> phase(c,s);
               std::complex<double> z = phase*rawData(ix,iy,iz);
               splineData(ix,iy,iz) = z.real();

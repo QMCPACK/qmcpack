@@ -20,11 +20,12 @@
 
 #include <memory>
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
-#include <OhmmsSoA/Container.h>
-#include <spline2/MultiBspline.hpp>
+#include "OhmmsSoA/VectorSoaContainer.h"
+#include "spline2/MultiBspline.hpp"
 #include "OpenMP/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Utilities/FairDivide.h"
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
@@ -66,6 +67,8 @@ public:
   using OffloadPosVector = VectorSoaContainer<DT, 3, OffloadAllocator<DT>>;
 
 private:
+  /// timer for offload portion
+  NewTimer& offload_timer_;
   ///primitive cell
   CrystalLattice<ST, 3> PrimLattice;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
@@ -80,8 +83,10 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  ///thread private ratios for reduction when using nested threading, numVP x numThread
+  ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
+  ///team private ratios and grads for reduction, numVP x numTeams
+  Matrix<TT, OffloadPinnedAllocator<TT>> rg_private;
   ///offload scratch space, dynamically resized to the maximal need
   Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
@@ -92,8 +97,10 @@ private:
   Vector<TT, OffloadPinnedAllocator<TT>> mw_psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
-  ///reference particle id of all the quadrature points
-  Vector<int, OffloadPinnedAllocator<int>> mw_ref_id;
+  ///multi purpose H2D buffer for mw_evaluateVGLandDetRatioGrads
+  Matrix<char, OffloadPinnedAllocator<char>> buffer_H2D;
+  ///multi purpose H2D buffer for mw_evaluateDetRatios
+  Vector<char, OffloadPinnedAllocator<char>> det_ratios_buffer_H2D;
 
   void evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
                            const RefVector<ValueVector_t>& psi_v_list,
@@ -109,7 +116,12 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2ROMP() : nComplexBands(0), GGt_offload(std::make_shared<OffloadVector<ST>>(9)), PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
+  SplineC2ROMP()
+      : BsplineSet(true),
+        offload_timer_(*timer_manager.createTimer("SplineC2ROMP::offload", timer_level_fine)),
+        nComplexBands(0),
+        GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
+        PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
   {
     is_complex = true;
     className  = "SplineC2ROMP";
@@ -160,7 +172,7 @@ public:
   void finalizeConstruction() override
   {
     // map the SplineInst->getSplinePtr() structure to GPU
-    auto* MultiSpline = SplineInst->getSplinePtr();
+    auto* MultiSpline    = SplineInst->getSplinePtr();
     auto* restrict coefs = MultiSpline->coefs;
     // attach pointers on the device to achieve deep copy
     PRAGMA_OFFLOAD("omp target map(always, to: MultiSpline[0:1], coefs[0:MultiSpline->coefs_size])")
@@ -175,7 +187,7 @@ public:
     PRAGMA_OFFLOAD("omp target update to(myKcart_ptr[0:myKcart->capacity()*3])")
     for (size_t i = 0; i < 9; i++)
     {
-      (*GGt_offload)[i] = GGt[i];
+      (*GGt_offload)[i]           = GGt[i];
       (*PrimLattice_G_offload)[i] = PrimLattice.G[i];
     }
     auto* PrimLattice_G_ptr = PrimLattice_G_offload->data();
@@ -193,7 +205,7 @@ public:
     // GPU CUDA code doesn't allow a change of the ordering
     nComplexBands = this->remap_kpoints();
 #endif
-    int nk = kPoints.size();
+    int nk  = kPoints.size();
     mKK     = std::make_shared<OffloadVector<ST>>(nk);
     myKcart = std::make_shared<OffloadPosVector<ST>>(nk);
     for (size_t i = 0; i < nk; ++i)
@@ -221,7 +233,7 @@ public:
   virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
                                     const RefVector<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
-                                    const RefVector<const ValueVector_t>& psiinv_list,
+                                    const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) override;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
@@ -234,12 +246,20 @@ public:
                            GradVector_t& dpsi,
                            ValueVector_t& d2psi) override;
 
-  virtual void mw_evaluateVGL(const std::vector<SPOSet*>& sa_list,
-                              const std::vector<ParticleSet*>& P_list,
+  virtual void mw_evaluateVGL(const RefVector<SPOSet>& sa_list,
+                              const RefVector<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
                               const RefVector<ValueVector_t>& d2psi_v_list) override;
+
+  virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+                                              const RefVector<ParticleSet>& P_list,
+                                              int iat,
+                                              const std::vector<const ValueType*>& invRow_ptr_list,
+                                              VGLVector_t& phi_vgl_v,
+                                              std::vector<ValueType>& ratios,
+                                              std::vector<GradType>& grads) override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,
@@ -277,8 +297,8 @@ public:
                                     ValueMatrix_t& d2logdet) override;
 
   template<class BSPLINESPO>
-  friend class SplineSetReader;
-  friend class BsplineReaderBase;
+  friend struct SplineSetReader;
+  friend struct BsplineReaderBase;
 };
 
 extern template class SplineC2ROMP<float>;

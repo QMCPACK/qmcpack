@@ -1027,6 +1027,12 @@ def test_job_run_command():
         ('amos'           , 'n2_t2'         ) : 'srun test.x',
         ('amos'           , 'n2_t2_e'       ) : 'srun test.x',
         ('amos'           , 'n2_t2_p2'      ) : 'srun test.x',
+        ('attaway'        , 'n1'            ) : 'srun test.x',
+        ('attaway'        , 'n1_p1'         ) : 'srun test.x',
+        ('attaway'        , 'n2'            ) : 'srun test.x',
+        ('attaway'        , 'n2_t2'         ) : 'srun test.x',
+        ('attaway'        , 'n2_t2_e'       ) : 'srun test.x',
+        ('attaway'        , 'n2_t2_p2'      ) : 'srun test.x',
         ('bluewaters_xe'  , 'n1'            ) : 'aprun -n 32 test.x',
         ('bluewaters_xe'  , 'n1_p1'         ) : 'aprun -n 1 test.x',
         ('bluewaters_xe'  , 'n2'            ) : 'aprun -n 64 test.x',
@@ -1075,6 +1081,12 @@ def test_job_run_command():
         ('cori'           , 'n2_t2'         ) : 'srun test.x',
         ('cori'           , 'n2_t2_e'       ) : 'srun test.x',
         ('cori'           , 'n2_t2_p2'      ) : 'srun test.x',
+        ('eclipse'        , 'n1'            ) : 'srun test.x',
+        ('eclipse'        , 'n1_p1'         ) : 'srun test.x',
+        ('eclipse'        , 'n2'            ) : 'srun test.x',
+        ('eclipse'        , 'n2_t2'         ) : 'srun test.x',
+        ('eclipse'        , 'n2_t2_e'       ) : 'srun test.x',
+        ('eclipse'        , 'n2_t2_p2'      ) : 'srun test.x',
         ('edison'         , 'n1'            ) : 'srun test.x',
         ('edison'         , 'n1_p1'         ) : 'srun test.x',
         ('edison'         , 'n2'            ) : 'srun test.x',
@@ -1129,24 +1141,12 @@ def test_job_run_command():
         ('oic5'           , 'n2_t2'         ) : 'mpirun -np 32 test.x',
         ('oic5'           , 'n2_t2_e'       ) : 'mpirun -np 32 test.x',
         ('oic5'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('redsky'         , 'n1'            ) : 'srun test.x',
-        ('redsky'         , 'n1_p1'         ) : 'srun test.x',
-        ('redsky'         , 'n2'            ) : 'srun test.x',
-        ('redsky'         , 'n2_t2'         ) : 'srun test.x',
-        ('redsky'         , 'n2_t2_e'       ) : 'srun test.x',
-        ('redsky'         , 'n2_t2_p2'      ) : 'srun test.x',
         ('rhea'           , 'n1'            ) : 'srun -N 1 -n 16 test.x',
         ('rhea'           , 'n1_p1'         ) : 'srun -N 1 -n 1 test.x',
         ('rhea'           , 'n2'            ) : 'srun -N 2 -n 32 test.x',
         ('rhea'           , 'n2_t2'         ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
         ('rhea'           , 'n2_t2_e'       ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
         ('rhea'           , 'n2_t2_p2'      ) : 'srun -N 2 -n 4 -c 2 --cpu-bind=cores test.x',
-        ('serrano'        , 'n1'            ) : 'srun test.x',
-        ('serrano'        , 'n1_p1'         ) : 'srun test.x',
-        ('serrano'        , 'n2'            ) : 'srun test.x',
-        ('serrano'        , 'n2_t2'         ) : 'srun test.x',
-        ('serrano'        , 'n2_t2_e'       ) : 'srun test.x',
-        ('serrano'        , 'n2_t2_p2'      ) : 'srun test.x',
         ('skybridge'      , 'n1'            ) : 'srun test.x',
         ('skybridge'      , 'n1_p1'         ) : 'srun test.x',
         ('skybridge'      , 'n2'            ) : 'srun test.x',
@@ -1358,6 +1358,20 @@ def test_write_job():
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 srun test.x''',
+        attaway = '''#!/bin/bash
+#SBATCH -p batch
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=36
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
         bluewaters_xe = '''#!/bin/bash
 #PBS -N jobname
 #PBS -l walltime=06:30:00
@@ -1394,9 +1408,10 @@ aprun -n 32 test.x''',
 #SBATCH -N 2
 #SBATCH --ntasks-per-node=36
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
+#SBATCH --mem=0
 #SBATCH -o test.out
 #SBATCH -e test.err
+#SBATCH --exclusive
 #SBATCH --export=ALL
 
 export ENV_VAR=1
@@ -1432,19 +1447,15 @@ echo "Cobalt location args: $LOCARGS" >&2
 
 runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 : test.x''',
         chama = '''#!/bin/bash
+#SBATCH -p batch
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=32
+#SBATCH --ntasks-per-node=16
 #SBATCH --cpus-per-task=1
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
-
-module purge
-module add intel/intel-16.0.1.150
-module add libraries/intel-mkl-16.0.1.150
-module add mvapich2-intel-psm/1.7
 
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
@@ -1473,6 +1484,20 @@ mpirun -np 24 test.x''',
 
 echo $SLURM_SUBMIT_DIR
 cd $SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        eclipse = '''#!/bin/bash
+#SBATCH -p batch
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=36
+#SBATCH --cpus-per-task=1
+#SBATCH -t 06:30:00
+#SBATCH -o test.out
+#SBATCH -e test.err
 
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
@@ -1621,24 +1646,6 @@ cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 mpirun -np 64 test.x''',
-        redsky = '''#!/bin/bash
-#SBATCH --job-name jobname
-#SBATCH --account=ABC123
-#SBATCH -N 2
-#SBATCH --ntasks-per-node=16
-#SBATCH --cpus-per-task=1
-#SBATCH -t 06:30:00
-#SBATCH -o test.out
-#SBATCH -e test.err
-
-module purge
-module add intel/intel-16.0.1.150
-module add libraries/intel-mkl-16.0.1.150
-module add mvapich2-intel-psm/1.7
-
-export OMP_NUM_THREADS=1
-export ENV_VAR=1
-srun test.x''',
         rhea = '''#!/bin/bash
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
@@ -1657,43 +1664,22 @@ echo List of nodes assigned to the job: $SLURM_NODELIST
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun -N 2 -n 32 test.x''',
-        serrano = '''#!/bin/bash
-#SBATCH --job-name jobname
-#SBATCH --account=ABC123
-#SBATCH -N 2
-#SBATCH --ntasks-per-node=36
-#SBATCH --cpus-per-task=1
-#SBATCH -t 06:30:00
-#SBATCH -o test.out
-#SBATCH -e test.err
-
-module purge
-module add intel/16.0.3
-module add mkl/16.0
-module add mvapich2-intel-psm2/2.2rc1
-
-export OMP_NUM_THREADS=1
-export ENV_VAR=1
-srun test.x''',
         skybridge = '''#!/bin/bash
+#SBATCH -p batch
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=32
+#SBATCH --ntasks-per-node=16
 #SBATCH --cpus-per-task=1
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
-
-module purge
-module add intel/intel-16.0.1.150
-module add libraries/intel-mkl-16.0.1.150
-module add mvapich2-intel-psm/1.7
 
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 srun test.x''',
         solo = '''#!/bin/bash
+#SBATCH -p batch
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
@@ -1702,11 +1688,6 @@ srun test.x''',
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
-
-module purge
-module add intel/16.0.3
-module add mkl/16.0
-module add mvapich2-intel-psm2/2.2rc1
 
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
@@ -1836,20 +1817,15 @@ export OMP_NUM_THREADS=1
 export ENV_VAR=1
 mpirun -np 128 test.x >test.out 2>test.err''',
         uno = '''#!/bin/bash
+#SBATCH -p batch
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=128
+#SBATCH --ntasks-per-node=16
 #SBATCH --cpus-per-task=1
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
-#SBATCH -p quad
-
-module purge
-module add intel/intel-16.0.1.150
-module add libraries/intel-mkl-16.0.1.150
-module add mvapich2-intel-psm/1.7
 
 export OMP_NUM_THREADS=1
 export ENV_VAR=1

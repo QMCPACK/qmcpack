@@ -1,0 +1,38 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2020 QMCPACK developers.
+//
+// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
+//
+// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+#include "MinimalContainers/RecordArray.hpp"
+
+#include "catch.hpp"
+
+
+namespace qmcplusplus
+{
+TEST_CASE("RecordArray basics", "[containers]")
+{
+  RecordArray<double> records;
+
+  int nentry = 1;
+  int nparam = 2;
+  records.resize(nparam, nentry);
+
+  records.setValue(0, 0, 1.1);
+  records.setValue(1, 0, 1.2);
+
+  REQUIRE(records.nparam() == 2);
+  REQUIRE(records.nentry() == 1);
+
+  REQUIRE(records.getValue(0, 0) == Approx(1.1));
+  REQUIRE(records.getValue(1, 0) == Approx(1.2));
+}
+
+} // namespace qmcplusplus

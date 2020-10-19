@@ -31,7 +31,7 @@ class DMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
+  DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);
@@ -58,9 +58,6 @@ private:
   std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
   IndexType mover_MaxAge;
-  ///turn on spin moves
-  std::string SpinMoves;
-  RealType SpinMass;
 
   void resetUpdateEngines();
   /// Copy Constructor (disabled)

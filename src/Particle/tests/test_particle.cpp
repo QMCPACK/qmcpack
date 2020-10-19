@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
@@ -27,21 +27,18 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("ParticleSet distance table management", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-
   ParticleSet ions;
   ParticleSet elecs;
 
   ions.setName("ions");
   elecs.setName("electrons");
 
-  const int ii_table_id = ions.addTable(ions, DT_SOA);
-  const int ie_table_id = ions.addTable(elecs, DT_SOA);
-  const int ei_table_id = elecs.addTable(ions, DT_SOA);
-  const int ee_table_id = elecs.addTable(elecs, DT_SOA);
+  const int ii_table_id = ions.addTable(ions);
+  const int ie_table_id = ions.addTable(elecs);
+  const int ei_table_id = elecs.addTable(ions);
+  const int ee_table_id = elecs.addTable(elecs);
 
   REQUIRE(ii_table_id == 0);
   REQUIRE(ie_table_id == 1);
@@ -49,10 +46,10 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   REQUIRE(ee_table_id == 1);
 
   // second query
-  const int ii_table_id2 = ions.addTable(ions, DT_SOA);
-  const int ie_table_id2 = ions.addTable(elecs, DT_SOA);
-  const int ei_table_id2 = elecs.addTable(ions, DT_SOA);
-  const int ee_table_id2 = elecs.addTable(elecs, DT_SOA);
+  const int ii_table_id2 = ions.addTable(ions);
+  const int ie_table_id2 = ions.addTable(elecs);
+  const int ei_table_id2 = elecs.addTable(ions);
+  const int ee_table_id2 = elecs.addTable(elecs);
 
   REQUIRE(ii_table_id2 == 0);
   REQUIRE(ie_table_id2 == 1);
@@ -71,8 +68,6 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-
   ParticleSet source;
 
   source.setName("electrons");
@@ -86,14 +81,14 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
   source.R[1][2] = 3.2;
 
   source.update();
-  /// make sure RSoA is updated no matter SoA or AoS.
-  REQUIRE(source.RSoA[0][1] == Approx(1.0));
-  REQUIRE(source.RSoA[1][2] == Approx(3.2));
+  /// make sure getCoordinates().getAllParticlePos() is updated no matter SoA or AoS.
+  REQUIRE(source.getCoordinates().getAllParticlePos()[0][1] == Approx(1.0));
+  REQUIRE(source.getCoordinates().getAllParticlePos()[1][2] == Approx(3.2));
 
-  const int TableID = source.addTable(source, DT_SOA);
+  const int TableID = source.addTable(source);
   source.update();
-  const auto& d_aa = source.getDistTable(TableID);
-  const auto& aa_dists = d_aa.getDistances();
+  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 
   REQUIRE(aa_dists[0][1] == Approx(1.62788206));
@@ -108,14 +103,12 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
 TEST_CASE("symmetric_distance_table PBC", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-
   ParticleSet source;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R = ParticleSet::Tensor_t(6.74632230, 6.74632230, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
-                                 0.00000000, 3.37316115);
+                                    0.00000000, 3.37316115);
   Lattice.reset();
 
   source.setName("electrons");
@@ -127,10 +120,10 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
   source.R[2] = ParticleSet::PosType(3.37316115, 3.37316115, 0.00000000);
   source.R[3] = ParticleSet::PosType(5.05974172, 5.05974172, 1.68658058);
 
-  const int TableID = source.addTable(source, DT_SOA);
+  const int TableID = source.addTable(source);
   source.update();
-  const auto& d_aa = source.getDistTable(TableID);
-  const auto& aa_dists = d_aa.getDistances();
+  const auto& d_aa      = source.getDistTable(TableID);
+  const auto& aa_dists  = d_aa.getDistances();
   const auto& aa_displs = d_aa.getDisplacements();
 
   REQUIRE(aa_dists[1][2] == Approx(2.9212432441));
@@ -145,8 +138,6 @@ TEST_CASE("symmetric_distance_table PBC", "[particle]")
 
 TEST_CASE("particle set lattice with vacuum", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-
   ParticleSet source;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;

@@ -15,14 +15,14 @@
 
 
 #include <Configuration.h>
-#include <Message/OpenMP.h>
-#include <OhmmsData/AttributeSet.h>
-#include <OhmmsApp/RandomNumberControl.h>
-#include <Utilities/RandomGeneratorIO.h>
-#include <Utilities/Timer.h>
-#include <HDFVersion.h>
-#include <io/hdf_archive.h>
-#include <mpi/collectives.h>
+#include "Message/OpenMP.h"
+#include "OhmmsData/AttributeSet.h"
+#include "RandomNumberControl.h"
+#include "Utilities/RandomGeneratorIO.h"
+#include "Utilities/Timer.h"
+#include "hdf/HDFVersion.h"
+#include "hdf/hdf_archive.h"
+#include "mpi/collectives.h"
 #if defined(HAVE_LIBBOOST)
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -32,7 +32,7 @@
 #include <exception>
 #include <iostream>
 #endif
-#include <Utilities/SimpleParser.h>
+#include "Utilities/SimpleParser.h"
 #include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
@@ -130,7 +130,7 @@ void RandomNumberControl::test()
     for (int i = 0; i < n; ++i)
     {
       double r = myrand.rand();
-      sum  += r;
+      sum += r;
       sum2 += r * r;
     }
     avg[ip]  = sum / static_cast<double>(n);
@@ -147,11 +147,11 @@ void RandomNumberControl::test()
     {
       app_log() << "RNGTest " << std::setw(4) << i << std::setw(4) << ip << std::setw(20) << avg_tot[ii]
                 << std::setw(20) << avg2_tot[ii] - avg_tot[ii] * avg_tot[ii] << std::endl;
-      avg_g  += avg_tot[ii];
+      avg_g += avg_tot[ii];
       avg2_g += avg2_tot[ii];
     }
   }
-  avg_g  /= static_cast<double>(nthreads * OHMMS::Controller->size());
+  avg_g /= static_cast<double>(nthreads * OHMMS::Controller->size());
   avg2_g /= static_cast<double>(nthreads * OHMMS::Controller->size());
   app_log() << "RNGTest " << std::setw(4) << OHMMS::Controller->size() << std::setw(4) << nthreads << std::setw(20)
             << avg_g << std::setw(20) << avg2_g - avg_g * avg_g << std::endl;
@@ -181,6 +181,8 @@ bool RandomNumberControl::put(xmlNodePtr cur)
       pid    = OHMMS::Controller->rank();
       nprocs = OHMMS::Controller->size();
     }
+
+    app_summary() << std::endl;
     app_summary() << " Random Number" << std::endl;
     app_summary() << " -------------" << std::endl;
     if (offset_in < 0)
@@ -206,7 +208,6 @@ bool RandomNumberControl::put(xmlNodePtr cur)
 
     make_children();
     NeverBeenInitialized = false;
-    app_log() << std::endl;
   }
   else
     reset();
@@ -257,8 +258,8 @@ void RandomNumberControl::read_old(const std::string& fname, Communicate* comm)
     hout.push("random");
     std::string engname;
     hout.read(slab, Random.EngineName);
-    shape[0]           = static_cast<int>(slab.size(0));
-    shape[1]           = static_cast<int>(slab.size(1));
+    shape[0] = static_cast<int>(slab.size(0));
+    shape[1] = static_cast<int>(slab.size(1));
 #endif
   }
 
@@ -400,12 +401,12 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
   }
   app_log() << "  Restart from the random number streams from the previous configuration.\n";
 
-  vt.resize(nthreads * Random.state_size());                              //buffer for children[ip]
-  mt.resize(Random.state_size()); //buffer for single thread Random object of random nums
+  vt.resize(nthreads * Random.state_size()); //buffer for children[ip]
+  mt.resize(Random.state_size());            //buffer for single thread Random object of random nums
 
   std::array<int, 2> shape{comm->size() * nthreads, Random.state_size()}; //global dims of children dataset
-  std::array<int, 2> counts{nthreads, Random.state_size()}; //local dimensions of dataset
-  std::array<int, 2> offsets{comm->rank() * nthreads, 0};   //offsets for each process to read in
+  std::array<int, 2> counts{nthreads, Random.state_size()};               //local dimensions of dataset
+  std::array<int, 2> offsets{comm->rank() * nthreads, 0};                 //offsets for each process to read in
 
   hin.push("random"); //group that holds children[ip] random nums
   hyperslab_proxy<std::vector<uint_type>, 2> slab(vt, shape, counts, offsets);

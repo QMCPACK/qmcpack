@@ -23,28 +23,40 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 
 
-SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
-         test_coulomb_pbcAA_ewald.cpp test_force.cpp test_force_ewald.cpp test_ecp.cpp
-         test_hamiltonian_pool.cpp test_hamiltonian_factory.cpp test_PairCorrEstimator.cpp)
+SET(SRCS test_bare_kinetic.cpp
+         test_coulomb_pbcAB.cpp
+         test_coulomb_pbcAB_ewald.cpp
+         test_coulomb_pbcAA.cpp
+         test_coulomb_pbcAA_ewald.cpp
+         test_force.cpp
+         test_force_ewald.cpp
+         test_stress.cpp
+         test_ecp.cpp
+         test_hamiltonian_pool.cpp
+         test_hamiltonian_factory.cpp
+         test_PairCorrEstimator.cpp
+         test_SkAllEstimator.cpp
+         test_QMCHamiltonian.cpp
+         )
+         
 IF(QMC_CUDA)
   SET(SRCS ${SRCS}
       test_coulomb_CUDA.cpp 
 )
 ENDIF()
 
-IF(ENABLE_SOA)
-  SET(SRCS test_QMCHamiltonian.cpp ${SRCS})
-ENDIF(ENABLE_SOA)
-
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.txt" ${UTEST_DIR})
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/C.BFD.xml" ${UTEST_DIR})
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/Na.BFD.xml" ${UTEST_DIR})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/Zn.ccECP-SO.xml" ${UTEST_DIR})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/so_ecp_test.xml" ${UTEST_DIR})
 
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcham qmcwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcham)
+IF(USE_OBJECT_TARGET)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcwfs qmcparticle qmcutil containers platform_omp)
+ENDIF()
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

@@ -37,11 +37,13 @@ class MinimalWaveFunctionPool
 
 public:
   MinimalWaveFunctionPool() : comm_(nullptr) {}
-  WaveFunctionPool operator()(Communicate* comm, ParticleSetPool* particle_pool)
+
+  ~MinimalWaveFunctionPool() { SPOSetBuilderFactory::clear(); }
+
+  WaveFunctionPool operator()(Communicate* comm, ParticleSetPool& particle_pool)
   {
     comm_ = comm;
-    WaveFunctionPool wp(comm_);
-    wp.setParticleSetPool(particle_pool);
+    WaveFunctionPool wp(particle_pool, comm_);
 
     Libxml2Document* doc = new Libxml2Document;
     bool okay            = doc->parseFromString(wf_input);
@@ -50,9 +52,6 @@ public:
     xmlNodePtr root = doc->getRoot();
 
     wp.put(root);
-
-    TrialWaveFunction psi(comm_);
-    wp.setPrimary(&psi);
 
     delete doc;
     return wp;

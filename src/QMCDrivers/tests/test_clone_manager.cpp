@@ -46,7 +46,6 @@ public:
 
 TEST_CASE("QMCUpdate", "[drivers]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   MCWalkerConfiguration elec;
@@ -64,7 +63,7 @@ TEST_CASE("QMCUpdate", "[drivers]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   FakeUpdate update(elec, psi, h, rg);
 
   update.put(NULL);
@@ -75,14 +74,9 @@ TEST_CASE("QMCUpdate", "[drivers]")
 
 TEST_CASE("CloneManager", "[drivers]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
-  HamiltonianPool hpool(c);
   CloneManager cm;
-
-  //double acc_ratio = cm.acceptRatio();
-  //std::cout << "acc ratio = " << acc_ratio << std::endl;
 }
 
 } // namespace qmcplusplus

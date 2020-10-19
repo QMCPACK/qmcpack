@@ -35,15 +35,13 @@ public:
   //helper function to apply_rotation
   void exponentiate_antisym_matrix(ValueMatrix_t& mat);
 
-  //A particualr SPOSet used for Orbitals
+  //A particular SPOSet used for Orbitals
   SPOSet* Phi;
 
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
-
-  bool IsCloned;
 
   /// the number of electrons of the majority spin
   size_t nel_major_;
@@ -105,6 +103,22 @@ public:
                            const size_t NP2,
                            const std::vector<std::vector<int>>& lookup_tbl) override;
 
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi,
+                             const QTFull::ValueType& psiCurrent,
+                             const std::vector<ValueType>& Coeff,
+                             const std::vector<size_t>& C2node_up,
+                             const std::vector<size_t>& C2node_dn,
+                             const ValueVector_t& detValues_up,
+                             const ValueVector_t& detValues_dn,
+                             const ValueMatrix_t& M_up,
+                             const ValueMatrix_t& M_dn,
+                             const ValueMatrix_t& Minv_up,
+                             const ValueMatrix_t& Minv_dn,
+                             const std::vector<int>& detData_up,
+                             const std::vector<std::vector<int>>& lookup_tbl) override;
+
   //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
   void table_method_eval(std::vector<ValueType>& dlogpsi,
                          std::vector<ValueType>& dhpsioverpsi,
@@ -135,13 +149,29 @@ public:
                          const size_t NP2,
                          const std::vector<std::vector<int>>& lookup_tbl);
 
+  void table_method_evalWF(std::vector<ValueType>& dlogpsi,
+                           const size_t nel,
+                           const size_t nmo,
+                           const ValueType& psiCurrent,
+                           const std::vector<RealType>& Coeff,
+                           const std::vector<size_t>& C2node_up,
+                           const std::vector<size_t>& C2node_dn,
+                           const ValueVector_t& detValues_up,
+                           const ValueVector_t& detValues_dn,
+                           const ValueMatrix_t& M_up,
+                           const ValueMatrix_t& M_dn,
+                           const ValueMatrix_t& Minv_up,
+                           const ValueMatrix_t& Minv_dn,
+                           const std::vector<int>& detData_up,
+                           const std::vector<std::vector<int>>& lookup_tbl);
+
   void checkInVariables(opt_variables_type& active) override
   {
     //reset parameters to zero after coefficient matrix has been updated
     for (int k = 0; k < myVars.size(); ++k)
       myVars[k] = 0.0;
 
-    if (Optimizable && !IsCloned)
+    if (Optimizable)
     {
       if (myVars.size())
         active.insertFrom(myVars);
@@ -151,7 +181,7 @@ public:
 
   void checkOutVariables(const opt_variables_type& active) override
   {
-    if (Optimizable && !IsCloned)
+    if (Optimizable)
     {
       myVars.getIndex(active);
     }
@@ -160,7 +190,7 @@ public:
   ///reset
   void resetParameters(const opt_variables_type& active) override
   {
-    if (Optimizable && !IsCloned)
+    if (Optimizable)
     {
       std::vector<RealType> param(m_act_rot_inds.size());
       for (int i = 0; i < m_act_rot_inds.size(); i++)
@@ -171,10 +201,9 @@ public:
       apply_rotation(param, true);
     }
   }
+
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
-  void resetTargetParticleSet(ParticleSet& P) override { Phi->resetTargetParticleSet(P); }
-
   void setOrbitalSetSize(int norbs) override { Phi->setOrbitalSetSize(norbs); }
 
   //  void setBasisSet(basis_type* bs);
@@ -207,7 +236,11 @@ public:
     Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
   }
 
-  void evaluateVGH(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi) override
+  void evaluateVGH(const ParticleSet& P,
+                   int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   HessVector_t& grad_grad_psi) override
   {
     assert(psi.size() <= OrbitalSetSize);
     Phi->evaluateVGH(P, iat, psi, dpsi, grad_grad_psi);

@@ -17,11 +17,16 @@
 #ifndef QMCPLUSPLUS_VIRTUAL_PARTICLESET_H
 #define QMCPLUSPLUS_VIRTUAL_PARTICLESET_H
 
-#include <Configuration.h>
-#include <Particle/ParticleSet.h>
+#include "Configuration.h"
+#include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {
+// forward declaration.
+class NonLocalECPComponent;
+template<typename T>
+struct NLPPJob;
+
 /** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
    */
 class VirtualParticleSet : public ParticleSet
@@ -59,6 +64,11 @@ public:
                  const std::vector<PosType>& deltaV,
                  bool sphere = false,
                  int iat     = -1);
+
+  static void flex_makeMoves(const RefVector<VirtualParticleSet>& vp_list,
+                             const RefVector<const std::vector<PosType>>& deltaV_list,
+                             const RefVector<const NLPPJob<RealType>>& joblist,
+                             bool sphere);
 };
 } // namespace qmcplusplus
 #endif

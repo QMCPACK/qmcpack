@@ -31,16 +31,9 @@ public:
 
   //This class is initialized by separately building the up and down channels of the spinor set and
   //then registering them.
-  void set_spos(std::shared_ptr<SPOSet> up, std::shared_ptr<SPOSet> dn);
+  void set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&& dn);
   /// reset parameters to the values from optimizer
   void resetParameters(const opt_variables_type& optVariables) override;
-
-  /** reset the target particleset
-   *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
-   *  Ye: Only AoS needs it, SoA LCAO doesn't need this. Reseting pointers is a state machine very hard to maintain.
-   *  This interface should be removed with AOS.
-   */
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals
@@ -62,7 +55,11 @@ public:
    * @param dpsi gradients of the SPO
    * @param d2psi laplacians of the SPO
    */
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
+  void evaluateVGL(const ParticleSet& P,
+                   int iat,
+                   ValueVector_t& psi,
+                   GradVector_t& dpsi,
+                   ValueVector_t& d2psi) override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
@@ -88,11 +85,12 @@ public:
    */
   void evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi) override;
 
+  SPOSet* makeClone() const override;
 
 private:
   //Sposet for the up and down channels of our spinors.
-  std::shared_ptr<SPOSet> spo_up;
-  std::shared_ptr<SPOSet> spo_dn;
+  std::unique_ptr<SPOSet> spo_up;
+  std::unique_ptr<SPOSet> spo_dn;
 
   //temporary arrays for holding the values of the up and down channels respectively.
   ValueVector_t psi_work_up;

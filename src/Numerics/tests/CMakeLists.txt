@@ -19,8 +19,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 
 
-SET(UTEST_SRCS test_grid_functor.cpp test_stdlib.cpp test_bessel.cpp
-               test_ylm.cpp test_e2iphi.cpp test_aligned_allocator.cpp
+SET(UTEST_SRCS test_grid_functor.cpp test_stdlib.cpp test_bessel.cpp test_ylm.cpp
                test_gaussian_basis.cpp test_cartesian_tensor.cpp test_soa_cartesian_tensor.cpp
                test_transform.cpp test_min_oned.cpp test_one_dim_cubic_spline.cpp)
 
@@ -30,7 +29,7 @@ SET(UTEST_SRCS test_grid_functor.cpp test_stdlib.cpp test_bessel.cpp
 ADD_EXECUTABLE(${UTEST_EXE} ${UTEST_SRCS})
 
 
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil Math::scalar_vector_functions)
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

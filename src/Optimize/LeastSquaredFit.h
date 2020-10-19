@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_LEASTSQUARED_FITTING_H
 
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 template<typename VT, typename MT>
 void LeastSquaredFitLU(VT& y, VT& sigma, MT& F, VT& a, VT& errors)

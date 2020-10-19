@@ -82,17 +82,15 @@ void setupParticleSetPool(ParticleSetPool& pp)
 TEST_CASE("WaveFunctionPool", "[qmcapp]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-
-  WaveFunctionPool wp(c);
-
-  REQUIRE(wp.empty() == true);
-
 
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);
-  wp.setParticleSetPool(&pp);
+
+  WaveFunctionPool wp(pp, c);
+
+  REQUIRE(wp.empty() == true);
+
 
   const char* wf_input = "<wavefunction target='e'>\
      <determinantset type='einspline' href='diamondC_1x1x1.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float'> \
@@ -117,7 +115,7 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
   wp.put(root);
 
   TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != NULL);
+  REQUIRE(psi != nullptr);
   REQUIRE(psi->getOrbitals().size() == 1);
 }
 } // namespace qmcplusplus

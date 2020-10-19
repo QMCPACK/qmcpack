@@ -68,7 +68,6 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   typedef QMCTraits::RealType RealType;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -134,11 +133,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   elec->get(std::cout); // print particleset info to stdout
 
   // Set up the distance table, match expected layout
-#ifdef ENABLE_SOA
-  const int ee_table_id = elec->addTable(*elec, DT_SOA);
-#else
-  const int ee_table_id = elec->addTable(*elec, DT_AOS);
-#endif
+  const int ee_table_id = elec->addTable(*elec);
 
   const auto& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here

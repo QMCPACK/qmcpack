@@ -13,10 +13,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 
 namespace qmcplusplus
 {
@@ -172,8 +172,6 @@ bool ProjectData::PreviousRoot(std::string& oldroot) const
   }
 }
 
-#if defined(HAVE_LIBXML2)
-
 bool ProjectData::put(xmlNodePtr cur)
 {
   m_cur                  = cur;
@@ -219,5 +217,4 @@ bool ProjectData::put(xmlNodePtr cur)
   return true;
 }
 
-#endif
 } // namespace qmcplusplus

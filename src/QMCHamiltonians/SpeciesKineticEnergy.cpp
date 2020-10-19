@@ -9,9 +9,9 @@
 // File created by: Yubo Yang, paul.young.0414@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCHamiltonians/SpeciesKineticEnergy.h"
+#include "SpeciesKineticEnergy.h"
 #include "QMCHamiltonians/BareKineticEnergy.h" // laplaician() defined here
-#include <OhmmsData/AttributeSet.h>
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {

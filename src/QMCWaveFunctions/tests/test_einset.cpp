@@ -31,7 +31,6 @@ namespace qmcplusplus
 TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -80,10 +79,10 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   elec_.Lattice.R(2, 1) = 0.0;
   elec_.Lattice.R(2, 2) = 3.37316115;
 
-  SpeciesSet& tspecies         = elec_.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx)   = -1;
+  SpeciesSet& tspecies       = elec_.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx) = -1;
 
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
@@ -240,7 +239,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -282,10 +280,10 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_.Lattice.R(2, 1) = 0.0;
   elec_.Lattice.R(2, 2) = 3.37316115;
 
-  SpeciesSet& tspecies         = elec_.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx)   = -1;
+  SpeciesSet& tspecies       = elec_.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx) = -1;
 
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
@@ -359,14 +357,14 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   // interchange positions
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
-  std::vector<ParticleSet*> P_list;
-  P_list.push_back(&elec_);
-  P_list.push_back(&elec_2);
+  RefVector<ParticleSet> P_list;
+  P_list.push_back(elec_);
+  P_list.push_back(elec_2);
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
-  std::vector<SPOSet*> spo_list;
-  spo_list.push_back(spo.get());
-  spo_list.push_back(spo_2.get());
+  RefVector<SPOSet> spo_list;
+  spo_list.push_back(*spo);
+  spo_list.push_back(*spo_2);
 
   SPOSet::ValueVector_t psi(spo->getOrbitalSetSize());
   SPOSet::GradVector_t dpsi(spo->getOrbitalSetSize());
@@ -385,23 +383,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   dpsi_v_list.push_back(dpsi_2);
   d2psi_v_list.push_back(d2psi);
   d2psi_v_list.push_back(d2psi_2);
-
-  spo->mw_evaluateValue(spo_list, P_list, 1, psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
-  // real part
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
-  // value
-  REQUIRE(std::real(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::real(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
-
-#if defined(QMC_COMPLEX)
-  // imaginary part
-  // value
-  REQUIRE(std::imag(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::imag(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
 
   spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
@@ -439,13 +420,11 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   REQUIRE(std::imag(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
   REQUIRE(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.4919104576));
 #endif
-
 }
 
 TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet* elec = new ParticleSet;
@@ -483,177 +462,5 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   esb.SuperLattice(0, 0) = 1.1;
   REQUIRE_FALSE(esb.CheckLattice());
 }
-
-//Now we test the spinor set with Einspline orbitals from HDF.
-#ifdef QMC_COMPLEX
-TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
-{
-  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-  app_log()<<"!!!!!  Einspline SpinorSet from HDF   !!!!!\n";
-  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
- 
-  using ValueType=SPOSet::ValueType;
-  using RealType=SPOSet::RealType;
-  Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
-  c = OHMMS::Controller;
-
-  ParticleSet ions_;
-  ParticleSet elec_;
-
-  ions_.setName("ion");
-  ions_.create(2);
-
-  ions_.R[0][0] = 0.00000000 ; 
-  ions_.R[0][1] = 0.00000000 ;    
-  ions_.R[0][2] = 1.08659253 ;  
-  ions_.R[1][0] = 0.00000000 ;   
-  ions_.R[1][1] = 0.00000000 ;  
-  ions_.R[1][2] =-1.08659253 ;
-
-  elec_.setName("elec");
-  elec_.create(3);
-  elec_.R[0][0] = 0.1;
-  elec_.R[0][1] = -0.3;
-  elec_.R[0][2] = 1.0;
-  elec_.R[1][0] = -0.1;
-  elec_.R[1][1] = 0.3;
-  elec_.R[1][2] = 1.0;
-  elec_.R[2][0] = 0.1;
-  elec_.R[2][1] = 0.2;
-  elec_.R[2][2] = 0.3;
-
-  elec_.spins[0] = 0.0 ;
-  elec_.spins[1] = 0.2 ;
-  elec_.spins[2] = 0.4 ;
-
-  // O2 test example from pwscf non-collinear calculation.
-  elec_.Lattice.R(0, 0) =  5.10509515 ;
-  elec_.Lattice.R(0, 1) = -3.23993545 ;
-  elec_.Lattice.R(0, 2) =  0.00000000 ;
-  elec_.Lattice.R(1, 0) = 5.10509515 ;
-  elec_.Lattice.R(1, 1) = 3.23993545 ;
-  elec_.Lattice.R(1, 2) = 0.00000000 ;
-  elec_.Lattice.R(2, 0) = -6.49690625 ;
-  elec_.Lattice.R(2, 1) =  0.00000000 ;
-  elec_.Lattice.R(2, 2) =  7.08268015 ; 
-
-  SpeciesSet& tspecies         = elec_.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx)   = -1;
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
-
-
-  const char* particles = "<tmp> \
-   <sposet_builder name=\"A\" type=\"spinorbspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\"> \
-     <sposet name=\"myspo\" size=\"3\"> \
-       <occupation mode=\"ground\"/> \
-     </sposet> \
-   </sposet_builder> \
-   </tmp> \
-";
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-
-  xmlNodePtr ein1 = xmlFirstElementChild(root);
-
-  EinsplineSpinorSetBuilder einSet(elec_,ptcl.getPool(), c, ein1);
-  std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
-  REQUIRE(spo);
-
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
- 
-  //These are the reference values computed from a spin-polarized calculation, 
-  //with the assumption that the coefficients for phi^\uparrow 
-  SPOSet::ValueMatrix_t psiM_up(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t psiM_down(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t psiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
-
-  SPOSet::GradMatrix_t dpsiM_up(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM_down(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
-
-  SPOSet::ValueMatrix_t d2psiM_up(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM_down(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM_ref(elec_.R.size(), spo->getOrbitalSetSize());
-
-
-  //These reference values were generated as follows:
-  // 1.) Non-Collinear O2 calculation in PBC's performed using Quantum Espresso.  
-  // 2.) Spinor wavefunction converted to HDF5 using convertpw4qmc tool.  Mainly, this places the up channel in the spin_0 slot, and spin down in spin_1.  
-  // 3.) The HDF5 metadata was hacked by hand to correspond to a fictional but consistent spin-polarized set of orbitals.
-  // 4.) A spin polarized QMCPACK run was done using the electron and ion configuration specified in this block.  Orbital values, gradients, and laplacians were calculated
-  //     for both "spin up" and "spin down" orbitals. This is where the psiM_up(down), d2psiM_up(down) values come from.   
-  // 5.) By hand, the reference values, gradients, and laplacians are calculated by using the formula for a spinor e^is phi_up + e^{-is} phi_down.
-  // 6.) These are compared against the integrated initialization/parsing/evaluation of the Einspline Spinor object.  
-  
-  //Reference values for spin up component.
-  psiM_up[0][0]=ValueType(2.8696985245e+00,-2.8696982861e+00); psiM_up[0][1]=ValueType(1.1698637009e+00,-1.1698638201e+00); psiM_up[0][2]=ValueType(-2.6149117947e+00,2.6149117947e+00);
-  psiM_up[1][0]=ValueType(2.8670933247e+00,-2.8670933247e+00); psiM_up[1][1]=ValueType(1.1687355042e+00,-1.1687356234e+00); psiM_up[1][2]=ValueType(-2.6131081581e+00,2.6131081581e+00);
-  psiM_up[2][0]=ValueType(4.4833350182e+00,-4.4833350182e+00); psiM_up[2][1]=ValueType(1.8927993774e+00,-1.8927993774e+00); psiM_up[2][2]=ValueType(-8.3977413177e-01,8.3977431059e-01);
-
-  //Reference values for spin down component.
-  psiM_down[0][0]=ValueType(1.1886650324e+00,-1.1886655092e+00); psiM_down[0][1]=ValueType(-2.8243079185e+00,2.8243076801e+00); psiM_down[0][2]=ValueType(-1.0831292868e+00,1.0831292868e+00);
-  psiM_down[1][0]=ValueType(1.1875861883e+00,-1.1875866652e+00); psiM_down[1][1]=ValueType(-2.8215842247e+00,2.8215837479e+00); psiM_down[1][2]=ValueType(-1.0823822021e+00,1.0823823214e+00);
-  psiM_down[2][0]=ValueType(1.8570541143e+00,-1.8570543528e+00); psiM_down[2][1]=ValueType(-4.5696320534e+00,4.5696320534e+00); psiM_down[2][2]=ValueType(-3.4784498811e-01,3.4784474969e-01);
-
-  //And the laplacians...
-  d2psiM_up[0][0]=ValueType(-6.1587309837e+00,6.1587429047e+00); d2psiM_up[0][1]=ValueType(-2.4736759663e+00,2.4736781120e+00); d2psiM_up[0][2]=ValueType(2.1381640434e-01,-2.1381306648e-01);
-  d2psiM_up[1][0]=ValueType(-5.0561609268e+00,5.0561575890e+00); d2psiM_up[1][1]=ValueType(-2.0328726768e+00,2.0328762531e+00); d2psiM_up[1][2]=ValueType(-7.4090242386e-01,7.4090546370e-01);
-  d2psiM_up[2][0]=ValueType(-1.8970542908e+01,1.8970539093e+01); d2psiM_up[2][1]=ValueType(-8.2134075165e+00,8.2134037018e+00); d2psiM_up[2][2]=ValueType(1.0161912441e+00,-1.0161914825e+00);
-
-  d2psiM_down[0][0]=ValueType(-2.5510206223e+00,2.5510258675e+00); d2psiM_down[0][1]=ValueType(5.9720201492e+00,-5.9720129967e+00); d2psiM_down[0][2]=ValueType(8.8568925858e-02,-8.8571548462e-02);
-  d2psiM_down[1][0]=ValueType(-2.0943276882e+00,2.0943336487e+00); d2psiM_down[1][1]=ValueType(4.9078116417e+00,-4.9078197479e+00); d2psiM_down[1][2]=ValueType(-3.0689623952e-01,3.0689093471e-01);
-  d2psiM_down[2][0]=ValueType(-7.8578405380e+00,7.8578381538e+00); d2psiM_down[2][1]=ValueType(1.9828968048e+01,-1.9828992844e+01); d2psiM_down[2][2]=ValueType(4.2092007399e-01,-4.2091816664e-01);
-
-  for(unsigned int iat=0; iat<3; iat++)
-  {
-    RealType s = elec_.spins[iat];
-    RealType coss(0.0),sins(0.0);
-
-    coss=std::cos(s);
-    sins=std::sin(s);
-
-    ValueType eis(coss,sins);
-    ValueType emis(coss,-sins);
-    //Using the reference values for the up and down channels invdividually, we build the total reference spinor value
-    //consistent with the current spin value of particle iat.
-    psiM_ref[iat][0]=eis*psiM_up[iat][0]+emis*psiM_down[iat][0];
-    psiM_ref[iat][1]=eis*psiM_up[iat][1]+emis*psiM_down[iat][1];
-    psiM_ref[iat][2]=eis*psiM_up[iat][2]+emis*psiM_down[iat][2];
-
-    d2psiM_ref[iat][0]=eis*d2psiM_up[iat][0]+emis*d2psiM_down[iat][0];
-    d2psiM_ref[iat][1]=eis*d2psiM_up[iat][1]+emis*d2psiM_down[iat][1];
-    d2psiM_ref[iat][2]=eis*d2psiM_up[iat][2]+emis*d2psiM_down[iat][2];
-
-  }
-
-  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
- 
-  for(unsigned int iat=0; iat<3; iat++)
-  {
-    
-    REQUIRE( psiM[iat][0] == ComplexApprox( psiM_ref[iat][0] ));
-    REQUIRE( psiM[iat][1] == ComplexApprox( psiM_ref[iat][1] ));
-    REQUIRE( psiM[iat][2] == ComplexApprox( psiM_ref[iat][2] ));
-
-    REQUIRE( d2psiM[iat][0] == ComplexApprox( d2psiM_ref[iat][0] ));
-    REQUIRE( d2psiM[iat][1] == ComplexApprox( d2psiM_ref[iat][1] ));
-    REQUIRE( d2psiM[iat][2] == ComplexApprox( d2psiM_ref[iat][2] ));
-  }
-
-}
-#endif //QMC_COMPLEX
-
 
 } // namespace qmcplusplus

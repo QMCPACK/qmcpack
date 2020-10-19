@@ -18,23 +18,20 @@
 
 #include "QMCTools/CasinoParser.h"
 #include "QMCTools/GaussianFCHKParser.h"
-#include "QMCTools/GamesXmlParser.h"
 #include "QMCTools/GamesAsciiParser.h"
-#include "QMCTools/QPParser.h"
-#include "QMCTools/GamesFMOParser.h"
 #include "QMCTools/LCAOHDFParser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include <sstream>
 
 int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-QP|-pyscf|-orbitals] filename "
+    std::cout << "Usage: convert [-gaussian|-casino|-gamess|-orbitals] filename "
               << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
@@ -46,7 +43,7 @@ int main(int argc, char** argv)
               << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the format "
               << std::endl;
-    std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml" << std::endl;
+    std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.h5 -> HDF5" << std::endl;
     return 1;
   }
 #ifdef HAVE_MPI
@@ -75,14 +72,13 @@ int main(int argc, char** argv)
 
 
   int TargetState = 0;
-  bool allH5      = false;
   bool addJastrow = true;
   bool usehdf5    = false;
+  bool h5         = false;
   bool useprefix  = false;
   bool debug      = false;
-  bool multidetH5 = false;
   bool prod       = false;
-  bool ci = false, zeroCI = false, orderByExcitation = false, fmo = false, addCusp = false, multidet = false,
+  bool ci = false, zeroCI = false, orderByExcitation = false, addCusp = false, multidet = false,
        optDetCoeffs = false;
   double thres      = 1e-20;
   int readNO        = 0; // if > 0, read Natural Orbitals from gamess output
@@ -96,36 +92,16 @@ int main(int argc, char** argv)
       parser  = new GaussianFCHKParser(argc, argv);
       in_file = argv[++iargc];
     }
-    else if (a == "-gamesxml")
+    else if (a == "-gamess")
     {
-      parser  = new GamesXmlParser(argc, argv);
-      in_file = argv[++iargc];
-    }
-    else if (a == "-gamessAscii" || a == "-gamess")
-    {
-      if (a == "-gamessAscii")
-        std::cout << "Option \"-gamessAscii\" is deprecated and will be removed in the next release. Please use "
-                     "instead the option: \"-gamess\" "
-                  << std::endl;
       parser  = new GamesAsciiParser(argc, argv);
       in_file = argv[++iargc];
     }
-    else if (a == "-QP")
-    {
-      parser  = new QPParser(argc, argv);
-      in_file = argv[++iargc];
-    }
-    else if (a == "-pyscf" || a == "-orbitals")
+    else if (a == "-orbitals")
     {
       parser  = new LCAOHDFParser(argc, argv);
+      h5= true;
       in_file = argv[++iargc];
-      allH5   = true;
-    }
-    else if (a == "-gamessFMO")
-    {
-      parser  = new GamesFMOParser(argc, argv);
-      in_file = argv[++iargc];
-      fmo     = true;
     }
     else if (a == "-casino")
     {
@@ -166,7 +142,6 @@ int main(int argc, char** argv)
     else if (a == "-multidet")
     {
       multidet   = true;
-      multidetH5 = true;
       punch_file = argv[++iargc];
     }
     else if (a == "-NbImages")
@@ -235,9 +210,9 @@ int main(int argc, char** argv)
     abort();
   }
   //Failed to create a parser. Try with the extension
+  std::string ext = getExtension(in_file);
   if (parser == 0)
   {
-    std::string ext = getExtension(in_file);
     if (ext == "data")
     {
       WARNMSG("Creating CasinoParser")
@@ -248,10 +223,10 @@ int main(int argc, char** argv)
       WARNMSG("Creating GaussianFCHKParser")
       parser = new GaussianFCHKParser(argc, argv);
     }
-    else if (ext == "xml")
+    else if (ext == "h5")
     {
-      WARNMSG("Creating GamesXmlParser")
-      parser = new GamesXmlParser(argc, argv);
+      WARNMSG("Creating LCAOHDFParser")
+      parser = new LCAOHDFParser(argc, argv);
     }
     else if (ext == "10")
     {
@@ -273,7 +248,7 @@ int main(int argc, char** argv)
   {
     prefix = in_file;
     std::string delimiter;
-    if (allH5)
+    if (ext=="h5")
       delimiter = ".h5";
     else
       delimiter = ".out";
@@ -285,97 +260,89 @@ int main(int argc, char** argv)
     prefix = token;
   }
   std::cout << "Using " << prefix << " to name output files" << std::endl;
-  if (fmo)
+  
+  parser->Title   = prefix;
+  parser->debug   = debug;
+  parser->DoCusp  = addCusp;
+  parser->UseHDF5 = usehdf5;
+  parser->singledetH5 = h5;
+  if (h5)
   {
-    parser->Title   = prefix;
-    parser->UseHDF5 = usehdf5;
-    parser->DoCusp  = addCusp;
-    parser->parse(in_file);
+    parser->UseHDF5 = false;
+    parser->h5file  = in_file;
+  }
+  if (usehdf5)
+    parser->h5file = parser->Title + ".orbs.h5";
+  parser->IonSystem.setName(ion_tag);
+  if (debug)
+  {
+    parser->UseHDF5 = false;
+    parser->h5file  = "";
+  }
+  parser->multideterminant = false;
+  if (ci)
+    parser->multideterminant = ci;
+  if (multidet)
+  {
+    parser->multideterminant = multidet;
+    parser->multidetH5 = multidet;
+  }
+  parser->multih5file       = punch_file;
+  parser->production        = prod;
+  parser->ci_threshold      = thres;
+  parser->optDetCoeffs      = optDetCoeffs;
+  parser->target_state      = TargetState;
+  parser->readNO            = readNO;
+  parser->orderByExcitation = orderByExcitation;
+  parser->zeroCI            = zeroCI;
+  parser->readGuess         = readGuess;
+  parser->outputFile        = punch_file;
+  parser->Image             = Image;
+  parser->parse(in_file);
+  if (prod)
+  {
+    parser->addJastrow = addJastrow;
+    parser->WFS_name   = jastrow;
+    if (parser->PBC)
+    {
+      std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+      parser->dumpPBC(psi_tag, ion_tag);
+    }
+    else
+      parser->dump(psi_tag, ion_tag);
+    parser->dumpStdInputProd(psi_tag, ion_tag);
   }
   else
   {
-    parser->Title   = prefix;
-    parser->debug   = debug;
-    parser->DoCusp  = addCusp;
-    parser->UseHDF5 = usehdf5;
-    if (usehdf5)
-      parser->h5file = parser->Title + ".orbs.h5";
-    parser->IonSystem.setName(ion_tag);
-    parser->AllH5 = allH5;
-    if (allH5)
+    parser->addJastrow = false;
+    jastrow            = "noj";
+    parser->WFS_name   = jastrow;
+    if (parser->PBC)
     {
-      parser->UseHDF5 = false;
-      parser->h5file  = in_file;
-    }
-    if (debug)
-    {
-      parser->UseHDF5 = false;
-      parser->h5file  = "";
-      parser->AllH5   = false;
-    }
-    parser->multideterminant = false;
-    if (ci)
-      parser->multideterminant = ci;
-    if (multidet)
-      parser->multideterminant = multidet;
-    parser->multidetH5        = multidetH5;
-    parser->multih5file       = punch_file;
-    parser->production        = prod;
-    parser->ci_threshold      = thres;
-    parser->optDetCoeffs      = optDetCoeffs;
-    parser->target_state      = TargetState;
-    parser->readNO            = readNO;
-    parser->orderByExcitation = orderByExcitation;
-    parser->zeroCI            = zeroCI;
-    parser->readGuess         = readGuess;
-    parser->outputFile        = punch_file;
-    parser->Image             = Image;
-    parser->parse(in_file);
-    if (prod)
-    {
-      parser->addJastrow = addJastrow;
-      parser->WFS_name = jastrow;
-      if (parser->PBC)
-      {
-        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
-                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
-        parser->dumpPBC(psi_tag, ion_tag);
-      }
-      else
-        parser->dump(psi_tag, ion_tag);
-      parser->dumpStdInputProd(psi_tag, ion_tag);
+      std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+      parser->dumpPBC(psi_tag, ion_tag);
     }
     else
+      parser->dump(psi_tag, ion_tag);
+    parser->dumpStdInput(psi_tag, ion_tag);
+
+    parser->addJastrow = true;
+    jastrow            = "j";
+    parser->WFS_name   = jastrow;
+    if (parser->PBC)
     {
-      parser->addJastrow = false;
-      jastrow = "noj";
-      parser->WFS_name = jastrow;
-      if (parser->PBC)
-      {
-        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
-                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
-        parser->dumpPBC(psi_tag, ion_tag);
-      }
-      else
-        parser->dump(psi_tag, ion_tag);
-      parser->dumpStdInput(psi_tag, ion_tag);
-
-      parser->addJastrow = true;
-      jastrow            = "j";
-      parser->WFS_name = jastrow;
-      if (parser->PBC)
-      {
-        std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0]
-                  << "  " << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
-        parser->dumpPBC(psi_tag, ion_tag);
-      }
-      else
-        parser->dump(psi_tag, ion_tag);
-      parser->dumpStdInput(psi_tag, ion_tag);
+      std::cout << "Generating Inputs for Supertwist  with coordinates:" << parser->STwist_Coord[0] << "  "
+                << parser->STwist_Coord[1] << "  " << parser->STwist_Coord[2] << std::endl;
+      parser->dumpPBC(psi_tag, ion_tag);
     }
-
-
-    OHMMS::Controller->finalize();
+    else
+      parser->dump(psi_tag, ion_tag);
+    parser->dumpStdInput(psi_tag, ion_tag);
   }
+
+
+  OHMMS::Controller->finalize();
   return 0;
 }

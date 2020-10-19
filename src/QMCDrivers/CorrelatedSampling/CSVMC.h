@@ -22,7 +22,7 @@
 #include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
 {
-class CSEnergyEstimator;
+struct CSEnergyEstimator;
 class CSUpdateBase;
 
 /** @ingroup QMCDrivers WalkerByWalker MultiplePsi
@@ -38,7 +38,6 @@ public:
   CSVMC(MCWalkerConfiguration& w,
         TrialWaveFunction& psi,
         QMCHamiltonian& h,
-        WaveFunctionPool& ppool,
         Communicate* comm);
 
   bool run();

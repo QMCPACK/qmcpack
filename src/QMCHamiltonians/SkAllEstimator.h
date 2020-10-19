@@ -18,7 +18,7 @@
  */
 #ifndef QMCPLUSPLUS_SK_ALL_ESTIMATOR_H
 #define QMCPLUSPLUS_SK_ALL_ESTIMATOR_H
-#include <QMCHamiltonians/OperatorBase.h>
+#include "QMCHamiltonians/OperatorBase.h"
 #include <vector>
 namespace qmcplusplus
 {
@@ -64,7 +64,7 @@ protected:
   std::vector<int> Kshell;
   /** instantaneous structure factor  */
   std::vector<RealType> Kmag;
-  /** 1.0/degenracy for a ksell */
+  /** 1.0/degenracy for a kshell */
   std::vector<RealType> OneOverDnk;
   /** \f$rho_k = \sum_{\alpha} \rho_k^{\alpha} \f$ for species index \f$\alpha\f$ */
 #if defined(USE_REAL_STRUCT_FACTOR)

@@ -15,9 +15,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
+#include "kSpaceJastrow.h"
 #include "LongRange/StructFact.h"
-#include "Numerics/e2iphi.h"
+#include "config/stdlib/math.hpp"
+#include "CPU/e2iphi.h"
 #include <sstream>
 #include <algorithm>
 
@@ -234,7 +235,7 @@ kSpaceJastrow::kSpaceJastrow(ParticleSet& ions,
                              RealType twoBodyCutoff,
                              std::string twobodyid,
                              bool twoBodySpin)
-    : Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
+    : WaveFunctionComponent("kSpaceJastrow", elecs.getName()), Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
 {
   Optimizable   = true;
   Prefactor     = 1.0 / elecs.Lattice.Volume;
@@ -352,21 +353,6 @@ void kSpaceJastrow::setCoefficients(std::vector<RealType>& oneBodyCoefs, std::ve
       TwoBodySymmCoefs[i].cG = twoBodyCoefs[i];
       myVars[kk++]           = twoBodyCoefs[i];
       TwoBodySymmCoefs[i].set(TwoBodyCoefs);
-    }
-  }
-}
-
-void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int i = 0; i < TwoBodyGvecs.size(); i++)
-  {
-    TwoBody_rhoG[i] = ComplexType();
-    for (int iat = 0; iat < num_elecs; iat++)
-    {
-      RealType phase, s, c;
-      phase = dot(TwoBodyGvecs[i], P.R[iat]);
-      sincos(phase, &s, &c);
-      TwoBody_rhoG[i] += ComplexType(c, s);
     }
   }
 }
@@ -813,7 +799,9 @@ WaveFunctionComponentPtr kSpaceJastrow::makeThrScope(PtclGrpIndexes& pgi) const
 
 /** constructor to initialize Ions
  */
-kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions) : Ions(ions) {}
+kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions)
+    : WaveFunctionComponent("kSpaceJastrow", ions.getName()), Ions(ions)
+{}
 
 void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
 {

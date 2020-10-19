@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_DMC_CUDA_H
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "type_traits/CUDATypes.h"
 
 namespace qmcplusplus
@@ -34,7 +34,6 @@ public:
   DMCcuda(MCWalkerConfiguration& w,
           TrialWaveFunction& psi,
           QMCHamiltonian& h,
-          WaveFunctionPool& ppool,
           Communicate* comm);
   bool run();
   bool put(xmlNodePtr cur);

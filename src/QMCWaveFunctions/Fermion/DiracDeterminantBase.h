@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -18,7 +18,7 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
@@ -30,13 +30,14 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase(SPOSetPtr const spos, int first = 0)
-      : UpdateTimer(*TimerManager.createTimer("DiracDeterminantBase::update", timer_level_fine)),
-        RatioTimer(*TimerManager.createTimer("DiracDeterminantBase::ratio", timer_level_fine)),
-        InverseTimer(*TimerManager.createTimer("DiracDeterminantBase::inverse", timer_level_fine)),
-        BufferTimer(*TimerManager.createTimer("DiracDeterminantBase::buffer", timer_level_fine)),
-        SPOVTimer(*TimerManager.createTimer("DiracDeterminantBase::spoval", timer_level_fine)),
-        SPOVGLTimer(*TimerManager.createTimer("DiracDeterminantBase::spovgl", timer_level_fine)),
+  DiracDeterminantBase(const std::string& class_name, SPOSetPtr const spos, int first = 0)
+      : WaveFunctionComponent(class_name),
+        UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
+        RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
+        InverseTimer(*timer_manager.createTimer(class_name + "::inverse", timer_level_fine)),
+        BufferTimer(*timer_manager.createTimer(class_name + "::buffer", timer_level_fine)),
+        SPOVTimer(*timer_manager.createTimer(class_name + "::spoval", timer_level_fine)),
+        SPOVGLTimer(*timer_manager.createTimer(class_name + "::spovgl", timer_level_fine)),
         Phi(spos),
         FirstIndex(first),
         LastIndex(first + spos->size()),
@@ -45,7 +46,6 @@ public:
   {
     Optimizable  = Phi->isOptimizable();
     is_fermionic = true;
-    ClassName    = "DiracDeterminantBase";
     registerTimers();
   }
 
@@ -63,6 +63,10 @@ public:
   inline int getFirstIndex() const { return FirstIndex; }
   inline int getLastIndex() const { return LastIndex; }
 
+#ifndef NDEBUG
+  virtual ValueMatrix_t& getPsiMinv() { return dummy_vmt; }
+#endif
+
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
@@ -73,27 +77,11 @@ public:
   virtual void setBF(BackflowTransformation* BFTrans) {}
 
   ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active) override
-  {
-    Phi->checkInVariables(active);
-  }
+  virtual inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
 
-  virtual inline void checkOutVariables(const opt_variables_type& active) override
-  {
-    Phi->checkOutVariables(active);
-  }
+  virtual inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
 
-  virtual void resetParameters(const opt_variables_type& active) override
-  {
-    Phi->resetParameters(active);
-  }
-
-  // To be removed with AoS
-  void resetTargetParticleSet(ParticleSet& P) override final
-  {
-    Phi->resetTargetParticleSet(P);
-    targetPtcl = &P;
-  }
+  virtual void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
   inline void reportStatus(std::ostream& os) override final {}
 
@@ -108,23 +96,24 @@ public:
   using WaveFunctionComponent::updateBuffer;
 
   using WaveFunctionComponent::acceptMove;
-  using WaveFunctionComponent::mw_acceptMove;
   using WaveFunctionComponent::completeUpdates;
-  using WaveFunctionComponent::mw_completeUpdates;
   using WaveFunctionComponent::evalGrad;
-  using WaveFunctionComponent::mw_evalGrad;
-  using WaveFunctionComponent::ratio;
+  using WaveFunctionComponent::mw_accept_rejectMove;
   using WaveFunctionComponent::mw_calcRatio;
-  using WaveFunctionComponent::ratioGrad;
+  using WaveFunctionComponent::mw_completeUpdates;
+  using WaveFunctionComponent::mw_evalGrad;
   using WaveFunctionComponent::mw_ratioGrad;
+  using WaveFunctionComponent::mw_ratioGradAsync;
+  using WaveFunctionComponent::ratio;
+  using WaveFunctionComponent::ratioGrad;
+  using WaveFunctionComponent::ratioGradAsync;
   using WaveFunctionComponent::restore;
-  using WaveFunctionComponent::mw_restore;
 
   using WaveFunctionComponent::evalGradSource;
   using WaveFunctionComponent::evaluateHessian;
   using WaveFunctionComponent::evaluateRatios;
-  using WaveFunctionComponent::mw_evaluateRatios;
   using WaveFunctionComponent::evaluateRatiosAlltoOne;
+  using WaveFunctionComponent::mw_evaluateRatios;
 
   // used by DiracDeterminantWithBackflow
   virtual void evaluateDerivatives(ParticleSet& P,
@@ -144,12 +133,12 @@ public:
     return 0;
   }
 
-  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, LogValueType& spingrad) override
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
     return 0.0;
-  } 
-  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, LogValueType& spingrad) override
+  }
+  virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
     APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
     return GradType();
@@ -192,8 +181,10 @@ protected:
   int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
-  /// targetPtcl pointer. YE: to be removed.
-  ParticleSet* targetPtcl;
+
+#ifndef NDEBUG
+  ValueMatrix_t dummy_vmt;
+#endif
 
   /// register all the timers
   void registerTimers()

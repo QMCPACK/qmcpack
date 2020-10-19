@@ -20,7 +20,7 @@
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
-#include<formic/utils/matrix.h>
+#include"formic/utils/matrix.h"
 
 namespace cqmc {
 

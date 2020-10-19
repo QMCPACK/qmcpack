@@ -10,7 +10,7 @@ def real_or_comp(str_rep):
   """
   val = None
   if str_rep.strip().startswith('('):
-    ri_list = map(float,str_rep.replace('(','').replace(')','').split(','))
+    ri_list = list(map(float,str_rep.replace('(','').replace(')','').split(',')))
     val = ri_list[0] + 1j*ri_list[1]
   else:
     val = float(str_rep)
@@ -49,7 +49,7 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
     if ider >= nmax_deriv:
       raise RuntimeError('please increase nmax_deriv')
     iparam = int( tokens[0] )
-    numeric,analytic,diff = map(real_or_comp,tokens[1:])
+    numeric,analytic,diff = list(map(real_or_comp,tokens[1:]))
     for name,val in zip(cols,[iparam,numeric,analytic,diff]):
       data[name].append(val)
     # end for 

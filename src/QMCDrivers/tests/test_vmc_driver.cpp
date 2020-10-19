@@ -41,7 +41,6 @@ namespace qmcplusplus
 TEST_CASE("VMC", "[drivers][vmc]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
   c->setName("test");
   ParticleSet ions;
@@ -65,25 +64,21 @@ TEST_CASE("VMC", "[drivers][vmc]")
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
+  elec.addTable(ions);
   elec.update();
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi(c);
-  ConstantOrbital* orb  = new ConstantOrbital;
-  psi.addComponent(orb, "Constant");
+  TrialWaveFunction psi;
+  ConstantOrbital* orb = new ConstantOrbital;
+  psi.addComponent(orb);
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -95,14 +90,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  HamiltonianPool hpool(c);
-
-  WaveFunctionPool wpool(c);
-
-  //EstimatorManagerBase emb(c);
-
-
-  VMC vmc_omp(elec, psi, h, wpool, c);
+  VMC vmc_omp(elec, psi, h, c);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
    <parameter name=\"substeps\">1</parameter> \
@@ -142,7 +130,6 @@ TEST_CASE("VMC", "[drivers][vmc]")
 TEST_CASE("SOVMC", "[drivers][vmc]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
   c->setName("test");
   ParticleSet ions;
@@ -158,31 +145,27 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
+  elec.R[0][0]  = 1.0;
+  elec.R[0][1]  = 0.0;
+  elec.R[0][2]  = 0.0;
   elec.spins[0] = 0.0;
   elec.createWalkers(1);
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
+  elec.addTable(ions);
   elec.update();
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi(c);
-  ConstantOrbital* orb  = new ConstantOrbital;
-  psi.addComponent(orb, "Constant");
+  TrialWaveFunction psi;
+  ConstantOrbital* orb = new ConstantOrbital;
+  psi.addComponent(orb);
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -194,14 +177,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  HamiltonianPool hpool(c);
-
-  WaveFunctionPool wpool(c);
-
-  //EstimatorManagerBase emb(c);
-
-
-  VMC vmc_omp(elec, psi, h, wpool, c);
+  VMC vmc_omp(elec, psi, h, c);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
    <parameter name=\"substeps\">1</parameter> \
@@ -235,6 +211,12 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
 
   REQUIRE(elec.spins[0] == Approx(-0.74465948215809097));
+
+  //Now we're going to test that the step updated the walker variables.
+  REQUIRE(elec.WalkerList[0]->R[0][0] == Approx(elec.R[0][0]));
+  REQUIRE(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
+  REQUIRE(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
+  REQUIRE(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
 
   delete doc;
 }

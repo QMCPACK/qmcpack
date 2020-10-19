@@ -15,10 +15,10 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SPO_HPP
 #define QMCPLUSPLUS_EINSPLINE_SPO_HPP
 #include <Configuration.h>
-#include <Particle/ParticleSet.h>
-#include <spline2/MultiBspline.hpp>
-#include <spline2/MultiBsplineEval.hpp>
-#include <simd/allocator.hpp>
+#include "Particle/ParticleSet.h"
+#include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineEval.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 #include <iostream>
 
 namespace qmcplusplus
@@ -149,7 +149,7 @@ namespace qmcplusplus
           pos_type end(1);
           einsplines.resize(nBlocks);
           RandomGenerator<T> myrandom(11);
-          Array<T,3> data(nx,ny,nz);
+          Array<double,3> data(nx,ny,nz);
           std::fill(data.begin(),data.end(),T());
           myrandom.generate_uniform(data.data(),data.size());
 
@@ -160,12 +160,12 @@ namespace qmcplusplus
           grid[0].num   = nx;
           grid[1].num   = ny;
           grid[2].num   = nz;
-          typename bspline_traits<T, 3>::BCType BC[3];
+          typename bspline_traits<double, 3>::BCType BC[3];
           BC[0].lCode = BC[0].rCode = PERIODIC;
           BC[1].lCode = BC[1].rCode = PERIODIC;
           BC[2].lCode = BC[2].rCode = PERIODIC;
 
-          BsplineAllocator<T> mAllocator;
+          BsplineAllocator<double> mAllocator;
           UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], BC[0], BC[1], BC[2], data.data());
           for(int i=0; i<nBlocks; ++i)
           {

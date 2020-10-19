@@ -31,7 +31,6 @@ namespace qmcplusplus
 TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -80,11 +79,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
+  elec.addTable(ions);
   elec.resetGroups();
   elec.update();
 
@@ -120,10 +115,10 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
   PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
   WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
-  SlaterDet* sd = dynamic_cast<SlaterDet*>(orb);
+  SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetPtr spo = sd->mySPOSet.begin()->second;
+  SPOSetPtr spo = sd->getPhi(0);
   REQUIRE(spo != NULL);
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
@@ -175,7 +170,6 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -230,11 +224,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
+  elec.addTable(ions);
   elec.resetGroups();
   elec.update();
 
@@ -270,10 +260,10 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
   PWOrbitalBuilder pw_builder(c, elec, ptcl.getPool());
   WaveFunctionComponent* orb = pw_builder.buildComponent(pw1);
-  SlaterDet* sd = dynamic_cast<SlaterDet*>(orb);
+  SlaterDet* sd              = dynamic_cast<SlaterDet*>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetPtr spo = sd->mySPOSet.begin()->second;
+  SPOSetPtr spo = sd->getPhi(0);
   REQUIRE(spo != NULL);
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);

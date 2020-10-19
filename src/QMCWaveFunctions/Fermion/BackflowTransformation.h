@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/ParticleBase/ParticleAttribOps.h"
 #include "Configuration.h"
 #include <map>
 #include <cmath>
@@ -147,14 +148,7 @@ public:
 
   opt_variables_type myVars;
 
-  BackflowTransformation(ParticleSet& els)
-      : QP(els),
-        cutOff(0.0),
-#ifdef ENABLE_SOA
-        myTableIndex_(els.addTable(els, DT_SOA))
-#else
-        myTableIndex_(els.addTable(els, DT_AOS))
-#endif
+  BackflowTransformation(ParticleSet& els) : QP(els), cutOff(0.0), myTableIndex_(els.addTable(els))
   {
     NumTargets = els.getTotalNum();
     Bmat.resize(NumTargets);
@@ -343,11 +337,7 @@ public:
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
-#ifdef ENABLE_SOA
     newQP[iat] -= myTable.getTempDispls()[iat];
-#else
-    newQP[iat] += myTable.Temp[iat].dr1;
-#endif
     indexQP.clear();
     for (int i = 0; i < bfFuns.size(); i++)
       bfFuns[i]->evaluatePbyP(P, iat, newQP);
@@ -362,9 +352,7 @@ public:
     /*
     dummyQP2.R = P.R;
     dummyQP2.update();
-    resetTargetParticleSet(dummyQP2);
     evaluate(P,dummyQP);
-    resetTargetParticleSet(P);
     std::cout <<"index: ";
     for(int i=0; i<indexQP.size(); i++) std::cout <<indexQP[i] <<" ";
     std::cout << std::endl;
@@ -394,11 +382,7 @@ public:
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
-#ifdef ENABLE_SOA
     newQP[iat] -= myTable.getTempDispls()[iat];
-#else
-    newQP[iat] += myTable.Temp[iat].dr1;
-#endif
     indexQP.clear();
     std::copy(FirstOfA, LastOfA, FirstOfA_temp);
     for (int i = 0; i < bfFuns.size(); i++)
@@ -423,9 +407,10 @@ public:
     for (int i = 0; i < NumTargets; i++)
       oldQP[i] = newQP[i] = QP.R[i];
     const auto& myTable = P.getDistTable(myTableIndex_);
-#ifndef ENABLE_SOA
-    newQP[iat] += myTable.Temp[iat].dr1;
-#endif
+
+    // this is from AoS, is it needed or not?
+    //newQP[iat] += myTable.Temp[iat].dr1;
+
     indexQP.clear();
     std::copy(FirstOfA, LastOfA, FirstOfA_temp);
     std::copy(FirstOfB, LastOfB, FirstOfB_temp);
@@ -731,12 +716,12 @@ public:
       dr[2] = -0.3;
       P.makeMove(iat, dr);
       const auto& myTable = P.getDistTable(myTableIndex_);
-#ifndef ENABLE_SOA
-      app_log() << "Move: " << myTable.Temp[iat].dr1 << std::endl;
-      app_log() << "cutOff: " << cutOff << std::endl;
-      for (int jat = 0; jat < NumTargets; jat++)
-        app_log() << jat << "  " << myTable.Temp[jat].r1 << std::endl;
-#endif
+
+      //app_log() << "Move: " << myTable.Temp[iat].dr1 << std::endl;
+      //app_log() << "cutOff: " << cutOff << std::endl;
+      //for (int jat = 0; jat < NumTargets; jat++)
+      //  app_log() << jat << "  " << myTable.Temp[jat].r1 << std::endl;
+
       //evaluatePbyP(P,iat);
       evaluatePbyPWithGrad(P, iat);
       app_log() << "Moving: ";

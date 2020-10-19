@@ -2,12 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+// File developed by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories 
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
@@ -16,7 +13,7 @@
 #ifndef QMCPLUSPLUS_SODMC_UPDATE_PARTICLEBYPARTCLE_H
 #define QMCPLUSPLUS_SODMC_UPDATE_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCUpdateBase.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 namespace qmcplusplus
 {
 class SODMCUpdatePbyPWithRejectionFast : public QMCUpdateBase

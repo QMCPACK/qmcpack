@@ -19,7 +19,6 @@
                     0 DIAMOND_SCALARS # VMC
                     )
 
-IF(ENABLE_SOA OR QMC_CUDA)
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short
@@ -28,9 +27,6 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     TRUE
                     0 DIAMOND_SCALARS # VMC
                     )
-ELSE()
-  MESSAGE("Skipping diamondC_1x1x1_hybridrep_pp-vmc_sdj test because neiher SOA nor CUDA is enabled")
-ENDIF()
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -41,7 +37,7 @@ ENDIF()
                     0 DIAMOND_SCALARS # VMC
                     )
 
-IF(NOT QMC_CUDA)
+IF(NOT QMC_CUDA AND NOT ENABLE_OFFLOAD)
   LIST(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
   LIST(APPEND DIAMOND_KSPACE_SCALARS "variance"  "0.312264 0.028662")
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj_kspace
@@ -243,7 +239,7 @@ IF(NOT QMC_CUDA)
                     )
 ENDIF()
 
-IF(NOT QMC_CUDA)
+IF(NOT QMC_CUDA AND NOT ENABLE_OFFLOAD)
   LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
   LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "variance"  "0.312264 0.028662")
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_sdj_kspace
@@ -605,6 +601,7 @@ IF(NOT QMC_CUDA)
   LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "flux" "-10.16222139 0.000001")
  ENDIF()
 
+IF(NOT ENABLE_OFFLOAD)
   QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     det_qmc_short_kspace
@@ -613,7 +610,7 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND_KSPACE_SCALARS # VMC
                     )
-
+ENDIF()
 
  IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND_DMC_SCALARS "totenergy" "-10.52336521 0.00001129")
@@ -850,11 +847,53 @@ ENDIF()
                     )
 
 
+IF((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA) AND (NOT QMC_COMPLEX))
+  # DMC cycle 1
+  LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "totenergy" "-11.15181221 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "kinetic" "11.34674025 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "potential" "-22.49855246 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "eeenergy" "-2.72967451 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "ionion" "-12.77566749 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "localecp" "-8.36105699 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "nonlocalecp" "1.36784653 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "mpc" "-2.66313760 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "samples" "16 0.0")
+  # DMC cycle 2
+  LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "totenergy" "-10.20986762 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "kinetic" "18.37238410 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "potential" "-28.58225171 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "eeenergy" "-3.11131238 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "ionion" "-12.77566749 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "localecp" "-11.73812555 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "nonlocalecp" "-0.95714628 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "mpc" "-3.02667676 0.000001")
+  LIST(APPEND DET_DIAMOND_DMC_LGTS2_SCALARS "samples" "18 0.0")
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1_pp-vmc-dmc-multi_ts_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    det_qmc_short_vmc_dmc_lg_ts
+                    det_qmc_short_vmc_dmc_lg_ts.in.xml
+                    1 1
+                    TRUE
+                    1 DET_DIAMOND_DMC_LGTS1_SCALARS # DMC cycle 1
+                    2 DET_DIAMOND_DMC_LGTS2_SCALARS # DMC cycle 2
+                    )
+ENDIF()
+
   # traces tests
   set(traces_python_reqs numpy;h5py)
   CHECK_PYTHON_REQS(traces_python_reqs diamond-traces add_traces_tests)
   if (add_traces_tests)
+   IF (QMC_MIXED_PRECISION)
     # traces with only scalars on
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars.in.xml
+      1 1
+      check_traces.py -p qmc_trace_scalars -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1 --tol=1e-6
+      )
+   ELSE()     
     SIMPLE_RUN_AND_CHECK(
       deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -862,8 +901,18 @@ ENDIF()
       1 1
       check_traces.py -p qmc_trace_scalars -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1
       )
+   ENDIF()
 
+   IF (QMC_MIXED_PRECISION)
     # traces with only selective scalars
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars_selective.in.xml
+      1 1
+      check_traces.py -p qmc_trace_scalars_selective -s '0,1' -m 'vmc,dmc' -q 'Kinetic,ElecElec' --dmc_steps_exclude=1 --tol=1e-6
+      )
+   ELSE()
     SIMPLE_RUN_AND_CHECK(
       deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -871,6 +920,7 @@ ENDIF()
       1 1
       check_traces.py -p qmc_trace_scalars_selective -s '0,1' -m 'vmc,dmc' -q 'Kinetic,ElecElec' --dmc_steps_exclude=1
       )
+   ENDIF()
   endif()
 
 # CUDA references

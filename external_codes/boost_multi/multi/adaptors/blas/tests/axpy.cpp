@@ -1,18 +1,20 @@
 #ifdef COMPILATION_INSTRUCTIONS
-c++ -std=c++14 -Wall -Wextra -Wpedantic -lblas -DADD_ $0 -o $0x.x  && time $0x.x $@ && rm -f $0x.x; exit
+$CXX -Wall -Wextra -Wpedantic $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2019
 
-#include "../../blas.hpp"
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS axpy"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
+#include       "../../blas.hpp"
 #include "../../../array.hpp"
 
 #include<complex>
-#include<cassert>
 
-using std::cout;
 namespace multi = boost::multi;
 
-int main(){
+BOOST_AUTO_TEST_CASE(multi_blas_axpy){
 	{
 		multi::array<double, 2> A = {
 			{1.,  2.,  3.,  4.},
@@ -23,7 +25,7 @@ int main(){
 		multi::array<double, 1> const B = A[2];
 		using multi::blas::axpy;
 		axpy(2., B, A[1]); // daxpy
-		assert( A[1][2] == 2.*B[2] + AC[1][2] );
+		BOOST_REQUIRE( A[1][2] == 2.*B[2] + AC[1][2] );
 	}
 	{
 		using Z = std::complex<double>;
@@ -36,7 +38,7 @@ int main(){
 		multi::array<Z, 1> const B = A[2];
 		using multi::blas::axpy;
 		axpy(2., B, A[1]); // zaxpy (2. is promoted to 2+I*0 internally and automatically)
-		assert( A[1][2] == 2.*B[2] + AC[1][2] );
+		BOOST_REQUIRE( A[1][2] == 2.*B[2] + AC[1][2] );
 	}
 }
 

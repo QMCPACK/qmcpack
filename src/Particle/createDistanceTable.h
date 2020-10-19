@@ -27,8 +27,6 @@ namespace qmcplusplus
  * of ParticleSet to add a distance table
  * int ParticleSet::addTable(const ParticleSet& source)
  *
- * dt_type is the type of distance table defined as DistTableType in DistanceTableData.h
- *
  * \deprecated There is only one instance of the data memebers of
  * DistanceTable in an application and the data are shared by many objects.
  * Note that static data members and functions are used
@@ -40,10 +38,24 @@ namespace qmcplusplus
  */
 
 ///free function to create a distable table of s-s
-DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type, std::ostream& description);
+DistanceTableData* createDistanceTable(ParticleSet& s, std::ostream& description);
 
 ///free function create a distable table of s-t
-DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type, std::ostream& description);
+DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, std::ostream& description);
+DistanceTableData* createDistanceTableABOMP(const ParticleSet& s, ParticleSet& t, std::ostream& description);
+
+inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, std::ostream& description)
+{
+  // during P-by-P move, the cost of single particle evaluation of distance tables
+  // is determined by the number of source particles.
+  // Thus the implementation selection is determined by the source particle set.
+#if defined(ENABLE_OFFLOAD)
+  if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
+    return createDistanceTableABOMP(s, t, description);
+  else
+#endif
+    return createDistanceTableAB(s, t, description);
+}
 
 } // namespace qmcplusplus
 #endif

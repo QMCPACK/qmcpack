@@ -9,8 +9,8 @@
 // File created by: Yubo Yang, paul.young.0414@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCHamiltonians/LatticeDeviationEstimator.h"
-#include <OhmmsData/AttributeSet.h>
+#include "LatticeDeviationEstimator.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {
@@ -26,11 +26,7 @@ LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,
       sgroup(sgroup_in),
       hdf5_out(false),
       per_xyz(false),
-#ifdef ENABLE_SOA
-      myTableID_(P.addTable(sP, DT_SOA))
-#else
-      myTableID_(P.addTable(sP, DT_AOS))
-#endif
+      myTableID_(P.addTable(sP))
 {
   // calculate number of source particles to use as lattice sites
   int src_species_id = sspecies.findSpecies(sgroup);
@@ -102,7 +98,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   Value = 0.0;
   std::fill(xyz2.begin(), xyz2.end(), 0.0);
 
-  RealType wgt = tWalker->Weight;
+  RealType wgt        = tWalker->Weight;
   const auto& d_table = P.getDistTable(myTableID_);
 
   // temp variables
@@ -120,14 +116,8 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
         if (tspecies.speciesName[tpset.GroupID[jat]] == tgroup)
         {
           // distance between particle iat in source pset, and jat in target pset
-#ifdef ENABLE_SOA
-          r = d_table.getDistRow(jat)[iat];
-#else
-          int nn = d_table.loc(iat, jat); // location where distance is stored
-          r = d_table.r(nn);
-#endif
-
-          r2 = r*r;
+          r  = d_table.getDistRow(jat)[iat];
+          r2 = r * r;
           Value += r2;
 
           if (hdf5_out & !per_xyz)
@@ -137,11 +127,7 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
 
           if (per_xyz)
           {
-#ifdef ENABLE_SOA
             dr = d_table.getDisplRow(jat)[iat];
-#else
-            dr = d_table.dr(nn);
-#endif
             for (int idir = 0; idir < OHMMS_DIM; idir++)
             {
               RealType dir2 = dr[idir] * dr[idir];
@@ -171,7 +157,10 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   Value /= num_sites;
   if (per_xyz)
   {
-    std::transform(xyz2.begin(), xyz2.end(), xyz2.begin(), bind2nd(std::multiplies<RealType>(), 1. / num_sites));
+    for (int idir = 0; idir < OHMMS_DIM; idir++)
+    {
+      xyz2[idir] /= num_sites;
+    }
   }
 
   return Value;

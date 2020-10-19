@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/NonLocalECPotential_CUDA.h"
+#include "NonLocalECPotential_CUDA.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPP.h"
 #include "Particle/MCWalkerConfiguration.h"

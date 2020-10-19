@@ -27,14 +27,11 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-using WP = WalkerProperties::Indexes;
+using WP        = WalkerProperties::Indexes;
 
 TEST_CASE("walker", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
-
   MCPWalker w(1);
   REQUIRE(w.R.size() == 1);
   w.R[0] = 1.0;
@@ -55,7 +52,6 @@ TEST_CASE("walker assumptions", "[particle]")
 
 TEST_CASE("walker HDF read and write", "[particle]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   MCPWalker w1(1);
@@ -118,17 +114,17 @@ TEST_CASE("walker HDF read and write", "[particle]")
 TEST_CASE("walker buffer add, update, restore", "[particle]")
 {
   int num_particles = 4;
-  
+
   UPtrVector<MCPWalker> walkers(2);
   auto createWalker = [num_particles](UPtr<MCPWalker>& walker_ptr) {
-    walker_ptr    = std::make_unique<MCPWalker>(num_particles);
+    walker_ptr = std::make_unique<MCPWalker>(num_particles);
     walker_ptr->registerData();
     walker_ptr->DataSet.allocate();
   };
   std::for_each(walkers.begin(), walkers.end(), createWalker);
-  
-  walkers[0]->Properties(WP::LOGPSI) = 1.2;
-  walkers[0]->Properties(WP::SIGN) = 1.3;
+
+  walkers[0]->Properties(WP::LOGPSI)         = 1.2;
+  walkers[0]->Properties(WP::SIGN)           = 1.3;
   walkers[0]->Properties(WP::UMBRELLAWEIGHT) = 1.4;
   walkers[0]->Properties(WP::LOCALPOTENTIAL) = 1.6;
   walkers[0]->updateBuffer();

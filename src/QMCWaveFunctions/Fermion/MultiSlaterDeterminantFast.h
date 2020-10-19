@@ -16,11 +16,11 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/WaveFunctionComponent.h>
-#include <QMCWaveFunctions/Fermion/MultiDiracDeterminant.h>
-#include <QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h>
-#include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
-#include "Utilities/NewTimer.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
+#include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
+#include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
@@ -80,8 +80,6 @@ public:
   void checkOutVariables(const opt_variables_type& active) override;
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
-
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();

@@ -117,8 +117,6 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   /**@}*/
   ///resize the basis set
   virtual void setBasisSetSize(int nbs) = 0;
-  ///reset the target particle set
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
   virtual void evaluateWithHessian(const ParticleSet& P, int iat)            = 0;
   virtual void evaluateWithThirdDeriv(const ParticleSet& P, int iat)         = 0;
@@ -133,7 +131,7 @@ struct BasisSetBase : public OrbitalSetTraits<T>
 /** Base for real basis set
  *
  * Equivalent to BasisSetBase with minimum requirements
- * Used by lcao
+ * Used by LCAO
  */
 template<typename T>
 struct SoaBasisSetBase

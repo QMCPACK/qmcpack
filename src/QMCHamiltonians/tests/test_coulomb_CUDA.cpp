@@ -31,10 +31,9 @@ namespace qmcplusplus
 TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
-  LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
+  LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -56,7 +55,7 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
@@ -67,27 +66,23 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   elec.R[0][1] = 0.5;
   elec.R[0][2] = 0.0;
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
   elec.createSK();
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
+  elec.addTable(ions);
   elec.update();
 
 
   ParticleSetPool ptcl = ParticleSetPool(c);
 
 
-  CoulombPBCAB_CUDA cab = CoulombPBCAB_CUDA(ions, elec);
+  CoulombPBCAB_CUDA cab(ions, elec);
 
   // Background charge term
   double consts = cab.evalConsts();
@@ -101,9 +96,8 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
-  LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
+  LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -129,7 +123,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
@@ -144,20 +138,16 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   elec.R[1][2] = 0.0;
   elec.createWalkers(1);
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
   elec.createSK();
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
+  elec.addTable(ions);
   elec.update();
 
 
@@ -168,7 +158,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   ParticleSetPool ptcl = ParticleSetPool(c);
 
 
-  CoulombPBCAB_CUDA cab = CoulombPBCAB_CUDA(ions, elec);
+  CoulombPBCAB_CUDA cab(ions, elec);
 
   // Background charge term
   double consts = cab.evalConsts();
@@ -192,10 +182,9 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
-  LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
+  LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -228,7 +217,7 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   int pIonMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)        = 1;
   ion_species(pIonMembersizeIdx, pIdx) = 2;
-  ions.Lattice = Lattice;
+  ions.Lattice                         = Lattice;
   ions.createSK();
   ions.update();
 
@@ -238,7 +227,7 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   ions.updateLists_GPU();
 
 
-  CoulombPBCAA_CUDA caa = CoulombPBCAA_CUDA(ions, true);
+  CoulombPBCAA_CUDA caa(ions, true);
 
   // Background charge term
   double consts = caa.evalConsts();

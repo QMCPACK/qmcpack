@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
@@ -22,13 +22,13 @@
 #include "Message/Communicate.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include "OhmmsData/FileUtility.h"
 #include "Platforms/sysutil.h"
 #include "Platforms/devices.h"
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 
 void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr root);
 
@@ -44,13 +44,13 @@ void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr ro
 int main(int argc, char** argv)
 {
   using namespace qmcplusplus;
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
   try
   {
     //qmc_common  and MPI is initialized
-#ifdef HAVE_MPI
-    mpi3::environment env(argc, argv);
-    OHMMS::Controller->initialize(env);
-#endif
     qmcplusplus::qmc_common.initialize(argc, argv);
     int clones = 1;
 #ifdef QMC_CUDA
@@ -85,26 +85,7 @@ int main(int argc, char** argv)
           if (pos != std::string::npos)
           {
             std::string timer_level = c.substr(pos + 1);
-            if (timer_level == "none")
-            {
-              TimerManager.set_timer_threshold(timer_level_none);
-            }
-            else if (timer_level == "coarse")
-            {
-              TimerManager.set_timer_threshold(timer_level_coarse);
-            }
-            else if (timer_level == "medium")
-            {
-              TimerManager.set_timer_threshold(timer_level_medium);
-            }
-            else if (timer_level == "fine")
-            {
-              TimerManager.set_timer_threshold(timer_level_fine);
-            }
-            else
-            {
-              std::cerr << "Unknown timer level: " << timer_level << std::endl;
-            }
+            timer_manager.set_timer_threshold(timer_level);
           }
         }
         if (c.find("-verbosity") < c.size())
@@ -188,6 +169,14 @@ int main(int argc, char** argv)
     Communicate* qmcComm = OHMMS::Controller;
     if (inputs.size() > 1)
     {
+      if (inputs.size() > OHMMS::Controller->size())
+      {
+        std::ostringstream msg;
+        msg << "main(). Current " << OHMMS::Controller->size() << " MPI ranks cannot accommodate all the "
+            << inputs.size() << " individual calculations in the ensemble. "
+            << "Increase the number of MPI ranks or reduce the number of calculations." << std::endl;
+        OHMMS::Controller->barrier_and_abort(msg.str());
+      }
       qmcComm               = new Communicate(*OHMMS::Controller, inputs.size());
       qmc_common.mpi_groups = inputs.size();
     }
@@ -234,18 +223,17 @@ int main(int argc, char** argv)
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
     output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
-    TimerManager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
+    timer_manager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
     qmc->ptclPool->output_particleset_info(timingDoc, timingDoc.getRoot());
     if (OHMMS::Controller->rank() == 0)
     {
       timingDoc.dump(qmc->getTitle() + ".info.xml");
     }
-    TimerManager.print(qmcComm);
+    timer_manager.print(qmcComm);
     if (qmc)
       delete qmc;
     if (useGPU)
       Finalize_CUDA();
-    OHMMS::Controller->finalize();
   }
   catch (const std::exception& e)
   {
@@ -258,6 +246,7 @@ int main(int argc, char** argv)
     APP_ABORT("Unhandled Exception");
   }
 
+  OHMMS::Controller->finalize();
   return 0;
 }
 

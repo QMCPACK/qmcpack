@@ -14,8 +14,8 @@
 #ifndef QMCPLUSPLUS_SHOSET_H
 #define QMCPLUSPLUS_SHOSET_H
 
-#include <QMCWaveFunctions/SPOSet.h>
-#include <QMCWaveFunctions/SPOInfo.h>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOInfo.h"
 
 
 namespace qmcplusplus
@@ -101,10 +101,6 @@ struct SHOSet : public SPOSet
   //empty methods
   /// number of orbitals is determined only by initial request
   inline void setOrbitalSetSize(int norbs) {}
-
-  /// does not affect ParticleSet information
-  inline void resetTargetParticleSet(ParticleSet& P) {}
-
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)

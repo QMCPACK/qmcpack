@@ -633,7 +633,7 @@ class TracesFileHDF(DataFile):
 
     # Perform internal consistency check between per-walker single 
     #   particle energies and per-walker total energies.
-    def check_particle_sums(self,tol=1e-8):
+    def check_particle_sums(self,tol):
         t = self.real_traces
 
         # Determine quantities present as "scalars" (total values) and also per-particle
@@ -874,7 +874,7 @@ class TracesAnalyzer(DevBase):
 
     # Check that per-particle quantities sum to total/scalar quantities 
     #   in each traces.h5 file separately.
-    def check_particle_sums(self,tol=1e-8):
+    def check_particle_sums(self,tol):
         same = True
         for trace_file in self.data:
             log('Checking traces file: {}'.format(os.path.basename(trace_file.filepath)),n=2)
@@ -888,7 +888,7 @@ class TracesAnalyzer(DevBase):
 
 
     # Check aggregated traces data against scalar.dat
-    def check_scalar_dat(self,tol=1e-8):
+    def check_scalar_dat(self,tol):
         valid = self.check_scalar_file('scalar.dat',self.scalar_dat,tol)
         self.scalar_dat_valid = valid
         self.pass_fail(valid,n=2)
@@ -897,7 +897,7 @@ class TracesAnalyzer(DevBase):
 
 
     # Check aggregated traces data against stat.h5
-    def check_stat_h5(self,tol=1e-8):
+    def check_stat_h5(self,tol):
         valid = self.check_scalar_file('stat.h5',self.stat_h5,tol)
         self.stat_h5_valid = valid
         self.pass_fail(valid,n=2)
@@ -906,7 +906,7 @@ class TracesAnalyzer(DevBase):
 
 
     # Shared checking implementation for scalar.dat and stat.h5
-    def check_scalar_file(self,file_type,scalar_file,tol=1e-8):
+    def check_scalar_file(self,file_type,scalar_file,tol):
 
         # Check that expected quantities are present
         qnames = scalar_file.quantities
@@ -959,7 +959,7 @@ class TracesAnalyzer(DevBase):
 
 
     # Check aggregated traces data against dmc.dat
-    def check_dmc_dat(self,tol=1e-8):
+    def check_dmc_dat(self,tol):
 
         # Some DMC steps are excluded due to a known bug in QMCPACK weights
         dmc_steps_exclude = self.options.dmc_steps_exclude
@@ -1274,6 +1274,10 @@ if __name__=='__main__':
                       default='0',
                       help='Exclude a number of DMC steps from being checked.  This option is temporary and will be removed once a bug in the DMC weights for the first step is fixed (default=%default).'
                       )
+    parser.add_option('--tol',dest='tolerance',
+                      default='1e-8',
+                      help='Tolerance to check (default=%default).'
+                      )
 
     opt,paths = parser.parse_args()
 
@@ -1289,6 +1293,8 @@ if __name__=='__main__':
         log(examples)
         sys.exit(0)
     #end if
+
+    tol = float(options.tolerance)
 
     if len(paths)==0:
         options.path = './'
@@ -1368,19 +1374,19 @@ if __name__=='__main__':
         if method=='vmc':
             if options.particle_sum:
                 log('\nChecking sums of single particle energies',n=1)
-                ta.check_particle_sums()
+                ta.check_particle_sums(tol)
             #end if
 
             log('\nChecking scalar.dat',n=1)
-            ta.check_scalar_dat()
+            ta.check_scalar_dat(tol)
 
             log('\nChecking stat.h5',n=1)
-            ta.check_stat_h5()
+            ta.check_stat_h5(tol)
 
         elif method=='dmc':
             if options.particle_sum:
                 log('\nChecking sums of single particle energies',n=1)
-                ta.check_particle_sums()
+                ta.check_particle_sums(tol)
             #end if
 
             log('\nSkipping checks of scalar.dat and stat.h5',n=1)
@@ -1390,7 +1396,7 @@ if __name__=='__main__':
                 'from the traces.',n=2)
 
             log('\nChecking dmc.dat',n=1)
-            ta.check_dmc_dat()
+            ta.check_dmc_dat(tol)
         #end if
 
         failed |= ta.failed

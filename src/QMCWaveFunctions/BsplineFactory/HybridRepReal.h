@@ -18,7 +18,7 @@
 #ifndef QMCPLUSPLUS_HYBRIDREP_REAL_H
 #define QMCPLUSPLUS_HYBRIDREP_REAL_H
 
-#include <QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h>
+#include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 namespace qmcplusplus
 {
 /** hybrid representation orbitals combining B-spline orbitals on a grid and atomic centered orbitals.
@@ -218,10 +218,10 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend class HybridRepSetReader;
+  friend struct HybridRepSetReader;
   template<class BSPLINESPO>
-  friend class SplineSetReader;
-  friend class BsplineReaderBase;
+  friend struct SplineSetReader;
+  friend struct BsplineReaderBase;
 };
 
 } // namespace qmcplusplus

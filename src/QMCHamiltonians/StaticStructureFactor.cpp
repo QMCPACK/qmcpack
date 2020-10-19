@@ -11,10 +11,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/StaticStructureFactor.h>
-#include <OhmmsData/AttributeSet.h>
-#include <LongRange/KContainer.h>
-#include <LongRange/StructFact.h>
+#include "StaticStructureFactor.h"
+#include "OhmmsData/AttributeSet.h"
+#include "LongRange/KContainer.h"
+#include "LongRange/StructFact.h"
 
 namespace qmcplusplus
 {

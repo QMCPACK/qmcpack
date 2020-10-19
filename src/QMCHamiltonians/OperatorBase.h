@@ -22,14 +22,14 @@
 #ifndef QMCPLUSPLUS_HAMILTONIANBASE_H
 #define QMCPLUSPLUS_HAMILTONIANBASE_H
 
-#include <Particle/ParticleSet.h>
-#include <OhmmsData/RecordProperty.h>
-#include <Utilities/RandomGenerator.h>
-#include <QMCHamiltonians/observable_helper.h>
+#include "Particle/ParticleSet.h"
+#include "OhmmsData/RecordProperty.h"
+#include "Utilities/RandomGenerator.h"
+#include "QMCHamiltonians/observable_helper.h"
 #if !defined(REMOVE_TRACEMANAGER)
-#include <Estimators/TraceManager.h>
+#include "Estimators/TraceManager.h"
 #endif
-#include <QMCWaveFunctions/OrbitalSetTraits.h>
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include <bitset>
 
 namespace qmcplusplus

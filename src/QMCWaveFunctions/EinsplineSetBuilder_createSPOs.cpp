@@ -17,8 +17,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Numerics/e2iphi.h"
-#include "simd/vmath.hpp"
+#include "CPU/e2iphi.h"
+#include "CPU/SIMD/vmath.hpp"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -28,8 +28,8 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTableData.h"
 #include <fftw3.h>
-#include <Utilities/ProgressReportEngine.h>
-#include <QMCWaveFunctions/einspline_helper.hpp>
+#include "Utilities/ProgressReportEngine.h"
+#include "QMCWaveFunctions/einspline_helper.hpp"
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
@@ -127,7 +127,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string useGPU = "no";
 #endif
   std::string GPUsharing = "no";
-  ScopedTimer spo_timer_scope(TimerManager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
+  ScopedTimer spo_timer_scope(timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;

@@ -1,17 +1,16 @@
 #ifdef COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0.cu) && nvcc -ccbin cuda-c++ -std=c++14 -I$HOME/prj/alf -D_TEST_MULTI_THRUST_ALGORITHMS $0.cu -o $0x && $0x && rm $0.cu $0x; exit
+(echo "#include\""$0"\"" > $0.cu) && nvcc -I$HOME/prj/alf -D_TEST_MULTI_THRUST_ALGORITHMS $0.cu -o $0x && $0x && rm $0.cu $0x; exit
 #endif
 
 #ifndef BOOST_MULTI_ADAPTORS_THRUST_ALGORITHMS_HPP
 #define BOOST_MULTI_ADAPTORS_THRUST_ALGORITHMS_HPP
 
+#include "../thrust/algorithms/copy.hpp"
 
-#include "../../array_ref.hpp"
-
-#include<thrust/device_ptr.h>
-
-#include <iostream>
-
+//#include "../../array_ref.hpp"
+//#include<thrust/device_ptr.h>
+//#include <iostream>
+#if 0
 namespace boost{
 namespace multi{
 	template<typename From, typename To, typename = std::enable_if_t<std::is_trivially_assignable<To&, From>{}> >
@@ -20,8 +19,7 @@ namespace multi{
 		array_iterator<From, 1, thrust::device_ptr<To>> l, 
 		array_iterator<To, 1, To*> d
 	){
-		assert( f.stride() == l.stride() );
-		static_assert( sizeof(From) == sizeof(To) );
+		assert(f.stride() == l.stride()); static_assert(sizeof(From) == sizeof(To), "!");
 		auto n = std::distance(f, l);
 		if(f.stride()==1 and d.stride()==1){
 			auto s = cudaMemcpy(d.data(), raw_pointer_cast(f.data()), n*sizeof(To), cudaMemcpyDeviceToHost); assert( s == cudaSuccess );
@@ -31,7 +29,28 @@ namespace multi{
 		}
 		return d + n;
 	}
+
+#if 1
+	template<typename From, typename To, typename = std::enable_if_t<std::is_trivially_assignable<To&, From>{}> >
+	void fill(
+		array_iterator<To, 1, thrust::device_ptr<To>> f, 
+		array_iterator<To, 1, thrust::device_ptr<To>> l, 
+		From const& value
+	){
+		assert( f.stride() == l.stride() ); static_assert(sizeof(From) == sizeof(To), "!");
+		auto n = std::distance(f, l);
+		if(f.stride()==1){
+		//	auto s = cudaMemcpy(f.data(), thrust::raw_pointer_cast(&value), n*sizeof(To), cudaMemcpyHostToDevice); assert(s == cudaSuccess);
+		}else{
+		//	auto s = cudaMemcpy2D(f.data(), f.stride()*sizeof(To), raw_pointer_cast(&value), 0*sizeof(To), sizeof(To), n, cudaMemcpyHostToDevice);
+		//	assert( s == cudaSuccess );
+		}
+		return;
+	}
+#endif
+
 }}
+#endif
 
 #ifdef _TEST_MULTI_THRUST_ALGORITHMS
 
@@ -46,7 +65,7 @@ namespace multi{
 #include<numeric> // iota
 
 int main(){
-
+#if 0
 	thrust::device_allocator<double> aaa;
 	auto p = aaa.allocate(10);
 	aaa.deallocate(p, 10);
@@ -129,6 +148,7 @@ int main(){
 
     // H and D are automatically deleted when the function returns
     return 0;
+#endif
 }
 
 #endif

@@ -16,9 +16,9 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/Fermion/DiracDeterminant.h>
-#include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
-#include "Utilities/NewTimer.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
+#include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
 namespace qmcplusplus
@@ -70,7 +70,10 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo);
+  MultiSlaterDeterminant(ParticleSet& targetPtcl,
+                         SPOSetProxyPtr upspo,
+                         SPOSetProxyPtr dnspo,
+                         const std::string& class_name = "MultiSlaterDeterminant");
 
   ///destructor
   ~MultiSlaterDeterminant();
@@ -79,8 +82,6 @@ public:
   virtual void checkOutVariables(const opt_variables_type& active);
   virtual void resetParameters(const opt_variables_type& active);
   virtual void reportStatus(std::ostream& os);
-
-  void resetTargetParticleSet(ParticleSet& P);
 
   ///set BF pointers
   virtual void setBF(BackflowTransformation* BFTrans) {}

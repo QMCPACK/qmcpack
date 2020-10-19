@@ -15,11 +15,11 @@
 
 #ifndef QMCPLUSPLUS_MPC_H
 #define QMCPLUSPLUS_MPC_H
-#include <QMCHamiltonians/OperatorBase.h>
-#include <LongRange/LRCoulombSingleton.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "LongRange/LRCoulombSingleton.h"
 
 #if defined(HAVE_EINSPLINE)
-#include <einspline/bspline.h>
+#include "einspline/bspline.h"
 #else
 class UBspline_3d_d;
 #endif

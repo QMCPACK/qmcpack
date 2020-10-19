@@ -14,9 +14,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
+#include "CoulombPBCAA_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {
@@ -147,7 +148,7 @@ void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
       PosType r = walkers[0]->R[ir];
       double s, c;
       double phase = dot(k, r);
-      sincos(phase, &s, &c);
+      qmcplusplus::sincos(phase, &s, &c);
       rhok += std::complex<double>(c, s);
     }
     fprintf(stderr, "GPU:   %d   %14.6f  %14.6f\n", ik, RhokHost[2 * ik + 0], RhokHost[2 * ik + 1]);

@@ -25,7 +25,7 @@ class VMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
+  VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
   bool run();
   bool put(xmlNodePtr cur);
   QMCRunType getRunType() { return QMCRunType::VMC; }
@@ -38,9 +38,6 @@ private:
   RealType logoffset, logepsilon;
   ///option to enable/disable drift equation or RN for VMC
   std::string UseDrift;
-  ///turn on spin moves
-  std::string SpinMoves;
-  RealType SpinMass;
   ///check the run-time environments
   void resetRun();
   ///copy constructor

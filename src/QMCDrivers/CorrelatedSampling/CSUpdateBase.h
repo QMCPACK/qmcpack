@@ -23,7 +23,7 @@
 
 namespace qmcplusplus
 {
-class CSEnergyEstimator;
+struct CSEnergyEstimator;
 class CSUpdateBase : public QMCUpdateBase
 {
 public:

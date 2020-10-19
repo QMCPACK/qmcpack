@@ -11,10 +11,4 @@ target_sources(ppconvert
     "${CMAKE_CURRENT_SOURCE_DIR}/ParserClass.cc"
 )
 
-target_link_libraries(ppconvert common ${LAPACK_LIBRARIES})
-set_property(TARGET ppconvert PROPERTY INSTALL_RPATH "${LAPACK_LINK_DIRECTORIES}")
-set_property(TARGET ppconvert PROPERTY BUILD_WITH_INSTALL_RPATH ON)
-set_property(TARGET ppconvert PROPERTY LINK_FLAGS "${LAPACK_LINKER_FLAGS}")
-target_include_directories(ppconvert PUBLIC
-  ${LAPACK_INCLUDE_DIRECTORIES}
-  )
+target_link_libraries(ppconvert common Math::BLAS_LAPACK)

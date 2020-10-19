@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include <map>
 #include <stdexcept>
 #include <iomanip>

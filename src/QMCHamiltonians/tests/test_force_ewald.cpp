@@ -32,7 +32,6 @@ namespace qmcplusplus
 TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -59,7 +58,7 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
@@ -74,12 +73,12 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   elec.R[1][2] = 0.0;
 
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
   elec.createSK();
 
@@ -91,9 +90,9 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-  LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
-  LRCoulombSingleton::CoulombDerivHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombDerivHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombDerivHandler->initBreakup(ions);
 
   ForceChiesaPBCAA force(ions, elec);
@@ -119,19 +118,14 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   REQUIRE(force.forces[1][1] == Approx(-0.078308730));
   REQUIRE(force.forces[1][2] == Approx(0.000000000));
 
-
-  delete LRCoulombSingleton::CoulombHandler;
-  LRCoulombSingleton::CoulombHandler = 0;
-
-  delete LRCoulombSingleton::CoulombDerivHandler;
-  LRCoulombSingleton::CoulombDerivHandler = 0;
+  LRCoulombSingleton::CoulombHandler.reset(nullptr);
+  LRCoulombSingleton::CoulombDerivHandler.reset(nullptr);
 }
 
 // test SR and LR pieces separately
 TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -156,7 +150,7 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
@@ -169,13 +163,13 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   elec.R[1][1] = 0.5;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
-  elec.Lattice = Lattice;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+  elec.Lattice               = Lattice;
   elec.createSK();
 
   // The call to resetGroups is needed transfer the SpeciesSet
@@ -183,9 +177,9 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   ions.resetGroups();
   elec.resetGroups();
 
-  LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
-  LRCoulombSingleton::CoulombDerivHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombDerivHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombDerivHandler->initBreakup(ions);
 
   ForceChiesaPBCAA force(ions, elec);
@@ -216,10 +210,8 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   //  QMCDrivers/CloneManager::makeClones
   //  QMCHamiltonian::makeClone
   //  OperatorBase::add2Hamiltonian -> ForceChiesaPBCAA::makeClone
-  TrialWaveFunction psi(c);
-  std::unique_ptr<ForceChiesaPBCAA> clone(
-    dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec,psi))
-  );
+  TrialWaveFunction psi;
+  std::unique_ptr<ForceChiesaPBCAA> clone(dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec, psi)));
   clone->evaluate(elec);
   REQUIRE(clone->addionion == force.addionion);
   REQUIRE(clone->forces_IonIon[0][0] == Approx(-0.0228366));
@@ -229,18 +221,14 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   REQUIRE(clone->forces_IonIon[1][1] == Approx(0.0228366));
   REQUIRE(clone->forces_IonIon[1][2] == Approx(0.0000000));
 
-  delete LRCoulombSingleton::CoulombHandler;
-  LRCoulombSingleton::CoulombHandler = 0;
-
-  delete LRCoulombSingleton::CoulombDerivHandler;
-  LRCoulombSingleton::CoulombDerivHandler = 0;
+  LRCoulombSingleton::CoulombHandler.reset(nullptr);
+  LRCoulombSingleton::CoulombDerivHandler.reset(nullptr);
 }
 
 // 3 H atoms randomly distributed in a box
 TEST_CASE("fccz h3", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
@@ -268,7 +256,7 @@ TEST_CASE("fccz h3", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
   elec.setName("elec");
@@ -280,13 +268,13 @@ TEST_CASE("fccz h3", "[hamiltonian]")
   elec.R[1][1] = 0.5;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
-  elec.Lattice = Lattice;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+  elec.Lattice               = Lattice;
   elec.createSK();
 
   // The call to resetGroups is needed transfer the SpeciesSet
@@ -294,9 +282,9 @@ TEST_CASE("fccz h3", "[hamiltonian]")
   ions.resetGroups();
   elec.resetGroups();
 
-  LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
-  LRCoulombSingleton::CoulombDerivHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombDerivHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombDerivHandler->initBreakup(ions);
 
   ForceChiesaPBCAA force(ions, elec);
@@ -327,11 +315,8 @@ TEST_CASE("fccz h3", "[hamiltonian]")
   REQUIRE(force.forces[2][1] == Approx(0.1379375923));
   REQUIRE(force.forces[2][2] == Approx(0.000000000));
 
-  delete LRCoulombSingleton::CoulombHandler;
-  LRCoulombSingleton::CoulombHandler = 0;
-
-  delete LRCoulombSingleton::CoulombDerivHandler;
-  LRCoulombSingleton::CoulombDerivHandler = 0;
+  LRCoulombSingleton::CoulombHandler.reset(nullptr);
+  LRCoulombSingleton::CoulombDerivHandler.reset(nullptr);
 }
 
 } // namespace qmcplusplus

@@ -32,9 +32,6 @@ public:
   QMCDriver* create(MCWalkerConfiguration& w,
                     TrialWaveFunction& psi,
                     QMCHamiltonian& h,
-                    ParticleSetPool& ptclpool,
-                    HamiltonianPool& hpool,
-                    WaveFunctionPool& ppool,
                     Communicate* comm);
 };
 } // namespace qmcplusplus

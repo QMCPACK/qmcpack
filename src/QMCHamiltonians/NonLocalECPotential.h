@@ -18,12 +18,13 @@
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/ForceBase.h"
-#include "QMCHamiltonians/NLPPJob.h"
 #include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
 class NonLocalECPComponent;
+template<typename T>
+struct NLPPJob;
 
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
@@ -172,7 +173,7 @@ private:
   /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
    * @param myTable electron ion distance table
    * @param iel reference electron
-   * Note this funtion should be called before acceptMove for a Tmove
+   * Note this function should be called before acceptMove for a Tmove
    */
   void markAffectedElecs(const DistanceTableData& myTable, int iel);
 };

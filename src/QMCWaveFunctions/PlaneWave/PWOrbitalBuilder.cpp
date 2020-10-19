@@ -16,11 +16,10 @@
 /** @file
  * @brief Definition of a builder class for PWOrbitalSet
  */
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
+#include "PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/HDFSTLAttrib.h"
@@ -89,11 +88,6 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
       success = createPWBasis(cur);
       slater_det = putSlaterDet(cur);
     }
-    else if (cname == sposcanner_tag)
-    {
-      SPOSetScanner ascanner(spomap, targetPtcl, ptclPool);
-      ascanner.put(cur);
-    }
     cur = cur->next;
   }
   H5Fclose(hfileID);
@@ -130,9 +124,7 @@ WaveFunctionComponent* PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if (lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;
-        ;
         SPOSetPtr psi(createPW(cur, spin_group));
-        sdet->add(psi, ref);
         spomap[ref] = psi;
         adet        = new Det_t(psi, firstIndex);
       }

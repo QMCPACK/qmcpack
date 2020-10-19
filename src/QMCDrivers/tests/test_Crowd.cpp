@@ -16,7 +16,7 @@
 #include "QMCDrivers/Crowd.h"
 #include "type_traits/template_types.hpp"
 #include "Estimators/tests/FakeEstimator.h"
-
+#include "Estimators/EstimatorManagerNew.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
@@ -32,7 +32,7 @@ class CrowdWithWalkers
 public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  EstimatorManagerBase em;
+  EstimatorManagerNew em;
   UPtr<Crowd> crowd_ptr;
   Crowd& get_crowd() { return *crowd_ptr; }
   UPtrVector<MCPWalker> walkers;
@@ -79,10 +79,9 @@ public:
 
 TEST_CASE("Crowd integration", "[drivers]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* comm = OHMMS::Controller;
 
-  EstimatorManagerBase em(comm);
+  EstimatorManagerNew em(comm);
 
   FakeEstimator* fake_est = new FakeEstimator;
 
@@ -90,7 +89,7 @@ TEST_CASE("Crowd integration", "[drivers]")
 
   ScalarEstimatorBase* est2 = em.getEstimator("fake");
   FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
-  REQUIRE(fake_est2 != NULL);
+  REQUIRE(fake_est2 != nullptr);
   REQUIRE(fake_est2 == fake_est);
   // The above was required behavior for crowd at one point.
   // TODO: determine whether it still is, I don't think so.
@@ -116,21 +115,6 @@ TEST_CASE("Crowd::loadWalkers", "[particle]")
   };
   for (int i = 0; i < crowd.size(); ++i)
     checkParticleSetPos(i);
-}
-
-TEST_CASE("Crowd::get_accept_ratio", "[Drivers]")
-{
-  using namespace testing;
-  SetupPools pools;
-
-  CrowdWithWalkers crowd_with_walkers(pools);
-  Crowd& crowd = crowd_with_walkers.get_crowd();
-
-  crowd.incAccept();
-  crowd.incAccept();
-  crowd.incAccept();
-  crowd.incReject();
-  REQUIRE(crowd.get_accept_ratio() == Approx(0.75));
 }
 
 TEST_CASE("Crowd redistribute walkers")

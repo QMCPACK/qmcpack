@@ -14,16 +14,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/PairCorrEstimator.h>
-#include <Particle/DistanceTableData.h>
-#include <OhmmsData/AttributeSet.h>
-#include <Utilities/SimpleParser.h>
+#include "PairCorrEstimator.h"
+#include "Particle/DistanceTableData.h"
+#include "OhmmsData/AttributeSet.h"
+#include "Utilities/SimpleParser.h"
 #include <set>
 
 namespace qmcplusplus
 {
 PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
-    : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns, DT_SOA_PREFERRED))
+    : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns))
 {
   UpdateMode.set(COLLECTABLE, 1);
   num_species = elns.groups();
@@ -57,20 +57,6 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
       pair_map[i * num_species + j] = npairs;
       ++npairs;
     }
-
-  const DistanceTableData& dii(elns.getDistTable(d_aa_ID_));
-  if (dii.DTType == DT_AOS)
-  {
-#ifndef ENABLE_SOA
-    pair_ids.resize(dii.getTotNadj());
-    for (int iat = 0; iat < dii.centers(); ++iat)
-    {
-      int ig = elns.GroupID[iat] * num_species;
-      for (int nn = dii.M[iat]; nn < dii.M[iat + 1]; ++nn)
-        pair_ids[nn] = pair_map[ig + elns.GroupID[dii.J[nn]]];
-    }
-#endif
-  }
 
   // source-target tables
   std::vector<std::string> slist, dlist;
@@ -120,84 +106,42 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
 {
   BufferType& collectables(P.Collectables);
   const DistanceTableData& dii(P.getDistTable(d_aa_ID_));
-  if (dii.DTType == DT_SOA) // Start SoA eval
+  for (int iat = 1; iat < dii.centers(); ++iat)
   {
-    for (int iat = 1; iat < dii.centers(); ++iat)
+    const auto& dist = dii.getDistRow(iat);
+    const int ig     = P.GroupID[iat];
+    for (int j = 0; j < iat; ++j)
     {
-      const auto& dist = dii.getDistRow(iat);
-      const int ig                  = P.GroupID[iat];
-      for (int j = 0; j < iat; ++j)
+      const RealType r = dist[j];
+      if (r < Dmax)
+      {
+        const int loc     = static_cast<int>(DeltaInv * r);
+        const int jg      = P.GroupID[j];
+        const int pair_id = ig * (ig + 1) / 2 + jg;
+        collectables[pair_id * NumBins + loc + myIndex] += norm_factor(pair_id + 1, loc);
+      }
+    }
+  }
+  for (int k = 0; k < other_ids.size(); ++k)
+  {
+    const DistanceTableData& d1(P.getDistTable(other_ids[k]));
+    const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
+    int koff        = other_offsets[k];
+    RealType overNI = 1.0 / d1.centers();
+    for (int iat = 0; iat < d1.targets(); ++iat)
+    {
+      const auto& dist = d1.getDistRow(iat);
+      for (int j = 0; j < d1.centers(); ++j)
       {
         const RealType r = dist[j];
         if (r < Dmax)
         {
-          const int loc     = static_cast<int>(DeltaInv * r);
-          const int jg      = P.GroupID[j];
-          const int pair_id = ig * (ig + 1) / 2 + jg;
-          collectables[pair_id * NumBins + loc + myIndex] += norm_factor(pair_id + 1, loc);
+          int toff = (gid[j] + koff) * NumBins;
+          int loc  = static_cast<int>(DeltaInv * r);
+          collectables[toff + loc + myIndex] += norm_factor(0, loc) * overNI;
         }
       }
     }
-    for (int k = 0; k < other_ids.size(); ++k)
-    {
-      const DistanceTableData& d1(P.getDistTable(other_ids[k]));
-      const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
-      int koff        = other_offsets[k];
-      RealType overNI = 1.0 / d1.centers();
-      for (int iat = 0; iat < d1.targets(); ++iat)
-      {
-        const auto& dist = d1.getDistRow(iat);
-        for (int j = 0; j < d1.centers(); ++j)
-        {
-          const RealType r = dist[j];
-          if (r < Dmax)
-          {
-            int toff = (gid[j] + koff) * NumBins;
-            int loc  = static_cast<int>(DeltaInv * r);
-            collectables[toff + loc + myIndex] += norm_factor(0, loc) * overNI;
-          }
-        }
-      }
-    }
-  }    // End SoA eval
-  else // Start AoS eval
-  {
-#ifndef ENABLE_SOA
-    for (int iat = 0; iat < dii.centers(); ++iat)
-    {
-      for (int nn = dii.M[iat]; nn < dii.M[iat + 1]; ++nn)
-      {
-        const RealType r = dii.r(nn);
-        if (r < Dmax)
-        {
-          const int loc = static_cast<int>(DeltaInv * r);
-          const int bin = pair_ids[nn] * NumBins + loc + myIndex;
-          collectables[bin] += norm_factor(pair_ids[nn] + 1, loc);
-        }
-      }
-    }
-    for (int k = 0; k < other_ids.size(); ++k)
-    {
-      const DistanceTableData& d1(P.getDistTable(other_ids[k]));
-      const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
-      int koff = other_offsets[k];
-      for (int iat = 0; iat < d1.centers(); ++iat)
-      {
-        RealType overNI = 1.0 / d1.centers();
-        int toff        = (gid[iat] + koff) * NumBins;
-        for (int nn = d1.M[iat]; nn < d1.M[iat + 1]; ++nn)
-        {
-          RealType r = dii.r(nn);
-          if (r < Dmax)
-          {
-            const int loc = static_cast<int>(DeltaInv * r);
-            const int bin = toff + loc + myIndex;
-            collectables[bin] += norm_factor(0, loc) * overNI;
-          }
-        }
-      }
-    }
-#endif
   }
   return 0.0;
 }

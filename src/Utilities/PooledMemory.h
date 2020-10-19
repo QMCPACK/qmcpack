@@ -16,7 +16,7 @@
 
 #include <complex>
 #include <cstring>
-#include "simd/allocator.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include <stdexcept>
 
@@ -31,7 +31,7 @@ namespace qmcplusplus
  * The scalar part works as PooledData, all the values are static_cast to T_scalar.
  */
 #define DEFAULT_PAGE_SIZE 4096
-template<typename T_scalar = OHMMS_PRECISION_FULL, typename Alloc = aligned_allocator<char, DEFAULT_PAGE_SIZE>>
+template<typename T_scalar, typename Alloc = aligned_allocator<char, DEFAULT_PAGE_SIZE>>
 struct PooledMemory
 {
   typedef char T;
@@ -95,6 +95,12 @@ struct PooledMemory
     Current        = 0;
     Scalar_ptr     = nullptr;
     Current_scalar = 0;
+  }
+
+  ///zero the data
+  inline void zero()
+  {
+    myData.zero();
   }
 
   ///allocate the data

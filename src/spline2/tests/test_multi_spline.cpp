@@ -10,10 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include <OhmmsSoA/Container.h>
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"

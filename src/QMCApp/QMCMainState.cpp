@@ -20,7 +20,7 @@
 /**@file QMCDriverFactory.cpp
  * @brief Implments QMCMain operators.
  */
-#include "QMCApp/QMCMainState.h"
+#include "QMCMainState.h"
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -28,9 +28,9 @@
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/RMC/RMCFactory.h"
-#include "QMCDrivers/QMCOptimize.h"
-#include "QMCDrivers/QMCFixedSampleLinearOptimize.h"
-#include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCOptimize.h"
+#include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
+#include "QMCDrivers/WFOpt/QMCCorrelatedSamplingLinearOptimize.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include <queue>
 #include "OhmmsData/AttributeSet.h"
@@ -40,25 +40,17 @@ namespace qmcplusplus
 {
 ///initialize the static data member
 //ParticleSetPool* QMCMainState::ptclPool = new ParticleSetPool;
-QMCMainState::QMCMainState(Communicate* c) : MPIObjectBase(c), curRunType(QMCRunType::DUMMY), qmcSystem(0)
+QMCMainState::QMCMainState(Communicate* c) : MPIObjectBase(c), curRunType(QMCRunType::DUMMY), qmcSystem(nullptr)
 {
   ////create ParticleSetPool
-  ptclPool = new ParticleSetPool(myComm);
+  ptclPool = std::make_unique<ParticleSetPool>(myComm);
   //create WaveFunctionPool
-  psiPool = new WaveFunctionPool(myComm);
-  psiPool->setParticleSetPool(ptclPool);
+  psiPool = std::make_unique<WaveFunctionPool>(*ptclPool, myComm);
   //create HamiltonianPool
-  hamPool = new HamiltonianPool(myComm);
-  hamPool->setParticleSetPool(ptclPool);
-  hamPool->setWaveFunctionPool(psiPool);
+  hamPool = std::make_unique<HamiltonianPool>(*ptclPool, *psiPool, myComm);
 }
 
-QMCMainState::~QMCMainState()
-{
-  delete hamPool;
-  delete psiPool;
-  delete ptclPool;
-}
+QMCMainState::~QMCMainState() = default;
 
 void QMCMainState::putCommunicator(xmlNodePtr cur)
 {

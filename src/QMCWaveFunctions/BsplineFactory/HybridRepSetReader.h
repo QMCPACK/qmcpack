@@ -18,12 +18,13 @@
 #ifndef QMCPLUSPLUS_HYBRIDREP_READER_H
 #define QMCPLUSPLUS_HYBRIDREP_READER_H
 
-#include <Numerics/Quadrature.h>
-#include <Numerics/Bessel.h>
-#include <QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h>
+#include "Numerics/Quadrature.h"
+#include "Numerics/Bessel.h"
+#include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 #include "OhmmsData/AttributeSet.h"
+#include "config/stdlib/math.hpp"
 
-//#include <QMCHamiltonians/Ylm.h>
+//#include "QMCHamiltonians/Ylm.h"
 //#define PRINT_RADIAL
 
 namespace qmcplusplus
@@ -90,7 +91,7 @@ struct Gvectors
 
 #pragma omp simd aligned(px, py, pz, v_r, v_i)
     for (size_t iat = 0; iat < RSoA.size(); iat++)
-      sincos(px[iat] * gv_x + py[iat] * gv_y + pz[iat] * gv_z, v_i + iat, v_r + iat);
+      qmcplusplus::sincos(px[iat] * gv_x + py[iat] * gv_y + pz[iat] * gv_z, v_i + iat, v_r + iat);
   }
 
   template<typename PT>
@@ -101,7 +102,7 @@ struct Gvectors
     for (size_t ig = 0; ig < NumGvecs; ig++)
     {
       ST s, c;
-      sincos(dot(gvecs_cart[ig], pos), &s, &c);
+      qmcplusplus::sincos(dot(gvecs_cart[ig], pos), &s, &c);
       ValueType pw0(c, s);
       val += cG[ig] * pw0;
     }
@@ -116,7 +117,7 @@ struct Gvectors
     for (size_t ig = 0; ig < NumGvecs; ig++)
     {
       ST s, c;
-      sincos(dot(gvecs_cart[ig], pos), &s, &c);
+      qmcplusplus::sincos(dot(gvecs_cart[ig], pos), &s, &c);
       ValueType pw0(c, s);
       phi += cG[ig] * pw0;
       d2phi += cG[ig] * pw0 * (-dot(gvecs_cart[ig], gvecs_cart[ig]));

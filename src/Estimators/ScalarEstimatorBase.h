@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
@@ -15,13 +16,13 @@
 
 #ifndef QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
 #define QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
-#include <Particle/MCWalkerConfiguration.h>
-#include <OhmmsData/RecordProperty.h>
-#include <OhmmsData/HDFAttribIO.h>
-#include <Estimators/accumulators.h>
-#include "QMCDrivers/MCPopulation.h"
+#include "Particle/MCWalkerConfiguration.h"
+#include "OhmmsData/RecordProperty.h"
+#include "OhmmsData/HDFAttribIO.h"
+#include "Estimators/accumulators.h"
+#include "Particle/Walker.h"
 #if !defined(REMOVE_TRACEMANAGER)
-#include <Estimators/TraceManager.h>
+#include "Estimators/TraceManager.h"
 #endif
 
 namespace qmcplusplus
@@ -31,9 +32,10 @@ struct observable_helper;
 /** Abstract class for an estimator of a scalar operator.
  *
  * ScalarEstimators derived from ScalarEstimatorBase  implement three main functions
- * - reset : reset the internal values so that observables can be accumulated
  * - accumulate : measure and accumulate its value and the square of the value
- * - report : evaluate the block average and variance
+ * - add2Record : \todo document this
+ * - registerObservables : \todo document this
+ * - clone : because all types must be erased
  * ScalarEstimatorBase and its derived classes do not perform any I/O function.
  */
 struct ScalarEstimatorBase
@@ -41,7 +43,7 @@ struct ScalarEstimatorBase
   typedef QMCTraits::FullPrecRealType RealType;
   typedef accumulator_set<RealType> accumulator_type;
   typedef MCWalkerConfiguration::Walker_t Walker_t;
-  using MCPWalker = MCPopulation::MCPWalker;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
   typedef MCWalkerConfiguration::const_iterator WalkerIterator;
   typedef RecordNamedProperty<RealType> RecordListType;
 
@@ -107,6 +109,27 @@ struct ScalarEstimatorBase
     }
   }
 
+  /** take the block accumulated scalars and return the block weight
+   * @param first starting iterator of values
+   * @param first_sq starting iterator of squared values
+   */
+  template<typename IT>
+  inline RealType takeBlockSumsGetWeight(IT first, IT first_sq)
+  {
+    first += FirstIndex;
+    first_sq += FirstIndex;
+    RealType weight = scalars[0].count();
+    for (int i = 0; i < scalars.size(); i++)
+    {
+      *first++         = scalars[i].result();
+      *first_sq++      = scalars[i].result2();
+      scalars_saved[i] = scalars[i]; //save current block
+      scalars[i].clear();
+    }
+    return weight;
+  }
+
+
   /** a virtual function to accumulate observables or collectables
    * @param W const MCWalkerConfiguration
    * @param first const_iterator for the first walker
@@ -117,7 +140,7 @@ struct ScalarEstimatorBase
    */
   virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) = 0;
 
-   /** a virtual function to accumulate observables or collectables
+  /** a virtual function to accumulate observables or collectables
    * @param global_walkers_ walkers per ranks or walkers total?
    * @param RefVector of MCPWalkers
    * @param wgt weight or maybe norm

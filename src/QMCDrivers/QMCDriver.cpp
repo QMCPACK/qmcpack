@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/QMCDriver.h"
+#include "QMCDriver.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -25,8 +25,8 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
-#include "HDFVersion.h"
-#include <qmc_common.h>
+#include "hdf/HDFVersion.h"
+#include "Utilities/qmc_common.h"
 #include <limits>
 #include <typeinfo>
 
@@ -45,18 +45,18 @@ namespace qmcplusplus
 QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
-                     WaveFunctionPool& ppool,
-                     Communicate* comm)
+                     Communicate* comm,
+                     const std::string& QMC_driver_type)
     : MPIObjectBase(comm),
       Estimators(0),
       Traces(0),
       branchEngine(0),
       DriftModifier(0),
       qmcNode(NULL),
+      QMCType(QMC_driver_type),
       W(w),
       Psi(psi),
       H(h),
-      psiPool(ppool),
       wOut(0)
 {
   ResetRandom  = false;
@@ -113,11 +113,15 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   nSamplesPerThread = 0;
   m_param.add(nSamplesPerThread, "samplesperthread", "real");
   m_param.add(nSamplesPerThread, "dmcwalkersperthread", "real");
- 
+
   nTargetPopulation = 0;
-  
+
   m_param.add(nTargetPopulation, "samples", "real");
 
+  SpinMoves = "no";
+  SpinMass  = 1.0;
+  m_param.add(SpinMoves, "SpinMoves", "string");
+  m_param.add(SpinMass, "SpinMass", "double");
 
   Tau = 0.1;
   //m_param.add(Tau,"timeStep","AU");
@@ -150,13 +154,12 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 #endif
 #endif
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute", "int");
-  QMCType = "invalid";
   ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;
 
-  checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
+  checkpointTimer = timer_manager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
 QMCDriver::~QMCDriver()
@@ -339,7 +342,7 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
   if (DumpConfig && dumpwalkers)
     wOut->dump(W, block);
   delete wOut;
-  wOut = 0;
+  wOut           = 0;
   nTargetWalkers = W.getActiveWalkers();
   MyCounter++;
   infoSummary.flush();
@@ -517,21 +520,22 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   if (!AppendRun)
     CurrentStep = 0;
 
- 
+  tolower(SpinMoves);
+  if (SpinMoves != "yes" && SpinMoves != "no")
+    myComm->barrier_and_abort("SpinMoves must be yes/no!\n");
+#if defined(QMC_CUDA)
+  if (SpinMoves == "yes")
+    myComm->barrier_and_abort("Spin moves are not supported in legacy CUDA build.");
+#endif
 
- 
-
- 
   //if walkers are initialized via <mcwalkerset/>, use the existing one
-
-
   if (qmc_common.qmc_counter || qmc_common.is_restart)
   {
     app_log() << "Using existing walkers " << std::endl;
   }
   else
-  { 
-      app_log() << "Resetting walkers" << std::endl;
+  {
+    app_log() << "Resetting walkers" << std::endl;
 #ifdef QMC_CUDA
     int nths(1);
 #else
@@ -552,7 +556,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     addWalkers(ndiff);
   }
 
-   return (W.getActiveWalkers() > 0);
+  return (W.getActiveWalkers() > 0);
 }
 
 xmlNodePtr QMCDriver::getQMCNode()
@@ -580,6 +584,5 @@ xmlNodePtr QMCDriver::getQMCNode()
   return newqmc;
 }
 
-         
 
 } // namespace qmcplusplus

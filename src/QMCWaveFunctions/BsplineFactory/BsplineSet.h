@@ -57,7 +57,8 @@ protected:
   std::string KeyWord;
 
 public:
-  BsplineSet() : is_complex(false), MyIndex(0), first_spo(0), last_spo(0) {}
+  BsplineSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false)
+      : SPOSet(use_OMP_offload, ion_deriv, optimizable), is_complex(false), MyIndex(0), first_spo(0), last_spo(0) {}
 
   auto& getHalfG() const { return HalfG; }
 
@@ -106,12 +107,11 @@ public:
   using SPOSet::evaluateVGL;
   using SPOSet::finalizeConstruction;
   using SPOSet::mw_evaluateVGL;
+  using SPOSet::mw_evaluateVGLandDetRatioGrads;
 
   virtual SPOSet* makeClone() const override = 0;
 
   void resetParameters(const opt_variables_type& active) override {}
-
-  void resetTargetParticleSet(ParticleSet& e) override {}
 
   void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
@@ -190,8 +190,8 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend class SplineSetReader;
-  friend class BsplineReaderBase;
+  friend struct SplineSetReader;
+  friend struct BsplineReaderBase;
 };
 
 } // namespace qmcplusplus

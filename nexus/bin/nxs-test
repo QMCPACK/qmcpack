@@ -1552,6 +1552,12 @@ def qmcpack_simulation():
 
 
 
+def observables():
+    nunit_all()
+#end def observables
+
+
+
 def nxs_redo():
     nunit('test_redo')
 
@@ -1913,6 +1919,7 @@ NexusTest( quantum_package_simulation      )
 NexusTest( pwscf_postprocessor_simulations )
 NexusTest( qmcpack_converter_simulations   )
 NexusTest( qmcpack_simulation              )
+NexusTest( observables                     )
 NexusTest( nxs_redo                        )
 NexusTest( nxs_sim                         )
 NexusTest( qmca                            )
@@ -1938,6 +1945,7 @@ NexusTest( qdens                           )
 #NexusTest( numerics                        )
 #NexusTest( nxs_redo                        )
 #NexusTest( nxs_sim                         )
+#NexusTest( observables                     )
 #NexusTest( optional_dependencies           , optional=True)
 #NexusTest( periodic_table                  )
 #NexusTest( physical_system                 )
@@ -2232,6 +2240,7 @@ if __name__=='__main__':
         exit()
     #end if
 
+    global_data['verbose']       = options.verbose
     global_data['job_ref_table'] = options.job_ref_table
 
     if options.regex!='none':

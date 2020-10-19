@@ -18,7 +18,7 @@
  */
 #ifndef QMCPLUSPLUS_SK_ESTIMATOR_H
 #define QMCPLUSPLUS_SK_ESTIMATOR_H
-#include <QMCHamiltonians/OperatorBase.h>
+#include "QMCHamiltonians/OperatorBase.h"
 namespace qmcplusplus
 {
 /** SkEstimator evaluate the structure factor of the target particleset

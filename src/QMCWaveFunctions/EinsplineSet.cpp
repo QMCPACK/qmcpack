@@ -15,9 +15,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Numerics/e2iphi.h>
-#include "QMCWaveFunctions/EinsplineSet.h"
-#include <einspline/multi_bspline.h>
+#include "CPU/e2iphi.h"
+#include "EinsplineSet.h"
+#include "einspline/multi_bspline.h"
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {
@@ -37,7 +38,7 @@ inline void EinsplineSetExtended<StorageType>::computePhaseFactors(const TinyVec
   //    double s, c;
   //    for (int i=0; i<kPoints.size(); i++) {
   //      phase[i] = -dot(r, kPoints[i]);
-  //      sincos (phase[i], &s, &c);
+  //      qmcplusplus::sincos (phase[i], &s, &c);
   //      eikr[i] = std::complex<double>(c,s);
   //    }
   //#endif
@@ -45,8 +46,6 @@ inline void EinsplineSetExtended<StorageType>::computePhaseFactors(const TinyVec
 
 
 EinsplineSet::UnitCellType EinsplineSet::GetLattice() { return SuperLattice; }
-
-void EinsplineSet::resetTargetParticleSet(ParticleSet& e) {}
 
 void EinsplineSet::resetSourceParticleSet(ParticleSet& ions) {}
 
@@ -139,10 +138,6 @@ void EinsplineSetExtended<StorageType>::resetParameters(const opt_variables_type
 {}
 
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::resetTargetParticleSet(ParticleSet& e)
-{}
-
-template<typename StorageType>
 void EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
 {
   OrbitalSetSize = norbs;
@@ -166,7 +161,7 @@ void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int 
     PosType k = kPoints[j];
     double s, c;
     double phase = -dot(r, k);
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e_mikr(c, s);
     StorageValueVector[j] *= e_mikr;
   }
@@ -215,7 +210,7 @@ void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int 
         PosType k = kPoints[j];
         double s, c;
         double phase = -dot(r, k);
-        sincos(phase, &s, &c);
+        qmcplusplus::sincos(phase, &s, &c);
         std::complex<double> e_mikr(c, s);
         valVec[j] *= e_mikr;
       }
@@ -277,7 +272,7 @@ void EinsplineSetExtended<StorageType>::evaluateValue(const ParticleSet& P, int 
     PosType k = kPoints[i];
     double s, c;
     double phase = -dot(r, k);
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e_mikr(c, s);
     convert(e_mikr * StorageValueVector[i], psi[i]);
   }
@@ -351,7 +346,7 @@ void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
       ck[n] = k[n];
     double s, c;
     double phase = -dot(r, k);
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e_mikr(c, s);
     StorageValueVector[j] = e_mikr * u;
     StorageGradVector[j]  = e_mikr * (-eye * u * ck + gradu);
@@ -415,7 +410,7 @@ void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
           ck[n] = k[n];
         double s, c;
         double phase = -dot(r, k);
-        sincos(phase, &s, &c);
+        qmcplusplus::sincos(phase, &s, &c);
         std::complex<double> e_mikr(c, s);
         valVec[j]  = e_mikr * u;
         gradVec[j] = e_mikr * (-eye * u * ck + gradu);
@@ -540,7 +535,7 @@ void EinsplineSetExtended<StorageType>::evaluateVGL(const ParticleSet& P,
       ck[n] = k[n];
     double s, c;
     double phase = -dot(r, k);
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e_mikr(c, s);
     convert(e_mikr * u, psi[j]);
     convert(e_mikr * (-eye * u * ck + gradu), dpsi[j]);
@@ -585,7 +580,7 @@ void EinsplineSetExtended<StorageType>::evaluateVGH(const ParticleSet& P,
       ck[n] = k[n];
     double s, c;
     double phase = -dot(r, k);
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e_mikr(c, s);
     convert(e_mikr * u, psi[j]);
     convert(e_mikr * (-eye * u * ck + gradu), dpsi[j]);
@@ -675,7 +670,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         ck[n] = k[n];
       double s, c;
       double phase = -dot(r, k);
-      sincos(phase, &s, &c);
+      qmcplusplus::sincos(phase, &s, &c);
       std::complex<double> e_mikr(c, s);
       StorageValueVector[j] = e_mikr * u;
       StorageGradVector[j]  = e_mikr * (-eye * u * ck + gradu);
@@ -738,7 +733,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
             ck[n] = k[n];
           double s, c;
           double phase = -dot(r, k);
-          sincos(phase, &s, &c);
+          qmcplusplus::sincos(phase, &s, &c);
           std::complex<double> e_mikr(c, s);
           valVec[j]  = e_mikr * u;
           gradVec[j] = e_mikr * (-eye * u * ck + gradu);
@@ -872,7 +867,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         ck[n] = k[n];
       double s, c;
       double phase = -dot(r, k);
-      sincos(phase, &s, &c);
+      qmcplusplus::sincos(phase, &s, &c);
       std::complex<double> e_mikr(c, s);
       StorageValueVector[j] = e_mikr * u;
       StorageGradVector[j]  = e_mikr * (-eye * u * ck + gradu);
@@ -939,7 +934,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
             ck[n] = k[n];
           double s, c;
           double phase = -dot(r, k);
-          sincos(phase, &s, &c);
+          qmcplusplus::sincos(phase, &s, &c);
           std::complex<double> e_mikr(c, s);
           valVec[j]  = e_mikr * u;
           gradVec[j] = e_mikr * (-eye * u * ck + gradu);
@@ -1020,7 +1015,7 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
           PosType k = kPoints[j];
           double s, c;
           double phase = -dot(r, k);
-          sincos(phase, &s, &c);
+          qmcplusplus::sincos(phase, &s, &c);
           std::complex<double> e_mikr(c, s);
           StorageValueVector[j] *= e_mikr;
           dpsi(i, dpsiIndex)[dim] = real(StorageValueVector[j]);
@@ -1080,7 +1075,7 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
             ck[n] = k[n];
           double s, c;
           double phase = -dot(r, k);
-          sincos(phase, &s, &c);
+          qmcplusplus::sincos(phase, &s, &c);
           std::complex<double> e_mikr(c, s);
           StorageValueVector[j]   = e_mikr * u;
           StorageGradVector[j]    = e_mikr * (-eye * u * ck + gradu);
@@ -1256,7 +1251,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         ck[n] = k[n];
       double s, c;
       double phase = -dot(r, k);
-      sincos(phase, &s, &c);
+      qmcplusplus::sincos(phase, &s, &c);
       std::complex<double> e_mikr(c, s);
       convert(e_mikr * u, psi(i, j));
       //convert(e_mikr * u, psi(j,i));
@@ -1305,7 +1300,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         ck[n] = k[n];
       double s, c;
       double phase = -dot(r, k);
-      sincos(phase, &s, &c);
+      qmcplusplus::sincos(phase, &s, &c);
       std::complex<double> e_mikr(c, s);
       convert(e_mikr * u, psi(i, j));
       //convert(e_mikr * u, psi(j,i));
@@ -1494,7 +1489,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
       //            for (int n=0; n<OHMMS_DIM; n++)       ck[n] = k[n];
       //            double s,c;
       //            double phase = -dot(r, k);
-      //            sincos (phase, &s, &c);
+      //            qmcplusplus::sincos (phase, &s, &c);
       //            std::complex<double> e_mikr (c,s);
       //            valVec[j]   = e_mikr*u;
       //            gradVec[j]  = e_mikr*(-eye*u*ck + gradu);
@@ -1509,7 +1504,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         ck[n] = k[n];
       double s, c;
       double phase = -dot(r, k);
-      sincos(phase, &s, &c);
+      qmcplusplus::sincos(phase, &s, &c);
       std::complex<double> e_mikr(c, s);
       StorageValueVector[j] = e_mikr * u;
       StorageGradVector[j]  = e_mikr * (-eye * u * ck + gradu);
@@ -1636,7 +1631,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         ck[n] = k[n];
       double s, c;
       double phase = -dot(r, k);
-      sincos(phase, &s, &c);
+      qmcplusplus::sincos(phase, &s, &c);
       std::complex<double> e_mikr(c, s);
       convert(e_mikr * u, psi(i, j));
       convert(e_mikr * (-eye * u * ck + gradu), dpsi(i, j));

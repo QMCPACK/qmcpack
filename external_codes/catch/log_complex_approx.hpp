@@ -12,17 +12,6 @@ class LogComplexApprox
     std::complex<double> m_value;
     double m_epsilon;
 
-    bool approx_compare(const double lhs, const double rhs) const
-    {
-        return Approx(lhs).epsilon(m_epsilon) == rhs;
-    }
-
-    bool approx_compare_polar(const double lhs, const double rhs) const
-    {
-        return Approx(std::sin(lhs)).epsilon(m_epsilon) == std::sin(rhs) &&
-               Approx(std::cos(lhs)).epsilon(m_epsilon) == std::cos(rhs);
-    }
-
 public:
 
     LogComplexApprox(const std::complex<double> &value) : m_value(value) {
@@ -41,7 +30,7 @@ public:
       init_epsilon();
     }
 
-   void init_epsilon() {
+    void init_epsilon() {
       // Copied from catch.hpp - would be better to copy it from Approx object
       m_epsilon = std::numeric_limits<float>::epsilon()*100;
     }
@@ -59,14 +48,12 @@ public:
 
     friend bool operator == (std::complex<double> const& lhs, LogComplexApprox const& rhs)
     {
-        return rhs.approx_compare(lhs.real(), rhs.m_value.real()) &&
-               rhs.approx_compare_polar(lhs.imag(), rhs.m_value.imag());
+        return std::exp(lhs) == ComplexApprox(std::exp(rhs.m_value)).epsilon(rhs.m_epsilon);
     }
 
     friend bool operator == (std::complex<float> const& lhs, LogComplexApprox const& rhs)
     {
-        return rhs.approx_compare(lhs.real(), rhs.m_value.real()) &&
-               rhs.approx_compare_polar(lhs.imag(), rhs.m_value.imag());
+        return std::exp(lhs) == ComplexApprox(std::exp(rhs.m_value)).epsilon(rhs.m_epsilon);
     }
 
     friend bool operator == (LogComplexApprox const &lhs, std::complex<double> const& rhs)

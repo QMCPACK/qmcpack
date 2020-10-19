@@ -15,55 +15,46 @@
 namespace boost{
 namespace multi{
 
-template<class Alloc = std::allocator<char>, typename std::allocator_traits<Alloc>::size_type MaxAlignemnt = sizeof(std::max_align_t)>
-struct monotonic_buffer : std::allocator_traits<Alloc>::template rebind_alloc<std::max_align_t>{
-	using allocator_type = typename std::allocator_traits<Alloc>::template rebind_alloc<std::max_align_t>;
-private:
-	using allocator_traits = std::allocator_traits<allocator_type>;
-public:
-	using size_type       = typename allocator_traits::size_type;
-	using pointer         = typename allocator_traits::pointer;
-	using void_pointer    = typename std::pointer_traits<pointer>::template rebind<void>;
-	using char_pointer    = typename std::pointer_traits<pointer>::template rebind<char>;
-	using difference_type = typename allocator_traits::difference_type;
-	constexpr static const size_type max_alignment = MaxAlignemnt;
-protected:
-	allocator_type alloc_;
-	char_pointer buffer_;
-	size_type size_;
-	size_type position_ = 0;
-	static size_type align_up(size_type n) noexcept{return (n + (max_alignment-1)) & ~(max_alignment-1);}
+template<typename Ptr = char*>
+struct block : std::pointer_traits<Ptr>{
+	template<std::size_t N> block(char(&t)[N]) : start_{t}, lenght_{N}{}
+	typename block::pointer start_;
+	typename block::size_type lenght_;
+	bool contains(typename block::pointer p) const{
+		using std::distance;
+		return distance(start_, p) < static_cast<difference_type>(lenght_);		
+	}
+};
+
+template<class Ptr = char*, std::size_t A = alignof(std::max_align_t)>
+class monotonic_buffer : block<Ptr>{
 	long hits_ = 0;
 	long misses_ = 0;
 	size_type allocated_bytes_ = 0;
 	size_type deallocated_bytes_ = 0;
-	bool in_buffer(char_pointer p) const{
-		return std::distance(buffer_, static_cast<char_pointer>(p)) <= static_cast<difference_type>(size_);
+//	size_type position_ = 0;
+	static size_type align_up(size_type n) noexcept{
+		return (n + (max_alignment-1)) & ~(max_alignment-1);
 	}
 public:
-	allocator_type& allocator(){return alloc_;}
 	size_type size() const{return size_;}
 	long hits() const{return hits_;}
 	long misses() const{return misses_;}
 	size_type allocated_bytes() const{return allocated_bytes_;}
 	size_type deallocated_bytes() const{return deallocated_bytes_;}
-	monotonic_buffer(size_type bytes = 0, allocator_type alloc = {}) : 
-		allocator_type{alloc}, buffer_{static_cast<char_pointer>(static_cast<void_pointer>(allocator_type::allocate(align_up(bytes)/sizeof(std::max_align_t))))}, size_{align_up(bytes)}{}
-	void reset(size_type bytes = 0){
-		if(bytes > size_){
-			allocator_type::deallocate(static_cast<pointer>(static_cast<void_pointer>(buffer_)), size_/sizeof(std::max_align_t));
-			buffer_ = static_cast<char_pointer>(static_cast<void_pointer>(allocator_type::allocate(align_up(bytes)/sizeof(std::max_align_t))));
-			size_ = align_up(bytes);
-		}
+	using block<Ptr>::block;
+	monotonic_buffer& operator=(block<Ptr> const& b){
+		position_ = 0;
+		block<Ptr>::operator=(b); return *this;
 	}
 	monotonic_buffer(monotonic_buffer const&) = delete;
 	monotonic_buffer& operator=(monotonic_buffer const&) = delete;
 	~monotonic_buffer(){
-		#ifndef _BOOST_MULTI_RELAX_MONOTONIC_LEAK_CONDITION
+#ifndef _BOOST_MULTI_RELAX_MONOTONIC_LEAK_CONDITION
 		assert(allocated_bytes() == deallocated_bytes());
-		#endif
-		allocator_type::deallocate(static_cast<pointer>(static_cast<void_pointer>(buffer_)), size_/sizeof(std::max_align_t));
+#endif
 	}
+	using void_pointer = monotonic_buffer
 	template<size_type RequiredAlignment = sizeof(std::max_align_t)>
 	void_pointer allocate(size_type req_bytes, size_type al = RequiredAlignment){
 		static_assert( RequiredAlignment <= max_alignment, "!"); // requested alignment is too large for this MR
