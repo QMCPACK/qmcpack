@@ -15,7 +15,7 @@
 /** @file SPOSetProxy.cpp
  * @brief implements the member functions of SPOSetProxy
  */
-#include "QMCWaveFunctions/Fermion/SPOSetProxy.h"
+#include "SPOSetProxy.h"
 namespace qmcplusplus
 {
 SPOSetProxy::SPOSetProxy(SPOSetPtr const& spos, int first, int last) : refPhi(spos)

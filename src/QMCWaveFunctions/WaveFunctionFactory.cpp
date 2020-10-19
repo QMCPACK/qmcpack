@@ -19,7 +19,7 @@
 /**@file WaveFunctionFactory.cpp
  *@brief Definition of a WaveFunctionFactory
  */
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "WaveFunctionFactory.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"

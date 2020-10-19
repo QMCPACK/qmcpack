@@ -5,10 +5,10 @@
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<vector>
+#include <vector>
 
-#include<formic/utils/numeric.h>
-#include<formic/utils/lapack_interface.h>
+#include "formic/utils/numeric.h"
+#include "formic/utils/lapack_interface.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Finds the minima or maxima of the porabola defined by the three supplied points

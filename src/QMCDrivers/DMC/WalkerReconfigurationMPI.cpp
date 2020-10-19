@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
+#include "WalkerReconfigurationMPI.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/FairDivide.h"

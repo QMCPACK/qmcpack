@@ -16,7 +16,7 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"

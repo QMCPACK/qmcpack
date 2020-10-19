@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/MCWalkerConfiguration.h"
+#include "MCWalkerConfiguration.h"
 #include "Particle/DistanceTableData.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
@@ -26,8 +26,8 @@
 #include "LongRange/StructFact.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/MCSample.h"
-#include <io/hdf_hyperslab.h>
-#include "HDFVersion.h"
+#include "hdf/hdf_hyperslab.h"
+#include "hdf/HDFVersion.h"
 #include <map>
 
 #ifdef QMC_CUDA

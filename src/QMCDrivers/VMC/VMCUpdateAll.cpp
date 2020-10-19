@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMCUpdateAll.h"
+#include "VMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "Message/OpenMP.h"
 

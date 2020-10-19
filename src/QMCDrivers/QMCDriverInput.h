@@ -14,7 +14,7 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "io/InputTypes.hpp"
+#include "QMCDrivers/InputTypes.hpp"
 
 namespace qmcplusplus
 {

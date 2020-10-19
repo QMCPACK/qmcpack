@@ -17,7 +17,7 @@
  */
 #include "NewTimer.h"
 #include <iostream>
-#include <Message/OpenMP.h>
+#include "Message/OpenMP.h"
 #include "config.h"
 #include "TimerManager.h"
 

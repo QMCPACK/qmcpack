@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 
 
 namespace qmcplusplus

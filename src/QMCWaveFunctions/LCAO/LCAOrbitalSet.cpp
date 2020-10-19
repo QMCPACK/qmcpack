@@ -10,8 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
-#include <Numerics/MatrixOperators.h>
+#include "LCAOrbitalSet.h"
+#include "Numerics/MatrixOperators.h"
 #include "CPU/BLAS.hpp"
 
 namespace qmcplusplus

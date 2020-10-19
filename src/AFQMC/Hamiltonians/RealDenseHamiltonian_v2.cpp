@@ -15,13 +15,13 @@
 
 #include "Configuration.h"
 #include "type_traits/container_traits_multi.h"
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/kp_utilities.hpp"
-#include "AFQMC/Hamiltonians/RealDenseHamiltonian_v2.h"
+#include "RealDenseHamiltonian_v2.h"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
 
 namespace qmcplusplus

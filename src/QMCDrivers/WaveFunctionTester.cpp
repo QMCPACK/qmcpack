@@ -19,7 +19,7 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
-#include "QMCDrivers/WaveFunctionTester.h"
+#include "WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"

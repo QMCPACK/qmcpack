@@ -13,7 +13,7 @@
 
 #include "catch.hpp"
 
-#include <OhmmsSoA/VectorSoaContainer.h>
+#include "OhmmsSoA/VectorSoaContainer.h"
 
 #include <stdio.h>
 #include <string>

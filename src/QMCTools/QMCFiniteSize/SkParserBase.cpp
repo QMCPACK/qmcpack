@@ -1,4 +1,4 @@
-#include "QMCTools/QMCFiniteSize/SkParserBase.h"
+#include "SkParserBase.h"
 #include "Message/Communicate.h"
 #include "QMCTools/QMCFiniteSize/FSUtilities.h"
 

@@ -20,8 +20,8 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_FACTORY_H
 #define QMCPLUSPLUS_HAMILTONIAN_FACTORY_H
 
-#include <QMCHamiltonians/QMCHamiltonian.h>
-#include <QMCWaveFunctions/WaveFunctionFactory.h>
+#include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 namespace qmcplusplus
 {
 /** Factory class to build a many-body wavefunction

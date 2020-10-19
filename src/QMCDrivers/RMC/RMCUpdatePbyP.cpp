@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/RMC/RMCUpdatePbyP.h"
+#include "RMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "Message/OpenMP.h"
 #include "Configuration.h"

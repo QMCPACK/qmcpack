@@ -24,9 +24,9 @@
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/TimerManager.h"
-#include <spline/einspline_engine.hpp>
+#include "spline/einspline_engine.hpp"
 #ifdef QMC_CUDA
-#include <einspline/multi_bspline_create_cuda.h>
+#include "einspline/multi_bspline_create_cuda.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/AtomicOrbitalCuda.h"
 #endif
 

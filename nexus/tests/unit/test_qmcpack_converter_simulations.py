@@ -327,7 +327,7 @@ def test_convert4qmc_incorporate_result():
 
     assert(sim.input_code=='gamess')
     assert(sim.input.gamess_ascii=='../rhf/rhf.out')
-    assert(sim.job.app_command=='convert4qmc -gamessAscii ../rhf/rhf.out')
+    assert(sim.job.app_command=='convert4qmc -gamess ../rhf/rhf.out')
 
     # incorporate orbitals from pyscf
     sim = sim_start.copy()

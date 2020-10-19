@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
+#include "CSVMC.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdateAll.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
 #include "Estimators/CSEnergyEstimator.h"
@@ -23,7 +23,7 @@
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/FairDivide.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 //#define ENABLE_VMC_OMP_MASTER
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"

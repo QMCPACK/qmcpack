@@ -14,7 +14,7 @@
 
 
 #include "Message/Communicate.h"
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalSet.h"
+#include "PWOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus

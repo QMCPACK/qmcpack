@@ -13,7 +13,7 @@
 #include <vector>
 #include <string>
 #include <numeric>
-#include "QMCDrivers/Optimizers/HybridEngine.h"
+#include "HybridEngine.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
 #include "OhmmsData/XMLParsingString.h"

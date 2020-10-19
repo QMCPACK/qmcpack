@@ -16,7 +16,7 @@
 /**@file NonLocalTOperator.cpp
  *@brief Definition of NonLocalTOperator
  */
-#include "QMCHamiltonians/NonLocalTOperator.h"
+#include "NonLocalTOperator.h"
 #include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus

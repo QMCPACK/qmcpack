@@ -15,13 +15,13 @@
 
 // Code for a descent engine
 
-#include "QMCDrivers/Optimizers/DescentEngine.h"
-#include "Message/CommOperators.h"
-#include "OhmmsData/ParameterSet.h"
+#include "DescentEngine.h"
 #include <cmath>
 #include <string>
 #include <vector>
 #include <numeric>
+#include "Message/CommOperators.h"
+#include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus
 {

@@ -19,7 +19,7 @@
 #include <numeric>
 #include <sstream>
 
-#include "QMCDrivers/WalkerControlBase.h"
+#include "WalkerControlBase.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"

@@ -20,7 +20,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
-#include <OhmmsSoA/VectorSoaContainer.h>
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include <limits>
 #include <bitset>
 

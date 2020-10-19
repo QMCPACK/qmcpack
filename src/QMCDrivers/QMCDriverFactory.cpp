@@ -24,8 +24,8 @@
 
 
 #include "QMCDrivers/MCPopulation.h"
-#include "qmc_common.h"
-#include "QMCDrivers/QMCDriverFactory.h"
+#include "Utilities/qmc_common.h"
+#include "QMCDriverFactory.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"

@@ -26,7 +26,7 @@
 #include <mutex>
 
 #include "Configuration.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "mpi3/shared_communicator.hpp"

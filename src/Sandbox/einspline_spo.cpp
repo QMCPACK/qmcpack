@@ -14,14 +14,14 @@
  * @brief Miniapp to capture the computation in einspline + NonLocalPP.
  */
 #include <Configuration.h>
-#include <Particle/ParticleSet.h>
+#include "Particle/ParticleSet.h"
 #include "random.hpp"
-#include <mpi/collectives.h>
-#include <Sandbox/input.hpp>
-#include <Sandbox/pseudo.hpp>
-#include <Utilities/Timer.h>
-#include <Sandbox/common.hpp>
-#include <Sandbox/einspline_spo.hpp>
+#include "mpi/collectives.h"
+#include "Sandbox/input.hpp"
+#include "Sandbox/pseudo.hpp"
+#include "Utilities/Timer.h"
+#include "Sandbox/common.hpp"
+#include "einspline_spo.hpp"
 #include <getopt.h>
 
 using namespace std;

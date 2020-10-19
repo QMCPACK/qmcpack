@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantWithBackflow.h"
+#include "MultiSlaterDeterminantWithBackflow.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus

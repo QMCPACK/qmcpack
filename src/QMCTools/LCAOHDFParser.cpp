@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/LCAOHDFParser.h"
+#include "LCAOHDFParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -163,64 +163,13 @@ void LCAOHDFParser::parse(const std::string& fname)
     else
     {
       hin.read(ci_size, "NbDet");
+      hin.read(ci_nstates, "nstate");
       CIcoeff.clear();
       CIalpha.clear();
       CIbeta.clear();
       CIcoeff.resize(ci_size);
       CIalpha.resize(ci_size);
       CIbeta.resize(ci_size);
-
-      hin.read(ci_nstates, "nstate");
-      /// 64 bit fixed width integer
-      const unsigned bit_kind = 64;
-      static_assert(bit_kind == sizeof(int64_t) * 8, "Must be 64 bit fixed width integer");
-      /// the number of 64 bit integers which represent the binary string for occupation
-      int N_int;
-      hin.read(N_int, "Nbits");
-
-      Matrix<int64_t> tempAlpha(ci_size, N_int);
-      hin.read(tempAlpha, "CI_Alpha");
-
-      Matrix<int64_t> tempBeta(ci_size, N_int);
-      hin.read(tempBeta, "CI_Beta");
-
-      std::string MyCItempAlpha, MyCItempBeta;
-      MyCItempAlpha.resize(ci_nstates + 1);
-      MyCItempBeta.resize(ci_nstates + 1);
-
-      for (int ni = 0; ni < ci_size; ni++)
-      {
-        int j = 0;
-        for (int i = 0; i < ci_nstates; i++)
-        {
-          MyCItempAlpha[i] = '9';
-          MyCItempBeta[i]  = '9';
-        }
-        for (int k = 0; k < N_int; k++)
-        {
-          int64_t a                = tempAlpha[ni][k];
-          std::bitset<bit_kind> a2 = a;
-
-          auto b  = tempBeta[ni][k];
-          auto b2 = std::bitset<bit_kind>(b);
-
-
-          // ci_nstates == n_orbital
-          for (int i = 0; i < bit_kind; i++)
-          {
-            if (j < ci_nstates)
-            {
-              MyCItempAlpha[j] = a2[i] ? '1' : '0';
-              MyCItempBeta[j]  = b2[i] ? '1' : '0';
-              j++;
-            }
-          }
-        }
-
-        CIalpha[ni] = MyCItempAlpha;
-        CIbeta[ni]  = MyCItempBeta;
-      }
-      hin.read(CIcoeff, "Coeff");
 
       int ds  = SpinMultiplicity - 1;
       int neb = (NumberOfEls - ds) / 2;

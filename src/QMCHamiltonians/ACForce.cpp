@@ -13,7 +13,7 @@
 /**@file ACForce.cpp
  *@brief Implementation of ACForce, Assaraf-Caffarel ZVZB style force estimation.
  */
-#include "QMCHamiltonians/ACForce.h"
+#include "ACForce.h"
 #include <sstream>
 
 namespace qmcplusplus

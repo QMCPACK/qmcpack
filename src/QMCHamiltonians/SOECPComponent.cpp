@@ -12,7 +12,7 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/SOECPComponent.h"
+#include "SOECPComponent.h"
 #include "Numerics/Ylm.h"
 
 namespace qmcplusplus

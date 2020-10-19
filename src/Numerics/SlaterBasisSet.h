@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
 #include "Numerics/SlaterTypeOrbital.h"
 #include "OhmmsData/AttributeSet.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {

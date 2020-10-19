@@ -17,7 +17,7 @@
 
 #include <type_traits>
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
-#include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
+#include "SlaterDetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 

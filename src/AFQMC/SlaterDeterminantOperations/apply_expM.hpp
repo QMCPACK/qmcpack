@@ -20,7 +20,7 @@
 #define AFQMC_APPLY_EXPM_HPP
 
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
