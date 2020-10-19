@@ -9,7 +9,7 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/DMC/DMCFactoryNew.h"
+#include "DMCFactoryNew.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "Message/OpenMP.h"
 

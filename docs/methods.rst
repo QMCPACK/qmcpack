@@ -1088,6 +1088,9 @@ parameters:
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``use_nonblocking``         | string       | yes/no                  | yes         | Using nonblocking send/recv             |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
+  | ``debug_disable_branching`` | string       | yes/no                  | no          | Disable branching for debugging         |
+  |                             |              |                         |             | without correctness guarantee           |
+  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
 
 .. centered:: Table 10 Additional DMC input parameters.
 

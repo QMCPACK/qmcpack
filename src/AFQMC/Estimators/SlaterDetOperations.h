@@ -4,7 +4,7 @@
 #include <fstream>
 
 #include "AFQMC/config.h"
-#include <Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
 #include "Message/Communicate.h"

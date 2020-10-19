@@ -15,10 +15,10 @@
 
 #include <random>
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/Matrix/csr_hdf5_readers.hpp"
-#include "AFQMC/Wavefunctions/WavefunctionFactory.h"
+#include "WavefunctionFactory.h"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/NOMSD.hpp"

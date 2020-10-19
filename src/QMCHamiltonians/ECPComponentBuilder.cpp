@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "ECPComponentBuilder.h"
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Quadrature.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
@@ -22,7 +22,7 @@
 #include "Utilities/SimpleParser.h"
 #include "Message/CommOperators.h"
 #include <cmath>
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 
 
 namespace qmcplusplus

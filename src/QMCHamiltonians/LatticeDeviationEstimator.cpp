@@ -9,8 +9,8 @@
 // File created by: Yubo Yang, paul.young.0414@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCHamiltonians/LatticeDeviationEstimator.h"
-#include <OhmmsData/AttributeSet.h>
+#include "LatticeDeviationEstimator.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {

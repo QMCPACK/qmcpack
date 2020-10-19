@@ -13,13 +13,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
+#include "DiracDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsPETE/Tensor.h"
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/SIMD/simd.hpp"
 
 namespace qmcplusplus
 {

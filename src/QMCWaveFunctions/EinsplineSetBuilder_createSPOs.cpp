@@ -28,8 +28,8 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTableData.h"
 #include <fftw3.h>
-#include <Utilities/ProgressReportEngine.h>
-#include <QMCWaveFunctions/einspline_helper.hpp>
+#include "Utilities/ProgressReportEngine.h"
+#include "QMCWaveFunctions/einspline_helper.hpp"
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"

@@ -19,7 +19,7 @@
 #include <iostream>
 #include <tuple>
 #include <complex>
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 

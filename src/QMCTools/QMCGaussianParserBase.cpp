@@ -15,14 +15,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/QMCGaussianParserBase.h"
+#include "QMCGaussianParserBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
 #include <iterator>
 #include <algorithm>
 #include <numeric>
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include <set>
 #include <map>
 #include <sstream>

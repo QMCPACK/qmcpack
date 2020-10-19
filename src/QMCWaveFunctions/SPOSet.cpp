@@ -15,13 +15,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/SPOSet.h"
+#include "SPOSet.h"
 #include "Message/Communicate.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/SIMD/simd.hpp"
 #include "Utilities/ProgressReportEngine.h"
-#include <io/hdf_archive.h>
+#include "hdf/hdf_archive.h"
 #include <limits>
 
 namespace qmcplusplus
@@ -39,16 +39,6 @@ SPOSet::SPOSet(bool use_OMP_offload, bool ion_deriv, bool optimizable)
 void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
 {
   APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
-}
-
-void SPOSet::mw_evaluateValue(const RefVector<SPOSet>& spo_list,
-                              const RefVector<ParticleSet>& P_list,
-                              int iat,
-                              const RefVector<ValueVector_t>& psi_v_list)
-{
-#pragma omp parallel for
-  for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw].get().evaluateValue(P_list[iw], iat, psi_v_list[iw]);
 }
 
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,

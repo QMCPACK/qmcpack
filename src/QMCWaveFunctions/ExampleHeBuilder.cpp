@@ -13,7 +13,7 @@
 /**@file ExampleHeBuilder.cpp
  *@brief Example builder for simple He wavefunction
  */
-#include "QMCWaveFunctions/ExampleHeBuilder.h"
+#include "ExampleHeBuilder.h"
 #include "QMCWaveFunctions/ExampleHeComponent.h"
 #include "OhmmsData/AttributeSet.h"
 

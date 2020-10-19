@@ -16,7 +16,7 @@
  */
 #include <getopt.h>
 #include <vector>
-#include <Utilities/Timer.h>
+#include "Utilities/Timer.h"
 #include "random.hpp"
 
 namespace qmcplusplus

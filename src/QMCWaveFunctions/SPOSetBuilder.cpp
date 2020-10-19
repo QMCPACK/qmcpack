@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/SPOSetBuilder.h>
+#include "SPOSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 
 #if !defined(QMC_COMPLEX)

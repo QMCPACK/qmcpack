@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/CorrelatedSampling/CSVMCUpdateAll.h"
+#include "CSVMCUpdateAll.h"
 #include "QMCDrivers/WalkerProperties.h"
 //#include "Utilities/OhmmsInfo.h"
 //#include "Particle/MCWalkerConfiguration.h"

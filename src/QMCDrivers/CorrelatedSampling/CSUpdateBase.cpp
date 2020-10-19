@@ -14,7 +14,7 @@
 
 
 #include "Platforms/sysutil.h"
-#include "QMCDrivers/CorrelatedSampling/CSUpdateBase.h"
+#include "CSUpdateBase.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Estimators/CSEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"

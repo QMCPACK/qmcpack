@@ -22,7 +22,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {

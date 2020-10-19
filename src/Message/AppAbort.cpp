@@ -9,7 +9,7 @@
 // Refactored from: Communicate.cpp
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "Message/AppAbort.h"
+#include "AppAbort.h"
 #include <iostream>
 #include "config.h"
 

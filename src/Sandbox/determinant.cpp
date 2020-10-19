@@ -15,13 +15,13 @@
  * Using only einspine SPO part + Jastrow as a wavefunction.
  */
 #include <Configuration.h>
-#include <Utilities/PrimeNumberSet.h>
-#include <Utilities/Timer.h>
+#include "Utilities/PrimeNumberSet.h"
+#include "Utilities/Timer.h"
 #include "random.hpp"
-#include <mpi/collectives.h>
+#include "mpi/collectives.h"
 #include <getopt.h>
 using namespace std;
-#include <Sandbox/determinant.hpp>
+#include "determinant.hpp"
 using namespace qmcplusplus;
 
 int main(int argc, char** argv)

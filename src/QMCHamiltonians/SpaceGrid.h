@@ -15,10 +15,10 @@
 #define QMCPLUSPLUS_SPACEGRID_H
 
 #include <Configuration.h>
-#include <OhmmsPETE/Tensor.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <Utilities/PooledData.h>
-#include <QMCHamiltonians/observable_helper.h>
+#include "OhmmsPETE/Tensor.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "Utilities/PooledData.h"
+#include "QMCHamiltonians/observable_helper.h"
 #include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus

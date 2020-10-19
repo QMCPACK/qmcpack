@@ -17,7 +17,7 @@ SET(HOST_SRCS
 )
 
 SET(DEVICE_SRCS
-    accelerators.cpp
+    dummy_function_for_cmake.cpp
 )
 
 ADD_LIBRARY(platform_host ${HOST_SRCS})
@@ -46,3 +46,5 @@ IF(ENABLE_CUDA)
   SUBDIRS(CUDA)
   TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda)
 ENDIF(ENABLE_CUDA)
+
+SUBDIRS(tests)

@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/LatticeGaussianProduct.h"
+#include "LatticeGaussianProduct.h"
 
 namespace qmcplusplus
 {

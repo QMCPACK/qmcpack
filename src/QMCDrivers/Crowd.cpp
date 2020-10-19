@@ -7,7 +7,7 @@
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/Crowd.h"
+#include "Crowd.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus

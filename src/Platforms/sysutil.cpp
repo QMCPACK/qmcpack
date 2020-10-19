@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Platforms/sysutil.h"
+#include "sysutil.h"
 #include <string>
 #include <sstream>
 #include <iostream>

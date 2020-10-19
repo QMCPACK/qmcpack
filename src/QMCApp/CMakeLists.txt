@@ -24,6 +24,7 @@ SET(QMCAPPDIR
     QMCMainState.cpp
     QMCMain.cpp
     CoupledMC.cpp
+    accelerators.cpp
 )
 IF(USE_OBJECT_TARGET)
   ADD_LIBRARY(qmc OBJECT ${QMCAPPDIR})

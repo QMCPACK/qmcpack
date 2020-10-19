@@ -17,7 +17,7 @@
 #include <cassert>
 #include <iostream>
 #include <fstream>
-#include "QMCDrivers/WFOpt/QMCCorrelatedSamplingLinearOptimize.h"
+#include "QMCCorrelatedSamplingLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"

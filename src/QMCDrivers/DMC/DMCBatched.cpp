@@ -14,7 +14,7 @@
 #include <cassert>
 #include <cmath>
 
-#include "QMCDrivers/DMC/DMCBatched.h"
+#include "DMCBatched.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"

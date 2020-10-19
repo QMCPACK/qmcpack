@@ -18,7 +18,7 @@
 #ifndef QMCPLUSPLUS_HYBRIDREP_REAL_H
 #define QMCPLUSPLUS_HYBRIDREP_REAL_H
 
-#include <QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h>
+#include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 namespace qmcplusplus
 {
 /** hybrid representation orbitals combining B-spline orbitals on a grid and atomic centered orbitals.

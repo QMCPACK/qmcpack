@@ -15,12 +15,12 @@
 #endif
 
 #include "Configuration.h"
-#include "io/hdf_multi.h"
+#include "hdf/hdf_multi.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/kp_utilities.hpp"
-#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
+#include "KPTHCHamiltonian.h"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
 //#include "AFQMC/HamiltonianOperations/KPTHCOpsIO.hpp"
 

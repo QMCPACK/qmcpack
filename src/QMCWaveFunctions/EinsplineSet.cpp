@@ -15,10 +15,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <CPU/e2iphi.h>
-#include "QMCWaveFunctions/EinsplineSet.h"
-#include <einspline/multi_bspline.h>
-#include <config/stdlib/math.hpp>
+#include "CPU/e2iphi.h"
+#include "EinsplineSet.h"
+#include "einspline/multi_bspline.h"
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {

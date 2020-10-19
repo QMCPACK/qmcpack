@@ -359,23 +359,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   d2psi_v_list.push_back(d2psi);
   d2psi_v_list.push_back(d2psi_2);
 
-  spo->mw_evaluateValue(spo_list, P_list, 1, psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
-  // real part
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
-  // value
-  REQUIRE(std::real(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::real(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
-
-#if defined(QMC_COMPLEX)
-  // imaginary part
-  // value
-  REQUIRE(std::imag(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::imag(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
-
   spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part

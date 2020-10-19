@@ -5,11 +5,11 @@
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<formic/utils/numeric.h>
-#include<formic/utils/mpi_interface.h>
+#include "numeric.h"
+#include "formic/utils/mpi_interface.h"
 
-#include<boost/scoped_array.hpp>
-#include<boost/format.hpp>
+#include <boost/scoped_array.hpp>
+#include <boost/format.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief   get an offset array used in compounding pairs of distinct indices

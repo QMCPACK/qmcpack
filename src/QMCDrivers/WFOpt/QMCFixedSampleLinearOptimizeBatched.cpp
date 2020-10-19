@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimizeBatched.h"
+#include "QMCFixedSampleLinearOptimizeBatched.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"

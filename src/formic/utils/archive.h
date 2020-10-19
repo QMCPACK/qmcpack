@@ -18,8 +18,8 @@
 #include <set>
 #include <complex>
 
-#include <formic/utils/exception.h>
-#include <formic/utils/matrix.h>
+#include "formic/utils/exception.h"
+#include "formic/utils/matrix.h"
 
 namespace formic {
 

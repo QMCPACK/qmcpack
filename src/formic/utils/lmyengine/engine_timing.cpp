@@ -15,10 +15,10 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include<formic/utils/mpi_interface.h>
+#include "formic/utils/mpi_interface.h"
 
-#include<formic/utils/lmyengine/engine_timing.h>
-#include<formic/utils/exception.h>
+#include "engine_timing.h"
+#include "formic/utils/exception.h"
 
 boost::scoped_ptr<std::pair<std::string,cqmc::Stopwatch> > cqmc::timers::propose_1e( new std::pair<std::string,cqmc::Stopwatch>(std::string("propose_1e"), cqmc::Stopwatch()) );
 boost::scoped_ptr<std::pair<std::string,cqmc::Stopwatch> > cqmc::timers::propose_2e( new std::pair<std::string,cqmc::Stopwatch>(std::string("propose_2e"), cqmc::Stopwatch()) );

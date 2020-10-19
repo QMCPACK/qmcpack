@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/DMC.h"
+#include "DMC.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/SODMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
@@ -29,7 +29,7 @@
 #include "Utilities/RunTimeManager.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"

@@ -15,14 +15,14 @@
 
 
 #include <Configuration.h>
-#include <Message/OpenMP.h>
-#include <OhmmsData/AttributeSet.h>
-#include <OhmmsApp/RandomNumberControl.h>
-#include <Utilities/RandomGeneratorIO.h>
-#include <Utilities/Timer.h>
-#include <HDFVersion.h>
-#include <io/hdf_archive.h>
-#include <mpi/collectives.h>
+#include "Message/OpenMP.h"
+#include "OhmmsData/AttributeSet.h"
+#include "RandomNumberControl.h"
+#include "Utilities/RandomGeneratorIO.h"
+#include "Utilities/Timer.h"
+#include "hdf/HDFVersion.h"
+#include "hdf/hdf_archive.h"
+#include "mpi/collectives.h"
 #if defined(HAVE_LIBBOOST)
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -32,7 +32,7 @@
 #include <exception>
 #include <iostream>
 #endif
-#include <Utilities/SimpleParser.h>
+#include "Utilities/SimpleParser.h"
 #include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus
