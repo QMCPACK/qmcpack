@@ -24,6 +24,7 @@ namespace qmcplusplus
 typedef qmcplusplus::QMCTraits::FullPrecValueType FullPrecValueType;
 typedef qmcplusplus::QMCTraits::ValueType ValueType;
 
+#if !defined(MIXED_PRECISION)
 ///This provides a basic test of the descent engine's parameter update algorithm
 TEST_CASE("DescentEngine RMSprop update","[drivers][descent]")
 {
@@ -103,7 +104,7 @@ REQUIRE(std::real(mean) == Approx(-2.0));
 REQUIRE(std::real(variance) == Approx(0.0));
 REQUIRE(std::real(stdErr) == Approx(0.0));
 }
-
+#endif
 }
 
 
