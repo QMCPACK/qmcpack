@@ -362,6 +362,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
   {
     //Seem to need this line to get non-zero derivatives for traditional Jastrow parameters when using descent.
     OptVariablesForPsi.setRecompute();
+    //Reset vectors and scalars from any previous iteration
     descentEngineObj.prepareStorage(omp_get_max_threads(), NumOptimizables);
   }
   RealType et_tot = 0.0;
@@ -447,9 +448,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 	    //so that der_rat_samp and le_der_samp are vectors of std::complex<double> when QMC_COMPLEX=1
 	    std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(),der_rat_samp.end());
 	    std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(),le_der_samp.end());
-	    
-
-          descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
+	  
+        descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
         }
 #endif
       }
@@ -498,7 +498,6 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
   }
   else if (MinMethod == "descent")
   {
-    descentEngineObj.setEtemp(etemp);
     descentEngineObj.sample_finish();
   }
 #endif

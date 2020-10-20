@@ -115,6 +115,7 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs(const int nkeep,
   // get the number of vectors in basis 1
   const int nd = hh.rows();
 
+
   // sanity checks
   if ( hh.rows() != hh.cols() )
     throw formic::Exception("hh (%i by %i) should be square in cqmc::engine::get_important_brlm_dirs") % hh.rows() % hh.cols();
@@ -231,7 +232,6 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs(const int nkeep,
      formic::ColVec<std::complex<double> > e_evals;
      formic::Matrix<std::complex<double> > e_evecs;
      hh4.nonsym_eig(e_evals, e_evecs);
-     //output << e_evals.print("%12.4f", "hh4_evals") << std::endl;
 
      // find the lowest energy eigenvalue
      double lowest_eval = e_evals.at(0).real();
