@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimizeBatched.h"
+#include "QMCFixedSampleLinearOptimizeBatched.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -46,8 +46,6 @@ using MatrixOperators::product;
 QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
                                                                          TrialWaveFunction& psi,
                                                                          QMCHamiltonian& h,
-                                                                         HamiltonianPool& hpool,
-                                                                         WaveFunctionPool& ppool,
                                                                          QMCDriverInput&& qmcdriver_input,
                                                                          VMCDriverInput&& vmcdriver_input,
                                                                          MCPopulation& population,
@@ -56,8 +54,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
     : QMCLinearOptimizeBatched(w,
                                psi,
                                h,
-                               hpool,
-                               ppool,
                                std::move(qmcdriver_input),
                                std::move(vmcdriver_input),
                                population,
@@ -135,44 +131,43 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
   m_param.add(opt_num_crowds_, "opt_num_crowds", "int");
 
 
-
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimizeBatched" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
-                                          false, // exact sampling
-                                          true,  // ground state?
-                                          false, // variance correct,
-                                          true,
-                                          true,  // print matrices,
-                                          true,  // build matrices
-                                          false, // spam
-                                          false, // use var deps?
-                                          true,  // chase lowest
-                                          false, // chase closest
-                                          false, // eom
-                                          false,
-                                          false,  // eom related
-                                          false,  // eom related
-                                          false,  // use block?
-                                          120000, // number of samples
-                                          0,      // number of parameters
-                                          60,     // max krylov iter
-                                          0,      // max spam inner iter
-                                          1,      // spam appro degree
-                                          0,      // eom related
-                                          0,      // eom related
-                                          0,      // eom related
-                                          0.0,    // omega
-                                          0.0,    // var weight
-                                          1.0e-6, // convergence threshold
-                                          0.99,   // minimum S singular val
-                                          0.0, 0.0,
-                                          10.0, // max change allowed
-                                          1.00, // identity shift
-                                          1.00, // overlap shift
-                                          0.3,  // max parameter change
-                                          shift_scales, app_log());
+                                                     false, // exact sampling
+                                                     true,  // ground state?
+                                                     false, // variance correct,
+                                                     true,
+                                                     true,  // print matrices,
+                                                     true,  // build matrices
+                                                     false, // spam
+                                                     false, // use var deps?
+                                                     true,  // chase lowest
+                                                     false, // chase closest
+                                                     false, // eom
+                                                     false,
+                                                     false,  // eom related
+                                                     false,  // eom related
+                                                     false,  // use block?
+                                                     120000, // number of samples
+                                                     0,      // number of parameters
+                                                     60,     // max krylov iter
+                                                     0,      // max spam inner iter
+                                                     1,      // spam appro degree
+                                                     0,      // eom related
+                                                     0,      // eom related
+                                                     0,      // eom related
+                                                     0.0,    // omega
+                                                     0.0,    // var weight
+                                                     1.0e-6, // convergence threshold
+                                                     0.99,   // minimum S singular val
+                                                     0.0, 0.0,
+                                                     10.0, // max change allowed
+                                                     1.00, // identity shift
+                                                     1.00, // overlap shift
+                                                     0.3,  // max parameter change
+                                                     shift_scales, app_log());
 #endif
 
 
@@ -484,7 +479,10 @@ bool QMCFixedSampleLinearOptimizeBatched::put(xmlNodePtr q)
     return processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5, bool useGPU)
+bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
+                                                        const std::string& vmcMove,
+                                                        bool reportH5,
+                                                        bool useGPU)
 {
   m_param.put(opt_xml);
   tolower(targetExcitedStr);
@@ -564,7 +562,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml, cons
   QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
   VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
   vmcEngine = std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
-                                           population_, Psi, H, psiPool, samples_, myComm);
+                                           population_, Psi, H, samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 
@@ -649,12 +647,12 @@ void QMCFixedSampleLinearOptimizeBatched::print_cost_summary_header()
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void QMCFixedSampleLinearOptimizeBatched::print_cost_summary(const double si,
-                                                      const double ss,
-                                                      const RealType mc,
-                                                      const RealType cv,
-                                                      const int ind,
-                                                      const int bi,
-                                                      const bool gu)
+                                                             const double ss,
+                                                             const RealType mc,
+                                                             const RealType cv,
+                                                             const int ind,
+                                                             const int bi,
+                                                             const bool gu)
 {
   if (ind >= 0)
   {
@@ -698,9 +696,9 @@ void QMCFixedSampleLinearOptimizeBatched::print_cost_summary(const double si,
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 bool QMCFixedSampleLinearOptimizeBatched::is_best_cost(const int ii,
-                                                const std::vector<RealType>& cv,
-                                                const std::vector<double>& sh,
-                                                const RealType ic) const
+                                                       const std::vector<RealType>& cv,
+                                                       const std::vector<double>& sh,
+                                                       const RealType ic) const
 {
   //app_log() << "determining best cost with cost_increase_tol = " << cost_increase_tol << " and target_shift_i = " << target_shift_i << std::endl;
 
@@ -771,9 +769,10 @@ bool QMCFixedSampleLinearOptimizeBatched::is_best_cost(const int ii,
 /// \param[out]     parameterDirections   on exit, the update directions for the different shifts
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
-                                                               const std::vector<double>& shifts_s,
-                                                               std::vector<std::vector<RealType>>& parameterDirections)
+void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
+    const std::vector<double>& shifts_i,
+    const std::vector<double>& shifts_s,
+    std::vector<std::vector<RealType>>& parameterDirections)
 {
   // get number of shifts to solve
   const int nshifts = shifts_i.size();
@@ -1101,7 +1100,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
   // find the best shift and the corresponding update direction
   const std::vector<ValueType>* bestDirection = 0;
-  int best_shift                             = -1;
+  int best_shift                              = -1;
   for (int k = 0; k < costValues.size() && std::abs((initCost - initCost) / initCost) < max_relative_cost_change; k++)
     if (is_best_cost(k, costValues, shifts_i, initCost) && good_update.at(k))
     {
@@ -1154,7 +1153,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
     formic::ColVec<RealType> update_dirs(numParams, 0.0);
     for (int i = 0; i < numParams; i++)
       // take the real part since blocked LM currently does not support complex parameter optimization
-      update_dirs.at(i) = std::real( bestDirection->at(i + 1) + parameterDirections.at(central_index).at(i + 1) ); 
+      update_dirs.at(i) = std::real(bestDirection->at(i + 1) + parameterDirections.at(central_index).at(i + 1));
     previous_update.insert(previous_update.begin(), update_dirs);
 
     // eliminate the oldest saved update if necessary

@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/SOECPotential.h"
+#include "SOECPotential.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus

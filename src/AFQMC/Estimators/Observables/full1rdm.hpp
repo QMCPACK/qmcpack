@@ -21,21 +21,19 @@
 #include <string>
 #include <iostream>
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/Timer.h"
 
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
 /* 
  * Observable class that calculates the walker averaged 1 RDM.
  * The resulting RDM will be [spin][x*NMO][x*NMO],
@@ -69,8 +67,8 @@ class full1rdm : public AFQMCInfo
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
-  using buffer_alloc_type = device_buffer_type<ComplexType>;
-  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, buffer_alloc_type>;
+  using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
+  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full1rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -443,8 +441,11 @@ private:
     // Grot = Xc * G * H(Xc)
     int nX   = XRot.size(0);
     int npts = (iN - i0) * nX;
-    StaticMatrix T1({(iN - i0), NMO}, device_buffer_generator->template get_allocator<ComplexType>());
-    StaticMatrix T2({(iN - i0), nX}, device_buffer_generator->template get_allocator<ComplexType>());
+    DeviceBufferManager buffer_manager;
+    StaticMatrix T1({(iN - i0), NMO}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix T2({(iN - i0), nX}, 
+                buffer_manager.get_generator().template get_allocator<ComplexType>());
     if (Grot.size() != npts)
       Grot = stdCVector(iextensions<1u>(npts));
 

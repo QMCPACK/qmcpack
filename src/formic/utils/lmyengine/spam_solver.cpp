@@ -6,25 +6,25 @@
 //  solve with spam method
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<vector>
-#include<string>
-#include<numeric>
-#include<cassert>
-#include<algorithm>
-#include<cmath>
-#include<complex>
-#include<iostream>
-//#include<mpi.h>
+#include <vector>
+#include <string>
+#include <numeric>
+#include <cassert>
+#include <algorithm>
+#include <cmath>
+#include <complex>
+#include <iostream>
+//#include <mpi.h>
 
-#include<boost/format.hpp>
-#include<boost/shared_ptr.hpp>
+#include <boost/format.hpp>
+#include <boost/shared_ptr.hpp>
 
-#include<formic/utils/exception.h>
-#include<formic/utils/matrix.h>
-#include<formic/utils/lapack_interface.h>
-#include<formic/utils/mpi_interface.h>
-#include<formic/utils/lmyengine/eigen_solver.h>
-#include<formic/utils/lmyengine/spam_solver.h>
+#include "formic/utils/exception.h"
+#include "formic/utils/matrix.h"
+#include "formic/utils/lapack_interface.h"
+#include "formic/utils/mpi_interface.h"
+#include "formic/utils/lmyengine/eigen_solver.h"
+#include "spam_solver.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // \brief solve the subspace generalized eigenvalue problem

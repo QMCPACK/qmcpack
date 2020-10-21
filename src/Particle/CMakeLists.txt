@@ -13,7 +13,7 @@
 ####################################
 # create libqmcparticle
 ####################################
-SET(PARTICLE ${PARTICLE}
+SET(PARTICLE
   InitMolecularSystem.cpp
   ParticleSetPool.cpp
   ParticleSet.cpp

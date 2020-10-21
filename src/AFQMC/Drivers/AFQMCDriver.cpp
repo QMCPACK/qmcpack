@@ -7,12 +7,12 @@
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Configuration.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Drivers/AFQMCDriver.h"
+#include "AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
@@ -87,7 +87,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
     estim0.print(iBlock + 1, total_time, Eshift, wset);
 
     // resize stack pointers to match maximum buffer use
-    update_buffer_generators();
+    update_memory_managers();
   }
 
   if (nCheckpoint > 0)

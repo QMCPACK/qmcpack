@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
+#include "CSVMCUpdatePbyP.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"

@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_CI_CONFIGURATION2_H
 #define QMCPLUSPLUS_CI_CONFIGURATION2_H
 //#include <vector>
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/SIMD/simd.hpp"
 #include <algorithm>
 #include <iostream>
 

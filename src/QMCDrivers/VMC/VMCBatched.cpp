@@ -9,7 +9,7 @@
 // File refactored from: VMC.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/VMC/VMCBatched.h"
+#include "VMCBatched.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
@@ -26,10 +26,9 @@ VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
                        MCPopulation& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
-                       WaveFunctionPool& ppool,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, ppool, "VMCBatched::", comm, "VMCBatched"),
+    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, "VMCBatched::", comm, "VMCBatched"),
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)

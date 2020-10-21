@@ -15,10 +15,10 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "DiracDeterminant.h"
 #include <stdexcept>
-#include <CPU/BLAS.hpp>
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/BLAS.hpp"
+#include "CPU/SIMD/simd.hpp"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
 
@@ -30,10 +30,8 @@ namespace qmcplusplus
  */
 template<typename DU_TYPE>
 DiracDeterminant<DU_TYPE>::DiracDeterminant(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase(spos, first), ndelay(1), invRow_id(-1)
-{
-  ClassName = "DiracDeterminant";
-}
+    : DiracDeterminantBase("DiracDeterminant", spos, first), ndelay(1), invRow_id(-1)
+{}
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
@@ -93,7 +91,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
-  invRow_id              = WorkingIndex;
+  invRow_id = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
@@ -117,7 +115,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
-  invRow_id              = WorkingIndex;
+  invRow_id = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g         = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   ComplexType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
@@ -266,7 +264,7 @@ void DiracDeterminant<DU_TYPE>::completeUpdates()
   UpdateTimer.start();
   // invRow becomes invalid after updating the inverse matrix
   invRow_id = -1;
-  updateEng.updateInvMat(psiM);   
+  updateEng.updateInvMat(psiM);
   UpdateTimer.stop();
 }
 

@@ -1,10 +1,10 @@
 
 #include "Configuration.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Memory/utilities.hpp"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/config.h"
-#include "AFQMC/Propagators/AFQMCBasePropagator.h"
+#include "AFQMCBasePropagator.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 // TODO: Remove this

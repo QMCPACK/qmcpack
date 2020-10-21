@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
+#include "MultiSlaterDeterminantFast.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
@@ -22,15 +22,16 @@ namespace qmcplusplus
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
                                                        MultiDiracDeterminant* up,
                                                        MultiDiracDeterminant* dn)
-    : RatioTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratio")),
-      RatioGradTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
-      RatioAllTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
-      UpdateTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
-      EvaluateTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::evaluate")),
-      Ratio1Timer(*timer_manager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
-      Ratio1GradTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
-      Ratio1AllTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
-      AccRejTimer(*timer_manager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
+    : WaveFunctionComponent("MultiSlaterDeterminantFast"),
+      RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
+      RatioGradTimer(*timer_manager.createTimer(ClassName + "ratioGrad")),
+      RatioAllTimer(*timer_manager.createTimer(ClassName + "ratio(all)")),
+      UpdateTimer(*timer_manager.createTimer(ClassName + "updateBuffer")),
+      EvaluateTimer(*timer_manager.createTimer(ClassName + "evaluate")),
+      Ratio1Timer(*timer_manager.createTimer(ClassName + "detEval_ratio")),
+      Ratio1GradTimer(*timer_manager.createTimer(ClassName + "detEval_ratioGrad")),
+      Ratio1AllTimer(*timer_manager.createTimer(ClassName + "detEval_ratio(all)")),
+      AccRejTimer(*timer_manager.createTimer(ClassName + "Accept_Reject")),
       CI_Optimizable(false),
       IsCloned(false),
       C2node_up(nullptr),
@@ -44,7 +45,6 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   //Optimizable=true;
   Optimizable   = false;
   is_fermionic  = true;
-  ClassName     = "MultiSlaterDeterminantFast";
   usingCSF      = false;
   NP            = targetPtcl.getTotalNum();
   nels_up       = targetPtcl.last(0) - targetPtcl.first(0);

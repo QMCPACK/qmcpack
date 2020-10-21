@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCDrivers/WalkerProperties.h"
-#include "QMCDrivers/DMC/WalkerReconfiguration.h"
+#include "WalkerReconfiguration.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/RandomGenerator.h"

@@ -17,7 +17,7 @@
  *@brief definition of three-body jastrow of Geminal functions
  */
 #include "QMCWaveFunctions/AGPDeterminant.h"
-#include "QMCWaveFunctions/AGPDeterminantBuilder.h"
+#include "AGPDeterminantBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 

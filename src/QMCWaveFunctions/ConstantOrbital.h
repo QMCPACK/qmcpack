@@ -27,7 +27,7 @@ public:
 
   PsiValueType FakeGradRatio;
 
-  ConstantOrbital() : FakeGradRatio(1.0) {}
+  ConstantOrbital() : WaveFunctionComponent("ConstantOrbital"), FakeGradRatio(1.0) {}
 
   virtual LogValueType evaluateLog(ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,

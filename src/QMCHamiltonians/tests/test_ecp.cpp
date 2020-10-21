@@ -237,7 +237,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
 
   //Add the two body jastrow
   const char* particles = "<tmp> \
@@ -257,7 +257,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
   RadialJastrowBuilder jastrow(c, elec);
-  psi.addComponent(jastrow.buildComponent(jas2), "RadialJastrow");
+  psi.addComponent(jastrow.buildComponent(jas2));
   // Done with two body jastrow.
 
   //Add the one body jastrow.
@@ -277,7 +277,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   RadialJastrowBuilder jastrow1bdy(c, elec, ions);
-  psi.addComponent(jastrow1bdy.buildComponent(jas1), "RadialJastrow");
+  psi.addComponent(jastrow1bdy.buildComponent(jas1));
 
   //Now we set up the nonlocal ECP component.
   ECPComponentBuilder ecp("test_read_ecp", c);
@@ -492,7 +492,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   ions.resetGroups();
   elec.resetGroups();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
 
   std::vector<PosType> kup, kdn;
   std::vector<RealType> k2up, k2dn;
@@ -525,7 +525,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   DiracDeterminant<>* dd = new DiracDeterminant<>(spinor_set);
   dd->resize(nelec, norb);
 
-  psi.addComponent(dd, "spinor");
+  psi.addComponent(dd);
 
   //Now we set up the SO ECP component.
   ECPComponentBuilder ecp("test_read_soecp", c);

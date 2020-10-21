@@ -31,7 +31,7 @@ class DMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
+  DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);

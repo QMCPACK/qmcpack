@@ -14,7 +14,7 @@
  */
 
 #include "OhmmsData/AttributeSet.h"
-#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDriverInput.h"
 #include "Concurrency/Info.hpp"
 
 namespace qmcplusplus

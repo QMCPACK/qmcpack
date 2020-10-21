@@ -13,22 +13,26 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
+#include "MultiSlaterDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
 {
-MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo)
-    : RatioTimer(*timer_manager.createTimer("MultiSlaterDeterminant::ratio")),
-      RatioGradTimer(*timer_manager.createTimer("MultiSlaterDeterminant::ratioGrad")),
-      RatioAllTimer(*timer_manager.createTimer("MultiSlaterDeterminant::ratio(all)")),
-      UpdateTimer(*timer_manager.createTimer("MultiSlaterDeterminant::updateBuffer")),
-      EvaluateTimer(*timer_manager.createTimer("MultiSlaterDeterminant::evaluate")),
-      Ratio1Timer(*timer_manager.createTimer("MultiSlaterDeterminant::detEval_ratio")),
-      Ratio1GradTimer(*timer_manager.createTimer("MultiSlaterDeterminant::detEval_ratioGrad")),
-      Ratio1AllTimer(*timer_manager.createTimer("MultiSlaterDeterminant::detEval_ratio(all)")),
-      AccRejTimer(*timer_manager.createTimer("MultiSlaterDeterminant::Accept_Reject")),
-      evalOrbTimer(*timer_manager.createTimer("MultiSlaterDeterminant::evalOrbGrad")),
+MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
+                                               SPOSetProxyPtr upspo,
+                                               SPOSetProxyPtr dnspo,
+                                               const std::string& class_name)
+    : WaveFunctionComponent(class_name),
+      RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
+      RatioGradTimer(*timer_manager.createTimer(ClassName + "ratioGrad")),
+      RatioAllTimer(*timer_manager.createTimer(ClassName + "ratio(all)")),
+      UpdateTimer(*timer_manager.createTimer(ClassName + "updateBuffer")),
+      EvaluateTimer(*timer_manager.createTimer(ClassName + "evaluate")),
+      Ratio1Timer(*timer_manager.createTimer(ClassName + "detEval_ratio")),
+      Ratio1GradTimer(*timer_manager.createTimer(ClassName + "detEval_ratioGrad")),
+      Ratio1AllTimer(*timer_manager.createTimer(ClassName + "detEval_ratio(all)")),
+      AccRejTimer(*timer_manager.createTimer(ClassName + "Accept_Reject")),
+      evalOrbTimer(*timer_manager.createTimer(ClassName + "evalOrbGrad")),
       spo_up(upspo),
       spo_dn(dnspo)
 {
@@ -36,7 +40,6 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
   //Optimizable=true;
   Optimizable   = false;
   is_fermionic  = true;
-  ClassName     = "MultiSlaterDeterminant";
   usingCSF      = false;
   FirstIndex_up = targetPtcl.first(0);
   LastIndex_up  = targetPtcl.last(0);
@@ -53,10 +56,10 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
 WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
   typedef DiracDeterminant<> SingleDet_t;
-  SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
-  SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
-  spo_up_C->occup             = spo_up->occup;
-  spo_dn_C->occup             = spo_dn->occup;
+  SPOSetProxyForMSD* spo_up_C   = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
+  SPOSetProxyForMSD* spo_dn_C   = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
+  spo_up_C->occup               = spo_up->occup;
+  spo_dn_C->occup               = spo_dn->occup;
   MultiSlaterDeterminant* clone = new MultiSlaterDeterminant(tqp, spo_up_C, spo_dn_C);
   clone->C2node_up              = C2node_up;
   clone->C2node_dn              = C2node_dn;

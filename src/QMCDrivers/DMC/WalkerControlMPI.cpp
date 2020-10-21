@@ -16,9 +16,9 @@
 #include <cmath>
 #include <sstream>
 
-#include <QMCDrivers/DMC/WalkerControlMPI.h>
-#include <Utilities/IteratorUtility.h>
-#include <Utilities/FairDivide.h>
+#include "WalkerControlMPI.h"
+#include "Utilities/IteratorUtility.h"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {

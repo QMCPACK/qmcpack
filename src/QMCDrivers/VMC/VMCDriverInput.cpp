@@ -9,7 +9,7 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/VMC/VMCDriverInput.h"
+#include "VMCDriverInput.h"
 
 namespace qmcplusplus
 {

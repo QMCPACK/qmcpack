@@ -17,9 +17,9 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
-#include <Utilities/TimerManager.h>
+#include "Utilities/TimerManager.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x)             \
@@ -43,6 +43,7 @@
 #include "AFQMC/Propagators/PropagatorFactory.h"
 #include "AFQMC/Propagators/Propagator.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
@@ -102,9 +103,6 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     auto TG   = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
-
-    // initialize TG buffer
-    make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
 
     const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
       <parameter name=\"walker_type\">closed</parameter>  \
@@ -238,8 +236,6 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     }
 
     timer_manager.print(nullptr);
-
-    destroy_shm_buffer_generators();
   }
 }
 
@@ -287,9 +283,6 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
     qmcplusplus::Timer Time;
-
-    // initialize TG buffer
-    make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
 
     const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
       <parameter name=\"walker_type\">closed</parameter>  \
@@ -426,8 +419,6 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     }
 
     timer_manager.print(nullptr);
-
-    destroy_shm_buffer_generators();
   }
 }
 
@@ -436,13 +427,15 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if (not world.root())
     infoLog.pause();
+  auto node = world.split_shared(world.rank());
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  auto node = world.split_shared(world.rank());
   arch::INIT(node);
 #endif
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   propg_fac_shared(world);
+  release_memory_managers();
 }
 
 TEST_CASE("propg_fac_distributed", "[propagator_factory]")
@@ -450,17 +443,18 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if (not world.root())
     infoLog.pause();
+  auto node = world.split_shared(world.rank());
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  auto node = world.split_shared(world.rank());
   int ngrp(world.size());
   arch::INIT(node);
 #else
-  auto node = world.split_shared(world.rank());
   int ngrp(world.size() / node.size());
 #endif
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   propg_fac_distributed(world, ngrp);
+  release_memory_managers();
 }
 
 } // namespace qmcplusplus

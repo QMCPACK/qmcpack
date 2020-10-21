@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/AGPDeterminant.h"
+#include "AGPDeterminant.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
 #include "CPU/SIMD/simd.hpp"
@@ -21,7 +21,9 @@ namespace qmcplusplus
 {
 using std::copy;
 
-AGPDeterminant::AGPDeterminant(BasisSetType* bs) : GeminalBasis(bs), NumPtcls(0) {}
+AGPDeterminant::AGPDeterminant(BasisSetType* bs)
+    : WaveFunctionComponent("AGPDeterminant"), GeminalBasis(bs), NumPtcls(0)
+{}
 AGPDeterminant::~AGPDeterminant() {}
 
 void AGPDeterminant::resize(int nup, int ndown)

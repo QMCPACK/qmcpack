@@ -15,8 +15,8 @@
 #include <cassert>
 #include <memory>
 #include <mpi.h>
-#include <AFQMC/config.0.h>
-#include <Utilities/FairDivide.h>
+#include "AFQMC/config.0.h"
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 #include "mpi3/communicator.hpp"

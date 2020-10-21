@@ -13,7 +13,7 @@
 
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
-#include <Utilities/Timer.h>
+#include "Utilities/Timer.h"
 
 namespace qmcplusplus
 {

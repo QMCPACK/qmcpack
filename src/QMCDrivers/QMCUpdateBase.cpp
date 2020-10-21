@@ -15,7 +15,7 @@
 
 
 #include "Platforms/sysutil.h"
-#include "QMCDrivers/QMCUpdateBase.h"
+#include "QMCUpdateBase.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"

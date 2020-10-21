@@ -18,17 +18,16 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Configuration.h"
 #include "OhmmsApp/RandomNumberControl.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 
 #include "config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/AFQMCFactory.h"
+#include "AFQMCFactory.h"
 #include "AFQMC/Walkers/WalkerSetFactory.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Propagators/PropagatorFactory.h"
 #include "AFQMC/Wavefunctions/WavefunctionFactory.h"
 #include "AFQMC/Drivers/DriverFactory.h"
-#include "AFQMC/Memory/buffer_allocators.h"
 
 namespace qmcplusplus
 {
@@ -84,8 +83,6 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
 
   // eventually read an initial buffer size from input
   // they are initialized now with 10 MBs
-  // host_buffer_type->resize(buffer_size);
-  // device_buffer_type->resize(buffer_size);
 
   // first look only for AFQMCInfo
   // Careful here, since all factories have a reference to this map

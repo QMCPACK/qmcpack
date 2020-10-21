@@ -9,7 +9,7 @@
 // File created by:  Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCWaveFunctions/SpinorSet.h"
+#include "SpinorSet.h"
 
 namespace qmcplusplus
 {

@@ -15,7 +15,7 @@
 #include <sstream>
 #include <numeric>
 
-#include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDriverNew.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -26,8 +26,8 @@
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Estimators/EstimatorManagerNew.h"
-#include "HDFVersion.h"
-#include "qmc_common.h"
+#include "hdf/HDFVersion.h"
+#include "Utilities/qmc_common.h"
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
@@ -44,7 +44,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            MCPopulation& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
-                           WaveFunctionPool& ppool,
                            const std::string timer_prefix,
                            Communicate* comm,
                            const std::string& QMC_driver_type,
@@ -56,7 +55,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       population_(population),
       Psi(psi),
       H(h),
-      psiPool(ppool),
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),

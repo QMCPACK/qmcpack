@@ -1,8 +1,8 @@
 #ifndef QMCPLUSPLUS_AFQMC_AFQMCDRIVER_H
 #define QMCPLUSPLUS_AFQMC_AFQMCDRIVER_H
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 #include "mpi3/communicator.hpp"
 
 #include "AFQMC/config.h"

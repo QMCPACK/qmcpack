@@ -23,11 +23,11 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
-#include <Utilities/SpeciesSet.h>
-#include <Utilities/PooledData.h>
-#include <OhmmsPETE/OhmmsArray.h>
-#include <Utilities/TimerManager.h>
-#include <OhmmsSoA/VectorSoaContainer.h>
+#include "Utilities/SpeciesSet.h"
+#include "Utilities/PooledData.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "Utilities/TimerManager.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
 namespace qmcplusplus
 {
@@ -662,16 +662,6 @@ protected:
 
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;
-
-  enum PSTimers
-  {
-    PS_newpos,
-    PS_donePbyP,
-    PS_accept,
-    PS_update
-  };
-
-  static const TimerNameList_t<PSTimers> PSTimerNames;
 
   TimerList_t myTimers;
 

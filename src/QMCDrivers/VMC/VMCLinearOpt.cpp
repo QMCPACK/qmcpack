@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMCLinearOpt.h"
+#include "VMCLinearOpt.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -37,10 +37,8 @@ using WP = WalkerProperties::Indexes;
 VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
-                           HamiltonianPool& hpool,
-                           WaveFunctionPool& ppool,
                            Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "VMCLinearOpt"),
+    : QMCDriver(w, psi, h, comm, "VMCLinearOpt"),
       UseDrift("yes"),
       NumOptimizables(0),
       w_beta(0.0),
@@ -490,7 +488,6 @@ void VMCLinearOpt::resetRun()
   for (int ip = 0; ip < NumThreads; ++ip)
     app_log() << "    Sample size for thread " << ip << " = " << samples_th[ip] << std::endl;
   app_log() << "  Warmup Steps " << nWarmupSteps << std::endl;
-  //     if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
   //    app_log() << "  Warmup Steps " << nWarmupSteps << std::endl;
   if (Movers.empty())
   {

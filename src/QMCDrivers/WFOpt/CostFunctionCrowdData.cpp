@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/CostFunctionCrowdData.h"
+#include "CostFunctionCrowdData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus

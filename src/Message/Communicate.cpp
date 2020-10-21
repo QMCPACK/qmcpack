@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/Communicate.h"
+#include "Communicate.h"
 #include <iostream>
 #include <sstream>
 #include <string>

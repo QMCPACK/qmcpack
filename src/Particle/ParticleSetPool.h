@@ -33,14 +33,17 @@ namespace qmcplusplus
 class ParticleSetPool : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PoolType;
+  using PoolType = std::map<std::string, ParticleSet*>;
 
   /** constructor
    * @param aname xml tag
    */
   ParticleSetPool(Communicate* c, const char* aname = "particleset");
 
+  ParticleSetPool(const ParticleSetPool&) = delete;
+  ParticleSetPool& operator=(const ParticleSetPool&) = delete;
   ParticleSetPool(ParticleSetPool&& pset);
+  ParticleSetPool& operator=(ParticleSetPool&&) = default;
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;

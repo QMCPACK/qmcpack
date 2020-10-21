@@ -14,9 +14,9 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
-#include <qmc_common.h>
-#include <CPU/SIMD/aligned_allocator.hpp>
-#include <CPU/SIMD/algorithm.hpp>
+#include "Utilities/qmc_common.h"
+#include "CPU/SIMD/aligned_allocator.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 #include <map>
 #include <numeric>
 
@@ -62,10 +62,12 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : myTableID(els.addTable(ions)), Ions(ions)
+  J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
+      : WaveFunctionComponent("J1OrbitalSoA", obj_name), myTableID(els.addTable(ions)), Ions(ions)
   {
+    if (myName.empty())
+      throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
     initialize(els);
-    ClassName = "J1OrbitalSoA";
   }
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs) = delete;
@@ -366,7 +368,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
-    J1OrbitalSoA<FT>* j1copy = new J1OrbitalSoA<FT>(Ions, tqp);
+    J1OrbitalSoA<FT>* j1copy = new J1OrbitalSoA<FT>(myName, Ions, tqp);
     j1copy->Optimizable      = Optimizable;
     for (size_t i = 0, n = F.size(); i < n; ++i)
     {
