@@ -40,6 +40,7 @@
 #include "AFQMC/Numerics/ma_operations.hpp"
 
 #include "AFQMC/Memory/custom_pointers.hpp"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
