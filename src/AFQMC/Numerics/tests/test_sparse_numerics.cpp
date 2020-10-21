@@ -184,10 +184,10 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
 
 TEST_CASE("sparse_ma_operations", "[matrix_operations]")
 {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
 
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   arch::INIT(node);
   using Alloc = device::device_allocator<double>;
   afqmc::setup_memory_managers(node, 10uL * 1024uL * 1024uL);
