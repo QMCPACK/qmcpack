@@ -4158,6 +4158,8 @@ class TracedQmcpackInput(BundledQmcpackInput):
         for value in values:
             inp = input.copy()
             qhost = inp.get_host(quantity)                               
+            print(inp)
+            print(qhost)
             if qhost!=None:
                 qhost[quantity] = value
             else:
@@ -4735,6 +4737,12 @@ def generate_determinantset_old(type           = 'bspline',
         elif spin_channel=='down':
             sdet = dset.get('downdet')
         elif spin_channel=='singlet' or spin_channel=='triplet':
+
+            # Is multi-det WF appropriate?
+            if elns.down_electron.count != elns.up_electron.count:
+                QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types assume number of up and down electrons is the same. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}'.format(elns.up_electron.count,elns.down_electron.count))
+            #end if
+
             coeff_sign = ''
             if spin_channel=='triplet':
                 coeff_sign = '-'
@@ -4744,6 +4752,7 @@ def generate_determinantset_old(type           = 'bspline',
                 meshfactor = meshfactor,
                 precision  = precision,
                 tilematrix = tilematrix,
+                twistnum   = twistnum,
                 href       = href,
                 source     = source,
                 sposets    = generate_sposets(
@@ -4761,7 +4770,7 @@ def generate_determinantset_old(type           = 'bspline',
                     spo_up='spo_u',
                     spo_dn='spo_d',
                     detlist = detlist(
-                        size = '1',
+                        size = '2',
                         type = 'CSF',
                         nca  = '0',
                         ncb  = '0',
@@ -4806,8 +4815,11 @@ def generate_determinantset_old(type           = 'bspline',
                 dset.sposets.spo_u.size = exc_orbs[1]
                 dset.sposets.spo_d.size = exc_orbs[1]
 
-            else: #Type 1 or Type 3
-                QmcpackInput.class_error('{} excitation is not yet available for band format'.format(spin_channel))
+            elif 'cb' not in excitation and 'vb' not in excitation: #Type 1 
+                exc_orbs = array(excitation.split(),dtype=int)
+                nel = elns.up_electron.count 
+            else:
+                QmcpackInput.class_error('{} excitation is not yet available for type 3'.format(spin_channel))
             #end if
 
             return dset
