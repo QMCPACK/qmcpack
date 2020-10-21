@@ -67,13 +67,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     G_ext = iextensions<2u>{nwalk, Gsize};
 
   if (MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
-    MFfactor = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    MFfactor = CMatrix({long(nsteps), long(nwalk)});
   if (hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
-    hybrid_weight = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
   if (new_overlaps.size(0) != nwalk)
-    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+    new_overlaps = CVector(iextensions<1u>{nwalk});
   if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
-    new_energies = std::move(CMatrix({long(nwalk), 3}));
+    new_energies = CMatrix({long(nwalk), 3});
 
   //  Temporary memory usage summary:
   //  G_for_vbias:     [ Gsize * nwalk ] (2 copies)
@@ -151,7 +151,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       if (bpX.num_elements() < m_)
       {
         realloc = true;
-        bpX     = std::move(mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()}));
+        bpX     = mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
           fill_n(bpX.origin(), bpX.num_elements(), SPComplexType(0.0));
       }
@@ -434,13 +434,13 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     G_ext = iextensions<2u>{nwalk, Gsize};
 
   if (MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
-    MFfactor = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    MFfactor = CMatrix({long(nsteps), long(nwalk)});
   if (hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
-    hybrid_weight = std::move(CMatrix({long(nsteps), long(nwalk)}));
+    hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
   if (new_overlaps.size(0) != nwalk)
-    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+    new_overlaps = CVector(iextensions<1u>{nwalk});
   if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
-    new_energies = std::move(CMatrix({long(nwalk), 3}));
+    new_energies = CMatrix({long(nwalk), 3});
 
   //  Temporary memory usage summary:
   //  G_for_vbias:     [ Gsize * nwalk ] (2 copies)
@@ -506,7 +506,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       if (bpX.num_elements() < m_)
       {
         realloc = true;
-        bpX     = std::move(mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()}));
+        bpX     = mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
           fill_n(bpX.origin(), bpX.num_elements(), SPComplexType(0.0));
       }

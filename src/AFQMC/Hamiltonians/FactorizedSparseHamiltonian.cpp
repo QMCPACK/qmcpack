@@ -254,7 +254,7 @@ HamiltonianOperations FactorizedSparseHamiltonian::getHamiltonianOperations(bool
   TGwfn.Global().broadcast_value(write_hdf);
 
   boost::multi::array<ComplexType, 2> vn0({NMO, NMO});
-  auto Spvn(std::move(calculateHSPotentials(cutvn, TGprop, vn0)));
+  auto Spvn(calculateHSPotentials(cutvn, TGprop, vn0));
   auto Spvnview(csr::shm::local_balanced_partition(Spvn, TGprop));
 
   // trick: the last node always knows what the total # of chol vecs is
