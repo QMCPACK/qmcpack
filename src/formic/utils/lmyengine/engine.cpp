@@ -435,10 +435,14 @@ void cqmc::engine::LMYEngine<S>::take_sample(std::vector<S> & der_rat_samp,
 
       std::vector<double> der_rat_samp_real;
       std::vector<double> le_der_samp_real;
+      
       for (auto it = der_rat_samp.begin(); it != der_rat_samp.end(); it++) {
         der_rat_samp_real.push_back(formic::real(*it));
+      }
+      for (auto it = le_der_samp.begin(); it != le_der_samp.end(); it++) {
          le_der_samp_real.push_back(formic::real(*it));
       }
+
       bool first_samp = !_block_first_sample_finished;
 
       // if it is the first sampling
@@ -454,6 +458,7 @@ void cqmc::engine::LMYEngine<S>::take_sample(std::vector<S> & der_rat_samp,
         else {
           // get <n|(w-H)|Psi_i>/<n|Psi>
           std::vector<double> mle_der_samp_real(le_der_samp_real.size(), 0.0);
+          
           for (int i = 0; i < mle_der_samp_real.size(); i++) 
             mle_der_samp_real.at(i) = _hd_lm_shift * der_rat_samp_real.at(i) - le_der_samp_real.at(i);
 

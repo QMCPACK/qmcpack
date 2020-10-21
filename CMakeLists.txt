@@ -434,11 +434,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF(ENABLE_MKL)
   IF ( HAVE_MKL )
     # Skip adding Math::BLAS_LAPACK target which has been imported by FindMKL.
-  ELSEIF (CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
-    # Cray specific environment variable indicates we are on a cray. Assume libsci will be linked
-    # preferable to attempt a compile/link
-    MESSAGE(STATUS "Assuming Cray libsci or other BLAS/LAPACK will be linked by compiler wrappers")
-    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
   ELSE()
     # The last search for Blas/Lapack
     find_package(LAPACK REQUIRED)

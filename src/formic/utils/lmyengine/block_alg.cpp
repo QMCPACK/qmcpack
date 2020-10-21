@@ -170,7 +170,6 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
 if(hybrid)
 {
   overwriteOldUpates(m_ou);
- 
 }
 
   // on root process
