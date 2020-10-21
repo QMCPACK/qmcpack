@@ -12,13 +12,17 @@
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef CUSPARSE_FUNCTIONDEFS_H
-#define CUSPARSE_FUNCTIONDEFS_H
+#ifndef CUSPARSE_FUNCTIONDEFS_DEPRECATED_H
+#define CUSPARSE_FUNCTIONDEFS_DEPRECATED_H
 
 #include <cassert>
 #include <cuda_runtime.h>
 #include "cusparse.h"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
+
+#if CUSPARSE_VER_MAJOR > 10
+#error
+#endif
 
 namespace cusparse
 {

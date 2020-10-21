@@ -189,9 +189,13 @@ TEST_CASE("sparse_ma_operations", "[matrix_operations]")
 
   arch::INIT(node);
   using Alloc = device::device_allocator<double>;
+  afqmc::setup_memory_managers(node, 10uL * 1024uL * 1024uL);
   test_sparse_matrix_mult<Alloc>();
+#else
+  afqmc::setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 #endif
   test_sparse_matrix_mult();
+  afqmc::release_memory_managers();
 }
 
 } // namespace qmcplusplus
