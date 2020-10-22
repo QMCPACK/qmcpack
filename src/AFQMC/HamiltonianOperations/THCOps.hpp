@@ -127,10 +127,10 @@ public:
         haj(std::move(h1)),
         rotMuv(std::move(rotmuv_)),
         rotPiu(std::move(rotpiu_)),
-        rotcPua(std::move(move_vector<nodeArray<SPComplexType, 2>>(std::move(rotpau_)))),
+        rotcPua(move_vector<nodeArray<SPComplexType, 2>>(std::move(rotpau_))),
         Luv(std::move(luv_)),
         Piu(std::move(piu_)),
-        cPua(std::move(move_vector<nodeArray<SPComplexType, 2>>(std::move(pau_)))),
+        cPua(move_vector<nodeArray<SPComplexType, 2>>(std::move(pau_))),
         vn0(std::move(v0_)),
         E0(e0_)
   {
