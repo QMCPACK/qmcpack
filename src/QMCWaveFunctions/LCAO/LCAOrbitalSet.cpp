@@ -16,21 +16,26 @@
 
 namespace qmcplusplus
 {
-LCAOrbitalSet::LCAOrbitalSet(basis_type* bs, bool optimize)
-    : SPOSet(false, true, optimize), myBasisSet(nullptr), BasisSetSize(0), Identity(true)
+LCAOrbitalSet::LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize)
+    : SPOSet(false, true, optimize), BasisSetSize(bs?bs->getBasisSetSize():0), Identity(true)
 {
-  if (bs != nullptr)
-    setBasisSet(bs);
-}
-
-void LCAOrbitalSet::setBasisSet(basis_type* bs)
-{
-  myBasisSet   = bs;
-  BasisSetSize = myBasisSet->getBasisSetSize();
+  if(!bs)
+    throw std::runtime_error("LCAOrbitalSet cannot take nullptr as its  basis set!");
+  myBasisSet = std::move(bs);
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
   Tempgh.resize(BasisSetSize);
 }
+
+LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
+    : SPOSet(in), myBasisSet(in.myBasisSet->makeClone()), C(in.C), BasisSetSize(in.BasisSetSize), Identity(in.Identity)
+{
+  Temp.resize(BasisSetSize);
+  Temph.resize(BasisSetSize);
+  Tempgh.resize(BasisSetSize);
+  setOrbitalSetSize(in.OrbitalSetSize);
+}
+
 
 bool LCAOrbitalSet::setIdentity(bool useIdentity)
 {
@@ -55,9 +60,7 @@ bool LCAOrbitalSet::setIdentity(bool useIdentity)
 
 SPOSet* LCAOrbitalSet::makeClone() const
 {
-  LCAOrbitalSet* myclone = new LCAOrbitalSet(*this);
-  myclone->myBasisSet    = myBasisSet->makeClone();
-  return myclone;
+  return new LCAOrbitalSet(*this);
 }
 
 void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)

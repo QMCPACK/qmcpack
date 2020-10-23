@@ -34,42 +34,18 @@ public:
   typedef basis_type::vgl_type vgl_type;
   typedef basis_type::vgh_type vgh_type;
   typedef basis_type::vghgh_type vghgh_type;
+
   ///pointer to the basis set
-  basis_type* myBasisSet;
-  ///number of Single-particle orbitals
-  IndexType BasisSetSize;
+  std::unique_ptr<basis_type> myBasisSet;
   /// pointer to matrix containing the coefficients
   std::shared_ptr<ValueMatrix_t> C;
-  /// a copy of the original C before orbital rotation is applied;
-  ValueMatrix_t C_copy;
-
-  ///true if C is an identity matrix
-  bool Identity;
-  ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
-  vgl_type Temp;
-  ///Tempv(OrbitalSetSize) Tempv=C*Temp
-  vgl_type Tempv;
-
-  //These are temporary VectorSoAContainers to hold value, gradient, and hessian for
-  //all basis or SPO functions evaluated at a given point.
-  //Nbasis x [1(value)+3(gradient)+6(hessian)]
-  vgh_type Temph;
-  //Norbitals x [1(value)+3(gradient)+6(hessian)]
-  vgh_type Temphv;
-
-  //These are temporary VectorSoAContainers to hold value, gradient, hessian, and
-  // gradient hessian for all basis or SPO functions evaluated at a given point.
-  //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
-  vghgh_type Tempgh;
-  //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
-  vghgh_type Tempghv;
 
   /** constructor
      * @param bs pointer to the BasisSet
      */
-  LCAOrbitalSet(basis_type* bs, bool optimize);
+  LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize);
 
-  LCAOrbitalSet(const LCAOrbitalSet& in) = default;
+  LCAOrbitalSet(const LCAOrbitalSet& in);
 
   SPOSet* makeClone() const override;
 
@@ -103,15 +79,12 @@ public:
     Tempghv.resize(OrbitalSetSize);
   }
 
-  /** set the basis set
-    */
-  void setBasisSet(basis_type* bs);
-
   /** return the size of the basis set
     */
   int getBasisSetSize() const override { return (myBasisSet == nullptr) ? 0 : myBasisSet->getBasisSetSize(); }
 
   bool setIdentity(bool useIdentity);
+  bool isIdentity() const { return Identity; };
 
   void checkObject() const override
   {
@@ -234,6 +207,33 @@ public:
 
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet) override;
 
+protected:
+  ///number of Single-particle orbitals
+  const IndexType BasisSetSize;
+  /// a copy of the original C before orbital rotation is applied;
+  ValueMatrix_t C_copy;
+
+  ///true if C is an identity matrix
+  bool Identity;
+  ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
+  vgl_type Temp;
+  ///Tempv(OrbitalSetSize) Tempv=C*Temp
+  vgl_type Tempv;
+
+  //These are temporary VectorSoAContainers to hold value, gradient, and hessian for
+  //all basis or SPO functions evaluated at a given point.
+  //Nbasis x [1(value)+3(gradient)+6(hessian)]
+  vgh_type Temph;
+  //Norbitals x [1(value)+3(gradient)+6(hessian)]
+  vgh_type Temphv;
+
+  //These are temporary VectorSoAContainers to hold value, gradient, hessian, and
+  // gradient hessian for all basis or SPO functions evaluated at a given point.
+  //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
+  vghgh_type Tempgh;
+  //Nbasis x [1(value)+3(gradient)+6(hessian)+10(grad_hessian)]
+  vghgh_type Tempghv;
+
 private:
   //helper functions to handl Identity
   void evaluate_vgl_impl(const vgl_type& temp, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const;
@@ -279,6 +279,8 @@ private:
                                   GradMatrix_t& dlogdet,
                                   HessMatrix_t& dglogdet,
                                   GradMatrix_t& dllogdet) const;
+
+  friend class LCAOrbitalBuilder;
 };
 } // namespace qmcplusplus
 #endif

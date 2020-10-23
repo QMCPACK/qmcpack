@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "LCAOrbitalBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/LCAO/NGFunctor.h"
@@ -26,7 +27,6 @@
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 //#include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/LCAO/AOBasisBuilder.h"
-#include "LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/LCAO/MultiFunctorAdapter.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
@@ -449,12 +449,12 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, optimize == "yes");
+    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
   }
   else
-    lcos = new LCAOrbitalSet(myBasisSet, optimize == "yes");
+    lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
 #else
-  lcos = new LCAOrbitalSet(myBasisSet, optimize == "yes");
+  lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
 #endif
   loadMO(*lcos, cur);
 
@@ -633,7 +633,6 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
 #if defined(HAVE_LIBHDF5)
-  int norbs  = spo.getOrbitalSetSize();
   int neigs  = spo.getBasisSetSize();
   int setVal = -1;
   std::string setname;
@@ -649,7 +648,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
 
-    Matrix<RealType> Ctemp(neigs, spo.getBasisSetSize());
+    Matrix<RealType> Ctemp;
     char name[72];
 
     //This is to make sure of Backward compatibility with previous tags.
@@ -666,6 +665,24 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       }
     }
     hin.close();
+
+    if (Ctemp.cols() != spo.getBasisSetSize())
+    {
+      std::ostringstream err_msg;
+      err_msg << "Basis set size " << spo.getBasisSetSize()
+              << " mismatched the number of MO coefficients columns " << Ctemp.cols()
+              << " from h5." << std::endl;
+      myComm->barrier_and_abort(err_msg.str());
+    }
+
+    int norbs = spo.getOrbitalSetSize();
+    if (Ctemp.rows() < norbs)
+    {
+      std::ostringstream err_msg;
+      err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp.cols()
+              << " from h5." << std::endl;
+      myComm->barrier_and_abort(err_msg.str());
+    }
 
     int n = 0, i = 0;
     while (i < norbs)
@@ -760,7 +777,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting.");
     }
     //SuperTwist=SuperTwistH5;
-    Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
+    Matrix<ValueType> Ctemp;//(neigs, spo.getBasisSetSize());
     LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp, MultiDet);
 
     int n = 0, i = 0;
