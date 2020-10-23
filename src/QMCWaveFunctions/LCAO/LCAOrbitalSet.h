@@ -86,11 +86,7 @@ public:
   bool setIdentity(bool useIdentity);
   bool isIdentity() const { return Identity; };
 
-  void checkObject() const override
-  {
-    if (!Identity && !(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
-      APP_ABORT("   LCAOrbitalSet::checkObject Linear coeffient for LCAOrbitalSet is not consistent with the input.");
-  }
+  void checkObject() const override;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
