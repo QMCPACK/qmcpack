@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
@@ -10,6 +10,7 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -17,6 +18,7 @@
 
 #ifndef OHMMS_COMMUNICATE_H
 #define OHMMS_COMMUNICATE_H
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -26,26 +28,13 @@
 namespace mpi3 = boost::mpi3;
 #endif
 
-#ifdef HAVE_OOMPI
-#include "oompi.h"
+#ifdef HAVE_MPI
 struct CommunicatorTraits
 {
   typedef MPI_Comm mpi_comm_type;
   typedef MPI_Status status;
   typedef MPI_Request request;
-  typedef OOMPI_Intra_comm intra_comm_type;
 };
-#define APP_ABORT(msg)                                            \
-  {                                                               \
-    std::cerr << "Fatal Error. Aborting at " << msg << std::endl; \
-    MPI_Abort(MPI_COMM_WORLD, 1);                                 \
-  }
-
-#define APP_ABORT_TRACE(f, l, msg)                                                           \
-  {                                                                                          \
-    std::cerr << "Fatal Error. Aborting at " << l << "::" << f << "\n " << msg << std::endl; \
-    MPI_Abort(MPI_COMM_WORLD, 1);                                                            \
-  }
 
 #else
 struct CommunicatorTraits
@@ -53,24 +42,9 @@ struct CommunicatorTraits
   typedef int mpi_comm_type;
   typedef int status;
   typedef int request;
-  typedef int intra_comm_type;
   static const int MPI_COMM_NULL    = 0;
   static const int MPI_REQUEST_NULL = 1;
 };
-
-#define APP_ABORT(msg)                                            \
-  {                                                               \
-    std::cerr << "Fatal Error. Aborting at " << msg << std::endl; \
-    std::cerr.flush();                                            \
-    exit(1);                                                      \
-  }
-
-#define APP_ABORT_TRACE(f, l, msg)                                                           \
-  {                                                                                          \
-    std::cerr << "Fatal Error. Aborting at " << l << "::" << f << "\n " << msg << std::endl; \
-    exit(1);                                                                                 \
-  }
-
 #endif
 
 #include <string>
@@ -78,6 +52,8 @@ struct CommunicatorTraits
 #include <utility>
 #include <unistd.h>
 #include <cstring>
+
+#include "Message/AppAbort.h"
 
 /**@class Communicate
  * @ingroup Message
@@ -96,13 +72,13 @@ public:
   ///constructor from mpi3 environment
 #ifdef HAVE_MPI
   Communicate(const mpi3::environment& env);
+
+  ///constructor with communicator
+  Communicate(const mpi3::communicator& in_comm);
 #endif
 
-  ///constructor with communicator
-  Communicate(const mpi_comm_type comm_input);
-
-  ///constructor with communicator
-  //Communicate(const intra_comm_type& c);
+  /** constructor that splits in_comm
+   */
   Communicate(const Communicate& in_comm, int nparts);
 
   /**destructor
@@ -122,8 +98,9 @@ public:
   /// initialize this as a node/shared-memory communicator
   void initializeAsNodeComm(const Communicate& parent);
   void finalize();
-  void abort();
-  void abort(const char* msg);
+  void barrier() const;
+  void abort() const;
+  void barrier_and_abort(const std::string& msg) const;
   void set_world();
 
 #if defined(HAVE_MPI)
@@ -133,9 +110,6 @@ public:
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
   inline mpi_comm_type getMPI() const { return myMPI; }
-
-  inline intra_comm_type& getComm() { return myComm; }
-  inline const intra_comm_type& getComm() const { return myComm; }
 
   ///return the rank
   inline int rank() const { return d_mycontext; }
@@ -151,8 +125,6 @@ public:
   void cleanupMessage(void*);
   inline void setNodeID(int i) { d_mycontext = i; }
   inline void setNumNodes(int n) { d_ncontexts = n; }
-
-  void barrier();
 
   inline void setName(const std::string& aname) { myName = aname; }
   inline const std::string& getName() const { return myName; }
@@ -192,15 +164,18 @@ public:
   }
 #endif
 
-  // MMORALES:
-  // right now there is no easy way to use Communicate
-  // for generic processor subgroups, so calling split on myMPI
-  // and managing the communicator directly
-  // THIS MUST BE FIXED!!!
 #ifdef HAVE_MPI
+  /** A hack to get around Communicate not supporting flexible processor subgroups
+   *
+   *  MMORALES:
+   *  right now there is no easy way to use Communicate
+   *  for generic processor subgroups, so calling split on myMPI
+   *  and managing the communicator directly
+   *  \todo THIS MUST BE FIXED!!!
+   */
   inline void split_comm(int key, MPI_Comm& comm)
   {
-    int myrank = rank(), nprocs = size();
+    int myrank = rank();
     MPI_Comm_split(myMPI, key, myrank, &comm);
   }
 #endif
@@ -255,25 +230,6 @@ protected:
    *  After switching to mpi3::communicator, myMPI is only a reference to the raw communicator owned by mpi3::communicator
    */
   mpi_comm_type myMPI;
-#ifdef HAVE_MPI
-  /* helper class to destroy myMPI after the destruction of myComm
-   * it must be declared before myComm and the destruction automatically happens after myComm
-   */
-  class MPI_Comm_destructor
-  {
-    MPI_Comm& comm;
-
-  public:
-    MPI_Comm_destructor(MPI_Comm& myMPI) : comm(myMPI) {}
-    ~MPI_Comm_destructor()
-    {
-      if (comm != MPI_COMM_NULL)
-        MPI_Comm_free(&comm);
-    }
-  } myMPI_destroy_helper;
-#endif
-  /// OOMPI communicator
-  intra_comm_type myComm;
   /// Communicator name
   std::string myName;
   /// Rank

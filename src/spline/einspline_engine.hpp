@@ -13,8 +13,10 @@
 
 #ifndef QMCPLUSPLUS_EINSPLINE_ENGINE_HPP
 #define QMCPLUSPLUS_EINSPLINE_ENGINE_HPP
-#include <spline/bspline_traits.hpp>
-#include <spline/einspline_impl.hpp>
+
+#include "spline/bspline_traits.hpp"
+#include "spline/einspline_impl.hpp"
+
 namespace qmcplusplus
 {
 /** einspline_engine

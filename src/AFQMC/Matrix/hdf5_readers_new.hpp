@@ -4,48 +4,45 @@
 ////
 //// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 ////
-//// File developed by: 
+//// File developed by:
 ////
-//// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+//// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_HDF5_READERS_HPP
 #define QMCPLUSPLUS_AFQMC_HDF5_READERS_HPP
 
 
-#include<cassert>
-#include<complex>
-#include<cstdlib>
-#include<algorithm>
-#include<utility>
-#include<vector>
-#include<numeric>
+#include <cassert>
+#include <complex>
+#include <cstdlib>
+#include <algorithm>
+#include <utility>
+#include <vector>
+#include <numeric>
 #if defined(USE_MPI)
-#include<mpi.h>
+#include <mpi.h>
 #endif
 
 #include "Configuration.h"
-#include <Utilities/FairDivide.h>
-#include "io/hdf_archive.h"
+#include "Utilities/FairDivide.h"
+#include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
 
-#include<AFQMC/config.0.h>
+#include "AFQMC/config.0.h"
 
 #if defined(ADD_TESTS_TIMERS)
 #include "AFQMC/Utilities/myTimer.h"
 #endif
 
-#define MORE  1555
-#define LAST  2777
+#define MORE 1555
+#define LAST 2777
 
 namespace qmcplusplus
 {
-
 namespace afqmc
 {
-
-
-// look for a dataset call ..._descriptor, which will contain integer types 
+// look for a dataset call ..._descriptor, which will contain integer types
 // describing the properties of the datasets, e.g.
 // - transposed?
 // - sorted?
@@ -53,12 +50,12 @@ namespace afqmc
 //
 // If this dataset is not found, then assume generic
 //
-// SpMatrix_Partition both partitions the matrix into local segments belonging to a 
+// SpMatrix_Partition both partitions the matrix into local segments belonging to a
 // given node, as well as applies cutoffs to values.
 //
-// For good efficiency, it is possible to partition the local block 
+// For good efficiency, it is possible to partition the local block
 // (obtained through split.local(i,j,val))
-// among equivalent nnodes (same node id within TG and using split.local_split(i,j,val)) 
+// among equivalent nnodes (same node id within TG and using split.local_split(i,j,val))
 // and read/sort only this local segment.
 // After the call to compress (which only does it over the local segment),
 // assemble the full local partition with a call to Allgather with the corresponding
@@ -67,124 +64,138 @@ namespace afqmc
 //
 // Algorith 1:
 //  1. head_of_nodes read a block from the hdf5 in parallel and sequentially
-//  2. loop over head_of_nodes, each one 
+//  2. loop over head_of_nodes, each one
 //      i. bcasts his block to the group
 //      ii. from each bcast, adds to the local list if split.local(i,j)==true
 //  *** overlap the calls to bcast (with Ibcast) and the block processing
 //  3. after read, compress
-//  4. after compress, gather segments from other equivalent nodes 
+//  4. after compress, gather segments from other equivalent nodes
 //  5. If memory is not a problem, further speedup can be obtained by having
-//     other cores also read/bcast/process blocks.   
-//       --  possible downside:  1) memory, 2) I/O bottleneck (e.g. BGQ) 
-template<class SpMatrix,
-         class SpMatrix_Partition,
-         class task_group
-         >
-inline bool multiple_reader_hdf5_SpMat(SpMatrix& SpM, SpMatrix_Partition& split, hdf_archive& dump, int nblk, task_group& TG, int n_working_cores)
+//     other cores also read/bcast/process blocks.
+//       --  possible downside:  1) memory, 2) I/O bottleneck (e.g. BGQ)
+template<class SpMatrix, class SpMatrix_Partition, class task_group>
+inline bool multiple_reader_hdf5_SpMat(SpMatrix& SpM,
+                                       SpMatrix_Partition& split,
+                                       hdf_archive& dump,
+                                       int nblk,
+                                       task_group& TG,
+                                       int n_working_cores)
 {
-
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID() , coreid = TG.getCoreID();
+  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID(), coreid = TG.getCoreID();
 #if defined(ADD_TESTS_TIMERS)
   myTimer Timer;
 #endif
 
   // process hdf5 file
-  if( coreid < n_working_cores ) {
-
-    bool need_lock = n_working_cores>1;
+  if (coreid < n_working_cores)
+  {
+    bool need_lock = n_working_cores > 1;
 
 #if defined(ADD_TESTS_TIMERS)
     Timer.start("Gen");
 #endif
 
     std::vector<int> block_size(nblk);
-    if(!dump.readEntry(block_size,std::string("block_sizes"))) {
-      app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading ***_block_sizes dataset. \n";
+    if (!dump.readEntry(block_size, std::string("block_sizes")))
+    {
+      app_error() << " Error in multiple_reader_hdf5_SpMat: Problems reading ***_block_sizes dataset. \n";
       return false;
     }
 
 #if defined(ADD_TESTS_TIMERS)
     Timer.stop("Gen");
-    app_log()<<" multiple_reader_hdf5_SpMat::read blocks " <<Timer.total("Gen") <<"\n";
+    app_log() << " multiple_reader_hdf5_SpMat::read blocks " << Timer.total("Gen") << "\n";
 #endif
 
     int nmax = 100000;
-    std::vector<std::tuple<int,int,SPValueType>> buff;
+    std::vector<std::tuple<int, int, SPValueType>> buff;
     buff.reserve(nmax);
 
     int ntmax = *std::max_element(block_size.begin(), block_size.end());
     std::vector<IndexType> ivec, ivec2;
     std::vector<ValueType> vvec, vvec2;
-    ivec.reserve(2*ntmax);
-    vvec.reserve(ntmax);    
-    ivec2.reserve(2*ntmax);
-    vvec2.reserve(ntmax);    
+    ivec.reserve(2 * ntmax);
+    vvec.reserve(ntmax);
+    ivec2.reserve(2 * ntmax);
+    vvec2.reserve(ntmax);
 
     std::vector<int> pool_dist;
     // divide blocks over n_working_cores groups
-    FairDivide(nblk,n_working_cores,pool_dist);
+    FairDivide(nblk, n_working_cores, pool_dist);
 
     int first_local_block = pool_dist[coreid];
-    int last_local_block = pool_dist[coreid+1];
-    int nbtot = last_local_block-first_local_block;
-    int niter = nbtot/nnodes + std::min(nbtot%nnodes,1);
+    int last_local_block  = pool_dist[coreid + 1];
+    int nbtot             = last_local_block - first_local_block;
+    int niter             = nbtot / nnodes + std::min(nbtot % nnodes, 1);
 
 #if defined(ADD_TESTS_TIMERS)
     Timer.reset("Gen");
     Timer.start("Gen");
 #endif
 
-    for(int iter=0; iter<niter; iter++) { 
-      int myblock_number = first_local_block + nnodes*iter + nodeid; 
-      int first_block = first_local_block + nnodes*iter; 
-      int last_block = std::min(first_block+nnodes,last_local_block);
-      if(myblock_number < last_local_block) {
-        ivec.resize(2*block_size[myblock_number]);
+    for (int iter = 0; iter < niter; iter++)
+    {
+      int myblock_number = first_local_block + nnodes * iter + nodeid;
+      int first_block    = first_local_block + nnodes * iter;
+      int last_block     = std::min(first_block + nnodes, last_local_block);
+      if (myblock_number < last_local_block)
+      {
+        ivec.resize(2 * block_size[myblock_number]);
         vvec.resize(block_size[myblock_number]);
-        if(!dump.readEntry(ivec,std::string("index_")+std::to_string(myblock_number))) {
-          app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading ***_index_" <<myblock_number <<" dataset. \n";
+        if (!dump.readEntry(ivec, std::string("index_") + std::to_string(myblock_number)))
+        {
+          app_error() << " Error in multiple_reader_hdf5_SpMat: Problems reading ***_index_" << myblock_number
+                      << " dataset. \n";
           return false;
         }
-        if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(myblock_number))) {
-          app_error()<<" Error in multiple_reader_hdf5_SpMat: Problems reading ***_vals_" <<myblock_number <<" dataset. \n";
+        if (!dump.readEntry(vvec, std::string("vals_") + std::to_string(myblock_number)))
+        {
+          app_error() << " Error in multiple_reader_hdf5_SpMat: Problems reading ***_vals_" << myblock_number
+                      << " dataset. \n";
           return false;
         }
-      }    
-      for(int k=first_block,ipr=0; k<last_block; k++,ipr++) {
-        ivec2.resize(2*block_size[k]);
+      }
+      for (int k = first_block, ipr = 0; k < last_block; k++, ipr++)
+      {
+        ivec2.resize(2 * block_size[k]);
         vvec2.resize(block_size[k]);
-        if(ipr==nodeid) {
-          assert(myblock_number==k);
-          std::copy(ivec.begin(),ivec.end(),ivec2.begin());
-          TG.Cores().broadcast_n(ivec2.begin(),ivec2.size(),ipr);
-          std::copy(vvec.begin(),vvec.end(),vvec2.begin());
-          TG.Cores().broadcast_n(vvec2.begin(),vvec2.size(),ipr);
-        } else {
-          TG.Cores().broadcast_n(ivec2.begin(),ivec2.size(),ipr);
-          TG.Cores().broadcast_n(vvec2.begin(),vvec2.size(),ipr);
+        if (ipr == nodeid)
+        {
+          assert(myblock_number == k);
+          std::copy(ivec.begin(), ivec.end(), ivec2.begin());
+          TG.Cores().broadcast_n(ivec2.begin(), ivec2.size(), ipr);
+          std::copy(vvec.begin(), vvec.end(), vvec2.begin());
+          TG.Cores().broadcast_n(vvec2.begin(), vvec2.size(), ipr);
+        }
+        else
+        {
+          TG.Cores().broadcast_n(ivec2.begin(), ivec2.size(), ipr);
+          TG.Cores().broadcast_n(vvec2.begin(), vvec2.size(), ipr);
         }
 
-        for(int ik=0, ikend=block_size[k]; ik<ikend; ik++) 
-          if(split.local(ivec2[2*ik],ivec2[2*ik+1], vvec2[ik])) {
-            buff.emplace_back(std::make_tuple(ivec2[2*ik],ivec2[2*ik+1], static_cast<SPValueType>(vvec2[ik]))); 
-            if(buff.size() == nmax) {
-              SpM.add(buff,need_lock); 
+        for (int ik = 0, ikend = block_size[k]; ik < ikend; ik++)
+          if (split.local(ivec2[2 * ik], ivec2[2 * ik + 1], vvec2[ik]))
+          {
+            buff.emplace_back(std::make_tuple(ivec2[2 * ik], ivec2[2 * ik + 1], static_cast<SPValueType>(vvec2[ik])));
+            if (buff.size() == nmax)
+            {
+              SpM.add(buff, need_lock);
               buff.clear();
             }
-          }  
-
+          }
       }
     }
-    if(buff.size() > 0) {
-      SpM.add(buff,need_lock);
+    if (buff.size() > 0)
+    {
+      SpM.add(buff, need_lock);
       buff.clear();
-    }  
-  } 
+    }
+  }
 
 #if defined(ADD_TESTS_TIMERS)
   MPI_Barrier(&(TG.Node()));
   Timer.stop("Gen");
-  app_log()<<" multiple_reader_hdf5_SpMat::read data " <<Timer.total("Gen") <<"\n";
+  app_log() << " multiple_reader_hdf5_SpMat::read data " << Timer.total("Gen") << "\n";
   Timer.reset("Gen");
   Timer.start("Gen");
 #endif
@@ -194,93 +205,109 @@ inline bool multiple_reader_hdf5_SpMat(SpMatrix& SpM, SpMatrix_Partition& split,
 
 #if defined(ADD_TESTS_TIMERS)
   Timer.stop("Gen");
-  app_log()<<" multiple_reader_hdf5_SpMat::compress " <<Timer.total("Gen") <<"\n";
+  app_log() << " multiple_reader_hdf5_SpMat::compress " << Timer.total("Gen") << "\n";
 #endif
 
-  // gather segment 
+  // gather segment
   //std::vector<int> counts, displ;
   //if(coreid == 0) {
   //  counts.resize(nnodes);
   //  displ.resize(nnodes+1);
   //}
- 
+
   return true;
 }
 
-template<class SpMatrix,
-         class SpMatrix_Partition,
-         class task_group
-         >
-inline bool single_reader_hdf5_SpMat(SpMatrix& SpM, SpMatrix_Partition& split, hdf_archive& dump, int nblk, task_group& TG)
+template<class SpMatrix, class SpMatrix_Partition, class task_group>
+inline bool single_reader_hdf5_SpMat(SpMatrix& SpM,
+                                     SpMatrix_Partition& split,
+                                     hdf_archive& dump,
+                                     int nblk,
+                                     task_group& TG)
 {
   return true;
 }
 
 
-template<class SpMatrix_Partition,
-         class IVec,
-         class task_group
-         >
-inline bool multiple_reader_count_entries(hdf_archive& dump, SpMatrix_Partition& split, int nblk, bool byRow, IVec& counts, task_group& TG, int n_working_cores)
+template<class SpMatrix_Partition, class IVec, class task_group>
+inline bool multiple_reader_count_entries(hdf_archive& dump,
+                                          SpMatrix_Partition& split,
+                                          int nblk,
+                                          bool byRow,
+                                          IVec& counts,
+                                          task_group& TG,
+                                          int n_working_cores)
 {
   double cut = split.getCutoff();
   int dim;
-  if(byRow) 
-    std::tie(dim,std::ignore) = split.getDimensions();
-  else 
-    std::tie(std::ignore,dim) = split.getDimensions();
+  if (byRow)
+    std::tie(dim, std::ignore) = split.getDimensions();
+  else
+    std::tie(std::ignore, dim) = split.getDimensions();
   counts.resize(dim);
-  std::fill(counts.begin(),counts.end(),0); 
+  std::fill(counts.begin(), counts.end(), 0);
   assert(sizeof(counts[0]) == sizeof(int));
 
-  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID() , coreid = TG.getCoreID();
+  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID(), coreid = TG.getCoreID();
 
   // process hdf5 file
-  if( coreid < n_working_cores ) {
-
+  if (coreid < n_working_cores)
+  {
     std::vector<int> block_size(nblk);
-    if(!dump.readEntry(block_size,std::string("block_sizes"))) {
-      app_error()<<" Error in multiple_reader_count_entries: Problems reading ***_block_sizes dataset. \n";
+    if (!dump.readEntry(block_size, std::string("block_sizes")))
+    {
+      app_error() << " Error in multiple_reader_count_entries: Problems reading ***_block_sizes dataset. \n";
       return false;
     }
 
     int ntmax = *std::max_element(block_size.begin(), block_size.end());
     std::vector<IndexType> ivec;
     std::vector<ValueType> vvec;
-    ivec.reserve(2*ntmax);
+    ivec.reserve(2 * ntmax);
     vvec.reserve(ntmax);
-  
+
     std::vector<int> pool_dist;
     // divide blocks over n_working_cores groups
-    FairDivide(nblk,n_working_cores,pool_dist); 
+    FairDivide(nblk, n_working_cores, pool_dist);
 
     int first_local_block = pool_dist[coreid];
-    int last_local_block = pool_dist[coreid+1];
+    int last_local_block  = pool_dist[coreid + 1];
 
-    for(int ib=first_local_block; ib<last_local_block; ib++) {
-      if( ib%nnodes != nodeid ) continue;
-      ivec.resize(2*block_size[ib]);
+    for (int ib = first_local_block; ib < last_local_block; ib++)
+    {
+      if (ib % nnodes != nodeid)
+        continue;
+      ivec.resize(2 * block_size[ib]);
       vvec.resize(block_size[ib]);
-      if(!dump.readEntry(ivec,std::string("index_")+std::to_string(ib))) {
-        app_error()<<" Error in multiple_reader_count_entries: Problems reading ***_index_" <<ib <<" dataset. \n";
+      if (!dump.readEntry(ivec, std::string("index_") + std::to_string(ib)))
+      {
+        app_error() << " Error in multiple_reader_count_entries: Problems reading ***_index_" << ib << " dataset. \n";
         return false;
       }
-      if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(ib))) {
-        app_error()<<" Error in multiple_reader_count_entries: Problems reading ***_vals_" <<ib <<" dataset. \n";
+      if (!dump.readEntry(vvec, std::string("vals_") + std::to_string(ib)))
+      {
+        app_error() << " Error in multiple_reader_count_entries: Problems reading ***_vals_" << ib << " dataset. \n";
         return false;
-      } 
-      if(byRow) { 
-        for(int ik=0, ikend=block_size[ib]; ik<ikend; ik++) {
-          if(std::abs(vvec[ik]) > cut) {
-            assert(ivec[2*ik] < dim);
-            counts[ivec[2*ik]]++;
+      }
+      if (byRow)
+      {
+        for (int ik = 0, ikend = block_size[ib]; ik < ikend; ik++)
+        {
+          if (std::abs(vvec[ik]) > cut)
+          {
+            assert(ivec[2 * ik] < dim);
+            counts[ivec[2 * ik]]++;
           }
         }
-      } else {
-        for(int ik=0, ikend=block_size[ib]; ik<ikend; ik++) {
-          if(std::abs(vvec[ik]) > cut) {
-            assert(ivec[2*ik+1] < dim);
-            counts[ivec[2*ik+1]]++;
+      }
+      else
+      {
+        for (int ik = 0, ikend = block_size[ib]; ik < ikend; ik++)
+        {
+          if (std::abs(vvec[ik]) > cut)
+          {
+            assert(ivec[2 * ik + 1] < dim);
+            counts[ivec[2 * ik + 1]]++;
           }
         }
       }
@@ -288,96 +315,115 @@ inline bool multiple_reader_count_entries(hdf_archive& dump, SpMatrix_Partition&
   }
 
   IVec a(counts);
-  MPI_Allreduce(a.data(),counts.data(),counts.size(),MPI_INT,MPI_SUM,&(TG.Global()));
+  MPI_Allreduce(a.data(), counts.data(), counts.size(), MPI_INT, MPI_SUM, &(TG.Global()));
   return true;
 }
 
-template<class SpMatrix_Partition,
-         class IVec,
-         class task_group
-         >
-inline bool single_reader_count_entries(hdf_archive& dump, SpMatrix_Partition& split, int nblk, bool byRow, IVec& counts, task_group& TG)
+template<class SpMatrix_Partition, class IVec, class task_group>
+inline bool single_reader_count_entries(hdf_archive& dump,
+                                        SpMatrix_Partition& split,
+                                        int nblk,
+                                        bool byRow,
+                                        IVec& counts,
+                                        task_group& TG)
 {
-  if(TG.getCoreID() != 0)
+  if (TG.getCoreID() != 0)
     return true;
 
   int dim;
-  if(byRow) 
-    std::tie(dim,std::ignore) = split.getDimensions();
-  else 
-    std::tie(std::ignore,dim) = split.getDimensions();
+  if (byRow)
+    std::tie(dim, std::ignore) = split.getDimensions();
+  else
+    std::tie(std::ignore, dim) = split.getDimensions();
   double cut = split.getCutoff();
   counts.resize(dim);
-  std::fill(counts.begin(),counts.end(),0); 
+  std::fill(counts.begin(), counts.end(), 0);
 
   std::vector<int> block_size(nblk);
-  if(!dump.readEntry(block_size,std::string("block_sizes"))) {
-    app_error()<<" Error in single_reader_count_entries: Problems reading ***_block_sizes dataset. \n";
+  if (!dump.readEntry(block_size, std::string("block_sizes")))
+  {
+    app_error() << " Error in single_reader_count_entries: Problems reading ***_block_sizes dataset. \n";
     return false;
   }
 
   int ntmax = *std::max_element(block_size.begin(), block_size.end());
   std::vector<IndexType> ivec;
   std::vector<ValueType> vvec;
-  ivec.reserve(2*ntmax);
+  ivec.reserve(2 * ntmax);
   vvec.reserve(ntmax);
 
-  for(int ib=0; ib<nblk; ib++) { 
-
-    ivec.resize(2*block_size[ib]);
+  for (int ib = 0; ib < nblk; ib++)
+  {
+    ivec.resize(2 * block_size[ib]);
     vvec.resize(block_size[ib]);
-    if(!dump.readEntry(ivec,std::string("index_")+std::to_string(ib))) {
-      app_error()<<" Error in single_reader_count_entries: Problems reading ***_index_" <<ib <<" dataset. \n";
+    if (!dump.readEntry(ivec, std::string("index_") + std::to_string(ib)))
+    {
+      app_error() << " Error in single_reader_count_entries: Problems reading ***_index_" << ib << " dataset. \n";
       return false;
     }
-    if(!dump.readEntry(vvec,std::string("vals_")+std::to_string(ib))) {
-      app_error()<<" Error in single_reader_count_entries: Problems reading ***_vals_" <<ib <<" dataset. \n";
+    if (!dump.readEntry(vvec, std::string("vals_") + std::to_string(ib)))
+    {
+      app_error() << " Error in single_reader_count_entries: Problems reading ***_vals_" << ib << " dataset. \n";
       return false;
     }
-    if(byRow) {
-      for(int ik=0, ikend=block_size[ib]; ik<ikend; ik++) {
-        if(std::abs(vvec[ik]) > cut) {
-          assert(ivec[2*ik] < dim);
-          counts[ivec[2*ik]]++;
+    if (byRow)
+    {
+      for (int ik = 0, ikend = block_size[ib]; ik < ikend; ik++)
+      {
+        if (std::abs(vvec[ik]) > cut)
+        {
+          assert(ivec[2 * ik] < dim);
+          counts[ivec[2 * ik]]++;
         }
       }
-    } else {
-      for(int ik=0, ikend=block_size[ib]; ik<ikend; ik++) {
-        if(std::abs(vvec[ik]) > cut) {
-          assert(ivec[2*ik+1] < dim);
-          counts[ivec[2*ik+1]]++;
+    }
+    else
+    {
+      for (int ik = 0, ikend = block_size[ib]; ik < ikend; ik++)
+      {
+        if (std::abs(vvec[ik]) > cut)
+        {
+          assert(ivec[2 * ik + 1] < dim);
+          counts[ivec[2 * ik + 1]]++;
         }
       }
     }
   }
- 
+
   return true;
 }
 
-template<class SpMatrix,
-         class SpMatrix_Partition,
-         class task_group
-         >
-inline bool read_hdf5_SpMat(SpMatrix& SpM, SpMatrix_Partition& split, hdf_archive& dump, int nblk, task_group& TG, bool parallel_read=true, int n_working_cores=1)
+template<class SpMatrix, class SpMatrix_Partition, class task_group>
+inline bool read_hdf5_SpMat(SpMatrix& SpM,
+                            SpMatrix_Partition& split,
+                            hdf_archive& dump,
+                            int nblk,
+                            task_group& TG,
+                            bool parallel_read  = true,
+                            int n_working_cores = 1)
 {
-  assert(n_working_cores>=1);
-  if(parallel_read)
-    return multiple_reader_hdf5_SpMat(SpM,split,dump,nblk,TG,n_working_cores);
+  assert(n_working_cores >= 1);
+  if (parallel_read)
+    return multiple_reader_hdf5_SpMat(SpM, split, dump, nblk, TG, n_working_cores);
   else
-    return single_reader_hdf5_SpMat(SpM,split,dump,nblk,TG);
+    return single_reader_hdf5_SpMat(SpM, split, dump, nblk, TG);
 }
 
-template<class SpMatrix_Partition,
-         class IVec,
-         class task_group
-         >
-inline bool count_entries_hdf5_SpMat(hdf_archive& dump, SpMatrix_Partition& split, int nblk, bool byRow, IVec& counts, task_group& TG, bool parallel_read=true, int n_working_cores=1)
+template<class SpMatrix_Partition, class IVec, class task_group>
+inline bool count_entries_hdf5_SpMat(hdf_archive& dump,
+                                     SpMatrix_Partition& split,
+                                     int nblk,
+                                     bool byRow,
+                                     IVec& counts,
+                                     task_group& TG,
+                                     bool parallel_read  = true,
+                                     int n_working_cores = 1)
 {
-  assert(n_working_cores>=1);
-  if(parallel_read)
-    return multiple_reader_count_entries(dump,split,nblk,byRow,counts,TG,n_working_cores);
+  assert(n_working_cores >= 1);
+  if (parallel_read)
+    return multiple_reader_count_entries(dump, split, nblk, byRow, counts, TG, n_working_cores);
   else
-    return single_reader_count_entries(dump,split,nblk,byRow,counts,TG);
+    return single_reader_count_entries(dump, split, nblk, byRow, counts, TG);
 }
 
 /*
@@ -535,8 +581,8 @@ inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, st
 } 
 */
 
-}
+} // namespace afqmc
 
-}
+} // namespace qmcplusplus
 
 #endif

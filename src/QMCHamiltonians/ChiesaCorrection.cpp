@@ -12,7 +12,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ChiesaCorrection.h"
+#include "ChiesaCorrection.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
@@ -21,7 +22,7 @@ void ChiesaCorrection::resetTargetParticleSet(ParticleSet& P) {}
 bool ChiesaCorrection::put(xmlNodePtr cur) { return true; }
 
 
-QMCHamiltonianBase* ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new ChiesaCorrection(qp, psi);
 }
@@ -30,11 +31,12 @@ ChiesaCorrection::Return_t ChiesaCorrection::evaluate(ParticleSet& P) { return V
 #ifdef QMC_CUDA
 void ChiesaCorrection::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
+  using WP = WalkerProperties::Indexes;
   RealType corr                   = psi_ref.KECorrection();
   std::vector<Walker_t*>& walkers = W.WalkerList;
   for (int iw = 0; iw < LocalEnergy.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = corr;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = corr;
     LocalEnergy[iw] += corr;
   }
 }

@@ -13,23 +13,29 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-#include "QMCWaveFunctions/WaveFunctionComponent.h"
+
+
+#include "WaveFunctionComponent.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 
 namespace qmcplusplus
 {
-WaveFunctionComponent::WaveFunctionComponent():
-  IsOptimizing(false), Optimizable(true), UpdateMode(ORB_WALKER),
-  LogValue(1.0),PhaseValue(0.0),ClassName("WaveFunctionComponent"),
-  derivsDone(false), parameterType(0), Bytes_in_WFBuffer(0)
-#if !defined(ENABLE_SMARTPOINTER)
-  ,dPsi(0), ionDerivs(false)
-#endif
-{ 
-  ///store instead of computing
-  Need2Compute4PbyP=false;
+// for return types
+using PsiValueType = WaveFunctionComponent::PsiValueType;
+
+WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, const std::string& obj_name)
+    : IsOptimizing(false),
+      Optimizable(true),
+      is_fermionic(false),
+      UpdateMode(ORB_WALKER),
+      LogValue(0.0),
+      dPsi(nullptr),
+      ClassName(class_name),
+      myName(obj_name),
+      Bytes_in_WFBuffer(0)
+{
+  if (ClassName.empty())
+    throw std::runtime_error("WaveFunctionComponent ClassName cannot be empty!");
 }
 
 // WaveFunctionComponent::WaveFunctionComponent(const WaveFunctionComponent& old):
@@ -44,60 +50,90 @@ WaveFunctionComponent::WaveFunctionComponent():
 // }
 
 
-void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d)
+PsiValueType WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-#if defined(ENABLE_SMARTPOINTER)
-  dPsi=DiffWaveFunctionComponentPtr(d);
-#else
-  dPsi=d;
-#endif
+  APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
+  return ValueType();
 }
 
-void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
-                                      const opt_variables_type& active,
-                                      std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
+void WaveFunctionComponent::ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat)
 {
-#if defined(ENABLE_SMARTPOINTER)
-  if (dPsi.get())
-#else
+#pragma omp task default(none) firstprivate(iat) shared(P, ratio, grad_iat)
+  ratio = ratioGrad(P, iat, grad_iat);
+}
+
+void WaveFunctionComponent::mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                                         const RefVector<ParticleSet>& P_list,
+                                         int iat,
+                                         std::vector<PsiValueType>& ratios,
+                                         std::vector<GradType>& grad_new)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    ratios[iw] = WFC_list[iw].get().ratioGrad(P_list[iw], iat, grad_new[iw]);
+}
+
+void WaveFunctionComponent::mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& WFC_list,
+                                              const RefVector<ParticleSet>& P_list,
+                                              int iat,
+                                              std::vector<PsiValueType>& ratios,
+                                              std::vector<GradType>& grad_new)
+{
+#pragma omp task default(none) firstprivate(WFC_list, P_list, iat) shared(ratios, grad_new)
+  mw_ratioGrad(WFC_list, P_list, iat, ratios, grad_new);
+}
+
+
+void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d) { dPsi = d; }
+
+void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
+                                                const opt_variables_type& active,
+                                                std::vector<ValueType>& dlogpsi,
+                                                std::vector<ValueType>& dhpsioverpsi)
+{
   if (dPsi)
-#endif
     dPsi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
+}
+
+void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
+                                                  const opt_variables_type& active,
+                                                  std::vector<ValueType>& dlogpsi)
+{
+  if (dPsi)
+    dPsi->evaluateDerivativesWF(P, active, dlogpsi);
 }
 
 /*@todo makeClone should be a pure virtual function
  */
 WaveFunctionComponentPtr WaveFunctionComponent::makeClone(ParticleSet& tpq) const
 {
-  APP_ABORT("Implement WaveFunctionComponent::makeClone "+ClassName+ " class.");
+  APP_ABORT("Implement WaveFunctionComponent::makeClone " + ClassName + " class.");
   return 0;
 }
 
-WaveFunctionComponent::RealType WaveFunctionComponent::KECorrection()
-{
-  return 0;
-}
+WaveFunctionComponent::RealType WaveFunctionComponent::KECorrection() { return 0; }
 
 void WaveFunctionComponent::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  assert(P.getTotalNum()==ratios.size());
-  for (int i=0; i<P.getTotalNum(); ++i)
-    ratios[i]=ratio(P,i);
+  assert(P.getTotalNum() == ratios.size());
+  for (int i = 0; i < P.getTotalNum(); ++i)
+    ratios[i] = ratio(P, i);
 }
 
-void WaveFunctionComponent::evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios)
+void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::ostringstream o;
   o << "WaveFunctionComponent::evaluateRatios is not implemented by " << ClassName;
   APP_ABORT(o.str());
 }
 
-void WaveFunctionComponent::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-    std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
+void WaveFunctionComponent::evaluateDerivRatios(VirtualParticleSet& VP,
+                                                const opt_variables_type& optvars,
+                                                std::vector<ValueType>& ratios,
+                                                Matrix<ValueType>& dratios)
 {
   //default is only ratios and zero derivatives
-  evaluateRatios(VP,ratios);
+  evaluateRatios(VP, ratios);
 }
 
-}
-
+} // namespace qmcplusplus

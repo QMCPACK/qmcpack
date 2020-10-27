@@ -1,6 +1,6 @@
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -15,12 +15,12 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "DiracDeterminant.h"
+#include <stdexcept>
+#include "CPU/BLAS.hpp"
+#include "CPU/SIMD/simd.hpp"
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
-#include "simd/simd.hpp"
 
 namespace qmcplusplus
 {
@@ -30,10 +30,8 @@ namespace qmcplusplus
  */
 template<typename DU_TYPE>
 DiracDeterminant<DU_TYPE>::DiracDeterminant(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase(spos, first), ndelay(1), invRow_id(-1)
-{
-  ClassName = "DiracDeterminant";
-}
+    : DiracDeterminantBase("DiracDeterminant", spos, first), ndelay(1), invRow_id(-1)
+{}
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
@@ -44,14 +42,18 @@ void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
 {
   FirstIndex = first;
   ndelay     = delay;
+
   resize(nel, nel);
+
+  if (Optimizable)
+    Phi->buildOptVariables(nel);
 }
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
-  updateEng.invert_transpose(logdetT, invMat, LogValue, PhaseValue);
+  updateEng.invert_transpose(logdetT, invMat, LogValue);
   InverseTimer.stop();
 }
 
@@ -60,6 +62,8 @@ void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMa
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
 {
+  if (Bytes_in_WFBuffer > 0)
+    throw std::runtime_error("DiracDeterimnant just went out of sync with buffer");
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
@@ -75,47 +79,71 @@ void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
   NumOrbitals = norb;
 
   dpsiV.resize(NumOrbitals);
+  dspin_psiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
   FirstAddressOfdV = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
   LastAddressOfdV  = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
-
-  if (ionDerivs)
-  {
-    grad_source_psiM.resize(nel, norb);
-    grad_lapl_source_psiM.resize(nel, norb);
-    grad_grad_source_psiM.resize(nel, norb);
-    phi_alpha_Minv.resize(nel, norb);
-    grad_phi_Minv.resize(nel, norb);
-    lapl_phi_Minv.resize(nel, norb);
-    grad_phi_alpha_Minv.resize(nel, norb);
-  }
 }
 
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad(ParticleSet& P, int iat)
 {
-  const int WorkingIndex = iat - FirstIndex;
   RatioTimer.start();
+  const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
   invRow_id = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
+#ifndef NDEBUG
+  ValueType g_norm = simd::dot(g.data(), g.data(), g.Size);
+  if (std::abs(g_norm) < std::abs(std::numeric_limits<QMCTraits::ValueType>::epsilon()))
+  {
+    std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
+    throw std::runtime_error("gradient of zero");
+  }
+#endif
   return g;
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratioGrad(ParticleSet& P,
-                                                                                   int iat,
-                                                                                   GradType& grad_iat)
+typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradWithSpin(ParticleSet& P,
+                                                                                         int iat,
+                                                                                         ComplexType& spingrad)
 {
-  SPOVGLTimer.start();
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
-  SPOVGLTimer.stop();
+  Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  UpdateMode             = ORB_PBYP_PARTIAL;
-  GradType rv;
+  assert(WorkingIndex >= 0);
+  invRow_id = WorkingIndex;
+  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  GradType g         = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
+  ComplexType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
+  RatioTimer.stop();
 
+  spingrad += spin_g;
+  return g;
+}
+
+template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGrad(ParticleSet& P,
+                                                                                      int iat,
+                                                                                      GradType& grad_iat)
+{
+  SPOVGLTimer.start();
+  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
+  SPOVGLTimer.stop();
+  return ratioGrad_compute(iat, grad_iat);
+}
+
+template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGrad_compute(int iat,
+                                                                                              GradType& grad_iat)
+{
+  UpdateMode = ORB_PBYP_PARTIAL;
+  RatioTimer.start();
+  const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
   // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
   // Some code paths call evalGrad before calling ratioGrad.
@@ -125,21 +153,92 @@ typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratioGr
     updateEng.getInvRow(psiM, WorkingIndex, invRow);
   }
   curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
-  grad_iat += ((RealType)1.0 / curRatio) * simd::dot(invRow.data(), dpsiV.data(), invRow.size());
+  grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
+      simd::dot(invRow.data(), dpsiV.data(), invRow.size());
   RatioTimer.stop();
   return curRatio;
 }
 
+template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratioGradWithSpin(ParticleSet& P,
+                                                                                              int iat,
+                                                                                              GradType& grad_iat,
+                                                                                              ComplexType& spingrad_iat)
+{
+  SPOVGLTimer.start();
+  Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
+  SPOVGLTimer.stop();
+
+  UpdateMode = ORB_PBYP_PARTIAL;
+  RatioTimer.start();
+  const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
+  // This is an optimization.
+  // check invRow_id against WorkingIndex to see if getInvRow() has been called already
+  // Some code paths call evalGrad before calling ratioGrad.
+  if (invRow_id != WorkingIndex)
+  {
+    invRow_id = WorkingIndex;
+    updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  }
+  curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
+  grad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
+      simd::dot(invRow.data(), dpsiV.data(), invRow.size());
+
+  spingrad_iat += static_cast<ValueType>(static_cast<PsiValueType>(1.0) / curRatio) *
+      simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
+  RatioTimer.stop();
+
+  return curRatio;
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                                             const RefVector<ParticleSet>& P_list,
+                                             int iat,
+                                             std::vector<PsiValueType>& ratios,
+                                             std::vector<GradType>& grad_new)
+{
+  SPOVGLTimer.start();
+  RefVector<SPOSet> phi_list;
+  phi_list.reserve(WFC_list.size());
+  RefVector<ValueVector_t> psi_v_list;
+  psi_v_list.reserve(WFC_list.size());
+  RefVector<GradVector_t> dpsi_v_list;
+  dpsi_v_list.reserve(WFC_list.size());
+  RefVector<ValueVector_t> d2psi_v_list;
+  d2psi_v_list.reserve(WFC_list.size());
+
+  for (WaveFunctionComponent& wfc : WFC_list)
+  {
+    auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc);
+    phi_list.push_back(*det.Phi);
+    psi_v_list.push_back(det.psiV);
+    dpsi_v_list.push_back(det.dpsiV);
+    d2psi_v_list.push_back(det.d2psiV);
+  }
+
+  Phi->mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+  SPOVGLTimer.stop();
+
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    ratios[iw] = static_cast<DiracDeterminant<DU_TYPE>&>(WFC_list[iw].get()).ratioGrad_compute(iat, grad_new[iw]);
+}
+
+
 /** move was accepted, update the real container
 */
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat)
+void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   const int WorkingIndex = iat - FirstIndex;
-  PhaseValue += evaluatePhase(curRatio);
-  LogValue += std::log(std::abs(curRatio));
+  assert(WorkingIndex >= 0);
+  LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
   updateEng.acceptRow(psiM, WorkingIndex, psiV);
+  if (!safe_to_delay)
+    updateEng.updateInvMat(psiM);
   // invRow becomes invalid after accepting a move
   invRow_id = -1;
   if (UpdateMode == ORB_PBYP_PARTIAL)
@@ -219,15 +318,20 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
   else
   {
     buf.forward(Bytes_in_WFBuffer);
+#ifndef NDEBUG
+    // this causes too much output in the legacy code.
+    // \todo turn this back on after legacy is dropped,
+    // I don't think it should print at all in the new design
+    // std::cerr << ("You really should know whether you have registered this objects data previously!, consider this an error in the unified code");
+#endif
   }
   buf.add(LogValue);
-  buf.add(PhaseValue);
 }
 
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::RealType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
-                                                                                     WFBufferType& buf,
-                                                                                     bool fromscratch)
+typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
+                                                                                         WFBufferType& buf,
+                                                                                         bool fromscratch)
 {
   if (fromscratch)
   {
@@ -240,7 +344,6 @@ typename DiracDeterminant<DU_TYPE>::RealType DiracDeterminant<DU_TYPE>::updateBu
   BufferTimer.start();
   buf.forward(Bytes_in_WFBuffer);
   buf.put(LogValue);
-  buf.put(PhaseValue);
   BufferTimer.stop();
   return LogValue;
 }
@@ -253,7 +356,6 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
   dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
   d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
-  buf.get(PhaseValue);
   // start with invRow labelled invalid
   invRow_id = -1;
   updateEng.initializeInv(psiM);
@@ -265,12 +367,13 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
  * @param iat the particle thas is being moved
  */
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratio(ParticleSet& P, int iat)
+typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratio(ParticleSet& P, int iat)
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
   SPOVTimer.start();
-  Phi->evaluate(P, iat, psiV);
+  Phi->evaluateValue(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
   // This is an optimization.
@@ -287,13 +390,60 @@ typename DiracDeterminant<DU_TYPE>::ValueType DiracDeterminant<DU_TYPE>::ratio(P
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  SPOVTimer.start();
+  RatioTimer.start();
   const int WorkingIndex = VP.refPtcl - FirstIndex;
-  invRow_id              = WorkingIndex;
-  updateEng.getInvRow(psiM, WorkingIndex, invRow);
+  assert(WorkingIndex >= 0);
+  std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
+  RatioTimer.stop();
+  SPOVTimer.start();
   Phi->evaluateDetRatios(VP, psiV, invRow, ratios);
+  SPOVTimer.stop();
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
+                                                  const RefVector<const VirtualParticleSet>& vp_list,
+                                                  std::vector<std::vector<ValueType>>& ratios)
+{
+  RatioTimer.start();
+  const size_t nw = wfc_list.size();
+
+  RefVector<SPOSet> phi_list;
+  RefVector<ValueVector_t> psiV_list;
+  std::vector<const ValueType*> invRow_ptr_list;
+  phi_list.reserve(nw);
+  psiV_list.reserve(nw);
+  invRow_ptr_list.reserve(nw);
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
+    const VirtualParticleSet& vp(vp_list[iw]);
+    const int WorkingIndex = vp.refPtcl - FirstIndex;
+    assert(WorkingIndex >= 0);
+    // If DiracDeterminant is in a valid state this copy_n is not necessary.
+    // That is at minimum a call to evaluateLog and ...
+    // std::copy_n(det.psiM[WorkingIndex], det.invRow.s.ize(), det.invRow.data());
+    // build lists
+    phi_list.push_back(*det.Phi);
+    psiV_list.push_back(det.psiV);
+    invRow_ptr_list.push_back(det.psiM[WorkingIndex]);
+  }
+  RatioTimer.stop();
+
+  SPOVTimer.start();
+  // Phi->isOMPoffload() requires device invRow pointers for mw_evaluateDetRatios.
+  // evaluateDetRatios only requires host invRow pointers.
+  if (Phi->isOMPoffload())
+    for (int iw = 0; iw < phi_list.size(); iw++)
+    {
+      Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psiV_list[iw].get().size());
+      phi_list[iw].get().evaluateDetRatios(vp_list[iw], psiV_list[iw], invRow, ratios[iw]);
+    }
+  else
+    Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
   SPOVTimer.stop();
 }
 
@@ -301,9 +451,22 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
-  Phi->evaluate(P, -1, psiV);
+  Phi->evaluateValue(P, -1, psiV);
   SPOVTimer.stop();
   MatrixOperators::product(psiM, psiV.data(), &ratios[FirstIndex]);
+}
+
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::resizeScratchObjectsForIonDerivs()
+{
+  grad_source_psiM.resize(NumPtcls, NumOrbitals);
+  grad_lapl_source_psiM.resize(NumPtcls, NumOrbitals);
+  grad_grad_source_psiM.resize(NumPtcls, NumOrbitals);
+  phi_alpha_Minv.resize(NumPtcls, NumOrbitals);
+  grad_phi_Minv.resize(NumPtcls, NumOrbitals);
+  lapl_phi_Minv.resize(NumPtcls, NumOrbitals);
+  grad_phi_alpha_Minv.resize(NumPtcls, NumOrbitals);
 }
 
 template<typename DU_TYPE>
@@ -311,118 +474,15 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
                                                                                        ParticleSet& source,
                                                                                        int iat)
 {
-  if (!ionDerivs)
-    APP_ABORT("template<typename DU_TYPE>DiracDeterminant<DU_TYPE>::evalGradSource.  Determinant not initialized for "
-              "force computations.");
-  Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
-  return simd::dot(psiM.data(), grad_source_psiM.data(), psiM.size());
-}
-
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGradSourcep(
-    ParticleSet& P,
-    ParticleSet& source,
-    int iat,
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
-{
-  if (!ionDerivs)
-    APP_ABORT("template<typename DU_TYPE>DiracDeterminant<DU_TYPE>::evalGradSourcep.  Determinant not initialized for "
-              "force computations.");
-  Phi->evaluateGradSource(P,
-                          FirstIndex,
-                          LastIndex,
-                          source,
-                          iat,
-                          grad_source_psiM,
-                          grad_grad_source_psiM,
-                          grad_lapl_source_psiM);
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
-
-  invertPsiM(psiM_temp, psiM);
-
-  GradMatrix_t& Phi_alpha(grad_source_psiM);
-  GradMatrix_t& Grad_phi(dpsiM);
-  ValueMatrix_t& Grad2_phi(d2psiM);
-  HessMatrix_t& Grad_phi_alpha(grad_grad_source_psiM);
-  GradMatrix_t& Grad2_phi_alpha(grad_lapl_source_psiM);
-  GradType Psi_alpha_over_psi;
-  Psi_alpha_over_psi = evalGradSource(P, source, iat);
-  std::ofstream outfile;
-  outfile.open("grad_psi_alpha_over_psi", std::ios::app);
-  ValueMatrix_t toDet;
-  ValueMatrix_t toDet_l;
-  toDet.resize(2, 2);
-  toDet_l.resize(2, 2);
-  for (int ptcl = 0; ptcl < NumPtcls; ptcl++)
+  GradType g(0.0);
+  if (Phi->hasIonDerivs())
   {
-    ValueType Grad2_psi_over_psi(0.0);
-    GradType Grad_psi_over_psi(0.0);
-    HessType Grad_psi_alpha_over_psi(0.0);
-    HessType one_row_change(0.0);
-    HessType two_row_change(0.0);
-    GradType one_row_change_l(0.0);
-    GradType two_row_change_l(0.0);
-    for (int el_dim = 0; el_dim < OHMMS_DIM; el_dim++)
-    {
-      for (int orbital = 0; orbital < NumOrbitals; orbital++)
-      {
-        Grad_psi_over_psi[el_dim] += Grad_phi(ptcl, orbital)[el_dim] * psiM(ptcl, orbital);
-        if (el_dim == 0)
-          Grad2_psi_over_psi += Grad2_phi(ptcl, orbital) * psiM(ptcl, orbital);
-      }
-      for (int dim = 0; dim < OHMMS_DIM; dim++)
-      {
-        one_row_change(dim, el_dim) = 0.0;
-        for (int orbital = 0; orbital < NumOrbitals; orbital++)
-        {
-          one_row_change(dim, el_dim) += Grad_phi_alpha(ptcl, orbital)(dim, el_dim) * psiM(ptcl, orbital);
-          if (el_dim == 0)
-            one_row_change_l[dim] += Grad2_phi_alpha(ptcl, orbital)[dim] * psiM(ptcl, orbital);
-        }
-        for (int ptcl2 = 0; ptcl2 < NumPtcls; ptcl2++)
-        {
-          if (ptcl != ptcl2)
-          {
-            toDet   = 0.0;
-            toDet_l = 0.0;
-            for (int orbital = 0; orbital < NumOrbitals; orbital++)
-            {
-              toDet(0, 0) += Grad_phi(ptcl, orbital)[el_dim] * psiM(ptcl, orbital);
-              toDet_l(0, 0) += Grad2_phi(ptcl, orbital) * psiM(ptcl, orbital);
-              toDet(0, 1) += Grad_phi(ptcl, orbital)[el_dim] * psiM(ptcl2, orbital);
-              toDet_l(0, 1) += Grad2_phi(ptcl, orbital) * psiM(ptcl2, orbital);
-              toDet(1, 0) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl, orbital);
-              toDet_l(1, 0) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl, orbital);
-              toDet(1, 1) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl2, orbital);
-              toDet_l(1, 1) += Phi_alpha(ptcl2, orbital)[dim] * psiM(ptcl2, orbital);
-            }
-            two_row_change(dim, el_dim) += toDet(0, 0) * toDet(1, 1) - toDet(1, 0) * toDet(0, 1);
-            if (el_dim == 0)
-              two_row_change_l[dim] += toDet_l(0, 0) * toDet_l(1, 1) - toDet_l(1, 0) * toDet_l(0, 1);
-          }
-        }
-        Grad_psi_alpha_over_psi(dim, el_dim) = one_row_change(dim, el_dim) + two_row_change(dim, el_dim);
-        outfile << Grad_psi_alpha_over_psi(dim, el_dim) << std::endl;
-        grad_grad[dim][ptcl][el_dim] = one_row_change(dim, el_dim) + two_row_change(dim, el_dim) -
-            Grad_psi_over_psi[el_dim] * Psi_alpha_over_psi[dim];
-      }
-    }
-    for (int dim = 0; dim < OHMMS_DIM; dim++)
-    {
-      lapl_grad[dim][ptcl] = 0.0;
-      lapl_grad[dim][ptcl] +=
-          one_row_change_l[dim] + two_row_change_l[dim] - Psi_alpha_over_psi[dim] * Grad2_psi_over_psi;
-      for (int el_dim = 0; el_dim < OHMMS_DIM; el_dim++)
-      {
-        lapl_grad[dim][ptcl] -= (RealType)2.0 * Grad_psi_alpha_over_psi(dim, el_dim) * Grad_psi_over_psi[el_dim];
-        lapl_grad[dim][ptcl] +=
-            (RealType)2.0 * Psi_alpha_over_psi[dim] * (Grad_psi_over_psi[el_dim] * Grad_psi_over_psi[el_dim]);
-      }
-    }
+    resizeScratchObjectsForIonDerivs();
+    Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
+    g = simd::dot(psiM.data(), grad_source_psiM.data(), psiM.size());
   }
-  outfile.close();
-  return Psi_alpha_over_psi;
+
+  return g;
 }
 
 template<typename DU_TYPE>
@@ -459,96 +519,92 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
     TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
 {
-  if (!ionDerivs)
-    APP_ABORT("template<typename DU_TYPE>DiracDeterminant<DU_TYPE>::evalGradSource.  Determinant not initialized for "
-              "force computations.");
-  Phi->evaluateGradSource(P,
-                          FirstIndex,
-                          LastIndex,
-                          source,
-                          iat,
-                          grad_source_psiM,
-                          grad_grad_source_psiM,
-                          grad_lapl_source_psiM);
-  // HACK HACK HACK
-  // Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-  // psiM_temp = psiM;
-  // LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
-  // 			   WorkSpace.data(),Pivot.data(),PhaseValue);
-  // for (int i=0; i<NumPtcls; i++)
-  //   for (int j=0; j<NumPtcls; j++) {
-  // 	double val = 0.0;
-  // 	for (int k=0; k<NumPtcls; k++)
-  // 	  val += psiM(i,k) * psiM_temp(k,j);
-  // 	val -= (i == j) ? 1.0 : 0.0;
-  // 	if (std::abs(val) > 1.0e-12)
-  // 	  std::cerr << "Error in inverse.\n";
-  //   }
-  // for (int i=0; i<NumPtcls; i++) {
-  //   P.G[FirstIndex+i] = GradType();
-  //   for (int j=0; j<NumOrbitals; j++)
-  // 	P.G[FirstIndex+i] += psiM(i,j)*dpsiM(i,j);
-  // }
-  // Compute matrices
-  phi_alpha_Minv      = 0.0;
-  grad_phi_Minv       = 0.0;
-  lapl_phi_Minv       = 0.0;
-  grad_phi_alpha_Minv = 0.0;
-  for (int i = 0; i < NumPtcls; i++)
-    for (int j = 0; j < NumOrbitals; j++)
-    {
-      lapl_phi_Minv(i, j) = 0.0;
-      for (int k = 0; k < NumOrbitals; k++)
-        lapl_phi_Minv(i, j) += d2psiM(i, k) * psiM(j, k);
-    }
-  for (int dim = 0; dim < OHMMS_DIM; dim++)
+  GradType gradPsi(0.0);
+  if (Phi->hasIonDerivs())
   {
+    resizeScratchObjectsForIonDerivs();
+    Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM, grad_grad_source_psiM,
+                            grad_lapl_source_psiM);
+    // HACK HACK HACK
+    // Phi->evaluateVGL(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+    // psiM_temp = psiM;
+    // LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
+    // 			   WorkSpace.data(),Pivot.data(),PhaseValue);
+    // for (int i=0; i<NumPtcls; i++)
+    //   for (int j=0; j<NumPtcls; j++) {
+    // 	double val = 0.0;
+    // 	for (int k=0; k<NumPtcls; k++)
+    // 	  val += psiM(i,k) * psiM_temp(k,j);
+    // 	val -= (i == j) ? 1.0 : 0.0;
+    // 	if (std::abs(val) > 1.0e-12)
+    // 	  std::cerr << "Error in inverse.\n";
+    //   }
+    // for (int i=0; i<NumPtcls; i++) {
+    //   P.G[FirstIndex+i] = GradType();
+    //   for (int j=0; j<NumOrbitals; j++)
+    // 	P.G[FirstIndex+i] += psiM(i,j)*dpsiM(i,j);
+    // }
+    // Compute matrices
+    phi_alpha_Minv      = 0.0;
+    grad_phi_Minv       = 0.0;
+    lapl_phi_Minv       = 0.0;
+    grad_phi_alpha_Minv = 0.0;
     for (int i = 0; i < NumPtcls; i++)
       for (int j = 0; j < NumOrbitals; j++)
       {
+        lapl_phi_Minv(i, j) = 0.0;
         for (int k = 0; k < NumOrbitals; k++)
-        {
-          phi_alpha_Minv(i, j)[dim] += grad_source_psiM(i, k)[dim] * psiM(j, k);
-          grad_phi_Minv(i, j)[dim] += dpsiM(i, k)[dim] * psiM(j, k);
-          for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-            grad_phi_alpha_Minv(i, j)(dim, dim_el) += grad_grad_source_psiM(i, k)(dim, dim_el) * psiM(j, k);
-        }
+          lapl_phi_Minv(i, j) += d2psiM(i, k) * psiM(j, k);
       }
-  }
-  GradType gradPsi;
-  for (int i = 0, iel = FirstIndex; i < NumPtcls; i++, iel++)
-  {
-    HessType dval(0.0);
-    GradType d2val(0.0);
     for (int dim = 0; dim < OHMMS_DIM; dim++)
-      for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-        dval(dim, dim_el) = grad_phi_alpha_Minv(i, i)(dim, dim_el);
-    for (int j = 0; j < NumOrbitals; j++)
     {
-      gradPsi += grad_source_psiM(i, j) * psiM(i, j);
-      for (int dim = 0; dim < OHMMS_DIM; dim++)
-        for (int k = 0; k < OHMMS_DIM; k++)
-          dval(dim, k) -= phi_alpha_Minv(j, i)[dim] * grad_phi_Minv(i, j)[k];
+      for (int i = 0; i < NumPtcls; i++)
+        for (int j = 0; j < NumOrbitals; j++)
+        {
+          for (int k = 0; k < NumOrbitals; k++)
+          {
+            phi_alpha_Minv(i, j)[dim] += grad_source_psiM(i, k)[dim] * psiM(j, k);
+            grad_phi_Minv(i, j)[dim] += dpsiM(i, k)[dim] * psiM(j, k);
+            for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
+              grad_phi_alpha_Minv(i, j)(dim, dim_el) += grad_grad_source_psiM(i, k)(dim, dim_el) * psiM(j, k);
+          }
+        }
     }
-    for (int dim = 0; dim < OHMMS_DIM; dim++)
+    for (int i = 0, iel = FirstIndex; i < NumPtcls; i++, iel++)
     {
-      for (int k = 0; k < OHMMS_DIM; k++)
-        grad_grad[dim][iel][k] += dval(dim, k);
+      HessType dval(0.0);
+      GradType d2val(0.0);
+      for (int dim = 0; dim < OHMMS_DIM; dim++)
+        for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
+          dval(dim, dim_el) = grad_phi_alpha_Minv(i, i)(dim, dim_el);
       for (int j = 0; j < NumOrbitals; j++)
       {
-        // First term, eq 9
-        lapl_grad[dim][iel] += grad_lapl_source_psiM(i, j)[dim] * psiM(i, j);
-        // Second term, eq 9
-        if (j == i)
+        gradPsi += grad_source_psiM(i, j) * psiM(i, j);
+        for (int dim = 0; dim < OHMMS_DIM; dim++)
+          for (int k = 0; k < OHMMS_DIM; k++)
+            dval(dim, k) -= phi_alpha_Minv(j, i)[dim] * grad_phi_Minv(i, j)[k];
+      }
+      for (int dim = 0; dim < OHMMS_DIM; dim++)
+      {
+        for (int k = 0; k < OHMMS_DIM; k++)
+          grad_grad[dim][iel][k] += dval(dim, k);
+        for (int j = 0; j < NumOrbitals; j++)
+        {
+          // First term, eq 9
+          lapl_grad[dim][iel] += grad_lapl_source_psiM(i, j)[dim] * psiM(i, j);
+          // Second term, eq 9
+          if (j == i)
+            for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
+              lapl_grad[dim][iel] -=
+                  (RealType)2.0 * grad_phi_alpha_Minv(j, i)(dim, dim_el) * grad_phi_Minv(i, j)[dim_el];
+          // Third term, eq 9
+          // First term, eq 10
+          lapl_grad[dim][iel] -= phi_alpha_Minv(j, i)[dim] * lapl_phi_Minv(i, j);
+          // Second term, eq 11
           for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-            lapl_grad[dim][iel] -= (RealType)2.0 * grad_phi_alpha_Minv(j, i)(dim, dim_el) * grad_phi_Minv(i, j)[dim_el];
-        // Third term, eq 9
-        // First term, eq 10
-        lapl_grad[dim][iel] -= phi_alpha_Minv(j, i)[dim] * lapl_phi_Minv(i, j);
-        // Second term, eq 11
-        for (int dim_el = 0; dim_el < OHMMS_DIM; dim_el++)
-          lapl_grad[dim][iel] +=
-              (RealType)2.0 * phi_alpha_Minv(j, i)[dim] * grad_phi_Minv(i, i)[dim_el] * grad_phi_Minv(i, j)[dim_el];
+            lapl_grad[dim][iel] +=
+                (RealType)2.0 * phi_alpha_Minv(j, i)[dim] * grad_phi_Minv(i, i)[dim_el] * grad_phi_Minv(i, j)[dim_el];
+        }
       }
     }
   }
@@ -567,9 +623,10 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
  *for local energy calculations.
  */
 template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::RealType DiracDeterminant<DU_TYPE>::evaluateLog(ParticleSet& P,
-                                                                                    ParticleSet::ParticleGradient_t& G,
-                                                                                    ParticleSet::ParticleLaplacian_t& L)
+typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateLog(
+    ParticleSet& P,
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L)
 {
   recompute(P);
 
@@ -601,23 +658,27 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
   SPOVGLTimer.stop();
   if (NumPtcls == 1)
   {
-    //CurrentDet=psiM(0,0);
     ValueType det = psiM_temp(0, 0);
     psiM(0, 0)    = RealType(1) / det;
-    LogValue      = evaluateLogAndPhase(det, PhaseValue);
+    LogValue      = convertValueToLog(det);
   }
   else
   {
     invertPsiM(psiM_temp, psiM);
   }
+
+  // invRow becomes invalid after updating the inverse matrix
+  invRow_id = -1;
 }
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& active,
-                                                    std::vector<RealType>& dlogpsi,
-                                                    std::vector<RealType>& dhpsioverpsi)
-{}
+                                                    std::vector<ValueType>& dlogpsi,
+                                                    std::vector<ValueType>& dhpsioverpsi)
+{
+  Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
+}
 
 template<typename DU_TYPE>
 DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) const
@@ -627,12 +688,9 @@ DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) co
   return dclone;
 }
 
-typedef QMCTraits::ValueType ValueType;
-typedef QMCTraits::QTFull::ValueType mValueType;
-
 template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
-template class DiracDeterminant<DelayedUpdateCUDA<ValueType, mValueType>>;
+template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

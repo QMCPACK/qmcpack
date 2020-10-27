@@ -79,16 +79,35 @@ IF (NOT QMC_CUDA)
                       ${MP_SUCCESS}
                       5 H4_OPT_SCALARS # OPT step 5
                       )
+
     #
     # H4 starting from perturbed orbitals, using optimizable determinants, and the adaptive linear method
     #
     LIST(APPEND H4_ORB_OPT_SCALARS "totenergy" "-2.0889 0.001") # total energy
 
+    QMC_RUN_AND_CHECK(short-H4-RHF-orb-opt
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      H4_RHF_orb_opt.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      14 H4_ORB_OPT_SCALARS # Final VMC step
+                      TRUE)
+
     QMC_RUN_AND_CHECK(short-H4-orb-opt
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
-                      h4_orb_opt.xml
+                      H4_orb_opt.xml
                       16 1
+                      ${MP_SUCCESS}
+                      14 H4_ORB_OPT_SCALARS # Final VMC step
+                      TRUE)
+
+    QMC_RUN_AND_CHECK(short-H4-orb-opt
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      H4_orb_opt.xml
+                      1 16
                       ${MP_SUCCESS}
                       14 H4_ORB_OPT_SCALARS # Final VMC step
                       TRUE)
@@ -102,7 +121,7 @@ IF (NOT QMC_CUDA)
     QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
-                      h4_orb_opt_dmc.xml
+                      H4_orb_opt_dmc.xml
                       16 1
                       ${MP_SUCCESS}
                       3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
@@ -111,7 +130,7 @@ IF (NOT QMC_CUDA)
     QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
                       "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
-                      h4_orb_opt_dmc.xml
+                      H4_orb_opt_dmc.xml
                       1 16
                       ${MP_SUCCESS}
                       3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
@@ -119,16 +138,6 @@ IF (NOT QMC_CUDA)
     #
     # H4 starting from unoptimized CIS coefficients, targeting the first excited state, and using the adaptive linear method
     #
-    LIST(APPEND H4_FDLR_SCALARS "totenergy" "-1.82507816 0.001") # total energy
-
-    QMC_RUN_AND_CHECK(short-H4-FDLR
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
-                      H4
-                      H4_FDLR_CIS_opt.xml
-                      16 1
-                      ${MP_SUCCESS}
-                      8 H4_FDLR_SCALARS # Final VMC step
-                      TRUE)
 
     LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.0045") # total energy
 
@@ -145,6 +154,86 @@ IF (NOT QMC_CUDA)
   ELSE()
    MESSAGE("Skipping H4_ae adaptive optimizer tests because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
   ENDIF(BUILD_LMYENGINE_INTERFACE)
+
+  LIST(APPEND H4_DESCENT_SCALARS "totenergy" "-2.047099 0.005")
+
+  QMC_RUN_AND_CHECK(short-H4-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-descent
+                    optm-descent.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    9 H4_DESCENT_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-descent
+                    optm-descent.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    9 H4_DESCENT_SCALARS
+                    TRUE)
+
+  LIST(APPEND H4_TARGET_DESCENT_SCALARS "totenergy" "-2.04604154 0.003")
+
+  QMC_RUN_AND_CHECK(short-H4-target-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-descent
+                    optm-target-descent.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_DESCENT_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-target-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-descent
+                    optm-target-descent.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_DESCENT_SCALARS
+                    TRUE)
+
+  LIST(APPEND H4_HYBRID_SCALARS "totenergy" "-2.140736 0.003")
+
+  QMC_RUN_AND_CHECK(short-H4-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-hybrid
+                    optm-hybrid.xml
+                    16 1
+                    ${MP_SUCCESS}
+		    9 H4_HYBRID_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-hybrid
+                    optm-hybrid.xml
+                    1 16
+                    ${MP_SUCCESS}
+		    9 H4_HYBRID_SCALARS
+                    TRUE)
+  
+  LIST(APPEND H4_TARGET_HYBRID_SCALARS "totenergy" "-2.13527301 0.003")
+
+  QMC_RUN_AND_CHECK(short-H4-target-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-hybrid
+                    optm-target-hybrid.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_HYBRID_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-target-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-hybrid
+                    optm-target-hybrid.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_HYBRID_SCALARS
+                    TRUE)
 
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
@@ -164,9 +253,9 @@ IF (NOT QMC_CUDA)
                     5 H4_OPT_SCALARS # OPT step 5
                     )
  ELSE()
-    MESSAGE("Skipping H4_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+    MESSAGE_VERBOSE("Skipping H4_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
 ELSE()
-    MESSAGE("Skipping H4_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+    MESSAGE_VERBOSE("Skipping H4_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
 

@@ -13,18 +13,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/BranchIO.h"
-#include "HDFVersion.h"
+#include "BranchIO.h"
+#include "hdf/HDFVersion.h"
 #include "Message/CommOperators.h"
-#include "io/hdf_archive.h"
-#ifdef HAVE_ADIOS
-#include "adios.h"
-#include "adios_read.h"
-#include "ADIOS/ADIOS_config.h"
-#ifdef ADIOS_VERIFY
-#include "ADIOS/ADIOS_verify.h"
-#endif
-#endif
+#include "hdf/hdf_archive.h"
 #if defined(HAVE_LIBBOOST)
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -86,10 +78,13 @@ struct h5data_proxy<accumulator_set<T>> : public h5_space_type<T, 1>
   inline T* end() { return ref_.properties + CAPACITY; }
 };
 
-std::vector<std::string> BranchIO::vParamName;
-std::vector<std::string> BranchIO::iParamName;
+template<class SFNB>
+std::vector<std::string> BranchIO<SFNB>::vParamName;
+template<class SFNB>
+std::vector<std::string> BranchIO<SFNB>::iParamName;
 
-void BranchIO::initAttributes()
+template<class SFNB>
+void BranchIO<SFNB>::initAttributes()
 {
   if (vParamName.size())
     return;
@@ -115,7 +110,8 @@ void BranchIO::initAttributes()
   iParamName[6] = "brnachinterval";
 }
 
-bool BranchIO::write(const std::string& fname)
+template<class SFNB>
+bool BranchIO<SFNB>::write(const std::string& fname)
 {
   if (myComm->rank())
     return true;
@@ -128,8 +124,9 @@ bool BranchIO::write(const std::string& fname)
   // Put log filename in property tree
   pt.put("state.branchmode", ref.BranchMode);
 
-  for (int i = 0; i < vParamName.size(); ++i)
-    pt.put("state.vparam." + vParamName[i], ref.vParam[i]);
+  auto it_vparam = ref.vParam.begin();
+  for (auto& name : vParamName)
+    pt.put("state.vparam." + name, *(it_vparam++));
   for (int i = 0; i < iParamName.size(); ++i)
     pt.put("state.iparam." + iParamName[i], ref.iParam[i]);
 
@@ -170,11 +167,11 @@ bool BranchIO::write(const std::string& fname)
   return true;
 }
 
-bool BranchIO::read(const std::string& fname)
+template<class SFNB>
+bool BranchIO<SFNB>::read(const std::string& fname)
 {
   int found_config = 0;
 
-#if defined(HAVE_LIBBOOST)
   if (myComm->rank() == 0)
   {
     initAttributes();
@@ -196,59 +193,14 @@ bool BranchIO::read(const std::string& fname)
       {
         ref.iParam[i++] = v.second.get_value<int>();
       }
-      i = 0;
+      auto it_vparam = ref.vParam.begin();
       BOOST_FOREACH (const ptree::value_type& v, pt.get_child("state.vparam"))
       {
-        ref.vParam[i++] = v.second.get_value<double>();
+        *(it_vparam++) = v.second.get_value<double>();
       }
       found_config = 1;
     }
   }
-#else
-  if (myComm->rank() == 0)
-  {
-    HDFVersion res_version(0, 4);  //start using major=0 and minor=4
-    HDFVersion res_20080624(0, 5); //major revision on 2008-06-24 0.5
-    HDFVersion in_version(0, 1);
-
-    //append .config.h5 if missing
-    std::string h5name(fname);
-    if (fname.find("qmc.h5") >= fname.size())
-      h5name.append(".qmc.h5");
-
-    hdf_archive prevconfig(myComm, true);
-    found_config = prevconfig.open(h5name, H5F_ACC_RDONLY);
-
-    if (found_config)
-    {
-      int n = ref.vParam.size() + ref.iParam.size();
-      /** temporary storage to broadcast restart data */
-      prevconfig.read(in_version.version, hdf::version);
-      myComm->bcast(in_version.version);
-      prevconfig.push(hdf::main_state, false);
-      if (in_version >= res_20080624)
-      {
-        //need a better version control
-        prevconfig.push(hdf::qmc_status, false);
-        prevconfig.read(ref.vParam, "vparam");
-        prevconfig.read(ref.iParam, "iparam");
-        prevconfig.read(ref.BranchMode, "branchmode");
-
-        prevconfig.push("histogram", false);
-        prevconfig.read(ref.EnergyHist, "energy");
-        prevconfig.read(ref.VarianceHist, "variance");
-        prevconfig.read(ref.R2Accepted, "r2accepted");
-        prevconfig.read(ref.R2Proposed, "r2proposed");
-        prevconfig.pop();
-
-        prevconfig.pop();
-      }
-      else
-        found_config = false;
-      prevconfig.pop();
-    }
-  }
-#endif
   myComm->bcast(found_config);
 
   if (!found_config)
@@ -259,29 +211,8 @@ bool BranchIO::read(const std::string& fname)
   return true;
 }
 
-
-bool BranchIO::read_adios(const std::string& fname)
-{ //do not use this
-#ifdef HAVE_ADIOS
-  if (ADIOS::getRdADIOS())
-  {
-    ADIOS::open(fname, myComm->getMPI());
-    /** temporary storage to broadcast restart data */
-    ADIOS::read(ref.vParam.data(), "vparam");
-    ADIOS::read(ref.iParam.data(), "iparam");
-    ADIOS::read(&ref.BranchMode, "branchmode");
-    ADIOS::read(&ref.EnergyHist, "energy");
-    ADIOS::read(&ref.VarianceHist, "variance");
-    ADIOS::read(&ref.R2Accepted, "r2accepted");
-    ADIOS::read(&ref.R2Proposed, "r2proposed");
-    ADIOS::close();
-  }
-  bcast_state();
-#endif
-  return true;
-}
-
-void BranchIO::bcast_state()
+template<class SFNB>
+void BranchIO<SFNB>::bcast_state()
 {
   int n = ref.vParam.size() + ref.iParam.size();
   std::vector<RealType> pdata(n + 1 + 16, -1);
@@ -307,8 +238,8 @@ void BranchIO::bcast_state()
   if (myComm->rank())
   {
     int ii = 0;
-    for (int i = 0; i < ref.vParam.size(); ++i, ++ii)
-      ref.vParam[i] = pdata[ii];
+    for (auto& vpar : ref.vParam)
+      vpar = pdata[ii++];
     for (int i = 0; i < ref.iParam.size(); ++i, ++ii)
       ref.iParam[i] = static_cast<int>(pdata[ii]);
     ref.BranchMode = static_cast<unsigned long>(pdata[ii]);
@@ -326,48 +257,6 @@ void BranchIO::bcast_state()
   }
 }
 
-#ifdef HAVE_ADIOS
-int64_t BranchIO::get_Checkpoint_size()
-{
-  int64_t adios_groupsize = 8 + 8 * (4) + 8 * (4) + 8 * (4) + 8 * (4) + 4 * (8) + 8 * (16);
-  return adios_groupsize;
-}
-
-
-void BranchIO::adios_checkpoint(int64_t adios_handle)
-{
-  //append .config.h5 if missing
-  void* vparam             = (void*)ref.vParam.data();
-  void* iparam             = (void*)ref.iParam.data();
-  unsigned long branchmode = ref.BranchMode.to_ulong();
-  RealType* energy         = ref.EnergyHist.properties;
-  RealType* variance       = ref.VarianceHist.properties;
-  RealType* r2accepted     = ref.R2Accepted.properties;
-  RealType* r2proposed     = ref.R2Proposed.properties;
-  adios_write(adios_handle, "branchmode", &branchmode);
-  adios_write(adios_handle, "energy", energy);
-  adios_write(adios_handle, "r2accepted", r2accepted);
-  adios_write(adios_handle, "r2proposed", r2proposed);
-  adios_write(adios_handle, "variance", variance);
-  adios_write(adios_handle, "iparam", iparam);
-  adios_write(adios_handle, "vparam", vparam);
-}
-
-#ifdef ADIOS_VERIFY
-void BranchIO::adios_checkpoint_verify(ADIOS_FILE* fp)
-{
-  unsigned long branchmode = ref.BranchMode.to_ulong();
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "branchmode", branchmode);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "energy", (RealType*)ref.EnergyHist.properties);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "variance", (RealType*)ref.VarianceHist.properties);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "r2accepted", (RealType*)ref.R2Accepted.properties);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "r2proposed", (RealType*)ref.R2Proposed.properties);
-  IO_VERIFY::adios_checkpoint_verify_variables(fp, "iparam", (RealType*)ref.iParam.data());
-  IO_VERIFY::adios_checkpoint_verify_intarray_variables(fp, "vparam", (int*)ref.vParam.data());
-}
-#endif
-
-#endif
-
-
+template class BranchIO<SimpleFixedNodeBranch>;
+template class BranchIO<SFNBranch>;
 } // namespace qmcplusplus

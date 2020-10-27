@@ -28,26 +28,36 @@ Contents
 
    The vast majority Linux distributions come with Python pre-installed.
   
-   To check for Python, type "python --version" at the command line.
-   You should see something like "Python 2.7.6".  Nexus is only 
-   compatible with Python 2.x (3.x is not yet supported).  If Python
+   To check for Python, type "python3 --version" at the command line.
+   You should see something like "Python 3.6.9".  Nexus is only 
+   compatible with Python 3.x (2.x is no longer supported). If Python 3
    is not present on your system, you can install it by following the 
    instructions at:
   
-     http://docs.python-guide.org/en/latest/starting/install/linux/
+     https://docs.python-guide.org/starting/installation/
   
-   With Python present, check for NumPy.  Type "python" at the command
-   line.  You will get an interactive prompt (">>>").  Now type 
-   "import numpy" then "numpy.__version__".  If the import is 
-   successful and your version number is greater than 1.6.x, then 
-   Nexus should work on your system.  If you need to install numpy, 
-   follow the instructions at:
-  
-     http://docs.scipy.org/doc/numpy/user/install.html
-  
-   Installation of NumPy on certain linux distributions is 
-   straightforward (e.g. via apt-get or yum).
+   With Python present, check for pip3.  Type "pip3 --version" at the
+   command line.  You should see something like:
 
+     pip 9.0.1 from /usr/lib/python3/dist-packages (python 3.6)
+
+   For basic (minimum) functioning of Nexus, numpy is required.
+   Optional dependencies include scipy, matplotlib, h5py, pydot, 
+   spglib, pycifrw, cif2cell and seekpath.  If not already present, 
+   these can all be installed via pip3:
+
+     pip3 install --user numpy
+     pip3 install --user scipy
+     pip3 install --user matplotlib
+     pip3 install --user h5py
+     pip3 install --user pydot
+     pip3 install --user spglib
+     pip3 install --user PyCifRW
+     pip3 install --user cif2cell
+     pip3 install --user seekpath
+
+   Please see the Nexus user guide (PDF) for more information about 
+   installing dependencies and how they are used by Nexus.
 
 
  b. "Install" Nexus

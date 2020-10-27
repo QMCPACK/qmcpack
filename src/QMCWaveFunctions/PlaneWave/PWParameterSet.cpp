@@ -16,7 +16,7 @@
 /** @file PWParameterSet.cpp
  * @brief Utility class to handle hdf5
  */
-#include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
+#include "PWParameterSet.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 

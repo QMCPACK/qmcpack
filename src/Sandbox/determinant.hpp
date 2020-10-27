@@ -15,9 +15,9 @@
  */
 #ifndef QMCPLUSPLUS_DETERMINANT_MINIAPPS_H
 #define QMCPLUSPLUS_DETERMINANT_MINIAPPS_H
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <simd/allocator.hpp>
-#include <Numerics/DeterminantOperators.h>
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "CPU/SIMD/aligned_allocator.hpp"
+#include "Numerics/DeterminantOperators.h"
 
 namespace qmcplusplus
 {
@@ -83,22 +83,19 @@ namespace qmcplusplus
 
   ///used only for debugging or walker move
   template<class T>
-    inline T
+    void
     InvertWithLog(T* restrict x, int n, int lda,
-        T* restrict work, int lwork, int* restrict pivot, T& phase)
+        T* restrict work, int lwork, int* restrict pivot, std::complex<T>& logdet)
     {
-      T logdet(0.0);
-      LUFactorization(n,n,x,lda,pivot);
-      int sign_det=1;
+      logdet = std::complex<T>(1.0);
+      LUFactorization(n, n, x, lda, pivot);
       for(int i=0; i<n; i++)
       {
-        sign_det *= (pivot[i] == i+1)?1:-1;
-        sign_det *= (x[i*lda+i]>0)?1:-1;
-        logdet += std::log(std::abs(x[i*lda+i]));
+        logdet *= (pivot[i] == i+1)?1:-1;
+        logdet *= x[i*lda+i];
       }
       getri(n, x, lda, pivot, work, lwork);
-      phase=(sign_det>0)?0.0:M_PI;
-      return logdet;
+      logdet = std::log(logdet);
     }
 
   ///recompute inverse, do not evaluate log|det|
@@ -130,7 +127,7 @@ template<typename T, typename INVT=double>
 struct DiracDet
 {
   ///log|det|
-  INVT LogValue;
+  std::complex<INVT> LogValue;
   ///current ratio
   INVT curRatio;
   ///workspace size
@@ -171,9 +168,8 @@ struct DiracDet
     RNG.generate_uniform(psiMsave.data(),nels*nels);
     psiMsave -= shift;
 
-    INVT phase;
     transpose(psiMsave.data(),psiM.data(),nels,nels);
-    LogValue=InvertWithLog(psiM.data(),nels,nels,work.data(),LWork,pivot.data(),phase);
+    InvertWithLog(psiM.data(),nels,nels,work.data(),LWork,pivot.data(),LogValue);
     copy_n(psiM.data(),nels*nels,psiMinv.data());
 
     if(omp_get_num_threads()==1)
@@ -188,7 +184,6 @@ struct DiracDet
   inline void recompute()
   {
     const int nels=psiV.size();
-    INVT phase;
     transpose(psiMsave.data(),psiM.data(),nels,nels);
     InvertOnly(psiM.data(),nels,nels,work.data(),pivot.data(),LWork);
     copy_n(psiM.data(),nels*nels,psiMinv.data());
@@ -222,7 +217,6 @@ struct DiracDet
     constexpr INVT czero(0.0);
     constexpr INVT eps=10.*numeric_limits<float>::epsilon();
     double ratio_error=czero;
-    INVT phase;
     {
       for(int i=0; i<nels; ++i)
       {
@@ -234,9 +228,10 @@ struct DiracDet
           //update A0
           copy_n(psiV.data(),nels,psiMsave[i]);
           transpose(psiMsave.data(),psiM.data(),nels,nels);
-          auto  newlog=InvertWithLog(psiM.data(), nels, nels, work.data(), pivot.data(), phase);
+          std::complex<INVT> newlog;
+          InvertWithLog(psiM.data(), nels, nels, work.data(), pivot.data(), newlog);
 
-          ratio_full=std::exp(newlog-LogValue);
+          ratio_full=std::exp(std::real(newlog-LogValue));
           LogValue=newlog;
           double err=r/ratio_full-1;
           ratio_error += err;

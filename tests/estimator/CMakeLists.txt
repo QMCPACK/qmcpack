@@ -19,8 +19,6 @@ endif()
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")
   message("${QMCAPP_ERR}  skipping tests")
-else()
-  INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
 endif()
 
 set(skinetic_python_reqs numpy;h5py)
@@ -44,6 +42,18 @@ if (add_test)
     vmc.xml
     1 16
     latdev_check.py
+  )
+endif()
+
+set(latdev_free_python_reqs numpy;h5py)
+CHECK_PYTHON_REQS(latdev_python_reqs estimator-latdev-free add_test)
+
+if (add_test)
+  SIMPLE_RUN_AND_CHECK(estimator-latdev-free
+    "${CMAKE_SOURCE_DIR}/tests/estimator/latdev/free"
+    two.xml
+    1 16
+    flatdev.py
   )
 endif()
 

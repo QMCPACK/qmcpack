@@ -14,11 +14,11 @@
 #ifndef QMCPLUSPLUS_STATIC_STRUCTURE_FACTOR_H
 #define QMCPLUSPLUS_STATIC_STRUCTURE_FACTOR_H
 
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include "QMCHamiltonians/OperatorBase.h"
 
 namespace qmcplusplus
 {
-class StaticStructureFactor : public QMCHamiltonianBase
+class StaticStructureFactor : public OperatorBase
 {
 public:
   typedef std::vector<RealType> k2_t;
@@ -37,7 +37,7 @@ public:
   ~StaticStructureFactor() {}
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

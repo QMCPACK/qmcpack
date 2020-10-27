@@ -21,7 +21,7 @@
 #ifndef QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 #define QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 
 namespace qmcplusplus
 {
@@ -53,6 +53,13 @@ struct NonLocalTOperator
 
   inline int size() const { return Txy.size(); }
 
+  /** replacement for put because wouldn't it be cool to know what the classes configuration actually
+   *  is.
+   */
+  int thingsThatShouldBeInMyConstructor(const std::string& non_local_move_option,
+                                        const double tau,
+                                        const double alpha,
+                                        const double gamma);
   /** initialize the parameters */
   int put(xmlNodePtr cur);
 

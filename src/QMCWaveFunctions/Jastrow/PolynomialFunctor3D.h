@@ -49,9 +49,9 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
   std::vector<std::string> ParameterNames;
   std::string iSpecies, eSpecies1, eSpecies2;
   int ResetCount;
-  real_type scale;
   // Order of continuity
   const int C;
+  real_type scale;
   bool notOpt;
 
   ///constructor
@@ -999,8 +999,9 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     for (int i = 0; i < Parameters.size(); ++i)
     {
       int loc = myVars.where(i);
-      if (loc >= 0)
-        Parameters[i] = myVars[i] = active[loc];
+      if (loc >= 0) {
+        Parameters[i] = std::real( myVars[i] = active[loc] );
+      }
     }
     if (ResetCount++ == 100)
     {

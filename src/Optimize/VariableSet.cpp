@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include <map>
 #include <stdexcept>
 #include <iomanip>
@@ -80,7 +80,7 @@ void VariableSet::insertFrom(const VariableSet& input)
 
 void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& input_2)
 {
-  real_type sum_val;
+  value_type sum_val;
   std::string vname;
 
   // Check that objects to be summed together have the same number of active
@@ -120,7 +120,7 @@ void VariableSet::insertFromSum(const VariableSet& input_1, const VariableSet& i
 
 void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& input_2)
 {
-  real_type diff_val;
+  value_type diff_val;
   std::string vname;
 
   // Check that objects to be subtracted have the same number of active
@@ -242,7 +242,7 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader)
                        [](const pair_type& e1, const pair_type& e2) { return e1.first.length() < e2.first.length(); })
           ->first.length();
 
-  int max_value_len     = 13; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
+  int max_value_len     = 28; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
   int max_type_len      = 1;
   int max_recompute_len = 1;
   int max_use_len       = 3;

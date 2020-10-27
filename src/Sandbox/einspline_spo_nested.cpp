@@ -14,14 +14,14 @@
  * @brief Derived einspline_spo with nested parallelism
  */
 #include <Configuration.h>
-#include <Particle/ParticleSet.h>
-#include <random/random.hpp>
-#include <mpi/collectives.h>
-#include <Sandbox/input.hpp>
-#include <Sandbox/pseudo.hpp>
-#include <Utilities/Timer.h>
-#include <Sandbox/common.hpp>
-#include <Sandbox/einspline_spo.hpp>
+#include "Particle/ParticleSet.h"
+#include "random.hpp"
+#include "mpi/collectives.h"
+#include "Sandbox/input.hpp"
+#include "Sandbox/pseudo.hpp"
+#include "Utilities/Timer.h"
+#include "Sandbox/common.hpp"
+#include "Sandbox/einspline_spo.hpp"
 #include <getopt.h>
 
 using namespace std;
@@ -145,10 +145,11 @@ int main(int argc, char** argv)
     }
 
     {//create up/down electrons
-      els.Lattice.BoxBConds=1;   els.Lattice.set(ions.Lattice);
+      els.Lattice.BoxBConds=1;
+      els.Lattice = ions.Lattice;
       vector<int> ud(2); ud[0]=nels/2; ud[1]=nels-ud[0];
       els.create(ud);
-      els.R.InUnit=1;
+      els.R.InUnit = PosUnit::Lattice;
       random_th.generate_uniform(&els.R[0][0],nels3);
       els.convert2Cart(els.R); // convert to Cartiesian
     }

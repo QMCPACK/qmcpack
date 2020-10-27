@@ -1,8 +1,7 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && clang++ `#-DNDEBUG` -O3 -std=c++14 -Wall -Wextra -Wpedantic -Wfatal-errors -D_TEST_MULTI_ADAPTORS_BLAS_SWAP -DADD_ $0x.cpp -o $0x.x -lblas && time $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// Alfredo A. Correa 2019 ©
-
+// © Alfredo A. Correa 2019-2020
 #ifndef MULTI_ADAPTORS_BLAS_SWAP_HPP
 #define MULTI_ADAPTORS_BLAS_SWAP_HPP
 
@@ -26,28 +25,25 @@ Y1D&& swap(X1D&& x, Y1D&& y){
 	assert( size(x) == size(y) );
 	assert( offset(x) == 0 and offset(y) == 0 );
 	swap( begin(x), end(x), begin(y) );
-	return std::move(y);
+	return std::forward<Y1D>(y);
 }
 
 }}}
 
-#if _TEST_MULTI_ADAPTORS_BLAS_SWAP
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_SWAP
+
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS swap"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
 #include "../../array.hpp"
 #include "../../utility.hpp"
 
-#include<complex>
-#include<cassert>
-#include<iostream>
-#include<numeric>
-#include<algorithm>
-
 #include "../blas/dot.hpp"
 
-using std::cout;
 namespace multi = boost::multi;
 
-int main(){
+BOOST_AUTO_TEST_CASE(multi_blas_swap, *boost::unit_test::tolerance(0.00001) ){
 	multi::array<double, 2> A = {
 		{1.,  2.,  3.,  4.},
 		{5.,  6.,  7.,  8.},
@@ -55,6 +51,8 @@ int main(){
 	};
 //	using multi::blas::swap;
 	multi::blas::swap(rotated(A)[1], rotated(A)[3]); // can ambiguate with (friend) multi::swap
+	BOOST_REQUIRE( A[0][1] == 4. );
+	BOOST_REQUIRE( A[0][3] == 2. );
 }
 
 #endif

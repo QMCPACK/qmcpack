@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file AGPDeterminant.h
  * @brief Declaration of AGPDeterminant for pairing orbitals.
  */
@@ -24,19 +24,16 @@
 
 namespace qmcplusplus
 {
-
-class AGPDeterminant: public WaveFunctionComponent
+class AGPDeterminant : public WaveFunctionComponent
 {
-
 public:
-
   ///define BasisSetType with RealType
   typedef BasisSetBase<RealType> BasisSetType;
   typedef BasisSetType::IndexVector_t IndexVector_t;
   typedef BasisSetType::ValueVector_t ValueVector_t;
   typedef BasisSetType::ValueMatrix_t ValueMatrix_t;
-  typedef BasisSetType::GradVector_t  GradVector_t;
-  typedef BasisSetType::GradMatrix_t  GradMatrix_t;
+  typedef BasisSetType::GradVector_t GradVector_t;
+  typedef BasisSetType::GradMatrix_t GradMatrix_t;
 
   BasisSetType* GeminalBasis;
 
@@ -44,7 +41,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  AGPDeterminant(BasisSetType* bs=0);
+  AGPDeterminant(BasisSetType* bs = 0);
 
   ///default destructor
   ~AGPDeterminant();
@@ -54,14 +51,12 @@ public:
   void resetParameters(const opt_variables_type& active);
   void reportStatus(std::ostream& os);
 
-  void resetTargetParticleSet(ParticleSet& P);
-
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nup, int ndown);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  ValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
@@ -69,7 +64,7 @@ public:
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   void ratioUp(ParticleSet& P, int iat);
 
@@ -77,7 +72,7 @@ public:
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   /** move was rejected. copy the real container to the temporary to move on
    */
@@ -95,10 +90,7 @@ public:
    *contribution of the determinant to G(radient) and L(aplacian)
    *for local energy calculations.
    */
-  ValueType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G,
-              ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
@@ -152,37 +144,37 @@ public:
    */
   ValueVector_t phiTv;
   ValueVector_t psiU, psiD;
-  GradVector_t  dpsiUv, dpsiDv;
+  GradVector_t dpsiUv, dpsiDv;
   ValueVector_t d2psiUv, d2psiDv;
   ValueVector_t workV1, workV2;
   ValueVector_t WorkSpace;
   IndexVector_t Pivot;
 
   ///current ratio
-  RealType curRatio;
+  PsiValueType curRatio;
   ///cummulate ratio for particle-by-particle update
   RealType cumRatio;
   ///address of  dpsiU[0][0]
-  BasisSetType::ValueType *FirstAddressOfdVU;
+  BasisSetType::ValueType* FirstAddressOfdVU;
   ///address of FirstAddressOfdVU+OHMMS_DIM*Nup*Nup
-  BasisSetType::ValueType *LastAddressOfdVU;
+  BasisSetType::ValueType* LastAddressOfdVU;
   ///address of  dpsiD[0][0]
-  BasisSetType::ValueType *FirstAddressOfdVD;
+  BasisSetType::ValueType* FirstAddressOfdVD;
   ///address of FirstAddressOfdVD+OHMMS_DIM*Ndown*Nup
-  BasisSetType::ValueType *LastAddressOfdVD;
+  BasisSetType::ValueType* LastAddressOfdVD;
   ///address of myG[0][0]
-  ParticleSet::SingleParticleValue_t *FirstAddressOfG;
+  ParticleSet::SingleParticleValue_t* FirstAddressOfG;
   ///address of FirstAddressOfG+OHMMS_DIM*NumPtcls
-  ParticleSet::SingleParticleValue_t *LastAddressOfG;
+  ParticleSet::SingleParticleValue_t* LastAddressOfG;
   ///address of dY[0][0]
-  BasisSetType::ValueType *FirstAddressOfdY;
+  BasisSetType::ValueType* FirstAddressOfdY;
   ///address of FirstAddressOfdY+NumPtcls*BasisSize
-  BasisSetType::ValueType *LastAddressOfdY;
+  BasisSetType::ValueType* LastAddressOfdY;
 
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
 
   void evaluateLogAndStore(ParticleSet& P);
 };
-}
+} // namespace qmcplusplus
 #endif

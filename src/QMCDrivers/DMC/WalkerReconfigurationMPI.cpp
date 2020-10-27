@@ -13,11 +13,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
+#include "WalkerReconfigurationMPI.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/RandomGenerator.h"
-using namespace qmcplusplus;
+
+namespace qmcplusplus
+{
+using WP = WalkerProperties::Indexes;
+
 
 /** default constructor
  *
@@ -28,11 +33,11 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c) : WalkerContr
   SwapMode = 1;
 }
 
-int WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+int WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
 {
   int nwkept = swapWalkers(W);
   measureProperties(iter);
-  W.EnsembleProperty = EnsembleProperty;
+  W.EnsembleProperty = ensemble_property_;
   //RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
   //accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
   //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
@@ -56,32 +61,32 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   //o << "check." << MyContext << ".dat";
   //ofstream fout(o.str().c_str(),std::ios::app);
   int nw = W.getActiveWalkers();
-  if (TotalWalkers != nw * NumContexts)
+  if (TotalWalkers != nw * num_contexts_)
   {
     FirstWalker  = nw * MyContext;
     LastWalker   = FirstWalker + nw;
-    TotalWalkers = nw * NumContexts;
-    nwInv        = 1.0 / static_cast<RealType>(TotalWalkers);
+    TotalWalkers = nw * num_contexts_;
+    nwInv        = 1.0 / static_cast<FullPrecRealType>(TotalWalkers);
     ncopy_w.resize(nw);
     wConf.resize(nw);
     //wSum.resize(NumContexts);
-    wOffset.resize(NumContexts + 1);
-    dN.resize(NumContexts + 4);
+    wOffset.resize(num_contexts_ + 1);
+    dN.resize(num_contexts_ + 4);
   }
   UnitZeta = Random();
   myComm->bcast(UnitZeta);
   DeltaStep = UnitZeta * nwInv;
   //std::fill(wSum.begin(),wSum.end(),0.0);
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-  int iw        = 0;
-  RealType esum = 0.0, e2sum = 0.0, wtot = 0.0, ecum = 0.0;
-  RealType r2_accepted = 0.0, r2_proposed = 0.0;
+  int iw                = 0;
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wtot = 0.0, ecum = 0.0;
+  FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   while (it != it_end)
   {
-    r2_accepted += (*it)->Properties(R2ACCEPTED);
-    r2_proposed += (*it)->Properties(R2PROPOSED);
-    RealType wgt((*it)->Weight);
-    RealType e((*it)->Properties(LOCALENERGY));
+    r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
+    r2_proposed += (*it)->Properties(WP::R2PROPOSED);
+    FullPrecRealType wgt((*it)->Weight);
+    FullPrecRealType e((*it)->Properties(WP::LOCALENERGY));
     esum += wgt * e;
     e2sum += wgt * e * e;
     wtot += wgt;
@@ -107,21 +112,22 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   //wOffset[ip] is the partial sum update to ip
   wOffset[0] = 0;
   //for(int ip=0; ip<NumContexts; ip++) wOffset[ip+1]=wOffset[ip]+wSum[ip];
-  for (int ip = 0, jp = LE_MAX; ip < NumContexts; ip++, jp++)
+  for (int ip = 0, jp = LE_MAX; ip < num_contexts_; ip++, jp++)
     wOffset[ip + 1] = wOffset[ip] + curData[jp];
-  wtot = wOffset[NumContexts]; //wtot is the total weight
+  wtot = wOffset[num_contexts_]; //wtot is the total weight
   //find the lower and upper bound of index
-  int minIndex = static_cast<int>((wOffset[MyContext] / wtot - DeltaStep) * static_cast<RealType>(TotalWalkers)) - 1;
+  int minIndex =
+      static_cast<int>((wOffset[MyContext] / wtot - DeltaStep) * static_cast<FullPrecRealType>(TotalWalkers)) - 1;
   int maxIndex =
-      static_cast<int>((wOffset[MyContext + 1] / wtot - DeltaStep) * static_cast<RealType>(TotalWalkers)) + 1;
+      static_cast<int>((wOffset[MyContext + 1] / wtot - DeltaStep) * static_cast<FullPrecRealType>(TotalWalkers)) + 1;
   int nb = maxIndex - minIndex + 1;
-  std::vector<RealType> Zeta(nb);
+  std::vector<FullPrecRealType> Zeta(nb);
   for (int i = minIndex, ii = 0; i < maxIndex; i++, ii++)
   {
-    Zeta[ii] = wtot * (DeltaStep + static_cast<RealType>(i) * nwInv);
+    Zeta[ii] = wtot * (DeltaStep + static_cast<FullPrecRealType>(i) * nwInv);
   }
-  RealType wCur = wOffset[MyContext];
-  int ind       = 0;
+  FullPrecRealType wCur = wOffset[MyContext];
+  int ind               = 0;
   while (Zeta[ind] < wCur)
   {
     ind++;
@@ -130,8 +136,8 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   int icdiff = 0;
   for (iw = 0; iw < nw; iw++)
   {
-    RealType tryp = wCur + std::abs(wConf[iw]);
-    int ni        = 0;
+    FullPrecRealType tryp = wCur + std::abs(wConf[iw]);
+    int ni                = 0;
     while (Zeta[ind] < tryp && Zeta[ind] >= wCur)
     {
       ind++;
@@ -172,7 +178,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     int ip = plus[lower];      //walker index to be duplicated
     W[im]->makeCopy(*(W[ip])); //copy the walker
     W[im]->ParentID = W[ip]->ID;
-    W[im]->ID       = (++NumWalkersCreated) * NumContexts + MyContext;
+    W[im]->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
     minus.pop_back(); //remove it
     plus.pop_back();  //remove it
   }
@@ -187,11 +193,11 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     dN[MyContext] = -minus.size();
   }
   //dN[NumContexts] contains the number of surviving walkers
-  dN[NumContexts] = icdiff;
+  dN[num_contexts_] = icdiff;
   //other data to compute survival rate and how many walkers are swapped
-  dN[NumContexts + 1] = nw_removed;
-  dN[NumContexts + 2] = plus.size();
-  dN[NumContexts + 3] = minus.size();
+  dN[num_contexts_ + 1] = nw_removed;
+  dN[num_contexts_ + 2] = plus.size();
+  dN[num_contexts_ + 3] = minus.size();
   //collect the data
   myComm->allreduce(dN);
   //Each task will send or recv not both.
@@ -204,17 +210,17 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   //for(int i=0; i<NumContexts; ++i) app_log() << dN[i] << " ";
   //app_log() << std::endl;
   //record the number of walkers created/destroyed
-  curData[RNONESIZE_INDEX]   = dN[NumContexts + 1];
+  curData[RNONESIZE_INDEX]   = dN[num_contexts_ + 1];
   curData[FNSIZE_INDEX]      = curData[WEIGHT_INDEX] - curData[RNONESIZE_INDEX];
-  curData[SENTWALKERS_INDEX] = dN[NumContexts + 2];
+  curData[SENTWALKERS_INDEX] = dN[num_contexts_ + 2];
   //collect surviving walkers
-  return dN[NumContexts];
+  return dN[num_contexts_];
 }
 
 void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W, const std::vector<IndexType>& plus)
 {
   std::vector<int> minusN, plusN;
-  for (int ip = 0; ip < NumContexts; ip++)
+  for (int ip = 0; ip < num_contexts_; ip++)
   {
     if (dN[ip] > 0)
     {
@@ -235,8 +241,7 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W, const std::
       int im          = plus[last];
       size_t byteSize = W[im]->byteSize();
       W[im]->updateBuffer();
-      OOMPI_Message sendBuffer(W[im]->DataSet.data(), byteSize);
-      myComm->getComm()[minusN[ic]].Send(sendBuffer);
+      myComm->comm.send_n(W[im]->DataSet.data(), byteSize, minusN[ic]);
       --last;
     }
     ++ic;
@@ -246,7 +251,7 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W, const std::
 void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W, const std::vector<IndexType>& minus)
 {
   std::vector<IndexType> minusN, plusN;
-  for (int ip = 0; ip < NumContexts; ip++)
+  for (int ip = 0; ip < num_contexts_; ip++)
   {
     if (dN[ip] > 0)
     {
@@ -266,13 +271,13 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W, const std::
     {
       int im          = minus[last];
       size_t byteSize = W[im]->byteSize();
-      OOMPI_Message recvBuffer(W[im]->DataSet.data(), byteSize);
-      myComm->getComm()[plusN[ic]].Recv(recvBuffer);
+      myComm->comm.receive_n(W[im]->DataSet.data(), byteSize, plusN[ic]);
       W[im]->copyFromBuffer();
       W[im]->ParentID = W[im]->ID;
-      W[im]->ID       = (++NumWalkersCreated) * NumContexts + MyContext;
+      W[im]->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
       --last;
     }
     ++ic;
   }
 }
+} // namespace qmcplusplus

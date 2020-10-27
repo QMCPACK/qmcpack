@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Estimators/RMCLocalEnergyEstimator.h"
+#include "RMCLocalEnergyEstimator.h"
 
 namespace qmcplusplus
 {

@@ -104,4 +104,39 @@ TEST_CASE("FairDivideAligned", "[utilities]")
   REQUIRE(last == 37);
 }
 
+TEST_CASE("fairDivide_one", "[utilities]")
+{
+  auto out = fairDivide(1, 1);
+  REQUIRE(out.size() == 1);
+  REQUIRE(out[0] == 1);
+}
+
+TEST_CASE("fairDivide_empties", "[utilities]")
+{
+  auto out = fairDivide(2, 3);
+  REQUIRE(out.size() == 3);
+  REQUIRE(out[0] == 1);
+  REQUIRE(out[1] == 1);
+  REQUIRE(out[2] == 0);
+}
+
+TEST_CASE("fairDivide_typical", "[utilities]")
+{
+  auto out = fairDivide(7, 3);
+  REQUIRE(out.size() == 3);
+  REQUIRE(out[0] == 3);
+  REQUIRE(out[1] == 2);
+  REQUIRE(out[2] == 2);
+}
+
+TEST_CASE("fairDivide_even", "[utilities]")
+{
+  auto out = fairDivide(6, 3);
+  REQUIRE(out.size() == 3);
+  REQUIRE(out[0] == 2);
+  REQUIRE(out[1] == 2);
+  REQUIRE(out[2] == 2);
+}
+
+
 } // namespace qmcplusplus

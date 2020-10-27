@@ -35,6 +35,7 @@ from generic import obj
 from developer import unavailable
 from xmlreader import XMLreader
 from plotting import *
+from physical_system import ghost_atoms
 #QmcpackAnalyzer classes imports
 from qmcpack_analyzer_base import QAobject,QAanalyzer,QAanalyzerCollection
 from qmcpack_property_analyzers \
@@ -213,6 +214,11 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             del kwargs['analyze']
         #end if
 
+        if 'ghost_atoms' in kwargs:
+            ghosts = kwargs.pop('ghost_atoms')
+            ghost_atoms(*ghosts)
+        #end if
+
         if isinstance(arg0,Simulation):
             sim = arg0
             if 'analysis_request' in sim:
@@ -368,7 +374,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         for method in method_objs:
             self[method] = QAanalyzerCollection()
         #end for
-        for index,calc in calculations.iteritems():
+        for index,calc in calculations.items():
             method = calc.method
             if method in method_aliases:
                 method_type = method_aliases[method]
@@ -409,13 +415,13 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         if 'dmc' in self and len(self.dmc)>1:
             maxtime = 0
             times = dict()
-            for series,dmc in self.dmc.iteritems():
+            for series,dmc in self.dmc.items():
                 blocks,steps,timestep = dmc.info.method_input.list('blocks','steps','timestep')
                 times[series] = blocks*steps*timestep
                 maxtime = max(times[series],maxtime)
             #end for
             dmc = QAanalyzerCollection()            
-            for series,time in times.iteritems():
+            for series,time in times.items():
                 if abs(time-maxtime)/maxtime<.5:
                     dmc[series] = self.dmc[series]
                 #end if
@@ -626,7 +632,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 #resize the average data
                 self.vlog('finding minimum data size (for incomplete runs)',n=2)
                 for analyzer in analyzers:
-                    for series,qmc in self.qmc.iteritems():
+                    for series,qmc in self.qmc.items():
                         qmc.minsize_data(analyzer.qmc[series])
                     #end for
                 #end for
@@ -634,7 +640,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 #accumulate the average data
                 self.vlog('accumulating data from bundled runs',n=2)
                 for analyzer in analyzers:
-                    for series,qmc in self.qmc.iteritems():
+                    for series,qmc in self.qmc.items():
                         qmc.accumulate_data(analyzer.qmc[series])
                     #end for
                 #end for
@@ -736,7 +742,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             q.extend(qn)
             sdata[s] = obj(
                 mlab = method+' '+str(s),
-                mloc = soffset + len(qn)/2,
+                mloc = soffset + len(qn)//2,
                 line_loc = soffset + len(qn)-1
                 )
             soffset += len(qn)

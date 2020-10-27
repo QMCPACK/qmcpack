@@ -14,8 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ForceCeperley.h"
-#include "Particle/DistanceTable.h"
+#include "ForceCeperley.h"
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -26,7 +25,8 @@
 
 namespace qmcplusplus
 {
-ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns) : ForceBase(ions, elns)
+ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
+    : ForceBase(ions, elns), d_aa_ID(ions.addTable(ions)), d_ei_ID(elns.addTable(ions))
 {
   ReportEngine PRE("ForceCeperley", "ForceCeperley");
   myName = "Ceperley_Force_Base";
@@ -36,9 +36,28 @@ ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns) : ForceBase(i
   m_exp   = 2;
   N_basis = 4;
   forces  = 0.0;
-  forces_ShortRange.resize(Nnuc);
-  forces_ShortRange = 0.0;
   ///////////////////////////////////////////////////////////////
+  ions.update();
+  evaluate_IonIon(forces_IonIon);
+}
+
+void ForceCeperley::evaluate_IonIon(ParticleSet::ParticlePos_t& forces) const
+{
+  forces = 0.0;
+  const DistanceTableData& d_aa(Ions.getDistTable(d_aa_ID));
+  const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
+  for (size_t ipart = 1; ipart < Nnuc; ipart++)
+  {
+    const auto& dist  = d_aa.getDistRow(ipart);
+    const auto& displ = d_aa.getDisplRow(ipart);
+    for (size_t jpart = 0; jpart < ipart; ++jpart)
+    {
+      RealType rinv = 1.0 / dist[jpart];
+      RealType r3zz = Zat[jpart] * Zat[ipart] * rinv * rinv * rinv;
+      forces[jpart] += r3zz * displ[jpart];
+      forces[ipart] -= r3zz * displ[jpart];
+    }
+  }
 }
 
 void ForceCeperley::InitMatrix()
@@ -62,65 +81,36 @@ void ForceCeperley::InitMatrix()
 
 ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
 {
-  forces                               = forces_IonIon;
-  forces_ShortRange                    = forces_IonIon;
-  const DistanceTableData* d_ab        = P.DistTables[myTableIndex];
+  if (addionion == true)
+    forces = forces_IonIon;
+  else
+    forces = 0.0;
+  const auto& d_ab                     = P.getDistTable(d_ei_ID);
   const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleScalar_t* restrict Qat = P.Z.first_address();
-
-  if (d_ab->DTType == DT_SOA)
+  for (int jat = 0; jat < Nel; jat++)
   {
-    for (int jat = 0; jat < Nel; jat++)
-    {
-      for (int iat = 0; iat < Nnuc; iat++)
-      {
-        // electron contribution (special treatment if distance is inside cutoff!)
-        RealType r       = d_ab->Distances[jat][iat];
-        RealType zoverr3 = Qat[jat] * Zat[iat] / (r * r * r);
-        if (r >= Rcut)
-        {
-          forces[iat] += zoverr3 * d_ab->Displacements[jat][iat];
-        }
-        else
-        {
-          RealType g_q = 0.0;
-          for (int q = 0; q < N_basis; q++)
-          {
-            g_q += c[q] * std::pow(r, m_exp + q + 1);
-          }
-          g_q *= zoverr3;
-          // negative sign accounts for definition of target as electrons
-          forces[iat]            += g_q * d_ab->Displacements[jat][iat];
-          forces_ShortRange[iat] += g_q * d_ab->Displacements[jat][iat];
-        }
-      }
-    }
-  }
-  else
-  {
+    const auto& dist  = d_ab.getDistRow(jat);
+    const auto& displ = d_ab.getDisplRow(jat);
     for (int iat = 0; iat < Nnuc; iat++)
     {
       // electron contribution (special treatment if distance is inside cutoff!)
-      for (int nn = d_ab->M[iat], jat = 0; nn < d_ab->M[iat + 1]; nn++, jat++)
+      RealType r       = dist[iat];
+      RealType zoverr3 = Qat[jat] * Zat[iat] / (r * r * r);
+      if (r >= Rcut)
       {
-        RealType zoverr3 = Qat[jat] * Zat[iat] * std::pow(d_ab->rinv(nn), 3);
-        if (d_ab->r(nn) >= Rcut)
+        forces[iat] += zoverr3 * displ[iat];
+      }
+      else
+      {
+        RealType g_q = 0.0;
+        for (int q = 0; q < N_basis; q++)
         {
-          forces[iat] -= zoverr3 * d_ab->dr(nn);
+          g_q += c[q] * std::pow(r, m_exp + q + 1);
         }
-        else
-        {
-          RealType r   = d_ab->r(nn);
-          RealType g_q = 0.0;
-          for (int q = 0; q < N_basis; q++)
-          {
-            g_q += c[q] * std::pow(r, m_exp + q + 1);
-          }
-          g_q *= zoverr3;
-          // negative sign accounts for definition of target as electrons
-          forces[iat]            -= g_q * d_ab->dr(nn);
-          forces_ShortRange[iat] -= g_q * d_ab->dr(nn);
-        }
+        g_q *= zoverr3;
+        // negative sign accounts for definition of target as electrons
+        forces[iat] += g_q * displ[iat];
       }
     }
   }
@@ -151,10 +141,7 @@ bool ForceCeperley::put(xmlNodePtr cur)
   return true;
 }
 
-QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-{
-  return new ForceCeperley(*this);
-}
+OperatorBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new ForceCeperley(*this); }
 } // namespace qmcplusplus
 
 //  void ForceCeperley::addObservables(PropertySetType& plist) {

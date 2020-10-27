@@ -14,17 +14,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/HDFWalkerInputManager.h"
+#include "HDFWalkerInputManager.h"
 #include "OhmmsData/AttributeSet.h"
 #if defined(HAVE_LIBHDF5)
 #include "Particle/HDFWalkerInput_0_0.h"
 #include "Particle/HDFWalkerInput_0_4.h"
 #endif
 #include "Message/Communicate.h"
-#include "HDFVersion.h"
-#ifdef HAVE_ADIOS
-#include "ADIOS/ADIOS_config.h"
-#endif
+#include "hdf/HDFVersion.h"
 
 namespace qmcplusplus
 {
@@ -32,7 +29,7 @@ HDFWalkerInputManager::HDFWalkerInputManager(MCWalkerConfiguration& w, Communica
 
 HDFWalkerInputManager::~HDFWalkerInputManager() {}
 
-#if defined(HAVE_LIBHDF5) || defined(HAVE_ADIOS)
+#if defined(HAVE_LIBHDF5)
 bool HDFWalkerInputManager::put(xmlNodePtr cur)
 {
   //reference revision number

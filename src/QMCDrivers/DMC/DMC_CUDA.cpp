@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/DMC_CUDA.h"
+#include "DMC_CUDA.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/QMCUpdateBase.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -31,38 +31,34 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /// Constructor.
 DMCcuda::DMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 WaveFunctionPool& ppool,
                  Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, comm, "DMCcuda"),
       myWarmupSteps(0),
       Mover(0),
       NLop(w.getTotalNum()),
-      ResizeTimer("DMCcuda::resize"),
-      DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
-      BranchTimer("DMCcuda::Branch"),
-      HTimer("DMCcuda::Hamiltonian")
+      ResizeTimer(*timer_manager.createTimer("DMCcuda::resize")),
+      DriftDiffuseTimer(*timer_manager.createTimer("DMCcuda::Drift_Diffuse")),
+      BranchTimer(*timer_manager.createTimer("DMCcuda::Branch")),
+      HTimer(*timer_manager.createTimer("DMCcuda::Hamiltonian"))
 {
   RootName = "dmc";
-  QMCType  = "DMCcuda";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   //m_param.add(myWarmupSteps,"warmupSteps","int");
   //m_param.add(nTargetSamples,"targetWalkers","int");
   m_param.add(ScaleWeight, "scaleweight", "string");
-  TimerManager.addTimer(&ResizeTimer);
-  TimerManager.addTimer(&DriftDiffuseTimer);
-  TimerManager.addTimer(&BranchTimer);
-  TimerManager.addTimer(&HTimer);
+
+  H.setRandomGenerator(&Random);
 }
 
 bool DMCcuda::checkBounds(const PosType& newpos)
 {
-  if (!W.UseBoundBox)
-    return true;
   PosType red = W.Lattice.toUnit(newpos);
   return W.Lattice.isValid(red);
 }
@@ -110,8 +106,8 @@ bool DMCcuda::run()
   for (int iw = 0; iw < nw; iw++)
     W[iw]->Weight = 1.0;
 
-  LoopTimer dmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> dmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
   do
   {
@@ -165,7 +161,7 @@ bool DMCcuda::run()
         {
           delpos[iw] *= m_sqrttau;
           PosType dr;
-          getScaledDrift(m_tauovermass, oldG[iw], dr);
+          DriftModifier->getDrift(m_tauovermass, oldG[iw], dr);
           newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
           ratios[iw] = 1.0;
 #ifdef QMC_COMPLEX
@@ -178,8 +174,7 @@ bool DMCcuda::run()
         Psi.calcRatio(W, iat, ratios, newG, newL);
         accepted.clear();
         std::vector<bool> acc(nw, true);
-        if (W.UseBoundBox)
-          checkBounds(newpos, acc);
+        checkBounds(newpos, acc);
         if (kDelay)
           Psi.det_lookahead(W, ratios, newG, newL, iat, k, W.getkblocksize(), nw);
         std::vector<RealType> logGf_v(nw);
@@ -196,7 +191,7 @@ bool DMCcuda::run()
         for (int iw = 0; iw < nw; ++iw)
         {
           PosType drNew;
-          getScaledDrift(m_tauovermass, newG[iw], drNew);
+          DriftModifier->getDrift(m_tauovermass, newG[iw], drNew);
           drNew += newpos[iw] - W[iw]->R[iat];
           RealType logGb = -m_oneover2tau * dot(drNew, drNew);
           RealType x     = logGb - logGf_v[iw];
@@ -283,7 +278,7 @@ bool DMCcuda::run()
         for (int iat = 0; iat < nat; iat++)
         {
           PosType wG_scaled;
-          getScaledDrift(m_tauovermass, W.G[iat], wG_scaled);
+          DriftModifier->getDrift(m_tauovermass, W.G[iat], wG_scaled);
           v2bar += dot(wG_scaled, wG_scaled);
 #ifdef QMC_COMPLEX
           PosType wG_real;
@@ -294,9 +289,9 @@ bool DMCcuda::run()
           v2 += dot(W.G[iat], W.G[iat]);
 #endif
         }
-        RealType scNew                       = std::sqrt(v2bar / (v2 * m_tauovermass * m_tauovermass));
-        RealType scOld                       = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[DRIFTSCALE];
-        W[iw]->getPropertyBase()[DRIFTSCALE] = scNew;
+        RealType scNew = std::sqrt(v2bar / (v2 * m_tauovermass * m_tauovermass));
+        RealType scOld = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[WP::DRIFTSCALE];
+        W[iw]->getPropertyBase()[WP::DRIFTSCALE] = scNew;
         // fprintf (stderr, "iw = %d  scNew = %1.8f  scOld = %1.8f\n", iw, scNew, scOld);
         RealType tauRatio = R2acc[iw] / R2prop[iw];
         //allow large time steps during warmup
@@ -307,15 +302,15 @@ bool DMCcuda::run()
           W[iw]->Weight *= branchEngine->branchWeightTau(LocalEnergy[iw], LocalEnergyOld[iw], scNew, scOld, taueff);
         else
           W[iw]->Weight *= branchEngine->branchWeight(LocalEnergy[iw], LocalEnergyOld[iw]);
-        W[iw]->getPropertyBase()[R2ACCEPTED] = R2acc[iw];
-        W[iw]->getPropertyBase()[R2PROPOSED] = R2prop[iw];
+        W[iw]->getPropertyBase()[WP::R2ACCEPTED] = R2acc[iw];
+        W[iw]->getPropertyBase()[WP::R2PROPOSED] = R2prop[iw];
       }
       Mover->setMultiplicity(W.begin(), W.end());
       branchEngine->branch(CurrentStep, W);
       nw = W.getActiveWalkers();
       LocalEnergyOld.resize(nw);
       for (int iw = 0; iw < nw; iw++)
-        LocalEnergyOld[iw] = W[iw]->getPropertyBase()[LOCALENERGY];
+        LocalEnergyOld[iw] = W[iw]->getPropertyBase()[WP::LOCALENERGY];
       BranchTimer.stop();
     } while (step < nSteps);
     if (nBlocksBetweenRecompute && (1 + block) % nBlocksBetweenRecompute == 0)
@@ -351,7 +346,7 @@ void DMCcuda::resetUpdateEngine()
     W.loadEnsemble();
     branchEngine->initWalkerController(W, false, false);
     Mover = new DMCUpdatePbyPWithRejectionFast(W, Psi, H, Random);
-    Mover->resetRun(branchEngine, Estimators);
+    Mover->resetRun(branchEngine, Estimators, nullptr, DriftModifier);
     //Mover->initWalkersForPbyP(W.begin(),W.end());
   }
   else

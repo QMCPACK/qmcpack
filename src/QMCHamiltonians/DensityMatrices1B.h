@@ -14,14 +14,28 @@
 #ifndef QMCPLUSPLUS_ONE_BODY_DENSITY_MATRICES_H
 #define QMCPLUSPLUS_ONE_BODY_DENSITY_MATRICES_H
 
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
-#include <QMCWaveFunctions/CompositeSPOSet.h>
-#include <ParticleBase/RandomSeqGenerator.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "QMCWaveFunctions/CompositeSPOSet.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 
 namespace qmcplusplus
 {
-class DensityMatrices1B : public QMCHamiltonianBase
+class DensityMatrices1B : public OperatorBase
 {
+protected:
+  enum DMTimers
+  {
+    DM_eval,
+    DM_gen_samples,
+    DM_gen_sample_basis,
+    DM_gen_sample_ratios,
+    DM_gen_particle_basis,
+    DM_matrix_products,
+    DM_accumulate,
+  };
+
+  TimerList_t timers;
+
 public:
   enum
   {
@@ -71,12 +85,13 @@ public:
   bool warmed_up;
   std::vector<PosType> rsamples;
   Vector<RealType> sample_weights;
+  std::vector<ValueType> psi_ratios;
   RealType dens;
   PosType drift;
   int nindex;
   int eindex;
-  TrialWaveFunction& Psi;
   Lattice_t& Lattice;
+  TrialWaveFunction& Psi;
   ParticleSet& Pq;
   const ParticleSet* Pc;
   TraceSample<TraceReal>* w_trace;
@@ -138,13 +153,14 @@ public:
 
   RandomGenerator_t* uniform_random;
 
+
   //constructor/destructor
   DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl);
   DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
   ~DensityMatrices1B();
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

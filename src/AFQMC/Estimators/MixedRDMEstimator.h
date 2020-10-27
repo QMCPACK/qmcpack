@@ -1,7 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_MIXEDRDMESTIMATOR_H
 #define QMCPLUSPLUS_AFQMC_MIXEDRDMESTIMATOR_H
 
-#include <Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 #include "AFQMC/config.h"
 #include <vector>
 #include <queue>
@@ -9,10 +9,9 @@
 #include <iostream>
 #include <fstream>
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
-#include "Utilities/NewTimer.h"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
@@ -22,21 +21,24 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-
-class MixedRDMEstimator: public EstimatorBase
+class MixedRDMEstimator : public EstimatorBase
 {
+  using CMatrix_ref = boost::multi::array_ref<ComplexType, 2>;
+  using CVector     = boost::multi::array<ComplexType, 1>;
+  using stdCVector  = boost::multi::array<ComplexType, 1>;
 
-  using CMatrix_ref = boost::multi::array_ref<ComplexType,2>;
-  using CVector = boost::multi::array<ComplexType,1>;
-  public:
-
-  MixedRDMEstimator(afqmc::TaskGroup_& tg_, AFQMCInfo& info,
-        std::string title, xmlNodePtr cur, WALKER_TYPES wlk, Wavefunction& wfn, bool impsamp_=true) :
-                                            EstimatorBase(info),TG(tg_), wfn0(wfn),
-                                            block_size(1), writer(false), importanceSampling(impsamp_)
+public:
+  MixedRDMEstimator(afqmc::TaskGroup_& tg_,
+                    AFQMCInfo& info,
+                    std::string title,
+                    xmlNodePtr cur,
+                    WALKER_TYPES wlk,
+                    Wavefunction& wfn,
+                    bool impsamp_ = true)
+      : EstimatorBase(info), TG(tg_), writer(false), wfn0(wfn), block_size(1), importanceSampling(impsamp_)
   {
-
-    if(cur != NULL) {
+    if (cur != NULL)
+    {
       ParameterSet m_param;
       std::string restore_paths;
       m_param.add(block_size, "block_size", "int");
@@ -44,26 +46,33 @@ class MixedRDMEstimator: public EstimatorBase
     }
 
     ncores_per_TG = TG.getNCoresPerTG();
-    core_rank = TG.getLocalTGRank();
-    writer = (TG.getGlobalRank()==0);
-    if(wlk == CLOSED) {
-      dm_size = NMO*NMO;
-      dm_dims = {NMO,NMO};
-    } else if(wlk == COLLINEAR) {
-      dm_size = 2*NMO*NMO;
-      dm_dims = {2*NMO,NMO};
-    } else if(wlk == NONCOLLINEAR) {
-      dm_size = 4*NMO*NMO;
-      dm_dims = {2*NMO,2*NMO};
+    core_rank     = TG.getLocalTGRank();
+    writer        = (TG.getGlobalRank() == 0);
+    if (wlk == CLOSED)
+    {
+      dm_size = NMO * NMO;
+      dm_dims = {NMO, NMO};
     }
-    if(DMBuffer.size() < dm_size) {
+    else if (wlk == COLLINEAR)
+    {
+      dm_size = 2 * NMO * NMO;
+      dm_dims = {2 * NMO, NMO};
+    }
+    else if (wlk == NONCOLLINEAR)
+    {
+      dm_size = 4 * NMO * NMO;
+      dm_dims = {2 * NMO, 2 * NMO};
+    }
+    if (DMBuffer.size() < dm_size)
+    {
       DMBuffer.reextent(iextensions<1u>{dm_size});
     }
-    if(DMAverage.size() < dm_size) {
+    if (DMAverage.size() < dm_size)
+    {
       DMAverage.reextent(iextensions<1u>{dm_size});
     }
-    std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
-    std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
+    std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0, 0.0));
+    std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0, 0.0));
     denom.reextent({1});
     denom_average.reextent({1});
     denom_average[0] = ComplexType(0.0);
@@ -75,12 +84,27 @@ class MixedRDMEstimator: public EstimatorBase
 
   void accumulate_block(WalkerSet& wset)
   {
-    bool back_propagation = false, path_restoration = false;
     // check to see whether we should be accumulating estimates.
-    CMatrix_ref OneRDM(DMBuffer.data(), {dm_dims.first,dm_dims.second});
-    denom[0] = ComplexType(0.0,0.0);
-    std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
-    wfn0.WalkerAveragedDensityMatrix(wset, OneRDM, denom, path_restoration, !importanceSampling, back_propagation);
+    CMatrix_ref OneRDM(DMBuffer.data(), {dm_dims.first, dm_dims.second});
+    denom[0] = ComplexType(0.0, 0.0);
+    std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0, 0.0));
+    stdCVector wgt(iextensions<1u>{wset.size()});
+    wset.getProperty(WEIGHT, wgt);
+
+    int nx((wset.getWalkerType() == COLLINEAR) ? 2 : 1);
+    if (wDMsum.size(0) != wset.size() || wDMsum.size(2) != nx)
+      wDMsum.reextent({wset.size(), nx});
+    if (wOvlp.size(0) != wset.size() || wOvlp.size(2) != nx)
+      wOvlp.reextent({wset.size(), nx});
+
+    if (!importanceSampling)
+    {
+      stdCVector phase(iextensions<1u>{wset.size()});
+      wset.getProperty(PHASE, phase);
+      for (int i = 0; i < wgt.size(); i++)
+        wgt[i] *= phase[i];
+    }
+    wfn0.WalkerAveragedDensityMatrix(wset, wgt, OneRDM, denom, wOvlp, wDMsum, !importanceSampling);
     iblock++;
   }
 
@@ -90,27 +114,32 @@ class MixedRDMEstimator: public EstimatorBase
   {
     // I doubt we will ever collect a billion blocks of data.
     int n_zero = 9;
-    if(writer) {
-      for(int i = 0; i < DMBuffer.size(); i++)
+    if (writer)
+    {
+      for (int i = 0; i < DMBuffer.size(); i++)
         DMAverage[i] += DMBuffer[i];
       denom_average[0] += denom[0];
-      if(iblock%block_size == 0) {
-        for(int i = 0; i < DMAverage.size(); i++)
+      if (iblock % block_size == 0)
+      {
+        for (int i = 0; i < DMAverage.size(); i++)
           DMAverage[i] /= block_size;
         denom_average[0] /= block_size;
         dump.push("Mixed");
-        std::string padded_iblock = std::string(n_zero-std::to_string(iblock).length(),'0')+std::to_string(iblock);
-        dump.write(DMAverage, "one_rdm_"+padded_iblock);
-        dump.write(denom_average, "one_rdm_denom_"+padded_iblock);
+        std::string padded_iblock = std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
+        boost::multi::array_ref<ComplexType, 1> wOvlp_(wOvlp.origin(), {wOvlp.size(0) * wOvlp.size(1)});
+        boost::multi::array_ref<ComplexType, 1> wDMsum_(wDMsum.origin(), {wDMsum.size(0) * wDMsum.size(1)});
+        dump.write(DMAverage, "one_rdm_" + padded_iblock);
+        dump.write(denom_average, "one_rdm_denom_" + padded_iblock);
+        dump.write(wOvlp_, "one_rdm_walker_overlaps_" + padded_iblock);
+        dump.write(wDMsum_, "one_rdm_walker_dm_sums_" + padded_iblock);
         dump.pop();
-        std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0,0.0));
-        std::fill(denom_average.begin(), denom_average.end(), ComplexType(0.0,0.0));
+        std::fill(DMAverage.begin(), DMAverage.end(), ComplexType(0.0, 0.0));
+        std::fill(denom_average.begin(), denom_average.end(), ComplexType(0.0, 0.0));
       }
     }
   }
 
-  private:
-
+private:
   TaskGroup_& TG;
 
   bool writer;
@@ -124,20 +153,22 @@ class MixedRDMEstimator: public EstimatorBase
 
   int core_rank;
   int ncores_per_TG;
-  int iblock = 0;
+  int iblock       = 0;
   ComplexType zero = ComplexType(0.0, 0.0);
-  ComplexType one = ComplexType(1.0, 0.0);
+  ComplexType one  = ComplexType(1.0, 0.0);
 
   // Block size over which RDM will be averaged.
   int block_size;
   bool importanceSampling;
   std::vector<ComplexType> weights;
   int dm_size;
-  std::pair<int,int> dm_dims;
+  std::pair<int, int> dm_dims;
   CVector denom, denom_average;
 
+  boost::multi::array<ComplexType, 2> wDMsum;
+  boost::multi::array<ComplexType, 2> wOvlp;
 };
-}
-}
+} // namespace afqmc
+} // namespace qmcplusplus
 
 #endif

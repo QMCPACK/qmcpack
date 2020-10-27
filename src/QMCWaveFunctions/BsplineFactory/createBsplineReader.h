@@ -19,7 +19,7 @@ namespace qmcplusplus
 {
 ///forward declaration
 struct BsplineReaderBase;
-struct EinsplineSetBuilder;
+class EinsplineSetBuilder;
 
 /** create a reader which handles complex (double size real) splines, C2R or C2C case
  *  spline storage and computation precision is double

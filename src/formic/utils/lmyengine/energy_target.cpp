@@ -6,12 +6,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<vector>
+#include <vector>
 
-#include<boost/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
-#include<formic/utils/lmyengine/energy_target_accu.h>
-#include<formic/utils/lmyengine/energy_target.h>
+#include "formic/utils/lmyengine/energy_target_accu.h"
+#include "energy_target.h"
 
 
 
@@ -34,13 +34,14 @@
 // \param[out]  tserr             target function statistical error
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////
+template<typename S>
 void cqmc::engine::et(const bool exact_sampling,
                       const bool ground_state,
                       const bool variance_correct,
                       const bool print,
                       const double hd_lm_shift,
                       const double var_weight,
-                      const std::vector<double> & le_history,
+                      const std::vector<S> & le_history,
                       const std::vector<double> & vg_history,
                       const std::vector<double> & w_history,
                       double & energy,
@@ -52,7 +53,7 @@ void cqmc::engine::et(const bool exact_sampling,
 {
 
   // create a computer for energy and target function 
-  cqmc::engine::ETCompute etcal(le_history, vg_history, w_history, exact_sampling, ground_state, variance_correct, hd_lm_shift, var_weight);
+  cqmc::engine::ETCompute<S> etcal(le_history, vg_history, w_history, exact_sampling, ground_state, variance_correct, hd_lm_shift, var_weight);
 
   // compute energy, target function value and relevant parameters
   etcal.en_tar();
@@ -61,14 +62,14 @@ void cqmc::engine::et(const bool exact_sampling,
   if ( variance_correct ) 
     etcal.correct_finite_variance();
 
-  // get the energy and relevant quantities
+  // get the energy and relevent quantities
   energy = etcal.energy();
 
   esdev = std::sqrt(etcal.variance());
 
   eserr = etcal.eserr(output);
 
-  // get the target function value and relevant quantities 
+  // get the target function value and relevent quantities 
   if ( !ground_state ) {
     target = etcal.tar_fn_val();
 
@@ -80,3 +81,35 @@ void cqmc::engine::et(const bool exact_sampling,
     etcal.print_statistics(output);
 
 }
+
+template void cqmc::engine::et(const bool exact_sampling,
+                               const bool ground_state,
+                               const bool variance_correct,
+                               const bool print,
+                               const double hd_lm_shift,
+                               const double var_weight,
+                               const std::vector<double> & le_history,
+                               const std::vector<double> & vg_history,
+                               const std::vector<double> & w_history,
+                               double & energy,
+                               double & esdev,
+                               double & eserr,
+                               double & target,
+                               double & tserr,
+                               std::ostream & output);
+
+template void cqmc::engine::et(const bool exact_sampling,
+                               const bool ground_state,
+                               const bool variance_correct,
+                               const bool print,
+                               const double hd_lm_shift,
+                               const double var_weight,
+                               const std::vector<std::complex<double> > & le_history,
+                               const std::vector<double> & vg_history,
+                               const std::vector<double> & w_history,
+                               double & energy,
+                               double & esdev,
+                               double & eserr,
+                               double & target,
+                               double & tserr,
+                               std::ostream & output);

@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+  <project id="md_cc_vmc_LiH-gamma" series="1">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      Simple Example of solid LiH
+    </application>
+  </project>
+
+  <!--random seed="666999"/-->
+  <qmcsystem>
+  <simulationcell name="global">
+    <parameter name="lattice" units="bohr">
+   -3.550000000000000    0.000000000000000    3.550000000000000
+    0.000000000000000    3.550000000000000    3.550000000000000
+   -3.550000000000000    3.550000000000000    0.000000000000000
+    </parameter>
+    <parameter name="bconds">
+p p p
+    </parameter>
+    <parameter name="LR_dim_cutoff">
+15
+    </parameter>
+  </simulationcell>
+  </qmcsystem>
+   <particleset name="i" size="2">
+    <group name="H">
+      <parameter name="charge">       1.0     </parameter>
+      <parameter name="atomicnumber"> 1.0     </parameter>
+    </group>
+    <group name="Li">
+      <parameter name="charge">       3.0     </parameter>
+      <parameter name="atomicnumber"> 3.0     </parameter>
+    </group>
+    <attrib name="ionid" datatype="stringArray">
+Li
+H
+    </attrib>
+    <attrib name="position" datatype="posArray" condition="1">
+    0.000000000000000    0.000000000000000    0.000000000000000
+    0.500000000000000    0.500000000000000    0.500000000000000
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" random_source="i">
+    <group name="u" size="2">
+      <parameter name="charge">
+          -1
+      </parameter>
+    </group>
+    <group name="d" size="2">
+      <parameter name="charge">
+          -1
+      </parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="einspline" href="LiH-gamma.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" gpu="yes" meshfactor="1.0" source="i"  precision="single">
+
+      <sposet type="einspline" name="spo-up" size="4" source="i" group="0" optimizable="no" />
+      <sposet type="einspline" name="spo-dn" size="4" source="i" group="0" optimizable="no" />
+
+      <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn">
+        <detlist size="2" type="CSF" nca="0" ncb="0" nea="2" neb="2" nstates="4" cutoff="0.0">
+          <csf id="CSFcoeff_0" exctLvl="0" coeff_real="0.89" coeff_imag="0.01" qchem_coeff="0.99" occ="2200">
+            <det id="csf_0-0" coeff="1" alpha="1100" beta="1100"/>
+          </csf>
+          <csf id="CSFcoeff_1" exctLvl="2" coeff_real="0.10" coeff_imag="0.01" qchem_coeff="0.99" occ="2020">
+            <det id="csf_0-0" coeff="1" alpha="1010" beta="1010"/>
+          </csf>
+        </detlist>
+      </multideterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="8">
+        <coefficients id="uu" type="Array" optimize="yes"> 0.225363463 0.1669795301 0.1254593518 0.08977901851 0.05998153419 0.03626461477 0.01856429994 0.006776294542 </coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="8">
+        <coefficients id="ud" type="Array" optimize="yes"> 0.3607069694 0.2684069145 0.1968819044 0.1393261726 0.09303389039 0.05650026749 0.02899367338 0.01049879464 </coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
+      <correlation elementType="Li" cusp="0.0" size="8" rcut="2.0">
+        <coefficients id="Li" type="Array" optimize="yes">-0.2283985508 -0.2277598846 -0.1988050981 -0.1585604529 -0.1151683434 -0.07354642589 -0.03788121737 -0.01275207554  </coefficients>
+      </correlation>
+      <correlation elementType="H" cusp="0.0" size="8" rcut="2.0">
+        <coefficients id="H" type="Array" optimize="yes"> -0.2097056894 -0.1464055385 -0.03390776074 0.01296889195 0.001182405124 -0.0121602525 -0.009014901264 -0.003706238235 </coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml">
+      <pseudo elementType="Li" href="Li.xml"/>
+      <pseudo elementType="H" href="H.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="i" target="i"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+  </hamiltonian>
+
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">    16 </parameter>
+    <parameter name="substeps">  5 </parameter>
+    <parameter name="samples"> 2000000 </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
+    <parameter name="steps">  100 </parameter>
+    <parameter name="blocks">  200 </parameter>
+    <parameter name="timestep">  1.0 </parameter>
+    <parameter name="usedrift">   no </parameter>
+  </qmc>
+</simulation>

@@ -13,7 +13,7 @@
 
 
 #include "Configuration.h"
-#include "QMCApp/QMCAppBase.h"
+#include "QMCAppBase.h"
 
 namespace qmcplusplus
 {

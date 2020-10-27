@@ -60,7 +60,7 @@ struct PadeFunctor : public OptimizableFunctorBase
   std::string ID_B;
 
   ///default constructor
-  PadeFunctor() : Scale(1.0), ID_A("0"), ID_B("0"), A(1.0), B0(1.0), Opt_A(false), Opt_B(true) { reset(); }
+  PadeFunctor() :  Opt_A(false), Opt_B(true), A(1.0), B0(1.0),Scale(1.0), ID_A("0"), ID_B("0")  { reset(); }
 
   void setCusp(real_type cusp)
   {
@@ -240,10 +240,12 @@ struct PadeFunctor : public OptimizableFunctorBase
       if (ia > -1)
       {
         int i = 0;
-        if (Opt_A)
-          A = myVars[i++] = active[ia++];
-        if (Opt_B)
-          B0 = myVars[i] = active[ia];
+        if (Opt_A) {
+          A = std::real( myVars[i++] = active[ia++] );
+        }
+        if (Opt_B) {
+          B0 = std::real( myVars[i] = active[ia] );
+        }
       }
       reset();
     }

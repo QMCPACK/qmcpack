@@ -119,12 +119,12 @@ inline T dotProduct(const std::vector<T>& a, const std::vector<T>& b)
 template<class T>
 CGOptimization<T>::CGOptimization(ObjectFuncType* atarget)
     : TargetFunc(atarget),
-      RestartCG(true),
       NumSteps(100),
       Displacement(1e-6),
       CostTol(1.e-6),
+      GammaTol(1.e-7), // GammaTol was set to 1e-4 originally
       GradTol(1.e-6),
-      GammaTol(1.e-7) // GammaTol was set to 1e-4 originally
+      RestartCG(true)
 {
   curCost = prevCost = 1.0e13;
 }
@@ -133,13 +133,13 @@ template<class T>
 void CGOptimization<T>::setTarget(ObjectFuncType* fn)
 {
   TargetFunc = fn;
-  NumParams  = TargetFunc->NumParams();
+  NumParams  = TargetFunc->getNumParams();
   Y.resize(NumParams);
   gY.resize(NumParams, 0);
   cgY.resize(NumParams, 0);
   for (int i = 0; i < NumParams; i++)
   {
-    Y[i] = TargetFunc->Params(i);
+    Y[i] = std::real(TargetFunc->Params(i));
   }
 }
 
@@ -265,8 +265,8 @@ void CGOptimization<T>::evaluateGradients(std::vector<Return_t>& grad)
   TargetFunc->GradCost(grad, Y, Displacement);
   //   //do the finite difference method
   //   Return_t dh=1.0/(2.0*Displacement);
-  //   for(int i=0; i<TargetFunc->NumParams() ; i++) {
-  //     for(int j=0; j<TargetFunc->NumParams(); j++) TargetFunc->Params(j)=Y[j];
+  //   for(int i=0; i<TargetFunc->getNumParams() ; i++) {
+  //     for(int j=0; j<TargetFunc->getNumParams(); j++) TargetFunc->Params(j)=Y[j];
   //     TargetFunc->Params(i) = Y[i]+ Displacement;
   //     Return_t CostPlus = TargetFunc->Cost();
   //     TargetFunc->Params(i) = Y[i]- Displacement;

@@ -5,20 +5,22 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-//    Lawrence Livermore National Laboratory 
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef AFQMC_CUSTOM_POINTERS_HPP
 #define AFQMC_CUSTOM_POINTERS_HPP
 
-#include "AFQMC/Memory/raw_pointers.hpp" 
-#if defined(ENABLE_CUDA)
-#include "AFQMC/Memory/CUDA/cuda_utilities.h"
-#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
+#include "AFQMC/Memory/raw_pointers.hpp"
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#include "AFQMC/Memory/device_pointers.hpp"
+//#include "AFQMC/Memory/CUDA/cuda_utilities.h"
+//#include "AFQMC/Memory/CUDA/cuda_init.h"
+//#include "AFQMC/Memory/CUDA/cuda_gpu_pointer.hpp"
 #endif
 
 #endif

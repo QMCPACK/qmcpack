@@ -17,7 +17,6 @@
 #define QMCPLUSPLUS_BACKFLOW_E_E_H
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
-#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include <cmath>
 
@@ -26,6 +25,10 @@ namespace qmcplusplus
 template<class FT>
 class Backflow_ee : public BackflowFunctionBase
 {
+private:
+  /// distance table index
+  const int myTableIndex_;
+
 public:
   //number of groups of the target particleset
   std::vector<FT*> RadFun;
@@ -35,9 +38,9 @@ public:
   Matrix<int> PairID;
   bool first;
 
-  Backflow_ee(ParticleSet& ions, ParticleSet& els) : BackflowFunctionBase(ions, els), first(true) //,RadFun(0)
+  Backflow_ee(ParticleSet& ions, ParticleSet& els)
+      : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(els)), first(true)
   {
-    myTable = DistanceTable::add(els, DT_SOA_PREFERRED);
     resize(NumTargets, NumTargets);
     NumGroups = els.groups();
     PairID.resize(NumTargets, NumTargets);
@@ -48,18 +51,9 @@ public:
     offsetPrms.resize(NumGroups * NumGroups, 0);
   }
 
-  //Backflow_ee(ParticleSet& ions, ParticleSet& els, FT* RF): BackflowFunctionBase(ions,els),RadFun(RF)
-  //{
-  //  myTable = DistanceTable::add(els,els);
-  //  resize(NumTargets);
-  //}
-
-
   ~Backflow_ee(){};
 
-  void resetTargetParticleSet(ParticleSet& P) { myTable = DistanceTable::add(P, DT_SOA_PREFERRED); }
-
-  BackflowFunctionBase* makeClone(ParticleSet& tqp)
+  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
   {
     Backflow_ee<FT>* clone = new Backflow_ee<FT>(tqp, tqp);
     clone->first           = false;
@@ -238,65 +232,61 @@ public:
    */
   inline void evaluate(const ParticleSet& P, ParticleSet& QP)
   {
-    RealType du, d2u;
-#ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluate(P,QP) not implemented for SoA\n");
-#else
-    for (int i = 0; i < myTable->size(SourceIndex); i++)
-    {
-      for (int nn = myTable->M[i]; nn < myTable->M[i + 1]; nn++)
-      {
-        int j        = myTable->J[nn];
-        RealType uij = RadFun[PairID(i, j)]->evaluate(myTable->r(nn), du, d2u);
-        PosType u    = uij * myTable->dr(nn);
-        QP.R[i] -= u; // dr(ij) = r_j-r_i
-        QP.R[j] += u;
-        UIJ(j, i) = u;
-        UIJ(i, j) = -1.0 * u;
-      }
-    }
-#endif
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //for (int i = 0; i < myTable.sources(); i++)
+    //{
+    //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
+    //  {
+    //    int j        = myTable.J[nn];
+    //    RealType uij = RadFun[PairID(i, j)]->evaluate(myTable.r(nn), du, d2u);
+    //    PosType u    = uij * myTable.dr(nn);
+    //    QP.R[i] -= u; // dr(ij) = r_j-r_i
+    //    QP.R[j] += u;
+    //    UIJ(j, i) = u;
+    //    UIJ(i, j) = -1.0 * u;
+    //  }
+    //}
   }
 
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
   {
     APP_ABORT("This shouldn't be called: Backflow_ee::evaluate(Bmat)");
     PosType du, d2u, temp;
-#ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_vec,Amat) not implemented for SoA\n");
-#else
-    for (int i = 0; i < myTable->size(SourceIndex); i++)
-    {
-      for (int nn = myTable->M[i]; nn < myTable->M[i + 1]; nn++)
-      {
-        int j        = myTable->J[nn];
-        RealType uij = RadFun[PairID(i, j)]->evaluate(myTable->r(nn), du, d2u);
-        PosType u    = uij * myTable->dr(nn);
-        // UIJ = eta(r) * (r_i - r_j)
-        UIJ(j, i) = u;
-        UIJ(i, j) = -1.0 * u;
-        du *= myTable->rinv(nn);
-        QP.R[i] -= u;
-        QP.R[j] += u;
-//          Amat(i,j) -= du*(outerProduct(myTable->dr(nn),myTable->dr(nn)));
-#if OHMMS_DIM == 3
-        Amat(i, j)[0] -= uij;
-        Amat(i, j)[4] -= uij;
-        Amat(i, j)[8] -= uij;
-#elif OHMMS_DIM == 2
-        Amat(i, j)[0] -= uij;
-        Amat(i, j)[3] -= uij;
-#endif
-        Amat(j, i) += Amat(i, j);
-        Amat(i, i) -= Amat(i, j);
-        Amat(j, j) -= Amat(i, j);
-        // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
-        u = 2.0 * (d2u + (OHMMS_DIM + 1.0) * du) * myTable->dr(nn);
-        Bmat[i] -= u;
-        Bmat[j] += u;
-      }
-    }
-#endif
+    //    const auto& myTable = P.getDistTable(myTableIndex_);
+    //    for (int i = 0; i < myTable.sources(); i++)
+    //    {
+    //      for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
+    //      {
+    //        int j        = myTable.J[nn];
+    //        RealType uij = RadFun[PairID(i, j)]->evaluate(myTable.r(nn), du, d2u);
+    //        PosType u    = uij * myTable.dr(nn);
+    //        // UIJ = eta(r) * (r_i - r_j)
+    //        UIJ(j, i) = u;
+    //        UIJ(i, j) = -1.0 * u;
+    //        du *= myTable.rinv(nn);
+    //        QP.R[i] -= u;
+    //        QP.R[j] += u;
+    ////          Amat(i,j) -= du*(outerProduct(myTable.dr(nn),myTable.dr(nn)));
+    //#if OHMMS_DIM == 3
+    //        Amat(i, j)[0] -= uij;
+    //        Amat(i, j)[4] -= uij;
+    //        Amat(i, j)[8] -= uij;
+    //#elif OHMMS_DIM == 2
+    //        Amat(i, j)[0] -= uij;
+    //        Amat(i, j)[3] -= uij;
+    //#endif
+    //        Amat(j, i) += Amat(i, j);
+    //        Amat(i, i) -= Amat(i, j);
+    //        Amat(j, j) -= Amat(i, j);
+    //        // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
+    //        u = 2.0 * (d2u + (OHMMS_DIM + 1.0) * du) * myTable.dr(nn);
+    //        Bmat[i] -= u;
+    //        Bmat[j] += u;
+    //      }
+    //    }
   }
 
 
@@ -305,16 +295,13 @@ public:
   inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
     RealType du, d2u;
-#ifdef ENABLE_SOA
-    //  APP_ABORT("Backflow_ee.h::evaluate(P,QP,Bmat_full,Amat) not implemented for SoA\n");
-    const DistanceTableData* d_table = P.DistTables[0];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int ig = 0; ig < NumGroups; ++ig)
     {
-      const int igt = ig * NumGroups;
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
-        const auto& dist  = myTable->Distances[iat];
-        const auto& displ = myTable->Displacements[iat];
+        const auto& dist  = myTable.getDistRow(iat);
+        const auto& displ = myTable.getDisplRow(iat);
         for (int jat = 0; jat < iat; ++jat)
         {
           if (dist[jat] > 0)
@@ -352,67 +339,25 @@ public:
         }
       }
     }
-#else
-    for (int i = 0; i < myTable->size(SourceIndex); i++)
-    {
-      for (int nn = myTable->M[i]; nn < myTable->M[i + 1]; nn++)
-      {
-        int j        = myTable->J[nn];
-        RealType uij = RadFun[PairID(i, j)]->evaluate(myTable->r(nn), du, d2u);
-        du *= myTable->rinv(nn);
-        PosType u = uij * myTable->dr(nn);
-        UIJ(j, i) = u;
-        UIJ(i, j) = -1.0 * u;
-        QP.R[i] -= u;
-        QP.R[j] += u;
-        HessType& hess = AIJ(i, j);
-        hess           = du * outerProduct(myTable->dr(nn), myTable->dr(nn));
-#if OHMMS_DIM == 3
-        hess[0] += uij;
-        hess[4] += uij;
-        hess[8] += uij;
-#elif OHMMS_DIM == 2
-        hess[0] += uij;
-        hess[3] += uij;
-#endif
-        AIJ(j, i) = hess;
-        Amat(i, i) += hess;
-        Amat(j, j) += hess;
-        Amat(i, j) -= hess;
-        Amat(j, i) -= hess;
-        GradType& grad = BIJ(j, i); // dr = r_j - r_i
-        grad           = (d2u + (OHMMS_DIM + 1) * du) * myTable->dr(nn);
-        BIJ(i, j)      = -1.0 * grad;
-        Bmat_full(i, i) -= grad;
-        Bmat_full(j, j) += grad;
-        Bmat_full(i, j) += grad;
-        Bmat_full(j, i) -= grad;
-      }
-    }
-#endif
   }
 
   /** calculate quasi-particle coordinates after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index)
   {
-    RealType du, d2u;
-#ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec) not implemented for SoA\n");
-#else
-    // myTable->Temp[jat].r1
-    int maxI = index.size();
-    int iat  = index[0];
-    for (int i = 1; i < maxI; i++)
-    {
-      int j = index[i];
-      // Temp[j].dr1 = (ri - rj)
-      RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable->Temp[j].r1, du, d2u);
-      PosType u    = (UIJ_temp[j] = uij * myTable->Temp[j].dr1) - UIJ(iat, j);
-      newQP[iat] += u;
-      newQP[j] -= u;
-    }
-#endif
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //int maxI            = index.size();
+    //int iat             = index[0];
+    //for (int i = 1; i < maxI; i++)
+    //{
+    //  int j        = index[i];
+    //  RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.Temp[j].r1, du, d2u);
+    //  PosType u    = (UIJ_temp[j] = uij * myTable.Temp[j].dr1) - UIJ(iat, j);
+    //  newQP[iat] += u;
+    //  newQP[j] -= u;
+    //}
   }
 
   /** calculate quasi-particle coordinates after pbyp move
@@ -420,42 +365,23 @@ public:
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP)
   {
     RealType du, d2u;
-#ifdef ENABLE_SOA
-    // APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP) not implemented for SoA\n");
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int i = 0; i < iat; i++)
     {
       // Temp[j].dr1 = (ri - rj)
-      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable->Temp_r[i], du, d2u);
-      PosType u    = (UIJ_temp[i] = -uij * myTable->Temp_dr[i]) - UIJ(iat, i);
+      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.getTempDists()[i], du, d2u);
+      PosType u    = (UIJ_temp[i] = -uij * myTable.getTempDispls()[i]) - UIJ(iat, i);
       newQP[iat] += u;
       newQP[i] -= u;
     }
     for (int i = iat + 1; i < NumTargets; i++)
     {
       // Temp[j].dr1 = (ri - rj)
-      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable->Temp_r[i], du, d2u);
-      PosType u    = (UIJ_temp[i] = -uij * myTable->Temp_dr[i]) - UIJ(iat, i);
+      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable.getTempDists()[i], du, d2u);
+      PosType u    = (UIJ_temp[i] = -uij * myTable.getTempDispls()[i]) - UIJ(iat, i);
       newQP[iat] += u;
       newQP[i] -= u;
     }
-#else
-    for (int i = 0; i < iat; i++)
-    {
-      // Temp[j].dr1 = (ri - rj)
-      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable->Temp[i].r1, du, d2u);
-      PosType u    = (UIJ_temp[i] = uij * myTable->Temp[i].dr1) - UIJ(iat, i);
-      newQP[iat] += u;
-      newQP[i] -= u;
-    }
-    for (int i = iat + 1; i < NumTargets; i++)
-    {
-      // Temp[j].dr1 = (ri - rj)
-      RealType uij = RadFun[PairID(iat, i)]->evaluate(myTable->Temp[i].r1, du, d2u);
-      PosType u    = (UIJ_temp[i] = uij * myTable->Temp[i].dr1) - UIJ(iat, i);
-      newQP[iat] += u;
-      newQP[i] -= u;
-    }
-#endif
   }
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
@@ -465,37 +391,34 @@ public:
                            const std::vector<int>& index,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
-#ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Amat) not implemented for SoA\n");
-#else
-    // myTable->Temp[jat].r1
-    int maxI = index.size();
-    int iat  = index[0];
-    for (int i = 1; i < maxI; i++)
-    {
-      int j        = index[i];
-      RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable->Temp[j].r1, du, d2u);
-      PosType u    = (UIJ_temp[j] = uij * myTable->Temp[j].dr1) - UIJ(iat, j);
-      newQP[iat] += u;
-      newQP[j] -= u;
-      HessType& hess = AIJ_temp[j];
-      hess           = (du * myTable->Temp[j].rinv1) * outerProduct(myTable->Temp[j].dr1, myTable->Temp[j].dr1);
-#if OHMMS_DIM == 3
-      hess[0] += uij;
-      hess[4] += uij;
-      hess[8] += uij;
-#elif OHMMS_DIM == 2
-      hess[0] += uij;
-      hess[3] += uij;
-#endif
-      HessType dA = hess - AIJ(iat, j);
-      Amat(iat, iat) += dA;
-      Amat(j, j) += dA;
-      Amat(iat, j) -= dA;
-      Amat(j, iat) -= dA;
-    }
-#endif
+    //    RealType du, d2u;
+    //    const auto& myTable = P.getDistTable(myTableIndex_);
+    //    int maxI            = index.size();
+    //    int iat             = index[0];
+    //    for (int i = 1; i < maxI; i++)
+    //    {
+    //      int j        = index[i];
+    //      RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.Temp[j].r1, du, d2u);
+    //      PosType u    = (UIJ_temp[j] = uij * myTable.Temp[j].dr1) - UIJ(iat, j);
+    //      newQP[iat] += u;
+    //      newQP[j] -= u;
+    //      HessType& hess = AIJ_temp[j];
+    //      hess           = (du * myTable.Temp[j].rinv1) * outerProduct(myTable.Temp[j].dr1, myTable.Temp[j].dr1);
+    //#if OHMMS_DIM == 3
+    //      hess[0] += uij;
+    //      hess[4] += uij;
+    //      hess[8] += uij;
+    //#elif OHMMS_DIM == 2
+    //      hess[0] += uij;
+    //      hess[3] += uij;
+    //#endif
+    //      HessType dA = hess - AIJ(iat, j);
+    //      Amat(iat, iat) += dA;
+    //      Amat(j, j) += dA;
+    //      Amat(iat, j) -= dA;
+    //      Amat(j, iat) -= dA;
+    //    }
   }
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
@@ -503,18 +426,17 @@ public:
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat)
   {
     RealType du, d2u;
-#ifdef ENABLE_SOA
-    // APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Amat) not implemented for SoA\n");
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int j = 0; j < iat; j++)
     {
-      if (myTable->Temp_r[j] > 0)
+      if (myTable.getTempDists()[j] > 0)
       {
-        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable->Temp_r[j], du, d2u);
-        PosType u    = (UIJ_temp[j] = -uij * myTable->Temp_dr[j]) - UIJ(iat, j);
+        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.getTempDists()[j], du, d2u);
+        PosType u    = (UIJ_temp[j] = -uij * myTable.getTempDispls()[j]) - UIJ(iat, j);
         newQP[iat] += u;
         newQP[j] -= u;
         HessType& hess = AIJ_temp[j];
-        hess           = (du / myTable->Temp_r[j]) * outerProduct(myTable->Temp_dr[j], myTable->Temp_dr[j]);
+        hess = (du / myTable.getTempDists()[j]) * outerProduct(myTable.getTempDispls()[j], myTable.getTempDispls()[j]);
 #if OHMMS_DIM == 3
         hess[0] += uij;
         hess[4] += uij;
@@ -532,14 +454,14 @@ public:
     }
     for (int j = iat + 1; j < NumTargets; j++)
     {
-      if (myTable->Temp_r[j] > 0)
+      if (myTable.getTempDists()[j] > 0)
       {
-        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable->Temp_r[j], du, d2u);
-        PosType u    = (UIJ_temp[j] = -uij * myTable->Temp_dr[j]) - UIJ(iat, j);
+        RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable.getTempDists()[j], du, d2u);
+        PosType u    = (UIJ_temp[j] = -uij * myTable.getTempDispls()[j]) - UIJ(iat, j);
         newQP[iat] += u;
         newQP[j] -= u;
         HessType& hess = AIJ_temp[j];
-        hess           = (du / myTable->Temp_r[j]) * outerProduct(myTable->Temp_dr[j], myTable->Temp_dr[j]);
+        hess = (du / myTable.getTempDists()[j]) * outerProduct(myTable.getTempDispls()[j], myTable.getTempDispls()[j]);
 #if OHMMS_DIM == 3
         hess[0] += uij;
         hess[4] += uij;
@@ -555,53 +477,6 @@ public:
         Amat(j, iat) -= dA;
       }
     }
-#else
-    // myTable->Temp[jat].r1
-    for (int j = 0; j < iat; j++)
-    {
-      RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable->Temp[j].r1, du, d2u);
-      PosType u    = (UIJ_temp[j] = uij * myTable->Temp[j].dr1) - UIJ(iat, j);
-      newQP[iat] += u;
-      newQP[j] -= u;
-      HessType& hess = AIJ_temp[j];
-      hess           = (du * myTable->Temp[j].rinv1) * outerProduct(myTable->Temp[j].dr1, myTable->Temp[j].dr1);
-#if OHMMS_DIM == 3
-      hess[0] += uij;
-      hess[4] += uij;
-      hess[8] += uij;
-#elif OHMMS_DIM == 2
-      hess[0] += uij;
-      hess[3] += uij;
-#endif
-      HessType dA = hess - AIJ(iat, j);
-      Amat(iat, iat) += dA;
-      Amat(j, j) += dA;
-      Amat(iat, j) -= dA;
-      Amat(j, iat) -= dA;
-    }
-    for (int j = iat + 1; j < NumTargets; j++)
-    {
-      RealType uij = RadFun[PairID(iat, j)]->evaluate(myTable->Temp[j].r1, du, d2u);
-      PosType u    = (UIJ_temp[j] = uij * myTable->Temp[j].dr1) - UIJ(iat, j);
-      newQP[iat] += u;
-      newQP[j] -= u;
-      HessType& hess = AIJ_temp[j];
-      hess           = (du * myTable->Temp[j].rinv1) * outerProduct(myTable->Temp[j].dr1, myTable->Temp[j].dr1);
-#if OHMMS_DIM == 3
-      hess[0] += uij;
-      hess[4] += uij;
-      hess[8] += uij;
-#elif OHMMS_DIM == 2
-      hess[0] += uij;
-      hess[3] += uij;
-#endif
-      HessType dA = hess - AIJ(iat, j);
-      Amat(iat, iat) += dA;
-      Amat(j, j) += dA;
-      Amat(iat, j) -= dA;
-      Amat(j, iat) -= dA;
-    }
-#endif
   }
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
@@ -612,46 +487,43 @@ public:
                            GradMatrix_t& Bmat,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
-    // myTable->Temp[jat].r1
-#ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,QP,index_vec,Bmat,Amat) not implemented for SoA\n");
-#else
-    int maxI                                                = index.size();
-    int iat                                                 = index[0];
-    const std::vector<DistanceTableData::TempDistType>& TMP = myTable->Temp;
-    for (int i = 1; i < maxI; i++)
-    {
-      int j        = index[i];
-      RealType uij = RadFun[PairID(iat, j)]->evaluate(TMP[j].r1, du, d2u);
-      PosType u    = (UIJ_temp[j] = uij * TMP[j].dr1) - UIJ(iat, j);
-      newQP[iat] += u;
-      newQP[j] -= u;
-      du *= TMP[j].rinv1;
-      HessType& hess = AIJ_temp[j];
-      hess           = du * outerProduct(TMP[j].dr1, TMP[j].dr1);
-#if OHMMS_DIM == 3
-      hess[0] += uij;
-      hess[4] += uij;
-      hess[8] += uij;
-#elif OHMMS_DIM == 2
-      hess[0] += uij;
-      hess[3] += uij;
-#endif
-      HessType dA = hess - AIJ(iat, j);
-      Amat(iat, iat) += dA;
-      Amat(j, j) += dA;
-      Amat(iat, j) -= dA;
-      Amat(j, iat) -= dA;
-      GradType& grad = BIJ_temp[j]; // dr = r_iat - r_j
-      grad           = (d2u + (OHMMS_DIM + 1) * du) * TMP[j].dr1;
-      GradType dg    = grad - BIJ(iat, j);
-      Bmat(iat, iat) += dg;
-      Bmat(j, j) -= dg;
-      Bmat(iat, j) -= dg;
-      Bmat(j, iat) += dg;
-    }
-#endif
+    //    RealType du, d2u;
+    //    const auto& myTable                                     = P.getDistTable(myTableIndex_);
+    //    int maxI                                                = index.size();
+    //    int iat                                                 = index[0];
+    //    const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
+    //    for (int i = 1; i < maxI; i++)
+    //    {
+    //      int j        = index[i];
+    //      RealType uij = RadFun[PairID(iat, j)]->evaluate(TMP[j].r1, du, d2u);
+    //      PosType u    = (UIJ_temp[j] = uij * TMP[j].dr1) - UIJ(iat, j);
+    //      newQP[iat] += u;
+    //      newQP[j] -= u;
+    //      du *= TMP[j].rinv1;
+    //      HessType& hess = AIJ_temp[j];
+    //      hess           = du * outerProduct(TMP[j].dr1, TMP[j].dr1);
+    //#if OHMMS_DIM == 3
+    //      hess[0] += uij;
+    //      hess[4] += uij;
+    //      hess[8] += uij;
+    //#elif OHMMS_DIM == 2
+    //      hess[0] += uij;
+    //      hess[3] += uij;
+    //#endif
+    //      HessType dA = hess - AIJ(iat, j);
+    //      Amat(iat, iat) += dA;
+    //      Amat(j, j) += dA;
+    //      Amat(iat, j) -= dA;
+    //      Amat(j, iat) -= dA;
+    //      GradType& grad = BIJ_temp[j]; // dr = r_iat - r_j
+    //      grad           = (d2u + (OHMMS_DIM + 1) * du) * TMP[j].dr1;
+    //      GradType dg    = grad - BIJ(iat, j);
+    //      Bmat(iat, iat) += dg;
+    //      Bmat(j, j) -= dg;
+    //      Bmat(iat, j) -= dg;
+    //      Bmat(j, iat) += dg;
+    //    }
   }
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
@@ -662,73 +534,70 @@ public:
                            GradMatrix_t& Bmat,
                            HessMatrix_t& Amat)
   {
-    RealType du, d2u;
-#ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluatePbyP(P,iat,QP,Bmat,Amat) not implemented for SoA\n");
-#else
-    // myTable->Temp[jat].r1
-    const std::vector<DistanceTableData::TempDistType>& TMP = myTable->Temp;
-    for (int j = 0; j < iat; j++)
-    {
-      RealType uij = RadFun[PairID(iat, j)]->evaluate(TMP[j].r1, du, d2u);
-      PosType u    = (UIJ_temp[j] = uij * TMP[j].dr1) - UIJ(iat, j);
-      newQP[iat] += u;
-      newQP[j] -= u;
-      du *= TMP[j].rinv1;
-      HessType& hess = AIJ_temp[j];
-      hess           = du * outerProduct(TMP[j].dr1, TMP[j].dr1);
-#if OHMMS_DIM == 3
-      hess[0] += uij;
-      hess[4] += uij;
-      hess[8] += uij;
-#elif OHMMS_DIM == 2
-      hess[0] += uij;
-      hess[3] += uij;
-#endif
-      HessType dA = hess - AIJ(iat, j);
-      Amat(iat, iat) += dA;
-      Amat(j, j) += dA;
-      Amat(iat, j) -= dA;
-      Amat(j, iat) -= dA;
-      GradType& grad = BIJ_temp[j]; // dr = r_iat - r_j
-      grad           = (d2u + (OHMMS_DIM + 1) * du) * TMP[j].dr1;
-      GradType dg    = grad - BIJ(iat, j);
-      Bmat(iat, iat) += dg;
-      Bmat(j, j) -= dg;
-      Bmat(iat, j) -= dg;
-      Bmat(j, iat) += dg;
-    }
-    for (int j = iat + 1; j < NumTargets; j++)
-    {
-      RealType uij = RadFun[PairID(iat, j)]->evaluate(TMP[j].r1, du, d2u);
-      PosType u    = (UIJ_temp[j] = uij * TMP[j].dr1) - UIJ(iat, j);
-      newQP[iat] += u;
-      newQP[j] -= u;
-      du *= TMP[j].rinv1;
-      HessType& hess = AIJ_temp[j];
-      hess           = du * outerProduct(TMP[j].dr1, TMP[j].dr1);
-#if OHMMS_DIM == 3
-      hess[0] += uij;
-      hess[4] += uij;
-      hess[8] += uij;
-#elif OHMMS_DIM == 2
-      hess[0] += uij;
-      hess[3] += uij;
-#endif
-      HessType dA = hess - AIJ(iat, j);
-      Amat(iat, iat) += dA;
-      Amat(j, j) += dA;
-      Amat(iat, j) -= dA;
-      Amat(j, iat) -= dA;
-      GradType& grad = BIJ_temp[j]; // dr = r_iat - r_j
-      grad           = (d2u + (OHMMS_DIM + 1) * du) * TMP[j].dr1;
-      GradType dg    = grad - BIJ(iat, j);
-      Bmat(iat, iat) += dg;
-      Bmat(j, j) -= dg;
-      Bmat(iat, j) -= dg;
-      Bmat(j, iat) += dg;
-    }
-#endif
+    //    RealType du, d2u;
+    //    const auto& myTable                                     = P.getDistTable(myTableIndex_);
+    //    const std::vector<DistanceTableData::TempDistType>& TMP = myTable.Temp;
+    //    for (int j = 0; j < iat; j++)
+    //    {
+    //      RealType uij = RadFun[PairID(iat, j)]->evaluate(TMP[j].r1, du, d2u);
+    //      PosType u    = (UIJ_temp[j] = uij * TMP[j].dr1) - UIJ(iat, j);
+    //      newQP[iat] += u;
+    //      newQP[j] -= u;
+    //      du *= TMP[j].rinv1;
+    //      HessType& hess = AIJ_temp[j];
+    //      hess           = du * outerProduct(TMP[j].dr1, TMP[j].dr1);
+    //#if OHMMS_DIM == 3
+    //      hess[0] += uij;
+    //      hess[4] += uij;
+    //      hess[8] += uij;
+    //#elif OHMMS_DIM == 2
+    //      hess[0] += uij;
+    //      hess[3] += uij;
+    //#endif
+    //      HessType dA = hess - AIJ(iat, j);
+    //      Amat(iat, iat) += dA;
+    //      Amat(j, j) += dA;
+    //      Amat(iat, j) -= dA;
+    //      Amat(j, iat) -= dA;
+    //      GradType& grad = BIJ_temp[j]; // dr = r_iat - r_j
+    //      grad           = (d2u + (OHMMS_DIM + 1) * du) * TMP[j].dr1;
+    //      GradType dg    = grad - BIJ(iat, j);
+    //      Bmat(iat, iat) += dg;
+    //      Bmat(j, j) -= dg;
+    //      Bmat(iat, j) -= dg;
+    //      Bmat(j, iat) += dg;
+    //    }
+    //    for (int j = iat + 1; j < NumTargets; j++)
+    //    {
+    //      RealType uij = RadFun[PairID(iat, j)]->evaluate(TMP[j].r1, du, d2u);
+    //      PosType u    = (UIJ_temp[j] = uij * TMP[j].dr1) - UIJ(iat, j);
+    //      newQP[iat] += u;
+    //      newQP[j] -= u;
+    //      du *= TMP[j].rinv1;
+    //      HessType& hess = AIJ_temp[j];
+    //      hess           = du * outerProduct(TMP[j].dr1, TMP[j].dr1);
+    //#if OHMMS_DIM == 3
+    //      hess[0] += uij;
+    //      hess[4] += uij;
+    //      hess[8] += uij;
+    //#elif OHMMS_DIM == 2
+    //      hess[0] += uij;
+    //      hess[3] += uij;
+    //#endif
+    //      HessType dA = hess - AIJ(iat, j);
+    //      Amat(iat, iat) += dA;
+    //      Amat(j, j) += dA;
+    //      Amat(iat, j) -= dA;
+    //      Amat(j, iat) -= dA;
+    //      GradType& grad = BIJ_temp[j]; // dr = r_iat - r_j
+    //      grad           = (d2u + (OHMMS_DIM + 1) * du) * TMP[j].dr1;
+    //      GradType dg    = grad - BIJ(iat, j);
+    //      Bmat(iat, iat) += dg;
+    //      Bmat(j, j) -= dg;
+    //      Bmat(iat, j) -= dg;
+    //      Bmat(j, iat) += dg;
+    //    }
   }
 
   /** calculate only Bmat
@@ -736,24 +605,22 @@ public:
    */
   inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full)
   {
-    RealType du, d2u;
-#ifdef ENABLE_SOA
     APP_ABORT("Backflow_ee.h::evaluateBmatOnly(P,QP,Bmat_full) not implemented for SoA\n");
-#else
-    for (int i = 0; i < myTable->size(SourceIndex); i++)
-    {
-      for (int nn = myTable->M[i]; nn < myTable->M[i + 1]; nn++)
-      {
-        int j        = myTable->J[nn];
-        RealType uij = RadFun[PairID(i, j)]->evaluate(myTable->r(nn), du, d2u);
-        PosType u    = (d2u + (OHMMS_DIM + 1) * du * myTable->rinv(nn)) * myTable->dr(nn);
-        Bmat_full(i, i) -= u;
-        Bmat_full(j, j) += u;
-        Bmat_full(i, j) += u;
-        Bmat_full(j, i) -= u;
-      }
-    }
-#endif
+    //RealType du, d2u;
+    //const auto& myTable = P.getDistTable(myTableIndex_);
+    //for (int i = 0; i < myTable.sources(); i++)
+    //{
+    //  for (int nn = myTable.M[i]; nn < myTable.M[i + 1]; nn++)
+    //  {
+    //    int j        = myTable.J[nn];
+    //    RealType uij = RadFun[PairID(i, j)]->evaluate(myTable.r(nn), du, d2u);
+    //    PosType u    = (d2u + (OHMMS_DIM + 1) * du * myTable.rinv(nn)) * myTable.dr(nn);
+    //    Bmat_full(i, i) -= u;
+    //    Bmat_full(j, j) += u;
+    //    Bmat_full(i, j) += u;
+    //    Bmat_full(j, i) -= u;
+    //  }
+    //}
   }
 
   /** calculate quasi-particle coordinates, Bmat and Amat
@@ -768,16 +635,13 @@ public:
                                       HessArray_t& Xmat)
   {
     RealType du, d2u;
-#ifdef ENABLE_SOA
-    // APP_ABORT("Backflow_ee.h::evaluateWithDerivatives(P,QP,Bmat,Amat,Cmat,Ymat,Xmat)\n");
-    const DistanceTableData* d_table = P.DistTables[0];
+    const auto& myTable = P.getDistTable(myTableIndex_);
     for (int ig = 0; ig < NumGroups; ++ig)
     {
-      const int igt = ig * NumGroups;
       for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
       {
-        const auto& dist  = myTable->Distances[iat];
-        const auto& displ = myTable->Displacements[iat];
+        const auto& dist  = myTable.getDistRow(iat);
+        const auto& displ = myTable.getDisplRow(iat);
         for (int jat = 0; jat < iat; ++jat)
         {
           if (dist[jat] > 0)
@@ -843,68 +707,6 @@ public:
         }
       }
     }
-#else
-    for (int i = 0; i < myTable->size(SourceIndex); i++)
-    {
-      for (int nn = myTable->M[i]; nn < myTable->M[i + 1]; nn++)
-      {
-        int j          = myTable->J[nn];
-        RealType uij   = RadFun[PairID(i, j)]->evaluate(myTable->r(nn), du, d2u);
-        int numParamJU = RadFun[PairID(i, j)]->NumParams;
-        std::vector<TinyVector<RealType, 3>> derivsju(numParamJU);
-        RadFun[PairID(i, j)]->evaluateDerivatives(myTable->r(nn), derivsju);
-        du *= myTable->rinv(nn);
-        PosType u = uij * myTable->dr(nn);
-        UIJ(j, i) = u;
-        UIJ(i, j) = -1.0 * u;
-        QP.R[i] -= u;
-        QP.R[j] += u;
-        HessType op    = outerProduct(myTable->dr(nn), myTable->dr(nn));
-        HessType& hess = AIJ(i, j);
-        hess           = du * op;
-#if OHMMS_DIM == 3
-        hess[0] += uij;
-        hess[4] += uij;
-        hess[8] += uij;
-#elif OHMMS_DIM == 2
-        hess[0] += uij;
-        hess[3] += uij;
-#endif
-        Amat(i, i) += hess;
-        Amat(j, j) += hess;
-        Amat(i, j) -= hess;
-        Amat(j, i) -= hess;
-        GradType& grad = BIJ(j, i); // dr = r_j - r_i
-        grad           = (d2u + (OHMMS_DIM + 1) * du) * myTable->dr(nn);
-        BIJ(i, j)      = -1.0 * grad;
-        Bmat_full(i, i) -= grad;
-        Bmat_full(j, j) += grad;
-        Bmat_full(i, j) += grad;
-        Bmat_full(j, i) -= grad;
-        for (int prm = 0, la = indexOfFirstParam + offsetPrms[PairID(i, j)]; prm < numParamJU; prm++, la++)
-        {
-          PosType uk = myTable->dr(nn) * derivsju[prm][0];
-          Cmat(la, i) -= uk;
-          Cmat(la, j) += uk;
-          Xmat(la, i, j) -= (derivsju[prm][1] * myTable->rinv(nn)) * op;
-#if OHMMS_DIM == 3
-          Xmat(la, i, j)[0] -= derivsju[prm][0];
-          Xmat(la, i, j)[4] -= derivsju[prm][0];
-          Xmat(la, i, j)[8] -= derivsju[prm][0];
-#elif OHMMS_DIM == 2
-          Xmat(la, i, j)[0] -= derivsju[prm][0];
-          Xmat(la, i, j)[3] -= derivsju[prm][0];
-#endif
-          Xmat(la, j, i) += Xmat(la, i, j);
-          Xmat(la, i, i) -= Xmat(la, i, j);
-          Xmat(la, j, j) -= Xmat(la, i, j);
-          uk = 2.0 * (derivsju[prm][2] + (OHMMS_DIM + 1) * derivsju[prm][1] * myTable->rinv(nn)) * myTable->dr(nn);
-          Ymat(la, i) -= uk;
-          Ymat(la, j) += uk;
-        }
-      }
-    }
-#endif
   }
 };
 

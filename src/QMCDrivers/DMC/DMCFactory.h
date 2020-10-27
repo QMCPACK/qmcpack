@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_DMC_FACTORY_H
 #define QMCPLUSPLUS_DMC_FACTORY_H
 #include "QMCDrivers/QMCDriver.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 
 namespace qmcplusplus
 {
@@ -26,13 +26,11 @@ private:
   xmlNodePtr myNode;
 
 public:
-  DMCFactory(bool pbyp, bool gpu, xmlNodePtr cur) : PbyPUpdate(pbyp), myNode(cur), GPU(gpu) {}
+  DMCFactory(bool pbyp, bool gpu, xmlNodePtr cur) : PbyPUpdate(pbyp), GPU(gpu), myNode(cur) {}
 
   QMCDriver* create(MCWalkerConfiguration& w,
                     TrialWaveFunction& psi,
                     QMCHamiltonian& h,
-                    HamiltonianPool& hpool,
-                    WaveFunctionPool& ppool,
                     Communicate* comm);
 };
 } // namespace qmcplusplus

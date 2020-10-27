@@ -20,10 +20,8 @@
 #====================================================================#
 
 
-from numpy import dot,zeros
-from numpy.linalg import inv
 from generic import obj
-from developer import DevBase
+from developer import DevBase,error
 
 
 class Unit(DevBase):
@@ -86,12 +84,12 @@ class UnitConverter(DevBase):
     Ha     = 2*Ry
     kJ_mol = 1000.*J/mol
     kcal_mol = 0.04336411531*eV
-    K      = J/kb
+    K      = kb
     degC   = K
-    degF   = 9./5.*K
+    degF   = 5./9.*K
 
     degC_shift = -273.15
-    degF_shift = -459.67 
+    degF_shift = 9./5*degC_shift+32
 
     # charge
     C = 1.e0
@@ -167,21 +165,19 @@ class UnitConverter(DevBase):
     unit_dict = Unit.unit_dicts.all
 
 
-    def __init(self):
+    def __init__(self):
         self.error('UnitConverter should not be instantiated')
     #def __init__
 
     @staticmethod
     def convert(value,source_unit,target_unit):
-        ui  = UnitConverter.unit_dict[source_unit]
+        ui = UnitConverter.unit_dict[source_unit]
         uo = UnitConverter.unit_dict[target_unit]
 
         if(ui.type != uo.type):
-            print 'ERROR: in UnitConverter.convert()'
-            print '   type conversion attempted between'
-            print '   '+ui.type+' and '+uo.type
+            error('in UnitConverter.convert()\ntype conversion attempted between '+ui.type+' and '+uo.type)
         else:
-            value_out = (value*ui.value+ui.shift-uo.shift)/uo.value
+            value_out = (value-ui.shift)*ui.value/uo.value+uo.shift
         #end if
 
         return (value_out,target_unit)
@@ -194,7 +190,7 @@ class UnitConverter(DevBase):
         value = dict()
         value['orig'] = value_orig
 
-        for k,u in UnitConverter.unit_dict.iteritems():
+        for k,u in UnitConverter.unit_dict.items():
             if(u.type == unit_type and u.value!=UnitConverter.unassigned):
                 (value[k],utmp) = UnitConverter.convert(value['orig'],units,k)
             #end if
@@ -202,44 +198,6 @@ class UnitConverter(DevBase):
 
         return value
     #end def convert_scalar_to_all
-
-    
-    @staticmethod
-    def convert_array_to_all(units,arr,vectors=None):
-        A = dict()
-        A['orig'] = arr.copy()
-
-        (n,m) = arr.shape
-
-        if(units=='lattice'):
-            if(vectors!=None):
-                A['lattice'] = arr
-            #end if
-            def_unit = 'A'
-            arr_use = dot(arr,vectors.A[def_unit])
-            ui = UnitConverter.unit_dict[def_unit]
-        else:
-            arr_use = arr
-            ui = UnitConverter.unit_dict[units]
-            if(vectors!=None):
-                A['lattice'] = dot(arr,inv(vectors.A[units]))
-            #end if
-        #end if
-            
-        At = zeros((n,m));
-        for k,u in UnitConverter.unit_dict.iteritems():
-            if(u.type == ui.type and u.value!=UnitConverter.unassigned):
-                for i in range(n):
-                    for j in range(m):
-                        At[i,j] = (arr_use[i,j]*ui.value+ui.shift-u.shift)/u.value
-                    #end for
-                #end for
-                A[k] = At.copy()
-            #end if
-        #end for
-
-        return A
-    #end def convert_array_to_all
 #end class UnitConverter
 
 

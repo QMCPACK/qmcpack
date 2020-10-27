@@ -96,7 +96,7 @@
    <qmc method="dmc" move="pbyp" checkpoint="-1">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="targetwalkers"> 256 </parameter>
-     <parameter name="reconfiguration">   yes </parameter>
+     <parameter name="reconfiguration">   runwhileincorrect </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="timestep">  0.005 </parameter>
      <parameter name="steps">   100 </parameter>

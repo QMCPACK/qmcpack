@@ -32,12 +32,13 @@
 
 
 import os
+import numpy as np
 from numpy import array,ndarray,abs
 from generic import obj
 from developer import DevBase
 from debug import *
 from simulation import Simulation
-from gamess_input import GamessInput,generate_gamess_input,FormattedGroup,KeywordGroup,GuessGroup
+from gamess_input import GamessInput,generate_gamess_input,FormattedGroup,KeywordGroup,GuessGroup,GIarray
 from gamess_analyzer import GamessAnalyzer
 
 
@@ -67,6 +68,16 @@ class Gamess(Simulation):
     #end def restore_default_settings
 
 
+    def __init__(self,**kwargs):
+        self.mo_reorder = None
+        mo_reorder = kwargs.pop('mo_reorder',None)
+        if mo_reorder is not None:
+            self.mo_reorder = [s.lower() for s in mo_reorder]
+        #end if
+        Simulation.__init__(self,**kwargs)
+    #end def __init__
+
+
     def init_job_extra(self):
         # gamess seems to need lots of environment variables to run properly
         # nearly all of these are names of output/work files
@@ -75,7 +86,7 @@ class Gamess(Simulation):
             self.error('you must set ericfmt with settings() or Gamess.settings()')
         #end if
         env = obj()
-        for file,unit in GamessInput.file_units.iteritems():
+        for file,unit in GamessInput.file_units.items():
             env[file] = '{0}.F{1}'.format(self.identifier,str(unit).zfill(2))
         #end for
         env.INPUT   = self.infile
@@ -114,6 +125,9 @@ class Gamess(Simulation):
                 result.norbitals = analyzer.punch.norbitals
                 result.vec       = analyzer.punch.vec
             #end if
+            if 'orbitals' in analyzer:
+                result.orbitals = analyzer.orbitals
+            #end if
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if
@@ -135,7 +149,64 @@ class Gamess(Simulation):
             else:
                 norb = result.norbitals
             #end if
-            input.guess.clear()
+            if 'norder' not in input.guess:
+                input.guess.clear()
+            #end if
+            if self.mo_reorder is not None:
+                if 'orbitals' not in result:
+                    self.error('Orbital information from prior calculation "{}" located at {} cannot be found. You requested orbital reordering via the  "mo_reorder" input keyword.  Due to missing information, this operation cannot be performed.  The current simulation "{}" is located at {}.'.format(sim.identifier,sim.locdir,self.identifier,self.locdir))
+                    self.block()
+                #end if
+                guess_inputs = obj()
+                ecounts = self.system.particles.electron_counts()
+                orbs = result.orbitals
+                order_map = obj(up='iorder',down='jorder')
+                nelec_map = obj(up=ecounts[0],down=ecounts[1])
+                for spin,vname in order_map.items():
+                    nelec = nelec_map[spin]
+                    if len(self.mo_reorder)<nelec:
+                        self.error('Too few symmetries provided in "mo_reorder" for spin "{0}".\nNumber of electrons with spin "{0}": {1}\nNumber of entries in "mo_reorder": {2}\nContents of "mo_reorder": {3}\nSimulation identifier: {4}\nSimulation location: {5}'.format(spin,nelec,len(self.mo_reorder),self.mo_reorder,self.identifier,self.locdir))
+                    #end if
+                    symmetries = [s.lower() for s in orbs[spin].symmetry]
+                    missing = set(self.mo_reorder)-set(symmetries)
+                    if len(missing)>0:
+                        self.error('Symmetries provided by "mo_reorder" keyword are not found in the outputted MOs.\nSet of symmetries provided in "mo_reorder": {}\nSet of symmetries present in MOs: {}\nContents of "mo_reorder": {}\nSimulation identifier: {}\nSimulation location: {}'.format(sorted(set(self.mo_reorder)),sorted(set(symmetries)),self.mo_reorder,self.identifier,self.locdir))
+                    #end if
+                    occ  = np.zeros(len(symmetries),dtype=bool)
+                    for symm in self.mo_reorder[:nelec]:
+                        for i,(s,o) in enumerate(zip(symmetries,occ)):
+                            if not o and symm==s:
+                                occ[i] = True
+                                break
+                            #end if
+                        #end for
+                    #end for
+                    if occ.sum()<nelec:
+                        self.error('Too few orbitals occupied based on "mo_reorder" request.\nNumber of orbitals occupied: {}\nNumber of spin "{}" electrons: {}\nContents of "mo_reorder": {}\nSimulation identifier: {}\nSimulation location: {}'.format(occ.sum(),spin,nelec,self.mo_reorder,self.identifier,self.locdir))
+                    #end if
+                    indices = np.arange(len(symmetries),dtype=int)[occ]+1
+                    start = 0
+                    found = False
+                    for i in range(len(indices)):
+                        start = i
+                        if indices[i]!=i+1:
+                            found = True
+                            break
+                        #end if
+                    #end if
+                    if found:
+                        reduced_indices = indices[start:]
+                        start+=1
+                    else:
+                        reduced_indices = []
+                    #end if
+                    if len(reduced_indices)>0:
+                        guess_inputs.norder = 1
+                        guess_inputs[vname] = GIarray({start:reduced_indices})
+                    #end if
+                #end for
+                input.guess.set(**guess_inputs)
+            #end if
             input.guess.set(
                 guess = 'moread',
                 norb  = norb,
@@ -194,7 +265,7 @@ class Gamess(Simulation):
 
 
 def generate_gamess(**kwargs):
-    sim_args,inp_args = Gamess.separate_inputs(kwargs,copy_pseudos=False)
+    sim_args,inp_args = Gamess.separate_inputs(kwargs,copy_pseudos=False,sim_kw=['mo_reorder'])
 
     if not 'input' in sim_args:
         sim_args.input = generate_gamess_input(**inp_args)

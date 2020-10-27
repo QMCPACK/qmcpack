@@ -2,21 +2,23 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ECPotentialBuilder.h"
+#include "ECPotentialBuilder.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
@@ -41,6 +43,7 @@ ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
     : MPIObjectBase(c),
       hasLocalPot(false),
       hasNonLocalPot(false),
+      hasSOPot(false),
       hasL2Pot(false),
       targetH(h),
       IonConfig(ions),
@@ -56,6 +59,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     localZeff.resize(ng, 1);
     localPot.resize(ng, 0);
     nonLocalPot.resize(ng, 0);
+    soPot.resize(ng, 0);
     L2Pot.resize(ng, 0);
   }
   std::string ecpFormat("table");
@@ -63,19 +67,23 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 #ifdef ENABLE_OFFLOAD
   NLPP_algo = "batched"; // set "batched" as the default
 #endif
+  std::string use_DLA("no");
   std::string pbc("yes");
   std::string forces("no");
+  std::string physicalSO("no");
+
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format");
   pAttrib.add(NLPP_algo, "algorithm");
+  pAttrib.add(use_DLA, "DLA");
   pAttrib.add(pbc, "pbc");
   pAttrib.add(forces, "forces");
+  pAttrib.add(physicalSO, "physicalSO");
   pAttrib.put(cur);
+
   bool doForces = (forces == "yes") || (forces == "true");
-  //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
-  //if(t != NULL) {
-  //  ecpFormat= (const char*)t;
-  //}
+  if (use_DLA == "yes")
+    app_log() << "    Using determinant localization approximation (DLA)" << std::endl;
   if (ecpFormat == "xml")
   {
     useXmlFormat(cur);
@@ -122,22 +130,20 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if (hasNonLocalPot)
   {
-    //resize the sphere
-    RealType rc2 = 0.0;
 #ifdef QMC_CUDA
     NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces);
 #else
-    NonLocalECPotential* apot =
-        new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, NLPP_algo == "batched");
+    NonLocalECPotential* apot = new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
 #endif
     int nknot_max = 0;
     for (int i = 0; i < nonLocalPot.size(); i++)
     {
       if (nonLocalPot[i])
       {
-        rc2       = std::max(rc2, nonLocalPot[i]->Rmax);
-        nknot_max = std::max(nknot_max, nonLocalPot[i]->nknot);
-        apot->add(i, nonLocalPot[i]);
+        nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
+        if (NLPP_algo == "batched")
+          nonLocalPot[i]->initVirtualParticle(targetPtcl);
+        apot->addComponent(i, nonLocalPot[i]);
       }
     }
     app_log() << "\n  Using NonLocalECP potential \n"
@@ -145,9 +151,40 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     if (NLPP_algo == "batched")
       app_log() << "    Using batched ratio computing in NonLocalECP" << std::endl;
 
-    targetPtcl.checkBoundBox(2 * rc2);
-
     targetH.addOperator(apot, "NonLocalECP");
+  }
+  if (hasSOPot)
+  {
+#ifndef QMC_COMPLEX
+    APP_ABORT("SOECPotential evaluations require complex build. Rebuild with -D QMC_COMPLEX=1\n");
+#endif
+    if (physicalSO == "yes")
+      app_log() << "    Spin-Orbit potential included in local energy" << std::endl;
+    else if (physicalSO == "no")
+      app_log() << "    Spin-Orbit potential is not included in local energy" << std::endl;
+    else
+      APP_ABORT("physicalSO must be set to yes/no. Unknown option given\n");
+
+    SOECPotential* apot = new SOECPotential(IonConfig, targetPtcl, targetPsi);
+    int nknot_max       = 0;
+    int sknot_max       = 0;
+    for (int i = 0; i < soPot.size(); i++)
+    {
+      if (soPot[i])
+      {
+        nknot_max = std::max(nknot_max, soPot[i]->getNknot());
+        sknot_max = std::max(sknot_max, soPot[i]->getSknot());
+        apot->addComponent(i, soPot[i]);
+      }
+    }
+    app_log() << "\n  Using SOECP potential \n"
+              << "    Maximum grid on a sphere for SOECPotential: " << nknot_max << std::endl;
+    app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
+
+    if (physicalSO == "yes")
+      targetH.addOperator(apot, "SOECP"); //default is physical operator
+    else
+      targetH.addOperator(apot, "SOECP", false);
   }
   if (hasL2Pot)
   {
@@ -192,7 +229,6 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       if (speciesIndex < ion_species.getTotalNum())
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
-        RealType rmax = 0.0;
 
         ECPComponentBuilder ecp(ionName, myComm);
         if (format == "xml")
@@ -225,17 +261,17 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           {
             hasNonLocalPot            = true;
             nonLocalPot[speciesIndex] = ecp.pp_nonloc;
-            rmax                      = std::max(rmax, ecp.pp_nonloc->Rmax);
+          }
+          if (ecp.pp_so)
+          {
+            hasSOPot            = true;
+            soPot[speciesIndex] = ecp.pp_so;
           }
           if (ecp.pp_L2)
           {
             hasL2Pot            = true;
             L2Pot[speciesIndex] = ecp.pp_L2;
-            // should this be added or not?
-            //rmax=std::max(rmax,ecp.pp_L2->rcut);
           }
-          int rcutIndex                        = ion_species.addAttribute("rmax_core");
-          ion_species(rcutIndex, speciesIndex) = rmax;
           if (chargeIndex == -1)
           {
             app_error() << "  Ion species " << ionName << " needs parameter \'charge\'" << std::endl;
@@ -274,8 +310,8 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       }
       if (!success)
       {
-        app_error() << " Failed to add pseudopotential for element " << ionName << std::endl;
-        APP_ABORT("ECPotentialBuilder::useXmlFormat failed!");
+        app_error() << "  Failed to add pseudopotential for element " << ionName << std::endl;
+        myComm->barrier_and_abort("ECPotentialBuilder::useXmlFormat failed!");
       }
     }
     cur = cur->next;
@@ -366,8 +402,8 @@ void ECPotentialBuilder::useSimpleTableFormat()
       }
       if (mynnloc)
       {
-        mynnloc->lmax = lmax;
-        mynnloc->Rmax = rmax;
+        mynnloc->setLmax(lmax);
+        mynnloc->setRmax(rmax);
         app_log() << "    Maximum cutoff of NonLocalECP " << rmax << std::endl;
       }
     }

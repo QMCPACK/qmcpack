@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file PWOribitalBuilder.h
+/** @file
  * @brief Declaration of a builder class for PWOrbitalSet
  *
  */
@@ -25,7 +25,7 @@
 #endif
 namespace qmcplusplus
 {
-class PWParameterSet;
+struct PWParameterSet;
 class SlaterDet;
 
 /** OrbitalBuilder for Slater determinants in PW basis
@@ -61,15 +61,15 @@ private:
   //std::map<std::string,SPOSetPtr> PWOSet;
 public:
   ///constructor
-  PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& psets);
+  PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets);
   ~PWOrbitalBuilder();
 
   ///implement vritual function
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
   hid_t getH5(xmlNodePtr cur, const char* aname);
-  bool putSlaterDet(xmlNodePtr cur);
+  WaveFunctionComponent* putSlaterDet(xmlNodePtr cur);
   bool createPWBasis(xmlNodePtr cur);
   SPOSet* createPW(xmlNodePtr cur, int spinIndex);
 #if defined(QMC_COMPLEX)

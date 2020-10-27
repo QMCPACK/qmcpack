@@ -1,0 +1,7 @@
+ENCUT  = 450.0
+IBRION = 2
+ICHARG = 2
+ISIF   = 2
+ISTART = 0
+NELECT = 64
+NSW    = 5

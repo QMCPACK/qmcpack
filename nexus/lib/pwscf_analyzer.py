@@ -18,6 +18,7 @@
 
 
 import os
+import numpy as np
 from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min,where
 from generic import obj
 from unit_converter import convert
@@ -25,6 +26,7 @@ from periodic_table import PeriodicTable
 from simulation import SimulationAnalyzer,Simulation
 from pwscf_input import PwscfInput
 from pwscf_data_reader import read_qexml
+from fileio import TextFile
 from debug import *
 import code
 import pdb
@@ -41,6 +43,7 @@ def is_number(s):
         return True
     except ValueError:
         return False
+    #end try
 #end def is_number
 
 
@@ -80,18 +83,28 @@ def pwscf_time(tsin):
 
 
 class PwscfAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False,warn=False):
+    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False,warn=False,md_only=False):
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
             infile_name = sim.infile
             outfile_name= sim.outfile
             self.input_structure = sim.system.structure
-        elif arg0!=None:
-            if infile_name!=None:
-                path = arg0
-            else:
-                path,infile_name = os.path.split(arg0)
+        elif arg0 is not None:
+            path = arg0
+            if not os.path.exists(path):
+                self.error('path to QE data does not exist\npath provided: {}'.format(path))
+            #end if
+            if os.path.isfile(path):
+                filepath = path
+                path,filename = os.path.split(filepath)
+                if filename.endswith('.in'):
+                    infile_name = filename
+                elif filename.endswith('.out'):
+                    outfile_name = filename
+                else:
+                    self.error('could not determine whether file is QE input or output\nfile provided: {}'.format(filepath))
+                #end if
             #end if
             if outfile_name is None:
                 outfile_name = infile_name.rsplit('.',1)[0]+'.out'
@@ -107,9 +120,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.abspath = os.path.abspath(path)
         self.pw2c_outfile_name = pw2c_outfile_name
 
-        self.info = obj(xml=xml,warn=warn)
+        self.info = obj(xml=xml,warn=warn,md_only=md_only)
 
-        self.input = PwscfInput(os.path.join(self.path,self.infile_name))
+        self.input = None
+        if self.infile_name is not None:
+            self.input = PwscfInput(os.path.join(self.path,self.infile_name))
+        #end if
         if analyze:
             self.analyze()
         #end if
@@ -124,8 +140,48 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         nx=0
 
+        outfile = os.path.join(path,outfile_name)
+
         try:
-            lines = open(os.path.join(path,outfile_name),'r').read().splitlines()
+            # perform MD analysis
+            f = TextFile(outfile)
+            n = 0
+            md_res = []
+            while f.seek('!',1)!=-1:
+                E = float(f.readtokens()[-2])
+                f.seek('P=',1)
+                P = float(f.readtokens()[-1])
+                f.seek('time      =',1)
+                t = float(f.readtokens()[-2])
+                f.seek('kinetic energy',1)
+                K = float(f.readtokens()[-2])
+                f.seek('temperature',1)
+                T = float(f.readtokens()[-2])
+                md_res.append((E,P,t,K,T))
+                n+=1
+            #end while
+            md_res = array(md_res,dtype=float).T
+            quantities = ('total_energy','pressure','time','kinetic_energy',
+                          'temperature')
+            md = obj()
+            for i,q in enumerate(quantities):
+                md[q] = md_res[i]
+            #end for
+            md.potential_energy = md.total_energy - md.kinetic_energy
+            self.md_data = md
+            self.md_stats = self.md_statistics()
+            if self.info.md_only:
+                return
+            #end if
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('MD analysis failed')
+            #end if
+        #end try
+
+        try:
+            lines = open(outfile,'r').read().splitlines()
         except:
             nx+=1
             if self.info.warn:
@@ -134,10 +190,29 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end try
 
         try:
+            fermi_energies = []
+            for l in lines:
+                if l.find('Fermi energy')!=-1:
+                    fermi_energies.append( float( l.split('is')[1].split()[0] ) )
+                #end if
+            #end for
+            if len(fermi_energies)==0:
+                self.Ef = 0.0
+            else:
+                self.Ef = fermi_energies[-1]
+            #end if
+            self.fermi_energies = array(fermi_energies)
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('fermi energy read failed')
+            #end if
+        #end try
+        try:
             energies = []
             for l in lines:
                 if l.find('!  ')!=-1:
-                    energies.append( eval( l.split('=')[1].split()[0] ) )
+                    energies.append( float( l.split('=')[1].split()[0] ) )
                 #end if
             #end for
             if len(energies)==0:
@@ -149,7 +224,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         except:
             nx+=1
             if self.info.warn:
-                self.warn('energy read failed')
+                self.warn('total energy read failed')
             #end if
         #end try
         try:
@@ -166,8 +241,19 @@ class PwscfAnalyzer(SimulationAnalyzer):
             read_kpoints  = False
             read_2pi_alat = False
             read_rel      = False
-            for i in xrange(len(lines)):
+            for i in range(len(lines)):
                 l = lines[i]
+                if 'End of self-consistent calculation' in l:
+                    # Initialize each time in case a hybrid functional was used
+                    if nfound > 0:
+                        nfound = 0
+                        index = -1
+                        bands = obj()
+                        bands.up = obj()
+                        bands.down = obj()
+                    #end if
+                #end if
+
                 if '- SPIN UP -' in l:
                     up_spin   = True
                 elif '- SPIN DOWN -' in l:
@@ -179,7 +265,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     try:
                         num_kpoints      = int(l.strip().split()[4])
                     except:
-                        print "Number of k-points {0} is not an integer".format(num_kpoints)
+                        print("Number of k-points {0} is not an integer".format(num_kpoints))
+                    #end try
 
                     kpoints_2pi_alat = lines[i+2:i+2+num_kpoints]
                     kpoints_rel      = lines[i+4+num_kpoints:i+4+2*num_kpoints]
@@ -393,19 +480,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 if l.find('total   stress')!=-1:
                     for j in range(3):
                         i+=1
-                        tokens = lines[i].split()
-                        stress.append(map(float,tokens))
-                    # end for j
-                # end found
+                        stress.append(list(np.array(lines[i].split(),dtype=float)))
+                    #end for
+                #end if
                 i += 1
-            # end while
+            #end while
             self.stress=stress
         except:
             nx+=1
             if self.info.warn:
                 self.warn('stress read failed')
             #end if
-        #end
+        #end try
         #end added by Yubo "Paul" Yang
 
         try:
@@ -557,16 +643,21 @@ class PwscfAnalyzer(SimulationAnalyzer):
             try:
                 cont = self.input.control
                 datadir = os.path.join(self.path,cont.outdir,cont.prefix+'.save')
-                data = read_qexml(os.path.join(datadir,'data-file.xml'))
+                data_file = os.path.join(datadir,'data-file.xml')
+                if not os.path.exists(data_file):
+                    datadir = os.path.join(self.path,cont.outdir)
+                    data_file = os.path.join(datadir,cont.prefix+'.xml')
+                #end if
+                data = read_qexml(data_file)
                 kpdata = data.root.eigenvalues.k_point
                 kpoints = obj()
-                for ki,kpd in kpdata.iteritems():
+                for ki,kpd in kpdata.items():
                     kp = obj(
                         kpoint = kpd.k_point_coords,
                         weight = kpd.weight
                         )
                     kpoints[ki]=kp
-                    for si,dfile in kpd.datafile.iteritems():
+                    for si,dfile in kpd.datafile.items():
                         efilepath = os.path.join(datadir,dfile.iotk_link)
                         if os.path.exists(efilepath):
                             edata = read_qexml(efilepath)
@@ -599,7 +690,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     data    = data,
                     kpoints = kpoints
                     )
-            except Exception,e:
+            except Exception as e:
                 if self.info.warn:
                     self.warn('encountered an exception during xml read, this data will not be available\nexception encountered: '+str(e))
                 #end if
@@ -628,7 +719,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         tot = obj(up=0,down=0)
         for kp in kpoints:
             w = kp.weight
-            for s,sl in spins.iteritems():
+            for s,sl in spins.items():
                 tot[s] += w*kp[sl].occupations.sum()
             #end for
         #end for
@@ -644,7 +735,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         for ik in sorted(kpoints.keys()):
             kp = kpoints[ik]
             kpt = obj()
-            for s,sl in spins.iteritems():
+            for s,sl in spins.items():
                 kpt[s] = w*kp[sl].occupations.sum()*mult
             #end for
             #text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}    {5}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up,kpt.down,kp.kpoint[0])
@@ -659,6 +750,61 @@ class PwscfAnalyzer(SimulationAnalyzer):
             return True
         #end if
     #end def write_electron_counts
+
+
+    def md_statistics(self,equil=None,autocorr=None):
+        import numpy as np
+        from numerics import simstats,simplestats
+        mds = obj()
+        for q,v in self.md_data.items():
+            if equil is not None:
+                v = v[equil:]
+            #end if
+            if autocorr is None:
+                mean,var,error,kappa = simstats(v)
+            else:
+                nv = len(v)
+                nb = int(np.floor(float(nv)/autocorr))
+                nexclude = nv-nb*autocorr
+                v = v[nexclude:]
+                v.shape = nb,autocorr
+                mean,error = simplestats(v.mean(axis=1))
+            #end if
+            mds[q] = mean,error
+        #end for
+        return mds
+    #end def md_statistics
+
+
+    def md_plots(self,show=True):
+
+        md = self.md_data
+
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+
+        plt.subplot(3,1,1)
+        plt.plot(md.time,md.total_energy-md.total_energy[0],label='Etot')
+        plt.plot(md.time,md.kinetic_energy-md.kinetic_energy[0],label='Ekin')
+        plt.plot(md.time,md.potential_energy-md.potential_energy[0],label='Epot')
+        plt.ylabel('E (Ryd)')
+        plt.legend()
+
+        plt.subplot(3,1,2)
+        plt.plot(md.time,md.temperature)
+        plt.ylabel('T (K)')
+
+        plt.subplot(3,1,3)
+        plt.plot(md.time,md.pressure)
+        plt.ylabel('P (kbar)')
+        plt.xlabel('time (ps)')
+
+        if show:
+            plt.show()
+        #end if
+
+        return fig
+    #end def md_plots
 
 
     def make_movie(self,filename,filepath=None):
@@ -684,6 +830,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end for
         #end for
     #end def make_movie
+
+
     def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True):
         if 'bands' in self:
             from structure import get_kpath

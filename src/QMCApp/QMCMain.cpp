@@ -20,35 +20,26 @@
 /**@file QMCMain.cpp
  * @brief Implments QMCMain operators.
  */
-#include "QMCApp/QMCMain.h"
-#include "Platforms/accelerators.hpp"
-#include "QMCApp/ParticleSetPool.h"
-#include "QMCApp/WaveFunctionPool.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "QMCMain.h"
+#include "accelerators.hpp"
+#include "Particle/ParticleSetPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Utilities/OutputManager.h"
+#include "Platforms/Host/OutputManager.h"
 #include "Utilities/Timer.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "Particle/HDFWalkerIO.h"
-#include "QMCApp/InitMolecularSystem.h"
-#include "Particle/DistanceTable.h"
+#include "Particle/InitMolecularSystem.h"
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include <queue>
 #include <cstring>
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
-#include "qmc_common.h"
-#ifdef HAVE_ADIOS
-#include "ADIOS/ADIOS_config.h"
-#include <adios_read.h>
-extern "C"
-{
-#include <adios_error.h>
-}
-#endif
+#include "Utilities/qmc_common.h"
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
@@ -62,7 +53,7 @@ extern "C"
 namespace qmcplusplus
 {
 QMCMain::QMCMain(Communicate* c)
-    : QMCDriverFactory(c),
+    : QMCMainState(c),
       QMCAppBase(),
       FirstQMC(true)
 #if !defined(REMOVE_TRACEMANAGER)
@@ -72,6 +63,8 @@ QMCMain::QMCMain(Communicate* c)
 {
   Communicate NodeComm;
   NodeComm.initializeAsNodeComm(*OHMMS::Controller);
+  // assign accelerators within a node
+  const int num_accelerators = assignAccelerators(NodeComm);
 
   app_summary() << "\n=====================================================\n"
                 << "                    QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
@@ -83,18 +76,22 @@ QMCMain::QMCMain(Communicate* c)
   qmc_common.print_git_info_if_present(app_summary());
   app_summary() << "=====================================================\n";
   qmc_common.print_options(app_log());
+  // clang-format off
   app_summary()
 #if !defined(HAVE_MPI)
-      << "\n  Built without MPI. Running in serial or with OMP threading only." << std::endl
+      << "\n  Built without MPI. Running in serial or with OMP threads." << std::endl
 #endif
       << "\n  Total number of MPI ranks = " << OHMMS::Controller->size()
       << "\n  Number of MPI groups      = " << myComm->getNumGroups()
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << NodeComm.size()
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(QMC_CUDA) || defined(ENABLE_ROCM)
+      << "\n  Accelerators per node     = " << num_accelerators
+#endif
       << std::endl;
-  // assign accelerators within a node
-  assignAccelerators(NodeComm);
+  // clang-format on
+
 #pragma omp parallel
   {
     const int L1_tid = omp_get_thread_num();
@@ -120,10 +117,27 @@ QMCMain::QMCMain(Communicate* c)
                 << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION)
                 << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
-#ifdef ENABLE_SOA
-                << "\n\n  Structure-of-arrays (SoA) optimization enabled"
-#endif
                 << std::endl;
+
+  // Record features configured in cmake or selected via command-line arguments to the printout
+  app_summary() << std::endl;
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_ROCM)
+  app_summary() << "  CPU only build" << std::endl;
+#else
+#if defined(ENABLE_OFFLOAD)
+  app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
+#endif
+#if defined(ENABLE_CUDA) || defined(QMC_CUDA)
+  app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
+#endif
+#if defined(ENABLE_ROCM)
+  app_summary() << "  ROCM acceleration build option is enabled" << std::endl;
+#endif
+#endif
+#ifdef ENABLE_TIMERS
+  app_summary() << "  Timer build option is enabled. Current timer level is "
+                << timer_manager.get_timer_threshold_string() << std::endl;
+#endif
   app_summary() << std::endl;
   app_summary().flush();
 }
@@ -154,7 +168,7 @@ bool QMCMain::execute()
 #ifdef BUILD_AFQMC
   if (simulationType == "afqmc")
   {
-    NewTimer* t2 = TimerManager.createTimer("Total", timer_level_coarse);
+    NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
     ScopedTimer t2_scope(t2);
     app_log() << std::endl
               << "/*************************************************\n"
@@ -185,10 +199,10 @@ bool QMCMain::execute()
 #endif
 
 
-  NewTimer* t2 = TimerManager.createTimer("Total", timer_level_coarse);
+  NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
   t2->start();
 
-  NewTimer* t3 = TimerManager.createTimer("Startup", timer_level_coarse);
+  NewTimer* t3 = timer_manager.createTimer("Startup", timer_level_coarse);
   t3->start();
 
   //validate the input file
@@ -306,7 +320,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       if (cname == "qmc")
       {
         //prevent completed is set
-        bool success = executeQMCSection(tcur, false);
+        bool success = executeQMCSection(tcur, iter > 0);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
@@ -319,7 +333,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   }
 }
 
-bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
+bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
 {
   std::string target("e");
   std::string random_test("no");
@@ -331,12 +345,12 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
     RandomNumberControl::test();
   if (qmcSystem == 0)
     qmcSystem = ptclPool->getWalkerSet(target);
-  bool success = runQMC(cur);
+  bool success = runQMC(cur, reuse);
   FirstQMC     = false;
   return success;
 }
 
-/** validate the main document
+/** validate the main document and (read the walker sets !)
  * @return false, if any of the basic objects is not properly created.
  *
  * Current xml schema is changing. Instead validating the input file,
@@ -348,77 +362,11 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
  * - hamiltonian: create hamiltonians
  * Finally, if /simulation/mcwalkerset exists, read the configurations
  * from the external files.
+ * TODO: Move this out of what should be a stateless call
  */
 bool QMCMain::validateXML()
 {
   xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
-#ifdef HAVE_ADIOS
-  OhmmsXPathObject ai("//adiosinit", m_context);
-  if (ai.empty())
-  {
-    app_warning() << "adiosinit is not defined" << std::endl;
-  }
-  else
-  {
-    xmlAttr* curr     = ai[0]->properties;
-    const char* value = (char*)xmlNodeListGetString(ai[0]->doc, curr->children, 1);
-    if (!strncmp((char*)curr->name, "href", 4))
-    {
-      if (adios_init(value, myComm->getMPI()))
-      {
-        //fprintf(stderr, "Error: %s %s\n", value, adios_get_last_errmsg());
-        APP_ABORT("ADIOS init error. Exiting");
-      }
-      else
-      {
-        if (OHMMS::Controller->rank() == 0)
-          std::cout << "Adios is initialized" << std::endl;
-        ADIOS::set_adios_init(true);
-      }
-      adios_read_init_method(ADIOS_READ_METHOD_BP, myComm->getMPI(), "verbose=3");
-    }
-  }
-  OhmmsXPathObject io("//checkpoint", m_context);
-  if (io.empty())
-  {
-    app_warning() << "checkpoint IO is not defined, no checkpoint will be written out." << std::endl;
-  }
-  else
-  {
-    xmlAttr* curr = io[0]->properties;
-    char* value   = NULL;
-    bool UseADIOS = false;
-    bool UseHDF5  = false;
-    for (curr; curr; curr = curr->next)
-    {
-      value = (char*)xmlNodeListGetString(io[0]->doc, curr->children, 1);
-      if (!strncmp((char*)curr->name, "adios", 6) && !strncmp(value, "yes", 4))
-      {
-        UseADIOS = true;
-      }
-      else if (!strncmp((char*)curr->name, "hdf5", 5) && !strncmp(value, "yes", 4))
-      {
-        UseHDF5 = true;
-      }
-      app_log() << "property: " << curr->name << ", value: " << value << std::endl;
-    }
-    ADIOS::initialize(UseHDF5, UseADIOS);
-  }
-  OhmmsXPathObject rd("//restart", m_context);
-  if (rd.empty())
-  {
-    app_warning() << "Checkpoint restart read method is not defined. frest start." << std::endl;
-  }
-  else
-  {
-    xmlAttr* curr     = rd[0]->properties;
-    const char* value = (char*)xmlNodeListGetString(rd[0]->doc, curr->children, 1);
-    if (!strncmp((char*)curr->name, "method", 6))
-    {
-      ADIOS::initialize(value);
-    }
-  }
-#endif
   OhmmsXPathObject result("//project", m_context);
   myProject.setCommunicator(myComm);
   if (result.empty())
@@ -459,7 +407,7 @@ bool QMCMain::validateXML()
   }
   if (qmc_common.use_density)
   {
-    app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl;
+    app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl << std::endl;
   }
 
   //initialize the random number generator
@@ -490,11 +438,10 @@ bool QMCMain::validateXML()
     else if (cname == "include")
     {
       //file is provided
-      xmlChar* a = xmlGetProp(cur, (const xmlChar*)"href");
-      if (a)
+      const XMLAttrString include_name(cur, "href");
+      if (!include_name.empty())
       {
-        bool success = pushDocument((const char*)a);
-        xmlFree(a);
+        bool success = pushDocument(include_name);
         if (success)
         {
           inputnode = processPWH(XmlDocStack.top()->getRoot());
@@ -515,7 +462,7 @@ bool QMCMain::validateXML()
     }
     else if (cname == "init")
     {
-      InitMolecularSystem moinit(ptclPool);
+      InitMolecularSystem moinit(*ptclPool);
       moinit.put(cur);
     }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -613,39 +560,69 @@ bool QMCMain::processPWH(xmlNodePtr cur)
  * @param cur qmc element
  * @return true, if a valid QMCDriver is set.
  */
-bool QMCMain::runQMC(xmlNodePtr cur)
+bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
-  bool append_run = setQMCDriver(myProject.m_series, cur);
-  if (qmcDriver)
+  std::unique_ptr<QMCDriverInterface> qmc_driver;
+  std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
+  bool append_run              = false;
+
+  if (!population_)
+  {
+    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(),
+                                       hamPool->getPrimary(), myComm->rank()));
+  }
+  if (reuse)
+    qmc_driver = std::move(last_driver);
+  else
+  {
+    QMCDriverFactory driver_factory;
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
+    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
+                                             *ptclPool, *psiPool, *hamPool, *population_, myComm);
+    append_run = das.append_run;
+  }
+
+  if (qmc_driver)
   {
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
       myProject.advance();
-    qmcDriver->setStatus(myProject.CurrentMainRoot(), PrevConfigFile, append_run);
-    qmcDriver->putWalkers(m_walkerset_in);
+
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
+    // PD:
+    // Q: How does m_walkerset_in end up being non empty?
+    // A: Anytime that we aren't doing a restart.
+    // So put walkers is an exceptional call. This code does not tell a useful
+    // story of a QMCDriver's life.
+    qmc_driver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
-    qmcDriver->putTraces(traces_xml);
+    qmc_driver->putTraces(traces_xml);
 #endif
-    qmcDriver->process(cur);
+    qmc_driver->process(cur);
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer* t1 = TimerManager.createTimer(qmcDriver->getEngineName(), timer_level_coarse);
+    NewTimer* t1 = timer_manager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
     t1->start();
-    qmcDriver->run();
+    qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    //keeps track of the configuration file
-    PrevConfigFile = myProject.CurrentMainRoot();
+    last_driver = std::move(qmc_driver);
     return true;
   }
   else
   {
+    // Ye: in which case, the code hits this?
     return false;
   }
 }
 
+
+/** Reads walkers sets from the restart file during XML validation
+ *
+ *  TODO: Move this, it is not a concern of QMCMain
+ */
 bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 {
   OhmmsXPathObject result("/simulation/mcwalkerset", context_);

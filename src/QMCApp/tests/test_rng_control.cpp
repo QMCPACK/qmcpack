@@ -28,7 +28,6 @@ namespace qmcplusplus
 TEST_CASE("RandomNumberControl make_seeds", "[ohmmsapp]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   RandomNumberControl::make_seeds();
@@ -39,7 +38,6 @@ TEST_CASE("RandomNumberControl make_seeds", "[ohmmsapp]")
 TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   const char* xml_input = "<tmp></tmp>";
@@ -57,7 +55,6 @@ TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")
 TEST_CASE("RandomNumberControl random in xml", "[ohmmsapp]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   const char* xml_input = "<tmp><random seed='0'></random></tmp>";

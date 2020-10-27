@@ -18,11 +18,11 @@
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/OneDimQuinticSpline.h"
-#include "QMCWaveFunctions/lcao/MultiQuinticSpline1D.h"
+#include "QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h"
 
 namespace qmcplusplus
 {
-TEST_CASE("LogGridLight", "[wavefunction][lcao]")
+TEST_CASE("LogGridLight", "[wavefunction][LCAO]")
 {
   LogGridLight<double> grid;
   grid.set(0.1, 1.0, 5);
@@ -43,7 +43,7 @@ TEST_CASE("LogGridLight", "[wavefunction][lcao]")
 }
 
 
-TEST_CASE("MultiQuinticSpline", "[wavefunction][lcao]")
+TEST_CASE("MultiQuinticSpline", "[wavefunction][LCAO]")
 {
   Vector<double> data(5);
   data[0] = 0.0;
@@ -87,9 +87,9 @@ TEST_CASE("MultiQuinticSpline", "[wavefunction][lcao]")
   double d3u[2];
 
   double u1, u2;
-  double du1, du2;
-  double d2u1, d2u2;
-  double d3u1, d3u2;
+  double du1 = 0.0, du2 = 0.0;
+  double d2u1 = 0.0, d2u2 = 0.0;
+  double d3u1 = 0.0, d3u2 = 0.0;
   for (int i = 0; i < 10; i++)
   {
     double r = 0.08 * i + 0.1;

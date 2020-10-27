@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -15,9 +15,9 @@
 #ifndef QMCPLUSPLUS_ECPPOTENTIAL_BUILDER_H
 #define QMCPLUSPLUS_ECPPOTENTIAL_BUILDER_H
 #include "Configuration.h"
-#include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/SOECPotential.h"
 #include "QMCHamiltonians/L2Potential.h"
 namespace qmcplusplus
 {
@@ -31,6 +31,7 @@ struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
   typedef LocalECPotential::GridType GridType;
   bool hasLocalPot;
   bool hasNonLocalPot;
+  bool hasSOPot;
   bool hasL2Pot;
 
   QMCHamiltonian& targetH;
@@ -41,6 +42,7 @@ struct ECPotentialBuilder : public MPIObjectBase, public QMCTraits
   std::vector<RealType> localZeff;
   std::vector<RadialPotentialType*> localPot;
   std::vector<NonLocalECPComponent*> nonLocalPot;
+  std::vector<SOECPComponent*> soPot;
   std::vector<L2RadialPotential*> L2Pot;
 
   ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, Communicate* c);

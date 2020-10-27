@@ -6,7 +6,7 @@
 //
 // File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //
-// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_AFQMC_SERIALWALKERSET_HPP
@@ -21,7 +21,6 @@
 #include "Utilities/RandomGenerator.h"
 
 #include "AFQMC/config.h"
-#include "Utilities/NewTimer.h"
 #include "AFQMC/Utilities/taskgroup.h"
 
 #include "AFQMC/Walkers/Walkers.hpp"
@@ -31,45 +30,36 @@
 
 namespace qmcplusplus
 {
-
 namespace afqmc
 {
-
 /*
  * Class that contains and handles walkers.
  * Implements communication, load balancing, and I/O operations.   
  * Walkers are always accessed through the handler.
  */
-class SerialWalkerSet: public WalkerSetBase<device_allocator<ComplexType>,
-                                            device_ptr<ComplexType>>
-                                             
+class SerialWalkerSet : public WalkerSetBase<device_allocator<ComplexType>, device_ptr<ComplexType>>
+
 {
+  using Base = WalkerSetBase<device_allocator<ComplexType>, device_ptr<ComplexType>>;
 
-  using Base = WalkerSetBase<device_allocator<ComplexType>,
-                             device_ptr<ComplexType>>;
-
-  public:
-
+public:
   /// constructor
-  SerialWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
-        RandomGenerator_t* r):
-                Base(tg_,cur,info,r,device_allocator<ComplexType>{})
-  {
-  }
+  SerialWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, RandomGenerator_t* r)
+      : Base(tg_, cur, info, r, device_allocator<ComplexType>{}, shared_allocator<ComplexType>{tg_.TG_local()})
+  {}
 
   /// destructor
   ~SerialWalkerSet() {}
 
   SerialWalkerSet(SerialWalkerSet const& other) = delete;
-  SerialWalkerSet(SerialWalkerSet&& other) = default;
+  SerialWalkerSet(SerialWalkerSet&& other)      = default;
   SerialWalkerSet& operator=(SerialWalkerSet const& other) = delete;
-  SerialWalkerSet& operator=(SerialWalkerSet&& other) = default;
-
+  SerialWalkerSet& operator=(SerialWalkerSet&& other) = delete;
 };
 
-}
+} // namespace afqmc
 
-}
+} // namespace qmcplusplus
 
 //#include "AFQMC/Walkers/SerialWalkerSet.icc"
 

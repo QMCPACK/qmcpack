@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_MPC_CUDA_H
 
 #include "QMCHamiltonians/MPC.h"
-#include <einspline/bspline_create_cuda.h>
+#include "einspline/bspline_create_cuda.h"
 
 namespace qmcplusplus
 {
@@ -41,7 +41,7 @@ protected:
 public:
   MPC_CUDA(ParticleSet& ref, double cutoff);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 };

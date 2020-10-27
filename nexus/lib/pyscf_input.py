@@ -130,6 +130,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  mole_var   = 'mol',  # local var name for Mole in written input
                  cell_var   = 'cell', # local var name for Cell in written input
                  save_qmc   = False,  # convert to QMCPACK format
+                 checkpoint = False,  # set $chkfile variable
                  mf_var     = 'mf',   # local var name for mf, used for convert
                  kpts_var   = 'kpts', # local var name for kpts, used for convert
                  filepath   = None,   # alias for template
@@ -140,9 +141,10 @@ class PyscfInput(SimulationInputTemplateDev):
         #end if
         SimulationInputTemplateDev.__init__(self,filepath,text)
 
-        self.prefix   = prefix
-        self.save_qmc = save_qmc
-        self.addendum = None     # used for save2qmcpack
+        self.prefix     = prefix
+        self.save_qmc   = save_qmc
+        self.checkpoint = checkpoint
+        self.addendum   = None     # used for save2qmcpack
 
         if custom is not None:
             self.assign(**custom)
@@ -202,7 +204,9 @@ class PyscfInput(SimulationInputTemplateDev):
                 sys_inputs.dimension = len(s.axes)
                 sys_inputs.a         = s.write_axes()
                 if len(s.kpoints)>0:
-                    sys_kpoints = s.kpoints.copy()
+                    skp = s.copy()
+                    skp.change_units('B')
+                    sys_kpoints = skp.kpoints.copy()
                 #end if
             #end if
         #end if
@@ -233,7 +237,7 @@ class PyscfInput(SimulationInputTemplateDev):
             #end if
             klen = 0
             has_array = False
-            for k,v in sys_inputs.iteritems():
+            for k,v in sys_inputs.items():
                 if not isinstance(v,PyscfInput.allowed_types):
                     tlist = ''
                     for t in PyscfInput.allowed_types:
@@ -305,6 +309,15 @@ class PyscfInput(SimulationInputTemplateDev):
             #end if
             s += '### end generated conversion text ###\n'
             self.addendum = '\n'+s+'\n'
+        #end if
+
+        if checkpoint:
+            if prefix is None:
+                self.error('cannot set $chkpoint variable\nplease provide input variable "prefix"')
+            #end if
+            chkfile = '{}.chk'.format(prefix)
+            self.chkfile = chkfile
+            self.assign(chkfile="'"+chkfile+"'")
         #end if
 
     #end def __init__

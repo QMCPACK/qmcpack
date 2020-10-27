@@ -11,10 +11,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/StaticStructureFactor.h>
-#include <OhmmsData/AttributeSet.h>
-#include <LongRange/KContainer.h>
-#include <LongRange/StructFact.h>
+#include "StaticStructureFactor.h"
+#include "OhmmsData/AttributeSet.h"
+#include "LongRange/KContainer.h"
+#include "LongRange/StructFact.h"
 
 namespace qmcplusplus
 {
@@ -44,7 +44,7 @@ void StaticStructureFactor::reset()
 }
 
 
-QMCHamiltonianBase* StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+OperatorBase* StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
   return new StaticStructureFactor(*this);
 }

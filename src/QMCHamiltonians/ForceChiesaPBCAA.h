@@ -21,12 +21,11 @@
 
 namespace qmcplusplus
 {
-struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
+struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
 {
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
-
 
   RealType Rcut;         // parameter: radial distance within which estimator is used
   int m_exp;             // parameter: exponent in polynomial fit
@@ -36,15 +35,10 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
   Vector<RealType> c;    // polynomial coefficients
   // container for short-range force estimator
 
-  bool kcdifferent;
-  RealType minkc;
-
   ///source particle set
   ParticleSet& PtclA;
   ///long-range Handler
-  LRHandlerType* AB;
-  ///locator of the distance table
-  int myTableIndex;
+  std::unique_ptr<LRHandlerType> dAB;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set
@@ -54,17 +48,6 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
   ///number of particles of B
   int NptclB;
 
-  ///cutoff radius of the short-range part
-  RealType myRcut;
-  ///radial grid
-  GridType* myGrid;
-  ///Always mave a radial functor for the bare coulomb
-  RadFunctorType* V0;
-
-  ///number of particles per species of A
-  std::vector<int> NofSpeciesA;
-  ///number of particles per species of B
-  std::vector<int> NofSpeciesB;
   ///Zat[iat] charge for the iat-th particle of A
   std::vector<RealType> Zat;
   ///Qat[iat] charge for the iat-th particle of B
@@ -73,14 +56,8 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
   std::vector<RealType> Zspec;
   ///Qspec[spec] charge for the spec-th species of B
   std::vector<RealType> Qspec;
-  ///Short-range potential for each ion
-  std::vector<RadFunctorType*> Vat;
-  ///Short-range potential for each species
-  std::vector<RadFunctorType*> Vspec;
 
   bool first_time;
-
-  ParticleSet::ParticlePos_t forces_ShortRange;
 
   ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime = true);
 
@@ -106,13 +83,13 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
 
   void setObservables(PropertySetType& plist)
   {
-    QMCHamiltonianBase::setObservables(plist);
+    OperatorBase::setObservables(plist);
     setObservablesF(plist);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+    OperatorBase::setParticlePropertyList(plist, offset);
     setParticleSetF(plist, offset);
   }
 
@@ -120,7 +97,7 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
   void resetTargetParticleSet(ParticleSet& P);
 
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   bool put(xmlNodePtr cur);
 
@@ -129,6 +106,14 @@ struct ForceChiesaPBCAA : public QMCHamiltonianBase, public ForceBase
     os << "Ceperley Force Estimator Hamiltonian: " << pairName;
     return true;
   }
+
+  // for testing only
+  int getDistanceTableAAID() const { return d_aa_ID; }
+
+private:
+  // AA table ID
+  const int d_aa_ID;
+  const int d_ei_ID;
 };
 
 } // namespace qmcplusplus

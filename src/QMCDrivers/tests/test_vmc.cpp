@@ -10,19 +10,15 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
@@ -30,6 +26,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 
 
 #include <stdio.h>
@@ -43,7 +40,6 @@ namespace qmcplusplus
 TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -56,7 +52,6 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);
@@ -68,27 +63,20 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
-  tspecies(massIdx, downIdx)   = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
+  elec.addTable(ions);
   elec.update();
 
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
-  ConstantOrbital* orb  = new ConstantOrbital;
-  psi.addOrbital(orb, "Constant");
+  TrialWaveFunction psi;
+  ConstantOrbital* orb = new ConstantOrbital;
+  psi.addComponent(orb);
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -104,7 +92,8 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   EstimatorManagerBase EM;
   SimpleFixedNodeBranch branch(0.1, 1);
   TraceManager TM;
-  vmc.resetRun(&branch, &EM, &TM);
+  DriftModifierUNR DM;
+  vmc.resetRun(&branch, &EM, &TM, &DM);
   vmc.startBlock(1);
 
   VMCUpdatePbyP::WalkerIter_t begin = elec.begin();

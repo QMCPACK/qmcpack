@@ -1,9 +1,9 @@
 #ifndef QMCPLUSPLUS_AFQMC_BENCHMARKDRIVER_H
 #define QMCPLUSPLUS_AFQMC_BENCHMARKDRIVER_H
 
-#include<Message/MPIObjectBase.h>
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "Message/MPIObjectBase.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h"
@@ -11,52 +11,45 @@
 #include "AFQMC/Walkers/WalkerHandlerBase.hpp"
 #include "AFQMC/Walkers/LocalWalkerHandler.h"
 #include "AFQMC/Hamiltonians/HamiltonianBase.hpp"
-#include "Utilities/NewTimer.h"
 
 namespace qmcplusplus
 {
-
 class BenchmarkDriver
 {
-
-  using HamPtr = std::shared_ptr<HamiltonianBase>;
+  using HamPtr  = std::shared_ptr<HamiltonianBase>;
   using WSetPtr = std::shared_ptr<WalkerHandlerBase>;
   typedef WavefunctionHandler* WfnPtr;
   typedef PropagatorBase* PropPtr;
   typedef AFQMCInfo* InfoPtr;
 
-  public:
+public:
+  BenchmarkDriver() : benchmark_list(""), maxnW(128), delnW(-1), nrepeat(5), dt(0.01)
+  {
+    name          = "Benchmark";
+    project_title = "benchmark";
+  }
 
-    BenchmarkDriver():benchmark_list("")
-            ,maxnW(128),delnW(-1),nrepeat(5),dt(0.01)
-    {
-      name = "Benchmark";
-      project_title = "benchmark";
-    }
+  ~BenchmarkDriver() {}
 
-    ~BenchmarkDriver() {}
+  bool run();
 
-    bool run();
+  bool parse(xmlNodePtr);
 
-    bool parse(xmlNodePtr);
+  bool setup(HamPtr, WSetPtr, PropPtr, WfnPtr);
 
-    bool setup(HamPtr,WSetPtr,PropPtr,WfnPtr);
+  bool checkpoint(int a, int b) { return true; }
 
-    bool checkpoint(int a,int b) { return true; }
+  bool restart(hdf_archive& d) { return true; }
 
-    bool restart(hdf_archive& d) { return true; }
+  bool clear() { return true; }
 
-    bool clear() { return true; }
+protected:
+  int maxnW, delnW, nrepeat;
 
-  protected:
+  RealType dt;
 
-    int maxnW,delnW,nrepeat;
-
-    RealType dt;
-
-    std::string benchmark_list;
-
+  std::string benchmark_list;
 };
-}
+} // namespace qmcplusplus
 
 #endif

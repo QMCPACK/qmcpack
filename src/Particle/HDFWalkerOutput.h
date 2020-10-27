@@ -16,17 +16,10 @@
 #ifndef QMCPLUSPLUS_WALKER_OUTPUT_H
 #define QMCPLUSPLUS_WALKER_OUTPUT_H
 
-#include <Particle/MCWalkerConfiguration.h>
-// #include <QMCDrivers/ForwardWalking/ForwardWalkingStructure.h>
+#include "Particle/MCWalkerConfiguration.h"
+// #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 #include <utility>
-#include <io/hdf_archive.h>
-#ifdef HAVE_ADIOS
-#include <adios.h>
-#ifdef ADIOS_VERIFY
-#include "adios_read.h"
-#include "adios_error.h"
-#endif
-#endif
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -62,17 +55,6 @@ public:
   HDFWalkerOutput(MCWalkerConfiguration& W, const std::string& fname, Communicate* c);
   ///destructor
   ~HDFWalkerOutput();
-
-#ifdef HAVE_ADIOS
-  uint64_t get_group_size(MCWalkerConfiguration& W);
-
-  bool adios_checkpoint(MCWalkerConfiguration& W, int64_t adios_handle, int block);
-#ifdef ADIOS_VERIFY
-  void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, OHMMS_PRECISION* origin);
-  void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, int origin);
-  void adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FILE* fp);
-#endif
-#endif
 
   /** dump configurations
    * @param w walkers

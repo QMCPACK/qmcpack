@@ -1,5 +1,5 @@
-#INFO: **** input file is /home/abenali/Work/Applications/Anatol/QM9_AMONS_NI_LE_5/ALL_Runs/frag_00005/B3LYP/frag00005.py ****
-#!/usr/bin/env python
+#INFO: **** input file is /home/abenali/Work/Development/QMCPACK-Benali/qmcpack/tests/molecules/CHN_ae/pyscf/CHN.py ****
+#! /usr/bin/env python3
 
 from pyscf import gto
 from pyscf import scf, dft, df
@@ -22,13 +22,11 @@ mol.build()
 mf = dft.RKS(mol).density_fit()
 mf.xc ='B3LYP'
 
-mf.chkfile ='frag_00005.chk'
+mf.chkfile ='CHN.chk'
 e_scf=mf.kernel()
-#dm = mf.from_chk('C5H12-dft.chk')
-#e_scf=mf.kernel(dm)
 
 
-title="frag_00005"
+title="CHN"
 kpts=[]
 from PyscfToQmcpack import savetoqmcpack
 savetoqmcpack(mol,mf,title=title,kpts=kpts)
@@ -36,16 +34,16 @@ savetoqmcpack(mol,mf,title=title,kpts=kpts)
 #INFO: ******************** input file end ********************
 
 
-System: ('Linux', 'abenali', '4.15.0-39-generic', '#42-Ubuntu SMP Tue Oct 23 15:48:01 UTC 2018', 'x86_64', 'x86_64')  Threads 8
-Python 2.7.15rc1 (default, Nov 12 2018, 14:31:15) 
-[GCC 7.3.0]
-numpy 1.14.0  scipy 1.0.0
-Date: Mon Nov 26 04:03:42 2018
-PySCF version 1.6a
+System: uname_result(system='Linux', node='abenali', release='4.15.0-112-generic', version='#113-Ubuntu SMP Thu Jul 9 23:41:39 UTC 2020', machine='x86_64', processor='x86_64')  Threads 8
+Python 3.6.9 (default, Jul 17 2020, 12:50:27) 
+[GCC 8.4.0]
+numpy 1.15.4  scipy 1.1.0
+Date: Mon Aug 24 10:09:28 2020
+PySCF version 1.6.4
 PySCF path  /home/abenali/Work/src/pyscf/pyscf
-GIT ORIG_HEAD 7666303c9de36afb63ffe98cb0ed18d534b27cbc
-GIT HEAD      ref: refs/heads/dev
-GIT dev branch  2a6e84075bfe26ccd0bc363d0095d10c8db7b65f
+GIT ORIG_HEAD a75bcf7966f0e9c0a30c188cc2a7f0bdf268b5e8
+GIT HEAD      ref: refs/heads/master
+GIT master branch  a75bcf7966f0e9c0a30c188cc2a7f0bdf268b5e8
 
 [CONFIG] conf_file None
 [INPUT] verbose = 5
@@ -61,34 +59,6 @@ GIT dev branch  2a6e84075bfe26ccd0bc363d0095d10c8db7b65f
 [INPUT]  3 H      2.038002985635  -0.076100107753  -0.064399881520 AA    3.851267483896  -0.143808361704  -0.121698138528 Bohr
 [INPUT] ---------------- BASIS SET ---------------- 
 [INPUT] l, kappa, [nprim/nctr], expnt,             c_1 c_2 ...
-[INPUT] H
-[INPUT] 0    0    [3    /1   ]  33.87             0.006068
-                                5.095             0.045308
-                                1.159             0.202822
-[INPUT] 0    0    [1    /1   ]  0.3258               1
-[INPUT] 0    0    [1    /1   ]  0.1027               1
-[INPUT] 1    0    [1    /1   ]  1.407                1
-[INPUT] 1    0    [1    /1   ]  0.388                1
-[INPUT] 2    0    [1    /1   ]  1.057                1
-[INPUT] C
-[INPUT] 0    0    [8    /2   ]  8236              0.000531 -0.000113
-                                1235              0.004108 -0.000878
-                                280.8             0.021087 -0.00454
-                                79.27             0.081853 -0.018133
-                                25.59             0.234817 -0.05576
-                                8.997             0.434401 -0.126895
-                                3.319             0.346129 -0.170352
-                                0.3643            -0.008983 0.598684
-[INPUT] 0    0    [1    /1   ]  0.9059               1
-[INPUT] 0    0    [1    /1   ]  0.1285               1
-[INPUT] 1    0    [3    /1   ]  18.71             0.014031
-                                4.133             0.086866
-                                1.2               0.290216
-[INPUT] 1    0    [1    /1   ]  0.3827               1
-[INPUT] 1    0    [1    /1   ]  0.1209               1
-[INPUT] 2    0    [1    /1   ]  1.097                1
-[INPUT] 2    0    [1    /1   ]  0.318                1
-[INPUT] 3    0    [1    /1   ]  0.761                1
 [INPUT] N
 [INPUT] 0    0    [8    /2   ]  11420             0.000523 -0.000115
                                 1712              0.004045 -0.000895
@@ -108,6 +78,34 @@ GIT dev branch  2a6e84075bfe26ccd0bc363d0095d10c8db7b65f
 [INPUT] 2    0    [1    /1   ]  1.654                1
 [INPUT] 2    0    [1    /1   ]  0.469                1
 [INPUT] 3    0    [1    /1   ]  1.093                1
+[INPUT] C
+[INPUT] 0    0    [8    /2   ]  8236              0.000531 -0.000113
+                                1235              0.004108 -0.000878
+                                280.8             0.021087 -0.00454
+                                79.27             0.081853 -0.018133
+                                25.59             0.234817 -0.05576
+                                8.997             0.434401 -0.126895
+                                3.319             0.346129 -0.170352
+                                0.3643            -0.008983 0.598684
+[INPUT] 0    0    [1    /1   ]  0.9059               1
+[INPUT] 0    0    [1    /1   ]  0.1285               1
+[INPUT] 1    0    [3    /1   ]  18.71             0.014031
+                                4.133             0.086866
+                                1.2               0.290216
+[INPUT] 1    0    [1    /1   ]  0.3827               1
+[INPUT] 1    0    [1    /1   ]  0.1209               1
+[INPUT] 2    0    [1    /1   ]  1.097                1
+[INPUT] 2    0    [1    /1   ]  0.318                1
+[INPUT] 3    0    [1    /1   ]  0.761                1
+[INPUT] H
+[INPUT] 0    0    [3    /1   ]  33.87             0.006068
+                                5.095             0.045308
+                                1.159             0.202822
+[INPUT] 0    0    [1    /1   ]  0.3258               1
+[INPUT] 0    0    [1    /1   ]  0.1027               1
+[INPUT] 1    0    [1    /1   ]  1.407                1
+[INPUT] 1    0    [1    /1   ]  0.388                1
+[INPUT] 2    0    [1    /1   ]  1.057                1
 
 nuclear repulsion = 24.0336217876244
 number of shells = 24
@@ -115,35 +113,35 @@ number of NR pGTOs = 100
 number of NR cGTOs = 74
 basis = cc-pvtz
 ecp = {}
-CPU time:         0.51
+CPU time:         0.34
 
 
-******** <class 'pyscf.df.df_jk.DFHF'> ********
+******** <class 'pyscf.df.df_jk.density_fit.<locals>.DFHF'> ********
 method = DFHF-RKS-RHF
 initial guess = minao
 damping factor = 0
-level shift factor = 0
+level_shift factor = 0
 DIIS = <class 'pyscf.scf.diis.CDIIS'>
-DIIS start cycle = 1
-DIIS space = 8
-SCF tol = 1e-09
-SCF gradient tol = None
-max. SCF cycles = 50
+diis_start_cycle = 1
+diis_space = 8
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
 direct_scf = False
-chkfile to save SCF result = frag_00005.chk
-max_memory 4000 MB (current use 62 MB)
+chkfile to save SCF result = CHN.chk
+max_memory 4000 MB (current use 76 MB)
 XC functionals = B3LYP
 small_rho_cutoff = 1e-07
 radial grids: 
     Treutler-Ahlrichs (JCP 102, 346 (M4)) radial grids
     
 becke partition: Becke, JCP, 88, 2547 (1988)
-pruning grids: <function nwchem_prune at 0x14cea412c578>
+pruning grids: <function nwchem_prune at 0x154106a33e18>
 grids dens level: 3
 symmetrized grids: False
-atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x14cea412c488>
+atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x154106a33d90>
 Set gradient conv threshold to 3.16228e-05
-cond(S) = 4498.290336324065
+cond(S) = 4498.2903363242585
 atom C rad-grids = 75, ang-grids = [ 50  50  50  50  50  50  50  50  50  50  50  50  50  50  50  50  50  50
   50  50  50  50  50  86  86  86  86  86  86  86  86  86  86 266 266 266
  266 266 266 266 302 302 302 302 302 302 302 302 302 302 302 302 302 302
@@ -159,27 +157,27 @@ atom H rad-grids = 50, ang-grids = [ 50  50  50  50  50  50  50  50  50  50  50 
  266 266 266 266 266 266 266 266 266 266 266 266 266 266]
 tot grids = 37972
 Drop grids 4185
-    CPU time for setting up grids      0.88 sec, wall time      0.11 sec
-nelec by numeric integration = 13.998750653981666
-    CPU time for vxc      1.58 sec, wall time      0.20 sec
+    CPU time for setting up grids      0.33 sec, wall time      0.12 sec
+nelec by numeric integration = 13.998750653981672
+    CPU time for vxc      0.69 sec, wall time      0.21 sec
 ******** <class 'pyscf.df.df.DF'> ********
 auxbasis = None
 max_memory = 4000
-_cderi_to_save = /home/abenali/Work/Applications/Anatol/QM9_AMONS_NI_LE_5/ALL_Runs/frag_00005/B3LYP/tmpBNIQfI
-Default auxbasis cc-pvtz-jkfit is used for H cc-pvtz
-Default auxbasis cc-pvtz-jkfit is used for C cc-pvtz
+_cderi_to_save = /home/abenali/Work/Development/QMCPACK-Benali/qmcpack/tests/molecules/CHN_ae/pyscf/tmptco7xkih
 Default auxbasis cc-pvtz-jkfit is used for N cc-pvtz
+Default auxbasis cc-pvtz-jkfit is used for C cc-pvtz
+Default auxbasis cc-pvtz-jkfit is used for H cc-pvtz
 num shells = 60, num cGTOs = 188
 size of aux basis 188
-    CPU time for 2c2e      0.00 sec, wall time      0.00 sec
-    CPU time for 3c2e      0.03 sec, wall time      0.00 sec
-    CPU time for Cholesky 2c2e      0.07 sec, wall time      0.01 sec
-    CPU time for cholesky_eri      0.18 sec, wall time      0.02 sec
-    CPU time for vj and vk      0.74 sec, wall time      0.09 sec
-E1 = -172.06205058908034  Ecoul = 66.92968387831496  Exc = -12.418009180206269
-init E= -93.5167541033473
-    CPU time for initialize scf      3.30 sec, wall time      0.42 sec
-  HOMO = -0.415040229563477  LUMO = -0.0600361939875198
+    CPU time for 2c2e      0.02 sec, wall time      0.01 sec
+    CPU time for 3c2e      0.05 sec, wall time      0.01 sec
+    CPU time for Cholesky 2c2e      0.00 sec, wall time      0.00 sec
+    CPU time for cholesky_eri      0.32 sec, wall time      0.10 sec
+    CPU time for vj and vk      0.55 sec, wall time      0.16 sec
+E1 = -172.06205058908046  Ecoul = 66.92968387831498  Exc = -12.418009180206283
+init E= -93.5167541033474
+    CPU time for initialize scf      1.81 sec, wall time      0.62 sec
+  HOMO = -0.415040229563469  LUMO = -0.0600361939875179
   mo_energy =
 [-14.41134967 -10.43728954  -1.08176293  -0.63152995  -0.4356593
   -0.41504023  -0.41504023  -0.06003619  -0.06003619   0.04105251
@@ -196,13 +194,13 @@ init E= -93.5167541033473
    4.51308837   4.51308837   4.60433046   4.60433166   4.63319134
    5.00436538   5.21660953   5.21660953   5.60862733   6.1616108
    6.1616108    6.32290774   8.12412482  14.52297178]
-nelec by numeric integration = 14.000000012194187
-    CPU time for vxc      1.51 sec, wall time      0.19 sec
-    CPU time for vj and vk      0.16 sec, wall time      0.02 sec
-E1 = -174.1950322820547  Ecoul = 69.4648008969596  Exc = -12.68765591952379
-cycle= 1 E= -93.3842655169945  delta_E= 0.132  |g|= 0.318  |ddm|= 1.48
-    CPU time for cycle= 1      1.86 sec, wall time      0.23 sec
-  HOMO = -0.303350706418472  LUMO = 0.0334925168709631
+nelec by numeric integration = 14.000000012194198
+    CPU time for vxc      0.75 sec, wall time      0.20 sec
+    CPU time for vj and vk      0.19 sec, wall time      0.06 sec
+E1 = -174.19503228205497  Ecoul = 69.46480089695976  Exc = -12.6876559195238
+cycle= 1 E= -93.3842655169946  delta_E= 0.132  |g|= 0.318  |ddm|= 1.48
+    CPU time for cycle= 1      0.99 sec, wall time      0.26 sec
+  HOMO = -0.303350706418459  LUMO = 0.0334925168709722
   mo_energy =
 [-14.16934224 -10.13221786  -0.83630013  -0.61102466  -0.3062961
   -0.3062961   -0.30335071   0.03349252   0.0489912    0.0489912
@@ -219,13 +217,13 @@ cycle= 1 E= -93.3842655169945  delta_E= 0.132  |g|= 0.318  |ddm|= 1.48
    4.62291317   4.62291317   4.72364034   4.74107416   4.74107571
    5.1145161    5.33882455   5.33882455   5.77300406   6.29165719
    6.29165719   6.49217969   8.21684011  14.70135388]
-nelec by numeric integration = 14.000000011798999
-    CPU time for vxc      1.72 sec, wall time      0.21 sec
-    CPU time for vj and vk      0.15 sec, wall time      0.02 sec
-E1 = -171.82990299667878  Ecoul = 66.84163802931457  Exc = -12.403397268253247
-cycle= 2 E= -93.3580404479931  delta_E= 0.0262  |g|= 0.473  |ddm|= 0.538
-    CPU time for cycle= 2      2.18 sec, wall time      0.27 sec
-  HOMO = -0.359625394031787  LUMO = 0.0134922217131153
+nelec by numeric integration = 14.000000011799003
+    CPU time for vxc      0.68 sec, wall time      0.19 sec
+    CPU time for vj and vk      0.22 sec, wall time      0.07 sec
+E1 = -171.82990299667873  Ecoul = 66.8416380293144  Exc = -12.403397268253212
+cycle= 2 E= -93.3580404479932  delta_E= 0.0262  |g|= 0.473  |ddm|= 0.538
+    CPU time for cycle= 2      0.92 sec, wall time      0.27 sec
+  HOMO = -0.359625394031781  LUMO = 0.0134922217131192
   mo_energy =
 [-1.43605056e+01 -1.01649811e+01 -9.15788434e-01 -5.97146315e-01
  -3.88950608e-01 -3.59625394e-01 -3.59625394e-01  1.34922217e-02
@@ -246,13 +244,13 @@ cycle= 2 E= -93.3580404479931  delta_E= 0.0262  |g|= 0.473  |ddm|= 0.538
   4.69648256e+00  5.06667969e+00  5.28422683e+00  5.28422683e+00
   5.71199766e+00  6.23885525e+00  6.23885525e+00  6.43617562e+00
   8.19214805e+00  1.46230838e+01]
-nelec by numeric integration = 14.000000016506116
-    CPU time for vxc      1.50 sec, wall time      0.19 sec
-    CPU time for vj and vk      0.15 sec, wall time      0.02 sec
-E1 = -173.11395045476723  Ecoul = 68.24006639679317  Exc = -12.562298956918669
-cycle= 3 E= -93.4025612272684  delta_E= -0.0445  |g|= 0.185  |ddm|= 0.352
-    CPU time for cycle= 3      1.72 sec, wall time      0.22 sec
-  HOMO = -0.370597003595538  LUMO = 0.0047779397678662
+nelec by numeric integration = 14.000000016506107
+    CPU time for vxc      0.58 sec, wall time      0.18 sec
+    CPU time for vj and vk      0.18 sec, wall time      0.06 sec
+E1 = -173.1139504547669  Ecoul = 68.24006639679297  Exc = -12.562298956918646
+cycle= 3 E= -93.4025612272682  delta_E= -0.0445  |g|= 0.185  |ddm|= 0.352
+    CPU time for cycle= 3      0.79 sec, wall time      0.25 sec
+  HOMO = -0.370597003595541  LUMO = 0.00477793976786464
   mo_energy =
 [-1.43454476e+01 -1.02324536e+01 -9.30759244e-01 -6.14286777e-01
  -3.87020212e-01 -3.70597004e-01 -3.70597004e-01  4.77793977e-03
@@ -273,13 +271,13 @@ cycle= 3 E= -93.4025612272684  delta_E= -0.0445  |g|= 0.185  |ddm|= 0.352
   4.68555544e+00  5.06439147e+00  5.27924582e+00  5.27924582e+00
   5.69734662e+00  6.22935754e+00  6.22935754e+00  6.41920649e+00
   8.17595915e+00  1.46084226e+01]
-nelec by numeric integration = 14.000000016026842
-    CPU time for vxc      1.50 sec, wall time      0.19 sec
-    CPU time for vj and vk      0.15 sec, wall time      0.02 sec
-E1 = -173.15500460886463  Ecoul = 68.27295530864595  Exc = -12.561185135833298
-cycle= 4 E= -93.4096126484276  delta_E= -0.00705  |g|= 0.0164  |ddm|= 0.0797
-    CPU time for cycle= 4      1.72 sec, wall time      0.22 sec
-  HOMO = -0.368281682199707  LUMO = 0.00715795868303211
+nelec by numeric integration = 14.000000016026851
+    CPU time for vxc      0.66 sec, wall time      0.19 sec
+    CPU time for vj and vk      0.05 sec, wall time      0.01 sec
+E1 = -173.15500460886486  Ecoul = 68.272955308646  Exc = -12.561185135833293
+cycle= 4 E= -93.4096126484278  delta_E= -0.00705  |g|= 0.0164  |ddm|= 0.0797
+    CPU time for cycle= 4      0.74 sec, wall time      0.21 sec
+  HOMO = -0.368281682199707  LUMO = 0.00715795868303315
   mo_energy =
 [-1.43396556e+01 -1.02272030e+01 -9.27439456e-01 -6.10017239e-01
  -3.86870776e-01 -3.68281682e-01 -3.68281682e-01  7.15795868e-03
@@ -300,13 +298,13 @@ cycle= 4 E= -93.4096126484276  delta_E= -0.00705  |g|= 0.0164  |ddm|= 0.0797
   4.68905485e+00  5.06607449e+00  5.28119537e+00  5.28119537e+00
   5.70086493e+00  6.23222152e+00  6.23222152e+00  6.42314034e+00
   8.17945225e+00  1.46124094e+01]
-nelec by numeric integration = 14.000000015942941
-    CPU time for vxc      1.48 sec, wall time      0.19 sec
-    CPU time for vj and vk      0.18 sec, wall time      0.02 sec
-E1 = -173.13032998524343  Ecoul = 68.24515056144372  Exc = -12.558119301588041
+nelec by numeric integration = 14.000000015942936
+    CPU time for vxc      0.64 sec, wall time      0.16 sec
+    CPU time for vj and vk      0.21 sec, wall time      0.06 sec
+E1 = -173.13032998524335  Ecoul = 68.24515056144364  Exc = -12.55811930158803
 cycle= 5 E= -93.4096769377634  delta_E= -6.43e-05  |g|= 0.00142  |ddm|= 0.00892
-    CPU time for cycle= 5      1.74 sec, wall time      0.22 sec
-  HOMO = -0.368490850603924  LUMO = 0.00694855675130921
+    CPU time for cycle= 5      0.88 sec, wall time      0.23 sec
+  HOMO = -0.368490850603925  LUMO = 0.00694855675131018
   mo_energy =
 [-1.43407576e+01 -1.02273186e+01 -9.27702547e-01 -6.10560035e-01
  -3.87011869e-01 -3.68490851e-01 -3.68490851e-01  6.94855675e-03
@@ -327,13 +325,13 @@ cycle= 5 E= -93.4096769377634  delta_E= -6.43e-05  |g|= 0.00142  |ddm|= 0.00892
   4.68855795e+00  5.06581253e+00  5.28093459e+00  5.28093459e+00
   5.70047017e+00  6.23188803e+00  6.23188803e+00  6.42272683e+00
   8.17905672e+00  1.46119528e+01]
-nelec by numeric integration = 14.00000001598467
-    CPU time for vxc      1.45 sec, wall time      0.24 sec
-    CPU time for vj and vk      0.28 sec, wall time      0.04 sec
-E1 = -173.13342117616892  Ecoul = 68.24874398446208  Exc = -12.55862189958619
-cycle= 6 E= -93.4096773036686  delta_E= -3.66e-07  |g|= 9.83e-05  |ddm|= 0.000922
-    CPU time for cycle= 6      1.81 sec, wall time      0.29 sec
-  HOMO = -0.368483312574009  LUMO = 0.00695930965862389
+nelec by numeric integration = 14.000000015984664
+    CPU time for vxc      0.74 sec, wall time      0.19 sec
+    CPU time for vj and vk      0.15 sec, wall time      0.04 sec
+E1 = -173.13342117616872  Ecoul = 68.2487439844621  Exc = -12.558621899586166
+cycle= 6 E= -93.4096773036684  delta_E= -3.66e-07  |g|= 9.83e-05  |ddm|= 0.000922
+    CPU time for cycle= 6      0.93 sec, wall time      0.24 sec
+  HOMO = -0.368483312574014  LUMO = 0.00695930965862287
   mo_energy =
 [-1.43407494e+01 -1.02272301e+01 -9.27695333e-01 -6.10537167e-01
  -3.86987882e-01 -3.68483313e-01 -3.68483313e-01  6.95930966e-03
@@ -354,13 +352,13 @@ cycle= 6 E= -93.4096773036686  delta_E= -3.66e-07  |g|= 9.83e-05  |ddm|= 0.00092
   4.68858497e+00  5.06583854e+00  5.28095662e+00  5.28095662e+00
   5.70049202e+00  6.23190179e+00  6.23190179e+00  6.42275320e+00
   8.17908193e+00  1.46119766e+01]
-nelec by numeric integration = 14.000000015986371
-    CPU time for vxc      1.54 sec, wall time      0.21 sec
-    CPU time for vj and vk      0.25 sec, wall time      0.03 sec
-E1 = -173.133220270259  Ecoul = 68.2485094012452  Exc = -12.558588224040896
-cycle= 7 E= -93.4096773054303  delta_E= -1.76e-09  |g|= 2.4e-05  |ddm|= 7.36e-05
-    CPU time for cycle= 7      1.89 sec, wall time      0.25 sec
-  HOMO = -0.36848642006067  LUMO = 0.00695567277151708
+nelec by numeric integration = 14.000000015986368
+    CPU time for vxc      0.78 sec, wall time      0.20 sec
+    CPU time for vj and vk      0.27 sec, wall time      0.07 sec
+E1 = -173.13322027025905  Ecoul = 68.24850940124514  Exc = -12.558588224040854
+cycle= 7 E= -93.4096773054304  delta_E= -1.76e-09  |g|= 2.4e-05  |ddm|= 7.36e-05
+    CPU time for cycle= 7      1.07 sec, wall time      0.28 sec
+  HOMO = -0.368486420060668  LUMO = 0.00695567277152272
   mo_energy =
 [-1.43407628e+01 -1.02272368e+01 -9.27698007e-01 -6.10540382e-01
  -3.86994205e-01 -3.68486420e-01 -3.68486420e-01  6.95567277e-03
@@ -381,13 +379,13 @@ cycle= 7 E= -93.4096773054303  delta_E= -1.76e-09  |g|= 2.4e-05  |ddm|= 7.36e-05
   4.68858034e+00  5.06583357e+00  5.28095160e+00  5.28095160e+00
   5.70048812e+00  6.23189822e+00  6.23189822e+00  6.42274920e+00
   8.17907744e+00  1.46119705e+01]
-nelec by numeric integration = 14.000000015986517
-    CPU time for vxc      1.58 sec, wall time      0.20 sec
-    CPU time for vj and vk      0.18 sec, wall time      0.02 sec
-E1 = -173.13327792561992  Ecoul = 68.24857539535802  Exc = -12.558596562906835
+nelec by numeric integration = 14.000000015986508
+    CPU time for vxc      0.71 sec, wall time      0.19 sec
+    CPU time for vj and vk      0.05 sec, wall time      0.01 sec
+E1 = -173.1332779256199  Ecoul = 68.24857539535799  Exc = -12.558596562906825
 cycle= 8 E= -93.4096773055444  delta_E= -1.14e-10  |g|= 2.26e-06  |ddm|= 2.15e-05
-    CPU time for cycle= 8      1.87 sec, wall time      0.23 sec
-  HOMO = -0.368485484221655  LUMO = 0.00695644980693009
+    CPU time for cycle= 8      0.79 sec, wall time      0.21 sec
+  HOMO = -0.368485484221658  LUMO = 0.00695644980692752
   mo_energy =
 [-1.43407608e+01 -1.02272348e+01 -9.27696996e-01 -6.10539598e-01
  -3.86993513e-01 -3.68485484e-01 -3.68485484e-01  6.95644981e-03
@@ -408,14 +406,14 @@ cycle= 8 E= -93.4096773055444  delta_E= -1.14e-10  |g|= 2.26e-06  |ddm|= 2.15e-0
   4.68858109e+00  5.06583421e+00  5.28095236e+00  5.28095236e+00
   5.70048907e+00  6.23189900e+00  6.23189900e+00  6.42275017e+00
   8.17907830e+00  1.46119718e+01]
-nelec by numeric integration = 14.00000001598645
-    CPU time for vxc      1.58 sec, wall time      0.20 sec
-    CPU time for vj and vk      0.15 sec, wall time      0.02 sec
-E1 = -173.1332663055359  Ecoul = 68.2485623435625  Exc = -12.558595131195744
-Extra cycle  E= -93.4096773055448  delta_E= -3.98e-13  |g|= 1.82e-06  |ddm|= 2.68e-06
-    CPU time for scf_cycle     19.89 sec, wall time      2.58 sec
-    CPU time for SCF     19.89 sec, wall time      2.58 sec
-converged SCF energy = -93.4096773055448
-Using Python 2.x
+nelec by numeric integration = 14.000000015986446
+    CPU time for vxc      0.71 sec, wall time      0.19 sec
+    CPU time for vj and vk      0.13 sec, wall time      0.04 sec
+E1 = -173.1332663055357  Ecoul = 68.24856234356248  Exc = -12.558595131195736
+Extra cycle  E= -93.4096773055446  delta_E= -1.99e-13  |g|= 1.82e-06  |ddm|= 2.68e-06
+    CPU time for scf_cycle      9.79 sec, wall time      2.80 sec
+    CPU time for SCF      9.79 sec, wall time      2.80 sec
+converged SCF energy = -93.4096773055446
+Using Python 3.x
 Wavefunction successfully saved to QMCPACK HDF5 Format
-Use: "convert4qmc -pyscf  frag_00005.h5" to generate QMCPACK input files
+Use: "convert4qmc -pyscf  CHN.h5" to generate QMCPACK input files

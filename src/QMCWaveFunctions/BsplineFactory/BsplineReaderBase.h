@@ -19,14 +19,14 @@
  */
 #ifndef QMCPLUSPLUS_BSPLINE_READER_BASE_H
 #define QMCPLUSPLUS_BSPLINE_READER_BASE_H
-#include <mpi/collectives.h>
-#include <mpi/point2point.h>
+#include "mpi/collectives.h"
+#include "mpi/point2point.h"
 namespace qmcplusplus
 {
-class SPOSetInputInfo;
+struct SPOSetInputInfo;
 
 /**
- * Each SplineAdoptor needs a reader derived from BsplineReaderBase.
+ * Each SplineC2X needs a reader derived from BsplineReaderBase.
  * This base class handles common chores
  * - check_twists : read gvectors, set twists for folded bands if needed, and set the phase for the special K
  * - set_grid : create the basic grid and boundary conditions for einspline
@@ -65,17 +65,12 @@ struct BsplineReaderBase
 
     app_log() << "  Using meshsize=" << MeshSize << "\n  vs input meshsize=" << mybuilder->MeshSize << std::endl;
 
-    xyz_grid[0].start = 0.0;
-    xyz_grid[0].end   = 1.0;
-    xyz_grid[0].num   = MeshSize[0];
-    xyz_grid[1].start = 0.0;
-    xyz_grid[1].end   = 1.0;
-    xyz_grid[1].num   = MeshSize[1];
-    xyz_grid[2].start = 0.0;
-    xyz_grid[2].end   = 1.0;
-    xyz_grid[2].num   = MeshSize[2];
     for (int j = 0; j < 3; ++j)
     {
+      xyz_grid[j].start = 0.0;
+      xyz_grid[j].end   = 1.0;
+      xyz_grid[j].num   = MeshSize[j];
+
       if (halfg[j])
       {
         xyz_bc[j].lCode = ANTIPERIODIC;
@@ -86,6 +81,9 @@ struct BsplineReaderBase
         xyz_bc[j].lCode = PERIODIC;
         xyz_bc[j].rCode = PERIODIC;
       }
+
+      xyz_bc[j].lVal = 0.0;
+      xyz_bc[j].rVal = 0.0;
     }
     return havePsig;
   }
@@ -96,10 +94,8 @@ struct BsplineReaderBase
   inline void check_twists(SPE* bspline, const BandInfoGroup& bandgroup)
   {
     //init(orbitalSet,bspline);
-    bspline->PrimLattice  = mybuilder->PrimCell;
-    bspline->SuperLattice = mybuilder->SuperCell;
-    bspline->GGt          = mybuilder->GGt;
-    //bspline->HalfG=mybuilder->HalfG;
+    bspline->PrimLattice = mybuilder->PrimCell;
+    bspline->GGt         = dot(transpose(bspline->PrimLattice.G), bspline->PrimLattice.G);
 
     int N       = bandgroup.getNumDistinctOrbitals();
     int numOrbs = bandgroup.getNumSPOs();
@@ -179,6 +175,9 @@ struct BsplineReaderBase
 
   /** create the spline set */
   SPOSet* create_spline_set(int spin, xmlNodePtr cur);
+
+  /** Set the checkNorm variable */
+  inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
 
   void initialize_spo2band(int spin,
                            const std::vector<BandInfo>& bigspace,

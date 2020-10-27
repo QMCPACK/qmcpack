@@ -60,15 +60,10 @@ struct SPOSetProxyForMSD : public SPOSet
    * @param last the last particle index
    */
   SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last);
-  void resetParameters(const opt_variables_type& optVariables);
-  void resetTargetParticleSet(ParticleSet& P);
-  void setOrbitalSetSize(int norbs);
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi)
-  {
-    APP_ABORT("Need specialization of evaluate(HessVector_t&) for grad_grad_grad_logdet. \n");
-  }
+  void resetParameters(const opt_variables_type& optVariables) override;
+  void setOrbitalSetSize(int norbs) override;
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
   void evaluate(const ParticleSet& P,
                 int first,
                 int last,
@@ -80,7 +75,7 @@ struct SPOSetProxyForMSD : public SPOSet
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+                            ValueMatrix_t& d2logdet) override;
   void evaluate(const ParticleSet& P,
                 int first,
                 int last,
@@ -101,7 +96,7 @@ struct SPOSetProxyForMSD : public SPOSet
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet);
+                            HessMatrix_t& grad_grad_logdet) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -109,7 +104,7 @@ struct SPOSetProxyForMSD : public SPOSet
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet);
+                            GGGMatrix_t& grad_grad_grad_logdet) override;
 
   void prepareFor(int n) { workingSet = n; }
 

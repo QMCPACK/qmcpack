@@ -60,7 +60,7 @@ template<class T>
 process& operator<<(process& self, T const& t){
 	self.comm_.send_value(t, self.rank_);
 	return self;
-};
+}
 
 inline process communicator::operator[](int rank){
 	return {*this, rank};

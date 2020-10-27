@@ -14,8 +14,9 @@
    can't add/remove elements. Then pass nnz through the dispatching of csrmm and csrmv. This class 
    is memory owning. 
 
--- There is something strange with cuda's RNG. Not sure if this is a bug or a problem with my use.
-   Right now I'm using QMCPACK's RNG on the host and copying the values to the device.
 
-
-- Remember to add missing overloads for shm_ptr_raw_ptr_dispatch to iterator based copy in boost::multi.
+-- new strategy for observables
+1. Let the estimator do all the implementation of walker averaged properties, 
+   because there seems to be no way to make use of the PHMSD compact representation of references.
+2. The BP class will generate the new green functions (from wset and Refs) and will calculate all desired
+   properties based on them. The wave-function still provides the mapping from G to property, e.g. for EKT. 

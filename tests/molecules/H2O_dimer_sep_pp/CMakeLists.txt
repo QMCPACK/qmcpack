@@ -102,9 +102,9 @@ IF (NOT QMC_CUDA)
                     )
 
  ELSE()
-    MESSAGE("Skipping H2O_dimer_sep_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+    MESSAGE_VERBOSE("Skipping H2O_dimer_sep_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
 ELSE()
-    MESSAGE("Skipping H2O_dimer_sep_pp tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+    MESSAGE_VERBOSE("Skipping H2O_dimer_sep_pp tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
 

@@ -13,11 +13,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/SkEstimator_CUDA.h"
+#include "SkEstimator_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 void SkEstimator_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
   int nw = W.WalkerList.size();
@@ -42,7 +45,7 @@ void SkEstimator_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
     else
     {
       for (int ik = 0; ik < NumK; ik++)
-        W.WalkerList[iw]->getPropertyBase()[NUMPROPERTIES + myIndex + ik] = OneOverN *
+        W.WalkerList[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex + ik] = OneOverN *
             (rhok_total[2 * ik + 0] * rhok_total[2 * ik + 0] + rhok_total[2 * ik + 1] * rhok_total[2 * ik + 1]);
     }
   }

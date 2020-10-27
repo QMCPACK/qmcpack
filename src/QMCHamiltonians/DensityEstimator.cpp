@@ -16,10 +16,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/DensityEstimator.h>
-#include <OhmmsData/AttributeSet.h>
+#include "DensityEstimator.h"
+#include "OhmmsData/AttributeSet.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 
@@ -29,7 +28,7 @@ typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
 typedef LRCoulombSingleton::GridType GridType;
 typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
-DensityEstimator::DensityEstimator(ParticleSet& elns) : rVs(0)
+DensityEstimator::DensityEstimator(ParticleSet& elns)
 {
   UpdateMode.set(COLLECTABLE, 1);
   Periodic = (elns.Lattice.SuperCellEnum != SUPERCELL_OPEN);
@@ -38,7 +37,6 @@ DensityEstimator::DensityEstimator(ParticleSet& elns) : rVs(0)
     density_max[dim] = elns.Lattice.Length[dim];
     ScaleFactor[dim] = 1.0 / elns.Lattice.Length[dim];
   }
-  //    InitPotential(elns);
 }
 
 void DensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
@@ -57,7 +55,6 @@ DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
       int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
       P.Collectables[getGridIndex(i, j, k)] += wgt; //1.0;
       //	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
-      //HACK!	P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
     }
   }
   else
@@ -77,7 +74,6 @@ DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
         int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
         P.Collectables[getGridIndex(i, j, k)] += wgt; //1.0;
         //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
-        //HACK!	  P.Collectables[getGridIndexPotential(i,j,k)]+=evalSR(P,iat)+evalLR(P,iat);
       }
     }
   }
@@ -110,82 +106,6 @@ void DensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
     }
   }
 }
-
-DensityEstimator::RealType DensityEstimator::evalLR(ParticleSet& P, int iat)
-{
-  RealType LR = 0.0;
-  const StructFact& PtclRhoK(*(P.SK));
-  //    for(int spec1=0; spec1<NumSpecies; spec1++) {
-  //      RealType Z1 = Zspec[spec1];
-  for (int spec2 = 0; spec2 < NumSpecies; spec2++)
-  {
-    RealType Z2 = Zspec[spec2];
-    //RealType temp=AA->evaluate(PtclRhoK.KLists.minusk, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
-#if defined(USE_REAL_STRUCT_FACTOR)
-    RealType temp = AA->evaluate(PtclRhoK.KLists.kshell, iat, PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2], P);
-#else
-    RealType temp = AA->evaluate(PtclRhoK.KLists.kshell, iat, PtclRhoK.rhok[spec2], P);
-#endif
-    int spec1   = spec2; ///BUG: REALLY NEED TO FIGURE OUT HOW TO GET SPEC OF IAT!
-    RealType Z1 = Zspec[spec1];
-    if (spec2 == spec1)
-      LR += 0.5 * Z1 * Z2 * temp;
-    else
-      LR += Z1 * Z2 * temp;
-  } //spec2
-  //    }//spec1
-  //LR*=0.5;
-  return LR;
-}
-
-void DensityEstimator::InitPotential(ParticleSet& P)
-{
-  SpeciesSet& tspecies(P.getSpeciesSet());
-  int ChargeAttribIndx = tspecies.addAttribute("charge");
-  int MemberAttribIndx = tspecies.addAttribute("membersize");
-  NumCenters           = P.getTotalNum();
-  NumSpecies           = tspecies.TotalNum;
-  Zat.resize(NumCenters);
-  Zspec.resize(NumSpecies);
-  for (int spec = 0; spec < NumSpecies; spec++)
-  {
-    Zspec[spec] = tspecies(ChargeAttribIndx, spec);
-    //      NofSpecies[spec] = static_cast<int>(tspecies(MemberAttribIndx,spec));
-  }
-  for (int iat = 0; iat < NumCenters; iat++)
-  {
-    //      SpeciesID[iat]=P.GroupID[iat];
-    Zat[iat] = Zspec[P.GroupID[iat]];
-  }
-  GridType* myGrid(0);
-  RealType myRcut;
-  AA = LRCoulombSingleton::getHandler(P);
-  //AA->initBreakup(*PtclRef);
-  myRcut = AA->get_rc();
-  if (rVs == 0)
-  {
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA, myRcut, myGrid);
-  }
-}
-
-
-DensityEstimator::RealType DensityEstimator::evalSR(ParticleSet& P, int ipart)
-{
-  const DistanceTableData* d_aa = P.DistTables[0];
-  RealType SR                   = 0.0;
-  //     for(int ipart=0; ipart<NumCenters; ipart++)
-  {
-    RealType esum = 0.0;
-    for (int nn = d_aa->M[ipart], jpart = ipart + 1; nn < d_aa->M[ipart + 1]; nn++, jpart++)
-    {
-      esum += Zat[jpart] * d_aa->rinv(nn) * rVs->splint(d_aa->r(nn));
-    }
-    //Accumulate pair sums...species charge for atom i.
-    SR += Zat[ipart] * esum;
-  }
-  return SR;
-}
-
 
 void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
@@ -260,7 +180,7 @@ bool DensityEstimator::get(std::ostream& os) const
   return true;
 }
 
-QMCHamiltonianBase* DensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* DensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //default constructor is sufficient
   return new DensityEstimator(*this);

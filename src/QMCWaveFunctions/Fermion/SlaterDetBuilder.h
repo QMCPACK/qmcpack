@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_LCORBITALSETBUILDER_H
 
 #include <vector>
+#include "Configuration.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
@@ -42,21 +43,20 @@ public:
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
-
-  ~SlaterDetBuilder();
+  SlaterDetBuilder(Communicate* comm, ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
 
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
    *
    */
-  bool put(xmlNodePtr cur);
-
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 private:
+  ///reference to TrialWaveFunction, should go away as the CUDA code.
+  TrialWaveFunction& targetPsi;
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
-  SPOSetBuilderFactory* mySPOSetBuilderFactory;
+  std::unique_ptr<SPOSetBuilderFactory> mySPOSetBuilderFactory;
   SlaterDeterminant_t* slaterdet_0;
   MultiSlaterDeterminant_t* multislaterdet_0;
   MultiSlaterDeterminantFast* multislaterdetfast_0;
@@ -81,11 +81,11 @@ private:
                    std::vector<size_t>& C2node_up,
                    std::vector<size_t>& C2node_dn,
                    std::vector<std::string>& CItags,
-                   std::vector<RealType>& coeff,
+                   std::vector<ValueType>& coeff,
                    bool& optimizeCI,
                    int nels_up,
                    int nels_dn,
-                   std::vector<RealType>& CSFcoeff,
+                   std::vector<ValueType>& CSFcoeff,
                    std::vector<size_t>& DetsPerCSF,
                    std::vector<RealType>& CSFexpansion,
                    bool& usingCSF);
@@ -97,10 +97,37 @@ private:
                      std::vector<size_t>& C2node_up,
                      std::vector<size_t>& C2node_dn,
                      std::vector<std::string>& CItags,
-                     std::vector<RealType>& coeff,
+                     std::vector<ValueType>& coeff,
                      bool& optimizeCI,
                      int nels_up,
                      int nels_dn);
+
+  // clang-format off
+  template<typename VT,
+           std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
+                            (std::is_floating_point<VT>::value), int> = 0>
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
+  {
+    hin.read(ci_coeff, "Coeff");
+  }
+  template<typename VT,
+           std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
+                            (std::is_same<VT, std::complex<typename VT::value_type>>::value), int> = 0>
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
+  {
+    std::vector<double> CIcoeff_real;
+    std::vector<double> CIcoeff_imag;
+    CIcoeff_imag.resize(n_dets);
+    CIcoeff_real.resize(n_dets);
+
+    hin.read(CIcoeff_real, "Coeff");
+    hin.read(CIcoeff_imag, "Coeff_imag");
+
+    for (size_t i = 0; i < n_dets; i++)
+      ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
+  }
+  // clang-format on
 };
+
 } // namespace qmcplusplus
 #endif

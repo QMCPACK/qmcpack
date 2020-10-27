@@ -13,12 +13,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMCUpdateAll.h"
+#include "VMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "Message/OpenMP.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
@@ -43,7 +45,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
   W.loadWalker(
       thisWalker,
       false); // W.R,G,L = thisWalker.R,G,L; false indicates W.DistTables & SK are not updated in this call. W.DistTables,SK are now stale.
-  RealType logpsi_old = thisWalker.Properties(LOGPSI);
+  RealType logpsi_old = thisWalker.Properties(WP::LOGPSI);
   for (int iter = 0; iter < nSubSteps; ++iter)
   { // make a few Monte-Carlo steps to decorrelate samples without calculating observables
     makeGaussRandomWithEngine(deltaR, RandomGen); // fill deltaR
@@ -51,7 +53,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     if (UseDrift)
     {
       assignDrift(Tau, MassInvP, thisWalker.G, drift); // fill variable drift
-      if (W.makeMoveWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
+      if (W.makeMoveAllParticlesWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
       { // W.R = thisWalker.R + drift + deltaR; W.DistTables,SK are updated; W.G,L are now stale
         RealType logpsi = Psi.evaluateLog(W); // update W.G,L; update Psi.PhaseValue,LogValue
         RealType logGf  = -0.5 * Dot(deltaR, deltaR);
@@ -73,7 +75,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     }
     else
     {
-      if (W.makeMove(thisWalker, deltaR, SqrtTauOverMass))
+      if (W.makeMoveAllParticles(thisWalker, deltaR, SqrtTauOverMass))
       {                                       // W.R += dR*dt; W.DistTables,SK are updated; W.G,L are now stale
         RealType logpsi = Psi.evaluateLog(W); // update W.G,L at changed W.R; update Psi.LogValue,PhaseValue
         RealType g      = std::exp(2.0 * (logpsi - logpsi_old));
@@ -96,14 +98,15 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
 
   if (!updated)
   {                                  // W.G and W.L have to be computed because the last move was rejected
-    W.update(thisWalker.R);          // move W back to last accepted configuration; W.DistTables, SK are updated
+    W.loadWalker(thisWalker, false); // move W back to last accepted configuration
+    W.update();                      // update W.DistTables and SK
     logpsi_old = Psi.evaluateLog(W); // update W.G,L
   }                                  // W and logpsi_old are up-to-date at this point
 
   RealType eloc = H.evaluate(
       W); // calculate local energy; W.SK must be up-to-date if Coulomb interaction is used with periodic boundary. W.SK is used to calculate the long-range part of the Coulomb potential.
   W.saveWalker(thisWalker);
-  thisWalker.resetProperty(logpsi_old, Psi.getPhase(), eloc); // update thisWalker::Properties[LOGPSI,SIGN,LOCALENERGY]
+  thisWalker.resetProperty(logpsi_old, Psi.getPhase(), eloc); // update thisWalker::Properties[WP::LOGPSI,WP::SIGN,WP::LOCALENERGY]
   H.auxHevaluate(W, thisWalker);                              // update auxiliary observables, i.e. fill H::Observables
   H.saveProperty(thisWalker.getPropertyBase());               // copy H::Observables to thisWalker::Properties
 }

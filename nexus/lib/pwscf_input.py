@@ -48,7 +48,7 @@ import os
 import inspect
 from copy import deepcopy
 from superstring import string2val
-from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil
+from numpy import fromstring,empty,array,float64,ones,pi,dot,ceil,ndarray
 from numpy.linalg import inv
 from unit_converter import convert
 from generic import obj
@@ -140,7 +140,7 @@ def array_from_lines(lines):
     a = fromstring(s,sep=' ')
     nelem = len(a)
     nlines = len(lines)
-    dim = nelem/nlines
+    dim = nelem//nlines
     a.shape = nlines,dim
     return a
 #end def array_from_lines
@@ -204,7 +204,7 @@ class PwscfInputBase(DevBase):
         'esm_efield','fcp_mu','london_c6','london_rvdw','xdm_a1','xdm_a2',
         # 6.3 additions
         'block_1','block_2','block_height','zgate','ts_vdw_econv_thr',
-        'starting_charge',
+        'starting_charge'
         ]
     strs=[
         # pre 5.4
@@ -240,12 +240,13 @@ class PwscfInputBase(DevBase):
         'hubbard_j0', 'hubbard_beta', 'hubbard_j',
         'starting_ns_eigenvalue', 'angle1', 'angle2', 'fixed_magnetization',
         'fe_step', 'efield_cart', 'london_c6', 'london_rvdw',
-        ]
+        'starting_charge' ,
+         ]
 
     species_arrays = [
         'starting_magnetization', 'hubbard_alpha', 'hubbard_u', 'hubbard_j0', 
         'hubbard_beta', 'hubbard_j', 'angle1', 'angle2', 
-        'london_c6', 'london_rvdw',
+        'london_c6', 'london_rvdw','starting_charge',
         ]
 
     species_array_indices = obj(hubbard_j=1)
@@ -510,7 +511,11 @@ class Card(Element):
 
     def change_specifier(self,new_specifier):
         self.not_implemented()
-    #end def change_specifier    
+    #end def change_specifier
+
+    def change_option(self,*args,**kwargs):
+        self.change_specifier(*args,**kwargs)
+    #end def change_option
 #end class Card
 
 
@@ -654,7 +659,7 @@ class system(Section):
     def post_process_read(self,parent):
         if 'atomic_species' in parent:
             keys = self.keys()
-            for alias,name in self.atomic_variables.iteritems():
+            for alias,name in self.atomic_variables.items():
                 has_var = False
                 avals = obj()
                 akeys = []
@@ -1050,7 +1055,7 @@ class atomic_positions(Card):
 
 
     def change_specifier(self,new_specifier,pwi):
-        scale,axes = pwi.get_common_vars('scale','axes')
+        scale = pwi.get_common_vars('scale')
 
         pos = self.positions
 
@@ -1062,6 +1067,7 @@ class atomic_positions(Card):
         elif spec=='angstrom':
             pos *= convert(1.,'A','B')
         elif spec=='crystal':
+            axes = pwi.get_common_vars('axes')
             pos = dot(pos,axes)
         else:
             self.error('old specifier for atomic_positions is invalid\n  old specifier: '+spec+'\n  valid options: alat, bohr, angstrom, crystal')
@@ -1075,6 +1081,7 @@ class atomic_positions(Card):
         elif spec=='angstrom':
             pos /= convert(1.,'A','B')
         elif spec=='crystal':
+            axes = pwi.get_common_vars('axes')
             pos = dot(pos,inv(axes))
         else:
             self.error('new specifier for atomic_positions is invalid\n  new specifier: '+spec+'\n  valid options: alat, bohr, angstrom, crystal')
@@ -1219,6 +1226,37 @@ class cell_parameters(Card):
     def write_text(self):
         return array_to_string(self.vectors)
     #end def write_text
+
+    def change_specifier(self,new_specifier,pwi):
+        scale = pwi.get_common_vars('scale')
+
+        vec = self.vectors
+
+        spec = self.specifier
+        if spec=='alat' or spec=='':
+            vec *= scale
+        elif spec=='bohr':
+            None
+        elif spec=='angstrom':
+            vec *= convert(1.,'A','B')
+        else:
+            self.error('old specifier for cell_parameters is invalid\nold specifier: '+spec+'\nvalid options: alat, bohr, angstrom')
+        #end if
+
+        spec = new_specifier
+        if spec=='alat' or spec=='':
+            vec /= scale
+        elif spec=='bohr':
+            None
+        elif spec=='angstrom':
+            vec /= convert(1.,'A','B')
+        else:
+            self.error('new specifier for cell_parameters is invalid\nnew specifier: '+spec+'\nvalid options: alat, bohr, angstrom')
+        #end if
+            
+        self.vectors   = vec
+        self.specifier = new_specifier
+    #end def change_specifier
 #end class cell_parameters
 
 
@@ -1465,20 +1503,16 @@ class PwscfInput(SimulationInput):
 
 
     def get_common_vars(self,*vars):
-        scale = None
+        scale = 1.0
         axes  = None
         kaxes = None
 
         if 'celldm(1)' in self.system:
             scale = self.system['celldm(1)']
-        elif 'ibrav' in self.system and self.system.ibrav==0:
-            scale = 1.0
         #end if
-        if scale!=None:
-            if 'cell_parameters' in self:
-                axes = scale*array(self.cell_parameters.vectors)
-                kaxes = 2*pi*inv(axes).T
-            #end if
+        if 'cell_parameters' in self:
+            axes = scale*array(self.cell_parameters.vectors)
+            kaxes = 2*pi*inv(axes).T
         #end if
 
         vals = []
@@ -1518,7 +1552,7 @@ class PwscfInput(SimulationInput):
         ndn = p.down_electron.count
 
         self.system.ibrav        = 0
-        self.system['celldm(1)'] = 1.0e0
+#        self.system['celldm(1)'] = 1.0e0
         nions,nspecies = p.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
@@ -1527,7 +1561,7 @@ class PwscfInput(SimulationInput):
         if not 'cell_parameters' in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
-        self.cell_parameters.specifier = 'cubic'
+        self.cell_parameters.specifier = 'bohr' 
         self.cell_parameters.vectors   = s.axes.copy()
 
         self.k_points.clear()
@@ -1555,7 +1589,7 @@ class PwscfInput(SimulationInput):
         if 'masses' not in self.atomic_species:
             self.atomic_species.masses = obj()
         #end if
-        for name,a in atoms.iteritems():
+        for name,a in atoms.items():
             self.atomic_species.masses[name] = convert(a.mass,'me','amu')
         #end for
         if elem_order is None:
@@ -1568,6 +1602,7 @@ class PwscfInput(SimulationInput):
             #end if
             self.atomic_species.atoms = list(elem_order)
         #end if
+
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
@@ -1579,7 +1614,7 @@ class PwscfInput(SimulationInput):
             #end if
         #end for
 
-        self.atomic_positions.specifier = 'alat'
+        self.atomic_positions.specifier = 'bohr'
         self.atomic_positions.positions = s.pos.copy()
         self.atomic_positions.atoms     = list(s.elem)
         if s.frozen!=None:
@@ -1589,7 +1624,7 @@ class PwscfInput(SimulationInput):
             else:
                 relax_directions = ones(s.pos.shape,dtype=int)
             #end if
-            for i in xrange(len(s.pos)):
+            for i in range(len(s.pos)):
                 relax_directions[i,0] = int(not frozen[i,0] and relax_directions[i,0])
                 relax_directions[i,1] = int(not frozen[i,1] and relax_directions[i,1])
                 relax_directions[i,2] = int(not frozen[i,2] and relax_directions[i,2])
@@ -1612,7 +1647,7 @@ class PwscfInput(SimulationInput):
         ndn = p.down_electron.count
 
         self.system.ibrav        = 0
-        self.system['celldm(1)'] = 1.0e0
+#        self.system['celldm(1)'] = 1.0e0
         nions,nspecies = p.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
@@ -1627,7 +1662,7 @@ class PwscfInput(SimulationInput):
         if not 'cell_parameters' in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
-        self.cell_parameters.specifier = 'cubic'
+        self.cell_parameters.specifier = 'bohr'
         self.cell_parameters.vectors   = s.axes.copy()
 
         self.k_points.clear()
@@ -1654,10 +1689,10 @@ class PwscfInput(SimulationInput):
 
         atoms = p.get_ions()
         masses = obj()
-        for name,a in atoms.iteritems():
+        for name,a in atoms.items():
             masses[name] = convert(a.mass,'me','amu')
         #end for
-        self.atomic_species.atoms  = list(atoms.keys())
+        self.atomic_species.atoms  = list(sorted(atoms.keys()))
         self.atomic_species.masses = masses
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
@@ -1670,7 +1705,7 @@ class PwscfInput(SimulationInput):
             #end if
         #end for
 
-        self.atomic_positions.specifier = 'alat'
+        self.atomic_positions.specifier = 'bohr'
         self.atomic_positions.positions = s.pos.copy()
         self.atomic_positions.atoms     = list(s.elem)
         if s.frozen!=None:
@@ -1680,7 +1715,7 @@ class PwscfInput(SimulationInput):
             else:
                 relax_directions = ones(s.pos.shape,dtype=int)
             #end if
-            for i in xrange(len(s.pos)):
+            for i in range(len(s.pos)):
                 relax_directions[i,0] = int(not frozen[i,0] and relax_directions[i,0])
                 relax_directions[i,1] = int(not frozen[i,1] and relax_directions[i,1])
                 relax_directions[i,2] = int(not frozen[i,2] and relax_directions[i,2])
@@ -1891,7 +1926,7 @@ def generate_any_pwscf_input(**kwargs):
     # enforce lowercase internally, but remain case insensitive to user input
     kw_in = kwargs
     kwargs = obj()
-    for name,value in kw_in.iteritems():
+    for name,value in kw_in.items():
         kwargs[name.lower()] = value
     #end for
 
@@ -1919,7 +1954,7 @@ def generate_any_pwscf_input(**kwargs):
     else:
         defaults = generate_any_defaults.standard
     #end if
-    for name,default in defaults.iteritems():
+    for name,default in defaults.items():
         if not name in kwargs:
             deftype = type(default)
             if inspect.isclass(default) or inspect.isfunction(default):
@@ -1939,13 +1974,14 @@ def generate_any_pwscf_input(**kwargs):
     nspin             = kwargs.get_optional('nspin',None)
     nbnd              = kwargs.get_optional('nbnd',None)
     hubbard_u         = kwargs.get_optional('hubbard_u',None)
-
+    occ               = kwargs.get_optional('occupations',None)
+    
     #make an empty input file
     pw = PwscfInput()
 
     #pull out section keywords
     section_keywords = obj()
-    for section_name,section_type in PwscfInput.section_types.iteritems():
+    for section_name,section_type in PwscfInput.section_types.items():
         keys = set(kwargs.keys()) & section_type.variables
         if len(keys)>0:
             kw = obj()
@@ -1957,20 +1993,34 @@ def generate_any_pwscf_input(**kwargs):
     #end for
 
     #process other keywords
-    use_folded    = kwargs.delete_required('use_folded')
-    kgrid         = kwargs.delete_required('kgrid')
-    kshift        = kwargs.delete_required('kshift')
-    system        = kwargs.delete_optional('system',None)
-    pseudos       = kwargs.delete_optional('pseudos',[])
-    elem_order    = kwargs.delete_optional('elem_order',None)
-    mass          = kwargs.delete_optional('mass',None)
-    elem          = kwargs.delete_optional('elem',None)
-    pos           = kwargs.delete_optional('pos',None)
-    pos_specifier = kwargs.delete_optional('pos_specifier',None)
-    totmag_sys    = kwargs.delete_optional('totmag_sys',False)
-    start_mag     = kwargs.delete_optional('start_mag',None)
-    bandfac       = kwargs.delete_optional('bandfac',None)
-    nogamma       = kwargs.delete_optional('nogamma',False)
+    use_folded       = kwargs.delete_required('use_folded')
+    kgrid            = kwargs.delete_required('kgrid')
+    kshift           = kwargs.delete_required('kshift')
+    system           = kwargs.delete_optional('system',None)
+    pseudos          = kwargs.delete_optional('pseudos',[])
+    elem_order       = kwargs.delete_optional('elem_order',None)
+    mass             = kwargs.delete_optional('mass',None)
+    elem             = kwargs.delete_optional('elem',None)
+    pos              = kwargs.delete_optional('pos',None)
+    totmag_sys       = kwargs.delete_optional('totmag_sys',False)
+    start_mag        = kwargs.delete_optional('start_mag',None)
+    bandfac          = kwargs.delete_optional('bandfac',None)
+    nogamma          = kwargs.delete_optional('nogamma',False)
+    positions_option = kwargs.delete_optional('pos_specifier',None)
+    if positions_option is None:
+        positions_option = kwargs.delete_optional('positions_option',None)
+    #end if
+    if positions_option is None:
+        positions_option = kwargs.delete_optional('atomic_positions_option',None)
+    #end if
+    kpoints_option   = kwargs.delete_optional('kpoints_option',None)
+    if kpoints_option is None:
+        kpoints_option   = kwargs.delete_optional('k_points_option',None)
+    #end if
+    cell_option      = kwargs.delete_optional('cell_option',None)
+    if cell_option is None:
+        cell_option      = kwargs.delete_optional('cell_parameters_option',None)
+    #end if
 
     #  pseudopotentials
     pseudopotentials = obj()
@@ -1997,8 +2047,8 @@ def generate_any_pwscf_input(**kwargs):
             if pos is None:
                 PwscfInput.class_error('"pos" must be provided when "elem" is given','generate_pwscf_input')
             #end if
-            if pos_specifier is None:
-                PwscfInput.class_error('"pos_specifier" must be provided when "elem" is given','generate_pwscf_input')
+            if positions_option is None:
+                PwscfInput.class_error('"atomic_positions_option" must be provided when "elem" is given','generate_pwscf_input')
             #end if
 
             # fill in atomic_species
@@ -2025,7 +2075,7 @@ def generate_any_pwscf_input(**kwargs):
             #end for
 
             # fill in atomic_positions
-            pw.atomic_positions.specifier = pos_specifier
+            pw.atomic_positions.specifier = positions_option
             pw.atomic_positions.positions = array(pos,dtype=float)
             pw.atomic_positions.atoms     = list(elem)
         #end if
@@ -2135,6 +2185,29 @@ def generate_any_pwscf_input(**kwargs):
     #        shift     = kshift
     #        )
     #end if
+
+    # occupations card
+    if isinstance(occ,(list,ndarray)):
+        pw.system.occupations = 'from_input'
+        occ_card = occupations()
+        occ_card.occupations = array(occ,dtype=float)
+        pw.occupations = occ_card
+    #end if
+    
+    # adjust card options, if requested
+    options = obj(
+        atomic_positions = positions_option,
+        k_points         = kpoints_option,
+        cell_parameters  = cell_option,
+        )
+    for card_name,option in options.items():
+        if option is not None:
+            if card_name not in pw:
+                PwscfInput.class_error('Card option provided for card "{}" but card is not present\noption provided: {}'.format(card_name,option))
+            #end if
+            pw[card_name].change_option(option,pw)
+        #end if
+    #end for
 
     # check for misformatted kpoints
     if len(pw.k_points)==0:

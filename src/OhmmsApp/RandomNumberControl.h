@@ -14,10 +14,11 @@
 
 #ifndef OHMMS_RANDOMNUMBERCONTROL_H__
 #define OHMMS_RANDOMNUMBERCONTROL_H__
+#include <libxml/xpath.h>
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
-#include <io/hdf_archive.h>
+#include "hdf/hdf_archive.h"
 
 class Communicate;
 
@@ -63,7 +64,7 @@ public:
    */
   static void write(const std::string& fname, Communicate* comm);
   /** read random state from a hdf file in parallel
-   * @param hdf_archive set to parallel
+   * @param hin hdf_archive set to parallel
    * @param comm communicator
    */
   static void read_parallel(hdf_archive& hin, Communicate* comm);
@@ -74,7 +75,7 @@ public:
   static void write_parallel(hdf_archive& hout, Communicate* comm);
   /** rank 0 reads random states from a hdf file
    * and distributes them to all the other ranks
-   * @param hdf_archive set to serial
+   * @param hin hdf_archive set to serial
    * @param comm communicator
    */
   static void read_rank_0(hdf_archive& hin, Communicate* comm);

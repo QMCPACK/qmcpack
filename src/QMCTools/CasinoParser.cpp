@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/CasinoParser.h"
+#include "CasinoParser.h"
 #include <iterator>
 #include <algorithm>
 #include <set>

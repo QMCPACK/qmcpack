@@ -12,7 +12,7 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include <formic/utils/exception.h>
+#include "formic/utils/exception.h"
 
 namespace cqmc {
 

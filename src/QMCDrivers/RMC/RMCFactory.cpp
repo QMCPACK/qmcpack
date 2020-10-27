@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/RMC/RMCFactory.h"
+#include "RMCFactory.h"
 #include "QMCDrivers/RMC/RMC.h"
 #include "Message/OpenMP.h"
 
@@ -20,9 +20,6 @@ namespace qmcplusplus
 QMCDriver* RMCFactory::create(MCWalkerConfiguration& w,
                               TrialWaveFunction& psi,
                               QMCHamiltonian& h,
-                              ParticleSetPool& ptclpool,
-                              HamiltonianPool& hpool,
-                              WaveFunctionPool& ppool,
                               Communicate* comm)
 {
   int np = omp_get_max_threads();
@@ -34,7 +31,7 @@ QMCDriver* RMCFactory::create(MCWalkerConfiguration& w,
 
   if (RMCMode == 0 || RMCMode == 1) //(0,0,0) (0,0,1) pbyp and all electron
   {
-    qmc = new RMC(w, psi, h, ppool, comm);
+    qmc = new RMC(w, psi, h, comm);
   }
 #if defined(QMC_BUILD_COMPLETE)
 //else if(RMCMode == 2) //(0,1,0)

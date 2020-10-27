@@ -5,7 +5,7 @@
 #// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 #//
 #// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-#//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign  
+#//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
 #//                    Norbert Podhorszki, pnorbert@ornl.gov, Oak Ridge National Laboratory
@@ -19,6 +19,8 @@
 
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
   ${qmcpack_BINARY_DIR}/src/config.h)
+
+INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
 
 SET(GITREV_BARE_FILE git-rev.h)
 SET(GITREV_BARE_TMP git-rev-tmp.h)
@@ -63,7 +65,7 @@ IF (IS_GIT_PROJECT)
   else ( SED_ERROR MATCHES ".*invalid.*" )
     MESSAGE("sed supports -E")
   endif ( SED_ERROR MATCHES ".*invalid.*" )
-    
+
   ADD_CUSTOM_COMMAND(
     OUTPUT ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_BRANCH_RAW " > ${GITREV_TMP}
@@ -116,88 +118,42 @@ IF (IS_GIT_PROJECT)
   MESSAGE("Git commit hash: ${GIT_CONFIG_COMMIT_HASH}")
 ENDIF()
 
-if (HAVE_MPI)
-  INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/mpi_wrapper")
-endif()
+INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 
-if (HAVE_LIBBOOST)
-    INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
-endif()
-
-####################################
-# create liboompi
-####################################
-IF(HAVE_OOMPI)
-  CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
-    ${qmcpack_BINARY_DIR}/src/oompi-config.h)
-  INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
-  SUBDIRS(OOMPI)
-  IF ( MPI_LIBRARY )
-     SET(MPI_LIBRARY oompi ${MPI_LIBRARY})
-  ELSE()
-     SET(MPI_LIBRARY oompi )
-  ENDIF()
-ENDIF(HAVE_OOMPI)
 
   ####################################
   # create libqmcutil
   ####################################
   SET(UTILITIES
-    qmc_common.cpp
-    Utilities/RandomGenerator.cpp 
-    Utilities/OhmmsObject.cpp 
-    Utilities/SpeciesSet.cpp 
-    Utilities/SimpleParser.cpp 
-    Utilities/InfoStream.cpp
-    Utilities/OutputManager.cpp
+    Utilities/qmc_common.cpp
+    Utilities/RandomGenerator.cpp
+    Utilities/OhmmsObject.cpp
+    Utilities/SpeciesSet.cpp
+    Utilities/SimpleParser.cpp
+    Utilities/Clock.cpp
     Utilities/NewTimer.cpp
+    Utilities/TimerManager.cpp
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
     Utilities/unit_conversion.cpp
-    OhmmsData/Libxml2Doc.cpp
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
-    Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
-    Platforms/sysutil.cpp
-    Platforms/accelerators.cpp
-    QMCFactory/OneDimGridFactory.cpp
-    Message/Communicate.cpp 
-    Message/MPIObjectBase.cpp 
+    Numerics/SmoothFunctions.cpp
+    Numerics/OneDimGridFactory.cpp
     Optimize/VariableSet.cpp
-    io/hdf_archive.cpp
-    spline2/MultiBsplineData.cpp
     )
 IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
 ENDIF()
 
-  IF(QMC_ADIOS)
-    SET(UTILITIES ${UTILITIES}
-      ADIOS/ADIOS_verify.cpp
-      ADIOS/ADIOS_config.h
-      ADIOS/ADIOS_config.cpp
-      )
-  ENDIF(QMC_ADIOS)
-
-  IF(QMC_CUDA)
-    SET(UTILITIES ${UTILITIES} 
-      Numerics/CUDA/cuda_inverse.cu 
-      CUDA/gpu_vector.cpp
-      CUDA/gpu_misc.cpp
-      Particle/accept_kernel.cu)
-  ENDIF(QMC_CUDA)
-
-  IF(QMC_CUDA)
-    CUDA_ADD_LIBRARY(qmcutil ${UTILITIES})
-    CUDA_ADD_CUBLAS_TO_TARGET(qmcutil)
-  ELSE(QMC_CUDA)
-    ADD_LIBRARY(qmcutil ${UTILITIES} ${ADIOS})
-  ENDIF(QMC_CUDA)
-
-  IF(HAVE_CUDA)
-    TARGET_LINK_LIBRARIES(qmcutil ${CUDA_LIBRARIES})
-  ENDIF(HAVE_CUDA)
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcutil OBJECT ${UTILITIES})
+ELSE(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcutil ${UTILITIES})
+ENDIF(USE_OBJECT_TARGET)
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message containers qmcio)
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
 
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
@@ -207,116 +163,33 @@ ENDIF()
   # Put the fake RNG in a separate library so production code doesn't
   # accidentally link to it
   SET(UNIT_TEST_UTILITIES
-    Utilities/FakeRandom.cpp 
-  ) 
+    Utilities/FakeRandom.cpp
+  )
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
-  #IF(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcutil STATIC ${UTILITIES})
-  #ELSE(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcutil SHARED ${UTILITIES})
-  #ENDIF(QMC_BUILD_STATIC)
+  SUBDIRS(io)
+  SUBDIRS(einspline)
+  SUBDIRS(Containers)
+  SUBDIRS(Message)
+  SUBDIRS(Platforms)
+  SUBDIRS(Particle)
 
+if(QMC_BUILD_SANDBOX_ONLY)
 
-  IF(OHMMS_DIM MATCHES 3)
-    SET(PARTICLE Lattice/Uniform3DGridLayout.cpp)
-  ENDIF(OHMMS_DIM MATCHES 3)
+  MESSAGE(STATUS "Minimal build: only Sandbox")
+  SUBDIRS(Sandbox)
 
-  IF(OHMMS_DIM MATCHES 2)
-    SET(PARTICLE Lattice/Uniform2DGridLayout.cpp)
-  ENDIF(OHMMS_DIM MATCHES 2)
-
-  ####################################
-  # create libqmcbase 
-  ####################################
-  SET(PARTICLE ${PARTICLE}
-    Particle/ParticleSet.cpp 
-    Particle/VirtualParticleSet.cpp
-    Particle/ParticleSet.BC.cpp 
-    Particle/MCWalkerConfiguration.cpp 
-    Particle/DistanceTableAA.cpp
-    Particle/DistanceTableAB.cpp
-    Particle/DistanceTable.cpp
-    Particle/HDFWalkerInputManager.cpp
-    LongRange/KContainer.cpp
-    LongRange/StructFact.cpp
-    LongRange/LPQHIBasis.cpp
-    LongRange/LPQHISRCoulombBasis.cpp
-    LongRange/EwaldHandler.cpp
-    LongRange/EwaldHandler3D.cpp
-    LongRange/LRCoulombSingleton.cpp
-    )
-
-  IF(OHMMS_DIM MATCHES 2)
-    SET(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
-  ENDIF(OHMMS_DIM MATCHES 2)
-
-
-  SET(PARTICLEIO
-    ParticleTags.cpp 
-    ParticleIO/ParticleLayoutIO.cpp 
-    ParticleIO/XMLParticleIO.cpp 
-    ParticleIO/ParticleIOUtility.cpp 
-    )
-
-  IF(HAVE_LIBHDF5 OR HAVE_ADIOS)
-    SET(PARTICLEIO ${PARTICLEIO}
-      Particle/HDFWalkerOutput.cpp
-      Particle/HDFWalkerInput_0_0.cpp
-      Particle/HDFWalkerInput_0_4.cpp
-      )
-    IF(HAVE_ADIOS)
-      SET(PARTICLEIO ${PARTICLEIO}
-        ADIOS/ADIOS_verify.cpp
-      )
-    ENDIF(HAVE_ADIOS)
-
-    IF(OHMMS_DIM  MATCHES 3)
-      SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
-    ENDIF(OHMMS_DIM  MATCHES 3)
-
-  ENDIF(HAVE_LIBHDF5 OR HAVE_ADIOS)
-
-  #Need to add this if nothing else but miniapps is compiled
-  if(QMC_BUILD_SANDBOX_ONLY)
-    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
-  endif()
-
-  ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO}) 
-
-  #IF(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcbase STATIC ${PARTICLE}  ${PARTICLEIO})
-  #ELSE(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcbase SHARED ${PARTICLE}  ${PARTICLEIO})
-  #ENDIF(QMC_BUILD_STATIC)
-  #SUBDIRS(einspline)
-
-  if(QMC_BUILD_SANDBOX_ONLY)
-
-    MESSAGE(STATUS "Minimal build: only Sandbox")
-    SUBDIRS(Sandbox)
-
-  else() #{{{
-
-  #############################
-  # Creating ADIOS
-  #############################
-
-  SET(ADIOS ADIOS/ADIOS_config.cpp)
-  IF(HAVE_ADIOS)
-    SET(ADIOS ${ADIOS}
-    Particle/AdiosWalkerInput.cpp
-    ADIOS/ADIOS_profile.cpp
-    ADIOS/ADIOS_verify.cpp
-    ADIOS/ADIOSTrace.cpp
-    )
-  ENDIF(HAVE_ADIOS)
-
-  ADD_LIBRARY(adios_config ${ADIOS})
+else() #{{{
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
+  SUBDIRS(Estimators)
   SUBDIRS(QMCDrivers)
+
+  IF(BUILD_LMYENGINE_INTERFACE)
+    SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
+    SUBDIRS(formic/utils)
+  ENDIF(BUILD_LMYENGINE_INTERFACE)
 
   IF(BUILD_AFQMC)
    SUBDIRS(AFQMC)
@@ -332,31 +205,21 @@ ENDIF()
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
 
-  if (BUILD_UNIT_TESTS) #{
+  IF (BUILD_UNIT_TESTS) #{
     #Unit test directories
-    INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
-    INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
-    SUBDIRS(OhmmsPETE/tests)
-    SUBDIRS(OhmmsSoA/tests)
     SUBDIRS(Numerics/tests)
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
     SUBDIRS(spline2/tests)
-    SUBDIRS(OhmmsData/tests)
-    SUBDIRS(io/tests)
-    SUBDIRS(Lattice/tests)
-    SUBDIRS(Particle/tests)
-    SUBDIRS(ParticleIO/tests)
+    SUBDIRS(Concurrency/tests)
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)
-    SUBDIRS(ParticleBase/tests)
-    SUBDIRS(Estimators/tests)
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
-    SUBDIRS(OpenMP/tests)
     SUBDIRS(Optimize/tests)
-  endif() #}
+    SUBDIRS(QMCTools/tests)
+  ENDIF() #}
 
 endif() #}}}

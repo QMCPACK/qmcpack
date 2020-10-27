@@ -15,9 +15,9 @@
  * @brief Implments QMCMain operators.
  */
 #include "QMCApp/QMCMain.h"
-#include "QMCApp/ParticleSetPool.h"
-#include "QMCApp/WaveFunctionPool.h"
-#include "QMCApp/HamiltonianPool.h"
+#include "Particle/ParticleSetPool.h"
+#include "QMCWaveFunctions/WaveFunctionPool.h"
+#include "QMCHamiltonians/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -26,7 +26,7 @@
 //#include "QMCDrivers/CMC/DummyIonMove.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus

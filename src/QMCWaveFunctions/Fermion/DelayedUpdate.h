@@ -12,12 +12,12 @@
 #ifndef QMCPLUSPLUS_DELAYED_UPDATE_H
 #define QMCPLUSPLUS_DELAYED_UPDATE_H
 
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include "Numerics/OhmmsBlas.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "CPU/BLAS.hpp"
+#include "CPU/BlasThreadingEnv.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "Numerics/BlasThreadingEnv.h"
-#include "config.h"
+#include "Message/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -29,8 +29,6 @@ namespace qmcplusplus
 template<typename T, typename T_FP>
 class DelayedUpdate
 {
-  /// define real type
-  using real_type = typename scalar_traits<T>::real_type;
   /// orbital values of delayed electrons
   Matrix<T> U;
   /// rows of Ainv corresponding to delayed electrons
@@ -48,7 +46,7 @@ class DelayedUpdate
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
   /// matrix inversion engine
-  DiracMatrix<T_FP, T> detEng;
+  DiracMatrix<T_FP> detEng;
 
 public:
   /// default constructor
@@ -73,9 +71,10 @@ public:
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
    */
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, real_type& LogValue, real_type& PhaseValue)
+  template<typename TREAL>
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& LogValue)
   {
-    detEng.invert_transpose(logdetT, Ainv, LogValue, PhaseValue);
+    detEng.invert_transpose(logdetT, Ainv, LogValue);
     // safe mechanism
     delay_count = 0;
   }
@@ -88,6 +87,8 @@ public:
     // safe mechanism
     delay_count = 0;
   }
+
+  inline int getDelayCount() const { return delay_count; }
 
   /** compute the row of up-to-date Ainv
    * @param Ainv inverse matrix
@@ -174,14 +175,13 @@ public:
     }
     else
     {
-      const int lda_Binv     = Binv.cols();
-      int num_threads_nested = getNumThreadsNested();
-      // always use serial when norb is small or only one second level thread
-      bool use_serial(norb <= 256 || num_threads_nested == 1);
-      if (use_serial || BlasThreadingEnv::NestedThreadingSupported())
+      const int lda_Binv = Binv.cols();
+      // number of threads at the next level, forced to 1 if the problem is small.
+      const int num_threads = (norb < 256 ? 1 : getNextLevelNumThreads());
+      if (num_threads == 1 || BlasThreadingEnv::NestedThreadingSupported())
       {
         // threading depends on BLAS
-        BlasThreadingEnv knob(use_serial ? 1 : num_threads_nested);
+        BlasThreadingEnv knob(num_threads);
         BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(),
                    lda_Binv);
         for (int i = 0; i < delay_count; i++)
@@ -196,7 +196,7 @@ public:
         // manually threaded version of the above GEMM calls
 #pragma omp parallel
         {
-          const int block_size = getAlignedSize<T>((norb + num_threads_nested - 1) / num_threads_nested);
+          const int block_size = getAlignedSize<T>((norb + num_threads - 1) / num_threads);
           int num_block        = (norb + block_size - 1) / block_size;
 #pragma omp for
           for (int ix = 0; ix < num_block; ix++)

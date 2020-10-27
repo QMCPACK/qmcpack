@@ -18,7 +18,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -26,6 +26,8 @@
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+  
 /** A fake Hamiltonian to check the sampling of the trial function.
  *
  * Integrating the expression
@@ -68,7 +70,7 @@ namespace qmcplusplus
  \f[\Psi\f] in terms of \f[\ln \Psi\] should use normal complex
  multiplication.
 */
-struct ConservedEnergy : public QMCHamiltonianBase
+struct ConservedEnergy : public OperatorBase
 {
   ConservedEnergy() {}
   ~ConservedEnergy() {}
@@ -97,7 +99,7 @@ struct ConservedEnergy : public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new ConservedEnergy; }
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new ConservedEnergy; }
 
 #ifdef QMC_CUDA
   ////////////////////////////////
@@ -120,7 +122,7 @@ struct ConservedEnergy : public QMCHamiltonianBase
 #else
       flux = lap + 2 * gradsq;
 #endif
-      w.getPropertyBase()[NUMPROPERTIES + myIndex] = flux;
+      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = flux;
     }
   }
 #endif

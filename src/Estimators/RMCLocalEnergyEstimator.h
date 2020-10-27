@@ -17,6 +17,7 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/Reptile.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
@@ -26,11 +27,12 @@ namespace qmcplusplus
  */
 class RMCLocalEnergyEstimator : public ScalarEstimatorBase
 {
+  using WP = WalkerProperties::Indexes;
   int FirstHamiltonian;
   int SizeOfHamiltonians;
+  const QMCHamiltonian& refH;
   int NObs;
   int RMCSpecificTerms;
-  const QMCHamiltonian& refH;
 
 public:
   /** constructor
@@ -46,6 +48,10 @@ public:
    */
   inline void accumulate(const Walker_t& awalker, RealType wgt) {}
 
+  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  {
+    throw std::runtime_error("RMC not supported by Unified Driver interfaces");
+  }
   /*@{*/
   inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt)
   {
@@ -65,13 +71,13 @@ public:
     //   RealType wwght=  head.Weight;
     RealType wwght = 0.5;
     //app_log()<<"~~~~~For head:  Energy:"<<ePtr[LOCALENERGY]<< std::endl;
-    scalars[0](0.5 * (ePtr[LOCALENERGY] + lPtr[LOCALENERGY]), wwght);
-    scalars[1](0.5 * (ePtr[LOCALENERGY] * ePtr[LOCALENERGY] + lPtr[LOCALENERGY] * lPtr[LOCALENERGY]), wwght);
-    scalars[2](cPtr[LOCALENERGY], wwght);
-    scalars[3](cPtr[LOCALENERGY] * cPtr[LOCALENERGY], wwght);
-    scalars[4](ePtr[LOCALENERGY] * lPtr[LOCALENERGY], wwght);
-    scalars[5](0.5 * (ePtr[LOCALPOTENTIAL] + lPtr[LOCALPOTENTIAL]), wwght);
-    scalars[6](cPtr[LOCALPOTENTIAL], wwght);
+    scalars[0](0.5 * (ePtr[WP::LOCALENERGY] + lPtr[WP::LOCALENERGY]), wwght);
+    scalars[1](0.5 * (ePtr[WP::LOCALENERGY] * ePtr[WP::LOCALENERGY] + lPtr[WP::LOCALENERGY] * lPtr[WP::LOCALENERGY]), wwght);
+    scalars[2](cPtr[WP::LOCALENERGY], wwght);
+    scalars[3](cPtr[WP::LOCALENERGY] * cPtr[WP::LOCALENERGY], wwght);
+    scalars[4](ePtr[WP::LOCALENERGY] * lPtr[WP::LOCALENERGY], wwght);
+    scalars[5](0.5 * (ePtr[WP::LOCALPOTENTIAL] + lPtr[WP::LOCALPOTENTIAL]), wwght);
+    scalars[6](cPtr[WP::LOCALPOTENTIAL], wwght);
 
     for (int target = RMCSpecificTerms, source = FirstHamiltonian; source < FirstHamiltonian + SizeOfHamiltonians;
          ++target, ++source)

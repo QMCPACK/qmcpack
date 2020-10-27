@@ -9,9 +9,7 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef __bgq__
-#include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
-#elif __linux__
+#ifdef __linux__
 #include <sched.h>
 #endif
 #include <omp.h>
@@ -27,10 +25,7 @@
 /*=======================================*/
 int get_core()
 {
-#ifdef __bgq__
-  int core = Kernel_ProcessorCoreID();
-  return core;
-#elif __linux__
+#ifdef __linux__
   int cpuid = sched_getcpu();
   return cpuid;
 #else
@@ -41,15 +36,7 @@ int get_core()
 /*=======================================*/
 /* routine to return the HW thread ID    */
 /*=======================================*/
-int get_hwthread()
-{
-#ifdef __bgq__
-  int hwthread = Kernel_ProcessorThreadID();
-  return hwthread;
-#else
-  return -1;
-#endif
-}
+int get_hwthread() { return -1; }
 
 int main()
 {
@@ -62,6 +49,9 @@ int main()
 #endif
 
   bool hwthread_id_supported = (get_hwthread() != -1);
+
+  if (rank == 0)
+    std::cout << "OpenMP OMP_MAX_ACTIVE_LEVELS = " << omp_get_max_active_levels() << std::endl;
 
   for (int l_rank = 0; l_rank < world_size; l_rank++)
   {

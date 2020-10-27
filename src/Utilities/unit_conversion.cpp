@@ -11,8 +11,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Utilities/unit_conversion.h>
-#include <Message/Communicate.h>
+#include "unit_conversion.h"
+#include "Message/Communicate.h"
 
 
 namespace qmcplusplus
@@ -21,205 +21,213 @@ namespace Units
 {
 units count_unit(const std::string& su)
 {
-  units u;
   if (su == "mol")
-    u = mol;
+    return mol;
   else if (su == "mole")
-    u = mol;
+    return mol;
   else
+  {
     APP_ABORT("units::count_unit\n  invalid count unit: " + su + "\n  valid options are: mol");
-  return u;
+    return mol;
+  }
 }
 
 
 units distance_unit(const std::string& su)
 {
-  units u;
   if (su == "m")
-    u = m;
+    return m;
   else if (su == "A")
-    u = A;
+    return A;
   else if (su == "B")
-    u = B;
+    return B;
   else if (su == "nm")
-    u = nm;
+    return nm;
   else if (su == "pm")
-    u = pm;
+    return pm;
   else if (su == "fm")
-    u = fm;
+    return fm;
   else if (su == "meter")
-    u = m;
+    return m;
   else if (su == "angstrom")
-    u = A;
+    return A;
   else if (su == "bohr")
-    u = B;
+    return B;
   else if (su == "nanometer")
-    u = nm;
+    return nm;
   else if (su == "picometer")
-    u = pm;
+    return pm;
   else if (su == "femtometer")
-    u = fm;
+    return fm;
   else
+  {
     APP_ABORT("units::distance_unit\n  invalid distance unit: " + su +
               "\n  valid options are: m/meter, A/angstrom, B/bohr, nm/nanometer, pm/picometer, fm/femtometer");
-  return u;
+    return m;
+  }
 }
 
 
 units time_unit(const std::string& su)
 {
-  units u;
   if (su == "s")
-    u = s;
+    return s;
   else if (su == "ms")
-    u = ms;
+    return ms;
   else if (su == "ns")
-    u = ns;
+    return ns;
   else if (su == "ps")
-    u = ps;
+    return ps;
   else if (su == "fs")
-    u = fs;
+    return fs;
   else if (su == "second")
-    u = s;
+    return s;
   else if (su == "millisecond")
-    u = ms;
+    return ms;
   else if (su == "nanosecond")
-    u = ns;
+    return ns;
   else if (su == "picosecond")
-    u = ps;
+    return ps;
   else if (su == "femtosecond")
-    u = fs;
+    return fs;
   else
+  {
     APP_ABORT("units::time_unit\n  invalid time unit: " + su +
               "\n  valid options are: s/second, ms/millisecond, ns/nanosecond, ps/picosecond, fs/femtosecond");
-  return u;
+    return s;
+  }
 }
 
 
 units mass_unit(const std::string& su)
 {
-  units u;
   if (su == "kg")
-    u = kg;
+    return kg;
   else if (su == "me")
-    u = me;
+    return me;
   else if (su == "mp")
-    u = mp;
+    return mp;
   else if (su == "amu")
-    u = amu;
+    return amu;
   else if (su == "Da")
-    u = Da;
+    return Da;
   else if (su == "kilogram")
-    u = kg;
+    return kg;
   else if (su == "electron_mass")
-    u = me;
+    return me;
   else if (su == "proton_mass")
-    u = mp;
+    return mp;
   else if (su == "atomic_mass_unit")
-    u = amu;
+    return amu;
   else if (su == "dalton")
-    u = Da;
+    return Da;
   else
+  {
     APP_ABORT("units::mass_unit\n  invalid mass unit: " + su +
               "\n  valid options are: kg/kilogram, me/electron_mass, mp/proton_mass, amu/atomic_mass_unit, Da/dalton");
-  return u;
+    return kg;
+  }
 }
 
 
 units energy_unit(const std::string& su)
 {
-  units u;
   if (su == "J")
-    u = J;
+    return J;
   else if (su == "eV")
-    u = eV;
+    return eV;
   else if (su == "Ry")
-    u = Ry;
+    return Ry;
   else if (su == "Ha")
-    u = Ha;
+    return Ha;
   else if (su == "kJ/mol")
-    u = kJ_mol;
+    return kJ_mol;
   else if (su == "K")
-    u = K;
+    return K;
   else if (su == "joule")
-    u = J;
+    return J;
   else if (su == "electron_volt")
-    u = eV;
+    return eV;
   else if (su == "rydberg")
-    u = Ry;
+    return Ry;
   else if (su == "hartree")
-    u = Ha;
+    return Ha;
   else if (su == "kilojoule_per_mole")
-    u = kJ_mol;
+    return kJ_mol;
   else if (su == "kelvin")
-    u = K;
+    return K;
   else
+  {
     APP_ABORT("units::energy_unit\n  invalid energy unit: " + su +
               "\n  valid options are: J/joule, eV/electron_volt, Ry/rydberg, Ha/hartree, kJ/mol/kilo_joule_per_mole, "
               "K/kelvin");
-  return u;
+    return J;
+  }
 }
 
 
 units charge_unit(const std::string& su)
 {
-  units u;
   if (su == "C")
-    u = C;
+    return C;
   else if (su == "e")
-    u = e;
+    return e;
   else if (su == "coulomb")
-    u = C;
+    return C;
   else if (su == "proton_charge")
-    u = e;
+    return e;
   else
+  {
     APP_ABORT("units::charge_unit\n  invalid charge unit: " + su + "\n  valid options are: C/coulomb, e/proton_charge");
-  return u;
+    return C;
+  }
 }
 
 
 units pressure_unit(const std::string& su)
 {
-  units u;
   if (su == "Pa")
-    u = Pa;
+    return Pa;
   else if (su == "bar")
-    u = bar;
+    return bar;
   else if (su == "Mbar")
-    u = Mbar;
+    return Mbar;
   else if (su == "GPa")
-    u = GPa;
+    return GPa;
   else if (su == "atm")
-    u = atm;
+    return atm;
   else if (su == "pascal")
-    u = Pa;
+    return Pa;
   else if (su == "megabar")
-    u = Mbar;
+    return Mbar;
   else if (su == "gigapascal")
-    u = GPa;
+    return GPa;
   else if (su == "atmosphere")
-    u = atm;
+    return atm;
   else
+  {
     APP_ABORT("units::pressure_unit\n  invalid pressure unit: " + su +
               "\n  valid options are: Pa/pascal, bar/bar, Mbar/megabar, GPa/gigapascal, atm/atmosphere");
-  return u;
+    return Pa;
+  }
 }
 
 
 units force_unit(const std::string& su)
 {
-  units u;
   if (su == "N")
-    u = N;
+    return N;
   else if (su == "pN")
-    u = pN;
+    return pN;
   else if (su == "newton")
-    u = N;
+    return N;
   else if (su == "piconewton")
-    u = pN;
+    return pN;
   else
+  {
     APP_ABORT("units::force_unit\n  invalid force unit: " + su + "\n  valid options are: N/newton, pN/piconewton");
-  return u;
+    return N;
+  }
 }
 
 } // namespace Units

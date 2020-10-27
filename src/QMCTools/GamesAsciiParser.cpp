@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/GamesAsciiParser.h"
+#include "GamesAsciiParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -893,13 +893,11 @@ void Cartesian2Spherical(int n, double* Cart, double* Sphe)
 {
   switch (n)
   {
-  case 1:
-  {
+  case 1: {
     *Sphe = *Cart;
     break;
   }
-  case 3:
-  {
+  case 3: {
     // m = -1
     *(Sphe) = *(Cart + 1);
     // m = 0
@@ -908,8 +906,7 @@ void Cartesian2Spherical(int n, double* Cart, double* Sphe)
     *(Sphe + 2) = *(Cart);
     break;
   }
-  case 5:
-  {
+  case 5: {
     // m = -2
     *(Sphe) = *(Cart + 3);
     // m = -1
@@ -922,8 +919,7 @@ void Cartesian2Spherical(int n, double* Cart, double* Sphe)
     *(Sphe + 4) = std::sqrt(0.75) * (*(Cart) - *(Cart + 1));
     break;
   }
-  case 7:
-  {
+  case 7: {
     // m = -3
     *(Sphe) = -1.0 * std::sqrt(5.0 / 8.0) * (*(Cart + 1)) + std::sqrt(9.0 / 8.0) * (*(Cart + 3));
     // m = -2
@@ -942,8 +938,7 @@ void Cartesian2Spherical(int n, double* Cart, double* Sphe)
     *(Sphe + 6) = -1.0 * std::sqrt(5.0 / 8.0) * (*(Cart)) + std::sqrt(9.0 / 8.0) * (*(Cart + 5));
     break;
   }
-  case 9:
-  {
+  case 9: {
     // m = -4
     *(Sphe) = std::sqrt(5.0 / 4.0) * (*(Cart + 3) - *(Cart + 5));
     // m = -3
@@ -995,8 +990,7 @@ void Cartesian2Spherical(int n, double* Cart, double* Sphe)
         *(Sphe+10)   = std::sqrt()*(*(Cart)+*(Cart));
       }
   */
-  default:
-  {
+  default: {
     std::cerr << "Error in Cartesian2Spherical. Invalid n: " << n << std::endl;
     abort();
   }
@@ -1440,7 +1434,7 @@ void GamesAsciiParser::getCI(std::istream& is)
       ci_neb++;
   if (CIalpha[0].size() != CIbeta[0].size())
   {
-    std::cerr << "QMCPack can't handle different number of active orbitals in alpha and beta channels right now. "
+    std::cerr << "QMCPACK can't handle different number of active orbitals in alpha and beta channels right now. "
                  "Contact developers for help (Miguel).\n";
     abort();
   }

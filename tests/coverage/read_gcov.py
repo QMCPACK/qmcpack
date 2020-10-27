@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 import argparse
 from collections import namedtuple, defaultdict, OrderedDict
@@ -5,7 +6,7 @@ import difflib
 import glob
 import json
 import os.path
-import StringIO
+from io import StringIO
 import sys
 
 # See https://gcc.gnu.org/onlinedocs/gcc/Invoking-Gcov.html or the gcov man page
@@ -70,21 +71,21 @@ def get_keyword_value(kw, pos, parts):
     """
 
     if len(parts) < pos:
-        print 'Not enough parts in line for kw %s'%kw
-        print '   line parts: %s'%parts
+        print('Not enough parts in line for kw %s'%kw)
+        print('   line parts: %s'%parts)
         return ''
 
     kws = kw.split()
     offset = len(kws)
     for i,kw in enumerate(kws):
         if parts[pos+i] != kw:
-            print 'error, keyword expected:%s, found: %s'%(kw, parts[pos+i])
-            print '   line parts: %s'%parts
+            print('error, keyword expected:%s, found: %s'%(kw, parts[pos+i]))
+            print('   line parts: %s'%parts)
             return ''
 
     if len(parts) < pos+offset:
-        print 'Not enough parts to line for kw value %s'%kw
-        print '   line parts: %s'%parts
+        print('Not enough parts to line for kw value %s'%kw)
+        print('   line parts: %s'%parts)
         return ''
 
     return parts[pos+offset]
@@ -95,11 +96,11 @@ def get_percent(s):
     '''Convert strings of the form '<x>%' to integer'''
 
     if len(s) == 0:
-        print 'get_percent empty string'
+        print('get_percent empty string')
         return 0
 
     if not s.endswith('%'):
-        print 'not percent: %s'%s
+        print('not percent: %s'%s)
         return int(s)
 
     if len(s) == 1:
@@ -155,7 +156,7 @@ def read_gcov(fname):
                 if 'returned' in line:
                     exed = get_percent(get_keyword_value('returned', 2, parts))
                 elif 'never executed' not in line:
-                    print "Unexpected value in call branch info: %s"%parts
+                    print("Unexpected value in call branch info: %s"%parts)
 
                 lines_with_info.add(current_src_line)
                 branch_location[current_src_line].append(CallInfo('call', exed))
@@ -173,7 +174,7 @@ def read_gcov(fname):
                 elif 'never executed' in line:
                     is_executed = False
                 else:
-                    print "Unexpected value in branch info: %s"%parts
+                    print("Unexpected value in branch info: %s"%parts)
 
                 lines_with_info.add(current_src_line)
                 branch_location[current_src_line].append(BranchInfo('branch', taken, is_executed, is_fallthrough, is_throw))
@@ -207,17 +208,17 @@ def read_gcov(fname):
                     try:
                       line_count = int(exe_count)
                       if line_count < 0:
-                          print 'Warning, negative exe count found'
-                          print '  ',line
-                          print '  ',fname
-                          print '   Replacing with uncovered'
+                          print('Warning, negative exe count found')
+                          print('  ',line)
+                          print('  ',fname)
+                          print('   Replacing with uncovered')
                           Uncov_norm = '#####'
                           exe_count = Uncov_norm
                     except:
                       pass
                     line_info[line_no] = LineInfo(exe_count, line_no, parts[2])
             else:
-                print 'Unhandled line: ',parts
+                print('Unhandled line: ',parts)
 
     # Last function in the file
     if current_function:
@@ -226,15 +227,15 @@ def read_gcov(fname):
     return GcovFile(fname, tags, line_info, func_location, None, branch_location, func_ranges)
 
 def write_gcov(gcov, f=sys.stdout):
-    for t,v in gcov.tags.iteritems():
+    for t,v in gcov.tags.items():
         if t == 'error':
-          print >>f, '%8s-:%5d:%s'%(' ', 0, v)
+          print('%8s-:%5d:%s'%(' ', 0, v), file=f)
         else:
-          print >>f, '%8s-:%5d:%s:%s'%(' ', 0, t, v)
+          print('%8s-:%5d:%s:%s'%(' ', 0, t, v), file=f)
 
-    for line_no, line_info in gcov.line_info.iteritems():
+    for line_no, line_info in gcov.line_info.items():
         assert(line_no == line_info.lineno)
-        print >>f, '%9s:%5d:%s'%(line_info.count, line_no, line_info.src)
+        print('%9s:%5d:%s'%(line_info.count, line_no, line_info.src), file=f)
         #if line_no in gcov.call_branch_info:
         #    for i,cb in enumerate(gcov.call_branch_info[line_no]):
         #        if cb.returned == 0:
@@ -246,25 +247,25 @@ def write_gcov(gcov, f=sys.stdout):
             for i,br in enumerate(gcov.branch_info[line_no]):
                 if br.type == 'call':
                     if br.returned == 0:
-                        print >>f, 'call    %d never executed'%i
+                        print('call    %d never executed'%i, file=f)
                     else:
-                        print >>f, 'call    %d returned %d%%'%(i, br.returned)
+                        print('call    %d returned %d%%'%(i, br.returned), file=f)
                 elif br.type == 'branch':
                     if not br.is_executed:
-                        print >>f, 'branch  %d never executed'%i
+                        print('branch  %d never executed'%i, file=f)
                     else:
                         ft = ''
                         if br.is_fallthrough:
                             ft = ' (fallthrough)'
                         if br.is_throw:
                             ft = ' (throw)'
-                        print >>f, 'branch  %d taken %d%%%s'%(i, br.taken, ft)
+                        print('branch  %d taken %d%%%s'%(i, br.taken, ft),file=f)
                 else:
-                    print 'unknown branch info type: ',br.type
+                    print('unknown branch info type: ',br.type)
 
         if gcov.function_info and line_no in gcov.function_info:
             for f1 in gcov.function_info[line_no]:
-                print >>f, 'function %s called %d returned %d%% blocks executed %d%%'%(f1.name, f1.called_count, f1.returned, f1.blocks_exe)
+                print('function %s called %d returned %d%% blocks executed %d%%'%(f1.name, f1.called_count, f1.returned, f1.blocks_exe), file=f)
 
 def read_gcov_files_glob(target_dir):
     flist = glob.glob(os.path.join(target_dir,'*.gcov'))
@@ -289,10 +290,10 @@ def summarize_all_files(all_files):
     uncovered_func = set()
     total_files = 0
     total_func = 0
-    for fname, val in all_files.iteritems():
+    for fname, val in all_files.items():
         total_files += 1
         file_touched = False
-        for f_line_no,func_infos in val.function_info.iteritems():
+        for f_line_no,func_infos in val.function_info.items():
             for func_info in func_infos:
                 total_func += 1
                 if func_info.called_count == 0:
@@ -313,10 +314,10 @@ def summarize_all_files(all_files):
     return CoverageSummary(covered_file, uncovered_file, total_files, covered_func, uncovered_func, total_func)
 
 def print_summary(cov_sum):
-    print 'Total files: %d Touched files: %d  Uncovered files:%d'% \
-            (cov_sum.total_files, len(cov_sum.covered_files), len(cov_sum.uncovered_files))
-    print 'Total func: %d  Touched func: %d   Uncovered func:%d'% \
-            (cov_sum.total_functions, len(cov_sum.covered_functions), len(cov_sum.uncovered_functions))
+    print('Total files: %d Touched files: %d  Uncovered files:%d'% \
+            (cov_sum.total_files, len(cov_sum.covered_files), len(cov_sum.uncovered_files)))
+    print('Total func: %d  Touched func: %d   Uncovered func:%d'% \
+            (cov_sum.total_functions, len(cov_sum.covered_functions), len(cov_sum.uncovered_functions)))
 
 
 def export_as_json(all_files, export_name='export.json'):
@@ -331,7 +332,7 @@ def export_as_json(all_files, export_name='export.json'):
 
     file_list = []
     func_list = []
-    for fname, gcov in all_files.iteritems():
+    for fname, gcov in all_files.items():
         file_entry = dict()
         file_entry['filename'] = fname
         file_entry['expansions'] = []
@@ -340,7 +341,7 @@ def export_as_json(all_files, export_name='export.json'):
         count = 0
         covered = 0
         func_entry = dict()
-        for func, called in gcov.function_info.iteritems():
+        for func, called in gcov.function_info.items():
             func_entry['name'] = func
             func_entry['count'] = called
             func_entry['filenames'] = [fname]
@@ -389,7 +390,7 @@ if __name__ == '__main__':
     parser.add_argument('-o','--output')
     args = parser.parse_args()
 
-    print 'input files = ', args.input_files
+    print('input files = ', args.input_files)
     if args.action in summarize_action:
         all_files = read_gcov_files(args.input_files)
         cov_sum = summarize_all_files(all_files)
@@ -411,14 +412,14 @@ if __name__ == '__main__':
           gcov = read_gcov(input_file)
           output_name = input_file.replace('.gcov',output + '.gcov')
           if input_file == output_name:
-            print 'Would overwrite input file, skipping:',input_file
+            print('Would overwrite input file, skipping:',input_file)
           else:
             write_gcov(gcov, open(output_name, 'w'))
 
     if args.action in test_action:
         for input_file in args.input_files:
           gcov = read_gcov(input_file)
-          output_buf = StringIO.StringIO()
+          output_buf = StringIO()
           write_gcov(gcov, output_buf)
           #output_buf.write('extra')  # how to test the diff
           output_buf.seek(0)
@@ -426,18 +427,18 @@ if __name__ == '__main__':
           input_buf = open(input_file,'r')
           diff = difflib.context_diff(input_buf.readlines(), output_buf.readlines(),input_file,output_name)
           for d in diff:
-            print d,
+            print(d,end='')
 
     if args.action in dump_action:
         fname = args.input_files[0]
         gcov = read_gcov(fname)
-        print '** File tags **'
-        for k,v in gcov.tags.iteritems():
-            print k,v
-        print '** Function info **'
-        for f,c in gcov.function_info.iteritems():
-            print f,c
-        print '** line info **'
-        for lineno, c in gcov.line_info.iteritems():
-            print lineno, c
+        print('** File tags **')
+        for k,v in gcov.tags.items():
+            print(k,v)
+        print('** Function info **')
+        for f,c in gcov.function_info.items():
+            print(f,c)
+        print('** line info **')
+        for lineno, c in gcov.line_info.items():
+            print(lineno, c)
 

@@ -1,0 +1,413 @@
+  Input file(s): qmc-ref-vmc-long.xml 
+
+=====================================================
+                    QMCPACK 3.7.9
+
+       (c) Copyright 2003-  QMCPACK developers
+
+                    Please cite:
+ J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
+      https://doi.org/10.1088/1361-648X/aab9c3
+
+  Git branch: opt-CI-H5
+  Last git commit: 5a8ba8501aa7fba70b3cbdadc4ccc94e2176adca
+  Last git commit date: Wed Jun 5 17:35:23 2019 -0500
+  Last git commit subject: Fix bug in output opt.xml file
+=====================================================
+  Global options 
+
+  Total number of MPI ranks = 512
+  Number of MPI groups      = 1
+  MPI group ID              = 0
+  Number of ranks in group  = 512
+  MPI ranks per node        = 1
+  OMP 1st level threads     = 32
+  OMP nested threading disabled or only 1 thread on the 2nd level
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  Structure-of-arrays (SoA) optimization enabled
+
+  Input XML = qmc-ref-vmc-long.xml
+
+  Project = qmc-long
+  date    = 2019-06-06 19:36:26 UTC
+  host    = Q02-I0-J01.vesta.itd
+
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 826
+
+  Range of prime numbers to use as seeds over processors and threads = 6359-190607
+
+
+ Particle Set 
+ ------------
+  Name: ion0
+  All the species have the same mass 1
+  Particle set size: 2
+
+ Particle Set 
+ ------------
+  Name: e
+  All the species have the same mass 1
+  Particle set size: 4
+
+ Wavefunction setup: 
+ ------------------- 
+  Name: psi0
+  LCAO: SoaAtomicBasisSet<MultiQuintic,0>
+Reading BasisSet from HDF5 file:../LiH.orbs.h5
+<input node="atomicBasisSet" name="Gaussian" expandYlm="Gamess" angular="cartesian" elementType="Li" normalized="no" type="Numerical" expM="0" />
+  AO BasisSet for Li
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 0 0 0
+   R(n,l,m,s) 4 0 0 0
+   R(n,l,m,s) 5 1 0 0
+   R(n,l,m,s) 6 1 0 0
+   R(n,l,m,s) 7 1 0 0
+   R(n,l,m,s) 8 1 0 0
+   R(n,l,m,s) 9 2 0 0
+   R(n,l,m,s) 10 2 0 0
+   R(n,l,m,s) 11 2 0 0
+   R(n,l,m,s) 12 3 0 0
+   R(n,l,m,s) 13 3 0 0
+   R(n,l,m,s) 14 4 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 10 cartesian gaussian orbitals for l= 3
+Adding 10 cartesian gaussian orbitals for l= 3
+Adding 15 cartesian gaussian orbitals for l= 4
+  Setting cutoff radius 23.3346
+
+   Maximum Angular Momentum  = 4
+   Number of Radial functors = 15
+   Basis size                = 70
+
+<input node="atomicBasisSet" name="Gaussian" expandYlm="Gamess" angular="cartesian" elementType="H" normalized="no" type="Numerical" expM="0" />
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 0 0 0
+   R(n,l,m,s) 4 1 0 0
+   R(n,l,m,s) 5 1 0 0
+   R(n,l,m,s) 6 1 0 0
+   R(n,l,m,s) 7 2 0 0
+   R(n,l,m,s) 8 2 0 0
+   R(n,l,m,s) 9 3 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 10 cartesian gaussian orbitals for l= 3
+  Setting cutoff radius 11.8032
+
+   Maximum Angular Momentum  = 3
+   Number of Radial functors = 10
+   Basis size                = 35
+
+  Created SPOSet builder named 'LCAOBSet' of type molecularorbital
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+spo_name = spo-up
+  Building SPOSet 'spo-up' with 'LCAOBSet' basis set.
+Reading cusp info from : ../spo-up.cuspInfo.xml
+Found precomputed cusp data for spo set: spo-up
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+spo_name = spo-dn
+  Building SPOSet 'spo-dn' with 'LCAOBSet' basis set.
+Reading cusp info from : ../spo-dn.cuspInfo.xml
+Found precomputed cusp data for spo set: spo-dn
+Using Bryan's algorithm for MultiSlaterDeterminant expansion. 
+Creating base determinant (up) for MSD expansion. 
+Creating base determinant (down) for MSD expansion. 
+Found Multideterminants in H5 File
+Found determinant list. 
+Reading CI expansion from HDF5:../LiH.orbs.h5
+ Done reading CIs from H5!!
+ Sorting unique CIs
+ Done Sorting unique CIs
+Found 185 terms in the MSD expansion.
+Norm of ci vector (sum of ci^2): 0.999824
+Found 70 unique up determinants.
+Found 70 unique down determinants.
+Number of terms in pairs array: 52
+Number of terms in pairs array: 52
+CI coefficients are optimizable. 
+  FermionWF = MultiSlaterDeterminantFast
+
+   Jastrow
+   -------
+    Name: J2   Type: Two-Body   Function: Bspline
+
+    Radial function for species: u - u
+     Number of parameters: 10
+     Cusp: -0.25
+     Cutoff radius: 10
+
+     Name         Value Type Recompute Use Index
+     ---- ------------- ---- --------- --- -----
+     uu_0  1.690231e-01    1         1 OFF
+     uu_1  6.260174e-02    1         1 OFF
+     uu_2  7.002351e-03    1         1 OFF
+     uu_3 -2.450325e-02    1         1 OFF
+     uu_4 -3.914573e-02    1         1 OFF
+     uu_5 -4.226678e-02    1         1 OFF
+     uu_6 -2.788722e-02    1         1 OFF
+     uu_7 -1.423216e-02    1         1 OFF
+     uu_8 -2.961230e-03    1         1 OFF
+     uu_9  1.054520e-02    1         1 OFF
+
+    Radial function for species: u - d
+     Number of parameters: 10
+     Cusp: -0.5
+     Cutoff radius: 10
+
+     Name         Value Type Recompute Use Index
+     ---- ------------- ---- --------- --- -----
+     ud_0  6.735085e-01    1         1 OFF
+     ud_1  3.452562e-01    1         1 OFF
+     ud_2  1.246050e-01    1         1 OFF
+     ud_3  2.213375e-02    1         1 OFF
+     ud_4 -6.075792e-02    1         1 OFF
+     ud_5 -1.223731e-01    1         1 OFF
+     ud_6 -1.552963e-01    1         1 OFF
+     ud_7 -1.757678e-01    1         1 OFF
+     ud_8 -1.698406e-01    1         1 OFF
+     ud_9 -1.551640e-01    1         1 OFF
+
+
+   Jastrow
+   -------
+    Name: J1   Type: One-Body   Function: Bspline
+
+    Radial function for element: Li
+     Number of parameters: 10
+     Cusp: 0
+     Cutoff radius: 5
+
+      Name         Value Type Recompute Use Index
+     ----- ------------- ---- --------- --- -----
+     eLi_0 -6.077081e-01    1         1 OFF
+     eLi_1 -5.359780e-01    1         1 OFF
+     eLi_2 -3.727965e-01    1         1 OFF
+     eLi_3 -2.906943e-01    1         1 OFF
+     eLi_4 -2.999628e-01    1         1 OFF
+     eLi_5 -2.454202e-01    1         1 OFF
+     eLi_6 -1.728198e-01    1         1 OFF
+     eLi_7 -1.160361e-01    1         1 OFF
+     eLi_8 -6.562932e-02    1         1 OFF
+     eLi_9 -2.836427e-02    1         1 OFF
+
+    Radial function for element: H
+     Number of parameters: 10
+     Cusp: 0
+     Cutoff radius: 5
+
+     Name         Value Type Recompute Use Index
+     ---- ------------- ---- --------- --- -----
+     eH_0 -4.480082e-01    1         1 OFF
+     eH_1 -4.176870e-01    1         1 OFF
+     eH_2 -3.851086e-01    1         1 OFF
+     eH_3 -3.213942e-01    1         1 OFF
+     eH_4 -2.478094e-01    1         1 OFF
+     eH_5 -1.757067e-01    1         1 OFF
+     eH_6 -1.375145e-01    1         1 OFF
+     eH_7 -1.014467e-01    1         1 OFF
+     eH_8 -6.860089e-02    1         1 OFF
+     eH_9 -3.729804e-02    1         1 OFF
+
+
+   Jastrow
+   -------
+    Name: J3   Type: eeI   Function: polynomial
+
+     Ion: Li   electron-electron: u - u
+      Number of parameters for e-e: 3, for e-I: 3
+      Cutoff radius: 5
+
+     Ion: Li   electron-electron: u - d
+      Number of parameters for e-e: 3, for e-I: 3
+      Cutoff radius: 5
+
+     Ion: H   electron-electron: u - u
+      Number of parameters for e-e: 3, for e-I: 3
+      Cutoff radius: 5
+
+     Ion: H   electron-electron: u - d
+      Number of parameters for e-e: 3, for e-I: 3
+      Cutoff radius: 5
+
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+  QMCHamiltonian::addOperator IonElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonElec
+
+  QMCHamiltonian::add2WalkerProperty added
+    4 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+ParticleSetPool::randomize 
+<init source="ion0" target="e">
+</init>
+  Initialization Execution time = 6.277 secs
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet 'e' contains 4 particles :  u(2) d(2)
+
+    u  5.2454585176e-01  1.0847113865e+00 -4.0631123297e-02
+    u -2.7393318320e-01 -1.1731151353e+00  4.6470649974e-02
+    d -1.1215063689e+00 -3.6691755873e-01 -2.4696761005e-01
+    d -6.8821546532e-01 -8.3538935503e-01  2.4829982404e+00
+
+  Distance table for similar particles (A-A):
+    source/target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+  Distance table for dissimilar particles (A-B):
+    source: ion0  target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  ParticleSet 'ion0' contains 2 particles :  Li(1) H(1)
+
+    Li  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H  0.0000000000e+00  0.0000000000e+00  3.0139239693e+00
+
+  Distance table for similar particles (A-A):
+    source/target: ion0
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  IonIon          CoulombAA source/target ion0
+
+  IonElec         CoulombAB source=ion0
+
+
+
+=========================================================
+  Start VMC
+  File Root qmc-long.s000 append = no 
+=========================================================
+  Adding 32 walkers to 0 existing sets
+  Total number of walkers: 1.6384000000e+04
+  Total weight: 1.6384000000e+04
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 5.0000000000e-02
+  blocks         = 600
+  steps          = 300
+  substeps       = 3
+  current        = 0
+  target samples = 1.6000000000e+05
+  walkers/mpi    = 32
+
+  stepsbetweensamples = -8214
+<parameter name="blocks" condition="int">600</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.0000000000e+01</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">-8214</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">-8214</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">1.6000000000e+05</parameter>
+<parameter name="samplesperthread" condition="real">1.0000000000e+01</parameter>
+<parameter name="steps" condition="int">300</parameter>
+<parameter name="stepsbetweensamples" condition="int">-8214</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">3</parameter>
+<parameter name="substeps" condition="int">3</parameter>
+<parameter name="tau" condition="au">5.0000000000e-02</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-02</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-02</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">32</parameter>
+<parameter name="warmup_steps" condition="int">50</parameter>
+<parameter name="warmupsteps" condition="int">50</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+</vmc>
+  Set drift_modifier UNR parameter a = 1.0000000000e+00
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+  CloneManager::makeClones makes 32 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+===== Memory Usage before cloning =====
+Allocated heap: 512.00 MB, avail. heap: 15743.98 MB
+Allocated stack: 0.02 MB, avail. stack: 15743.98 MB
+==================================================
+===== Memory Usage after cloning =====
+Allocated heap: 512.00 MB, avail. heap: 15743.98 MB
+Allocated stack: 0.02 MB, avail. stack: 15743.98 MB
+==================================================
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =163840
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 
+===== Memory Usage after the buffer registration =====
+Allocated heap: 512.00 MB, avail. heap: 15743.98 MB
+Allocated stack: 0.02 MB, avail. stack: 15743.98 MB
+==================================================
+  Anonymous Buffer size per walker : 24776 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.05
+    reference energy   = -8.04345
+    reference variance = 0.239956
+====================================================
+  QMC Execution time = 1.3088e+03 secs
+  Total Execution time = 1.3089e+03 secs
+
+=========================================================
+  A new xml input file : qmc-long.s000.cont.xml

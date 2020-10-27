@@ -12,11 +12,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/LocalECPotential_CUDA.h"
+#include "LocalECPotential_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 LocalECPotential_CUDA::LocalECPotential_CUDA(ParticleSet& ions, ParticleSet& elns)
     : LocalECPotential(ions, elns),
       ElecRef(elns),
@@ -114,13 +117,13 @@ void LocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Real
   for (int iw = 0; iw < walkers.size(); iw++)
   {
     // fprintf (stderr, "Energy = %18.6f\n", SumHost[iw]);
-    walkers[iw]->getPropertyBase()[NUMPROPERTIES + myIndex] = esum[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = esum[iw];
     LocalEnergy[iw] += esum[iw];
   }
 }
 
 
-QMCHamiltonianBase* LocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* LocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   LocalECPotential_CUDA* myclone = new LocalECPotential_CUDA(IonRef, qp);
   for (int ig = 0; ig < PPset.size(); ++ig)

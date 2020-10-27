@@ -14,6 +14,7 @@
 
 #include "OpenMP/OMPstd.hpp"
 #include "spline2/MultiBsplineData.hpp"
+#include "spline2/MultiBsplineEval_helper.hpp"
 
 namespace spline2offload
 {
@@ -68,49 +69,30 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
 
 template<typename T>
 inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
-                               T x,
-                               T y,
-                               T z,
+                               int ix,
+                               int iy,
+                               int iz,
+                               const T a[4],
+                               const T b[4],
+                               const T c[4],
                                T* restrict vals,
-                               int first,
-                               int last)
+                               const int first,
+                               const int index)
 {
-  x -= spline_m->x_grid.start;
-  y -= spline_m->y_grid.start;
-  z -= spline_m->z_grid.start;
-  T tx, ty, tz;
-  int ix, iy, iz;
-  spline2::getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
-  spline2::getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
-  spline2::getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
-  T a[4], b[4], c[4];
-
-  spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
-  spline2::MultiBsplineData<T>::compute_prefactors(b, ty);
-  spline2::MultiBsplineData<T>::compute_prefactors(c, tz);
-
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
   const intptr_t zs = spline_m->z_stride;
 
-  const int num_splines = last - first;
-#ifdef ENABLE_OFFLOAD
-#pragma omp for
-#else
-#pragma omp simd aligned(vals)
-#endif
-  for (int n = 0; n < num_splines; n++)
-  {
-    T val = T();
-    for (int i = 0; i < 4; i++)
-      for (int j = 0; j < 4; j++)
-      {
-        const T* restrict coefs = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
-        val += a[i] * b[j] *
-            (c[0] * coefs[n] + c[1] * coefs[n + zs] + c[2] * coefs[n + zs * 2] + c[3] * coefs[n + zs * 3]);
-      }
-    vals[n] = val;
-  }
+  T val = T();
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 4; j++)
+    {
+      const T* restrict coefs = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      val += a[i] * b[j] *
+          (c[0] * coefs[index] + c[1] * coefs[index + zs] + c[2] * coefs[index + zs * 2] +
+           c[3] * coefs[index + zs * 3]);
+    }
+  vals[index] = val;
 }
 
 } // namespace spline2offload

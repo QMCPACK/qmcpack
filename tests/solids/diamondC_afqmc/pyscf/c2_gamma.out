@@ -1,5 +1,5 @@
 #INFO: **** input file is /p/lscratchh/mmorale/PYSCF/debug/C/pyscf/c2_gamma.py ****
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 import numpy
 from functools import reduce

@@ -11,14 +11,14 @@
 #  Content summary:                                                  #
 #    ci                                                              #
 #      Function to enter interactive environment.                    #
-#      Usage: ci(ls(),gs()).                                         #
+#      Usage: ci()                                                   #
 #                                                                    #
 #    ls                                                              #
 #      Alias for standard locals function.                           #
 #                                                                    #
 #    gs                                                              #
 #      Alias for standard globals function.                          #
-#                                                                    #                                        
+#                                                                    #
 #====================================================================#
 
 
