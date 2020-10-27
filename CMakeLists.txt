@@ -183,9 +183,9 @@ SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
 ######################################################################
 # enable MPI and OPENMP  if possible
 ######################################################################
-SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
-SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
-SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
+OPTION(QMC_MPI "Enable/disable MPI" ON)
+OPTION(QMC_OMP "Enable/disable OpenMP" ON)
+OPTION(QMC_COMPLEX "Build for complex binary" OFF)
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
@@ -418,35 +418,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #---------------------------------------------------
   include(CMake/TestCxx14Library.cmake)
 
-  #-------------------------------------------------------------------
-  # check lapack/blas
-  #-------------------------------------------------------------------
-  # Quick search for MKL (this will need to be improved).
-  # This reproduces the old intel -mkl behavior or
-  # if ENABLE_MKL is set to 1 supports other compilers
-  IF (INTEL_COMPILER)
-    SET(ENABLE_MKL TRUE CACHE BOOL "ENABLE MKL for Intel compilers")
-  ELSE (INTEL_COMPILER)
-    SET(ENABLE_MKL FALSE CACHE BOOL "ENABLE MKL for non-intel compilers (Experimental)")
-  ENDIF (INTEL_COMPILER)
-  IF (ENABLE_MKL)
-    INCLUDE(CMake/FindMKL.cmake)
-  ENDIF(ENABLE_MKL)
-  IF ( HAVE_MKL )
-    # Skip adding Math::BLAS_LAPACK target which has been imported by FindMKL.
-  ELSE()
-    # The last search for Blas/Lapack
-    find_package(LAPACK REQUIRED)
-    IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
-      MESSAGE(FATAL_ERROR "MKL found via LAPACK/BLAS. Please pass -DENABLE_MKL=1 to cmake for full Intel MKL utilization. -DMKL_ROOT may also be needed for the include files to be found.")
-    ENDIF()
-    MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
-    MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
-    SET(LAPACK_LIBRARY ${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
-    # Add Math::BLAS_LAPACK target
-    ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
-    SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES "${LAPACK_LIBRARY}")
-  ENDIF()
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 IF (ENABLE_GCOV)
@@ -542,6 +513,19 @@ ENDIF(QMC_MPI)
 # use customized cmake file for boost so that we can deal with multiple
 # installataions
 # list of libraries to be linked with the main applications using I/O
+
+#-------------------------------------------------------------------
+# check lapack/blas
+#-------------------------------------------------------------------
+# Add Math::BLAS_LAPACK target
+ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
+find_package(LAPACK REQUIRED)
+MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
+MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
+SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
+IF(LAPACK_LIBRARIES MATCHES "mkl_core")
+  INCLUDE(CMake/FindMKL.cmake)
+ENDIF()
 
 #-------------------------------------------------------------------
 #  set up scalar/vector math libraries
