@@ -51,7 +51,7 @@ DMC::DMC(MCWalkerConfiguration& w,
       KillNodeCrossing(0),
       BranchInterval(-1),
       vmc("no"),
-      L2("no")
+      L2("no"),
       Reconfiguration("no"),
       mover_MaxAge(-1)
 {

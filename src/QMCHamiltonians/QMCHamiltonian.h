@@ -19,7 +19,6 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "Configuration.h"

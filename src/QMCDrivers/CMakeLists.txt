@@ -60,8 +60,6 @@ SET(QMCDRIVERS
   DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp
-  DMC/DMCUpdatePbyPVMC.cpp
-  DMC/DMCUpdatePbyPL2VMC.cpp
   DMC/DMCUpdatePbyPL2.cpp
   DMC/DMCFactory.cpp
   DMC/DMCFactoryNew.cpp

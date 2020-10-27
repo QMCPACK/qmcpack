@@ -33,7 +33,7 @@ namespace qmcplusplus
 QMCHamiltonian::QMCHamiltonian(const std::string& aname)
     : myIndex(0),
       numCollectables(0),
-      l2_ptr(nullptr)
+      l2_ptr(nullptr),
       myName(aname),
       nlpp_ptr(nullptr),
       ham_timer_(timer_manager.createTimer("Hamiltonian:" + aname, timer_level_medium))
