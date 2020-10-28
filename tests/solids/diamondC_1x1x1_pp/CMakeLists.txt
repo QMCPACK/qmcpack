@@ -295,7 +295,7 @@ ENDIF()
 # estimator tests
 INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
 set(stat_python_reqs numpy;h5py)
-CHECK_PYTHON_REQS(stat_python_reqs diamond-estimator add_tests)
+CHECK_PYTHON_REQS(stat_python_reqs diamond-estimator add_estimator_tests)
 if (NOT QMC_CUDA)
   set(NMPI 4)
   set(NOMP 4)
@@ -310,7 +310,7 @@ if (NOT QMC_COMPLEX)
 else()
   set(OFEXT "_comp")
 endif()
-if (add_tests)
+if (add_estimator_tests)
   # density tests
   SIMPLE_RUN_AND_CHECK(
     short-diamondC_1x1x1_pp-vmc-estimator-density
@@ -478,6 +478,22 @@ endif()
 # Deterministic tests
 #
 IF(NOT QMC_CUDA)
+
+  # deterministic estimator tests
+  if (add_estimator_tests AND NOT QMC_MIXED_PRECISION)
+    # spindensity tests
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_spindens_short.in.xml
+      1 1
+      check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short -r qmc-ref/det_qmc_spindens_short.s000.stat_ref_spindensity.dat
+      )
+  endif()
+
+
+  # deterministic scalar tests
+
  IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND_SCALARS "totenergy" "-10.65155712 0.00001582")
    LIST(APPEND DET_DIAMOND_SCALARS "kinetic" "16.03245992 0.00001650")
@@ -1256,5 +1272,6 @@ ENDIF()
                     2 DET_DIAMOND_DMC_MWALKERS1_SCALARS # DMC cycle 1
                     3 DET_DIAMOND_DMC_MWALKERS2_SCALARS # DMC cycle 2
                     )
+
 
 ENDIF()
