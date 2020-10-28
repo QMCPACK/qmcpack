@@ -498,6 +498,14 @@ IF(NOT QMC_CUDA)
       check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short_mw -r qmc-ref/det_qmc_spindens_short_mw.s000.stat_ref_spindensity_4_4.dat
       )
 
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_spindens_short_vmc_dmc.in.xml
+      1 1
+      check_stats.py -s 1 -q spindensity -e 1 -c 8 -p det_qmc_spindens_short_vmc_dmc -r qmc-ref/det_qmc_spindens_short_vmc_dmc.s001.stat_ref_spindensity_1_1.dat
+      )
+
     # density tests
     SIMPLE_RUN_AND_CHECK(
       deterministic-diamondC_1x1x1_pp-vmc-estimator-density
