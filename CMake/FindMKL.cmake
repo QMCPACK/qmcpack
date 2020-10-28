@@ -2,7 +2,7 @@
 # It relies on FindLAPACK to locate MKL library files and set up linker options first.
 INCLUDE( CheckCXXSourceCompiles )
 
-SET(MKL_LIBRARIES ${LAPACK_LIBRARIES})
+SET(MKL_LIBRARIES ${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES})
 
 MESSAGE(STATUS "Looking for Intel MKL library header files")
 
@@ -10,7 +10,7 @@ MESSAGE(STATUS "Looking for Intel MKL library header files")
 # Extremely Basic Support of common mkl module environment variables
 FIND_PATH(MKL_INCLUDE_DIRECTORIES "mkl.h"
   HINTS ${MKL_ROOT} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}
-  PATH_SUFFIXES include NO_CMAKE_SYSTEM_PATH)
+  PATH_SUFFIXES include)
 IF(NOT MKL_INCLUDE_DIRECTORIES)
   # Finding MKL headers in the system
   FIND_PATH(MKL_INCLUDE_DIRECTORIES "mkl.h" PATH_SUFFIXES mkl)
@@ -19,12 +19,13 @@ ENDIF()
 IF(MKL_INCLUDE_DIRECTORIES)
   MESSAGE(STATUS "MKL_INCLUDE_DIRECTORIES: ${MKL_INCLUDE_DIRECTORIES}")
 ELSE(MKL_INCLUDE_DIRECTORIES)
+  MESSAGE(STATUS "mkl.h cannot be found")
   IF(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     MESSAGE(FATAL_ERROR "Intel's standard compilervar.sh sets the env variable MKLROOT.\n"
             "If you are invoking icc without the customary environment\n"
             "you must set the the environment variable or pass cmake MKL_ROOT.")
   ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    MESSAGE(FATAL_ERROR "mkl directory not found. Set MKL_ROOT." )
+    MESSAGE(FATAL_ERROR "Pass mkl root directory to cmake via MKL_ROOT." )
   ENDIF(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
 ENDIF(MKL_INCLUDE_DIRECTORIES)
 
@@ -72,8 +73,8 @@ IF ( HAVE_MKL )
   MESSAGE(STATUS "MKL found: HAVE_MKL=${HAVE_MKL}, HAVE_MKL_VML=${HAVE_MKL_VML}, HAVE_MKL_FFTW3=${HAVE_MKL_FFTW3}")
 
   #Add BLAS_LAPACK header
-  SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_COMPILE_DEFINITIONS "HAVE_MKL")
-  SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${MKL_INCLUDE_DIRECTORIES}")
+  SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_COMPILE_DEFINITIONS "HAVE_MKL"
+                                                     INTERFACE_INCLUDE_DIRECTORIES "${MKL_INCLUDE_DIRECTORIES}")
 
   IF( HAVE_MKL_VML )
     #create scalar_vector_functions target
