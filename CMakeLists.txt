@@ -76,7 +76,7 @@ SET( DART_TESTING_TIMEOUT 3600 CACHE STRING "Maximum time for one test")
 ENABLE_TESTING()
 INCLUDE( CTest )
 
-SET( QMC_SYMLINK_TEST_FILES TRUE CACHE BOOL "Use symbolic links for test files to save space.  Set to false to copy files instead.")
+OPTION(QMC_SYMLINK_TEST_FILES "Use symbolic links for test files to save space.  Set to false to copy files instead." ON)
 
 
 IF (QMC_SYMLINK_TEST_FILES)
@@ -95,7 +95,7 @@ MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_M
 # On leconte: rerun of cmake with
 # slow custom commands 27 secs
 # without 8 secs
-SET( QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS FALSE CACHE BOOL "Disable the slow cmake custom commands for integration tests.")
+OPTION(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS "Disable the slow cmake custom commands for integration tests." OFF)
 MARK_AS_ADVANCED(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
 
@@ -103,7 +103,7 @@ MARK_AS_ADVANCED(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 # Build level
 ######################################################################
 
-SET(QMC_BUILD_SANDBOX_ONLY OFF CACHE BOOL "Build only applications in Sandbox directory")
+OPTION(QMC_BUILD_SANDBOX_ONLY "Build only applications in Sandbox directory" OFF)
 IF ( NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
   SET( CMAKE_BUILD_TYPE Release )
 ENDIF()
@@ -178,7 +178,7 @@ ENDIF(QMC_CUDA)
 
 # Code coverage
 SET(GCOV_SUPPORTED FALSE)
-SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
+OPTION(ENABLE_GCOV "Enable code coverage" OFF)
 
 ######################################################################
 # enable MPI and OPENMP  if possible
@@ -186,7 +186,6 @@ SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
 OPTION(QMC_MPI "Enable/disable MPI" ON)
 OPTION(QMC_OMP "Enable/disable OpenMP" ON)
 OPTION(QMC_COMPLEX "Build for complex binary" OFF)
-SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 OPTION(ENABLE_CUDA "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)" OFF)
@@ -203,12 +202,13 @@ IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
 ENDIF(ENABLE_CUDA AND QMC_CUDA)
 
-SET(QMC_VERBOSE_CONFIGURATION 0 CACHE BOOL "Give details why specific tests are/are not added")
+OPTION(QMC_VERBOSE_CONFIGURATION "Give details why specific tests are/are not added" OFF)
 
 ######################################################################
 # set debug printout
 # DEBUG_PSIBUFFER_ON keep track buffer's locator
 ######################################################################
+SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(DEBUG_PSIBUFFER_ON 0 CACHE BOOL "Debug messages for PSIBUFFER locator")
 MARK_AS_ADVANCED(DEBUG_PSIBUFFER_ON)
 SET(DEBUG_PER_STEP_ACCEPT_REJECT 0 CACHE BOOL "Print accepts and rejects at each step")
@@ -614,9 +614,9 @@ ENDIF(LIBXML2_FOUND)
 #  set up HDF5 library
 #-------------------------------------------------------------------
 IF(HAVE_MPI)
-  SET(HDF5_PREFER_PARALLEL 1 CACHE BOOL "Request parallel/serial HDF5 library")
+  SET(HDF5_PREFER_PARALLEL TRUE CACHE BOOL "Request parallel/serial HDF5 library")
 ELSE(HAVE_MPI)
-  SET(HDF5_PREFER_PARALLEL 0 CACHE BOOL "Request parallel/serial HDF5 library")
+  SET(HDF5_PREFER_PARALLEL FALSE CACHE BOOL "Request parallel/serial HDF5 library")
   IF(HDF5_PREFER_PARALLEL)
     MESSAGE(FATAL_ERROR "Parallel HDF5 library cannot be selected with QMCPACK non-MPI build. "
                         "Please set HDF5_PREFER_PARALLEL=0.")
@@ -638,10 +638,10 @@ IF(HDF5_FOUND)
 
   IF(HDF5_IS_PARALLEL)
     MESSAGE(STATUS "Parallel HDF5 library found")
-    SET(ENABLE_PHDF5 1 CACHE BOOL "Enable code paths using parallel HDF5")
+    OPTION(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
   ELSE(HDF5_IS_PARALLEL)
     MESSAGE(STATUS "Serial HDF5 library found")
-    SET(ENABLE_PHDF5 0 CACHE BOOL "Enable code paths using parallel HDF5")
+    OPTION(ENABLE_PHDF5 "Enable code paths using parallel HDF5" OFF)
     IF(ENABLE_PHDF5)
       IF(HAVE_MPI)
         MESSAGE(FATAL_ERROR "Parallel HDF5 code paths requested but serial HDF5 library found! "
@@ -732,7 +732,7 @@ ELSE(QMC_CUDA OR ENABLE_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
-SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
+OPTION(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF)
 IF(USE_NVTX_API)
   IF(HAVE_CUDA)
     FIND_LIBRARY(NVTX_API_LIB
@@ -803,7 +803,7 @@ IF (USE_VTUNE_API)
   LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
 ENDIF()
 
-SET(QMC_EXP_THREADING FALSE CACHE BOOL "Experimental non openmp threading models")
+OPTION(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 MARK_AS_ADVANCED(QMC_EXP_THREADING)
 IF(QMC_EXP_THREADING)
   include(CheckAtomic)
@@ -913,13 +913,3 @@ IF(NOT QMC_BUILD_SANDBOX_ONLY)
     SUBDIRS(nexus/tests)
   ENDIF()
 ENDIF()
-
-#ADD_CUSTOM_TARGET(print_settings ALL
-#      ${CMAKE_COMMAND} -E echo "Print build settings"
-#          VERBATIM)
-#
-#add_custom_command(TARGET print_settings
-#  POST_BUILD
-#  COMMAND svn info ${qmcpack_SOURCE_DIR})
-#
-#file(APPEND ${qmcpack_BINARY_DIR}/bin/qmcpack.settings ${print_settings})
