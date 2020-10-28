@@ -32,11 +32,8 @@ FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
     # Find all the files but not subdirectories
     FILE(GLOB FILE_ONLY_NAMES LIST_DIRECTORIES TRUE "${SRC_DIR}/*")
     FOREACH(F IN LISTS FILE_ONLY_NAMES)
-      GET_FILENAME_COMPONENT(FL ${F} NAME)
-      IF(NOT EXISTS "${DST_DIR}/${FL}")
-        #MESSAGE("Creating symlink from  ${F} to directory ${DST_DIR} as ${FL}")
-        EXECUTE_PROCESS( COMMAND ln -sf "${F}" "${FL}" WORKING_DIRECTORY ${DST_DIR})
-      ENDIF()
+      #MESSAGE("Creating symlink from  ${F} to directory ${DST_DIR}")
+      EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
     ENDFOREACH()
 ENDFUNCTION()
 
