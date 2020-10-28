@@ -1,32 +1,20 @@
 # Simple file to refine MKL search.
-# It relies on FindLAPACK to locate MKL library files and set up linker options.
+# It relies on FindLAPACK to locate MKL library files and set up linker options first.
 INCLUDE( CheckCXXSourceCompiles )
 
 SET(MKL_LIBRARIES ${LAPACK_LIBRARIES})
 
 MESSAGE(STATUS "Looking for Intel MKL library header files")
 
-IF(DEFINED MKL_ROOT)
-  # Finding and setting the MKL_INCLUDE_DIRECTORIES based on explicit MKL_ROOT
-  SET(SUFFIXES include)
-  FIND_PATH(MKL_INCLUDE_DIRECTORIES "mkl.h" HINTS ${MKL_ROOT}
-    PATH_SUFFIXES ${SUFFIXES} NO_CMAKE_SYSTEM_PATH)
-  IF(NOT MKL_INCLUDE_DIRECTORIES)
-    message(FATAL_ERROR "MKL_INCLUDE_DIRECTORIES not set. \"mkl.h\" not found in MKL_ROOT/(${SUFFIXES})")
-  ENDIF ()
-ELSE(DEFINED MKL_ROOT)
-  # Finding and setting the MKL_INCLUDE_DIRECTORIES based on $ENV{MKLROOT}, $ENV{MKL_ROOT}, $ENV{MKL_HOME}
-  # Extremely Basic Support of common mkl module environment variables
-  FIND_PATH(MKL_INCLUDE_DIRECTORIES "mkl.h"
-    HINTS $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}
-    PATH_SUFFIXES include NO_CMAKE_SYSTEM_PATH)
-  IF(MKL_INCLUDE_DIRECTORIES)
-    STRING(REPLACE "/include" "" MKL_ROOT ${MKL_INCLUDE_DIRECTORIES})
-  ELSE(MKL_INCLUDE_DIRECTORIES)
-    # Finding MKL headers in the system
-    FIND_PATH(MKL_INCLUDE_DIRECTORIES "mkl.h" PATH_SUFFIXES mkl)
-  ENDIF(MKL_INCLUDE_DIRECTORIES)
-ENDIF(DEFINED MKL_ROOT)
+# Finding and setting the MKL_INCLUDE_DIRECTORIES based on MKL_ROOT, $ENV{MKLROOT}, $ENV{MKL_ROOT}, $ENV{MKL_HOME}
+# Extremely Basic Support of common mkl module environment variables
+FIND_PATH(MKL_INCLUDE_DIRECTORIES "mkl.h"
+  HINTS ${MKL_ROOT} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}
+  PATH_SUFFIXES include NO_CMAKE_SYSTEM_PATH)
+IF(NOT MKL_INCLUDE_DIRECTORIES)
+  # Finding MKL headers in the system
+  FIND_PATH(MKL_INCLUDE_DIRECTORIES "mkl.h" PATH_SUFFIXES mkl)
+ENDIF()
 
 IF(MKL_INCLUDE_DIRECTORIES)
   MESSAGE(STATUS "MKL_INCLUDE_DIRECTORIES: ${MKL_INCLUDE_DIRECTORIES}")
@@ -36,7 +24,7 @@ ELSE(MKL_INCLUDE_DIRECTORIES)
             "If you are invoking icc without the customary environment\n"
             "you must set the the environment variable or pass cmake MKL_ROOT.")
   ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    MESSAGE(FATAL_ERROR "ENABLE_MKL is TRUE and mkl directory not found. Set MKL_ROOT." )
+    MESSAGE(FATAL_ERROR "mkl directory not found. Set MKL_ROOT." )
   ENDIF(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
 ENDIF(MKL_INCLUDE_DIRECTORIES)
 
