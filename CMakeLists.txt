@@ -426,11 +426,6 @@ IF (ENABLE_GCOV)
   ENDIF()
 ENDIF(ENABLE_GCOV)
 
-# AFQMC requires MKL sparse for good performance (roughly a factor of 2x)
-IF (BUILD_AFQMC AND NOT MKL_FOUND)
-  MESSAGE(WARNING "AFQMC - MKL not found, using simple sparse matrix routines.  Link with MKL sparse libraries for better performance.")
-ENDIF()
-
 IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
@@ -519,12 +514,41 @@ ENDIF(QMC_MPI)
 #-------------------------------------------------------------------
 # Add Math::BLAS_LAPACK target
 ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
-find_package(LAPACK REQUIRED)
+
+FOREACH(MKL_LIB_PATH IN ITEMS ${MKL_ROOT} $ENV{MKL_ROOT} $ENV{MKLROOT} $ENV{MKL_HOME})
+  SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${MKL_LIB_PATH}/lib/intel64)
+ENDFOREACH()
+IF(NOT BLA_VENDOR)
+  MESSAGE(STATUS "Trying to find the LAPACK from Intel MKL ...")
+  IF(QMC_OMP)
+    SET(BLA_VENDOR Intel10_64lp)
+  ELSE()
+    SET(BLA_VENDOR Intel10_64lp_seq)
+  ENDIF()
+  find_package(LAPACK QUIET)
+  IF(NOT LAPACK_FOUND)
+    MESSAGE(STATUS "MKL not found.")
+    MESSAGE(STATUS "Trying to find alternative LAPACK libraries")
+    SET(BLA_VENDOR All)
+    find_package(LAPACK REQUIRED)
+  ENDIF()
+ELSE()
+  MESSAGE(STATUS "Trying to find LAPACK library as requested BLA_VENDOR=${BLA_VENDOR}")
+  find_package(LAPACK REQUIRED)
+ENDIF()
+
 MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
 MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
 SET_TARGET_PROPERTIES(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
+
+# Detects MKL header files and other components.
 IF(LAPACK_LIBRARIES MATCHES "mkl_core")
   INCLUDE(CMake/FindMKL.cmake)
+ENDIF()
+
+# AFQMC requires MKL sparse for good performance (roughly a factor of 2x)
+IF (BUILD_AFQMC AND NOT MKL_FOUND)
+  MESSAGE(WARNING "AFQMC - MKL not found, using simple sparse matrix routines.  Link with MKL sparse libraries for better performance.")
 ENDIF()
 
 #-------------------------------------------------------------------
