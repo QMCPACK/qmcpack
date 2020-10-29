@@ -737,11 +737,7 @@ Installing on Mac OS X using Macports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These instructions assume a fresh installation of macports
-and use the gcc 6.1 compiler. Older versions are fine, but it is vital to ensure that
-matching compilers and libraries are used for all
-packages and to force use of what is installed in /opt/local.  Performance should be very reasonable.
-Note that we use the Apple-provided Accelerate framework for
-optimized BLAS.
+and use the gcc 10.2 compiler. 
 
 Follow the Macports install instructions at https://www.macports.org/.
 
@@ -751,24 +747,40 @@ Follow the Macports install instructions at https://www.macports.org/.
 
 - Install MacPorts for your version of OS X.
 
-Install the required tools:
+We recommend to make sure macports is updated:
 
 ::
 
-  sudo port install gcc6
-  sudo port select gcc mp-gcc6
-  sudo port install openmpi-devel-gcc6
-  sudo port select --set mpi openmpi-devel-gcc61-fortran
+  sudo port -v selfupdate # Required for macports first run, recommended in general
+  sudo port upgrade outdated # Recommended
 
-  sudo port install fftw-3 +gcc6
+
+Install the required tools. For thoroughness we include the current full set of python
+dependencies. Some of the tests will be skipped if not all are available.
+
+::
+
+  sudo port install gcc10
+  sudo port select gcc mp-gcc10
+  sudo port install openmpi-devel-gcc10
+  sudo port select --set mpi openmpi-devel-gcc10-fortran
+
+  sudo port install fftw-3 +gcc10
   sudo port install libxml2
   sudo port install cmake
-  sudo post install boost +gcc6
-  sudo port install hdf5 +gcc6
+  sudo port install boost +gcc10
+  sudo port install hdf5 +gcc10
 
-  sudo port select --set python python27
-  sudo port install py27-numpy +gcc6
-  sudo port install py27-matplotlib  #For graphical plots with qmca
+  sudo port install python38
+  sudo port select --set python python38
+  sudo port select --set python3 python38
+  sudo port install py38-numpy +gcc10
+  sudo port select --set cython cython38
+  sudo port install py38-scipy +gcc10
+  sudo port install py38-h5py +gcc10
+  sudo port install py38-pandas
+  sudo port install py38-lxml
+  sudo port install py38-matplotlib  #For graphical plots with qmca
 
 QMCPACK build:
 
@@ -779,13 +791,14 @@ QMCPACK build:
   make -j 6 # Adjust for available core count
   ls -l bin/qmcpack
 
-Cmake should pickup the versions of HDF5 and libxml (etc.) installed in
-/opt/local by macports. If you have other copies of these libraries
-installed and wish to force use of a specific version, use the
-environment variables detailed in :ref:`envvar`.
+Run the deterministic tests:
 
-This recipe was verified on July 1, 2016, on a Mac running OS X 10.11.5
-"El Capitain."
+::
+
+  ctest -R deterministic
+
+This recipe was verified on October 26, 2020, on a Mac running OS X 10.15.7
+"Catalina" with macports 2.6.3.
 
 Installing on Mac OS X using Homebrew (brew)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -793,8 +806,7 @@ Installing on Mac OS X using Homebrew (brew)
 Homebrew is a package manager for OS X that provides a convenient
 route to install all the QMCPACK dependencies. The
 following recipe will install the latest available versions of each
-package. This was successfully tested under OS X 10.12 "Sierra" in December 2017. Note that it is necessary to build the MPI software from
-source to use the brew-provided gcc instead of Apple CLANG.
+package. This was successfully tested under OS X 10.15.7 "Catalina" on October 26, 2020.
 
 1.  Install Homebrew from http://brew.sh/:
 
@@ -808,17 +820,14 @@ source to use the brew-provided gcc instead of Apple CLANG.
 
   ::
 
-    brew install gcc # installs gcc 7.2.0 on 2017-12-19
-    export HOMEBREW_CXX=g++-7
-    export HOMEBREW_CC=gcc-7
-    brew install mpich2 --build-from-source
-    # Build from source required to use homebrew compiled compilers as
-    # opposed to Apple CLANG. Check "mpicc -v" indicates Homebrew gcc
+    brew install gcc # 10.2.0 when tested
+    brew install openmpi
     brew install cmake
     brew install fftw
     brew install boost
-    brew install homebrew/science/hdf5
-    #Note: Libxml2 is not required via brew since OS X already includes it.
+    brew install hdf5
+    export OMPI_CC=gcc-10
+    export OMPI_CXX=g++-10
 
 3.  Configure and build QMCPACK:
 
@@ -826,13 +835,14 @@ source to use the brew-provided gcc instead of Apple CLANG.
 
     cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
           -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
-    make -j 12
+    make -j 6 # Adjust for available core count
+    ls -l bin/qmcpack
 
-4.  Run the short tests. When MPICH is used for the first time, OSX will request approval of the network connection for each executable.
+4.  Run the deterministic tests
 
   ::
 
-    ctest -R short -LE unstable
+    ctest -R deterministic
 
 Installing on ALCF Theta, Cray XC40
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
