@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_DMC_UPDATE_PARTICLEBYPARTCLE_L2_H
 #define QMCPLUSPLUS_DMC_UPDATE_PARTICLEBYPARTCLE_L2_H
 #include "QMCDrivers/QMCUpdateBase.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
@@ -36,6 +36,8 @@ public:
 private:
   TimerList_t myTimers;
 };
+
+//extern TimerNameList_t<DMCTimers> DMCTimerNames;
 
 
 } // namespace qmcplusplus
