@@ -13,14 +13,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file PWOribitalBuilder.cpp
+/** @file
  * @brief Definition of a builder class for PWOrbitalSet
  */
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
+#include "PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/HDFSTLAttrib.h"
@@ -29,15 +28,12 @@
 
 namespace qmcplusplus
 {
-PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(els, psi),
+PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
+    : WaveFunctionComponentBuilder(comm, els),
       ptclPool(psets),
       hfileID(-1),
-      rootNode(NULL)
-#if !defined(ENABLE_SMARTPOINTER)
-      ,
-      myBasisSet(0)
-#endif
+      rootNode(NULL),
+      myBasisSet(nullptr)
 {
   myParam = new PWParameterSet(myComm);
 }
@@ -45,8 +41,9 @@ PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, Ptc
 PWOrbitalBuilder::~PWOrbitalBuilder() { delete myParam; }
 
 //All data parsing is handled here, outside storage classes.
-bool PWOrbitalBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
+  WaveFunctionComponent* slater_det = nullptr;
   //save the parent
   rootNode = cur;
   //
@@ -69,9 +66,8 @@ bool PWOrbitalBuilder::put(xmlNodePtr cur)
     std::string cname((const char*)(cur->name));
     if (cname == "basisset")
     {
-      const xmlChar* aptr = xmlGetProp(cur, (const xmlChar*)"ecut");
-      if (aptr != NULL)
-        myParam->Ecut = atof((const char*)aptr);
+      const XMLAttrString a(cur, "ecut");
+      if (!a.empty()) myParam->Ecut = std::stod(a);
     }
     else if (cname == "coefficients")
     {
@@ -86,25 +82,19 @@ bool PWOrbitalBuilder::put(xmlNodePtr cur)
         hfileID = getH5(cur, "href");
       if (hfileID < 0)
       {
-        app_error() << "  Cannot create a SlaterDet due to missing h5 file" << std::endl;
+        APP_ABORT("  Cannot create a SlaterDet due to missing h5 file\n");
         OHMMS::Controller->abort();
       }
       success = createPWBasis(cur);
-      success = putSlaterDet(cur);
-    }
-    else if (cname == sposcanner_tag)
-    {
-      SPOSetScanner ascanner(spomap, targetPtcl, ptclPool);
-      ascanner.put(cur);
+      slater_det = putSlaterDet(cur);
     }
     cur = cur->next;
   }
   H5Fclose(hfileID);
-  return success;
+  return slater_det;
 }
 
-
-bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
+WaveFunctionComponent* PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
 {
   //catch parameters
   myParam->put(cur);
@@ -134,9 +124,7 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if (lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;
-        ;
         SPOSetPtr psi(createPW(cur, spin_group));
-        sdet->add(psi, ref);
         spomap[ref] = psi;
         adet        = new Det_t(psi, firstIndex);
       }
@@ -155,15 +143,12 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
     }
     cur = cur->next;
   }
+
   if (spin_group)
-  {
-    targetPsi.addOrbital(sdet, "SlaterDet");
-  }
-  else
-  {
-    APP_ABORT(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
-  }
-  return true;
+    return sdet;
+
+  APP_ABORT(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
+  return nullptr;
 }
 
 /** The read routine - get data from XML and H5. Process it and build orbitals.
@@ -206,17 +191,10 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.read(hfileID, "/electrons/kpoint_0/reduced_k");
   TwistAngle = TwistAngle_DP;
-#if defined(ENABLE_SMARTPOINTER)
-  if (myBasisSet.get() == 0)
-  {
-    myBasisSet.reset(new PWBasis(TwistAngle));
-  }
-#else
-  if (myBasisSet == 0)
+  if (myBasisSet == nullptr)
   {
     myBasisSet = new PWBasis(TwistAngle);
   }
-#endif
   //Read the planewave basisset.
   //Note that the same data is opened here for each twist angle-avoids duplication in the
   //h5 file (which may become very large).
@@ -365,7 +343,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
 {
   std::ostringstream splineTag;
   splineTag << "eigenstates_" << nG[0] << "_" << nG[1] << "_" << nG[2];
-  herr_t status = H5Eset_auto(NULL, NULL);
+  herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
   app_log() << " splineTag " << splineTag.str() << std::endl;
   hid_t es_grp_id;
   status = H5Gget_objinfo(hfileID, splineTag.str().c_str(), 0, NULL);
@@ -463,7 +441,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
       for (int kg = 0; kg < nG[2]; kg++)
       {
         targetPtcl.R[0] = lattice.toCart(PosType(x, y, kg * dz));
-        pwFunc.evaluate(targetPtcl, 0, phi);
+        pwFunc.evaluateValue(targetPtcl, 0, phi);
         RealType x(dot(targetPtcl.R[0], tAngle));
         ValueType phase(std::cos(x), -std::sin(x));
         for (int ib = 0; ib < nb; ib++)
@@ -516,15 +494,12 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
 
 hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
 {
-  const xmlChar* aptr = xmlGetProp(cur, (const xmlChar*)aname);
-  if (aptr == NULL)
-  {
-    return -1;
-  }
-  hid_t h = H5Fopen((const char*)aptr, H5F_ACC_RDONLY, H5P_DEFAULT);
+  const XMLAttrString a(cur, aname);
+  if (a.empty()) return -1;
+  hid_t h = H5Fopen(a.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   if (h < 0)
   {
-    app_error() << " Cannot open " << (const char*)aptr << " file." << std::endl;
+    app_error() << " Cannot open " << a << " file." << std::endl;
     OHMMS::Controller->abort();
   }
   myParam->checkVersion(h);

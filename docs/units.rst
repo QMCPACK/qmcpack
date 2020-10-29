@@ -1,0 +1,6 @@
+.. _units:
+
+Units used in QMCPACK
+=====================
+
+Internally, QMCPACK uses atomic units throughout. Unless stated, all inputs and outputs are also in atomic units. For convenience the analysis tools offer conversions to eV, Ry, Angstrom, Bohr, etc.

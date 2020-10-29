@@ -10,13 +10,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include <OhmmsSoA/Container.h>
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include "config/stdlib/Constants.h"
 
 namespace qmcplusplus
 {
@@ -196,8 +196,6 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
 
     REQUIRE(bs.num_splines() == npad);
 
-    double tpi = 2 * M_PI;
-
     BsplineAllocator<double> mAllocator;
     UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
@@ -211,22 +209,22 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
     TinyVector<T, 3> pos = {0, 0, 0};
 
     aligned_vector<T> v(npad);
-    spline2::evaluate3d(bs.spline_m, pos, v);
+    spline2::evaluate3d(bs.getSplinePtr(), pos, v);
 
     VectorSoaContainer<T, 3> dv(npad);
     VectorSoaContainer<T, 6> hess(npad);
-    spline2::evaluate3d_vgh(bs.spline_m, pos, v, dv, hess);
+    spline2::evaluate3d_vgh(bs.getSplinePtr(), pos, v, dv, hess);
 
     pos = {0.1, 0.2, 0.3};
-    spline2::evaluate3d(bs.spline_m, pos, v);
+    spline2::evaluate3d(bs.getSplinePtr(), pos, v);
 
-    spline2::evaluate3d_vgh(bs.spline_m, pos, v, dv, hess);
+    spline2::evaluate3d_vgh(bs.getSplinePtr(), pos, v, dv, hess);
 
     VectorSoaContainer<T, 3> lap(npad);
-    spline2::evaluate3d_vgl(bs.spline_m, pos, v, dv, lap);
+    spline2::evaluate3d_vgl(bs.getSplinePtr(), pos, v, dv, lap);
 
     VectorSoaContainer<T, 10> ghess(npad);
-    spline2::evaluate3d_vghgh(bs.spline_m, pos, v, dv, hess, ghess);
+    spline2::evaluate3d_vghgh(bs.getSplinePtr(), pos, v, dv, hess, ghess);
   }
 };
 
@@ -270,12 +268,12 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     // symbolic value at pos =  (cx[0]/6 + 2*cx[1]/3 + cx[2]/6)*(cy[0]/6 + 2*cy[1]/3 + cy[2]/6)*(cz[0]/6 + 2*cz[1]/3 + cz[2]/6)
 
     aligned_vector<T> v(npad);
-    spline2::evaluate3d(bs.spline_m, pos, v);
+    spline2::evaluate3d(bs.getSplinePtr(), pos, v);
     REQUIRE(v[0] == Approx(-3.529930688e-12));
 
     VectorSoaContainer<T, 3> dv(npad);
     VectorSoaContainer<T, 6> hess(npad);
-    spline2::evaluate3d_vgh(bs.spline_m, pos, v, dv, hess);
+    spline2::evaluate3d_vgh(bs.getSplinePtr(), pos, v, dv, hess);
     // Gradient
     REQUIRE(dv[0][0] == Approx(6.178320809));
     REQUIRE(dv[0][1] == Approx(-7.402942564));
@@ -288,12 +286,12 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     }
 
     pos = {0.1, 0.2, 0.3};
-    spline2::evaluate3d(bs.spline_m, pos, v);
+    spline2::evaluate3d(bs.getSplinePtr(), pos, v);
 
     // Value
     REQUIRE(v[0] == Approx(-0.9476393279));
 
-    spline2::evaluate3d_vgh(bs.spline_m, pos, v, dv, hess);
+    spline2::evaluate3d_vgh(bs.getSplinePtr(), pos, v, dv, hess);
     // Value
     REQUIRE(v[0] == Approx(-0.9476393279));
     // Gradient
@@ -310,7 +308,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
 
 
     VectorSoaContainer<T, 3> lap(npad);
-    spline2::evaluate3d_vgl(bs.spline_m, pos, v, dv, lap);
+    spline2::evaluate3d_vgl(bs.getSplinePtr(), pos, v, dv, lap);
     // Value
     REQUIRE(v[0] == Approx(-0.9476393279));
     // Gradient
@@ -321,7 +319,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     REQUIRE(lap[0][0] == Approx(147.1127789));
 
     VectorSoaContainer<T, 10> ghess(npad);
-    spline2::evaluate3d_vghgh(bs.spline_m, pos, v, dv, hess, ghess);
+    spline2::evaluate3d_vghgh(bs.getSplinePtr(), pos, v, dv, hess, ghess);
     // Value
     REQUIRE(v[0] == Approx(-0.9476393279));
     // Gradient

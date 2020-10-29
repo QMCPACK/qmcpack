@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/BParser.h"
+#include "BParser.h"
 #include "QMCTools/BMakeFunc.h"
 #include <fstream>
 #include <iterator>
@@ -191,7 +191,7 @@ void BParser::getBasisSetForDet(std::istream& is)
     }
     char rname[64];
     sprintf(rname, "R%d%d", centerID, rnl[centerID]);
-    rnl[centerID]             += 1;
+    rnl[centerID] += 1;
     detBasisPerAtom[centerID] += 2 * angL + 1;
     //call the factory
     BMakeFuncBase* afunc = createBMakeFunc(iflag);
@@ -231,7 +231,7 @@ void BParser::getBasisSetForJ3(std::istream& is)
     }
     char rname[64];
     sprintf(rname, "R%d%d", centerID, rnl[centerID]);
-    rnl[centerID]            += 1;
+    rnl[centerID] += 1;
     j3BasisPerAtom[centerID] += 2 * angL + 1;
     //call the factory
     BMakeFuncBase* afunc = createBMakeFunc(iflag);

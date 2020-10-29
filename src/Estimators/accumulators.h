@@ -21,9 +21,8 @@
 #ifndef QMCPLUSPLUS_ACCUMULATORS_H
 #define QMCPLUSPLUS_ACCUMULATORS_H
 
-#include <config/stdlib/limits.h>
 #include <iostream>
-#include <type_traits>
+#include "config/stdlib/math.hpp"
 
 /** generic accumulator of a scalar type
  *
@@ -103,7 +102,7 @@ struct accumulator_set
   /** return true if Weight!= 0 */
   inline bool good() const { return properties[WEIGHT] > 0; }
   /** return true if Weight== 0 */
-  inline bool bad() const { return iszero(properties[WEIGHT]); }
+  inline bool bad() const { return qmcplusplus::iszero(properties[WEIGHT]); }
 
   /** return the sum */
   inline return_type result() const { return properties[VALUE]; }
@@ -131,7 +130,7 @@ struct accumulator_set
 
   inline return_type variance() const
   {
-    if (iszero(properties[WEIGHT]))
+    if (qmcplusplus::iszero(properties[WEIGHT]))
       return std::numeric_limits<T>::max();
     value_type norm = 1.0 / properties[WEIGHT];
     return norm * (properties[VALUESQ] - properties[VALUE] * properties[VALUE] * norm);

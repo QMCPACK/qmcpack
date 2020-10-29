@@ -14,8 +14,9 @@
 
 
 #include "OhmmsData/ParameterSet.h"
-#include "QMCDrivers/DMC/WalkerControlFactory.h"
+#include "WalkerControlFactory.h"
 #include "QMCDrivers/DMC/WalkerReconfiguration.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #if defined(HAVE_MPI)
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
@@ -23,6 +24,7 @@
 
 namespace qmcplusplus
 {
+
 WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur, bool reconfig)
 {
   app_log() << "  Creating WalkerController: target  number of walkers = " << nwtot << std::endl;
@@ -39,7 +41,10 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   //if(nmin<0) nmin=nideal/2;
   WalkerControlBase* wc = 0;
   int ncontexts         = comm->size();
-  bool fixw             = (reconfig || reconfigopt == "yes" || reconfigopt == "pure");
+  if(reconfigopt != "no" && reconfigopt != "runwhileincorrect")
+    APP_ABORT("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
+  //bool fixw             = (reconfig || reconfigopt == "yes" || reconfigopt == "pure");
+  bool fixw = (reconfig || reconfigopt == "runwhileincorrect");
   if (fixw)
   {
     int nwloc = std::max(omp_get_max_threads(), nwtot / ncontexts);
@@ -73,7 +78,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
       wc = new WalkerControlBase(comm);
     }
   }
-  wc->MyMethod = fixw;
+  wc->set_method(fixw);
   wc->setMinMax(nwtot, nmax);
   return wc;
 }

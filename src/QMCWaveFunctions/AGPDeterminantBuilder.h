@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /**@file AGPDeterminantBuilder.h
  *@brief declaration of a builder class for AGPDeterminant
  */
@@ -21,24 +21,20 @@
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 namespace qmcplusplus
 {
-
 class AGPDeterminant;
 
 /**@ingroup WFSBuilder
  * @brief An abstract class for wave function builders
  */
-class AGPDeterminantBuilder: public WaveFunctionComponentBuilder
+class AGPDeterminantBuilder : public WaveFunctionComponentBuilder
 {
-
 public:
-
-  AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& pset);
+  AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset);
 
   /// process a xml node at cur
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
 protected:
-
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
   ///basiset Factory
@@ -48,9 +44,8 @@ protected:
   std::string funcOpt;
   std::string transformOpt;
 
-  template <typename BasisBuilderT>
+  template<typename BasisBuilderT>
   bool createAGP(BasisBuilderT* abuilder, xmlNodePtr cur);
-
 };
-}
+} // namespace qmcplusplus
 #endif

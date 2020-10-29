@@ -6,21 +6,21 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<complex>
-#include<vector>
-#include<string>
-#include<numeric>
-#include<cassert>
-#include<algorithm>
-//#include<mpi.h>
+#include <complex>
+#include <vector>
+#include <string>
+#include <numeric>
+#include <cassert>
+#include <algorithm>
+//#include <mpi.h>
 
-#include<boost/format.hpp>
-#include<boost/shared_ptr.hpp>
+#include <boost/format.hpp>
+#include <boost/shared_ptr.hpp>
 
-#include<formic/utils/exception.h>
-#include<formic/utils/mpi_interface.h>
-#include<formic/utils/lmyengine/engine_numeric.h>
-#include<formic/utils/lmyengine/energy_target_accu.h>
+#include "formic/utils/exception.h"
+#include "formic/utils/mpi_interface.h"
+#include "formic/utils/lmyengine/engine_numeric.h"
+#include "energy_target_accu.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // \brief  constructs the computer
@@ -41,8 +41,6 @@ cqmc::engine::ETCompute::ETCompute(const std::vector<double> & le_history,
   _exact_sampling(exact_sampling),
   _ground_state(ground_state),
   _variance_correct(variance_correct),
-  _hd_shift(hd_shift),
-  _var_weight(var_weight),
   _energy(0.0),
   _energy_s(0.0),
   _target_fn_val(0.0),
@@ -51,7 +49,9 @@ cqmc::engine::ETCompute::ETCompute(const std::vector<double> & le_history,
   _serr(-1.0),
   _tnserr(-1.0),
   _tdserr(-1.0),
-  _tserr(-1.0)
+  _tserr(-1.0),
+  _hd_shift(hd_shift),
+  _var_weight(var_weight)
 {
   // initialize all list based on the input vector 
   this -> history_initialize();
@@ -525,7 +525,7 @@ void cqmc::engine::ETCompute::print_statistics(std::ostream & fout)
       }
     }
     fout << boost::format("              std dev = %20.12f") % std::sqrt(_variance) << std::endl;
-    fout << boost::format("             variance = %20.12f") % _variance << std::endl;
+    fout << boost::format("             le_variance = %20.12f") % _variance << std::endl;
     fout << std::endl;
   } 
 }

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 def real_or_comp(str_rep):
   """ convert the string representation of a real or complex number into float or complex
@@ -10,7 +10,7 @@ def real_or_comp(str_rep):
   """
   val = None
   if str_rep.strip().startswith('('):
-    ri_list = map(float,str_rep.replace('(','').replace(')','').split(','))
+    ri_list = list(map(float,str_rep.replace('(','').replace(')','').split(',')))
     val = ri_list[0] + 1j*ri_list[1]
   else:
     val = float(str_rep)
@@ -34,7 +34,7 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
     dict: derivative data in dictionary having keys ('iparam','numeric','analytic','diff')
   """
 
-  idx = mm.find(header)
+  idx = mm.find(header.encode())
   if idx == -1:
     raise RuntimeError('failed to find %s'%header)
   mm.seek(idx)
@@ -43,13 +43,13 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
   cols = ['iparam','numeric','analytic','diff'] # define order of keys
   data = {'iparam':[],'numeric':[],'analytic':[],'diff':[]}
   for ider in range(nmax_deriv):
-    tokens = mm.readline().split()
+    tokens = mm.readline().decode().split()
     if len(tokens) < 4:
       break # reached the end of data block
     if ider >= nmax_deriv:
       raise RuntimeError('please increase nmax_deriv')
     iparam = int( tokens[0] )
-    numeric,analytic,diff = map(real_or_comp,tokens[1:])
+    numeric,analytic,diff = list(map(real_or_comp,tokens[1:]))
     for name,val in zip(cols,[iparam,numeric,analytic,diff]):
       data[name].append(val)
     # end for 

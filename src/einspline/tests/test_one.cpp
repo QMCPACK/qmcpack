@@ -11,7 +11,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 #include "einspline/bspline_base.h"
@@ -22,10 +21,8 @@
 #include "einspline/multi_bspline_eval_s.h"
 
 #include <stdio.h>
-#include <string>
 #include <vector>
-
-using std::string;
+#include "config/stdlib/Constants.h"
 
 TEST_CASE("double_1d_natural", "[einspline]")
 {
@@ -120,7 +117,7 @@ TEST_CASE("double_1d_periodic", "[einspline]")
   x_grid.start = 0.0;
   x_grid.end = 1.0;
   //Enough grid points are required to do the micro evaluation test.
-  int N = 12;
+  constexpr int N = 12;
   x_grid.num = N;
   double delta = (x_grid.end - x_grid.start)/x_grid.num;
 
@@ -202,13 +199,19 @@ TEST_CASE("multi_cuda_wrapper", "[einspline]")
   pos[0] = 9.99999999;
   // Check the CPU value
   eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
-  REQUIRE(cpu_val[0] == 3.0);
+  //std::cout << std::setprecision(24) << cpu_val[0] << " == " << 3.0000f << '\n';
+  //With power 9/ clang 8  3.0000f is 3 but cpu_val[0] = 3.0000002384185791015625
+  REQUIRE(cpu_val[0] == Approx(3.0000f).epsilon(0.00000025));
 
   // Check the GPU value
   pos[0] = 0.0;
   float vals_output[1];
   test_multi(s, pos, vals_output);
   REQUIRE(vals_output[0] == 2.0);
+
+  pos[0] = 9.99999999;
+  test_multi(s, pos, vals_output);
+  REQUIRE(vals_output[0] == 3.0);
 }
 
 #endif

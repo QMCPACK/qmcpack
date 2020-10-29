@@ -14,13 +14,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
-#include "Lattice/Uniform3DGridLayout.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
-#include "Particle/SymmetricDistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 
 
@@ -36,13 +31,12 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(1.0);
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(1.0);
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -53,7 +47,7 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
-  ions.Lattice.copy(grid);
+  ions.Lattice = Lattice;
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
   int pIdx                          = ion_species.addSpecies("H");
@@ -61,7 +55,7 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 1;
-  ions.Lattice.copy(grid);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
@@ -81,13 +75,12 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(3.77945227);
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(3.77945227);
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -101,7 +94,7 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
   ions.R[1][0] = 1.88972614;
   ions.R[1][1] = 1.88972614;
   ions.R[1][2] = 1.88972614;
-  ions.Lattice.copy(grid);
+  ions.Lattice = Lattice;
 
   SpeciesSet& ion_species           = ions.getSpeciesSet();
   int pIdx                          = ion_species.addSpecies("H");
@@ -109,7 +102,7 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
   int pMembersizeIdx                = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx)     = 1;
   ion_species(pMembersizeIdx, pIdx) = 2;
-  ions.Lattice.copy(grid);
+  ions.Lattice = Lattice;
   ions.createSK();
 
 
@@ -129,17 +122,16 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(1.0);
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(1.0);
+  Lattice.reset();
 
   ParticleSet elec;
 
-  elec.Lattice.copy(grid);
+  elec.Lattice = Lattice;
   elec.setName("elec");
   elec.create(1);
   elec.R[0][0] = 0.0;
@@ -148,13 +140,12 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();
   int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
   int chargeIdx                = tspecies.addAttribute("charge");
   int massIdx                  = tspecies.addAttribute("mass");
+  int pMembersizeIdx           = tspecies.addAttribute("membersize");
+  tspecies(pMembersizeIdx, upIdx)   = 1;
   tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)     = 1.0;
-  tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
   elec.update();
@@ -164,11 +155,11 @@ TEST_CASE("Coulomb PBC A-A elec", "[hamiltonian]")
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.064495247));
+  REQUIRE(consts == Approx(-3.1151210154));
 
   double val = caa.evaluate(elec);
   //cout << "val = " << val << std::endl;
-  REQUIRE(val == Approx(-1.3680247006)); // not validated
+  REQUIRE(val == Approx(-1.418648723)); // not validated
 }
 
 

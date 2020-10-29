@@ -124,13 +124,13 @@ template<class T>
 void DampedDynamics<T>::setTarget(ObjectFuncType* fn)
 {
   TargetFunc = fn;
-  NumParams  = TargetFunc->NumParams();
+  NumParams  = TargetFunc->getNumParams();
   Y.resize(NumParams);
   gY.resize(NumParams, 0);
   Y0.resize(NumParams);
   for (int i = 0; i < NumParams; i++)
   {
-    Y[i]  = TargetFunc->Params(i);
+    Y[i]  = std::real(TargetFunc->Params(i));
     Y0[i] = Y[i];
   }
 }
@@ -196,8 +196,8 @@ void DampedDynamics<T>::evaluateGradients(std::vector<Return_t>& grad)
   //   else
   //   {
   //     Return_t dh=1.0/(2.0*Displacement);
-  //     for(int i=0; i<TargetFunc->NumParams() ; i++) {
-  //       for(int j=0; j<TargetFunc->NumParams(); j++) TargetFunc->Params(j)=Y[j];
+  //     for(int i=0; i<TargetFunc->getNumParams() ; i++) {
+  //       for(int j=0; j<TargetFunc->getNumParams(); j++) TargetFunc->Params(j)=Y[j];
   //       TargetFunc->Params(i) = Y[i]+ Displacement;
   //       Return_t CostPlus = TargetFunc->Cost();
   //       TargetFunc->Params(i) = Y[i]- Displacement;

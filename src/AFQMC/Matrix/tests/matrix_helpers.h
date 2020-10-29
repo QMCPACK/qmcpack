@@ -17,12 +17,11 @@
 #include <complex>
 #include <type_traits>
 
-using std::string;
 using std::complex;
+using std::string;
 
 namespace qmcplusplus
 {
-
 template<typename T>
 void myREQUIRE(T const& a, T const& b)
 {
@@ -39,31 +38,29 @@ void myREQUIRE(std::complex<T> const& a, std::complex<T> const& b)
 template<class M1,
          class M2,
          typename = typename std::enable_if<(M1::dimensionality == 1)>::type,
-         typename = typename std::enable_if<(M2::dimensionality == 1)>::type
-         >
+         typename = typename std::enable_if<(M2::dimensionality == 1)>::type>
 void verify_approx(M1 const& A, M2 const& B)
 {
   // casting in case operator[] returns a fancy reference
   using element1 = typename std::decay<M1>::type::element;
   using element2 = typename std::decay<M2>::type::element;
   REQUIRE(A.size(0) == B.size(0));
-  for(int i=0; i<A.size(0); i++)
-      myREQUIRE(element1(A[i]),element2(B[i]));
+  for (int i = 0; i < A.size(0); i++)
+    myREQUIRE(element1(A[i]), element2(B[i]));
 }
 
 template<class M1,
          class M2,
          typename = typename std::enable_if<(M1::dimensionality > 1)>::type,
          typename = typename std::enable_if<(M2::dimensionality > 1)>::type,
-         typename = void
-         >
+         typename = void>
 void verify_approx(M1 const& A, M2 const& B)
 {
   REQUIRE(A.size(0) == B.size(0));
-  for(int i=0; i<A.size(0); i++)
-    verify_approx(A[i],B[i]);
+  for (int i = 0; i < A.size(0); i++)
+    verify_approx(A[i], B[i]);
 }
 
-}
+} // namespace qmcplusplus
 
 #endif

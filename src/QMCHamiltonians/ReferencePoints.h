@@ -15,10 +15,10 @@
 #define QMCPLUSPLUS_REFERENCE_POINTS_H
 
 #include <Configuration.h>
-#include <OhmmsData/OhmmsElementBase.h>
-#include <Particle/ParticleSet.h>
-#include <QMCHamiltonians/observable_helper.h>
-#include <OhmmsPETE/Tensor.h>
+#include "OhmmsData/OhmmsElementBase.h"
+#include "Particle/ParticleSet.h"
+#include "QMCHamiltonians/observable_helper.h"
+#include "OhmmsPETE/Tensor.h"
 
 namespace qmcplusplus
 {

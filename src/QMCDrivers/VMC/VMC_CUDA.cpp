@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMC_CUDA.h"
+#include "VMC_CUDA.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -22,7 +22,7 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "type_traits/scalar_traits.h"
 #include "Utilities/RunTimeManager.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 #ifdef USE_NVTX_API
 #include <nvToolsExt.h>
 #endif
@@ -33,26 +33,26 @@ namespace qmcplusplus
 VMCcuda::VMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 WaveFunctionPool& ppool,
                  Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, comm, "VMCcuda"),
       UseDrift("yes"),
       myPeriod4WalkerDump(0),
-      GEVtype("mixed"),
-      w_alpha(0.0),
       w_beta(0.0),
+      w_alpha(0.0),
+      GEVtype("mixed"),
       forOpt(false)
 {
   RootName = "vmc";
-  QMCType  = "VMCcuda";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(nTargetSamples, "targetWalkers", "int");
   m_param.add(w_beta, "beta", "double");
   m_param.add(w_alpha, "alpha", "double");
   m_param.add(GEVtype, "GEVMethod", "string");
+
+  H.setRandomGenerator(&Random);
 }
 
 bool VMCcuda::checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid)
@@ -135,8 +135,7 @@ void VMCcuda::advanceWalkers()
         for (int iw = 0; iw < nw; ++iw)
           newpos[iw] = W.Rnew_host[iw + k * nw];
         std::vector<bool> acc(nw, true);
-        if (W.UseBoundBox)
-          checkBounds(newpos, acc);
+        checkBounds(newpos, acc);
 #ifdef SPLIT_SPLINE_DEBUG
         if (gpu::rank == 1)
           std::cerr << "iat = " << iat << "\n";
@@ -201,7 +200,7 @@ bool VMCcuda::run()
   IndexType block        = 0;
   IndexType nAcceptTot   = 0;
   IndexType nRejectTot   = 0;
-  IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
+  IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int nat                = W.getTotalNum();
   int nw                 = W.getActiveWalkers();
   std::vector<RealType> LocalEnergy(nw);
@@ -209,8 +208,8 @@ bool VMCcuda::run()
   Matrix<GradType> grad(nw, nat);
   double Esum;
 
-  LoopTimer vmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> vmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
 
   // First do warmup steps
@@ -363,7 +362,7 @@ void VMCcuda::advanceWalkersWithDrift()
       {
         PosType dr;
         delpos[iw] *= m_sqrttau;
-        getScaledDrift(m_tauovermass, oldG[iw], dr);
+        DriftModifier->getDrift(m_tauovermass, oldG[iw], dr);
         newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
         ratios[iw] = 1.0;
         acc[iw]    = true;
@@ -375,8 +374,7 @@ void VMCcuda::advanceWalkersWithDrift()
       update_now = W.update_now(iat);
       Psi.calcRatio(W, iat, ratios, newG, newL);
       accepted.clear();
-      if (W.UseBoundBox)
-        checkBounds(newpos, acc);
+      checkBounds(newpos, acc);
       if (kDelay)
         Psi.det_lookahead(W, ratios, newG, newL, iat, k, W.getkblocksize(), nw);
       std::vector<RealType> logGf_v(nw);
@@ -393,7 +391,7 @@ void VMCcuda::advanceWalkersWithDrift()
       for (int iw = 0; iw < nw; ++iw)
       {
         PosType drNew;
-        getScaledDrift(m_tauovermass, newG[iw], drNew);
+        DriftModifier->getDrift(m_tauovermass, newG[iw], drNew);
         drNew += newpos[iw] - W[iw]->R[iat];
         // if (dot(drNew, drNew) > 25.0)
         //   std::cerr << "Large drift encountered!  Drift = " << drNew << std::endl;

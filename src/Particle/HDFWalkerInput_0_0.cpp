@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/HDFWalkerInput_0_0.h"
+#include "HDFWalkerInput_0_0.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Particle/HDFParticleAttrib.h"
@@ -21,7 +21,7 @@
 #include "OhmmsData/FileUtility.h"
 namespace qmcplusplus
 {
-HDFWalkerInput_0_0::HDFWalkerInput_0_0(MCWalkerConfiguration& W, const std::string& aroot) : targetW(W), version(0, 0)
+HDFWalkerInput_0_0::HDFWalkerInput_0_0(MCWalkerConfiguration& W, const std::string& aroot) : version(0, 0), targetW(W)
 {
   FileName        = aroot;
   std::string ext = getExtension(aroot);

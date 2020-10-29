@@ -235,9 +235,8 @@ void GaussianTimesRN<T>::reset()
 template<class T>
 bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur, int baseOff)
 {
-  const xmlChar* t = xmlGetProp(cur, (const xmlChar*)"basePower");
-  if (t != NULL)
-    basePower = atoi((const char*)t);
+  const XMLAttrString t(cur, "basePower");
+  if (!t.empty()) basePower = std::stoi(t);
   basePower += baseOff;
   cur = cur->children;
   while (cur != NULL)

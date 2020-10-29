@@ -59,12 +59,7 @@ solve_NUB_deriv_interp_1d_s (NUBasis* restrict basis,
   // Banded matrix storage.  The first three elements in the
   // tinyvector store the tridiagonal coefficients.  The last element
   // stores the RHS data.
-#ifdef HAVE_C_VARARRAYS
-  float bands[4*N];
-#else
   float *bands = malloc (4*N*sizeof(float));
-#endif
-  
 
   // Fill up bands
   for (int i=0; i<4; i++) {
@@ -116,9 +111,7 @@ solve_NUB_deriv_interp_1d_s (NUBasis* restrict basis,
   // Finish with first row
   p[0] = bands[4*(0)+3] - bands[4*(0)+1]*p[pstride*1] - bands[4*(0)+2]*p[pstride*2];
 
-#ifndef HAVE_C_VARARRAYS
   free (bands);
-#endif
 }
 
 
@@ -135,12 +128,8 @@ solve_NUB_periodic_interp_1d_s (NUBasis* restrict basis,
   // Banded matrix storage.  The first three elements in each row
   // store the tridiagonal coefficients.  The last element
   // stores the RHS data.
-#ifdef HAVE_C_VARARRAYS
-  float bands[4*M], lastCol[M];
-#else
   float *bands   = malloc (4*M*sizeof(float));
   float *lastCol = malloc (  M*sizeof(float));
-#endif
 
   // Fill up bands
   for (int i=0; i<M; i++) {
@@ -189,10 +178,9 @@ solve_NUB_periodic_interp_1d_s (NUBasis* restrict basis,
   p[pstride*  0  ] = p[pstride*M];
   p[pstride*(M+1)] = p[pstride*1];
   p[pstride*(M+2)] = p[pstride*2];
-#ifndef HAVE_C_VARARRAYS
+
   free (bands);
   free (lastCol);
-#endif
 }
 
 
@@ -396,11 +384,7 @@ solve_NUB_deriv_interp_1d_d (NUBasis* restrict basis,
   // Banded matrix storage.  The first three elements in the
   // tinyvector store the tridiagonal coefficients.  The last element
   // stores the RHS data.
-#ifdef HAVE_C_VARARRAYS
-  double bands[4*N];
-#else
   double *bands = malloc (4*N*sizeof(double));
-#endif
 
   // Fill up bands
   for (int i=0; i<4; i++) {
@@ -454,9 +438,8 @@ solve_NUB_deriv_interp_1d_d (NUBasis* restrict basis,
   
   // Finish with first row
   p[0] = bands[4*(0)+3] - bands[4*(0)+1]*p[pstride*1] - bands[4*(0)+2]*p[pstride*2];
-#ifndef HAVE_C_VARARRAYS
+
   free (bands);
-#endif
 }
 
 
@@ -470,12 +453,8 @@ solve_NUB_periodic_interp_1d_d (NUBasis* restrict basis,
   // Banded matrix storage.  The first three elements in the
   // tinyvector store the tridiagonal coefficients.  The last element
   // stores the RHS data.
-#ifdef HAVE_C_VARARRAYS
-  double bands[4*M], lastCol[M];
-#else
   double *bands   = malloc (4*M*sizeof(double));
   double *lastCol = malloc (  M*sizeof(double));
-#endif
 
   // Fill up bands
   for (int i=0; i<M; i++) {
@@ -524,10 +503,9 @@ solve_NUB_periodic_interp_1d_d (NUBasis* restrict basis,
   p[pstride*  0  ] = p[pstride*M];
   p[pstride*(M+1)] = p[pstride*1];
   p[pstride*(M+2)] = p[pstride*2];
-#ifndef HAVE_C_VARARRAYS
+
   free (bands);
   free (lastCol);
-#endif
 }
 
 

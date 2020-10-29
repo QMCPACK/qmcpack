@@ -5,41 +5,37 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 //
 // File created by:
-// Miguel A. Morales, moralessilva2@llnl.gov 
-//    Lawrence Livermore National Laboratory 
+// Miguel A. Morales, moralessilva2@llnl.gov
+//    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef AFQMC_WALKERIO_HPP 
-#define AFQMC_WALKERIO_HPP 
+#ifndef AFQMC_WALKERIO_HPP
+#define AFQMC_WALKERIO_HPP
 
-#include<cassert>
-#include<cstdlib>
-#include<vector>
-#include<type_traits>
-#include "type_traits/container_proxy_multi.h"
+#include <cassert>
+#include <cstdlib>
+#include <vector>
+#include <type_traits>
+#include "type_traits/container_traits_multi.h"
 
 #include "Configuration.h"
 #include "AFQMC/config.h"
 
 namespace qmcplusplus
 {
-
 namespace afqmc
 {
-
-template<class WalkerSet,
-         typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type
-        >
-bool dumpSamplesHDF5(WalkerSet& wset, hdf_archive& dump, int nW_to_file) 
+template<class WalkerSet, typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type>
+bool dumpSamplesHDF5(WalkerSet& wset, hdf_archive& dump, int nW_to_file)
 {
   return true;
-APP_ABORT("Finish \n");
-return true;
-/*
+  APP_ABORT("Finish \n");
+  return true;
+  /*
   if(nW_to_file==0) return true;
   if(head) { 
 
@@ -166,98 +162,115 @@ return true;
 */
 }
 
-template<class WalkerSet,
-         typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type
-        >
-bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, std::string hdf_read_restart, hdf_archive& read, bool set_to_target)
+template<class WalkerSet, typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type>
+bool restartFromHDF5(WalkerSet& wset,
+                     int nW_per_tg,
+                     std::string hdf_read_restart,
+                     hdf_archive& read,
+                     bool set_to_target)
 {
-
   TaskGroup_& TG = wset.getTG();
 
   std::vector<int> Idata(7);
-  if(read.is_parallel()) {
-    app_error()<<" Error: hdf_archive can't be parallel in restartFromHDF5().\n";
+  if (read.is_parallel())
+  {
+    app_error() << " Error: hdf_archive can't be parallel in restartFromHDF5().\n";
     APP_ABORT("");
   }
-  if(TG.TG_local().root()) {
-
-    if(!read.open(hdf_read_restart, H5F_ACC_RDONLY))
+  if (TG.TG_local().root())
+  {
+    if (!read.open(hdf_read_restart, H5F_ACC_RDONLY))
       APP_ABORT("Problem opening restart file");
 
     std::string path = "/Walkers/WalkerSet";
 
-    if(!read.is_group(path)) {
-      app_error()<<" ERROR: H5Group  could not find /Walkers/WalkerSet group in file. No restart data for walkers. \n";
+    if (!read.is_group(path))
+    {
+      app_error()
+          << " ERROR: H5Group  could not find /Walkers/WalkerSet group in file. No restart data for walkers. \n";
       return false;
     }
 
-    if(!read.push("Walkers")) return false;
-    if(!read.push("WalkerSet")) return false;
+    if (!read.push("Walkers"))
+      return false;
+    if (!read.push("WalkerSet"))
+      return false;
 
-    if(!read.readEntry(Idata,"dims")) return false;
+    if (!read.readEntry(Idata, "dims"))
+      return false;
   }
-  TG.TG_local().broadcast_n(Idata.begin(),Idata.size());
+  TG.TG_local().broadcast_n(Idata.begin(), Idata.size());
 
-  int nWtot = Idata[0];
+  auto walker_type = wset.getWalkerType();
+
+  int nWtot      = Idata[0];
   int wlk_nterms = Idata[2];
-  int wlk_sz = Idata[3];
-  int NMO = Idata[4];
-  int NAEA = Idata[5];
-  int NAEB = Idata[6];
-  if(wlk_nterms != wset.walkerSizeIO()) {
-    app_error()<<" Inconsistent walker restart file: IO size, NMO, NAEA, NAEB, WalkerType:" 
-    <<wset.walkerSizeIO() <<" " <<NMO <<" " <<NAEA <<" " <<NAEB <<" " <<wset.getWalkerType()
-    <<std::endl;
+  int NMO        = Idata[4];
+  int NAEA       = Idata[5];
+  int NAEB       = Idata[6];
+  if (wlk_nterms != wset.walkerSizeIO())
+  {
+    app_error() << " Inconsistent walker restart file: IO size, NMO, NAEA, NAEB, WalkerType:" << wset.walkerSizeIO()
+                << " " << NMO << " " << NAEA << " " << NAEB << " " << wset.getWalkerType() << std::endl;
     APP_ABORT("");
   }
 
   // walker range belonging to this TG
   int nW0, nWN;
-  if(set_to_target) {
-    if(nWtot < nW_per_tg*TG.TG_heads().size())
+  if (set_to_target)
+  {
+    if (nWtot < nW_per_tg * TG.TG_heads().size())
       APP_ABORT(" Error: Not enough walkers in restart file.\n");
-    nW0 = nW_per_tg*TG.TG_heads().rank();
+    nW0 = nW_per_tg * TG.TG_heads().rank();
     nWN = nW0 + nW_per_tg;
-  } else {
-    if(nWtot%TG.TG_heads().size()!=0)
-      APP_ABORT(" Error: Number of walkers in restart file must be divisible by number of task groups.\n");
-    nW0 = (nWtot/TG.TG_heads().size())*TG.TG_heads().rank();
-    nWN = nW0 + nWtot/TG.TG_heads().size();
   }
-  int nw_local = nWN-nW0;
+  else
+  {
+    if (nWtot % TG.TG_heads().size() != 0)
+      APP_ABORT(" Error: Number of walkers in restart file must be divisible by number of task groups.\n");
+    nW0 = (nWtot / TG.TG_heads().size()) * TG.TG_heads().rank();
+    nWN = nW0 + nWtot / TG.TG_heads().size();
+  }
+  int nw_local = nWN - nW0;
   { // to limit scope
-    boost::multi::array<ComplexType,2> PsiA, PsiB;
-    if(TG.TG_local().root()) {
-      PsiA.reextent({NMO,NAEA});
-      if(wset.getWalkerType() == COLLINEAR)
-        PsiB.reextent({NMO,NAEB});
+    boost::multi::array<ComplexType, 2> PsiA, PsiB;
+    int NMO2 = ((walker_type == NONCOLLINEAR)?2*NMO:NMO);
+    if (TG.TG_local().root())
+    {
+      PsiA.reextent({NMO2, NAEA});
+      if (wset.getWalkerType() == COLLINEAR)
+        PsiB.reextent({NMO, NAEB});
     }
     // PsiA/B only meaningful at root
-    wset.resize(nw_local,PsiA,PsiB);
+    wset.resize(nw_local, PsiA, PsiB);
   }
 
   // only head of WalkerSet reads
-  if(TG.TG_local().root()) {
+  if (TG.TG_local().root())
+  {
     std::vector<int> wlk_per_blk;
-    read.read(wlk_per_blk,"wlk_per_blk");
+    read.read(wlk_per_blk, "wlk_per_blk");
 
-    boost::multi::array<ComplexType,2> Data;
+    boost::multi::array<ComplexType, 2> Data;
 
     // loop through blocks and read when necessary
-    int ni=0, nread=0, bi=0;
-    while(nread < nw_local) {
-      if(ni+wlk_per_blk[bi] > nW0) {
+    int ni = 0, nread = 0, bi = 0;
+    while (nread < nw_local)
+    {
+      if (ni + wlk_per_blk[bi] > nW0)
+      {
         // determine block of walkers to read
-        int w0 = std::max(0,nW0-ni);
-        int nw_ = std::min(ni+wlk_per_blk[bi],nWN) - std::max(ni,nW0);
-        Data.reextent({nw_,wlk_nterms});
-        hyperslab_proxy<boost::multi::array_ref<ComplexType,2>,2> hslab(Data,
-                                  std::array<int,2>{wlk_per_blk[bi],wlk_nterms},
-                                  std::array<int,2>{nw_,wlk_nterms},
-                                  std::array<int,2>{w0,0});
-        read.read(hslab,std::string("walkers_")+std::to_string(bi));
-        for(int n=0; n<nw_; n++, nread++)
-          wset.copyFromIO(Data[n],nread);
+        int w0  = std::max(0, nW0 - ni);
+        int nw_ = std::min(ni + wlk_per_blk[bi], nWN) - std::max(ni, nW0);
+        Data.reextent({nw_, wlk_nterms});
+        hyperslab_proxy<boost::multi::array_ref<ComplexType, 2>, 2> hslab(Data,
+                                                                          std::array<int, 2>{wlk_per_blk[bi],
+                                                                                             wlk_nterms},
+                                                                          std::array<int, 2>{nw_, wlk_nterms},
+                                                                          std::array<int, 2>{w0, 0});
+        read.read(hslab, std::string("walkers_") + std::to_string(bi));
+        for (int n = 0; n < nw_; n++, nread++)
+          wset.copyFromIO(Data[n], nread);
       }
       ni += wlk_per_blk[bi++];
     }
@@ -266,76 +279,75 @@ bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, std::string hdf_read_restar
 
   read.close();
   return true;
-
 }
 
-template<class WalkerSet,
-         typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type
-        >
+template<class WalkerSet, typename = typename std::enable_if<(WalkerSet::contiguous_walker)>::type>
 bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
 {
   TaskGroup_& TG = wset.getTG();
 
-  if(TG.TG_local().root()) {
-
+  if (TG.TG_local().root())
+  {
     int nW = wset.size();
 
     auto nw_per_tg = TG.TG_heads().all_gather_value(nW);
 
-    int nWtot = std::accumulate(nw_per_tg.begin(),nw_per_tg.end(),int(0));
-    int w0 = std::accumulate(nw_per_tg.begin(),
-                             nw_per_tg.begin()+TG.TG_heads().rank(),int(0));
+    int nWtot = std::accumulate(nw_per_tg.begin(), nw_per_tg.end(), int(0));
+    int w0    = std::accumulate(nw_per_tg.begin(), nw_per_tg.begin() + TG.TG_heads().rank(), int(0));
 
     auto walker_type = wset.getWalkerType();
 
     // careful here, avoid sending extra information (e.g. B mats for back propg)
     int wlk_nterms = wset.walkerSizeIO();
-    int wlk_sz = wlk_nterms*sizeof(ComplexType);
+    int wlk_sz     = wlk_nterms * sizeof(ComplexType);
 
 #if defined(__ENABLE_PHDF5__)
 
     // parallel I/O
     APP_ABORT("Restarting with parallel HDF5 not implemented yet.\n");
-    int nwlk_per_block = std::min(std::max(1,WALKER_HDF_BLOCK_SIZE/wlk_sz),nW);
-    int nblks = (nW-1)/nwlk_per_block + 1;
-    auto nblks_per_tg = TG.TG_heads().all_gather_value(nblks);
-    int nblkTot = std::accumulate(nblks_per_tg.begin(),
-                             nblks_per_tg.end(),int(0));
-    int blk0 = std::accumulate(nblks_per_tg.begin(),
-                             nblks_per_tg.begin()+TG.TG_heads().rank(),int(0));
+    int nwlk_per_block = std::min(std::max(1, WALKER_HDF_BLOCK_SIZE / wlk_sz), nW);
+    int nblks          = (nW - 1) / nwlk_per_block + 1;
+    auto nblks_per_tg  = TG.TG_heads().all_gather_value(nblks);
+    int nblkTot        = std::accumulate(nblks_per_tg.begin(), nblks_per_tg.end(), int(0));
+    int blk0           = std::accumulate(nblks_per_tg.begin(), nblks_per_tg.begin() + TG.TG_heads().rank(), int(0));
     std::vector<int> wlk_per_blk(nblks);
 
-//    if(TG.TG_heads().root()) {
+    //    if(TG.TG_heads().root()) {
 
-      // check that restart data doesnot exist 
-      std::string path = "/Walkers/WalkerSet";
-      if(dump.is_group( path )) {
-        app_error()<<" ERROR: H5Group /Walkers/WalkerSet already exists in restart file. This is a bug and should not happen. Contact a developer.\n";
-        return false;
-      }
+    // check that restart data doesnot exist
+    std::string path = "/Walkers/WalkerSet";
+    if (dump.is_group(path))
+    {
+      app_error() << " ERROR: H5Group /Walkers/WalkerSet already exists in restart file. This is a bug and should not "
+                     "happen. Contact a developer.\n";
+      return false;
+    }
 
-      int NMO, NAEA, NAEB=0;
-      { // to limit the scope
-        auto w = wset[0];
-        NMO = w.SlaterMatrix(Alpha).size(0);
-        NAEA = w.SlaterMatrix(Alpha).size(1);
-        if(walker_type==COLLINEAR) NAEB = w.SlaterMatrix(Beta).size(1)
-      }
+    int NMO, NAEA, NAEB = 0;
+    { // to limit the scope
+      auto w = wset[0];
+      NMO    = (*w.SlaterMatrix(Alpha)).size(0);
+      NAEA   = (*w.SlaterMatrix(Alpha)).size(1);
+      if (walker_type == COLLINEAR)
+        NAEB = (*w.SlaterMatrix(Beta)).size(1)
+      if (walker_type == NONCOLLINEAR) 
+        NMO /= 2;
+    }
 
-      std::vector<int> Idata(7);
-      Idata[0]=nWtot;
-      Idata[1]=nblkTot;
-      Idata[2]=wlk_nterms;
-      Idata[3]=wlk_sz;
-      Idata[4]=NMO;
-      Idata[5]=NAEA;
-      Idata[6]=NAEB;
+    std::vector<int> Idata(7);
+    Idata[0] = nWtot;
+    Idata[1] = nblkTot;
+    Idata[2] = wlk_nterms;
+    Idata[3] = wlk_sz;
+    Idata[4] = NMO;
+    Idata[5] = NAEA;
+    Idata[6] = NAEB;
 
-      dump.push("Walkers");
-      dump.push("WalkerSet");
-      dump.write(Idata,"dims");
+    dump.push("Walkers");
+    dump.push("WalkerSet");
+    dump.write(Idata, "dims");
 
-//    } 
+    //    }
     APP_ABORT("FINISH.\n");
 
     // loop through blocks and use double hyperslabs
@@ -343,19 +355,21 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
 #else
 
     // communicate to root
-    int nwlk_per_block = std::min(std::max(1,WALKER_HDF_BLOCK_SIZE/wlk_sz),nWtot);
-    int nblks = (nWtot-1)/nwlk_per_block + 1;
+    int nwlk_per_block = std::min(std::max(1, WALKER_HDF_BLOCK_SIZE / wlk_sz), nWtot);
+    int nblks          = (nWtot - 1) / nwlk_per_block + 1;
     std::vector<int> wlk_per_blk;
 
-    boost::multi::array<ComplexType,2> SendBuff, RecvBuff;
-    boost::multi::array<int,1> counts, displ;
+    boost::multi::array<ComplexType, 2> RecvBuff;
+    boost::multi::array<int, 1> counts, displ;
 
-    if(TG.TG_heads().root()) {
-
+    if (TG.TG_heads().root())
+    {
       // check that restart data doesnot exist
       std::string path = "/Walkers/WalkerSet";
-      if(dump.is_group( path )) {
-        app_error()<<" ERROR: H5Group /Walkers/WalkerSet already exists in restart file. This is a bug and should not happen. Contact a developer.\n";
+      if (dump.is_group(path))
+      {
+        app_error() << " ERROR: H5Group /Walkers/WalkerSet already exists in restart file. This is a bug and should "
+                       "not happen. Contact a developer.\n";
         return false;
       }
 
@@ -363,100 +377,105 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
       displ.reextent({TG.TG_heads().size()});
       wlk_per_blk.reserve(nblks);
 
-      int NMO, NAEA, NAEB=0;
+      int NMO, NAEA, NAEB = 0;
       { // to limit the scope
         auto w = wset[0];
-        NMO = w.SlaterMatrix(Alpha).size(0);
-        NAEA = w.SlaterMatrix(Alpha).size(1);
-        if(walker_type==COLLINEAR) NAEB = w.SlaterMatrix(Beta).size(1);
+        NMO    = (*w.SlaterMatrix(Alpha)).size(0);
+        NAEA   = (*w.SlaterMatrix(Alpha)).size(1);
+        if (walker_type == COLLINEAR) 
+          NAEB = (*w.SlaterMatrix(Beta)).size(1); 
+        if (walker_type == NONCOLLINEAR) 
+          NMO /= 2;
       }
 
       std::vector<int> Idata(7);
-      Idata[0]=nWtot;
-      Idata[1]=nblks;
-      Idata[2]=wlk_nterms;
-      Idata[3]=wlk_sz;
-      Idata[4]=NMO;
-      Idata[5]=NAEA;
-      Idata[6]=NAEB;
+      Idata[0] = nWtot;
+      Idata[1] = nblks;
+      Idata[2] = wlk_nterms;
+      Idata[3] = wlk_sz;
+      Idata[4] = NMO;
+      Idata[5] = NAEA;
+      Idata[6] = NAEB;
 
       dump.push("Walkers");
       dump.push("WalkerSet");
-      dump.write(Idata,"dims");
-
+      dump.write(Idata, "dims");
     }
 
-    int nsent=0;
+    int nsent = 0;
     // ready to send walkers to head in blocks
-    for(int i=0, ndone=0; i<nblks; i++, ndone+=nwlk_per_block) {
+    for (int i = 0, ndone = 0; i < nblks; i++, ndone += nwlk_per_block)
+    {
+      boost::multi::array<ComplexType, 2> SendBuff;
+      int nwlk_tot   = std::min(nwlk_per_block, nWtot - ndone);
+      int nw_to_send = 0;
+      if (w0 + nsent >= ndone && w0 + nsent < ndone + nwlk_tot)
+        nw_to_send = std::min(nW - nsent, (ndone + nwlk_tot) - (w0 + nsent));
 
-      int nwlk_tot = std::min(nwlk_per_block,nWtot-ndone);
-      int nw_to_send=0;
-      if( w0+nsent >= ndone && w0+nsent < ndone + nwlk_tot)
-        nw_to_send = std::min(nW-nsent,(ndone+nwlk_tot)-(w0+nsent));
-
-      if(TG.TG_heads().root()) {
-
-        for(int p=0, nt=0; p<TG.TG_heads().size(); p++) {
-
+      if (TG.TG_heads().root())
+      {
+        for (int p = 0, nt = 0; p < TG.TG_heads().size(); p++)
+        {
           int n_ = 0;
-          int nn = nt + nW;
-          if( ndone+nwlk_tot > nt && ndone < nt+nW ) {
-            if(ndone <= nt)
-              n_ = std::min(nW,(ndone+nwlk_tot)-nt);
+          if (ndone + nwlk_tot > nt && ndone < nt + nW)
+          {
+            if (ndone <= nt)
+              n_ = std::min(nW, (ndone + nwlk_tot) - nt);
             else
-              n_ = std::min(nt+nW-ndone,nwlk_tot);
+              n_ = std::min(nt + nW - ndone, nwlk_tot);
           }
 
-          counts[p]=n_*wlk_nterms;
-          nt+=nw_per_tg[p];
-
+          counts[p] = n_ * wlk_nterms;
+          nt += nw_per_tg[p];
         }
-        displ[0]=0;
-        for(int p=1, nt=0; p<TG.TG_heads().size(); p++) {
-          nt += counts[p-1];
-          displ[p]=nt;
+        displ[0] = 0;
+        for (int p = 1, nt = 0; p < TG.TG_heads().size(); p++)
+        {
+          nt += counts[p - 1];
+          displ[p] = nt;
         }
 
-        RecvBuff.reextent({nwlk_tot,wlk_nterms});
+        RecvBuff.reextent({nwlk_tot, wlk_nterms});
       }
 
-      if(nw_to_send>0) {
-        SendBuff.reextent({nw_to_send,wlk_nterms});
-        for(int p=0; p<nw_to_send; p++) {
-          wset.copyToIO(SendBuff[p],nsent+p);
+      if (nw_to_send > 0)
+      {
+        SendBuff.reextent({nw_to_send, wlk_nterms});
+        for (int p = 0; p < nw_to_send; p++)
+        {
+          wset.copyToIO(SendBuff[p], nsent + p);
         }
       }
 
-      TG.TG_heads().gatherv_n(SendBuff.origin(), SendBuff.num_elements(), RecvBuff.origin(), counts.data(), displ.data(), 0);
+      TG.TG_heads().gatherv_n(SendBuff.origin(), SendBuff.num_elements(), RecvBuff.origin(), counts.data(),
+                              displ.data(), 0);
       nsent += nw_to_send;
 
-      if(TG.TG_heads().root()) {
-        dump.write(RecvBuff,std::string("walkers_")+std::to_string(i));
+      if (TG.TG_heads().root())
+      {
+        dump.write(RecvBuff, std::string("walkers_") + std::to_string(i));
         wlk_per_blk.push_back(nwlk_tot);
       }
 
       // not sure if necessary, but avoids avalanche of messages on head node
       TG.TG_heads().barrier();
-
     }
 
-    if(TG.TG_heads().root()) {
-      dump.write(wlk_per_blk,"wlk_per_blk");
+    if (TG.TG_heads().root())
+    {
+      dump.write(wlk_per_blk, "wlk_per_blk");
       dump.pop();
       dump.pop();
     }
 #endif
-
   }
 
   TG.global_barrier();
   return true;
 }
 
-}
+} // namespace afqmc
 
-}
+} // namespace qmcplusplus
 
 #endif
-

@@ -14,8 +14,8 @@
 
 #ifndef QMCPLUSPLUS_COLLECTABLES_ESTIMATOR_H
 #define QMCPLUSPLUS_COLLECTABLES_ESTIMATOR_H
-#include <Estimators/ScalarEstimatorBase.h>
-#include <QMCHamiltonians/QMCHamiltonian.h>
+#include "Estimators/ScalarEstimatorBase.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
@@ -41,6 +41,9 @@ public:
   void add2Record(RecordListType& record);
   /** do nothing with accumulate */
   void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) {}
+
+  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt) {}
+  
   /** accumulate the collectables */
   inline void accumulate_all(const MCWalkerConfiguration::Buffer_t& data, RealType wgt)
   {

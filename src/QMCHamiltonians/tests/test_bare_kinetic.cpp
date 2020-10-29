@@ -10,21 +10,15 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
-#include "Particle/SymmetricDistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
+#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
 
@@ -38,7 +32,6 @@ namespace qmcplusplus
 TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions;
@@ -59,17 +52,12 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   elec.R[1][1] = 1.0;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet& tspecies = elec.getSpeciesSet();
-  int upIdx            = tspecies.addSpecies("u");
-  int downIdx          = tspecies.addSpecies("d");
-  //int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  //tspecies(chargeIdx, upIdx) = -1;
-  //tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx)   = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
+  SpeciesSet& tspecies     = elec.getSpeciesSet();
+  int upIdx                = tspecies.addSpecies("u");
+  int massIdx              = tspecies.addAttribute("mass");
+  tspecies(massIdx, upIdx) = 1.0;
 
-  elec.addTable(ions, DT_AOS);
+  elec.addTable(ions);
   elec.update();
 
 
@@ -116,16 +104,15 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   typedef QMCTraits::ValueType ValueType;
   typedef QMCTraits::PosType PosType;
 
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   //Cell definition:
 
-  Uniform3DGridLayout grid;
-  grid.BoxBConds = true; // periodic
-  grid.R.diagonal(20);
-  grid.LR_dim_cutoff = 15;
-  grid.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
+  Lattice.BoxBConds = true; // periodic
+  Lattice.R.diagonal(20);
+  Lattice.LR_dim_cutoff = 15;
+  Lattice.reset();
 
 
   ParticleSet ions;
@@ -147,13 +134,14 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice.copy(grid);
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
-  elec.Lattice.copy(grid);
+  elec.Lattice = Lattice;
   elec.setName("e");
-  elec.create(2);
+  std::vector<int> agroup(2, 1);
+  elec.create(agroup);
   elec.R[0][0] = 2.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -182,21 +170,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-  int myTableIndex = -1;
-#ifdef ENABLE_SOA
-  myTableIndex = elec.addTable(ions, DT_SOA);
-  ions.addTable(ions, DT_SOA);
-#else
-  myTableIndex = elec.addTable(ions, DT_AOS);
-  ions.addTable(ions, DT_AOS);
-#endif
-
-  ions.update();
-  elec.update();
-
-
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction psi;
 
   //Add the two body jastrow
   const char* particles = "<tmp> \
@@ -215,9 +190,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow(elec, psi);
-  bool build_okay = jastrow.put(jas2);
-  REQUIRE(build_okay);
+  RadialJastrowBuilder jastrow(c, elec);
+  psi.addComponent(jastrow.buildComponent(jas2));
   // Done with two body jastrow.
 
   //Add the one body jastrow.
@@ -236,9 +210,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
-  RadialJastrowBuilder jastrow1bdy(elec, psi, ions);
-  bool build_okay2 = jastrow1bdy.put(jas1);
-  REQUIRE(build_okay2);
+  RadialJastrowBuilder jastrow1bdy(c, elec, ions);
+  psi.addComponent(jastrow1bdy.buildComponent(jas1));
 
   const char* kexml = "<tmp> \
 </tmp> \
@@ -251,6 +224,10 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   BareKineticEnergy<double> bare_ke(elec);
   bare_ke.put(h1);
 
+  // update all distance tables
+  ions.update();
+  elec.update();
+
   RealType logpsi = psi.evaluateLog(elec);
 
   RealType keval = bare_ke.evaluate(elec);
@@ -258,7 +235,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   //This is validated against an alternate code path (waveefunction tester for local energy).
   REQUIRE(keval == Approx(-0.147507745));
 
-#ifdef ENABLE_SOA
   ParticleSet::ParticlePos_t HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
@@ -273,7 +249,5 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   REQUIRE(PulayTerm[1][0] == Approx(-0.12145));
   REQUIRE(PulayTerm[1][1] == Approx(0.0));
   REQUIRE(PulayTerm[1][2] == Approx(0.0));
-
-#endif
 }
 } // namespace qmcplusplus

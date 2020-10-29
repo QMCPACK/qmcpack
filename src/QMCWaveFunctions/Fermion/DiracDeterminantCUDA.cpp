@@ -19,10 +19,9 @@
  */
 
 #include "DiracDeterminantCUDA.h"
-#include "Numerics/CUDA/cuda_inverse.h"
-#include "QMCWaveFunctions/Fermion/determinant_update.h"
-#include "QMCWaveFunctions/Fermion/delayed_update.h"
-#include "Numerics/CUDA/cuda_inverse.h"
+#include "CUDA_legacy/cuda_inverse.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/determinant_update.h"
+#include "QMCWaveFunctions/detail/CUDA_legacy/delayed_update.h"
 #include "Numerics/DeterminantOperators.h"
 #include <unistd.h>
 
@@ -32,26 +31,26 @@
 namespace qmcplusplus
 {
 DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase(spos, first),
+    : DiracDeterminantBase("DiracDeterminantCUDA", spos, first),
       UpdateJobList_d("DiracDeterminant::UpdateJobList_d"),
       srcList_d("DiracDeterminant::srcList_d"),
       destList_d("DiracDeterminant::destList_d"),
       AList_d("DiracDeterminant::AList_d"),
       AinvList_d("DiracDeterminant::AinvList_d"),
-      AinvUList_d("DiracDeterminant::AinvUList_d"),
       newRowList_d("DiracDeterminant::newRowList_d"),
+      LemmaList_d("DiracDeterminant::LemmaList_d"),
+      LemmaLUList_d("DiracDeterminant::LemmaLUList_d"),
+      LemmaInvList_d("DiracDeterminant::LemmaInvList_d"),
+      AinvUList_d("DiracDeterminant::AinvUList_d"),
       AinvDeltaList_d("DiracDeterminant::AinvDeltaList_d"),
       AinvColkList_d("DiracDeterminant::AinvColkList_d"),
       gradLaplList_d("DiracDeterminant::gradLaplList_d"),
       newGradLaplList_d("DiracDeterminant::newGradLaplList_d"),
       AWorkList_d("DiracDeterminant::AWorkList_d"),
       AinvWorkList_d("DiracDeterminant::AinvWorkList_d"),
+      GLList_d("DiracDeterminant::GLList_d"),
       PivotArray_d("DiracDeterminant::PivotArray_d"),
       infoArray_d("DiracDeterminant::infoArray_d"),
-      GLList_d("DiracDeterminant::GLList_d"),
-      LemmaList_d("DiracDeterminant::LemmaList_d"),
-      LemmaLUList_d("DiracDeterminant::LemmaLUList_d"),
-      LemmaInvList_d("DiracDeterminant::LemmaInvList_d"),
       ratio_d("DiracDeterminant::ratio_d"),
       gradLapl_d("DiracDeterminant::gradLapl_d"),
       iatList_d("DiracDeterminant::iatList_d"),
@@ -66,7 +65,6 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const spos, int first)
 {
   for (int i = 0; i < 2; ++i)
     NLratios_d[i] = gpu::device_vector<CTS::ValueType>("DiracDeterminant::NLratios_d");
-  ClassName = "DiracDeterminantCUDA";
 }
 
 /////////////////////////////////////

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Estimators/CSEnergyEstimator.h"
+#include "CSEnergyEstimator.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -98,15 +98,16 @@ void CSEnergyEstimator::registerObservables(std::vector<observable_helper*>& h5d
 
 void CSEnergyEstimator::accumulate(const Walker_t& awalker, RealType wgt)
 {
+  using WP = WalkerProperties::Indexes;
   std::vector<double> weightaverage(NumCopies);
   //first copy data to tmp_dat to calculate differences
   for (int i = 0; i < NumCopies; i++)
   {
     const RealType* restrict prop = awalker.getPropertyBase(i);
     RealType* restrict prop_saved = tmp_data[i];
-    uweights[i]                   = prop[UMBRELLAWEIGHT];
-    *prop_saved++                 = prop[LOCALENERGY];
-    *prop_saved++                 = prop[LOCALPOTENTIAL];
+    uweights[i]                   = prop[WP::UMBRELLAWEIGHT];
+    *prop_saved++                 = prop[WP::LOCALENERGY];
+    *prop_saved++                 = prop[WP::LOCALPOTENTIAL];
     std::copy(prop + FirstHamiltonian, prop + LastHamiltonian, prop_saved);
   }
 

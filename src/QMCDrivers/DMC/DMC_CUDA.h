@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_DMC_CUDA_H
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
-#include "Utilities/NewTimer.h"
+#include "Utilities/TimerManager.h"
 #include "type_traits/CUDATypes.h"
 
 namespace qmcplusplus
@@ -34,7 +34,6 @@ public:
   DMCcuda(MCWalkerConfiguration& w,
           TrialWaveFunction& psi,
           QMCHamiltonian& h,
-          WaveFunctionPool& ppool,
           Communicate* comm);
   bool run();
   bool put(xmlNodePtr cur);
@@ -61,13 +60,15 @@ private:
   bool checkBounds(const PosType& newpos);
   void checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid);
 
+  QMCRunType getRunType() { return QMCRunType::DMC; }
+
   ///hide initialization from the main function
   void resetRun();
   NonLocalTOperator NLop;
   ///use T-moves
   int UseTMove;
 
-  NewTimer ResizeTimer, DriftDiffuseTimer, BranchTimer, HTimer;
+  NewTimer& ResizeTimer, &DriftDiffuseTimer, &BranchTimer, &HTimer;
 };
 } // namespace qmcplusplus
 

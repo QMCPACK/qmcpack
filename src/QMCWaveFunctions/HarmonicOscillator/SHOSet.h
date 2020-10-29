@@ -14,8 +14,8 @@
 #ifndef QMCPLUSPLUS_SHOSET_H
 #define QMCPLUSPLUS_SHOSET_H
 
-#include <QMCWaveFunctions/SPOSet.h>
-#include <QMCWaveFunctions/SPOInfo.h>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOInfo.h"
 
 
 namespace qmcplusplus
@@ -74,9 +74,9 @@ struct SHOSet : public SPOSet
   //SPOSet interface methods
   SPOSet* makeClone() const;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -102,10 +102,6 @@ struct SHOSet : public SPOSet
   /// number of orbitals is determined only by initial request
   inline void setOrbitalSetSize(int norbs) {}
 
-  /// does not affect ParticleSet information
-  inline void resetTargetParticleSet(ParticleSet& P) {}
-
-
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
   {
@@ -116,7 +112,6 @@ struct SHOSet : public SPOSet
   //methods to be implemented in the future (possibly)
   void resetParameters(const opt_variables_type& optVariables);
   void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& ddpsi);
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& dddlogdet);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,

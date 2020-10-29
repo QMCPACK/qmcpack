@@ -19,19 +19,13 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <type_traits/QMCTypes.h>
-#include <OhmmsData/OhmmsElementBase.h>
-#include <OhmmsData/RecordProperty.h>
-#if OHMMS_DIM == 3
-#include <Lattice/Uniform3DGridLayout.h>
-#elif OHMMS_DIM == 2
-#include <Lattice/Uniform2DGridLayout.h>
-#else
-#error "Only 2D and 3D are implemented.\n"
-#endif
-#include <ParticleBase/ParticleAttrib.h>
-#include <Utilities/OutputManager.h>
-#include <Message/Communicate.h>
+#include "type_traits/QMCTypes.h"
+#include "OhmmsData/OhmmsElementBase.h"
+#include "OhmmsData/RecordProperty.h"
+#include "Particle/Lattice/CrystalLattice.h"
+#include "Particle/ParticleBase/ParticleAttrib.h"
+#include "Platforms/Host/OutputManager.h"
+#include "Message/Communicate.h"
 
 //define empty DEBUG_MEMORY
 #define DEBUG_MEMORY(msg)
@@ -68,23 +62,20 @@ struct QMCTraits
   typedef QTBase::TensorType TensorType;
   ///define other types
   typedef OHMMS_INDEXTYPE IndexType;
-  typedef QTFull::RealType EstimatorRealType;
+  typedef QTFull::RealType FullPrecRealType;
+  typedef QTFull::ValueType FullPrecValueType;
   ///define PropertyList_t
-  typedef RecordNamedProperty<EstimatorRealType> PropertySetType;
+  typedef RecordNamedProperty<FullPrecRealType> PropertySetType;
+
+  // Type for particle group index pairs
+  using PtclGrpIndexes = std::vector<std::pair<int,int>>;
 };
 
 /** Particle traits to use UniformGridLayout for the ParticleLayout.
  */
 struct PtclOnLatticeTraits
 {
-#if OHMMS_DIM == 3
-  typedef Uniform3DGridLayout ParticleLayout_t;
-#elif OHMMS_DIM == 2
-  typedef Uniform2DGridLayout ParticleLayout_t;
-#else
-  typedef UniformGridLayout<OHMMS_PRECISION, OHMMS_DIM> ParticleLayout_t;
-#endif
-
+  using ParticleLayout_t = CrystalLattice<OHMMS_PRECISION, OHMMS_DIM>;
   using QTFull = QMCTraits::QTFull;
 
   typedef int Index_t;

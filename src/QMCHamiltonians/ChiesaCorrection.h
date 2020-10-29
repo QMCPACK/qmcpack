@@ -14,12 +14,12 @@
 
 #ifndef QMCPLUSPLUS_CHIESA_CORRECTION_H
 #define QMCPLUSPLUS_CHIESA_CORRECTION_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
 {
-class ChiesaCorrection : public QMCHamiltonianBase
+class ChiesaCorrection : public OperatorBase
 {
 private:
   const TrialWaveFunction& psi_ref;
@@ -44,7 +44,7 @@ public:
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
 
 } // namespace qmcplusplus

@@ -15,8 +15,8 @@
 
 #ifndef QMCPLUSPLUS_PAIRCOOR_HAMILTONIAN_H
 #define QMCPLUSPLUS_PAIRCOOR_HAMILTONIAN_H
-#include <QMCHamiltonians/QMCHamiltonianBase.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus
 {
@@ -24,7 +24,7 @@ namespace qmcplusplus
  *
  * Compute pair correlation function for the target particle set and optionally any source particles
  */
-class PairCorrEstimator : public QMCHamiltonianBase
+class PairCorrEstimator : public OperatorBase
 {
 public:
   /** constructor
@@ -47,8 +47,9 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
+  void set_norm_factor();
   void report();
 
 private:
@@ -74,6 +75,8 @@ private:
   Matrix<RealType> norm_factor;
   int num_species, N_e;
   std::vector<RealType> n_vec;
+  // AA table ID
+  const int d_aa_ID_;
   /////data
   //Matrix<RealType> gof_r;
   ///prefix of each gof_r

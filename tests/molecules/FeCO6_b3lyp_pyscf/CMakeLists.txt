@@ -19,7 +19,7 @@ IF (NOT QMC_CUDA)
                     vmc_short_noj
                     vmc_short_noj.in.xml
                     1 16
-                    ${SOA_SUCCESS}
+                    TRUE
                     0 FeCO6_PYSCF_SHORT # VMC
                     )
 
@@ -32,14 +32,14 @@ IF (NOT QMC_CUDA)
                     vmc_long_noj
                     vmc_long_noj.in.xml
                     1 16
-                    ${SOA_SUCCESS}
+                    TRUE
                     0 FeCO6_PYSCF_LONG # VMC
                     )
 
   ELSE()
-    MESSAGE("Skipping  FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+    MESSAGE_VERBOSE("Skipping  FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   ENDIF()
 ELSE()
-    MESSAGE("Skipping FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+    MESSAGE_VERBOSE("Skipping FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
 

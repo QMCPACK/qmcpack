@@ -18,21 +18,27 @@
  */
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
-#include "config.h"
 #include <iostream>
-#include <spline2/BsplineAllocator.hpp>
-#include <stdlib.h>
+#include <cstdlib>
+#include <type_traits>
+#include "config.h"
+#include "spline2/BsplineAllocator.hpp"
 
 namespace qmcplusplus
 {
 /** container class to hold a 3D multi spline pointer and BsplineAllocator
-   * @tparam T the precision of splines
-   * @tparam ALIGN the alignment of the orbital dimention
-   * @tparam ALLOC memory allocator
-   */
-template<typename T, size_t ALIGN = QMC_CLINE, typename ALLOC = Mallocator<T, ALIGN>>
-struct MultiBspline
+ * @tparam T the precision of splines
+ * @tparam ALLOC memory allocator
+ *
+ * This class contains a pointer to a C object, copy and assign of this class is forbidden.
+ */
+template<typename T,
+         typename COEFS_ALLOC         = aligned_allocator<T>,
+         typename MULTI_SPLINE_ALLOC  = aligned_allocator<typename bspline_traits<T, 3>::SplineType>,
+         typename SINGLE_SPLINE_ALLOC = aligned_allocator<typename bspline_traits<T, 3>::SingleSplineType>>
+class MultiBspline
 {
+private:
   ///define the einsplie object type
   using SplineType = typename bspline_traits<T, 3>::SplineType;
   ///define the real type
@@ -40,8 +46,9 @@ struct MultiBspline
   ///actual einspline multi-bspline object
   SplineType* spline_m;
   ///use allocator
-  BsplineAllocator<T, ALIGN, ALLOC> myAllocator;
+  BsplineAllocator<T, COEFS_ALLOC, MULTI_SPLINE_ALLOC, SINGLE_SPLINE_ALLOC> myAllocator;
 
+public:
   MultiBspline() : spline_m(nullptr) {}
   MultiBspline(const MultiBspline& in) = delete;
   MultiBspline& operator=(const MultiBspline& in) = delete;
@@ -52,12 +59,20 @@ struct MultiBspline
       myAllocator.destroy(spline_m);
   }
 
+  SplineType* getSplinePtr() { return spline_m; }
+
   /** create the einspline as used in the builder
-       */
+   * @tparam GT grid type
+   * @tparam BCT boundary type
+   * @param bc num_splines number of splines
+   *
+   * num_splines must be padded to the aligned size. The caller must be aware of padding and pad all result arrays.
+   */
   template<typename GT, typename BCT>
   void create(GT& grid, BCT& bc, int num_splines)
   {
-    if (getAlignedSize<T, ALIGN>(num_splines) != num_splines)
+    static_assert(std::is_same<T, typename COEFS_ALLOC::value_type>::value, "MultiBspline and ALLOC data types must agree!");
+    if (getAlignedSize<T, COEFS_ALLOC::alignment>(num_splines) != num_splines)
       throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!\n");
     if (spline_m == nullptr)
     {
@@ -76,6 +91,8 @@ struct MultiBspline
       zBC.rVal  = static_cast<T>(bc[2].rVal);
       spline_m  = myAllocator.allocateMultiBspline(grid[0], grid[1], grid[2], xBC, yBC, zBC, num_splines);
     }
+    else
+      throw std::runtime_error("MultiBspline::spline_m cannot be created twice!\n");
   }
 
   void flush_zero() const
@@ -89,9 +106,10 @@ struct MultiBspline
   size_t sizeInByte() const { return (spline_m == nullptr) ? 0 : spline_m->coefs_size * sizeof(T); }
 
   /** copy a single spline to the big table
-       * @param aSpline UBspline_3d_(d,s)
-       * @param int index of aSpline
-       */
+   * @tparam SingleSpline single spline type
+   * @param aSpline UBspline_3d_(d,s)
+   * @param int index of aSpline
+   */
   template<typename SingleSpline>
   void copy_spline(SingleSpline* aSpline, int i)
   {

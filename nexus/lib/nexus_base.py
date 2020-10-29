@@ -28,9 +28,10 @@
 import os
 import traceback
 import gc as garbage_collector
+from versions import nexus_version
 from memory import resident
 from generic import obj
-from developer import DevBase
+from developer import DevBase,log
 
 
 # Nexus namespaces
@@ -78,7 +79,7 @@ nexus_core_defaults = obj(
     generate_only     = False,             # used by: Simulation,Machine
     sleep             = 3,                 # used by: ProjectManager
     runs              = 'runs',            # used by: Simulation,Machine
-    results           = 'results',         # used by: Simulation
+    results           = '',                # used by: Simulation
     local_directory   = './',              # used by: Simulation,Machine
     remote_directory  = './',              # used by: Simulation
     file_locations    = ['./'],            # used by: Simulation
@@ -111,7 +112,7 @@ def restore_nexus_core_defaults():
 
     nexus_core.set(**nexus_core_defaults.copy())
     nexus_noncore.set(**nexus_noncore_defaults.copy())
-    nexus_core_noncore.transfer_from(nexus_core,keys=nexus_core_noncore_defaults.keys())
+    nexus_core_noncore.transfer_from(nexus_core,keys=list(nexus_core_noncore_defaults.keys()))
 #end def restore_nexus_core_defaults
 
 restore_nexus_core_defaults()
@@ -134,25 +135,21 @@ class NexusCore(DevBase):
 
     @staticmethod
     def write_splash():
-        return # don't do this yet
         if not NexusCore.wrote_splash:
             splash_text = '''
 _____________________________________________________
-   _         _______                       _______   
-  | \    /| |  ____ \ |\     /| |\     /| |  ____ \  
-  |  \  | | | |    \/ | \   / | | |   | | | |    \/  
-  |   \ | | | |__      \ \_/ /  | |   | | | |_____   
-  | |\ \| | |  __|      | _ |   | |   | | |_____  |  
-  | | \   | | |        / / \ \  | |   | |       | |  
-  | |  \  | | |____/\ | /   \ | | |___| | /\____| |  
-  |/    \_| |_______/ |/     \| |_______| \_______|  
+
+                     Nexus {}.{}.{}
+
+        (c) Copyright 2012-  Nexus developers
+
+                     Please cite:
+  J. T. Krogel Comput. Phys. Commun. 198 154 (2016)
+     https://doi.org/10.1016/j.cpc.2015.08.012
 _____________________________________________________
-                                               
-            Main author: Jaron T. Krogel            
-            ____________________________
           
-            '''
-            print splash_text
+            '''.format(*nexus_version)
+            log(splash_text)
             NexusCore.wrote_splash = True
         #end if
     #end def write_splash
@@ -164,7 +161,7 @@ _____________________________________________________
 _____________________________________________________
 _____________________________________________________
             '''
-        print splash_text
+        print(splash_text)
     #end def write_end_splash
 
     def mem_usage(self):

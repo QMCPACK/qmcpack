@@ -36,24 +36,22 @@
 
 namespace qmcplusplus
 {
-class BackflowBuilder : public WaveFunctionComponentBuilder
+class BackflowBuilder
 {
-  typedef LRHandlerBase HandlerType;
-  typedef LinearGrid<RealType> GridType;
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+  using RealType = BackflowFunctionBase::RealType;
+  using HandlerType = LRHandlerBase;
+  using GridType = LinearGrid<RealType>;
+  using PtclPoolType = std::map<std::string, ParticleSet*>;
 
 public:
-  BackflowBuilder(ParticleSet& p, PtclPoolType& pool, TrialWaveFunction& psi);
+  BackflowBuilder(ParticleSet& p, PtclPoolType& pool);
 
-  ~BackflowBuilder();
-
-  bool put(xmlNodePtr cur);
-
-  BackflowTransformation* getBFTrans() { return BFTrans; }
+  BackflowTransformation* buildBackflowTransformation(xmlNodePtr cur);
 
   RealType cutOff;
 
 private:
+  ParticleSet& targetPtcl;
   PtclPoolType& ptclPool;
   BackflowTransformation* BFTrans;
   bool IgnoreSpin;

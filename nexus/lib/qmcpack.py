@@ -30,15 +30,14 @@ from numpy.linalg import inv,norm
 from generic import obj
 from periodic_table import periodic_table
 from physical_system import PhysicalSystem
-from simulation import Simulation
+from simulation import Simulation,NullSimulationAnalyzer
 from qmcpack_input import QmcpackInput,generate_qmcpack_input
 from qmcpack_input import TracedQmcpackInput
 from qmcpack_input import loop,linear,cslinear,vmc,dmc,collection,determinantset,hamiltonian,init,pairpot,bspline_builder
 from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3
 from qmcpack_input import generate_opt,generate_opts
 from qmcpack_analyzer import QmcpackAnalyzer
-from qmcpack_converters import Pw2qmcpack,Wfconvert,Convert4qmc
-from sqd import Sqd
+from qmcpack_converters import Pw2qmcpack,Convert4qmc,PyscfToAfqmc
 from debug import ci,ls,gs
 from developer import unavailable
 from nexus_base import nexus_core
@@ -60,10 +59,22 @@ class Qmcpack(Simulation):
     application_results    = set(['jastrow','cuspcorr','wavefunction'])
 
 
+    def has_afqmc_input(self):
+        afqmc_input = False
+        if not self.has_generic_input():
+            afqmc_input = self.input.is_afqmc_input()
+        #end if
+        return afqmc_input
+    #end def has_afqmc_input
+
+
     def post_init(self):
         generic_input = self.has_generic_input()
 
-        if self.system is None:
+        if self.has_afqmc_input():
+            self.analyzer_type = NullSimulationAnalyzer
+            self.should_twist_average = False
+        elif self.system is None:
             if not generic_input:
                 self.warn('system must be specified to determine whether to twist average\nproceeding under the assumption of no twist averaging')
             #end if
@@ -109,7 +120,7 @@ class Qmcpack(Simulation):
         if self.system is None:
             self.should_twist_average = False
         elif nexus_core.generate_only:
-            twistnums = range(len(self.system.structure.kpoints))
+            twistnums = list(range(len(self.system.structure.kpoints)))
             if self.should_twist_average:
                 self.twist_average(twistnums)
             #end if
@@ -124,8 +135,6 @@ class Qmcpack(Simulation):
             calculating_result = 'opt' in calctypes
         elif result_name=='cuspcorr':
             calculating_result = self.input.cusp_correction()
-        else:
-            self.error('ability to check for result '+result_name+' has not been implemented')
         #end if        
         return calculating_result
     #end def check_result
@@ -133,14 +142,19 @@ class Qmcpack(Simulation):
 
     def get_result(self,result_name,sim):
         result = obj()
-        analyzer = self.load_analyzer_image()
         if result_name=='jastrow' or result_name=='wavefunction':
+            analyzer = self.load_analyzer_image()
             if not 'results' in analyzer or not 'optimization' in analyzer.results:
-                self.error('analyzer did not compute results required to determine jastrow')
+                if self.should_twist_average:
+                    self.error('Wavefunction optimization was performed for each twist separately.\nCurrently, the transfer of per-twist wavefunction parameters from\none QMCPACK simulation to another is not supported.  Please either\nredo the optimization with a single twist (see "twist" or "twistnum"\noptions), or request that this feature be implemented.')
+                else:
+                    self.error('analyzer did not compute results required to determine jastrow')
+                #end if
             #end if
             opt_file = analyzer.results.optimization.optimal_file
             opt_file = str(opt_file)
             result.opt_file = os.path.join(self.locdir,opt_file)
+            del analyzer
         elif result_name=='cuspcorr':
             result.spo_up_cusps = os.path.join(self.locdir,self.identifier+'.spo-up.cuspInfo.xml')
             result.spo_dn_cusps = os.path.join(self.locdir,self.identifier+'.spo-dn.cuspInfo.xml')
@@ -149,7 +163,6 @@ class Qmcpack(Simulation):
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if        
-        del analyzer
         return result
     #end def get_result
 
@@ -158,7 +171,7 @@ class Qmcpack(Simulation):
         input = self.input
         system = self.system
         if result_name=='orbitals':
-            if isinstance(sim,Pw2qmcpack) or isinstance(sim,Wfconvert):
+            if isinstance(sim,Pw2qmcpack):
 
                 h5file = result.h5file
 
@@ -176,7 +189,7 @@ class Qmcpack(Simulation):
                 elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
                     orb_elem = wf.determinantset
                 else:
-                    self.error('could not incorporate pw2qmcpack/wfconvert orbitals\nbspline sposet_builder and determinantset are both missing')
+                    self.error('could not incorporate pw2qmcpack orbitals\nbspline sposet_builder and determinantset are both missing')
                 #end if
                 if 'href' in orb_elem and isinstance(orb_elem.href,str) and os.path.exists(orb_elem.href):
                     # user specified h5 file for orbitals, bypass orbital dependency
@@ -191,7 +204,7 @@ class Qmcpack(Simulation):
                     #twistnum   = 0,
                     meshfactor = 1.0
                     )
-                for var,val in defs.iteritems():
+                for var,val in defs.items():
                     if not var in orb_elem:
                         orb_elem[var] = val
                     #end if
@@ -210,61 +223,15 @@ class Qmcpack(Simulation):
                 #end if
                     
                 if not os.path.exists(h5file):
-                    self.error('wavefunction file not found:  \n'+h5file)
+                    self.error('wavefunction file not found:\n'+h5file)
                 #end if
 
-                twistnums = range(len(structure.kpoints))
+                twistnums = list(range(len(structure.kpoints)))
                 if self.should_twist_average:
                     self.twist_average(twistnums)
                 elif not has_twist and orb_elem.twistnum is None:
                     orb_elem.twistnum = twistnums[0]
                 #end if
-
-            elif isinstance(sim,Sqd):
-
-                h5file  = os.path.join(result.dir,result.h5file)
-                h5file  = os.path.relpath(h5file,self.locdir)
-
-                sqdxml_loc = os.path.join(result.dir,result.qmcfile)
-                sqdxml = QmcpackInput(sqdxml_loc)
-
-                #sqd sometimes puts the wrong ionic charge
-                #  rather than setting Z to the number of electrons
-                #  set it to the actual atomic number
-                g = sqdxml.qmcsystem.particlesets.atom.group
-                elem = g.name
-                if not elem in periodic_table.elements:
-                    self.error(elem+' is not an element in the periodic table')
-                #end if
-                g.charge = periodic_table.elements[elem].atomic_number
-
-                input = self.input
-                s = input.simulation
-                qsys_old = s.qmcsystem
-                del s.qmcsystem
-                s.qmcsystem = sqdxml.qmcsystem
-                if 'jastrows' in qsys_old.wavefunction:
-                    s.qmcsystem.wavefunction.jastrows = qsys_old.wavefunction.jastrows
-                    for jastrow in s.qmcsystem.wavefunction.jastrows:
-                        if 'type' in jastrow:
-                            jtype = jastrow.type.lower().replace('-','_')
-                            if jtype=='one_body':
-                                jastrow.source = 'atom'
-                            #end if
-                        #end if
-                    #end for
-                #end if
-                s.qmcsystem.hamiltonian = hamiltonian(
-                    name='h0',type='generic',target='e',
-                    pairpots = [
-                        pairpot(name='ElecElec',type='coulomb',source='e',target='e'),
-                        pairpot(name='Coulomb' ,type='coulomb',source='atom',target='e'),
-                        ]
-                    )
-                s.init = init(source='atom',target='e')
-
-                abset = input.get('atomicbasisset')
-                abset.href = h5file
 
             elif isinstance(sim,Convert4qmc):
 
@@ -283,8 +250,19 @@ class Qmcpack(Simulation):
                     dset.cuspcorrection = True
                 #end if
                 if 'orbfile' in result:
-                    h5file = result.orbfile
-                    dset.href = os.path.relpath(h5file,self.locdir)
+                    orb_h5file = result.orbfile
+                    if not os.path.exists(orb_h5file) and 'href' in dset:
+                        orb_h5file = os.path.join(sim.locdir,dset.href)
+                    #end if
+                    if not os.path.exists(orb_h5file):
+                        self.error('orbital h5 file from convert4qmc does not exist\nlocation checked: {}'.format(orb_h5file))
+                    #end if
+                    orb_path = os.path.relpath(orb_h5file,self.locdir)
+                    dset.href = orb_path
+                    detlist = dset.get('detlist')
+                    if detlist is not None and 'href' in detlist:
+                        detlist.href = orb_path
+                    #end if
                 #end if
                 qs.wavefunction = newwfn
 
@@ -301,14 +279,23 @@ class Qmcpack(Simulation):
                     if 'jastrow' in wf:
                         js = [wf.jastrow]
                     elif 'jastrows' in wf:
-                        js = wf.jastrows.values()
+                        js = list(wf.jastrows.values())
                     else:
                         js = []
                     #end if
                     jd = dict()
                     for j in js:
                         jtype = j.type.lower().replace('-','_').replace(' ','_')
-                        jd[jtype] = j
+                        key = jtype
+                        # take care of multiple jastrows of the same type
+                        if key in jd:  # use name to distinguish
+                            key += j.name
+                            if key in jd:  # if still duplicate then error out
+                                msg = 'duplicate jastrow in '+self.__class__.__name__
+                                self.error(msg)
+                            #end if
+                        #end if
+                        jd[key] = j
                     #end for
                     return jd
                 #end def process_jastrow
@@ -331,38 +318,6 @@ class Qmcpack(Simulation):
                     #end if
                 #end if
                 del optwf
-            elif isinstance(sim,Sqd):
-                wavefunction = input.get('wavefunction')
-                jastrows = []
-                if 'jastrows' in wavefunction:
-                    for jastrow in wavefunction.jastrows:
-                        jname = jastrow.name
-                        if jname!='J1' and jname!='J2':
-                            jastrows.append(jastrow)
-                        #end if
-                    #end for
-                    del wavefunction.jastrows
-                #end if
-
-                ionps = input.get_ion_particlesets()
-                if ionps is None or len(ionps)==0:
-                    self.error('ion particleset does not seem to exist')
-                elif len(ionps)==1:
-                    ionps_name = list(ionps.keys())[0]
-                else:
-                    self.error('multiple ion species not supported for atomic calculations')
-                #end if
-
-                jastrows.extend([
-                        generate_jastrow('J1','bspline',8,result.rcut,iname=ionps_name,system=self.system),
-                        generate_jastrow('J2','pade',result.B)
-                        ])
-
-                wavefunction.jastrows = collection(jastrows)
-
-            else:
-                self.error('incorporating jastrow from '+sim.__class__.__name__+' has not been implemented')
-            #end if
         elif result_name=='particles':
             if isinstance(sim,Convert4qmc):
                 ptcl_file = result.location
@@ -383,22 +338,52 @@ class Qmcpack(Simulation):
             ds = self.input.get('determinantset')
             ds.cuspcorrection = True
             try: # multideterminant
-              ds.sposets['spo-up'].cuspinfo = os.path.relpath(result.spo_up_cusps,self.locdir)
-              ds.sposets['spo-dn'].cuspinfo = os.path.relpath(result.spo_dn_cusps,self.locdir)
+                ds.sposets['spo-up'].cuspinfo = os.path.relpath(result.spo_up_cusps,self.locdir)
+                ds.sposets['spo-dn'].cuspinfo = os.path.relpath(result.spo_dn_cusps,self.locdir)
             except: # single determinant
-              sd = ds.slaterdeterminant
-              sd.determinants['updet'].cuspinfo = os.path.relpath(result.updet_cusps,self.locdir)
-              sd.determinants['downdet'].cuspinfo = os.path.relpath(result.dndet_cusps,self.locdir)
-            # end try
+                sd = ds.slaterdeterminant
+                sd.determinants['updet'].cuspinfo = os.path.relpath(result.updet_cusps,self.locdir)
+                sd.determinants['downdet'].cuspinfo = os.path.relpath(result.dndet_cusps,self.locdir)
+            #end try
 
         elif result_name=='wavefunction':
-            if not isinstance(sim,Qmcpack):
+            if isinstance(sim,Qmcpack):
+                opt = QmcpackInput(result.opt_file)
+                qs = input.get('qmcsystem')
+                qs.wavefunction = opt.qmcsystem.wavefunction.copy()
+            elif isinstance(sim,PyscfToAfqmc):
+                if not self.input.is_afqmc_input():
+                    self.error('incorporating wavefunction from {} is only supported for AFQMC calculations'.format(sim.__class__.__name__))
+                #end if
+                h5_file =  os.path.relpath(result.h5_file,self.locdir)
+                wfn = self.input.simulation.wavefunction
+                ham = self.input.simulation.hamiltonian
+                wfn.filename = h5_file
+                wfn.filetype = 'hdf5'
+                if 'filename' not in ham or ham.filename=='MISSING.h5':
+                    ham.filename = h5_file
+                    ham.filetype = 'hdf5'
+                #end if
+                if 'xml' in result:
+                    xml = QmcpackInput(result.xml)
+                    info_new = xml.simulation.afqmcinfo.copy()
+                    info = self.input.simulation.afqmcinfo
+                    info.set_optional(**info_new)
+                    # override particular inputs set by default
+                    if 'generation_info' in input._metadata:
+                        g = input._metadata.generation_info
+                        if 'walker_type' not in g:
+                            walker_type = xml.get('walker_type')
+                            walkerset = input.get('walkerset')
+                            if walker_type is not None and walkerset is not None:
+                                walkerset.walker_type = walker_type
+                            #end if
+                        #end if
+                    #end if
+                #end if
+            else:
                 self.error('incorporating wavefunction from '+sim.__class__.__name__+' has not been implemented')
             #end if
-            print '        getting optimal wavefunction from: '+result.opt_file
-            opt = QmcpackInput(result.opt_file)
-            qs = input.get('qmcsystem')
-            qs.wavefunction = opt.qmcsystem.wavefunction.copy()
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
         #end if        
@@ -439,9 +424,9 @@ class Qmcpack(Simulation):
             #end for
 
             if ran_to_end and not files_exist:
-                self.warn('run finished successfully, but output files do not seem to exist')
-                print outfiles
-                print os.listdir(self.locdir)
+                self.warn('run finished successfully, but output files do not exist')
+                self.log(outfiles)
+                self.log(os.listdir(self.locdir))
             #end if
         #end if
 
@@ -465,7 +450,7 @@ class Qmcpack(Simulation):
             output_files = []
         else:
             if self.should_twist_average and not isinstance(self.input,TracedQmcpackInput):
-                self.twist_average(range(len(self.system.structure.kpoints)))
+                self.twist_average(list(range(len(self.system.structure.kpoints))))
                 br = self.bundle_request
                 input = self.input.trace(br.quantity,br.values)
                 input.generate_filenames(self.infile)
@@ -521,6 +506,25 @@ class Qmcpack(Simulation):
                 self.infile = input.filenames[-1]
                 self.input  = input
                 self.job.app_command = self.app_command()
+                # write twist info files
+                s = self.system.structure
+                kweights        = s.kweights.copy()
+                kpoints         = s.kpoints.copy()
+                kpoints_qmcpack = s.kpoints_qmcpack()
+                for file in input.filenames:
+                    if file.startswith(self.identifier+'.g'):
+                        tokens = file.split('.')
+                        twist_index = int(tokens[1].replace('g',''))
+                        twist_filename = '{}.{}.twist_info.dat'.format(tokens[0],tokens[1])
+                        kw  = kweights[twist_index]
+                        kp  = kpoints[twist_index]
+                        kpq = kpoints_qmcpack[twist_index]
+                        contents = ' {: 16.6f}  {: 16.12f} {: 16.12f} {: 16.12f}  {: 16.12f} {: 16.12f} {: 16.12f}\n'.format(kw,*kp,*kpq)
+                        fobj = open(os.path.join(self.locdir,twist_filename),'w')
+                        fobj.write(contents)
+                        fobj.close()
+                    #end if
+                #end for
             #end if
         #end if
     #end def write_prep
@@ -549,9 +553,7 @@ def generate_cusp_correction(**kwargs):
 
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
-    input_type = inp_args.input_type
-    del inp_args.input_type
-    input = generate_qmcpack_input(input_type,**inp_args)
+    input = generate_qmcpack_input(**inp_args)
 
     wf = input.get('wavefunction')
     if not 'determinantset' in wf:

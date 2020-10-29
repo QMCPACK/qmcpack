@@ -14,6 +14,7 @@
 
 
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
@@ -46,6 +47,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   std::string lloc;
   int ndown = 1;
   int nup   = 0;
+  int nso   = 0;
   Llocal    = -1;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(eunits, "units");
@@ -54,6 +56,9 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   aAttrib.add(nup, "npots-up");
   aAttrib.add(Llocal, "l-local");
   aAttrib.add(Nrule, "nrule");
+  aAttrib.add(Srule, "srule");
+  aAttrib.add(nso, "npots-so");
+
   xmlNodePtr cur_semilocal = semiPtr[0];
   aAttrib.put(cur_semilocal);
   RealType Vprefactor = 1.0;
@@ -78,9 +83,13 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   }
   // We cannot construct the potentials as we construct them since
   // we may not know which one is local yet.
+
   std::vector<int> angList;
+  std::vector<int> angListSO; //For spin-orbit, if it exists
   std::vector<xmlNodePtr> vpsPtr;
-  Lmax = -1;
+  std::vector<xmlNodePtr> vpsoPtr; //For spin-orbit, if it exists.
+  Lmax   = -1;
+  LmaxSO = -1;
   // Now read vps sections
   xmlNodePtr cur_vps = cur_semilocal->children;
   while (cur_vps != NULL)
@@ -100,6 +109,20 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       vpsPtr.push_back(cur_vps);
       Lmax = std::max(Lmax, l); //count the maximum L
     }
+    else if (vname == "vps_so") //This accumulates the spin-orbit corrections, if defined.
+    {
+      OhmmsAttributeSet aAttrib;
+      std::string lstr("s");
+      RealType rc = -1.0;
+      aAttrib.add(lstr, "l");
+      aAttrib.add(rc, "cutoff");
+      aAttrib.put(cur_vps);
+      rmax  = std::max(rmax, rc);
+      int l = angMon[lstr];
+      angListSO.push_back(l);
+      vpsoPtr.push_back(cur_vps);
+      LmaxSO = std::max(LmaxSO, l); //count the maximum L
+    }
     cur_vps = cur_vps->next;
   }
   if (rmax < 0)
@@ -108,6 +131,16 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   {
     Llocal = Lmax;
     app_log() << "    Only one vps is found. Set the local component=" << Lmax << std::endl;
+  }
+
+  if (angListSO.size() != nso)
+  {
+    std::stringstream ssout;
+    ssout << "Error. npots-so=" << angListSO.size() << " while declared number of SO channels is " << nso << std::endl;
+    std::string outstring("");
+    outstring = ssout.str();
+
+    APP_ABORT(outstring.c_str());
   }
   int npts = grid_global->size();
   Matrix<mRealType> vnn(angList.size(), npts);
@@ -132,6 +165,35 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     //copy the numerical data with the correct map
     copy(vt.begin(), vt.end(), vnn[angList[l]]);
   }
+
+  //Grabbing the spin-orbit functions from XML.
+  Matrix<mRealType> vnnso(angListSO.size(), npts);
+  for (int l = 0; l < angListSO.size(); l++)
+  {
+    std::vector<mRealType> vtso(npts);
+    xmlNodePtr c = vpsoPtr[l]->children;
+    while (c != NULL)
+    {
+      if (xmlStrEqual(c->name, (const xmlChar*)"radfunc"))
+      {
+        xmlNodePtr c1 = c->children;
+        while (c1 != NULL)
+        {
+          if (xmlStrEqual(c1->name, (const xmlChar*)"data"))
+            putContent(vtso, c1);
+          c1 = c1->next;
+        }
+      }
+      c = c->next;
+    }
+    //copy the numerical data with the correct map
+    //So this is weird, but I feel like l should be the proper index for vnnso,
+    //with angListSO[l] being the actual angular momentum channel referred to by l.
+    //This differs from the parsing of the nonlocal pseudopotential piece, but whatever.
+    copy(vtso.begin(), vtso.end(), vnnso[l]);
+  }
+
+
   ////rather stupid to do this but necessary
   //vector<RealType> temp(npts);
   //for(int i=0; i<npts; i++) temp[i]=grid_global->r(i);
@@ -141,10 +203,84 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     for (int i = 0; i < vnn.rows(); i++)
       for (int j = 0; j < npts; j++)
         vnn[i][j] *= grid_global->r(j);
+    for (int i = 0; i < vnnso.rows(); i++)
+      for (int j = 0; j < npts; j++)
+        vnnso[i][j] *= grid_global->r(j);
   }
   app_log() << "   Number of angular momentum channels " << angList.size() << std::endl;
   app_log() << "   Maximum angular momentum channel " << Lmax << std::endl;
   doBreakUp(angList, vnn, rmax, Vprefactor);
+
+  //If any spinorbit terms are found...
+  if (nso > 0)
+    buildSO(angListSO, vnnso, rmax, 1.0);
+  else
+  {
+    //No SO channels found. Delete pp_so
+    delete pp_so;
+    pp_so = 0;
+  }
+}
+
+//Most of this is copied directly from doBreakUp, but is separated to prevent from cluttering doBreakUp.
+//This function takes the input grid and input SO potential table, interpolates it onto a linear grid if necessary
+//via a cubic spline, and then adds the final splined RadialPotentialType object to the SOECPComponent object.
+void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
+                                  const Matrix<mRealType>& vnnso,
+                                  RealType rmax,
+                                  mRealType Vprefactor)
+{
+  const int max_points = 100000;
+  app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
+  //this is a new grid
+  mRealType d                 = 1e-4;
+  LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
+  // If the global grid is already linear, do not interpolate the data
+  int ng;
+  if (grid_global->getGridTag() == LINEAR_1DGRID)
+  {
+    ng = (int)std::ceil(rmax * grid_global->DeltaInv) + 1;
+    if (ng <= max_points)
+    {
+      app_log() << "  Using global grid with delta = " << grid_global->Delta << std::endl;
+      rmax = grid_global->Delta * (ng - 1);
+      agrid->set(0.0, rmax, ng);
+    }
+    else
+      agrid->set(0.0, rmax, max_points);
+  }
+  else
+  {
+    ng = std::min(max_points, static_cast<int>(rmax / d) + 1);
+    agrid->set(0, rmax, ng);
+  }
+  // This is critical!!!
+  // If d is not reset, we generate an error in the interpolated PP!
+  d        = agrid->Delta;
+  int ngIn = vnnso.cols() - 2;
+  std::vector<RealType> newP(ng);
+  std::vector<mRealType> newPin(ngIn);
+  for (int l = 0; l < angList.size(); l++)
+  {
+    const mRealType* restrict vp = vnnso[l];
+    for (int i = 0; i < ngIn; i++)
+      newPin[i] = Vprefactor * vp[i];
+
+    OneDimCubicSpline<mRealType> infunc(grid_global, newPin);
+    infunc.spline(0, 0.0, ngIn - 1, 0.0);
+    for (int i = 1; i < ng - 1; i++)
+    {
+      mRealType r = d * i;
+      newP[i]     = infunc.splint(r) / r;
+    }
+    newP[0]                  = newP[1];
+    newP[ng - 1]             = 0.0;
+    RadialPotentialType* app = new RadialPotentialType(agrid, newP);
+    app->spline();
+    pp_so->add(angList[l], app);
+  }
+  NumSO       = angList.size();
+  pp_so->Rmax = rmax;
 }
 
 bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
@@ -159,13 +295,7 @@ bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   aAttrib.add(Lmax, "lmax");
   aAttrib.add(Nrule, "nrule");
   aAttrib.put(cur);
-  //const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
-  //if(rptr != NULL) rmax = atof((const char*)rptr);
-  //app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
-  //const RealType d=5e-4;
-  //LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
-  //int ng=static_cast<int>(rmax/d)+1;
-  //agrid->set(0,rmax,ng);
+
   std::ifstream fin(fname.c_str(), std::ios_base::in);
   if (!fin)
   {

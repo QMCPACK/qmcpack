@@ -6,7 +6,7 @@
 from sympy import *
 from collections import namedtuple, defaultdict
 import numpy as np
-
+import pdb
 
 CG_basis = namedtuple('CG_basis',['orbtype','nbasis','zeta','contraction_coeff'])
 
@@ -53,6 +53,27 @@ class GTO:
     # Need to expand to avoid NaN's
     self.lap = expand(lap.subs(r2, self.r**2))
 
+    self.hess = [0]*6
+    self.hess[0] = diff(diff(gto_xyz,self.x),self.x).subs(r2,self.r**2)
+    self.hess[1] = diff(diff(gto_xyz,self.x),self.y).subs(r2,self.r**2)
+    self.hess[2] = diff(diff(gto_xyz,self.x),self.z).subs(r2,self.r**2)
+    self.hess[3] = diff(diff(gto_xyz,self.y),self.y).subs(r2,self.r**2)
+    self.hess[4] = diff(diff(gto_xyz,self.y),self.z).subs(r2,self.r**2)
+    self.hess[5] = diff(diff(gto_xyz,self.z),self.z).subs(r2,self.r**2)
+
+    self.ghess = [0]*10
+    self.ghess[0] = diff(diff(diff(gto_xyz,self.x),self.x),self.x).subs(r2,self.r**2)
+    self.ghess[1] = diff(diff(diff(gto_xyz,self.x),self.x),self.y).subs(r2,self.r**2)
+    self.ghess[2] = diff(diff(diff(gto_xyz,self.x),self.x),self.z).subs(r2,self.r**2)
+    self.ghess[3] = diff(diff(diff(gto_xyz,self.x),self.y),self.y).subs(r2,self.r**2)
+    self.ghess[4] = diff(diff(diff(gto_xyz,self.x),self.y),self.z).subs(r2,self.r**2)
+    self.ghess[5] = diff(diff(diff(gto_xyz,self.x),self.z),self.z).subs(r2,self.r**2)
+    self.ghess[6] = diff(diff(diff(gto_xyz,self.y),self.y),self.y).subs(r2,self.r**2)
+    self.ghess[7] = diff(diff(diff(gto_xyz,self.y),self.y),self.z).subs(r2,self.r**2)
+    self.ghess[8] = diff(diff(diff(gto_xyz,self.y),self.z),self.z).subs(r2,self.r**2)
+    self.ghess[9] = diff(diff(diff(gto_xyz,self.z),self.z),self.z).subs(r2,self.r**2)
+
+
   def set_basis(self, basis):
     self.basis = basis
 
@@ -67,7 +88,10 @@ class GTO:
       subs_list[self.y] = y
       subs_list[self.z] = z
       return subs_list
-
+  def make_subs_ijk_list(self,i,j,k):
+      subs_list = {self.i:i, self.j:j, self.k:k}
+      return subs_list
+  
   def eval_single_v(self, i, j, k, x, y, z, alpha):
       xc = x - self.center[0]
       yc = y - self.center[1]
@@ -85,6 +109,36 @@ class GTO:
       g = [grad.subs(sl1).evalf() for grad in self.grad]
       lap = self.lap.subs(sl1).evalf()
       return v,g,lap
+
+  def eval_single_vgh(self, i, j, k, x, y, z, alpha):
+      xc = x - self.center[0]
+      yc = y - self.center[1]
+      zc = z - self.center[2]
+      #This is to deal with the sympy "feature" encountered, explained below...
+      expsub=self.make_subs_ijk_list(i,j,k)
+      sl1 = self.make_subs_list(i,j,k,xc,yc,zc,alpha)
+      v = self.gto_sym.subs(sl1).evalf()
+      g = [grad.subs(sl1).evalf() for grad in self.grad]
+      #Since we are taking derivatives of x^i*y^j*z^k, derivaties of the GTO basis functions
+      #will reduce the exponents on the cartesian tensor terms.  Depending on how sympy
+      #tries to evaluate the terms, it can end up trying to evaluate things like y^(j-1). If
+      #j=0 and y=0; this will results in nan or inf, even though the properly evaluated term will have
+      #compensating terms to cancel out this divergence.  
+      #
+      #Thus, we evaluate the expression with i,j,k specified.  Then we simplify this expression, allowing divergent terms
+      #to be taken care of.  Then we do the normal subs(sl1).evalf().
+      h = [simplify(hess.subs(expsub)).subs(sl1).evalf() for hess in self.hess]
+      return v,g,h
+
+  def eval_single_gradhess(self, i, j, k, x, y, z, alpha):
+      xc = x - self.center[0]
+      yc = y - self.center[1]
+      zc = z - self.center[2]
+      sl1 = self.make_subs_list(i,j,k,xc,yc,zc,alpha)
+      #see eval_single_vgh for why this trick is employed.
+      expsub=self.make_subs_ijk_list(i,j,k)
+      gh = [simplify(ghess.subs(expsub)).subs(sl1).evalf() for ghess in self.ghess]
+      return gh
 
   def eval_contraction_v(self, x, y, z, basis):
       vals = []
@@ -119,6 +173,39 @@ class GTO:
         laps.append(lap)
       return vals, grads, laps
 
+  def eval_contraction_vgh(self, x, y, z, basis):
+      vals = []
+      grads = []
+      hesses = []
+
+      angular_list = self.ijk[basis.orbtype]
+      for i,j,k,name in angular_list:
+        val = 0.0
+        grad = [0.0, 0.0, 0.0]
+        hess = [0.0,0.0,0.0,0.0,0.0,0.0]
+        for idx in range(basis.nbasis):
+          c = basis.contraction_coeff[idx]
+          v,g,h = self.eval_single_vgh(i,j,k,x,y,z,basis.zeta[idx])
+          val += c*v
+          grad = [c*g[m] + grad[m] for m in range(3)]
+          hess = [c*h[m] + hess[m] for m in range(6)]
+        vals.append(val)
+        grads.append(grad)
+        hesses.append(hess)
+      return vals, grads, hesses
+
+  def eval_contraction_gradhess(self, x, y, z, basis):
+      gradhesses = []
+      angular_list = self.ijk[basis.orbtype]
+      for i,j,k,name in angular_list:
+        ghess = [0.0 for m in range(10)]
+        for idx in range(basis.nbasis):
+          c = basis.contraction_coeff[idx]
+          gh = self.eval_single_gradhess(i,j,k,x,y,z,basis.zeta[idx])
+          ghess = [c*gh[m] + ghess[m] for m in range(10)]
+        gradhesses.append(ghess)
+      return gradhesses
+
   def eval_v(self, x, y, z):
     vs = []
     for basis in self.basis:
@@ -136,6 +223,24 @@ class GTO:
         grads.extend(g)
         lapls.extend(l)
     return vs, grads, lapls
+
+  def eval_vgh(self, x, y, z):
+    vs = []
+    grads = []
+    hesses = []
+    for basis in self.basis:
+        v,g,hess = self.eval_contraction_vgh(x, y, z, basis)
+        vs.extend(v)
+        grads.extend(g)
+        hesses.extend(hess)
+    return vs, grads, hesses
+
+  def eval_gradhess(self,x,y,z):
+    gradhesses = []
+    for basis in self.basis:
+        ghess = self.eval_contraction_gradhess(x, y, z, basis)
+        gradhesses.extend(ghess)
+    return gradhesses
 
 # generated from qmcpack src/Numerics/codegen/read_order.py
 # Only part of the function included for now
@@ -204,6 +309,26 @@ class GTO_centers:
       laps.extend(l)
 
     return vs, grads, laps
+
+  def eval_vgh(self, x, y, z):
+    vs = []
+    grads = []
+    hesses = []
+    for gto in self.gto_list:
+      v,g,h = gto.eval_vgh(x,y,z)
+      vs.extend(v)
+      grads.extend(g)
+      hesses.extend(h)
+
+    return vs, grads, hesses
+
+  def eval_gradhess(self, x, y, z):
+    ghesses = []
+    count=0
+    for gto in self.gto_list:
+      gh = gto.eval_gradhess(x,y,z)
+      ghesses.extend(gh)
+    return ghesses
 
 def get_center_and_ijk_by_index(pos_list, elements, basis_sets):
   index = []

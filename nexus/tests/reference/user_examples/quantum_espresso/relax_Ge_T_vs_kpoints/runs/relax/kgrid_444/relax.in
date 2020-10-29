@@ -10,7 +10,7 @@
 /
 
 &SYSTEM
-   celldm(1)       = 1.0
+   !celldm(1)       = 1.0
    degauss         = 0.0001
    ecutrho         = 200
    ecutwfc         = 50
@@ -43,7 +43,7 @@
 ATOMIC_SPECIES 
    Ge 72.61 Ge.pbe-kjpaw.UPF
 
-ATOMIC_POSITIONS alat
+ATOMIC_POSITIONS bohr
    Ge       5.34792496       5.34792496       5.34792496 
    Ge       0.00000000       0.00000000       0.00000000 
    Ge       2.67396248       2.67396248       2.67396248 
@@ -65,7 +65,7 @@ ATOMIC_POSITIONS alat
 K_POINTS automatic
    4 4 4  1 1 1 
 
-CELL_PARAMETERS cubic
+CELL_PARAMETERS bohr
         10.69584991      10.69584991       0.00000000 
          0.00000000      10.69584991      10.69584991 
         10.69584991       0.00000000      10.69584991 

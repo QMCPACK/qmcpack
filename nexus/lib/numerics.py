@@ -83,9 +83,10 @@
 
 import sys
 import inspect
+import numpy as np
 from numpy import array,ndarray,zeros,linspace,pi,exp,sqrt,polyfit,polyval
 from numpy import sum,abs,arange,empty,sin,cos,dot,atleast_2d,ogrid
-from numpy import ones_like,sign,random,cross,prod
+from numpy import ones_like,sign,cross,prod
 from numpy.linalg import norm
 from generic import obj
 from developer import unavailable,warn,error
@@ -104,9 +105,6 @@ except:
 #end try
 
 
-def numerics_error(*args,**kwargs):
-    error(*args,**kwargs)
-#end def numerics_error
 # cost functions
 least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
 absmin        = lambda p,x,y,f: abs(f(p,x)-y).sum()
@@ -122,14 +120,15 @@ cost_functions = obj(
 def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
     if isinstance(cost,str):
         if cost not in cost_functions:
-            numerics_error('"{0}" is an invalid cost function\nvalid options are: {1}'.format(cost,sorted(cost_functions.keys())))
+            error('"{0}" is an invalid cost function\nvalid options are: {1}'.format(cost,sorted(cost_functions.keys())))
         #end if
         cost = cost_functions[cost]
     #end if
     if optimizer=='fmin':
         p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000,disp=0)
     else:
-        numerics_error('optimizers other than fmin are not supported yet','curve_fit')
+        error('optimizers other than fmin are not supported yet','curve_fit')
+    #end if
     return p
 #end def curve_fit
 
@@ -307,7 +306,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
     perror = None
     if jackknife:
         if Edata is None:
-            numerics_error('cannot perform jackknife fit because blocked data was not provided (only the means are present)','morse_fit')
+            error('cannot perform jackknife fit because blocked data was not provided (only the means are present)','morse_fit')
         #end if
         pmean,perror = numerics_jackknife(data     = Edata,
                                           function = curve_fit,
@@ -317,7 +316,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
         # compute auxiliary jackknife quantities, if desired (e.g. morse_freq, etc)
         if calc_aux:
             psamples = jcapture.jsamples
-            for auxname,auxfunc in auxfuncs.iteritems():
+            for auxname,auxfunc in auxfuncs.items():
                 auxcap = None
                 if capture_results:
                     auxcap = obj()
@@ -419,7 +418,7 @@ eos_param_funcs = obj(
 
 def eos_eval(p,V,type='vinet'):
     if type not in eos_funcs:
-        numerics_error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
     #end if
     return eos_funcs[type](p,V)
 #end def eos_eval
@@ -427,11 +426,11 @@ def eos_eval(p,V,type='vinet'):
 
 def eos_param(p,param,type='vinet'):
     if type not in eos_param_funcs:
-        numerics_error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_param_funcs.keys())))
+        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_param_funcs.keys())))
     #end if
     eos_pfuncs = eos_param_funcs[type]
     if param not in eos_pfuncs:
-        numerics_error('"{0}" is not an available parameter for a {1} fit\navailable parameters are: {2}'.format(param,type,sorted(eos_pfuncs.keys())))
+        error('"{0}" is not an available parameter for a {1} fit\navailable parameters are: {2}'.format(param,type,sorted(eos_pfuncs.keys())))
     #end if
     return eos_pfuncs[param](p)
 #end def eos_param
@@ -446,7 +445,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',optimizer='fmin',jackk
     #end if
     
     if type not in eos_funcs:
-        numerics_error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
     #end if
     eos_func = eos_funcs[type]
 
@@ -504,7 +503,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
     jnorm   = 1./(nb-1.)
     data_sum = data.sum(axis=0)
     array_return = False
-    for b in xrange(nblocks):
+    for b in range(nblocks):
         jdata = jnorm*(data_sum-data[b])
         if argpos:
             args[position] = jdata
@@ -533,7 +532,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
                 jsum  += jsample
                 jsum2 += jsample**2
             else:
-                for c in xrange(len(jsample)):
+                for c in range(len(jsample)):
                     jsum[c]  += jsample[c]
                     jsum2[c] += jsample[c]**2
                 #end for
@@ -551,7 +550,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
     else:
         jmean  = []
         jerror = []
-        for c in xrange(len(jsum)):
+        for c in range(len(jsum)):
             jval  = jsum[c]
             jval2 = jsum2[c]
             jm = jval/nb
@@ -574,6 +573,7 @@ def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
 numerics_jackknife = jackknife
 
 
+# test needed
 # get jackknife estimate of auxiliary quantities
 #   jsamples is a subset of jsamples data computed by jackknife above
 #   auxfunc is an additional function to get a jackknife sample of a derived quantity
@@ -589,7 +589,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
         elif len(auxfunc)==4:
             auxfunc,args,kwargs,position = auxfunc
         else:
-            numerics_error('between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc)))
+            error('between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc)))
         #end if
     #end if
 
@@ -608,7 +608,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
 
     nblocks = len(jsamples)
     nb      = float(nblocks)
-    for b in xrange(nblocks):
+    for b in range(nblocks):
         jdata = jsamples[b]
         if argpos:
             args[position] = jdata
@@ -652,7 +652,7 @@ def check_jackknife_inputs(args,kwargs,position):
         elif isinstance(position,str):
             kwargpos = True
         else:
-            numerics_error('position must be an integer or keyword, received: {0}'.format(position),'jackknife')
+            error('position must be an integer or keyword, received: {0}'.format(position),'jackknife')
         #end if
     elif args is None and kwargs is None:
         args     = [None]
@@ -662,7 +662,7 @@ def check_jackknife_inputs(args,kwargs,position):
         argpos   = True
         position = 0
     else:
-        numerics_error('function argument position for input data must be provided','jackknife')
+        error('function argument position for input data must be provided','jackknife')
     #end if
     if args is None:
         args = []
@@ -790,18 +790,18 @@ def ndgrid(*args, **kwargs):
 def simstats(x,dim=None):
     shape = x.shape
     ndim  = len(shape)
-    if dim==None:
+    if dim is None:
         dim=ndim-1
     #end if
     permute = dim!=ndim-1
     reshape = ndim>2
     nblocks = shape[dim]
     if permute:
-        r = range(ndim)
+        r = list(range(ndim))
         r.pop(dim)
         r.append(dim)
         permutation = tuple(r)
-        r = range(ndim)
+        r = list(range(ndim))
         r.pop(ndim-1)
         r.insert(dim,ndim-1)
         invperm     = tuple(r)
@@ -850,7 +850,7 @@ def simstats(x,dim=None):
     else:
         error = zeros(mean.shape,dtype=mean.dtype)
         kappa = zeros(mean.shape,dtype=mean.dtype)
-        for v in xrange(nvars):
+        for v in range(nvars):
             i=0          
             tempC=0.5
             kap=0.0
@@ -894,18 +894,23 @@ def simstats(x,dim=None):
 
 
 
-def simplestats(x,dim=None):
-    if dim==None:
+def simplestats(x,dim=None,full=False):
+    if dim is None:
         dim=len(x.shape)-1
     #end if
     osqrtN = 1.0/sqrt(1.0*x.shape[dim])
     mean   = x.mean(dim)
-    error  = x.var(dim)*osqrtN
-    return (mean,error)
+    var    = x.var(dim)
+    error  = sqrt(var)*osqrtN
+    if not full:
+        return (mean,error)
+    else:
+        return (mean,var,error,1.0)
+    #end if
 #end def simplestats
 
 
-def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
+def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True):
     bounces = max(1,bounces)
     eqlen = 0
     nx = len(x)
@@ -921,6 +926,7 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
     mean  = xs[int(.5*(nxt-1)+.5)]
     sigma = (abs(xs[int((.5-.341)*nxt+.5)]-mean)+abs(xs[int((.5+.341)*nxt+.5)]-mean))/2
     crossings = bounces*[0,0]
+    bounce = None
     if abs(x[0]-mean)>sigma:
         s = -sign(x[0]-mean)
         ncrossings = 0
@@ -938,7 +944,11 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
         bounce = crossings[-2:]
         bounce[1] = max(bounce[1],bounce[0])
         #print len(x),crossings,crossings[1]-crossings[0]+1
-        eqlen = bounce[0]+random.randint(bounce[1]-bounce[0]+1)
+        if random:
+            eqlen = bounce[0]+np.random.randint(bounce[1]-bounce[0]+1)
+        else:
+            eqlen = (bounce[0]+bounce[1])//2
+        #end if
     #end if
     if plot:
         xlims = xlim
@@ -951,7 +961,9 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
         plot([0,nx],[mean+sigma,mean+sigma],'r-')
         plot([0,nx],[mean-sigma,mean-sigma],'r-')
         plot(ix[crossings],x[crossings],'r.')
-        plot(ix[bounce],x[bounce],'ro')
+        if bounce is not None:
+            plot(ix[bounce],x[bounce],'ro')
+        #end if
         plot([ix[eqlen],ix[eqlen]],[x.min(),x.max()],'g-')
         plot(ix[eqlen],x[eqlen],'go')
         if xlims!=None:
@@ -963,6 +975,8 @@ def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
 #end def equilibration_length
 
 
+
+# probability that two means are from the same distribution
 def ttest(m1,e1,n1,m2,e2,n2):
     m1 = float(m1)
     e1 = float(e1)
@@ -973,12 +987,13 @@ def ttest(m1,e1,n1,m2,e2,n2):
     t  = (m1-m2)/sqrt(v1+v2)
     nu = (v1+v2)**2/(v1**2/(n1-1)+v2**2/(n2-1))
     x = nu/(nu+t**2)
-    p = 1.-betainc(nu/2,.5,x)
+    p = betainc(nu/2,.5,x)
     return p
 #end def ttest
 
 
 
+# test needed
 def surface_normals(x,y,z):
     nu,nv = x.shape
     normals = empty((nu,nv,3))
@@ -992,8 +1007,8 @@ def surface_normals(x,y,z):
     dr[1] = y[0,0]-y[1,0]
     dr[2] = z[0,0]-z[1,0]
     drtol = 1e-4
-    for i in xrange(nu):
-        for j in xrange(nv):
+    for i in range(nu):
+        for j in range(nv):
             iedge = i==0 or i==mi
             jedge = j==0 or j==mj
             if iedge:
@@ -1047,6 +1062,7 @@ def surface_normals(x,y,z):
 #end def surface_normals
 
 
+# test needed
 simple_surface_coords = [set(['x','y','z']),set(['r','phi','z']),set(['r','phi','theta'])]
 simple_surface_min = {'x':-1.00000000001,'y':-1.00000000001,'z':-1.00000000001,'r':-0.00000000001,'phi':-0.00000000001,'theta':-0.00000000001}
 def simple_surface(origin,axes,grid):
@@ -1059,23 +1075,23 @@ def simple_surface(origin,axes,grid):
         #end if
     #end for
     if not matched:
-        print 'Error in simple_surface: invalid coordinate system provided'
-        print '  provided coordinates:',gk
-        print '  permitted coordinates:'
+        print('Error in simple_surface: invalid coordinate system provided')
+        print('  provided coordinates:',gk)
+        print('  permitted coordinates:')
         for c in range(3):
-            print '               ',simple_surface_coords[c]
+            print('               ',simple_surface_coords[c])
         #end for
         sys.exit()
     #end if
-    for k,v in grid.iteritems():
+    for k,v in grid.items():
         if min(v)<simple_surface_min[k]:
-            print 'Error in simple surface: '+k+' cannot be less than '+str(simple_surface_min[k])
-            print '   actual minimum: '+str(min(v))
+            print('Error in simple surface: '+k+' cannot be less than '+str(simple_surface_min[k]))
+            print('   actual minimum: '+str(min(v)))
             sys.exit()
         #end if
         if max(v)>1.00000000001:
-            print 'Error in simple surface: '+k+' cannot be more than 1'
-            print '   actual maximum: '+str(max(v))
+            print('Error in simple surface: '+k+' cannot be more than 1')
+            print('   actual maximum: '+str(max(v)))
             sys.exit()
         #end if
     #end if
@@ -1089,9 +1105,9 @@ def simple_surface(origin,axes,grid):
         npoints = prod(dim)
         points = empty((npoints,3))
         n=0
-        for i in xrange(dim[0]):
-            for j in xrange(dim[1]):
-                for k in xrange(dim[2]):
+        for i in range(dim[0]):
+            for j in range(dim[1]):
+                for k in range(dim[2]):
                     r[0] = xl[i]
                     r[1] = yl[j]
                     r[2] = zl[k]
@@ -1108,9 +1124,9 @@ def simple_surface(origin,axes,grid):
         npoints = prod(dim)
         points = empty((npoints,3))
         n=0
-        for i in xrange(dim[0]):
-            for j in xrange(dim[1]):
-                for k in xrange(dim[2]):
+        for i in range(dim[0]):
+            for j in range(dim[1]):
+                for k in range(dim[2]):
                     u[0] = rl[i]
                     u[1] = phil[j]
                     u[2] = zl[k]
@@ -1136,9 +1152,9 @@ def simple_surface(origin,axes,grid):
         npoints = prod(dim)
         points = empty((npoints,3))
         n=0
-        for i in xrange(dim[0]):
-            for j in xrange(dim[1]):
-                for k in xrange(dim[2]):
+        for i in range(dim[0]):
+            for j in range(dim[1]):
+                for k in range(dim[2]):
                     u[0] = rl[i]
                     u[1] = phil[j]
                     u[2] = thetal[k]
@@ -1153,8 +1169,8 @@ def simple_surface(origin,axes,grid):
     #end if
 
     if min(dim)!=1:
-        print 'Error in simple_surface: minimum dimension must be 1'
-        print '   actual minimum dimension:',str(min(dim))
+        print('Error in simple_surface: minimum dimension must be 1')
+        print('   actual minimum dimension:',str(min(dim)))
         sys.exit()
     #end if
 
@@ -1175,8 +1191,8 @@ def simple_surface(origin,axes,grid):
 
 
 
+# test needed
 #least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
-
 def func_fit(x,y,fitting_function,p0,cost=least_squares):
     f = fitting_function
     p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000)
@@ -1187,15 +1203,18 @@ def func_fit(x,y,fitting_function,p0,cost=least_squares):
 def distance_table(p1,p2,ordering=0):
     n1 = len(p1)
     n2 = len(p2)
+    same = id(p1)==id(p2)
     if not isinstance(p1,ndarray):
-        p1=array(p1)
+        p1=array(p1,dtype=float)
     #end if
-    if not isinstance(p2,ndarray):
-        p2=array(p2)
+    if same:
+        p2 = p1
+    elif not isinstance(p2,ndarray):
+        p2=array(p2,dtype=float)
     #end if
-    dt = zeros((n1,n2))
-    for i1 in xrange(n1):
-        for i2 in xrange(n2):
+    dt = zeros((n1,n2),dtype=float)
+    for i1 in range(n1):
+        for i2 in range(n2):
             dt[i1,i2] = norm(p1[i1]-p2[i2])
         #end for
     #end for
@@ -1208,11 +1227,10 @@ def distance_table(p1,p2,ordering=0):
             n=n2
             dt=dt.T
         else:
-            print 'distance_table Error: ordering must be 1 or 2,\n  you provided '+str(ordering)+'\nexiting.'
-            exit()
+            error('ordering must be 1 or 2,\nyou provided '+str(ordering),'distance_table')
         #end if
         order = empty(dt.shape,dtype=int)
-        for i in xrange(n):
+        for i in range(n):
             o = dt[i].argsort()
             order[i] = o
             dt[i,:]  = dt[i,o]
@@ -1225,7 +1243,7 @@ def distance_table(p1,p2,ordering=0):
 
 def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
     extra = 0
-    if qpoints==None:
+    if qpoints is None:
         qpoints=points
         if len(points)>1:
             extra=1
@@ -1236,8 +1254,7 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
         #end if
     #end if
     if n>len(qpoints)-extra:
-        print 'nearest_neighbors Error: requested more than the total number of neighbors\n  maximum is: {0}\n  you requested: {1}\nexiting.'.format(len(qpoints)-extra,n)
-        exit()
+        error('requested more than the total number of neighbors\nmaximum is: {0}\nyou requested: {1}\nexiting.'.format(len(qpoints)-extra,n),'nearest_neighbors')
     #end if
     slow = slow or scipy_unavailable
     if not slow:
@@ -1261,6 +1278,7 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
 #end def nearest_neighbors
 
 
+
 def voronoi_neighbors(points):
     vor = Voronoi(points)
     neighbor_pairs = vor.ridge_points
@@ -1268,12 +1286,13 @@ def voronoi_neighbors(points):
 #end def voronoi_neighbors
 
 
+
 def convex_hull(points,dimension=None,tol=None):
     if dimension is None:
         np,dimension = points.shape
     #end if
     d1 = dimension+1
-    tri = Delaunay(points)
+    tri = Delaunay(points,qhull_options='QJ')
     all_inds = empty((d1,),dtype=bool)
     all_inds[:] = True
     verts = []
@@ -1287,7 +1306,7 @@ def convex_hull(points,dimension=None,tol=None):
             inds[i] = False
             v = tri.vertices[ni]
             if have_tol:
-                iv = range(d1)
+                iv = list(range(d1))
                 iv.pop(i)
                 c = points[v[iv[1]]]
                 a = points[v[i]]-c
@@ -1304,3 +1323,151 @@ def convex_hull(points,dimension=None,tol=None):
     verts = list(set(verts))
     return verts
 #end def convex_hull
+
+
+
+
+def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_return=False):
+
+    # Update inputs to be consistent with periodic merge, if requested
+    if merge and periodic:
+        if xmax is None:
+            error('"xmax" must be provided.','layers_1d')
+        elif xmin is None:
+            xmin = 0.0
+        #end if
+    #end if
+
+    # Setup a virtual fine grid along x with grid cell width of tol
+    if xmin is None:
+        xmin = xpoints.min()
+    #end if
+    if xmax is None:
+        xmax = xpoints.max()
+    #end if
+    nbins = np.uint64(np.round(np.ceil((xmax-xmin+tol)/tol)))
+    dx    = (xmax-xmin+tol)/nbins
+
+    # Find the points belonging to each grid cell/layer
+    layers = obj()
+    for i,x in enumerate(xpoints):
+        n = np.uint64(x/dx)
+        if n not in layers:
+            layers[n] = obj(ilist=[i],xsum=x,nsum=1)
+        else:
+            l = layers[n]
+            l.ilist.append(i)
+            l.xsum += x
+            l.nsum += 1
+        #end if
+    #end for
+
+    # Find the mean of each set of points
+    for l in layers:
+        l.xmean = l.xsum/l.nsum
+    #end for
+
+    # Merge neighboring layers if the means are within the tolerance
+    if merge:
+        lprev = None
+        for n in sorted(layers.keys()):
+            l = layers[n]
+            if lprev is not None and np.abs(l.xmean-lprev.xmean)<tol:
+                lprev.ilist.extend(l.ilist)
+                lprev.xsum += l.xsum
+                lprev.nsum += l.nsum
+                lprev.xmean = lprev.xsum/lprev.nsum
+                del layers[n]
+            else:
+                lprev = l
+            #end if
+        #end for
+
+        # Merge around periodic boundary
+        if periodic:
+            nleft  = 0
+            nright = nbins-1
+            if nleft in layers and nright in layers:
+                ll = layers[nleft]
+                lr = layers[nright]
+                L  = xmax-xmin
+                if np.abs(ll.xmean + L - lr.xmean)<tol:
+                    ll.ilist.extend(lr.ilist)
+                    ll.xsum += lr.xsum
+                    ll.nsum += lr.nsum
+                    ll.xmean = ll.xsum/ll.nsum
+                    del layers[nright]
+                #end if
+            #end if
+        #end if
+    #end if
+
+    if not full_return:
+        return layers
+    else:
+        return layers,xmin,xmax
+    #end if
+#end def layers_1d
+
+
+
+def layer_means_1d(xpoints,tol,full_return=False):
+    # Get layer data
+    layers,xmin,xmax = layers_1d(xpoints,tol,full_return=True)
+
+    # Extract and sort layer means
+    xlayers = np.empty((len(layers),),dtype=float)
+    i = 0
+    for n in sorted(layers.keys()):
+        l = layers[n]
+        xlayers[i] = l.xmean
+        i += 1
+    #end for
+    xlayers.sort()
+
+    if not full_return:
+        return xlayers
+    else:
+        return xlayers,xmin,xmax
+    #end if
+#end def layer_means_1d
+
+
+
+def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
+    # Get layer means
+    xlayer,xmin,xmax = layer_means_1d(xpoints,tol,full_return=True)
+
+    # Get layer separations
+    dxlayer = xlayer[1:]-xlayer[:-1]
+
+    # Find appropriate layer separation for indexing
+    if uniform:
+        dxmin   = dxlayer.min()
+        dxmax   = dxlayer.max()
+        if np.abs(dxmax-dxmin)>2*tol:
+            error('Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {}\nMax layer spacing: {}\nSpread   : {}\nTolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol),'index_by_layer_1d')
+        #end if
+        dx = dxlayer.mean()
+    else:
+        dx = dxlayer.min()
+    #end if
+
+    # Find indices for each layer
+    ipoints = np.array(np.around((xpoints-xmin)/dx),dtype=int)
+
+    # Check the layer indices, if requested
+    if check:
+        if np.abs(ipoints*dx+xmin-xpoints).max()>3*tol: # Tolerance accounts for merge
+            error('Layer indexing failed.','index_by_layer_1d')
+        #end if
+    #end if
+
+    if not full_return:
+        return ipoints
+    else:
+        return ipoints,xmin,xmax
+    #end if
+#end def index_by_layer
+
+

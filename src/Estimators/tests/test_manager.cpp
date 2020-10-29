@@ -17,28 +17,17 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
+#include "Estimators/tests/FakeEstimator.h"
 #include "Estimators/ScalarEstimatorBase.h"
-
+#include "Estimators/tests/EstimatorManagerBaseTest.h"
 
 #include <stdio.h>
 #include <sstream>
 
 namespace qmcplusplus
 {
-class FakeEstimator : public ScalarEstimatorBase
-{
-  virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) {}
-
-  virtual void add2Record(RecordNamedProperty<RealType>& record) {}
-
-  virtual void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) {}
-
-  virtual ScalarEstimatorBase* clone() { return new FakeEstimator; }
-};
-
 TEST_CASE("EstimatorManagerBase", "[estimators]")
 {
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   EstimatorManagerBase em(c);
@@ -65,6 +54,25 @@ TEST_CASE("EstimatorManagerBase", "[estimators]")
   // compute averages over threads
   //em.stop();
   em.reset();
+}
+
+TEST_CASE("Estimator adhoc addVector operator", "[estimators]")
+{
+  int num_scalars = 3;
+  std::vector<double> vec_a{1.0, 2.0, 3.0};
+  std::vector<double> vec_b{2.0, 3.0, 4.0};
+  std::vector<std::vector<double>> est{vec_a, vec_b};
+  auto addVectors = [](const auto& vec_a, const auto& vec_b) {
+    std::vector<ScalarEstimatorBase::RealType> result_vector(vec_a.size(), 0.0);
+    for (int i = 0; i < vec_a.size(); ++i)
+      result_vector[i] = vec_a[i] + vec_b[i];
+    return result_vector;
+  };
+
+  std::vector<double> reduced_scalars(num_scalars);
+  reduced_scalars = std::accumulate(est.begin(), est.end(), std::vector<double>(num_scalars, 0.0), addVectors);
+  std::vector<double> correct{3.0, 5.0, 7.0};
+  REQUIRE(reduced_scalars == correct);
 }
 
 } // namespace qmcplusplus

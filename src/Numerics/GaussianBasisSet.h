@@ -14,20 +14,20 @@
 
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
-#include <io/hdf_archive.h>
-#include "Numerics/OptimizableFunctorBase.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 #include "Message/CommOperators.h"
 namespace qmcplusplus
 {
 template<class T>
-struct GaussianCombo : public OptimizableFunctorBase
+struct GaussianCombo
 {
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
   // Caution: most other code assumes value_type can only be real
   // but maybe it can be different precision
   // Possibly one of these types is the full precision and the other reduced precision
-  typedef T value_type;
+  typedef T real_type;
   real_type Y, dY, d2Y, d3Y;
 
   struct BasicGaussian
@@ -62,11 +62,6 @@ struct GaussianCombo : public OptimizableFunctorBase
       CoeffPP    = 4.0 * Sigma * Sigma * Coeff;
       CoeffPPP1  = 12.0 * Sigma * Sigma * Coeff;
       CoeffPPP2  = -8.0 * Sigma * Sigma * Sigma * Coeff;
-    }
-
-    void resetParameters(const opt_variables_type& active)
-    {
-      //DO NOTHING
     }
 
     inline void setgrid(real_type r) {}
@@ -105,10 +100,6 @@ struct GaussianCombo : public OptimizableFunctorBase
                          const char* node_name = "radfunc",
                          const char* exp_name  = "exponent",
                          const char* c_name    = "contraction");
-
-  ~GaussianCombo() {}
-
-  OptimizableFunctorBase* makeClone() const { return new GaussianCombo<T>(*this); }
 
   void reset();
 
@@ -200,13 +191,6 @@ struct GaussianCombo : public OptimizableFunctorBase
   bool put(xmlNodePtr cur);
 
   void addGaussian(real_type c, real_type alpha);
-
-  void checkInVariables(opt_variables_type& active) {}
-  void checkOutVariables(const opt_variables_type& active) {}
-  void resetParameters(const opt_variables_type& active)
-  {
-    //DO NOTHING FOR NOW
-  }
 
   bool putBasisGroup(xmlNodePtr cur);
   bool putBasisGroupH5(hdf_archive& hin);

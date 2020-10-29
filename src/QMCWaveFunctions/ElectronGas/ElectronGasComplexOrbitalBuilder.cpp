@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
+#include "ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
@@ -45,12 +45,12 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, c
   //assign_degeneracies(d);
 }
 
-ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi)
-    : WaveFunctionComponentBuilder(els, psi)
+ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(Communicate* comm, ParticleSet& els)
+    : WaveFunctionComponentBuilder(comm, els)
 {}
 
 
-bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
+WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc = 0;
   PosType twist(0.0);
@@ -81,18 +81,16 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   //create a Slater determinant
   //SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
   SlaterDet* sdet = new SlaterDet(targetPtcl);
-  sdet->add(psiu, "u");
-  sdet->add(psid, "d");
   sdet->add(updet, 0);
   sdet->add(downdet, 1);
-  //add Slater determinant to targetPsi
-  targetPsi.addOrbital(sdet, "SlaterDet", true);
-  return true;
+  return sdet;
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder(comm), egGrid(p.Lattice), unique_twist(-1.0), has_twist(false)
-{}
+    : SPOSetBuilder("ElectronGas", comm), has_twist(false), unique_twist(-1.0), egGrid(p.Lattice), spo_node(NULL)
+{
+  ClassName = "ElectronGasSPOBuilder";
+}
 
 SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {

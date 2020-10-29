@@ -2,7 +2,7 @@
 <simulation>
   <project id="qmc_long_vmc_dmc" series="0"/>
   <include href="C_Diamond-211.structure.xml"/>
-  <include href="C_Diamond-211.wfj-Twist0.xml"/>
+  <include href="C_Diamond-211.wfj.xml"/>
   <hamiltonian name="h0" type="generic" target="e">
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
     <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
@@ -22,7 +22,7 @@
      <parameter name="samples"> 256 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
-   <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+   <!--qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="targetwalkers"> 256 </parameter>
      <parameter name="reconfiguration">   no </parameter>
@@ -31,7 +31,7 @@
      <parameter name="steps">   20 </parameter>
      <parameter name="blocks">  10 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
-   </qmc>
+   </qmc-->
    <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="targetwalkers"> 256 </parameter>

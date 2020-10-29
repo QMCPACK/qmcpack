@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/RMC/RMC.h"
+#include "RMC.h"
 #include "QMCDrivers/RMC/RMCUpdatePbyP.h"
 #include "QMCDrivers/RMC/RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -23,6 +23,7 @@
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Particle/Reptile.h"
+#include "Utilities/FairDivide.h"
 #include "Utilities/RunTimeManager.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
@@ -37,14 +38,17 @@ namespace qmcplusplus
 RMC::RMC(MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), prestepsVMC(-1), rescaleDrift("no"), beta(-1), beads(-1), fromScratch(true)
+    : QMCDriver(w, psi, h, comm, "RMC"),
+      prestepsVMC(-1),
+      rescaleDrift("no"),
+      beta(-1),
+      beads(-1),
+      fromScratch(true)
 {
   RootName = "rmc";
-  QMCType  = "RMC";
-  QMCDriverMode.set(QMC_UPDATE_MODE, 1);
-  QMCDriverMode.set(QMC_WARMUP, 0);
+  qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
+  qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(rescaleDrift, "drift", "string");
   m_param.add(beta, "beta", "double");
   m_param.add(beads, "beads", "int");
@@ -72,15 +76,15 @@ bool RMC::run()
 #endif
   const bool has_collectables = W.Collectables.size();
 
-  LoopTimer rmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> rmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
   for (int block = 0; block < nBlocks; ++block)
   {
     rmc_loop.start();
 #pragma omp parallel
     {
       int ip                 = omp_get_thread_num();
-      IndexType updatePeriod = (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
       Movers[ip]->startBlock(nSteps);
@@ -217,7 +221,7 @@ void RMC::resetRun()
       traceClones[ip] = Traces->makeClone();
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip]);
-      if (QMCDriverMode[QMC_UPDATE_MODE])
+      if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
         os << "  PbyP moves with drift, using RMCUpdatePbyPWithDriftFast" << std::endl;
         Movers[ip] =
@@ -248,7 +252,7 @@ void RMC::resetRun()
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip]);
+    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
     // wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     wClones[ip]->reptile = W.ReptileList[ip];
     //app_log()<<"Thread # "<<ip<< std::endl;
@@ -258,7 +262,7 @@ void RMC::resetRun()
     wClones[ip]->activeBead = 0;
     wClones[ip]->direction  = +1;
 
-    if (QMCDriverMode[QMC_UPDATE_MODE])
+    if (qmc_driver_mode[QMC_UPDATE_MODE])
     {
       // app_log () << ip << " initWalkers for pbyp...\n";
       Movers[ip]->initWalkersForPbyP(W.ReptileList[ip]->repstart, W.ReptileList[ip]->repend);

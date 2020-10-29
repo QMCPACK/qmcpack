@@ -13,7 +13,7 @@
 
 
 #include "Configuration.h"
-#include "Utilities/ProgressReportEngine.h"
+#include "ProgressReportEngine.h"
 
 namespace qmcplusplus
 {

@@ -19,17 +19,15 @@
  * Not the most optimized method to use wavefunctions in a plane-wave basis.
  */
 #include "Message/Communicate.h"
-#include "QMCWaveFunctions/PlaneWave/PWRealOrbitalSet.h"
+#include "PWRealOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
 {
 PWRealOrbitalSet::~PWRealOrbitalSet()
 {
-#if !defined(ENABLE_SMARTPOINTER)
   if (OwnBasisSet && myBasisSet)
     delete myBasisSet;
-#endif
 }
 
 SPOSet* PWRealOrbitalSet::makeClone() const
@@ -46,13 +44,6 @@ void PWRealOrbitalSet::resetParameters(const opt_variables_type& active)
 }
 
 void PWRealOrbitalSet::setOrbitalSetSize(int norbs) {}
-
-void PWRealOrbitalSet::resetTargetParticleSet(ParticleSet& P)
-{
-  //  Not sure what to do here, if anything
-  //app_error() << "PWRealOrbitalSet::resetTargetParticleSet not yet coded." << std::endl;
-  //OHMMS::Controller->abort();
-}
 
 void PWRealOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
 {
@@ -101,7 +92,7 @@ void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs, int jorb
   }
 }
 
-void PWRealOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void PWRealOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   myBasisSet->evaluate(P.activeR(iat));
   MatrixOperators::product(CC, myBasisSet->Zv, tempPsi.data());
@@ -109,11 +100,11 @@ void PWRealOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& ps
     psi[j] = tempPsi[j].real();
 }
 
-void PWRealOrbitalSet::evaluate(const ParticleSet& P,
-                                int iat,
-                                ValueVector_t& psi,
-                                GradVector_t& dpsi,
-                                ValueVector_t& d2psi)
+void PWRealOrbitalSet::evaluateVGL(const ParticleSet& P,
+                                   int iat,
+                                   ValueVector_t& psi,
+                                   GradVector_t& dpsi,
+                                   ValueVector_t& d2psi)
 {
   myBasisSet->evaluateAll(P, iat);
   MatrixOperators::product(CC, myBasisSet->Z, Temp);

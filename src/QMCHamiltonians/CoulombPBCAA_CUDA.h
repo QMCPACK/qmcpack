@@ -50,7 +50,7 @@ struct CoulombPBCAA_CUDA : public CoulombPBCAA
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
   void initBreakup(ParticleSet& P, bool cloning);
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
 } // namespace qmcplusplus
 #endif

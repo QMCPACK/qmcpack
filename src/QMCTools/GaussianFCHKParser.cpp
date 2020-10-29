@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/GaussianFCHKParser.h"
+#include "GaussianFCHKParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -89,8 +89,8 @@ void GaussianFCHKParser::parse(const std::string& fname)
   numMO = NumOfIndOrb;
   // TDB: THIS ADDITION SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES
   std::streampos pivottdb = fin.tellg();
-  int ng;
-  notfound = true;
+  int ng                  = 0;
+  notfound                = true;
   while (notfound)
   {
     std::string aline;
@@ -109,7 +109,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
   // getwords(currentWords,fin); //Number of contracted shells
   // getwords(currentWords,fin); //Number of contracted shells
   // int nx=atoi(currentWords.back().c_str()); //Number of exponents
-  int nx;
+  int nx   = 0;
   notfound = true;
   while (notfound)
   {

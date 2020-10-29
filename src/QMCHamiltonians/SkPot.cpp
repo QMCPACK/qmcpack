@@ -12,9 +12,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/SkPot.h>
-#include <Utilities/IteratorUtility.h>
-#include <OhmmsData/AttributeSet.h>
+#include "SkPot.h"
+#include "Utilities/IteratorUtility.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {
@@ -72,7 +72,7 @@ bool SkPot::put(xmlNodePtr cur)
 
 bool SkPot::get(std::ostream& os) const { return true; }
 
-QMCHamiltonianBase* SkPot::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+OperatorBase* SkPot::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   SkPot* myclone = new SkPot(*this);
   myclone->FillFk();

@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_OPTIMIZATIONFUNCION_BASE_H
 
 #include "OhmmsData/OhmmsElementBase.h"
-#include "Optimize/LeastSquaredFit.h"
+#include "Configuration.h"
 
 /** Base class for any cost function
  *
@@ -26,7 +26,10 @@ template<class T = double>
 class CostFunctionBase
 {
 public:
-  typedef T Return_t;
+
+  typedef qmcplusplus::QMCTraits::ValueType Return_t;
+  typedef qmcplusplus::QMCTraits::RealType Return_rt;
+
 
   /** boolean to indicate if the cost function is valid.
    *
@@ -38,15 +41,17 @@ public:
 
   virtual ~CostFunctionBase() {}
 
-  virtual int NumParams() = 0;
+  virtual int getNumParams() const = 0;
 
   virtual Return_t& Params(int i) = 0;
 
   virtual Return_t Params(int i) const = 0;
 
-  virtual Return_t Cost(bool needGrad = true) = 0;
+  virtual std::string getParamName(int i) const = 0;
 
-  virtual void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff = 0) = 0;
+  virtual Return_rt Cost(bool needGrad = true) = 0;
+
+  virtual void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) = 0;
 
   virtual void Report() = 0;
 
@@ -62,10 +67,10 @@ public:
    */
   virtual bool lineoptimization(const std::vector<T>& x0,
                                 const std::vector<T>& gr,
-                                Return_t val0,
-                                Return_t& dl,
-                                Return_t& vopt,
-                                Return_t& lambda_max)
+                                Return_rt val0,
+                                Return_rt& dl,
+                                Return_rt& vopt,
+                                Return_rt& lambda_max)
   {
     return false;
   }

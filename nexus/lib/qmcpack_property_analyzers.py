@@ -105,7 +105,7 @@ class Bspline(QAobject):
         d2v = zeros(r.shape)
         for p in range(len(r)):               
             ri = r[p]*odr
-            i = floor(ri)
+            i = int(floor(ri))
             if i<ni:
                 t = ri - i
                 tp[0,0] = t*t*t
@@ -230,7 +230,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
         jnames = {'One-Body':'J1','Two-Body':'J2','Three-Body':'J3'}
         jastrows = QAobject()
-        for jt,jn in jnames.iteritems():
+        for jt,jn in jnames.items():
             jastrows[jn] = QAobject()
         #end for
         del jastrows.J3
@@ -247,7 +247,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
                 jname = 'J1'
                 func = J1.function.lower()
                 if func=='bspline':
-                    for jn,corr in J1.correlations.iteritems():
+                    for jn,corr in J1.correlations.items():
                         if 'rcut' in corr:
                             rcut = corr.rcut
                         else:
@@ -262,7 +262,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
                 jname = 'J2'
                 func = J2.function.lower()
                 if func=='bspline':
-                    for jn,corr in J2.correlations.iteritems():
+                    for jn,corr in J2.correlations.items():
                         if 'rcut' in corr:
                             rcut = corr.rcut
                         else:
@@ -286,7 +286,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
     def load_jastrow_data(self):
         ext = '.g'+str(self.batch_index).zfill(3)+'.dat'
         for jt in self.jastrow_types:
-            for jn,je in self[jt]._iteritems():
+            for jn,je in self[jt].items():
                 J = self[jt][jn]
                 data = loadtxt(os.path.join(self.sourcepath,jt+'.'+jn+ext))
                 J.r  = data[:,0]
@@ -301,7 +301,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
     def plot_jastrow_data(self):
         for jt in self.jastrow_types:
             if len(self[jt])!=0:
-                for jn,je in self[jt]._iteritems():
+                for jn,je in self[jt].items():
                     r = je.r
                     bs = Bspline(je.coefficients,r.max())
                     d0,d1,d2 = bs.evaluate(r)
@@ -325,9 +325,9 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
 
     def plot_jastrows(self,ptype=plot):
-        for name,value in self.iteritems():
+        for name,value in self.items():
             if name in self.jastrow_types:
-                for label,jastrow in value.iteritems():
+                for label,jastrow in value.items():
                     jtype = jastrow.__class__.__name__
                     figure()
                     jastrow.plot(ptype=ptype)

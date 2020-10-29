@@ -82,7 +82,8 @@ private:
   // Basic data //
   ////////////////
   RealType CellVolume, NormConstant;
-  int NumElecs, NumSpins;
+  int num_elecs;
+  int NumSpins;
   int NumIons, NumIonSpecies;
 
   // Gvectors included in the summation for the
@@ -135,7 +136,6 @@ private:
   void StructureFactor(PosType G, std::vector<ComplexType>& rho_G);
 
   const ParticleSet& Ions;
-  ParticleSet& Elecs;
   std::string OneBodyID;
   std::string TwoBodyID;
   double Prefactor;
@@ -160,29 +160,30 @@ public:
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
   void reportStatus(std::ostream& os);
-  //evaluate the distance table with els
-  void resetTargetParticleSet(ParticleSet& P);
 
-  RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat);
 
   GradType evalGrad(ParticleSet& P, int iat);
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void restore(int iat);
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   // Allocate per-walker data in the PooledData buffer
   void registerData(ParticleSet& P, WFBufferType& buf);
   // Walker move has been accepted -- update the buffer
-  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   // Pull data from the walker buffer at the beginning of a block of
   // single-particle moves
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   ///process input file
   bool put(xmlNodePtr cur);
+  ///output jastrow coefficients
+  void printOneBody(std::ostream& os);
+  void printTwoBody(std::ostream& os);
 
   // Implements strict weak ordering with respect to the
   // structure factors.  Used to sort the G-vectors according to
@@ -190,10 +191,12 @@ public:
   bool operator()(PosType G1, PosType G2);
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
+  WaveFunctionComponentPtr makeThrScope(PtclGrpIndexes& pgi) const;
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi);
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi);
 
   /** evaluate the ratio
   */
@@ -201,7 +204,7 @@ public:
 
 private:
   void copyFrom(const kSpaceJastrow& old);
-  kSpaceJastrow(const ParticleSet& ions, ParticleSet& els);
+  kSpaceJastrow(const ParticleSet& ions);
   std::vector<int> TwoBodyVarMap;
   std::vector<int> OneBodyVarMap;
 };

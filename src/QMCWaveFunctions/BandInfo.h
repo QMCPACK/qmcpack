@@ -9,8 +9,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file BandInfo.h
  *
  * Define helper class to sort bands according to the band and twist and functions
@@ -21,18 +21,17 @@
 
 namespace qmcplusplus
 {
-
 class SPOSetInfo;
 
 struct BandInfo
 {
   ///twist index
   int TwistIndex;
-  ///band index 
+  ///band index
   int BandIndex;
   /// band group index
   int BandGroup;
-  ///spin index 
+  ///spin index
   int Spin;
   ///energy associated with this band
   double Energy;
@@ -42,8 +41,8 @@ struct BandInfo
   bool IsCoreState;
   ///default constructor
   BandInfo()
-    :TwistIndex(0),BandIndex(-1),BandGroup(0),Spin(0),Energy(1e9),MakeTwoCopies(false),IsCoreState(false)
-  { }
+      : TwistIndex(0), BandIndex(-1), BandGroup(0), Spin(0), Energy(1e9), MakeTwoCopies(false), IsCoreState(false)
+  {}
 
   /** operator to determine the order of any band
    * 
@@ -52,10 +51,10 @@ struct BandInfo
    */
   inline bool operator<(BandInfo other) const
   {
-    if  ((Energy < other.Energy+1e-6)&&(Energy > other.Energy-1e-6))
+    if ((Energy < other.Energy + 1e-6) && (Energy > other.Energy - 1e-6))
     {
       if (TwistIndex == other.TwistIndex)
-        return BandIndex<other.BandIndex;
+        return BandIndex < other.BandIndex;
       else
         return TwistIndex < other.TwistIndex;
     }
@@ -85,13 +84,13 @@ struct BandInfoGroup
   ///constructor
   BandInfoGroup();
   ///return the size of this band
-  inline int getNumDistinctOrbitals() const { return myBands.size();}
+  inline int getNumDistinctOrbitals() const { return myBands.size(); }
   ///return the indext of the first SPO set
-  inline int getFirstSPO() const { return FirstSPO;}
+  inline int getFirstSPO() const { return FirstSPO; }
   ///return the indext of the last SPO set
-  inline int getLastSPO() const { return NumSPOs+FirstSPO;}
+  inline int getLastSPO() const { return NumSPOs + FirstSPO; }
   ///return the number of SPOs
-  inline int getNumSPOs() const { return NumSPOs;}
+  inline int getNumSPOs() const { return NumSPOs; }
 
   /** select the bands within an energy range [emin,emax)
    *
@@ -110,6 +109,6 @@ struct BandInfoGroup
   void selectBands(const std::vector<BandInfo>& bigspace, int first_orb, int num_spos, bool relative);
 };
 
-}
+} // namespace qmcplusplus
 
 #endif

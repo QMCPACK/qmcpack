@@ -59,15 +59,15 @@
 
 //#include<mpi.h>
 
-#include<formic/utils/lmyengine/var_dependencies.h>
-#include<formic/utils/lmyengine/eigen_solver.h>
-#include<formic/utils/matrix.h>
+#include"formic/utils/lmyengine/var_dependencies.h"
+#include"formic/utils/lmyengine/eigen_solver.h"
+#include"formic/utils/matrix.h"
 
 namespace cqmc {
   
   namespace engine { 
   
-  class SpamLMHD : public EigenSolver { 
+  class SpamLMHD : public EigenSolver<double> { 
 
 private: 
 
@@ -338,6 +338,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////////
 
   void SMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool approximate);
+  void LSMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool approximate) {}
 
   ////////////////////////////////////////////////////////////////////////////////////
   // \brief function that performs overlap matrix-matrix multiplication 

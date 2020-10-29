@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -26,23 +26,35 @@
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
+#include "Estimators/EstimatorManagerInterface.h"
+#include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include <bitset>
 
 namespace qmcplusplus
 {
-class MCWalkerConifugration;
+class MCWalkerConfiguration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
-/**Class to manage a set of ScalarEstimators */
-class EstimatorManagerBase
+namespace testing
+{
+class EstimatorManagerBaseTest;
+} // namespace testing
+
+
+/** Class to manage a set of ScalarEstimators */
+class EstimatorManagerBase : public EstimatorManagerInterface
 {
 public:
-  typedef QMCTraits::EstimatorRealType RealType;
+  typedef QMCTraits::FullPrecRealType RealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+
   typedef ScalarEstimatorBase EstimatorType;
   typedef std::vector<RealType> BufferType;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
   ///name of the primary estimator name
@@ -128,7 +140,7 @@ public:
 
   ///process xml tag associated with estimators
   //bool put(xmlNodePtr cur);
-  bool put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodePtr cur);
+  bool put(QMCHamiltonian& H, xmlNodePtr cur);
 
   void resetTargetParticleSet(ParticleSet& p);
 
@@ -168,6 +180,7 @@ public:
    * @param accept acceptance rate of this block
    */
   void stopBlock(RealType accept, bool collectall = true);
+
   /** stop a block
    * @param m list of estimator which has been collecting data independently
    */
@@ -185,14 +198,10 @@ public:
    */
   void accumulate(MCWalkerConfiguration& W, MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
 
-  //     /** accumulate the FW observables
-  //      */
-  //     void accumulate(HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, std::vector<int>& Dims);
-
-  ///** set the cummulative energy and weight
-  void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
-
-  void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
+  /** get the average of per-block energy and variance of all the blocks
+   * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
+   */
+  void getApproximateEnergyVariance(RealType& e, RealType& var);
 
   template<class CT>
   void write(CT& anything, bool doappend)
@@ -200,8 +209,11 @@ public:
     anything.write(h_file, doappend);
   }
 
+  auto& get_AverageCache() { return AverageCache; }
+  auto& get_SquaredAverageCache() { return SquaredAverageCache; }
+
 protected:
-  ///use bitset to handle options
+  //  TODO: fix needless use of bitset instead of clearer more visible booleans
   std::bitset<8> Options;
   ///size of the message buffer
   int BufferSize;
@@ -271,10 +283,12 @@ private:
   //Data for communication
   std::vector<BufferType*> RemoteData;
   ///collect data and write
-  void collectBlockAverages(int num_threads);
+  void collectBlockAverages();
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;
+
+  friend class qmcplusplus::testing::EstimatorManagerBaseTest;
 };
 } // namespace qmcplusplus
 #endif

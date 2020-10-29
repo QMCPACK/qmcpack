@@ -16,7 +16,7 @@
 
 #ifndef QMCPLUSPLUS_COULOMBPBCAB_TEMP_H
 #define QMCPLUSPLUS_COULOMBPBCAB_TEMP_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Numerics/OneDimGridBase.h"
@@ -32,23 +32,21 @@ namespace qmcplusplus
  * Functionally identical to CoulombPBCAB but uses a templated version of
  * LRHandler.
  */
-struct CoulombPBCAB : public QMCHamiltonianBase, public ForceBase
+struct CoulombPBCAB : public OperatorBase, public ForceBase
 {
   typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
   typedef LRCoulombSingleton::GridType GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType mRealType;
 
-  typedef DistanceTableData::RowContainer RowContainerType;
-
   ///source particle set
   ParticleSet& PtclA;
   ///long-range Handler
-  LRHandlerType* AB;
+  std::unique_ptr<LRHandlerType> AB;
   ///long-range derivative handler
-  LRHandlerType* dAB;
+  std::unique_ptr<LRHandlerType> dAB;
   ///locator of the distance table
-  int myTableIndex;
+  const int myTableIndex;
   ///number of species of A particle set
   int NumSpeciesA;
   ///number of species of B particle set
@@ -157,17 +155,10 @@ struct CoulombPBCAB : public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   ///Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
   void initBreakup(ParticleSet& P);
-
-  //Do these functions need to be kept?
-  Return_t evalConsts_orig(bool report = true);
-  Return_t evalSR_old(ParticleSet& P);
-  Return_t evalLR_old(ParticleSet& P);
-  Return_t evalConsts_old(bool report = true);
-  //
 
   ///Computes the short-range contribution to the coulomb energy.
   Return_t evalSR(ParticleSet& P);
@@ -186,14 +177,14 @@ struct CoulombPBCAB : public QMCHamiltonianBase, public ForceBase
 
   void setObservables(PropertySetType& plist)
   {
-    QMCHamiltonianBase::setObservables(plist);
+    OperatorBase::setObservables(plist);
     if (ComputeForces)
       setObservablesF(plist);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+    OperatorBase::setParticlePropertyList(plist, offset);
     if (ComputeForces)
       setParticleSetF(plist, offset);
   }

@@ -221,6 +221,14 @@ inline void Communicate::allreduce(long& g)
   MPI_Allreduce(&(gt), &(g), 1, MPI_LONG, MPI_SUM, myMPI);
 }
 
+template<>
+inline void Communicate::allreduce(unsigned long& g)
+{
+  if (d_ncontexts == 1)
+    return;
+  unsigned long gt = g;
+  MPI_Allreduce(&(gt), &(g), 1, MPI_UNSIGNED_LONG, MPI_SUM, myMPI);
+}
 
 template<>
 inline void Communicate::allreduce(float& g)
@@ -287,6 +295,16 @@ inline void Communicate::allreduce(std::vector<long>& g)
     return;
   std::vector<long> gt(g.size(), 0);
   MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_LONG, MPI_SUM, myMPI);
+  g = gt;
+}
+
+template<>
+inline void Communicate::allreduce(std::vector<unsigned long>& g)
+{
+  if (d_ncontexts == 1)
+    return;
+  std::vector<unsigned long> gt(g.size(), 0);
+  MPI_Allreduce(&(g[0]), &(gt[0]), g.size(), MPI_UNSIGNED_LONG, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -685,9 +703,21 @@ inline void Communicate::bcast(double* restrict x, int n)
 }
 
 template<>
+inline void Communicate::bcast(std::complex<double>* restrict x, int n)
+{
+  MPI_Bcast(x, 2*n, MPI_DOUBLE, 0, myMPI);
+}
+
+template<>
 inline void Communicate::bcast(float* restrict x, int n)
 {
   MPI_Bcast(x, n, MPI_FLOAT, 0, myMPI);
+}
+
+template<>
+inline void Communicate::bcast(std::complex<float>* restrict x, int n)
+{
+  MPI_Bcast(x, 2*n, MPI_FLOAT, 0, myMPI);
 }
 
 template<>

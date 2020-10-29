@@ -14,19 +14,17 @@
 
 
 #include "Message/Communicate.h"
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalSet.h"
+#include "PWOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
 {
 PWOrbitalSet::~PWOrbitalSet()
 {
-#if !defined(ENABLE_SMARTPOINTER)
   if (OwnBasisSet && myBasisSet)
     delete myBasisSet;
   if (!IsCloned && C != nullptr)
     delete C;
-#endif
 }
 
 SPOSet* PWOrbitalSet::makeClone() const
@@ -43,13 +41,6 @@ void PWOrbitalSet::resetParameters(const opt_variables_type& optVariables)
 }
 
 void PWOrbitalSet::setOrbitalSetSize(int norbs) {}
-
-void PWOrbitalSet::resetTargetParticleSet(ParticleSet& P)
-{
-  // Not sure what to do here, if anything
-  //app_error() << "PWOrbitalSet::resetTargetParticleSet not yet coded." << std::endl;
-  //OHMMS::Controller->abort();
-}
 
 void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
 {
@@ -97,7 +88,7 @@ void PWOrbitalSet::addVector(const std::vector<RealType>& coefs, int jorb)
   }
 }
 
-void PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void PWOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   //Evaluate every orbital for particle iat.
   //Evaluate the basis-set at these coordinates:
@@ -106,7 +97,7 @@ void PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   MatrixOperators::product(*C, myBasisSet->Zv, &psi[0]);
 }
 
-void PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void PWOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   //Evaluate the orbitals and derivatives for particle iat only.
   myBasisSet->evaluateAll(P, iat);

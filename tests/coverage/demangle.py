@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 from subprocess import *
 import sys
@@ -11,11 +12,11 @@ def demangle(names):
   inp = '\n'.join(names)
   stdout, stderr = p.communicate(inp)
   if stderr:
-    print 'stderr:',stderr
+    print('stderr:',stderr)
 
   lines = stdout.split('\n')
   return lines
 
 if __name__ == '__main__':
   plain = demangle(sys.argv[1:])
-  print plain
+  print(plain)

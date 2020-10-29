@@ -20,9 +20,9 @@
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
-#include<formic/utils/matrix.h>
-#include<formic/utils/lmyengine/block_mat.h>
-#include<formic/utils/lmyengine/var_dependencies.h>
+#include"formic/utils/matrix.h"
+#include"formic/utils/lmyengine/block_mat.h"
+#include"formic/utils/lmyengine/var_dependencies.h"
 
 namespace cqmc {
 
@@ -52,6 +52,12 @@ class LMBlocker {
 
     // whether to solve the eigenvalue problem iteratively
     bool _iterative;
+
+//whether hybrid optimization method is being used, default is false
+    bool hybrid = false;
+        
+    //Vector for storing the input vectors to the BLM steps of hybrid method
+    std::vector< std::vector<double> > hybridBLM_Input;
 
   public:
     
@@ -106,6 +112,16 @@ class LMBlocker {
                               std::vector<std::vector<formic::Matrix<double> > > & block_ups,
                               std::ostream & output,
                               const double omega=0.0);
+
+    //function that sets whether hybrid method is being used
+    void setHybrid(bool h) {hybrid = h;}
+
+    //function that returns the vector of vectors for receiving information from the engine object
+    std::vector< std::vector<double> >&  getInputVector() {return hybridBLM_Input;}
+    
+    //function for overwriting the set of old updates used in the blocked linear method portion of the hybrid method
+    void overwriteOldUpates(formic::Matrix<double>& m_ou);
+
   };
 }
 }

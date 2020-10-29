@@ -32,7 +32,6 @@ public:
   VMCcuda(MCWalkerConfiguration& w,
           TrialWaveFunction& psi,
           QMCHamiltonian& h,
-          WaveFunctionPool& ppool,
           Communicate* comm);
 
   bool run();
@@ -65,7 +64,7 @@ private:
   VMCcuda& operator=(const VMCcuda&) = delete;
   ///hide initialization from the main function
   bool checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid);
-
+  QMCRunType getRunType() { return QMCRunType::VMC; }
   void resetRun();
 
   opt_variables_type dummy;

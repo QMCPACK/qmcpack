@@ -14,20 +14,20 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file DeterminantOperator.h
+/** @file
  * @brief Define determinant operators
  */
 #ifndef OHMMS_NUMERIC_DETERMINANT_H
 #define OHMMS_NUMERIC_DETERMINANT_H
 
 #include <algorithm>
-#include <OhmmsPETE/TinyVector.h>
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <Numerics/OhmmsBlas.h>
-#include <config/stdlib/math.h>
-#include <simd/simd.hpp>
-#include <Numerics/determinant_operators.h>
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "CPU/BLAS.hpp"
+#include "config/stdlib/math.hpp"
+#include "CPU/SIMD/inner_product.hpp"
+#include "Numerics/determinant_operators.h"
 
 namespace qmcplusplus
 {
@@ -161,70 +161,19 @@ inline T Determinant(T* restrict x, int n, int m, int* restrict pivot)
 template<class T>
 inline T Invert(T* restrict x, int n, int m)
 {
-  int pivot[n];
-  T work[n];
-  return Invert(x, n, m, work, pivot);
+  std::vector<int> pivot(n);
+  std::vector<T> work(n);
+  return Invert(x, n, m, work.data(), pivot.data());
 }
 
-template<class T>
-inline T InvertWithLog(T* restrict x, int n, int m, T* restrict work, int* restrict pivot, T& phase)
+template<class T, class T1>
+inline void InvertWithLog(T* restrict x, int n, int m, T* restrict work, int* restrict pivot, std::complex<T1>& logdet)
 {
-  T logdet(0.0);
   LUFactorization(n, m, x, n, pivot);
-  int sign_det = 1;
+  logdet = std::complex<T1>();
   for (int i = 0; i < n; i++)
-  {
-    sign_det *= (pivot[i] == i + 1) ? 1 : -1;
-    sign_det *= (x[i * m + i] > 0) ? 1 : -1;
-    logdet += std::log(std::abs(x[i * m + i]));
-  }
+    logdet += std::log(std::complex<T1>((pivot[i] == i + 1) ? x[i * m + i] : -x[i * m + i]));
   InvertLU(n, x, n, pivot, work, n);
-  phase = (sign_det > 0) ? 0.0 : M_PI;
-  return logdet;
-}
-
-template<class T>
-inline T InvertWithLog(std::complex<T>* restrict x,
-                       int n,
-                       int m,
-                       std::complex<T>* restrict work,
-                       int* restrict pivot,
-                       T& phase)
-{
-  T logdet(0.0);
-  LUFactorization(n, m, x, n, pivot);
-  phase = 0.0;
-  for (int i = 0; i < n; i++)
-  {
-    int ii = i * m + i;
-    phase += std::arg(x[ii]);
-    if (pivot[i] != i + 1)
-      phase += M_PI;
-    logdet += std::log(x[ii].real() * x[ii].real() + x[ii].imag() * x[ii].imag());
-    //slightly smaller error with the following
-    //        logdet+=2.0*std::log(std::abs(x[ii]);
-  }
-  InvertLU(n, x, n, pivot, work, n);
-  const T one_over_2pi = 1.0 / TWOPI;
-  phase -= std::floor(phase * one_over_2pi) * TWOPI;
-  return 0.5 * logdet;
-}
-
-/** matrix inversion using log method to avoid numerical over/under-flow
- * @param x starting address of an n-by-m
- * @param n rows
- * @param m cols
- * @param phase output
- * @return |det|
- *
- * Use type-specific InvertWithLog defined above.
- */
-template<typename T, typename RT>
-inline RT InvertWithLog(T* restrict x, int n, int m, RT& phase)
-{
-  int pivot[m];
-  T work[m];
-  return InvertWithLog(x, n, m, work, pivot, phase);
 }
 
 /** invert a matrix
@@ -237,9 +186,9 @@ inline typename MatrixA::value_type invert_matrix(MatrixA& M, bool getdet = true
 {
   typedef typename MatrixA::value_type value_type;
   const int n = M.rows();
-  int pivot[n];
-  value_type work[n];
-  LUFactorization(n, n, M.data(), n, pivot);
+  std::vector<int> pivot(n);
+  std::vector<value_type> work(n);
+  LUFactorization(n, n, M.data(), n, pivot.data());
   value_type det0 = 1.0;
   if (getdet)
   // calculate determinant
@@ -253,70 +202,10 @@ inline typename MatrixA::value_type invert_matrix(MatrixA& M, bool getdet = true
     }
     det0 *= static_cast<value_type>(sign);
   }
-  InvertLU(n, M.data(), n, pivot, work, n);
+  InvertLU(n, M.data(), n, pivot.data(), work.data(), n);
   return det0;
 }
 
-/** determinant a matrix
- * \param M a matrix to be inverted
- * \return the determinant
- */
-template<class MatrixA>
-inline typename MatrixA::value_type determinant_matrix(MatrixA& M)
-{
-  typedef typename MatrixA::value_type value_type;
-  MatrixA N(M);
-  const int n = N.rows();
-  int pivot[n];
-  value_type work[n];
-  LUFactorization(n, n, N.data(), n, pivot);
-  value_type det0 = 1.0;
-  int sign        = 1;
-  for (int i = 0; i < n; ++i)
-  {
-    if (pivot[i] != i + 1)
-      sign *= -1;
-    det0 *= M(i, i);
-  }
-  det0 *= static_cast<value_type>(sign);
-  return det0;
-}
-//
-///** invert a matrix
-// * \param M a matrix to be inverted
-// * \param getdet bool, if true, calculate the determinant
-// * \return the determinant
-// */
-//template<class MatrixA>
-//  inline typename MatrixA::value_type
-//invert_matrix_log(MatrixA& M, int &sign_det, bool getdet)
-//{
-//  typedef typename MatrixA::value_type value_type;
-//  std::vector<int> pivot(M.rows());
-//  std::vector<value_type> work(M.rows());
-//  int n(M.rows());
-//  int m(M.cols());
-//  MatrixA Mcopy(M);
-//  LUFactorization(n,m,M.data(),n,&pivot[0]);
-//  value_type logdet = 0.0;
-//  sign_det=1;
-//  if(getdet)
-//  {
-//    for(int i=0; i<n; i++)
-//    {
-//      ////if(pivot[i] != i+1) sign_det *= -1;
-//      sign_det *= (pivot[i] == i+1)?1:-1;
-//      sign_det *= (M(i*m+i)>0)?1:-1;
-//      logdet += std::log(std::abs(M(i*m+i)));
-//    }
-//  }
-//  InvertLU(n,M.data(),m, &pivot[0], &work[0], n);
-//  //value_type det0 = Invert(Mcopy.data(),n,m,&work[0], &pivot[0]);
-//  //double expdetp = sign_det*std::exp(logdet);
-//  //std::cerr <<"DETS ARE NOW "<<det0<<" "<<expdetp<<" "<<logdet<< std::endl;
-//  return logdet;
-//}
-//
 /** determinant ratio with a row substitution
  * @param Minv inverse matrix
  * @param newv row vector
@@ -393,14 +282,6 @@ inline void InverseUpdateByColumn(MatA& Minv,
   //}
   //for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
 }
-
-// template<class T1, class T2>
-// inline T2
-// dot(const T1* restrict a, const T2* restrict b, int n) {
-//   T2 res;
-//   for(int i=0; i<n; i++) res += a[i]*b[i];
-//   return res;
-// }
 
 } // namespace qmcplusplus
 #endif

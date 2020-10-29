@@ -14,10 +14,10 @@
 /** @file common.hpp
  * @brief Testing random number generators
  */
-#include <Utilities/Timer.h>
-#include <random/random.hpp>
-#include <vector>
 #include <getopt.h>
+#include <vector>
+#include "Utilities/Timer.h"
+#include "random.hpp"
 
 namespace qmcplusplus
 {

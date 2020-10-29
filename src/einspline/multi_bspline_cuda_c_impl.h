@@ -16,7 +16,7 @@
 
 #include "multi_bspline.h"
 #include "multi_bspline_create_cuda.h"
-#include "../CUDA/gpu_misc.h"
+#include "CUDA_legacy/gpu_misc.h"
 
 __global__ static void
 eval_multi_multi_UBspline_1d_c_kernel

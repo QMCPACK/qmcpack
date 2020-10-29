@@ -14,15 +14,9 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
-#include "Particle/SymmetricDistanceTableData.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
-#include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -35,6 +29,9 @@ using std::string;
 
 namespace qmcplusplus
 {
+using LogValueType = WaveFunctionComponent::LogValueType;
+using PsiValueType = WaveFunctionComponent::PsiValueType;
+
 TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 {
   PolynomialFunctor3D functor;
@@ -47,7 +44,6 @@ TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   ParticleSet ions_;
@@ -63,7 +59,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
-  ions_.RSoA = ions_.R;
+  ions_.setCoordinates(ions_.R);
   //ions_.resetGroups();
 
   elec_.setName("elec");
@@ -91,15 +87,6 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   target_species(chargeIdx, downIdx) = -1;
   //elec_.resetGroups();
 
-#ifdef ENABLE_SOA
-  elec_.addTable(ions_, DT_SOA);
-#else
-  elec_.addTable(ions_, DT_AOS);
-#endif
-  elec_.update();
-
-  TrialWaveFunction psi = TrialWaveFunction(c);
-
   const char* particles = "<tmp> \
     <jastrow name=\"J3\" type=\"eeI\" function=\"polynomial\" source=\"ion\" print=\"yes\"> \
       <correlation ispecies=\"O\" especies=\"u\" isize=\"3\" esize=\"3\" rcut=\"10\"> \
@@ -119,22 +106,18 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 
   xmlNodePtr jas_eeI = xmlFirstElementChild(root);
 
-  eeI_JastrowBuilder jastrow(elec_, psi, ions_);
-  bool build_okay = jastrow.put(jas_eeI);
-  REQUIRE(build_okay);
+  eeI_JastrowBuilder jastrow(c, elec_, ions_);
+  std::unique_ptr<WaveFunctionComponent> jas(jastrow.buildComponent(jas_eeI));
 
-  WaveFunctionComponent* orb = psi.getOrbitals()[0];
-
-#ifdef ENABLE_SOA
   typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
-#else
-  typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-#endif
-  J3Type* j3 = dynamic_cast<J3Type*>(orb);
-  REQUIRE(j3 != NULL);
+  std::unique_ptr<WaveFunctionComponent> j3(dynamic_cast<J3Type*>(jastrow.buildComponent(jas_eeI)));
+  REQUIRE(j3 != nullptr);
 
-  double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == Approx(-1.193457749)); // note: number not validated
+  // update all distance tables
+  elec_.update();
+
+  double logpsi_real = std::real(j3->evaluateLog(elec_, elec_.G, elec_.L));
+  REQUIRE(logpsi_real == Approx(-1.193457749)); // note: number not validated
 
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
@@ -149,61 +132,61 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   std::vector<ValueType> ratios(elec_.getTotalNum());
   j3->evaluateRatiosAlltoOne(elec_, ratios);
 
-  REQUIRE(ratios[0] == ComplexApprox(0.8744938582).compare_real_only());
-  REQUIRE(ratios[1] == ComplexApprox(1.0357541137).compare_real_only());
-  REQUIRE(ratios[2] == ComplexApprox(0.8302245609).compare_real_only());
-  REQUIRE(ratios[3] == ComplexApprox(0.7987703724).compare_real_only());
+  REQUIRE(std::real(ratios[0]) == Approx(0.8744938582));
+  REQUIRE(std::real(ratios[1]) == Approx(1.0357541137));
+  REQUIRE(std::real(ratios[2]) == Approx(0.8302245609));
+  REQUIRE(std::real(ratios[3]) == Approx(0.7987703724));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
-  ValueType ratio_0 = j3->ratio(elec_, 0);
+  PsiValueType ratio_0 = j3->ratio(elec_, 0);
   elec_.rejectMove(0);
 
   elec_.makeMove(1, newpos - elec_.R[1]);
-  ValueType ratio_1 = j3->ratio(elec_, 1);
+  PsiValueType ratio_1 = j3->ratio(elec_, 1);
   elec_.rejectMove(1);
 
   elec_.makeMove(2, newpos - elec_.R[2]);
-  ValueType ratio_2 = j3->ratio(elec_, 2);
+  PsiValueType ratio_2 = j3->ratio(elec_, 2);
   elec_.rejectMove(2);
 
   elec_.makeMove(3, newpos - elec_.R[3]);
-  ValueType ratio_3 = j3->ratio(elec_, 3);
+  PsiValueType ratio_3 = j3->ratio(elec_, 3);
   elec_.rejectMove(3);
 
-  REQUIRE(ratio_0 == ComplexApprox(0.8744938582).compare_real_only());
-  REQUIRE(ratio_1 == ComplexApprox(1.0357541137).compare_real_only());
-  REQUIRE(ratio_2 == ComplexApprox(0.8302245609).compare_real_only());
-  REQUIRE(ratio_3 == ComplexApprox(0.7987703724).compare_real_only());
+  REQUIRE(std::real(ratio_0) == Approx(0.8744938582));
+  REQUIRE(std::real(ratio_1) == Approx(1.0357541137));
+  REQUIRE(std::real(ratio_2) == Approx(0.8302245609));
+  REQUIRE(std::real(ratio_3) == Approx(0.7987703724));
 
   opt_variables_type optvars;
-  std::vector<WaveFunctionComponent::RealType> dlogpsi;
-  std::vector<WaveFunctionComponent::RealType> dhpsioverpsi;
+  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
+  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
-  psi.checkInVariables(optvars);
+  j3->checkInVariables(optvars);
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
-  psi.checkOutVariables(optvars);
+  j3->checkOutVariables(optvars);
   dlogpsi.resize(NumOptimizables);
   dhpsioverpsi.resize(NumOptimizables);
-  psi.evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
+  j3->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
 
   std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
   for (int iparam = 0; iparam < NumOptimizables; iparam++)
     std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   std::cout << std::endl;
 
-  REQUIRE(dlogpsi[43] == Approx(1.3358726814e+05));
-  REQUIRE(dhpsioverpsi[43] == Approx(-2.3246270644e+05));
+  REQUIRE(std::real(dlogpsi[43]) == Approx(1.3358726814e+05));
+  REQUIRE(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
 
   VirtualParticleSet VP(elec_, 2);
-  ParticleSet::ParticlePos_t newpos2(2);
+  std::vector<PosType> newpos2(2);
   std::vector<ValueType> ratios2(2);
-  newpos2[0] = newpos;
-  newpos2[1] = PosType(0.2, 0.5, 0.3);
-  VP.makeMoves(1, newpos2);
+  newpos2[0] = newpos - elec_.R[1];
+  newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
+  VP.makeMoves(1, elec_.R[1], newpos2);
   j3->evaluateRatios(VP, ratios2);
 
-  REQUIRE(ratios2[0] == ComplexApprox(1.0357541137).compare_real_only());
-  REQUIRE(ratios2[1] == ComplexApprox(1.0257141422).compare_real_only());
+  REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
+  REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));
 }
 } // namespace qmcplusplus

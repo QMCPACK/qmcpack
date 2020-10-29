@@ -15,7 +15,7 @@
 
 #include "QMCDrivers/DMC/DMCUpdatePbyPL2.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/DistanceTable.h"
+// #include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -30,6 +30,7 @@ typedef int TraceManager;
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
 
 /// Constructor.
 DMCUpdatePbyPL2::DMCUpdatePbyPL2(MCWalkerConfiguration& w,
@@ -56,8 +57,10 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
   int nAcceptTemp(0);
   int nRejectTemp(0);
   //copy the old energy and scale factor of drift
-  EstimatorRealType eold(thisWalker.Properties(LOCALENERGY));
-  EstimatorRealType enew(eold);
+  //EstimatorRealType eold(thisWalker.Properties(LOCALENERGY));
+  //EstimatorRealType enew(eold);
+  FullPrecRealType eold(thisWalker.Properties(WP::LOCALENERGY));
+  FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
@@ -83,7 +86,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
     RealType rr;
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
-      W.setActive(iat);
+      //W.setActive(iat);
       //get the displacement
       GradType grad_iat = Psi.evalGrad(W, iat);
       mPosType dr;
@@ -142,7 +145,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
         if (!W.makeMoveAndCheck(iat, dr))
           continue;
       }
-      RealType ratio = Psi.ratioGrad(W, iat, grad_iat);
+      ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
@@ -153,17 +156,17 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
       }
       else
       {
-        EstimatorRealType logGf = -0.5 * dot(dr_diff, dr_diff);
+        FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
-        getScaledDrift(tauovermass, grad_iat, dr);
-        dr                      = W.R[iat] - W.activePos - dr;
-        EstimatorRealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob           = ratio * ratio * std::exp(logGb - logGf);
+        DriftModifier->getDrift(tauovermass, grad_iat, dr);
+        dr                     = W.R[iat] - W.activePos - dr;
+        FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
+        RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
         if (RandomGen() < prob)
         {
           ++nAcceptTemp;
-          Psi.acceptMove(W, iat);
-          W.acceptMove(iat);
+          Psi.acceptMove(W, iat, true);
+          W.acceptMove(iat, true);
           rr_accepted += rr;
           gf_acc *= prob; //accumulate the ratio
         }
@@ -202,7 +205,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
   {
     //all moves are rejected: does not happen normally with reasonable wavefunctions
     thisWalker.Age++;
-    thisWalker.Properties(R2ACCEPTED) = 0.0;
+    thisWalker.Properties(WP::R2ACCEPTED) = 0.0;
     //weight is set to 0 for traces
     // consistent w/ no evaluate/auxHevaluate
     RealType wtmp     = thisWalker.Weight;

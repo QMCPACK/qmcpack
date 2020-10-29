@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_WALKER_INPUT_V0_4_H
 #define QMCPLUSPLUS_WALKER_INPUT_V0_4_H
 
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include <stack>
 
@@ -84,8 +84,6 @@ struct HDFWalkerInput_0_4
   bool read_hdf5_scatter(std::string h5name);
   /** read walkers using PHDF5 */
   bool read_phdf5(std::string h5name);
-  /**  for adios validation */
-  bool read_adios(xmlNodePtr cur);
 };
 
 } // namespace qmcplusplus

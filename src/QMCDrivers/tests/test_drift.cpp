@@ -15,19 +15,18 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
 
 namespace qmcplusplus
 {
 TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
@@ -63,13 +62,11 @@ TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
 TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
 { // basically copy and pasted from real test, except "myi"
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
@@ -104,13 +101,11 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
 TEST_CASE("get scaled drift real", "[drivers][drift]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
@@ -126,10 +121,11 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
   double gradx = -xtot / 2.;
   double dx    = xtot / nx;
 
+  DriftModifierUNR DM;
   for (int ix = 0; ix < nx; ix++)
   {
     elec.G[0][0] = gradx;
-    getScaledDrift(tau / mass, elec.G[0], drift);
+    DM.getDrift(tau / mass, elec.G[0], drift);
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
@@ -143,13 +139,11 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
 TEST_CASE("get scaled drift complex", "[drivers][drift]")
 {
   Communicate* c;
-  OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
   MCWalkerConfiguration elec;
 
   elec.setName("elec");
-  elec.setBoundBox(false);
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
@@ -165,12 +159,14 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
   double gradx = -xtot / 2.;
   double dx    = xtot / nx;
 
+  DriftModifierUNR DM;
+
   // imaginary component of wf gradient should NOT affect drift
   std::complex<double> myi(0, 1.9);
   for (int ix = 0; ix < nx; ix++)
   {
     elec.G[0][0] = gradx + myi;
-    getScaledDrift(tau / mass, elec.G[0], drift);
+    DM.getDrift(tau / mass, elec.G[0], drift);
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);

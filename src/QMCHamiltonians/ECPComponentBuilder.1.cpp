@@ -15,6 +15,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Transform2GridFunctor.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 
 namespace qmcplusplus
 {
@@ -34,7 +35,7 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
     else if (cname == "vps")
     {
       //should be able to overwrite rmax
-      int l           = angMon[(const char*)xmlGetProp(cur, (const xmlChar*)"l")];
+      int l           = angMon[XMLAttrString{cur, "l"}];
       Lmax            = std::max(l, Lmax);
       xmlNodePtr cur1 = cur->children;
       while (cur1 != NULL)
@@ -108,12 +109,11 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
 {
   if (pp_loc)
     return; //something is wrong
+
   std::string vFormat("V");
-  const xmlChar* vptr = xmlGetProp(cur, (const xmlChar*)"format");
-  if (vptr != NULL)
-  {
-    vFormat = (const char*)vptr;
-  }
+  const XMLAttrString v_str(cur, "format");
+  if (!v_str.empty()) vFormat = v_str;
+
   int vPowerCorrection = 1;
   if (vFormat == "r*V")
   {

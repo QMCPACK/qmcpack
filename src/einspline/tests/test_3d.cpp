@@ -21,10 +21,8 @@
 #include "einspline/multi_bspline_create.h"
 
 #include <stdio.h>
-#include <string>
 #include <limits>
-
-using std::string;
+#include "config/stdlib/Constants.h"
 
 TEST_CASE("double_3d_natural","[einspline]")
 {
@@ -67,7 +65,7 @@ TEST_CASE("double_3d_periodic","[einspline]")
   Ugrid grid;
   grid.start = 0.0;
   grid.end = 1.0;
-  int N = 5;
+  constexpr int N = 5;
   grid.num = N;
   double delta = (grid.end - grid.start)/grid.num;
 

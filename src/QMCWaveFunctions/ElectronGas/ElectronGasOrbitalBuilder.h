@@ -17,9 +17,9 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
-#include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
-#include <QMCWaveFunctions/SPOSet.h>
-#include <config/stdlib/math.h>
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "config/stdlib/math.hpp"
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
@@ -41,13 +41,12 @@ struct RealEGOSet : public SPOSet
 
   RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
 
-  void resetParameters(const opt_variables_type& optVariables) {}
-  inline void resetTargetParticleSet(ParticleSet& P) {}
-  void setOrbitalSetSize(int norbs) {}
+  void resetParameters(const opt_variables_type& optVariables) override {}
+  void setOrbitalSetSize(int norbs) override {}
 
-  SPOSet* makeClone() const { return new RealEGOSet(*this); }
+  SPOSet* makeClone() const override { return new RealEGOSet(*this); }
 
-  PosType get_k(int i)
+  PosType get_k(int i) override
   {
     //Only used in the same_k part of the optimizable SPO set. we allow optimization to k points in the same direction
     if (i > 0)
@@ -81,14 +80,14 @@ struct RealEGOSet : public SPOSet
       return 1.0;
   }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override
   {
     const PosType& r = P.activeR(iat);
     RealType sinkr, coskr;
     psi[0] = 1.0;
     for (int ik = 0, j = 1; ik < KptMax; ik++)
     {
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[j++] = coskr;
       psi[j++] = sinkr;
     }
@@ -101,7 +100,7 @@ struct RealEGOSet : public SPOSet
    * @param dpsi gradient row
    * @param d2psi laplacian row
    */
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
   {
     psi[0]           = 1.0;
     dpsi[0]          = 0.0;
@@ -111,7 +110,7 @@ struct RealEGOSet : public SPOSet
     for (int ik = 0, j1 = 1; ik < KptMax; ik++, j1 += 2)
     {
       int j2 = j1 + 1;
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[j1]   = coskr;
       psi[j2]   = sinkr;
       dpsi[j1]  = -sinkr * K[ik];
@@ -128,7 +127,7 @@ struct RealEGOSet : public SPOSet
    * @param dpsi gradient row
    * @param hess hessian row
    */
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& hess)
+  inline void evaluateVGH(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& hess) override
   {
     psi[0]           = 1.0;
     dpsi[0]          = 0.0;
@@ -138,7 +137,7 @@ struct RealEGOSet : public SPOSet
     for (int ik = 0, j1 = 1; ik < KptMax; ik++, j1 += 2)
     {
       int j2 = j1 + 1;
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[j1]  = coskr;
       psi[j2]  = sinkr;
       dpsi[j1] = -sinkr * K[ik];
@@ -163,14 +162,14 @@ struct RealEGOSet : public SPOSet
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet)
+                            ValueMatrix_t& d2logdet) override
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
       ValueVector_t v(logdet[i], OrbitalSetSize);
       GradVector_t g(dlogdet[i], OrbitalSetSize);
       ValueVector_t l(d2logdet[i], OrbitalSetSize);
-      evaluate(P, iat, v, g, l);
+      evaluateVGL(P, iat, v, g, l);
     }
   }
 
@@ -179,7 +178,7 @@ struct RealEGOSet : public SPOSet
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet)
+                            HessMatrix_t& grad_grad_logdet) override
   {
     for (int i = 0, iat = first; iat < last; i++, iat++)
     {
@@ -193,7 +192,7 @@ struct RealEGOSet : public SPOSet
       for (int ik = 0, j1 = 1; ik < KptMax; ik++, j1 += 2)
       {
         int j2 = j1 + 1;
-        sincos(dot(K[ik], P.R[iat]), &sinkr, &coskr);
+        qmcplusplus::sincos(dot(K[ik], P.R[iat]), &sinkr, &coskr);
         psi[j1]  = coskr;
         psi[j2]  = sinkr;
         dpsi[j1] = -sinkr * K[ik];
@@ -220,7 +219,7 @@ struct RealEGOSet : public SPOSet
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet)
+                            GGGMatrix_t& grad_grad_grad_logdet) override
   {
     for (int i = 0, iat = first; iat < last; i++, iat++)
     {
@@ -236,7 +235,7 @@ struct RealEGOSet : public SPOSet
       for (int ik = 0, j1 = 1; ik < KptMax; ik++, j1 += 2)
       {
         int j2 = j1 + 1;
-        sincos(dot(K[ik], P.R[iat]), &sinkr, &coskr);
+        qmcplusplus::sincos(dot(K[ik], P.R[iat]), &sinkr, &coskr);
         psi[j1]  = coskr;
         psi[j2]  = sinkr;
         dpsi[j1] = -sinkr * K[ik];
@@ -312,10 +311,10 @@ class ElectronGasOrbitalBuilder : public WaveFunctionComponentBuilder
 {
 public:
   ///constructor
-  ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+  ElectronGasOrbitalBuilder(Communicate* comm, ParticleSet& els);
 
   ///implement vritual function
-  bool put(xmlNodePtr cur);
+  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
 
   bool UseBackflow;
   BackflowTransformation* BFTrans;

@@ -1,0 +1,375 @@
+  Input file(s): vmc_short_noj.in.xml 
+
+=====================================================
+                    QMCPACK 3.7.9
+
+       (c) Copyright 2003-  QMCPACK developers
+
+                    Please cite:
+ J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
+      https://doi.org/10.1088/1361-648X/aab9c3
+
+  Git branch: develop
+  Last git commit: fea17b416dd98bfd43d55ea165c43ecb9bbcf6aa-dirty
+  Last git commit date: Mon May 6 13:16:27 2019 -0500
+  Last git commit subject: Merge pull request #1578 from anbenali/LCAO-CMPL-PrePhase
+=====================================================
+  Global options 
+
+  Total number of MPI ranks = 1
+  Number of MPI groups      = 1
+  MPI group ID              = 0
+  Number of ranks in group  = 1
+  MPI ranks per node        = 1
+  OMP 1st level threads     = 16
+  OMP nested threading disabled or only 1 thread on the 2nd level
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  Structure-of-arrays (SoA) optimization enabled
+
+  Input XML = vmc_short_noj.in.xml
+
+  Project = vmc_short_noj
+  date    = 2019-06-06 18:26:10 CDT
+  host    = abenali
+
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 274
+
+  Range of prime numbers to use as seeds over processors and threads = 1783-1907
+
+
+ Particle Set 
+ ------------
+  Name: ion0
+  All the species have the same mass 1
+  Particle set size: 2
+
+ Particle Set 
+ ------------
+  Name: e
+  All the species have the same mass 1
+  Particle set size: 4
+
+ Wavefunction setup: 
+ ------------------- 
+  Name: psi0
+  LCAO: SoaAtomicBasisSet<MultiQuintic,0>
+Reading BasisSet from HDF5 file:LiH.orbs.h5
+<input node="atomicBasisSet" name="Gaussian" expandYlm="Gamess" angular="cartesian" elementType="Li" normalized="no" type="Numerical" expM="0" />
+  AO BasisSet for Li
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 0 0 0
+   R(n,l,m,s) 4 0 0 0
+   R(n,l,m,s) 5 1 0 0
+   R(n,l,m,s) 6 1 0 0
+   R(n,l,m,s) 7 1 0 0
+   R(n,l,m,s) 8 1 0 0
+   R(n,l,m,s) 9 2 0 0
+   R(n,l,m,s) 10 2 0 0
+   R(n,l,m,s) 11 2 0 0
+   R(n,l,m,s) 12 3 0 0
+   R(n,l,m,s) 13 3 0 0
+   R(n,l,m,s) 14 4 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 10 cartesian gaussian orbitals for l= 3
+Adding 10 cartesian gaussian orbitals for l= 3
+Adding 15 cartesian gaussian orbitals for l= 4
+  Setting cutoff radius 23.3346
+
+   Maximum Angular Momentum  = 4
+   Number of Radial functors = 15
+   Basis size                = 70
+
+<input node="atomicBasisSet" name="Gaussian" expandYlm="Gamess" angular="cartesian" elementType="H" normalized="no" type="Numerical" expM="0" />
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 0 0 0
+   R(n,l,m,s) 4 1 0 0
+   R(n,l,m,s) 5 1 0 0
+   R(n,l,m,s) 6 1 0 0
+   R(n,l,m,s) 7 2 0 0
+   R(n,l,m,s) 8 2 0 0
+   R(n,l,m,s) 9 3 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 10 cartesian gaussian orbitals for l= 3
+  Setting cutoff radius 11.8032
+
+   Maximum Angular Momentum  = 3
+   Number of Radial functors = 10
+   Basis size                = 35
+
+  Created SPOSet builder named 'LCAOBSet' of type molecularorbital
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+spo_name = spo-up
+  Building SPOSet 'spo-up' with 'LCAOBSet' basis set.
+Reading cusp info from : spo-up.cuspInfo.xml
+Found precomputed cusp data for spo set: spo-up
+  Cloning distance tables. It has   Cloning distance tables. It has 2
+  Cloning distance tables. It has 2  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has   Cloning distance tables. It has 2
+2
+
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2  Cloning distance tables. It has 2
+
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+spo_name = spo-dn
+  Building SPOSet 'spo-dn' with 'LCAOBSet' basis set.
+Reading cusp info from : spo-dn.cuspInfo.xml
+Found precomputed cusp data for spo set: spo-dn
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has   Cloning distance tables. It has 2  Cloning distance tables. It has 2
+
+  Cloning distance tables. It has 2
+2
+  Cloning distance tables. It has 2
+  Cloning distance tables. It has 2
+Using Bryan's algorithm for MultiSlaterDeterminant expansion. 
+Creating base determinant (up) for MSD expansion. 
+Creating base determinant (down) for MSD expansion. 
+Found Multideterminants in H5 File
+Found determinant list. 
+Reading CI expansion from HDF5:LiH.orbs.h5
+ Done reading CIs from H5!!
+ Sorting unique CIs
+ Done Sorting unique CIs
+Found 1487 terms in the MSD expansion.
+Norm of ci vector (sum of ci^2): 1
+Found 265 unique up determinants.
+Found 265 unique down determinants.
+Number of terms in pairs array: 135
+Number of terms in pairs array: 135
+CI coefficients are optimizable. 
+  FermionWF = MultiSlaterDeterminantFast
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+  QMCHamiltonian::addOperator IonElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonElec
+
+  QMCHamiltonian::add2WalkerProperty added
+    4 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+ParticleSetPool::randomize 
+<init source="ion0" target="e">
+</init>
+  Initialization Execution time = 0.8155 secs
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet 'e' contains 4 particles :  u(2) d(2)
+
+    u  6.2550123830e-01 -1.0305820076e+00 -6.8525424272e-03
+    u -1.1585203538e+00 -2.3154213414e-01  2.4003512404e-01
+    d -8.8512170665e-01  7.4189949871e-01 -3.4574951780e-01
+    d -5.2853786507e-01  9.0060133225e-01  3.6163880731e+00
+
+  Distance table for similar particles (A-A):
+    source/target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+  Distance table for dissimilar particles (A-B):
+    source: ion0  target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  ParticleSet 'ion0' contains 2 particles :  Li(1) H(1)
+
+    Li  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H  0.0000000000e+00  0.0000000000e+00  3.0139239693e+00
+
+  Distance table for similar particles (A-A):
+    source/target: ion0
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  IonIon          CoulombAA source/target ion0
+
+  IonElec         CoulombAB source=ion0
+
+
+
+=========================================================
+  Start VMC
+  File Root vmc_short_noj.s000 append = no 
+=========================================================
+  Adding 16 walkers to 0 existing sets
+  Total number of walkers: 1.6000000000e+01
+  Total weight: 1.6000000000e+01
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 4.0000000000e-01
+  blocks         = 200
+  steps          = 200
+  substeps       = 3
+  current        = 0
+  target samples = 0.0000000000e+00
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 40200
+<parameter name="blocks" condition="int">200</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">40200</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">40200</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">0.0000000000e+00</parameter>
+<parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="steps" condition="int">200</parameter>
+<parameter name="stepsbetweensamples" condition="int">40200</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">3</parameter>
+<parameter name="substeps" condition="int">3</parameter>
+<parameter name="tau" condition="au">4.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">4.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">4.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">50</parameter>
+<parameter name="warmupsteps" condition="int">50</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 40200 steps.
+</vmc>
+  Set drift_modifier UNR parameter a = 1.0000000000e+00
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+  CloneManager::makeClones makes 16 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+===== Memory Usage before cloning =====
+Available memory on node 0, free + buffers : 13940 MB
+Memory footprint by rank 0 on node 0       : 67 MB
+==================================================
+===== Memory Usage after cloning =====
+Available memory on node 0, free + buffers : 13936 MB
+Memory footprint by rank 0 on node 0       : 71 MB
+==================================================
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =0
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 13935 MB
+Memory footprint by rank 0 on node 0       : 71 MB
+==================================================
+  Anonymous Buffer size per walker : 52456 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.4
+    reference energy   = -8.08434
+    reference variance = 0.213922
+====================================================
+  QMC Execution time = 1.5098e+02 secs
+  Total Execution time = 1.5098e+02 secs
+
+=========================================================
+  A new xml input file : vmc_short_noj.s000.cont.xml

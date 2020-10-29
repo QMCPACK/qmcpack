@@ -37,20 +37,10 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
                               int first,
                               int last)
 {
-  x -= spline_m->x_grid.start;
-  y -= spline_m->y_grid.start;
-  z -= spline_m->z_grid.start;
-  T tx, ty, tz;
   int ix, iy, iz;
-  getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
-  getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
-  getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
-
   T a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
 
-  MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
-  MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
-  MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
+  computeLocationAndFractional(spline_m, x, y, z, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
@@ -79,7 +69,6 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
       const T pre20 = d2a[i] * b[j];
       const T pre10 = da[i] * b[j];
       const T pre00 = a[i] * b[j];
-      const T pre11 = da[i] * db[j];
       const T pre01 = a[i] * db[j];
       const T pre02 = a[i] * d2b[j];
 
@@ -99,12 +88,12 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
         T sum0 = c[0] * coefsv + c[1] * coefsvzs + c[2] * coefsv2zs + c[3] * coefsv3zs;
         T sum1 = dc[0] * coefsv + dc[1] * coefsvzs + dc[2] * coefsv2zs + dc[3] * coefsv3zs;
         T sum2 = d2c[0] * coefsv + d2c[1] * coefsvzs + d2c[2] * coefsv2zs + d2c[3] * coefsv3zs;
-        gx[n]   += pre10 * sum0;
-        gy[n]   += pre01 * sum0;
-        gz[n]   += pre00 * sum1;
-        lx[n]   += pre20 * sum0;
-        ly[n]   += pre02 * sum0;
-        lz[n]   += pre00 * sum2;
+        gx[n] += pre10 * sum0;
+        gy[n] += pre01 * sum0;
+        gz[n] += pre00 * sum1;
+        lx[n] += pre20 * sum0;
+        ly[n] += pre02 * sum0;
+        lz[n] += pre00 * sum2;
         vals[n] += pre00 * sum0;
       }
     }
@@ -140,19 +129,9 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
                               int last)
 {
   int ix, iy, iz;
-  T tx, ty, tz;
   T a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
 
-  x -= spline_m->x_grid.start;
-  y -= spline_m->y_grid.start;
-  z -= spline_m->z_grid.start;
-  getSplineBound(x * spline_m->x_grid.delta_inv, tx, ix, spline_m->x_grid.num - 1);
-  getSplineBound(y * spline_m->y_grid.delta_inv, ty, iy, spline_m->y_grid.num - 1);
-  getSplineBound(z * spline_m->z_grid.delta_inv, tz, iz, spline_m->z_grid.num - 1);
-
-  MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
-  MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
-  MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
+  computeLocationAndFractional(spline_m, x, y, z, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
 
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
@@ -209,15 +188,15 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
         T sum1 = dc[0] * coefsv + dc[1] * coefsvzs + dc[2] * coefsv2zs + dc[3] * coefsv3zs;
         T sum2 = d2c[0] * coefsv + d2c[1] * coefsvzs + d2c[2] * coefsv2zs + d2c[3] * coefsv3zs;
 
-        hxx[n]  += pre20 * sum0;
-        hxy[n]  += pre11 * sum0;
-        hxz[n]  += pre10 * sum1;
-        hyy[n]  += pre02 * sum0;
-        hyz[n]  += pre01 * sum1;
-        hzz[n]  += pre00 * sum2;
-        gx[n]   += pre10 * sum0;
-        gy[n]   += pre01 * sum0;
-        gz[n]   += pre00 * sum1;
+        hxx[n] += pre20 * sum0;
+        hxy[n] += pre11 * sum0;
+        hxz[n] += pre10 * sum1;
+        hyy[n] += pre02 * sum0;
+        hyz[n] += pre01 * sum1;
+        hzz[n] += pre00 * sum2;
+        gx[n] += pre10 * sum0;
+        gy[n] += pre01 * sum0;
+        gz[n] += pre00 * sum1;
         vals[n] += pre00 * sum0;
       }
     }
@@ -235,9 +214,9 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #pragma omp simd aligned(gx, gy, gz, hxx, hxy, hxz, hyy, hyz, hzz)
   for (int n = 0; n < num_splines; n++)
   {
-    gx[n]  *= dxInv;
-    gy[n]  *= dyInv;
-    gz[n]  *= dzInv;
+    gx[n] *= dxInv;
+    gy[n] *= dyInv;
+    gz[n] *= dzInv;
     hxx[n] *= dxx;
     hyy[n] *= dyy;
     hzz[n] *= dzz;

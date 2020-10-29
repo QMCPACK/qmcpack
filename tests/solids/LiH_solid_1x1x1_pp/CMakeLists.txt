@@ -50,7 +50,6 @@
                     0 LIH_X_SCALARS # VMC
                     )
 
-IF(ENABLE_SOA OR QMC_CUDA)
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-x
@@ -59,9 +58,6 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     TRUE
                     0 LIH_X_SCALARS # VMC
                     )
-ELSE()
-  MESSAGE("Skipping LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj test because neither SOA nor GPU is enabled")
-ENDIF()
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
   LIST(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")
@@ -94,6 +90,30 @@ ENDIF()
                     ${LIH_ARB_SUCCEED}
                     0 LIH_ARB_SCALARS # VMC
                     )
+
+# multi-slater determinant requires complex build to run. Ensure fails with real/non-complex build
+  LIST(APPEND LIH_MD_GAMMA_SCALARS "totenergy" "-8.489858484145001 0.004")
+  IF (QMC_COMPLEX)
+    QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
+                      "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                      md_cc_vmc_LiH-gamma
+                      md_cc_vmc_LiH-gamma.xml
+                      1 16
+                      TRUE
+                      1 LIH_MD_GAMMA_SCALARS # VMC
+                      )
+
+  ELSE()
+    QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
+                      "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                      md_rc_vmc_LiH-gamma
+                      md_rc_vmc_LiH-gamma.xml
+                      1 16
+                      TRUE                  
+                      1 LIH_MD_GAMMA_SCALARS # VMC
+                      )
+  ENDIF()
+
 
 # DMC tests for LiH, locality and non-local (t-moves) variants
 
@@ -157,3 +177,54 @@ ENDIF()
                     1 LIH_ARB_DMCNL_SCALARS # DMC
                     )
 
+# Deterministic test
+IF(NOT QMC_CUDA)
+ IF(QMC_MIXED_PRECISION)
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "totenergy" "-7.875831457 0.00001597")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "kinetic" "-0.683640782 0.00001588")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "potential" "-7.192190677 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "eeenergy" "-1.754495253 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "ionion" "-3.689227667 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-1.748467757 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "flux" "18.03236644 0.00002925")
+ ELSE()
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "totenergy" "-7.87585082 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "kinetic" "-0.68365931 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "potential" "-7.19219151 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "eeenergy" "-1.75449482 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "ionion" "-3.68922683 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-1.74846985 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "flux" "18.03240377 0.000001")
+ ENDIF()
+ELSE()
+ IF(QMC_MIXED_PRECISION)
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "totenergy" "-8.33531909 0.00001393")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "kinetic" "-0.64046925 0.00001482")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "potential" "-7.69484984 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "eeenergy" "-1.592412505 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "ionion" "-3.68922683 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-2.41321051 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "flux" "14.58175431 0.00002873")
+ ELSE()
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "totenergy" "-8.33530410 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "kinetic" "-0.64045465 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "potential" "-7.69484946 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "eeenergy" "-1.59241253 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "ionion" "-3.68922682 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-2.41321011 0.000001")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
+  LIST(APPEND DET_LIH_GAMMA_SCALARS "flux" "14.58172101 0.000001")
+ ENDIF()
+ENDIF()
+
+  QMC_RUN_AND_CHECK(deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    det_hf_vmc_LiH-gamma
+                    det_hf_vmc_LiH-gamma.xml
+                    1 1
+                    TRUE
+                    0 DET_LIH_GAMMA_SCALARS # VMC
+                    )

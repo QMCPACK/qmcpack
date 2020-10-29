@@ -18,11 +18,11 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 #define QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 
-#include <mpi/mpi_datatype.h>
-#include <Message/CommOperators.h>
-#include <OhmmsData/FileUtility.h>
-#include <io/hdf_archive.h>
-#include <einspline/multi_bspline_copy.h>
+#include "mpi/mpi_datatype.h"
+#include "Message/CommOperators.h"
+#include "OhmmsData/FileUtility.h"
+#include "hdf/hdf_archive.h"
+#include "einspline/multi_bspline_copy.h"
 #include <limits>
 
 namespace qmcplusplus
@@ -126,9 +126,10 @@ struct h5data_proxy<einspline_engine<ENGT>>
   {
     D = einspline_engine<ENGT>::D
   };
-  typedef typename einspline_engine<ENGT>::value_type value_type;
-  using h5_space_type<value_type, D + 1>::dims;
-  using h5_space_type<value_type, D + 1>::get_address;
+  using value_type = typename einspline_engine<ENGT>::value_type;
+  using Base = h5_space_type<value_type, D + 1>;
+  using Base::dims;
+  using Base::get_address;
   typedef einspline_engine<ENGT> data_type;
 
   data_type& ref_;
@@ -145,7 +146,7 @@ struct h5data_proxy<einspline_engine<ENGT>>
 
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    return h5d_write(grp, aname.c_str(), this->size(), dims, get_address(ref_.spliner->coefs), xfer_plist);
+    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(ref_.spliner->coefs), xfer_plist);
   }
 };
 

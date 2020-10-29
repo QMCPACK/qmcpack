@@ -11,8 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Configuration.h"
-#include "Message/MPIObjectBase.h"
+#include "MPIObjectBase.h"
 
 namespace qmcplusplus
 {

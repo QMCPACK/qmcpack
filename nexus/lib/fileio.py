@@ -22,10 +22,11 @@
 
 import os
 import mmap
+import numpy as np
 from numpy import array,zeros,ndarray,around,arange,dot,savetxt,empty,reshape
 from numpy.linalg import det,norm
 from generic import obj
-from developer import DevBase,error
+from developer import DevBase,error,to_str
 from periodic_table import pt as ptable,is_element
 from unit_converter import convert
 from debug import *
@@ -81,7 +82,7 @@ class TextFile(DevBase):
             self.seek(s)
         #end if
         self.mm.readline()
-        line = self.mm.readline()
+        line = to_str(self.mm.readline())
         stokens = line.split()
         all_same = False
         if len(formats)==1 and len(stokens)>1:
@@ -96,8 +97,8 @@ class TextFile(DevBase):
                 tokens.append(format(stoken))
             #end for
         else:
-            for i in xrange(len(formats)):
-                tokens.append(formats[i](stokens[i]))
+            for format,stoken in zip(formats,stokens):
+                tokens.append(format(stoken))
             #end for
         #end if
         if len(tokens)==1:
@@ -116,6 +117,7 @@ class TextFile(DevBase):
 
     def seek(self,pos,whence=0,start=None,end=None):
         if isinstance(pos,str):
+            pos = pos.encode('ASCII')
             if whence!=2 and start is None:
                 if whence==0:
                     start = 0
@@ -152,21 +154,29 @@ class TextFile(DevBase):
         if s!=None:
             self.seek(s)
         #end if
-        return self.mm.readline()
+        return to_str(self.mm.readline())
     #end def readline
 
     def read(self,num=None):
         if num is None:
-            return self.mm[:]
+            return to_str(self.mm[:])
         else:
-            return self.mm.read(num)
+            return to_str(self.mm.read(num))
         #end if
     #end def read
 
 
     # unchanged mmap interface below
     def find(self,*a,**kw):
-        return self.mm.find(*a,**kw)
+        args = []
+        for v in a:
+            if isinstance(v,str):
+                args.append(v.encode('ASCII'))
+            else:
+                args.append(a)
+            #end if
+        #end for
+        return self.mm.find(*args,**kw)
     #end def find
 
     def flush(self,*a,**kw):
@@ -186,7 +196,15 @@ class TextFile(DevBase):
     #end def resize
 
     def rfind(self,*a,**kw):
-        return self.mm.rfind(*a,**kw)
+        args = []
+        for v in a:
+            if isinstance(v,str):
+                args.append(v.encode('ASCII'))
+            else:
+                args.append(a)
+            #end if
+        #end for
+        return self.mm.rfind(*args,**kw)
     #end def rfind
 
     def size(self):
@@ -316,6 +334,7 @@ class XsfFile(StandardFile):
     #end def add_to_image
 
 
+    # test needed for axsf and bxsf
     def read_text(self,text):
         lines = text.splitlines()
         i=0
@@ -527,7 +546,7 @@ class XsfFile(StandardFile):
                                 i+=1
                                 line = lines[i].strip().lower()
                             #end while
-                            for bi,bv in bands.iteritems():
+                            for bi,bv in bands.items():
                                 bands[bi] = array(bv,dtype=float)
                                 bands[bi].shape = tuple(grid)
                             #end for
@@ -549,6 +568,7 @@ class XsfFile(StandardFile):
     #end def read_text
 
 
+    # test needed for axsf and bxsf
     def write_text(self):
         c=''
         if self.filetype=='xsf':    # only write structure/datagrid if present
@@ -769,6 +789,7 @@ class XsfFile(StandardFile):
     #end def validity_checks
 
 
+    # test needed
     def incorporate_structure(self,structure):
         s = structure.copy()
         s.change_units('A')
@@ -783,7 +804,11 @@ class XsfFile(StandardFile):
                     e = e[0:2]
                 #end if
             #end if
-            elem.append(ptable.elements[e].atomic_number)
+            if is_element(e):
+                elem.append(ptable.elements[e].atomic_number)
+            else:
+                elem.append(0)
+            #end if
         #end for
         self.filetype    = 'xsf'
         self.periodicity = 'crystal' # assumed
@@ -845,6 +870,7 @@ class XsfFile(StandardFile):
     #end def get_density
 
 
+    # test needed
     def change_units(self,in_unit,out_unit):
         fac = 1.0/convert(1.0,in_unit,out_unit)**3
         density = self.get_density()
@@ -855,6 +881,7 @@ class XsfFile(StandardFile):
     #end def change_units
 
 
+    # test needed
     def remove_ghost(self,density=None):
         if density is None:
             density = self.get_density()
@@ -874,6 +901,7 @@ class XsfFile(StandardFile):
     #end def remove_ghost
 
     
+    # test needed
     def norm(self,density=None,vnorm=True):
         if density is None:
             density = self.get_density()
@@ -891,6 +919,7 @@ class XsfFile(StandardFile):
     #end def norm
 
 
+    # test needed
     def line_data(self,dim,density=None):
         if density is None:
             density = self.get_density()
@@ -904,7 +933,7 @@ class XsfFile(StandardFile):
         ndim = 3
         permute = dim!=0
         if permute:
-            r = range(0,ndim)
+            r = list(range(0,ndim))
             r.pop(dim)
             permutation = tuple([dim]+r)
             data = data.transpose(permutation)
@@ -919,8 +948,85 @@ class XsfFile(StandardFile):
 
     def line_plot(self,dim,filepath):
         r,d = self.line_data(dim)
-        savetxt(filepath,array(zip(r,d)))
+        savetxt(filepath,array(list(zip(r,d))))
     #end def line_plot
+
+    # test needed
+    def interpolate_plane(self,r1,r2,r3,density=None,meshsize=50,fill_value=0):
+        if density is None:
+            density = self.get_density()
+        #end if
+   
+        dens_values = np.array(density.values)
+
+        # Construct crystal meshgrid for dens
+        da = 1./(density.grid[0]-1)
+        db = 1./(density.grid[1]-1)
+        dc = 1./(density.grid[2]-1)
+    
+        cry_corner = np.matmul(density.corner,np.linalg.inv(density.cell))
+        a0  = cry_corner[0]
+        b0  = cry_corner[1]
+        c0  = cry_corner[2]
+        
+        ra = np.arange(a0, density.grid[0]*da, da)
+        rb = np.arange(b0, density.grid[1]*db, db)
+        rc = np.arange(c0, density.grid[2]*dc, dc)
+    
+        [mra, mrb, mrc] = np.meshgrid(ra, rb, rc)
+    
+        # 3d Interpolation on crystal coordinates
+        from scipy.interpolate import RegularGridInterpolator
+        g = RegularGridInterpolator((ra,rb,rc), dens_values, bounds_error=False,fill_value=fill_value)
+    
+        # Construct cartesian meshgrid for dens
+        mrx,mry,mrz = np.array([mra,mrb,mrc]).T.dot(density.cell).T
+     
+        # First construct a basis (x'^,y'^,z'^) where z'^ is normal to the plane formed from ra, rb, and rc
+        zph = np.cross((r2-r3),(r1-r3))
+        zph = zph/np.linalg.norm(zph)
+        yph = r2-r3
+        yph = yph/np.linalg.norm(yph)
+        xph = np.cross(yph,zph)
+    
+        # Positions in (x'^,y'^,z'^) basis
+        rp1 = np.dot(r1,np.linalg.inv((xph,yph,zph))) 
+        rp2 = np.dot(r2,np.linalg.inv((xph,yph,zph))) 
+        rp3 = np.dot(r3,np.linalg.inv((xph,yph,zph)))  
+    
+        # Meshgrid in (x'^,y'^,z'^) basis
+        mrxp,mryp,mrzp = np.array([mrx,mry,mrz]).T.dot(np.linalg.inv([xph,yph,zph])).T
+    
+        # Generate mesh in (x'^,y'^,z'^) basis. Ensure all points are in cell.
+        xp_min = np.amin(mrxp)
+        xp_max = np.amax(mrxp)
+        yp_min = np.amin(mryp)
+        yp_max = np.amax(mryp)
+    
+    
+        rpx = np.arange(xp_min,xp_max,(xp_max-xp_min)/meshsize)
+        rpy = np.arange(yp_min,yp_max,(yp_max-yp_min)/meshsize)
+        mrpx, mrpy = np.meshgrid(rpx,rpy)
+    
+        slice_dens = []
+        for xpi in np.arange(xp_min,xp_max,(xp_max-xp_min)/meshsize):
+            yline = []
+            for ypi in np.arange(yp_min,yp_max,(yp_max-yp_min)/meshsize):
+                # xpi,ypi,rp1[2] to crystal coords
+                rcry = np.matmul( np.dot((xpi,ypi,rp1[2]),(xph,yph,zph)) , np.linalg.inv(density.cell))
+                yline.extend(g(rcry))
+                #end if
+            #end for
+            slice_dens.append(yline)
+        #end for
+        slice_dens = np.array(slice_dens).T
+       
+        # return the following...
+        # slice_dens: density on slice
+        # mrpx, mrpy: meshgrid for x',y' coordinates parallel to slice, i.e., (x'^,y'^) basis
+        # rp1, rp2, rp3: Input positions in (x'^,y'^,z'^) basis
+        return slice_dens, mrpx, mrpy, rp1, rp2, rp3
+    #end def coordinatesToSlice
 #end class XsfFile
 
 
@@ -981,7 +1087,7 @@ class PoscarFile(StandardFile):
             msgs.append('elem_count must be an array')
         elif len(self.elem_count)==0:
             msgs.append('elem_count array must contain at least one entry')
-        elif not isinstance(self.elem_count[0],int):
+        elif not isinstance(self.elem_count[0],(int,np.int_)):
             msgs.append('elem_count must be an array of integers')
         else:
             if (self.elem_count<1).sum()>0:
@@ -1086,7 +1192,7 @@ class PoscarFile(StandardFile):
             #end for
         else:
             bm = self.bool_map
-            for i in xrange(len(self.pos)):
+            for i in range(len(self.pos)):
                 p = self.pos[i]
                 d = self.dynamic[i]
                 text += ' {0:20.14f} {1:20.14f} {2:20.14f}  {3}  {4}  {5}\n'.format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
@@ -1117,7 +1223,7 @@ class PoscarFile(StandardFile):
         elem_indices   = []
 
         spec_set = set()
-        for i in xrange(len(elem)):
+        for i in range(len(elem)):
             e = elem[i]
             if not e in spec_set:
                 spec_set.add(e)
@@ -1184,12 +1290,14 @@ class ChgcarFile(StandardFile):
             msgs.append('grid must be an array')
         elif len(self.grid)!=3 or self.grid.size!=3:
             msgs.append('grid must have 3 entries')
-        elif not isinstance(self.grid[0],int):
+        elif not isinstance(self.grid[0],(int,np.int_)):
             msgs.append('grid must be an array of integers')
         elif (self.grid<1).sum()>0:
             msgs.append('all grid entries must be greater than zero')
         #end if
-        ng = self.grid.prod()
+        if self.grid is not None:
+            ng = self.grid.prod()
+        #end if
         if self.charge_density is None:
             msgs.append('charge_density is missing')
         elif not isinstance(self.charge_density,ndarray):
@@ -1294,7 +1402,7 @@ def read_poscar_chgcar(host,text):
     nlines = len(lines)
     min_lines = 8
     if nlines<min_lines:
-        host.error('file {0} must have at least {1} lines\nonly {2} lines found'.format(filepath,min_lines,nlines))
+        host.error('file {0} must have at least {1} lines\nonly {2} lines found'.format(host.filepath,min_lines,nlines))
     #end if
     description = lines[0]
     dim = 3
@@ -1318,7 +1426,7 @@ def read_poscar_chgcar(host,text):
         c = lines[lcur].lower()[0]
         lcur+=1
     else:
-        host.error('file {0} is incomplete (missing positions)'.format(filepath))
+        host.error('file {0} is incomplete (missing positions)'.format(host.filepath))
     #end if
     selective_dynamics = c=='s'
     if selective_dynamics: # Selective dynamics
@@ -1326,7 +1434,7 @@ def read_poscar_chgcar(host,text):
             c = lines[lcur].lower()[0]
             lcur+=1
         else:
-            host.error('file {0} is incomplete (missing positions)'.format(filepath))
+            host.error('file {0} is incomplete (missing positions)'.format(host.filepath))
         #end if
     #end if
     cartesian = c=='c' or c=='k'
@@ -1337,7 +1445,7 @@ def read_poscar_chgcar(host,text):
     #end if
     npos = counts.sum()
     if lcur+npos>len(lines):
-        host.error('file {0} is incomplete (missing positions)'.format(filepath))
+        host.error('file {0} is incomplete (missing positions)'.format(host.filepath))
     #end if
     spos = []
     for i in range(npos):
@@ -1373,7 +1481,7 @@ def read_poscar_chgcar(host,text):
         cline = lines[lcur].lower()
         lcur+=1
         if lcur+npos>len(lines):
-            host.error('file {0} is incomplete (missing velocities)'.format(filepath))
+            host.error('file {0} is incomplete (missing velocities)'.format(host.filepath))
         #end if
         cartesian = len(cline)>0 and (cline[0]=='c' or cline[0]=='k')
         if cartesian:
@@ -1399,7 +1507,7 @@ def read_poscar_chgcar(host,text):
             grid = array(lines[lcur].split(),dtype=int)
             lcur+=1
         else:
-            host.error('file {0} is incomplete (missing grid)'.format(filepath))
+            host.error('file {0} is incomplete (missing grid)'.format(host.filepath))
         #end if
         if lcur<len(lines):
             ng = grid.prod()
@@ -1418,17 +1526,20 @@ def read_poscar_chgcar(host,text):
                 #end def is_float
                 # remove anything but the densities (e.g. augmentation charges)
                 n=0
-                while is_float(density[n]) and n+ng<len(density):
+                while is_float(density[n]):
                     n+=ng
+                    if n+ng>=len(density):
+                        break
+                    #end if
                 #end while
                 density = array(density[:n],dtype=float)
             else:
-                host.error('file {0} is incomplete (missing density)'.format(filepath))
+                host.error('file {0} is incomplete (missing density)'.format(host.filepath))
             #end if
             if density.size%ng!=0:
                 host.error('number of density data entries is not a multiple of the grid\ngrid shape: {0}\ngrid size: {1}\ndensity size: {2}'.format(grid,ng,density.size))
             #end if
-            ndens = density.size/ng
+            ndens = density.size//ng
             if ndens==1:
                 charge_density = density
                 spin_density   = None
@@ -1442,10 +1553,10 @@ def read_poscar_chgcar(host,text):
                     spin_density[:,i] = density[(i+1)*ng:(i+2)*ng]
                 #end for
             else:
-                host.error('density data must be present for one of the following situations\n  1) charge density only (1 density)\n2) charge and collinear spin densities (2 densities)\n  3) charge and non-collinear spin densities (4 densities)\nnumber of densities found: {0}'.format(ndens))
+                host.error('density data must be present for one of the following situations\n  1) charge density only (1 density)\n  2) charge and collinear spin densities (2 densities)\n  3) charge and non-collinear spin densities (4 densities)\nnumber of densities found: {0}'.format(ndens))
             #end if
         else:
-            host.error('file {0} is incomplete (missing density)'.format(filepath))
+            host.error('file {0} is incomplete (missing density)'.format(host.filepath))
         #end if
     #end if
 

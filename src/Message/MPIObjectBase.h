@@ -27,7 +27,6 @@ class MPIObjectBase
 {
 public:
   typedef Communicate::mpi_comm_type mpi_comm_type;
-  typedef Communicate::intra_comm_type intra_comm_type;
 
   ///constructor with communicator
   MPIObjectBase(Communicate* c);
@@ -41,6 +40,9 @@ public:
   ///return myComm
   inline Communicate* getCommunicator() const { return myComm; }
 
+  ///return a TEMPORARY reference to Communicate
+  inline Communicate& getCommRef() const { return *myComm; }
+  
   ///return MPI communicator if one wants to use MPI directly
   inline mpi_comm_type getMPI() const { return myComm->getMPI(); }
 

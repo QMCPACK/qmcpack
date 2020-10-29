@@ -17,8 +17,7 @@
 #define QMCPLUSPLUS_BACKFLOW_EE_KSPACE_H
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
-#include "Particle/DistanceTable.h"
-#include <LongRange/StructFact.h>
+#include "LongRange/StructFact.h"
 #include "Message/Communicate.h"
 #include <cmath>
 
@@ -47,13 +46,11 @@ public:
   Vector<ComplexType> Rhok;
 
   Matrix<int> PairID;
-  bool first;
   ///set of variables to be optimized
   opt_variables_type myVars;
 
   Backflow_ee_kSpace(ParticleSet& ions, ParticleSet& els) : BackflowFunctionBase(ions, els)
   {
-    first     = true;
     Optimize  = false;
     numParams = 0;
     resize(NumTargets);
@@ -79,12 +76,9 @@ public:
 
   ~Backflow_ee_kSpace(){};
 
-  void resetTargetParticleSet(ParticleSet& P) {}
-
-  BackflowFunctionBase* makeClone(ParticleSet& tqp)
+  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
   {
     Backflow_ee_kSpace* clone = new Backflow_ee_kSpace(CenterSys, tqp);
-    first                     = true;
     clone->resize(NumTargets);
     //       clone->uniqueRadFun.resize(uniqueRadFun.size());
     //       clone->RadFun.resize(RadFun.size());
@@ -148,8 +142,11 @@ public:
       for (int i = 0; i < Fk.size(); ++i)
       {
         int loc = myVars.where(i);
-        if (loc >= 0)
-          Fk[i] = myVars[i] = active[loc];
+        if (loc >= 0) {
+          myVars[i] = active[loc];
+          Fk[i] = std::real(myVars[i]);
+          //Fk[i] = myVars[i] = active[loc];
+        }
       }
     }
   }

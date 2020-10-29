@@ -24,7 +24,7 @@
 
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
@@ -32,11 +32,7 @@ class PWRealOrbitalSet : public SPOSet
 {
 public:
   typedef PWBasis BasisSet_t;
-#if defined(ENABLE_SMARTPOINTER)
-  typedef boost::shared_ptr<PWBasis> PWBasisPtr;
-#else
   typedef PWBasis* PWBasisPtr;
-#endif
 
   /** inherit the enum of BasisSet_t */
   enum
@@ -51,7 +47,10 @@ public:
 
   /** default constructor
   */
-  PWRealOrbitalSet() : OwnBasisSet(false), BasisSetSize(0), myBasisSet(nullptr) {}
+  PWRealOrbitalSet() : OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0)
+  {
+    className="PWRealOrbitalSet";
+  }
 
   /** delete BasisSet only it owns this
    *
@@ -59,7 +58,7 @@ public:
    */
   ~PWRealOrbitalSet();
 
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
 
   /** resize  the orbital base
    * @param bset PWBasis
@@ -80,11 +79,9 @@ public:
    */
   void addVector(const std::vector<ComplexType>& coefs, int jorb);
 
-  void resetParameters(const opt_variables_type& optVariables);
+  void resetParameters(const opt_variables_type& optVariables) override;
 
-  void setOrbitalSetSize(int norbs);
-
-  void resetTargetParticleSet(ParticleSet& P);
+  void setOrbitalSetSize(int norbs) override;
 
   inline ValueType evaluate(int ib, const PosType& pos)
   {
@@ -92,27 +89,23 @@ public:
     return real(BLAS::dot(BasisSetSize, CC[ib], myBasisSet->Zv.data()));
   }
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+                            ValueMatrix_t& d2logdet) override;
 
-  void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& gg_psi)
-  {
-    APP_ABORT("Need specialization of evaluate(iat) for HessVector. \n");
-  }
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet)
+                            HessMatrix_t& grad_grad_logdet) override
   {
     APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n");
   }

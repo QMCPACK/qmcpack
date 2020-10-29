@@ -11,8 +11,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/HarmonicExternalPotential.h>
-#include <OhmmsData/AttributeSet.h>
+#include "HarmonicExternalPotential.h"
+#include "OhmmsData/AttributeSet.h"
 
 
 namespace qmcplusplus
@@ -54,7 +54,7 @@ bool HarmonicExternalPotential::get(std::ostream& os) const
 }
 
 
-QMCHamiltonianBase* HarmonicExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+OperatorBase* HarmonicExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
   return new HarmonicExternalPotential(*this);
 }

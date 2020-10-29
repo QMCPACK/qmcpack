@@ -47,7 +47,7 @@ __global__ void accept_kernel(T** Rlist, T* Rnew, int* toAccept, int iat, int N,
 }
 
 #include <cstdio>
-#include "../CUDA/gpu_misc.h"
+#include "CUDA_legacy/gpu_misc.h"
 
 void accept_move_GPU_cuda(float** Rlist, float new_pos[], int toAccept[], int iat, int N, int k)
 {
