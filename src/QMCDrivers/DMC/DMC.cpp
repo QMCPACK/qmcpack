@@ -60,9 +60,6 @@ DMC::DMC(MCWalkerConfiguration& w,
   m_param.add(NonLocalMove, "nonlocalmove", "string");
   m_param.add(NonLocalMove, "nonlocalmoves", "string");
   m_param.add(mover_MaxAge, "MaxAge", "double");
-  //DMC overwrites ConstPopulation
-  //ConstPopulation = false;
-
   m_param.add(L2,"L2_diffusion","string");
 }
 
