@@ -116,7 +116,7 @@ void L2Potential::evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K)
       RealType r  = d_table.getTempDists()[iat];
       if (r < ppot->rcut)
       {
-        PosType  rv = d_table.getTempDispls()[iat];
+        PosType  rv = -1*d_table.getTempDispls()[iat];
         RealType vL2 = ppot->evaluate(r);
         K += 2*rv*vL2;
         for (int i = 0; i < DIM; ++i)
