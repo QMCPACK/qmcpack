@@ -19,8 +19,6 @@
 
 #include "DMC.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
-#include "QMCDrivers/DMC/DMCUpdatePbyPVMC.h"
-#include "QMCDrivers/DMC/DMCUpdatePbyPL2VMC.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyPL2.h"
 #include "QMCDrivers/DMC/SODMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
@@ -50,7 +48,6 @@ DMC::DMC(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, comm, "DMC"),
       KillNodeCrossing(0),
       BranchInterval(-1),
-      vmc("no"),
       L2("no"),
       Reconfiguration("no"),
       mover_MaxAge(-1)
@@ -66,7 +63,6 @@ DMC::DMC(MCWalkerConfiguration& w,
   //DMC overwrites ConstPopulation
   //ConstPopulation = false;
 
-  m_param.add(vmc,"vmc","string");
   m_param.add(L2,"L2_diffusion","string");
 }
 
@@ -149,14 +145,13 @@ void DMC::resetUpdateEngines()
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          bool do_vmc = vmc=="yes";
           bool do_L2  = L2=="yes";
-          if(!do_vmc && !do_L2)
+          if(!do_L2)
           {
             app_log()<<"Using DMCUpdatePbyPWithRejectionFast\n";
             Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
           }
-          else if(!do_vmc && do_L2)
+          else
           {
             app_log()<<"Using DMCUpdatePbyPL2\n";
             Movers[ip] = new DMCUpdatePbyPL2(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
