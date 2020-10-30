@@ -58,8 +58,7 @@ private:
   std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
   IndexType mover_MaxAge;
-
-  std::string vmc;
+  ///input to control diffusion with L2 operator
   std::string L2;
 
   void resetUpdateEngines();
