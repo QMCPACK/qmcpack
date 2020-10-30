@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////2//////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
@@ -67,7 +67,7 @@ DMC::DMC(MCWalkerConfiguration& w,
   //ConstPopulation = false;
 
   m_param.add(vmc,"vmc","string");
-  m_param.add(L2,"L2","string");
+  m_param.add(L2,"L2_diffusion","string");
 }
 
 void DMC::resetUpdateEngines()
