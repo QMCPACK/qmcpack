@@ -2507,8 +2507,8 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace','target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme','vmc','L2']
-    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno,vmc=yesno,L2=yesno)
+    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme','l2_diffusion']
+    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno,l2_diffusion=yesno)
 #end class dmc
 
 class rmc(QIxml):
@@ -2699,6 +2699,7 @@ Names.set_expanded_names(
     l_local          = 'l-local',
     pbcimages        = 'PBCimages',
     dla              = 'DLA',
+    l2_diffusion     = 'L2_diffusion',
     )
 # afqmc names
 Names.set_afqmc_expanded_names(
