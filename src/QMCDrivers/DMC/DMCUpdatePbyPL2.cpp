@@ -67,7 +67,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
   mPosType K;
   mTensorType D;
   mTensorType Dchol;
-  PosType Ktmp;
+  PosType Ktmp,drtmp;
   TensorType Dtmp;
   bool L2_proj = H.has_L2();
   if(L2_proj)
@@ -158,7 +158,8 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
       {
         FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
-        DriftModifier->getDrift(tauovermass, grad_iat, dr);
+        DriftModifier->getDrift(tauovermass, grad_iat, drtmp);
+        dr = drtmp; // upcast for mixed precision
         dr                     = W.R[iat] - W.activePos - dr;
         FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
         RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
