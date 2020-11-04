@@ -338,15 +338,13 @@ the path to the source directory.
     QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
                               including details of which tests are enabled.
 
-- Intel MKL related
+- BLAS/LAPACK related
 
   ::
 
-    ENABLE_MKL          Enable Intel MKL libraries (1:yes (default for intel compiler),
-                                                  0:no (default otherwise)).
-    MKL_ROOT            Path to MKL libraries (only necessary for non intel compilers
-                        or intel without standard environment variables.)
-                        One of the above environment variables can be used.
+    BLA_VENDOR          If set, checks only the specified vendor, if not set checks all the possibilities.
+                        See full list at https://cmake.org/cmake/help/latest/module/FindLAPACK.html
+    MKL_ROOT            Path to MKL libraries. Only necessary when auto-detection fails or overriding is desired.
 
 - libxml2 related
 
@@ -360,8 +358,8 @@ the path to the source directory.
 
   ::
 
-    HDF5_PREFER_PARALLEL 1(default for MPI build)/0, enables/disable parallel HDF5 library searching.
-    ENABLE_PHDF5         1(default for parallel HDF5 library)/0, enables/disable parallel collective I/O.
+    HDF5_PREFER_PARALLEL TRUE(default for MPI build)/FALSE, enables/disable parallel HDF5 library searching.
+    ENABLE_PHDF5         ON(default for parallel HDF5 library)/OFF, enables/disable parallel collective I/O.
 
 - FFTW related
 
@@ -443,7 +441,7 @@ For example, using Clang 11 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
 
 
 Installation from CMake
@@ -601,10 +599,11 @@ To use Intel MKL with, e.g. an MPICH wrapped gcc:
 
   cmake \
     -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
-    -DENABLE_MKL=1 -DMKL_ROOT=$MKLROOT/lib \
+    -DMKL_ROOT=YOUR_INTEL_MKL_ROOT_DIRECTORY \
     ..
 
-MKLROOT is the directory containing the MKL binary, examples, and lib
+MKL\_ROOT is only necessary when MKL is not auto-detected successfully or a particular MKL installation is desired.
+YOUR\_INTEL\_MKL\_ROOT\_DIRECTORY is the directory containing the MKL bin, examples, and lib
 directories (etc.) and is often /opt/intel/mkl.
 
 .. _threadedlibrary:
@@ -1693,7 +1692,7 @@ The NiO tests are for bulk supercells of varying size. The QMC runs consist of s
 without drift (2) VMC with drift term included, and (3) DMC with
 constant population. The tests use spline wavefunctions that must be
 downloaded as described in the README file because of their large size. You
-will need to set ``-DQMC_DATA=YOUR_DATA_FOLDER -DENABLE_TIMERS=1``
+will need to set ``-DQMC_DATA=YOUR_DATA_FOLDER``
 when running CMake as
 described in the README file.
 
