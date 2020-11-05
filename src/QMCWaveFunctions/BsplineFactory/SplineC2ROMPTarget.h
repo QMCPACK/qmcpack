@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -10,33 +10,33 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file SplineC2COMP.h
+/** @file SplineC2ROMPTarget.h
  *
- * class to handle complex splines to complex orbitals with splines of arbitrary precision
+ * class to handle complex splines to real orbitals with splines of arbitrary precision
  * splines storage and computation is offloaded to accelerators using OpenMP target
  */
-#ifndef QMCPLUSPLUS_SPLINE_C2C_OMP_H
-#define QMCPLUSPLUS_SPLINE_C2C_OMP_H
+#ifndef QMCPLUSPLUS_SPLINE_C2R_OMPTARGET_H
+#define QMCPLUSPLUS_SPLINE_C2R_OMPTARGET_H
 
 #include <memory>
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
-#include "OpenMP/OMPallocator.hpp"
+#include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
-/** class to match std::complex<ST> spline with BsplineSet::ValueType (complex) SPOs
+/** class to match std::complex<ST> spline with BsplineSet::ValueType (real) SPOs
  * @tparam ST precision of spline
  *
  * Requires temporage storage and multiplication of phase vectors
  * Internal storage use double sized arrays of ST type, aligned and padded.
  */
 template<typename ST>
-class SplineC2COMP : public BsplineSet
+class SplineC2ROMPTarget : public BsplineSet
 {
 public:
   template<typename DT>
@@ -50,7 +50,7 @@ public:
   using PointType        = TinyVector<ST, 3>;
   using SingleSplineType = UBspline_3d_d;
   // types for evaluation results
-  using ComplexT = typename BsplineSet::ValueType;
+  using TT = typename BsplineSet::ValueType;
   using BsplineSet::GGGVector_t;
   using BsplineSet::GradVector_t;
   using BsplineSet::HessVector_t;
@@ -73,6 +73,8 @@ private:
   CrystalLattice<ST, 3> PrimLattice;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
   Tensor<ST, 3> GGt;
+  ///number of complex bands
+  int nComplexBands;
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST, OffloadAllocator<ST>, OffloadAllocator<SplineType>>> SplineInst;
 
@@ -82,17 +84,17 @@ private:
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
   ///team private ratios for reduction, numVP x numTeams
-  Matrix<ComplexT, OffloadPinnedAllocator<ComplexT>> ratios_private;
+  Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
   ///team private ratios and grads for reduction, numVP x numTeams
-  Matrix<ComplexT, OffloadPinnedAllocator<ComplexT>> rg_private;
+  Matrix<TT, OffloadPinnedAllocator<TT>> rg_private;
   ///offload scratch space, dynamically resized to the maximal need
   Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
-  Vector<ComplexT, OffloadPinnedAllocator<ComplexT>> results_scratch;
+  Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
   ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
-  Vector<ComplexT, OffloadPinnedAllocator<ComplexT>> psiinv_pos_copy;
+  Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
   ///psiinv and position scratch space of multiple walkers, used to avoid allocation on the fly and faster transfer
-  Vector<ComplexT, OffloadPinnedAllocator<ComplexT>> mw_psiinv_pos_copy;
+  Vector<TT, OffloadPinnedAllocator<TT>> mw_psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
   ///multi purpose H2D buffer for mw_evaluateVGLandDetRatioGrads
@@ -114,18 +116,19 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2COMP()
+  SplineC2ROMPTarget()
       : BsplineSet(true),
-        offload_timer_(*timer_manager.createTimer("SplineC2COMP::offload", timer_level_fine)),
+        offload_timer_(*timer_manager.createTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
+        nComplexBands(0),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
   {
     is_complex = true;
-    className  = "SplineC2COMP";
-    KeyWord    = "SplineC2C";
+    className  = "SplineC2ROMPTarget";
+    KeyWord    = "SplineC2R";
   }
 
-  virtual SPOSet* makeClone() const override { return new SplineC2COMP(*this); }
+  virtual SPOSet* makeClone() const override { return new SplineC2ROMPTarget(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -150,7 +153,7 @@ public:
     FairDivideLow(Nbands, Nbandgroups, offset);
 
     for (size_t ib = 0; ib < offset.size(); ib++)
-      offset[ib] *= 2;
+      offset[ib] = offset[ib] * 2;
     gatherv(comm, SplineInst->getSplinePtr(), SplineInst->getSplinePtr()->z_stride, offset);
   }
 
@@ -198,9 +201,13 @@ public:
   /** remap kPoints to pack the double copy */
   inline void resize_kpoints()
   {
-    const size_t nk = kPoints.size();
-    mKK             = std::make_shared<OffloadVector<ST>>(nk);
-    myKcart         = std::make_shared<OffloadPosVector<ST>>(nk);
+#ifndef QMC_CUDA
+    // GPU CUDA code doesn't allow a change of the ordering
+    nComplexBands = this->remap_kpoints();
+#endif
+    int nk  = kPoints.size();
+    mKK     = std::make_shared<OffloadVector<ST>>(nk);
+    myKcart = std::make_shared<OffloadPosVector<ST>>(nk);
     for (size_t i = 0; i < nk; ++i)
     {
       (*mKK)[i]     = -dot(kPoints[i], kPoints[i]);
@@ -294,8 +301,8 @@ public:
   friend struct BsplineReaderBase;
 };
 
-extern template class SplineC2COMP<float>;
-extern template class SplineC2COMP<double>;
+extern template class SplineC2ROMPTarget<float>;
+extern template class SplineC2ROMPTarget<double>;
 
 } // namespace qmcplusplus
 #endif

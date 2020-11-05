@@ -10,25 +10,25 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file RealSpacePostionsOMP.h
+/** @file RealSpacePostionsOMPTarget.h
  */
-#ifndef QMCPLUSPLUS_REALSPACE_POSITIONS_OMP_H
-#define QMCPLUSPLUS_REALSPACE_POSITIONS_OMP_H
+#ifndef QMCPLUSPLUS_REALSPACE_POSITIONS_OMPTARGET_H
+#define QMCPLUSPLUS_REALSPACE_POSITIONS_OMPTARGET_H
 
 #include "Particle/DynamicCoordinates.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "OpenMP/OMPallocator.hpp"
+#include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 
 namespace qmcplusplus
 {
 /** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
    */
-class RealSpacePositionsOMP : public DynamicCoordinates
+class RealSpacePositionsOMPTarget : public DynamicCoordinates
 {
 public:
-  RealSpacePositionsOMP() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA_device_ptr(nullptr) {}
-  RealSpacePositionsOMP(const RealSpacePositionsOMP& in)
+  RealSpacePositionsOMPTarget() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA_device_ptr(nullptr) {}
+  RealSpacePositionsOMPTarget(const RealSpacePositionsOMPTarget& in)
       : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA(in.RSoA)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
@@ -37,7 +37,10 @@ public:
     updateH2D();
   }
 
-  std::unique_ptr<DynamicCoordinates> makeClone() override { return std::make_unique<RealSpacePositionsOMP>(*this); }
+  std::unique_ptr<DynamicCoordinates> makeClone() override
+  {
+    return std::make_unique<RealSpacePositionsOMPTarget>(*this);
+  }
 
   void resize(size_t n) override
   {
