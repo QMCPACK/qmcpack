@@ -16,19 +16,11 @@ int main(int argc, char **argv)
 ")
 
 
-# CMake versions prior to 3.8 did not support the CXX_STANDARD options to try_compile
-if (${CMAKE_VERSION} VERSION_LESS 3.8.0)
-  try_compile(CXX14_LIBRARY_OKAY ${CMAKE_BINARY_DIR}
-              ${TEST_CXX14_SOURCE}
-              COMPILE_DEFINITIONS ${CMAKE_CXX14_STANDARD_COMPILE_OPTION}
-              OUTPUT_VARIABLE COMPILE_OUTPUT)
-else()
-  try_compile(CXX14_LIBRARY_OKAY ${CMAKE_BINARY_DIR}
-              ${TEST_CXX14_SOURCE}
-              CXX_STANDARD 14
-              CXX_STANDARD_REQUIRED ON
-              OUTPUT_VARIABLE COMPILE_OUTPUT)
-endif()
+try_compile(CXX14_LIBRARY_OKAY ${CMAKE_BINARY_DIR}
+            ${TEST_CXX14_SOURCE}
+            CXX_STANDARD 14
+            CXX_STANDARD_REQUIRED ON
+            OUTPUT_VARIABLE COMPILE_OUTPUT)
 
 
 if (NOT CXX14_LIBRARY_OKAY)
