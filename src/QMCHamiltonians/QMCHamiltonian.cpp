@@ -35,6 +35,7 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       numCollectables(0),
       myName(aname),
       nlpp_ptr(nullptr),
+      l2_ptr(nullptr),
       ham_timer_(timer_manager.createTimer("Hamiltonian:" + aname, timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
@@ -115,12 +116,23 @@ void QMCHamiltonian::addOperator(OperatorBase* h, const std::string& aname, bool
   }
 
   //assign save NLPP if found
+  //  name is fixed in ECPotentialBuilder::put()
   if (aname == "NonLocalECP")
   {
     if (nlpp_ptr == nullptr)
       nlpp_ptr = dynamic_cast<NonLocalECPotential*>(h);
     else
       APP_ABORT("QMCHamiltonian::addOperator nlpp_ptr is supposed to be null. Something went wrong!");
+  }
+
+  //save L2 potential if found
+  //  name is fixed in ECPotentialBuilder::put()
+  if (aname == "L2")
+  {
+    if (l2_ptr == nullptr)
+      l2_ptr = dynamic_cast<L2Potential*>(h);
+    else
+      APP_ABORT("QMCHamiltonian::addOperator l2_ptr is supposed to be null. Something went wrong!");
   }
 }
 

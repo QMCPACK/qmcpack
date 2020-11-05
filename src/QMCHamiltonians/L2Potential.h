@@ -77,6 +77,9 @@ struct L2Potential : public OperatorBase
 
   Return_t evaluate(ParticleSet& P);
 
+  void evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K);
+  void evaluateD(ParticleSet& P, int iel, TensorType& D);
+
   bool put(xmlNodePtr cur) { return true; }
 
   bool get(std::ostream& os) const
