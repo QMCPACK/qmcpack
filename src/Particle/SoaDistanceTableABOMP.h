@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_AB_OMP_H
 #define QMCPLUSPLUS_DTDIMPL_AB_OMP_H
 
-#include "OpenMP/OMPallocator.hpp"
+#include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMP.h"
 

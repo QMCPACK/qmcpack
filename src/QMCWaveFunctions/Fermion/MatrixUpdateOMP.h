@@ -14,12 +14,12 @@
 
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "Platforms/PinnedAllocator.h"
-#include "OpenMP/OMPallocator.hpp"
+#include "OMPTarget/OMPallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "Platforms/OpenMP/ompBLAS.hpp"
-#include "Platforms/OpenMP/ompReduction.hpp"
+#include "Platforms/OMPTarget/ompBLAS.hpp"
+#include "Platforms/OMPTarget/ompReduction.hpp"
 
 
 namespace qmcplusplus

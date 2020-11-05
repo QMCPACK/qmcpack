@@ -55,7 +55,7 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/ps
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcham)
 IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcwfs qmcparticle qmcutil containers platform_omp)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcwfs qmcparticle qmcutil containers platform_omptarget)
 ENDIF()
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

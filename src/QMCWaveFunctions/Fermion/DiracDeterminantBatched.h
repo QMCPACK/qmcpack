@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/Fermion/MatrixDelayedUpdateCUDA.h"
 #endif
 #include "Platforms/PinnedAllocator.h"
-#include "OpenMP/OMPallocator.hpp"
+#include "OMPTarget/OMPallocator.hpp"
 
 namespace qmcplusplus
 {

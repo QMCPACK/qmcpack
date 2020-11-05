@@ -14,7 +14,7 @@
 #include "spline2/MultiBsplineEval.hpp"
 #include "spline2/MultiBsplineEval_OMPoffload.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
-#include "Platforms/OpenMP/ompReduction.hpp"
+#include "Platforms/OMPTarget/ompReduction.hpp"
 #include "config/stdlib/math.hpp"
 
 namespace qmcplusplus

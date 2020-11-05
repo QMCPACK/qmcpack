@@ -17,7 +17,7 @@
 
 #include "Particle/DynamicCoordinates.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "OpenMP/OMPallocator.hpp"
+#include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 
 namespace qmcplusplus
