@@ -9,8 +9,8 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_MATRIX_UPDATE_OMP_H
-#define QMCPLUSPLUS_MATRIX_UPDATE_OMP_H
+#ifndef QMCPLUSPLUS_MATRIX_UPDATE_OMPTARGET_H
+#define QMCPLUSPLUS_MATRIX_UPDATE_OMPTARGET_H
 
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "Platforms/PinnedAllocator.h"
@@ -30,9 +30,9 @@ namespace qmcplusplus
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
 template<typename T, typename T_FP>
-class MatrixUpdateOMP
+class MatrixUpdateOMPTarget
 {
-  using This_t = MatrixUpdateOMP<T, T_FP>;
+  using This_t = MatrixUpdateOMPTarget<T, T_FP>;
 
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;

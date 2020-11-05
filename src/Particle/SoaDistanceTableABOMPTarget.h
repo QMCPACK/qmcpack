@@ -10,12 +10,12 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_DTDIMPL_AB_OMP_H
-#define QMCPLUSPLUS_DTDIMPL_AB_OMP_H
+#ifndef QMCPLUSPLUS_DTDIMPL_AB_OMPTARGET_H
+#define QMCPLUSPLUS_DTDIMPL_AB_OMPTARGET_H
 
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
-#include "Particle/RealSpacePositionsOMP.h"
+#include "Particle/RealSpacePositionsOMPTarget.h"
 
 namespace qmcplusplus
 {
@@ -23,7 +23,7 @@ namespace qmcplusplus
  * @brief A derived classe from DistacneTableData, specialized for AB using a transposed form
  */
 template<typename T, unsigned D, int SC>
-class SoaDistanceTableABOMP : public DTD_BConds<T, D, SC>, public DistanceTableData
+class SoaDistanceTableABOMPTarget : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
 private:
   template<typename DT>
@@ -49,15 +49,15 @@ private:
   NewTimer& eval_timer_;
 
 public:
-  SoaDistanceTableABOMP(const ParticleSet& source, ParticleSet& target)
+  SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice),
         DistanceTableData(source, target),
         r_dr_device_ptr_(nullptr),
-        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMP::offload_") + target.getName() + "_" + source.getName(), timer_level_fine)),
-        copy_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMP::copy_") + target.getName() + "_" + source.getName(), timer_level_fine)),
-        eval_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMP::evaluate_") + target.getName() + "_" + source.getName(), timer_level_fine))
+        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") + target.getName() + "_" + source.getName(), timer_level_fine)),
+        copy_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::copy_") + target.getName() + "_" + source.getName(), timer_level_fine)),
+        eval_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") + target.getName() + "_" + source.getName(), timer_level_fine))
   {
-    auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMP*>(&source.getCoordinates());
+    auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());
     if (!coordinates_soa) throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
     resize(source.getTotalNum(), target.getTotalNum());
     #pragma omp target enter data map(to:this[:1])
@@ -94,10 +94,10 @@ public:
     temp_dr_.resize(N_sources);
   }
 
-  SoaDistanceTableABOMP()                             = delete;
-  SoaDistanceTableABOMP(const SoaDistanceTableABOMP&) = delete;
+  SoaDistanceTableABOMPTarget()                             = delete;
+  SoaDistanceTableABOMPTarget(const SoaDistanceTableABOMPTarget&) = delete;
 
-  ~SoaDistanceTableABOMP()
+  ~SoaDistanceTableABOMPTarget()
   {
     #pragma omp target exit data map(delete:this[:1])
   }
@@ -187,13 +187,13 @@ public:
     count_targets = 0;
     for (size_t iw = 0; iw < nw; iw++)
     {
-      auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[iw].get());
+      auto& dt = static_cast<SoaDistanceTableABOMPTarget&>(dt_list[iw].get());
       ParticleSet& pset(p_list[iw]);
 
       assert(N_sources == dt.N_sources);
 
-      auto& RSoA_OMP = static_cast<const RealSpacePositionsOMP&>(dt.Origin->getCoordinates());
-      source_ptrs[iw] = const_cast<RealType*>(RSoA_OMP.getDevicePtr());
+      auto& RSoA_OMPTarget = static_cast<const RealSpacePositionsOMPTarget&>(dt.Origin->getCoordinates());
+      source_ptrs[iw] = const_cast<RealType*>(RSoA_OMPTarget.getDevicePtr());
 
       for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
       {
@@ -242,7 +242,7 @@ public:
       ScopedTimer copy(&copy_timer_);
       for (size_t iw = 0; iw < nw; iw++)
       {
-        auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[iw].get());
+        auto& dt = static_cast<SoaDistanceTableABOMPTarget&>(dt_list[iw].get());
         auto* pool_ptr = dt.r_dr_memorypool_.data();
         #pragma omp target update from(pool_ptr[:dt.r_dr_memorypool_.size()]) nowait depend(inout:total_targets)
       }
@@ -279,13 +279,13 @@ public:
     count_targets = 0;
     for (size_t iw = 0; iw < nw; iw++)
     {
-      auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[iw].get());
+      auto& dt = static_cast<SoaDistanceTableABOMPTarget&>(dt_list[iw].get());
       ParticleSet& pset(p_list[iw]);
 
       assert(N_sources == dt.N_sources);
 
-      auto& RSoA_OMP = static_cast<const RealSpacePositionsOMP&>(dt.Origin->getCoordinates());
-      source_ptrs[iw] = const_cast<RealType*>(RSoA_OMP.getDevicePtr());
+      auto& RSoA_OMPTarget = static_cast<const RealSpacePositionsOMPTarget&>(dt.Origin->getCoordinates());
+      source_ptrs[iw] = const_cast<RealType*>(RSoA_OMPTarget.getDevicePtr());
 
       for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
       {
@@ -337,7 +337,7 @@ public:
       {
         const int wid = walker_id_ptr[iat];
         const int pid = particle_id[iat];
-        auto& dt = static_cast<SoaDistanceTableABOMP&>(dt_list[wid].get());
+        auto& dt = static_cast<SoaDistanceTableABOMPTarget&>(dt_list[wid].get());
         assert(N_sources_padded == dt.displacements_[pid].capacity());
         auto offset = offload_output.data() + iat * N_sources_padded * (D + 1);
         std::copy_n(offset, N_sources_padded, dt.distances_[pid].data());

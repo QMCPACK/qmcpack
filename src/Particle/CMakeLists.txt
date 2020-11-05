@@ -36,7 +36,7 @@ SET(PARTICLE
 
 IF(ENABLE_OFFLOAD)
   SET(PARTICLE ${PARTICLE}
-    createDistanceTableABOMP.cpp
+    createDistanceTableABOMPTarget.cpp
     )
 ENDIF(ENABLE_OFFLOAD)
 

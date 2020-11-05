@@ -10,13 +10,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file SplineC2COMP.h
+/** @file SplineC2COMPTarget.h
  *
  * class to handle complex splines to complex orbitals with splines of arbitrary precision
  * splines storage and computation is offloaded to accelerators using OpenMP target
  */
-#ifndef QMCPLUSPLUS_SPLINE_C2C_OMP_H
-#define QMCPLUSPLUS_SPLINE_C2C_OMP_H
+#ifndef QMCPLUSPLUS_SPLINE_C2C_OMPTARGET_H
+#define QMCPLUSPLUS_SPLINE_C2C_OMPTARGET_H
 
 #include <memory>
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
@@ -36,7 +36,7 @@ namespace qmcplusplus
  * Internal storage use double sized arrays of ST type, aligned and padded.
  */
 template<typename ST>
-class SplineC2COMP : public BsplineSet
+class SplineC2COMPTarget : public BsplineSet
 {
 public:
   template<typename DT>
@@ -114,18 +114,18 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2COMP()
+  SplineC2COMPTarget()
       : BsplineSet(true),
-        offload_timer_(*timer_manager.createTimer("SplineC2COMP::offload", timer_level_fine)),
+        offload_timer_(*timer_manager.createTimer("SplineC2COMPTarget::offload", timer_level_fine)),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
   {
     is_complex = true;
-    className  = "SplineC2COMP";
+    className  = "SplineC2COMPTarget";
     KeyWord    = "SplineC2C";
   }
 
-  virtual SPOSet* makeClone() const override { return new SplineC2COMP(*this); }
+  virtual SPOSet* makeClone() const override { return new SplineC2COMPTarget(*this); }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -294,8 +294,8 @@ public:
   friend struct BsplineReaderBase;
 };
 
-extern template class SplineC2COMP<float>;
-extern template class SplineC2COMP<double>;
+extern template class SplineC2COMPTarget<float>;
+extern template class SplineC2COMPTarget<double>;
 
 } // namespace qmcplusplus
 #endif
