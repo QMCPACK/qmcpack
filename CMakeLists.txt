@@ -1,17 +1,15 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12.0)
 
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
 # various Find<Package>.cmake modules may not follow this policy
 # CMP0075: check_include_file_cxx and other follow CMAKE_REQUIRED_LIBRARIES
 # when doing link check
-IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
-  cmake_policy(SET CMP0074 NEW)
-  cmake_policy(SET CMP0075 NEW)
-ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+cmake_policy(SET CMP0074 NEW)
+cmake_policy(SET CMP0075 NEW)
 include(CMakeDependentOption)
 
 ######################################################################
@@ -35,11 +33,7 @@ SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 # Verify Python3 available
 ######################################################################
 INCLUDE(CMake/python.cmake)
-IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-  TEST_PYTHON_MODULE( "os"  Python3_FOUND )
-ELSE()
-  find_package(Python3)
-ENDIF()
+find_package(Python3)
 IF ( NOT Python3_FOUND )
   MESSAGE( FATAL_ERROR "Could not find required python3" )
 ENDIF ( NOT Python3_FOUND )
@@ -598,16 +592,7 @@ SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 #  set up Libxml2 library
 #-------------------------------------------------------------------
 find_package(ZLIB)
-find_package(LibXml2)
-IF(LIBXML2_FOUND)
-  IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-    ADD_LIBRARY(LibXml2::LibXml2 INTERFACE IMPORTED)
-    SET_TARGET_PROPERTIES(LibXml2::LibXml2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBXML2_INCLUDE_DIR}"
-                                                      INTERFACE_LINK_LIBRARIES "${LIBXML2_LIBRARIES}")
-  ENDIF()
-ELSE()
-  MESSAGE(FATAL_ERROR "Could not find required library Libxml2")
-ENDIF(LIBXML2_FOUND)
+find_package(LibXml2 REQUIRED)
 
 #-------------------------------------------------------------------
 #  set up HDF5 library
