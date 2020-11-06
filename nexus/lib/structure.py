@@ -5349,7 +5349,7 @@ class Structure(Sobj):
         cubic_F        = 'Cubic Face Centered',
         )
 
-    def rmg_lattice(self,allow_tile=False,all_results=False,exit=False,warn=False):
+    def rmg_lattice(self,allow_tile=False,all_results=False,ret_bravais=False,exit=False,warn=False):
         # output variables
         rmg_lattice = None
         tmatrix     = None
@@ -5388,12 +5388,12 @@ class Structure(Sobj):
                 # apply tiling matrix
                 st = sp.copy().tile(tmatrix)
                 # update lattice type
-                rmg_lattice = st.rmg_lattice()
+                rmg_lattice,bv = st.rmg_lattice(ret_bravais=True)
             #end if
         #end if
 
         if rmg_lattice is None and (exit or warn):
-            msg = 'Bravais lattice is not supported by the RMG code.\nCell bravais lattice: {}\nLattices supported by RMG: {}'.format(rmg_lattice,list(sorted(rmg_lattices.keys())))
+            msg = 'Bravais lattice is not supported by the RMG code.\nCell bravais lattice: {}\nLattices supported by RMG: {}'.format(bv,list(sorted(rmg_lattices.keys())))
             if exit:
                 self.error(msg)
             elif warn:
@@ -5402,45 +5402,54 @@ class Structure(Sobj):
         #end if
 
         if all_results:
-            return rmg_lattice,tmatrix,s,sp
+            return rmg_lattice,tmatrix,s,sp,bv
         elif allow_tile:
             return rmg_lattice,tmatrix
+        elif ret_bravais:
+            return rmg_lattice,bv
         else:
             return rmg_lattice
         #end if
     #end def rmg_lattice
 
 
-    def rmg_transform(self,allow_tile=False,all_results=False):
-        rmg_lattice,tmatrix,s,sp = self.rmg_lattice(
+    def rmg_transform(self,allow_tile=False,allow_general=False,all_results=False):
+        rmg_lattice,tmatrix,s,sp,bv = self.rmg_lattice(
             allow_tile  = allow_tile,
-            exit        = True,
+            exit        = not allow_general,
             all_results = True,
             )
-        s_trans = self.copy()
-        R = np.dot(np.linalg.inv(s.axes),sp.axes)
-        s_trans.matrix_transform(R.T)
-        if tmatrix is not None:
-            s_trans = s_trans.tile(tmatrix)
-        #end if
-        if s_trans.units=='A':
-            rmg_units = 'Angstrom'
-        elif s_trans.units=='B':
-            rmg_units = 'Bohr'
+        if rmg_lattice is None and allow_general:
+            s_trans    = self.copy()
+            rmg_inputs = obj()
+            R          = None
+            tmatrix    = None
         else:
-            self.error('unrecognized length units in structure "{}"'.format(s_trans.units))
+            s_trans = self.copy()
+            R = np.dot(np.linalg.inv(s.axes),sp.axes)
+            s_trans.matrix_transform(R.T)
+            if tmatrix is not None:
+                s_trans = s_trans.tile(tmatrix)
+            #end if
+            if s_trans.units=='A':
+                rmg_units = 'Angstrom'
+            elif s_trans.units=='B':
+                rmg_units = 'Bohr'
+            else:
+                self.error('Unrecognized length units in structure "{}"'.format(s_trans.units))
+            #end if
+            rmg_inputs = obj(
+                bravais_lattice_type = self.rmg_lattices[rmg_lattice],
+                a_length             = np.linalg.norm(s_trans.axes[0]),
+                b_length             = np.linalg.norm(s_trans.axes[1]),
+                c_length             = np.linalg.norm(s_trans.axes[2]),
+                length_units         = rmg_units,
+                )
         #end if
-        rmg_inputs = obj(
-            bravais_lattice_type = self.rmg_lattices[rmg_lattice],
-            a_length             = np.linalg.norm(s_trans.axes[0]),
-            b_length             = np.linalg.norm(s_trans.axes[1]),
-            c_length             = np.linalg.norm(s_trans.axes[2]),
-            length_units         = rmg_units,
-            )
         if not all_results:
             return s_trans,rmg_inputs
         else:
-            return s_trans,rmg_inputs,R,tmatrix
+            return s_trans,rmg_inputs,R,tmatrix,bv
         #end if
     #end def rmg_transform
 

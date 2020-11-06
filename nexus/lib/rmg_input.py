@@ -23,6 +23,8 @@ class RmgInputSettings(DevBase):
 #       Max value: 50     -> 500
 #     pseudopotential
 #       Key type : string -> formatted
+#     Hubbard_U
+#       Key type : string -> formatted
 
 raw_input_spec = '''
 Control options
