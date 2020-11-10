@@ -28,10 +28,10 @@ set thres = 0.0075
 set norb = 40
 
 # uncomment for single-determinant
-runjob --np ${nodes} -p ${tasks} --block $COBALT_PARTNAME --verbose=INFO --envs OMP_NUM_THREADS=$threads : $convert -gamessAscii ${output_orbitals} -add3BodyJ
+runjob --np ${nodes} -p ${tasks} --block $COBALT_PARTNAME --verbose=INFO --envs OMP_NUM_THREADS=$threads : $convert -gamess ${output_orbitals} -add3BodyJ
 
 # uncomment for multi-determinant 
-#runjob --np ${nodes} -p ${tasks} --block $COBALT_PARTNAME --verbose=INFO --envs OMP_NUM_THREADS=$threads : $convert -gamessAscii ${output_orbitals} -ci ${output_ci} -threshold ${thres} -readInitialGuess ${norb} -add3BodyJ
+#runjob --np ${nodes} -p ${tasks} --block $COBALT_PARTNAME --verbose=INFO --envs OMP_NUM_THREADS=$threads : $convert -gamess ${output_orbitals} -ci ${output_ci} -threshold ${thres} -readInitialGuess ${norb} -add3BodyJ
 
 mv sample.Gaussian-G2.xml H2O.wfs.xml
 mv sample.Gaussian-G2.ptcl.xml H2O.ptcl.xml

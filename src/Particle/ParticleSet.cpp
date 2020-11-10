@@ -19,7 +19,7 @@
 
 #include <numeric>
 #include <iomanip>
-#include "Particle/ParticleSet.h"
+#include "ParticleSet.h"
 #include "Particle/DynamicCoordinatesBuilder.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/createDistanceTable.h"
@@ -41,10 +41,22 @@ template<>
 int ParticleSet::Walker_t::cuda_DataSize = 0;
 #endif
 
-const TimerNameList_t<ParticleSet::PSTimers> ParticleSet::PSTimerNames = {{PS_newpos, "ParticleSet::computeNewPosDT"},
-                                                                          {PS_donePbyP, "ParticleSet::donePbyP"},
-                                                                          {PS_accept, "ParticleSet::acceptMove"},
-                                                                          {PS_update, "ParticleSet::update"}};
+enum PSetTimers
+{
+  PS_newpos,
+  PS_donePbyP,
+  PS_accept,
+  PS_update
+};
+
+static const TimerNameList_t<PSetTimers>
+generatePSetTimerNames(std::string& obj_name)
+{
+  return {{PS_newpos, "ParticleSet:" + obj_name + "::computeNewPosDT"},
+          {PS_donePbyP, "ParticleSet:" + obj_name + "::donePbyP"},
+          {PS_accept, "ParticleSet:" + obj_name + "::acceptMove"},
+          {PS_update, "ParticleSet:" + obj_name + "::update"}};
+}
 
 ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
     : quantum_domain(classical),
@@ -57,10 +69,10 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
-      coordinates_(std::move(createDynamicCoordinates(kind)))
+      coordinates_(createDynamicCoordinates(kind))
 {
   initPropertyList();
-  setup_timers(myTimers, PSTimerNames, timer_level_fine);
+  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
@@ -73,7 +85,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       Properties(p.Properties),
       myTwist(0.0),
       ParentName(p.parentName()),
-      coordinates_(std::move(p.coordinates_->makeClone()))
+      coordinates_(p.coordinates_->makeClone())
 {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
@@ -91,7 +103,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
-    addTable(p.DistTables[i]->origin(), p.DistTables[i]->DTType, p.DistTables[i]->getFullTableNeeds());
+    addTable(p.DistTables[i]->origin(), p.DistTables[i]->getFullTableNeeds());
   if (p.SK)
   {
     LRBox = p.LRBox;               //copy LRBox
@@ -100,7 +112,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     //createSK();
     //SK->DoUpdate=p.SK->DoUpdate;
   }
-  setup_timers(myTimers, PSTimerNames, timer_level_fine);
+  setup_timers(myTimers, generatePSetTimerNames(myName), timer_level_medium);
   myTwist = p.myTwist;
 
   G = p.G;
@@ -341,25 +353,21 @@ void ParticleSet::reset() { app_log() << "<<<< going to set properties >>>> " <<
 ///read the particleset
 bool ParticleSet::put(xmlNodePtr cur) { return true; }
 
-int ParticleSet::addTable(const ParticleSet& psrc, int dt_type, bool need_full_table)
+int ParticleSet::addTable(const ParticleSet& psrc, bool need_full_table)
 {
   if (myName == "none" || psrc.getName() == "none")
     APP_ABORT("ParticleSet::addTable needs proper names for both source and target particle sets.");
-
-  if (DistTables.size() > 0 && dt_type != DT_SOA_PREFERRED && !DistTables[0]->is_same_type(dt_type))
-    APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
 
   int tid;
   std::map<std::string, int>::iterator tit(myDistTableMap.find(psrc.getName()));
   if (tit == myDistTableMap.end())
   {
     std::ostringstream description;
-    tid                = DistTables.size();
-    int dt_type_in_use = (tid == 0 ? dt_type : DistTables[0]->DTType);
+    tid = DistTables.size();
     if (myName == psrc.getName())
-      DistTables.push_back(createDistanceTable(*this, dt_type_in_use, description));
+      DistTables.push_back(createDistanceTable(*this, description));
     else
-      DistTables.push_back(createDistanceTable(psrc, *this, dt_type_in_use, description));
+      DistTables.push_back(createDistanceTable(psrc, *this, description));
     distTableDescriptions.push_back(description.str());
     myDistTableMap[psrc.getName()] = tid;
     app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->getName()
@@ -732,7 +740,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 
     // in certain cases, full tables must be ready
     for (int i = 0; i < DistTables.size(); i++)
-      if (DistTables[i]->DTType == DT_AOS || DistTables[i]->getFullTableNeeds())
+      if (DistTables[i]->getFullTableNeeds())
         DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if (SK && SK->DoUpdate)

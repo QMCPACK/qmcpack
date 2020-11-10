@@ -30,11 +30,13 @@ SET(SRCS test_bare_kinetic.cpp
          test_coulomb_pbcAA_ewald.cpp
          test_force.cpp
          test_force_ewald.cpp
+         test_stress.cpp
          test_ecp.cpp
          test_hamiltonian_pool.cpp
          test_hamiltonian_factory.cpp
          test_PairCorrEstimator.cpp
          test_SkAllEstimator.cpp
+         test_QMCHamiltonian.cpp
          )
          
 IF(QMC_CUDA)
@@ -42,10 +44,6 @@ IF(QMC_CUDA)
       test_coulomb_CUDA.cpp 
 )
 ENDIF()
-
-IF(ENABLE_SOA)
-  SET(SRCS test_QMCHamiltonian.cpp ${SRCS})
-ENDIF(ENABLE_SOA)
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.txt" ${UTEST_DIR})
@@ -56,6 +54,9 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/ps
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcham)
+IF(USE_OBJECT_TARGET)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcwfs qmcparticle qmcutil containers platform_omptarget)
+ENDIF()
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

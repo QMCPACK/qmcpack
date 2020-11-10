@@ -15,12 +15,12 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "DiracDeterminant.h"
+#include <stdexcept>
+#include "CPU/BLAS.hpp"
+#include "CPU/SIMD/simd.hpp"
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/OhmmsBlas.h"
 #include "Numerics/MatrixOperators.h"
-#include "simd/simd.hpp"
 
 namespace qmcplusplus
 {
@@ -30,10 +30,8 @@ namespace qmcplusplus
  */
 template<typename DU_TYPE>
 DiracDeterminant<DU_TYPE>::DiracDeterminant(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase(spos, first), ndelay(1), invRow_id(-1)
-{
-  ClassName = "DiracDeterminant";
-}
+    : DiracDeterminantBase("DiracDeterminant", spos, first), ndelay(1), invRow_id(-1)
+{}
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
@@ -64,6 +62,8 @@ void DiracDeterminant<DU_TYPE>::invertPsiM(const ValueMatrix_t& logdetT, ValueMa
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::resize(int nel, int morb)
 {
+  if (Bytes_in_WFBuffer > 0)
+    throw std::runtime_error("DiracDeterimnant just went out of sync with buffer");
   int norb = morb;
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
@@ -90,10 +90,19 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
 {
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  invRow_id              = WorkingIndex;
+  assert(WorkingIndex >= 0);
+  invRow_id = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
+#ifndef NDEBUG
+  ValueType g_norm = simd::dot(g.data(), g.data(), g.Size);
+  if (std::abs(g_norm) < std::abs(std::numeric_limits<QMCTraits::ValueType>::epsilon()))
+  {
+    std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
+    throw std::runtime_error("gradient of zero");
+  }
+#endif
   return g;
 }
 
@@ -105,7 +114,8 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-  invRow_id              = WorkingIndex;
+  assert(WorkingIndex >= 0);
+  invRow_id = WorkingIndex;
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g         = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   ComplexType spin_g = simd::dot(invRow.data(), dspin_psiV.data(), invRow.size());
@@ -133,7 +143,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-
+  assert(WorkingIndex >= 0);
   // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
   // Some code paths call evalGrad before calling ratioGrad.
@@ -163,7 +173,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode = ORB_PBYP_PARTIAL;
   RatioTimer.start();
   const int WorkingIndex = iat - FirstIndex;
-
+  assert(WorkingIndex >= 0);
   // This is an optimization.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
   // Some code paths call evalGrad before calling ratioGrad.
@@ -223,6 +233,7 @@ template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
   LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
   updateEng.acceptRow(psiM, WorkingIndex, psiV);
@@ -307,6 +318,12 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
   else
   {
     buf.forward(Bytes_in_WFBuffer);
+#ifndef NDEBUG
+    // this causes too much output in the legacy code.
+    // \todo turn this back on after legacy is dropped,
+    // I don't think it should print at all in the new design
+    // std::cerr << ("You really should know whether you have registered this objects data previously!, consider this an error in the unified code");
+#endif
   }
   buf.add(LogValue);
 }
@@ -354,6 +371,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
   SPOVTimer.start();
   Phi->evaluateValue(P, iat, psiV);
   SPOVTimer.stop();
@@ -376,6 +394,7 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
 {
   RatioTimer.start();
   const int WorkingIndex = VP.refPtcl - FirstIndex;
+  assert(WorkingIndex >= 0);
   std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
   RatioTimer.stop();
   SPOVTimer.start();
@@ -393,26 +412,38 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
 
   RefVector<SPOSet> phi_list;
   RefVector<ValueVector_t> psiV_list;
-  RefVector<const ValueVector_t> invRow_list;
+  std::vector<const ValueType*> invRow_ptr_list;
   phi_list.reserve(nw);
   psiV_list.reserve(nw);
-  invRow_list.reserve(nw);
+  invRow_ptr_list.reserve(nw);
 
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
     const VirtualParticleSet& vp(vp_list[iw]);
     const int WorkingIndex = vp.refPtcl - FirstIndex;
-    std::copy_n(det.psiM[WorkingIndex], det.invRow.size(), det.invRow.data());
+    assert(WorkingIndex >= 0);
+    // If DiracDeterminant is in a valid state this copy_n is not necessary.
+    // That is at minimum a call to evaluateLog and ...
+    // std::copy_n(det.psiM[WorkingIndex], det.invRow.s.ize(), det.invRow.data());
     // build lists
     phi_list.push_back(*det.Phi);
     psiV_list.push_back(det.psiV);
-    invRow_list.push_back(det.invRow);
+    invRow_ptr_list.push_back(det.psiM[WorkingIndex]);
   }
   RatioTimer.stop();
 
   SPOVTimer.start();
-  Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_list, ratios);
+  // Phi->isOMPoffload() requires device invRow pointers for mw_evaluateDetRatios.
+  // evaluateDetRatios only requires host invRow pointers.
+  if (Phi->isOMPoffload())
+    for (int iw = 0; iw < phi_list.size(); iw++)
+    {
+      Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psiV_list[iw].get().size());
+      phi_list[iw].get().evaluateDetRatios(vp_list[iw], psiV_list[iw], invRow, ratios[iw]);
+    }
+  else
+    Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);
   SPOVTimer.stop();
 }
 
@@ -635,6 +666,9 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
   {
     invertPsiM(psiM_temp, psiM);
   }
+
+  // invRow becomes invalid after updating the inverse matrix
+  invRow_id = -1;
 }
 
 template<typename DU_TYPE>

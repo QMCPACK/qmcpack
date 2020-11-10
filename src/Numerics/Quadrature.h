@@ -18,7 +18,7 @@
 #include <assert.h>
 #include "Numerics/Ylm.h"
 #include "type_traits/scalar_traits.h"
-#include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
+#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
 
 namespace qmcplusplus
 {
@@ -313,7 +313,7 @@ struct Quadrature3D
             }
             if ((l1 == l2) && (m1 == m2))
               sum -= 1.0;
-            if (std::abs(sum) > 15 * std::numeric_limits<float>::epsilon())
+            if (std::abs(sum) > 16 * std::numeric_limits<float>::epsilon())
             {
               app_error() << "Broken real spherical quadrature for " << grid.size() << "-point rule.\n" << std::endl;
               app_error() << "  Should be zero:  " << sum << std::endl;

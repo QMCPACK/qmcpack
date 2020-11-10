@@ -19,10 +19,6 @@
 #include "QMCHamiltonians/BareKineticEnergy.h"
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#ifndef ENABLE_SOA
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-#endif
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
 
@@ -56,16 +52,12 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   elec.R[1][1] = 1.0;
   elec.R[1][2] = 0.0;
 
-  SpeciesSet& tspecies = elec.getSpeciesSet();
-  int upIdx            = tspecies.addSpecies("u");
-  int massIdx = tspecies.addAttribute("mass");
-  tspecies(massIdx, upIdx)   = 1.0;
+  SpeciesSet& tspecies     = elec.getSpeciesSet();
+  int upIdx                = tspecies.addSpecies("u");
+  int massIdx              = tspecies.addAttribute("mass");
+  tspecies(massIdx, upIdx) = 1.0;
 
-#ifdef ENABLE_SOA
-  elec.addTable(ions, DT_SOA);
-#else
-  elec.addTable(ions, DT_AOS);
-#endif
+  elec.addTable(ions);
   elec.update();
 
 
@@ -142,7 +134,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice = Lattice;
+  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
@@ -179,7 +171,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
 
   //Add the two body jastrow
   const char* particles = "<tmp> \
@@ -199,7 +191,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
   RadialJastrowBuilder jastrow(c, elec);
-  psi.addComponent(jastrow.buildComponent(jas2), "RadialJastrow");
+  psi.addComponent(jastrow.buildComponent(jas2));
   // Done with two body jastrow.
 
   //Add the one body jastrow.
@@ -219,7 +211,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   RadialJastrowBuilder jastrow1bdy(c, elec, ions);
-  psi.addComponent(jastrow1bdy.buildComponent(jas1), "RadialJastrow");
+  psi.addComponent(jastrow1bdy.buildComponent(jas1));
 
   const char* kexml = "<tmp> \
 </tmp> \
@@ -243,7 +235,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   //This is validated against an alternate code path (waveefunction tester for local energy).
   REQUIRE(keval == Approx(-0.147507745));
 
-#ifdef ENABLE_SOA
   ParticleSet::ParticlePos_t HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
@@ -258,7 +249,5 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   REQUIRE(PulayTerm[1][0] == Approx(-0.12145));
   REQUIRE(PulayTerm[1][1] == Approx(0.0));
   REQUIRE(PulayTerm[1][2] == Approx(0.0));
-
-#endif
 }
 } // namespace qmcplusplus

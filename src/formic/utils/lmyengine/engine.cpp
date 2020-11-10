@@ -7,27 +7,27 @@
 ///
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<vector>
-#include<string>
-#include<algorithm>
-#include<utility>
-#include<complex>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <utility>
+#include <complex>
 
-#include<boost/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
-#include<formic/utils/openmp.h>
+#include "formic/utils/openmp.h"
 
-#include <formic/utils/zero_one.h>
-#include <formic/utils/lmyengine/engine.h>
-#include <formic/utils/lmyengine/updater.h>
-#include <formic/utils/lmyengine/energy_target.h>
-#include <formic/utils/lmyengine/matrix_builder.h>
-#include <formic/utils/lmyengine/eom.h>
-#include <formic/utils/lmyengine/var_dependencies.h>
-#include <formic/utils/lmyengine/engine_timing.h>
-#include <formic/utils/exception.h>
-#include <formic/utils/lapack_interface.h>
-#include <formic/utils/mpi_interface.h>
+#include "formic/utils/zero_one.h"
+#include "engine.h"
+#include "formic/utils/lmyengine/updater.h"
+#include "formic/utils/lmyengine/energy_target.h"
+#include "formic/utils/lmyengine/matrix_builder.h"
+#include "formic/utils/lmyengine/eom.h"
+#include "formic/utils/lmyengine/var_dependencies.h"
+#include "formic/utils/lmyengine/engine_timing.h"
+#include "formic/utils/exception.h"
+#include "formic/utils/lapack_interface.h"
+#include "formic/utils/mpi_interface.h"
 
 /////////////////////////////////////////////////////////////////////////////////
 /// \brief constructor with given parameters
@@ -435,10 +435,14 @@ void cqmc::engine::LMYEngine<S>::take_sample(std::vector<S> & der_rat_samp,
 
       std::vector<double> der_rat_samp_real;
       std::vector<double> le_der_samp_real;
+      
       for (auto it = der_rat_samp.begin(); it != der_rat_samp.end(); it++) {
         der_rat_samp_real.push_back(formic::real(*it));
+      }
+      for (auto it = le_der_samp.begin(); it != le_der_samp.end(); it++) {
          le_der_samp_real.push_back(formic::real(*it));
       }
+
       bool first_samp = !_block_first_sample_finished;
 
       // if it is the first sampling
@@ -454,6 +458,7 @@ void cqmc::engine::LMYEngine<S>::take_sample(std::vector<S> & der_rat_samp,
         else {
           // get <n|(w-H)|Psi_i>/<n|Psi>
           std::vector<double> mle_der_samp_real(le_der_samp_real.size(), 0.0);
+          
           for (int i = 0; i < mle_der_samp_real.size(); i++) 
             mle_der_samp_real.at(i) = _hd_lm_shift * der_rat_samp_real.at(i) - le_der_samp_real.at(i);
 

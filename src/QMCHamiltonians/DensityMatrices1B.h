@@ -14,9 +14,9 @@
 #ifndef QMCPLUSPLUS_ONE_BODY_DENSITY_MATRICES_H
 #define QMCPLUSPLUS_ONE_BODY_DENSITY_MATRICES_H
 
-#include <QMCHamiltonians/OperatorBase.h>
-#include <QMCWaveFunctions/CompositeSPOSet.h>
-#include <ParticleBase/RandomSeqGenerator.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "QMCWaveFunctions/CompositeSPOSet.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 
 namespace qmcplusplus
 {

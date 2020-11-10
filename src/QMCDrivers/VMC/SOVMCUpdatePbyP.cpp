@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"
+#include "SOVMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "Message/OpenMP.h"
 #if !defined(REMOVE_TRACEMANAGER)
@@ -28,10 +28,10 @@ SOVMCUpdatePbyP::SOVMCUpdatePbyP(MCWalkerConfiguration& w,
                                  QMCHamiltonian& h,
                                  RandomGenerator_t& rg)
     : QMCUpdateBase(w, psi, h, rg),
-      buffer_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::Buffer", timer_level_medium)),
-      movepbyp_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::MovePbyP", timer_level_medium)),
-      hamiltonian_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::Hamiltonian", timer_level_medium)),
-      collectables_timer_(*TimerManager.createTimer("SOVMCUpdatePbyP::Collectables", timer_level_medium))
+      buffer_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::Buffer", timer_level_medium)),
+      movepbyp_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::MovePbyP", timer_level_medium)),
+      hamiltonian_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::Hamiltonian", timer_level_medium)),
+      collectables_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::Collectables", timer_level_medium))
 {}
 
 SOVMCUpdatePbyP::~SOVMCUpdatePbyP() {}

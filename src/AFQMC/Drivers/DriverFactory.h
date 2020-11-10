@@ -3,7 +3,7 @@
 #define QMCPLUSPLUS_DRIVERFACTORY_H
 
 #include "OhmmsData/libxmldefs.h"
-#include<Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 
 #include "mpi3/communicator.hpp"
 
@@ -16,71 +16,64 @@
 
 namespace qmcplusplus
 {
-
 namespace afqmc
 {
-
 class DriverFactory
 {
-
   using communicator = boost::mpi3::communicator;
 
-  public:
+public:
+  DriverFactory(GlobalTaskGroup& gtg_,
+                TaskGroupHandler& tghandler_,
+                std::map<std::string, AFQMCInfo>& info,
+                WalkerSetFactory& wsetfac_,
+                PropagatorFactory& pfac_,
+                WavefunctionFactory& wfnfac_,
+                HamiltonianFactory& hfac)
+      : ncores(-10),
+        gTG(gtg_),
+        TGHandler(tghandler_),
+        InfoMap(info),
+        WSetFac(wsetfac_),
+        PropFac(pfac_),
+        HamFac(hfac),
+        WfnFac(wfnfac_)
+  {}
 
-    DriverFactory(GlobalTaskGroup& gtg_,
-        TaskGroupHandler& tghandler_,
-	std::map<std::string, AFQMCInfo>& info,
-	WalkerSetFactory& wsetfac_,
-	PropagatorFactory& pfac_,
-	WavefunctionFactory& wfnfac_,
-	HamiltonianFactory& hfac):
-		ncores(-10),
-		gTG(gtg_),
-		TGHandler(tghandler_),
-		InfoMap(info),
-		WSetFac(wsetfac_),
-		PropFac(pfac_),
-		HamFac(hfac),
-		WfnFac(wfnfac_)
-    {
-    }
-
-    ~DriverFactory() {}
+  ~DriverFactory() {}
 
 
-    bool executeDriver(std::string title, int m_series, xmlNodePtr cur);
+  bool executeDriver(std::string title, int m_series, xmlNodePtr cur);
 
-  private:
+private:
+  bool executeAFQMCDriver(std::string title, int m_series, xmlNodePtr cur);
+  bool executeBenchmarkDriver(std::string title, int m_series, xmlNodePtr cur);
 
-    bool executeAFQMCDriver(std::string title, int m_series, xmlNodePtr cur);
-    bool executeBenchmarkDriver(std::string title, int m_series, xmlNodePtr cur);
+  int ncores;
 
-    int ncores;
+  // global TG from which all TGs are constructed
+  GlobalTaskGroup& gTG;
 
-    // global TG from which all TGs are constructed
-    GlobalTaskGroup& gTG;
+  TaskGroupHandler& TGHandler;
 
-    TaskGroupHandler& TGHandler;
+  // container of AFQMCInfo objects
+  std::map<std::string, AFQMCInfo>& InfoMap;
 
-    // container of AFQMCInfo objects
-    std::map<std::string,AFQMCInfo>& InfoMap;
+  // WalkerHandler factory
+  WalkerSetFactory& WSetFac;
 
-    // WalkerHandler factory
-    WalkerSetFactory& WSetFac;
+  // Propagator factory
+  PropagatorFactory& PropFac;
 
-    // Propagator factory
-    PropagatorFactory& PropFac;
+  // Hamiltonian factory
+  HamiltonianFactory& HamFac;
 
-    // Hamiltonian factory
-    HamiltonianFactory& HamFac;
-
-    // Wavefunction factory
-    WavefunctionFactory& WfnFac;
-
+  // Wavefunction factory
+  WavefunctionFactory& WfnFac;
 };
 
-}
+} // namespace afqmc
 
-}
+} // namespace qmcplusplus
 
 #endif

@@ -12,7 +12,7 @@
 
 #ifndef WRITE_ESHDF_H
 #define WRITE_ESHDF_H
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include <string>
 #include <fstream>
 #include <vector>
@@ -29,7 +29,7 @@ class KPoint;
     from QBOX or quantum espresso can be handed to it and the data can
     be processed and written to the eshdf file 
 */
-class EshdfFile 
+class EshdfFile
 {
   typedef std::map<std::vector<int>, std::complex<double>> momap_t;
   typedef std::pair<std::vector<int>, std::complex<double>> mopair_t;
@@ -78,36 +78,36 @@ private:
       occupations per kpoint, kpoints,
       and the weights and number of g-vectors for each kpoint */
   void processKPts(const XmlNode& band_structure_xml,
-		   const std::vector<double>& ptvs,
-		   std::vector<std::vector<double > >& eigenvals,
-		   std::vector<std::vector<double > >& occupations,
-		   std::vector<KPoint>& kpts,
-		   std::vector<double>& weights,
-		   std::vector<int>& ngvecs);
+                   const std::vector<double>& ptvs,
+                   std::vector<std::vector<double>>& eigenvals,
+                   std::vector<std::vector<double>>& occupations,
+                   std::vector<KPoint>& kpts,
+                   std::vector<double>& weights,
+                   std::vector<int>& ngvecs);
   /*! will use the occupations and weights to figure out the total number
       of up and down electrons (nup,ndn).  Also needs a flag to see if the
       calculation was spin_polarized (0 for no, 1 for yes) and another to 
       see if noncolinear spins were used (0 for no, 1 for yes)
    */
-  void getNumElectrons(std::vector<std::vector<double> >& occupations, 
-		       std::vector<double>& weights,
-		       int& nup,
-		       int& ndn, 
-		       int spinpol,
-		       int ncol);
+  void getNumElectrons(std::vector<std::vector<double>>& occupations,
+                       std::vector<double>& weights,
+                       int& nup,
+                       int& ndn,
+                       int spinpol,
+                       int ncol);
   /*! helper function to read in the data from the wfc(kpt_num).hdf5 files located in
       directory dir_name.  Needs to know the KPoint, its eigenvalues, weight, the
       flags for spinolarized and noncolinear as well as the momap_t that handles
       the global mapping from g_vectors at individual k_points to global ones 
   */
   void handleKpt(int kpt_num,
-		 const std::string& dir_name,
-		 KPoint& kpt, 
-		 const std::vector<double>& eigenvalues,
-		 double weight,
-		 int spinpol,
-		 int noncol,
-		 const momap_t& moref);
+                 const std::string& dir_name,
+                 KPoint& kpt,
+                 const std::vector<double>& eigenvalues,
+                 double weight,
+                 int spinpol,
+                 int noncol,
+                 const momap_t& moref);
   /*! handles reading in the g-vectors for a particular k-point so that they can be inserted 
       into a momap_t.  Needs to know the number of the kpoint (kpt_num), the directory where
       it is located (dir_name) and whether it is spin polarized (spinpol)

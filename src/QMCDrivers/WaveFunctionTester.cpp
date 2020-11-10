@@ -19,7 +19,7 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
-#include "QMCDrivers/WaveFunctionTester.h"
+#include "WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
@@ -29,7 +29,6 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/SymmetryOperations.h"
-#include "Numerics/Blasf.h"
 #include <sstream>
 
 namespace qmcplusplus
@@ -40,9 +39,8 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
                                        ParticleSetPool& ptclPool,
-                                       WaveFunctionPool& ppool,
                                        Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, comm, "WaveFunctionTester"),
       PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
@@ -102,6 +100,10 @@ bool WaveFunctionTester::run()
   app_log() << "Starting a Wavefunction tester.  Additional information in " << fname << std::endl;
 
   put(qmcNode);
+
+  RandomGenerator_t* Rng1        = new RandomGenerator_t();
+  H.setRandomGenerator(Rng1);
+
   if (checkSlaterDetOption == "no")
     checkSlaterDet = false;
   if (checkRatio == "yes")
@@ -1410,6 +1412,7 @@ void WaveFunctionTester::runRatioV()
 
 void WaveFunctionTester::runGradSourceTest()
 {
+   
   app_log() << " ===== runGradSourceTest =====\n";
   ParticleSetPool::PoolType::iterator p;
   for (p = PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)

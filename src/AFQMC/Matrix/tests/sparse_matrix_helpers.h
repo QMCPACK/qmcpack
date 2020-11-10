@@ -18,54 +18,64 @@
 #include <string>
 #include <complex>
 
-using std::string;
 using std::complex;
+using std::string;
 
 namespace qmcplusplus
 {
-
-template<typename T> void output_data(T *data, int size)
+template<typename T>
+void output_data(T* data, int size)
 {
   std::cout << "[ ";
-  for (int i= 0; i < size; i++)
+  for (int i = 0; i < size; i++)
   {
     std::cout << data[i] << " ";
   }
   std::cout << "]" << std::endl;
 }
 
-template<typename T> void output_matrix(SparseMatrix<T> &M)
+template<typename T>
+void output_matrix(SparseMatrix<T>& M)
 {
   std::cout << "Colms = ";
   output_data(M.column_data(), M.size());
   std::cout << "Row index = ";
-  output_data(M.row_index(), M.rows()+1);
+  output_data(M.row_index(), M.rows() + 1);
   std::cout << "Values = ";
   output_data(M.values(), M.size());
 }
 
-template <typename T> double realPart(T &a) { REQUIRE(false); return 0.0; }
+template<typename T>
+double realPart(T& a)
+{
+  REQUIRE(false);
+  return 0.0;
+}
 
-template<> double realPart(const double &a)
+template<>
+double realPart(const double& a)
 {
   return a;
 }
 
-template<> double realPart(double &a)
+template<>
+double realPart(double& a)
 {
   return a;
 }
 
-template<> double realPart(const complex<double> &a)
+template<>
+double realPart(const complex<double>& a)
 {
   return a.real();
 }
 
-template<> double realPart(complex<double> &a)
+template<>
+double realPart(complex<double>& a)
 {
   return a.real();
 }
 
-}
+} // namespace qmcplusplus
 
 #endif

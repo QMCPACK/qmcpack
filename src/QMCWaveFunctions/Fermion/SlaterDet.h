@@ -38,18 +38,14 @@ public:
   std::vector<Determinant_t*> Dets;
   ///the last particle of each group
   std::vector<int> Last;
-  std::map<std::string, SPOSetPtr> mySPOSet;
 
   /**  constructor
    * @param targetPtcl target Particleset
    */
-  SlaterDet(ParticleSet& targetPtcl);
+  SlaterDet(ParticleSet& targetPtcl, const std::string& class_name = "SlaterDet");
 
   ///destructor
   ~SlaterDet();
-
-  ///add a SPOSet
-  void add(SPOSetPtr sposet, const std::string& aname);
 
   ///add a new DiracDeterminant to the list of determinants
   virtual void add(Determinant_t* det, int ispin);
@@ -65,8 +61,6 @@ public:
   virtual void resetParameters(const opt_variables_type& optVariables) override;
 
   void reportStatus(std::ostream& os) override;
-
-  virtual void resetTargetParticleSet(ParticleSet& P) override;
 
   virtual LogValueType evaluateLog(ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
@@ -104,28 +98,25 @@ public:
     return Dets[det_id]->mw_evaluateRatios(extract_DetRef_list(wfc_list, det_id), vp_list, ratios);
   }
 
-  virtual inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
-  {
-    return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
-  }
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat) override;
 
-  virtual inline PsiValueType ratioGradWithSpin(ParticleSet& P,
-                                                int iat,
-                                                GradType& grad_iat,
-                                                ComplexType& spingrad_iat) override
-  {
-    return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
-  }
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P,
+                                         int iat,
+                                         GradType& grad_iat,
+                                         ComplexType& spingrad_iat) override;
 
   virtual void mw_ratioGrad(const RefVector<WaveFunctionComponent>& wfc_list,
                             const RefVector<ParticleSet>& P_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
-                            std::vector<GradType>& grad_now) override
-  {
-    const int det_id = getDetID(iat);
-    Dets[det_id]->mw_ratioGrad(extract_DetRef_list(wfc_list, det_id), P_list, iat, ratios, grad_now);
-  }
+                            std::vector<GradType>& grad_now) override;
+
+  void mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& wfc_list,
+                         const RefVector<ParticleSet>& P_list,
+                         int iat,
+                         std::vector<PsiValueType>& ratios,
+                         std::vector<GradType>& grad_now) override;
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
@@ -356,8 +347,6 @@ public:
 #endif
 
 private:
-  SlaterDet() {}
-
   //get Det ID
   inline int getDetID(const int iat)
   {

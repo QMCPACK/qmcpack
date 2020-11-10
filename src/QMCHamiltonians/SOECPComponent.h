@@ -19,7 +19,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
@@ -126,7 +126,7 @@ public:
   inline int getNknot() const { return nknot; }
   inline int getSknot() const { return sknot; }
 
-  friend class ECPComponentBuilder;
+  friend struct ECPComponentBuilder;
   friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);
 };
 

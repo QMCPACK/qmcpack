@@ -24,18 +24,23 @@ performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 9.2.0, 7.3.0
-  * Clang/LLVM 9.0.0, 5.0.1
-  * Intel 2019.1.0.166, 2019.0.5.281 configured to use C++ library from GCC 7.4.0 
+  * GCC 10.2.0, 7.3.0
+  * Clang/LLVM 10.0.1, 6.0.1
+  * Intel 19.1.1.217 configured to use C++ library from GCC 8.3.0 
   * PGI 19.4 configured to use C++ library from GCC 8.3.0
-* Boost 1.70.0, 1.65.1
+* Boost 1.74.0, 1.68.0
 * HDF5 1.10.5, 1.8.19
 * FFTW 3.3.8, 3.3.4
-* CMake 3.16.2, 3.10.2
+* CMake 3.18.2, 3.12.1
 * MPI
-  * OpenMPI 4.0.2, 3.10.2
-  * Intel MPI 2019.1.0.166, 2019.0.5.281
+  * OpenMPI 4.0.4, 3.1.2
+  * Intel MPI 19.1.1.217
 * CUDA 10.2.89
+
+Workflow tests are performed with Quantum Espresso v6.4.1 and PySCF v1.7.4. These check trial wavefunction generation and
+conversion through to actual QMC runs.
+
+On a developmental basis we also check the latest Clang development version, AMD AOMP and Intel OneAPI compilers.
 
 # Building with CMake
 
@@ -49,8 +54,8 @@ Nightly testing currently includes the following software versions on x86:
  e.g., /usr, /usr/local, there is no need to set environment or CMake
  variables for the packages.
 
- See the manuals linked at https://www.qmcpack.org/documentation or buildable via
- manual/build_manual.sh for build examples on Linux, Mac OS X etc.
+ See the manual linked at https://qmcpack.readthedocs.io/en/develop/ and https://www.qmcpack.org/documentation or buildable using
+ sphinx from the sources in docs/.
 
 ## Quick build
 
@@ -123,6 +128,8 @@ make -j 8
                         Release (create a release/optimized build)
                         RelWithDebInfo (create a release/optimized build with debug info)
                         MinSizeRel (create an executable optimized for size)
+    CMAKE_SYSTEM_NAME   Set value to CrayLinuxEnvironment when cross-compiling
+                        in Cray Programming Environment.
     CMAKE_C_FLAGS       Set the C flags.  Note: to prevent default debug/release flags
                         from being used, set the CMAKE_BUILD_TYPE=None
                         Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE,
@@ -136,7 +143,7 @@ make -j 8
  * Key QMC build options
 
 ```
-     QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
+     QMC_CUDA            Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
      QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
      QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
                          (1:yes (GPU default), 0:no (CPU default)).
@@ -145,11 +152,13 @@ make -j 8
                          The GPU support is quite mature.
                          Use always double for host side base and full precision
                          and use float and double for CUDA base and full precision.
-     ENABLE_TIMERS       Enable fine-grained timers (1:yes, 0:no (default)).
-                         Timers are off by default to avoid potential slowdown in small
-                         systems. For large systems (100+ electrons) there is no risk.
-     ENABLE_SOA          Enable CPU optimization based on Structure-
-                         of-Array (SoA) datatypes (1:yes (default), 0:no). ```
+     ENABLE_CUDA         ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
+                         Production quality for AFQMC. Pre-production quality for real-space.
+                         Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
+     ENABLE_OFFLOAD      ON/OFF(default). Experimental feature. Enable OpenMP target offload for GPU acceleration.
+     ENABLE_TIMERS       ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
+                         to avoid potential slowdown in tiny systems.
+                         For systems beyond tiny sizes (100+ electrons) there is no risk.
 ```
 
  * Additional QMC options
@@ -159,7 +168,7 @@ make -j 8
      QMC_DATA            Specify data directory for QMCPACK performance and integration tests
      QMC_INCLUDE         Add extra include paths
      QMC_EXTRA_LIBS      Add extra link libraries
-     QMC_BUILD_STATIC    Add -static flags to build
+     QMC_BUILD_STATIC    ON/OFF(default). Add -static flags to build
      QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
                             saving default use of symbolic links for test files. Useful
                             if the build is on a separate filesystem from the source, as

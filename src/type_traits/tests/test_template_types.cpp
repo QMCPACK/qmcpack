@@ -31,4 +31,24 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
   RefVector<Dummy> rdum(convertUPtrToRefVector(uvec));
 }
 
+TEST_CASE("convertPtrToRefvectorSubset", "[type_traits]")
+{
+  struct Dummy2
+  {
+    Dummy2(int j) : i(j) {}
+    int i;
+  };
+
+  std::vector<Dummy2*> pvec;
+  for (int i = 0; i < 5; ++i)
+    pvec.push_back(new Dummy2(i));
+
+  RefVector<Dummy2> rdum(convertPtrToRefVectorSubset(pvec, 1, 4));
+
+  CHECK(rdum.size() == 4);
+  CHECK(rdum[0].get().i == 1);
+
+  for (int i = 0; i < 5; ++i)
+    delete pvec[i];
+}
 }

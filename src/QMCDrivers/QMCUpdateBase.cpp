@@ -15,7 +15,7 @@
 
 
 #include "Platforms/sysutil.h"
-#include "QMCDrivers/QMCUpdateBase.h"
+#include "QMCUpdateBase.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -89,7 +89,7 @@ void QMCUpdateBase::setDefaults()
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       MassInvP[iat] = MassInvS[ig];
 
-  InitWalkersTimer = TimerManager.createTimer("QMCUpdateBase::WalkerInit", timer_level_medium);
+  InitWalkersTimer = timer_manager.createTimer("QMCUpdateBase::WalkerInit", timer_level_medium);
 }
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
@@ -226,7 +226,8 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
   for (; it != it_end; ++it)
   {
     Walker_t& awalker(**it);
-    W.R = awalker.R;
+    W.R     = awalker.R;
+    W.spins = awalker.spins;
     W.update();
     if (awalker.DataSet.size())
       awalker.DataSet.clear();

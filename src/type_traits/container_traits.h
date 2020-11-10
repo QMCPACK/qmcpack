@@ -41,7 +41,7 @@ struct container_traits
   inline static auto getElementPtr(CT& ref) { return ref.data(); }
 };
 
-// tempalte specialization for std::vector
+// template specialization for std::vector
 template<typename T, class ALLOC>
 struct container_traits<std::vector<T, ALLOC>>
 {

@@ -301,7 +301,7 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         exclude = self.info.exclude
         self.data = QAHDFdata()
         for var in list(data.keys()):
-            if not var in exclude and not str(var)[0]=='_':
+            if not var in exclude and not str(var)[0]=='_' and not 'skall' in var.lower():
                 self.data[var] = data[var]
                 del data[var]
             #end if
@@ -521,6 +521,46 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
             E = E,
             P = P
             )
+
+        # convert ion point data, if present
+        if 'ions' in self:
+            ions = QAobject()
+            ions.D  = QAobject()
+            ions.T  = QAobject()
+            ions.V  = QAobject()
+            ions.E  = QAobject()
+            ions.P  = QAobject()
+
+            value = self.ions.value.transpose()[...,nbe:]
+
+            mean,var,error,kappa = simstats(value)
+            ions.D.mean   = mean[iD]
+            ions.D.error  = error[iD]
+            ions.T.mean   = mean[iT]
+            ions.T.error  = error[iT]
+            ions.V.mean   = mean[iV]
+            ions.V.error  = error[iV]
+
+            E  = value[iT,:]+value[iV,:]
+            mean,var,error,kappa = simstats(E)
+            ions.E.mean  = mean
+            ions.E.error = error
+
+            P  = 2./3.*value[iT,:]+1./3.*value[iV,:]
+            mean,var,error,kappa = simstats(P)
+            ions.P.mean  = mean
+            ions.P.error = error
+
+            ions.data = obj(
+                D = value[iD,:],
+                T = value[iT,:],
+                V = value[iV,:],
+                E = E,
+                P = P
+                )
+
+            self.ions = ions
+        #end if
 
         return
     #end def analyze_local
@@ -2287,25 +2327,32 @@ class SpaceGridBase(QAobject):
         #end if
         value = value[...,nbe:]
 
-        #(mean,error)=simplestats(value)
         (mean,var,error,kappa)=simstats(value)
         quants = ['D','T','V']
+        iD = -1
+        iT = -1
+        iV = -1
         for i in range(len(quants)):
             q=quants[i]
             self[q].mean  =  mean[i,...]
             self[q].error = error[i,...]
-            self.error('alternative to exec needed')
-            #exec('i'+q+'='+str(i))
+            if q=='D':
+                iD = i
+            elif q=='T':
+                iT = i
+            elif q=='V':
+                iV = i
+            else:
+                self.error('quantity "{}" not recognized'.format(q))
+            #end if
         #end for
         
         E = value[iT,...]+value[iV,...]
-#        (mean,error)=simplestats(E)
         (mean,var,error,kappa)=simstats(E)
         self.E.mean  =  mean
         self.E.error = error
         
         P = 2./3.*value[iT,...]+1./3.*value[iV,...]
-        #(mean,error)=simplestats(P)
         (mean,var,error,kappa)=simstats(P)
         self.P.mean  =  mean
         self.P.error = error
@@ -2329,10 +2376,6 @@ class SpaceGridBase(QAobject):
             self.data.E = E
             self.data.P = P
         #end if
-
-        #print 'sg'
-        #import code
-        #code.interact(local=locals())
             
         return
     #end def init_from_hdfgroup
@@ -2827,7 +2870,7 @@ class RectilinearGrid(SpaceGridBase):
                     ndu_per_interval[iaxis][idom] = ndu_int[i]
                     idom+=1
                 #end 
-          #end       
+            #end       
         #end 
 
         axinv = inv(axes)
@@ -2986,12 +3029,12 @@ class RectilinearGrid(SpaceGridBase):
         return succeeded
     #end def initialize
 
-    def point2unit_cartesian(point):
+    def point2unit_cartesian(self,point):
         u = dot(self.axinv,(point-self.origin)) 
         return u
     #end def point2unit_cartesian
 
-    def point2unit_cylindrical(point):
+    def point2unit_cylindrical(self,point):
         ub = dot(self.axinv,(point-self.origin)) 
         u=zeros((self.DIM,))
         u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1]) 
@@ -3000,7 +3043,7 @@ class RectilinearGrid(SpaceGridBase):
         return u
     #end def point2unit_cylindrical
 
-    def point2unit_spherical(point):
+    def point2unit_spherical(self,point):
         ub = dot(self.axinv,(point-self.origin)) 
         u=zeros((self.DIM,))
         u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1]+ub[2]*ub[2]) 

@@ -36,8 +36,8 @@ public:
         num_ranks(nranks),
         qmcdrv_input(3)
   {
-    if (Concurrency::maxThreads<>() < 8)
-      num_crowds = Concurrency::maxThreads<>();
+    if (Concurrency::maxCapacity<>() < 8)
+      num_crowds = Concurrency::maxCapacity<>();
   }
 
   DMCBatched operator()()
@@ -56,7 +56,6 @@ public:
             population,
             *(wavefunction_pool->getPrimary()),
             *(hamiltonian_pool->getPrimary()),
-            *(wavefunction_pool),
             comm};
   }
 

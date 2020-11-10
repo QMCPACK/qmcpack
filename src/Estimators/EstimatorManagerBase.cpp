@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -16,9 +16,10 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <functional>
 
 #include "Particle/MCWalkerConfiguration.h"
-#include "Estimators/EstimatorManagerBase.h"
+#include "EstimatorManagerBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -32,7 +33,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
 //leave it for serialization debug
@@ -108,7 +109,7 @@ void EstimatorManagerBase::setCommunicator(Communicate* c)
     return;
   myComm = c ? c : OHMMS::Controller;
   //set the default options
-  // This is a flag to tell manager if there is more than one thread
+  // This is a flag to tell manager if there is more than one rank
   // running walkers, its discovered by smelly query of myComm.
   Options.set(COLLECT, myComm->size() > 1);
   Options.set(MANAGE, myComm->rank() == 0);
@@ -134,7 +135,8 @@ void EstimatorManagerBase::setCollectionMode(bool collect)
 /** reset names of the properties
  *
  * The number of estimators and their order can vary from the previous state.
- * Clear properties before setting up a new BlockAverage data list.
+ * reinitialized properties before setting up a new BlockAverage data list.
+ *
  */
 void EstimatorManagerBase::reset()
 {
@@ -180,6 +182,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   varAccumulator.clear();
   int nc = (Collectables) ? Collectables->size() : 0;
   BlockAverages.setValues(0.0);
+  // \todo Collectables should just have its own data structures not change the EMBS layout.
   AverageCache.resize(BlockAverages.size() + nc);
   SquaredAverageCache.resize(BlockAverages.size() + nc);
   PropertyCache.resize(BlockProperties.size());
@@ -298,56 +301,6 @@ void EstimatorManagerBase::stopBlock(RealType accept, bool collectall)
     collectBlockAverages();
 }
 
-void EstimatorManagerBase::stopBlockNew(RealType accept)
-{
-  //take block averages and update properties per block
-  PropertyCache[weightInd] = BlockWeight;
-  PropertyCache[cpuInd]    = MyTimer.elapsed();
-  PropertyCache[acceptInd] = accept;
-
-  collectBlockAverages();
-}
-
-
-
-/** Called at end of block in Unified Driver
- *
- */
-void EstimatorManagerBase::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators,
-                                                   const int total_walkers,
-                                                   const RealType block_weight)
-{
-  // One scalar estimator can be accumulating many scalar values
-  int num_est      = estimators.size();
-  int num_scalars  = estimators[0].get().size();
-  using ScalarType = ScalarEstimatorBase::RealType;
-
-  BlockWeight += block_weight;
-  
-  std::vector<ScalarType> averages_work(num_scalars, 0.0);
-  std::vector<ScalarType> averages_sum(num_scalars, 0.0);
-
-  auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
-    for (int i = 0; i < vec_a.size(); ++i)
-      vec_a[i] += vec_b[i];
-  };
-
-  AverageCache = 0.0;
-  if (AverageCache.size() != num_scalars)
-    throw std::runtime_error(
-        "EstimatorManagerBase and Crowd ScalarManagers do not agree on number of scalars being estimated");
-  for (int i = 0; i < num_est; ++i)
-  {
-    estimators[i].get().takeBlockAverage(averages_work.begin());
-    accumulateVectorsInPlace(AverageCache, averages_work);
-  }
-
-  RealType tnorm = 1.0 / num_est;
-
-  AverageCache *= tnorm;
-
-}
-
 void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& est)
 {
   //normalized it by the thread
@@ -366,11 +319,8 @@ void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& e
     PropertyCache += est[i]->PropertyCache;
   for (int i = 1; i < PropertyCache.size(); i++)
     PropertyCache[i] *= tnorm;
-  //for(int i=0; i<num_threads; ++i)
-  //varAccumulator(est[i]->varAccumulator.mean());
   collectBlockAverages();
 }
-
 
 void EstimatorManagerBase::collectBlockAverages()
 {
@@ -403,7 +353,7 @@ void EstimatorManagerBase::collectBlockAverages()
   }
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
-  varAccumulator(SquaredAverageCache[0] - AverageCache[0] * AverageCache[0]);
+  varAccumulator(SquaredAverageCache[0]);
   if (Archive)
   {
     *Archive << std::setw(10) << RecordCount;
@@ -445,55 +395,24 @@ void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W,
     Collectables->accumulate_all(W.Collectables, 1.0);
 }
 
-void EstimatorManagerBase::getEnergyAndWeight(RealType& e, RealType& w, RealType& var)
+void EstimatorManagerBase::getApproximateEnergyVariance(RealType& e, RealType& var)
 {
   if (Options[COLLECT]) //need to broadcast the value
   {
     RealType tmp[3];
-    tmp[0] = energyAccumulator.result();
-    tmp[1] = energyAccumulator.count();
-    tmp[2] = varAccumulator.mean();
+    tmp[0] = energyAccumulator.count();
+    tmp[1] = energyAccumulator.result();
+    tmp[2] = varAccumulator.result();
     myComm->bcast(tmp, 3);
-    e   = tmp[0];
-    w   = tmp[1];
-    var = tmp[2];
+    e   = tmp[1] / tmp[0];
+    var = tmp[2] / tmp[0] - e * e;
   }
   else
   {
-    e   = energyAccumulator.result();
-    w   = energyAccumulator.count();
-    var = varAccumulator.mean();
+    e   = energyAccumulator.mean();
+    var = varAccumulator.mean() - e * e;
   }
 }
-
-void EstimatorManagerBase::getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var)
-{
-  LocalEnergyOnlyEstimator energynow;
-  energynow.clear();
-  energynow.accumulate(W, W.begin(), W.end(), 1.0);
-  std::vector<RealType> tmp(3);
-  tmp[0] = energynow.scalars[0].result();
-  tmp[1] = energynow.scalars[0].result2();
-  tmp[2] = energynow.scalars[0].count();
-  myComm->allreduce(tmp);
-  eavg = tmp[0] / tmp[2];
-  var  = tmp[1] / tmp[2] - eavg * eavg;
-}
-
-void EstimatorManagerBase::getCurrentStatistics(const int global_walkers, RefVector<MCPWalker>& walkers, RealType& eavg, RealType& var, Communicate* comm)
-{
-  LocalEnergyOnlyEstimator energynow;
-  energynow.clear();
-  energynow.accumulate(global_walkers, walkers, 1.0);
-  std::vector<RealType> tmp(3);
-  tmp[0] = energynow.scalars[0].result();
-  tmp[1] = energynow.scalars[0].result2();
-  tmp[2] = energynow.scalars[0].count();
-  comm->allreduce(tmp);
-  eavg = tmp[0] / tmp[2];
-  var  = tmp[1] / tmp[2] - eavg * eavg;
-}
-
 
 EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getMainEstimator()
 {

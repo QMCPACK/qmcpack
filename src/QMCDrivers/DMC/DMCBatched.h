@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -17,18 +17,23 @@
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
+#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {
-
 class DriverModifierBase;
 
+namespace testing
+{
+class DMCBatchedTest;
+}
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a DMC using particle-by-particle threaded and batched moves.
  */
 class DMCBatched : public QMCDriverNew
 {
 public:
+  using Base              = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
@@ -43,7 +48,7 @@ public:
     const DMCDriverInput& dmcdrv_input;
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
-    BranchEngineType& branch_engine;
+    SFNBranch& branch_engine;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
@@ -51,9 +56,17 @@ public:
     StateForThread(QMCDriverInput& qmci,
                    DMCDriverInput& dmci,
                    DriftModifierBase& drift_mod,
-                   BranchEngineType& branch_eng,
+                   SFNBranch& branch_eng,
                    MCPopulation& pop)
         : qmcdrv_input(qmci), dmcdrv_input(dmci), drift_modifier(drift_mod), population(pop), branch_engine(branch_eng)
+    {}
+  };
+
+  class DMCTimers
+  {
+  public:
+    NewTimer& tmove_timer;
+    DMCTimers(const std::string& prefix) : tmove_timer(*timer_manager.createTimer(prefix + "Tmove", timer_level_medium))
     {}
   };
 
@@ -63,17 +76,23 @@ public:
              MCPopulation& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
-             WaveFunctionPool& ppool,
              Communicate* comm);
 
   DMCBatched(DMCBatched&&) = default;
 
-  /** The initial number of local walkers
+  /** DMCBatched driver will eventually ignore cur
    *
-   *  Currently substantially the same as VMCBatch so if it doesn't change
-   *  This should be pulled down the QMCDriverNew
+   *  This is the shared entry point
+   *  from QMCMain so cannot be updated yet
+   *  
+   *  Contains logic that sets walkers_per_rank_ 
+   *  TargetWalkers trump walkers, if it is not set
+   *  walkers which is by default per rank for the batched drivers
+   *  from this or the previous section wins.
+   *
+   *  walkers is still badly named.
    */
-  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
+  void process(xmlNodePtr cur);
 
   bool run();
 
@@ -82,7 +101,7 @@ public:
   static void runDMCStep(int crowd_id,
                          const StateForThread& sft,
                          DriverTimers& timers,
-                         //                         DMCTimers& dmc_timers,
+                         DMCTimers& dmc_timers,
                          UPtrVector<ContextForSteps>& move_context,
                          UPtrVector<Crowd>& crowds);
 
@@ -93,6 +112,10 @@ public:
 
 private:
   DMCDriverInput dmcdriver_input_;
+
+  /** I think its better if these have there own type and variable name
+   */
+  DMCTimers dmc_timers_;
   /// Interval between branching
   IndexType branch_interval_;
   void resetUpdateEngines();
@@ -104,7 +127,7 @@ private:
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
-                             //                             DMCTimers& dmc_timers,
+                             DMCTimers& dmc_timers,
                              ContextForSteps& move_context,
                              bool recompute);
 
@@ -157,7 +180,7 @@ private:
     std::vector<RealType>& gf_accs;
   };
 
-  
+
   /** for the return of DMCPerWalkerRefs split into moved and stalled
    *
    *  until C++17 we need a structure to return the split moved and stalled refs
@@ -169,20 +192,22 @@ private:
     DMCPerWalkerRefs moved;
     DMCPerWalkerRefs stalled;
   };
-  
+
   static MovedStalled buildMovedStalled(const std::vector<int>& did_walker_move, const DMCPerWalkerRefRefs& refs);
 
   static void handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers);
   static void handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft);
-// struct DMCTimers
+  // struct DMCTimers
   // {
   //   NewTimer& dmc_movePbyP;
   //   DriverTimers(const std::string& prefix)
-  //       : dmc_movePbyP(*TimerManager.createTimer(prefix + "DMC_movePbyP", timer_level_medium)),
+  //       : dmc_movePbyP(*timer_manager.createTimer(prefix + "DMC_movePbyP", timer_level_medium)),
   //   {}
   // };
 
   // DMCTimers dmc_timers_;
+
+  friend class qmcplusplus::testing::DMCBatchedTest;
 };
 
 } // namespace qmcplusplus

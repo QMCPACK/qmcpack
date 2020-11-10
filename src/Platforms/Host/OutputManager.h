@@ -16,7 +16,7 @@
 #ifndef OUTPUTMANAGER_H
 #define OUTPUTMANAGER_H
 
-#include <Platforms/Host/InfoStream.h>
+#include "InfoStream.h"
 
 
 enum class Verbosity
@@ -66,7 +66,7 @@ inline std::ostream& app_log() { return infoLog.getStream(); }
 
 inline std::ostream& app_error() { return infoError.getStream() << "ERROR "; }
 
-inline std::ostream& app_warning() { return infoError.getStream() << "WARNING "; }
+inline std::ostream& app_warning() { return infoLog.getStream() << "WARNING "; }
 
 inline std::ostream& app_debug_stream() { return infoDebug.getStream(); }
 

@@ -26,7 +26,7 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantCalculator.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
-//#include "Numerics/OhmmsBlas.h"
+//#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
@@ -178,7 +178,6 @@ public:
 
 
   inline void reportStatus(std::ostream& os) {}
-  void resetTargetParticleSet(ParticleSet& P) { Phi->resetTargetParticleSet(P); }
 
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);

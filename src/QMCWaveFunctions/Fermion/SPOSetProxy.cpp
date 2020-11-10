@@ -15,7 +15,7 @@
 /** @file SPOSetProxy.cpp
  * @brief implements the member functions of SPOSetProxy
  */
-#include "QMCWaveFunctions/Fermion/SPOSetProxy.h"
+#include "SPOSetProxy.h"
 namespace qmcplusplus
 {
 SPOSetProxy::SPOSetProxy(SPOSetPtr const& spos, int first, int last) : refPhi(spos)
@@ -26,8 +26,6 @@ SPOSetProxy::SPOSetProxy(SPOSetPtr const& spos, int first, int last) : refPhi(sp
 }
 
 void SPOSetProxy::resetParameters(const opt_variables_type& optVariables) { refPhi->resetParameters(optVariables); }
-
-void SPOSetProxy::resetTargetParticleSet(ParticleSet& P) { refPhi->resetTargetParticleSet(P); }
 
 void SPOSetProxy::setOrbitalSetSize(int norbs)
 {

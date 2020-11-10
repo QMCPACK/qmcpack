@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/DMC_CUDA.h"
+#include "DMC_CUDA.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/QMCUpdateBase.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -37,19 +37,17 @@ using WP = WalkerProperties::Indexes;
 DMCcuda::DMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 WaveFunctionPool& ppool,
                  Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, comm, "DMCcuda"),
       myWarmupSteps(0),
       Mover(0),
       NLop(w.getTotalNum()),
-      ResizeTimer(*TimerManager.createTimer("DMCcuda::resize")),
-      DriftDiffuseTimer(*TimerManager.createTimer("DMCcuda::Drift_Diffuse")),
-      BranchTimer(*TimerManager.createTimer("DMCcuda::Branch")),
-      HTimer(*TimerManager.createTimer("DMCcuda::Hamiltonian"))
+      ResizeTimer(*timer_manager.createTimer("DMCcuda::resize")),
+      DriftDiffuseTimer(*timer_manager.createTimer("DMCcuda::Drift_Diffuse")),
+      BranchTimer(*timer_manager.createTimer("DMCcuda::Branch")),
+      HTimer(*timer_manager.createTimer("DMCcuda::Hamiltonian"))
 {
   RootName = "dmc";
-  QMCType  = "DMCcuda";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
   //m_param.add(myWarmupSteps,"warmupSteps","int");
@@ -108,8 +106,8 @@ bool DMCcuda::run()
   for (int iw = 0; iw < nw; iw++)
     W[iw]->Weight = 1.0;
 
-  LoopTimer dmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> dmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
   do
   {
@@ -291,8 +289,8 @@ bool DMCcuda::run()
           v2 += dot(W.G[iat], W.G[iat]);
 #endif
         }
-        RealType scNew                       = std::sqrt(v2bar / (v2 * m_tauovermass * m_tauovermass));
-        RealType scOld                       = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[WP::DRIFTSCALE];
+        RealType scNew = std::sqrt(v2bar / (v2 * m_tauovermass * m_tauovermass));
+        RealType scOld = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[WP::DRIFTSCALE];
         W[iw]->getPropertyBase()[WP::DRIFTSCALE] = scNew;
         // fprintf (stderr, "iw = %d  scNew = %1.8f  scOld = %1.8f\n", iw, scNew, scOld);
         RealType tauRatio = R2acc[iw] / R2prop[iw];

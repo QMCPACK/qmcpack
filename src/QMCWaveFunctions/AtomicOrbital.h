@@ -18,12 +18,12 @@
 #ifndef ATOMIC_ORBITAL_H
 #define ATOMIC_ORBITAL_H
 
-#include <config/stdlib/math.hpp>
-#include <einspline/multi_bspline.h>
-#include <QMCWaveFunctions/SPOSet.h>
-#include <Lattice/CrystalLattice.h>
+#include "config/stdlib/math.hpp"
+#include "einspline/multi_bspline.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "Lattice/CrystalLattice.h"
 #include <Configuration.h>
-#include <Utilities/NewTimer.h>
+#include "Utilities/TimerManager.h"
 
 
 namespace qmcplusplus
@@ -153,9 +153,9 @@ public:
 
   AtomicOrbital()
       : RadialSpline(NULL),
-        YlmTimer(*TimerManager.createTimer("AtomicOrbital::CalcYlm")),
-        SplineTimer(*TimerManager.createTimer("AtomicOrbital::1D spline")),
-        SumTimer(*TimerManager.createTimer("AtomicOrbital::Summation")),
+        YlmTimer(*timer_manager.createTimer("AtomicOrbital::CalcYlm")),
+        SplineTimer(*timer_manager.createTimer("AtomicOrbital::1D spline")),
+        SumTimer(*timer_manager.createTimer("AtomicOrbital::Summation")),
         rmagLast(std::numeric_limits<RealType>::max())
   {
     // Nothing else for now
@@ -214,7 +214,7 @@ inline bool AtomicOrbital<StorageType>::evaluate(PosType r, ComplexValueVector_t
     // fprintf (stderr, "phase[%d] = %1.2f pi\n", i, phase/M_PI);
     // fprintf (stderr, "img = [%f,%f,%f]\n", img[0], img[1], img[2]);
     double s, c;
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     vals[i] *= std::complex<double>(c, s);
   }
   SumTimer.stop();
@@ -279,7 +279,7 @@ inline bool AtomicOrbital<StorageType>::evaluate(PosType r, RealValueVector_t& v
     // 	    ulmVec[index].imag() * YlmVec[lm].imag());
     double phase = -2.0 * M_PI * dot(TwistAngles[i], img);
     double s, c;
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     vals[i] = real(std::complex<double>(c, s) * tmp);
   }
   SumTimer.stop();
@@ -373,7 +373,7 @@ inline bool AtomicOrbital<StorageType>::evaluate(PosType r,
     // Compute e^{-i k.L} phase factor
     double phase = -2.0 * M_PI * dot(TwistAngles[i], img);
     double s, c;
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e2mikr(c, s);
     StorageType tmp_val, tmp_lapl, grad_rhat, grad_thetahat, grad_phihat;
     tmp_val = tmp_lapl = grad_rhat = grad_thetahat = grad_phihat = StorageType();
@@ -488,7 +488,7 @@ inline bool AtomicOrbital<StorageType>::evaluate(PosType r,
     // Compute e^{-i k.L} phase factor
     double phase = -2.0 * M_PI * dot(TwistAngles[i], img);
     double s, c;
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     std::complex<double> e2mikr(c, s);
     for (int l = 0; l <= lMax; l++)
       for (int m = -l; m <= l; m++, lm++, index++)

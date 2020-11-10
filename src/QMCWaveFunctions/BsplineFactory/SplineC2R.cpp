@@ -14,9 +14,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/BsplineFactory/SplineC2R.h>
-#include <spline2/MultiBsplineEval.hpp>
+#include "Message/OpenMP.h"
+#include "SplineC2R.h"
+#include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {
@@ -73,7 +75,7 @@ inline void SplineC2R<ST>::assign_v(const PointType& r,
     const size_t ji = jr + 1;
     const ST val_r  = myV[jr];
     const ST val_i  = myV[ji];
-    sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
+    qmcplusplus::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
     psi_s[jr] = val_r * c - val_i * s;
     psi_s[ji] = val_i * c + val_r * s;
   }
@@ -85,7 +87,7 @@ inline void SplineC2R<ST>::assign_v(const PointType& r,
     ST s, c;
     const ST val_r = myV[2 * j];
     const ST val_i = myV[2 * j + 1];
-    sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
+    qmcplusplus::sincos(-(x * kx[j] + y * ky[j] + z * kz[j]), &s, &c);
     psi_s[j] = val_r * c - val_i * s;
   }
 }
@@ -212,7 +214,7 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -237,12 +239,10 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
     const ST lap_i   = lcart_i + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
     const size_t psiIndex = first_spo + jr;
-    //this will be fixed later
     psi[psiIndex]       = c * val_r - s * val_i;
     psi[psiIndex + 1]   = c * val_i + s * val_r;
     d2psi[psiIndex]     = c * lap_r - s * lap_i;
     d2psi[psiIndex + 1] = c * lap_i + s * lap_r;
-    //this will go way with Determinant
     dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
     dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
     dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
@@ -265,7 +265,7 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -286,7 +286,6 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
 
     const size_t psiIndex = first_spo + nComplexBands + j;
     psi[psiIndex]         = c * val_r - s * val_i;
-    //this will be fixed later
     dpsi[psiIndex][0] = c * gX_r - s * gX_i;
     dpsi[psiIndex][1] = c * gY_r - s * gY_i;
     dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
@@ -340,7 +339,7 @@ inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g0[jr];
@@ -362,13 +361,11 @@ inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
     const ST lap_r = myL[jr] + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i = myL[ji] + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
-    //this will be fixed later
     const size_t psiIndex = first_spo + jr;
     psi[psiIndex]         = c * val_r - s * val_i;
     psi[psiIndex + 1]     = c * val_i + s * val_r;
     d2psi[psiIndex]       = c * lap_r - s * lap_i;
     d2psi[psiIndex + 1]   = c * lap_i + s * lap_r;
-    //this will go way with Determinant
     dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
     dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
     dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
@@ -391,7 +388,7 @@ inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g0[jr];
@@ -411,7 +408,6 @@ inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
     const ST gZ_i         = dZ_i - val_r * kZ;
     const size_t psiIndex = first_spo + nComplexBands + j;
     psi[psiIndex]         = c * val_r - s * val_i;
-    //this will be fixed later
     dpsi[psiIndex][0] = c * gX_r - s * gX_i;
     dpsi[psiIndex][1] = c * gY_r - s * gY_i;
     dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
@@ -486,7 +482,7 @@ void SplineC2R<ST>::assign_vgh(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -590,7 +586,7 @@ void SplineC2R<ST>::assign_vgh(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -742,7 +738,7 @@ void SplineC2R<ST>::assign_vghgh(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
@@ -976,7 +972,7 @@ void SplineC2R<ST>::assign_vghgh(const PointType& r,
 
     //phase
     ST s, c;
-    sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+    qmcplusplus::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
 
     //dot(PrimLattice.G,myG[j])
     const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];

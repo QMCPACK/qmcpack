@@ -42,7 +42,7 @@ public:
   QMCDriverInterface* create(MCPopulation& pop,
                              TrialWaveFunction& psi,
                              QMCHamiltonian& h,
-                             WaveFunctionPool& wf_pool,
+                             SampleStack& samples,
                              Communicate* comm);
 };
 } // namespace qmcplusplus

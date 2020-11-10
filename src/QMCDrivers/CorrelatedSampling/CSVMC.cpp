@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
+#include "CSVMC.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdateAll.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
 #include "Estimators/CSEnergyEstimator.h"
@@ -23,7 +23,7 @@
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/FairDivide.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 //#define ENABLE_VMC_OMP_MASTER
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
@@ -37,12 +37,10 @@ namespace qmcplusplus
 CSVMC::CSVMC(MCWalkerConfiguration& w,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
-             WaveFunctionPool& ppool,
              Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), UseDrift("yes"), multiEstimator(0), Mover(0)
+    : QMCDriver(w, psi, h, comm, "CSVMC"), UseDrift("yes"), multiEstimator(0), Mover(0)
 {
   RootName = "csvmc";
-  QMCType  = "CSVMC";
   m_param.add(UseDrift, "useDrift", "string");
   m_param.add(UseDrift, "usedrift", "string");
   m_param.add(UseDrift, "use_drift", "string");

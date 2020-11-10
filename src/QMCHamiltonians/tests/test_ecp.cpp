@@ -237,7 +237,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
 
   //Add the two body jastrow
   const char* particles = "<tmp> \
@@ -257,7 +257,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   xmlNodePtr jas2 = xmlFirstElementChild(root);
 
   RadialJastrowBuilder jastrow(c, elec);
-  psi.addComponent(jastrow.buildComponent(jas2), "RadialJastrow");
+  psi.addComponent(jastrow.buildComponent(jas2));
   // Done with two body jastrow.
 
   //Add the one body jastrow.
@@ -277,7 +277,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   RadialJastrowBuilder jastrow1bdy(c, elec, ions);
-  psi.addComponent(jastrow1bdy.buildComponent(jas1), "RadialJastrow");
+  psi.addComponent(jastrow1bdy.buildComponent(jas1));
 
   //Now we set up the nonlocal ECP component.
   ECPComponentBuilder ecp("test_read_ecp", c);
@@ -291,7 +291,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //quadrature Lattice instead...
   copyGridUnrotatedForTest(*nlpp);
 
-  const int myTableIndex = elec.addTable(ions, DT_SOA_PREFERRED);
+  const int myTableIndex = elec.addTable(ions);
 
   const auto& myTable = elec.getDistTable(myTableIndex);
 
@@ -304,7 +304,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   REQUIRE(logpsi == Approx(5.1497823982));
 
   double Value1(0.0);
-#ifdef ENABLE_SOA
   //Using SoA distance tables, hence the guard.
   for (int jel = 0; jel < elec.getTotalNum(); jel++)
   {
@@ -314,20 +313,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
       if (nlpp != nullptr && dist[iat] < nlpp->getRmax())
         Value1 += nlpp->evaluateOne(elec, iat, psi, jel, dist[iat], -displ[iat], false);
   }
-#else
-  for (int iat = 0; iat < ions.getTotalNum(); iat++)
-  {
-    if (nlpp == nullptr)
-      continue;
-    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
-    {
-      const RealType r(myTable.r(nn));
-      if (r > nlpp->getRmax())
-        continue;
-      Value1 += nlpp->evaluateOne(elec, iat, psi, iel, r, myTable.dr(nn), false);
-    }
-  }
-#endif
   //These numbers are validated against an alternate code path via wavefunction tester.
   REQUIRE(Value1 == Approx(6.9015710211e-02));
 
@@ -355,7 +340,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
 
   Value1 = 0.0;
-#ifdef ENABLE_SOA
   //Using SoA distance tables, hence the guard.
   for (int jel = 0; jel < elec.getTotalNum(); jel++)
   {
@@ -366,21 +350,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
         Value1 += nlpp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                     dhpsioverpsi);
   }
-#else
-  for (int iat = 0; iat < ions.getTotalNum(); iat++)
-  {
-    if (nlpp == nullptr)
-      continue;
-    for (int nn = myTable.M[iat], iel = 0; nn < myTable.M[iat + 1]; nn++, iel++)
-    {
-      const RealType r(myTable.r(nn));
-      if (r > nlpp->getRmax())
-        continue;
-      Value1 +=
-          nlpp->evaluateValueAndDerivatives(elec, iat, psi, iel, r, myTable.dr(nn), optvars, dlogpsi, dhpsioverpsi);
-    }
-  }
-#endif
   REQUIRE(Value1 == Approx(6.9015710211e-02));
 
   REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
@@ -389,8 +358,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
   REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968763604));
 
-#ifdef ENABLE_SOA
-  //Forces are only implemented in SOA version, hence the guard.
   double Value2(0.0);
   double Value3(0.0);
   ParticleSet::ParticlePos_t PulayTerm, HFTerm, HFTerm2;
@@ -458,7 +425,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //HFTerm[1][0]+PulayTerm[1][0] =  0.002734064
   //HFTerm[1][1]+PulayTerm[1][1] =  0.0
   //HFTerm[1][2]+PulayTerm[1][2] =  0.0
-#endif
 }
 
 #ifdef QMC_COMPLEX
@@ -526,7 +492,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   ions.resetGroups();
   elec.resetGroups();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
 
   std::vector<PosType> kup, kdn;
   std::vector<RealType> k2up, k2dn;
@@ -548,18 +514,18 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   k2dn.resize(nelec);
   k2dn[0] = -dot(kdn[0], kdn[0]);
 
-  std::shared_ptr<EGOSet> spo_up(new EGOSet(kup, k2up));
-  std::shared_ptr<EGOSet> spo_dn(new EGOSet(kdn, k2dn));
+  auto spo_up = std::make_unique<EGOSet>(kup, k2up);
+  auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
 
   SpinorSet* spinor_set = new SpinorSet();
-  spinor_set->set_spos(spo_up, spo_dn);
-
-  DiracDeterminant<>* dd    = new DiracDeterminant<>(spinor_set);
-  QMCTraits::IndexType norb = spo_up->size();
+  spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
+  QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);
+
+  DiracDeterminant<>* dd = new DiracDeterminant<>(spinor_set);
   dd->resize(nelec, norb);
 
-  psi.addComponent(dd, "spinor");
+  psi.addComponent(dd);
 
   //Now we set up the SO ECP component.
   ECPComponentBuilder ecp("test_read_soecp", c);
@@ -571,7 +537,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   REQUIRE(sopp != nullptr);
   copyGridUnrotatedForTest(*sopp);
 
-  const int myTableIndex = elec.addTable(ions, DT_SOA_PREFERRED);
+  const int myTableIndex = elec.addTable(ions);
 
   const auto& myTable = elec.getDistTable(myTableIndex);
 
@@ -584,7 +550,6 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   RealType Value1(0.0);
 
-#ifdef ENABLE_SOA
   for (int jel = 0; jel < elec.getTotalNum(); jel++)
   {
     const auto& dist  = myTable.getDistRow(jel);
@@ -597,8 +562,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       }
     }
   }
-  REQUIRE(Value1 == Approx(0.1644374207));
-#endif
+  REQUIRE(Value1 == Approx(-0.3214176962));
 }
 #endif
 

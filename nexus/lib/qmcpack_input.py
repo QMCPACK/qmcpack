@@ -1804,7 +1804,7 @@ class qmcsystem(QIxml):
 
 class simulationcell(QIxml):
     attributes = ['name','tilematrix']
-    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','rs','nparticles','scale','uc_grid']
+    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','lr_tol','lr_handler','rs','nparticles','scale','uc_grid']
 #end class simulationcell
 
 class particleset(QIxml):
@@ -2158,9 +2158,10 @@ class localenergy(QIxml):
 
 class energydensity(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','dynamic','static']
-    elements   = ['reference_points','spacegrid']
-    identifier = 'name'
+    attributes  = ['type','name','dynamic','static','ion_points']
+    elements    = ['reference_points','spacegrid']
+    identifier  = 'name'
+    write_types = obj(ion_points=yesno)
 #end class energydensity
 
 class reference_points(QIxml):
@@ -2506,8 +2507,8 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace','target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme']
-    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno)
+    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme','l2_diffusion']
+    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno,l2_diffusion=yesno)
 #end class dmc
 
 class rmc(QIxml):
@@ -2662,6 +2663,8 @@ Names.set_expanded_names(
     gevmethod        = 'GEVMethod',
     localenergy      = 'LocalEnergy',
     lr_dim_cutoff    = 'LR_dim_cutoff',
+    lr_tol           = 'LR_tol',
+    lr_handler       = 'LR_handler',
     minmethod        = 'MinMethod',
     one_body         = 'One-Body',
     speciesa         = 'speciesA',
@@ -2696,6 +2699,7 @@ Names.set_expanded_names(
     l_local          = 'l-local',
     pbcimages        = 'PBCimages',
     dla              = 'DLA',
+    l2_diffusion     = 'L2_diffusion',
     )
 # afqmc names
 Names.set_afqmc_expanded_names(
@@ -2801,7 +2805,7 @@ spindensity.defaults.set(
     type='spindensity',name='SpinDensity'
     )
 skall.defaults.set(
-    type='skall',name='skall'
+    type='skall',name='skall',source='ion0',target='e',hdf5=True
     )
 force.defaults.set(
     type='Force',name='force'
@@ -4227,13 +4231,19 @@ class QmcpackInputTemplate(SimulationInputTemplate):
 
 
 
-def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,system=None):
+def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler=None,system=None):
     bconds = tuple(bconds)
     sc = simulationcell(bconds=bconds)
     periodic = 'p' in bconds
     axes_valid = system!=None and len(system.structure.axes)>0
     if periodic:
         sc.lr_dim_cutoff = lr_dim_cutoff
+        if lr_tol is not None:
+            sc.lr_tol = lr_tol
+        #end if
+        if lr_handler is not None:
+            sc.lr_handler = lr_handler
+        #end if
         if not axes_valid:
             QmcpackInput.class_error('invalid axes in generate_simulationcell\nargument system must be provided\naxes of the structure must have non-zero dimension')
         #end if
@@ -4636,6 +4646,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 twistnum       = None, 
                                 twist          = None,
                                 spin_polarized = False,
+                                hybridrep      = None,
                                 source         = 'ion0',
                                 href           = 'MISSING.h5',
                                 excitation     = None,
@@ -4683,6 +4694,13 @@ def generate_determinantset_old(type           = 'bspline',
         dset.twistnum = 0
     else:
         dset.twistnum = None
+    #end if
+    if hybridrep is not None:
+        if hybridrep=='yes' or hybridrep=='no':
+            dset.hybridrep = hybridrep
+        else:
+            dset.hybridrep = yesno_dict[hybridrep]
+        #end if
     #end if
     if excitation is not None:
         format_failed = False
@@ -4910,6 +4928,8 @@ def generate_hamiltonian(name         = 'h0',
                     est = chiesa(name='KEcorr',type='chiesa',source=ename,psi=wfname)
                 elif estname=='localenergy':
                     est = localenergy(name='LocalEnergy')
+                elif estname=='skall':
+                    est = skall(name='SkAll',type='skall',source=iname,target=ename,hdf5=True)
                 elif estname=='energydensity':
                     est = energydensity(
                         type='EnergyDensity',name='EDvoronoi',dynamic=ename,static=iname,
@@ -6219,6 +6239,8 @@ gen_basic_input_defaults = obj(
     truncate       = False,            
     buffer         = None,             
     lr_dim_cutoff  = 15,               
+    lr_tol         = None,               
+    lr_handler     = None,               
     remove_cell    = False,            
     randomsrc      = False,            
     meshfactor     = 1.0,              
@@ -6347,6 +6369,8 @@ def generate_basic_input(**kwargs):
     simcell = generate_simulationcell(
         bconds        = kw.bconds,
         lr_dim_cutoff = kw.lr_dim_cutoff,
+        lr_tol        = kw.lr_tol,
+        lr_handler    = kw.lr_handler,
         system        = kw.system,
         )
 
@@ -6414,6 +6438,7 @@ def generate_basic_input(**kwargs):
             twistnum       = kw.twistnum,
             meshfactor     = kw.meshfactor,
             precision      = kw.precision,
+            hybridrep      = kw.hybridrep,
             href           = kw.orbitals_h5,
             spin_polarized = kw.spin_polarized,
             excitation     = kw.excitation,

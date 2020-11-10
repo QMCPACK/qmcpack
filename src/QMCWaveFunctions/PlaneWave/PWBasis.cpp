@@ -16,7 +16,7 @@
 /** @file PWBasis.cpp
  * @brief Definition of member functions of Plane-wave basis set
  */
-#include "QMCWaveFunctions/PlaneWave/PWBasis.h"
+#include "PWBasis.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 

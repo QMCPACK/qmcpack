@@ -10,8 +10,6 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SUBDIRS(OpenMP)
-
 SET(HOST_SRCS
     sysutil.cpp
     Host/InfoStream.cpp
@@ -19,10 +17,34 @@ SET(HOST_SRCS
 )
 
 SET(DEVICE_SRCS
-    accelerators.cpp
+    dummy_function_for_cmake.cpp
 )
 
 ADD_LIBRARY(platform_host ${HOST_SRCS})
 
-ADD_LIBRARY(platform_device ${DEVICE_SRCS})
-TARGET_LINK_LIBRARIES(platform_device PUBLIC qmcomp message)
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(platform_device OBJECT ${DEVICE_SRCS})
+ELSE(USE_OBJECT_TARGET)
+  ADD_LIBRARY(platform_device ${DEVICE_SRCS})
+ENDIF(USE_OBJECT_TARGET)
+
+TARGET_INCLUDE_DIRECTORIES(platform_device PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_LINK_LIBRARIES(platform_device PUBLIC message)
+
+SUBDIRS(CPU)
+TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cpu)
+
+SUBDIRS(OMPTarget)
+TARGET_LINK_LIBRARIES(platform_device PRIVATE platform_omptarget)
+
+IF(QMC_CUDA)
+  SUBDIRS(CUDA_legacy)
+  TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda_legacy)
+ENDIF(QMC_CUDA)
+
+IF(ENABLE_CUDA)
+  SUBDIRS(CUDA)
+  TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda)
+ENDIF(ENABLE_CUDA)
+
+SUBDIRS(tests)

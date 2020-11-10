@@ -26,7 +26,7 @@ namespace qmcplusplus
 {
 class MCWalkerConfiguration;
 class HDFWalkerOutput;
-class MCSample;
+struct MCSample;
 
 class SampleStack
 {
@@ -58,6 +58,10 @@ public:
   ///clear the ensemble
   void clearEnsemble();
   //@}
+  ///  Set the sample count to zero but preserve the storage
+  void resetSampleCount();
+
+  ~SampleStack();
 
 private:
   int total_num_;

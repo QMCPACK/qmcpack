@@ -47,6 +47,8 @@ public:
 
   virtual Return_t Params(int i) const = 0;
 
+  virtual std::string getParamName(int i) const = 0;
+
   virtual Return_rt Cost(bool needGrad = true) = 0;
 
   virtual void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) = 0;

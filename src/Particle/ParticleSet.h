@@ -20,14 +20,14 @@
 #define QMCPLUSPLUS_PARTICLESET_H
 
 #include <Configuration.h>
-#include <ParticleTags.h>
-#include <Particle/DynamicCoordinates.h>
-#include <Particle/Walker.h>
-#include <Utilities/SpeciesSet.h>
-#include <Utilities/PooledData.h>
-#include <OhmmsPETE/OhmmsArray.h>
-#include <Utilities/NewTimer.h>
-#include <OhmmsSoA/Container.h>
+#include "ParticleTags.h"
+#include "DynamicCoordinates.h"
+#include "Walker.h"
+#include "Utilities/SpeciesSet.h"
+#include "Utilities/PooledData.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "Utilities/TimerManager.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
 namespace qmcplusplus
 {
@@ -249,12 +249,11 @@ public:
 
   /** add a distance table
    * @param psrc source particle set
-   * @param dt_type distance table type
    * @param need_full_table if true, DT is fully computed in loadWalker() and maintained up-to-date during p-by-p moving
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, int dt_type, bool need_full_table = false);
+  int addTable(const ParticleSet& psrc, bool need_full_table = false);
 
   /** get a distance table by table_ID
    */
@@ -663,16 +662,6 @@ protected:
 
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;
-
-  enum PSTimers
-  {
-    PS_newpos,
-    PS_donePbyP,
-    PS_accept,
-    PS_update
-  };
-
-  static const TimerNameList_t<PSTimers> PSTimerNames;
 
   TimerList_t myTimers;
 

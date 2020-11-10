@@ -17,13 +17,16 @@
 #define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/MatrixUpdateOMP.h"
+#include "QMCWaveFunctions/Fermion/MatrixUpdateOMPTarget.h"
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+#include "QMCWaveFunctions/Fermion/MatrixDelayedUpdateCUDA.h"
+#endif
 #include "Platforms/PinnedAllocator.h"
-#include "OpenMP/OMPallocator.hpp"
+#include "OMPTarget/OMPallocator.hpp"
 
 namespace qmcplusplus
 {
-template<typename DET_ENGINE_TYPE = MatrixUpdateOMP<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+template<typename DET_ENGINE_TYPE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
@@ -39,13 +42,11 @@ public:
   using mGradType  = TinyVector<mValueType, DIM>;
 
   template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
-  template<typename DT>
   using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadPinnedValueVector_t    = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
-  using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadAllocator<ValueType>>;
+  using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
@@ -108,6 +109,11 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
+  void mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                   const RefVector<ParticleSet>& P_list,
+                   int iat,
+                   std::vector<GradType>& grad_now) override;
+
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
   GradType evalGradSource(ParticleSet& P,
@@ -128,11 +134,7 @@ public:
 
   void completeUpdates() override;
 
-  void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override
-  {
-    for (WaveFunctionComponent& wfc : WFC_list)
-      wfc.completeUpdates();
-  }
+  void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override;
 
   /** move was rejected. copy the real container to the temporary to move on
    */
@@ -164,22 +166,21 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
-  /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM_temp;
+  /// return  for testing
+  auto& getPsiMinv() const { return psiMinv; }
 
-  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
+  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_engine_
   OffloadPinnedValueMatrix_t psiMinv;
-  /// device pointer of psiMinv data
-  ValueType* psiMinv_dev_ptr;
-  /// multi-walker pointers of psiMinv data
-  std::vector<ValueType*> psiMinv_dev_ptr_list;
-  /// multi-walker pointers of invRow data
-  Vector<ValueType*, OffloadPinnedAllocator<ValueType*>> invRow_dev_ptr_list;
 
-  /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
+  /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
+  OffloadVGLVector_t psiM_vgl;
+  /// device pointer of psiM_vgl data;
+  ValueType* psiM_vgl_dev_ptr;
+  /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
+  ValueMatrix_t psiM_temp;
+  /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   GradMatrix_t dpsiM;
-
-  /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
+  /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   ValueMatrix_t d2psiM;
 
   /// Used for force computations
@@ -198,6 +199,8 @@ public:
 
   /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
   OffloadVGLVector_t phi_vgl_v;
+  /// device pointer of phi_vgl_v data;
+  ValueType* phi_vgl_v_dev_ptr;
 
   /// delayed update engine
   DET_ENGINE_TYPE det_engine_;
@@ -205,9 +208,9 @@ public:
   // psi(r')/psi(r) during a PbyP move
   PsiValueType curRatio;
 
-  // multi walker of ratios
+  // multi walker of ratio
   std::vector<ValueType> ratios_local;
-  // multi walker of ratios
+  // multi walker of grads
   std::vector<GradType> grad_new_local;
 
 private:
@@ -216,11 +219,21 @@ private:
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
+
+  /// Resize multi walker scratch spaces
+  void resizeMultiWalkerScratch(int norb, int nw);
+
+  /// maximal number of delayed updates
+  int ndelay;
+
+  /// timers
+  NewTimer &D2HTimer, &H2DTimer;
 };
 
 extern template class DiracDeterminantBatched<>;
-#if defined(ENABLE_CUDA)
-//extern template class DiracDeterminantBatched<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+extern template class DiracDeterminantBatched<
+    MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "WaveFunctionComponentBuilder.h"
 
 /**@file WaveFunctionComponentBuilder.cpp
   *@brief Initialization of static data members for wavefunction-related tags.
@@ -32,8 +32,6 @@ std::string WaveFunctionComponentBuilder::param_tag = "parameter";
 std::string WaveFunctionComponentBuilder::dtable_tag = "distancetable";
 
 std::string WaveFunctionComponentBuilder::jastrow_tag = "jastrow";
-
-std::string WaveFunctionComponentBuilder::fdlrwfn_tag = "fdlrwfn";
 
 std::string WaveFunctionComponentBuilder::detset_tag = "determinantset";
 
@@ -54,7 +52,5 @@ std::string WaveFunctionComponentBuilder::ionorb_tag = "ionwf";
 std::string WaveFunctionComponentBuilder::backflow_tag = "backflow";
 
 std::string WaveFunctionComponentBuilder::multisd_tag = "multideterminant";
-
-std::string WaveFunctionComponentBuilder::sposcanner_tag = "spo_scanner";
 
 } // namespace qmcplusplus

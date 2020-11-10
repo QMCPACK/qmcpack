@@ -20,6 +20,8 @@
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
   ${qmcpack_BINARY_DIR}/src/config.h)
 
+INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
+
 SET(GITREV_BARE_FILE git-rev.h)
 SET(GITREV_BARE_TMP git-rev-tmp.h)
 SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
@@ -123,52 +125,35 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
   # create libqmcutil
   ####################################
   SET(UTILITIES
-    qmc_common.cpp
+    Utilities/qmc_common.cpp
     Utilities/RandomGenerator.cpp
     Utilities/OhmmsObject.cpp
     Utilities/SpeciesSet.cpp
     Utilities/SimpleParser.cpp
+    Utilities/Clock.cpp
     Utilities/NewTimer.cpp
+    Utilities/TimerManager.cpp
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
     Utilities/unit_conversion.cpp
-    OhmmsData/Libxml2Doc.cpp
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
-    Numerics/OhmmsBlas.cpp
     Numerics/OptimizableFunctorBase.cpp
     Numerics/SmoothFunctions.cpp
-    QMCFactory/OneDimGridFactory.cpp
-    Message/Communicate.cpp
-    Message/MPIObjectBase.cpp
+    Numerics/OneDimGridFactory.cpp
     Optimize/VariableSet.cpp
-    io/hdf_archive.cpp
     )
 IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
 ENDIF()
 
-  IF(QMC_CUDA)
-    SET(UTILITIES ${UTILITIES}
-      Numerics/CUDA/cuda_inverse.cu
-      CUDA/gpu_vector.cpp
-      CUDA/gpu_misc.cpp
-      Particle/accept_kernel.cu)
-  ENDIF(QMC_CUDA)
-
-  IF(QMC_CUDA)
-    CUDA_ADD_LIBRARY(qmcutil ${UTILITIES})
-    CUDA_ADD_CUBLAS_TO_TARGET(qmcutil)
-  ELSE(QMC_CUDA)
-    ADD_LIBRARY(qmcutil ${UTILITIES})
-  ENDIF(QMC_CUDA)
-
-  IF(HAVE_CUDA)
-    TARGET_LINK_LIBRARIES(qmcutil PRIVATE ${CUDA_LIBRARIES})
-  ENDIF(HAVE_CUDA)
-
-  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message)
-  TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
+IF(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcutil OBJECT ${UTILITIES})
+ELSE(USE_OBJECT_TARGET)
+  ADD_LIBRARY(qmcutil ${UTILITIES})
+ENDIF(USE_OBJECT_TARGET)
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message containers qmcio)
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
 
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
@@ -182,76 +167,12 @@ ENDIF()
   )
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
-  #IF(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcutil STATIC ${UTILITIES})
-  #ELSE(QMC_BUILD_STATIC)
-  #  ADD_LIBRARY(qmcutil SHARED ${UTILITIES})
-  #ENDIF(QMC_BUILD_STATIC)
-
-  ####################################
-  # create libqmcbase
-  ####################################
-  SET(PARTICLE ${PARTICLE}
-    Particle/InitMolecularSystem.cpp
-    Particle/ParticleSetPool.cpp
-    Particle/ParticleSet.cpp
-    Particle/VirtualParticleSet.cpp
-    Particle/ParticleSet.BC.cpp
-    Particle/DynamicCoordinatesBuilder.cpp
-    Particle/MCWalkerConfiguration.cpp
-    Particle/SampleStack.cpp
-    Particle/createDistanceTableAA.cpp
-    Particle/createDistanceTableAB.cpp
-    Particle/HDFWalkerInputManager.cpp
-    LongRange/KContainer.cpp
-    LongRange/StructFact.cpp
-    LongRange/LPQHIBasis.cpp
-    LongRange/LPQHISRCoulombBasis.cpp
-    LongRange/EwaldHandler.cpp
-    LongRange/EwaldHandler3D.cpp
-    LongRange/LRCoulombSingleton.cpp
-    )
-
-  IF(ENABLE_OFFLOAD)
-    SET(PARTICLE ${PARTICLE}
-      Particle/createDistanceTableABOMP.cpp
-      )
-  ENDIF(ENABLE_OFFLOAD)
-
-  IF(OHMMS_DIM MATCHES 2)
-    SET(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
-  ENDIF(OHMMS_DIM MATCHES 2)
-
-
-  SET(PARTICLEIO
-    ParticleTags.cpp
-    ParticleIO/ParticleLayoutIO.cpp
-    ParticleIO/XMLParticleIO.cpp
-    ParticleIO/ParticleIOUtility.cpp
-    Particle/HDFWalkerOutput.cpp
-    Particle/HDFWalkerInput_0_0.cpp
-    Particle/HDFWalkerInput_0_4.cpp
-    )
-
-  IF(OHMMS_DIM MATCHES 3)
-    SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
-  ENDIF(OHMMS_DIM MATCHES 3)
-
-  #Need to add this if nothing else but miniapps is compiled
-  IF(QMC_BUILD_SANDBOX_ONLY)
-    SET(PARTICLE ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
-  ENDIF(QMC_BUILD_SANDBOX_ONLY)
-
-  ADD_LIBRARY(qmcbase ${PARTICLE} ${PARTICLEIO})
-
-  TARGET_LINK_LIBRARIES(qmcbase PRIVATE qmcminimalcontainers Math::BLAS_LAPACK Math::scalar_vector_functions)
-
-  TARGET_LINK_LIBRARIES(qmcbase PUBLIC qmcutil)
-
+  SUBDIRS(io)
   SUBDIRS(einspline)
-  SUBDIRS(MinimalContainers)
+  SUBDIRS(Containers)
   SUBDIRS(Message)
   SUBDIRS(Platforms)
+  SUBDIRS(Particle)
 
 if(QMC_BUILD_SANDBOX_ONLY)
 
@@ -262,6 +183,7 @@ else() #{{{
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
+  SUBDIRS(Estimators)
   SUBDIRS(QMCDrivers)
 
   IF(BUILD_LMYENGINE_INTERFACE)
@@ -283,36 +205,21 @@ else() #{{{
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
 
-  if (BUILD_UNIT_TESTS) #{
+  IF (BUILD_UNIT_TESTS) #{
     #Unit test directories
-    INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
-    INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
-    SUBDIRS(OhmmsPETE/tests)
-    SUBDIRS(OhmmsSoA/tests)
     SUBDIRS(Numerics/tests)
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
     SUBDIRS(spline2/tests)
     SUBDIRS(Concurrency/tests)
-    SUBDIRS(OhmmsData/tests)
-    SUBDIRS(io/tests)
-    SUBDIRS(Lattice/tests)
-    SUBDIRS(LongRange/tests)
-    SUBDIRS(Particle/tests)
-    SUBDIRS(ParticleIO/tests)
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)
-    SUBDIRS(ParticleBase/tests)
-    SUBDIRS(Estimators/tests)
     SUBDIRS(QMCDrivers/tests)
     SUBDIRS(QMCApp/tests)
     SUBDIRS(Message/tests)
-    SUBDIRS(CUDA/tests)
-    SUBDIRS(OpenMP/tests)
     SUBDIRS(Optimize/tests)
-    SUBDIRS(MinimalContainers/tests)
     SUBDIRS(QMCTools/tests)
-  endif() #}
+  ENDIF() #}
 
 endif() #}}}

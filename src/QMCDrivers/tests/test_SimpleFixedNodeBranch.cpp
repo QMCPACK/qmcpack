@@ -84,36 +84,6 @@ public:
     return sfnb;
   }
 
-  SimpleFixedNodeBranch operator()(ParticleSet& p_set, TrialWaveFunction& twf, QMCHamiltonian& ham)
-  {
-    pop_ = std::make_unique<MCPopulation>(1, &p_set, &twf, &ham, comm_->rank());
-    // MCPopulation owns it walkers it cannot just take refs so we just create and then update its walkers.
-    pop_->createWalkers(2);
-
-    RefVector<MCPWalker> walkers = convertUPtrToRefVector(pop_->get_walkers());
-
-    walkers[0].get().R[0] = 1.0;
-    walkers[1].get().R[0] = 0.5;
-
-    SimpleFixedNodeBranch sfnb(tau_, num_global_walkers_);
-
-    sfnb.setEstimatorManager(emb_.get());
-
-    createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
-
-    sfnb.initWalkerController(*pop_, false, false);
-
-
-    sfnb.checkParameters(pop_->get_num_global_walkers(), walkers);
-
-    UPtrVector<Crowd> crowds;
-    crowds.emplace_back(std::make_unique<Crowd>(*emb_));
-    crowds.emplace_back(std::make_unique<Crowd>(*emb_));
-    
-    sfnb.branch(0, crowds, *pop_);
-
-    return sfnb;
-  }
   
 private:
 
@@ -147,17 +117,5 @@ TEST_CASE("SimpleFixedNodeBranch::branch(MCWC...)", "[drivers][legacy]")
   // \todo: check walker ID's here. might need more walkers to make this significant.
 
 }
-
-TEST_CASE("SimpleFixedNodeBranch::branch(MCPopulation...)", "[drivers]")
-{
-  using namespace testing;
-  SetupPools pools;
-  SetupSimpleFixedNodeBranch setup_sfnb(pools.comm);
-  SimpleFixedNodeBranch sfnb = setup_sfnb(*pools.particle_pool->getParticleSet("e"),
-                                          *pools.wavefunction_pool->getPrimary(),
-                                          *pools.hamiltonian_pool->getPrimary());  
-  
-}
-
 
 } // namespace qmcplusplus

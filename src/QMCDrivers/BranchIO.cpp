@@ -13,10 +13,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/BranchIO.h"
-#include "HDFVersion.h"
+#include "BranchIO.h"
+#include "hdf/HDFVersion.h"
 #include "Message/CommOperators.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #if defined(HAVE_LIBBOOST)
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -78,10 +78,13 @@ struct h5data_proxy<accumulator_set<T>> : public h5_space_type<T, 1>
   inline T* end() { return ref_.properties + CAPACITY; }
 };
 
-std::vector<std::string> BranchIO::vParamName;
-std::vector<std::string> BranchIO::iParamName;
+template<class SFNB>
+std::vector<std::string> BranchIO<SFNB>::vParamName;
+template<class SFNB>
+std::vector<std::string> BranchIO<SFNB>::iParamName;
 
-void BranchIO::initAttributes()
+template<class SFNB>
+void BranchIO<SFNB>::initAttributes()
 {
   if (vParamName.size())
     return;
@@ -107,7 +110,8 @@ void BranchIO::initAttributes()
   iParamName[6] = "brnachinterval";
 }
 
-bool BranchIO::write(const std::string& fname)
+template<class SFNB>
+bool BranchIO<SFNB>::write(const std::string& fname)
 {
   if (myComm->rank())
     return true;
@@ -163,7 +167,8 @@ bool BranchIO::write(const std::string& fname)
   return true;
 }
 
-bool BranchIO::read(const std::string& fname)
+template<class SFNB>
+bool BranchIO<SFNB>::read(const std::string& fname)
 {
   int found_config = 0;
 
@@ -206,8 +211,8 @@ bool BranchIO::read(const std::string& fname)
   return true;
 }
 
-
-void BranchIO::bcast_state()
+template<class SFNB>
+void BranchIO<SFNB>::bcast_state()
 {
   int n = ref.vParam.size() + ref.iParam.size();
   std::vector<RealType> pdata(n + 1 + 16, -1);
@@ -252,4 +257,6 @@ void BranchIO::bcast_state()
   }
 }
 
+template class BranchIO<SimpleFixedNodeBranch>;
+template class BranchIO<SFNBranch>;
 } // namespace qmcplusplus

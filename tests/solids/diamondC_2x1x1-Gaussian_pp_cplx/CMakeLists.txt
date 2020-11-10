@@ -1,5 +1,4 @@
 
-IF(ENABLE_SOA)
  IF (NOT QMC_CUDA)
    IF (QMC_COMPLEX)
 
@@ -52,6 +51,3 @@ LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "ionion" "-25.55132675
   ELSE()
     MESSAGE_VERBOSE("Skipping Periodic LCAO as not supported by CUDA build (QMC_CUDA=1)")
   ENDIF()
-ELSE()
-  MESSAGE_VERBOSE("Skipping Periodic LCAO as not supported by AoS build (ENABLE_SOA=0)")
-ENDIF()

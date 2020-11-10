@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
+#include "MultiSlaterDeterminantFast.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
@@ -22,15 +22,17 @@ namespace qmcplusplus
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
                                                        MultiDiracDeterminant* up,
                                                        MultiDiracDeterminant* dn)
-    : RatioTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio")),
-      RatioGradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratioGrad")),
-      RatioAllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::ratio(all)")),
-      UpdateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::updateBuffer")),
-      EvaluateTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::evaluate")),
-      Ratio1Timer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio")),
-      Ratio1GradTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratioGrad")),
-      Ratio1AllTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::detEval_ratio(all)")),
-      AccRejTimer(*TimerManager.createTimer("MultiSlaterDeterminantFast::Accept_Reject")),
+    : WaveFunctionComponent("MultiSlaterDeterminantFast"),
+      RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
+      RatioGradTimer(*timer_manager.createTimer(ClassName + "ratioGrad")),
+      RatioAllTimer(*timer_manager.createTimer(ClassName + "ratio(all)")),
+      UpdateTimer(*timer_manager.createTimer(ClassName + "updateBuffer")),
+      EvaluateTimer(*timer_manager.createTimer(ClassName + "evaluate")),
+      Ratio1Timer(*timer_manager.createTimer(ClassName + "detEval_ratio")),
+      Ratio1GradTimer(*timer_manager.createTimer(ClassName + "detEval_ratioGrad")),
+      Ratio1AllTimer(*timer_manager.createTimer(ClassName + "detEval_ratio(all)")),
+      AccRejTimer(*timer_manager.createTimer(ClassName + "Accept_Reject")),
+      CI_Optimizable(false),
       IsCloned(false),
       C2node_up(nullptr),
       C2node_dn(nullptr),
@@ -43,7 +45,6 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   //Optimizable=true;
   Optimizable   = false;
   is_fermionic  = true;
-  ClassName     = "MultiSlaterDeterminantFast";
   usingCSF      = false;
   NP            = targetPtcl.getTotalNum();
   nels_up       = targetPtcl.last(0) - targetPtcl.first(0);
@@ -87,7 +88,6 @@ WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp)
     BackflowTransformation* tr = BFTrans->makeClone(tqp);
     clone->setBF(tr);
   }
-  clone->resetTargetParticleSet(tqp);
 
   //Set IsCloned so that only the main object handles the optimizable data
   clone->IsCloned = true;
@@ -100,6 +100,8 @@ WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp)
   clone->Optimizable = Optimizable;
   clone->usingCSF    = usingCSF;
   clone->usingBF     = usingBF;
+
+  clone->CI_Optimizable = CI_Optimizable;
 
   if (usingCSF)
   {
@@ -124,21 +126,6 @@ MultiSlaterDeterminantFast::~MultiSlaterDeterminantFast()
   }
   //clean up determinants too!
 }
-
-void MultiSlaterDeterminantFast::resetTargetParticleSet(ParticleSet& P)
-{
-  if (usingBF)
-  {
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->resetTargetParticleSet(BFTrans->QP);
-  }
-  else
-  {
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->resetTargetParticleSet(P);
-  }
-}
-
 
 void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
 {

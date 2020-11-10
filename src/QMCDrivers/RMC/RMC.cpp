@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/RMC/RMC.h"
+#include "RMC.h"
 #include "QMCDrivers/RMC/RMCUpdatePbyP.h"
 #include "QMCDrivers/RMC/RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -38,12 +38,15 @@ namespace qmcplusplus
 RMC::RMC(MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm), prestepsVMC(-1), rescaleDrift("no"), beta(-1), beads(-1), fromScratch(true)
+    : QMCDriver(w, psi, h, comm, "RMC"),
+      prestepsVMC(-1),
+      rescaleDrift("no"),
+      beta(-1),
+      beads(-1),
+      fromScratch(true)
 {
   RootName = "rmc";
-  QMCType  = "RMC";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
   m_param.add(rescaleDrift, "drift", "string");
@@ -73,8 +76,8 @@ bool RMC::run()
 #endif
   const bool has_collectables = W.Collectables.size();
 
-  LoopTimer rmc_loop;
-  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  LoopTimer<> rmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
   for (int block = 0; block < nBlocks; ++block)
   {
     rmc_loop.start();

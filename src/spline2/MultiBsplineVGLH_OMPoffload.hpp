@@ -23,9 +23,9 @@
 #ifndef SPLINE2_OFFLOAD_MULTIEINSPLINE_VGLH_HPP
 #define SPLINE2_OFFLOAD_MULTIEINSPLINE_VGLH_HPP
 
-#include "OpenMP/OMPstd.hpp"
+#include "OMPTarget/OMPstd.hpp"
 #include "spline2/MultiBsplineData.hpp"
-#include <spline2/MultiBsplineEval_helper.hpp>
+#include "spline2/MultiBsplineEval_helper.hpp"
 
 namespace spline2offload
 {
@@ -107,12 +107,12 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
         T sum0 = c[0] * coefsv + c[1] * coefsvzs + c[2] * coefsv2zs + c[3] * coefsv3zs;
         T sum1 = dc[0] * coefsv + dc[1] * coefsvzs + dc[2] * coefsv2zs + dc[3] * coefsv3zs;
         T sum2 = d2c[0] * coefsv + d2c[1] * coefsvzs + d2c[2] * coefsv2zs + d2c[3] * coefsv3zs;
-        gx[n]   += pre10 * sum0;
-        gy[n]   += pre01 * sum0;
-        gz[n]   += pre00 * sum1;
-        lx[n]   += pre20 * sum0;
-        ly[n]   += pre02 * sum0;
-        lz[n]   += pre00 * sum2;
+        gx[n] += pre10 * sum0;
+        gy[n] += pre01 * sum0;
+        gz[n] += pre00 * sum1;
+        lx[n] += pre20 * sum0;
+        ly[n] += pre02 * sum0;
+        lz[n] += pre00 * sum2;
         vals[n] += pre00 * sum0;
       }
     }
@@ -225,15 +225,15 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
         T sum1 = dc[0] * coefsv + dc[1] * coefsvzs + dc[2] * coefsv2zs + dc[3] * coefsv3zs;
         T sum2 = d2c[0] * coefsv + d2c[1] * coefsvzs + d2c[2] * coefsv2zs + d2c[3] * coefsv3zs;
 
-        hxx[n]  += pre20 * sum0;
-        hxy[n]  += pre11 * sum0;
-        hxz[n]  += pre10 * sum1;
-        hyy[n]  += pre02 * sum0;
-        hyz[n]  += pre01 * sum1;
-        hzz[n]  += pre00 * sum2;
-        gx[n]   += pre10 * sum0;
-        gy[n]   += pre01 * sum0;
-        gz[n]   += pre00 * sum1;
+        hxx[n] += pre20 * sum0;
+        hxy[n] += pre11 * sum0;
+        hxz[n] += pre10 * sum1;
+        hyy[n] += pre02 * sum0;
+        hyz[n] += pre01 * sum1;
+        hzz[n] += pre00 * sum2;
+        gx[n] += pre10 * sum0;
+        gy[n] += pre01 * sum0;
+        gz[n] += pre00 * sum1;
         vals[n] += pre00 * sum0;
       }
     }
@@ -255,9 +255,9 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #endif
   for (int n = 0; n < num_splines; n++)
   {
-    gx[n]  *= dxInv;
-    gy[n]  *= dyInv;
-    gz[n]  *= dzInv;
+    gx[n] *= dxInv;
+    gy[n] *= dyInv;
+    gz[n] *= dzInv;
     hxx[n] *= dxx;
     hyy[n] *= dyy;
     hzz[n] *= dzz;
@@ -269,92 +269,91 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 
 template<typename T>
 inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
-                                 int ix, int iy, int iz,
-                                 const T a[4], const T b[4], const T c[4],
-                                 const T da[4], const T db[4], const T dc[4],
-                                 const T d2a[4], const T d2b[4], const T d2c[4],
+                                 int ix,
+                                 int iy,
+                                 int iz,
+                                 const T a[4],
+                                 const T b[4],
+                                 const T c[4],
+                                 const T da[4],
+                                 const T db[4],
+                                 const T dc[4],
+                                 const T d2a[4],
+                                 const T d2b[4],
+                                 const T d2c[4],
                                  T* restrict vals,
                                  T* restrict grads,
                                  T* restrict hess,
-                                 size_t out_offset,
+                                 const size_t out_offset,
                                  const int first,
-                                 const int last)
+                                 const int index)
 {
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
   const intptr_t zs = spline_m->z_stride;
 
-#ifdef ENABLE_OFFLOAD
-#pragma omp for
-#else
-#pragma omp simd aligned(vals, grads, hess)
-#endif
-  for (int n = 0; n < last - first; n++)
-  {
-    T val = T();
-    T gx  = T();
-    T gy  = T();
-    T gz  = T();
-    T hxx = T();
-    T hxy = T();
-    T hxz = T();
-    T hyy = T();
-    T hyz = T();
-    T hzz = T();
+  T val = T();
+  T gx  = T();
+  T gy  = T();
+  T gz  = T();
+  T hxx = T();
+  T hxy = T();
+  T hxz = T();
+  T hyy = T();
+  T hyz = T();
+  T hzz = T();
 
-    for (int i = 0; i < 4; i++)
-      for (int j = 0; j < 4; j++)
-      {
-        const T* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
-        const T* restrict coefszs  = coefs + zs;
-        const T* restrict coefs2zs = coefs + 2 * zs;
-        const T* restrict coefs3zs = coefs + 3 * zs;
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 4; j++)
+    {
+      const T* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      const T* restrict coefszs  = coefs + zs;
+      const T* restrict coefs2zs = coefs + 2 * zs;
+      const T* restrict coefs3zs = coefs + 3 * zs;
 
-        const T pre20 = d2a[i] * b[j];
-        const T pre10 = da[i] * b[j];
-        const T pre00 = a[i] * b[j];
-        const T pre11 = da[i] * db[j];
-        const T pre01 = a[i] * db[j];
-        const T pre02 = a[i] * d2b[j];
+      const T pre20 = d2a[i] * b[j];
+      const T pre10 = da[i] * b[j];
+      const T pre00 = a[i] * b[j];
+      const T pre11 = da[i] * db[j];
+      const T pre01 = a[i] * db[j];
+      const T pre02 = a[i] * d2b[j];
 
-        T coefsv    = coefs[n];
-        T coefsvzs  = coefszs[n];
-        T coefsv2zs = coefs2zs[n];
-        T coefsv3zs = coefs3zs[n];
+      T coefsv    = coefs[index];
+      T coefsvzs  = coefszs[index];
+      T coefsv2zs = coefs2zs[index];
+      T coefsv3zs = coefs3zs[index];
 
-        T sum0 = c[0] * coefsv + c[1] * coefsvzs + c[2] * coefsv2zs + c[3] * coefsv3zs;
-        T sum1 = dc[0] * coefsv + dc[1] * coefsvzs + dc[2] * coefsv2zs + dc[3] * coefsv3zs;
-        T sum2 = d2c[0] * coefsv + d2c[1] * coefsvzs + d2c[2] * coefsv2zs + d2c[3] * coefsv3zs;
+      T sum0 = c[0] * coefsv + c[1] * coefsvzs + c[2] * coefsv2zs + c[3] * coefsv3zs;
+      T sum1 = dc[0] * coefsv + dc[1] * coefsvzs + dc[2] * coefsv2zs + dc[3] * coefsv3zs;
+      T sum2 = d2c[0] * coefsv + d2c[1] * coefsvzs + d2c[2] * coefsv2zs + d2c[3] * coefsv3zs;
 
-        hxx += pre20 * sum0;
-        hxy += pre11 * sum0;
-        hxz += pre10 * sum1;
-        hyy += pre02 * sum0;
-        hyz += pre01 * sum1;
-        hzz += pre00 * sum2;
-        gx  += pre10 * sum0;
-        gy  += pre01 * sum0;
-        gz  += pre00 * sum1;
-        val += pre00 * sum0;
-      }
+      hxx += pre20 * sum0;
+      hxy += pre11 * sum0;
+      hxz += pre10 * sum1;
+      hyy += pre02 * sum0;
+      hyz += pre01 * sum1;
+      hzz += pre00 * sum2;
+      gx += pre10 * sum0;
+      gy += pre01 * sum0;
+      gz += pre00 * sum1;
+      val += pre00 * sum0;
+    }
 
-    // put data back to the result vector
-    vals[n] = val;
+  // put data back to the result vector
+  vals[index] = val;
 
-    const T dxInv = spline_m->x_grid.delta_inv;
-    const T dyInv = spline_m->y_grid.delta_inv;
-    const T dzInv = spline_m->z_grid.delta_inv;
-
-    grads[n]                  = gx * dxInv;
-    grads[n + out_offset]     = gy * dyInv;
-    grads[n + 2 * out_offset] = gz * dzInv;
-    hess[n]                   = hxx * dxInv * dxInv;
-    hess[n + out_offset]      = hxy * dxInv * dyInv;
-    hess[n + 2 * out_offset]  = hxz * dxInv * dzInv;
-    hess[n + 3 * out_offset]  = hyy * dyInv * dyInv;
-    hess[n + 4 * out_offset]  = hyz * dyInv * dzInv;
-    hess[n + 5 * out_offset]  = hzz * dzInv * dzInv;
-  }
+  const T dxInv                 = spline_m->x_grid.delta_inv;
+  const T dyInv                 = spline_m->y_grid.delta_inv;
+  const T dzInv                 = spline_m->z_grid.delta_inv;
+  grads[index]                  = gx * dxInv;
+  grads[index + out_offset]     = gy * dyInv;
+  grads[index + 2 * out_offset] = gz * dzInv;
+  hess[index]                   = hxx * dxInv * dxInv;
+  hess[index + out_offset]      = hxy * dxInv * dyInv;
+  hess[index + 2 * out_offset]  = hxz * dxInv * dzInv;
+  hess[index + 3 * out_offset]  = hyy * dyInv * dyInv;
+  hess[index + 4 * out_offset]  = hyz * dyInv * dzInv;
+  hess[index + 5 * out_offset]  = hzz * dzInv * dzInv;
 }
 
 } // namespace spline2offload

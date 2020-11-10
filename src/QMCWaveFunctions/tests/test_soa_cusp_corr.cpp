@@ -20,8 +20,8 @@
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/GaussianBasisSet.h"
 
-#include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
-#include "QMCWaveFunctions/lcao/CuspCorrection.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
+#include "QMCWaveFunctions/LCAO/CuspCorrection.h"
 
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
@@ -96,7 +96,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   elec.R = 0.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
   Libxml2Document doc2;
@@ -158,8 +158,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   okay = readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info);
 
   REQUIRE(okay);
-  Vector<double> xgrid;
-  Vector<double> rad_orb;
+  Vector<RealType> xgrid;
+  Vector<RealType> rad_orb;
   int ngrid = 10;
   xgrid.resize(ngrid);
   for (int i = 0; i < ngrid; i++)
@@ -276,7 +276,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   elec.R = 0.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
   Libxml2Document doc2;
@@ -455,7 +455,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   elec.R = 0.0;
 
-  elec.addTable(ions, DT_SOA);
+  elec.addTable(ions);
   elec.update();
 
   Libxml2Document doc2;

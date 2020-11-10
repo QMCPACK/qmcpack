@@ -14,9 +14,9 @@
 #ifndef QMCPLUSPLUS_SHO_BASIS_BUILDER_H
 #define QMCPLUSPLUS_SHO_BASIS_BUILDER_H
 
-#include <QMCWaveFunctions/HarmonicOscillator/SHOSet.h>
-#include <QMCWaveFunctions/SPOSetBuilder.h>
-#include <QMCWaveFunctions/SPOSetInfo.h>
+#include "QMCWaveFunctions/HarmonicOscillator/SHOSet.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
+#include "QMCWaveFunctions/SPOSetInfo.h"
 
 namespace qmcplusplus
 {

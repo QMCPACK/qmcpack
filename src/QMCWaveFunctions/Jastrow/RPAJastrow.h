@@ -20,9 +20,6 @@
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
-#ifndef ENABLE_SOA
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#endif
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 
@@ -71,8 +68,6 @@ struct RPAJastrow : public WaveFunctionComponent
   /** reset the parameters during optimizations
     */
   void resetParameters(const opt_variables_type& active);
-
-  void resetTargetParticleSet(ParticleSet& P);
 
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 

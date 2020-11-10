@@ -80,7 +80,6 @@ IF (NOT QMC_CUDA)
                       5 H4_OPT_SCALARS # OPT step 5
                       )
 
-   IF(ENABLE_SOA)
     #
     # H4 starting from perturbed orbitals, using optimizable determinants, and the adaptive linear method
     #
@@ -139,19 +138,6 @@ IF (NOT QMC_CUDA)
     #
     # H4 starting from unoptimized CIS coefficients, targeting the first excited state, and using the adaptive linear method
     #
-    LIST(APPEND H4_FDLR_SCALARS "totenergy" "-1.82507816 0.001") # total energy
-
-    QMC_RUN_AND_CHECK(short-H4-FDLR
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
-                      H4
-                      H4_FDLR_CIS_opt.xml
-                      16 1
-                      ${MP_SUCCESS}
-                      8 H4_FDLR_SCALARS # Final VMC step
-                      TRUE)
-   ELSE()
-    MESSAGE("Skipping H4_ae orbital rotation tests because they are no more supported with AoS builds.")
-   ENDIF(ENABLE_SOA)
 
     LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.0045") # total energy
 
@@ -189,6 +175,25 @@ IF (NOT QMC_CUDA)
                     9 H4_DESCENT_SCALARS
                     TRUE)
 
+  LIST(APPEND H4_TARGET_DESCENT_SCALARS "totenergy" "-2.04604154 0.003")
+
+  QMC_RUN_AND_CHECK(short-H4-target-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-descent
+                    optm-target-descent.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_DESCENT_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-target-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-descent
+                    optm-target-descent.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_DESCENT_SCALARS
+                    TRUE)
 
   LIST(APPEND H4_HYBRID_SCALARS "totenergy" "-2.140736 0.003")
 
@@ -208,6 +213,26 @@ IF (NOT QMC_CUDA)
                     1 16
                     ${MP_SUCCESS}
 		    9 H4_HYBRID_SCALARS
+                    TRUE)
+  
+  LIST(APPEND H4_TARGET_HYBRID_SCALARS "totenergy" "-2.13527301 0.003")
+
+  QMC_RUN_AND_CHECK(short-H4-target-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-hybrid
+                    optm-target-hybrid.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_HYBRID_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-target-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-hybrid
+                    optm-target-hybrid.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_HYBRID_SCALARS
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly

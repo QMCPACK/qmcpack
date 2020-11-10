@@ -564,6 +564,20 @@ except:
 #end try
 
 
+# mark all statistical tests as unstable
+#   some of these work well, and others do not
+#   cause of intermittent statistical failures needs further investiagion
+try: 
+    if test.startswith('short-') or test.startswith('long-') or test.startswith('estimator-'):
+        if 'unstable' not in labels:
+            labels.append('unstable')
+        #end if
+    #end if
+except:
+    error()
+#end try
+
+
 # make a ctest list of the labels
 try:
     ctest_labels = ''

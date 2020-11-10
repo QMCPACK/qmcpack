@@ -14,6 +14,7 @@
 
 #include "Configuration.h"
 #include "Message/Communicate.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/ExampleHeComponent.h"
@@ -68,7 +69,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   particle_set_map["ion0"]    = ions;
 
 
-  WaveFunctionFactory wff(elec, particle_set_map, c);
+  WaveFunctionFactory wff("psi0", *elec, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction> \
   <example_he name=\"mine\" source=\"ion0\"> \
@@ -82,14 +83,14 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   xmlNodePtr root = doc.getRoot();
   wff.put(root);
 
-  REQUIRE(wff.targetPsi != NULL);
-  REQUIRE(wff.targetPsi->size() == 1);
+  REQUIRE(wff.getTWF() != nullptr);
+  REQUIRE(wff.getTWF()->size() == 1);
 
-  WaveFunctionComponent* base_example_he = wff.targetPsi->getOrbitals()[0];
-  REQUIRE(base_example_he != NULL);
+  WaveFunctionComponent* base_example_he = wff.getTWF()->getOrbitals()[0];
+  REQUIRE(base_example_he != nullptr);
 
   ExampleHeComponent* example_he = dynamic_cast<ExampleHeComponent*>(base_example_he);
-  REQUIRE(example_he != NULL);
+  REQUIRE(example_he != nullptr);
 
   ions->update();
   elec->update();

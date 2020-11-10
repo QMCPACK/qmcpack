@@ -19,7 +19,7 @@ IF (NOT QMC_CUDA)
                     vmc_short_noj
                     vmc_short_noj.in.xml
                     1 16
-                    ${SOA_SUCCESS}
+                    TRUE
                     0 FeCO6_PYSCF_SHORT # VMC
                     )
 
@@ -32,7 +32,7 @@ IF (NOT QMC_CUDA)
                     vmc_long_noj
                     vmc_long_noj.in.xml
                     1 16
-                    ${SOA_SUCCESS}
+                    TRUE
                     0 FeCO6_PYSCF_LONG # VMC
                     )
 

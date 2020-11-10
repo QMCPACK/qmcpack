@@ -37,9 +37,14 @@ class ParticleSet;
 class WaveFunctionPool : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, WaveFunctionFactory*> PoolType;
+  using PoolType = std::map<std::string, WaveFunctionFactory*>;
 
-  WaveFunctionPool(Communicate* c, const char* aname = "wavefunction");
+  WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, const char* aname = "wavefunction");
+  WaveFunctionPool(const WaveFunctionPool&) = delete;
+  WaveFunctionPool& operator=(const WaveFunctionPool&) = delete;
+  WaveFunctionPool(WaveFunctionPool&&)                 = default;
+  WaveFunctionPool& operator=(WaveFunctionPool&&) = delete;
+
   ~WaveFunctionPool();
 
   bool put(xmlNodePtr cur);
@@ -56,12 +61,12 @@ public:
     if (pit == myPool.end())
     {
       if (myPool.empty())
-        return 0;
+        return nullptr;
       else
-        return (*(myPool.begin())).second->targetPsi;
+        return (*(myPool.begin())).second->getTWF();
     }
     else
-      return (*pit).second->targetPsi;
+      return (*pit).second->getTWF();
   }
 
   WaveFunctionFactory* getWaveFunctionFactory(const std::string& pname)
@@ -70,17 +75,13 @@ public:
     if (pit == myPool.end())
     {
       if (myPool.empty())
-        return 0;
+        return nullptr;
       else
         return (*(myPool.begin())).second;
     }
     else
       return (*pit).second;
   }
-
-  /** assign a pointer of ParticleSetPool
-   */
-  inline void setParticleSetPool(ParticleSetPool* pset) { ptcl_pool_ = pset; }
 
   /** return a xmlNode containing Jastrow
    * @param id name of the wave function
@@ -109,7 +110,7 @@ private:
    * TrialWaveFunction needs to know which ParticleSet object
    * is used as an input object for the evaluations.
    */
-  ParticleSetPool* ptcl_pool_;
+  ParticleSetPool& ptcl_pool_;
 };
 } // namespace qmcplusplus
 #endif

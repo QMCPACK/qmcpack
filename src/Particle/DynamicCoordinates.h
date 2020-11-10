@@ -17,7 +17,7 @@
 
 #include <memory>
 #include "Configuration.h"
-#include "OhmmsSoA/Container.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 
 namespace qmcplusplus
 {
@@ -25,7 +25,7 @@ namespace qmcplusplus
  */
 enum class DynamicCoordinateKind
 {
-  DC_POS, // SoA positions
+  DC_POS,         // SoA positions
   DC_POS_OFFLOAD, // SoA positions with OpenMP offload
 };
 
@@ -34,10 +34,10 @@ enum class DynamicCoordinateKind
 class DynamicCoordinates
 {
 public:
-  using RealType = QMCTraits::RealType;
-  using PosType = QMCTraits::PosType;
+  using RealType      = QMCTraits::RealType;
+  using PosType       = QMCTraits::PosType;
   using ParticlePos_t = PtclOnLatticeTraits::ParticlePos_t;
-  using PosVectorSoa = VectorSoaContainer<RealType, QMCTraits::DIM>;
+  using PosVectorSoa  = VectorSoaContainer<RealType, QMCTraits::DIM>;
 
   DynamicCoordinates(const DynamicCoordinateKind kind_in) : variable_kind_(kind_in) {}
 
@@ -51,15 +51,16 @@ public:
   virtual std::unique_ptr<DynamicCoordinates> makeClone() = 0;
 
   virtual void resize(size_t n) = 0;
-  virtual size_t size() = 0;
+  virtual size_t size()         = 0;
 
-  virtual void setAllParticlePos(const ParticlePos_t& R) = 0;
+  virtual void setAllParticlePos(const ParticlePos_t& R)         = 0;
   virtual void setOneParticlePos(const PosType& pos, size_t iat) = 0;
 
   virtual const PosVectorSoa& getAllParticlePos() const = 0;
-  virtual PosType getOneParticlePos(size_t iat) const = 0;
+  virtual PosType getOneParticlePos(size_t iat) const   = 0;
 
-  virtual void donePbyP() { }
+  virtual void donePbyP() {}
+
 protected:
   const DynamicCoordinateKind variable_kind_;
 };

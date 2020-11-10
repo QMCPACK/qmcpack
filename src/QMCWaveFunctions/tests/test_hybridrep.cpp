@@ -130,7 +130,11 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
   // lapl
   REQUIRE(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
+#if defined(MIXED_PRECISION) 
+  REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257).epsilon(3e-5));
+#else
   REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257));
+#endif
 
   // electron 1
   // value
@@ -233,6 +237,19 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   ions_.update();
   elec_.update();
+
+  ParticleSet::RealType r;
+  ParticleSet::PosType dr;
+  elec_.getDistTable(0).get_first_neighbor(0, r, dr, false);
+  std::cout << std::setprecision(14) << "check r^2 against dr^2. "
+            << "r = " << r << " dr = " << dr << std::endl;
+  std::cout << "abs(r^2 - dr^2) = " << std::abs(r * r - dot(dr, dr))
+            << " epsilon = " << std::numeric_limits<double>::epsilon() << std::endl;
+#if defined(MIXED_PRECISION)
+  REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon() * 1e8);
+#else
+  REQUIRE(std::abs(r * r - dot(dr, dr)) < std::numeric_limits<double>::epsilon());
+#endif
 
   // for vgl
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -341,23 +358,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   dpsi_v_list.push_back(dpsi_2);
   d2psi_v_list.push_back(d2psi);
   d2psi_v_list.push_back(d2psi_2);
-
-  spo->mw_evaluateValue(spo_list, P_list, 1, psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
-  // real part
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
-  // value
-  REQUIRE(std::real(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::real(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
-
-#if defined(QMC_COMPLEX)
-  // imaginary part
-  // value
-  REQUIRE(std::imag(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::imag(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
 
   spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)

@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 
 class MCPopulation;
-struct DistanceTableData;
+class DistanceTableData;
 
 /** Thread local context for moving walkers
  *
@@ -50,7 +50,9 @@ public:
   int get_num_groups() const { return particle_group_indexes_.size(); }
   RandomGenerator_t& get_random_gen() { return random_gen_; }
 
-  void nextDeltaRs() {
+  void nextDeltaRs(size_t num_rs) {
+    // hate to repeat this pattern, this should never resize.
+    walker_deltas_.resize(num_rs);
     makeGaussRandomWithEngine(walker_deltas_, random_gen_);
   }
   

@@ -17,16 +17,16 @@
 #ifndef QMCPLUSPLUS_TIMER_H
 #define QMCPLUSPLUS_TIMER_H
 
-#include <Utilities/Clock.h>
+#include "Utilities/Clock.h"
 
 namespace qmcplusplus
 {
 struct Timer
 {
   double start_time;
-  inline Timer() { start_time = cpu_clock(); }
-  inline void restart() { start_time = cpu_clock(); }
-  inline double elapsed() const { return cpu_clock() - start_time; }
+  inline Timer() { start_time = CPUClock()(); }
+  inline void restart() { start_time = CPUClock()(); }
+  inline double elapsed() const { return CPUClock()() - start_time; }
 };
 } // namespace qmcplusplus
 #endif

@@ -20,7 +20,7 @@
 
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "Numerics/OhmmsBlas.h"
+#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
@@ -70,8 +70,6 @@ public:
   void resetParameters(const opt_variables_type& optVariables) override;
 
   void setOrbitalSetSize(int norbs) override;
-
-  void resetTargetParticleSet(ParticleSet& P) override;
 
   inline ValueType evaluate(int ib, const PosType& pos)
   {

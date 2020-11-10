@@ -172,9 +172,16 @@ public:
   inline void setneedGrads(bool tf) { needGrads = tf; }
   inline void setDMC() { vmc_or_dmc = 1.0; }
 
-  inline std::string getName(int i) const { return OptVariables.name(i); }
+  inline std::string getParamName(int i) const { return OptVariables.name(i); }
 
   inline const opt_variables_type& getOptVariables() const { return OptVariables; }
+
+  /// return variance after checkConfigurations
+  inline Return_rt getVariance() const
+  {
+    return SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT] -
+        (SumValue[SUM_E_WGT] / SumValue[SUM_WGT]) * (SumValue[SUM_E_WGT] / SumValue[SUM_WGT]);
+  }
 
 protected:
   ///walker ensemble

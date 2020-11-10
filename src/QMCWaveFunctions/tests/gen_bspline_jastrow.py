@@ -87,16 +87,26 @@ def recreate_piecewise(basis_map, c, xs):
 def gen_bspline_jastrow(nknots, rcut_val, param, cusp_val):
   xs = Symbol('x')
 
+  # Workaround for Sympy issue
+  #   bspline_basis_set depends on ordering of relational items.
+  #   The order for <something>*Delta is okay, the order for bare Delta is not (that is, when i = 1)
+  #   Workaround is to multiply Delta by a dummy variable so there is always a multiplication.
+  # Issue
+  #  https://github.com/sympy/sympy/issues/19262
+  #  It has been fixed in mainline, but not a released version (1.6 series as of this writing)
+
+  dummy = Symbol('y', positive=True)
   Delta = Symbol('Delta',positive=True)
   knots = [i*Delta for i in range(nknots)]
-  print 'knots = ',knots
-  all_knots = [i*Delta for i in range(-3,nknots+3)]
+  all_knots = [i*Delta*dummy for i in range(-3,nknots+3)]
   rcut = (nknots-1)*Delta
 
   # Third-order bspline
-  jastrow_sym_basis = bspline_basis_set(3, all_knots, xs)
+  jastrow_sym_basis1 = bspline_basis_set(3, all_knots, xs)
+  # Remove the dummy variable after it has served its purpose
+  jastrow_sym_basis = [s.subs(dummy, 1) for s in jastrow_sym_basis1]
+
   print("Number of basis functions = ",len(jastrow_sym_basis))
-  #print jastrow_sym_basis
 
   # Rearrange the basis and conditionals into a more useful form
   jastrow_cond_map = transpose_interval_and_coefficients(jastrow_sym_basis, xs)
@@ -106,15 +116,12 @@ def gen_bspline_jastrow(nknots, rcut_val, param, cusp_val):
 
 
   Delta_val = rcut_val*1.0/(nknots+1)
-  #print 'Delta = ',Delta_val
-  #print 'coeff size = ',nknots+4
 
   coeffs = np.zeros(nknots+4)
   coeffs[0] = -2*cusp_val*Delta_val + param[1]
   coeffs[1] = param[0]
   coeffs[2] = param[1]
   coeffs[3:-3] = param[2:]
-  #print 'coeffs',coeffs
 
   deriv_jastrow_spline = diff(jastrow_spline, xs)
   deriv2_jastrow_spline = diff(jastrow_spline, xs, 2)
@@ -125,11 +132,9 @@ def gen_bspline_jastrow(nknots, rcut_val, param, cusp_val):
     jv = jastrow_spline.subs({xs:x,Delta:Delta_val})
     jd = deriv_jastrow_spline.subs({xs:x,Delta:Delta_val})
     jdd = deriv2_jastrow_spline.subs({xs:x,Delta:Delta_val})
-    #print jj
     subslist = dict()
     for i in range(12):
       subslist[c[i]] = coeffs[i]
-    #print x,jv.subs(subslist),jd.subs(subslist),jdd.subs(subslist)
     vals.append((x,jv.subs(subslist),jd.subs(subslist),jdd.subs(subslist)))
 
  # Assumes
@@ -148,7 +153,7 @@ def gen_bspline_jastrow(nknots, rcut_val, param, cusp_val):
 """
   fmt_values = ',\n  '.join("{%.2f, %15.10g, %15.10g, %15.10g}"%(r,u,du,ddu) for r,u,du,ddu in vals)
   s = tmpl.format(N=len(vals), values=fmt_values)
-  print s
+  print(s)
 
 
 # Generate output for these parameters

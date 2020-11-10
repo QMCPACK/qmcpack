@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
+#include "config/stdlib/math.hpp"
 
 
 namespace qmcplusplus
@@ -36,7 +37,6 @@ struct EGOSet : public SPOSet
   SPOSet* makeClone() const override { return new EGOSet(*this); }
 
   void resetParameters(const opt_variables_type& optVariables) override {}
-  inline void resetTargetParticleSet(ParticleSet& P) override {}
   void setOrbitalSetSize(int norbs) override {}
 
   inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override
@@ -45,7 +45,7 @@ struct EGOSet : public SPOSet
     RealType sinkr, coskr;
     for (int ik = 0; ik < KptMax; ik++)
     {
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[ik] = ValueType(coskr, sinkr);
     }
   }
@@ -63,7 +63,7 @@ struct EGOSet : public SPOSet
     RealType sinkr, coskr;
     for (int ik = 0; ik < KptMax; ik++)
     {
-      sincos(dot(K[ik], r), &sinkr, &coskr);
+      qmcplusplus::sincos(dot(K[ik], r), &sinkr, &coskr);
       psi[ik]   = ValueType(coskr, sinkr);
       dpsi[ik]  = ValueType(-sinkr, coskr) * K[ik];
       d2psi[ik] = ValueType(mK2[ik] * coskr, mK2[ik] * sinkr);

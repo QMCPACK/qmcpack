@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_HARMONIC_EXTERNAL_POTENTIAL_H
 #define QMCPLUSPLUS_HARMONIC_EXTERNAL_POTENTIAL_H
 
-#include <QMCHamiltonians/OperatorBase.h>
+#include "QMCHamiltonians/OperatorBase.h"
 
 
 namespace qmcplusplus

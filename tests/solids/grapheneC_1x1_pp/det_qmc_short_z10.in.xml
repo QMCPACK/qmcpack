@@ -15,7 +15,8 @@
       0   0   18.897259886
       </parameter>
       <parameter name="bconds">p p p </parameter>
-      <parameter name="LR_dim_cutoff">15</parameter>
+      <parameter name="LR_handler"> ewald </parameter>
+      <parameter name="LR_dim_cutoff">30</parameter>
   </simulationcell>
   </qmcsystem>
   <particleset name="i" size="2">

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -23,14 +23,20 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class VMCBatchedTest;
+}
+
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a VMC using particle-by-particle move. Threaded execution.
  */
 class VMCBatched : public QMCDriverNew
 {
 public:
-  using FullPrecRealType = QMCTraits::FullPrecRealType;
-  using PosType = QMCTraits::PosType;
+  using Base              = QMCDriverNew;
+  using FullPrecRealType  = QMCTraits::FullPrecRealType;
+  using PosType           = QMCTraits::PosType;
   using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
 
   /** To avoid 10's of arguments to runVMCStep
@@ -43,7 +49,7 @@ public:
     const QMCDriverInput& qmcdrv_input;
     const VMCDriverInput& vmcdrv_input;
     const DriftModifierBase& drift_modifier;
-    const MCPopulation&   population;
+    const MCPopulation& population;
     IndexType recalculate_properties_period;
     IndexType step;
     int block;
@@ -61,9 +67,11 @@ public:
              MCPopulation& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
-             WaveFunctionPool& ppool,
+             SampleStack& samples_,
              Communicate* comm);
- 
+
+  void process(xmlNodePtr node);
+
   bool run();
 
   /** Refactor of VMCUpdatePbyP in crowd context
@@ -71,7 +79,11 @@ public:
    *  MCWalkerConfiguration layer removed.
    *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
    */
-  static void advanceWalkers(const StateForThread& sft, Crowd& crowd, DriverTimers& timers, ContextForSteps& move_context, bool recompute);
+  static void advanceWalkers(const StateForThread& sft,
+                             Crowd& crowd,
+                             DriverTimers& timers,
+                             ContextForSteps& move_context,
+                             bool recompute);
 
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
@@ -81,7 +93,18 @@ public:
                          std::vector<std::unique_ptr<ContextForSteps>>& context_for_steps,
                          std::vector<std::unique_ptr<Crowd>>& crowds);
 
-  IndexType calc_default_local_walkers(IndexType walkers_per_rank);
+  /** transitional interface on the way to better walker count adjustment handling.
+   *  returns a closure taking walkers per rank and accomplishing what calc_default_local_walkers does.
+   */
+  auto getCDLW();
+
+  /** Enable collecting samples during the VMC run
+   *
+   *  strong assumption that VMCBatched driver has passed through process phase of
+   *  initialization.
+   *  A side effect of VMCBatched::process is that MCPopulation has created local walkers.
+   */
+  void enable_sample_collection();
 
 private:
   int prevSteps;
@@ -94,6 +117,17 @@ private:
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
+
+
+  /// Storage for samples (later used in optimizer)
+  SampleStack& samples_;
+  /// Sample collection flag
+  bool collect_samples_;
+  /** function to calculate samples per node
+   */
+  static int compute_samples_per_node(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers);
+
+  friend class qmcplusplus::testing::VMCBatchedTest;
 };
 
 extern std::ostream& operator<<(std::ostream& o_stream, const VMCBatched& vmc_batched);

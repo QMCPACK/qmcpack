@@ -15,7 +15,7 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPPJob.h"
 
 namespace qmcplusplus
@@ -186,6 +186,7 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
                                             const RefVector<ParticleSet>& p_list,
                                             const RefVector<TrialWaveFunction>& psi_list,
                                             const RefVector<const NLPPJob<RealType>>& joblist,
+                                            TrialWaveFunction& psi_leader,
                                             std::vector<RealType>& pairpots,
                                             bool use_DLA)
 {
@@ -218,10 +219,10 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
 
       VirtualParticleSet::flex_makeMoves(vp_list, deltaV_list, joblist, true);
       if (use_DLA)
-        TrialWaveFunction::flex_evaluateRatios(psi_list, const_vp_list, psiratios_list,
+        psi_leader.flex_evaluateRatios(psi_list, const_vp_list, psiratios_list,
                                                TrialWaveFunction::ComputeType::FERMIONIC);
       else
-        TrialWaveFunction::flex_evaluateRatios(psi_list, const_vp_list, psiratios_list);
+        psi_leader.flex_evaluateRatios(psi_list, const_vp_list, psiratios_list);
     }
     else
     {

@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/MCWalkerConfiguration.h"
+#include "MCWalkerConfiguration.h"
 #include "Particle/DistanceTableData.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
@@ -26,9 +26,8 @@
 #include "LongRange/StructFact.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/MCSample.h"
-#include "QMCDrivers/QMCDriver.h"
-#include <io/hdf_hyperslab.h>
-#include "HDFVersion.h"
+#include "hdf/hdf_hyperslab.h"
+#include "hdf/HDFVersion.h"
 #include <map>
 
 #ifdef QMC_CUDA
@@ -76,6 +75,7 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
       UpdateMode(Update_Walker),
       Polymer(0)
 {
+  samples.clearEnsemble();
   samples.setMaxSamples(mcw.getMaxSamples());
   GlobalNumWalkers = mcw.GlobalNumWalkers;
   WalkerOffsets    = mcw.WalkerOffsets;
@@ -99,6 +99,7 @@ void MCWalkerConfiguration::createWalkers(int n)
     {
       Walker_t* awalker = new Walker_t(TotalNum);
       awalker->R        = R;
+      awalker->spins    = spins;
       WalkerList.push_back(awalker);
       --n;
     }
@@ -313,7 +314,19 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
 {
   int m(PropertyList.size());
   app_log() << "  Resetting Properties of the walkers " << ncopy << " x " << m << std::endl;
-  Properties.resize(ncopy, m);
+  try
+  {
+    Properties.resize(ncopy, m);
+  }
+  catch (std::domain_error& de)
+  {
+    app_error() << de.what() << '\n'
+                << "This is likely because some object has attempted to add walker properties\n"
+                << " in excess of WALKER_MAX_PROPERTIES.\n"
+                << "build with cmake ... -DWALKER_MAX_PROPERTIES=at_least_properties_required" << std::endl;
+    APP_ABORT("Fatal Exception");
+  }
+
   iterator it(WalkerList.begin()), it_end(WalkerList.end());
   while (it != it_end)
   {
@@ -341,7 +354,11 @@ void MCWalkerConfiguration::resizeWalkerHistories()
 /** allocate the SampleStack
  * @param n number of samples per thread
  */
-void MCWalkerConfiguration::setNumSamples(int n) { samples.setMaxSamples(n); }
+void MCWalkerConfiguration::setNumSamples(int n)
+{
+  samples.clearEnsemble();
+  samples.setMaxSamples(n);
+}
 
 /** save the current walkers to SampleStack
  */

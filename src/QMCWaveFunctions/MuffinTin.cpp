@@ -14,13 +14,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <einspline/bspline_base.h>
-#include <einspline/nubspline.h>
-#include <einspline/multi_nubspline.h>
-#include <Numerics/DeterminantOperators.h>
-#include <Particle/DistanceTableData.h>
-#include <QMCWaveFunctions/MuffinTin.h>
-#include <config/stdlib/math.hpp>
+#include "einspline/bspline_base.h"
+#include "einspline/nubspline.h"
+#include "einspline/multi_nubspline.h"
+#include "Numerics/DeterminantOperators.h"
+#include "Particle/DistanceTableData.h"
+#include "MuffinTin.h"
+#include "config/stdlib/math.hpp"
 
 
 namespace qmcplusplus
@@ -424,7 +424,7 @@ void MuffinTinClass::evaluate(TinyVector<double, 3> r, Vector<std::complex<doubl
     // Multiply by phase factor for k-point translation
     double phase = -dot(L, kPoints[iorb]);
     double s, c;
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     phi[iorb] *= std::complex<double>(c, s);
   }
 }
@@ -553,7 +553,7 @@ void MuffinTinClass::evaluate(TinyVector<double, 3> r,
     // Multiply by phase factor for k-point translation
     double phase = -dot(L, kPoints[iorb]);
     double s, c;
-    sincos(phase, &s, &c);
+    qmcplusplus::sincos(phase, &s, &c);
     phi[iorb] *= std::complex<double>(c, s);
     grad[iorb] *= std::complex<double>(c, s);
     lapl[iorb] *= std::complex<double>(c, s);
@@ -658,7 +658,7 @@ void MuffinTinClass::evaluateCore(TinyVector<double, 3> r, Vector<std::complex<d
     phi[first + i] = ylm * (u);
     // double phase = dot (r, Core_kVecs[i]);
     // double s, c;
-    // sincos(phase, &s, &c);
+    // qmcplusplus::sincos(phase, &s, &c);
     // phi[first+i] *= std::complex<double>(c,s);
   }
 }

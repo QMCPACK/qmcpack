@@ -11,13 +11,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/SpaceGrid.h>
-#include <OhmmsData/AttributeSet.h>
-#include <Utilities/string_utils.h>
+#include "SpaceGrid.h"
+#include "OhmmsData/AttributeSet.h"
+#include "Utilities/string_utils.h"
 #include <cmath>
-#include <OhmmsPETE/OhmmsArray.h>
+#include "OhmmsPETE/OhmmsArray.h"
 
-#include <Message/OpenMP.h>
+#include "Message/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -34,11 +34,13 @@ SpaceGrid::SpaceGrid(int& nvalues)
   nvalues_per_domain = nvalues;
   Rptcl              = 0;
   ndparticles        = 0;
+  periodic           = false;
 }
 
 
-bool SpaceGrid::put(xmlNodePtr cur, std::map<std::string, Point>& points, bool abort_on_fail)
+bool SpaceGrid::put(xmlNodePtr cur, std::map<std::string, Point>& points, bool is_periodic, bool abort_on_fail)
 {
+  periodic       = is_periodic;
   bool succeeded = true;
   ndomains       = -1;
   OhmmsAttributeSet ga;
@@ -51,6 +53,7 @@ bool SpaceGrid::put(xmlNodePtr cur, std::map<std::string, Point>& points, bool a
   ga.add(npmin, "min_part");
   ga.add(npmax, "max_part");
   ga.add(ref, "reference");
+  ga.add(periodic,"periodic");
   ga.put(cur);
   if (coord == "cartesian")
     coordinate = cartesian;
@@ -186,6 +189,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
     {
       cmap[ax_cylindrical[d]] = d;
       axlabel[d]              = ax_cylindrical[d];
+      periodic                = false;
     }
     break;
   case (spherical):
@@ -193,6 +197,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
     {
       cmap[ax_spherical[d]] = d;
       axlabel[d]            = ax_spherical[d];
+      periodic              = false;
     }
     break;
   default:
@@ -833,18 +838,36 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
     switch (coordinate)
     {
     case cartesian:
-      for (p = 0; p < nparticles; p++)
+      if (periodic)
       {
-        u = dot(axinv, (R[p] - origin));
-        if (u[0] > umin[0] && u[0] < umax[0] && u[1] > umin[1] && u[1] < umax[1] && u[2] > umin[2] && u[2] < umax[2])
+        for (p = 0; p < nparticles; p++)
         {
           particles_outside[p] = false;
-          iu[0]                = gmap[0][floor((u[0] - umin[0]) * odu[0])];
-          iu[1]                = gmap[1][floor((u[1] - umin[1]) * odu[1])];
-          iu[2]                = gmap[2][floor((u[2] - umin[2]) * odu[2])];
-          buf_index            = buffer_offset + nvalues * (dm[0] * iu[0] + dm[1] * iu[1] + dm[2] * iu[2]);
+          u = dot(axinv, (R[p] - origin));
+          for (int d=0; d<DIM; ++d)
+            iu[d] = gmap[d][floor((u[d] - umin[d]) * odu[d])];
+          buf_index = buffer_offset;
+          for (int d=0; d<DIM; ++d)
+            buf_index += nvalues*dm[d]*iu[d];
           for (v = 0; v < nvalues; v++, buf_index++)
             buf[buf_index] += values(p, v);
+        }
+      }
+      else
+      {
+        for (p = 0; p < nparticles; p++)
+        {
+          u = dot(axinv, (R[p] - origin));
+          if (u[0] > umin[0] && u[0] < umax[0] && u[1] > umin[1] && u[1] < umax[1] && u[2] > umin[2] && u[2] < umax[2])
+          {
+            particles_outside[p] = false;
+            iu[0]                = gmap[0][floor((u[0] - umin[0]) * odu[0])];
+            iu[1]                = gmap[1][floor((u[1] - umin[1]) * odu[1])];
+            iu[2]                = gmap[2][floor((u[2] - umin[2]) * odu[2])];
+            buf_index            = buffer_offset + nvalues * (dm[0] * iu[0] + dm[1] * iu[1] + dm[2] * iu[2]);
+            for (v = 0; v < nvalues; v++, buf_index++)
+              buf[buf_index] += values(p, v);
+          }
         }
       }
       break;
@@ -890,18 +913,16 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       //find cell center nearest to each dynamic particle
       int nd, nn;
       RealType dist;
-      for (nd = 0; nd < ndomains; nd++)
-#ifndef ENABLE_SOA
-        for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
-        {
-          dist = dtab.r(nn);
-          if (dist < nearcell[p].r)
-          {
-            nearcell[p].r = dist;
-            nearcell[p].i = nd;
-          }
-        }
-#endif
+      for (p = 0; p < ndparticles; p++)
+      {
+        const auto& dist = dtab.getDistRow(p);
+        for (nd = 0; nd < ndomains; nd++)
+              if (dist[nd] < nearcell[p].r)
+              {
+                nearcell[p].r = dist[nd];
+                nearcell[p].i = nd;
+              }
+      }
       //accumulate values for each dynamic particle
       for (p = 0; p < ndparticles; p++)
       {
@@ -995,18 +1016,17 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       //find cell center nearest to each dynamic particle
       int nn;
       RealType dist;
-      for (nd = 0; nd < ndomains; nd++)
-#ifndef ENABLE_SOA
-        for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
-        {
-          dist = dtab.r(nn);
-          if (dist < nearcell[p].r)
-          {
-            nearcell[p].r = dist;
-            nearcell[p].i = nd;
-          }
-        }
-#endif
+      APP_ABORT("SoA transformation needed for Voronoi grids")
+      //for (nd = 0; nd < ndomains; nd++)
+      //  for (nn = dtab.M[nd], p = 0; nn < dtab.M[nd + 1]; ++nn, ++p)
+      //  {
+      //    dist = dtab.r(nn);
+      //    if (dist < nearcell[p].r)
+      //    {
+      //      nearcell[p].r = dist;
+      //      nearcell[p].i = nd;
+      //    }
+      //  }
       //accumulate values for each dynamic particle
       for (p = 0; p < ndparticles; p++)
       {
@@ -1018,7 +1038,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       //accumulate values for static particles (static particles == cell centers)
       for (p = ndparticles, cell_index = 0; p < nparticles; p++, cell_index++)
       {
-        for (v = 0; v < nvalues; v++, buf_index++)
+        for (v = 0; v < nvalues; v++)
           cellsamples(cell_index, v) += values(p, v);
         cellsamples(cell_index, nvalues) += 1.0;
       }

@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
+#include "QMCFixedSampleLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -24,7 +24,7 @@
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
-#include "Numerics/Blasf.h"
+#include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include <cassert>
 #if defined(QMC_CUDA)
@@ -50,10 +50,8 @@ using MatrixOperators::product;
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
                                                            TrialWaveFunction& psi,
                                                            QMCHamiltonian& h,
-                                                           HamiltonianPool& hpool,
-                                                           WaveFunctionPool& ppool,
                                                            Communicate* comm)
-    : QMCLinearOptimize(w, psi, h, hpool, ppool, comm),
+    : QMCLinearOptimize(w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
@@ -99,7 +97,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  QMCType  = "QMCFixedSampleLinearOptimize";
   m_param.add(Max_iterations, "max_its", "int");
   m_param.add(nstabilizers, "nstabilizers", "int");
   m_param.add(stabilizerScale, "stabilizerscale", "double");
@@ -201,17 +198,27 @@ bool QMCFixedSampleLinearOptimize::run()
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
+#if !defined(QMC_COMPLEX)
     app_log() << "Doing hybrid run" << std::endl;
     return hybrid_run();
+#else
+myComm->barrier_and_abort(" Error: Hybrid method does not work with QMC_COMPLEX=1. \n");
+#endif
   }
 
-  // if requested, perform the update via the adaptive three-shift or single-shift method
+if (current_optimizer_type_ == OptimizerType::DESCENT)
+#if !defined(QMC_COMPLEX)
+    return descent_run();
+#else
+myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX=1. \n");
+#endif
+
+
+// if requested, perform the update via the adaptive three-shift or single-shift method
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
     return adaptive_three_shift_run();
 
-  if (current_optimizer_type_ == OptimizerType::DESCENT)
-    return descent_run();
-
+  
 #endif
 
   if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
@@ -414,7 +421,6 @@ bool QMCFixedSampleLinearOptimize::run()
         }
       }
       app_log().flush();
-      app_error().flush();
       if (failedTries > 20)
         break;
       //APP_ABORT("QMCFixedSampleLinearOptimize::run TOO MANY FAILURES");
@@ -433,7 +439,6 @@ bool QMCFixedSampleLinearOptimize::run()
         optTarget->Params(i) = currentParameters[i];
     }
     app_log().flush();
-    app_error().flush();
   }
 
   finish();
@@ -487,12 +492,23 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   previous_optimizer_type_ = current_optimizer_type_;
   current_optimizer_type_  = OptimizerNames.at(MinMethod);
 
-  if (current_optimizer_type_ == OptimizerType::DESCENT && !descentEngineObj)
-    descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
+  if (current_optimizer_type_ == OptimizerType::DESCENT)
+  {
+    if(!descentEngineObj)
+    {
+        descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
+    }
+
+    else
+    {
+        descentEngineObj->processXML(opt_xml);
+    }
+  }
+
 
   // sanity check
-  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE)
-    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive");
+  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE && current_optimizer_type_ != OptimizerType::DESCENT)
+     myComm->barrier_and_abort("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
 
 #ifdef ENABLE_OPENMP
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
@@ -551,10 +567,10 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::
   // {
 #if defined(QMC_CUDA)
   if (useGPU)
-    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, myComm);
   else
 #endif
-    vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMC>(W, Psi, H, myComm);
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   // }
 
@@ -1331,11 +1347,16 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimize::descent_run()
 {
-  start();
+
+    const bool saved_grads_flag = optTarget->getneedGrads();
+
+    //Make sure needGrads is true before engine_checkConfigurations is called
+    optTarget->setneedGrads(true);
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start(EngineObj, *descentEngineObj, MinMethod);
 
+  
   int descent_num = descentEngineObj->getDescentNum();
 
   if (descent_num == 0)
@@ -1345,6 +1366,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
   descentEngineObj->storeDerivRecord();
 
   descentEngineObj->updateParameters();
+
 
   std::vector<ValueType> results = descentEngineObj->retrieveNewParams();
 
@@ -1366,13 +1388,14 @@ bool QMCFixedSampleLinearOptimize::descent_run()
     }
   }
 
+
   finish();
   return (optTarget->getReportCounter() > 0);
 }
 #endif
 
 
-//Function for controlling the alternation between sections of descent optimization and BLM optimization.
+//Function for controlling the alternation between sections of descent optimization and Blocked LM optimization.
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
@@ -1386,6 +1409,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     //of vectors to the BLM engine.
     if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
+        descentEngineObj->resetStorageCount();
       std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
 #if !defined(QMC_COMPLEX)
       //FIXME once complex is fixed in BLM engine
@@ -1393,6 +1417,13 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 #endif
     }
     adaptive_three_shift_run();
+ 
+    app_log() << "Update descent engine parameter values after Blocked LM step" << std::endl;
+    for(int i = 0; i < numParams; i++) 
+    {    
+        ValueType val = optTarget->Params(i);
+        descentEngineObj->setParamVal(i,val);
+    } 
   }
 
   if (current_optimizer_type_ == OptimizerType::DESCENT)

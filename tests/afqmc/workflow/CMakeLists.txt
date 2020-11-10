@@ -3,46 +3,54 @@ MESSAGE("Adding tests for afqmctools and QMCPACK workflow")
 INCLUDE("${qmcpack_SOURCE_DIR}/CMake/test_labels.cmake")
 
 FUNCTION(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS NPROC_INT)
-  SET(TESTDIR "${CMAKE_CURRENT_BINARY_DIR}/qmcpack_${test_name}-16-1")
+  SET(TESTDIR "${CMAKE_CURRENT_BINARY_DIR}/converter_test_qmcpack_${test_name}-16-1")
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory "${input_dir}" "${TESTDIR}")
 
   # 1. Run scf.
-  SET(TESTNAME "pyscf_${test_name}")
-  ADD_TEST(NAME ${TESTNAME} COMMAND python ${TESTDIR}/scf.py gen_test_data WORKING_DIRECTORY ${TESTDIR})
+  SET(TESTNAME "converter_test_pyscf_${test_name}")
+  ADD_TEST(NAME ${TESTNAME} COMMAND ${TESTDIR}/scf.py gen_test_data WORKING_DIRECTORY ${TESTDIR})
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
 
-  # 2. Generate hamiltonian/wavefunction.
+  # 2.a Generate hamiltonian/wavefunction.
   SET(INT_SCRIPT)
-  SET(TESTNAME "pyscf_to_afqmc_${test_name}")
+  SET(TESTNAME "converter_test_pyscf_to_afqmc_${test_name}")
   ADD_TEST(NAME ${TESTNAME}
            COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NPROC_INT} ${MPIEXEC_PREFLAGS}
-           python ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/pyscf_to_afqmc.py ${ARGN}
+           ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/pyscf_to_afqmc.py ${ARGN}
            WORKING_DIRECTORY ${TESTDIR})
-  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "pyscf_${test_name}")
+  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_pyscf_${test_name}")
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc" )
 
-  # 3. Generate xml input.
-  SET(TESTNAME "gen_input_${test_name}")
-  ADD_TEST(NAME ${TESTNAME} COMMAND python "${TESTDIR}/gen_input.py"
+  # 2.b Test Hamiltonian consistency.
+  SET(TESTNAME "converter_test_hamiltonian_consistency_${test_name}")
+  ADD_TEST(NAME ${TESTNAME} COMMAND
+           ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/test_afqmc_input.py --input afqmc.h5
            WORKING_DIRECTORY ${TESTDIR})
-  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "pyscf_to_afqmc_${test_name}")
+  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_pyscf_to_afqmc_${test_name}")
+  SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
+
+  # 3. Generate xml input.
+  SET(TESTNAME "converter_test_gen_input_${test_name}")
+  ADD_TEST(NAME ${TESTNAME} COMMAND "${TESTDIR}/gen_input.py"
+           WORKING_DIRECTORY ${TESTDIR})
+  SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_hamiltonian_consistency_${test_name}")
   SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
 
   # 5. Run AFQMC.
-  SET(TESTNAME "qmcpack_${test_name}")
+  SET(TESTNAME "converter_test_qmcpack_${test_name}")
   QMC_RUN_AND_CHECK(${TESTNAME}
                     ${input_dir}
                     qmc afqmc.xml
                     16 1
                     TRUE
                     0 TEST_SCALARS)
-  SET_TESTS_PROPERTIES(${TESTNAME}-16-1 PROPERTIES  DEPENDS "pyscf_to_afqmc_${test_name}")
+  SET_TESTS_PROPERTIES(${TESTNAME}-16-1 PROPERTIES  DEPENDS "converter_test_pyscf_to_afqmc_${test_name}")
   SET_PROPERTY(TEST ${TESTNAME}-16-1 APPEND PROPERTY LABELS "converter;afqmc")
   IF(TEST_OBS)
-    SET(TESTNAME "qmcpack_obs_${test_name}")
-    ADD_TEST(NAME ${TESTNAME} COMMAND python ${TESTDIR}/reference/test_obs.py
+    SET(TESTNAME "converter_test_qmcpack_obs_${test_name}")
+    ADD_TEST(NAME ${TESTNAME} COMMAND ${TESTDIR}/reference/test_obs.py
              WORKING_DIRECTORY ${TESTDIR})
-    SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "qmcpack_${test_name}-16-1")
+    SET_TESTS_PROPERTIES(${TESTNAME} PROPERTIES  DEPENDS "converter_test_qmcpack_${test_name}-16-1")
     SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
   ENDIF()
 ENDFUNCTION()

@@ -19,7 +19,6 @@
                     0 DIAMOND_SCALARS # VMC
                     )
 
-IF(ENABLE_SOA OR QMC_CUDA)
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short
@@ -28,9 +27,6 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     TRUE
                     0 DIAMOND_SCALARS # VMC
                     )
-ELSE()
-  MESSAGE("Skipping diamondC_1x1x1_hybridrep_pp-vmc_sdj test because neiher SOA nor CUDA is enabled")
-ENDIF()
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -41,7 +37,7 @@ ENDIF()
                     0 DIAMOND_SCALARS # VMC
                     )
 
-IF(NOT QMC_CUDA)
+IF(NOT QMC_CUDA AND NOT ENABLE_OFFLOAD)
   LIST(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
   LIST(APPEND DIAMOND_KSPACE_SCALARS "variance"  "0.312264 0.028662")
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj_kspace
@@ -243,7 +239,7 @@ IF(NOT QMC_CUDA)
                     )
 ENDIF()
 
-IF(NOT QMC_CUDA)
+IF(NOT QMC_CUDA AND NOT ENABLE_OFFLOAD)
   LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
   LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "variance"  "0.312264 0.028662")
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_sdj_kspace
@@ -299,7 +295,7 @@ ENDIF()
 # estimator tests
 INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
 set(stat_python_reqs numpy;h5py)
-CHECK_PYTHON_REQS(stat_python_reqs diamond-estimator add_tests)
+CHECK_PYTHON_REQS(stat_python_reqs diamond-estimator add_estimator_tests)
 if (NOT QMC_CUDA)
   set(NMPI 4)
   set(NOMP 4)
@@ -314,7 +310,7 @@ if (NOT QMC_COMPLEX)
 else()
   set(OFEXT "_comp")
 endif()
-if (add_tests)
+if (add_estimator_tests)
   # density tests
   SIMPLE_RUN_AND_CHECK(
     short-diamondC_1x1x1_pp-vmc-estimator-density
@@ -482,6 +478,22 @@ endif()
 # Deterministic tests
 #
 IF(NOT QMC_CUDA)
+
+  # deterministic estimator tests
+  if (add_estimator_tests AND NOT QMC_MIXED_PRECISION)
+    # spindensity tests
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_spindens_short.in.xml
+      1 1
+      check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short -r qmc-ref/det_qmc_spindens_short.s000.stat_ref_spindensity.dat
+      )
+  endif()
+
+
+  # deterministic scalar tests
+
  IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND_SCALARS "totenergy" "-10.65155712 0.00001582")
    LIST(APPEND DET_DIAMOND_SCALARS "kinetic" "16.03245992 0.00001650")
@@ -605,6 +617,7 @@ IF(NOT QMC_CUDA)
   LIST(APPEND DET_DIAMOND_KSPACE_SCALARS "flux" "-10.16222139 0.000001")
  ENDIF()
 
+IF(NOT ENABLE_OFFLOAD)
   QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     det_qmc_short_kspace
@@ -613,7 +626,7 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND_KSPACE_SCALARS # VMC
                     )
-
+ENDIF()
 
  IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND_DMC_SCALARS "totenergy" "-10.52336521 0.00001129")
@@ -850,7 +863,7 @@ ENDIF()
                     )
 
 
-IF((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA) AND (NOT QMC_COMPLEX) AND ENABLE_SOA)
+IF((NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA) AND (NOT QMC_COMPLEX))
   # DMC cycle 1
   LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "totenergy" "-11.15181221 0.000001")
   LIST(APPEND DET_DIAMOND_DMC_LGTS1_SCALARS "kinetic" "11.34674025 0.000001")
@@ -887,7 +900,16 @@ ENDIF()
   set(traces_python_reqs numpy;h5py)
   CHECK_PYTHON_REQS(traces_python_reqs diamond-traces add_traces_tests)
   if (add_traces_tests)
+   IF (QMC_MIXED_PRECISION)
     # traces with only scalars on
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars.in.xml
+      1 1
+      check_traces.py -p qmc_trace_scalars -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1 --tol=1e-6
+      )
+   ELSE()     
     SIMPLE_RUN_AND_CHECK(
       deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -895,8 +917,18 @@ ENDIF()
       1 1
       check_traces.py -p qmc_trace_scalars -s '0,1' -m 'vmc,dmc' --dmc_steps_exclude=1
       )
+   ENDIF()
 
+   IF (QMC_MIXED_PRECISION)
     # traces with only selective scalars
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_trace_scalars_selective.in.xml
+      1 1
+      check_traces.py -p qmc_trace_scalars_selective -s '0,1' -m 'vmc,dmc' -q 'Kinetic,ElecElec' --dmc_steps_exclude=1 --tol=1e-6
+      )
+   ELSE()
     SIMPLE_RUN_AND_CHECK(
       deterministic-diamondC_1x1x1_pp-vmc-dmc-trace_scalars_sel
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -904,6 +936,7 @@ ENDIF()
       1 1
       check_traces.py -p qmc_trace_scalars_selective -s '0,1' -m 'vmc,dmc' -q 'Kinetic,ElecElec' --dmc_steps_exclude=1
       )
+   ENDIF()
   endif()
 
 # CUDA references
@@ -1239,5 +1272,6 @@ ENDIF()
                     2 DET_DIAMOND_DMC_MWALKERS1_SCALARS # DMC cycle 1
                     3 DET_DIAMOND_DMC_MWALKERS2_SCALARS # DMC cycle 2
                     )
+
 
 ENDIF()

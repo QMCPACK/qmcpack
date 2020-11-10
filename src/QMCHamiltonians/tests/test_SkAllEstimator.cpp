@@ -35,12 +35,10 @@ using std::string;
  */
 
 
-
 namespace qmcplusplus
 {
 TEST_CASE("SkAll", "[hamiltonian]")
 {
-
   // Boiler plate setup
   std::cout << std::fixed;
   std::cout << std::setprecision(8);
@@ -113,7 +111,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   bool lat_okay = doc.parseFromString(lat_xml);
   REQUIRE(lat_okay);
   xmlNodePtr lat_xml_root = doc.getRoot();
-  
+
   std::cout << "\n\n\ntest_SkAllEstimator: START\n";
 
   // Build a ParticleSetPool - makes ParticleSets
@@ -166,7 +164,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
 
   elec->get(std::cout); // print particleset info to stdout
 
-  
+
   // Get the (now assembled) ion ParticleSet, sanity check, report
   bool ion_pset_okay = doc.parseFromString(ion_pset_xml);
   REQUIRE(ion_pset_okay);
@@ -184,11 +182,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
 
 
   // Set up the distance table, match expected layout
-#ifdef ENABLE_SOA
-  const int ee_table_id = elec->addTable(*elec, DT_SOA);
-#else
-  const int ee_table_id = elec->addTable(*elec, DT_AOS);
-#endif
+  const int ee_table_id = elec->addTable(*elec);
 
   const auto& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here
@@ -197,7 +191,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   bool skall_okay = doc.parseFromString(skall_xml);
   REQUIRE(skall_okay);
   xmlNodePtr skall_xml_root = doc.getRoot();
-  
+
   // Make a SkAllEstimator, call put() to set up internals
   SkAllEstimator skall(*ion, *elec);
   skall.put(skall_xml_root);
@@ -218,7 +212,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   // of k-vectors in cartesian coordinates.
   // Luckily, ParticleSet stores that in SK->KLists.kpts_cart
   StructFact* SK = elec->SK;
-  int nkpts = SK->KLists.numk;
+  int nkpts      = SK->KLists.numk;
   std::cout << "\n";
   std::cout << "SkAll results:\n";
   std::cout << std::fixed;
@@ -228,8 +222,8 @@ TEST_CASE("SkAll", "[hamiltonian]")
             << "  " << std::setw(8) << "ky"
             << "  " << std::setw(8) << "kz"
             << "  " << std::setw(8) << "rhok_r"
-	    << "  " << std::setw(8) << "rhok_i"
-	    << "  " << std::setw(8) << "c.c."
+            << "  " << std::setw(8) << "rhok_i"
+            << "  " << std::setw(8) << "c.c."
             << "\n";
   std::cout << "================================================================\n";
 
@@ -237,23 +231,19 @@ TEST_CASE("SkAll", "[hamiltonian]")
   auto rhok = elec->Collectables;
   std::cout << std::fixed;
   std::cout << std::setprecision(5);
-  for (int k=0; k<nkpts; k++)
-    {
-      auto kvec = SK->KLists.kpts_cart[k];
-      RealType kx = kvec[0];
-      RealType ky = kvec[1];
-      RealType kz = kvec[2];
-      RealType rk_r = rhok[nkpts+k];
-      RealType rk_i = rhok[2*nkpts+k];
-      RealType rk_cc   = rhok[k];
-      std::cout << std::setw(4) << k  << "  "
-		<< std::setw(8) << kx << "  "
-		<< std::setw(8) << ky << "  "
-		<< std::setw(8) << kz << "  "
-		<< std::setw(8) << rk_r << "  "
-		<< std::setw(8) << rk_i << "  "
-		<< std::setw(8) << rk_cc << "\n";
-    }
+  for (int k = 0; k < nkpts; k++)
+  {
+    auto kvec      = SK->KLists.kpts_cart[k];
+    RealType kx    = kvec[0];
+    RealType ky    = kvec[1];
+    RealType kz    = kvec[2];
+    RealType rk_r  = rhok[nkpts + k];
+    RealType rk_i  = rhok[2 * nkpts + k];
+    RealType rk_cc = rhok[k];
+    std::cout << std::setw(4) << k << "  " << std::setw(8) << kx << "  " << std::setw(8) << ky << "  " << std::setw(8)
+              << kz << "  " << std::setw(8) << rk_r << "  " << std::setw(8) << rk_i << "  " << std::setw(8) << rk_cc
+              << "\n";
+  }
 
   /*    
     Verify against analytic result:
@@ -286,68 +276,68 @@ TEST_CASE("SkAll", "[hamiltonian]")
     rho( 1.94889,  1.94889,  1.94889)= -1.38359 +  0.30687i
   */
 
-  const RealType eps = 1E-04;           // tolerance
-  REQUIRE(std::fabs(rhok[26]      - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52]      + 3.71748) < eps);
-  REQUIRE(std::fabs(rhok[26 + 1]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 + 1]  + 3.71748) < eps);
-  REQUIRE(std::fabs(rhok[26 + 2]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 + 2]  + 3.71748) < eps);
+  const RealType eps = 1E-04; // tolerance
+  REQUIRE(std::fabs(rhok[26] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52] + 3.71748) < eps);
+  REQUIRE(std::fabs(rhok[26 + 1] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 1] + 3.71748) < eps);
+  REQUIRE(std::fabs(rhok[26 + 2] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 2] + 3.71748) < eps);
 
-  REQUIRE(std::fabs(rhok[26 + 3]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 + 3]  - 3.71748) < eps);
-  REQUIRE(std::fabs(rhok[26 + 4]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 + 4]  - 3.71748) < eps);
-  REQUIRE(std::fabs(rhok[26 + 5]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 + 5]  - 3.71748) < eps);
+  REQUIRE(std::fabs(rhok[26 + 3] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 3] - 3.71748) < eps);
+  REQUIRE(std::fabs(rhok[26 + 4] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 4] - 3.71748) < eps);
+  REQUIRE(std::fabs(rhok[26 + 5] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 5] - 3.71748) < eps);
 
-  REQUIRE(std::fabs(rhok[26 + 6]  + 0.93151) < eps);
-  REQUIRE(std::fabs(rhok[52 + 6]  + 2.34518) < eps);
-  REQUIRE(std::fabs(rhok[26 + 7]  + 0.93151) < eps);
-  REQUIRE(std::fabs(rhok[52 + 7]  + 2.34518) < eps);
-  REQUIRE(std::fabs(rhok[26 + 8]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 + 8]  - 0.00000) < eps);
+  REQUIRE(std::fabs(rhok[26 + 6] + 0.93151) < eps);
+  REQUIRE(std::fabs(rhok[52 + 6] + 2.34518) < eps);
+  REQUIRE(std::fabs(rhok[26 + 7] + 0.93151) < eps);
+  REQUIRE(std::fabs(rhok[52 + 7] + 2.34518) < eps);
+  REQUIRE(std::fabs(rhok[26 + 8] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 8] - 0.00000) < eps);
 
-  REQUIRE(std::fabs(rhok[26 + 9]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 + 9]  - 0.00000) < eps);
-  REQUIRE(std::fabs(rhok[26 +10]  + 0.93151) < eps);
-  REQUIRE(std::fabs(rhok[52 +10]  + 2.34518) < eps);
-  REQUIRE(std::fabs(rhok[26 +11]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 +11]  - 0.00000) < eps);
+  REQUIRE(std::fabs(rhok[26 + 9] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 9] - 0.00000) < eps);
+  REQUIRE(std::fabs(rhok[26 + 10] + 0.93151) < eps);
+  REQUIRE(std::fabs(rhok[52 + 10] + 2.34518) < eps);
+  REQUIRE(std::fabs(rhok[26 + 11] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 11] - 0.00000) < eps);
 
-  REQUIRE(std::fabs(rhok[26 +12]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 +12]  - 0.00000) < eps);
-  REQUIRE(std::fabs(rhok[26 +13]  + 0.93151) < eps);
-  REQUIRE(std::fabs(rhok[52 +13]  - 2.34518) < eps);
-  REQUIRE(std::fabs(rhok[26 +14]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 +14]  - 0.00000) < eps);
+  REQUIRE(std::fabs(rhok[26 + 12] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 12] - 0.00000) < eps);
+  REQUIRE(std::fabs(rhok[26 + 13] + 0.93151) < eps);
+  REQUIRE(std::fabs(rhok[52 + 13] - 2.34518) < eps);
+  REQUIRE(std::fabs(rhok[26 + 14] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 14] - 0.00000) < eps);
 
-  REQUIRE(std::fabs(rhok[26 +15]  - 2.52341) < eps);
-  REQUIRE(std::fabs(rhok[52 +15]  - 0.00000) < eps);
-  REQUIRE(std::fabs(rhok[26 +16]  + 0.93151) < eps);
-  REQUIRE(std::fabs(rhok[52 +16]  - 2.34518) < eps);
-  REQUIRE(std::fabs(rhok[26 +17]  + 0.93151) < eps);
-  REQUIRE(std::fabs(rhok[52 +17]  - 2.34518) < eps);
+  REQUIRE(std::fabs(rhok[26 + 15] - 2.52341) < eps);
+  REQUIRE(std::fabs(rhok[52 + 15] - 0.00000) < eps);
+  REQUIRE(std::fabs(rhok[26 + 16] + 0.93151) < eps);
+  REQUIRE(std::fabs(rhok[52 + 16] - 2.34518) < eps);
+  REQUIRE(std::fabs(rhok[26 + 17] + 0.93151) < eps);
+  REQUIRE(std::fabs(rhok[52 + 17] - 2.34518) < eps);
 
-  REQUIRE(std::fabs(rhok[26 +18]  + 1.38359) < eps);
-  REQUIRE(std::fabs(rhok[52 +18]  + 0.30687) < eps);
-  REQUIRE(std::fabs(rhok[26 +19]  - 0.79595) < eps);
-  REQUIRE(std::fabs(rhok[52 +19]  + 1.17259) < eps);
-  REQUIRE(std::fabs(rhok[26 +20]  - 0.79595) < eps);
-  REQUIRE(std::fabs(rhok[52 +20]  + 1.17259) < eps);
+  REQUIRE(std::fabs(rhok[26 + 18] + 1.38359) < eps);
+  REQUIRE(std::fabs(rhok[52 + 18] + 0.30687) < eps);
+  REQUIRE(std::fabs(rhok[26 + 19] - 0.79595) < eps);
+  REQUIRE(std::fabs(rhok[52 + 19] + 1.17259) < eps);
+  REQUIRE(std::fabs(rhok[26 + 20] - 0.79595) < eps);
+  REQUIRE(std::fabs(rhok[52 + 20] + 1.17259) < eps);
 
-  REQUIRE(std::fabs(rhok[26 +21]  - 0.79595) < eps);
-  REQUIRE(std::fabs(rhok[52 +21]  - 1.17259) < eps);
-  REQUIRE(std::fabs(rhok[26 +22]  - 0.79595) < eps);
-  REQUIRE(std::fabs(rhok[52 +22]  + 1.17259) < eps);
-  REQUIRE(std::fabs(rhok[26 +23]  - 0.79595) < eps);
-  REQUIRE(std::fabs(rhok[52 +23]  - 1.17259) < eps);
+  REQUIRE(std::fabs(rhok[26 + 21] - 0.79595) < eps);
+  REQUIRE(std::fabs(rhok[52 + 21] - 1.17259) < eps);
+  REQUIRE(std::fabs(rhok[26 + 22] - 0.79595) < eps);
+  REQUIRE(std::fabs(rhok[52 + 22] + 1.17259) < eps);
+  REQUIRE(std::fabs(rhok[26 + 23] - 0.79595) < eps);
+  REQUIRE(std::fabs(rhok[52 + 23] - 1.17259) < eps);
 
-  REQUIRE(std::fabs(rhok[26 +24]  - 0.79595) < eps);
-  REQUIRE(std::fabs(rhok[52 +24]  - 1.17259) < eps);
-  REQUIRE(std::fabs(rhok[26 +25]  + 1.38359) < eps);
-  REQUIRE(std::fabs(rhok[52 +25]  - 0.30687) < eps);
-  
+  REQUIRE(std::fabs(rhok[26 + 24] - 0.79595) < eps);
+  REQUIRE(std::fabs(rhok[52 + 24] - 1.17259) < eps);
+  REQUIRE(std::fabs(rhok[26 + 25] + 1.38359) < eps);
+  REQUIRE(std::fabs(rhok[52 + 25] - 0.30687) < eps);
+
   std::cout << "test_SkAllEstimator:: STOP\n";
 }
-} // namespace qmcplusplus 
+} // namespace qmcplusplus

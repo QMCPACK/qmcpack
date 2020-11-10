@@ -17,7 +17,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "Message/CommOperators.h"
 #include <fftw3.h>
-#include <QMCWaveFunctions/einspline_helper.hpp>
+#include "QMCWaveFunctions/einspline_helper.hpp"
 
 namespace qmcplusplus
 {
@@ -631,7 +631,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
 //			ru[2] = (RealType)iz / (RealType)nz;
 //			double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
 //			double s, c;
-//			sincos(phi, &s, &c);
+//			qmcplusplus::sincos(phi, &s, &c);
 //			complex<double> phase(c,s);
 //			complex<double> z = phase*rawData(ix,iy,iz);
 //			splineData(ix,iy,iz) = z.real();

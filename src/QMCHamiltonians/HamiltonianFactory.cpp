@@ -22,7 +22,7 @@
 /**@file HamiltonianFactory.cpp
  *@brief Definition of a HamiltonianFactory
  */
-#include "QMCHamiltonians/HamiltonianFactory.h"
+#include "HamiltonianFactory.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
@@ -32,7 +32,6 @@
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
-#include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
 #include "QMCHamiltonians/HarmonicExternalPotential.h"
@@ -59,14 +58,25 @@
 
 namespace qmcplusplus
 {
-HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c)
-    : MPIObjectBase(c), targetPtcl(qp), targetH(0), ptclPool(pset), psiPool(oset), myNode(NULL), psiName("psi0")
+HamiltonianFactory::HamiltonianFactory(const std::string& hName,
+                                       ParticleSet& qp,
+                                       PtclPoolType& pset,
+                                       PsiPoolType& oset,
+                                       Communicate* c)
+    : MPIObjectBase(c),
+      targetH(std::make_unique<QMCHamiltonian>(hName)),
+      targetPtcl(qp),
+      ptclPool(pset),
+      psiPool(oset),
+      myNode(NULL),
+      psiName("psi0")
 {
   //PBCType is zero or 1 but should be generalized
-  PBCType   = targetPtcl->Lattice.SuperCellEnum;
+  PBCType   = targetPtcl.Lattice.SuperCellEnum;
   ClassName = "HamiltonianFactory";
-  myName    = "psi0";
-  targetPtcl->set_quantum();
+  myName    = hName;
+  targetPtcl.set_quantum();
+  targetH->addOperator(new BareKineticEnergy<OHMMS_PRECISION_FULL>(targetPtcl), "Kinetic");
 }
 
 /** main hamiltonian build function
@@ -86,6 +96,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 {
   if (cur == NULL)
     return false;
+
+  app_summary() << std::endl;
+  app_summary() << " Hamiltonian and observables" << std::endl;
+  app_summary() << " ---------------------------" << std::endl;
+  app_summary() << "  Name: " << myName << std::endl;
+  app_summary() << std::endl;
+
   std::string htype("generic"), source("i"), defaultKE("yes");
   OhmmsAttributeSet hAttrib;
   hAttrib.add(htype, "type");
@@ -112,16 +129,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       attach2Node = true;
     }
   }
-  if (targetH == 0)
-  {
-    targetH = new QMCHamiltonian;
-    targetH->setName(myName);
-    targetH->addOperator(new BareKineticEnergy<OHMMS_PRECISION_FULL>(*targetPtcl), "Kinetic");
-  }
-  OrbitalPoolType::iterator psi_it(psiPool.find(psiName));
+  PsiPoolType::iterator psi_it(psiPool.find(psiName));
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
-  TrialWaveFunction* targetPsi = psi_it->second->targetPsi;
+  TrialWaveFunction* targetPsi = psi_it->second->getTWF();
   xmlNodePtr cur_saved(cur);
   cur = cur->children;
   while (cur != NULL)
@@ -133,8 +144,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     std::string potName(noname);
     std::string potUnit("hartree");
     std::string estType("coulomb");
-    std::string sourceInp(targetPtcl->getName());
-    std::string targetInp(targetPtcl->getName());
+    std::string sourceInp(targetPtcl.getName());
+    std::string targetInp(targetPtcl.getName());
     OhmmsAttributeSet attrib;
     attrib.add(sourceInp, "source");
     attrib.add(sourceInp, "sources");
@@ -157,7 +168,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 #if !defined(QMC_CUDA)
       else if (potType == "skpot")
       {
-        SkPot* hs = new SkPot(*targetPtcl);
+        SkPot* hs = new SkPot(targetPtcl);
         hs->put(cur);
         targetH->addOperator(hs, "SkPot", true);
       }
@@ -167,12 +178,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         addMPCPotential(cur);
       else if (potType == "pseudo")
         addPseudoPotential(cur);
-#if !defined(QMC_CUDA)
-      else if (potType == "cpp")
-      {
-        addCorePolPotential(cur);
-      }
-#endif
 #endif
     }
     else if (cname == "constant")
@@ -185,13 +190,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     {
       if (potType == "harmonic_ext" || potType == "HarmonicExt")
       {
-        HarmonicExternalPotential* hs = new HarmonicExternalPotential(*targetPtcl);
+        HarmonicExternalPotential* hs = new HarmonicExternalPotential(targetPtcl);
         hs->put(cur);
         targetH->addOperator(hs, "HarmonicExt", true);
       }
       if (potType == "grid")
       {
-        GridExternalPotential* hs = new GridExternalPotential(*targetPtcl);
+        GridExternalPotential* hs = new GridExternalPotential(targetPtcl);
         hs->put(cur);
         targetH->addOperator(hs, "Grid", true);
       }
@@ -204,7 +209,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
       else if (potType == "specieskinetic")
       {
-        SpeciesKineticEnergy* apot = new SpeciesKineticEnergy(*targetPtcl);
+        SpeciesKineticEnergy* apot = new SpeciesKineticEnergy(targetPtcl);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -244,23 +249,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
       else if (potType == "gofr")
       {
-        PairCorrEstimator* apot = new PairCorrEstimator(*targetPtcl, sourceInp);
-        apot->put(cur);
-        targetH->addOperator(apot, potName, false);
-      }
-      else if (potType == "localmoment")
-      {
-        std::string SourceName = "ion0";
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(SourceName, "source");
-        hAttrib.put(cur);
-        PtclPoolType::iterator pit(ptclPool.find(SourceName));
-        if (pit == ptclPool.end())
-        {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for LocalMoment.");
-        }
-        ParticleSet* source        = (*pit).second;
-        LocalMomentEstimator* apot = new LocalMomentEstimator(*targetPtcl, *source);
+        PairCorrEstimator* apot = new PairCorrEstimator(targetPtcl, sourceInp);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -268,7 +257,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         //          if(PBCType)//only if perioidic
         {
-          DensityEstimator* apot = new DensityEstimator(*targetPtcl);
+          DensityEstimator* apot = new DensityEstimator(targetPtcl);
           apot->put(cur);
           targetH->addOperator(apot, potName, false);
         }
@@ -276,21 +265,21 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if (potType == "spindensity")
       {
         app_log() << "  Adding SpinDensity" << std::endl;
-        SpinDensity* apot = new SpinDensity(*targetPtcl);
+        SpinDensity* apot = new SpinDensity(targetPtcl);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
       else if (potType == "structurefactor")
       {
         app_log() << "  Adding StaticStructureFactor" << std::endl;
-        StaticStructureFactor* apot = new StaticStructureFactor(*targetPtcl);
+        StaticStructureFactor* apot = new StaticStructureFactor(targetPtcl);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
       else if (potType == "orbitalimages")
       {
         app_log() << "  Adding OrbitalImages" << std::endl;
-        OrbitalImages* apot = new OrbitalImages(*targetPtcl, ptclPool, myComm);
+        OrbitalImages* apot = new OrbitalImages(targetPtcl, ptclPool, myComm);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -319,7 +308,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
-        DensityMatrices1B* apot = new DensityMatrices1B(*targetPtcl, *targetPsi, Pc);
+        DensityMatrices1B* apot = new DensityMatrices1B(targetPtcl, *targetPsi, Pc);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -329,9 +318,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if (PBCType) //only if perioidic
         {
 #ifdef QMC_CUDA
-          SkEstimator_CUDA* apot = new SkEstimator_CUDA(*targetPtcl);
+          SkEstimator_CUDA* apot = new SkEstimator_CUDA(targetPtcl);
 #else
-          SkEstimator* apot = new SkEstimator(*targetPtcl);
+          SkEstimator* apot = new SkEstimator(targetPtcl);
 #endif
           apot->put(cur);
           targetH->addOperator(apot, potName, false);
@@ -356,12 +345,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
           APP_ABORT("Unknown source \"" + SourceName + "\" for Chiesa correction.");
         }
         ParticleSet& source = *pit->second;
-        OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+        PsiPoolType::iterator psi_it(psiPool.find(PsiName));
         if (psi_it == psiPool.end())
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for Chiesa correction.");
         }
-        const TrialWaveFunction& psi = *psi_it->second->targetPsi;
+        const TrialWaveFunction& psi = *psi_it->second->getTWF();
         ChiesaCorrection* chiesa     = new ChiesaCorrection(source, psi);
         targetH->addOperator(chiesa, "KEcorr", false);
       }
@@ -375,13 +364,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         PtclPoolType::iterator pit(ptclPool.find(SourceName));
         if (pit == ptclPool.end())
         {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for LocalMoment.");
+          APP_ABORT("Unknown source \"" + SourceName + "\" for SkAll.");
         }
         ParticleSet* source = (*pit).second;
 
         if (PBCType)
         {
-          SkAllEstimator* apot = new SkAllEstimator(*source, *targetPtcl);
+          SkAllEstimator* apot = new SkAllEstimator(*source, targetPtcl);
           apot->put(cur);
           targetH->addOperator(apot, potName, false);
           app_log() << "Adding S(k) ALL estimator" << std::endl;
@@ -393,13 +382,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         if (estType == "coulomb")
         {
-          Pressure* BP = new Pressure(*targetPtcl);
+          Pressure* BP = new Pressure(targetPtcl);
           BP->put(cur);
           targetH->addOperator(BP, "Pressure", false);
           int nlen(100);
           attrib.add(nlen, "truncateSum");
           attrib.put(cur);
-          //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
+          //             DMCPressureCorr* DMCP = new DMCPressureCorr(targetPtcl,nlen);
           //             targetH->addOperator(DMCP,"PressureSum",false);
         }
       }
@@ -410,15 +399,15 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         OhmmsAttributeSet hAttrib;
         hAttrib.add(PsiName, "wavefunction");
         hAttrib.put(cur);
-        OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+        PsiPoolType::iterator psi_it(psiPool.find(PsiName));
         if (psi_it == psiPool.end())
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");
         }
-        TrialWaveFunction* psi = (*psi_it).second->targetPsi;
-        MomentumEstimator* ME  = new MomentumEstimator(*targetPtcl, *psi);
+        TrialWaveFunction* psi = (*psi_it).second->getTWF();
+        MomentumEstimator* ME  = new MomentumEstimator(targetPtcl, *psi);
         bool rt(myComm->rank() == 0);
-        ME->putSpecial(cur, *targetPtcl, rt);
+        ME->putSpecial(cur, targetPtcl, rt);
         targetH->addOperator(ME, "MomentumEstimator", false);
       }
     }
@@ -448,7 +437,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     cur = cur->next;
   }
   //add observables with physical and simple estimators
-  int howmany = targetH->addObservables(*targetPtcl);
+  int howmany = targetH->addObservables(targetPtcl);
   //do correction
   bool dmc_correction = false;
   cur                 = cur_saved->children;
@@ -465,13 +454,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         app_log() << "  Not Adding ZeroVarObs Operator" << std::endl;
         //         ZeroVarObs* FW=new ZeroVarObs();
-        //         FW->put(cur,*targetH,*targetPtcl);
+        //         FW->put(cur,*targetH,targetPtcl);
         //         targetH->addOperator(FW,"ZeroVarObs",false);
       }
       //         else if(potType == "DMCCorrection")
       //         {
       //           TrialDMCCorrection* TE = new TrialDMCCorrection();
-      //           TE->putSpecial(cur,*targetH,*targetPtcl);
+      //           TE->putSpecial(cur,*targetH,targetPtcl);
       //           targetH->addOperator(TE,"DMC_CORR",false);
       //           dmc_correction=true;
       //         }
@@ -479,7 +468,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         app_log() << "  Adding Forward Walking Operator" << std::endl;
         ForwardWalking* FW = new ForwardWalking();
-        FW->putSpecial(cur, *targetH, *targetPtcl);
+        FW->putSpecial(cur, *targetH, targetPtcl);
         targetH->addOperator(FW, "ForwardWalking", false);
         dmc_correction = true;
       }
@@ -488,22 +477,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   }
   //evaluate the observables again
   if (dmc_correction)
-    howmany = targetH->addObservables(*targetPtcl);
+    howmany = targetH->addObservables(targetPtcl);
   return true;
 }
 
 
 void HamiltonianFactory::renameProperty(const std::string& a, const std::string& b) { RenamedProperty[a] = b; }
-
-void HamiltonianFactory::setCloneSize(int np) { myClones.resize(np, 0); }
-
-//TrialWaveFunction*
-//HamiltonianFactory::cloneWaveFunction(ParticleSet* qp, int ip) {
-//  HamiltonianFactory* aCopy= new HamiltonianFactory(qp,ptclPool);
-//  aCopy->put(myNode,false);
-//  myClones[ip]=aCopy;
-//  return aCopy->targetPsi;
-//}
 
 void HamiltonianFactory::renameProperty(std::string& aname)
 {
@@ -513,22 +492,6 @@ void HamiltonianFactory::renameProperty(std::string& aname)
     aname = (*it).second;
   }
 }
-HamiltonianFactory::~HamiltonianFactory()
-{
-  //clean up everything
-}
-
-HamiltonianFactory* HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction* psi, int ip, const std::string& aname)
-{
-  HamiltonianFactory* aCopy = new HamiltonianFactory(qp, ptclPool, psiPool, myComm);
-  aCopy->setName(aname);
-  aCopy->renameProperty("e", qp->getName());
-  aCopy->renameProperty(psiName, psi->getName());
-  aCopy->build(myNode, false);
-  myClones[ip] = aCopy;
-  //aCopy->get(app_log());
-  return aCopy;
-}
 
 bool HamiltonianFactory::put(xmlNodePtr cur)
 {
@@ -536,5 +499,4 @@ bool HamiltonianFactory::put(xmlNodePtr cur)
   return success;
 }
 
-void HamiltonianFactory::reset() {}
 } // namespace qmcplusplus
