@@ -2,7 +2,7 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+## [3.10.0] - 2020-11-10
 
 ### Notes
 
@@ -24,7 +24,7 @@ an important wavefunction optimization bug fixed in real space QMC.
 * Intel 2019 is the earliest supported Intel compiler. The latest release is recommended.
 * Future releases of QMCPACK will require C++17. The current minimum is C++14.
 * AoS builds are no longer supported. The code has been removed now that the default structures-of-arrays (SoA) build has
-  sufficiently broad capability. 
+  sufficiently broad capability.
 * The default CUDA architecture is set to sm_70 (Volta).
 * QMCPACK is built with ENABLE_TIMERS=ON by default [\#2663](https://github.com/QMCPACK/qmcpack/issues/2663)
 * Various bug fixes to complete the transition to Python 3.
@@ -33,7 +33,7 @@ an important wavefunction optimization bug fixed in real space QMC.
 ### NEXUS
 
 * NEXUS manual is now available at https://nexus-workflows.readthedocs.io, having been converted to use the reStructuredText and sphinx
-  documentation system. 
+  documentation system.
 * Various small fixes and improvements.
 
 ## [3.9.2] - 2020-04-29
