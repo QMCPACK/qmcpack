@@ -723,7 +723,7 @@ ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
 OPTION(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF)
 IF(USE_NVTX_API)
-  IF(HAVE_CUDA)
+  IF(HAVE_CUDA OR ENABLE_OFFLOAD)
     FIND_LIBRARY(NVTX_API_LIB
       NAME nvToolsExt
       HINTS ${CUDA_TOOLKIT_ROOT_DIR}
@@ -733,7 +733,7 @@ IF(USE_NVTX_API)
     ENDIF(NOT NVTX_API_LIB)
     MESSAGE("CUDA nvToolsExt library: ${NVTX_API_LIB}")
     LINK_LIBRARIES(${NVTX_API_LIB})
-  ENDIF(HAVE_CUDA)
+  ENDIF(HAVE_CUDA OR ENABLE_OFFLOAD)
 ENDIF(USE_NVTX_API)
 
 #-------------------------------------------------------------------

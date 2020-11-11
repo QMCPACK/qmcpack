@@ -45,6 +45,10 @@ void TimerType<CLOCK>::start()
     __itt_task_begin(manager->task_domain, __itt_null, parent_task, task_name);
 #endif
 
+#ifdef USE_NVTX_API
+    nvtxRangePushA(name.c_str());
+#endif
+
     bool is_true_master(true);
     for (int level = omp_get_level(); level > 0; level--)
       if (omp_get_ancestor_thread_num(level) != 0)
@@ -88,6 +92,10 @@ void TimerType<CLOCK>::stop()
 
 #ifdef USE_VTUNE_TASKS
     __itt_task_end(manager->task_domain);
+#endif
+
+#ifdef USE_NVTX_API
+    nvtxRangePop();
 #endif
 
     bool is_true_master(true);
