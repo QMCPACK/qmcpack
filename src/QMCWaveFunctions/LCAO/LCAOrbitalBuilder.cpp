@@ -901,7 +901,12 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   }
 
   char name[72];
-  sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
+  bool PBC = false;
+  hin.read(PBC, "/PBC/PBC");
+  if (MultiDet && PBC)
+    sprintf(name, "%s%d", "/Super_Twist/eigenset_unsorted_", setVal);
+  else
+    sprintf(name, "%s%d", "/Super_Twist/eigenset_", setVal);
   readRealMatrixFromH5(hin, name, Creal);
 }
 
