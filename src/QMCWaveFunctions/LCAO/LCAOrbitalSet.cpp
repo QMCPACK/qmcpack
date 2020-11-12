@@ -25,6 +25,8 @@ LCAOrbitalSet::LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize)
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
   Tempgh.resize(BasisSetSize);
+  OrbitalSetSize = BasisSetSize;
+  LCAOrbitalSet::checkObject();
 }
 
 LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
@@ -33,29 +35,27 @@ LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
   Tempgh.resize(BasisSetSize);
-  setOrbitalSetSize(in.OrbitalSetSize);
+  if (!in.Identity)
+  {
+    Tempv.resize(OrbitalSetSize);
+    Temphv.resize(OrbitalSetSize);
+    Tempghv.resize(OrbitalSetSize);
+  }
+  LCAOrbitalSet::checkObject();
 }
 
-
-bool LCAOrbitalSet::setIdentity(bool useIdentity)
+void LCAOrbitalSet::setOrbitalSetSize(int norbs)
 {
-  Identity = useIdentity;
-  if (Identity)
-    return true;
+  if(C)
+    throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize cannot reset existing MO coefficients");
 
-  if (!C && (OrbitalSetSize > 0) && (BasisSetSize > 0))
-  {
-    C = std::make_shared<ValueMatrix_t>(OrbitalSetSize, BasisSetSize);
-  }
-  else
-  {
-    app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
-    app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
-    app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
-    APP_ABORT("LCAOrbitalBuilder::setIdentiy ");
-  }
-
-  return true;
+  Identity = false;
+  OrbitalSetSize = norbs;
+  C = std::make_shared<ValueMatrix_t>(OrbitalSetSize, BasisSetSize);
+  Tempv.resize(OrbitalSetSize);
+  Temphv.resize(OrbitalSetSize);
+  Tempghv.resize(OrbitalSetSize);
+  LCAOrbitalSet::checkObject();
 }
 
 void LCAOrbitalSet::checkObject() const

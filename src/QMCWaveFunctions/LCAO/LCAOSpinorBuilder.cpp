@@ -119,8 +119,6 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     myComm->barrier_and_abort("LCASpinorBuilder::loadMO  detected ZERO BasisSetSize");
     return false;
   }
-  up.setIdentity(false);
-  dn.setIdentity(false);
 
   int norbs = up.getOrbitalSetSize();
 

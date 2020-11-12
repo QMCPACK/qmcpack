@@ -35,11 +35,9 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
   LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  phi.setIdentity(false);
 
   LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  eta.setIdentity(false);
 
 
   std::vector<bool> corrCenter(num_centers, "true");
@@ -201,11 +199,9 @@ void generateCuspInfo(int orbital_set_size,
 
   LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  phi.setIdentity(false);
 
   LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  eta.setIdentity(false);
 
 
   std::vector<bool> corrCenter(num_centers, "true");
@@ -233,11 +229,9 @@ void generateCuspInfo(int orbital_set_size,
 
       LCAOrbitalSet local_phi(std::unique_ptr<LCAOrbitalSet::basis_type>(phi.myBasisSet->makeClone()), phi.isOptimizable());
       local_phi.setOrbitalSetSize(phi.getOrbitalSetSize());
-      local_phi.setIdentity(false);
 
       LCAOrbitalSet local_eta(std::unique_ptr<LCAOrbitalSet::basis_type>(eta.myBasisSet->makeClone()), eta.isOptimizable());
       local_eta.setOrbitalSetSize(eta.getOrbitalSetSize());
-      local_eta.setIdentity(false);
 
 #pragma omp critical
       app_log() << "   Working on MO: " << mo_idx << " Center: " << center_idx << std::endl;

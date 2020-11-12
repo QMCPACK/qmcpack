@@ -524,7 +524,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
   aAttrib.add(debugc, "debug");
   aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
-  spo.setOrbitalSetSize(norb);
   xmlNodePtr occ_ptr   = NULL;
   xmlNodePtr coeff_ptr = NULL;
   cur                  = cur->xmlChildrenNode;
@@ -544,8 +543,9 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
   if (coeff_ptr == NULL)
   {
     app_log() << "   Using Identity for the LCOrbitalSet " << std::endl;
-    return spo.setIdentity(true);
+    return true;
   }
+  spo.setOrbitalSetSize(norb);
   bool success = putOccupation(spo, occ_ptr);
   if (h5_path == "")
     success = putFromXML(spo, coeff_ptr);
@@ -592,7 +592,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
 
 bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-  spo.Identity = true;
   int norbs    = 0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norbs, "size");
@@ -608,7 +607,6 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     std::vector<ValueType> Ctemp;
     int BasisSetSize = spo.getBasisSetSize();
     Ctemp.resize(norbs * BasisSetSize);
-    spo.setIdentity(false);
     putContent(Ctemp, coeff_ptr);
     int n = 0, i = 0;
     std::vector<ValueType>::iterator cit(Ctemp.begin());
@@ -641,7 +639,6 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(neigs, "size");
   aAttrib.add(neigs, "orbitals");
   aAttrib.put(coeff_ptr);
-  spo.setIdentity(false);
   hdf_archive hin(myComm);
   if (myComm->rank() == 0)
   {
@@ -723,7 +720,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(neigs, "size");
   aAttrib.add(neigs, "orbitals");
   aAttrib.put(coeff_ptr);
-  spo.setIdentity(false);
   hdf_archive hin(myComm);
 
   xmlNodePtr curtemp = coeff_ptr;

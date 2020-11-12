@@ -126,11 +126,9 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcob->myBasisSet->makeClone()), lcob->isOptimizable());
   phi.setOrbitalSetSize(lcob->getOrbitalSetSize());
-  phi.setIdentity(false);
 
   LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcob->myBasisSet->makeClone()), lcob->isOptimizable());
   eta.setOrbitalSetSize(lcob->getOrbitalSetSize());
-  eta.setIdentity(false);
 
   *(eta.C) = *(lcob->C);
   *(phi.C) = *(lcob->C);

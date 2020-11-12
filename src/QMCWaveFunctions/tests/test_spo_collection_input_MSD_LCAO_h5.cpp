@@ -26,7 +26,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-void test_LiH_msd_xml_input(const std::string& spo_xml_string)
+void test_LiH_msd_xml_input(const std::string& spo_xml_string, const std::string& check_sponame, int check_spo_size, int check_basisset_size)
 {
   Communicate* c;
   c = OHMMS::Controller;
@@ -35,7 +35,7 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string)
   ParticleSet elec_;
 
   ions_.setName("ion0");
-  ions_.create(2);
+  ions_.create({1,1});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {0.0, 0.0, 3.0139239693};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
@@ -73,6 +73,11 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string)
   WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
   wf_factory.put(ein_xml);
 
+  SPOSet* spo_ptr(get_sposet(check_sponame));
+  REQUIRE(spo_ptr != nullptr);
+  REQUIRE(spo_ptr->getOrbitalSetSize() == check_spo_size);
+  REQUIRE(spo_ptr->getBasisSetSize() == check_basisset_size);
+
   SPOSetBuilderFactory::clear();
 }
 
@@ -84,8 +89,11 @@ TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
   app_log() << "LiH_msd input style 1 using sposet_collection" << std::endl;
   app_log() << "-------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" transform=\"yes\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\"> \
+    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
+      <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"yes\"> \
+        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
+      </basisset> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\" spindataset=\"0\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"85\" spindataset=\"0\"/> \
       </sposet> \
@@ -101,7 +109,7 @@ TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
     </determinantset> \
 </wavefunction> \
 ";
-  test_LiH_msd_xml_input(spo_xml_string1);
+  test_LiH_msd_xml_input(spo_xml_string1, "spo-up", 85, 105);
 
   app_log() << "-------------------------------------------------------------" << std::endl;
   app_log() << "LiH_msd input style 2 using sposet_collection" << std::endl;
@@ -120,7 +128,7 @@ TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
     </determinantset> \
 </wavefunction> \
 ";
-  test_LiH_msd_xml_input(spo_xml_string2);
+  test_LiH_msd_xml_input(spo_xml_string2, "spo", 85, 105);
 
   app_log() << "-------------------------------------------------------------" << std::endl;
   app_log() << "LiH_msd input style 3 sposet inside determinantset" << std::endl;
@@ -141,6 +149,6 @@ TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
     </determinantset> \
 </wavefunction> \
 ";
-  test_LiH_msd_xml_input(spo_xml_string3);
+  test_LiH_msd_xml_input(spo_xml_string3, "spo-up", 85, 105);
 }
 } // namespace qmcplusplus

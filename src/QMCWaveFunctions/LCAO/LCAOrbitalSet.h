@@ -69,23 +69,19 @@ public:
     APP_ABORT("LCAOrbitalSet should not call resetParameters");
   }
 
-  /** set the OrbitalSetSize
+  /** set the OrbitalSetSize and Identity=false and initialize internal storages
     */
-  virtual void setOrbitalSetSize(int norbs) override
-  {
-    OrbitalSetSize = norbs;
-    Tempv.resize(OrbitalSetSize);
-    Temphv.resize(OrbitalSetSize);
-    Tempghv.resize(OrbitalSetSize);
-  }
+  virtual void setOrbitalSetSize(int norbs) override;
 
   /** return the size of the basis set
     */
   int getBasisSetSize() const override { return (myBasisSet == nullptr) ? 0 : myBasisSet->getBasisSetSize(); }
 
-  bool setIdentity(bool useIdentity);
   bool isIdentity() const { return Identity; };
 
+  /** check consistency between Identity and C
+    *
+    */
   void checkObject() const override;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
@@ -276,7 +272,6 @@ private:
                                   HessMatrix_t& dglogdet,
                                   GradMatrix_t& dllogdet) const;
 
-  friend class LCAOrbitalBuilder;
 };
 } // namespace qmcplusplus
 #endif
