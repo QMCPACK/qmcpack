@@ -1,11 +1,11 @@
 # Getting and building QMCPACK
 
  Obtain the latest release from https://github.com/QMCPACK/qmcpack/releases or clone the development source from
- https://github.com/QMCPACK/qmcpack. 
+ https://github.com/QMCPACK/qmcpack.
 
 # Prerequisites
 
- * C++ 14 and C99 capable compilers. 
+ * C++17 and C99 capable compilers.
  * CMake v3.10.0 or later, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library. Use platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
@@ -26,7 +26,7 @@ Nightly testing currently includes the following software versions on x86:
 * Compilers
   * GCC 10.2.0, 7.3.0
   * Clang/LLVM 10.0.1, 6.0.1
-  * Intel 19.1.1.217 configured to use C++ library from GCC 8.3.0 
+  * Intel 19.1.1.217 configured to use C++ library from GCC 8.3.0
   * PGI 19.4 configured to use C++ library from GCC 8.3.0
 * Boost 1.74.0, 1.68.0
 * HDF5 1.10.5, 1.8.19
@@ -313,7 +313,7 @@ These tests currently take a few seconds to run, and include all the
  significant problem that should be solved before using QMCPACK
  further. This ctest invocation can be used as part of an automated
  installation verification process.
- 
+
 ## Run the short (quick) tests
 
  From the build directory, invoke ctest specifying only tests
@@ -336,7 +336,7 @@ ctest -R name-of-test-to-run
 # Documentation and support
 
 For more informaton, consult QMCPACK pages at http://www.qmcpack.org,
-the manual PDF at https://docs.qmcpack.org/qmcpack_manual.pdf, 
+the manual PDF at https://docs.qmcpack.org/qmcpack_manual.pdf,
 or its sources in the manual directory.
 
 If you have trouble using or building QMCPACK, or have questions about

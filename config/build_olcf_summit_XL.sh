@@ -53,6 +53,7 @@ if [ ! -f CMakeCache.txt ] ; then
 cmake $CMAKE_FLAGS -D CMAKE_C_COMPILER=mpixlc -D CMAKE_CXX_COMPILER=mpixlC -D CMAKE_C_FLAGS=-qarch=pwr9 \
   -D CMAKE_CXX_FLAGS="-qarch=pwr9 -qxflag=disable__cplusplusOverride -isystem /sw/summit/gcc/6.4.0/include/c++/6.4.0/powerpc64le-none-linux-gnu -qgcc_cpp_stdinc=/sw/summit/gcc/6.4.0/include/c++/6.4.0" \
   -D CMAKE_CXX_STANDARD_LIBRARIES=/sw/summit/gcc/6.4.0/lib64/libstdc++.a \
+  -D QMC_CXX_STANDARD=14 \
   -D BLAS_essl_LIBRARY=$OLCF_ESSL_ROOT/lib64/libessl.so ..
 cmake ..
 fi
