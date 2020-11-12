@@ -89,11 +89,8 @@ TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
   app_log() << "LiH_msd input style 1 using sposet_collection" << std::endl;
   app_log() << "-------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
-      <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"yes\"> \
-        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
-      </basisset> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\" spindataset=\"0\"> \
+    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" transform=\"yes\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"85\" spindataset=\"0\"/> \
       </sposet> \
@@ -110,6 +107,58 @@ TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
 </wavefunction> \
 ";
   test_LiH_msd_xml_input(spo_xml_string1, "spo-up", 85, 105);
+
+  app_log() << "-----------------------------------------------------------------" << std::endl;
+  app_log() << "LiH_msd input style 1 using sposet_collection with basisset added" << std::endl;
+  app_log() << "-----------------------------------------------------------------" << std::endl;
+  const char* spo_xml_string1_updated = "<wavefunction name=\"psi0\" target=\"e\"> \
+    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
+      <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"yes\"> \
+        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
+      </basisset> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\" spindataset=\"0\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"85\" spindataset=\"0\"/> \
+      </sposet> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\" spindataset=\"0\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"85\" spindataset=\"0\"/> \
+      </sposet> \
+    </sposet_collection> \
+    <determinantset> \
+      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\"> \
+        <detlist size=\"1487\" type=\"DETS\" nca=\"0\" ncb=\"0\" nea=\"2\" neb=\"2\" nstates=\"85\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
+      </multideterminant> \
+    </determinantset> \
+</wavefunction> \
+";
+  test_LiH_msd_xml_input(spo_xml_string1_updated, "spo-up", 85, 105);
+
+  app_log() << "------------------------------------------------------------------------------" << std::endl;
+  app_log() << "LiH_msd input style 1 using sposet_collection with basisset added no transform" << std::endl;
+  app_log() << "------------------------------------------------------------------------------" << std::endl;
+  const char* spo_xml_string1_updated_no_transform = "<wavefunction name=\"psi0\" target=\"e\"> \
+    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
+      <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"no\"> \
+        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
+      </basisset> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\" spindataset=\"0\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"85\" spindataset=\"0\"/> \
+      </sposet> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\" spindataset=\"0\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"85\" spindataset=\"0\"/> \
+      </sposet> \
+    </sposet_collection> \
+    <determinantset> \
+      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\"> \
+        <detlist size=\"1487\" type=\"DETS\" nca=\"0\" ncb=\"0\" nea=\"2\" neb=\"2\" nstates=\"85\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
+      </multideterminant> \
+    </determinantset> \
+</wavefunction> \
+";
+  test_LiH_msd_xml_input(spo_xml_string1_updated_no_transform, "spo-up", 85, 105);
 
   app_log() << "-------------------------------------------------------------" << std::endl;
   app_log() << "LiH_msd input style 2 using sposet_collection" << std::endl;

@@ -151,13 +151,45 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
   test_He_sto3g_xml_input(spo_xml_string1);
 
   app_log() << "-------------------------------------------------------------" << std::endl;
+  app_log() << "He_sto3g input style 1 using sposet_collection updated" << std::endl;
+  app_log() << "-------------------------------------------------------------" << std::endl;
+  const char* spo_xml_string1_updated = "<wavefunction name=\"psi0\" target=\"e\">\
+    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\"> \
+      <basisset name=\"LCAOBSet\" transform=\"yes\"> \
+        <atomicBasisSet name=\"Gaussian\" angular=\"cartesian\" type=\"Gaussian\" elementType=\"He\" normalized=\"no\"> \
+          <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
+          <basisGroup rid=\"He00\" n=\"0\" l=\"0\" type=\"Gaussian\"> \
+            <radfunc exponent=\"6.362421400000e+00\" contraction=\"1.543289672950e-01\"/> \
+            <radfunc exponent=\"1.158923000000e+00\" contraction=\"5.353281422820e-01\"/> \
+            <radfunc exponent=\"3.136498000000e-01\" contraction=\"4.446345421850e-01\"/> \
+          </basisGroup> \
+        </atomicBasisSet> \
+      </basisset> \
+      <sposet name=\"spo\" size=\"1\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"1\" id=\"updetC\"> \
+          1.00000000000000e+00 \
+        </coefficient> \
+      </sposet> \
+    </sposet_collection> \
+    <determinantset> \
+      <slaterdeterminant> \
+        <determinant name=\"det_up\" sposet=\"spo\" size=\"1\"/> \
+        <determinant name=\"det_dn\" sposet=\"spo\" size=\"1\"/> \
+      </slaterdeterminant> \
+    </determinantset> \
+</wavefunction> \
+";
+  test_He_sto3g_xml_input(spo_xml_string1_updated);
+
+  app_log() << "-------------------------------------------------------------" << std::endl;
   app_log() << "He_sto3g input style 2 sposet inside determinantset" << std::endl;
   app_log() << "-------------------------------------------------------------" << std::endl;
   const char* spo_xml_string2 = "<wavefunction name=\"psi0\" target=\"e\">\
     <determinantset type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" transform=\"yes\" cuspCorrection=\"no\"> \
       <basisset name=\"LCAOBSet\"> \
+        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
         <atomicBasisSet name=\"Gaussian\" angular=\"cartesian\" type=\"Gaussian\" elementType=\"He\" normalized=\"no\"> \
-          <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
           <basisGroup rid=\"He00\" n=\"0\" l=\"0\" type=\"Gaussian\"> \
             <radfunc exponent=\"6.362421400000e+00\" contraction=\"1.543289672950e-01\"/> \
             <radfunc exponent=\"1.158923000000e+00\" contraction=\"5.353281422820e-01\"/> \
