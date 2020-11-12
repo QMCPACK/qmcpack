@@ -110,20 +110,7 @@ MESSAGE( STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 SET (LIBRARY_OUTPUT_PATH ${qmcpack_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")
 SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables.")
 
-######################################################################
-# build include and library paths required for the projects
-# For XYZ library, set an environment as
-# export XYZ_HOME='root-of-the-library'
-# XYZ_HOME/include
-# XYZ_HOME/lib
-# IF XYZ library is found, XYZ_FOUND is set to true
-#
-# find_package is used with cmake 2.8 and higher
-######################################################################
-#if(APPLE)
-#  set(QMC_INCLUDE_PATHS ${QMC_INCLUDE_PATHS} /sw/include)
-#  set(QMC_LIBRARY_PATHS ${QMC_LIBRARY_PATHS} /sw/lib)
-#endif(APPLE)
+SET(QMC_CXX_STANDARD 17 CACHE STRING "QMCPACK C++ language standard")
 
 ######################################################################
 # Set the compiler-time parameters
@@ -358,7 +345,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #--------------------------------
   #  C++ 14 is the minimum standard
   #--------------------------------
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
 
