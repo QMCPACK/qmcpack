@@ -1,7 +1,7 @@
 #ifdef COMPILATION_INSTRUCTIONS
-$CXX $0.cpp -o $0x&&$0x&&rm $0x $0.cpp;exit
+$CXXX $CXXFLAGS $0 -o $0$X&&$0$X&&rm $0$X;exit
 #endif
-//  © Alfredo A. Correa 2018-2019
+//  © Alfredo A. Correa 2018-2020
 
 #ifndef MULTI_DETAIL_TYPES_HPP
 #define MULTI_DETAIL_TYPES_HPP
@@ -125,6 +125,12 @@ struct iextensions : detail::repeat<index_extension, D>::type{
 	base_ const& base() const{return *this;}
 	friend decltype(auto) base(iextensions const& s){return s.base();}
 private:
+//	template<std::size_t... Ns> bool bool_aux(std::index_sequence<Ns...>) const{return (not std::get<0>(*this).empty() and tail(*this));}
+public:
+//	explicit operator bool() const{return bool_aux(std::make_index_sequence<D>());}
+//	bool is_empty() const{return bool_aux(std::make_index_sequence<D>());}
+//	bool empty() const{return is_empty();}
+private:
 	template <class T, size_t... Is> 
 	iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr, std::index_sequence<Is...>) : iextensions{arr[Is]...}{}
 };
@@ -142,11 +148,17 @@ auto contains(index_extensions<D> const& ie, Tuple const& tp){
 
 }}
 
+#if defined(__cpp_structured_bindings) and __cpp_structured_bindings>=201606
+namespace std{ // this is for structured binding
+	template<boost::multi::dimensionality_type D> struct tuple_size<boost::multi::iextensions<D>> : std::integral_constant<size_t, D> { };
+	template<size_t N, boost::multi::dimensionality_type D> struct tuple_element<N, boost::multi::iextensions<D>> : tuple_element<N, typename boost::multi::iextensions<D>::base_>{};
+}
+#endif
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_DETAIL_TYPES
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
-#include<range/v3/begin_end.hpp>
-#include<range/v3/utility/concepts.hpp>
+//#include<range/v3/begin_end.hpp>
+//#include<range/v3/utility/concepts.hpp>
 
 #include<cassert>
 #include<iostream>
@@ -174,14 +186,23 @@ int main(){
 	assert( b[0] == x[0] );
 	assert( b[1] == x[1] );
 
-	static_assert( ranges::forward_iterator< std::decay_t<decltype(b)> > , "!");
+//	static_assert( ranges::forward_iterator< std::decay_t<decltype(b)> > , "!");
 
 	assert( std::accumulate( begin(x), end(x), 0) == 0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 );
 
 	std::iterator_traits<std::decay_t<decltype(begin(x))>>::difference_type d; (void)d;
 //	for(auto i : x) std::cout << i << std::endl;
 
+	{
+		multi::iextensions<3> ies({{0, 3}, {0, 4}, {0, 5}});
+		assert( std::get<1>(ies).size() == 4 );
+		auto [is, js, ks] = ies;
+		assert( is.size() == 3 );
+	}
+
 }
+
+
 #endif
 #endif
 
