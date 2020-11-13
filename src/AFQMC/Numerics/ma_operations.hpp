@@ -498,7 +498,7 @@ struct op_tag<transpose_tag<MultiArray2D>> : std::integral_constant<char, 'T'>
 {};
 
 template<class MultiArray2D>
-transpose_tag<MultiArray2D> transposed_matrix(MultiArray2D&& arg)
+transpose_tag<MultiArray2D&&> transposed_matrix(MultiArray2D&& arg)
 {
   return {std::forward<MultiArray2D>(arg)};
 }
@@ -522,7 +522,7 @@ struct hermitian_tag
 };
 
 template<class MultiArray2D>
-hermitian_tag<MultiArray2D> hermitian(MultiArray2D&& arg)
+hermitian_tag<MultiArray2D&&> hermitian(MultiArray2D&& arg)
 {
   return {std::forward<MultiArray2D>(arg)};
 }
