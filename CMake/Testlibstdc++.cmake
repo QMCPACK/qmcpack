@@ -8,8 +8,8 @@ file(WRITE ${TEST_LIBSTDCXX_SOURCE}
 
 int main(int argc, char **argv)
 {
-#if ( ( __INTEL_COMPILER == 1800 ) && (  _GLIBCXX_RELEASE > 7 ) )
-#error too new libstdc++ from GNU for Intel 18, use GNU version <= 7
+#if ( defined(__INTEL_COMPILER) && (  _GLIBCXX_RELEASE < 7 ) )
+#error too old libstdc++ from GNU for Intel compilers, use GNU version >= 7
 #endif
     return 0;
 }
