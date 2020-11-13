@@ -110,20 +110,14 @@ MESSAGE( STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 SET (LIBRARY_OUTPUT_PATH ${qmcpack_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")
 SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables.")
 
-######################################################################
-# build include and library paths required for the projects
-# For XYZ library, set an environment as
-# export XYZ_HOME='root-of-the-library'
-# XYZ_HOME/include
-# XYZ_HOME/lib
-# IF XYZ library is found, XYZ_FOUND is set to true
-#
-# find_package is used with cmake 2.8 and higher
-######################################################################
-#if(APPLE)
-#  set(QMC_INCLUDE_PATHS ${QMC_INCLUDE_PATHS} /sw/include)
-#  set(QMC_LIBRARY_PATHS ${QMC_LIBRARY_PATHS} /sw/lib)
-#endif(APPLE)
+##################################
+# Set C++ standard used by QMCPACK
+##################################
+SET(QMC_CXX_STANDARD 14 CACHE STRING "QMCPACK C++ language standard")
+IF(NOT QMC_CXX_STANDARD EQUAL 14)
+  MESSAGE(WARNING "C++14 is the only language standard officially supported by this QMCPACK version. "
+                  "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
+ENDIF()
 
 ######################################################################
 # Set the compiler-time parameters
@@ -318,12 +312,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(ENABLE_OPENMP 0)
   SET(HAVE_ACML 0)
 
-  ######################################################
-  # Try to identify CPU identity
-  ######################################################
-  SET(CPU_IDENTITY "generic")
-  #INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
-
   #------------------------
   # On Cray's machine
   #------------------------
@@ -354,13 +342,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
       MESSAGE(FATAL_ERROR "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added.")
     ENDIF()
   ENDIF()
-
-  #--------------------------------
-  #  C++ 14 is the minimum standard
-  #--------------------------------
-  set(CMAKE_CXX_STANDARD 14)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(CMAKE_CXX_EXTENSIONS OFF)
 
   #------------------------------------
   # Identify the compiler -- This serves only to deal with case where only C or CXX is set, refactor? 
@@ -405,18 +386,28 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
-
-  #--------------------------------------------------------------------------
-  # Check that a C++ compiler is compatiable with the underlying libstdc++
-  #--------------------------------------------------------------------------
-  include(CMake/Testlibstdc++.cmake)
-
-  #---------------------------------------------------
-  # Check that a C++ 14 standard library is configured
-  #---------------------------------------------------
-  include(CMake/TestCxx14Library.cmake)
-
 ENDIF(CMAKE_TOOLCHAIN_FILE)
+
+###############################################
+# Set C++ minimum standard and run basic checks
+###############################################
+set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+#-----------------------------------------------------------------------
+# Check that a C++ compiler is compatiable with the underlying libstdc++
+#-----------------------------------------------------------------------
+include(CMake/Testlibstdc++.cmake)
+
+#---------------------------------------------------------
+# Check that a C++ standard library is configured properly
+#---------------------------------------------------------
+IF(QMC_CXX_STANDARD GREATER_EQUAL 17)
+  include(CMake/TestCxx17Library.cmake)
+ELSE()
+  include(CMake/TestCxx14Library.cmake)
+ENDIF()
 
 IF (ENABLE_GCOV)
   IF (NOT GCOV_SUPPORTED)
