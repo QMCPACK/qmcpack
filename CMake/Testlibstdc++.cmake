@@ -8,8 +8,10 @@ file(WRITE ${TEST_LIBSTDCXX_SOURCE}
 
 int main(int argc, char **argv)
 {
-#if ( ( __INTEL_COMPILER == 1800 ) && (  _GLIBCXX_RELEASE > 7 ) )
-#error too new libstdc++ from GNU for Intel 18, use GNU version <= 7
+// Unfortunately this check doesn't work because _GLIBCXX_RELEASE appeared in the GCC 7.1 release.
+// It is kept here as an exmple for the future.
+#if ( defined(__INTEL_COMPILER) && (  _GLIBCXX_RELEASE < 7 ) )
+#error too old libstdc++ from GNU for Intel compilers, use GNU version >= 7
 #endif
     return 0;
 }
