@@ -40,31 +40,6 @@ side swap(side s){
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../../array.hpp"
-#include "../../utility.hpp"
-#include "../blas/nrm2.hpp"
-
-#include<complex>
-#include<cassert>
-#include<iostream>
-#include<numeric>
-#include<algorithm>
-
-using std::cout;
-
-template<class M> 
-decltype(auto) print(M const& C){
-	using boost::multi::size;
-	for(int i = 0; i != size(C); ++i){
-		for(int j = 0; j != size(C[i]); ++j) cout<< C[i][j] <<' ';
-		cout<<std::endl;
-	}
-	return cout<<"---"<<std::endl;
-}
-
-namespace multi = boost::multi;
-using complex = std::complex<double>; constexpr complex I{0, 1};
-
 BOOST_AUTO_TEST_CASE(multi_adaptors_blas_side){
 	return;
 }
