@@ -4,12 +4,6 @@ $CXX $0 -o $0x&&$0x&&rm $0x $0.cpp;exit
 #ifndef BOOST_MULTI_DETAIL_OPERATORS_HPP
 #define BOOST_MULTI_DETAIL_OPERATORS_HPP
 
-#if defined(__CUDACC__)
-#define HD __host__ __device__
-#else
-#define HD 
-#endif
-
 #include<type_traits> // enable_if
 #include<utility> // forward
 
@@ -89,7 +83,7 @@ struct decrementable : weakly_decrementable<T>{
 template<class T>
 struct steppable : incrementable<T>, decrementable<T>{};
 
-template<class T, class Reference>//, typename Reference = decltype(*std::declval<T const&>())>
+template<class T, class Reference>
 struct dereferenceable{
 	using reference = Reference;
 	friend reference operator*(dereferenceable const& t){return *static_cast<T const&>(t);}
@@ -101,7 +95,7 @@ struct addable2{
 	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}> >
 	friend constexpr T operator+(TT&& t, difference_type const& d){T tmp{std::forward<TT>(t)}; tmp+=d; return tmp;}
 	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}> >
-	friend constexpr T operator+(difference_type const& d, TT&& t) HD{return std::forward<TT>(t) + d;}
+	friend constexpr T operator+(difference_type const& d, TT&& t) {return std::forward<TT>(t) + d;}
 };
 
 template<class T, class D>
@@ -111,9 +105,9 @@ struct subtractable2{
 	friend T operator-(TT&& t, difference_type const& d){T tmp{std::forward<TT>(t)}; tmp-=d; return tmp;}
 };
 
-template<class T, class D = typename T::difference_type>
-struct affine : addable2<T, D>, subtractable2<T, D>{
-	using difference_type = D;
+template<class T, class Difference>
+struct affine : addable2<T, Difference>, subtractable2<T, Difference>{
+	using difference_type = Difference;
 };
 
 template<class T>

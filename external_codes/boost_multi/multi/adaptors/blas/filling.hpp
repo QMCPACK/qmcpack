@@ -1,5 +1,5 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
+$CXXX $CXXFLAGS $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -25,8 +25,8 @@ enum class filling : char{
 	upper = 'L'  //static_cast<char>(uplo::L)
 };
 
-static constexpr filling U = filling::upper;
-static constexpr filling L = filling::lower;
+MAYBE_UNUSED static constexpr filling U = filling::upper;
+MAYBE_UNUSED static constexpr filling L = filling::lower;
 
 filling flip(filling side){
 	switch(side){
@@ -65,7 +65,7 @@ filling detect_triangular_aux(A2D const& A){
 template<class A2D>
 filling detect_triangular(A2D const& A){
 #if __cpp_if_constexpr>=201606
-	if constexpr(not is_hermitized<A2D>()){
+	if constexpr(not is_conjugated<A2D>{}){
 		using blas::asum;
 		for(auto i = size(A); i != 0; --i){
 			auto const asum_up = asum(A[i-1]({i, A[i-1].size()}));
@@ -119,7 +119,6 @@ decltype(auto) print(M const& C){
 
 namespace multi = boost::multi;
 using complex = std::complex<double>;
-auto const I = complex(0., 1.);
 
 BOOST_AUTO_TEST_CASE(multi_adaptors_blas_side){
 	return;

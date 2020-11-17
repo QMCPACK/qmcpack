@@ -19,6 +19,8 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
+#include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/L2Potential.h"
 #include "Configuration.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
@@ -42,6 +44,9 @@ class QMCHamiltonian
   friend class HamiltonianFactory;
 
 public:
+  typedef OperatorBase::Return_t Return_t;
+  typedef OperatorBase::PosType PosType;
+  typedef OperatorBase::TensorType TensorType;
   typedef OperatorBase::RealType RealType;
   typedef OperatorBase::ValueType ValueType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
@@ -291,6 +296,34 @@ public:
    */
   int makeNonLocalMoves(ParticleSet& P);
 
+  /** determine if L2 potential is present
+   */
+  bool has_L2()
+  {
+    return l2_ptr!=nullptr;
+  }
+
+  /** compute D matrix and K vector for L2 potential propagator
+    * @param r single particle coordinate
+    * @param D diffusion matrix (outputted)
+    * @param K drift modification vector (outputted)
+    */
+  void computeL2DK(ParticleSet& P, int iel, TensorType& D, PosType& K)
+  {
+    if(l2_ptr != nullptr)
+      l2_ptr->evaluateDK(P,iel,D,K);
+  }
+
+  /** compute D matrix for L2 potential propagator
+    * @param r single particle coordinate
+    * @param D diffusion matrix (outputted)
+    */
+  void computeL2D(ParticleSet& P, int iel, TensorType& D)
+  {
+    if(l2_ptr != nullptr)
+      l2_ptr->evaluateD(P,iel,D);    
+  }
+
   static std::vector<int> flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
@@ -354,6 +387,8 @@ private:
   std::vector<OperatorBase*> H;
   ///pointer to NonLocalECP
   NonLocalECPotential* nlpp_ptr;
+  ///pointer to L2Potential
+  L2Potential* l2_ptr;
   ///vector of Hamiltonians
   std::vector<OperatorBase*> auxH;
   /// Total timer for H evaluation

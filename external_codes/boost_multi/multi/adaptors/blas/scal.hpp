@@ -14,15 +14,15 @@ namespace blas{
 
 using core::scal;
 
-template<class X1D, typename Elem = typename std::decay_t<X1D>::element_type>
-auto scal(Elem a, X1D&& m)
+template<class X1D> // don't do this: ", typename Elem = typename X1D::element_type>"
+auto scal(typename std::decay_t<X1D>::element_type a, X1D&& m)
 ->decltype(scal(size(m), &a, base(m), stride(m)), std::forward<X1D>(m)){
 	return scal(size(m), &a, base(m), stride(m)), std::forward<X1D>(m);}
 
-template<class X1D, typename Elem = typename X1D::element_type>
+template<class X1D>//, typename Elem = typename X1D::element_type>
 NODISCARD("because last argument is const")
-auto scal(Elem a, X1D const& m){
-	return scal(a, m.decay());
+typename X1D::decay_type scal(typename X1D::element_type a, X1D const& m){
+	return scal(a, typename X1D::decay_type{m});
 }
 
 }}}
@@ -46,8 +46,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_scal_real){
 			{9., 10., 11., 12.}
 		};
 
-		using blas::scal;
-		auto S = scal(2., rotated(A)[1]);
+		auto S = blas::scal(2., rotated(A)[1]);
 
 		BOOST_REQUIRE( A[2][1] == 20 );
 		BOOST_REQUIRE( S[0] == 4 );
@@ -58,8 +57,8 @@ BOOST_AUTO_TEST_CASE(multi_blas_scal_real){
 			{5.,  6.,  7.,  8.},
 			{9., 10., 11., 12.}
 		};
-		using multi::blas::scal;
-		auto rA1_scaled = scal(2., A[1]);
+		auto rA1_scaled = blas::scal(2., A[1]);
+		BOOST_REQUIRE( A[1][1] == 6. );
 		BOOST_REQUIRE( size(rA1_scaled) == 4 );
 		BOOST_REQUIRE( rA1_scaled[1] == 12 );
 	}
