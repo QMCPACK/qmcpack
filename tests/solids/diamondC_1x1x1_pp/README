@@ -160,6 +160,22 @@ qmc_spindens_dmc_ref.s001.stat_trace_spindensity.dat  # reference per block data
 qmc_spindens_dmc_long.s001.stat_ref_spindensity.dat   # reference mean/error bar for long runs (-m 10)
 qmc_spindens_dmc_short.s001.stat_ref_spindensity.dat  # reference mean/error bar for short runs (-m 100)
 
+-------------------------------------------------
+Reference files for deterministic VMC spindensity
+-------------------------------------------------
+# reference input file
+det_qmc_spindens_short.in.xml
+
+# command run
+check_stats.py -v -s 0 -q spindensity -e 0 -c 8 -m '0' -p det_qmc_spindens_short
+
+# files produced 
+det_qmc_spindens_short.s000.stat_ref_spindensity.dat
+
+# other
+The 2nd and 4th columns of det_qmc_spindens_short.s000.stat_ref_spindensity.dat 
+had to be modified for the deterministic test.  These are the "errorbars" and 
+are deterministically small.
 
 
 =================

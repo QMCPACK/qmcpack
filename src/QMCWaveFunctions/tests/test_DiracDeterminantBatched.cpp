@@ -42,7 +42,7 @@ using PsiValueType = QMCTraits::QTFull::ValueType;
 #if defined(ENABLE_CUDA)
 typedef DiracDeterminantBatched<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #else
-typedef DiracDeterminantBatched<MatrixUpdateOMP<ValueType, QMCTraits::QTFull::ValueType>> DetType;
+typedef DiracDeterminantBatched<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #endif
 #else
 typedef DiracDeterminantBatched<> DetType;

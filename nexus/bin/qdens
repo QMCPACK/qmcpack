@@ -872,7 +872,7 @@ class QMCDensityProcessor(QDBase):
             if opt.weights is not None:
                 weight_failed = False
                 try:
-                    w = comma_list(ws)
+                    w = comma_list(opt.weights)
                     w = np.array(eval(w),dtype=float)
                     opt.weights = w
                     weight_failed = len(w.shape)!=1
