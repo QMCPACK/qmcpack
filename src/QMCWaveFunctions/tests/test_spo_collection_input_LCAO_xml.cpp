@@ -142,8 +142,8 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
     </sposet_collection> \
     <determinantset> \
       <slaterdeterminant> \
-        <determinant name=\"det_up\" sposet=\"spo\" size=\"1\"/> \
-        <determinant name=\"det_dn\" sposet=\"spo\" size=\"1\"/> \
+        <determinant name=\"det_up\" sposet=\"spo\"/> \
+        <determinant name=\"det_dn\" sposet=\"spo\"/> \
       </slaterdeterminant> \
     </determinantset> \
 </wavefunction> \
@@ -174,8 +174,8 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
     </sposet_collection> \
     <determinantset> \
       <slaterdeterminant> \
-        <determinant name=\"det_up\" sposet=\"spo\" size=\"1\"/> \
-        <determinant name=\"det_dn\" sposet=\"spo\" size=\"1\"/> \
+        <determinant name=\"det_up\" sposet=\"spo\"/> \
+        <determinant name=\"det_dn\" sposet=\"spo\"/> \
       </slaterdeterminant> \
     </determinantset> \
 </wavefunction> \
@@ -210,8 +210,8 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
         </coefficient> \
       </sposet> \
       <slaterdeterminant> \
-        <determinant name=\"det_up\" sposet=\"spo\" size=\"1\"/> \
-        <determinant name=\"det_dn\" sposet=\"spo-down\" size=\"1\"/> \
+        <determinant name=\"det_up\" sposet=\"spo\"/> \
+        <determinant name=\"det_dn\" sposet=\"spo-down\"/> \
       </slaterdeterminant> \
     </determinantset> \
 </wavefunction> \

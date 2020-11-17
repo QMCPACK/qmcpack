@@ -163,10 +163,24 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         getNodeName(tname, tcur);
         if (tname == det_tag || tname == rn_tag)
         {
+          if (spin_group >= targetPtcl.groups())
+          {
+            std::ostringstream err_msg;
+            err_msg << "Need only " << targetPtcl.groups() << " determinant input elements. Found more."
+                    << std::endl;
+            throw std::runtime_error(err_msg.str());
+          }
           if (putDeterminant(tcur, spin_group))
             spin_group++;
         }
         tcur = tcur->next;
+      }
+      if (spin_group < targetPtcl.groups())
+      {
+        std::ostringstream err_msg;
+        err_msg << "Not enough determinant input elements. "
+                << "Need " << targetPtcl.groups() << " but only found " << spin_group << "." << std::endl;
+        throw std::runtime_error(err_msg.str());
       }
     }
     else if (cname == multisd_tag)

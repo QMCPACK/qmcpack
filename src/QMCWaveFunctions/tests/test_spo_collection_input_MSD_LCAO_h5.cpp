@@ -116,11 +116,11 @@ TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
       <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"yes\"> \
         <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
       </basisset> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\" spindataset=\"0\"> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"85\" spindataset=\"0\"/> \
       </sposet> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\" spindataset=\"0\"> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"85\" spindataset=\"0\"/> \
       </sposet> \
@@ -142,11 +142,11 @@ TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
       <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"no\"> \
         <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
       </basisset> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\" spindataset=\"0\"> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"85\" spindataset=\"0\"/> \
       </sposet> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\" spindataset=\"0\"> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"85\" spindataset=\"0\"/> \
       </sposet> \
