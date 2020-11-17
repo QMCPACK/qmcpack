@@ -13,6 +13,13 @@ int main(int argc, char **argv)
 #if ( defined(__INTEL_COMPILER) && (  _GLIBCXX_RELEASE < 7 ) )
 #error too old libstdc++ from GNU for Intel compilers, use GNU version >= 7
 #endif
+// libstdc++ from GCC 8 is bad for Intel 19 in both C++14 and C++17
+#if ( ( __INTEL_COMPILER == 1900 ) && (  _GLIBCXX_RELEASE > 7 ) )
+#error too new libstdc++ from GNU for Intel 19, use GNU version <= 7
+#endif
+#if ( ( __INTEL_COMPILER == 1910 ) && (  _GLIBCXX_RELEASE > 9 ) )
+#error too new libstdc++ from GNU for Intel 20, use GNU version <= 9
+#endif
     return 0;
 }
 ")
