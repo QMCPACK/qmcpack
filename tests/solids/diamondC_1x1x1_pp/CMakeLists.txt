@@ -495,7 +495,7 @@ IF(NOT QMC_CUDA)
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
       det_qmc_spindens_short_mw.in.xml
       4 4
-      check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short -r qmc-ref/det_qmc_spindens_short_mw.s000.stat_ref_spindensity_4_4.dat
+      check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short_mw -r qmc-ref/det_qmc_spindens_short_mw.s000.stat_ref_spindensity_4_4.dat
       )
   endif()
 
