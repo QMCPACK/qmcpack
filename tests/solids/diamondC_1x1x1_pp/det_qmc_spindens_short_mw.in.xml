@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det_qmc_spindens_short" series="0">
+   <project id="det_qmc_spindens_short_mw" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="71"/>
@@ -86,7 +86,7 @@
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
       <estimator name="LocalEnergy" hdf5="no"/>
-      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="walkers"             >    4               </parameter>
       <parameter name="blocks"              >    3               </parameter>
       <parameter name="steps"               >    3               </parameter>
       <parameter name="subSteps"            >    2               </parameter>
