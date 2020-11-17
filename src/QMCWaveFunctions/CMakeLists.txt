@@ -142,7 +142,7 @@ IF(OHMMS_DIM MATCHES 3)
         BsplineFactory/SplineC2C.cpp
       )
       IF(ENABLE_OFFLOAD)
-        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2COMP.cpp)
+        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
       ENDIF(ENABLE_OFFLOAD)
     ELSE(QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
@@ -152,7 +152,7 @@ IF(OHMMS_DIM MATCHES 3)
         BsplineFactory/SplineR2R.cpp
         )
       IF(ENABLE_OFFLOAD)
-        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2ROMP.cpp)
+        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2ROMPTarget.cpp)
       ENDIF(ENABLE_OFFLOAD)
     ENDIF(QMC_COMPLEX)
 

@@ -42,7 +42,7 @@ DistanceTableData* createDistanceTable(ParticleSet& s, std::ostream& description
 
 ///free function create a distable table of s-t
 DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, std::ostream& description);
-DistanceTableData* createDistanceTableABOMP(const ParticleSet& s, ParticleSet& t, std::ostream& description);
+DistanceTableData* createDistanceTableABOMPTarget(const ParticleSet& s, ParticleSet& t, std::ostream& description);
 
 inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, std::ostream& description)
 {
@@ -51,7 +51,7 @@ inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet&
   // Thus the implementation selection is determined by the source particle set.
 #if defined(ENABLE_OFFLOAD)
   if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
-    return createDistanceTableABOMP(s, t, description);
+    return createDistanceTableABOMPTarget(s, t, description);
   else
 #endif
     return createDistanceTableAB(s, t, description);

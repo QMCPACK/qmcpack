@@ -43,6 +43,37 @@ inline void getScaledDrift(Tt tau, const TinyVector<TG, D>& qf, TinyVector<T, D>
   drift *= sc;
 }
 
+/** evaluate a drift with a real force with rescaling for an L2 potential
+ * @param tau timestep
+ * @param qf quantum force
+ * @param drift
+ */
+template<class Tt, class TG, class T, unsigned D>
+inline void getScaledDriftL2(Tt tau, const TinyVector<TG, D>& qf, const Tensor<T, D>& Dmat, TinyVector<T, D>& Kvec, TinyVector<T, D>& drift)
+{
+  //We convert the complex gradient to real and temporarily store in drift.
+  convert(qf, drift);
+  //modify the bare drift in the presence of L2 potentials
+  drift = dot(Dmat, drift) - Kvec;
+  T vsq = dot(drift, drift);
+  T sc  = (vsq < std::numeric_limits<T>::epsilon()) ? tau : ((-1.0 + std::sqrt(1.0 + 2.0 * tau * vsq)) / vsq);
+  //Apply the umrigar scaled drift.
+  drift *= sc;
+}
+
+/** evaluate a drift with a real force and no rescaling
+ * @param tau timestep
+ * @param qf quantum force
+ * @param drift
+ */
+template<class Tt, class TG, class T, unsigned D>
+inline void getUnscaledDrift(Tt tau, const TinyVector<TG, D>& qf, TinyVector<T, D>& drift)
+{
+  //We convert the complex gradient to real and temporarily store in drift.
+  convert(qf, drift);
+  drift *= tau;
+}
+
 /** scale drift
  * @param tau_au timestep au
  * @param qf quantum forces

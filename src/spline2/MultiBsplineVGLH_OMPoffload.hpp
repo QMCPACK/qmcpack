@@ -23,7 +23,7 @@
 #ifndef SPLINE2_OFFLOAD_MULTIEINSPLINE_VGLH_HPP
 #define SPLINE2_OFFLOAD_MULTIEINSPLINE_VGLH_HPP
 
-#include "OpenMP/OMPstd.hpp"
+#include "OMPTarget/OMPstd.hpp"
 #include "spline2/MultiBsplineData.hpp"
 #include "spline2/MultiBsplineEval_helper.hpp"
 
