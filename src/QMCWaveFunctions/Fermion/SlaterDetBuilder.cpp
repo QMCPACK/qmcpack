@@ -849,12 +849,11 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   if (NEA == 0)
     NEA = nels_up - NCA;
   else if (NEA != nels_up - NCA)
-    throw std::runtime_error("nea is not equal to nel_up - nca");
-
+    throw std::runtime_error("nea is not equal to nels_up - nca");
   if (NEB == 0)
     NEB = nels_dn - NCB;
-  else if (NEB != nels_dn - NEB)
-    throw std::runtime_error("neb is not equal to nel_dn - ncb");
+  else if (NEB != nels_dn - NCB)
+    throw std::runtime_error("neb is not equal to nels_dn - ncb");
 
   // mmorales: a little messy for now, clean up later
   cur = DetListNode->children;
