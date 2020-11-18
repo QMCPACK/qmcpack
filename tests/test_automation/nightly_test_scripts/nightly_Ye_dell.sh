@@ -70,7 +70,7 @@ if [[ $sys == *"OneAPI"* ]]; then
   export CC=icx
   export CXX=icpx
 
-  CTEST_FLAGS="$CTEST_FLAGS -DQMC_MPI=0 -DENABLE_MKL=1"
+  CTEST_FLAGS="$CTEST_FLAGS -DQMC_MPI=0"
   if [[ $sys == *"Offload"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=spir64;-DQMC_NIO_MAX_SIZE=16'"
   else

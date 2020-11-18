@@ -19,6 +19,7 @@
 
 #include "DMC.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
+#include "QMCDrivers/DMC/DMCUpdatePbyPL2.h"
 #include "QMCDrivers/DMC/SODMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -47,6 +48,7 @@ DMC::DMC(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, comm, "DMC"),
       KillNodeCrossing(0),
       BranchInterval(-1),
+      L2("no"),
       Reconfiguration("no"),
       mover_MaxAge(-1)
 {
@@ -58,6 +60,7 @@ DMC::DMC(MCWalkerConfiguration& w,
   m_param.add(NonLocalMove, "nonlocalmove", "string");
   m_param.add(NonLocalMove, "nonlocalmoves", "string");
   m_param.add(mover_MaxAge, "MaxAge", "double");
+  m_param.add(L2,"L2_diffusion","string");
 }
 
 void DMC::resetUpdateEngines()
@@ -139,7 +142,17 @@ void DMC::resetUpdateEngines()
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          bool do_L2  = L2=="yes";
+          if(!do_L2)
+          {
+            app_log()<<"Using DMCUpdatePbyPWithRejectionFast\n";
+            Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          }
+          else
+          {
+            app_log()<<"Using DMCUpdatePbyPL2\n";
+            Movers[ip] = new DMCUpdatePbyPL2(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+          }
           Movers[ip]->put(qmcNode);
           Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
           Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);

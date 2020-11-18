@@ -1,6 +1,8 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&& clang++ -std=c++17 -Wall -Wextra -Wfatal-errors -D_TEST_BOOST_MULTI_MEMORY_STACK $0.cpp -o $0x && $0x && rm $0x $0.cpp; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2019-2020
+
 #ifndef BOOST_MULTI_MEMORY_STACK_HPP
 #define BOOST_MULTI_MEMORY_STACK_HPP
 
@@ -31,7 +33,7 @@ public:
 	template<std::size_t AA = Align>
 	typename stack::void_pointer allocate(
 		typename stack::size_type required_bytes,
-		typename stack::size_type align = AA//alignof(std::max_align_t)
+		typename stack::size_type align = AA
 	){
 		total_requested_ += required_bytes;
 		max_needed_ = std::max(max_needed_, total_requested_ - total_discarded_);
@@ -56,28 +58,33 @@ using stack_allocator = multi::memory::allocator<T, stack<char*>>;//, alignof(T)
 
 }}}
 
-#if _TEST_BOOST_MULTI_MEMORY_STACK
+#if not __INCLUDE_LEVEL__
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi stack memory resource"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
 #include "../../multi/array.hpp"
-
-#include<iostream>
 #include<vector>
-#include<cmath>
 
 namespace multi = boost::multi;
 namespace memory = multi::memory;
 
-using std::cout;
-
-int main(){
+BOOST_AUTO_TEST_CASE(multi_memory_allocator){
 {
 	alignas(double) char buffer[256*sizeof(double)];
 	memory::stack<char*> stck(buffer);
-	auto p1 = stck.allocate(1*sizeof(double), alignof(double));	  assert( stck.max_needed() == 1*sizeof(double) );
-	auto p2 = stck.allocate(255*sizeof(double), alignof(double)); assert( stck.max_needed() == 256*sizeof(double) );
-	stck.deallocate(p2, 255*sizeof(double));	                  assert( stck.max_needed() == 256*sizeof(double) );
+	auto p1 = stck.allocate(1*sizeof(double), alignof(double));	  
+	BOOST_REQUIRE( stck.max_needed() == 1*sizeof(double) );
+
+	auto p2 = stck.allocate(255*sizeof(double), alignof(double)); 
+	BOOST_REQUIRE( stck.max_needed() == 256*sizeof(double) );
+
+	stck.deallocate(p2, 255*sizeof(double));
+	BOOST_REQUIRE( stck.max_needed() == 256*sizeof(double) );
+
 	stck.deallocate(p1, 1*sizeof(double));
-	assert( stck.max_needed() == 256*sizeof(double) );
+	BOOST_REQUIRE( stck.max_needed() == 256*sizeof(double) );
+
 	auto p3 = stck.allocate(100*sizeof(double)); (void)p3;
 }
 {
@@ -88,7 +95,7 @@ int main(){
 		std::vector<double, multi::memory::stack_allocator<double>> w(10, &sm);
 	}
 	std::vector<double, multi::memory::stack_allocator<double>> w(5, &sm);
-	assert( sm.max_needed()/sizeof(double) == 20 );
+	BOOST_REQUIRE( sm.max_needed()/sizeof(double) == 20 );
 }
 }
 #endif

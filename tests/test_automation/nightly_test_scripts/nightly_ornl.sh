@@ -664,7 +664,6 @@ if [[ $sys == *"mkl"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-MKL
 # MKL setup used by many builds for BLAS, LAPACK etc.
 source /opt/intel2020/mkl/bin/mklvars.sh intel64
-CTCFG="$CTCFG -DENABLE_MKL=1 -DCMAKE_PREFIX_PATH=$MKLROOT/lib"
 fi
 
 # Complex
