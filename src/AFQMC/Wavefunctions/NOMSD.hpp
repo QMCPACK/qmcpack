@@ -37,7 +37,6 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-
 /*
  * Class that implements a multi-Slater determinant trial wave-function.
  * Single determinant wfns are also allowed. 
@@ -63,7 +62,7 @@ class NOMSD : public AFQMCInfo
   using const_pointer_shared = typename Allocator_shared::const_pointer;
 
   using buffer_alloc_type     = DeviceBufferManager::template allocator_t<ComplexType>;
-  using shm_buffer_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>; 
+  using shm_buffer_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
 
   using CVector      = boost::multi::array<ComplexType, 1, Allocator>;
   using CMatrix      = boost::multi::array<ComplexType, 2, Allocator>;
@@ -306,10 +305,8 @@ public:
   void Energy(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticMatrix eloc({nw, 3}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix eloc({nw, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Energy(wset, eloc, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -347,8 +344,7 @@ public:
   void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact = true, bool transpose = false)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact, transpose);
   }
 
@@ -437,8 +433,7 @@ public:
   void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact_G_for_vbias, transposed_G_for_vbias_);
   }
 
@@ -461,8 +456,7 @@ public:
   void Overlap(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Overlap(wset, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)

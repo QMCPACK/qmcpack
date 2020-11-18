@@ -79,8 +79,8 @@ void propg_fac_shared(boost::mpi3::communicator& world)
 
     int NMO, NAEA, NAEB;
     std::tie(NMO, NAEA, NAEB) = read_info_from_hdf(UTEST_HAMIL);
-    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
-    int NPOL = (type == NONCOLLINEAR) ?  2 : 1;
+    WALKER_TYPES type         = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL                  = (type == NONCOLLINEAR) ? 2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -147,7 +147,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
     //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
@@ -256,8 +256,8 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
 
     int NMO, NAEA, NAEB;
     std::tie(NMO, NAEA, NAEB) = read_info_from_hdf(UTEST_HAMIL);
-    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
-    int NPOL = (type == NONCOLLINEAR) ?  2 : 1;
+    WALKER_TYPES type         = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL                  = (type == NONCOLLINEAR) ? 2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -324,7 +324,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 

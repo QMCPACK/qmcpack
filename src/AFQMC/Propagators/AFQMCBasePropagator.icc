@@ -104,7 +104,8 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     AFQMCTimers[G_for_vbias_timer]->stop();
     //std::cout<<" G: " <<ma::dot(G(G.extension(0),0),G(G.extension(0),0)) <<std::endl;
 
-    StaticSPMatrix vbias({long(localnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(localnCV), long(nwalk)},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
     // 2. Calculate vbias for initial configuration
     AFQMCTimers[vbias_timer]->start();
     if (free_projection)
@@ -118,7 +119,8 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     AFQMCTimers[vbias_timer]->stop();
     //std::cout<<" vbias: " <<ma::sum(vbias) <<std::endl;
 
-    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)},
+                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
     // 3. Assemble X(nCV,nsteps,nwalk)
     AFQMCTimers[assemble_X_timer]->start();
     assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor, hybrid_weight);
@@ -273,7 +275,8 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   }
 
   StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
-  StaticSPMatrix X({long(globalnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  StaticSPMatrix X({long(globalnCV), long(nwalk)},
+                   buffer_manager.get_generator().template get_allocator<SPComplexType>());
   C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()), vhs3d_ext);
 
   auto&& Fields(*wset.getFields());

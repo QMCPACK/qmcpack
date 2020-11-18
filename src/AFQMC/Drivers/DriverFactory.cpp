@@ -98,10 +98,12 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
 
   // hard restriction for now
   bool first(false);
-  if (ncores < 0) {
-    first=true;
+  if (ncores < 0)
+  {
+    first  = true;
     ncores = ncores_per_TG;
-  } else if (ncores != ncores_per_TG)
+  }
+  else if (ncores != ncores_per_TG)
     APP_ABORT(" Error: Current implementation requires the same ncores in all execution blocks. \n");
 
   TGHandler.setNCores(ncores);
@@ -209,7 +211,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   // setting TG buffer generator here, as soon as localTG is available from any TG
   // defaults to 20MB. Read from input!!!
   std::size_t buffer_size(20);
-  if(first)
+  if (first)
     LocalTGBufferManager local_buffer(TGwfn.TG_local(), buffer_size * 1024uL * 1024uL);
 
   // walker set and type

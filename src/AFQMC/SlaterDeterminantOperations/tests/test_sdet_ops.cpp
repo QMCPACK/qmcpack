@@ -977,9 +977,9 @@ TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   arch::INIT(node);
-  using Alloc    = device::device_allocator<ComplexType>;
+  using Alloc = device::device_allocator<ComplexType>;
 #else
-  using Alloc    = std::allocator<ComplexType>;
+  using Alloc = std::allocator<ComplexType>;
 #endif
   setup_memory_managers(node, 10uL * 1024uL * 1024uL);
   SDetOps_complex_serial<Alloc, DeviceBufferManager>(Alloc{}, DeviceBufferManager{});

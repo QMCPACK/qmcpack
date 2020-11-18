@@ -746,7 +746,7 @@ int main()
     std::vector<double> m = {
         9.,  24., 30., 4., 10.,
         12., 14., 16., 36. //,
-        //	9., 6., 1.
+                           //	9., 6., 1.
     };
     boost::multi::array_ref<double, 2> M(m.data(), {3, 3});
     assert(M.num_elements() == m.size());

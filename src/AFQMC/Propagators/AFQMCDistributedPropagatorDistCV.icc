@@ -92,8 +92,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
   { // using scope to control lifetime of StaticArrays, avoiding unnecesary buffer space
 
-    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk},
+                                 buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk},
+                                      buffer_manager.get_generator().template get_allocator<ComplexType>());
     StaticSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // 1. Calculate Green function for all (local) walkers
@@ -114,8 +116,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
 
     StaticSPMatrix Grecv(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix vbias({long(localnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(localnCV), long(nwalk)},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)},
+                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
 #if defined(MIXED_PRECISION)
     // in MIXED_PRECISION, use second half of vrecv_buff for vsend
     SPCMatrix_ref vsend(sp_pointer(make_device_ptr(vrecv_buff.origin())) + vrecv_buff.num_elements(), vhs_ext);
@@ -460,8 +464,10 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 
   // scope controlling lifetime of temporary arrays
   {
-    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk},
+                                 buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk},
+                                      buffer_manager.get_generator().template get_allocator<ComplexType>());
     StaticSPMatrix Gstore(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     int Gak0, GakN;
@@ -482,8 +488,10 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     AFQMCTimers[G_for_vbias_timer]->stop();
 
     StaticSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix vbias({long(localnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(localnCV), long(nwalk)},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)},
+                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
 // reusing second half of vrecv buffer reinterpreted as a SPComplex Array
 #if defined(MIXED_PRECISION)
     SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vrecv_buff.origin())) + vrecv_buff.num_elements(), vhs_ext);
@@ -796,9 +804,12 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   //  vHS:             [ NMO*NMO * nwalk ] (3 copies)
   // memory_needs: nwalk * ( localnCV + NMO*NMO )
 
-  StaticSPMatrix X({long(localnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-  StaticSPMatrix Xsend({long(globalnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-  StaticSPMatrix Xrecv({long(globalnCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  StaticSPMatrix X({long(localnCV), long(nwalk)},
+                   buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  StaticSPMatrix Xsend({long(globalnCV), long(nwalk)},
+                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  StaticSPMatrix Xrecv({long(globalnCV), long(nwalk)},
+                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
   StaticMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
   SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())), vhs_ext);
 #if defined(MIXED_PRECISION)
