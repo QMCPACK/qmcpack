@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det_qmc_spindens_short" series="0">
+   <project id="det_qmc_dens_short" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="71"/>
@@ -79,9 +79,7 @@
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
          <estimator type="flux" name="Flux"/>
-         <estimator type="spindensity" name="SpinDensity" report="yes">
-           <parameter name="grid"> 10 10 10 </parameter>
-         </estimator>
+         <estimator name="Density" type="density" delta="0.1 0.1 0.1"/>
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
