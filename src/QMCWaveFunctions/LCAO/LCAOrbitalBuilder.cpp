@@ -773,7 +773,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting.");
     }
     //SuperTwist=SuperTwistH5;
-    Matrix<ValueType> Ctemp;//(neigs, spo.getBasisSetSize());
+    Matrix<ValueType> Ctemp;
     LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp, MultiDet);
 
     int n = 0, i = 0;

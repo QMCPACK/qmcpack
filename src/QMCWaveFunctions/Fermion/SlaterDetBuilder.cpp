@@ -1234,8 +1234,6 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     }
     cur = cur->next;
   }
-  size_t NCA = 0, NCB = 0;
-  size_t NEA = 0, NEB = 0;
   size_t nstates = 0;
   size_t ndets = 0;
   size_t H5_ndets, H5_nstates;
@@ -1247,10 +1245,6 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   std::string Dettype = "DETS";
   ValueType sumsq     = 0.0;
   OhmmsAttributeSet spoAttrib;
-  spoAttrib.add(NCA, "nca");
-  spoAttrib.add(NCB, "ncb");
-  spoAttrib.add(NEA, "nea");
-  spoAttrib.add(NEB, "neb");
   spoAttrib.add(ndets, "size");
   spoAttrib.add(Dettype, "type");
   spoAttrib.add(nstates, "nstates");
