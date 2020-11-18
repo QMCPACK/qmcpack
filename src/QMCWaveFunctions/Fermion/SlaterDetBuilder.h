@@ -121,7 +121,8 @@ private:
     CIcoeff_real.resize(n_dets);
 
     hin.read(CIcoeff_real, "Coeff");
-    hin.read(CIcoeff_imag, "Coeff_imag");
+    if (!hin.readEntry(CIcoeff_imag, "Coeff_imag"))
+      app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
 
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);

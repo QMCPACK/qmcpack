@@ -676,7 +676,7 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     if (Ctemp.rows() < norbs)
     {
       std::ostringstream err_msg;
-      err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp.cols()
+      err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp.rows()
               << " from h5." << std::endl;
       myComm->barrier_and_abort(err_msg.str());
     }
@@ -860,8 +860,8 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
                                             Matrix<std::complex<RealType>>& Ctemp,
                                             bool MultiDet)
 {
-  Matrix<RealType> Creal(Ctemp.rows(), Ctemp.cols());
-  Matrix<RealType> Ccmplx(Ctemp.rows(), Ctemp.cols());
+  Matrix<RealType> Creal;
+  Matrix<RealType> Ccmplx;
 
   char name[72];
   std::string setname;
@@ -884,6 +884,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   hin.read(IsComplex, "/parameters/IsComplex");
   if (IsComplex == false)
   {
+    Ccmplx.resize(Creal.rows(), Creal.cols());
     Ccmplx = 0.0;
   }
   else
@@ -892,6 +893,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
     readRealMatrixFromH5(hin, setname, Ccmplx);
   }
 
+  Ctemp.resize(Creal.rows(), Creal.cols());
   for (int i = 0; i < Ctemp.rows(); i++)
     for (int j = 0; j < Ctemp.cols(); j++)
       Ctemp[i][j] = std::complex<RealType>(Creal[i][j], Ccmplx[i][j]);
