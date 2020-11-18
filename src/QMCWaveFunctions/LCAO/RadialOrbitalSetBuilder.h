@@ -240,8 +240,9 @@ bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
     ri = tt;
     hin.read(tt, "grid_rf");
     rf = tt;
-    hin.read(tt, "rmax_safe");
-    rmax_safe = tt;
+    // Ye to Anouar: do we need this input? It is missing in current h5
+    //hin.read(tt, "rmax_safe");
+    //rmax_safe = tt;
     hin.read(npts, "grid_npts");
   }
   myComm->bcast(ri);
