@@ -1233,6 +1233,9 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     }
     cur = cur->next;
   }
+
+  app_log() << "  H5 code path implicitly assumes NCA = NCB = 0, "
+            << "NEA = " << nels_up << " and NEB = " << nels_dn << std::endl;
   size_t nstates = 0;
   size_t ndets = 0;
   size_t H5_ndets, H5_nstates;

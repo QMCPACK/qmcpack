@@ -171,9 +171,6 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     hin.read(Normalized, "normalized");
     hin.read(Morder, "expandYlm");
     hin.read(basisName, "name");
-    // Ye to Anouar: do we need these inputs? They are missing in current h5
-    //hin.read(basisType, "type");
-    //hin.read(addsignforM, "expM");
   }
 
   myComm->bcast(sph);
