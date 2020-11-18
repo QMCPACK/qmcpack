@@ -32,11 +32,8 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   c = OHMMS::Controller;
 
   ParticleSet elec;
-  std::vector<int> agroup(2);
-  agroup[0] = 1;
-  agroup[1] = 1;
   elec.setName("e");
-  elec.create(agroup);
+  elec.create({1, 1});
   elec.R[0] = 0.0;
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();

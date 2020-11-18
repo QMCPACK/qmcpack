@@ -43,9 +43,7 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string, const std::string
   int HIdx             = ispecies.addSpecies("H");
 
   elec_.setName("elec");
-  std::vector<int> agroup(2, 2);
-  elec_.create(agroup);
-  elec_.create(2);
+  elec_.create({2, 2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 0.0, 1.0};
   elec_.R[2] = {0.0, 1.0, 0.0};
