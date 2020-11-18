@@ -86,11 +86,13 @@ protected:
   bool putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
+  // the dimensions of Ctemp are determined by the dataset on file
   void LoadFullCoefsFromH5(hdf_archive& hin,
                            int setVal,
                            PosType& SuperTwist,
                            Matrix<std::complex<RealType>>& Ctemp,
                            bool MultiDet);
+  // the dimensions of Creal are determined by the dataset on file
   void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal, bool Multidet);
   void EvalPeriodicImagePhaseFactors(PosType SuperTwist, std::vector<RealType>& LocPeriodicImagePhaseFactors);
   void EvalPeriodicImagePhaseFactors(PosType SuperTwist,

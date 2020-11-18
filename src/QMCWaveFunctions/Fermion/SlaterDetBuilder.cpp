@@ -163,10 +163,24 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         getNodeName(tname, tcur);
         if (tname == det_tag || tname == rn_tag)
         {
+          if (spin_group >= targetPtcl.groups())
+          {
+            std::ostringstream err_msg;
+            err_msg << "Need only " << targetPtcl.groups() << " determinant input elements. Found more."
+                    << std::endl;
+            throw std::runtime_error(err_msg.str());
+          }
           if (putDeterminant(tcur, spin_group))
             spin_group++;
         }
         tcur = tcur->next;
+      }
+      if (spin_group < targetPtcl.groups())
+      {
+        std::ostringstream err_msg;
+        err_msg << "Not enough determinant input elements. "
+                << "Need " << targetPtcl.groups() << " but only found " << spin_group << "." << std::endl;
+        throw std::runtime_error(err_msg.str());
       }
     }
     else if (cname == multisd_tag)
@@ -793,7 +807,12 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     }
     cur = cur->next;
   }
-  size_t NCA, NCB, NEA, NEB, nstates, ndets = 0, count = 0, cnt0 = 0;
+  size_t NCA = 0, NCB = 0;
+  size_t NEA = 0, NEB = 0;
+  size_t nstates = 0;
+  size_t ndets = 0;
+  size_t count = 0;
+  size_t cnt0 = 0;
   std::string Dettype   = "DETS";
   std::string CSFChoice = "qchem_coeff";
   OhmmsAttributeSet spoAttrib;
@@ -809,10 +828,12 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   spoAttrib.add(zero_cutoff, "zerocutoff");
   spoAttrib.add(CSFChoice, "sortby");
   spoAttrib.put(DetListNode);
+
   if (ndets == 0)
   {
     APP_ABORT("size==0 in detlist is not allowed. Use slaterdeterminant in this case.\n");
   }
+
   if (Dettype == "DETS" || Dettype == "Determinants")
     usingCSF = false;
   else if (Dettype == "CSF")
@@ -821,11 +842,19 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   {
     APP_ABORT("Only allowed type in detlist is DETS or CSF.\n");
   }
+
   if (zero_cutoff > 0)
     app_log() << "  Initializing CI coeffs less than " << zero_cutoff << " to zero." << std::endl;
-  // cheating until I fix the converter
-  NCA = nels_up - NEA;
-  NCB = nels_dn - NEB;
+
+  if (NEA == 0)
+    NEA = nels_up - NCA;
+  else if (NEA != nels_up - NCA)
+    throw std::runtime_error("nea is not equal to nels_up - nca");
+  if (NEB == 0)
+    NEB = nels_dn - NCB;
+  else if (NEB != nels_dn - NCB)
+    throw std::runtime_error("neb is not equal to nels_dn - ncb");
+
   // mmorales: a little messy for now, clean up later
   cur = DetListNode->children;
   ci_configuration dummyC_alpha;
@@ -1204,7 +1233,11 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     }
     cur = cur->next;
   }
-  size_t NCA, NCB, NEA, NEB, nstates, ndets = 0;
+
+  app_log() << "  H5 code path implicitly assumes NCA = NCB = 0, "
+            << "NEA = " << nels_up << " and NEB = " << nels_dn << std::endl;
+  size_t nstates = 0;
+  size_t ndets = 0;
   size_t H5_ndets, H5_nstates;
   /// 64 bit fixed width integer
   const unsigned bit_kind = 64;
@@ -1214,10 +1247,6 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   std::string Dettype = "DETS";
   ValueType sumsq     = 0.0;
   OhmmsAttributeSet spoAttrib;
-  spoAttrib.add(NCA, "nca");
-  spoAttrib.add(NCB, "ncb");
-  spoAttrib.add(NEA, "nea");
-  spoAttrib.add(NEB, "neb");
   spoAttrib.add(ndets, "size");
   spoAttrib.add(Dettype, "type");
   spoAttrib.add(nstates, "nstates");
@@ -1256,7 +1285,9 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   }
 
   hin.read(H5_nstates, "nstate");
-  if (nstates != H5_nstates)
+  if (nstates == 0)
+    nstates = H5_nstates;
+  else if (nstates != H5_nstates)
   {
     std::cerr << "Number of states/orbitals in H5 file (" << H5_nstates
               << ") different from number of states/orbitals in XML (" << nstates << ")" << std::endl;
@@ -1327,7 +1358,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     dummyC_beta.occup[i] = true;
 
   hin.close();
-  app_log() << " Done reading CIs from H5!!" << std::endl;
+  app_log() << " Done reading " << ndets << " CIs from H5!" << std::endl;
 
   int cntup = 0;
   int cntdn = 0;

@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "LCAOrbitalBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/LCAO/NGFunctor.h"
@@ -26,7 +27,6 @@
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 //#include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/LCAO/AOBasisBuilder.h"
-#include "LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/LCAO/MultiFunctorAdapter.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSetWithCorrection.h"
@@ -449,12 +449,12 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, optimize == "yes");
+    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
   }
   else
-    lcos = new LCAOrbitalSet(myBasisSet, optimize == "yes");
+    lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
 #else
-  lcos = new LCAOrbitalSet(myBasisSet, optimize == "yes");
+  lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
 #endif
   loadMO(*lcos, cur);
 
@@ -524,7 +524,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
   aAttrib.add(debugc, "debug");
   aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
-  spo.setOrbitalSetSize(norb);
   xmlNodePtr occ_ptr   = NULL;
   xmlNodePtr coeff_ptr = NULL;
   cur                  = cur->xmlChildrenNode;
@@ -544,8 +543,9 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
   if (coeff_ptr == NULL)
   {
     app_log() << "   Using Identity for the LCOrbitalSet " << std::endl;
-    return spo.setIdentity(true);
+    return true;
   }
+  spo.setOrbitalSetSize(norb);
   bool success = putOccupation(spo, occ_ptr);
   if (h5_path == "")
     success = putFromXML(spo, coeff_ptr);
@@ -592,7 +592,6 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
 
 bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-  spo.Identity = true;
   int norbs    = 0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norbs, "size");
@@ -608,7 +607,6 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     std::vector<ValueType> Ctemp;
     int BasisSetSize = spo.getBasisSetSize();
     Ctemp.resize(norbs * BasisSetSize);
-    spo.setIdentity(false);
     putContent(Ctemp, coeff_ptr);
     int n = 0, i = 0;
     std::vector<ValueType>::iterator cit(Ctemp.begin());
@@ -633,7 +631,6 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
 #if defined(HAVE_LIBHDF5)
-  int norbs  = spo.getOrbitalSetSize();
   int neigs  = spo.getBasisSetSize();
   int setVal = -1;
   std::string setname;
@@ -642,14 +639,13 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(neigs, "size");
   aAttrib.add(neigs, "orbitals");
   aAttrib.put(coeff_ptr);
-  spo.setIdentity(false);
   hdf_archive hin(myComm);
   if (myComm->rank() == 0)
   {
     if (!hin.open(h5_path, H5F_ACC_RDONLY))
       APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
 
-    Matrix<RealType> Ctemp(neigs, spo.getBasisSetSize());
+    Matrix<RealType> Ctemp;
     char name[72];
 
     //This is to make sure of Backward compatibility with previous tags.
@@ -666,6 +662,24 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       }
     }
     hin.close();
+
+    if (Ctemp.cols() != spo.getBasisSetSize())
+    {
+      std::ostringstream err_msg;
+      err_msg << "Basis set size " << spo.getBasisSetSize()
+              << " mismatched the number of MO coefficients columns " << Ctemp.cols()
+              << " from h5." << std::endl;
+      myComm->barrier_and_abort(err_msg.str());
+    }
+
+    int norbs = spo.getOrbitalSetSize();
+    if (Ctemp.rows() < norbs)
+    {
+      std::ostringstream err_msg;
+      err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp.rows()
+              << " from h5." << std::endl;
+      myComm->barrier_and_abort(err_msg.str());
+    }
 
     int n = 0, i = 0;
     while (i < norbs)
@@ -706,7 +720,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   aAttrib.add(neigs, "size");
   aAttrib.add(neigs, "orbitals");
   aAttrib.put(coeff_ptr);
-  spo.setIdentity(false);
   hdf_archive hin(myComm);
 
   xmlNodePtr curtemp = coeff_ptr;
@@ -760,7 +773,7 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
       APP_ABORT("Requested Super Twist in XML and Super Twist in HDF5 do not Match!!! Aborting.");
     }
     //SuperTwist=SuperTwistH5;
-    Matrix<ValueType> Ctemp(neigs, spo.getBasisSetSize());
+    Matrix<ValueType> Ctemp;
     LoadFullCoefsFromH5(hin, setVal, SuperTwist, Ctemp, MultiDet);
 
     int n = 0, i = 0;
@@ -847,8 +860,8 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
                                             Matrix<std::complex<RealType>>& Ctemp,
                                             bool MultiDet)
 {
-  Matrix<RealType> Creal(Ctemp.rows(), Ctemp.cols());
-  Matrix<RealType> Ccmplx(Ctemp.rows(), Ctemp.cols());
+  Matrix<RealType> Creal;
+  Matrix<RealType> Ccmplx;
 
   char name[72];
   std::string setname;
@@ -871,6 +884,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
   hin.read(IsComplex, "/parameters/IsComplex");
   if (IsComplex == false)
   {
+    Ccmplx.resize(Creal.rows(), Creal.cols());
     Ccmplx = 0.0;
   }
   else
@@ -879,6 +893,7 @@ void LCAOrbitalBuilder::LoadFullCoefsFromH5(hdf_archive& hin,
     readRealMatrixFromH5(hin, setname, Ccmplx);
   }
 
+  Ctemp.resize(Creal.rows(), Creal.cols());
   for (int i = 0; i < Ctemp.rows(); i++)
     for (int j = 0; j < Ctemp.cols(); j++)
       Ctemp[i][j] = std::complex<RealType>(Creal[i][j], Ccmplx[i][j]);

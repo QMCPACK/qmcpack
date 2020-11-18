@@ -47,6 +47,14 @@ void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
 
   if (Optimizable)
     Phi->buildOptVariables(nel);
+
+  if (Phi->getOrbitalSetSize() < nel)
+  {
+    std::ostringstream err_msg;
+    err_msg << "The SPOSet " << Phi->getName() << " only has " << Phi->getOrbitalSetSize() << " orbitals "
+            << "but this determinant needs at least " << nel << std::endl;
+    throw std::runtime_error(err_msg.str());
+  }
 }
 
 template<typename DU_TYPE>
