@@ -147,7 +147,6 @@ WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
   {
     mySPOSetBuilderFactory = new SPOSetBuilderFactory(myComm, targetPtcl, ptclPool);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
-    mySPOSetBuilderFactory->loadBasisSetFromXML(bPtr);
   }
   // mmorales: this needs to be fixed after changes to BasisSetfactory
   //    BasisSetBase<RealType>* myBasisSet=mySPOSetBuilderFactory->getBasisSet();

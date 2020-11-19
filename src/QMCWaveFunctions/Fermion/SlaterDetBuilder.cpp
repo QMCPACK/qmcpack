@@ -88,11 +88,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   while (cur != NULL) //check the basis set
   {
     getNodeName(cname, cur);
-    if (cname == basisset_tag)
-    {
-      mySPOSetBuilderFactory->loadBasisSetFromXML(cur);
-    }
-    else if (cname == sposet_tag)
+    if (cname == sposet_tag)
     {
       app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
       std::string spo_name;

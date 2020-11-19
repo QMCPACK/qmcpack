@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 #define QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 
+#include <map>
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
@@ -32,14 +33,13 @@ namespace qmcplusplus
 class LCAOrbitalBuilder : public SPOSetBuilder
 {
 public:
-  typedef typename LCAOrbitalSet::basis_type BasisSet_t;
+  using BasisSet_t = LCAOrbitalSet::basis_type;
   /** constructor
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
   LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur);
   ~LCAOrbitalBuilder();
-  void loadBasisSetFromXML(xmlNodePtr cur);
   SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
 protected:
@@ -49,6 +49,8 @@ protected:
   ParticleSet& sourcePtcl;
   ///localized basis set
   BasisSet_t* myBasisSet;
+  /// localized basis set map
+  std::map<std::string, std::unique_ptr<BasisSet_t>> basisset_map_;
   ///apply cusp correction to molecular orbitals
   int radialOrbType;
   bool cuspCorr;
@@ -68,7 +70,7 @@ protected:
   bool doCuspCorrection;
 
   ///load basis set from hdf5 file
-  void loadBasisSetFromH5();
+  std::unique_ptr<BasisSet_t> loadBasisSetFromH5();
   /** create basis set
      *
      * Use ao_traits<T,I,J> to match (ROT)x(SH) combo
@@ -107,6 +109,8 @@ protected:
   void readRealMatrixFromH5(hdf_archive& hin,
                             const std::string& setname,
                             Matrix<LCAOrbitalBuilder::RealType>& Creal) const;
+private:
+  std::unique_ptr<BasisSet_t> loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent);
 };
 
 

@@ -117,7 +117,6 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   REQUIRE(bb != nullptr);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  bb->loadBasisSetFromXML(MO_base[0]);
   SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
   LCAOrbitalSet* lcob = dynamic_cast<LCAOrbitalSet*>(sposet);
@@ -295,7 +294,6 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(bb != nullptr);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  bb->loadBasisSetFromXML(MO_base[0]);
   SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
   SPOSet::ValueVector_t values;
@@ -474,7 +472,6 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(bb != nullptr);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  bb->loadBasisSetFromXML(MO_base[0]);
   SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
 

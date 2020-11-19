@@ -52,8 +52,6 @@ public:
 
   SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
 
-  void loadBasisSetFromXML(xmlNodePtr cur) { last_builder->loadBasisSetFromXML(cur); }
-
   SPOSet* createSPOSet(xmlNodePtr cur);
 
   void build_sposet_collection(xmlNodePtr cur);

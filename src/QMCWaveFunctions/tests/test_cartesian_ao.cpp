@@ -73,7 +73,6 @@ void test_cartesian_ao()
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector_t values;
@@ -143,7 +142,6 @@ void test_dirac_ao()
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector_t values;

@@ -87,7 +87,6 @@ void test_He(bool transform)
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
@@ -207,7 +206,6 @@ void test_Ne(bool transform)
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
@@ -336,7 +334,6 @@ void test_HCN(bool transform)
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
 

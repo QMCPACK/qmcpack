@@ -104,6 +104,7 @@ struct ao_traits<T, ORBT, 2, 1>
 
 inline bool is_same(const xmlChar* a, const char* b) { return !strcmp((const char*)a, b); }
 
+using BasisSet_t = LCAOrbitalSet::basis_type;
 
 LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur)
     : SPOSetBuilder("LCAO", comm),
@@ -153,9 +154,33 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
     doCuspCorrection = true;
   //Evaluate the Phase factor. Equals 1 for OBC.
   EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors);
+
   // no need to wait but load the basis set
   if (h5_path != "")
-    loadBasisSetFromH5();
+    basisset_map_["LCAOBSet"] = loadBasisSetFromH5();
+  else
+  {
+    processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+      if (cname == "basisset")
+      {
+        XMLAttrString basisset_name_input(element, "name");
+        std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input.c_str());
+        if (basisset_map_.find(basisset_name) != basisset_map_.end())
+        {
+          std::ostringstream err_msg;
+          err_msg << "Cannot create basisset " << basisset_name << " which already exists."
+                  << std::endl;
+          throw std::runtime_error(err_msg.str());
+        }
+        basisset_map_[basisset_name] = loadBasisSetFromXML(element, cur);
+      }
+    });
+  }
+
+  if (basisset_map_.size() == 0)
+    throw std::runtime_error("No basisset found in the XML input!");
+
+  myBasisSet = basisset_map_["LCAOBSet"].get();
 }
 
 LCAOrbitalBuilder::~LCAOrbitalBuilder()
@@ -163,26 +188,9 @@ LCAOrbitalBuilder::~LCAOrbitalBuilder()
   //properly cleanup
 }
 
-void LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur)
+std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent)
 {
   ReportEngine PRE(ClassName, "loadBasisSetFromXML(xmlNodePtr)");
-  if (myBasisSet)
-  {
-    app_log() << "Reusing previously loaded BasisSet." << std::endl;
-    return;
-  }
-
-  if (!is_same(cur->name, "basisset"))
-  { //heck to handle things like <sposet_builder>
-    xmlNodePtr cur1 = cur->xmlChildrenNode;
-    while (cur1 != NULL)
-    {
-      if (is_same(cur1->name, "basisset"))
-        cur = cur1;
-      cur1 = cur1->next;
-    }
-  }
-
   int ylm = -1;
   {
     xmlNodePtr cur1 = cur->xmlChildrenNode;
@@ -203,6 +211,7 @@ void LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur)
   if (ylm < 0)
     PRE.error("Missing angular attribute of atomicBasisSet.", true);
 
+  BasisSet_t* myBasisSet = nullptr;
   /** process atomicBasisSet per ion species */
   switch (radialOrbType)
   {
@@ -228,16 +237,13 @@ void LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur)
     PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.", true);
     break;
   }
+
+  return std::unique_ptr<BasisSet_t>(myBasisSet);
 }
 
-void LCAOrbitalBuilder::loadBasisSetFromH5()
+std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5()
 {
   ReportEngine PRE(ClassName, "loadBasisSetFromH5()");
-  if (myBasisSet)
-  {
-    app_log() << "Reusing previously loaded BasisSet." << std::endl;
-    return;
-  }
 
   hdf_archive hin(myComm);
   int ylm = -1;
@@ -262,6 +268,7 @@ void LCAOrbitalBuilder::loadBasisSetFromH5()
   if (ylm < 0)
     PRE.error("Missing angular attribute of atomicBasisSet.", true);
 
+  BasisSet_t* myBasisSet = nullptr;
   /** process atomicBasisSet per ion species */
   switch (radialOrbType)
   {
@@ -287,6 +294,7 @@ void LCAOrbitalBuilder::loadBasisSetFromH5()
     PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.", true);
     break;
   }
+  return std::unique_ptr<BasisSet_t>(myBasisSet);
 }
 
 

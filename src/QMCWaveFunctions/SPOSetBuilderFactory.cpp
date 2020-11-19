@@ -260,19 +260,8 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   else if (spo_builders.find(type) != spo_builders.end())
     bb = spo_builders[type];
   else
-  {
-    std::string cname("");
-    xmlNodePtr tcur = cur->children;
-    if (tcur != NULL)
-      getNodeName(cname, tcur);
-    if (cname == basisset_tag)
-    {
-      bb = createSPOSetBuilder(cur);
-      bb->loadBasisSetFromXML(tcur);
-    }
-    else
-      bb = createSPOSetBuilder(cur);
-  }
+    bb = createSPOSetBuilder(cur);
+
   if (bb)
   {
     SPOSet* spo = bb->createSPOSet(cur);
@@ -307,12 +296,6 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 
   // create the SPOSet builder
   SPOSetBuilder* bb = createSPOSetBuilder(cur);
-
-  // going through a list of basisset entries
-  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-    if (cname == "basisset")
-      bb->loadBasisSetFromXML(cur);
-  });
 
   // going through a list of sposet entries
   int nsposets = 0;
