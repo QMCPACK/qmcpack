@@ -26,6 +26,7 @@
 #include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"
 #include "QMCHamiltonians/observable_helper.h"
+#include "Containers/MinimalContainers/RecordArray.hpp"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif
@@ -247,6 +248,13 @@ struct OperatorBase : public QMCTraits
   virtual Return_t evaluate(ParticleSet& P) = 0;
   /** Evaluate the contribution of this component of multiple walkers */
   virtual void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list);
+
+  virtual void mw_evaluateWithParameterDerivatives(const RefVector<OperatorBase>& O_list,
+                                                   const RefVector<ParticleSet>& P_list,
+                                                   const opt_variables_type& optvars,
+                                                   RecordArray<ValueType>& dlogpsi,
+                                                   RecordArray<ValueType>& dhpsioverpsi);
+
 
   virtual Return_t rejectedMove(ParticleSet& P) { return 0; }
   /** Evaluate the local energy contribution of this component with Toperators updated if requested
