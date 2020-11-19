@@ -24,9 +24,7 @@ LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Commun
   ClassName = "LCAOSpinorBuilder";
 
   if (h5_path == "")
-  {
     myComm->barrier_and_abort("LCAOSpinorBuilder only works with href");
-  }
 }
 
 SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
@@ -125,8 +123,6 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     return false;
   }
 
-  int norbs = up.getOrbitalSetSize();
-
   bool success = true;
   hdf_archive hin(myComm);
   if (myComm->rank() == 0)
@@ -177,7 +173,9 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     assert(upReal.cols() == dnReal.cols());
 
     Occ.resize(upReal.rows());
-    success = putOccupation(norbs, occ_ptr);
+    success = putOccupation(up, occ_ptr);
+
+    int norbs = up.getOrbitalSetSize();
 
     int n = 0, i = 0;
     while (i < norbs)
@@ -208,41 +206,6 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
 #endif
 
   return success;
-}
-
-bool LCAOSpinorBuilder::putOccupation(int norbs, xmlNodePtr occ_ptr)
-{
-  Occ = 0.0;
-  for (int i = 0; i < norbs; i++)
-    Occ[i] = 1.0;
-  std::vector<int> occ_in;
-  std::string occ_mode("table");
-  if (occ_ptr == nullptr)
-  {
-    occ_mode = "ground";
-  }
-  else
-  {
-    const XMLAttrString o(occ_ptr, "mode");
-    if (!o.empty())
-      occ_mode = o;
-  }
-  if (occ_mode == "excited")
-  {
-    putContent(occ_in, occ_ptr);
-    for (int k = 0; k < occ_in.size(); k++)
-    {
-      if (occ_in[k] < 0)
-        Occ[-occ_in[k] - 1] = 0.0;
-      else
-        Occ[occ_in[k] - 1] = 1.0;
-    }
-  }
-  else if (occ_mode == "table")
-  {
-    putContent(Occ, occ_ptr);
-  }
-  return true;
 }
 
 } // namespace qmcplusplus
