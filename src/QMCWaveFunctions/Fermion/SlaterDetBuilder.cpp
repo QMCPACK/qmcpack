@@ -77,10 +77,11 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
 
-  if (!mySPOSetBuilderFactory)
+  if (SPOSetBuilderFactory::spo_builders.size() == 0)
   { //always create one, using singleton and just to access the member functions
-    mySPOSetBuilderFactory = std::make_unique<SPOSetBuilderFactory>(myComm, targetPtcl, ptclPool);
-    mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
+    app_warning() << "!!!!!!! Deprecated input style. Creating SPOSetBuilder inside determinantset" << std::endl;
+    SPOSetBuilderFactory mySPOSetBuilderFactory(myComm, targetPtcl, ptclPool);
+    mySPOSetBuilderFactory.createSPOSetBuilder(curRoot);
   }
 
   //check the basis set
@@ -90,13 +91,14 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
     getNodeName(cname, cur);
     if (cname == sposet_tag)
     {
+      app_warning() << "!!!!!!! Deprecated input style. Creating SPO set inside determinantset" << std::endl;
       app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
       std::string spo_name;
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add(spo_name, "name");
       spoAttrib.put(cur);
       app_log() << "spo_name = " << spo_name << std::endl;
-      SPOSetPtr spo = mySPOSetBuilderFactory->createSPOSet(cur);
+      SPOSetPtr spo = SPOSetBuilderFactory::createSPOSet(cur);
       if (spomap.find(spo_name) != spomap.end())
       {
         app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
@@ -394,8 +396,9 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   //check if the named sposet exists
   if (psi == 0)
   {
+    app_warning() << "!!!!!!! Deprecated input style. Creating SPO set inside determinantset" << std::endl;
     app_log() << "      Create a new SPO set " << sposet_name << std::endl;
-    psi = mySPOSetBuilderFactory->createSPOSet(cur);
+    psi = SPOSetBuilderFactory::createSPOSet(cur);
   }
   psi->checkObject();
 

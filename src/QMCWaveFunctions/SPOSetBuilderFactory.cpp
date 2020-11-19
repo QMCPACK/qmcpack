@@ -241,26 +241,18 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 
 SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
 {
-  std::string bname("");
   std::string sname("");
   std::string type("");
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(bname, "basisset");
   aAttrib.add(sname, "name");
   aAttrib.add(type, "type");
   aAttrib.put(cur);
 
-  //tolower(type);
-
-  SPOSetBuilder* bb;
-  if (bname == "")
-    bname = type;
+  SPOSetBuilder* bb = nullptr;
   if (type == "")
     bb = last_builder;
   else if (spo_builders.find(type) != spo_builders.end())
     bb = spo_builders[type];
-  else
-    bb = createSPOSetBuilder(cur);
 
   if (bb)
   {
@@ -269,10 +261,7 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
     return spo;
   }
   else
-  {
-    myComm->barrier_and_abort("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. SPOSetBuilder is empty.");
-    return 0;
-  }
+    throw std::runtime_error("Cannot find any SPOSetBuilder to build SPOSet!");
 }
 
 void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)

@@ -151,7 +151,11 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
 
   // deprecated h5 basis set handling when basisset element is missing
   if (basisset_map_.size() == 0 && h5_path != "")
+  {
+    app_warning() << "!!!!!!! Deprecated input style. Missing basisset element. "
+                  << "Fallback on loading an implicit one." << std::endl;
     basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
+  }
 
   if (basisset_map_.size() == 0)
     throw std::runtime_error("No basisset found in the XML input!");

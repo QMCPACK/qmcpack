@@ -52,7 +52,7 @@ public:
 
   SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
 
-  SPOSet* createSPOSet(xmlNodePtr cur);
+  static SPOSet* createSPOSet(xmlNodePtr cur);
 
   void build_sposet_collection(xmlNodePtr cur);
 

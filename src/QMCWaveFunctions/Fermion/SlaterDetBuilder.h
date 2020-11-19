@@ -56,7 +56,6 @@ private:
   TrialWaveFunction& targetPsi;
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
-  std::unique_ptr<SPOSetBuilderFactory> mySPOSetBuilderFactory;
   SlaterDeterminant_t* slaterdet_0;
   MultiSlaterDeterminant_t* multislaterdet_0;
   MultiSlaterDeterminantFast* multislaterdetfast_0;
