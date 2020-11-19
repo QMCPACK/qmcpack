@@ -162,7 +162,7 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
           </basisGroup> \
         </atomicBasisSet> \
       </basisset> \
-      <sposet name=\"spo\" size=\"1\"> \
+      <sposet name=\"spo\" basisset=\"LCAOBSet\" size=\"1\"> \
         <occupation mode=\"ground\"/> \
         <coefficient size=\"1\" id=\"updetC\"> \
           1.00000000000000e+00 \

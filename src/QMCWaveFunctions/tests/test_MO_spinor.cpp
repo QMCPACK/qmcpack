@@ -66,7 +66,7 @@ void test_lcao_spinor()
   ptcl.addParticleSet(&ions_);
 
   const char* particles = "<tmp> \
-   <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
+   <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" transform=\"yes\" source=\"ion\" precision=\"float\"> \
      <sposet name=\"myspo\" size=\"1\"/> \
    </sposet_builder> \
    </tmp> \
@@ -232,7 +232,7 @@ void test_lcao_spinor_excited()
   ptcl.addParticleSet(&ions_);
 
   const char* particles = "<tmp> \
-   <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
+   <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" transform=\"yes\" source=\"ion\" precision=\"float\"> \
      <sposet name=\"myspo\" size=\"1\"> \
        <occupation mode=\"excited\"> \
          -1 2 \

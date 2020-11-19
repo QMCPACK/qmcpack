@@ -33,13 +33,18 @@ SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), optimize("no");
+  std::string basisset_name("LCAOBSet");
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(spo_name, "name");
   spoAttrib.add(optimize, "optimize");
+  spoAttrib.add(basisset_name, "basisset");
   spoAttrib.put(cur);
 
-  if (myBasisSet == nullptr)
-    PRE.error("Missing basisset.", true);
+  BasisSet_t* myBasisSet = nullptr;
+  if (basisset_map_.find(basisset_name) == basisset_map_.end())
+    myComm->barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
+  else
+    myBasisSet = basisset_map_[basisset_name].get();
 
   if (optimize == "yes")
     app_log() << "  SPOSet " << spo_name << " is optimizable\n";

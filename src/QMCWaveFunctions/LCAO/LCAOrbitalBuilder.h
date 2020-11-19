@@ -47,14 +47,10 @@ protected:
   ParticleSet& targetPtcl;
   ///source ParticleSet
   ParticleSet& sourcePtcl;
-  ///localized basis set
-  BasisSet_t* myBasisSet;
   /// localized basis set map
   std::map<std::string, std::unique_ptr<BasisSet_t>> basisset_map_;
-  ///apply cusp correction to molecular orbitals
-  int radialOrbType;
+  /// if true, add cusp correction to orbitals
   bool cuspCorr;
-  std::string cuspInfo;
   ///Path to HDF5 Wavefunction
   std::string h5_path;
   ///Number of periodic Images for Orbital evaluation
@@ -69,8 +65,6 @@ protected:
   /// Enable cusp correction
   bool doCuspCorrection;
 
-  ///load basis set from hdf5 file
-  std::unique_ptr<BasisSet_t> loadBasisSetFromH5();
   /** create basis set
      *
      * Use ao_traits<T,I,J> to match (ROT)x(SH) combo
@@ -109,8 +103,14 @@ protected:
   void readRealMatrixFromH5(hdf_archive& hin,
                             const std::string& setname,
                             Matrix<LCAOrbitalBuilder::RealType>& Creal) const;
+
 private:
+  ///load a basis set from XML input
   std::unique_ptr<BasisSet_t> loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent);
+  ///load a basis set from h5 file
+  std::unique_ptr<BasisSet_t> loadBasisSetFromH5(xmlNodePtr parent);
+  ///determine radial orbital type based on "keyword" and "transform" attributes
+  int determineRadialOrbType(xmlNodePtr cur) const;
 };
 
 

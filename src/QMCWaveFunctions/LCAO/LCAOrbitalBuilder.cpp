@@ -110,7 +110,6 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
     : SPOSetBuilder("LCAO", comm),
       targetPtcl(els),
       sourcePtcl(ions),
-      myBasisSet(nullptr),
       h5_path(""),
       SuperTwist(0.0),
       doCuspCorrection(false)
@@ -118,26 +117,64 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   ClassName = "LCAOrbitalBuilder";
   ReportEngine PRE(ClassName, "createBasisSet");
 
-  std::string keyOpt("NMO");       // Numerical Molecular Orbital
-  std::string transformOpt("yes"); // Numerical Molecular Orbital
-  std::string cuspC("no");         // cusp correction
-  cuspInfo = "";                   // file with precalculated cusp correction info
+  std::string cuspC("no"); // cusp correction
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(keyOpt, "keyword");
-  aAttrib.add(keyOpt, "key");
-  aAttrib.add(transformOpt, "transform");
   aAttrib.add(cuspC, "cuspCorrection");
-  aAttrib.add(cuspInfo, "cuspInfo");
   aAttrib.add(h5_path, "href");
   aAttrib.add(PBCImages, "PBCimages");
   aAttrib.add(SuperTwist, "twist");
   aAttrib.put(cur);
 
-  if (cur != NULL)
-    aAttrib.put(cur);
+  if (cuspC == "yes")
+    doCuspCorrection = true;
+  //Evaluate the Phase factor. Equals 1 for OBC.
+  EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors);
 
-  radialOrbType = -1;
-  if (transformOpt == "yes")
+  // no need to wait but load the basis set
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "basisset")
+    {
+      XMLAttrString basisset_name_input(element, "name");
+      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input.c_str());
+      if (basisset_map_.find(basisset_name) != basisset_map_.end())
+      {
+        std::ostringstream err_msg;
+        err_msg << "Cannot create basisset " << basisset_name << " which already exists." << std::endl;
+        throw std::runtime_error(err_msg.str());
+      }
+      if (h5_path != "")
+        basisset_map_[basisset_name] = loadBasisSetFromH5(element);
+      else
+        basisset_map_[basisset_name] = loadBasisSetFromXML(element, cur);
+    }
+  });
+
+  // deprecated h5 basis set handling when basisset element is missing
+  if (basisset_map_.size() == 0 && h5_path != "")
+    basisset_map_["LCAOBSet"] = loadBasisSetFromH5(cur);
+
+  if (basisset_map_.size() == 0)
+    throw std::runtime_error("No basisset found in the XML input!");
+
+}
+
+LCAOrbitalBuilder::~LCAOrbitalBuilder()
+{
+  //properly cleanup
+}
+
+int LCAOrbitalBuilder::determineRadialOrbType(xmlNodePtr cur) const
+{
+  std::string keyOpt;
+  std::string transformOpt;
+  OhmmsAttributeSet aAttrib;
+  aAttrib.add(keyOpt, "keyword");
+  aAttrib.add(keyOpt, "key");
+  aAttrib.add(transformOpt, "transform");
+  aAttrib.put(cur);
+
+  int radialOrbType = -1;
+  if (transformOpt == "yes" || keyOpt == "NMO")
     radialOrbType = 0;
   else
   {
@@ -146,46 +183,7 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
     if (keyOpt == "STO")
       radialOrbType = 2;
   }
-
-  if (radialOrbType < 0)
-    PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .", true);
-
-  if (cuspC == "yes")
-    doCuspCorrection = true;
-  //Evaluate the Phase factor. Equals 1 for OBC.
-  EvalPeriodicImagePhaseFactors(SuperTwist, PeriodicImagePhaseFactors);
-
-  // no need to wait but load the basis set
-  if (h5_path != "")
-    basisset_map_["LCAOBSet"] = loadBasisSetFromH5();
-  else
-  {
-    processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-      if (cname == "basisset")
-      {
-        XMLAttrString basisset_name_input(element, "name");
-        std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input.c_str());
-        if (basisset_map_.find(basisset_name) != basisset_map_.end())
-        {
-          std::ostringstream err_msg;
-          err_msg << "Cannot create basisset " << basisset_name << " which already exists."
-                  << std::endl;
-          throw std::runtime_error(err_msg.str());
-        }
-        basisset_map_[basisset_name] = loadBasisSetFromXML(element, cur);
-      }
-    });
-  }
-
-  if (basisset_map_.size() == 0)
-    throw std::runtime_error("No basisset found in the XML input!");
-
-  myBasisSet = basisset_map_["LCAOBSet"].get();
-}
-
-LCAOrbitalBuilder::~LCAOrbitalBuilder()
-{
-  //properly cleanup
+  return radialOrbType;
 }
 
 std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent)
@@ -210,6 +208,17 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cu
 
   if (ylm < 0)
     PRE.error("Missing angular attribute of atomicBasisSet.", true);
+
+  int radialOrbType = determineRadialOrbType(cur);
+  if (radialOrbType < 0)
+  {
+    app_warning() << "Radial orbital type cannot be determined based on the attributes of basisset line. "
+                  << "Trying the parent element." << std::endl;
+    radialOrbType = determineRadialOrbType(parent);
+  }
+
+  if (radialOrbType < 0)
+    PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .", true);
 
   BasisSet_t* myBasisSet = nullptr;
   /** process atomicBasisSet per ion species */
@@ -241,7 +250,7 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cu
   return std::unique_ptr<BasisSet_t>(myBasisSet);
 }
 
-std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5()
+std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5(xmlNodePtr parent)
 {
   ReportEngine PRE(ClassName, "loadBasisSetFromH5()");
 
@@ -267,6 +276,10 @@ std::unique_ptr<BasisSet_t> LCAOrbitalBuilder::loadBasisSetFromH5()
   myComm->bcast(ylm);
   if (ylm < 0)
     PRE.error("Missing angular attribute of atomicBasisSet.", true);
+
+  int radialOrbType = determineRadialOrbType(parent);
+  if (radialOrbType < 0)
+    PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .", true);
 
   BasisSet_t* myBasisSet = nullptr;
   /** process atomicBasisSet per ion species */
@@ -438,15 +451,20 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), id, cusp_file(""), optimize("no");
+  std::string basisset_name("LCAOBSet");
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(spo_name, "name");
   spoAttrib.add(id, "id");
   spoAttrib.add(cusp_file, "cuspInfo");
   spoAttrib.add(optimize, "optimize");
+  spoAttrib.add(basisset_name, "basisset");
   spoAttrib.put(cur);
 
-  if (myBasisSet == nullptr)
-    PRE.error("Missing basisset.", true);
+  BasisSet_t* myBasisSet = nullptr;
+  if (basisset_map_.find(basisset_name) == basisset_map_.end())
+    myComm->barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
+  else
+    myBasisSet = basisset_map_[basisset_name]->makeClone();
 
   if (optimize == "yes")
     app_log() << "  SPOSet " << spo_name << " is optimizable\n";
@@ -457,12 +475,14 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
+    lcos = lcwc =
+        new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, std::unique_ptr<BasisSet_t>(myBasisSet),
+                                        optimize == "yes");
   }
   else
-    lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
+    lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet), optimize == "yes");
 #else
-  lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
+  lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet), optimize == "yes");
 #endif
   loadMO(*lcos, cur);
 
@@ -600,7 +620,7 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
 
 bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-  int norbs    = 0;
+  int norbs = 0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norbs, "size");
   aAttrib.add(norbs, "orbitals");
@@ -674,9 +694,8 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     if (Ctemp.cols() != spo.getBasisSetSize())
     {
       std::ostringstream err_msg;
-      err_msg << "Basis set size " << spo.getBasisSetSize()
-              << " mismatched the number of MO coefficients columns " << Ctemp.cols()
-              << " from h5." << std::endl;
+      err_msg << "Basis set size " << spo.getBasisSetSize() << " mismatched the number of MO coefficients columns "
+              << Ctemp.cols() << " from h5." << std::endl;
       myComm->barrier_and_abort(err_msg.str());
     }
 
@@ -684,8 +703,8 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     if (Ctemp.rows() < norbs)
     {
       std::ostringstream err_msg;
-      err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp.rows()
-              << " from h5." << std::endl;
+      err_msg << "Need " << norbs << " orbitals. Insufficient rows of MO coefficients " << Ctemp.rows() << " from h5."
+              << std::endl;
       myComm->barrier_and_abort(err_msg.str());
     }
 
