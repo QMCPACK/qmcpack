@@ -57,10 +57,9 @@ public:
   using Base::OverlapForWoodbury;
   using Base::Propagate;
 
-  SlaterDetOperations_serial(BufferManager b) : SlaterDetOperations_base<Type, BufferManager>(b)
-  {}
+  SlaterDetOperations_serial(BufferManager b) : SlaterDetOperations_base<Type, BufferManager>(b) {}
 
-  SlaterDetOperations_serial(int NMO, int NAEA, BufferManager b) 
+  SlaterDetOperations_serial(int NMO, int NAEA, BufferManager b)
       : SlaterDetOperations_base<Type, BufferManager>(NMO, NAEA, b)
   {}
 
@@ -128,7 +127,13 @@ public:
   }
 
   template<class Mat, class MatP1, class MatV>
-  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order = 6, char TA = 'N', bool noncollinear = false)
+  void Propagate(Mat&& A,
+                 const MatP1& P1,
+                 const MatV& V,
+                 communicator& comm,
+                 int order         = 6,
+                 char TA           = 'N',
+                 bool noncollinear = false)
   {
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     APP_ABORT(" Error: SlaterDetOperations_serial should not be here. \n");
@@ -137,7 +142,12 @@ public:
   }
 
   template<class MatA, class MatP1, class MatV>
-  void BatchedPropagate(std::vector<MatA>& Ai, const MatP1& P1, const MatV& V, int order = 6, char TA = 'N', bool noncollinear = false)
+  void BatchedPropagate(std::vector<MatA>& Ai,
+                        const MatP1& P1,
+                        const MatV& V,
+                        int order         = 6,
+                        char TA           = 'N',
+                        bool noncollinear = false)
   {
     static_assert(pointedType<MatA>::dimensionality == 2, " dimenionality == 2");
     static_assert(std::decay<MatV>::type::dimensionality == 3, " dimenionality == 3");
@@ -145,11 +155,11 @@ public:
       return;
     assert(Ai.size() == V.size(0));
     int nbatch = Ai.size();
-    int npol = noncollinear ? 2 : 1;
+    int npol   = noncollinear ? 2 : 1;
     int NMO    = (*Ai[0]).size(0);
     int NAEA   = (*Ai[0]).size(1);
-    int M = NMO/npol;
-    assert(NMO%npol == 0);
+    int M      = NMO / npol;
+    assert(NMO % npol == 0);
     assert(P1.size(0) == NMO);
     assert(P1.size(1) == NMO);
     assert(V.size(1) == M);
@@ -173,18 +183,21 @@ public:
       for (int ib = 0; ib < nbatch; ib++)
         ma::product(P1, *(Ai[ib]), TMN[ib]);
     }
-   
+
     // Apply V
-    if(noncollinear) { 
+    if (noncollinear)
+    {
       // treat 2 polarizations as separate elements in the batch
       using TTensor_ref = boost::multi::array_ref<T, 3, decltype(TMN.origin())>;
-      TTensor_ref TMN_( TMN.origin(), {npol*nbatch, M, NAEA}); 
-      TTensor_ref T1_( T1.origin(), {npol*nbatch, M, NAEA}); 
-      TTensor_ref T2_( T2.origin(), {npol*nbatch, M, NAEA}); 
+      TTensor_ref TMN_(TMN.origin(), {npol * nbatch, M, NAEA});
+      TTensor_ref T1_(T1.origin(), {npol * nbatch, M, NAEA});
+      TTensor_ref T2_(T2.origin(), {npol * nbatch, M, NAEA});
       SlaterDeterminantOperations::batched::apply_expM_noncollinear(V, TMN_, T1_, T2_, order, TA);
-    } else {
+    }
+    else
+    {
       SlaterDeterminantOperations::batched::apply_expM(V, TMN, T1, T2, order, TA);
-    } 
+    }
 
     if (TA == 'H' || TA == 'h')
     {

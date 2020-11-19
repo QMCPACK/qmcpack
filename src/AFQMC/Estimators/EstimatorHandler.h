@@ -139,13 +139,14 @@ public:
             m_param.add(nnodes, "nnodes_per_TG", "int");
             m_param.add(nnodes, "nnodes", "int");
             m_param.put(wfn_cur);
-            if(WfnFac.is_constructed(wfn_name)) {
-              app_warning()<<" ****************************************************************************\n\n"
-                <<" WARNING: Wavefunction already constructed in Estimator Handler. \n"
-                <<"          Will reused available wavefunction object, ignoring hamiltonian. \n"
-                <<" ****************************************************************************\n\n";            
-              wfn = std::addressof(WfnFac.getWavefunction(TGgen.getTG(1), TGgen.getTG(nnodes), 
-                                                wfn_name,wfn0.getWalkerType(), nullptr)); 
+            if (WfnFac.is_constructed(wfn_name))
+            {
+              app_warning() << " ****************************************************************************\n\n"
+                            << " WARNING: Wavefunction already constructed in Estimator Handler. \n"
+                            << "          Will reused available wavefunction object, ignoring hamiltonian. \n"
+                            << " ****************************************************************************\n\n";
+              wfn = std::addressof(
+                  WfnFac.getWavefunction(TGgen.getTG(1), TGgen.getTG(nnodes), wfn_name, wfn0.getWalkerType(), nullptr));
             }
             else if (ham_name != "")
             {
