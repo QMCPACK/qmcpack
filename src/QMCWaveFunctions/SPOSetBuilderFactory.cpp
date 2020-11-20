@@ -41,22 +41,17 @@
 
 namespace qmcplusplus
 {
-//initialization of the static data of SPOSetBuilderFactory
-std::map<std::string, SPOSetBuilder*> SPOSetBuilderFactory::spo_builders;
-SPOSetBuilder* SPOSetBuilderFactory::last_builder = 0;
-
 void SPOSetBuilderFactory::clear()
 {
   spo_builders.clear();
   last_builder = nullptr;
 }
 
-SPOSet* get_sposet(const std::string& name)
+SPOSet* SPOSetBuilderFactory::get_sposet(const std::string& name) const
 {
   int nfound  = 0;
   SPOSet* spo = nullptr;
-  std::map<std::string, SPOSetBuilder*>::iterator it;
-  for (it = SPOSetBuilderFactory::spo_builders.begin(); it != SPOSetBuilderFactory::spo_builders.end(); ++it)
+  for (auto it = spo_builders.begin(); it != spo_builders.end(); ++it)
   {
     std::vector<SPOSet*>& sposets = it->second->sposets;
     for (int i = 0; i < sposets.size(); ++i)
@@ -83,11 +78,10 @@ SPOSet* get_sposet(const std::string& name)
 }
 
 
-void write_spo_builders(const std::string& pad)
+void SPOSetBuilderFactory::write_spo_builders(const std::string& pad) const
 {
   std::string pad2 = pad + "  ";
-  std::map<std::string, SPOSetBuilder*>::iterator it;
-  for (it = SPOSetBuilderFactory::spo_builders.begin(); it != SPOSetBuilderFactory::spo_builders.end(); ++it)
+  for (auto it = spo_builders.begin(); it != spo_builders.end(); ++it)
   {
     const std::string& type       = it->first;
     std::vector<SPOSet*>& sposets = it->second->sposets;
@@ -106,7 +100,7 @@ void write_spo_builders(const std::string& pad)
  * \param ions reference to the ions
  */
 SPOSetBuilderFactory::SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
-    : MPIObjectBase(comm), targetPtcl(els), ptclPool(psets)
+    : MPIObjectBase(comm), last_builder(nullptr), targetPtcl(els), ptclPool(psets)
 {
   ClassName = "SPOSetBuilderFactory";
 }
@@ -163,7 +157,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   if (type == "composite")
   {
     app_log() << "Composite SPO set with existing SPOSets." << std::endl;
-    bb = new CompositeSPOSetBuilder(myComm);
+    bb = new CompositeSPOSetBuilder(myComm, *this);
   }
   else if (type == "jellium" || type == "heg")
   {

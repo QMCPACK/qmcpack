@@ -21,25 +21,13 @@
 
 namespace qmcplusplus
 {
-///writes info about contained sposets to stdout
-void write_spo_builders(const std::string& pad = "");
-
-/**returns a named sposet from the global pool
-   *  only use in serial portion of execution
-   *  ie during initialization prior to threaded code
-   */
-SPOSet* get_sposet(const std::string& name);
-
 class SPOSetBuilderFactory : public MPIObjectBase
 {
 public:
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
 
-  ///set of basis set builders resolved by type
-  static std::map<std::string, SPOSetBuilder*> spo_builders;
-
   /// Reset the map and last_builder pointers.  Mostly for unit tests.
-  static void clear();
+  void clear();
 
   /** constructor
    * \param comm communicator
@@ -52,13 +40,27 @@ public:
 
   SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
 
-  static SPOSet* createSPOSet(xmlNodePtr cur);
+  SPOSet* createSPOSet(xmlNodePtr cur);
+
+/**returns a named sposet from the pool
+   *  only use in serial portion of execution
+   *  ie during initialization prior to threaded code
+   */
+  SPOSet* get_sposet(const std::string& name) const;
 
   void build_sposet_collection(xmlNodePtr cur);
 
+  bool empty() const { return spo_builders.size() == 0; }
+
 private:
+///writes info about contained sposets to stdout
+void write_spo_builders(const std::string& pad = "") const;
+
+  ///set of basis set builders resolved by type
+  std::map<std::string, SPOSetBuilder*> spo_builders;
+
   ///store the last builder, use if type not provided
-  static SPOSetBuilder* last_builder;
+  SPOSetBuilder* last_builder;
 
   ///reference to the target particle
   ParticleSet& targetPtcl;

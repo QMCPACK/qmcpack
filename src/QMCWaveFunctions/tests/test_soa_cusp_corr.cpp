@@ -233,8 +233,6 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   CHECK((*lcob->C)(0, 1) == Approx(0.0));
   CHECK((*lcob->C)(0, 2) == Approx(0.0));
   CHECK((*lcob->C)(0, 3) != 0.0);
-
-  SPOSetBuilderFactory::clear();
 }
 
 TEST_CASE("HCN MO with cusp", "[wavefunction]")
@@ -410,8 +408,6 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(all_grad[0][1][1] == Approx(0.0000000000));
   REQUIRE(all_grad[0][1][2] == Approx(0.0000000000));
   REQUIRE(all_lap[0][1] == Approx(19.8720529007));
-
-  SPOSetBuilderFactory::clear();
 }
 
 // Test case with multiple atoms of the same type
@@ -555,8 +551,6 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(all_grad[0][11][1] == Approx(0.9883840215));
   REQUIRE(all_grad[0][11][2] == Approx(1.7863218842));
   REQUIRE(all_lap[0][11] == Approx(-33.5202249813));
-
-  SPOSetBuilderFactory::clear();
 }
 
 

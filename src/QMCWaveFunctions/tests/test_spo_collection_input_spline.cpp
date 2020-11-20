@@ -90,7 +90,7 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
   wf_factory.put(ein_xml);
 
-  SPOSet* spo_ptr(get_sposet("spo"));
+  SPOSet* spo_ptr(wf_factory.getSPOSet("spo"));
   REQUIRE(spo_ptr);
   std::unique_ptr<SPOSet> spo(spo_ptr->makeClone());
 
@@ -135,8 +135,6 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   REQUIRE(std::imag(d2psiM[1][0]) == Approx(-1.3757134676));
   REQUIRE(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
 #endif
-
-  SPOSetBuilderFactory::clear();
 }
 
 TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")

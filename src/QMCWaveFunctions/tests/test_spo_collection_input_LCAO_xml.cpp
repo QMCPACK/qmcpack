@@ -67,7 +67,7 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   WaveFunctionFactory wf_factory("psi0", elec, ptcl.getPool(), c);
   wf_factory.put(ein_xml);
 
-  SPOSet* spo_ptr(get_sposet("spo"));
+  SPOSet* spo_ptr(wf_factory.getSPOSet("spo"));
   REQUIRE(spo_ptr);
   std::unique_ptr<SPOSet> sposet(spo_ptr->makeClone());
 
@@ -107,8 +107,6 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   REQUIRE(dpsi[0][1] == ValueApprox(0.0));
   REQUIRE(dpsi[0][2] == ValueApprox(0.0));
   REQUIRE(d2psi[0] == ValueApprox(-0.2618497452));
-
-  SPOSetBuilderFactory::clear();
 }
 
 TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")

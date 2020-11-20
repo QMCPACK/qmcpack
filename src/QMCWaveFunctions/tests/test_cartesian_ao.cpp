@@ -86,8 +86,6 @@ void test_cartesian_ao()
 
     //generated from ao_order_test.py
     REQUIRE(values[0] == Approx(0.48224527310155046).epsilon(1E-6));
-
-    SPOSetBuilderFactory::clear();
   }
 }
 
@@ -155,8 +153,6 @@ void test_dirac_ao()
 
     //from ao_order_test.py
     REQUIRE(values[0] == Approx(0.35953790416302006).epsilon(1E-6));
-
-    SPOSetBuilderFactory::clear();
   }
 }
 
