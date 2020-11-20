@@ -87,7 +87,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   {
     std::string cname((const char*)(cur->name));
     if (cname == "sposet_builder" || cname == "sposet_collection")
-      sposet_builder_factory_.build_sposet_collection(cur);
+      sposet_builder_factory_.buildSPOSetCollection(cur);
     else if (cname == WaveFunctionComponentBuilder::detset_tag)
     {
       success = addFermionTerm(cur);

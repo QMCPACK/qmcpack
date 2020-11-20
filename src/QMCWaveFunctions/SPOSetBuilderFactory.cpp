@@ -42,7 +42,7 @@
 namespace qmcplusplus
 {
 
-SPOSet* SPOSetBuilderFactory::get_sposet(const std::string& name) const
+SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 {
   int nfound  = 0;
   SPOSet* spo = nullptr;
@@ -62,13 +62,12 @@ SPOSet* SPOSetBuilderFactory::get_sposet(const std::string& name) const
   if (nfound > 1)
   {
     write_spo_builders();
-    APP_ABORT_TRACE(__FILE__, __LINE__, "get_sposet: requested sposet " + name + " is not unique");
+    throw std::runtime_error("getSPOSet: requested sposet " + name + " is not unique!");
   }
-  //else if(spo==NULL)
-  //{
-  //  write_spo_builders();
-  //  myComm->barrier_and_abort("get_sposet: requested sposet "+name+" does not exist");
-  //}
+  // keep this commented until legacy input styles are moved.
+  // In legacy input styles, this look up may fail and need to build SPOSet on the fly.
+  //else if (nfound == 0)
+  //  throw std::runtime_error("getSPOSet: requested sposet " + name + " is not found!");
   return spo;
 }
 
@@ -253,7 +252,7 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
     throw std::runtime_error("Cannot find any SPOSetBuilder to build SPOSet!");
 }
 
-void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
+void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
 {
   std::string collection_name;
   std::string collection_type;
@@ -286,7 +285,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
   });
 
   if (nsposets == 0)
-    myComm->barrier_and_abort("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
+    myComm->barrier_and_abort("SPOSetBuilderFactory::buildSPOSetCollection  no <sposet/> elements found");
 
   // going through a list of spo_scanner entries
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {

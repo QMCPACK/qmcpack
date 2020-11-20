@@ -39,13 +39,13 @@ public:
 
   SPOSet* createSPOSet(xmlNodePtr cur);
 
-/**returns a named sposet from the pool
+  /** returns a named sposet from the pool
    *  only use in serial portion of execution
    *  ie during initialization prior to threaded code
    */
-  SPOSet* get_sposet(const std::string& name) const;
+  SPOSet* getSPOSet(const std::string& name) const;
 
-  void build_sposet_collection(xmlNodePtr cur);
+  void buildSPOSetCollection(xmlNodePtr cur);
 
   bool empty() const { return spo_builders.size() == 0; }
 

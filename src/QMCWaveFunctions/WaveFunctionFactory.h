@@ -48,7 +48,7 @@ public:
   ///get targetPsi
   TrialWaveFunction* getTWF() const { return targetPsi.get(); }
   ///get SPOSet
-  SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.get_sposet(name); }
+  SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.getSPOSet(name); }
 
 private:
   /** process xmlNode to populate targetPsi

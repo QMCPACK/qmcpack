@@ -206,8 +206,8 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       spoAttrib.add(fastAlg, "Fast");
       spoAttrib.put(cur);
 
-      SPOSetPtr spo_alpha = sposet_builder_factory_.get_sposet(spo_alpha_name);
-      SPOSetPtr spo_beta  = sposet_builder_factory_.get_sposet(spo_beta_name);
+      SPOSetPtr spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
+      SPOSetPtr spo_beta  = sposet_builder_factory_.getSPOSet(spo_beta_name);
       if (spo_alpha == nullptr)
       {
         app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha_name
@@ -392,7 +392,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
                 << std::endl;
   app_summary() << std::endl;
 
-  SPOSetPtr psi = sposet_builder_factory_.get_sposet(sposet_name);
+  SPOSetPtr psi = sposet_builder_factory_.getSPOSet(sposet_name);
   //check if the named sposet exists
   if (psi == 0)
   {
