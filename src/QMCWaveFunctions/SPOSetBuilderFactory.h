@@ -26,9 +26,6 @@ class SPOSetBuilderFactory : public MPIObjectBase
 public:
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
 
-  /// Reset the map and last_builder pointers.  Mostly for unit tests.
-  void clear();
-
   /** constructor
    * \param comm communicator
    * \param els reference to the electrons

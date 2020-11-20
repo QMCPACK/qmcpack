@@ -41,11 +41,6 @@
 
 namespace qmcplusplus
 {
-void SPOSetBuilderFactory::clear()
-{
-  spo_builders.clear();
-  last_builder = nullptr;
-}
 
 SPOSet* SPOSetBuilderFactory::get_sposet(const std::string& name) const
 {
