@@ -232,9 +232,12 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   iter = SPOSetMap.find(aset);
   if ((iter != SPOSetMap.end()) && (!NewOcc))
   {
-    app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
-              << "cloning EinsplineSet object.\n";
-    return iter->second->makeClone();
+    app_log() << "SPOSet parameters match in EinsplineSetBuilder. cloning EinsplineSet object." << std::endl;
+    app_warning() << "!!!!!!! Deprecated input style. Implict sharing one SPOSet for spin-up and spin-down electrions has been deprecated."
+                  << "Use sposet_collection to construct an explict sposet for explicit sharing." << std::endl;
+    OrbitalSet = iter->second->makeClone();
+    OrbitalSet->setName("");
+    return OrbitalSet;
   }
 
   if (FullBands[spinSet] == 0)
