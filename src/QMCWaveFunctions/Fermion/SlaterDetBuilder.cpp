@@ -44,8 +44,9 @@
 
 namespace qmcplusplus
 {
-SlaterDetBuilder::SlaterDetBuilder(Communicate* comm, ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
+SlaterDetBuilder::SlaterDetBuilder(Communicate* comm, SPOSetBuilderFactory& factory, ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
     : WaveFunctionComponentBuilder(comm, els),
+      sposet_builder_factory_(factory),
       targetPsi(psi),
       ptclPool(psets),
       slaterdet_0(nullptr),
@@ -77,10 +78,10 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
 
-  if (!mySPOSetBuilderFactory)
+  if (sposet_builder_factory_.empty())
   { //always create one, using singleton and just to access the member functions
-    mySPOSetBuilderFactory = std::make_unique<SPOSetBuilderFactory>(myComm, targetPtcl, ptclPool);
-    mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
+    app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside." << std::endl;
+    sposet_builder_factory_.createSPOSetBuilder(curRoot);
   }
 
   //check the basis set
@@ -88,19 +89,16 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   while (cur != NULL) //check the basis set
   {
     getNodeName(cname, cur);
-    if (cname == basisset_tag)
+    if (cname == sposet_tag)
     {
-      mySPOSetBuilderFactory->loadBasisSetFromXML(cur);
-    }
-    else if (cname == sposet_tag)
-    {
+      app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside." << std::endl;
       app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
       std::string spo_name;
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add(spo_name, "name");
       spoAttrib.put(cur);
       app_log() << "spo_name = " << spo_name << std::endl;
-      SPOSetPtr spo = mySPOSetBuilderFactory->createSPOSet(cur);
+      SPOSetPtr spo = sposet_builder_factory_.createSPOSet(cur);
       if (spomap.find(spo_name) != spomap.end())
       {
         app_error() << "SPOSet name \"" << spo_name << "\" is already in use.\n";
@@ -208,8 +206,8 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       spoAttrib.add(fastAlg, "Fast");
       spoAttrib.put(cur);
 
-      SPOSetPtr spo_alpha = get_sposet(spo_alpha_name);
-      SPOSetPtr spo_beta  = get_sposet(spo_beta_name);
+      SPOSetPtr spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
+      SPOSetPtr spo_beta  = sposet_builder_factory_.getSPOSet(spo_beta_name);
       if (spo_alpha == nullptr)
       {
         app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha_name
@@ -336,7 +334,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   std::string s_detSize("0");
 
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(basisName, basisset_tag);
+  aAttrib.add(basisName, "basisset");
   aAttrib.add(detname, "id");
   aAttrib.add(sposet_name, "sposet");
   aAttrib.add(refname, "ref");
@@ -394,12 +392,13 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
                 << std::endl;
   app_summary() << std::endl;
 
-  SPOSetPtr psi = get_sposet(sposet_name);
+  SPOSetPtr psi = sposet_builder_factory_.getSPOSet(sposet_name);
   //check if the named sposet exists
   if (psi == 0)
   {
+    app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside." << std::endl;
     app_log() << "      Create a new SPO set " << sposet_name << std::endl;
-    psi = mySPOSetBuilderFactory->createSPOSet(cur);
+    psi = sposet_builder_factory_.createSPOSet(cur);
   }
   psi->checkObject();
 

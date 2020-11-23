@@ -71,12 +71,10 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string, const std::string
   WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
   wf_factory.put(ein_xml);
 
-  SPOSet* spo_ptr(get_sposet(check_sponame));
+  SPOSet* spo_ptr(wf_factory.getSPOSet(check_sponame));
   REQUIRE(spo_ptr != nullptr);
   REQUIRE(spo_ptr->getOrbitalSetSize() == check_spo_size);
   REQUIRE(spo_ptr->getBasisSetSize() == check_basisset_size);
-
-  SPOSetBuilderFactory::clear();
 }
 
 TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")

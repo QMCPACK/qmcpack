@@ -185,8 +185,6 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 
   CHECK(dlogpsi2[0] == ValueApprox(dlogpsi_list.getValue(0, 1)));
   CHECK(dhpsioverpsi2[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 1)));
-
-  SPOSetBuilderFactory::clear();
 }
 
 
@@ -421,8 +419,6 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   RealType logpsi2b = psi2.evaluateDeltaLog(p_list[1], true);
   CHECK(logpsi2b == Approx(logpsi_variable_list2[1]));
-
-  SPOSetBuilderFactory::clear();
 }
 
 

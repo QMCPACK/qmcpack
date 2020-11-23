@@ -17,6 +17,7 @@
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/CompositeSPOSet.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 
 namespace qmcplusplus
 {
@@ -155,7 +156,7 @@ public:
 
 
   //constructor/destructor
-  DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl);
+  DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl, const WaveFunctionFactory& factory);
   DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
   ~DensityMatrices1B();
 
@@ -227,6 +228,10 @@ public:
   bool same(Matrix_t& m1, Matrix_t& m2, RealType tol = 1e-6);
   void compare(const std::string& name, Vector_t& v1, Vector_t& v2, bool write = false, bool diff_only = true);
   void compare(const std::string& name, Matrix_t& m1, Matrix_t& m2, bool write = false, bool diff_only = true);
+
+private:
+  /// reference to the sposet_builder_factory
+  const WaveFunctionFactory& wf_factory_;
 };
 
 } // namespace qmcplusplus

@@ -17,7 +17,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/string_utils.h"
-#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 
 
 namespace qmcplusplus
@@ -27,15 +27,15 @@ using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
 
-DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
-    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl)
+DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl, const WaveFunctionFactory& factory)
+    : Lattice(P.Lattice), Psi(psi), Pq(P), Pc(Pcl), wf_factory_(factory)
 {
   reset();
 }
 
 
 DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi)
-    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc)
+    : OperatorBase(master), Lattice(P.Lattice), Psi(psi), Pq(P), Pc(master.Pc), wf_factory_(master.wf_factory_)
 {
   reset();
   set_state(master);
@@ -252,7 +252,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
 
   for (int i = 0; i < sposets.size(); ++i)
   {
-    basis_functions.add(get_sposet(sposets[i]));
+    basis_functions.add(wf_factory_.getSPOSet(sposets[i]));
   }
   basis_size = basis_functions.size();
 
