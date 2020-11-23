@@ -187,7 +187,7 @@ public:
     if (Mode[NOIO])
       return true;
     if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-      std::runtime_error("Only write data in parallel or by master but not every rank!");
+      throw std::runtime_error("Only write data in parallel or by master but not every rank!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<T> e(data);
     return e.write(p, aname, xfer_plist);
@@ -201,7 +201,7 @@ public:
   {
     if (!writeEntry(data, aname))
     {
-      std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
+      throw std::runtime_error("HDF5 write failure in hdf_archive::write " + aname);
     }
   }
 
@@ -248,7 +248,7 @@ public:
   {
     if (!readEntry(data, aname))
     {
-      std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
+      throw std::runtime_error("HDF5 read failure in hdf_archive::read " + aname);
     }
   }
 

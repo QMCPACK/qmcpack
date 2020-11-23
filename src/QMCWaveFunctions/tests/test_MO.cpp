@@ -87,7 +87,6 @@ void test_He(bool transform)
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
@@ -128,8 +127,6 @@ void test_He(bool transform)
     REQUIRE(dpsi[0][1] == Approx(0));
     REQUIRE(dpsi[0][2] == Approx(0));
     REQUIRE(d2psi[0] == Approx(-0.2618497452));
-
-    SPOSetBuilderFactory::clear();
   }
 }
 
@@ -207,7 +204,6 @@ void test_Ne(bool transform)
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
@@ -254,8 +250,6 @@ void test_Ne(bool transform)
     REQUIRE(dpsi[0][1] == Approx(0));
     REQUIRE(dpsi[0][2] == Approx(0));
     REQUIRE(d2psi[0] == Approx(-0.01551755818));
-
-    SPOSetBuilderFactory::clear();
   }
 }
 
@@ -336,7 +330,6 @@ void test_HCN(bool transform)
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
 
@@ -668,8 +661,6 @@ void test_HCN(bool transform)
     REQUIRE(dionpsi[0][4][2] == Approx(-7.300043903e-05));
     REQUIRE(dionpsi[0][5][2] == Approx(2.910525987e-06));
     REQUIRE(dionpsi[0][6][2] == Approx(-1.56074936e-05));
-
-    SPOSetBuilderFactory::clear();
   }
 }
 

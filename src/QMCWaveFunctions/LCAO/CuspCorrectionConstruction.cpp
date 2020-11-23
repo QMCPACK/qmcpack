@@ -33,15 +33,11 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
   ScopedTimer cuspApplyTimerWrapper(cuspApplyTimer);
 
-  LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  phi.BasisSetSize = lcwc.getBasisSetSize();
-  phi.setIdentity(false);
 
-  LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  eta.BasisSetSize = lcwc.getBasisSetSize();
-  eta.setIdentity(false);
 
 
   std::vector<bool> corrCenter(num_centers, "true");
@@ -201,15 +197,11 @@ void generateCuspInfo(int orbital_set_size,
 
   ScopedTimer createCuspTimerWrapper(cuspCreateTimer);
 
-  LCAOrbitalSet phi = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  phi.BasisSetSize = lcwc.getBasisSetSize();
-  phi.setIdentity(false);
 
-  LCAOrbitalSet eta = LCAOrbitalSet(lcwc.myBasisSet, lcwc.isOptimizable());
+  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
-  eta.BasisSetSize = lcwc.getBasisSetSize();
-  eta.setIdentity(false);
 
 
   std::vector<bool> corrCenter(num_centers, "true");
@@ -235,15 +227,11 @@ void generateCuspInfo(int orbital_set_size,
       ParticleSet localTargetPtcl(targetPtcl);
       ParticleSet localSourcePtcl(sourcePtcl);
 
-      LCAOrbitalSet local_phi(phi);
-      local_phi.myBasisSet = phi.myBasisSet->makeClone();
-      local_phi.C          = nullptr;
-      local_phi.setIdentity(false);
+      LCAOrbitalSet local_phi(std::unique_ptr<LCAOrbitalSet::basis_type>(phi.myBasisSet->makeClone()), phi.isOptimizable());
+      local_phi.setOrbitalSetSize(phi.getOrbitalSetSize());
 
-      LCAOrbitalSet local_eta(eta);
-      local_eta.myBasisSet = eta.myBasisSet->makeClone();
-      local_eta.C          = nullptr;
-      local_eta.setIdentity(false);
+      LCAOrbitalSet local_eta(std::unique_ptr<LCAOrbitalSet::basis_type>(eta.myBasisSet->makeClone()), eta.isOptimizable());
+      local_eta.setOrbitalSetSize(eta.getOrbitalSetSize());
 
 #pragma omp critical
       app_log() << "   Working on MO: " << mo_idx << " Center: " << center_idx << std::endl;

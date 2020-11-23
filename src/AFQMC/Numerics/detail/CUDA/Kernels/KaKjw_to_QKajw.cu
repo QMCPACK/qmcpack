@@ -41,8 +41,8 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
                                       T const* A,
                                       T2* B)
 {
-  int Q = blockIdx.x;
-  int K = blockIdx.y;
+  int Q   = blockIdx.x;
+  int K   = blockIdx.y;
   int pol = blockIdx.z;
   if (Q >= nkpts || K >= nkpts || pol > npol)
     return;
@@ -60,8 +60,8 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
   if (threadIdx.y >= nwalk)
     return;
 
-  for (int a = 0, a0 = pol*nmo_max*nwalk, a1 = pol*nmo_tot*nwalk; 
-            a < na; a++, a0 += npol * nmo_max * nwalk, a1 += npol * nmo_tot * nwalk)
+  for (int a = 0, a0 = pol * nmo_max * nwalk, a1 = pol * nmo_tot * nwalk; a < na;
+       a++, a0 += npol * nmo_max * nwalk, a1 += npol * nmo_tot * nwalk)
     for (int j = threadIdx.x; j < nj; j += blockDim.x)
       for (int n = threadIdx.y; n < nwalk; n += blockDim.y)
         B_[a0 + j * nwalk + n] = static_cast<T2>(A_[a1 + j * nwalk + n]);
@@ -82,8 +82,8 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
                                       thrust::complex<T> const* A,
                                       thrust::complex<T2>* B)
 {
-  int Q = blockIdx.x;
-  int K = blockIdx.y;
+  int Q   = blockIdx.x;
+  int K   = blockIdx.y;
   int pol = blockIdx.z;
   if (Q >= nkpts || K >= nkpts || pol > npol)
     return;
@@ -101,8 +101,8 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
   if (threadIdx.y >= nwalk)
     return;
 
-  for (int a = 0, a0 = pol*nmo_max*nwalk, a1 = pol*nmo_tot*nwalk; 
-                a < na; a++, a0 += npol*nmo_max * nwalk, a1 += npol * nmo_tot * nwalk)
+  for (int a = 0, a0 = pol * nmo_max * nwalk, a1 = pol * nmo_tot * nwalk; a < na;
+       a++, a0 += npol * nmo_max * nwalk, a1 += npol * nmo_tot * nwalk)
   {
     for (int j = threadIdx.x; j < nj; j += blockDim.x)
       for (int n = threadIdx.y; n < nwalk; n += blockDim.y)

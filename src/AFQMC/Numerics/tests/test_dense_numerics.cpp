@@ -72,10 +72,7 @@ namespace qmcplusplus
 void test_dense_matrix_mult()
 {
   {
-    vector<double> m = {
-        9.,  24., 30., 4., 10.,
-        12., 14., 16., 36.
-    };
+    vector<double> m = {9., 24., 30., 4., 10., 12., 14., 16., 36.};
     array_ref<double, 2> M(m.data(), {3, 3});
     REQUIRE(M.num_elements() == m.size());
     vector<double> x = {1., 2., 3.};

@@ -16,49 +16,70 @@
 
 namespace qmcplusplus
 {
-LCAOrbitalSet::LCAOrbitalSet(basis_type* bs, bool optimize)
-    : SPOSet(false, true, optimize), myBasisSet(nullptr), BasisSetSize(0), Identity(true)
+LCAOrbitalSet::LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize)
+    : SPOSet(false, true, optimize), BasisSetSize(bs ? bs->getBasisSetSize() : 0), Identity(true)
 {
-  if (bs != nullptr)
-    setBasisSet(bs);
-}
-
-void LCAOrbitalSet::setBasisSet(basis_type* bs)
-{
-  myBasisSet   = bs;
-  BasisSetSize = myBasisSet->getBasisSetSize();
+  if (!bs)
+    throw std::runtime_error("LCAOrbitalSet cannot take nullptr as its  basis set!");
+  myBasisSet = std::move(bs);
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
   Tempgh.resize(BasisSetSize);
+  OrbitalSetSize = BasisSetSize;
+  LCAOrbitalSet::checkObject();
 }
 
-bool LCAOrbitalSet::setIdentity(bool useIdentity)
+LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
+    : SPOSet(in), myBasisSet(in.myBasisSet->makeClone()), C(in.C), BasisSetSize(in.BasisSetSize), Identity(in.Identity)
 {
-  Identity = useIdentity;
-  if (Identity)
-    return true;
-
-  if (!C && (OrbitalSetSize > 0) && (BasisSetSize > 0))
+  Temp.resize(BasisSetSize);
+  Temph.resize(BasisSetSize);
+  Tempgh.resize(BasisSetSize);
+  if (!in.Identity)
   {
-    C = std::make_shared<ValueMatrix_t>(OrbitalSetSize, BasisSetSize);
+    Tempv.resize(OrbitalSetSize);
+    Temphv.resize(OrbitalSetSize);
+    Tempghv.resize(OrbitalSetSize);
+  }
+  LCAOrbitalSet::checkObject();
+}
+
+void LCAOrbitalSet::setOrbitalSetSize(int norbs)
+{
+  if(C)
+    throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize cannot reset existing MO coefficients");
+
+  Identity = false;
+  OrbitalSetSize = norbs;
+  C = std::make_shared<ValueMatrix_t>(OrbitalSetSize, BasisSetSize);
+  Tempv.resize(OrbitalSetSize);
+  Temphv.resize(OrbitalSetSize);
+  Tempghv.resize(OrbitalSetSize);
+  LCAOrbitalSet::checkObject();
+}
+
+void LCAOrbitalSet::checkObject() const
+{
+  if (Identity)
+  {
+    if (OrbitalSetSize != BasisSetSize)
+      throw std::runtime_error(
+          "LCAOrbitalSet::checkObject OrbitalSetSize and BasisSetSize must be equal if Identity = true!");
+    if (C)
+      throw std::runtime_error("LCAOrbitalSet::checkObject C should be nullptr if Identity = true!");
   }
   else
   {
-    app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
-    app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
-    app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
-    APP_ABORT("LCAOrbitalBuilder::setIdentiy ");
+    if (!C)
+      throw std::runtime_error("LCAOrbitalSet::checkObject C should not be nullptr if Identity = false!");
+    if (OrbitalSetSize != C->rows())
+      throw std::runtime_error("LCAOrbitalSet::checkObject C rows doesn't match OrbitalSetSize.");
+    if (BasisSetSize != C->cols())
+      throw std::runtime_error("LCAOrbitalSet::checkObject C columns doesn't match BasisSetSize.");
   }
-
-  return true;
 }
 
-SPOSet* LCAOrbitalSet::makeClone() const
-{
-  LCAOrbitalSet* myclone = new LCAOrbitalSet(*this);
-  myclone->myBasisSet    = myBasisSet->makeClone();
-  return myclone;
-}
+SPOSet* LCAOrbitalSet::makeClone() const { return new LCAOrbitalSet(*this); }
 
 void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
 {

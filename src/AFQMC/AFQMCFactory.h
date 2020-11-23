@@ -63,8 +63,8 @@ public:
     RandomNumberControl::PrimeNumbers.get(baseoffset, nprocs, myprimes);
     arch::INIT(gTG.Node(), (unsigned long long int)(myprimes[rank]));
 #endif
-    // Global host buffers manager 
-    HostBufferManager host_buffer(10uL * 1024uL * 1024uL); // setup monostate
+    // Global host buffers manager
+    HostBufferManager host_buffer(10uL * 1024uL * 1024uL);  // setup monostate
     DeviceBufferManager dev_buffer(10uL * 1024uL * 1024uL); // setup monostate
     timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);

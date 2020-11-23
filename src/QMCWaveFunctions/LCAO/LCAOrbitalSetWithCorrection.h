@@ -34,7 +34,7 @@ struct LCAOrbitalSetWithCorrection : public LCAOrbitalSet
      * @param bs pointer to the BasisSet
      * @param rl report level
      */
-  LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs, bool optimize);
+  LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, std::unique_ptr<basis_type>&& bs, bool optimize);
 
   LCAOrbitalSetWithCorrection(const LCAOrbitalSetWithCorrection& in) = default;
 

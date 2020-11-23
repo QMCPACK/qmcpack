@@ -92,7 +92,11 @@ void test_basic_walker_features(bool serial, std::string wtype)
   //assert(world.size()%2 == 0);
 
   int NMO = 8, NAEA = 2, NAEB = 2, nwalkers = 10;
-  if(wtype=="noncollinear") { NAEA = 4; NAEB = 0; } 
+  if (wtype == "noncollinear")
+  {
+    NAEA = 4;
+    NAEB = 0;
+  }
 
   //auto node = world.split_shared();
 
@@ -103,18 +107,21 @@ void test_basic_walker_features(bool serial, std::string wtype)
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  int M( (wtype=="noncollinear")?2*NMO:NMO );
-  boost::multi::array<Type,2> initA({M,NAEA});
-  boost::multi::array<Type,2> initB({M,NAEB});
-  for(int i=0; i<NAEA; i++) initA[i][i] = Type(0.22);
-  for(int i=0; i<NAEB; i++) initB[i][i] = Type(0.22);
+  int M((wtype == "noncollinear") ? 2 * NMO : NMO);
+  boost::multi::array<Type, 2> initA({M, NAEA});
+  boost::multi::array<Type, 2> initB({M, NAEB});
+  for (int i = 0; i < NAEA; i++)
+    initA[i][i] = Type(0.22);
+  for (int i = 0; i < NAEB; i++)
+    initB[i][i] = Type(0.22);
   RandomGenerator_t rng;
 
   std::string xml_block;
   xml_block = "<WalkerSet name=\"wset0\">  \
   <parameter name=\"min_weight\">0.05</parameter>  \
   <parameter name=\"max_weight\">4</parameter>  \
-  <parameter name=\"walker_type\">"+wtype+"</parameter>  \
+  <parameter name=\"walker_type\">" +
+      wtype + "</parameter>  \
   <parameter name=\"load_balance\">async</parameter>  \
   <parameter name=\"pop_control\">pair</parameter>  \
 </WalkerSet> \
@@ -377,7 +384,11 @@ void test_walker_io(std::string wtype)
   //assert(world.size()%2 == 0);
 
   int NMO = 8, NAEA = 2, NAEB = 2, nwalkers = 10;
-  if(wtype=="noncollinear") { NAEA = 4; NAEB = 0; }
+  if (wtype == "noncollinear")
+  {
+    NAEA = 4;
+    NAEB = 0;
+  }
 
   //auto node = world.split_shared();
 
@@ -388,16 +399,19 @@ void test_walker_io(std::string wtype)
   info.NAEA = NAEA;
   info.NAEB = NAEB;
   info.name = "walker";
-  int M( (wtype=="noncollinear")?2*NMO:NMO );
-  boost::multi::array<Type,2> initA({M,NAEA});
-  boost::multi::array<Type,2> initB({M,NAEB});
-  for(int i=0; i<NAEA; i++) initA[i][i] = Type(0.22);
-  for(int i=0; i<NAEB; i++) initB[i][i] = Type(0.22);
+  int M((wtype == "noncollinear") ? 2 * NMO : NMO);
+  boost::multi::array<Type, 2> initA({M, NAEA});
+  boost::multi::array<Type, 2> initB({M, NAEB});
+  for (int i = 0; i < NAEA; i++)
+    initA[i][i] = Type(0.22);
+  for (int i = 0; i < NAEB; i++)
+    initB[i][i] = Type(0.22);
   RandomGenerator_t rng;
 
   std::string xml_block;
   xml_block = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">"+wtype+"</parameter>  \
+  <parameter name=\"walker_type\">" +
+      wtype + "</parameter>  \
 </WalkerSet> \
 ";
   Libxml2Document doc;
@@ -482,12 +496,12 @@ void test_walker_io(std::string wtype)
 
 TEST_CASE("swset_test_serial", "[shared_wset]")
 {
-  test_basic_walker_features(true,"closed");
-  test_basic_walker_features(false,"closed");
-  test_basic_walker_features(true,"collinear");
-  test_basic_walker_features(false,"collinear");
-  test_basic_walker_features(true,"noncollinear");
-  test_basic_walker_features(false,"noncollinear");
+  test_basic_walker_features(true, "closed");
+  test_basic_walker_features(false, "closed");
+  test_basic_walker_features(true, "collinear");
+  test_basic_walker_features(false, "collinear");
+  test_basic_walker_features(true, "noncollinear");
+  test_basic_walker_features(false, "noncollinear");
 }
 /*
 TEST_CASE("hyperslab_tests", "[shared_wset]")
@@ -496,10 +510,11 @@ TEST_CASE("hyperslab_tests", "[shared_wset]")
   test_double_hyperslab();
 }
 */
-TEST_CASE("walker_io", "[shared_wset]") { 
-  test_walker_io("closed"); 
-  test_walker_io("collinear"); 
-  test_walker_io("noncollinear"); 
+TEST_CASE("walker_io", "[shared_wset]")
+{
+  test_walker_io("closed");
+  test_walker_io("collinear");
+  test_walker_io("noncollinear");
 }
 
 } // namespace qmcplusplus
