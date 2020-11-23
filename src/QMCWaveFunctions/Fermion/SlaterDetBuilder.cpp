@@ -1337,6 +1337,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   std::unordered_map<std::string, int> MyMapDn;
 
   app_log() << " Sorting unique CIs" << std::endl;
+  ///This loop will find all unique Determinants in and store them "unsorted" in a new container uniqueConfg_up 
+  ///and uniqueConfg_dn. The sorting is not done here 
   for (int ni = 0; ni < ndets; ni++)
   {
     if (std::abs(CIcoeff[ni]) < cutoff)
