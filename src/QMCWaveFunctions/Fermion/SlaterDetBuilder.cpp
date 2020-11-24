@@ -44,7 +44,11 @@
 
 namespace qmcplusplus
 {
-SlaterDetBuilder::SlaterDetBuilder(Communicate* comm, SPOSetBuilderFactory& factory, ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
+SlaterDetBuilder::SlaterDetBuilder(Communicate* comm,
+                                   SPOSetBuilderFactory& factory,
+                                   ParticleSet& els,
+                                   TrialWaveFunction& psi,
+                                   PtclPoolType& psets)
     : WaveFunctionComponentBuilder(comm, els),
       sposet_builder_factory_(factory),
       targetPsi(psi),
@@ -80,7 +84,9 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
 
   if (sposet_builder_factory_.empty())
   { //always create one, using singleton and just to access the member functions
-    app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside." << std::endl;
+    app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage "
+                     "will soon be removed. SPO sets should be built outside."
+                  << std::endl;
     sposet_builder_factory_.createSPOSetBuilder(curRoot);
   }
 
@@ -91,7 +97,9 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
     getNodeName(cname, cur);
     if (cname == sposet_tag)
     {
-      app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside." << std::endl;
+      app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage "
+                       "will soon be removed. SPO sets should be built outside."
+                    << std::endl;
       app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
       std::string spo_name;
       OhmmsAttributeSet spoAttrib;
@@ -164,8 +172,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           if (spin_group >= targetPtcl.groups())
           {
             std::ostringstream err_msg;
-            err_msg << "Need only " << targetPtcl.groups() << " determinant input elements. Found more."
-                    << std::endl;
+            err_msg << "Need only " << targetPtcl.groups() << " determinant input elements. Found more." << std::endl;
             throw std::runtime_error(err_msg.str());
           }
           if (putDeterminant(tcur, spin_group))
@@ -396,7 +403,9 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   //check if the named sposet exists
   if (psi == 0)
   {
-    app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside." << std::endl;
+    app_warning() << "!!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage "
+                     "will soon be removed. SPO sets should be built outside."
+                  << std::endl;
     app_log() << "      Create a new SPO set " << sposet_name << std::endl;
     psi = sposet_builder_factory_.createSPOSet(cur);
   }
@@ -499,7 +508,6 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   bool success = true;
   std::vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
   std::vector<std::string> CItags;
-  std::string HDF5Path(""), cname;
 
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
@@ -509,9 +517,9 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
 
   xmlNodePtr curTemp = cur, DetListNode = nullptr;
   curTemp = curTemp->children;
-  OhmmsAttributeSet ciAttrib;
   while (curTemp != NULL) //check the basis set
   {
+    std::string cname;
     getNodeName(cname, curTemp);
     if (cname == "detlist")
     {
@@ -519,8 +527,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
     }
     curTemp = curTemp->next;
   }
-  ciAttrib.add(HDF5Path, "href");
-  ciAttrib.put(DetListNode);
+  XMLAttrString HDF5Path(DetListNode, "href");
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
@@ -652,9 +659,32 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
-  success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, multiSD->C2node_up, multiSD->C2node_dn, CItags, multiSD->C,
-                        optimizeCI, nels_up, nels_dn, multiSD->CSFcoeff, multiSD->DetsPerCSF, multiSD->CSFexpansion,
-                        multiSD->usingCSF);
+
+  //Check id multideterminants are in HDF5
+
+  xmlNodePtr curTemp = cur, DetListNode = nullptr;
+  curTemp = curTemp->children;
+  while (curTemp != NULL) //check the basis set
+  {
+    std::string cname;
+    getNodeName(cname, curTemp);
+    if (cname == "detlist")
+    {
+      DetListNode = curTemp;
+    }
+    curTemp = curTemp->next;
+  }
+  XMLAttrString HDF5Path(DetListNode, "href");
+  if (HDF5Path != "")
+  {
+    app_log() << "Found Multideterminants in H5 File" << std::endl;
+    success = readDetListH5(cur, uniqueConfg_up, uniqueConfg_dn, multiSD->C2node_up, multiSD->C2node_dn, CItags,
+                            multiSD->C, optimizeCI, nels_up, nels_dn);
+  }
+  else
+    success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, multiSD->C2node_up, multiSD->C2node_dn, CItags,
+                          multiSD->C, optimizeCI, nels_up, nels_dn, multiSD->CSFcoeff, multiSD->DetsPerCSF,
+                          multiSD->CSFexpansion, multiSD->usingCSF);
   if (!success)
     return false;
   multiSD->resize(uniqueConfg_up.size(), uniqueConfg_dn.size());
@@ -808,10 +838,10 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   }
   size_t NCA = 0, NCB = 0;
   size_t NEA = 0, NEB = 0;
-  size_t nstates = 0;
-  size_t ndets = 0;
-  size_t count = 0;
-  size_t cnt0 = 0;
+  size_t nstates        = 0;
+  size_t ndets          = 0;
+  size_t count          = 0;
+  size_t cnt0           = 0;
   std::string Dettype   = "DETS";
   std::string CSFChoice = "qchem_coeff";
   OhmmsAttributeSet spoAttrib;
@@ -915,7 +945,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
 #ifdef QMC_COMPLEX
           ci_real = 0.0;
 #else
-          ci = 0.0;
+          ci    = 0.0;
 #endif
         CSFcoeff.push_back(ci);
         sumsq_qc += qc_ci * qc_ci;
@@ -1236,7 +1266,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   app_log() << "  H5 code path implicitly assumes NCA = NCB = 0, "
             << "NEA = " << nels_up << " and NEB = " << nels_dn << std::endl;
   size_t nstates = 0;
-  size_t ndets = 0;
+  size_t ndets   = 0;
   size_t H5_ndets, H5_nstates;
   /// 64 bit fixed width integer
   const unsigned bit_kind = 64;

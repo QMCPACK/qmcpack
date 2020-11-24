@@ -26,7 +26,10 @@ using std::string;
 
 namespace qmcplusplus
 {
-void test_LiH_msd(const std::string& spo_xml_string, const std::string& check_sponame, int check_spo_size, int check_basisset_size)
+void test_LiH_msd(const std::string& spo_xml_string,
+                  const std::string& check_sponame,
+                  int check_spo_size,
+                  int check_basisset_size)
 {
   Communicate* c;
   c = OHMMS::Controller;
@@ -35,9 +38,9 @@ void test_LiH_msd(const std::string& spo_xml_string, const std::string& check_sp
   ParticleSet elec_;
 
   ions_.setName("ion0");
-  ions_.create({1,1});
-  ions_.R[0] = {0.0, 0.0, 0.0};
-  ions_.R[1] = {0.0, 0.0, 3.0139239693};
+  ions_.create({1, 1});
+  ions_.R[0]           = {0.0, 0.0, 0.0};
+  ions_.R[1]           = {0.0, 0.0, 3.0139239693};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int LiIdx            = ispecies.addSpecies("Li");
   int HIdx             = ispecies.addSpecies("H");
@@ -84,7 +87,8 @@ void test_LiH_msd(const std::string& spo_xml_string, const std::string& check_sp
 
   std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
             << std::endl;
-  REQUIRE(std::complex<double>(twf.getLogPsi(), twf.getPhase()) == LogComplexApprox(std::complex<double>(-7.646027846242066, 3.141592653589793)));
+  REQUIRE(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
+          LogComplexApprox(std::complex<double>(-7.646027846242066, 3.141592653589793)));
   auto grad_old = twf.evalGrad(elec_, 1);
   std::cout << "twf.evalGrad grad_old " << std::setprecision(16) << grad_old << std::endl;
   REQUIRE(grad_old[0] == ValueApprox(0.1204183219));
@@ -149,7 +153,7 @@ TEST_CASE("LiH multi Slater dets", "[wavefunction]")
       </sposet> \
     </sposet_collection> \
     <determinantset> \
-      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\" Fast=\"yes\"> \
+      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\" Fast=\"no\"> \
         <detlist size=\"1487\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
       </multideterminant> \
     </determinantset> \
