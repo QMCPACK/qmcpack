@@ -135,8 +135,11 @@ public:
 
   void resize(int, int);
   void initialize();
-
+  
   void testMSD(ParticleSet& P, int iat);
+
+  ///Evaluate the cij_dj Matrix to be stored
+  void evaluateCDj(const int spin1, size_t nc, const ValueType* restrict cptr, const size_t* restrict det1, const ValueType* restrict detValues1);
 
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
@@ -182,6 +185,11 @@ public:
   Matrix<RealType> dpsia_up, dLa_up;
   Matrix<RealType> dpsia_dn, dLa_dn;
   Array<GradType, OHMMS_DIM> dGa_up, dGa_dn;
+ 
+  // Storage of the C_ijD_down Matrix for optimized CI algorithm
+  Matrix<ValueType> CDj;
+
+  
 
   // debug, erase later
   //      MultiSlaterDeterminant *msd;

@@ -343,10 +343,18 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
   const size_t* restrict det1          = (upspin) ? C2node_dn->data() : C2node_up->data();
   const ValueType* restrict cptr       = C->data();
   const size_t nc                      = C->size();
-
+  
+  evaluateCDj(spin1,nc, cptr, det1, detValues1);   
+   
   PsiValueType psi = 0;
   for (size_t i = 0; i < nc; ++i)
-    psi += cptr[i] * detValues0[det0[i]] * detValues1[det1[i]];
+  {
+    //app_log()<<"i="<<i<<"    cptr[i]="<<cptr[i]<<"      det0[i]="<<det0[i]<<"    detValues0[det0[i]]="<<detValues0[det0[i]]<<"  detValues1[det1[i]]="<<detValues1[det1[i]]<<std::endl;     
+    //psi += cptr[i] * detValues0[det0[i]] * detValues1[det1[i]];
+    psi += detValues0[det0[i]] * CDj[spin1][i];
+
+  }
+  //exit(0);
   return psi;
 }
 
@@ -834,5 +842,16 @@ void MultiSlaterDeterminantFast::registerTimers()
   AccRejTimer.reset();
 }
 
+void MultiSlaterDeterminantFast::evaluateCDj(const int spin1, size_t nc, const ValueType* restrict cptr, const size_t* restrict det1, const ValueType* restrict detValues1)
+{
+  
+  CDj.resize(2, nc);
+
+  for (size_t i =0; i<nc;i++)
+     CDj[spin1][i]=cptr[i] * detValues1[det1[i]];
+  
+  
+
+}
 
 } // namespace qmcplusplus
