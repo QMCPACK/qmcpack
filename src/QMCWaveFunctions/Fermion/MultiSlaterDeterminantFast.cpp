@@ -20,8 +20,7 @@
 namespace qmcplusplus
 {
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
-                                                       MultiDiracDeterminant* up,
-                                                       MultiDiracDeterminant* dn)
+                                                       std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets)
     : WaveFunctionComponent("MultiSlaterDeterminantFast"),
       RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
       RatioGradTimer(*timer_manager.createTimer(ClassName + "ratioGrad")),
@@ -51,9 +50,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   nels_dn       = targetPtcl.last(1) - targetPtcl.first(1);
   FirstIndex_up = targetPtcl.first(0);
   FirstIndex_dn = targetPtcl.first(1);
-  Dets.resize(2);
-  Dets[0] = up;
-  Dets[1] = dn;
+  Dets = std::move(dets);
   myG.resize(NP);
   myL.resize(NP);
   myG_temp.resize(NP);
@@ -80,9 +77,11 @@ void MultiSlaterDeterminantFast::initialize()
 
 WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
 {
-  MultiDiracDeterminant* up_clone   = new MultiDiracDeterminant(*Dets[0]);
-  MultiDiracDeterminant* dn_clone   = new MultiDiracDeterminant(*Dets[1]);
-  MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp, up_clone, dn_clone);
+  std::vector<std::unique_ptr<MultiDiracDeterminant>> dets_clone;
+  for(auto& det : Dets)
+    dets_clone.emplace_back(std::make_unique<MultiDiracDeterminant>(*det));
+
+  MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp, std::move(dets_clone));
   if (usingBF)
   {
     BackflowTransformation* tr = BFTrans->makeClone(tqp);

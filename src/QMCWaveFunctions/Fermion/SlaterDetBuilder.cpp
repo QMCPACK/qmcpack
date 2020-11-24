@@ -241,14 +241,14 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         {
           APP_ABORT("Backflow is not implemented with the table method.");
         }
-        MultiDiracDeterminant* up_det = 0;
-        MultiDiracDeterminant* dn_det = 0;
-        app_log() << "      Creating base determinant (up) for MSD expansion. \n";
-        up_det = new MultiDiracDeterminant(spo_alpha, 0);
-        app_log() << "      Creating base determinant (down) for MSD expansion. \n";
-        dn_det = new MultiDiracDeterminant(spo_beta, 1);
 
-        multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, up_det, dn_det);
+        std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
+        app_log() << "      Creating base determinant (up) for MSD expansion. \n";
+        dets.emplace_back(std::make_unique<MultiDiracDeterminant>(spo_alpha, 0));
+        app_log() << "      Creating base determinant (down) for MSD expansion. \n";
+        dets.emplace_back(std::make_unique<MultiDiracDeterminant>(spo_alpha, 1));
+
+        multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets));
         success              = createMSDFast(multislaterdetfast_0, cur);
       }
       else

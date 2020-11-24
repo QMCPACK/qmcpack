@@ -348,7 +348,7 @@ public:
 
 private:
   //get Det ID
-  inline int getDetID(const int iat)
+  inline int getDetID(const int iat) const
   {
     int id = 0;
     while (iat > Last[id])
