@@ -32,7 +32,6 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
       Ratio1AllTimer(*timer_manager.createTimer(ClassName + "detEval_ratio(all)")),
       AccRejTimer(*timer_manager.createTimer(ClassName + "Accept_Reject")),
       CI_Optimizable(false),
-      IsCloned(false),
       C2node_up(nullptr),
       C2node_dn(nullptr),
       C(nullptr),
@@ -62,18 +61,16 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
 
 void MultiSlaterDeterminantFast::initialize()
 {
-  if (C == nullptr)
-  {
-    C2node_up    = new std::vector<size_t>;
-    C2node_dn    = new std::vector<size_t>;
-    C            = new std::vector<ValueType>;
-    CSFcoeff     = new std::vector<ValueType>;
-    DetsPerCSF   = new std::vector<size_t>;
-    CSFexpansion = new std::vector<RealType>;
-    myVars       = new opt_variables_type;
-    IsCloned     = false;
-  }
+  C2node_up    = std::make_shared<std::vector<size_t>>();
+  C2node_dn    = std::make_shared<std::vector<size_t>>();
+  C            = std::make_shared<std::vector<ValueType>>();
+  CSFcoeff     = std::make_shared<std::vector<ValueType>>();
+  DetsPerCSF   = std::make_shared<std::vector<size_t>>();
+  CSFexpansion = std::make_shared<std::vector<RealType>>();
+  myVars       = std::make_shared<opt_variables_type>();
 }
+
+MultiSlaterDeterminantFast::~MultiSlaterDeterminantFast() = default;
 
 WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
 {
@@ -87,9 +84,6 @@ WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp)
     BackflowTransformation* tr = BFTrans->makeClone(tqp);
     clone->setBF(tr);
   }
-
-  //Set IsCloned so that only the main object handles the optimizable data
-  clone->IsCloned = true;
 
   clone->C2node_up = C2node_up;
   clone->C2node_dn = C2node_dn;
@@ -109,21 +103,6 @@ WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp)
     clone->DetsPerCSF   = DetsPerCSF;
   }
   return clone;
-}
-
-MultiSlaterDeterminantFast::~MultiSlaterDeterminantFast()
-{
-  if (!IsCloned)
-  {
-    delete myVars;
-    delete CSFexpansion;
-    delete DetsPerCSF;
-    delete CSFcoeff;
-    delete C;
-    delete C2node_dn;
-    delete C2node_up;
-  }
-  //clean up determinants too!
 }
 
 void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
@@ -452,7 +431,7 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
 
 void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
 {
-  if (CI_Optimizable && !IsCloned)
+  if (CI_Optimizable)
   {
     if (myVars->size())
       active.insertFrom(*myVars);
@@ -468,10 +447,9 @@ void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
 
 void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& active)
 {
-  if (CI_Optimizable && !IsCloned)
-  {
+  if (CI_Optimizable)
     myVars->getIndex(active);
-  }
+
   if (Dets[0]->Optimizable && Dets[1]->Optimizable)
   {
     Dets[0]->checkOutVariables(active);
@@ -485,7 +463,7 @@ void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& act
  */
 void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& active)
 {
-  if (CI_Optimizable && !IsCloned)
+  if (CI_Optimizable)
   {
     if (usingCSF)
     {

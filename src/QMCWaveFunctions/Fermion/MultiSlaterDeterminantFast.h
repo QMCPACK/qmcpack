@@ -155,7 +155,6 @@ public:
   size_t FirstIndex_dn;
   size_t ActiveSpin;
   bool usingCSF;
-  bool IsCloned;
   PsiValueType curRatio;
   PsiValueType psiCurrent;
 
@@ -164,10 +163,10 @@ public:
   std::map<std::string, size_t> SPOSetID;
 
   // map determinant in linear combination to unique det list
-  std::vector<size_t>* C2node_up;
-  std::vector<size_t>* C2node_dn;
+  std::shared_ptr<std::vector<size_t>> C2node_up;
+  std::shared_ptr<std::vector<size_t>> C2node_dn;
   /// CI coefficients
-  std::vector<ValueType>* C;
+  std::shared_ptr<std::vector<ValueType>> C;
   /// C_n x D^1_n x D^2_n ... D^3 with one D removed.
   ValueMatrix_t C_otherDs;
 
@@ -177,13 +176,13 @@ public:
   ValueVector_t laplSum_dn;
 
   //optimizable variable is shared with the clones
-  opt_variables_type* myVars;
+  std::shared_ptr<opt_variables_type> myVars;
   // coefficients of csfs, these are only used during optm
-  std::vector<ValueType>* CSFcoeff;
+  std::shared_ptr<std::vector<ValueType>> CSFcoeff;
   // number of dets per csf
-  std::vector<size_t>* DetsPerCSF;
+  std::shared_ptr<std::vector<size_t>> DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
-  std::vector<RealType>* CSFexpansion;
+  std::shared_ptr<std::vector<RealType>> CSFexpansion;
 
   // transformation
   BackflowTransformation* BFTrans;
