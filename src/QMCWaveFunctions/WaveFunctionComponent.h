@@ -216,6 +216,14 @@ struct WaveFunctionComponent : public QMCTraits
     APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + ClassName + " class.");
   }
 
+  /** Prepare internal data for updating WFC correspond to a particle group
+   *  Particle groups usually correspond to determinants of different spins.
+   *  This call can be used to handle precomputation for PbyP moves.
+   * @param P quantum particle set
+   * @param ig particle group index
+   */
+  virtual void prepareGroup(ParticleSet& P, int ig) {}
+
   /** return the current gradient for the iat-th particle
    * @param P quantum particle set
    * @param iat particle index

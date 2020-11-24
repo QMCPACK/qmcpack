@@ -104,6 +104,7 @@ public:
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
+  void prepareGroup(ParticleSet& P, int ig) override;
   GradType evalGrad(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
@@ -136,11 +137,15 @@ public:
 
   void resize(int, int);
   void initialize();
-  
+
   void testMSD(ParticleSet& P, int iat);
 
   ///Evaluate the cij_dj Matrix to be stored
-  void evaluateCDj(const int spin1, size_t nc, const ValueType* restrict cptr, const size_t* restrict det1, const ValueType* restrict detValues1);
+  void evaluateC_otherDs(const int spin1,
+                         size_t nc,
+                         const ValueType* restrict cptr,
+                         const size_t* restrict det1,
+                         const ValueType* restrict detValues1);
 
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
@@ -189,11 +194,6 @@ public:
   Matrix<RealType> dpsia_up, dLa_up;
   Matrix<RealType> dpsia_dn, dLa_dn;
   Array<GradType, OHMMS_DIM> dGa_up, dGa_dn;
- 
-  // Storage of the C_ijD_down Matrix for optimized CI algorithm
-  Matrix<ValueType> CDj;
-
-  
 
 private:
   //get Det ID. It should be consistent with particle group id within the particle set.

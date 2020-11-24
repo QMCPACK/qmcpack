@@ -89,6 +89,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
             << std::endl;
   REQUIRE(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
           LogComplexApprox(std::complex<double>(-7.646027846242066, 3.141592653589793)));
+
+  twf.prepareGroup(elec_, 0);
   auto grad_old = twf.evalGrad(elec_, 1);
   std::cout << "twf.evalGrad grad_old " << std::setprecision(16) << grad_old << std::endl;
   REQUIRE(grad_old[0] == ValueApprox(0.1204183219));

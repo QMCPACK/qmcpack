@@ -465,6 +465,13 @@ void TrialWaveFunction::flex_calcRatio(const RefVector<TrialWaveFunction>& wf_li
     ratios[0] = wf_list[0].get().calcRatio(p_list[0], iat);
 }
 
+void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
+{
+  for (int i = 0; i < Z.size(); ++i)
+    Z[i]->prepareGroup(P, ig);
+}
+
+
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
 {
   ScopedTimer local_timer(TWF_timers_[VGL_TIMER]);

@@ -50,7 +50,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   nels_dn       = targetPtcl.last(1) - targetPtcl.first(1);
   FirstIndex_up = targetPtcl.first(0);
   FirstIndex_dn = targetPtcl.first(1);
-  Dets = std::move(dets);
+  Dets          = std::move(dets);
   myG.resize(NP);
   myL.resize(NP);
   myG_temp.resize(NP);
@@ -78,7 +78,7 @@ void MultiSlaterDeterminantFast::initialize()
 WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
 {
   std::vector<std::unique_ptr<MultiDiracDeterminant>> dets_clone;
-  for(auto& det : Dets)
+  for (auto& det : Dets)
     dets_clone.emplace_back(std::make_unique<MultiDiracDeterminant>(*det));
 
   MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp, std::move(dets_clone));
@@ -342,16 +342,15 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
   const size_t* restrict det1          = (upspin) ? C2node_dn->data() : C2node_up->data();
   const ValueType* restrict cptr       = C->data();
   const size_t nc                      = C->size();
-  
-  evaluateCDj(spin1,nc, cptr, det1, detValues1);   
-   
+
+  evaluateC_otherDs(spin1, nc, cptr, det1, detValues1);
+
   PsiValueType psi = 0;
   for (size_t i = 0; i < nc; ++i)
   {
-    //app_log()<<"i="<<i<<"    cptr[i]="<<cptr[i]<<"      det0[i]="<<det0[i]<<"    detValues0[det0[i]]="<<detValues0[det0[i]]<<"  detValues1[det1[i]]="<<detValues1[det1[i]]<<std::endl;     
+    //app_log()<<"i="<<i<<"    cptr[i]="<<cptr[i]<<"      det0[i]="<<det0[i]<<"    detValues0[det0[i]]="<<detValues0[det0[i]]<<"  detValues1[det1[i]]="<<detValues1[det1[i]]<<std::endl;
     //psi += cptr[i] * detValues0[det0[i]] * detValues1[det1[i]];
-    psi += detValues0[det0[i]] * CDj[spin1][i];
-
+    psi += detValues0[det0[i]] * C_otherDs[spin1][i];
   }
   //exit(0);
   return psi;
@@ -841,16 +840,22 @@ void MultiSlaterDeterminantFast::registerTimers()
   AccRejTimer.reset();
 }
 
-void MultiSlaterDeterminantFast::evaluateCDj(const int spin1, size_t nc, const ValueType* restrict cptr, const size_t* restrict det1, const ValueType* restrict detValues1)
+void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
 {
-  
-  CDj.resize(2, nc);
+  ///YYYY compute C_otherDs. C_otherDs[ig] Cn x \pi_{id} Dn^id (id != ig)
+  /// C_otherDs.resize(Dets.size(), C->size());
+}
 
-  for (size_t i =0; i<nc;i++)
-     CDj[spin1][i]=cptr[i] * detValues1[det1[i]];
-  
-  
+void MultiSlaterDeterminantFast::evaluateC_otherDs(const int spin1,
+                                                   size_t nc,
+                                                   const ValueType* restrict cptr,
+                                                   const size_t* restrict det1,
+                                                   const ValueType* restrict detValues1)
+{
+  C_otherDs.resize(2, nc);
 
+  for (size_t i = 0; i < nc; i++)
+    C_otherDs[spin1][i] = cptr[i] * detValues1[det1[i]];
 }
 
 } // namespace qmcplusplus
