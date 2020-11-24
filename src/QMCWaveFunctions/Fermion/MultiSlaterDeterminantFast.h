@@ -62,6 +62,7 @@ public:
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
   typedef OrbitalSetTraits<ValueType>::HessMatrix_t HessMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::HessType HessType;
   typedef Array<HessType, 3> HessArray_t;
   typedef TinyVector<HessType, OHMMS_DIM> GGGType;
@@ -71,7 +72,7 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminant* up, MultiDiracDeterminant* dn);
+  MultiSlaterDeterminantFast(ParticleSet& targetPtcl, std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets);
 
   ///destructor
   ~MultiSlaterDeterminantFast();
@@ -154,13 +155,16 @@ public:
   PsiValueType psiCurrent;
 
   // assume Dets[0]: up, Dets[1]:down
-  std::vector<MultiDiracDeterminant*> Dets;
+  std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
   std::map<std::string, size_t> SPOSetID;
 
   // map determinant in linear combination to unique det list
   std::vector<size_t>* C2node_up;
   std::vector<size_t>* C2node_dn;
+  /// CI coefficients
   std::vector<ValueType>* C;
+  /// C_n x D^1_n x D^2_n ... D^3 with one D removed.
+  ValueMatrix_t C_otherDs;
 
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
@@ -191,8 +195,15 @@ public:
 
   
 
-  // debug, erase later
-  //      MultiSlaterDeterminant *msd;
+private:
+  //get Det ID. It should be consistent with particle group id within the particle set.
+  inline int getDetID(ParticleSet& P, const int iat) const
+  {
+    int id = 0;
+    while (iat > P.last(iat))
+      id++;
+    return id;
+  }
 };
 
 } // namespace qmcplusplus
