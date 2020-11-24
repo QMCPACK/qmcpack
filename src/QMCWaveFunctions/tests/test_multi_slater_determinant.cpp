@@ -100,11 +100,15 @@ void test_LiH_msd(const std::string& spo_xml_string,
 
   ParticleSet::GradType grad_new;
   auto ratio = twf.calcRatioGrad(elec_, 1, grad_new);
-  std::cout << "twf.evalGrad ratio " << ratio << " grad_new " << std::setprecision(16) << grad_new << std::endl;
+  std::cout << "twf.calcRatioGrad ratio " << ratio << " grad_new " << grad_new << std::endl;
   REQUIRE(ratio == ValueApprox(1.374307585));
   REQUIRE(grad_new[0] == ValueApprox(0.05732804333));
   REQUIRE(grad_new[1] == ValueApprox(0.05747775029));
   REQUIRE(grad_new[2] == ValueApprox(1.126889742));
+
+  ratio = twf.calcRatio(elec_, 1);
+  std::cout << "twf.calcRatio ratio " << ratio << std::endl;
+  REQUIRE(ratio == ValueApprox(1.374307585));
 }
 
 TEST_CASE("LiH multi Slater dets", "[wavefunction]")
