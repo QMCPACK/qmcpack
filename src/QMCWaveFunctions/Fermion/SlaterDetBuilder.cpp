@@ -531,11 +531,11 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    success = readDetListH5(cur, uniqueConfg_up, uniqueConfg_dn, *(multiSD->C2node_up), *(multiSD->C2node_dn), CItags,
+    success = readDetListH5(cur, uniqueConfg_up, uniqueConfg_dn, (*multiSD->C2node)[0], (*multiSD->C2node)[1], CItags,
                             *(multiSD->C), optimizeCI, nels_up, nels_dn);
   }
   else
-    success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, *(multiSD->C2node_up), *(multiSD->C2node_dn), CItags,
+    success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, (*multiSD->C2node)[0], (*multiSD->C2node)[1], CItags,
                           *(multiSD->C), optimizeCI, nels_up, nels_dn, *(multiSD->CSFcoeff), *(multiSD->DetsPerCSF),
                           *(multiSD->CSFexpansion), multiSD->usingCSF);
   if (!success)

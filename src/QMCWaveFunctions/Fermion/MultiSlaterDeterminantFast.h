@@ -163,8 +163,7 @@ public:
   std::map<std::string, size_t> SPOSetID;
 
   // map determinant in linear combination to unique det list
-  std::shared_ptr<std::vector<size_t>> C2node_up;
-  std::shared_ptr<std::vector<size_t>> C2node_dn;
+  std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
   /// CI coefficients
   std::shared_ptr<std::vector<ValueType>> C;
   /// C_n x D^1_n x D^2_n ... D^3 with one D removed.
