@@ -510,8 +510,8 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   std::vector<std::string> CItags;
 
   bool optimizeCI;
-  int nels_up = multiSD->nels_up;
-  int nels_dn = multiSD->nels_dn;
+  int nels_up = targetPtcl.last(0) - targetPtcl.first(0);
+  int nels_dn = targetPtcl.last(1) - targetPtcl.first(1);
   multiSD->initialize();
   //Check id multideterminants are in HDF5
 

@@ -38,16 +38,18 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   Optimizable   = false;
   is_fermionic  = true;
   usingCSF      = false;
-  NP            = targetPtcl.getTotalNum();
-  nels_up       = targetPtcl.last(0) - targetPtcl.first(0);
-  nels_dn       = targetPtcl.last(1) - targetPtcl.first(1);
   FirstIndex_up = targetPtcl.first(0);
   FirstIndex_dn = targetPtcl.first(1);
   Dets          = std::move(dets);
+  int NP = targetPtcl.getTotalNum();
   myG.resize(NP);
   myL.resize(NP);
   myG_temp.resize(NP);
   myL_temp.resize(NP);
+
+  Last.resize(targetPtcl.groups());
+  for (int i = 0; i < Last.size(); ++i)
+    Last[i] = targetPtcl.last(i) - 1;
 
   usingBF = false;
   BFTrans = 0;
@@ -101,7 +103,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
 {
   //     APP_ABORT("Testing disabled for safety");
   app_log() << "Testing MSDFast. \n";
-  int n = nels_up + nels_dn;
+  int n = P.getTotalNum();
   ParticleSet::ParticleGradient_t G(n), G0(n);
   ParticleSet::ParticleLaplacian_t L(n), L0(n);
   ValueType log0;
@@ -241,7 +243,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
                                                                               bool newpos,
                                                                               GradType& g_at)
 {
-  const bool upspin = getDetID(P, iat) == 0;
+  const bool upspin = getDetID(iat) == 0;
   const int spin0   = (upspin) ? 0 : 1;
   const int spin1   = (upspin) ? 1 : 0;
 
@@ -301,12 +303,12 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
 
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
 {
-  const bool upspin = getDetID(P, iat) == 0;
+  const bool upspin = getDetID(iat) == 0;
   const int spin0   = (upspin) ? 0 : 1;
   const int spin1   = (upspin) ? 1 : 0;
 
   //YYYY all the above should go away and replaced with
-  // const int det_id = getDetID(P, iat);
+  // const int det_id = getDetID(iat);
   // det_id is the new spin0 and no spin1 is needed.
   // C_otherDs also use det_id
 
@@ -358,8 +360,7 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_t
   psiCurrent *= curRatio;
   curRatio = 1.0;
 
-  Dets[iat >= nels_up]->acceptMove(P, iat, safe_to_delay);
-  //Dets[DetID[iat]]->acceptMove(P,iat);
+  Dets[getDetID(iat)]->acceptMove(P, iat, safe_to_delay);
 
   AccRejTimer.stop();
 }
@@ -372,7 +373,7 @@ void MultiSlaterDeterminantFast::restore(int iat)
   }
   AccRejTimer.start();
 
-  Dets[iat >= nels_up]->restore(iat);
+  Dets[getDetID(iat)]->restore(iat);
   //Dets[DetID[iat]]->restore(iat);
   curRatio = 1.0;
   AccRejTimer.stop();
@@ -559,6 +560,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         ValueVector_t::iterator it(laplSum_up.begin());
         ValueVector_t::iterator last(laplSum_up.end());
         ValueType* ptr0 = lapls_up[0];
+        int nels_up     = P.last(0) - P.first(0);
         while (it != last)
         {
           (*it) = 0.0;
@@ -569,6 +571,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         it   = laplSum_dn.begin();
         last = laplSum_dn.end();
         ptr0 = lapls_dn[0];
+        int nels_dn     = P.last(1) - P.first(1);
         while (it != last)
         {
           (*it) = 0.0;
@@ -656,6 +659,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         ValueVector_t::iterator it(laplSum_up.begin());
         ValueVector_t::iterator last(laplSum_up.end());
         ValueType* ptr0 = lapls_up[0];
+        int nels_up     = P.last(0) - P.first(0);
         while (it != last)
         {
           (*it) = 0.0;
@@ -666,6 +670,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         it   = laplSum_dn.begin();
         last = laplSum_dn.end();
         ptr0 = lapls_dn[0];
+        int nels_dn     = P.last(1) - P.first(1);
         while (it != last)
         {
           (*it) = 0.0;

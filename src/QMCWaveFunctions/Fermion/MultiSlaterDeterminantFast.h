@@ -149,8 +149,6 @@ public:
 
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
-  size_t NP;
-  size_t nels_up, nels_dn;
   size_t FirstIndex_up;
   size_t FirstIndex_dn;
   size_t ActiveSpin;
@@ -195,13 +193,16 @@ public:
 
 private:
   //get Det ID. It should be consistent with particle group id within the particle set.
-  inline int getDetID(ParticleSet& P, const int iat) const
+  inline int getDetID(const int iat) const
   {
     int id = 0;
-    while (iat >= P.last(id))
+    while (iat > Last[id])
       id++;
     return id;
   }
+
+  ///the last particle of each group
+  std::vector<int> Last;
 };
 
 } // namespace qmcplusplus

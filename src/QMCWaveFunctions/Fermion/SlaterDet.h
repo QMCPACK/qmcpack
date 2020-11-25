@@ -36,8 +36,6 @@ public:
   typedef DiracDeterminantBase Determinant_t;
   ///container for the DiracDeterminants
   std::vector<Determinant_t*> Dets;
-  ///the last particle of each group
-  std::vector<int> Last;
 
   /**  constructor
    * @param targetPtcl target Particleset
@@ -366,6 +364,9 @@ private:
       Det_list.push_back(*static_cast<SlaterDet&>(wfc).Dets[det_id]);
     return Det_list;
   }
+
+  ///the last particle of each group
+  std::vector<int> Last;
 };
 } // namespace qmcplusplus
 #endif
