@@ -153,6 +153,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
   for (int jel = 0; jel < P.getTotalNum(); jel++)
     ElecNeighborIons.getNeighborList(jel).clear();
 
+  Psi.prepareAllGroups(P);
   if (ComputeForces)
   {
     forces = 0;
@@ -256,6 +257,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
     if (ComputeForces)
       APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
 
+    O.Psi.prepareAllGroups(P);
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
       auto& joblist = O.nlpp_jobs[ig];
@@ -367,6 +369,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
   for (int jel = 0; jel < P.getTotalNum(); jel++)
     ElecNeighborIons.getNeighborList(jel).clear();
 
+  Psi.prepareAllGroups(P);
   for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
     const auto& dist               = myTable.getDistRow(jel);
@@ -416,6 +419,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     if (oneTMove)
     {
       int iat = oneTMove->PID;
+      Psi.prepareGroup(P, P.getGroupID(iat));
       if (P.makeMoveAndCheck(iat, oneTMove->Delta))
       {
         GradType grad_iat;
@@ -431,6 +435,8 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     GradType grad_iat;
     //make a non-local move per particle
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+    {
+      Psi.prepareGroup(P, P.getGroupID(ig));
       for (int iat = P.first(ig); iat < P.last(ig); ++iat)
       {
         computeOneElectronTxy(P, iat);
@@ -446,6 +452,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           }
         }
       }
+    }
   }
   else if (UseTMove == TMOVE_V3)
   {
@@ -454,6 +461,8 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     GradType grad_iat;
     //make a non-local move per particle
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+    {
+      Psi.prepareGroup(P, P.getGroupID(ig));
       for (int iat = P.first(ig); iat < P.last(ig); ++iat)
       {
         const NonLocalData* oneTMove;
@@ -478,6 +487,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           }
         }
       }
+    }
   }
 
   if (NonLocalMoveAccepted > 0)

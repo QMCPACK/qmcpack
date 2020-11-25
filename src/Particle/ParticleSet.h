@@ -592,6 +592,18 @@ public:
   ///return the last index of a group i
   inline int last(int igroup) const { return SubPtcl[igroup + 1]; }
 
+  ///return the size of a group
+  inline int getGroupID(int iat) const
+  {
+    if (iat < 0 || iat >= TotalNum)
+      throw std::runtime_error("ParticleSet::getGroupID iat is out of range.");
+    int id = 0;
+    while (iat >= SubPtcl[id + 1])
+      id++;
+    return id;
+  }
+
+  ///return the size of a group
   inline int groupsize(int igroup) const { return SubPtcl[igroup + 1] - SubPtcl[igroup]; }
 
   ///add attributes to list for IO
