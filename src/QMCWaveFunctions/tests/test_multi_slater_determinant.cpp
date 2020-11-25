@@ -116,7 +116,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
 TEST_CASE("LiH multi Slater dets", "[wavefunction]")
 {
   app_log() << "-----------------------------------------------------------------" << std::endl;
-  app_log() << "LiH_msd input style 1 using sposet_collection table method" << std::endl;
+  app_log() << "LiH_msd using the table method" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
     <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
@@ -142,7 +142,7 @@ TEST_CASE("LiH multi Slater dets", "[wavefunction]")
   test_LiH_msd(spo_xml_string1, "spo-up", 85, 105);
 
   app_log() << "-----------------------------------------------------------------" << std::endl;
-  app_log() << "LiH_msd input style 1 using sposet_collection slow method" << std::endl;
+  app_log() << "LiH_msd using the traditional slow method" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1_slow = "<wavefunction name=\"psi0\" target=\"e\"> \
     <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
