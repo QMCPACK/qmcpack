@@ -321,14 +321,16 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
   const ValueType* restrict cptr       = C->data();
   const size_t nc                      = C->size();
 
-  evaluateC_otherDs(spin1, nc, cptr, det1, detValues1);
+  //evaluateC_otherDs(spin1, nc, cptr, det1, detValues1);
 
   PsiValueType psi = 0;
   for (size_t i = 0; i < nc; ++i)
   {
-    //app_log()<<"i="<<i<<"    cptr[i]="<<cptr[i]<<"      det0[i]="<<det0[i]<<"    detValues0[det0[i]]="<<detValues0[det0[i]]<<"  detValues1[det1[i]]="<<detValues1[det1[i]]<<std::endl;
+//    app_log()<<"i="<<i<<"    cptr[i]="<<cptr[i]<<"      det0[i]="<<det0[i]<<"    detValues0[det0[i]]="<<detValues0[det0[i]]<<"  detValues1[det1[i]]="<<detValues1[det1[i]]<<"     cptr[i] * detValues1[det1[i]]="<<cptr[i] * detValues1[det1[i]]<<"    C_otherDs[spin1][i]="<<C_otherDs[spin1][i]<<std::endl;
+
     //psi += cptr[i] * detValues0[det0[i]] * detValues1[det1[i]];
     psi += detValues0[det0[i]] * C_otherDs[spin1][i];
+    //app_log()<<"i="<<i<<"    cptr[i]="<<cptr[i]<<"      det0[i]="<<det0[i]<<"    detValues0[det0[i]]="<<detValues0[det0[i]]<<"  detValues1[det1[i]]="<<detValues1[det1[i]]<<std::endl;
   }
   //exit(0);
   return psi;
@@ -823,7 +825,20 @@ void MultiSlaterDeterminantFast::registerTimers()
 void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
 {
   //YYYY compute C_otherDs. C_otherDs[ig] Cn x \pi_{id} Dn^id (id != ig)
-  // C_otherDs.resize(Dets.size(), C->size());
+
+  const int det_id = getDetID(ig);
+  C_otherDs.resize(Dets.size(), C->size());
+
+  
+
+  const ValueType* restrict detValues = Dets[det_id]->detValues.data();
+  const size_t* restrict det          = (*C2node)[ig].data();
+
+
+  for (size_t i = 0; i < C->size(); i++)
+    C_otherDs[ig][i] = C->data()[i] * detValues[det[i]];
+    
+  //  C_otherDs[ig][i] = 0;//C->data()[i] * detValues1[(*C2node)[ig].data()[i]];
   // C_otherDs(0, :) stores C x D_dn
   // C_otherDs(1, :) stores C x D_up
   // we probably just fuse evaluateC_otherDs into this function.
