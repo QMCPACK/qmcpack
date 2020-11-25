@@ -13,8 +13,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
-#define QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
+#ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_TABLE_LEGACY_H
+#define QMCPLUSPLUS_MULTISLATERDETERMINANT_TABLE_LEGACY_H
 #include <Configuration.h>
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
@@ -49,7 +49,7 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDeterminantFast : public WaveFunctionComponent
+class MultiSlaterDeterminantTableLegacy : public WaveFunctionComponent
 {
 public:
   void registerTimers();
@@ -72,10 +72,10 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl, std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets);
+  MultiSlaterDeterminantTableLegacy(ParticleSet& targetPtcl, std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets);
 
   ///destructor
-  ~MultiSlaterDeterminantFast();
+  ~MultiSlaterDeterminantTableLegacy();
 
   void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;
@@ -104,7 +104,6 @@ public:
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
-  void prepareGroup(ParticleSet& P, int ig) override;
   GradType evalGrad(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
@@ -115,7 +114,7 @@ public:
   {
     // the base class routine may probably work, just never tested.
     // it can also be highly optimized with a specialized implementation.
-    APP_ABORT(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
+    APP_ABORT(" Need to implement MultiSlaterDeterminantTableLegacy::evaluateRatiosAlltoOne. \n");
   }
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
@@ -155,8 +154,6 @@ public:
   std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
   /// CI coefficients
   std::shared_ptr<std::vector<ValueType>> C;
-  /// C_n x D^1_n x D^2_n ... D^3 with one D removed.
-  ValueMatrix_t C_otherDs;
 
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
