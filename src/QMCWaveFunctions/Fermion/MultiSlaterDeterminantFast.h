@@ -198,7 +198,7 @@ private:
   inline int getDetID(ParticleSet& P, const int iat) const
   {
     int id = 0;
-    while (iat > P.last(iat))
+    while (iat >= P.last(id))
       id++;
     return id;
   }
