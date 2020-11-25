@@ -303,36 +303,21 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
 
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
 {
-  const bool upspin = getDetID(iat) == 0;
-  const int spin0   = (upspin) ? 0 : 1;
-  const int spin1   = (upspin) ? 1 : 0;
+  const int det_id = getDetID(iat);
 
-  //YYYY all the above should go away and replaced with
-  // const int det_id = getDetID(iat);
-  // det_id is the new spin0 and no spin1 is needed.
-  // C_otherDs also use det_id
+  Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  Dets[spin0]->evaluateDetsForPtclMove(P, iat);
-
-  const ValueType* restrict detValues0 = Dets[spin0]->new_detValues.data(); //always new
-  const ValueType* restrict detValues1 = Dets[spin1]->detValues.data();
-  const size_t* restrict det0          = (*C2node)[spin0].data();
-  const size_t* restrict det1          = (*C2node)[spin1].data();
-  const ValueType* restrict cptr       = C->data();
-  const size_t nc                      = C->size();
-
-  //evaluateC_otherDs(spin1, nc, cptr, det1, detValues1);
+  const ValueType* restrict detValues0 = Dets[det_id]->new_detValues.data(); //always new
+  const size_t* restrict det0          = (*C2node)[det_id].data();
 
   PsiValueType psi = 0;
-  for (size_t i = 0; i < nc; ++i)
-  {
-//    app_log()<<"i="<<i<<"    cptr[i]="<<cptr[i]<<"      det0[i]="<<det0[i]<<"    detValues0[det0[i]]="<<detValues0[det0[i]]<<"  detValues1[det1[i]]="<<detValues1[det1[i]]<<"     cptr[i] * detValues1[det1[i]]="<<cptr[i] * detValues1[det1[i]]<<"    C_otherDs[spin1][i]="<<C_otherDs[spin1][i]<<std::endl;
-
-    //psi += cptr[i] * detValues0[det0[i]] * detValues1[det1[i]];
-    psi += detValues0[det0[i]] * C_otherDs[spin1][i];
-    //app_log()<<"i="<<i<<"    cptr[i]="<<cptr[i]<<"      det0[i]="<<det0[i]<<"    detValues0[det0[i]]="<<detValues0[det0[i]]<<"  detValues1[det1[i]]="<<detValues1[det1[i]]<<std::endl;
-  }
-  //exit(0);
+  /// This function computes 
+  /// psi=Det_Coeff[i]*Det_Value[unique_det_up]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
+  /// Since only one electron group is moved at the time, identified by det_id, We precompute:
+  /// C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
+  for (size_t i = 0; i < C->size(); ++i)
+    psi += detValues0[det0[i]] * C_otherDs[det_id][i];
+ 
   return psi;
 }
 
@@ -824,36 +809,31 @@ void MultiSlaterDeterminantFast::registerTimers()
 
 void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
 {
-  //YYYY compute C_otherDs. C_otherDs[ig] Cn x \pi_{id} Dn^id (id != ig)
+  /// This function computes 
+  /// C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
+  /// Since only one electron group is moved at the time, identified by det_id, We precompute C_otherDs[det_id][i]:
+  /// psi=Det_Coeff[i]*Det_Value[unique_det_up]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
+  /// becomes:
+  /// psi=Det_Value[unique_det_up]*C_otherDs[det_id][i]
+  /// ig is the id of the group electron being moved. In this function, we compute the other groups 
+  /// of electrons. 
+  /// We loop over the number of type of determinants (up, diwn, positrons, etc), but we only multiply for ll types BUT ig 
+  /// C_otherDs(0, :) stores C x D_dn x D_pos
+  /// C_otherDs(1, :) stores C x D_up x D_pos
+  /// C_otherDs(2, :) stores C x D_up x D_dn
 
-  const int det_id = getDetID(ig);
   C_otherDs.resize(Dets.size(), C->size());
 
-  
-
-  const ValueType* restrict detValues = Dets[det_id]->detValues.data();
-  const size_t* restrict det          = (*C2node)[ig].data();
-
-
   for (size_t i = 0; i < C->size(); i++)
-    C_otherDs[ig][i] = C->data()[i] * detValues[det[i]];
-    
-  //  C_otherDs[ig][i] = 0;//C->data()[i] * detValues1[(*C2node)[ig].data()[i]];
-  // C_otherDs(0, :) stores C x D_dn
-  // C_otherDs(1, :) stores C x D_up
-  // we probably just fuse evaluateC_otherDs into this function.
+    C_otherDs[ig][i] = (*C)[i];
+
+
+  for (size_t id = 0; id < Dets.size(); id++)
+    if (id!=ig)
+      for (size_t i = 0; i < C->size(); i++)
+        C_otherDs[ig][i] *= Dets[id]->detValues[(*C2node)[id][i]]; 
+
 }
 
-void MultiSlaterDeterminantFast::evaluateC_otherDs(const int spin1,
-                                                   size_t nc,
-                                                   const ValueType* restrict cptr,
-                                                   const size_t* restrict det1,
-                                                   const ValueType* restrict detValues1)
-{
-  C_otherDs.resize(2, nc);
-
-  for (size_t i = 0; i < nc; i++)
-    C_otherDs[spin1][i] = cptr[i] * detValues1[det1[i]];
-}
 
 } // namespace qmcplusplus

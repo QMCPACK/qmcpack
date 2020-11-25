@@ -140,13 +140,6 @@ public:
 
   void testMSD(ParticleSet& P, int iat);
 
-  ///Evaluate the cij_dj Matrix to be stored
-  void evaluateC_otherDs(const int spin1,
-                         size_t nc,
-                         const ValueType* restrict cptr,
-                         const size_t* restrict det1,
-                         const ValueType* restrict detValues1);
-
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
   size_t FirstIndex_up;
