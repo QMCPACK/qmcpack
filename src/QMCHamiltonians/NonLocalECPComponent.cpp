@@ -114,6 +114,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
 {
   buildQuadraturePointDeltaPositions(r, dr, deltaV);
 
+  psi.prepareAllGroups(W);
   if (VP)
   {
     // Compute ratios with VP

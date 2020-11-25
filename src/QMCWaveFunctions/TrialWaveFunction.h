@@ -336,6 +336,14 @@ public:
    */
   void prepareGroup(ParticleSet& P, int ig);
 
+  /** Prepare internal data for updating WFC correspond to a particle group
+   *  Particle groups usually correspond to determinants of different spins.
+   *  This call can be used to handle precomputation for virtual moves.
+   * @param P quantum particle set
+   * @param ig particle group index
+   */
+  void prepareAllGroups(ParticleSet& P);
+
   GradType evalGrad(ParticleSet& P, int iat);
 
   /** compute d/ds ln(psi) spin gradient at current particle position for iat electron

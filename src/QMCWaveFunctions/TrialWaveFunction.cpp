@@ -471,6 +471,12 @@ void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
     Z[i]->prepareGroup(P, ig);
 }
 
+void TrialWaveFunction::prepareAllGroups(ParticleSet& P)
+{
+  for (int ig = 0; ig < P.groups(); ++ig)
+    for (int i = 0; i < Z.size(); ++i)
+      Z[i]->prepareGroup(P, ig);
+}
 
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
 {
