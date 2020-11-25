@@ -162,7 +162,7 @@ public:
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
   std::map<std::string, size_t> SPOSetID;
 
-  // map determinant in linear combination to unique det list
+  // map determinant in linear combination to unique det list (Dets.size(), C.size())
   std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
   /// CI coefficients
   std::shared_ptr<std::vector<ValueType>> C;

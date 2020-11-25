@@ -241,7 +241,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
                                                                               bool newpos,
                                                                               GradType& g_at)
 {
-  const bool upspin = (iat < FirstIndex_dn);
+  const bool upspin = getDetID(P, iat) == 0;
   const int spin0   = (upspin) ? 0 : 1;
   const int spin1   = (upspin) ? 1 : 0;
 
@@ -301,9 +301,14 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
 
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
 {
-  const bool upspin = (iat < FirstIndex_dn);
+  const bool upspin = getDetID(P, iat) == 0;
   const int spin0   = (upspin) ? 0 : 1;
   const int spin1   = (upspin) ? 1 : 0;
+
+  //YYYY all the above should go away and replaced with
+  // const int det_id = getDetID(P, iat);
+  // det_id is the new spin0 and no spin1 is needed.
+  // C_otherDs also use det_id
 
   Dets[spin0]->evaluateDetsForPtclMove(P, iat);
 
@@ -812,8 +817,11 @@ void MultiSlaterDeterminantFast::registerTimers()
 
 void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
 {
-  ///YYYY compute C_otherDs. C_otherDs[ig] Cn x \pi_{id} Dn^id (id != ig)
-  /// C_otherDs.resize(Dets.size(), C->size());
+  //YYYY compute C_otherDs. C_otherDs[ig] Cn x \pi_{id} Dn^id (id != ig)
+  // C_otherDs.resize(Dets.size(), C->size());
+  // C_otherDs(0, :) stores C x D_dn
+  // C_otherDs(1, :) stores C x D_up
+  // we probably just fuse evaluateC_otherDs into this function.
 }
 
 void MultiSlaterDeterminantFast::evaluateC_otherDs(const int spin1,
