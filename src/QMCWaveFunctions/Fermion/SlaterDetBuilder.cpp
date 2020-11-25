@@ -207,7 +207,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       }
       std::string spo_alpha_name;
       std::string spo_beta_name;
-      std::string fastAlg("yes");
+      std::string fastAlg("new");
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add(spo_alpha_name, "spo_up");
       spoAttrib.add(spo_beta_name, "spo_dn");
@@ -607,7 +607,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
       APP_ABORT("Error in SlaterDetBuilder::createMSDFast, problems with ci configuration list. \n");
     }
   }
-  Dets[0]->set(targetPtcl.first(0), targetPtcl.groupsize(0), Dets[0]->Phi->getOrbitalSetSize());
+  Dets[0]->set(targetPtcl.first(0), nels_up, Dets[0]->Phi->getOrbitalSetSize());
 
   Dets[1]->ReferenceDeterminant  = 0; // for now
   Dets[1]->NumDets               = uniqueConfg_dn.size();
@@ -625,7 +625,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
       APP_ABORT("Error in SlaterDetBuilder::createMSDFast, problems with ci configuration list. \n");
     }
   }
-  Dets[1]->set(targetPtcl.first(1), targetPtcl.groupsize(1), Dets[1]->Phi->getOrbitalSetSize());
+  Dets[1]->set(targetPtcl.first(1), nels_dn, Dets[1]->Phi->getOrbitalSetSize());
   if (CSFcoeff.size() == 1)
     optimizeCI = false;
   if (optimizeCI)
@@ -668,7 +668,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
       APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization!\n");
 
     //checks that the hartree fock determinant is the first in the multislater expansion
-    for (int i = 0; i < targetPtcl.groupsize(0); i++)
+    for (int i = 0; i < nels_up; i++)
     {
       if ((uniqueConfg_up[0].occup[i] != true) || (uniqueConfg_dn[0].occup[i] != true))
         APP_ABORT(
