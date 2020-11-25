@@ -44,10 +44,10 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string, const std::string
 
   elec_.setName("elec");
   elec_.create({2, 2});
-  elec_.R[0] = {0.0, 0.0, 0.0};
-  elec_.R[1] = {0.0, 0.0, 1.0};
-  elec_.R[2] = {0.0, 1.0, 0.0};
-  elec_.R[3] = {1.0, 0.0, 0.0};
+  elec_.R[0] = {0.5, 0.5, 0.5};
+  elec_.R[1] = {0.1, 0.1, 1.1};
+  elec_.R[2] = {-0.5, -0.5, -0.5};
+  elec_.R[3] = {-0.1, -0.1, 1.5};
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
