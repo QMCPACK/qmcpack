@@ -22,15 +22,15 @@ namespace qmcplusplus
 MultiSlaterDeterminantTableLegacy::MultiSlaterDeterminantTableLegacy(ParticleSet& targetPtcl,
                                                        std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets)
     : WaveFunctionComponent("MultiSlaterDeterminantTableLegacy"),
-      RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
-      RatioGradTimer(*timer_manager.createTimer(ClassName + "ratioGrad")),
-      RatioAllTimer(*timer_manager.createTimer(ClassName + "ratio(all)")),
-      UpdateTimer(*timer_manager.createTimer(ClassName + "updateBuffer")),
-      EvaluateTimer(*timer_manager.createTimer(ClassName + "evaluate")),
-      Ratio1Timer(*timer_manager.createTimer(ClassName + "detEval_ratio")),
-      Ratio1GradTimer(*timer_manager.createTimer(ClassName + "detEval_ratioGrad")),
-      Ratio1AllTimer(*timer_manager.createTimer(ClassName + "detEval_ratio(all)")),
-      AccRejTimer(*timer_manager.createTimer(ClassName + "Accept_Reject")),
+      RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
+      RatioGradTimer(*timer_manager.createTimer(ClassName + "::ratioGrad")),
+      RatioAllTimer(*timer_manager.createTimer(ClassName + "::ratio(all)")),
+      UpdateTimer(*timer_manager.createTimer(ClassName + "::updateBuffer")),
+      EvaluateTimer(*timer_manager.createTimer(ClassName + "::evaluate")),
+      Ratio1Timer(*timer_manager.createTimer(ClassName + "::detEval_ratio")),
+      Ratio1GradTimer(*timer_manager.createTimer(ClassName + "::detEval_ratioGrad")),
+      Ratio1AllTimer(*timer_manager.createTimer(ClassName + "::detEval_ratio(all)")),
+      AccRejTimer(*timer_manager.createTimer(ClassName + "::Accept_Reject")),
       CI_Optimizable(false)
 {
   registerTimers();
