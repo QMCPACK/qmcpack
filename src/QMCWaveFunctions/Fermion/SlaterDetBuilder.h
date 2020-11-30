@@ -108,11 +108,15 @@ private:
                             (std::is_floating_point<VT>::value), int> = 0>
   void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets,int ext_level)
   {
+    ///Determinant coeffs are stored in Coeff_N where N is Nth excited state. 
+    ///The Ground State is always stored in Coeff. 
+    ///Backwards compatibility: Not needed 
     std::string extVar;
-    extVar="Coeff_"+std::to_string(ext_level-1);
-    ///Determinant coeffs are stored in Coeff_N where N=1 for the ground state and N=2
-    ///Would be the first excited state.
-    ///Backwards compatibility: Old format assums "Coeff"
+    if (ext_level==0)
+      extVar="Coeff";
+    else
+       extVar="Coeff_"+std::to_string(ext_level);
+
     if (!hin.readEntry(ci_coeff,extVar))
        if(!hin.readEntry(ci_coeff,"Coeff"))
           APP_ABORT("Could not read CI coefficients from HDF5");
@@ -128,13 +132,16 @@ private:
     std::vector<double> CIcoeff_imag;
     CIcoeff_imag.resize(n_dets);
     CIcoeff_real.resize(n_dets);
+    ///Determinant coeffs are stored in Coeff_N where N is Nth excited state. 
+    ///The Ground State is always stored in Coeff. 
+    ///Backwards compatibility: Not needed 
 
     std::string ext_var;
-    extVar="Coeff_"+std::to_string(ext_level-1);
+    if (ext_level==0)
+      extVar="Coeff";
+    else
+      extVar="Coeff_"+std::to_string(ext_level);
     
-    ///Determinant coeffs are stored in Coeff_N where N=1 for the ground state and N=2
-    ///Would be the first excited state.
-    ///Backwards compatibility: Old format assums "Coeff" or "Coeff_imag"  
 
     if(!hin.readEntry(CIcoeff_real, extVar))
        if(!hin.readEntry(CIcoeff_real, "Coeff"))
@@ -143,7 +150,7 @@ private:
           hin.read(CIcoeff_imag, "Coeff_imag");
     else
     {
-      extVar="Coeff_"+std::to_string(ext_level-1)+"_imag";
+      extVar="Coeff_"+std::to_string(ext_level)+"_imag";
       hin.read(CIcoeff_imag, extVar);
     }
          
