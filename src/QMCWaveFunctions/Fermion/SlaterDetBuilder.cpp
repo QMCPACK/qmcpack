@@ -1174,7 +1174,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
                                      int nels_dn)
 {
   bool success = true;
-  int extlevel(1);
+  int extlevel(0);
   uniqueConfg_up.clear();
   uniqueConfg_dn.clear();
   C2node_up.clear();
