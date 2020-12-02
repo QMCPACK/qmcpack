@@ -58,7 +58,7 @@ struct container_traits<boost::multi::array_ref<T, D>>
   template<typename I>
   inline static void resize(CT& ref, I* n, int d)
   {
-    std::runtime_error("Can not resize container_proxy<boost::multi::array_ref<T,D>>!\n");
+    throw std::runtime_error("Can not resize container_proxy<boost::multi::array_ref<T,D>>!\n");
   }
 
   inline static size_t getSize(const CT& ref) { return ref.num_elements(); }

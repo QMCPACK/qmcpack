@@ -43,7 +43,7 @@ xPOTRF(c)   ; xPOTRF(z)    ;
 
 xSYEV(s)    ; xSYEV(d)     ;
 xSYEVD(s)   ; xSYEVD(d)    ;
-                           ; xHEEV(c)    ; xHEEV(z)     ;
+                             xHEEV(c)    ; xHEEV(z)     ;
 }
 
 #undef JOBZ

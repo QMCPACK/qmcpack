@@ -61,7 +61,8 @@ SET(JASTROW_SRC test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomi
                 test_rpa_jastrow.cpp test_user_jastrow.cpp test_kspace_jastrow.cpp
                 test_short_range_cusp_jastrow.cpp)
 SET(DETERMINANT_SRC FakeSPO.cpp test_DiracDeterminantBatched.cpp test_dirac_det.cpp
-                    test_multi_dirac_determinant.cpp test_dirac_matrix.cpp)
+                    test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
+                    test_multi_slater_determinant.cpp)
 
 FOREACH(CATEGORY trialwf sposet jastrow determinant)
   SET(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
@@ -71,7 +72,7 @@ FOREACH(CATEGORY trialwf sposet jastrow determinant)
 
   TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions)
   IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil containers platform_omp)
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget)
   ENDIF()
 
   ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

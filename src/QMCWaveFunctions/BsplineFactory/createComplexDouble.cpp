@@ -19,8 +19,8 @@
 #include "QMCWaveFunctions/BsplineFactory/SplineC2R.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
 #if defined(ENABLE_OFFLOAD)
-#include "QMCWaveFunctions/BsplineFactory/SplineC2ROMP.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineC2COMP.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineC2ROMPTarget.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineC2COMPTarget.h"
 #endif
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCplx.h"
 #include <fftw3.h>
@@ -51,7 +51,7 @@ BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybri
     else
     {
       app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
-      aReader = new SplineSetReader<SplineC2COMP<double>>(e);
+      aReader = new SplineSetReader<SplineC2COMPTarget<double>>(e);
     }
   }
   else
@@ -81,7 +81,7 @@ BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybri
     else
     {
       app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
-      aReader = new SplineSetReader<SplineC2ROMP<double>>(e);
+      aReader = new SplineSetReader<SplineC2ROMPTarget<double>>(e);
     }
   }
   else

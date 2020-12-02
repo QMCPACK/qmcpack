@@ -1,17 +1,15 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12.0)
 
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
 # various Find<Package>.cmake modules may not follow this policy
 # CMP0075: check_include_file_cxx and other follow CMAKE_REQUIRED_LIBRARIES
 # when doing link check
-IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
-  cmake_policy(SET CMP0074 NEW)
-  cmake_policy(SET CMP0075 NEW)
-ENDIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+cmake_policy(SET CMP0074 NEW)
+cmake_policy(SET CMP0075 NEW)
 include(CMakeDependentOption)
 
 ######################################################################
@@ -20,7 +18,7 @@ include(CMakeDependentOption)
 PROJECT(qmcpack)
 
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 9)
+SET(QMCPACK_VERSION_MINOR 10)
 SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
@@ -35,11 +33,7 @@ SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 # Verify Python3 available
 ######################################################################
 INCLUDE(CMake/python.cmake)
-IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-  TEST_PYTHON_MODULE( "os"  Python3_FOUND )
-ELSE()
-  find_package(Python3)
-ENDIF()
+find_package(Python3)
 IF ( NOT Python3_FOUND )
   MESSAGE( FATAL_ERROR "Could not find required python3" )
 ENDIF ( NOT Python3_FOUND )
@@ -116,20 +110,14 @@ MESSAGE( STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 SET (LIBRARY_OUTPUT_PATH ${qmcpack_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")
 SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables.")
 
-######################################################################
-# build include and library paths required for the projects
-# For XYZ library, set an environment as
-# export XYZ_HOME='root-of-the-library'
-# XYZ_HOME/include
-# XYZ_HOME/lib
-# IF XYZ library is found, XYZ_FOUND is set to true
-#
-# find_package is used with cmake 2.8 and higher
-######################################################################
-#if(APPLE)
-#  set(QMC_INCLUDE_PATHS ${QMC_INCLUDE_PATHS} /sw/include)
-#  set(QMC_LIBRARY_PATHS ${QMC_LIBRARY_PATHS} /sw/lib)
-#endif(APPLE)
+##################################
+# Set C++ standard used by QMCPACK
+##################################
+SET(QMC_CXX_STANDARD 14 CACHE STRING "QMCPACK C++ language standard")
+IF(NOT QMC_CXX_STANDARD EQUAL 14)
+  MESSAGE(WARNING "C++14 is the only language standard officially supported by this QMCPACK version. "
+                  "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
+ENDIF()
 
 ######################################################################
 # Set the compiler-time parameters
@@ -198,6 +186,11 @@ OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
+IF(USE_OBJECT_TARGET)
+   IF(${CMAKE_VERSION} VERSION_LESS "3.14.0")
+     MESSAGE(FATAL_ERROR "USE_OBJECT_TARGET=ON requires cmake 3.14.0 or above!")
+   ENDIF()
+ENDIF()
 IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
 ENDIF(ENABLE_CUDA AND QMC_CUDA)
@@ -319,12 +312,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(ENABLE_OPENMP 0)
   SET(HAVE_ACML 0)
 
-  ######################################################
-  # Try to identify CPU identity
-  ######################################################
-  SET(CPU_IDENTITY "generic")
-  #INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
-
   #------------------------
   # On Cray's machine
   #------------------------
@@ -355,13 +342,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
       MESSAGE(FATAL_ERROR "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added.")
     ENDIF()
   ENDIF()
-
-  #--------------------------------
-  #  C++ 14 is the minimum standard
-  #--------------------------------
-  set(CMAKE_CXX_STANDARD 14)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(CMAKE_CXX_EXTENSIONS OFF)
 
   #------------------------------------
   # Identify the compiler -- This serves only to deal with case where only C or CXX is set, refactor? 
@@ -406,18 +386,28 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
-
-  #--------------------------------------------------------------------------
-  # Check that a C++ compiler is compatiable with the underlying libstdc++
-  #--------------------------------------------------------------------------
-  include(CMake/Testlibstdc++.cmake)
-
-  #---------------------------------------------------
-  # Check that a C++ 14 standard library is configured
-  #---------------------------------------------------
-  include(CMake/TestCxx14Library.cmake)
-
 ENDIF(CMAKE_TOOLCHAIN_FILE)
+
+###############################################
+# Set C++ minimum standard and run basic checks
+###############################################
+set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+#-----------------------------------------------------------------------
+# Check that a C++ compiler is compatiable with the underlying libstdc++
+#-----------------------------------------------------------------------
+include(CMake/Testlibstdc++.cmake)
+
+#---------------------------------------------------------
+# Check that a C++ standard library is configured properly
+#---------------------------------------------------------
+IF(QMC_CXX_STANDARD GREATER_EQUAL 17)
+  include(CMake/TestCxx17Library.cmake)
+ELSE()
+  include(CMake/TestCxx14Library.cmake)
+ENDIF()
 
 IF (ENABLE_GCOV)
   IF (NOT GCOV_SUPPORTED)
@@ -598,16 +588,7 @@ SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 #  set up Libxml2 library
 #-------------------------------------------------------------------
 find_package(ZLIB)
-find_package(LibXml2)
-IF(LIBXML2_FOUND)
-  IF(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-    ADD_LIBRARY(LibXml2::LibXml2 INTERFACE IMPORTED)
-    SET_TARGET_PROPERTIES(LibXml2::LibXml2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LIBXML2_INCLUDE_DIR}"
-                                                      INTERFACE_LINK_LIBRARIES "${LIBXML2_LIBRARIES}")
-  ENDIF()
-ELSE()
-  MESSAGE(FATAL_ERROR "Could not find required library Libxml2")
-ENDIF(LIBXML2_FOUND)
+find_package(LibXml2 REQUIRED)
 
 #-------------------------------------------------------------------
 #  set up HDF5 library
@@ -733,7 +714,7 @@ ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
 OPTION(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF)
 IF(USE_NVTX_API)
-  IF(HAVE_CUDA)
+  IF(HAVE_CUDA OR ENABLE_OFFLOAD)
     FIND_LIBRARY(NVTX_API_LIB
       NAME nvToolsExt
       HINTS ${CUDA_TOOLKIT_ROOT_DIR}
@@ -743,7 +724,7 @@ IF(USE_NVTX_API)
     ENDIF(NOT NVTX_API_LIB)
     MESSAGE("CUDA nvToolsExt library: ${NVTX_API_LIB}")
     LINK_LIBRARIES(${NVTX_API_LIB})
-  ENDIF(HAVE_CUDA)
+  ENDIF(HAVE_CUDA OR ENABLE_OFFLOAD)
 ENDIF(USE_NVTX_API)
 
 #-------------------------------------------------------------------

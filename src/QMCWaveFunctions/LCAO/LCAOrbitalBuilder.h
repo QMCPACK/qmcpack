@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 #define QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 
+#include <map>
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
@@ -32,14 +33,13 @@ namespace qmcplusplus
 class LCAOrbitalBuilder : public SPOSetBuilder
 {
 public:
-  typedef typename LCAOrbitalSet::basis_type BasisSet_t;
+  using BasisSet_t = LCAOrbitalSet::basis_type;
   /** constructor
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
   LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur);
   ~LCAOrbitalBuilder();
-  void loadBasisSetFromXML(xmlNodePtr cur);
   SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
 protected:
@@ -47,12 +47,10 @@ protected:
   ParticleSet& targetPtcl;
   ///source ParticleSet
   ParticleSet& sourcePtcl;
-  ///localized basis set
-  BasisSet_t* myBasisSet;
-  ///apply cusp correction to molecular orbitals
-  int radialOrbType;
+  /// localized basis set map
+  std::map<std::string, std::unique_ptr<BasisSet_t>> basisset_map_;
+  /// if true, add cusp correction to orbitals
   bool cuspCorr;
-  std::string cuspInfo;
   ///Path to HDF5 Wavefunction
   std::string h5_path;
   ///Number of periodic Images for Orbital evaluation
@@ -67,8 +65,6 @@ protected:
   /// Enable cusp correction
   bool doCuspCorrection;
 
-  ///load basis set from hdf5 file
-  void loadBasisSetFromH5();
   /** create basis set
      *
      * Use ao_traits<T,I,J> to match (ROT)x(SH) combo
@@ -86,11 +82,13 @@ protected:
   bool putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
   bool putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr);
+  // the dimensions of Ctemp are determined by the dataset on file
   void LoadFullCoefsFromH5(hdf_archive& hin,
                            int setVal,
                            PosType& SuperTwist,
                            Matrix<std::complex<RealType>>& Ctemp,
                            bool MultiDet);
+  // the dimensions of Creal are determined by the dataset on file
   void LoadFullCoefsFromH5(hdf_archive& hin, int setVal, PosType& SuperTwist, Matrix<RealType>& Creal, bool Multidet);
   void EvalPeriodicImagePhaseFactors(PosType SuperTwist, std::vector<RealType>& LocPeriodicImagePhaseFactors);
   void EvalPeriodicImagePhaseFactors(PosType SuperTwist,
@@ -105,6 +103,14 @@ protected:
   void readRealMatrixFromH5(hdf_archive& hin,
                             const std::string& setname,
                             Matrix<LCAOrbitalBuilder::RealType>& Creal) const;
+
+private:
+  ///load a basis set from XML input
+  std::unique_ptr<BasisSet_t> loadBasisSetFromXML(xmlNodePtr cur, xmlNodePtr parent);
+  ///load a basis set from h5 file
+  std::unique_ptr<BasisSet_t> loadBasisSetFromH5(xmlNodePtr parent);
+  ///determine radial orbital type based on "keyword" and "transform" attributes
+  int determineRadialOrbType(xmlNodePtr cur) const;
 };
 
 

@@ -2,10 +2,39 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+## [3.10.0] - 2020-11-10
 
+### Notes
+
+This release contains multiple feature improvements and bug fixes. The AFQMC implementation has been significantly enhanced, and
+an important wavefunction optimization bug fixed in real space QMC.
+
+* The QMCPACK manual is now available at https://qmcpack.readthedocs.io, having been converted to use reStructuredText and the sphinx
+  documentation system.
+* Significant improvements to the AFQMC code including HIP support for AMD GPUs, updated documentation, and support for non-collinear calculations and spin-orbit k-point Hamiltonians
+  [\#2734](https://github.com/QMCPACK/qmcpack/pull/2734).
+* Improved support for spin-orbit in real-space QMC including documentation [\#2733](https://github.com/QMCPACK/qmcpack/pull/2733).
+* Important bug fix for wavefunction optimization in few electron systems such as isolated atoms. The bug would result in slow or no
+  convergence. Thanks to Jaron Krogel and Matus Dubecky for reports and reproducers.
+  [\#2496](https://github.com/QMCPACK/qmcpack/issues/2496).
+* Implementation of L2 potentials and evaluation in DMC [\#1948](https://github.com/QMCPACK/qmcpack/pull/1948).
+* Consistent with our two year support policy for open source compilers, libraries, and tooling, several version minimums have
+  been increased to either avoid bugs or to utilize new features.
+* Clang 7 is the earliest supported Clang compiler. The latest release is recommended.
+* Intel 2019 is the earliest supported Intel compiler. The latest release is recommended.
+* Future releases of QMCPACK will require C++17. The current minimum is C++14.
+* AoS builds are no longer supported. The code has been removed now that the default structures-of-arrays (SoA) build has
+  sufficiently broad capability.
 * The default CUDA architecture is set to sm_70 (Volta).
-* AoS builds are no longer supported. The code has been removed.
+* QMCPACK is built with ENABLE_TIMERS=ON by default [\#2663](https://github.com/QMCPACK/qmcpack/issues/2663)
+* Various bug fixes to complete the transition to Python 3.
+* Ongoing improvements to the OpenMP offload implementation.
+
+### NEXUS
+
+* NEXUS manual is now available at https://nexus-workflows.readthedocs.io, having been converted to use the reStructuredText and sphinx
+  documentation system.
+* Various small fixes and improvements.
 
 ## [3.9.2] - 2020-04-29
 

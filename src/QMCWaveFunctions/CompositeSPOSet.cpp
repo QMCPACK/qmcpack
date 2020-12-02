@@ -232,7 +232,7 @@ SPOSet* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   CompositeSPOSet* spo_now = new CompositeSPOSet;
   for (int i = 0; i < spolist.size(); ++i)
   {
-    SPOSet* spo = get_sposet(spolist[i]);
+    SPOSet* spo = sposet_builder_factory_.getSPOSet(spolist[i]);
     if (spo)
       spo_now->add(spo);
   }

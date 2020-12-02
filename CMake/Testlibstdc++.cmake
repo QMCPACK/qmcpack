@@ -8,26 +8,28 @@ file(WRITE ${TEST_LIBSTDCXX_SOURCE}
 
 int main(int argc, char **argv)
 {
-#if ( ( __INTEL_COMPILER == 1800 ) && (  _GLIBCXX_RELEASE > 7 ) )
-#error too new libstdc++ from GNU for Intel 18, use GNU version <= 7
+// Unfortunately this check doesn't work because _GLIBCXX_RELEASE appeared in the GCC 7.1 release.
+// It is kept here as an exmple for the future.
+#if ( defined(__INTEL_COMPILER) && (  _GLIBCXX_RELEASE < 7 ) )
+#error too old libstdc++ from GNU for Intel compilers, use GNU version >= 7
+#endif
+// libstdc++ from GCC 8 is bad for Intel 19 in both C++14 and C++17
+#if ( ( __INTEL_COMPILER == 1900 ) && (  _GLIBCXX_RELEASE > 7 ) )
+#error too new libstdc++ from GNU for Intel 19, use GNU version <= 7
+#endif
+#if ( ( __INTEL_COMPILER == 1910 ) && (  _GLIBCXX_RELEASE > 9 ) )
+#error too new libstdc++ from GNU for Intel 20, use GNU version <= 9
 #endif
     return 0;
 }
 ")
 
 
-if (${CMAKE_VERSION} VERSION_LESS 3.8.0)
-  try_compile(LIBSTDCXX_OKAY ${CMAKE_BINARY_DIR}
-              ${TEST_LIBSTDCXX_SOURCE}
-              COMPILE_DEFINITIONS ${CMAKE_CXX14_STANDARD_COMPILE_OPTION}
-              OUTPUT_VARIABLE COMPILE_OUTPUT)
-else()
-  try_compile(LIBSTDCXX_OKAY ${CMAKE_BINARY_DIR}
-              ${TEST_LIBSTDCXX_SOURCE}
-              CXX_STANDARD 14
-              CXX_STANDARD_REQUIRED ON
-              OUTPUT_VARIABLE COMPILE_OUTPUT)
-endif()
+try_compile(LIBSTDCXX_OKAY ${CMAKE_BINARY_DIR}
+            ${TEST_LIBSTDCXX_SOURCE}
+            CXX_STANDARD 14
+            CXX_STANDARD_REQUIRED ON
+            OUTPUT_VARIABLE COMPILE_OUTPUT)
 
 
 if (NOT LIBSTDCXX_OKAY)

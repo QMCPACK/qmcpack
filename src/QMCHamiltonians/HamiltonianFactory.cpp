@@ -279,7 +279,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if (potType == "orbitalimages")
       {
         app_log() << "  Adding OrbitalImages" << std::endl;
-        OrbitalImages* apot = new OrbitalImages(targetPtcl, ptclPool, myComm);
+        OrbitalImages* apot = new OrbitalImages(targetPtcl, ptclPool, myComm, *psi_it->second);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -308,7 +308,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
-        DensityMatrices1B* apot = new DensityMatrices1B(targetPtcl, *targetPsi, Pc);
+        DensityMatrices1B* apot = new DensityMatrices1B(targetPtcl, *targetPsi, Pc, *psi_it->second);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
