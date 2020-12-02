@@ -2411,7 +2411,7 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetFromH5()
   xmlNewProp(detlist, (const xmlChar*)"neb", (const xmlChar*)cineb.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"nstates", (const xmlChar*)nstates.str().c_str());
   xmlNewProp(detlist, (const xmlChar*)"cutoff", (const xmlChar*)ci_thr.str().c_str());
-  if (nbexcitedstates != 1)
+  if (nbexcitedstates >= 1)
   {
     app_log() << "WARNING!! THE HDF5 Contains CI coefficients for " << nbexcitedstates - 1
               << ". By default, the ground state coefficients will be loaded ( ext_level=0). If you want to evaluate "
