@@ -108,18 +108,20 @@ private:
                             (std::is_floating_point<VT>::value), int> = 0>
   void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets,int ext_level)
   {
-    ///Determinant coeffs are stored in Coeff_N where N is Nth excited state. 
-    ///The Ground State is always stored in Coeff. 
-    ///Backwards compatibility: Not needed 
+    ///Determinant coeffs are stored in Coeff for the ground state and Coeff_N 
+    ///for the Nth excited state. 
+    ///The Ground State is always stored in Coeff 
+    ///Backward compatibility is insured
     std::string extVar;
     if (ext_level==0)
-      extVar="Coeff";
+       extVar="Coeff";
     else
        extVar="Coeff_"+std::to_string(ext_level);
 
     if (!hin.readEntry(ci_coeff,extVar))
-       if(!hin.readEntry(ci_coeff,"Coeff"))
-          APP_ABORT("Could not read CI coefficients from HDF5");
+       APP_ABORT("Could not read CI coefficients from HDF5");
+
+
       
   }
   template<typename VT,
@@ -134,7 +136,7 @@ private:
     CIcoeff_real.resize(n_dets);
     ///Determinant coeffs are stored in Coeff_N where N is Nth excited state. 
     ///The Ground State is always stored in Coeff. 
-    ///Backwards compatibility: Not needed 
+    ///Backward compatibility is insured
 
     std::string ext_var;
     if (ext_level==0)
@@ -144,15 +146,11 @@ private:
     
 
     if(!hin.readEntry(CIcoeff_real, extVar))
-       if(!hin.readEntry(CIcoeff_real, "Coeff"))
-          APP_ABORT("Could not read CI coefficients from HDF5")
-       else
-          hin.read(CIcoeff_imag, "Coeff_imag");
-    else
-    {
-      extVar="Coeff_"+std::to_string(ext_level)+"_imag";
-      hin.read(CIcoeff_imag, extVar);
-    }
+       APP_ABORT("Could not read CI coefficients from HDF5")
+
+    extVar=extVar+"_imag";
+    if(!hin.readEntry(CIcoeff_imag, extVar))
+       APP_ABORT("Could not read CI coefficients from HDF5")
          
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
