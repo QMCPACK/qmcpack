@@ -134,6 +134,7 @@ private:
     std::vector<double> CIcoeff_imag;
     CIcoeff_imag.resize(n_dets);
     CIcoeff_real.resize(n_dets);
+    fill(CIcoeff_imag.begin(), CIcoeff_imag.end(), 0.0);
     ///Determinant coeffs are stored in Coeff_N where N is Nth excited state. 
     ///The Ground State is always stored in Coeff. 
     ///Backward compatibility is insured
@@ -150,7 +151,7 @@ private:
 
     extVar=extVar+"_imag";
     if(!hin.readEntry(CIcoeff_imag, extVar))
-       APP_ABORT("Could not read CI coefficients from HDF5")
+       app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
          
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
