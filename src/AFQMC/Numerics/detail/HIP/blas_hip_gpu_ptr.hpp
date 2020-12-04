@@ -50,7 +50,8 @@ template<typename T, typename Q>
 inline static void copy(int n, T const* x, int incx, device_pointer<Q> y, int incy)
 {
   static_assert(std::is_same<typename std::decay<Q>::type, T>::value, "Wrong dispatch.\n");
-  arch::memcopy2D(to_address(y), sizeof(Q) * incy, x, sizeof(T) * incx, sizeof(T), n, arch::memcopyH2D, "blas_hip_gpu_ptr::copy");
+  arch::memcopy2D(to_address(y), sizeof(Q) * incy, x, sizeof(T) * incx, sizeof(T), n, arch::memcopyH2D,
+                  "blas_hip_gpu_ptr::copy");
 }
 
 template<typename T, typename Q>
@@ -58,7 +59,8 @@ inline static void copy(int n, device_pointer<Q> x, int incx, T* y, int incy)
 {
   static_assert(std::is_same<typename std::decay<Q>::type, T>::value, "Wrong dispatch.\n");
   assert(sizeof(Q) == sizeof(T));
-  arch::memcopy2D(y, sizeof(T) * incy, to_address(x), sizeof(Q) * incx, sizeof(T), n, arch::memcopyD2H, "blas_hip_gpu_ptr::copy");
+  arch::memcopy2D(y, sizeof(T) * incy, to_address(x), sizeof(Q) * incx, sizeof(T), n, arch::memcopyD2H,
+                  "blas_hip_gpu_ptr::copy");
 }
 
 // scal Specializations
@@ -465,16 +467,16 @@ template<typename T, typename T2>
 inline static void copy2D(int N, int M, T const* src, int lda, device_pointer<T2> dst, int ldb)
 {
   static_assert(std::is_same<typename std::decay<T>::type, T2>::value, "Wrong dispatch.\n");
-  arch::memcopy2D(to_address(dst), sizeof(T2) * ldb, src, sizeof(T) * lda, M * sizeof(T), N,
-                  arch::memcopyH2D, "blas_hip_gpu_ptr::copy2D");
+  arch::memcopy2D(to_address(dst), sizeof(T2) * ldb, src, sizeof(T) * lda, M * sizeof(T), N, arch::memcopyH2D,
+                  "blas_hip_gpu_ptr::copy2D");
 }
 
 template<typename T, typename T2>
 inline static void copy2D(int N, int M, device_pointer<T> src, int lda, T2* dst, int ldb)
 {
   static_assert(std::is_same<typename std::decay<T>::type, T2>::value, "Wrong dispatch.\n");
-  arch::memcopy2D(dst, sizeof(T2) * ldb, to_address(src), sizeof(T) * lda, M * sizeof(T), N,
-                  arch::memcopyD2H, "blas_hip_gpu_ptr::copy2D");
+  arch::memcopy2D(dst, sizeof(T2) * ldb, to_address(src), sizeof(T) * lda, M * sizeof(T), N, arch::memcopyD2H,
+                  "blas_hip_gpu_ptr::copy2D");
 }
 
 template<typename T, typename T2>

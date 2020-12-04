@@ -28,6 +28,10 @@
 #include <ittnotify.h>
 #endif
 
+#ifdef USE_NVTX_API
+#include <nvToolsExt.h>
+#endif
+
 #define USE_STACK_TIMERS
 
 namespace qmcplusplus

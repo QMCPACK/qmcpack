@@ -174,13 +174,13 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     nkpts = Idata[2];
 #endif
 
-  // MAM: this is wrong in NONCOLLINEAR, but how do I know what 
+  // MAM: this is wrong in NONCOLLINEAR, but how do I know what
   // walker type it is right here???
   // Might need to read dimensions ahead of time from hdf5 file and check consistensy
   // later
   // Also, OneBodyHamiltonian doesn't make much sense now that you have KP classes.
   // Consider refactoring this part of the code...
-  // It is not really used now, you can just read H1 in Sparse class too...  
+  // It is not really used now, you can just read H1 in Sparse class too...
 
   // 1 body hamiltonian: Why isn't this in shared memory!!!
   boost::multi::array<ValueType, 2> H1({NMO, NMO});

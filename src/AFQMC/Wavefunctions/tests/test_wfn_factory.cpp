@@ -158,7 +158,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
       auto initial_guess = WfnFac.getInitialGuess(wfn_name);
       REQUIRE(initial_guess.size(0) == 2);
-      REQUIRE(initial_guess.size(1) == NPOL*NMO);
+      REQUIRE(initial_guess.size(1) == NPOL * NMO);
       REQUIRE(initial_guess.size(2) == NAEA);
 
       if (type == COLLINEAR)
@@ -296,7 +296,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
       //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
       REQUIRE(initial_guess.size(0) == 2);
-      REQUIRE(initial_guess.size(1) == NPOL*NMO);
+      REQUIRE(initial_guess.size(1) == NPOL * NMO);
       REQUIRE(initial_guess.size(2) == NAEA);
 
       if (type == COLLINEAR)
@@ -497,7 +497,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
 
     if (type == COLLINEAR)
@@ -656,7 +656,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
 
     if (type == COLLINEAR)

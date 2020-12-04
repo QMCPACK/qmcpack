@@ -469,8 +469,8 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(1);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(2);
 #endif
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMP<VT, FPVT>>>(1);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMP<VT, FPVT>>>(2);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(2);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(1);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(2);
 }

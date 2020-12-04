@@ -234,7 +234,7 @@ bool restartFromHDF5(WalkerSet& wset,
   int nw_local = nWN - nW0;
   { // to limit scope
     boost::multi::array<ComplexType, 2> PsiA, PsiB;
-    int NMO2 = ((walker_type == NONCOLLINEAR)?2*NMO:NMO);
+    int NMO2 = ((walker_type == NONCOLLINEAR) ? 2 * NMO : NMO);
     if (TG.TG_local().root())
     {
       PsiA.reextent({NMO2, NAEA});
@@ -329,9 +329,7 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
       NMO    = (*w.SlaterMatrix(Alpha)).size(0);
       NAEA   = (*w.SlaterMatrix(Alpha)).size(1);
       if (walker_type == COLLINEAR)
-        NAEB = (*w.SlaterMatrix(Beta)).size(1)
-      if (walker_type == NONCOLLINEAR) 
-        NMO /= 2;
+        NAEB = (*w.SlaterMatrix(Beta)).size(1) if (walker_type == NONCOLLINEAR) NMO /= 2;
     }
 
     std::vector<int> Idata(7);
@@ -382,9 +380,9 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
         auto w = wset[0];
         NMO    = (*w.SlaterMatrix(Alpha)).size(0);
         NAEA   = (*w.SlaterMatrix(Alpha)).size(1);
-        if (walker_type == COLLINEAR) 
-          NAEB = (*w.SlaterMatrix(Beta)).size(1); 
-        if (walker_type == NONCOLLINEAR) 
+        if (walker_type == COLLINEAR)
+          NAEB = (*w.SlaterMatrix(Beta)).size(1);
+        if (walker_type == NONCOLLINEAR)
           NMO /= 2;
       }
 

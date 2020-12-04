@@ -24,12 +24,12 @@ namespace kernels
 {
 template<typename Size, typename Size1, typename T>
 __global__ void kernel_fill_n(Size N, T* x, Size1 incx, T const a)
-{ 
-  Size N0(8*blockDim.x*blockIdx.x);
-  T* x_(x+Size(incx)*N0);
-  Size N_( min( Size(8*blockDim.x), N-N0 ) );
+{
+  Size N0(8 * blockDim.x * blockIdx.x);
+  T* x_(x + Size(incx) * N0);
+  Size N_(min(Size(8 * blockDim.x), N - N0));
   for (Size ip = Size(threadIdx.x); ip < N_; ip += Size(blockDim.x))
-  { 
+  {
     x_[ip * Size(incx)] = a;
   }
 }
@@ -46,8 +46,8 @@ __global__ void kernel_fill2D_n(Size N, Size M, T* y, Size lda, T const a)
 
 void fill_n(char* first, int N, int incx, char const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -55,8 +55,8 @@ void fill_n(char* first, int N, int incx, char const value)
 }
 void fill_n(int* first, int N, int incx, int const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -64,8 +64,8 @@ void fill_n(int* first, int N, int incx, int const value)
 }
 void fill_n(float* first, int N, int incx, float const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -73,8 +73,8 @@ void fill_n(float* first, int N, int incx, float const value)
 }
 void fill_n(double* first, int N, int incx, double const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -83,16 +83,16 @@ void fill_n(double* first, int N, int incx, double const value)
 void fill_n(std::complex<float>* first, int N, int incx, std::complex<float> const value)
 {
   int N_(DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
-  size_t nthr(DEFAULT_BLOCK_SIZE); 
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
 void fill_n(std::complex<double>* first, int N, int incx, std::complex<double> const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, incx, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -101,8 +101,8 @@ void fill_n(std::complex<double>* first, int N, int incx, std::complex<double> c
 
 void fill_n(char* first, int N, char const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -110,8 +110,8 @@ void fill_n(char* first, int N, char const value)
 }
 void fill_n(long int* first, long unsigned int N, const long int value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -119,8 +119,8 @@ void fill_n(long int* first, long unsigned int N, const long int value)
 }
 void fill_n(long unsigned int* first, long unsigned int N, const long unsigned int value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -128,8 +128,8 @@ void fill_n(long unsigned int* first, long unsigned int N, const long unsigned i
 }
 void fill_n(int* first, int N, int const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -137,8 +137,8 @@ void fill_n(int* first, int N, int const value)
 }
 void fill_n(float* first, int N, float const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -146,8 +146,8 @@ void fill_n(float* first, int N, float const value)
 }
 void fill_n(double* first, int N, double const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -155,8 +155,8 @@ void fill_n(double* first, int N, double const value)
 }
 void fill_n(std::complex<float>* first, int N, std::complex<float> const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
   qmc_cuda::cuda_check(cudaGetLastError());
@@ -164,8 +164,8 @@ void fill_n(std::complex<float>* first, int N, std::complex<float> const value)
 }
 void fill_n(std::complex<double>* first, int N, std::complex<double> const value)
 {
-  int N_(8*DEFAULT_BLOCK_SIZE);
-  size_t nblk((N+N_-1)/N_);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
   size_t nthr(DEFAULT_BLOCK_SIZE);
   kernel_fill_n<<<nblk, nthr>>>(N, first, 1, value);
   qmc_cuda::cuda_check(cudaGetLastError());

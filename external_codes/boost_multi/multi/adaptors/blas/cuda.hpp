@@ -1,16 +1,22 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-exit;$CXX $0 -o $0x `pkg-config --libs blas` -lcudart -lcublas&&$0x&&rm $0x;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+$CXXX $CXXFLAGS -include"boost/log/trivial.hpp" -D'MULTI_MARK_SCOPE(MsG)=BOOST_LOG_TRIVIAL(trace)<<MsG' -DBOOST_LOG_DYN_LINK $0 -o $0x `pkg-config --cflags --libs cudart-11.0 cublas-11.0 blas` -lboost_unit_test_framework -lboost_log -lboost_thread -lboost_system -lboost_log_setup -lpthread&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
 #ifndef MULTI_ADAPTORS_BLAS_CUDA_HPP
 #define MULTI_ADAPTORS_BLAS_CUDA_HPP
 
+#include "../blas/../../config/MARK.hpp" // MULTI_MARK_SCOPE
+
 #include "../../memory/adaptors/cuda/ptr.hpp"
 #include "../../memory/adaptors/cuda/managed/ptr.hpp"
 #include "../../memory/adaptors/cuda/managed/allocator.hpp"
 
 #include<cublas_v2.h>
+
+#include "../cublas/error.hpp"
+
+#include<thrust/complex.h>
 
 #define DECLRETURN(ExpR) ->decltype(ExpR){return ExpR;}
 #define JUSTRETURN(ExpR)                 {return ExpR;}
@@ -21,68 +27,16 @@ exit;$CXX $0 -o $0x `pkg-config --libs blas` -lcudart -lcublas&&$0x&&rm $0x;exit
 
 #include<system_error>
 
-namespace boost{
-namespace multi{
-
-enum class cublas_error : typename std::underlying_type<cublasStatus_t>::type{
-	success               = CUBLAS_STATUS_SUCCESS,
-	not_initialized       = CUBLAS_STATUS_NOT_INITIALIZED,
-	allocation_failed     = CUBLAS_STATUS_ALLOC_FAILED,
-	invalid_value         = CUBLAS_STATUS_INVALID_VALUE,
-	architecture_mismatch = CUBLAS_STATUS_ARCH_MISMATCH,
-	mapping_error         = CUBLAS_STATUS_MAPPING_ERROR,
-	execution_failed      = CUBLAS_STATUS_EXECUTION_FAILED,
-	internal_error        = CUBLAS_STATUS_INTERNAL_ERROR,
-	not_supported         = CUBLAS_STATUS_NOT_SUPPORTED,
-	license_error         = CUBLAS_STATUS_LICENSE_ERROR
-};
-
-std::string inline cublas_string(enum cublas_error err){ //https://stackoverflow.com/questions/13041399/equivalent-of-cudageterrorstring-for-cublas
-	switch(err){
-		case cublas_error::success              : return "CUBLAS_STATUS_SUCCESS";
-		case cublas_error::not_initialized      : return "CUBLAS_STATUS_NOT_INITIALIZED";
-		case cublas_error::allocation_failed    : return "CUBLAS_STATUS_ALLOC_FAILED";
-		case cublas_error::invalid_value        : return "CUBLAS_STATUS_INVALID_VALUE";
-		case cublas_error::architecture_mismatch: return "CUBLAS_STATUS_ARCH_MISMATCH";
-		case cublas_error::mapping_error        : return "CUBLAS_STATUS_MAPPING_ERROR";
-		case cublas_error::execution_failed     : return "CUBLAS_STATUS_EXECUTION_FAILED";
-		case cublas_error::internal_error       : return "CUBLAS_STATUS_INTERNAL_ERROR";
-		case cublas_error::not_supported        : return "CUBLAS_STATUS_NOT_SUPPORTED";
-		case cublas_error::license_error        : return "CUBLAS_STATUS_LICENSE_ERROR";
-	}
-	return "cublas status <unknown>";
-}
-
-struct cublas_error_category : std::error_category{
-	char const* name() const noexcept override{return "cublas wrapper";}
-	std::string message(int err) const override{return cublas_string(static_cast<enum cublas_error>(err));}
-	static error_category& instance(){static cublas_error_category instance; return instance;}
-};
-
-inline std::error_code make_error_code(cublas_error err) noexcept{
-	return std::error_code(int(err), cublas_error_category::instance());
-}
-
-/*
-template<class CublasFunction>
-auto cublas_call(CublasFunction f){
-	return [=](auto... args){
-		auto s = static_cast<enum cublas_error>(f(args...));
-		if( s != cublas_error::success ) throw std::system_error{make_error_code(s), "cannot call cublas function "};
-#ifdef _MULTI_CUBLAS_ALWAYS_SYNC
-		cudaDeviceSynchronize();
-#endif
-	};
-}*/
-//#define CUBLAS_(FunctionPostfix) boost::multi::cublas_call(cublas##FunctionPostfix)
-
 #define CUBLAS_CALL(CodE) \
-	auto s = static_cast<enum cublas_error>(CodE); \
-	if( s != cublas_error::success ) throw std::system_error{make_error_code(s), "cannot call cublas function "#CodE };
+	MULTI_MARK_SCOPE("multi::cublas "#CodE); \
+	auto s = static_cast<enum cublas::error>(CodE); \
+	cudaDeviceSynchronize(); /*TODO make this more specific to mananged ptr and specific handle*/ \
+	if(s != cublas::error::success) throw std::system_error{make_error_code(s), "cannot call cublas function "#CodE };
 
-}}
-
-namespace std{template<> struct is_error_code_enum<::boost::multi::cublas_error> : true_type{};}
+cublasStatus_t cublasZdot (cublasHandle_t handle, int n,
+                           const double2          *x, int incx,
+                           const double2          *y, int incy,
+                           double2          *result) = delete;
 
 namespace boost{
 namespace multi{
@@ -136,8 +90,27 @@ template<class T = void> struct cublas3{};
 
 DEFINE_CUBLAS1(S, s);
 DEFINE_CUBLAS1(D, d);
-DEFINE_CUBLAS1(C, c);
-DEFINE_CUBLAS1(Z, z);
+
+#define DEFINE_CUBLAS1_COMPLEX(UppeR, LowR, ReaLUppeR, ReaLLowR) \
+	template<> struct cublas1<UppeR>{ \
+		template<class...As> static auto iamax(As...as){return cublasI##LowR##amax(as...);}    \
+		/*amin */ \
+		template<class...As> static auto asum (As...as){return cublas##ReaLUppeR##LowR##asum (as...);}   \
+		/*axpy */ \
+		template<class...As> static auto copy (As...as){return cublas##UppeR##copy (as...);}   \
+		template<class...As> static auto dot  (As...as){return cublas##UppeR##dotu  (as...);} \
+		template<class...As> static auto dotu (As...as){return cublas##UppeR##dotu (as...);}   \
+		template<class...As> static auto dotc (As...as){return cublas##UppeR##dotc (as...);}   \
+		template<class...As> static auto nrm2 (As...as){return cublas##UppeR##nrm2 (as...);}   \
+		/*rot  */ \
+		/*rotg */ \
+		/*rotmg*/ \
+		template<class...As> static auto scal (As...as){return cublas##UppeR##scal (as...);}   \
+		/*swap */ \
+	}
+
+DEFINE_CUBLAS1_COMPLEX(C, c, S, s);
+DEFINE_CUBLAS1_COMPLEX(Z, z, D, d);
 
 template<class T> struct nrm2_result;//{using type = T;};
 template<> struct nrm2_result<S>{using type = S;};
@@ -149,13 +122,19 @@ template<> struct cublas1<void>{
 // 2.5.1. cublasI<t>amax() https://docs.nvidia.com/cuda/cublas/index.html#cublasi-lt-t-gt-amax
 	template<class T> static cublasStatus_t iamax(cublasHandle_t handle, int n, const T* x, int incx, int *result   ){return cublas1<T>::iamax(handle, n, x, incx, result);}
 // 2.5.3. cublas<t>asum() https://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-asum
-	template<class T> static cublasStatus_t asum (cublasHandle_t handle, int n, const T* x, int incx, T* result     ){return cublas1<T>::asum(handle, n, x, incx, result);}
+	template<class T1, class T2> static cublasStatus_t asum (cublasHandle_t handle, int n, T1 const* x, int incx, T2* result     ){return cublas1<T1>::asum(handle, n, x, incx, result);}
 // 2.5.5. cublas<t>copy() https://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-copy
 	template<class T> static cublasStatus_t copy (cublasHandle_t handle, int n, const T* x, int incx, T* y, int incy){return cublas1<T>::copy(handle, n, x, incx, y, incy);}
 // 2.5.6. cublas<t>dot() https://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-dot
-	template<class T> static cublasStatus_t dot(cublasHandle_t handle, int n, const T* x, int incx, const T* y, int incy, T* result){return cublas1<T>::dot(handle, n, x, incx, y, incy, result);}
-	template<class T> static auto dotu(cublasHandle_t handle, int n, const T* x, int incx, const T* y, int incy, T* result) DECLRETURN(cublas1<T>::dotu(handle, n, x, incx, y, incy, result))
-	template<class T> static auto dotc(cublasHandle_t handle, int n, const T* x, int incx, const T* y, int incy, T* result) DECLRETURN(cublas1<T>::dotc(handle, n, x, incx, y, incy, result))
+	template<class T> static auto dot(cublasHandle_t handle, int n, const T* x, int incx, const T* y, int incy, T* result)
+	->decltype(cublas1<T>::dot(handle, n, x, incx, y, incy, result)){MULTI_MARK_SCOPE("function dot");
+		return cublas1<T>::dot(handle, n, x, incx, y, incy, result);}
+	template<class T> static auto dotu(cublasHandle_t handle, int n, const T* x, int incx, const T* y, int incy, T* result)
+	->decltype(cublas1<T>::dotu(handle, n, x, incx, y, incy, result)){MULTI_MARK_SCOPE("function dotu");
+		return cublas1<T>::dotu(handle, n, x, incx, y, incy, result);}
+	template<class T> static auto dotc(cublasHandle_t handle, int n, const T* x, int incx, const T* y, int incy, T* result)
+	->decltype(cublas1<T>::dotc(handle, n, x, incx, y, incy, result)){MULTI_MARK_PRETTY_FUNCTION;
+		return cublas1<T>::dotc(handle, n, x, incx, y, incy, result);}
 // 2.5.7. cublas<t>nrm2() https://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-nrm2
 	template<class T> static auto nrm2(cublasHandle_t handle, int n,
                             const T           *x, int incx, typename nrm2_result<T>::type  *result){return cublas1<T>::nrm2(handle, n, x, incx, result);}
@@ -203,9 +182,15 @@ template<> struct cublas3<Z>{
 	template<class...As> static auto trsm (As...as){ CUBLAS_CALL(cublasZtrsm(as...));}
 };
 
-template<class T> struct herk_scalar;//{using type = T;};
+template<class T> struct herk_scalar;
 template<> struct herk_scalar<C>{using type = S;};
 template<> struct herk_scalar<Z>{using type = D;};
+
+template<class T> struct asum_scalar;
+template<> struct asum_scalar<C>{using type = S;};
+template<> struct asum_scalar<Z>{using type = D;};
+
+template<class T> using herk_scalar_t = typename herk_scalar<T>::type;
 
 template<> struct cublas3<void>{
 // 2.7.1. cublas<t>gemm() https://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-gemm
@@ -216,7 +201,7 @@ template<> struct cublas3<void>{
                            const T           *A, int lda,
                            const T           *B, int ldb,
                            const T           *beta,
-                           T           *C, int ldc){return cublas3<T>::gemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);}
+                           T           *C, int ldc){MULTI_MARK_PRETTY_FUNCTION; return cublas3<T>::gemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);}
 // 2.7.6. cublas<t>syrk() https://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-syrk
 	template<class T> static auto syrk(cublasHandle_t handle,
                            cublasFillMode_t uplo, cublasOperation_t trans,
@@ -226,13 +211,13 @@ template<> struct cublas3<void>{
                            const T           *beta,
                            T           *C, int ldc){return cublas3<T>::syrk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc);}
 // 2.7.13. cublas<t>herk() https://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-herk
-	template<class T> static auto herk(cublasHandle_t handle,
+	template<class T2, class T3> static auto herk(cublasHandle_t handle,
                            cublasFillMode_t uplo, cublasOperation_t trans,
                            int n, int k,
-                           const typename herk_scalar<T>::type  *alpha,
-                           const T       *A, int lda,
-                           const typename herk_scalar<T>::type  *beta,
-                           T       *C, int ldc){return cublas3<T>::herk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc);}
+                           const herk_scalar_t<T2> *alpha,
+                           const T2       *A, int lda,
+                           const herk_scalar_t<T2> *beta,
+                           T3       *C, int ldc){return cublas3<T2>::herk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc);}
 // 2.7.10. cublas<t>trsm() https://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-trsm
 	template<class T> static auto trsm(cublasHandle_t handle,
                            cublasSideMode_t side, cublasFillMode_t uplo,
@@ -246,14 +231,20 @@ template<> struct cublas3<void>{
 namespace cublas{
 
 template<class T, std::enable_if_t<not std::is_integral<T>{}, int> =0> decltype(auto) translate(T t){return t;}
+template<class T, std::enable_if_t<not std::is_copy_constructible<std::decay_t<T>>{}, int> =0> T& translate(T& t){return t;}
 
-auto translate(std::complex<float> const * t){return reinterpret_cast<cublas::complex<float>  const*>(t);}	
-auto translate(std::complex<float>       * t){return reinterpret_cast<cublas::complex<float>       *>(t);}	
-auto translate(std::complex<double> const* t){return reinterpret_cast<cublas::complex<double> const*>(t);}	
+auto translate(std::complex<float> const * t){return reinterpret_cast<cublas::complex<float>  const*>(t);}
+auto translate(std::complex<float>       * t){return reinterpret_cast<cublas::complex<float>       *>(t);}
+auto translate(std::complex<double> const* t){return reinterpret_cast<cublas::complex<double> const*>(t);}
 auto translate(std::complex<double>      * t){return reinterpret_cast<cublas::complex<double>      *>(t);}
+
+auto translate(thrust::complex<double> const* t){return reinterpret_cast<cublas::complex<double> const*>(t);}
+auto translate(thrust::complex<double>      * t){return reinterpret_cast<cublas::complex<double>      *>(t);}
 
 template<class T> auto translate(memory::cuda::ptr<T>          p) DECLRETURN(translate(raw_pointer_cast(p)))
 template<class T> auto translate(memory::cuda::managed::ptr<T> p) DECLRETURN(translate(raw_pointer_cast(p)))
+
+//auto translate(context& c){return c;}
 
 template<class T, std::enable_if_t<std::is_integral<T>{},int> = 0> 
 auto translate(T n){
@@ -269,11 +260,12 @@ auto translate(char O)->cublasOperation_t{
 
 struct context : std::unique_ptr<std::decay_t<decltype(*cublasHandle_t{})>, decltype(&cublasDestroy)>{
 	context()  : std::unique_ptr<std::decay_t<decltype(*cublasHandle_t{})>, decltype(&cublasDestroy)>(
-		[]{cublasHandle_t h; cublasCreate(&h); return h;}(), &cublasDestroy
+		[]{MULTI_MARK_SCOPE("multi::cublas::create context"); cublasHandle_t h; cublasCreate(&h); return h;}(), &cublasDestroy
 	){}
 	int version() const{
 		int ret; cublasGetVersion(get(), &ret); return ret;
 	}
+	context(context&& other) noexcept = default;
 	~context() noexcept = default;
 // 2.4.7. cublasGetPointerMode()
 	auto get_pointer_mode() const{
@@ -320,6 +312,22 @@ struct context : std::unique_ptr<std::decay_t<decltype(*cublasHandle_t{})>, decl
 namespace boost{
 namespace multi{
 
+namespace blas{
+
+template<class T> boost::multi::cublas::context default_context_of(memory::cuda::ptr<T>){return {};}
+template<class T> boost::multi::cublas::context default_context_of(memory::cuda::managed::ptr<T>){return {};}
+
+}
+
+namespace memory{namespace cuda{
+	using boost::multi::blas::default_context_of; // to please nvcc 'default_context_of' should be declared prior to the call site or in namespace 'boost::multi::memory::cuda'
+}}
+
+}}
+
+namespace boost{
+namespace multi{
+
 namespace memory{
 namespace cuda{
 
@@ -337,7 +345,7 @@ auto asum(S n, cuda::ptr<ComplexTconst> x, S incx){
 
 template<class...As> auto copy(As... as) DECLRETURN(cublas::context{}.copy(as...))
 template<class...As> auto scal(As... as) DECLRETURN(cublas::context{}.scal(as...))
-template<class...As> auto dot (As... as) DECLRETURN(cublas::context{}.dot (as...))
+//template<class...As> auto dot (As... as) DECLRETURN(cublas::context{}.dot (as...))
 template<class...As> auto dotu(As... as) DECLRETURN(cublas::context{}.dotu(as...))
 template<class...As> auto dotc(As... as) DECLRETURN(cublas::context{}.dotc(as...))
 template<class...As> auto nrm2(As... as) DECLRETURN(cublas::context{}.nrm2(as...))
@@ -364,8 +372,7 @@ auto trsv(char ul, char transA, char a_diag, S n, memory::cuda::ptr<Tconst> A, S
 template<class... As>
 auto gemm(As... as)
 ->decltype(cublas::context{}.gemm(as...)){
-	return cublas::context{}.gemm(as...);
-}
+	return cublas::context{}.gemm(as...);}
 
 template<class Tconst, class T, class UL, class C, class S, class Real>
 void syrk(UL ul, C transA, S n, S k, Real alpha, multi::memory::cuda::ptr<Tconst> A, S lda, Real beta, multi::memory::cuda::ptr<T> CC, S ldc){
@@ -429,7 +436,7 @@ using cuda::iamax;
 using cuda::asum;
 using cuda::copy;
 using cuda::scal;
-using cuda::dot;
+//using cuda::dot;
 using cuda::dotu;
 using cuda::dotc;
 using cuda::nrm2;
@@ -455,16 +462,68 @@ auto trsm(Side /*cublasSideMode_t*/ side, /*cublasFillMode_t*/ Fill uplo, /*cubl
 
 #if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_CUDA
 
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
+
 #include "../../array.hpp"
 #include "../../utility.hpp"
+
+#include "../../adaptors/cuda.hpp"
+#include "../../adaptors/blas.hpp"
+#include "../../adaptors/blas/cuda.hpp"
+
 #include<cassert>
 
 namespace multi = boost::multi;
 
-int main(){
-//	multi::cublas::context c;
-//	assert( c.version() >= 10100 );
+#if 0
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_cuda_version){
+	multi::cublas::context c;
+	BOOST_REQUIRE( c.version() >= 10100 );
 }
+
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_cuda_iamax){
+	using complex = std::complex<double>;
+	complex const I{0,1};
+	{
+		multi::array<complex, 1> const A = {1. + 2.*I, 2., 3. + 3.*I, 4.};
+		using multi::blas::iamax;
+		BOOST_REQUIRE( iamax(A) == 2 );
+	}
+	{
+		multi::cuda::array<complex, 1> const A = {1. + 2.*I, 2., 3. + 3.*I, 4.};
+		using multi::blas::iamax;
+		BOOST_REQUIRE( iamax(A) == 2 );
+	}
+	{
+		multi::cuda::managed::array<complex, 1> const A = {1. + 2.*I, 2., 3. + 3.*I, 4.};
+		using multi::blas::iamax;
+		BOOST_REQUIRE( iamax(A) == 2 );
+	}
+}
+#endif
+
+template<class T> void what(T&&) = delete;
+
+BOOST_AUTO_TEST_CASE(multi_adaptors_blas_cuda_dot){
+	using complex = std::complex<double>;
+	complex const I{0,1};
+	multi::array<complex, 1> const A = {1. + 2.*I, 2., 3. + 3.*I, 4.};
+	multi::array<complex, 1> const B = {2. + 3.*I, 4., 5. + 6.*I, 7.};
+	namespace blas = multi::blas;
+	{
+		multi::cuda::array<complex, 1> const A_gpu = A, B_gpu = B;
+		using blas::dot;
+		BOOST_REQUIRE( dot(blas::C(A_gpu), B_gpu) == dot(blas::C(A), B) );
+	}
+	{
+		multi::cuda::managed::array<complex, 1> const A_mng = A, B_mng = B;
+		using blas::dot;
+		BOOST_REQUIRE( dot(blas::C(A_mng), A_mng) == dot(blas::C(A), A) );
+	}
+}
+
 
 #endif
 #endif

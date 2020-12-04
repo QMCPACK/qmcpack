@@ -2207,6 +2207,7 @@ def check_values(options,values):
             #end if
             fixed_sum_success = True
             ftol = 1e-8
+            eq = options.equilibration
             for dname in dnames_fixed:
                 ref_vals  = ref_values[dname]
                 ref_mean  = ref_vals.full_mean
@@ -2215,7 +2216,7 @@ def check_values(options,values):
                     exit_fail('reference fixed sum is not fixed as asserted\ncannot check per block fixed sums\nplease check reference data')
                 #end if
                 test_vals = values[dname].data.full_sum
-                for i,v in enumerate(test_vals):
+                for i,v in enumerate(test_vals[eq:]):
                     if abs((v-ref_mean)/ref_mean)>ftol:
                         fixed_sum_success = False
                         msg += '    {0} {1} {2}!={3}\n'.format(dname,i,v,ref_mean)

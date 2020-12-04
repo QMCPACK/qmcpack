@@ -65,8 +65,6 @@ public:
   static std::string spo_tag;
   /// the element name for single-particle orbital set
   static std::string sposet_tag;
-  /// the element name for the basis set: basis set contains multiple basis elements
-  static std::string basisset_tag;
   /// the element name for an ion wavefunction
   static std::string ionorb_tag;
   /// the element name for a backflow transformation

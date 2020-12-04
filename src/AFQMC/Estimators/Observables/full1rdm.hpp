@@ -68,7 +68,7 @@ class full1rdm : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full1rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -442,10 +442,8 @@ private:
     int nX   = XRot.size(0);
     int npts = (iN - i0) * nX;
     DeviceBufferManager buffer_manager;
-    StaticMatrix T1({(iN - i0), NMO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticMatrix T2({(iN - i0), nX}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix T1({(iN - i0), NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix T2({(iN - i0), nX}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     if (Grot.size() != npts)
       Grot = stdCVector(iextensions<1u>(npts));
 
