@@ -9,18 +9,15 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+
 #ifndef QMCPLUSPLUS_DELAYED_UPDATE_SYCL_H
 #define QMCPLUSPLUS_DELAYED_UPDATE_SYCL_H
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "SYCL/SYCLallocator.hpp"
-#include "SYCL/cuBLAS.hpp"
-#include "SYCL/cusolver.hpp"
 #include "QMCWaveFunctions/detail/SYCL/delayed_update_helper.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include <cuda_runtime_api.h>
-#include "SYCL/cudaError.h"
 
 namespace qmcplusplus
 {
@@ -100,7 +97,7 @@ class DelayedUpdateSYCL
   //cudaStream_t hstream;
   sycl::queue q;
 
-  inline void waitStream() { q.finish() }
+  inline void waitStream() { q.wait(); }
 
 public:
   /// default constructor
@@ -141,9 +138,7 @@ public:
     // prepare cusolver auxiliary arrays
     ipiv.resize(norb + 1);
     ipiv_gpu.resize(norb + 1);
-    int lwork;
-    cusolverErrorCheck(cusolver::getrf_bufferSize(h_cusolver, norb, norb, Mat2_gpu.data(), norb, &lwork),
-                       "cusolver::getrf_bufferSize failed!");
+    const int lwork = oneapi::mkl::lapack::getrf_scratchpad_size(q, norb, norb, Mat2_gpu.data());
     work_gpu.resize(lwork);
   }
 
@@ -158,40 +153,43 @@ public:
     // safe mechanism
     delay_count = 0;
     int norb    = logdetT.rows();
-    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T), cudaMemcpyHostToDevice,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
-    cusolverErrorCheck(cusolver::getrf(h_cusolver, norb, norb, Mat1_gpu.data(), norb, work_gpu.data(),
-                                       ipiv_gpu.data() + 1, ipiv_gpu.data()),
-                       "cusolver::getrf failed!");
-    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), cudaMemcpyDeviceToHost,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
-    extract_matrix_diagonal_cuda(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(), hstream);
-    cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP),
-                                   cudaMemcpyDeviceToHost, hstream),
-                   "cudaMemcpyAsync failed!");
-    // check LU success
-    waitStream();
+    q.memcpy(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T) );
+    q.wait();
+   
+    oneapi::mkl::lapack::getrf(q, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data(), work_gpu.data(), work_gpu.size());
+    q.wait();
+
+    q.memcpy(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int));
+    q.wait(); 
+    
+    extract_matrix_diagonal_sycl(norb, Mat1_gpu.data(), norb, LU_diag_gpu.data(),q);
+    q.wait();
+   
+    q.memcpy(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP)); 
+    q.wait();
+
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
-      err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
+      err << "oneapi::mkl::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
-    make_identity_matrix_cuda(norb, Mat2_gpu.data(), norb, hstream);
-    cusolverErrorCheck(cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data() + 1,
-                                       Mat2_gpu.data(), norb, ipiv_gpu.data()),
-                       "cusolver::getrs failed!");
-    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream),
-                   "cudaMemcpyAsync failed!");
+    make_identity_matrix_sycl(norb, Mat2_gpu.data(), q);
+
+    //Todo check if CUBLAS_OP_T == oneapi::mkl::transpose::trans
+    oneapi::mkl::lapack::getrs(q, oneapi::mkl::transpose::trans, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data(), work_gpu.data(), work_gpu.size());
+    q.wait();
+
+    q.memcpy(ipiv.data(), ipiv_gpu.data(), sizeof(int));
+    q.wait();
+
     computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, LogValue);
-    cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
+
+    q.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T));
     // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
     //waitStream();
+    q.wait();
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -212,20 +210,20 @@ public:
     // safe mechanism
     delay_count = 0;
     int norb    = logdetT.rows();
-    cudaErrorCheck(cudaMemcpyAsync(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T), cudaMemcpyHostToDevice,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
-    copy_matrix_cuda(norb, norb, (T*)Mat1_gpu.data(), norb, Mat2_gpu.data(), norb, hstream);
-    cusolverErrorCheck(cusolver::getrf(h_cusolver, norb, norb, Mat2_gpu.data(), norb, work_gpu.data(),
-                                       ipiv_gpu.data() + 1, ipiv_gpu.data()),
-                       "cusolver::getrf failed!");
-    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int), cudaMemcpyDeviceToHost,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
-    extract_matrix_diagonal_cuda(norb, Mat2_gpu.data(), norb, LU_diag_gpu.data(), hstream);
-    cudaErrorCheck(cudaMemcpyAsync(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP),
-                                   cudaMemcpyDeviceToHost, hstream),
-                   "cudaMemcpyAsync failed!");
+
+    q.memcpy(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T));
+    q.wait();
+    copy_matrix_sycl(norb, norb, (T*)Mat1_gpu.data(), norb, Mat2_gpu.data(), norb, q);
+
+    oneapi::mkl::lapack::getrf(q, norb, norb, Mat2_gpu.data(), norb, ipiv_gpu.data(), work_gpu.data(), work_gpu.size());
+    q.wait();
+
+
+    q.memcpy(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int));
+    q.wait();
+    extract_matrix_diagonal_cuda(norb, Mat2_gpu.data(), norb, LU_diag_gpu.data(), q);
+    q.memcpy(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP));
+    q.wait();
     // check LU success
     waitStream();
     if (ipiv[0] != 0)
@@ -235,19 +233,17 @@ public:
       std::cerr << err.str();
       throw std::runtime_error(err.str());
     }
-    make_identity_matrix_cuda(norb, Mat1_gpu.data(), norb, hstream);
-    cusolverErrorCheck(cusolver::getrs(h_cusolver, CUBLAS_OP_T, norb, norb, Mat2_gpu.data(), norb, ipiv_gpu.data() + 1,
-                                       Mat1_gpu.data(), norb, ipiv_gpu.data()),
-                       "cusolver::getrs failed!");
-    copy_matrix_cuda(norb, norb, Mat1_gpu.data(), norb, (T*)Mat2_gpu.data(), norb, hstream);
-    cudaErrorCheck(cudaMemcpyAsync(ipiv.data(), ipiv_gpu.data(), sizeof(int), cudaMemcpyDeviceToHost, hstream),
-                   "cudaMemcpyAsync failed!");
+    make_identity_matrix_sycl(norb, Mat1_gpu.data(), norb, q);
+    oneapi::mkl::lapack::getrs(q, oneapi::mkl::transpose::trans, norb, norb, Mat2_gpu.data(), norb, ipiv_gpu.data(), work_gpu.data(), work_gpu.size());
+    q.wait();
+
+    copy_matrix_sycl(norb, norb, Mat1_gpu.data(), norb, (T*)Mat2_gpu.data(), norb, q);
+    q.memcpy(ipiv.data(), ipiv_gpu.data(), sizeof(int));
     computeLogDet(LU_diag.data(), norb, ipiv.data() + 1, LogValue);
-    cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
-    //waitStream();
+
+    q.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T));
+    q.wait();
+
     if (ipiv[0] != 0)
     {
       std::ostringstream err;
@@ -262,10 +258,9 @@ public:
    */
   inline void initializeInv(const Matrix<T>& Ainv)
   {
-    cudaErrorCheck(cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T), cudaMemcpyHostToDevice,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
-    // safe mechanism
+    q.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T));
+    q.wait();
+
     delay_count = 0;
     prefetched_range.clear();
   }
@@ -280,10 +275,9 @@ public:
     if (!prefetched_range.checkRange(rowchanged))
     {
       int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
-      cudaErrorCheck(cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
-                                     invRow.size() * (last_row - rowchanged) * sizeof(T), cudaMemcpyDeviceToHost,
-                                     hstream),
-                     "cudaMemcpyAsync failed!");
+
+      q.memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged],
+                invRow.size() * (last_row - rowchanged) * sizeof(T));
       prefetched_range.setRange(rowchanged, last_row);
       waitStream();
     }
@@ -355,26 +349,29 @@ public:
       const int norb     = Ainv.rows();
       const int lda_Binv = Binv.cols();
       const T cminusone(-1);
-      cudaErrorCheck(cudaMemcpyAsync(U_gpu.data(), U.data(), norb * delay_count * sizeof(T), cudaMemcpyHostToDevice,
-                                     hstream),
-                     "cudaMemcpyAsync failed!");
-      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(),
-                                    norb, Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv),
-                       "cuBLAS::gemm failed!");
-      cudaErrorCheck(cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count * sizeof(int),
-                                     cudaMemcpyHostToDevice, hstream),
-                     "cudaMemcpyAsync failed!");
-      applyW_stageV_cuda(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(),
-                         Ainv_gpu.data(), hstream);
-      cudaErrorCheck(cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T),
-                                     cudaMemcpyHostToDevice, hstream),
-                     "cudaMemcpyAsync failed!");
-      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone,
-                                    V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb),
-                       "cuBLAS::gemm failed!");
-      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
-                                    U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb),
-                       "cuBLAS::gemm failed!");
+
+        q.memcpy(U_gpu.data(), U.data(), norb * delay_count * sizeof(T));
+        q.wait();
+
+     oneapi::mkl::blas::gemm(q, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans , delay_count, norb, norb, &cone, U_gpu.data(),
+                                    norb, Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv);
+    q.wait();
+
+        q.memcpy(delay_list_gpu.data(), delay_list.data(), delay_count * sizeof(int));
+        q.wait();
+      applyW_stageV_stream(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(),
+                         Ainv_gpu.data(), q);
+        q.wait();
+        q.memcpy(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T));
+        q.wait();
+        oneapi::mkl::blas::gemm(q, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,norb, delay_count, delay_count, &cone,
+                                    V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
+        q.wait();
+
+        oneapi::mkl::blas::gemm(q, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans, norb, norb, delay_count, &cminusone,
+                                   U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
+        q.wait();
+
       delay_count = 0;
       // Ainv is invalid, reset range
       prefetched_range.clear();
@@ -383,11 +380,8 @@ public:
     // transfer Ainv_gpu to Ainv and wait till completion
     if (transfer_to_host)
     {
-      cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
-                                     hstream),
-                     "cudaMemcpyAsync failed!");
-      // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
-      //waitStream();
+        q.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T));
+        q.wait();
     }
   }
 };
