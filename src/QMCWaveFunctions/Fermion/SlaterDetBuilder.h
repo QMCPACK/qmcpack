@@ -120,8 +120,6 @@ private:
 
     if (!hin.readEntry(ci_coeff,extVar))
        APP_ABORT("Could not read CI coefficients from HDF5");
-
-
       
   }
   template<typename VT,
