@@ -177,9 +177,9 @@ OPTION(QMC_COMPLEX "Build for complex binary" OFF)
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 OPTION(ENABLE_CUDA "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)" OFF)
-OPTION(ENABLE_SYCL "Build with the second generation of GPU support through SYCL" OFF)
 OPTION(ENABLE_HIP "Build with with GPU support through HIP" OFF)
 OPTION(ENABLE_ROCM "Build with with GPU support through ROCM" OFF)
+OPTION(ENABLE_ONEAPI "Build with GPU support through OneAPI" OFF)
 OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
@@ -758,14 +758,20 @@ ENDIF(ENABLE_HIP)
 
 
 #-------------------------------------------------------------------
-#  set up SYCL compiler options
+#  set up OneAPI compiler options and libraries
 #-------------------------------------------------------------------
-IF(ENABLE_SYCL)
-  MESSAGE(STATUS "Enabling SYCL")
-  ADD_LIBRARY(SYCL::SYCL INTERFACE IMPORTED)
-  SET_TARGET_PROPERTIES(SYCL::SYCL PROPERTIES INTERFACE_COMPILE_DEFINITIONS "ENABLE_SYCL"
-                                              INTERFACE_LINK_LIBRARIES "-DMKL_ILP64 -lmkl_sycl -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lsycl")
-ENDIF(ENABLE_SYCL)
+IF(QMC_ENABLE_ONEAPI)
+  #IF(NOT ONEAPI_ROOT)
+  #  MESSAGE(FATAL_ERROR "ONEAPI_ROOT not set!")
+  #ENDIF()
+  #MESSAGE(STATUS "ONEAPI_ROOT: ${ONEAPI_ROOT}")
+
+  ADD_LIBRARY(ONEAPI::DPCPP INTERFACE IMPORTED)
+  SET_TARGET_PROPERTIES(ONEAPI::DPCPP PROPERTIES INTERFACE_COMPILE_OPTIONS "-fsycl"
+                                                 INTERFACE_COMPILE_DEFINITIONS "ENABLE_SYCL;MKL_ILP64"
+                                                 INTERFACE_LINK_OPTIONS "-fsycl"
+                                                 INTERFACE_LINK_LIBRARIES "-lmkl_sycl;-lmkl_intel_ilp64;-lmkl_sequential;-lmkl_core")
+ENDIF(QMC_ENABLE_ONEAPI)
 
 ######################################################
 # Add optional macros
