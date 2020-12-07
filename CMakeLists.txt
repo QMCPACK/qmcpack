@@ -760,7 +760,7 @@ ENDIF(ENABLE_HIP)
 #-------------------------------------------------------------------
 #  set up OneAPI compiler options and libraries
 #-------------------------------------------------------------------
-IF(QMC_ENABLE_ONEAPI)
+IF(ENABLE_ONEAPI)
   #IF(NOT ONEAPI_ROOT)
   #  MESSAGE(FATAL_ERROR "ONEAPI_ROOT not set!")
   #ENDIF()
@@ -771,7 +771,7 @@ IF(QMC_ENABLE_ONEAPI)
                                                  INTERFACE_COMPILE_DEFINITIONS "ENABLE_SYCL;MKL_ILP64"
                                                  INTERFACE_LINK_OPTIONS "-fsycl"
                                                  INTERFACE_LINK_LIBRARIES "-lmkl_sycl;-lmkl_intel_ilp64;-lmkl_sequential;-lmkl_core")
-ENDIF(QMC_ENABLE_ONEAPI)
+ENDIF(ENABLE_ONEAPI)
 
 ######################################################
 # Add optional macros
