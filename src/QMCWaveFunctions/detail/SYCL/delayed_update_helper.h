@@ -13,7 +13,10 @@
 #ifndef SYCL_DELAYED_UPDATE_HELPER_H
 #define SYCL_DELAYED_UPDATE_HELPER_H
 
+#include <CL/sycl.hpp>
 #include <complex>
+
+namespace sycl = cl::sycl;
 
 /** helper function for delayed update algorithm
  * W matrix is applied and copy selected rows of Ainv into V
