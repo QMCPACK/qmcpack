@@ -177,6 +177,7 @@ OPTION(QMC_COMPLEX "Build for complex binary" OFF)
 SET(ENABLE_SOA 1 CACHE BOOL "Enable/disable SoA optimization")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 OPTION(ENABLE_CUDA "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)" OFF)
+OPTION(ENABLE_SYCL "Build with the second generation of GPU support through SYCL" OFF)
 OPTION(ENABLE_HIP "Build with with GPU support through HIP" OFF)
 OPTION(ENABLE_ROCM "Build with with GPU support through ROCM" OFF)
 OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
@@ -754,6 +755,17 @@ IF(ENABLE_HIP)
                                             INTERFACE_COMPILE_DEFINITIONS "ENABLE_HIP"
                                             INTERFACE_LINK_LIBRARIES "-L${ROCM_ROOT}/lib;-lhipsparse;-lhipblas;-lamdhip64")
 ENDIF(ENABLE_HIP)
+
+
+#-------------------------------------------------------------------
+#  set up SYCL compiler options
+#-------------------------------------------------------------------
+IF(ENABLE_SYCL)
+  MESSAGE(STATUS "Enabling SYCL")
+  ADD_LIBRARY(SYCL::SYCL INTERFACE IMPORTED)
+  SET_TARGET_PROPERTIES(SYCL::SYCL PROPERTIES INTERFACE_COMPILE_DEFINITIONS "ENABLE_SYCL"
+                                              INTERFACE_LINK_LIBRARIES "-DMKL_ILP64 -lmkl_sycl -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lsycl")
+ENDIF(ENABLE_SYCL)
 
 ######################################################
 # Add optional macros
