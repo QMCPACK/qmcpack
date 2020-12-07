@@ -207,6 +207,18 @@ IF(ENABLE_CUDA)
       )
 ENDIF(ENABLE_CUDA)
 
+IF(ENABLE_ONEAPI)
+    SET(WFSSRCS_ONEAPI ${WFSSRCS_ONEAPI}
+      detail/SYCL/delayed_update_helper.cpp
+      )
+ENDIF(ENABLE_ONEAPI)
+
+IF(ENABLE_ONEAPI)
+  ADD_LIBRARY(qmcwfs_oneapi ${WFSSRCS_ONEAPI})
+  TARGET_LINK_LIBRARIES(qmcwfs_oneapi PRIVATE ONEAPI::DPCPP)
+  TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_oneapi)
+ENDIF(ENABLE_ONEAPI)
+
 ####################################
 # create libqmcwfs
 ####################################
