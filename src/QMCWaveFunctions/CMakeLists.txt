@@ -213,12 +213,6 @@ IF(ENABLE_ONEAPI)
       )
 ENDIF(ENABLE_ONEAPI)
 
-IF(ENABLE_ONEAPI)
-  ADD_LIBRARY(qmcwfs_oneapi ${WFSSRCS_ONEAPI})
-  TARGET_LINK_LIBRARIES(qmcwfs_oneapi PRIVATE ONEAPI::DPCPP)
-  TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_oneapi)
-ENDIF(ENABLE_ONEAPI)
-
 ####################################
 # create libqmcwfs
 ####################################
@@ -236,6 +230,12 @@ IF(QMC_CUDA OR ENABLE_CUDA)
   ENDIF()
   TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda)
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
+
+IF(ENABLE_ONEAPI)
+  ADD_LIBRARY(qmcwfs_oneapi ${WFSSRCS_ONEAPI})
+  TARGET_LINK_LIBRARIES(qmcwfs_oneapi PRIVATE ONEAPI::DPCPP)
+  TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_oneapi)
+ENDIF(ENABLE_ONEAPI)
 
 TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcparticle platform_device)
 TARGET_LINK_LIBRARIES(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Math::scalar_vector_functions)
