@@ -535,11 +535,24 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
           ParticleSet::flex_update(p_list, true);
 
           // Evaluate difference in log psi
+
+          std::vector<std::unique_ptr<ParticleSet::ParticleGradient_t>> dummyG_ptr_list;
+          std::vector<std::unique_ptr<ParticleSet::ParticleLaplacian_t>> dummyL_ptr_list;
           RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
           RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
           if (compute_all_from_scratch)
           {
-            // need to have dummyG_list and dummyL_list set up
+            int nptcl = gradPsi[0]->size();
+            dummyG_ptr_list.reserve(curr_crowd_size);
+            dummyL_ptr_list.reserve(curr_crowd_size);
+            for (int i = 0; i < curr_crowd_size; i++)
+            {
+              dummyG_ptr_list.emplace_back(std::make_unique<ParticleGradient_t>(nptcl));
+              dummyL_ptr_list.emplace_back(std::make_unique<ParticleLaplacian_t>(nptcl));
+            }
+            dummyG_list = convertUPtrToRefVector(dummyG_ptr_list);
+            dummyL_list = convertUPtrToRefVector(dummyL_ptr_list);
+
           }
           opt_data.zero_log_psi();
 
