@@ -38,28 +38,28 @@ FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
 ENDFUNCTION()
 
 # Copy files, but symlink the *.h5 files (which are the large ones)
-FUNCTION( COPY_DIRECTORY_SYMLINK_H5 SRC_DIR DST_DIR)
-    # Copy everything but *.h5 files and pseudopotential files
-    FILE(COPY "${SRC_DIR}/" DESTINATION "${DST_DIR}"
-         PATTERN "*.h5" EXCLUDE
-         PATTERN "*.opt.xml" EXCLUDE
-         PATTERN "*.ncpp.xml" EXCLUDE
-         PATTERN "*.BFD.xml" EXCLUDE)
-
-    # Now find and symlink the *.h5 files and psuedopotential files
-    FILE(GLOB_RECURSE H5 "${SRC_DIR}/*.h5" "${SRC_DIR}/*.opt.xml" "${SRC_DIR}/*.ncpp.xml" "${SRC_DIR}/*.BFD.xml")
-    FOREACH(F IN LISTS H5)
-      FILE(RELATIVE_PATH R "${SRC_DIR}" "${F}")
-      #MESSAGE("Creating symlink from  ${SRC_DIR}/${R} to ${DST_DIR}/${R}")
-      EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink "${SRC_DIR}/${R}" "${DST_DIR}/${R}")
+FUNCTION( COPY_DIRECTORY_USING_SYMLINK_LIMITED SRC_DIR DST_DIR ${ARGN})
+    FILE(MAKE_DIRECTORY "${DST_DIR}")
+    # Find all the files but not subdirectories
+    FILE(GLOB FILE_FOLDER_NAMES LIST_DIRECTORIES TRUE
+        "${SRC_DIR}/qmc_ref" "${SRC_DIR}/qmc-ref" "${SRC_DIR}/*.h5"
+        "${SRC_DIR}/*.opt.xml" "${SRC_DIR}/*.ncpp.xml" "${SRC_DIR}/*.BFD.xml"
+        "${SRC_DIR}/*.py" "${SRC_DIR}/*.sh" "${SRC_DIR}/*.restart.xml"
+        "${SRC_DIR}/Li.xml" "${SRC_DIR}/H.xml" "${SRC_DIR}/*.L2_test.xml"
+        "${SRC_DIR}/*.wfnoj.xml" "${SRC_DIR}/*.wfj.xml" "${SRC_DIR}/*wfsxml.xml" "${SRC_DIR}/*wfshdf5.xml"
+        "${SRC_DIR}/*.structure.xml" "${SRC_DIR}/*ptcl.xml")
+    FOREACH(F IN LISTS FILE_FOLDER_NAMES)
+      EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
+    ENDFOREACH()
+    FOREACH(F IN LISTS ARGN)
+      EXECUTE_PROCESS( COMMAND ln -sf "${SRC_DIR}/${F}" "." WORKING_DIRECTORY ${DST_DIR})
     ENDFOREACH()
 ENDFUNCTION()
 
 # Control copy vs. symlink with top-level variable
-FUNCTION( COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR )
+FUNCTION( COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR ${ARGN})
   IF (QMC_SYMLINK_TEST_FILES)
-    COPY_DIRECTORY_USING_SYMLINK("${SRC_DIR}" "${DST_DIR}")
-    #COPY_DIRECTORY_SYMLINK_H5("${SRC_DIR}" "${DST_DIR}" )
+    COPY_DIRECTORY_USING_SYMLINK_LIMITED("${SRC_DIR}" "${DST_DIR}" ${ARGN})
   ELSE()
     COPY_DIRECTORY("${SRC_DIR}" "${DST_DIR}")
   ENDIF()
@@ -123,7 +123,13 @@ ENDFUNCTION()
 # Runs qmcpack
 #  Note that TEST_ADDED is an output variable
 FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED TEST_LABELS ${ARGN} )
-    COPY_DIRECTORY_MAYBE_USING_SYMLINK( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
+    # restrict ARGN to only one file or empty
+    LIST(LENGTH ARGN INPUT_FILE_LENGTH)
+    IF(INPUT_FILE_LENGTH GREATER 1)
+      MESSAGE(FATAL_ERROR "Incorrect invocation of RUN_QMC_APP by ${TESTNAME}. ARGN value is \"${ARGN}\"")
+    ENDIF()
+
+    COPY_DIRECTORY_MAYBE_USING_SYMLINK( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" "${ARGN}")
     SET( TEST_ADDED_TEMP FALSE )
     SET( TEST_LABELS_TEMP "" )
     RUN_QMC_APP_NO_COPY( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME} ${PROCS} ${THREADS} TEST_ADDED_TEMP TEST_LABELS_TEMP ${ARGN} )
