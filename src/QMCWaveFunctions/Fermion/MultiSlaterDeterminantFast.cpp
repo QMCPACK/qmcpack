@@ -39,6 +39,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
   is_fermionic  = true;
   usingCSF      = false;
   Dets          = std::move(dets);
+  C_otherDs.resize(Dets.size());
   int NP = targetPtcl.getTotalNum();
   myG.resize(NP);
   myL.resize(NP);
@@ -254,10 +255,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   const size_t noffset                 = Dets[det_id]->FirstIndex;
 
   PsiValueType psi(0);
-  for (size_t i = 0; i < C->size(); ++i)
+  for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
   {
-    psi += detValues0[det0[i]] * C_otherDs[det_id][i];
-    g_at += C_otherDs[det_id][i] * grads(det0[i], iat - noffset);
+    psi += detValues0[i] * C_otherDs[det_id][i];
+    g_at += C_otherDs[det_id][i] * grads(i, iat - noffset);
   }
   return psi;
 }
@@ -303,8 +304,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
   /// psi=Det_Coeff[i]*Det_Value[unique_det_up]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
   /// Since only one electron group is moved at the time, identified by det_id, We precompute:
   /// C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
-  for (size_t i = 0; i < C->size(); ++i)
-    psi += detValues0[det0[i]] * C_otherDs[det_id][i];
+  for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
+    psi += detValues0[i] * C_otherDs[det_id][i];
  
   return psi;
 }
@@ -810,17 +811,16 @@ void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
   /// C_otherDs(1, :) stores C x D_up x D_pos
   /// C_otherDs(2, :) stores C x D_up x D_dn
 
-  C_otherDs.resize(Dets.size(), C->size());
-
+  C_otherDs[ig].resize(Dets[ig]->NumDets);
+  std::fill(C_otherDs[ig].begin(), C_otherDs[ig].end(), ValueType(0));
   for (size_t i = 0; i < C->size(); i++)
-    C_otherDs[ig][i] = (*C)[i];
-
-
-  for (size_t id = 0; id < Dets.size(); id++)
-    if (id!=ig)
-      for (size_t i = 0; i < C->size(); i++)
-        C_otherDs[ig][i] *= Dets[id]->detValues[(*C2node)[id][i]]; 
-
+  {
+    auto product = (*C)[i];
+    for (size_t id = 0; id < Dets.size(); id++)
+      if (id!=ig)
+        product *= Dets[id]->detValues[(*C2node)[id][i]];
+    C_otherDs[ig][(*C2node)[ig][i]] += product;
+  }
 }
 
 
