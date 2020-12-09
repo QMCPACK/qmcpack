@@ -625,6 +625,8 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateValue
     for (int iw = 0; iw < H_list.size(); ++iw)
       local_energies[iw] = H_list[iw].get().get_LocalEnergy();
   }
+
+  return local_energies;
 }
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateValueAndDerivatives(
