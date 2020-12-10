@@ -2114,7 +2114,7 @@ class Cori(NerscMachine):
             self.procs_per_node = 2
             self.cores_per_node = 32
             self.ram_per_node   = 128
-        elif 'amd' in job.constraint or 'cmem':
+        elif 'amd' in job.constraint:
             self.nodes = 20
             self.procs_per_node = 2
             self.cores_per_node = 32
