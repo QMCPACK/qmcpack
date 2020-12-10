@@ -53,8 +53,8 @@ class MultiSlaterDeterminantFast : public WaveFunctionComponent
 {
 public:
   void registerTimers();
-  NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
-  NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer;
+  NewTimer &RatioTimer, &EvalGradTimer, &RatioGradTimer, &PrepareGroupTimer, &UpdateTimer;
+  NewTimer &AccRejTimer, &EvaluateTimer;
 
   typedef SPOSet* SPOSetPtr;
   typedef SPOSetProxyForMSD* SPOSetProxyPtr;
@@ -151,8 +151,9 @@ public:
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
   std::map<std::string, size_t> SPOSetID;
 
-  // map determinant in linear combination to unique det list (Dets.size(), C.size())
-  // map global det id to unique det id. [spin, global det id] = unique det id
+  /** map determinant in linear combination to unique det list
+   * map global det id to unique det id. [spin, global det id] = unique det id
+   */
   std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
   /// CI coefficients
   std::shared_ptr<std::vector<ValueType>> C;
