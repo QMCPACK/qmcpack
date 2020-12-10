@@ -58,7 +58,6 @@ private:
    * after this, we have up/dn LCAOrbitalSet that can be registered to the SpinorSet
    */
   bool putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr);
-  bool putOccupation(int norbs, xmlNodePtr cur);
 };
 } // namespace qmcplusplus
 #endif

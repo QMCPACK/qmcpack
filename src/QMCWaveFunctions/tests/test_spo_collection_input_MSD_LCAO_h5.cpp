@@ -44,10 +44,10 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string, const std::string
 
   elec_.setName("elec");
   elec_.create({2, 2});
-  elec_.R[0] = {0.0, 0.0, 0.0};
-  elec_.R[1] = {0.0, 0.0, 1.0};
-  elec_.R[2] = {0.0, 1.0, 0.0};
-  elec_.R[3] = {1.0, 0.0, 0.0};
+  elec_.R[0] = {0.5, 0.5, 0.5};
+  elec_.R[1] = {0.1, 0.1, 1.1};
+  elec_.R[2] = {-0.5, -0.5, -0.5};
+  elec_.R[3] = {-0.1, -0.1, 1.5};
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -71,12 +71,10 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string, const std::string
   WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
   wf_factory.put(ein_xml);
 
-  SPOSet* spo_ptr(get_sposet(check_sponame));
+  SPOSet* spo_ptr(wf_factory.getSPOSet(check_sponame));
   REQUIRE(spo_ptr != nullptr);
   REQUIRE(spo_ptr->getOrbitalSetSize() == check_spo_size);
   REQUIRE(spo_ptr->getBasisSetSize() == check_basisset_size);
-
-  SPOSetBuilderFactory::clear();
 }
 
 TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")

@@ -47,6 +47,8 @@ public:
   xmlNodePtr getNode() const { return myNode; }
   ///get targetPsi
   TrialWaveFunction* getTWF() const { return targetPsi.get(); }
+  ///get SPOSet
+  SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.getSPOSet(name); }
 
 private:
   /** process xmlNode to populate targetPsi
@@ -73,6 +75,9 @@ private:
   xmlNodePtr myNode;
   ///builder tree
   UPtrVector<WaveFunctionComponentBuilder> psiBuilder;
+
+  /// factory for all the sposet builders in this WF
+  SPOSetBuilderFactory sposet_builder_factory_;
 };
 
 } // namespace qmcplusplus
