@@ -486,8 +486,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
   bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
   bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
-  if (compute_all_from_scratch)
-    APP_ABORT("Batched optimizer does not have support for NLPP yet");
 
   // Divide samples among crowds
   std::vector<int> samples_per_crowd(opt_num_crowds_ + 1);
