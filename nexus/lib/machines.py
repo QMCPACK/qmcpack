@@ -2114,8 +2114,13 @@ class Cori(NerscMachine):
             self.procs_per_node = 2
             self.cores_per_node = 32
             self.ram_per_node   = 128
+        elif 'amd' in job.constraint or 'cmem':
+            self.nodes = 20
+            self.procs_per_node = 2
+            self.cores_per_node = 32
+            self.ram_per_node   = 2048
         else:
-            self.error('SLURM input "constraint" must contain either "knl" or "haswell"\nyou provided: {0}'.format(job.constraint))
+            self.error('SLURM input "constraint" must contain either "knl", "haswell", or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
         #end if
         if job.core_spec is not None:
             self.cores_per_node -= job.core_spec
