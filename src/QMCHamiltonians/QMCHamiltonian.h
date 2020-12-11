@@ -184,6 +184,7 @@ public:
   inline FullPrecRealType getLocalEnergy() { return LocalEnergy; }
   ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
   inline FullPrecRealType getLocalPotential() { return LocalEnergy - KineticEnergy; }
+  inline FullPrecRealType getKineticEnergy() { return KineticEnergy; }
   void auxHevaluate(ParticleSet& P);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_properties, bool do_collectables);
@@ -265,6 +266,22 @@ public:
                                                std::vector<ValueType>& dhpsioverpsi,
                                                bool compute_deriv);
 
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateValueAndDerivatives(
+      RefVector<QMCHamiltonian>& H_list,
+      RefVector<ParticleSet>& P_list,
+      const opt_variables_type& optvars,
+      RecordArray<ValueType>& dlogpsi,
+      RecordArray<ValueType>& dhpsioverpsi,
+      bool compute_deriv);
+
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateValueAndDerivativesInner(
+      RefVector<QMCHamiltonian>& H_list,
+      RefVector<ParticleSet>& P_list,
+      const opt_variables_type& optvars,
+      RecordArray<ValueType>& dlogpsi,
+      RecordArray<ValueType>& dhpsioverpsi);
+
+
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
   * @param ions source particle set (ions)
@@ -298,10 +315,7 @@ public:
 
   /** determine if L2 potential is present
    */
-  bool has_L2()
-  {
-    return l2_ptr!=nullptr;
-  }
+  bool has_L2() { return l2_ptr != nullptr; }
 
   /** compute D matrix and K vector for L2 potential propagator
     * @param r single particle coordinate
@@ -310,8 +324,8 @@ public:
     */
   void computeL2DK(ParticleSet& P, int iel, TensorType& D, PosType& K)
   {
-    if(l2_ptr != nullptr)
-      l2_ptr->evaluateDK(P,iel,D,K);
+    if (l2_ptr != nullptr)
+      l2_ptr->evaluateDK(P, iel, D, K);
   }
 
   /** compute D matrix for L2 potential propagator
@@ -320,8 +334,8 @@ public:
     */
   void computeL2D(ParticleSet& P, int iel, TensorType& D)
   {
-    if(l2_ptr != nullptr)
-      l2_ptr->evaluateD(P,iel,D);    
+    if (l2_ptr != nullptr)
+      l2_ptr->evaluateD(P, iel, D);
   }
 
   static std::vector<int> flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list);

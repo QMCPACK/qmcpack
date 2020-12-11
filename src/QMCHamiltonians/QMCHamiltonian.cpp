@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/TimerManager.h"
+#include "Containers/MinimalContainers/RecordArray.hpp"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
@@ -49,8 +50,7 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       weight_sample(nullptr),
       position_sample(nullptr)
 #endif
-{
-}
+{}
 
 ///// copy constructor is distable by declaring it as private
 //QMCHamiltonian::QMCHamiltonian(const QMCHamiltonian& qh) {}
@@ -590,6 +590,67 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(Par
       LocalEnergy += H[i]->evaluate(P);
   return LocalEnergy;
 }
+
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateValueAndDerivativesInner(
+    RefVector<QMCHamiltonian>& H_list,
+    RefVector<ParticleSet>& P_list,
+    const opt_variables_type& optvars,
+    RecordArray<ValueType>& dlogpsi,
+    RecordArray<ValueType>& dhpsioverpsi)
+{
+  std::vector<FullPrecRealType> local_energies(H_list.size(), 0.0);
+  for (int iw = 0; iw < H_list.size(); iw++)
+    H_list[iw].get().LocalEnergy = 0.0;
+
+  if (H_list.size() > 0)
+  {
+    int num_ham_operators = H_list[0].get().H.size();
+    for (int i_ham_op = 0; i_ham_op < num_ham_operators; ++i_ham_op)
+    {
+      ScopedTimer local_timer(H_list[0].get().my_timers_[i_ham_op]);
+      const auto HC_list(extract_HC_list(H_list, i_ham_op));
+
+      HC_list[0].get().mw_evaluateWithParameterDerivatives(HC_list, P_list, optvars, dlogpsi, dhpsioverpsi);
+
+      for (int iw = 0; iw < H_list.size(); iw++)
+        updateNonKinetic(HC_list[iw], H_list[iw], P_list[iw]);
+    }
+
+    for (int iw = 0; iw < H_list.size(); iw++)
+    {
+      const auto HC_list(extract_HC_list(H_list, 0));
+      updateKinetic(HC_list[iw], H_list[iw], P_list[iw]);
+    }
+
+    for (int iw = 0; iw < H_list.size(); ++iw)
+      local_energies[iw] = H_list[iw].get().get_LocalEnergy();
+  }
+
+  return local_energies;
+}
+
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateValueAndDerivatives(
+    RefVector<QMCHamiltonian>& H_list,
+    RefVector<ParticleSet>& P_list,
+    const opt_variables_type& optvars,
+    RecordArray<ValueType>& dlogpsi,
+    RecordArray<ValueType>& dhpsioverpsi,
+    bool compute_deriv)
+{
+  std::vector<FullPrecRealType> local_energies(H_list.size(), 0.0);
+  if (compute_deriv)
+  {
+    local_energies =
+        QMCHamiltonian::flex_evaluateValueAndDerivativesInner(H_list, P_list, optvars, dlogpsi, dhpsioverpsi);
+  }
+  else
+  {
+    local_energies = QMCHamiltonian::flex_evaluate(H_list, P_list);
+  }
+
+  return local_energies;
+}
+
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {

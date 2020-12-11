@@ -292,88 +292,110 @@ void QMCCostFunctionBatched::checkConfigurations()
   FairDivide(numSamples, opt_num_crowds_, samples_per_crowd);
 
   // lambda to execute on each crowd
-  auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
-                          std::vector<int>& samples_per_crowd, int crowd_size,
-                          std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
-                          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
-                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars) {
-    CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
+  auto evalOptConfig =
+      [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds, std::vector<int>& samples_per_crowd,
+         int crowd_size, std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
+         Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords,
+         const SampleStack& samples, opt_variables_type& optVars, bool needGrads, bool compute_nlpp) {
+        CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
-    int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
-    int num_batches;
-    int final_batch_size;
+        int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
+        int num_batches;
+        int final_batch_size;
 
-    compute_batch_parameters(local_samples, crowd_size, num_batches, final_batch_size);
+        compute_batch_parameters(local_samples, crowd_size, num_batches, final_batch_size);
 
-    for (int inb = 0; inb < num_batches; inb++)
-    {
-      int curr_crowd_size = crowd_size;
-      if (inb == num_batches - 1)
-        curr_crowd_size = final_batch_size;
-
-      int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
-
-      auto wf_list = opt_data.get_wf_list(curr_crowd_size);
-      auto p_list  = opt_data.get_p_list(curr_crowd_size);
-      auto h_list  = opt_data.get_h_list(curr_crowd_size);
-
-      auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
-      auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, curr_crowd_size);
-
-      // Load samples into the crowd data
-      for (int ib = 0; ib < curr_crowd_size; ib++)
-      {
-        samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
-      }
-
-      // Compute distance tables.
-      ParticleSet::flex_update(p_list);
-
-      // Log psi and prepare for difference the log psi
-      opt_data.zero_log_psi();
-
-      TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
-                                                    opt_data.get_log_psi_opt(), ref_dLogPsi, ref_d2LogPsi);
-
-      // Compute parameter derivatives of the wavefunction
-      int nparam = optVars.size();
-      RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
-      RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
-      TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
-
-      for (int ib = 0; ib < curr_crowd_size; ib++)
-      {
-        int is = base_sample_index + ib;
-        for (int j = 0; j < nparam; j++)
+        for (int inb = 0; inb < num_batches; inb++)
         {
-          DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
-          HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+          int curr_crowd_size = crowd_size;
+          if (inb == num_batches - 1)
+            curr_crowd_size = final_batch_size;
+
+          int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
+
+          auto wf_list = opt_data.get_wf_list(curr_crowd_size);
+          auto p_list  = opt_data.get_p_list(curr_crowd_size);
+          auto h_list  = opt_data.get_h_list(curr_crowd_size);
+
+          auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
+          auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, curr_crowd_size);
+
+          // Load samples into the crowd data
+          for (int ib = 0; ib < curr_crowd_size; ib++)
+          {
+            samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
+          }
+
+          // Compute distance tables.
+          ParticleSet::flex_update(p_list);
+
+          // Log psi and prepare for difference the log psi
+          opt_data.zero_log_psi();
+
+          TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
+                                                        opt_data.get_log_psi_opt(), ref_dLogPsi, ref_d2LogPsi);
+
+          if (needGrads)
+          {
+            // Compute parameter derivatives of the wavefunction
+            int nparam = optVars.size();
+            RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
+            RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
+            TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array,
+                                                                 dhpsioverpsi_array);
+
+            auto energy_list = QMCHamiltonian::flex_evaluateValueAndDerivatives(h_list, p_list, optVars, dlogpsi_array,
+                                                                                dhpsioverpsi_array, compute_nlpp);
+
+            for (int ib = 0; ib < curr_crowd_size; ib++)
+            {
+              int is = base_sample_index + ib;
+              for (int j = 0; j < nparam; j++)
+              {
+                DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
+                HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+              }
+              RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
+              RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
+            }
+
+            for (int ib = 0; ib < curr_crowd_size; ib++)
+            {
+              int is    = base_sample_index + ib;
+              auto etmp = energy_list[ib];
+              opt_data.get_e0() += etmp;
+              opt_data.get_e2() += etmp * etmp;
+
+              RecordsOnNode[is][ENERGY_NEW]   = etmp;
+              RecordsOnNode[is][ENERGY_TOT]   = etmp;
+              RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+              RecordsOnNode[is][REWEIGHT]     = 1.0;
+            }
+          }
+          else
+          {
+            // Energy
+            auto energy_list = QMCHamiltonian::flex_evaluate(h_list, p_list);
+
+            for (int ib = 0; ib < curr_crowd_size; ib++)
+            {
+              int is    = base_sample_index + ib;
+              auto etmp = energy_list[ib];
+              opt_data.get_e0() += etmp;
+              opt_data.get_e2() += etmp * etmp;
+
+              RecordsOnNode[is][ENERGY_NEW]   = etmp;
+              RecordsOnNode[is][ENERGY_TOT]   = etmp;
+              RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+              RecordsOnNode[is][REWEIGHT]     = 1.0;
+            }
+          }
         }
-        RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
-        RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
-      }
-
-      // Energy
-      auto energy_list = QMCHamiltonian::flex_evaluate(h_list, p_list);
-
-      for (int ib = 0; ib < curr_crowd_size; ib++)
-      {
-        int is    = base_sample_index + ib;
-        auto etmp = energy_list[ib];
-        opt_data.get_e0() += etmp;
-        opt_data.get_e2() += etmp * etmp;
-
-        RecordsOnNode[is][ENERGY_NEW]   = etmp;
-        RecordsOnNode[is][ENERGY_TOT]   = etmp;
-        RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
-        RecordsOnNode[is][REWEIGHT]     = 1.0;
-      }
-    }
-  };
+      };
 
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds_, evalOptConfig, opt_eval_, samples_per_crowd, opt_batch_size_, dLogPsi, d2LogPsi,
-              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi);
+              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads, compute_nlpp);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
@@ -464,8 +486,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
   bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
   bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
-  if (compute_all_from_scratch)
-    APP_ABORT("Batched optimizer does not have support for NLPP yet");
 
   // Divide samples among crowds
   std::vector<int> samples_per_crowd(opt_num_crowds_ + 1);
@@ -513,11 +533,24 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
           ParticleSet::flex_update(p_list, true);
 
           // Evaluate difference in log psi
+
+          std::vector<std::unique_ptr<ParticleSet::ParticleGradient_t>> dummyG_ptr_list;
+          std::vector<std::unique_ptr<ParticleSet::ParticleLaplacian_t>> dummyL_ptr_list;
           RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
           RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
           if (compute_all_from_scratch)
           {
-            // need to have dummyG_list and dummyL_list set up
+            int nptcl = gradPsi[0]->size();
+            dummyG_ptr_list.reserve(curr_crowd_size);
+            dummyL_ptr_list.reserve(curr_crowd_size);
+            for (int i = 0; i < curr_crowd_size; i++)
+            {
+              dummyG_ptr_list.emplace_back(std::make_unique<ParticleGradient_t>(nptcl));
+              dummyL_ptr_list.emplace_back(std::make_unique<ParticleLaplacian_t>(nptcl));
+            }
+            dummyG_list = convertUPtrToRefVector(dummyG_ptr_list);
+            dummyL_list = convertUPtrToRefVector(dummyL_ptr_list);
+
           }
           opt_data.zero_log_psi();
 
