@@ -29,6 +29,8 @@ SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
+INCLUDE(CMake/macros.cmake)
+
 ######################################################################
 # Verify Python3 available
 ######################################################################
@@ -59,7 +61,6 @@ ENDIF()
 ######################################################################
 # CTest
 ######################################################################
-INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
 SET( DROP_METHOD "http" )
 SET( DROP_SITE "cdash.qmcpack.org" )
 SET( DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
