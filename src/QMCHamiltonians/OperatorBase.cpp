@@ -42,7 +42,7 @@ OperatorBase::OperatorBase() : myIndex(-1), Dependants(0), Value(0.0), tWalker(0
  */
 void OperatorBase::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
 {
-  /**  Temporary raw omp pragma for simple thread parallelism
+/**  Temporary raw omp pragma for simple thread parallelism
    *   ignoring the driver level concurrency
    *   
    *  \todo replace this with a proper abstraction. It should adequately describe the behavior
@@ -66,9 +66,29 @@ void OperatorBase::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefV
    *  This is only thread safe only if each walker has a complete
    *  set of anything involved in an Operator.evaluate.
    */
-  #pragma omp parallel for
+#pragma omp parallel for
   for (int iw = 0; iw < O_list.size(); iw++)
     O_list[iw].get().evaluate(P_list[iw]);
+}
+
+void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVector<OperatorBase>& O_list,
+                                                       const RefVector<ParticleSet>& P_list,
+                                                       const opt_variables_type& optvars,
+                                                       RecordArray<ValueType>& dlogpsi,
+                                                       RecordArray<ValueType>& dhpsioverpsi)
+{
+  int nparam = dlogpsi.nparam();
+  std::vector<ValueType> tmp_dlogpsi(nparam);
+  std::vector<ValueType> tmp_dhpsioverpsi(nparam);
+  for (int iw = 0; iw < O_list.size(); iw++)
+  {
+    O_list[iw].get().evaluateValueAndDerivatives(P_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+    for (int j = 0; j < nparam; j++)
+    {
+      dlogpsi.setValue(j, iw, tmp_dlogpsi[j]);
+      dhpsioverpsi.setValue(j, iw, tmp_dhpsioverpsi[j]);
+    }
+  }
 }
 
 
