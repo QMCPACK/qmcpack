@@ -114,7 +114,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   int sortBands(1);
   int spinSet      = 0;
   int TwistNum_inp = 0;
-  bool skipChecks = false;
+  bool skipChecks  = false;
 
   std::string sourceName;
   std::string spo_prec("double");
@@ -235,7 +235,8 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if ((iter != SPOSetMap.end()) && (!NewOcc))
   {
     app_log() << "SPOSet parameters match in EinsplineSetBuilder. cloning EinsplineSet object." << std::endl;
-    app_warning() << "!!!!!!! Deprecated input style: implict sharing one SPOSet for spin-up and spin-down electrions has been deprecated. Create a single SPO set outside determinantset instead."
+    app_warning() << "!!!!!!! Deprecated input style: implict sharing one SPOSet for spin-up and spin-down electrions "
+                     "has been deprecated. Create a single SPO set outside determinantset instead."
                   << "Use sposet_collection to construct an explict sposet for explicit sharing." << std::endl;
     OrbitalSet = iter->second->makeClone();
     OrbitalSet->setName("");
@@ -290,7 +291,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //////////////////////////////////
   Timer mytimer;
   mytimer.restart();
-  OccupyBands(spinSet, sortBands, numOrbs,skipChecks);
+  OccupyBands(spinSet, sortBands, numOrbs, skipChecks);
   if (spinSet == 0)
     TileIons();
 
