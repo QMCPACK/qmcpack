@@ -114,6 +114,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   int sortBands(1);
   int spinSet      = 0;
   int TwistNum_inp = 0;
+  bool skipChecks = false;
 
   std::string sourceName;
   std::string spo_prec("double");
@@ -146,6 +147,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(truncate, "truncate");
     a.add(use_einspline_set_extended, "use_old_spline");
     a.add(myName, "tag");
+    a.add(skipChecks, "skipChecks");
 #if defined(QMC_CUDA)
     a.add(gpu::MaxGPUSpineSizeMB, "Spline_Size_Limit_MB");
 #endif
@@ -253,7 +255,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   // set the internal parameters
   if (spinSet == 0)
-    set_metadata(numOrbs, TwistNum_inp);
+    set_metadata(numOrbs, TwistNum_inp, skipChecks);
   //if (use_complex_orb == "yes") UseRealOrbitals = false; // override given user input
 
   // look for <backflow>, would be a lot easier with xpath, but I cannot get it to work
@@ -288,7 +290,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //////////////////////////////////
   Timer mytimer;
   mytimer.restart();
-  OccupyBands(spinSet, sortBands, numOrbs);
+  OccupyBands(spinSet, sortBands, numOrbs,skipChecks);
   if (spinSet == 0)
     TileIons();
 
