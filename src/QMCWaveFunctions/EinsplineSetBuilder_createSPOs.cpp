@@ -147,7 +147,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(truncate, "truncate");
     a.add(use_einspline_set_extended, "use_old_spline");
     a.add(myName, "tag");
-    a.add(skipChecks, "skipChecks");
+    a.add(skipChecks, "skip_checks");
 #if defined(QMC_CUDA)
     a.add(gpu::MaxGPUSpineSizeMB, "Spline_Size_Limit_MB");
 #endif
