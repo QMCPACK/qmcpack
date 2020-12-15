@@ -18,7 +18,10 @@ SET(QMCEST_SRC
   EstimatorManagerBase.cpp
   EstimatorManagerNew.cpp
   EstimatorManagerCrowd.cpp
-  CollectablesEstimator.cpp)
+  CollectablesEstimator.cpp
+  OperatorEstBase.cpp
+  SpinDensityInput.cpp
+  SpinDensityNew.cpp)
 
 ####################################
 # create libqmcestimators
