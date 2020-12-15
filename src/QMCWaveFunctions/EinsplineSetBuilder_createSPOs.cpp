@@ -120,6 +120,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string spo_prec("double");
   std::string truncate("no");
   std::string hybrid_rep("no");
+  std::string skip_checks("no");
   std::string use_einspline_set_extended(
       "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
 #if defined(QMC_CUDA) || defined(ENABLE_OFFLOAD)
@@ -147,7 +148,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(truncate, "truncate");
     a.add(use_einspline_set_extended, "use_old_spline");
     a.add(myName, "tag");
-    a.add(skipChecks, "skip_checks");
+    a.add(skip_checks, "skip_checks");
 #if defined(QMC_CUDA)
     a.add(gpu::MaxGPUSpineSizeMB, "Spline_Size_Limit_MB");
 #endif
@@ -162,6 +163,10 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (myName.empty())
       myName = "einspline";
   }
+
+  if (skip_checks == "yes")
+    skipChecks = true;
+
 
   SourcePtcl = ParticleSets[sourceName];
   if (SourcePtcl == 0)
