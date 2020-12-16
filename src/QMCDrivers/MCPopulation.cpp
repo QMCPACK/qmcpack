@@ -24,28 +24,28 @@ MCPopulation::MCPopulation()
 {}
 
 MCPopulation::MCPopulation(int num_ranks,
-                           MCWalkerConfiguration& mcwc,
+                           WalkerConfigurations& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian,
                            int this_rank)
     : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
 {
-  num_global_walkers_ = mcwc.GlobalNumWalkers;
-  num_local_walkers_  = mcwc.LocalNumWalkers;
-  num_particles_      = mcwc.getParticleNum();
+  num_global_walkers_ = mcwc.getGlobalNumWalkers();
+  num_local_walkers_  = mcwc.getActiveWalkers();
+  num_particles_      = elecs->getTotalNum();
 
   // MCWalkerConfiguration doesn't give actual number of groups
-  num_groups_ = mcwc.groups();
+  num_groups_ = elecs->groups();
   particle_group_indexes_.resize(num_groups_);
   for (int i = 0; i < num_groups_; ++i)
   {
-    particle_group_indexes_[i].first  = mcwc.first(i);
-    particle_group_indexes_[i].second = mcwc.last(i);
+    particle_group_indexes_[i].first  = elecs->first(i);
+    particle_group_indexes_[i].second = elecs->last(i);
   }
   ptclgrp_mass_.resize(num_groups_);
   for (int ig = 0; ig < num_groups_; ++ig)
-    ptclgrp_mass_[ig] = mcwc.Mass[ig];
+    ptclgrp_mass_[ig] = elecs->Mass[ig];
   ptclgrp_inv_mass_.resize(num_groups_);
   for (int ig = 0; ig < num_groups_; ++ig)
     ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
