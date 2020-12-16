@@ -48,7 +48,6 @@ MCWalkerConfiguration::MCWalkerConfiguration(const DynamicCoordinateKind kind)
       AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
 #endif
       ReadyForPbyP(false),
-      GlobalNumWalkers(0),
       UpdateMode(Update_Walker),
       reptile(0),
       Polymer(0)
@@ -69,7 +68,6 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
       AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
 #endif
       ReadyForPbyP(false),
-      GlobalNumWalkers(mcw.GlobalNumWalkers),
       UpdateMode(Update_Walker),
       Polymer(0)
 {
@@ -82,52 +80,20 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 }
 
 ///default destructor
-MCWalkerConfiguration::~MCWalkerConfiguration()
-{
-  destroyWalkers(WalkerList.begin(), WalkerList.end());
-}
+MCWalkerConfiguration::~MCWalkerConfiguration() { destroyWalkers(WalkerList.begin(), WalkerList.end()); }
 
 
 void MCWalkerConfiguration::createWalkers(int n)
 {
-  if (WalkerList.empty())
-  {
-    while (n)
+  const int old_nw = getActiveWalkers();
+  WalkerConfigurations::createWalkers(n, TotalNum);
+  // no pre-existing walkers, need to initialized based on particleset.
+  if (old_nw == 0)
+    for (auto* awalker : WalkerList)
     {
-      Walker_t* awalker = new Walker_t(TotalNum);
-      awalker->R        = R;
-      awalker->spins    = spins;
-      WalkerList.push_back(awalker);
-      --n;
+      awalker->R     = R;
+      awalker->spins = spins;
     }
-  }
-  else
-  {
-    if (WalkerList.size() >= n)
-    {
-      int iw = WalkerList.size(); //copy from the back
-      for (int i = 0; i < n; ++i)
-      {
-        WalkerList.push_back(new Walker_t(*WalkerList[--iw]));
-      }
-    }
-    else
-    {
-      int nc  = n / WalkerList.size();
-      int nw0 = WalkerList.size();
-      for (int iw = 0; iw < nw0; ++iw)
-      {
-        for (int ic = 0; ic < nc; ++ic)
-          WalkerList.push_back(new Walker_t(*WalkerList[iw]));
-      }
-      n -= nc * nw0;
-      while (n > 0)
-      {
-        WalkerList.push_back(new Walker_t(*WalkerList[--nw0]));
-        --n;
-      }
-    }
-  }
   resizeWalkerHistories();
 }
 
@@ -136,83 +102,16 @@ void MCWalkerConfiguration::resize(int numWalkers, int numPtcls)
 {
   if (TotalNum && WalkerList.size())
     app_warning() << "MCWalkerConfiguration::resize cleans up the walker list." << std::endl;
+  const int old_nw = getActiveWalkers();
   ParticleSet::resize(unsigned(numPtcls));
-  int dn = numWalkers - WalkerList.size();
-  if (dn > 0)
-    createWalkers(dn);
-  if (dn < 0)
-  {
-    int nw = -dn;
-    if (nw < WalkerList.size())
+  WalkerConfigurations::resize(numWalkers, TotalNum);
+  // no pre-existing walkers, need to initialized based on particleset.
+  if (old_nw == 0)
+    for (auto* awalker : WalkerList)
     {
-      iterator it = WalkerList.begin();
-      while (nw)
-      {
-        delete *it;
-        ++it;
-        --nw;
-      }
-      WalkerList.erase(WalkerList.begin(), WalkerList.begin() - dn);
+      awalker->R     = R;
+      awalker->spins = spins;
     }
-  }
-  //iterator it = WalkerList.begin();
-  //while(it != WalkerList.end()) {
-  //  delete *it++;
-  //}
-  //WalkerList.erase(WalkerList.begin(),WalkerList.end());
-  //R.resize(np);
-  //TotalNum = np;
-  //createWalkers(nw);
-}
-
-///returns the next valid iterator
-MCWalkerConfiguration::iterator MCWalkerConfiguration::destroyWalkers(iterator first, iterator last)
-{
-  iterator it = first;
-  while (it != last)
-  {
-    delete *it++;
-  }
-  return WalkerList.erase(first, last);
-}
-
-void MCWalkerConfiguration::createWalkers(iterator first, iterator last)
-{
-  destroyWalkers(WalkerList.begin(), WalkerList.end());
-  while (first != last)
-  {
-    WalkerList.push_back(new Walker_t(**first));
-    ++first;
-  }
-}
-
-void MCWalkerConfiguration::destroyWalkers(int nw)
-{
-  if (nw > WalkerList.size())
-  {
-    app_warning() << "  Cannot remove walkers. Current Walkers = " << WalkerList.size() << std::endl;
-    return;
-  }
-  nw     = WalkerList.size() - nw;
-  int iw = nw;
-  while (iw < WalkerList.size())
-  {
-    delete WalkerList[iw++];
-  }
-  //iterator it(WalkerList.begin()+nw),it_end(WalkerList.end());
-  //while(it != it_end)
-  //{
-  //  delete *it++;
-  //}
-  WalkerList.erase(WalkerList.begin() + nw, WalkerList.end());
-}
-
-void MCWalkerConfiguration::copyWalkers(iterator first, iterator last, iterator it)
-{
-  while (first != last)
-  {
-    (*it++)->makeCopy(**first++);
-  }
 }
 
 /** Make Metropolis move to the walkers and save in a temporary array.
@@ -227,18 +126,6 @@ void MCWalkerConfiguration::sample(iterator it, RealType tauinv)
   //  makeGaussRandom(R);
   //  R *= tauinv;
   //  R += (*it)->R + (*it)->Drift;
-}
-
-void MCWalkerConfiguration::reset()
-{
-  iterator it(WalkerList.begin()), it_end(WalkerList.end());
-  while (it != it_end)
-  //(*it)->reset();++it;}
-  {
-    (*it)->Weight       = 1.0;
-    (*it)->Multiplicity = 1.0;
-    ++it;
-  }
 }
 
 //void MCWalkerConfiguration::clearAuxDataSet() {
