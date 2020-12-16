@@ -165,21 +165,6 @@ public:
    */
   void destroyWalkers(int nw);
 
-  /** copy the pointers to the Walkers to WalkerList
-   * @param head pointer to the head walker
-   * @param tail pointer to the tail walker
-   *
-   * \todo I believe this can/should be deleted
-   * Special function introduced to work with Reptation method.
-   * Clear the current WalkerList and add two walkers, head and tail.
-   * OwnWalkers are set to false.
-   */
-  void copyWalkerRefs(Walker_t* head, Walker_t* tail);
-
-  /** make fake walker list for testing
-   */
-  void fakeWalkerList(Walker_t* first, Walker_t* second);
-
   ///clean up the walker list and make a new list
   void resize(int numWalkers, int numPtcls);
 
@@ -413,8 +398,6 @@ public:
 #endif
 
 protected:
-  ///boolean for cleanup
-  bool OwnWalkers;
   ///true if the buffer is ready for particle-by-particle updates
   bool ReadyForPbyP;
   ///number of walkers on a node

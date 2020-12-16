@@ -47,7 +47,6 @@ MCWalkerConfiguration::MCWalkerConfiguration(const DynamicCoordinateKind kind)
       iatList_GPU("iatList_GPU"),
       AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
 #endif
-      OwnWalkers(true),
       ReadyForPbyP(false),
       GlobalNumWalkers(0),
       UpdateMode(Update_Walker),
@@ -69,7 +68,6 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
       iatList_GPU("iatList_GPU"),
       AcceptList_GPU("MCWalkerConfiguration::AcceptList_GPU"),
 #endif
-      OwnWalkers(true),
       ReadyForPbyP(false),
       GlobalNumWalkers(mcw.GlobalNumWalkers),
       UpdateMode(Update_Walker),
@@ -86,8 +84,7 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 ///default destructor
 MCWalkerConfiguration::~MCWalkerConfiguration()
 {
-  if (OwnWalkers)
-    destroyWalkers(WalkerList.begin(), WalkerList.end());
+  destroyWalkers(WalkerList.begin(), WalkerList.end());
 }
 
 
@@ -171,13 +168,10 @@ void MCWalkerConfiguration::resize(int numWalkers, int numPtcls)
 ///returns the next valid iterator
 MCWalkerConfiguration::iterator MCWalkerConfiguration::destroyWalkers(iterator first, iterator last)
 {
-  if (OwnWalkers)
+  iterator it = first;
+  while (it != last)
   {
-    iterator it = first;
-    while (it != last)
-    {
-      delete *it++;
-    }
+    delete *it++;
   }
   return WalkerList.erase(first, last);
 }
@@ -185,7 +179,6 @@ MCWalkerConfiguration::iterator MCWalkerConfiguration::destroyWalkers(iterator f
 void MCWalkerConfiguration::createWalkers(iterator first, iterator last)
 {
   destroyWalkers(WalkerList.begin(), WalkerList.end());
-  OwnWalkers = true;
   while (first != last)
   {
     WalkerList.push_back(new Walker_t(**first));
@@ -220,34 +213,6 @@ void MCWalkerConfiguration::copyWalkers(iterator first, iterator last, iterator 
   {
     (*it++)->makeCopy(**first++);
   }
-}
-
-
-void MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail)
-{
-  if (OwnWalkers)
-  //destroy the current walkers
-  {
-    destroyWalkers(WalkerList.begin(), WalkerList.end());
-    WalkerList.clear();
-    OwnWalkers = false; //set to false to prevent deleting the Walkers
-  }
-  if (WalkerList.size() < 2)
-  {
-    WalkerList.push_back(0);
-    WalkerList.push_back(0);
-  }
-  WalkerList[0] = head;
-  WalkerList[1] = tail;
-}
-
-void MCWalkerConfiguration::fakeWalkerList(Walker_t* first, Walker_t* second)
-{
-  if (WalkerList.size() != 0)
-    throw std::runtime_error("This should only be called in tests and only with a fresh MCWC!");
-  OwnWalkers = false;
-  WalkerList.push_back(first);
-  WalkerList.push_back(second);
 }
 
 /** Make Metropolis move to the walkers and save in a temporary array.
