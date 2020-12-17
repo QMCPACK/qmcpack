@@ -96,7 +96,7 @@ public:
    *  in QMCDriverFactory.
    */
   MCPopulation(int num_ranks,
-               MCWalkerConfiguration& mcwc,
+               WalkerConfigurations& mcwc,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian_,

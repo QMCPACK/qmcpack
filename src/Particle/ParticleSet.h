@@ -36,30 +36,6 @@ class DistanceTableData;
 
 class StructFact;
 
-/** Monte Carlo Data of an ensemble
- *
- * The quantities are shared by all the nodes in a group
- * - NumSamples number of samples
- * - Weight     total weight of a sample
- * - Energy     average energy of a sample
- * - Variance   variance
- * - LivingFraction fraction of walkers alive each step.
- */
-template<typename T>
-struct MCDataType
-{
-  T NumSamples;
-  T RNSamples;
-  T Weight;
-  T Energy;
-  T AlternateEnergy;
-  T Variance;
-  T R2Accepted;
-  T R2Proposed;
-  T LivingFraction;
-};
-
-
 /** Specialized paritlce class for atomistic simulations
  *
  * Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
@@ -88,9 +64,6 @@ public:
   quantum_domains quantum_domain;
 
   //@{ public data members
-  ///property of an ensemble represented by this ParticleSet
-  //MCDataType<FullPrecRealType> EnsembleProperty;
-
   ///ParticleLayout
   ParticleLayout_t Lattice, PrimitiveLattice;
   ///Long-range box
