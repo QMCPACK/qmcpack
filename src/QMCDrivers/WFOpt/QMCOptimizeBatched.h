@@ -51,7 +51,7 @@ public:
                      QMCHamiltonian& h,
                      QMCDriverInput&& qmcdriver_input,
                      VMCDriverInput&& vmcdriver_input,
-                     MCPopulation& population,
+                     MCPopulation&& population,
                      SampleStack& samples,
                      Communicate* comm);
 
@@ -99,8 +99,6 @@ private:
 
   /// VMC-specific driver input
   VMCDriverInput vmcdriver_input_;
-
-  MCPopulation& population_;
 
   /// Samples to use in optimizer
   SampleStack& samples_;

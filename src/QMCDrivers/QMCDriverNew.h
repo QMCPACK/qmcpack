@@ -116,7 +116,7 @@ protected:
 public:
   /// Constructor.
   QMCDriverNew(QMCDriverInput&& input,
-               MCPopulation& population,
+               MCPopulation&& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                const std::string timer_prefix,
@@ -343,7 +343,7 @@ protected:
 
 
   ///the entire (or on node) walker population
-  MCPopulation& population_;
+  MCPopulation population_;
 
   ///trial function
   TrialWaveFunction& Psi;

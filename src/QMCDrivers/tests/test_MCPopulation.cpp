@@ -35,7 +35,10 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
 
   TrialWaveFunction twf;
-  MCPopulation population(1, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary(),comm->rank());
+  WalkerConfigurations walker_confs;
+
+  MCPopulation population(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"), &twf,
+                          hamiltonian_pool.getPrimary());
 
   population.createWalkers(8, 2.0);
   CHECK(population.get_walkers().size() == 8);
@@ -70,8 +73,9 @@ TEST_CASE("MCPopulation::distributeWalkers", "[particle][population]")
   MinimalHamiltonianPool mhp;
   HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
 
-  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                          hamiltonian_pool.getPrimary(), comm->rank());
+  WalkerConfigurations walker_confs;
+  MCPopulation population(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
+                          wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
 
   population.createWalkers(24);
   REQUIRE(population.get_walkers().size() == 24);
@@ -80,7 +84,7 @@ TEST_CASE("MCPopulation::distributeWalkers", "[particle][population]")
   std::for_each(walker_consumers.begin(), walker_consumers.end(),
                 [](std::unique_ptr<WalkerConsumer>& wc) { wc.reset(new WalkerConsumer()); });
   population.distributeWalkers(walker_consumers);
-  
+
   REQUIRE((*walker_consumers[0]).walkers.size() == 3);
 
   std::vector<std::unique_ptr<WalkerConsumer>> walker_consumers_incommensurate(5);

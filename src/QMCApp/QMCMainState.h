@@ -25,7 +25,6 @@
 #include "Message/MPIObjectBase.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCDrivers/QMCDriverFactory.h"
-#include "QMCDrivers/MCPopulation.h"
 #include "type_traits/template_types.hpp"
 
 class Communicate;
@@ -65,8 +64,6 @@ struct QMCMainState : public MPIObjectBase
   /** QMCHamiltonian Pool
    */
   std::unique_ptr<HamiltonianPool> hamPool;
-
-  UPtr<MCPopulation> population_;
 
   /** default constructor **/
   QMCMainState(Communicate* c);

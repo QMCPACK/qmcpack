@@ -19,17 +19,18 @@
 
 namespace qmcplusplus
 {
-MCPopulation::MCPopulation()
-    : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr), num_ranks_(1), rank_(0)
-{}
-
 MCPopulation::MCPopulation(int num_ranks,
+                           int this_rank,
                            WalkerConfigurations& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian,
-                           int this_rank)
-    : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
+                           QMCHamiltonian* hamiltonian)
+    : trial_wf_(trial_wf),
+      elec_particle_set_(elecs),
+      hamiltonian_(hamiltonian),
+      num_ranks_(num_ranks),
+      rank_(this_rank),
+      walker_configs_ref_(mcwc)
 {
   num_global_walkers_ = mcwc.getGlobalNumWalkers();
   num_local_walkers_  = mcwc.getActiveWalkers();
@@ -56,20 +57,6 @@ MCPopulation::MCPopulation(int num_ranks,
       ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
   }
 }
-
-MCPopulation::MCPopulation(int num_ranks,
-                           ParticleSet* elecs,
-                           TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian,
-                           int this_rank)
-    : num_particles_(elecs->R.size()),
-      trial_wf_(trial_wf),
-      elec_particle_set_(elecs),
-      hamiltonian_(hamiltonian),
-      num_ranks_(num_ranks),
-      rank_(this_rank)
-{}
-
 
 /** Default creates walkers equal to num_local_walkers_ and zeroed positions
  */
@@ -180,7 +167,7 @@ WalkerElementsRef MCPopulation::getWalkerElementsRef(const size_t index)
 std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
 {
   std::vector<WalkerElementsRef> walker_elements;
-  for(int iw = 0; iw < walkers_.size(); ++iw)
+  for (int iw = 0; iw < walkers_.size(); ++iw)
   {
     walker_elements.emplace_back(*walkers_[iw], *walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]);
   }

@@ -46,7 +46,7 @@ public:
                                       QMCHamiltonian& h,
                                       QMCDriverInput&& qmcdriver_input,
                                       VMCDriverInput&& vmcdriver_input,
-                                      MCPopulation& population,
+                                      MCPopulation&& population,
                                       SampleStack& samples,
                                       Communicate* comm);
 

@@ -58,7 +58,7 @@ public:
                            QMCHamiltonian& h,
                            QMCDriverInput&& qmcdriver_input,
                            VMCDriverInput&& vmcdriver_input,
-                           MCPopulation& population,
+                           MCPopulation&& population,
                            SampleStack& samples,
                            Communicate* comm,
                            const std::string& QMC_driver_type = "QMCLinearOptimizeBatched");
@@ -192,7 +192,7 @@ public:
 
   QMCDriverInput qmcdriver_input_;
   VMCDriverInput vmcdriver_input_;
-  MCPopulation& population_;
+  MCPopulation population_;
   SampleStack& samples_;
 
   virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }

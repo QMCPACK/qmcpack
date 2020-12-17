@@ -38,10 +38,11 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
   int num_ranks = dpools_.comm->size();
   if (num_ranks != 3)
     throw std::runtime_error("Bad Rank Count, WalkerControlMPI tests can only be run with 3 MPI ranks.");
-
-  pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.particle_pool->getParticleSet("e"),
-                                        dpools_.wavefunction_pool->getPrimary(), dpools_.hamiltonian_pool->getPrimary(),
-                                        dpools_.comm->rank());
+  WalkerConfigurations walker_confs;
+  pop_ =
+      std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), walker_confs,
+                                     dpools_.particle_pool->getParticleSet("e"),
+                                     dpools_.wavefunction_pool->getPrimary(), dpools_.hamiltonian_pool->getPrimary());
 
   pop_->createWalkers(1);
 
@@ -64,8 +65,8 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
 void UnifiedDriverWalkerControlMPITest::makeValidWalkers()
 {
   auto walker_elements = pop_->get_walker_elements();
-  
-  for( auto we : walker_elements)
+
+  for (auto we : walker_elements)
   {
     we.pset.update();
     if (we.walker.DataSet.size() <= 0)
@@ -94,7 +95,7 @@ void UnifiedDriverWalkerControlMPITest::testMultiplicity(std::vector<int>& rank_
   int future_pop                       = std::accumulate(rank_counts_expanded.begin(), rank_counts_expanded.end(), 0);
 
   std::vector<WalkerElementsRef> walker_elements = pop_->get_walker_elements();
-  
+
   WalkerControlBase::PopulationAdjustment pop_adjust{future_pop,
                                                      walker_elements,
                                                      {rank_counts_expanded[rank] - 1},
@@ -131,9 +132,8 @@ void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& ran
   auto proper_number_copies = [](int size) -> std::vector<int> { return std::vector<int>(size, 0); };
 
   std::vector<WalkerElementsRef> walker_elements2 = pop_->get_walker_elements();
-  
-  WalkerControlBase::PopulationAdjustment pop_adjust2{rank_counts_before[rank],
-                                                      walker_elements2,
+
+  WalkerControlBase::PopulationAdjustment pop_adjust2{rank_counts_before[rank], walker_elements2,
                                                       proper_number_copies(pop_->get_num_local_walkers()),
                                                       std::vector<WalkerElementsRef>{}};
 

@@ -36,7 +36,7 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
                                                    QMCHamiltonian& h,
                                                    QMCDriverInput&& qmcdriver_input,
                                                    VMCDriverInput&& vmcdriver_input,
-                                                   MCPopulation& population,
+                                                   MCPopulation&& population,
                                                    SampleStack& samples,
                                                    Communicate* comm,
                                                    const std::string& QMC_driver_type)
@@ -48,7 +48,7 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
       param_tol(1e-4),
       qmcdriver_input_(qmcdriver_input),
       vmcdriver_input_(vmcdriver_input),
-      population_(population),
+      population_(std::move(population)),
       samples_(samples),
       generate_samples_timer_(
           *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
@@ -643,8 +643,13 @@ bool QMCLinearOptimizeBatched::put(xmlNodePtr q)
   {
     QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
     VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
-    vmcEngine = std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
-                                             population_, Psi, H, samples_, myComm);
+    vmcEngine =
+        std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
+                                     MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
+                                                  population_.get_golden_electrons(), &Psi, &H)
+
+                                         ,
+                                     Psi, H, samples_, myComm);
 
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);

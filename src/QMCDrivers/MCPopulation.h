@@ -38,7 +38,7 @@ public:
   using Properties       = MCPWalker::PropertyContainer_t;
   using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  
+
 private:
   // Potential thread safety issue
   MCDataType<QMCTraits::FullPrecRealType> ensemble_property_;
@@ -90,23 +90,19 @@ private:
   int num_ranks_;
   int rank_;
 
+  // reference to the captured WalkerConfigurations
+  WalkerConfigurations& walker_configs_ref_;
+
 public:
-  MCPopulation();
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
    *  in QMCDriverFactory.
    */
   MCPopulation(int num_ranks,
+               int this_rank,
                WalkerConfigurations& mcwc,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
-               QMCHamiltonian* hamiltonian_,
-               int this_rank);
-
-  MCPopulation(int num_ranks,
-               ParticleSet* elecs,
-               TrialWaveFunction* trial_wf,
-               QMCHamiltonian* hamiltonian,
-               int this_rank);
+               QMCHamiltonian* hamiltonian_);
 
   MCPopulation(MCPopulation&) = delete;
   MCPopulation& operator=(MCPopulation&) = delete;
@@ -131,7 +127,7 @@ public:
    *  \param[in] num_walkers number of living walkers in initial population
    *  \param[in] reserve multiple above that to reserve >=1.0
    */
-  void createWalkers(IndexType num_walkers,RealType reserve = 1.0);
+  void createWalkers(IndexType num_walkers, RealType reserve = 1.0);
   void createWalkers(int num_crowds_,
                      int num_walkers_per_crowd_,
                      IndexType num_walkers,
@@ -154,9 +150,10 @@ public:
     auto walker_index = 0;
     for (int i = 0; i < walker_consumers.size(); ++i)
     {
-      for(int j = 0; j < walkers_per_crowd[i]; ++j)
+      for (int j = 0; j < walkers_per_crowd[i]; ++j)
       {
-        walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index], *walker_trial_wavefunctions_[walker_index], *walker_hamiltonians_[walker_index]);
+        walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index],
+                                       *walker_trial_wavefunctions_[walker_index], *walker_hamiltonians_[walker_index]);
         ++walker_index;
       }
     }
@@ -186,6 +183,7 @@ public:
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
+  ParticleSet* get_golden_electrons() { return elec_particle_set_; }
   void syncWalkersPerNode(Communicate* comm);
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
@@ -199,6 +197,7 @@ public:
   }
 
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
+  const UPtrVector<MCPWalker>& get_walkers() const { return walkers_; }
   UPtrVector<MCPWalker>& get_dead_walkers() { return dead_walkers_; }
 
   UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
@@ -223,7 +222,7 @@ public:
    *  As operator[] don't use it to ignore the concurrency design.
    */
   std::vector<WalkerElementsRef> get_walker_elements();
-  
+
   const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
@@ -236,6 +235,8 @@ public:
 
   /// Set variational parameters for the per-walker copies of the wavefunction.
   void set_variational_parameters(const opt_variables_type& active);
+
+  WalkerConfigurations& getWalkerConfigsRef() { return walker_configs_ref_; }
 };
 
 } // namespace qmcplusplus

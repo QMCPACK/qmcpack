@@ -566,11 +566,6 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run              = false;
 
-  if (!population_)
-  {
-    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(),
-                                       hamPool->getPrimary(), myComm->rank()));
-  }
   if (reuse)
     qmc_driver = std::move(last_driver);
   else
@@ -578,7 +573,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     QMCDriverFactory driver_factory;
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
     qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
-                                             *ptclPool, *psiPool, *hamPool, *population_, myComm);
+                                             *ptclPool, *psiPool, *hamPool, myComm);
     append_run = das.append_run;
   }
 
