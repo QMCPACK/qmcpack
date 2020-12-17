@@ -104,6 +104,7 @@ public:
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian_);
 
+  ~MCPopulation();
   MCPopulation(MCPopulation&) = delete;
   MCPopulation& operator=(MCPopulation&) = delete;
   MCPopulation(MCPopulation&&)           = default;
@@ -237,6 +238,9 @@ public:
   void set_variational_parameters(const opt_variables_type& active);
 
   WalkerConfigurations& getWalkerConfigsRef() { return walker_configs_ref_; }
+
+  // save walker configurations to walker_configs_ref_
+  void saveWalkerConfigurations();
 };
 
 } // namespace qmcplusplus

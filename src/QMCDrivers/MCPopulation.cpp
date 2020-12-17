@@ -58,6 +58,13 @@ MCPopulation::MCPopulation(int num_ranks,
   }
 }
 
+MCPopulation::~MCPopulation()
+{
+  // if there are active walkers, save them to lightweight walker configuration list.
+  if (walkers_.size())
+    saveWalkerConfigurations();
+}
+
 /** Default creates walkers equal to num_local_walkers_ and zeroed positions
  */
 //void MCPopulation::createWalkers() { createWalkers(num_local_walkers_); }
@@ -97,6 +104,9 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 
   for (auto& walker_ptr : walkers_)
     createWalker(walker_ptr);
+
+  for (int iw = 0; iw < std::min(walkers_.size(), walker_configs_ref_.WalkerList.size()); iw++)
+    *walkers_[iw] = *walker_configs_ref_[iw];
 
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
@@ -354,6 +364,13 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 //                   }
 //                 });
 // }
+
+void MCPopulation::saveWalkerConfigurations()
+{
+  walker_configs_ref_.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
+  for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
+    walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
+}
 
 
 } // namespace qmcplusplus
