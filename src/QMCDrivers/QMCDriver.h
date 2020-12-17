@@ -153,10 +153,10 @@ public:
   }
 
   ///set the BranchEngineType
-  void setBranchEngine(BranchEngineType* be) { branchEngine = be; }
+  void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) override { branchEngine = std::move(be); }
 
   ///return BranchEngineType*
-  BranchEngineType* getBranchEngine() { return branchEngine; }
+  std::unique_ptr<BranchEngineType> getBranchEngine() override { return std::move(branchEngine); }
 
   int addObservable(const std::string& aname)
   {
@@ -189,7 +189,7 @@ public:
 
 protected:
   ///branch engine
-  BranchEngineType* branchEngine;
+  std::unique_ptr<BranchEngineType> branchEngine;
   ///drift modifer
   DriftModifierBase* DriftModifier;
   ///randomize it

@@ -130,7 +130,7 @@ void DMC::resetUpdateEngines()
           Movers[ip] = new SODMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
           Movers[ip]->setSpinMass(SpinMass);
           Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+          Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
           Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
         }
         else
@@ -154,7 +154,7 @@ void DMC::resetUpdateEngines()
             Movers[ip] = new DMCUpdatePbyPL2(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
           }
           Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+          Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
           Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
         }
         else
@@ -164,7 +164,7 @@ void DMC::resetUpdateEngines()
           else
             Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
           Movers[ip]->put(qmcNode);
-          Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+          Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
           Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
         }
       }

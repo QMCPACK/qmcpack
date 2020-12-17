@@ -192,34 +192,34 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_p
   case QMCRunType::LINEAR_OPTIMIZE:
   case QMCRunType::CS_LINEAR_OPTIMIZE:
   case QMCRunType::WF_TEST: {
-    QMCDriver::BranchEngineType* branchEngine = nullptr;
+    std::unique_ptr<QMCDriver::BranchEngineType> branchEngine;
     if (last_driver)
     {
-      branchEngine = last_driver->getBranchEngine();
+      branchEngine = std::move(last_driver->getBranchEngine());
       branchEngine->resetRun(cur);
     }
     if (branchEngine)
-      new_driver->setBranchEngine(branchEngine);
+      new_driver->setBranchEngine(std::move(branchEngine));
   }
   break;
   case QMCRunType::VMC_BATCH:
   case QMCRunType::DMC_BATCH:
   case QMCRunType::OPTIMIZE_BATCH:
   case QMCRunType::LINEAR_OPTIMIZE_BATCH: {
-    SFNBranch* branchEngine = nullptr;
+    std::unique_ptr<SFNBranch> branchEngine;
     if (last_driver)
     {
       //Checking the QMCRunType gives us the type information
       QMCDriverNew& old_unified_driver = static_cast<QMCDriverNew&>(*last_driver);
 
-      branchEngine = old_unified_driver.getNewBranchEngine();
+      branchEngine = std::move(old_unified_driver.getNewBranchEngine());
       // Someone helpful added a resetRun call here, a call from legacy CUDA that if it did help I need to know why.
       // It did seem to fix an issue with legacy which is interesting....
     }
     if (branchEngine)
     {
       QMCDriverNew& new_unified_driver = static_cast<QMCDriverNew&>(*new_driver);
-      new_unified_driver.setNewBranchEngine(branchEngine);
+      new_unified_driver.setNewBranchEngine(std::move(branchEngine));
     }
   }
   break;

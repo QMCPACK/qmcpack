@@ -156,22 +156,11 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset);
 
-  /** placate the legacy base class interface
-   */
-  void setBranchEngine(SimpleFixedNodeBranch* be)
-  {
-    throw std::runtime_error("You can not use the legacy SimpleFixedNodeBranch class with QMCDriverNew");
-  }
-
   ///set the BranchEngineType
-  void setNewBranchEngine(SFNBranch* be) { branch_engine_ = be; }
-
-  /** placate the legacy base class interface
-   */
-  SimpleFixedNodeBranch* getBranchEngine() { return nullptr; }
+  void setNewBranchEngine(std::unique_ptr<SFNBranch>&& be) override { branch_engine_ = std::move(be); }
 
   ///return BranchEngineType*
-  SFNBranch* getNewBranchEngine() { return branch_engine_; }
+  std::unique_ptr<SFNBranch> getNewBranchEngine() override { return std::move(branch_engine_); }
 
   int addObservable(const std::string& aname);
 
@@ -305,7 +294,7 @@ protected:
   std::string h5_file_root_;
 
   ///branch engine
-  SFNBranch* branch_engine_;
+  std::unique_ptr<SFNBranch> branch_engine_;
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 
