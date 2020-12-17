@@ -320,7 +320,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       if (cname == "qmc")
       {
         //prevent completed is set
-        bool success = executeQMCSection(tcur, iter > 0);
+        bool success = executeQMCSection(tcur, true);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
@@ -331,6 +331,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       tcur = tcur->next;
     }
   }
+  // Clean up the last driver. No further reuse needed.
+  last_driver.reset(nullptr);
 }
 
 bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
@@ -566,7 +568,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run              = false;
 
-  if (reuse)
+  if (reuse && last_driver)
     qmc_driver = std::move(last_driver);
   else
   {
@@ -603,7 +605,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    last_driver = std::move(qmc_driver);
+    if (reuse)
+      last_driver = std::move(qmc_driver);
     return true;
   }
   else
