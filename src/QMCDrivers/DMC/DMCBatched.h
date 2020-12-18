@@ -73,7 +73,7 @@ public:
   /// Constructor.
   DMCBatched(QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
-             MCPopulation& pop,
+             MCPopulation&& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
              Communicate* comm);

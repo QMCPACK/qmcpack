@@ -41,7 +41,7 @@ namespace qmcplusplus
  *  masquerading as a C++ object.
  */
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
-                           MCPopulation& population,
+                           MCPopulation&& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            const std::string timer_prefix,
@@ -49,10 +49,10 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            const std::string& QMC_driver_type,
                            SetNonLocalMoveHandler snlm_handler)
     : MPIObjectBase(comm),
-      qmcdriver_input_(input),
+      qmcdriver_input_(std::move(input)),
       branch_engine_(nullptr),
       QMCType(QMC_driver_type),
-      population_(population),
+      population_(std::move(population)),
       Psi(psi),
       H(h),
       estimator_manager_(nullptr),

@@ -48,7 +48,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
                                                                          QMCHamiltonian& h,
                                                                          QMCDriverInput&& qmcdriver_input,
                                                                          VMCDriverInput&& vmcdriver_input,
-                                                                         MCPopulation& population,
+                                                                         MCPopulation&& population,
                                                                          SampleStack& samples,
                                                                          Communicate* comm)
     : QMCLinearOptimizeBatched(w,
@@ -56,7 +56,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
                                h,
                                std::move(qmcdriver_input),
                                std::move(vmcdriver_input),
-                               population,
+                               std::move(population),
                                samples,
                                comm,
                                "QMCFixedSampleLinearOptimizeBatched"),
@@ -561,8 +561,11 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   // {
   QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
   VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
-  vmcEngine = std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
-                                           population_, Psi, H, samples_, myComm);
+  vmcEngine =
+      std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
+                                   MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
+                                                population_.get_golden_electrons(), &Psi, &H),
+                                   Psi, H, samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 
