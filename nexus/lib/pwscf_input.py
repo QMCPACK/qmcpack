@@ -2259,7 +2259,9 @@ def generate_scf_input(prefix       = 'pwscf',
                        use_folded   = True,
                        group_atoms  = False,
                        la2F         = None,
-                       nbnd         = None
+                       nbnd         = None,
+                       lspinorb     = False,
+                       noncolin     = False,
                        ):
     if pseudos is None:
         pseudos = []
@@ -2384,7 +2386,7 @@ def generate_scf_input(prefix       = 'pwscf',
         if not isinstance(start_mag,(dict,obj)):
             PwscfInput.class_error('input start_mag must be of type dict or obj')
         #end if
-        pw.system.start_mag = deepcopy(start_mag)
+        pw.system.starting_magnetization = deepcopy(start_mag)
         #if 'tot_magnetization' in pw.system:
         #    del pw.system.tot_magnetization
         ##end if
@@ -2582,7 +2584,7 @@ def generate_relax_input(prefix       = 'pwscf',
         if not isinstance(start_mag,(dict,obj)):
             PwscfInput.class_error('input start_mag must be of type dict or obj')
         #end if
-        pw.system.start_mag = deepcopy(start_mag)
+        pw.system.starting_magnetization = deepcopy(start_mag)
         #if 'tot_magnetization' in pw.system:
         #    del pw.system.tot_magnetization
         ##end if
@@ -2648,6 +2650,7 @@ def generate_relax_input(prefix       = 'pwscf',
 def generate_vcrelax_input(
     press          = None, # None = use pw.x default
     cell_factor    = None, 
+    cell_dofree    = None,
     forc_conv_thr  = None,
     ion_dynamics   = None,
     press_conv_thr = None,
@@ -2674,6 +2677,9 @@ def generate_vcrelax_input(
     # end if
     if press_conv_thr is not None:
         pw.cell.set(press_conv_thr=press_conv_thr)
+    # end if
+    if cell_dofree is not None:
+        pw.cell.set(cell_dofree=cell_dofree)
     # end if
 
     return pw
