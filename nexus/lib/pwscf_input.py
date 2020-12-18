@@ -2330,6 +2330,12 @@ def generate_scf_input(prefix       = 'pwscf',
         pseudopotentials = pseudopotentials
         )
 
+    if noncolin or lspinorb:
+        pw.system.set(
+            noncolin = noncolin or lspinorb,
+            lspinorb = lspinorb
+            )
+    #end if
     if input_dft!=None:
         pw.system.input_dft = input_dft
     #end if
