@@ -43,6 +43,8 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
+#include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {
@@ -55,7 +57,7 @@ namespace qmcplusplus
  *  At some point in driver refactoring this should go there and
  *  QMCDriverInput created before the giant switch
  */
-QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(int curSeries, xmlNodePtr cur)
+QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr cur)
 {
   DriverAssemblyState das;
   std::string curName((const char*)cur->name);
@@ -157,74 +159,29 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(int curSerie
   return das;
 }
 
-std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_ptr<QMCDriverInterface> last_driver,
-                                                                   int curSeries,
-                                                                   xmlNodePtr cur,
-                                                                   QMCDriverFactory::DriverAssemblyState& das,
-                                                                   MCWalkerConfiguration& qmc_system,
-                                                                   ParticleSetPool& particle_pool,
-                                                                   WaveFunctionPool& wavefunction_pool,
-                                                                   HamiltonianPool& hamiltonian_pool,
-                                                                   Communicate* comm)
+std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(
+    std::unique_ptr<SimpleFixedNodeBranch>&& last_branch_engine_legacy_driver,
+    std::unique_ptr<SFNBranch>&& last_branch_engine_new_unified_driver,
+    xmlNodePtr cur,
+    QMCDriverFactory::DriverAssemblyState& das,
+    MCWalkerConfiguration& qmc_system,
+    ParticleSetPool& particle_pool,
+    WaveFunctionPool& wavefunction_pool,
+    HamiltonianPool& hamiltonian_pool,
+    Communicate* comm)
 {
   //create a driver
   std::unique_ptr<QMCDriverInterface> new_driver =
       createQMCDriver(cur, das, qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
-  //initialize QMCDriver::comm
-  // branchEngine has to be transferred to a new QMCDriver
-  // but we also have to deal with it splitting into new and legacy classes
 
-  if (last_driver && last_driver->getRunType() == QMCRunType::DUMMY)
+  if (last_branch_engine_legacy_driver)
   {
-    throw std::runtime_error(
-        "QMCDriverFactory::newQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
+    last_branch_engine_legacy_driver->resetRun(cur);
+    new_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
   }
 
-  switch (das.new_run_type)
-  {
-  case QMCRunType::DUMMY:
-  case QMCRunType::VMC:
-  case QMCRunType::CSVMC:
-  case QMCRunType::DMC:
-  case QMCRunType::RMC:
-  case QMCRunType::OPTIMIZE:
-  case QMCRunType::VMC_OPT:
-  case QMCRunType::LINEAR_OPTIMIZE:
-  case QMCRunType::CS_LINEAR_OPTIMIZE:
-  case QMCRunType::WF_TEST: {
-    std::unique_ptr<QMCDriver::BranchEngineType> branchEngine;
-    if (last_driver)
-    {
-      branchEngine = std::move(last_driver->getBranchEngine());
-      branchEngine->resetRun(cur);
-    }
-    if (branchEngine)
-      new_driver->setBranchEngine(std::move(branchEngine));
-  }
-  break;
-  case QMCRunType::VMC_BATCH:
-  case QMCRunType::DMC_BATCH:
-  case QMCRunType::OPTIMIZE_BATCH:
-  case QMCRunType::LINEAR_OPTIMIZE_BATCH: {
-    std::unique_ptr<SFNBranch> branchEngine;
-    if (last_driver)
-    {
-      //Checking the QMCRunType gives us the type information
-      QMCDriverNew& old_unified_driver = static_cast<QMCDriverNew&>(*last_driver);
-
-      branchEngine = std::move(old_unified_driver.getNewBranchEngine());
-      // Someone helpful added a resetRun call here, a call from legacy CUDA that if it did help I need to know why.
-      // It did seem to fix an issue with legacy which is interesting....
-    }
-    if (branchEngine)
-    {
-      QMCDriverNew& new_unified_driver = static_cast<QMCDriverNew&>(*new_driver);
-      new_unified_driver.setNewBranchEngine(std::move(branchEngine));
-    }
-  }
-  break;
-  }
-  //initialize to 0
+  if (last_branch_engine_new_unified_driver)
+    new_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
 
   infoSummary.flush();
   infoLog.flush();
@@ -232,6 +189,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(std::unique_p
   bool allow_traces = das.traces_tag == "yes" ||
       (das.traces_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC));
   new_driver->requestTraces(allow_traces);
+
   return new_driver;
 }
 

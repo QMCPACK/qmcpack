@@ -560,6 +560,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 
 /** prepare for a QMC run
  * @param cur qmc element
+ * @param reuse if true, the current call is from a loop
  * @return true, if a valid QMCDriver is set.
  */
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
@@ -569,12 +570,18 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   bool append_run              = false;
 
   if (reuse && last_driver)
+  {
     qmc_driver = std::move(last_driver);
+    qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
+    qmc_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
+  }
   else
   {
     QMCDriverFactory driver_factory;
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
-    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+
+    qmc_driver = driver_factory.newQMCDriver(std::move(last_branch_engine_legacy_driver),
+                                             std::move(last_branch_engine_new_unified_driver), cur, das, *qmcSystem,
                                              *ptclPool, *psiPool, *hamPool, myComm);
     append_run = das.append_run;
   }
@@ -605,6 +612,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
+    last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
+    last_branch_engine_new_unified_driver = qmc_driver->getNewBranchEngine();
     if (reuse)
       last_driver = std::move(qmc_driver);
     return true;
