@@ -71,14 +71,20 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
       std::ostringstream pulayname;
       std::ostringstream wfgradname1;
       std::ostringstream wfgradname2;
+      std::ostringstream swctname1;
+      std::ostringstream swctname2;
       hfname << prefix << "_hf_" << iat << "_" << x;
       pulayname << prefix << "_pulay_" << iat << "_" << x;
       wfgradname1 << prefix << "_Ewfgrad_" << iat << "_" << x;
       wfgradname2 << prefix << "_wfgrad_" << iat << "_" << x;
+      swctname1 << prefix << "_swct1_" << iat << "_" << x;
+      swctname2 << prefix << "_swct2_" << iat << "_" << x;
       plist.add(hfname.str());
       plist.add(pulayname.str());
       plist.add(wfgradname1.str());
       plist.add(wfgradname2.str());
+      plist.add(swctname1.str());
+      plist.add(swctname2.str());
     }
   }
 };
@@ -95,6 +101,8 @@ void ACForce::setObservables(PropertySetType& plist)
       plist[myindex++] = -pulay_force[iat][iondim];
       plist[myindex++] = -Value * wf_grad[iat][iondim];
       plist[myindex++] = -wf_grad[iat][iondim];
+      plist[myindex++] = 0;
+      plist[myindex++] = 0;
     }
   }
 };
@@ -109,6 +117,8 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
       plist[myindex++] = -pulay_force[iat][iondim];
       plist[myindex++] = -Value * wf_grad[iat][iondim];
       plist[myindex++] = -wf_grad[iat][iondim];
+      plist[myindex++] = 0; 
+      plist[myindex++] = 0;
     }
   }
 };
