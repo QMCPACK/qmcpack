@@ -43,8 +43,6 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
-#include "QMCDrivers/SimpleFixedNodeBranch.h"
-#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {
@@ -57,7 +55,7 @@ namespace qmcplusplus
  *  At some point in driver refactoring this should go there and
  *  QMCDriverInput created before the giant switch
  */
-QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr cur)
+QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr cur) const
 {
   DriverAssemblyState das;
   std::string curName((const char*)cur->name);
@@ -159,47 +157,13 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   return das;
 }
 
-std::unique_ptr<QMCDriverInterface> QMCDriverFactory::newQMCDriver(
-    std::unique_ptr<SimpleFixedNodeBranch>&& last_branch_engine_legacy_driver,
-    std::unique_ptr<SFNBranch>&& last_branch_engine_new_unified_driver,
-    xmlNodePtr cur,
-    QMCDriverFactory::DriverAssemblyState& das,
-    MCWalkerConfiguration& qmc_system,
-    ParticleSetPool& particle_pool,
-    WaveFunctionPool& wavefunction_pool,
-    HamiltonianPool& hamiltonian_pool,
-    Communicate* comm)
-{
-  //create a driver
-  std::unique_ptr<QMCDriverInterface> new_driver =
-      createQMCDriver(cur, das, qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
-
-  if (last_branch_engine_legacy_driver)
-  {
-    last_branch_engine_legacy_driver->resetRun(cur);
-    new_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
-  }
-
-  if (last_branch_engine_new_unified_driver)
-    new_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
-
-  infoSummary.flush();
-  infoLog.flush();
-  //add trace information
-  bool allow_traces = das.traces_tag == "yes" ||
-      (das.traces_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC));
-  new_driver->requestTraces(allow_traces);
-
-  return new_driver;
-}
-
 std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr cur,
                                                                       DriverAssemblyState& das,
                                                                       MCWalkerConfiguration& qmc_system,
                                                                       ParticleSetPool& particle_pool,
                                                                       WaveFunctionPool& wavefunction_pool,
                                                                       HamiltonianPool& hamiltonian_pool,
-                                                                      Communicate* comm)
+                                                                      Communicate* comm) const
 {
   ///////////////////////////////////////////////
   // get primaryPsi and primaryH
@@ -370,6 +334,14 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
       targetPsi.pop();
     }
   }
+
+  infoSummary.flush();
+  infoLog.flush();
+  //add trace information
+  bool allow_traces = das.traces_tag == "yes" ||
+      (das.traces_tag == "none" && (das.new_run_type == QMCRunType::VMC || das.new_run_type == QMCRunType::DMC));
+  new_driver->requestTraces(allow_traces);
+
   return new_driver;
 }
 } // namespace qmcplusplus

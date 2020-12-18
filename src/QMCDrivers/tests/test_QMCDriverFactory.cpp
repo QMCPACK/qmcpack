@@ -57,8 +57,8 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 
   std::unique_ptr<QMCDriverInterface> qmc_driver;
 
-  qmc_driver = driver_factory.newQMCDriver(nullptr, nullptr, node, das, *qmc_system, particle_pool, wavefunction_pool,
-                                           hamiltonian_pool, comm);
+  qmc_driver =
+      driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
   REQUIRE(qmc_driver != nullptr);
 }
 
@@ -88,8 +88,8 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver = driver_factory.newQMCDriver(nullptr, nullptr, node, das, *qmc_system, particle_pool, wavefunction_pool,
-                                           hamiltonian_pool, comm);
+  qmc_driver =
+      driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
   REQUIRE(qmc_driver != nullptr);
 }
 
@@ -119,8 +119,8 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver = driver_factory.newQMCDriver(nullptr, nullptr, node, das, *qmc_system, particle_pool, wavefunction_pool,
-                                           hamiltonian_pool, comm);
+  qmc_driver =
+      driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
   REQUIRE(qmc_driver != nullptr);
 }
 
@@ -150,8 +150,8 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver = driver_factory.newQMCDriver(nullptr, nullptr, node, das, *qmc_system, particle_pool, wavefunction_pool,
-                                           hamiltonian_pool, comm);
+  qmc_driver =
+      driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
   REQUIRE(qmc_driver != nullptr);
 }
 

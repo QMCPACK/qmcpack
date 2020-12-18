@@ -570,24 +570,27 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   bool append_run              = false;
 
   if (reuse && last_driver)
-  {
     qmc_driver = std::move(last_driver);
-    qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
-    qmc_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
-  }
   else
   {
     QMCDriverFactory driver_factory;
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
 
-    qmc_driver = driver_factory.newQMCDriver(std::move(last_branch_engine_legacy_driver),
-                                             std::move(last_branch_engine_new_unified_driver), cur, das, *qmcSystem,
-                                             *ptclPool, *psiPool, *hamPool, myComm);
+    qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
     append_run = das.append_run;
   }
 
   if (qmc_driver)
   {
+    if (last_branch_engine_legacy_driver)
+    {
+      last_branch_engine_legacy_driver->resetRun(cur);
+      qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
+    }
+
+    if (last_branch_engine_new_unified_driver)
+      qmc_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
+
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)

@@ -22,6 +22,8 @@
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCApp/QMCMainState.h"
 #include "QMCApp/QMCAppBase.h"
+#include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {

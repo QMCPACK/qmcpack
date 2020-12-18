@@ -32,8 +32,6 @@ namespace qmcplusplus
 //forward declaration
 class MCWalkerConfiguration;
 class QMCDriverInterface;
-class SimpleFixedNodeBranch;
-class SFNBranch;
 class WaveFunctionPool;
 class HamiltonianPool;
 
@@ -52,22 +50,8 @@ public:
   //QMCDriverFactory() ;
 
   /** read the current QMC Section */
-  DriverAssemblyState readSection(xmlNodePtr cur);
+  DriverAssemblyState readSection(xmlNodePtr cur) const;
 
-  /** set the active qmcDriver
-   *  The unique_ptr's take care of killing the old driver if it exists */
-  std::unique_ptr<QMCDriverInterface> newQMCDriver(
-      std::unique_ptr<SimpleFixedNodeBranch>&& last_branch_engine_legacy_driver,
-      std::unique_ptr<SFNBranch>&& last_branch_engine_new_unified_driver,
-      xmlNodePtr cur,
-      DriverAssemblyState& das,
-      MCWalkerConfiguration& qmc_system,
-      ParticleSetPool& particle_pool,
-      WaveFunctionPool& wave_function_pool,
-      HamiltonianPool& hamiltonian_pool,
-      Communicate* comm);
-
-private:
   /** create a new QMCDriver
    *
    *  Broken out for unit tests
@@ -78,7 +62,7 @@ private:
                                                       ParticleSetPool& particle_pool,
                                                       WaveFunctionPool& wave_function_pool,
                                                       HamiltonianPool& hamiltonian_pool,
-                                                      Communicate* comm);
+                                                      Communicate* comm) const;
 };
 } // namespace qmcplusplus
 #endif
