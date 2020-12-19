@@ -36,6 +36,8 @@ Quantum Monte Carlo Methods
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``trace``      | text         |              | no          | ???                             |
   +----------------+--------------+--------------+-------------+---------------------------------+
+  | ``profiling``  | text         | yes/no       | no          | Activate resume/pause control   |
+  +----------------+--------------+--------------+-------------+---------------------------------+
   | ``checkpoint`` | integer      | -1, 0, n     | -1          | Checkpoint frequency            |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``record``     | integer      | n            | 0           | Save configuration ever n steps |
@@ -58,6 +60,12 @@ Additional information:
 -  ``gpu``: When the executable is compiled with CUDA, the target
    computing device can be chosen by this switch. With a regular
    CPU-only compilation, this option is not effective.
+
+-  ``profiling``: Performance profiling tools by default profile complete application executions.
+   This is largely unnecessary if the focus is a QMC section instead of any initialization.
+   Setting this flag to ``yes`` for the QMC sections of interest and starting the tool with
+   data collection paused from the beginning help reducing the profiling workflow
+   and amount of collected data.
 
 -  ``checkpoint``: This enables and disables checkpointing and
    specifying the frequency of output. Possible values are:
