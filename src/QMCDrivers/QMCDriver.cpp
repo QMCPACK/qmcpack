@@ -56,7 +56,9 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
       W(w),
       Psi(psi),
       H(h),
-      wOut(0)
+      wOut(0),
+      driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_profiler_(false)
 {
   ResetRandom  = false;
   AppendRun    = false;

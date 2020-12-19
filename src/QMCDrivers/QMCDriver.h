@@ -25,6 +25,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/PooledData.h"
 #include "Utilities/TimerManager.h"
+#include "Utilities/ScopedProfiler.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -359,7 +360,13 @@ protected:
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
   const std::string& get_root_name() const override { return RootName; }
+
+private:
   NewTimer* checkpointTimer;
+  ///time the driver lifetime
+  ScopedTimer driver_scope_timer_;
+  ///profile the driver lifetime
+  ScopedProfiler driver_scope_profiler_;
 };
 /**@}*/
 } // namespace qmcplusplus

@@ -41,7 +41,7 @@ public:
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                   DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod);
+                                  const std::string& MinMethod) override;
 #endif
 
 
@@ -63,7 +63,7 @@ protected:
 
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj);
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
 #endif
 };
 } // namespace qmcplusplus

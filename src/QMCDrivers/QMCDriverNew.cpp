@@ -57,6 +57,8 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),
+      driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       setNonLocalMoveHandler_(snlm_handler)
 {
   rotation = 0;

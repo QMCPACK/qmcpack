@@ -31,6 +31,7 @@
 #include "Configuration.h"
 #include "Utilities/PooledData.h"
 #include "Utilities/TimerManager.h"
+#include "Utilities/ScopedProfiler.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -388,6 +389,11 @@ protected:
 
 
   DriverTimers timers_;
+
+  ///time the driver lifetime
+  ScopedTimer driver_scope_timer_;
+  ///profile the driver lifetime
+  ScopedProfiler driver_scope_profiler_;
 
 public:
   ///Copy Constructor (disabled).
