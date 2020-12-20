@@ -94,7 +94,13 @@ void DMC::resetUpdateEngines()
       copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(o, " "));
       o << "\n";
       if (qmc_driver_mode[QMC_UPDATE_MODE])
+      {
         o << "  Updates by particle-by-particle moves";
+        if (L2 == "yes")
+          app_log() << "Using DMCUpdatePbyPL2" << std::endl;
+        else
+          app_log() << "Using DMCUpdatePbyPWithRejectionFast" << std::endl;
+      }
       else
         o << "  Updates by walker moves";
       // Appears to be set in constructor reported here and used nowhere
@@ -139,17 +145,11 @@ void DMC::resetUpdateEngines()
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          bool do_L2 = L2 == "yes";
-          if (!do_L2)
-          {
-            app_log() << "Using DMCUpdatePbyPWithRejectionFast\n";
-            Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-          }
-          else
-          {
-            app_log() << "Using DMCUpdatePbyPL2\n";
+          if (L2 == "yes")
             Movers[ip] = new DMCUpdatePbyPL2(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
-          }
+          else
+            Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
+
           Movers[ip]->put(qmcNode);
           Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
           Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
