@@ -262,7 +262,7 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 OPTION(QMC_BUILD_STATIC "Link to static libraries" OFF)
 OPTION(ENABLE_TIMERS "Enable internal timers" ON)
 OPTION(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
-OPTION(USE_VTUNE_API "Enable use of VTune ittnotify APIs" ON)
+OPTION(USE_VTUNE_API "Enable use of VTune ittnotify APIs" OFF)
 CMAKE_DEPENDENT_OPTION(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF "ENABLE_TIMERS AND USE_VTUNE_API" OFF)
 CMAKE_DEPENDENT_OPTION(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND (QMC_CUDA OR ENABLE_CUDA)" OFF)
 
