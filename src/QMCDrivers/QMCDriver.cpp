@@ -46,7 +46,8 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      Communicate* comm,
-                     const std::string& QMC_driver_type)
+                     const std::string& QMC_driver_type,
+                     bool enable_profiling)
     : MPIObjectBase(comm),
       Estimators(0),
       Traces(0),
@@ -58,7 +59,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
       H(h),
       wOut(0),
       driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
-      driver_scope_profiler_(false)
+      driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;
   AppendRun    = false;

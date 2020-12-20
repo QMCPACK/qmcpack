@@ -64,6 +64,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   std::string multi_tag("no");
   std::string warp_tag("no");
   std::string append_tag("no");
+  std::string profiling_tag("no");
 #if defined(QMC_CUDA)
   std::string gpu_tag("yes");
 #else
@@ -75,10 +76,12 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   aAttrib.add(multi_tag, "multiple");
   aAttrib.add(warp_tag, "warp");
   aAttrib.add(append_tag, "append");
+  aAttrib.add(profiling_tag, "profiling");
   aAttrib.add(gpu_tag, "gpu");
   aAttrib.add(das.traces_tag, "trace");
   aAttrib.put(cur);
   das.append_run                 = (append_tag == "yes");
+  das.enable_profiling           = (profiling_tag == "yes");
   das.what_to_do[SPACEWARP_MODE] = (warp_tag == "yes");
   das.what_to_do[MULTIPLE_MODE]  = (multi_tag == "yes");
   das.what_to_do[UPDATE_MODE]    = (update_mode == "pbyp");
@@ -232,7 +235,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
     VMCFactory fac(das.what_to_do.to_ulong(), cur);
-    new_driver.reset(fac.create(qmc_system, *primaryPsi, *primaryH, comm));
+    new_driver.reset(fac.create(qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling));
     //TESTING CLONE
     //TrialWaveFunction* psiclone=primaryPsi->makeClone(qmc_system);
     //qmcDriver = fac.create(qmc_system,*psiclone,*primaryH,particle_pool,hamiltonian_pool);
@@ -246,7 +249,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::DMC)
   {
     DMCFactory fac(das.what_to_do[UPDATE_MODE], das.what_to_do[GPU_MODE], cur);
-    new_driver.reset(fac.create(qmc_system, *primaryPsi, *primaryH, comm));
+    new_driver.reset(fac.create(qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling));
   }
   else if (das.new_run_type == QMCRunType::DMC_BATCH)
   {

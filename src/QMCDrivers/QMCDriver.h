@@ -99,7 +99,8 @@ public:
             TrialWaveFunction& psi,
             QMCHamiltonian& h,
             Communicate* comm,
-            const std::string& QMC_driver_type);
+            const std::string& QMC_driver_type,
+            bool enable_profiling = false);
 
   virtual ~QMCDriver() override;
 

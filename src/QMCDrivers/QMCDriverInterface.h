@@ -59,9 +59,9 @@ public:
   virtual unsigned long getDriverMode()                                 = 0;
   virtual ~QMCDriverInterface() {}
 
-  virtual void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) { }
+  virtual void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) {}
   virtual std::unique_ptr<BranchEngineType> getBranchEngine() { return nullptr; }
-  virtual void setNewBranchEngine(std::unique_ptr<SFNBranch>&& be) { }
+  virtual void setNewBranchEngine(std::unique_ptr<SFNBranch>&& be) {}
   virtual std::unique_ptr<SFNBranch> getNewBranchEngine() { return nullptr; }
 };
 

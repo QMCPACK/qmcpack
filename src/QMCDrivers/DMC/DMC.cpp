@@ -41,11 +41,8 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 /// Constructor.
-DMC::DMC(MCWalkerConfiguration& w,
-         TrialWaveFunction& psi,
-         QMCHamiltonian& h,
-         Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "DMC"),
+DMC::DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling)
+    : QMCDriver(w, psi, h, comm, "DMC", enable_profiling),
       KillNodeCrossing(0),
       BranchInterval(-1),
       L2("no"),
@@ -60,7 +57,7 @@ DMC::DMC(MCWalkerConfiguration& w,
   m_param.add(NonLocalMove, "nonlocalmove", "string");
   m_param.add(NonLocalMove, "nonlocalmoves", "string");
   m_param.add(mover_MaxAge, "MaxAge", "double");
-  m_param.add(L2,"L2_diffusion","string");
+  m_param.add(L2, "L2_diffusion", "string");
 }
 
 void DMC::resetUpdateEngines()
@@ -142,15 +139,15 @@ void DMC::resetUpdateEngines()
       {
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
-          bool do_L2  = L2=="yes";
-          if(!do_L2)
+          bool do_L2 = L2 == "yes";
+          if (!do_L2)
           {
-            app_log()<<"Using DMCUpdatePbyPWithRejectionFast\n";
+            app_log() << "Using DMCUpdatePbyPWithRejectionFast\n";
             Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
           }
           else
           {
-            app_log()<<"Using DMCUpdatePbyPL2\n";
+            app_log() << "Using DMCUpdatePbyPL2\n";
             Movers[ip] = new DMCUpdatePbyPL2(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
           }
           Movers[ip]->put(qmcNode);

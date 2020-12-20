@@ -42,6 +42,7 @@ public:
   {
     std::bitset<QMC_MODE_MAX> what_to_do;
     bool append_run         = false;
+    bool enable_profiling   = false;
     std::string traces_tag  = "none";
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };

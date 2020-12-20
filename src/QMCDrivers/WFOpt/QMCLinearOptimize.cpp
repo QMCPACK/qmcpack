@@ -667,10 +667,10 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
   {
 #if defined(QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, myComm);
+      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, myComm, false);
     else
 #endif
-      vmcEngine = std::make_unique<VMC>(W, Psi, H, myComm);
+      vmcEngine = std::make_unique<VMC>(W, Psi, H, myComm, false);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 
