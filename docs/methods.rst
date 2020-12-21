@@ -227,11 +227,11 @@ Additional information:
   recompute) by default when not using mixed precision. Recomputing
   introduces a performance penalty dependent on system size.
 
--  ``spinMoves`` Determines whether or not the spin variables are sampled following 
+- ``spinMoves`` Determines whether or not the spin variables are sampled following
   :cite:`Melton2016-1` and :cite:`Melton2016-2`. If a relativistic calculation is desired using pseudopotentials,
   spin variable sampling is required.
 
--  ``spinMass`` If spin sampling is on using ``spinMoves`` == yes, the spin mass determines the rate 
+- ``spinMass`` If spin sampling is on using ``spinMoves`` == yes, the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`.
 
 An example VMC section for a simple VMC run:
@@ -778,7 +778,7 @@ Additional information and recommendations:
  
  -  For reporting quantities such as a final energy and associated uncertainty,
     an average over many descent steps can be taken. The parameters for 
-   ``collection_step`` and ``compute_step`` help automate this task. 
+    ``collection_step`` and ``compute_step`` help automate this task.
     After the descent iteration specified by ``collection_step``, a 
     history of local energy values will be kept for determining a final 
     error and average, which will be computed and given in the output 
