@@ -139,7 +139,13 @@ public:
         lapLogPsi[i]  = new ValueVectorType(NumPtcls);
       }
       OffSet.resize(F.size());
-      int varoffset = myVars.Index[0];
+      int varoffset = -1;
+      for (int i = 0; i < myVars.size(); i++)
+      {
+        varoffset = myVars.Index[i];
+        if (varoffset != -1)
+          break;
+      }
       for (int i = 0; i < F.size(); ++i)
       {
         if (F[i] && F[i]->myVars.Index.size())
@@ -172,7 +178,7 @@ public:
         continue;
       if (active.recompute(kk))
         recalculate = true;
-      rcsingles[k] = true;
+      rcsingles[kk] = true;
     }
     if (recalculate)
     {
@@ -181,9 +187,9 @@ public:
         int kk = myVars.where(k);
         if (kk < 0)
           continue;
-        if (rcsingles[k])
+        if (rcsingles[kk])
         {
-          dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
+          dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(*lapLogPsi[kk])) - ValueType(Dot(P.G, *gradLogPsi[kk]));
         }
       }
     }
@@ -270,9 +276,9 @@ public:
         int kk = myVars.where(k);
         if (kk < 0)
           continue;
-        if (rcsingles[k])
+        if (rcsingles[kk])
         {
-          dlogpsi[kk] = dLogPsi[k];
+          dlogpsi[kk] = dLogPsi[kk];
         }
         //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }
