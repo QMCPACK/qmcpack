@@ -331,7 +331,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       tcur = tcur->next;
     }
   }
-  // Clean up the last driver. No further reuse needed.
+  // Destroy the last driver at the end of a loop with no further reuse of a driver needed.
   last_driver.reset(nullptr);
 }
 
@@ -615,8 +615,10 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver->run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
+    // transfer the states of a driver before its destruction
     last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
     last_branch_engine_new_unified_driver = qmc_driver->getNewBranchEngine();
+    // save the driver in a driver loop
     if (reuse)
       last_driver = std::move(qmc_driver);
     return true;
