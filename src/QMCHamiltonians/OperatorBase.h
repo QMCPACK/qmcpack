@@ -246,6 +246,7 @@ struct OperatorBase : public QMCTraits
    *@return the value of the Hamiltonian component
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
+  virtual Return_t evaluate2(ParticleSet& P);
   /** Evaluate the contribution of this component of multiple walkers */
   virtual void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list);
 

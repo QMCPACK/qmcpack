@@ -45,7 +45,7 @@ public:
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
-
+  Return_t evaluate2(ParticleSet& P) override;
   void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
@@ -154,7 +154,7 @@ private:
    * @param P particle set
    * @param Tmove whether Txy for Tmove is updated
    */
-  void evaluateImpl(ParticleSet& P, bool Tmove);
+  void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid=false);
 
   /** the actual implementation for batched walkers, used by mw_evaluate and mw_evaluateWithToperator
    * @param O_list the list of NonLocalECPotential in a walker batch
