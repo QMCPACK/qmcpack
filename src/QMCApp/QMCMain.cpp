@@ -610,10 +610,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer* t1 = timer_manager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
-    t1->start();
     qmc_driver->run();
-    t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
     // transfer the states of a driver before its destruction
     last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
