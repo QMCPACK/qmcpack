@@ -62,10 +62,15 @@ Additional information:
    CPU-only compilation, this option is not effective.
 
 -  ``profiling``: Performance profiling tools by default profile complete application executions.
-   This is largely unnecessary if the focus is a QMC section instead of any initialization.
+   This is largely unnecessary if the focus is a QMC section instead of any initialization
+   and additional QMC sections for equilibrating walkers.
    Setting this flag to ``yes`` for the QMC sections of interest and starting the tool with
    data collection paused from the beginning help reducing the profiling workflow
-   and amount of collected data.
+   and amount of collected data. Additional restriction may be imposed by profiling tools.
+   For example, NVIDIA profilers can only be turned on and off once and thus only the first QMC
+   section with ``profiling="yes"`` will be profiled.
+   VTune instead allows pause and resume for unlimited times and thus multiple selected QMC sections
+   can be profiled in a single run.
 
 -  ``checkpoint``: This enables and disables checkpointing and
    specifying the frequency of output. Possible values are:
