@@ -93,19 +93,10 @@ struct OperatorBase : public QMCTraits
     quantum_quantum
   };
 
-  enum data_locality
-  {
-    main_block = 0,
-    separate
-  };
-  
   ///quantum_domain of the (particle) operator, default = no_quantum_domain
   quantum_domains quantum_domain;
   ///energy domain of the operator (kinetic/potential), default = no_energy_domain
   energy_domains energy_domain;
-
-  ///data locality with respect to walker buffer
-  
   ///enum for UpdateMode
   enum
   {

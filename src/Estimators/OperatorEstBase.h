@@ -59,6 +59,8 @@ public:
     quantum_quantum
   };
 
+
+  ///data locality with respect to walker buffer
   enum data_locality
   {
     main_block = 0,
