@@ -50,7 +50,6 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            SetNonLocalMoveHandler snlm_handler)
     : MPIObjectBase(comm),
       qmcdriver_input_(std::move(input)),
-      branch_engine_(nullptr),
       QMCType(QMC_driver_type),
       population_(std::move(population)),
       Psi(psi),
@@ -136,7 +135,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   if (!branch_engine_)
   {
-    branch_engine_ = new SFNBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
+    branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
   //create and initialize estimator

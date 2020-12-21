@@ -50,7 +50,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
     : MPIObjectBase(comm),
       Estimators(0),
       Traces(0),
-      branchEngine(0),
       DriftModifier(0),
       qmcNode(NULL),
       QMCType(QMC_driver_type),
@@ -203,9 +202,9 @@ void QMCDriver::process(xmlNodePtr cur)
   int numCopies = (H1.empty()) ? 1 : H1.size();
   W.resetWalkerProperty(numCopies);
   //create branchEngine first
-  if (branchEngine == 0)
+  if (!branchEngine)
   {
-    branchEngine = new BranchEngineType(Tau, W.getGlobalNumWalkers());
+    branchEngine = std::make_unique<BranchEngineType>(Tau, W.getGlobalNumWalkers());
   }
   //execute the put function implemented by the derived classes
   put(cur);

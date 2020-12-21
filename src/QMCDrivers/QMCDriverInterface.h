@@ -16,13 +16,14 @@
 #include <vector>
 #include <libxml/parser.h>
 #include "QMCDrivers/DriverTraits.h"
+#include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/SFNBranch.h"
 #include "Utilities/RandomGenerator.h"
 
 namespace qmcplusplus
 {
 class QMCHamiltonian;
 class TrialWaveFunction;
-struct SimpleFixedNodeBranch;
 
 /** Creates a common base class pointer for QMCDriver and QMCDriverNew
  *  to share.
@@ -54,11 +55,14 @@ public:
   virtual void process(xmlNodePtr cur)                                  = 0;
   virtual QMCRunType getRunType()                                       = 0;
   virtual const std::string& get_root_name() const                      = 0;
-  virtual void setBranchEngine(BranchEngineType* be)                    = 0;
-  virtual BranchEngineType* getBranchEngine()                           = 0;
   virtual std::string getEngineName()                                   = 0;
   virtual unsigned long getDriverMode()                                 = 0;
   virtual ~QMCDriverInterface() {}
+
+  virtual void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) { }
+  virtual std::unique_ptr<BranchEngineType> getBranchEngine() { return nullptr; }
+  virtual void setNewBranchEngine(std::unique_ptr<SFNBranch>&& be) { }
+  virtual std::unique_ptr<SFNBranch> getNewBranchEngine() { return nullptr; }
 };
 
 } // namespace qmcplusplus

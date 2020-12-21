@@ -63,7 +63,7 @@ TEST_CASE("QMCDriverFactory create VMC_CUDA Driver", "[qmcapp]")
   bool okay = doc.parseFromString(driver_xml);
   REQUIRE(okay);
   xmlNodePtr node                           = doc.getRoot();
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(0, node);
+  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
   REQUIRE(das.new_run_type == QMCRunType::VMC);
 
   MinimalParticlePool mpp;
@@ -75,10 +75,9 @@ TEST_CASE("QMCDriverFactory create VMC_CUDA Driver", "[qmcapp]")
   std::string target("e");
   MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
-  std::unique_ptr<QMCDriverInterface> last_driver;
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), 0, node, das, *qmc_system, particle_pool,
-                                           wavefunction_pool, hamiltonian_pool, comm);
+  qmc_driver = driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool,
+                                              wavefunction_pool, hamiltonian_pool, comm);
   REQUIRE(qmc_driver != nullptr);
 }
 
