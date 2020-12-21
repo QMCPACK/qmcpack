@@ -24,9 +24,12 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   prefix = "ACForce";
   myName = prefix;
   Nions  = ions.getTotalNum();
+  
   hf_force.resize(Nions);
   pulay_force.resize(Nions);
   wf_grad.resize(Nions);
+  sw_force.resize(elns.getTotalNum());
+  delta=1e-5;
 };
 
 OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -56,6 +59,8 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
   Value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
+  computeElecGradEL(P,sw_force);
+  app_log()<<sw_force<<std::endl;
   return 0.0;
 };
 
@@ -123,4 +128,38 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
   }
 };
 
+void ACForce::computeElecGradEL(ParticleSet& P, ACForce::Force_t& Egrad)
+{
+  int nelec=P.getTotalNum();
+  RealType ep(0.0);
+  RealType em(0.0);
+
+  for(int iel=0; iel<nelec; iel++)
+  {
+    for(int dim=0; dim<OHMMS_DIM; dim++)
+    {
+      RealType r0=P.R[iel][dim];
+      
+      //Plus
+      RealType rp=r0+delta;
+      P.R[iel][dim]=rp;
+      P.update();
+
+      psi.evaluateLog(P);
+      ep=ham.evaluate2(P);
+
+      //minus
+      RealType rm=r0-delta;
+      P.R[iel][dim]=rm;
+      P.update();
+      psi.evaluateLog(P);
+      em=ham.evaluate2(P);
+
+      Egrad[iel][dim]=(ep-em)/(2.0*delta);
+      P.R[iel][dim]=r0;
+      P.update();
+      psi.evaluateLog(P);
+    }
+  }
+};
 } // namespace qmcplusplus

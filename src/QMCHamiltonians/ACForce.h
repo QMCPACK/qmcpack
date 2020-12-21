@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCHamiltonians/SpaceWarpTransformation.h"
 
 namespace qmcplusplus
 {
@@ -54,6 +55,9 @@ struct ACForce : public OperatorBase
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P);
 
+  void computeElecGradEL(ParticleSet& P, Force_t& gradEL); //This computes the 3N electron gradients of EL by finite differences.  
+  RealType delta; //finite difference time step
+
   //** Internal variables **/
   //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
   //  instantiation.  Making sure no crosstalk happens is the job of whatever clones this.
@@ -70,7 +74,9 @@ struct ACForce : public OperatorBase
   Force_t hf_force;
   Force_t pulay_force;
   Force_t wf_grad;
+  Force_t sw_force;
 
+  SpaceWarpTransformation swt;
   //Class info.
   std::string prefix;
   //We also set the following from the OperatorBase class.
