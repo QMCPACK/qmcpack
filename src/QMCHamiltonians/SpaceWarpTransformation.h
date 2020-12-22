@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_SPACEWARP_H
 
 #include "Configuration.h"
+#include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {
@@ -25,10 +26,31 @@ namespace qmcplusplus
  */
 struct SpaceWarpTransformation : public QMCTraits
 {
-  SpaceWarpTransformation(){};
+  typedef ParticleSet::ParticleScalar_t ParticleScalar_t;
+  typedef ParticleSet::ParticlePos_t Force_t;
+  typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
+
+  SpaceWarpTransformation(ParticleSet& elns, ParticleSet& ions);
   ~SpaceWarpTransformation(){};
 
   RealType f(RealType r); 
+  RealType df(RealType r); 
+
+  void computeSWTIntermediates(ParticleSet& P, ParticleSet& ions); //This computes the intermediate matrices required to build all 
+                                                      //space warp components and gradients.
+
+  void getSWT(int iat, ParticleScalar_t& w, Force_t& grad_w); //For each ion component iat, this generates all the required space warp quantities to 
+                                                              //generate the "space warp" contribution to the iat-th force component.
+                                                              
+  void computeSWT(ParticleSet& elec, ParticleSet& ions, Force_t& dEl, ParticleGradient_t& dlogpsi, Force_t& el_contribution, Force_t& psi_contribution); //Takes in precomputed grad(E_L) and grad(logPsi), and uses
+                                                                                                                        //this to compute the ZV (el_contribution) and ZB (psi_contribution) 
+                                                                                                                        //space warp contributions.                                                               
+
+  int myTableIndex;
+  int Nelec;
+  int Nions;
+  Matrix<RealType> warpval;  //Nelec x Nion matrix of F(|r_i-R_J|)
+  Matrix<PosType>  gradval;  //Nelec x Nion matrix of \nabla_i F(|r_i-R_J|)
 };
 }
 #endif

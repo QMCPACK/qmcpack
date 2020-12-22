@@ -74,7 +74,8 @@ struct ACForce : public OperatorBase
   Force_t hf_force;
   Force_t pulay_force;
   Force_t wf_grad;
-  Force_t sw_force;
+  Force_t sw_pulay;
+  Force_t sw_grad;
 
   SpaceWarpTransformation swt;
   //Class info.

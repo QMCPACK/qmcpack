@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H)
-    : ions(source), elns(target), psi(psi_in), ham(H), FirstForceIndex(-1), Nions(0)
+    : ions(source), elns(target), psi(psi_in), ham(H), FirstForceIndex(-1), Nions(0), swt(target,source)
 {
   prefix = "ACForce";
   myName = prefix;
@@ -28,8 +28,9 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   hf_force.resize(Nions);
   pulay_force.resize(Nions);
   wf_grad.resize(Nions);
-  sw_force.resize(elns.getTotalNum());
-  delta=1e-5;
+  sw_pulay.resize(Nions);
+  sw_grad.resize(Nions);
+  delta=1e-6;
 };
 
 OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -55,12 +56,16 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   hf_force    = 0;
   pulay_force = 0;
   wf_grad     = 0;
-
+  sw_pulay    = 0;
+  sw_grad     = 0;
+  Force_t el_grad;
+  el_grad.resize(P.getTotalNum());
+  el_grad=0;
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
   Value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
-  computeElecGradEL(P,sw_force);
-  app_log()<<sw_force<<std::endl;
+  computeElecGradEL(P,el_grad);
+  swt.computeSWT(P,ions,el_grad,P.G,sw_pulay,sw_grad);
   return 0.0;
 };
 
@@ -78,18 +83,21 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
       std::ostringstream wfgradname2;
       std::ostringstream swctname1;
       std::ostringstream swctname2;
+      std::ostringstream swctname3;
       hfname << prefix << "_hf_" << iat << "_" << x;
       pulayname << prefix << "_pulay_" << iat << "_" << x;
       wfgradname1 << prefix << "_Ewfgrad_" << iat << "_" << x;
       wfgradname2 << prefix << "_wfgrad_" << iat << "_" << x;
       swctname1 << prefix << "_swct1_" << iat << "_" << x;
       swctname2 << prefix << "_swct2_" << iat << "_" << x;
+      swctname3 << prefix << "_swct3_" << iat << "_" << x;
       plist.add(hfname.str());
       plist.add(pulayname.str());
       plist.add(wfgradname1.str());
       plist.add(wfgradname2.str());
       plist.add(swctname1.str());
       plist.add(swctname2.str());
+      plist.add(swctname3.str());
     }
   }
 };
@@ -106,8 +114,9 @@ void ACForce::setObservables(PropertySetType& plist)
       plist[myindex++] = -pulay_force[iat][iondim];
       plist[myindex++] = -Value * wf_grad[iat][iondim];
       plist[myindex++] = -wf_grad[iat][iondim];
-      plist[myindex++] = 0;
-      plist[myindex++] = 0;
+      plist[myindex++] = -sw_pulay[iat][iondim];
+      plist[myindex++] = -Value*sw_grad[iat][iondim];
+      plist[myindex++] = -sw_grad[iat][iondim];
     }
   }
 };
@@ -122,8 +131,9 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
       plist[myindex++] = -pulay_force[iat][iondim];
       plist[myindex++] = -Value * wf_grad[iat][iondim];
       plist[myindex++] = -wf_grad[iat][iondim];
-      plist[myindex++] = 0; 
-      plist[myindex++] = 0;
+      plist[myindex++] = -sw_pulay[iat][iondim];
+      plist[myindex++] = -Value*sw_grad[iat][iondim];
+      plist[myindex++] = -sw_grad[iat][iondim];
     }
   }
 };
