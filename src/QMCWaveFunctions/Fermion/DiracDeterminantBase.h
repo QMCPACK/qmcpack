@@ -57,7 +57,7 @@ public:
   DiracDeterminantBase& operator=(const DiracDeterminantBase& s) = delete;
 
   // get the SPO pointer
-  inline SPOSetPtr getPhi() const { return Phi; }
+  inline SPOSetPtr getPhi() const { return Phi.get(); }
 
   // get FirstIndex, Last Index
   inline int getFirstIndex() const { return FirstIndex; }
@@ -172,7 +172,7 @@ protected:
   /// Timers
   NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &BufferTimer, &SPOVTimer, &SPOVGLTimer;
   /// a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetPtr const Phi;
+  const std::unique_ptr<SPOSet> Phi;
   ///index of the first particle with respect to the particle set
   int FirstIndex;
   ///index of the last particle with respect to the particle set

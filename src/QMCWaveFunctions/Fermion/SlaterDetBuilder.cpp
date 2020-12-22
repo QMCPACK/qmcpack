@@ -410,6 +410,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     psi = sposet_builder_factory_.createSPOSet(cur);
   }
   psi->checkObject();
+  psi = psi->makeClone();
 
   int firstIndex = targetPtcl.first(spin_group);
   int lastIndex  = targetPtcl.last(spin_group);

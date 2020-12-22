@@ -329,7 +329,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
   Optimizable          = s.Optimizable;
 
   registerTimers();
-  Phi = (s.Phi->makeClone());
+  Phi.reset(s.Phi->makeClone());
   this->resize(s.NumPtcls, s.NumOrbitals);
   this->DetCalculator.resize(s.NumPtcls);
 }
