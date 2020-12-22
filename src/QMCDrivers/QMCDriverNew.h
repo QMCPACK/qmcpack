@@ -31,6 +31,7 @@
 #include "Configuration.h"
 #include "Utilities/PooledData.h"
 #include "Utilities/TimerManager.h"
+#include "Utilities/ScopedProfiler.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -116,7 +117,7 @@ protected:
 public:
   /// Constructor.
   QMCDriverNew(QMCDriverInput&& input,
-               MCPopulation& population,
+               MCPopulation&& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
                const std::string timer_prefix,
@@ -126,7 +127,7 @@ public:
 
   QMCDriverNew(QMCDriverNew&&) = default;
 
-  virtual ~QMCDriverNew();
+  virtual ~QMCDriverNew() override;
 
   ///return current step
   inline IndexType current() const { return current_step_; }
@@ -141,7 +142,7 @@ public:
    * of previous QMC runs for the simulation and "suffix"
    * is the suffix for the output file.
    */
-  void setStatus(const std::string& aname, const std::string& h5name, bool append);
+  void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
   /** add QMCHamiltonian/TrialWaveFunction pair for multiple
    * @param h QMCHamiltonian
@@ -150,28 +151,17 @@ public:
    * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
    * for energy difference evaluations.
    */
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override;
 
   void createRngsStepContexts(int num_crowds);
 
-  void putWalkers(std::vector<xmlNodePtr>& wset);
-
-  /** placate the legacy base class interface
-   */
-  void setBranchEngine(SimpleFixedNodeBranch* be)
-  {
-    throw std::runtime_error("You can not use the legacy SimpleFixedNodeBranch class with QMCDriverNew");
-  }
+  void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
   ///set the BranchEngineType
-  void setNewBranchEngine(SFNBranch* be) { branch_engine_ = be; }
-
-  /** placate the legacy base class interface
-   */
-  SimpleFixedNodeBranch* getBranchEngine() { return nullptr; }
+  void setNewBranchEngine(std::unique_ptr<SFNBranch>&& be) override { branch_engine_ = std::move(be); }
 
   ///return BranchEngineType*
-  SFNBranch* getNewBranchEngine() { return branch_engine_; }
+  std::unique_ptr<SFNBranch> getNewBranchEngine() override { return std::move(branch_engine_); }
 
   int addObservable(const std::string& aname);
 
@@ -188,17 +178,18 @@ public:
   //       inline std::vector<std::unique_ptr RandomGenerator_t*>& getRng() { return Rng; }
 
   ///return the i-th random generator
-  inline RandomGenerator_t& getRng(int i) { return (*Rng[i]); }
+  inline RandomGenerator_t& getRng(int i) override { return (*Rng[i]); }
 
-  std::string getEngineName() { return QMCType; }
-  unsigned long getDriverMode() { return qmc_driver_mode_.to_ulong(); }
+  std::string getEngineName() override { return QMCType; }
+  unsigned long getDriverMode() override { return qmc_driver_mode_.to_ulong(); }
 
-  IndexType get_living_walkers() const { return population_.get_walkers().size(); }
+  IndexType get_num_living_walkers() const { return population_.get_walkers().size(); }
+  IndexType get_num_dead_walkers() const { return population_.get_dead_walkers().size(); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
    */
-  bool put(xmlNodePtr cur) { return false; };
+  bool put(xmlNodePtr cur) override { return false; };
 
   /** QMCDriverNew driver second (3rd, 4th...) stage of constructing a valid driver
    *
@@ -208,7 +199,7 @@ public:
    *  \todo remove cur, the driver and all its child nodes should be completely processed before
    *        this stage of driver initialization is hit.
    */
-  virtual void process(xmlNodePtr cur) = 0;
+  virtual void process(xmlNodePtr cur) override = 0;
 
   /** Do common section starting tasks
    *
@@ -225,10 +216,10 @@ public:
   /** should be set in input don't see a reason to set individually
    * @param pbyp if true, use particle-by-particle update
    */
-  inline void setUpdateMode(bool pbyp) { qmc_driver_mode_[QMC_UPDATE_MODE] = pbyp; }
+  inline void setUpdateMode(bool pbyp) override { qmc_driver_mode_[QMC_UPDATE_MODE] = pbyp; }
 
-  void putTraces(xmlNodePtr txml) {}
-  void requestTraces(bool allow_traces) {}
+  void putTraces(xmlNodePtr txml) override {}
+  void requestTraces(bool allow_traces) override {}
   /** }@ */
 
 protected:
@@ -305,7 +296,7 @@ protected:
   std::string h5_file_root_;
 
   ///branch engine
-  SFNBranch* branch_engine_;
+  std::unique_ptr<SFNBranch> branch_engine_;
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 
@@ -343,7 +334,7 @@ protected:
 
 
   ///the entire (or on node) walker population
-  MCPopulation& population_;
+  MCPopulation population_;
 
   ///trial function
   TrialWaveFunction& Psi;
@@ -400,6 +391,11 @@ protected:
 
   DriverTimers timers_;
 
+  ///time the driver lifetime
+  ScopedTimer driver_scope_timer_;
+  ///profile the driver lifetime
+  ScopedProfiler driver_scope_profiler_;
+
 public:
   ///Copy Constructor (disabled).
   QMCDriverNew(const QMCDriverNew&) = delete;
@@ -423,7 +419,7 @@ public:
    *
    * virtual function with a default implementation
    */
-  virtual void recordBlock(int block);
+  virtual void recordBlock(int block) override;
 
   /** finalize a qmc section
    * @param block current block
@@ -435,7 +431,7 @@ public:
   bool finalize(int block, bool dumpwalkers = true);
 
   int rotation;
-  const std::string& get_root_name() const { return root_name_; }
+  const std::string& get_root_name() const override { return root_name_; }
   std::string getRotationName(std::string RootName);
   std::string getLastRotationName(std::string RootName);
 

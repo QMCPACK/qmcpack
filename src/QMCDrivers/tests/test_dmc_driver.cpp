@@ -91,7 +91,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(elec, psi, h, c);
+  DMC dmc_omp(elec, psi, h, c, false);
 
   const char* dmc_input = "<qmc method=\"dmc\"> \
    <parameter name=\"steps\">1</parameter> \
@@ -179,7 +179,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(elec, psi, h, c);
+  DMC dmc_omp(elec, psi, h, c, false);
 
   const char* dmc_input = "<qmc method=\"dmc\"> \
    <parameter name=\"steps\">1</parameter> \

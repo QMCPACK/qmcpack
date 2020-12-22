@@ -21,7 +21,10 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   std::string reconfig_str;
   parameter_set_.add(reconfig_str, "reconfiguration", "string");
   if (!reconfig_str.empty() && reconfig_str != "no" && reconfig_str != "runwhileincorrect")
-    throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.");
+    throw std::runtime_error(
+        "Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the "
+        "reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to "
+        "\"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.");
   reconfiguration_ = (reconfig_str == "runwhileincorrect");
   parameter_set_.add(NonLocalMove, "nonlocalmove", "string");
   parameter_set_.add(NonLocalMove, "nonlocalmoves", "string");
@@ -41,14 +44,14 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   parameter_set_.add(reserve_, "reserve", "double");
 
   parameter_set_.put(node);
-  
+
   // TODO: similar check for alpha and gamma
-  if(max_age_ < 0)
+  if (max_age_ < 0)
     throw std::runtime_error("Illegal input for MaxAge in DMC input section");
-  if(branch_interval_ < 0)
+  if (branch_interval_ < 0)
     throw std::runtime_error("Illegal input for branchInterval or substeps in DMC input section");
 
-  if(reserve_ < 1.0)
+  if (reserve_ < 1.0)
     throw std::runtime_error("You can only reserve walkers above the target walker count");
 }
 

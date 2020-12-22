@@ -41,7 +41,7 @@ namespace qmcplusplus
  *  masquerading as a C++ object.
  */
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
-                           MCPopulation& population,
+                           MCPopulation&& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            const std::string timer_prefix,
@@ -49,15 +49,16 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            const std::string& QMC_driver_type,
                            SetNonLocalMoveHandler snlm_handler)
     : MPIObjectBase(comm),
-      qmcdriver_input_(input),
-      branch_engine_(nullptr),
+      qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
-      population_(population),
+      population_(std::move(population)),
       Psi(psi),
       H(h),
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),
+      driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       setNonLocalMoveHandler_(snlm_handler)
 {
   rotation = 0;
@@ -136,7 +137,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   if (!branch_engine_)
   {
-    branch_engine_ = new SFNBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
+    branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
   //create and initialize estimator

@@ -43,11 +43,11 @@ QMCCostFunction::~QMCCostFunction()
   delete_iter(HDerivRecords.begin(), HDerivRecords.end());
 }
 
-void QMCCostFunction::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff)
+void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff)
 {
   if (FiniteDiff > 0)
   {
-    QMCTraits::ValueType dh = 1.0 / (2.0 * FiniteDiff);
+    QMCTraits::RealType dh = 1.0 / (2.0 * FiniteDiff);
     for (int i = 0; i < NumOptimizables; i++)
     {
       for (int j = 0; j < NumOptimizables; j++)

@@ -19,33 +19,34 @@
 
 namespace qmcplusplus
 {
-MCPopulation::MCPopulation()
-    : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr), num_ranks_(1), rank_(0)
-{}
-
 MCPopulation::MCPopulation(int num_ranks,
-                           MCWalkerConfiguration& mcwc,
+                           int this_rank,
+                           WalkerConfigurations& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian,
-                           int this_rank)
-    : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
+                           QMCHamiltonian* hamiltonian)
+    : trial_wf_(trial_wf),
+      elec_particle_set_(elecs),
+      hamiltonian_(hamiltonian),
+      num_ranks_(num_ranks),
+      rank_(this_rank),
+      walker_configs_ref_(mcwc)
 {
-  num_global_walkers_ = mcwc.GlobalNumWalkers;
-  num_local_walkers_  = mcwc.LocalNumWalkers;
-  num_particles_      = mcwc.getParticleNum();
+  num_global_walkers_ = mcwc.getGlobalNumWalkers();
+  num_local_walkers_  = mcwc.getActiveWalkers();
+  num_particles_      = elecs->getTotalNum();
 
   // MCWalkerConfiguration doesn't give actual number of groups
-  num_groups_ = mcwc.groups();
+  num_groups_ = elecs->groups();
   particle_group_indexes_.resize(num_groups_);
   for (int i = 0; i < num_groups_; ++i)
   {
-    particle_group_indexes_[i].first  = mcwc.first(i);
-    particle_group_indexes_[i].second = mcwc.last(i);
+    particle_group_indexes_[i].first  = elecs->first(i);
+    particle_group_indexes_[i].second = elecs->last(i);
   }
   ptclgrp_mass_.resize(num_groups_);
   for (int ig = 0; ig < num_groups_; ++ig)
-    ptclgrp_mass_[ig] = mcwc.Mass[ig];
+    ptclgrp_mass_[ig] = elecs->Mass[ig];
   ptclgrp_inv_mass_.resize(num_groups_);
   for (int ig = 0; ig < num_groups_; ++ig)
     ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
@@ -57,19 +58,12 @@ MCPopulation::MCPopulation(int num_ranks,
   }
 }
 
-MCPopulation::MCPopulation(int num_ranks,
-                           ParticleSet* elecs,
-                           TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian,
-                           int this_rank)
-    : num_particles_(elecs->R.size()),
-      trial_wf_(trial_wf),
-      elec_particle_set_(elecs),
-      hamiltonian_(hamiltonian),
-      num_ranks_(num_ranks),
-      rank_(this_rank)
-{}
-
+MCPopulation::~MCPopulation()
+{
+  // if there are active walkers, save them to lightweight walker configuration list.
+  if (walkers_.size())
+    saveWalkerConfigurations();
+}
 
 /** Default creates walkers equal to num_local_walkers_ and zeroed positions
  */
@@ -110,6 +104,9 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 
   for (auto& walker_ptr : walkers_)
     createWalker(walker_ptr);
+
+  for (int iw = 0; iw < std::min(walkers_.size(), walker_configs_ref_.WalkerList.size()); iw++)
+    *walkers_[iw] = *walker_configs_ref_[iw];
 
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
@@ -180,7 +177,7 @@ WalkerElementsRef MCPopulation::getWalkerElementsRef(const size_t index)
 std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
 {
   std::vector<WalkerElementsRef> walker_elements;
-  for(int iw = 0; iw < walkers_.size(); ++iw)
+  for (int iw = 0; iw < walkers_.size(); ++iw)
   {
     walker_elements.emplace_back(*walkers_[iw], *walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]);
   }
@@ -367,6 +364,13 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 //                   }
 //                 });
 // }
+
+void MCPopulation::saveWalkerConfigurations()
+{
+  walker_configs_ref_.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
+  for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
+    walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
+}
 
 
 } // namespace qmcplusplus

@@ -21,6 +21,7 @@ SET(PARTICLE
   ParticleSet.BC.cpp
   DynamicCoordinatesBuilder.cpp
   MCWalkerConfiguration.cpp
+  WalkerConfigurations.cpp
   SampleStack.cpp
   createDistanceTableAA.cpp
   createDistanceTableAB.cpp

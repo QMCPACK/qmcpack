@@ -64,7 +64,7 @@ public:
   /// Constructor.
   VMCBatched(QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
-             MCPopulation& pop,
+             MCPopulation&& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
              SampleStack& samples_,
