@@ -183,7 +183,8 @@ public:
   std::string getEngineName() override { return QMCType; }
   unsigned long getDriverMode() override { return qmc_driver_mode_.to_ulong(); }
 
-  IndexType get_living_walkers() const { return population_.get_walkers().size(); }
+  IndexType get_num_living_walkers() const { return population_.get_walkers().size(); }
+  IndexType get_num_dead_walkers() const { return population_.get_dead_walkers().size(); }
 
   /** @ingroup Legacy interface to be dropped
    *  @{

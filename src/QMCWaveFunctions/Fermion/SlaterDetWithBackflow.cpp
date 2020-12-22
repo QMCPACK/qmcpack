@@ -116,7 +116,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   RealType dh       = 0.00001;
   for (int k = 0; k < Dets.size(); k++)
   {
-    DiracDeterminantWithBackflow* Dets_ = (DiracDeterminantWithBackflow*)Dets[k];
+    DiracDeterminantWithBackflow* Dets_ = dynamic_cast<DiracDeterminantWithBackflow*>(Dets[k].get());
     Dets_->testGGG(P);
     for (int i = 0; i < Nvars; i++)
     {
@@ -139,7 +139,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
     L2 = 0.0;
     for (int k = 0; k < Dets.size(); k++)
     {
-      DiracDeterminantWithBackflow* Dets_ = (DiracDeterminantWithBackflow*)Dets[k];
+      DiracDeterminantWithBackflow* Dets_ = dynamic_cast<DiracDeterminantWithBackflow*>(Dets[k].get());
       Dets_->evaluateDerivatives(P, wfVars, dlogpsi, dhpsi, &G0, &L0, i);
     }
     for (int j = 0; j < Nvars; j++)

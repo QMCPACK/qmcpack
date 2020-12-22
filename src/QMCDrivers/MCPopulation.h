@@ -199,7 +199,7 @@ public:
 
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
   const UPtrVector<MCPWalker>& get_walkers() const { return walkers_; }
-  UPtrVector<MCPWalker>& get_dead_walkers() { return dead_walkers_; }
+  const UPtrVector<MCPWalker>& get_dead_walkers() const { return dead_walkers_; }
 
   UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
   UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
