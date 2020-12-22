@@ -82,11 +82,16 @@ void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVector<OperatorB
   std::vector<ValueType> tmp_dhpsioverpsi(nparam);
   for (int iw = 0; iw < O_list.size(); iw++)
   {
-    O_list[iw].get().evaluateValueAndDerivatives(P_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
     for (int j = 0; j < nparam; j++)
     {
-      dlogpsi.setValue(j, iw, tmp_dlogpsi[j]);
-      dhpsioverpsi.setValue(j, iw, tmp_dhpsioverpsi[j]);
+      tmp_dlogpsi[j] = dlogpsi.getValue(j, iw);
+    }
+
+    O_list[iw].get().evaluateValueAndDerivatives(P_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+
+    for (int j = 0; j < nparam; j++)
+    {
+      dhpsioverpsi.setValue(j, iw, dhpsioverpsi.getValue(j, iw) + tmp_dhpsioverpsi[j]);
     }
   }
 }
