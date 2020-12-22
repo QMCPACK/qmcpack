@@ -92,11 +92,9 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 
   dmcdriver.process(node);
   CHECK(dmcdriver.getNewBranchEngine() != nullptr);
-  CHECK(dmcdriver.get_living_walkers() == 32);
-  //  CHECK(population.get_num_global_walkers() == 32);
-  //  CHECK(population.get_num_local_walkers() == 32);
-  //  QMCTraits::IndexType reserved_walkers = population.get_num_local_walkers() + population.get_dead_walkers().size();
-  //  CHECK(reserved_walkers == 48);
+  CHECK(dmcdriver.get_num_living_walkers() == 8);
+  const QMCTraits::IndexType reserved_walkers = dmcdriver.get_num_living_walkers() + dmcdriver.get_num_dead_walkers();
+  CHECK(reserved_walkers == 10);
   // What else should we expect after process
 }
 

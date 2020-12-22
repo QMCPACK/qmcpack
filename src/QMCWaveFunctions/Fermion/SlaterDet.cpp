@@ -32,7 +32,7 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) : W
   for (int i = 0; i < Last.size(); ++i)
     Last[i] = targetPtcl.last(i) - 1;
 
-  Dets.resize(targetPtcl.groups(), nullptr);
+  Dets.resize(targetPtcl.groups());
 }
 
 ///destructor
@@ -49,7 +49,7 @@ void SlaterDet::add(Determinant_t* det, int ispin)
     APP_ABORT("SlaterDet::add(Determinant_t* det, int ispin) is alreaded instantiated.");
   }
   else
-    Dets[ispin] = det;
+    Dets[ispin].reset(det);
   Optimizable = Optimizable || det->Optimizable;
 }
 
