@@ -33,8 +33,10 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(2);
@@ -87,8 +89,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \
@@ -241,8 +243,10 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(4);
@@ -288,8 +292,8 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_2x1x1
   const char* particles = "<tmp> \

@@ -79,10 +79,6 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
   //initPropertyList();
 }
 
-///default destructor
-MCWalkerConfiguration::~MCWalkerConfiguration() { destroyWalkers(WalkerList.begin(), WalkerList.end()); }
-
-
 void MCWalkerConfiguration::createWalkers(int n)
 {
   const int old_nw = getActiveWalkers();
