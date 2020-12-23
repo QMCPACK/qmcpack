@@ -32,8 +32,7 @@ PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPool
     : WaveFunctionComponentBuilder(comm, els),
       ptclPool(psets),
       hfileID(-1),
-      rootNode(NULL),
-      myBasisSet(nullptr)
+      rootNode(NULL)
 {
   myParam = new PWParameterSet(myComm);
 }
@@ -192,9 +191,9 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.read(hfileID, "/electrons/kpoint_0/reduced_k");
   TwistAngle = TwistAngle_DP;
-  if (myBasisSet == nullptr)
+  if (!myBasisSet)
   {
-    myBasisSet = new PWBasis(TwistAngle);
+    myBasisSet = std::make_unique<PWBasis>(TwistAngle);
   }
   //Read the planewave basisset.
   //Note that the same data is opened here for each twist angle-avoids duplication in the
@@ -285,7 +284,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
       occBand[i] = i;
   }
   //going to take care of occ
-  psi->resize(myBasisSet, nb, true);
+  psi->resize(new PWBasis(*myBasisSet), nb, true);
   if (myParam->hasComplexData(hfileID)) //input is complex
   {
     //app_log() << "  PW coefficients are complex." << std::endl;
