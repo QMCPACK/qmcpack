@@ -431,7 +431,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet* elec = new ParticleSet;
+  auto elec = std::make_unique<ParticleSet>();
 
   elec->setName("elec");
   std::vector<int> agroup(2);
@@ -451,7 +451,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   elec->Lattice.R(2, 2) = 1.0;
 
   EinsplineSetBuilder::PtclPoolType ptcl_map;
-  ptcl_map["e"] = elec;
+  ptcl_map["e"] = elec.get();
 
   xmlNodePtr cur = NULL;
   EinsplineSetBuilder esb(*elec, ptcl_map, c, cur);

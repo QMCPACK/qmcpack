@@ -128,7 +128,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
   std::for_each(walker_elec_particle_sets_.begin(), walker_elec_particle_sets_.end(),
                 [this](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
-                  elec_ps_ptr.reset(new ParticleSet(*elec_particle_set_));
+                  elec_ps_ptr = std::make_unique<ParticleSet>(*elec_particle_set_);
                 });
 
   auto it_weps = walker_elec_particle_sets_.begin();
@@ -231,7 +231,7 @@ WalkerElementsRef MCPopulation::spawnWalker()
     //walkers_.back()->Properties = elec_particle_set_->Properties;
     //walkers_.back()->registerData();
 
-    walker_elec_particle_sets_.emplace_back(new ParticleSet(*elec_particle_set_));
+    walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));
     walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
     walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
     walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
