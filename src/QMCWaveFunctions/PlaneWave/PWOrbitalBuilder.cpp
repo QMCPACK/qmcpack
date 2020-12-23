@@ -124,14 +124,15 @@ WaveFunctionComponent* PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if (lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;
-        SPOSetPtr psi(createPW(cur, spin_group));
-        spomap[ref] = psi;
-        adet        = new Det_t(psi, firstIndex);
+        std::unique_ptr<SPOSet> psi(createPW(cur, spin_group));
+        spomap[ref] = psi.get();
+        adet        = new Det_t(std::move(psi), firstIndex);
       }
       else
       {
         app_log() << "  Reuse a PWOrbitalSet" << std::endl;
-        adet = new Det_t((*lit).second, firstIndex);
+        std::unique_ptr<SPOSet> psi((*lit).second->makeClone());
+        adet = new Det_t(std::move(psi), firstIndex);
       }
       app_log() << "    spin=" << spin_group << " id=" << id << " ref=" << ref << std::endl;
       if (adet)

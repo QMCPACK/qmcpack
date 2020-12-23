@@ -346,7 +346,7 @@ WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) cons
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const& spos, int first)
+MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first)
     : WaveFunctionComponent("MultiDiracDeterminant"),
       UpdateTimer(*timer_manager.createTimer(ClassName + "update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
@@ -361,11 +361,11 @@ MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const& spos, int first)
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "ExtraStuff")),
       NP(0),
       FirstIndex(first),
-      Phi(spos),
+      Phi(std::move(spos)),
       ciConfigList(nullptr),
       ReferenceDeterminant(0)
 {
-  (spos->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
+  (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
   IsCloned = false;
 

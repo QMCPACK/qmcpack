@@ -209,7 +209,7 @@ WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
   myclone->Optimizable = Optimizable;
   for (int i = 0; i < Dets.size(); ++i)
   {
-    Determinant_t* newD = Dets[i]->makeCopy(Dets[i]->getPhi()->makeClone());
+    Determinant_t* newD = Dets[i]->makeCopy(std::unique_ptr<SPOSet>(Dets[i]->getPhi()->makeClone()));
     myclone->add(newD, i);
   }
   return myclone;

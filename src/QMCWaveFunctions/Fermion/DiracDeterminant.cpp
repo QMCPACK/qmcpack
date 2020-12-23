@@ -29,8 +29,8 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>::DiracDeterminant(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase("DiracDeterminant", spos, first), ndelay(1), invRow_id(-1)
+DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first)
+    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first), ndelay(1), invRow_id(-1)
 {}
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
@@ -689,9 +689,9 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) const
+DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(spo);
+  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(std::move(spo));
   dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
   return dclone;
 }

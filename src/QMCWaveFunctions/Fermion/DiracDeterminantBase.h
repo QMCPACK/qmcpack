@@ -27,10 +27,12 @@ class DiracDeterminantBase : public WaveFunctionComponent
 {
 public:
   /** constructor
-   *@param spos the single-particle orbital set
+   *@param spos the single-particle orbital set.
+   *  shared_ptr is intended neither for sharing between spin up and down electrons nor for sharing between clones.
+   *  The sharing aspect is for the determinants used by the the multi-determinant slow implementation.
    *@param first index of the first particle
    */
-  DiracDeterminantBase(const std::string& class_name, SPOSetPtr const spos, int first = 0)
+  DiracDeterminantBase(const std::string& class_name, std::shared_ptr<SPOSet>&& spos, int first = 0)
       : WaveFunctionComponent(class_name),
         UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
         RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
@@ -38,11 +40,11 @@ public:
         BufferTimer(*timer_manager.createTimer(class_name + "::buffer", timer_level_fine)),
         SPOVTimer(*timer_manager.createTimer(class_name + "::spoval", timer_level_fine)),
         SPOVGLTimer(*timer_manager.createTimer(class_name + "::spovgl", timer_level_fine)),
-        Phi(spos),
+        Phi(std::move(spos)),
         FirstIndex(first),
-        LastIndex(first + spos->size()),
-        NumOrbitals(spos->size()),
-        NumPtcls(spos->size())
+        LastIndex(first + Phi->size()),
+        NumOrbitals(Phi->size()),
+        NumPtcls(Phi->size())
   {
     Optimizable  = Phi->isOptimizable();
     is_fermionic = true;
@@ -150,7 +152,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const = 0;
+  virtual DiracDeterminantBase* makeCopy(std::shared_ptr<SPOSet>&& spo) const = 0;
 
 #ifdef QMC_CUDA
   // expose GPU interfaces
@@ -171,8 +173,11 @@ public:
 protected:
   /// Timers
   NewTimer &UpdateTimer, &RatioTimer, &InverseTimer, &BufferTimer, &SPOVTimer, &SPOVGLTimer;
-  /// a set of single-particle orbitals used to fill in the  values of the matrix
-  const std::unique_ptr<SPOSet> Phi;
+  /** a set of single-particle orbitals used to fill in the  values of the matrix
+   *  shared_ptr is intended neither for sharing between spin up and down electrons nor for sharing between clones.
+   *  The sharing aspect is for the determinants used by the the multi-determinant slow implementation.
+   */
+  const std::shared_ptr<SPOSet> Phi;
   ///index of the first particle with respect to the particle set
   int FirstIndex;
   ///index of the last particle with respect to the particle set
