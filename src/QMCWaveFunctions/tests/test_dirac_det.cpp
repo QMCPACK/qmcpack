@@ -498,10 +498,10 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   auto spo_up = std::make_unique<EGOSet>(kup, k2up);
   auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
 
-  SpinorSet* spinor_set = new SpinorSet();
+  auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
-  DetType dd(spinor_set);
+  DetType dd(std::move(spinor_set));
   dd.resize(nelec, norb);
   app_log() << " nelec=" << nelec << " norb=" << norb << std::endl;
 

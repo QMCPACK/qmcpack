@@ -517,12 +517,12 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   auto spo_up = std::make_unique<EGOSet>(kup, k2up);
   auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
 
-  SpinorSet* spinor_set = new SpinorSet();
+  auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);
 
-  DiracDeterminant<>* dd = new DiracDeterminant<>(spinor_set);
+  DiracDeterminant<>* dd = new DiracDeterminant<>(std::move(spinor_set));
   dd->resize(nelec, norb);
 
   psi.addComponent(dd);
