@@ -33,9 +33,10 @@ struct SpaceWarpTransformation : public QMCTraits
   SpaceWarpTransformation(ParticleSet& elns, ParticleSet& ions);
   ~SpaceWarpTransformation(){};
 
-  RealType f(RealType r); 
-  RealType df(RealType r); 
+  RealType f(RealType r, RealType a); 
+  RealType df(RealType r, RealType a); 
 
+  void setPow(RealType swpow_in){swpow=swpow_in;};
   void computeSWTIntermediates(ParticleSet& P, ParticleSet& ions); //This computes the intermediate matrices required to build all 
                                                       //space warp components and gradients.
 
@@ -49,6 +50,8 @@ struct SpaceWarpTransformation : public QMCTraits
   int myTableIndex;
   int Nelec;
   int Nions;
+
+  RealType swpow; //Power of space warp transformation.  Right now, r^{-swpow}.
   Matrix<RealType> warpval;  //Nelec x Nion matrix of F(|r_i-R_J|)
   Matrix<PosType>  gradval;  //Nelec x Nion matrix of \nabla_i F(|r_i-R_J|)
 };

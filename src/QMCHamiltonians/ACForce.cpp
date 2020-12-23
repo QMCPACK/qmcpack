@@ -15,11 +15,12 @@
  */
 #include "ACForce.h"
 #include <sstream>
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {
 ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H)
-    : ions(source), elns(target), psi(psi_in), ham(H), FirstForceIndex(-1), Nions(0), swt(target,source)
+    : ions(source), elns(target), psi(psi_in), ham(H), FirstForceIndex(-1), Nions(0), useSpaceWarp(false), swt(target,source)
 {
   prefix = "ACForce";
   myName = prefix;
@@ -44,6 +45,25 @@ OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMC
   OperatorBase* myclone = new ACForce(qp, ions, psi_in, ham_in);
   return myclone;
 }
+
+bool ACForce::put(xmlNodePtr cur)
+{
+  std::string useSpaceWarpString("no");
+  std::string ionionforce("yes");
+  RealType swpow(4);
+  OhmmsAttributeSet attr;
+  attr.add(useSpaceWarpString,"spacewarp"); //"yes" or "no"
+  attr.add(swpow, "swpow"); //REal number"
+  attr.put(cur); 
+
+  useSpaceWarp = (useSpaceWarpString == "yes") || (useSpaceWarpString == "true");
+  swt.setPow(swpow);
+   
+  if(useSpaceWarp) app_log()<<"ACForce is using space warp with power="<<swpow<<std::endl;
+  else  app_log()<<"ACForce is not using space warp\n";  
+  
+}
+
 void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in)
 {
   //The following line is modified
@@ -64,8 +84,12 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
   Value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
-  computeElecGradEL(P,el_grad);
-  swt.computeSWT(P,ions,el_grad,P.G,sw_pulay,sw_grad);
+  
+  if(useSpaceWarp)
+  {
+    computeElecGradEL(P,el_grad);
+    swt.computeSWT(P,ions,el_grad,P.G,sw_pulay,sw_grad);
+  }
   return 0.0;
 };
 
@@ -81,23 +105,28 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
       std::ostringstream pulayname;
       std::ostringstream wfgradname1;
       std::ostringstream wfgradname2;
-      std::ostringstream swctname1;
-      std::ostringstream swctname2;
-      std::ostringstream swctname3;
       hfname << prefix << "_hf_" << iat << "_" << x;
       pulayname << prefix << "_pulay_" << iat << "_" << x;
       wfgradname1 << prefix << "_Ewfgrad_" << iat << "_" << x;
       wfgradname2 << prefix << "_wfgrad_" << iat << "_" << x;
-      swctname1 << prefix << "_swct1_" << iat << "_" << x;
-      swctname2 << prefix << "_swct2_" << iat << "_" << x;
-      swctname3 << prefix << "_swct3_" << iat << "_" << x;
+
       plist.add(hfname.str());
       plist.add(pulayname.str());
       plist.add(wfgradname1.str());
       plist.add(wfgradname2.str());
-      plist.add(swctname1.str());
-      plist.add(swctname2.str());
-      plist.add(swctname3.str());
+
+      if(useSpaceWarp)
+      {
+        std::ostringstream swctname1;
+        std::ostringstream swctname2;
+        std::ostringstream swctname3;
+        swctname1 << prefix << "_swct1_" << iat << "_" << x;
+        swctname2 << prefix << "_swct2_" << iat << "_" << x;
+        swctname3 << prefix << "_swct3_" << iat << "_" << x;
+        plist.add(swctname1.str());
+        plist.add(swctname2.str());
+        plist.add(swctname3.str());
+      }
     }
   }
 };
@@ -114,9 +143,12 @@ void ACForce::setObservables(PropertySetType& plist)
       plist[myindex++] = -pulay_force[iat][iondim];
       plist[myindex++] = -Value * wf_grad[iat][iondim];
       plist[myindex++] = -wf_grad[iat][iondim];
-      plist[myindex++] = -sw_pulay[iat][iondim];
-      plist[myindex++] = -Value*sw_grad[iat][iondim];
-      plist[myindex++] = -sw_grad[iat][iondim];
+      if(useSpaceWarp)
+      {
+        plist[myindex++] = -sw_pulay[iat][iondim];
+        plist[myindex++] = -Value*sw_grad[iat][iondim];
+        plist[myindex++] = -sw_grad[iat][iondim];
+      }
     }
   }
 };
@@ -131,9 +163,12 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
       plist[myindex++] = -pulay_force[iat][iondim];
       plist[myindex++] = -Value * wf_grad[iat][iondim];
       plist[myindex++] = -wf_grad[iat][iondim];
-      plist[myindex++] = -sw_pulay[iat][iondim];
-      plist[myindex++] = -Value*sw_grad[iat][iondim];
-      plist[myindex++] = -sw_grad[iat][iondim];
+      if(useSpaceWarp)
+      {
+        plist[myindex++] = -sw_pulay[iat][iondim];
+        plist[myindex++] = -Value*sw_grad[iat][iondim];
+        plist[myindex++] = -sw_grad[iat][iondim];
+      }
     }
   }
 };

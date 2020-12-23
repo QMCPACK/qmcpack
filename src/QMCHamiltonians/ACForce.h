@@ -34,7 +34,7 @@ struct ACForce : public OperatorBase
   //ACForce(const ACForce& ac)  {};
 
   /** I/O Routines */
-  bool put(xmlNodePtr cur) { return true; };
+  bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const { return true; };
 
   /** Cloning **/
@@ -77,6 +77,7 @@ struct ACForce : public OperatorBase
   Force_t sw_pulay;
   Force_t sw_grad;
 
+  bool useSpaceWarp;
   SpaceWarpTransformation swt;
   //Class info.
   std::string prefix;
