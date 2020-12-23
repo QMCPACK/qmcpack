@@ -30,7 +30,7 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   wf_grad.resize(Nions);
   sw_pulay.resize(Nions);
   sw_grad.resize(Nions);
-  delta=1e-6;
+  delta=1e-4;
 };
 
 OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -143,18 +143,17 @@ void ACForce::computeElecGradEL(ParticleSet& P, ACForce::Force_t& Egrad)
   int nelec=P.getTotalNum();
   RealType ep(0.0);
   RealType em(0.0);
-
+  RealType e0(0.0);
   for(int iel=0; iel<nelec; iel++)
   {
     for(int dim=0; dim<OHMMS_DIM; dim++)
     {
       RealType r0=P.R[iel][dim];
-      
+      ep=0; em=0; 
       //Plus
       RealType rp=r0+delta;
       P.R[iel][dim]=rp;
       P.update();
-
       psi.evaluateLog(P);
       ep=ham.evaluate2(P);
 

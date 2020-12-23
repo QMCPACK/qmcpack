@@ -37,7 +37,7 @@ void SpaceWarpTransformation::computeSWTIntermediates(ParticleSet& P, ParticleSe
       gradval[iel][ionid]=-dr[ionid]*(df(dist[ionid])/dist[ionid]); //because there's a -1 in distance table displacement definition.  R-r :(. 
     }
   }
-
+ 
 }
 
 void SpaceWarpTransformation::getSWT(int iat, ParticleScalar_t& w, Force_t& grad_w)
@@ -70,21 +70,30 @@ void SpaceWarpTransformation::computeSWT(ParticleSet& P, ParticleSet& ions, Forc
     
   for(size_t iat=0; iat<Nions; iat++)
   {
+    w=0; gradw=0;
     getSWT(iat,w,gradw);
-    
     for(size_t iel=0; iel<Nelec; iel++)
     {
-      el_contribution+=w[iel]*dEl[iel];
+      el_contribution[iat]+=w[iel]*dEl[iel];
 
       #if defined(QMC_COMPLEX)
       convert(dlogpsi[iel],gwfn);
       #else
       gwfn=dlogpsi[iel];
       #endif 
-      psi_contribution[iat]=w[iel]*gwfn+0.5*gradw[iel];
+      psi_contribution[iat]+=w[iel]*gwfn+0.5*gradw[iel];
     }
     
   }
+  //REMOVE ME
+  //app_log()<<"FINAL SPACE WARP TRANSFORM\n";
+  //app_log()<<" Using dEl="<<dEl<<std::endl;
+  //app_log()<<" Using dlogpsi="<<dlogpsi<<std::endl;
+
+  //app_log()<<"Space warp EL piece\n";
+  //app_log()<<" EL = "<<el_contribution<<std::endl;
+  //app_log()<<"Space warp logpsi piece\n";
+  //app_log()<<" psipiece = "<<psi_contribution<<std::endl;
 }
 
 /*void SpaceWarpTransformation::sw(ParticleSet& P, ParticleSet& ions, int iat, ParticleScalar_t& sw_vals, Force_t& sw_grads)
