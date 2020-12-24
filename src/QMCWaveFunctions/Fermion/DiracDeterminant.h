@@ -52,7 +52,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminant(SPOSetPtr const spos, int first = 0);
+  DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first = 0);
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s) = delete;
@@ -173,7 +173,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminant* makeCopy(SPOSet* spo) const override;
+  DiracDeterminant* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 

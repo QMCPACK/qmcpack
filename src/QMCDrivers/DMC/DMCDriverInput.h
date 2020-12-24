@@ -36,6 +36,7 @@ public:
   double get_alpha() const { return alpha_; }
   double get_gamma() const { return gamma_; }
   RealType get_reserve() const { return reserve_; }
+
 private:
   /** @ingroup Parameters for DMC Driver
    *  @{
@@ -59,11 +60,10 @@ private:
   IndexType max_age_ = 10;
   /// reserved walkers for population growth
   RealType reserve_ = 1.0;
-  double alpha_ = 0.0;
-  double gamma_ = 0.0;
+  double alpha_     = 0.0;
+  double gamma_     = 0.0;
   /** @} */
 public:
-
   friend std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& vmci);
 };
 

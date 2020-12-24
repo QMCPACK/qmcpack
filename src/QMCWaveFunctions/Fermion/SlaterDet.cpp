@@ -32,7 +32,7 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) : W
   for (int i = 0; i < Last.size(); ++i)
     Last[i] = targetPtcl.last(i) - 1;
 
-  Dets.resize(targetPtcl.groups(), nullptr);
+  Dets.resize(targetPtcl.groups());
 }
 
 ///destructor
@@ -49,7 +49,7 @@ void SlaterDet::add(Determinant_t* det, int ispin)
     APP_ABORT("SlaterDet::add(Determinant_t* det, int ispin) is alreaded instantiated.");
   }
   else
-    Dets[ispin] = det;
+    Dets[ispin].reset(det);
   Optimizable = Optimizable || det->Optimizable;
 }
 
@@ -209,7 +209,7 @@ WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
   myclone->Optimizable = Optimizable;
   for (int i = 0; i < Dets.size(); ++i)
   {
-    Determinant_t* newD = Dets[i]->makeCopy(Dets[i]->getPhi()->makeClone());
+    Determinant_t* newD = Dets[i]->makeCopy(std::unique_ptr<SPOSet>(Dets[i]->getPhi()->makeClone()));
     myclone->add(newD, i);
   }
   return myclone;

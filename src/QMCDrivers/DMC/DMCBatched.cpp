@@ -35,11 +35,11 @@ using WP = WalkerProperties::Indexes;
  */
 DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
                        DMCDriverInput&& input,
-                       MCPopulation& pop,
+                       MCPopulation&& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h,
+    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h,
                    "DMCBatched::", comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
@@ -548,7 +548,7 @@ bool DMCBatched::run()
     dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
         ? qmcdriver_input_.get_recalculate_properties_period()
         : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
-    dmc_state.recomputing_blocks = qmcdriver_input_.get_blocks_between_recompute();
+    dmc_state.recomputing_blocks            = qmcdriver_input_.get_blocks_between_recompute();
 
     for (UPtr<Crowd>& crowd : crowds_)
       crowd->startBlock(qmcdriver_input_.get_max_steps());

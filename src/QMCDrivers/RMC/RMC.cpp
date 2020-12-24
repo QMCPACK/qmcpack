@@ -252,7 +252,7 @@ void RMC::resetRun()
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
     // wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     wClones[ip]->reptile = W.ReptileList[ip];
     //app_log()<<"Thread # "<<ip<< std::endl;

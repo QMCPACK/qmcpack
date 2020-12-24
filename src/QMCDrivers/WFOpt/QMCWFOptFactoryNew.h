@@ -34,7 +34,7 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
                                        MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
-                                       MCPopulation& pop,
+                                       MCPopulation&& pop,
                                        SampleStack& samples,
                                        Communicate* comm);
 
@@ -43,7 +43,7 @@ QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
                                                               MCWalkerConfiguration& w,
                                                               TrialWaveFunction& psi,
                                                               QMCHamiltonian& h,
-                                                              MCPopulation& pop,
+                                                              MCPopulation&& pop,
                                                               SampleStack& samples,
                                                               Communicate* comm);
 } // namespace qmcplusplus

@@ -37,8 +37,9 @@ using WP = WalkerProperties::Indexes;
 DMCcuda::DMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "DMCcuda"),
+                 Communicate* comm,
+                 bool enable_profiling)
+    : QMCDriver(w, psi, h, comm, "DMCcuda", enable_profiling),
       myWarmupSteps(0),
       Mover(0),
       NLop(w.getTotalNum()),
@@ -346,7 +347,7 @@ void DMCcuda::resetUpdateEngine()
     W.loadEnsemble();
     branchEngine->initWalkerController(W, false, false);
     Mover = new DMCUpdatePbyPWithRejectionFast(W, Psi, H, Random);
-    Mover->resetRun(branchEngine, Estimators, nullptr, DriftModifier);
+    Mover->resetRun(branchEngine.get(), Estimators, nullptr, DriftModifier);
     //Mover->initWalkersForPbyP(W.begin(),W.end());
   }
   else

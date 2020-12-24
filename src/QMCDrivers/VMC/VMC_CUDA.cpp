@@ -33,8 +33,9 @@ namespace qmcplusplus
 VMCcuda::VMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "VMCcuda"),
+                 Communicate* comm,
+                 bool enable_profiling)
+    : QMCDriver(w, psi, h, comm, "VMCcuda", enable_profiling),
       UseDrift("yes"),
       myPeriod4WalkerDump(0),
       w_beta(0.0),

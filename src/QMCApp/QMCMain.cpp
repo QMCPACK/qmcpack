@@ -320,7 +320,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       if (cname == "qmc")
       {
         //prevent completed is set
-        bool success = executeQMCSection(tcur, iter > 0);
+        bool success = executeQMCSection(tcur, true);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
@@ -331,6 +331,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       tcur = tcur->next;
     }
   }
+  // Destroy the last driver at the end of a loop with no further reuse of a driver needed.
+  last_driver.reset(nullptr);
 }
 
 bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
@@ -558,6 +560,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 
 /** prepare for a QMC run
  * @param cur qmc element
+ * @param reuse if true, the current call is from a loop
  * @return true, if a valid QMCDriver is set.
  */
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
@@ -566,24 +569,28 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run              = false;
 
-  if (!population_)
-  {
-    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(),
-                                       hamPool->getPrimary(), myComm->rank()));
-  }
-  if (reuse)
+  if (reuse && last_driver)
     qmc_driver = std::move(last_driver);
   else
   {
     QMCDriverFactory driver_factory;
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
-    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
-                                             *ptclPool, *psiPool, *hamPool, *population_, myComm);
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+
+    qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
     append_run = das.append_run;
   }
 
   if (qmc_driver)
   {
+    if (last_branch_engine_legacy_driver)
+    {
+      last_branch_engine_legacy_driver->resetRun(cur);
+      qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
+    }
+
+    if (last_branch_engine_new_unified_driver)
+      qmc_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
+
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
@@ -603,12 +610,14 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer* t1 = timer_manager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
-    t1->start();
     qmc_driver->run();
-    t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    last_driver = std::move(qmc_driver);
+    // transfer the states of a driver before its destruction
+    last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
+    last_branch_engine_new_unified_driver = qmc_driver->getNewBranchEngine();
+    // save the driver in a driver loop
+    if (reuse)
+      last_driver = std::move(qmc_driver);
     return true;
   }
   else

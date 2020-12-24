@@ -19,17 +19,18 @@
 
 namespace qmcplusplus
 {
-MCPopulation::MCPopulation()
-    : trial_wf_(nullptr), elec_particle_set_(nullptr), hamiltonian_(nullptr), num_ranks_(1), rank_(0)
-{}
-
 MCPopulation::MCPopulation(int num_ranks,
+                           int this_rank,
                            WalkerConfigurations& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian,
-                           int this_rank)
-    : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
+                           QMCHamiltonian* hamiltonian)
+    : trial_wf_(trial_wf),
+      elec_particle_set_(elecs),
+      hamiltonian_(hamiltonian),
+      num_ranks_(num_ranks),
+      rank_(this_rank),
+      walker_configs_ref_(mcwc)
 {
   num_global_walkers_ = mcwc.getGlobalNumWalkers();
   num_local_walkers_  = mcwc.getActiveWalkers();
@@ -57,19 +58,12 @@ MCPopulation::MCPopulation(int num_ranks,
   }
 }
 
-MCPopulation::MCPopulation(int num_ranks,
-                           ParticleSet* elecs,
-                           TrialWaveFunction* trial_wf,
-                           QMCHamiltonian* hamiltonian,
-                           int this_rank)
-    : num_particles_(elecs->R.size()),
-      trial_wf_(trial_wf),
-      elec_particle_set_(elecs),
-      hamiltonian_(hamiltonian),
-      num_ranks_(num_ranks),
-      rank_(this_rank)
-{}
-
+MCPopulation::~MCPopulation()
+{
+  // if there are active walkers, save them to lightweight walker configuration list.
+  if (walkers_.size())
+    saveWalkerConfigurations();
+}
 
 /** Default creates walkers equal to num_local_walkers_ and zeroed positions
  */
@@ -111,6 +105,9 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   for (auto& walker_ptr : walkers_)
     createWalker(walker_ptr);
 
+  for (int iw = 0; iw < std::min(walkers_.size(), walker_configs_ref_.WalkerList.size()); iw++)
+    *walkers_[iw] = *walker_configs_ref_[iw];
+
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
   {
@@ -131,7 +128,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
   std::for_each(walker_elec_particle_sets_.begin(), walker_elec_particle_sets_.end(),
                 [this](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
-                  elec_ps_ptr.reset(new ParticleSet(*elec_particle_set_));
+                  elec_ps_ptr = std::make_unique<ParticleSet>(*elec_particle_set_);
                 });
 
   auto it_weps = walker_elec_particle_sets_.begin();
@@ -180,7 +177,7 @@ WalkerElementsRef MCPopulation::getWalkerElementsRef(const size_t index)
 std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
 {
   std::vector<WalkerElementsRef> walker_elements;
-  for(int iw = 0; iw < walkers_.size(); ++iw)
+  for (int iw = 0; iw < walkers_.size(); ++iw)
   {
     walker_elements.emplace_back(*walkers_[iw], *walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]);
   }
@@ -234,7 +231,7 @@ WalkerElementsRef MCPopulation::spawnWalker()
     //walkers_.back()->Properties = elec_particle_set_->Properties;
     //walkers_.back()->registerData();
 
-    walker_elec_particle_sets_.emplace_back(new ParticleSet(*elec_particle_set_));
+    walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));
     walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
     walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
     walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
@@ -367,6 +364,13 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 //                   }
 //                 });
 // }
+
+void MCPopulation::saveWalkerConfigurations()
+{
+  walker_configs_ref_.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
+  for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
+    walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
+}
 
 
 } // namespace qmcplusplus
