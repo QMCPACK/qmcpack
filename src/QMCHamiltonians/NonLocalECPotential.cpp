@@ -53,7 +53,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   //els.resizeSphere(NumIons);
   PP.resize(NumIons, nullptr);
   prefix = "FNL";
-  PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
+  PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
   PulayTerm.resize(NumIons);
   UpdateMode.set(NONLOCAL, 1);
   nlpp_jobs.resize(els.groups());
@@ -63,17 +63,6 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
     nlpp_jobs[ig].reserve(2 * els.groupsize(ig));
   }
 }
-
-///destructor
-NonLocalECPotential::~NonLocalECPotential()
-{
-  delete_iter(PPset.begin(), PPset.end());
-  //map<int,NonLocalECPComponent*>::iterator pit(PPset.begin()), pit_end(PPset.end());
-  //while(pit != pit_end) {
-  //   delete (*pit).second; ++pit;
-  //}
-}
-
 
 #if !defined(REMOVE_TRACEMANAGER)
 void NonLocalECPotential::contribute_particle_quantities() { request.contribute_array(myName); }
@@ -529,25 +518,20 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
   }
 }
 
-void NonLocalECPotential::addComponent(int groupID, NonLocalECPComponent* ppot)
+void NonLocalECPotential::addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& ppot)
 {
   for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
-      PP[iat] = ppot;
-  PPset[groupID] = ppot;
+      PP[iat] = ppot.get();
+  PPset[groupID] = std::move(ppot);
 }
 
 OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
-  {
     if (PPset[ig])
-    {
-      NonLocalECPComponent* ppot = PPset[ig]->makeClone(qp);
-      myclone->addComponent(ig, ppot);
-    }
-  }
+      myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));
   return myclone;
 }
 

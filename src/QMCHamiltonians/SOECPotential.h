@@ -22,8 +22,6 @@ class SOECPotential : public OperatorBase
 public:
   SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
-  ~SOECPotential();
-
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
@@ -38,14 +36,14 @@ public:
 
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
-  void addComponent(int groupID, SOECPComponent* pp);
+  void addComponent(int groupID, std::unique_ptr<SOECPComponent>&& pp);
 
   void setRandomGenerator(RandomGenerator_t* rng) override { myRNG = rng; }
 
 protected:
   RandomGenerator_t* myRNG;
   std::vector<SOECPComponent*> PP;
-  std::vector<SOECPComponent*> PPset;
+  std::vector<std::unique_ptr<SOECPComponent>> PPset;
   ParticleSet& IonConfig;
   TrialWaveFunction& Psi;
 
