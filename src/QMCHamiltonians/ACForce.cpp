@@ -116,18 +116,19 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
       plist.add(wfgradname1.str());
       plist.add(wfgradname2.str());
 
-      if(useSpaceWarp)
-      {
-        std::ostringstream swctname1;
-        std::ostringstream swctname2;
-        std::ostringstream swctname3;
-        swctname1 << prefix << "_swct1_" << iat << "_" << x;
-        swctname2 << prefix << "_swct2_" << iat << "_" << x;
-        swctname3 << prefix << "_swct3_" << iat << "_" << x;
-        plist.add(swctname1.str());
-        plist.add(swctname2.str());
-        plist.add(swctname3.str());
-      }
+      //Remove when ACForce is production ready.
+//      if(useSpaceWarp)
+//      {
+//        std::ostringstream swctname1;
+//        std::ostringstream swctname2;
+//        std::ostringstream swctname3;
+//        swctname1 << prefix << "_swct1_" << iat << "_" << x;
+//        swctname2 << prefix << "_swct2_" << iat << "_" << x;
+//        swctname3 << prefix << "_swct3_" << iat << "_" << x;
+//        plist.add(swctname1.str());
+//        plist.add(swctname2.str());
+//        plist.add(swctname3.str());
+//      }
     }
   }
 };
@@ -141,15 +142,17 @@ void ACForce::setObservables(PropertySetType& plist)
       //Flipping the sign, since these terms currently store d/dR values.
       // add the minus one to be a force.
       plist[myindex++] = -hf_force[iat][iondim];
-      plist[myindex++] = -pulay_force[iat][iondim];
-      plist[myindex++] = -Value * wf_grad[iat][iondim];
-      plist[myindex++] = -wf_grad[iat][iondim];
-      if(useSpaceWarp)
-      {
-        plist[myindex++] = -sw_pulay[iat][iondim];
-        plist[myindex++] = -Value*sw_grad[iat][iondim];
-        plist[myindex++] = -sw_grad[iat][iondim];
-      }
+      plist[myindex++] = -(pulay_force[iat][iondim]+sw_pulay[iat][iondim]);
+      plist[myindex++] = -Value * (wf_grad[iat][iondim]+sw_grad[iat][iondim]);
+      plist[myindex++] = -(wf_grad[iat][iondim]+sw_grad[iat][iondim]);
+     
+      //Remove when ACForce is production ready
+//      if(useSpaceWarp)
+//      {
+//        plist[myindex++] = -sw_pulay[iat][iondim];
+//        plist[myindex++] = -Value*sw_grad[iat][iondim];
+//        plist[myindex++] = -sw_grad[iat][iondim];
+//      }
     }
   }
 };
@@ -161,15 +164,15 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
     for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
     {
       plist[myindex++] = -hf_force[iat][iondim];
-      plist[myindex++] = -pulay_force[iat][iondim];
-      plist[myindex++] = -Value * wf_grad[iat][iondim];
-      plist[myindex++] = -wf_grad[iat][iondim];
-      if(useSpaceWarp)
-      {
-        plist[myindex++] = -sw_pulay[iat][iondim];
-        plist[myindex++] = -Value*sw_grad[iat][iondim];
-        plist[myindex++] = -sw_grad[iat][iondim];
-      }
+      plist[myindex++] = -(pulay_force[iat][iondim]+sw_pulay[iat][iondim]);
+      plist[myindex++] = -Value * (wf_grad[iat][iondim]+sw_grad[iat][iondim]);
+      plist[myindex++] = -(wf_grad[iat][iondim]+sw_grad[iat][iondim]);
+//      if(useSpaceWarp)
+//      {
+//        plist[myindex++] = -sw_pulay[iat][iondim];
+//        plist[myindex++] = -Value*sw_grad[iat][iondim];
+//        plist[myindex++] = -sw_grad[iat][iondim];
+//      }
     }
   }
 };
