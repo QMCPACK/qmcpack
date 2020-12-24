@@ -19,10 +19,9 @@
 namespace qmcplusplus
 {
 /** @ingroup hamiltonian
- *\brief Calculates the AA Coulomb potential using PBCs
+ *\brief This implements the differential space warp transformation for ZVZB estimators given by Sorella & Capriotti
+ *       J. Chem. Phys., 133, 23411 (2010), https://doi.org/10.1063/1.3516208 
  *
- * Functionally identical to CoulombPBCAB but uses a templated version of
- * LRHandler.
  */
 struct SpaceWarpTransformation : public QMCTraits
 {
@@ -33,10 +32,12 @@ struct SpaceWarpTransformation : public QMCTraits
   SpaceWarpTransformation(ParticleSet& elns, ParticleSet& ions);
   ~SpaceWarpTransformation(){};
 
-  RealType f(RealType r); 
-  RealType df(RealType r); 
+ 
+  RealType f(RealType r);  //space warp transformation function F.
+  RealType df(RealType r); //The gradient of F(r)
 
-  void setPow(RealType swpow_in){swpow=swpow_in;};
+  void setPow(RealType swpow_in){swpow=swpow_in;}; //This sets the exponent for the power law space warp transformation.
+
   void computeSWTIntermediates(ParticleSet& P, ParticleSet& ions); //This computes the intermediate matrices required to build all 
                                                       //space warp components and gradients.
 

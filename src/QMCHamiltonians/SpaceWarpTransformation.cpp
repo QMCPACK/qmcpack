@@ -22,7 +22,9 @@ SpaceWarpTransformation::RealType SpaceWarpTransformation::df(RealType r)
 {
   return -swpow*std::pow(r,-(swpow+1));
 }
-
+//Space warp functions have the form w_I(r_i) = F(|r_i-R_I)/Sum_J F(|r_i-R_J|).  Hence the intermediate we will 
+//precompute is the matrix "warpval[i][J] = F(|r_i-R_J|) and gradval[i][J]=Grad(F(|r_i-R_J|)).  
+//This allows the calculation of any space warp value or gradient by a matrix lookup, combined with a sum over columns.  
 void SpaceWarpTransformation::computeSWTIntermediates(ParticleSet& P, ParticleSet& ions)
 {
   const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
@@ -39,6 +41,8 @@ void SpaceWarpTransformation::computeSWTIntermediates(ParticleSet& P, ParticleSe
  
 }
 
+//This function handles parsing of the intermediate matrices and construction of the w_I(r_i) and Grad_i(w_I(r_i)) functions 
+// that appear in the space warp transformation formulas.
 void SpaceWarpTransformation::getSWT(int iat, ParticleScalar_t& w, Force_t& grad_w)
 {
   for(size_t iel=0; iel<Nelec; iel++)
@@ -54,7 +58,7 @@ void SpaceWarpTransformation::getSWT(int iat, ParticleScalar_t& w, Force_t& grad
     grad_w[iel]=gradval[iel][iat]/warpdenom - w[iel]*denomgrad/warpdenom;
   }
 }
-
+//This function returns Sum_i w_I(r_i) Grad_i(E_L) (as el_contribution)  and Sum_i[ w_I(r_i)Grad_i(logpsi)+0.5*Grad_i(w_I(r_i)) (as psi_contribution).  See Eq (15) and (16) respectively.
 void SpaceWarpTransformation::computeSWT(ParticleSet& P, ParticleSet& ions, Force_t& dEl, ParticleGradient_t& dlogpsi, Force_t& el_contribution, Force_t& psi_contribution)
 {
   el_contribution=0;
@@ -94,22 +98,5 @@ void SpaceWarpTransformation::computeSWT(ParticleSet& P, ParticleSet& ions, Forc
   //app_log()<<"Space warp logpsi piece\n";
   //app_log()<<" psipiece = "<<psi_contribution<<std::endl;
 }
-
-/*void SpaceWarpTransformation::sw(ParticleSet& P, ParticleSet& ions, int iat, ParticleScalar_t& sw_vals, Force_t& sw_grads)
-{
-  int Nelec=P.getTotalNum();
-  int Nions=ions.getTotalNum();
-  const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
-  for (size_t iel = 0; iel < Nelec; ++iel)
-  {
-    const auto& dist = d_ab.getDistRow(iel);
-    const auto& dr   = d_ab.getDisplRow(iel);
-    mRealType esum   = czero;
-    for (size_t ionid = 0; ionid < ionid; ++ionid)
-    {
-     
-    }
-  }
-}*/
 
 }
