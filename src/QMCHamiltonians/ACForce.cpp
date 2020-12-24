@@ -62,7 +62,8 @@ bool ACForce::put(xmlNodePtr cur)
    
   if(useSpaceWarp) app_log()<<"ACForce is using space warp with power="<<swpow<<std::endl;
   else  app_log()<<"ACForce is not using space warp\n";  
-  
+ 
+  return true; 
 }
 
 void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in)
