@@ -53,7 +53,8 @@ bool ACForce::put(xmlNodePtr cur)
   RealType swpow(4);
   OhmmsAttributeSet attr;
   attr.add(useSpaceWarpString,"spacewarp"); //"yes" or "no"
-  attr.add(swpow, "swpow"); //REal number"
+  attr.add(swpow, "swpow"); //Real number"
+  attr.add(delta, "delta"); //Real number"
   attr.put(cur); 
 
   useSpaceWarp = (useSpaceWarpString == "yes") || (useSpaceWarpString == "true");
@@ -87,7 +88,7 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   
   if(useSpaceWarp)
   {
-    computeElecGradEL(P,el_grad);
+    ham.evaluateElecGrad(P,psi,el_grad,delta);
     swt.computeSWT(P,ions,el_grad,P.G,sw_pulay,sw_grad);
   }
   return 0.0;
@@ -173,37 +174,4 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
   }
 };
 
-void ACForce::computeElecGradEL(ParticleSet& P, ACForce::Force_t& Egrad)
-{
-  int nelec=P.getTotalNum();
-  RealType ep(0.0);
-  RealType em(0.0);
-  RealType e0(0.0);
-  for(int iel=0; iel<nelec; iel++)
-  {
-    for(int dim=0; dim<OHMMS_DIM; dim++)
-    {
-      RealType r0=P.R[iel][dim];
-      ep=0; em=0; 
-      //Plus
-      RealType rp=r0+delta;
-      P.R[iel][dim]=rp;
-      P.update();
-      psi.evaluateLog(P);
-      ep=ham.evaluate2(P);
-
-      //minus
-      RealType rm=r0-delta;
-      P.R[iel][dim]=rm;
-      P.update();
-      psi.evaluateLog(P);
-      em=ham.evaluate2(P);
-
-      Egrad[iel][dim]=(ep-em)/(2.0*delta);
-      P.R[iel][dim]=r0;
-      P.update();
-      psi.evaluateLog(P);
-    }
-  }
-};
 } // namespace qmcplusplus

@@ -55,7 +55,6 @@ struct ACForce : public OperatorBase
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P);
 
-  void computeElecGradEL(ParticleSet& P, Force_t& gradEL); //This computes the 3N electron gradients of EL by finite differences.  
   RealType delta; //finite difference time step
 
   //** Internal variables **/

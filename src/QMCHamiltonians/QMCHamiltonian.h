@@ -282,6 +282,15 @@ public:
       RecordArray<ValueType>& dhpsioverpsi);
 
 
+  /** Evaluate the electron gradient of the local energy.
+  * @param psi Trial Wave Function
+  * @param P electron particle set
+  * @param EGrad an Nelec x 3 real array which corresponds to d/d[r_i]_j E_L
+  * @param A finite difference step size if applicable.  Default is to use finite diff with delta=1e-5.
+  * @return EGrad.  Function itself returns nothing.
+  */    
+  void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos_t& EGrad, RealType delta=1e-5);
+
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
   * @param ions source particle set (ions)

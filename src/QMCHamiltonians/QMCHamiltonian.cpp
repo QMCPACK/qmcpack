@@ -817,7 +817,39 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateWithT
   }
   return local_energies;
 }
+void QMCHamiltonian::evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos_t& Egrad, RealType delta)
+{
+  int nelec=P.getTotalNum();
+  RealType ep(0.0);
+  RealType em(0.0);
+  RealType e0(0.0);
+  for(int iel=0; iel<nelec; iel++)
+  {
+    for(int dim=0; dim<OHMMS_DIM; dim++)
+    {
+      RealType r0=P.R[iel][dim];
+      ep=0; em=0; 
+      //Plus
+      RealType rp=r0+delta;
+      P.R[iel][dim]=rp;
+      P.update();
+      psi.evaluateLog(P);
+      ep=evaluate2(P);
 
+      //minus
+      RealType rm=r0-delta;
+      P.R[iel][dim]=rm;
+      P.update();
+      psi.evaluateLog(P);
+      em=evaluate2(P);
+
+      Egrad[iel][dim]=(ep-em)/(2.0*delta);
+      P.R[iel][dim]=r0;
+      P.update();
+      psi.evaluateLog(P);
+    }
+  }
+}
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& P,
                                                                    ParticleSet& ions,
                                                                    TrialWaveFunction& psi,
