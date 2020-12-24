@@ -111,7 +111,7 @@ void ParticleSet::createSK()
     else
     {
       app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc << std::endl;
-      SK = new StructFact(*this, LRBox.LR_kc);
+      SK = std::make_unique<StructFact>(*this, LRBox.LR_kc);
     }
     //Lattice.print(app_log());
     //This uses the copy constructor to avoid recomputing the data.

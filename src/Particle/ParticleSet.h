@@ -130,7 +130,7 @@ public:
   SpeciesSet mySpecies;
 
   ///Structure factor
-  StructFact* SK;
+  std::unique_ptr<StructFact> SK;
 
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
