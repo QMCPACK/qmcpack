@@ -104,7 +104,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P)
   return Value;
 }
 
-NonLocalECPotential::Return_t NonLocalECPotential::evaluate2(ParticleSet& P)
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(ParticleSet& P)
 {
   evaluateImpl(P, false, true);
   return Value;

@@ -45,7 +45,7 @@ public:
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
-  Return_t evaluate2(ParticleSet& P) override;
+  Return_t evaluateDeterministic(ParticleSet& P) override;
   void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;

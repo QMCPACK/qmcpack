@@ -230,7 +230,13 @@ public:
    * P.R, P.G and P.L are used to evaluate the LocalEnergy.
    */
   FullPrecRealType evaluate(ParticleSet& P);
-  FullPrecRealType evaluate2(ParticleSet& P); //This is the same as evaluate(), but doesn't update the quadrature grid for a PP point.
+
+  /** evaluate Local Energy deterministically.  Defaults to evaluate(P) for operators without a stochastic component. For the nonlocal PP, the quadrature grid is not rerandomized.  
+   * @param P ParticleSet
+   * @return Local energy. 
+   *
+   */
+  FullPrecRealType evaluateDeterministic(ParticleSet& P); 
   /** batched version of evaluate for LocalEnergy 
    *
    *  Encapsulation is ignored for H_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.

@@ -35,7 +35,7 @@ OperatorBase::OperatorBase() : myIndex(-1), Dependants(0), Value(0.0), tWalker(0
   UpdateMode.set(PRIMARY, 1);
 }
 
-OperatorBase::Return_t OperatorBase::evaluate2(ParticleSet& P)
+OperatorBase::Return_t OperatorBase::evaluateDeterministic(ParticleSet& P)
 {
   return evaluate(P);
 }

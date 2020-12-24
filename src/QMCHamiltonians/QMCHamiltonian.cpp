@@ -501,14 +501,14 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate(ParticleSet& P)
   return LocalEnergy;
 }
 
-QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate2(ParticleSet& P)
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleSet& P)
 {
   ScopedTimer local_timer(ham_timer_);
   LocalEnergy = 0.0;
   for (int i = 0; i < H.size(); ++i)
   {
     ScopedTimer h_timer(my_timers_[i]);
-    const auto LocalEnergyComponent = H[i]->evaluate2(P);
+    const auto LocalEnergyComponent = H[i]->evaluateDeterministic(P);
     if (std::isnan(LocalEnergyComponent))
       APP_ABORT("QMCHamiltonian::evaluate component " + H[i]->myName + " returns NaN\n");
     LocalEnergy += LocalEnergyComponent;
@@ -834,14 +834,14 @@ void QMCHamiltonian::evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, Pa
       P.R[iel][dim]=rp;
       P.update();
       psi.evaluateLog(P);
-      ep=evaluate2(P);
+      ep=evaluateDeterministic(P);
 
       //minus
       RealType rm=r0-delta;
       P.R[iel][dim]=rm;
       P.update();
       psi.evaluateLog(P);
-      em=evaluate2(P);
+      em=evaluateDeterministic(P);
 
       Egrad[iel][dim]=(ep-em)/(2.0*delta);
       P.R[iel][dim]=r0;
