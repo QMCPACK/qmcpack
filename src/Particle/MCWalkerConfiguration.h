@@ -123,9 +123,6 @@ public:
   ///default constructor: copy only ParticleSet
   MCWalkerConfiguration(const MCWalkerConfiguration& mcw);
 
-  ///default destructor
-  ~MCWalkerConfiguration();
-
   /** create numWalkers Walkers
    *
    * Append Walkers to WalkerList.

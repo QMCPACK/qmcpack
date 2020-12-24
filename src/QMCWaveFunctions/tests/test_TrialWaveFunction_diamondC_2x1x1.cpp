@@ -34,8 +34,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(4);
@@ -88,8 +90,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
 
   ParticleSetPool ptcl{c};
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   // make a ParticleSet Clone
   ParticleSet elec_clone(elec_);

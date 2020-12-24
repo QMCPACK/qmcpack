@@ -60,9 +60,9 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   ParticleSet* ws = pp.getWalkerSet("ion0");
   REQUIRE(ws != NULL);
 
-  ParticleSet* ps2 = new ParticleSet();
+  auto ps2 = std::make_unique<ParticleSet>();
   ps2->setName("particle_set_2");
-  pp.addParticleSet(ps2);
+  pp.addParticleSet(std::move(ps2));
 
   // should do nothing, since no random particlesets were specified
   pp.randomize();

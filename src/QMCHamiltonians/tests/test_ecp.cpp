@@ -447,9 +447,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   Lattice.LR_dim_cutoff = 15;
   Lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions(*ions_uptr);
+  ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion0");
   ions.create(1);
@@ -486,8 +487,8 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   elec.createSK();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec);
-  ptcl.addParticleSet(&ions);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   ions.resetGroups();
   elec.resetGroups();
