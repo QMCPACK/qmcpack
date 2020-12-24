@@ -13,14 +13,14 @@ SpaceWarpTransformation::SpaceWarpTransformation(ParticleSet& elns, ParticleSet&
   gradval.resize(Nelec,Nions);
 }
 
-SpaceWarpTransformation::RealType SpaceWarpTransformation::f(RealType r, RealType inpow)
+SpaceWarpTransformation::RealType SpaceWarpTransformation::f(RealType r)
 {
-  return std::pow(r,-inpow);
+  return std::pow(r,-swpow);
 }
 
-SpaceWarpTransformation::RealType SpaceWarpTransformation::df(RealType r, RealType inpow)
+SpaceWarpTransformation::RealType SpaceWarpTransformation::df(RealType r)
 {
-  return -inpow*std::pow(r,-(inpow+1));
+  return -swpow*std::pow(r,-(swpow+1));
 }
 
 void SpaceWarpTransformation::computeSWTIntermediates(ParticleSet& P, ParticleSet& ions)
@@ -32,8 +32,8 @@ void SpaceWarpTransformation::computeSWTIntermediates(ParticleSet& P, ParticleSe
     const auto& dr   = d_ab.getDisplRow(iel);
     for (size_t ionid = 0; ionid < Nions; ++ionid)
     {
-      warpval[iel][ionid]=f(dist[ionid],swpow);
-      gradval[iel][ionid]=-dr[ionid]*(df(dist[ionid],swpow)/dist[ionid]); //because there's a -1 in distance table displacement definition.  R-r :(. 
+      warpval[iel][ionid]=f(dist[ionid]);
+      gradval[iel][ionid]=-dr[ionid]*(df(dist[ionid])/dist[ionid]); //because there's a -1 in distance table displacement definition.  R-r :(. 
     }
   }
  

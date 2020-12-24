@@ -33,8 +33,8 @@ struct SpaceWarpTransformation : public QMCTraits
   SpaceWarpTransformation(ParticleSet& elns, ParticleSet& ions);
   ~SpaceWarpTransformation(){};
 
-  RealType f(RealType r, RealType a); 
-  RealType df(RealType r, RealType a); 
+  RealType f(RealType r); 
+  RealType df(RealType r); 
 
   void setPow(RealType swpow_in){swpow=swpow_in;};
   void computeSWTIntermediates(ParticleSet& P, ParticleSet& ions); //This computes the intermediate matrices required to build all 
