@@ -37,11 +37,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
       Zeff(0),
       RcutMax(-1),
       Species(aname),
-      grid_global(0),
-      pp_loc(0),
-      pp_nonloc(0),
-      pp_so(0),
-      pp_L2(0)
+      grid_global(0)
 {
   angMon["s"] = 0;
   angMon["p"] = 1;
@@ -197,10 +193,10 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   }
   if (semiPtr.size())
   {
-    if (pp_nonloc == 0)
-      pp_nonloc = new NonLocalECPComponent;
+    if (!pp_nonloc)
+      pp_nonloc = std::make_unique<NonLocalECPComponent>();
     if (pp_so == 0)
-      pp_so = new SOECPComponent;
+      pp_so = std::make_unique<SOECPComponent>();
     if (pp_loc)
     {
       for (int i = 0; i < semiPtr.size(); i++)

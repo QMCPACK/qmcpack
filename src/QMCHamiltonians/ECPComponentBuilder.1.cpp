@@ -144,7 +144,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
     }
     else if (cname == "data")
     {
-      pp_loc = createVrWithData(cur, grid_local_inp, vPowerCorrection);
+      pp_loc = std::unique_ptr<RadialPotentialType>(createVrWithData(cur, grid_local_inp, vPowerCorrection));
       app_log() << "  Local pseduopotential in a <data/>" << std::endl;
       return;
     }
@@ -178,7 +178,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
       v.resize(3);
       for (int ig = 0; ig < 3; ig++)
         v[ig] = 1.0;
-      pp_loc = new RadialPotentialType(grid_local, v);
+      pp_loc = std::make_unique<RadialPotentialType>(grid_local, v);
       pp_loc->spline(0, 0.0, 2, 0.0);
     }
     else
@@ -211,7 +211,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
       }
       v[0]      = 2.0 * v[1] - v[2];
       v[ng - 1] = 1.0;
-      pp_loc    = new RadialPotentialType(grid_local, v);
+      pp_loc    = std::make_unique<RadialPotentialType>(grid_local, v);
       pp_loc->spline(); //use the fixed conditions
     }
   }

@@ -50,7 +50,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      bool enable_profiling)
     : MPIObjectBase(comm),
       Estimators(0),
-      Traces(0),
       DriftModifier(0),
       qmcNode(NULL),
       QMCType(QMC_driver_type),
@@ -224,9 +223,9 @@ void QMCDriver::process(xmlNodePtr cur)
   DriftModifier->parseXML(cur);
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
-  if (Traces == 0)
+  if (!Traces)
   {
-    Traces = new TraceManager(myComm);
+    Traces = std::make_unique<TraceManager>(myComm);
   }
   Traces->put(traces_xml, allow_traces, RootName);
 #endif

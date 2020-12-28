@@ -57,7 +57,7 @@ struct CoulombPBCAB_CUDA : public CoulombPBCAB
   std::vector<gpu::device_vector<CUDA_PRECISION_FULL>> RhokIonsGPU;
   void setupLongRangeGPU();
 
-  void add(int groupID, RadFunctorType* ppot);
+  void add(int groupID, std::unique_ptr<RadFunctorType>&& ppot);
 
   void initBreakup(ParticleSet& P);
 
