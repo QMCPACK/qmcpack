@@ -14,6 +14,7 @@ _Delete the items that do not apply_
 - Code style update (formatting, renaming)
 - Refactoring (no functional changes, no api changes)
 - Build related changes
+- Add/update unit/integration/performance tests
 - Documentation content changes
 - Other (please describe):
 
