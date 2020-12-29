@@ -33,7 +33,7 @@ Each file should start with the header.
   // This file is distributed under the University of Illinois/NCSA Open Source License.
   // See LICENSE file in top directory for details.
   //
-  // Copyright (c) 2020 QMCPACK developers
+  // Copyright (c) 2021 QMCPACK developers
   //
   // File developed by: Name, email, affiliation
   //
@@ -68,6 +68,13 @@ The symbol name of the ``#define`` guards should be ``NAMESPACE(s)_CLASSNAME_H``
 Includes
 ~~~~~~~~
 
+Related header files should be included without any path.
+Header files from external projects and standard libraries should be includes using the ``<iostream>`` convention, while headers that are part of the QMCPACK project should be included using the ``"our_header.h"`` convention.
+
+As we are modernizing the use of CMake in QMCPACK and reorganizing source files, header file inclusion changes from legacy stle to a new style for modern CMake.
+
+Legacy style
+^^^^^^^^^^^^
 Header files should be included with the full path based on the ``src`` directory.
 For example, the file ``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
 
@@ -75,8 +82,31 @@ For example, the file ``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be includ
 
   #include "QMCWaveFunctions/SPOSet.h"
 
-Even if the included file is located in the same directory as the including file, this rule should be obeyed. Header files from external projects and standard libraries should be includes using the ``<iostream>`` convention, while headers that are part of the QMCPACK project should be included using the ``"our_header.h"`` convention.
+Even if the included file is located in the same directory as the including file, this rule should be obeyed.
 
+New style for modern CMake
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+In QMCPACK, include paths are handled by modern CMake target dependency. Every top level folder is at least one target.
+For example, ``src/Particle/CMakeLists.txt`` defines `qmcparticle` target. It propagates include path ``qmcpack/src/Particle`` to compiling command lines in CMake via
+
+::
+
+  TARGET_INCLUDE_DIRECTORIES(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+For this reason, the file ``qmcpack/src/Particle/Lattice/ParticleBConds3DSoa.h`` should be included as
+
+::
+
+  #include "Lattice/ParticleBConds3DSoa.h"
+
+If the compiled file is not part of the same target as `qmcparticle`, the target it belongs to should have a dependency on `qmcparticle`. For example, test source files under ``qmcpack/src/Particle/tests`` are not part of `qmcparticle` and thus requires the following additional CMake setting
+
+::
+
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle)
+
+Ordering
+^^^^^^^^
 For readability, we suggest using the following standard order of includes:
 
 #. related header
@@ -663,6 +693,32 @@ Use of const
       ...
       int getCount() const { return count_;}
     }
+
+Smart pointers
+~~~~~~~~~~~~~~
+Prior to C++11, C++ uses C-style pointers. A pointer may have one or more meanings like an address value and the ownership of a piece of heap memory.
+This leads to confusion and causes memory leaks if pointers are not managed properly. Since C++11, smart pointers were introduced to resolve this issue and we adopt this feature to make QMCAPCK fully memory leak free. In addition to that, it demands developers to think about the ownership and lifetime of an declared pointer object.
+
+std::unique_ptr
+^^^^^^^^^^^^^^^
+A unique pointer is the unique owner of a piece of allocated memory.
+Pointers in per-walker data structure with distinct contents should be unique pointers.
+For example, every walker has a trial wavefunction object which contains an SPO object pointer.
+Because the SPO object has a vector to store SPO evaluation results,
+it cannot be shared between two trial wavefunction objects.
+For this reason the SPO object pointer should be an unique pointer.
+
+In QMCPACK, most raw pointers can be directly replaced with ``std::unique_ptr``.
+Corresponding use of ``new`` operator can be replaced with ``std:make_unique``.
+
+std::shared_ptr
+^^^^^^^^^^^^^^^
+A shared pointer is the shared owner of a piece of allocated memory.
+Moving a pointer ownership from one place to another should not use shared pointers but C++ move semantics.
+Shared contents between walkers may eligible for shared pointers.
+For example, although the Jastrow factor object must be unique per walker, the pointer to the parameter data structure can be a shared pointer.
+During Jastrow optimization, any update to the parameter data managed by the shared pointer will be effective immediately in all the Jastrow objects.
+In another example, spline coefficients are managed by a shared pointer which achieves a single copy in memory shared by an SPOSet and all its clones.
 
 Scalar estimator implementation
 -------------------------------
