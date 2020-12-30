@@ -15,6 +15,7 @@
 #include "SpinDensityInput.h"
 
 #include <vector>
+#include <variant>
 
 #include "Configuration.h"
 #include "OperatorEstBase.h"
@@ -34,6 +35,7 @@ class SpinDensityNew : public OperatorEstBase
 public:
   using POLT    = PtclOnLatticeTraits;
   using Lattice = POLT::ParticleLayout_t;
+  using QMCT = QMCTraits;
 
   //  typedef std::vector<RealType> dens_t;
   //  typedef std::vector<PosType> pts_t;
@@ -43,19 +45,30 @@ public:
   SpeciesSet species_;
 
   // this is a bit of a mess to get from SpeciesSet
-  std::vector<int> species_size;
+  std::vector<int> species_size_;
 
+  /** the type in this variant changes based on data locality
+   */
   
+  using Data = std::variant<std::unique_ptr<std::vector<QMCT::RealType>>,
+               std::shared_ptr<std::vector<QMCT::RealType>>>;
+
+  Data data_;
+
   //constructor/destructor
-  SpinDensityNew(SpinDensityInput&& sdi, const SpeciesSet& species);
+  SpinDensityNew(SpinDensityInput& sdi, const SpeciesSet& species);
   ~SpinDensityNew() {}
-
+  SpinDensityNew(const SpinDensityNew& sdn);
+  
   //standard interface
-  OperatorEstBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
-  QMCT::FullPrecRealType evaluate(ParticleSet& P);
+  OperatorEstBase* clone();
+  void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets);
 
-  //obsolete?
-  bool get(std::ostream& os) const { return false; }
+  void collect(const OperatorEstBase&  oeb);
+private:
+  /** data management
+   */
+  static Data createLocalData(size_t size, DataLocality data_locality);
 
   //local functions
   void reset();

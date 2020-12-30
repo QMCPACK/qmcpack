@@ -8,8 +8,6 @@
 #//
 #// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
@@ -17,12 +15,12 @@ SET(SRC_DIR estimators)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRCS test_accumulator.cpp test_local_energy_est.cpp EstimatorManagerBaseTest.cpp EstimatorManagerNewTest.cpp test_manager.cpp test_EstimatorManagerNew.cpp test_trace_manager.cpp)
+SET(SRCS test_accumulator.cpp test_local_energy_est.cpp EstimatorManagerBaseTest.cpp EstimatorManagerNewTest.cpp test_manager.cpp test_EstimatorManagerNew.cpp test_trace_manager.cpp test_SpinDensityInput.cpp test_SpinDensityNew.cpp)
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcestimators_unit)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil qmcestimators_unit)
 IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_omptarget)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_omptarget)
 ENDIF()
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

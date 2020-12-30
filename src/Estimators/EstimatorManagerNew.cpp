@@ -13,6 +13,8 @@
 #include <numeric>
 
 #include "EstimatorManagerNew.h"
+#include "EstimatorInput.h"
+#include "SpinDensityNew.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -122,7 +124,7 @@ void EstimatorManagerNew::reset()
   //It's essential that this one is first, other code assumes weightInd always == 0
   weightInd = BlockProperties.add("BlockWeight");
   assert(weightInd == 0);
-  cpuInd    = BlockProperties.add("BlockCPU");
+  cpuInd         = BlockProperties.add("BlockCPU");
   acceptRatioInd = BlockProperties.add("AcceptRatio");
   BlockAverages.clear(); //cleaup the records
   for (int i = 0; i < Estimators.size(); i++)
@@ -209,7 +211,10 @@ void EstimatorManagerNew::startBlock(int steps)
   BlockWeight = 0.0;
 }
 
-void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, RealType block_weight, double cpu_block_time)
+void EstimatorManagerNew::stopBlock(unsigned long accept,
+                                    unsigned long reject,
+                                    RealType block_weight,
+                                    double cpu_block_time)
 {
   //take block averages and update properties per block
   PropertyCache[weightInd] = block_weight;
@@ -217,9 +222,9 @@ void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, 
   makeBlockAverages(accept, reject);
 }
 
-
 /** Called at end of block in Unified Driver
  *
+ *  Seems broken if there is more than one ScalarEstimator per crowd.
  */
 QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
     const RefVector<ScalarEstimatorBase>& estimators)
@@ -253,6 +258,23 @@ QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
   return tot_weight;
 }
 
+
+/** Reduces OperatorEstimator data from Crowds to the managers OperatorEstimator data
+ */
+void EstimatorManagerNew::collectOperatorEstimators(
+    const std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
+{
+  for (int icrowd = 0; icrowd < crowd_op_ests.size(); ++icrowd)
+  {
+    const RefVector<OperatorEstBase>& op_ests = crowd_op_ests[icrowd];
+
+    for (int i = 0; i < op_ests.size(); ++i)
+    {
+      operator_ests_[i]->collect(op_ests[i]);
+    }
+  }
+}
+
 // blocks don't close frequently enough that we should be sweating the mpi transfers at all.
 // all this Cache stuff is premature optimization because someone wanted to be very fancy
 void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long rejects)
@@ -263,11 +285,13 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   // a pack into and out of an fp type that can be assured to hold the integral type exactly
   // IMHO they should not be primarily stored in a vector with magic indexes
   std::vector<unsigned long> accepts_and_rejects(my_comm_->size() * 2, 0);
-  accepts_and_rejects[my_comm_->rank()] = accepts;
+  accepts_and_rejects[my_comm_->rank()]                    = accepts;
   accepts_and_rejects[my_comm_->size() + my_comm_->rank()] = rejects;
   my_comm_->allreduce(accepts_and_rejects);
-  unsigned long total_block_accept = std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), 0);
-  unsigned long total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(), accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
+  unsigned long total_block_accept =
+      std::accumulate(accepts_and_rejects.begin(), accepts_and_rejects.begin() + my_comm_->size(), 0);
+  unsigned long total_block_reject = std::accumulate(accepts_and_rejects.begin() + my_comm_->size(),
+                                                     accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
 
   //Transfer FullPrecisionRead data
   int n1 = AverageCache.size();
@@ -306,8 +330,9 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   }
 
   // now we put the correct accept ratio in
-  PropertyCache[acceptRatioInd] = static_cast<FullPrecRealType>(total_block_accept) / static_cast<FullPrecRealType>(total_block_accept + total_block_reject);
-  
+  PropertyCache[acceptRatioInd] = static_cast<FullPrecRealType>(total_block_accept) /
+      static_cast<FullPrecRealType>(total_block_accept + total_block_reject);
+
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
   varAccumulator(SquaredAverageCache[0]);
@@ -356,7 +381,7 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
     return Estimators[(*it).second];
 }
 
-bool EstimatorManagerNew::put(QMCHamiltonian& H, xmlNodePtr cur)
+bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur)
 {
   std::vector<std::string> extra;
   cur = cur->children;
@@ -393,6 +418,15 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, xmlNodePtr cur)
         hAttrib.put(cur);
         add(new CSEnergyEstimator(H, nPsi), MainEstimatorName);
         app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
+      }
+      else if (est_name == "spindensity_new")
+      {
+        // Eventually this should be getting read before Estimator Manager New is constructed
+        // EMN will be constructed with a vector of EstimatorInputs
+        estimator_inputs_.emplace_back(EstimatorInput{std::in_place_type<SpinDensityInput>});
+        SpinDensityInput& spdi = std::get<SpinDensityInput>(estimator_inputs_.back());
+        spdi.readXML(cur);
+        operator_ests_.emplace_back(new SpinDensityNew(spdi, pset.mySpecies));
       }
       else
         extra.push_back(est_name);

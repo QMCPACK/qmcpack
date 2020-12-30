@@ -160,7 +160,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   // Carrying the population on is one thing but a branch engine seems like it
   // should be fresh per section.
   branch_engine_->put(cur);
-  estimator_manager_->put(H, cur);
+  estimator_manager_->put(H, *population_.get_golden_electrons(), cur);
 
   crowds_.resize(awc.walkers_per_crowd.size());
 
@@ -534,15 +534,21 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   return awc;
 }
 
+/** The scalar estimator collection is quite strange
+ *
+ */
 void QMCDriverNew::endBlock()
 {
   RefVector<ScalarEstimatorBase> all_scalar_estimators;
+
   FullPrecRealType total_block_weight = 0.0;
   // Collect all the ScalarEstimatorsFrom EMCrowds
   double cpu_block_time      = 0.0;
   unsigned long block_accept = 0;
   unsigned long block_reject = 0;
 
+  std::vector<RefVector<OperatorEstBase>> crowd_operator_estimators;
+  
   for (const UPtr<Crowd>& crowd : crowds_)
   {
     crowd->stopBlock();
@@ -553,7 +559,11 @@ void QMCDriverNew::endBlock()
     block_accept += crowd->get_accept();
     block_reject += crowd->get_reject();
     cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
+
+    // This seems altogether easier and more sane.
+    crowd_operator_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_operator_estimators());
   }
+  
 #ifdef DEBUG_PER_STEP_ACCEPT_REJECT
   app_warning() << "accept: " << block_accept << "   reject: " << block_reject;
   FullPrecRealType total_accept_ratio =
@@ -561,6 +571,8 @@ void QMCDriverNew::endBlock()
   std::cerr << "   total_accept_ratio: << " << total_accept_ratio << '\n';
 #endif
   estimator_manager_->collectScalarEstimators(all_scalar_estimators);
+  estimator_manager_->collectOperatorEstimators(crowd_operator_estimators);
+
   /// get the average cpu_block time per crowd
   /// cpu_block_time /= crowds_.size();
 

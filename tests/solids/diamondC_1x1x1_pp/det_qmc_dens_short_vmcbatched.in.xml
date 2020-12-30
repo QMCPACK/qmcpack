@@ -79,11 +79,23 @@
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
          <estimator type="flux" name="Flux"/>
-         <estimator name="Density" type="density" delta="0.1 0.1"/>
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc_batch" move="pbyp">
-      <estimator name="LocalEnergy" hdf5="no"/>
+     <estimator name="LocalEnergy" hdf5="no"/>
+          <estimator name="spindensity_new" type="spindensity" report="yes">
+       <parameter name="grid">
+         10 10 10
+       </parameter>
+       <parameter name="center">
+         0.0 0.0 0.0
+       </parameter>
+       <parameter name="cell">
+                           3.37316115        3.37316115        0.00000000
+                  0.00000000        3.37316115        3.37316115
+                  3.37316115        0.00000000        3.37316115
+       </parameter>
+     </estimator>
       <parameter name="walkers"             >    1               </parameter>
       <parameter name="blocks"              >    3               </parameter>
       <parameter name="steps"               >    3               </parameter>

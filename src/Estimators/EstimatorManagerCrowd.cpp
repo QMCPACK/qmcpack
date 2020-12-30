@@ -31,9 +31,22 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
   for (int i = 0; i < em.Estimators.size(); i++)
     scalar_estimators_.push_back(em.Estimators[i]->clone());
   MainEstimator = scalar_estimators_[EstimatorMap[MainEstimatorName]];
-  if (em.Collectables)
-    Collectables = em.Collectables->clone();
+  std::for_each(em.operator_ests_.begin(), em.operator_ests_.end(),
+                [this](UPtr<OperatorEstBase>& upeb) { operator_ests_.emplace_back(upeb->clone()); });
 }
+
+void EstimatorManagerCrowd::accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
+  {
+    block_weight_ += walkers.size();
+    //Don't normalize we only divide once after reduction.
+    //RealType norm             = 1.0 / global_walkers;
+    int num_scalar_estimators = scalar_estimators_.size();
+    for (int i = 0; i < num_scalar_estimators; ++i)
+      scalar_estimators_[i]->accumulate(global_walkers, walkers, 1);
+    for (int i = 0; i < operator_ests_.size(); ++i)
+      operator_ests_[i]->accumulate(walkers, psets);
+  }
+
 
 void EstimatorManagerCrowd::startBlock(int steps)
 {

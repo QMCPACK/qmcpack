@@ -17,50 +17,21 @@
 
 namespace qmcplusplus
 {
-OperatorEstBase::OperatorEstBase() : myIndex(-1), Dependants(0), Value(0.0), tWalker(0)
+OperatorEstBase::OperatorEstBase() : Value(0.0), walkers_weight_(0)
 {
   quantum_domain = no_quantum_domain;
   energy_domain  = no_energy_domain;
-
+  data_locality_ = DataLocality::crowd;
   UpdateMode.set(PRIMARY, 1);
 }
 
-/** Take o_list and p_list update evaluation result variables in o_list?
- *
- * really should reduce vector of local_energies. matching the ordering and size of o list
- * the this can be call for 1 or more QMCHamiltonians
- */
-void OperatorEstBase::mw_evaluate(const RefVector<OperatorEstBase>& O_list, const RefVector<ParticleSet>& P_list)
+OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth) : walkers_weight_(0)
 {
-  /**  Temporary raw omp pragma for simple thread parallelism
-   *   ignoring the driver level concurrency
-   *   
-   *  \todo replace this with a proper abstraction. It should adequately describe the behavior
-   *  and strictly limit the activation of this level concurrency to when it is intended.
-   *  It is unlikely to belong in this function.
-   *  
-   *  This implicitly depends on openmp work division logic. Essentially adhoc runtime
-   *  crowds over which we have given up control of thread/global scope.
-   *  How many walkers per thread? How to handle their data movement if any of these
-   *  hamiltonians should be accelerated? We can neither reason about or describe it in C++
-   *
-   *  As I understand it it should only be required for as long as the AMD openmp offload 
-   *  compliler is incapable of running multiple threads. They should/must fix their compiler
-   *  before delivery of frontier and it should be removed at that point at latest
-   *
-   *  If you want 16 threads of 1 walker that should be 16 crowds of 1
-   *  not one crowd of 16 with openmp thrown in at hamiltonian level.
-   *  If this must be different from the other crowd batching. Make this a reasoned about
-   *  and controlled level of concurency blocking at the driver level.
-   *
-   *  This is only thread safe only if each walker has a complete
-   *  set of anything involved in an Operator.evaluate.
-   */
-  #pragma omp parallel for
-  for (int iw = 0; iw < O_list.size(); iw++)
-    O_list[iw].get().evaluate(P_list[iw]);
+  quantum_domain = oth.quantum_domain;
+  energy_domain = oth.energy_domain;
+  data_locality_ = oth.data_locality_;     
+  UpdateMode.set(PRIMARY, 1);
 }
-
 
 void OperatorEstBase::set_energy_domain(energy_domains edomain)
 {

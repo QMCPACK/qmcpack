@@ -15,12 +15,12 @@ SET(QMCEST_SRC
   CSEnergyEstimator.cpp
   LocalEnergyEstimator.cpp
   RMCLocalEnergyEstimator.cpp
+  SpinDensityInput.cpp
   EstimatorManagerBase.cpp
   EstimatorManagerNew.cpp
   EstimatorManagerCrowd.cpp
   CollectablesEstimator.cpp
   OperatorEstBase.cpp
-  SpinDensityInput.cpp
   SpinDensityNew.cpp)
 
 ####################################

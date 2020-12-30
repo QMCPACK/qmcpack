@@ -35,6 +35,8 @@ public:
   void fakeSomeScalarSamples();
   /** call private EMB method and colelct EMBTs estimators_ */
   void collectScalarEstimators();
+  /** reduce the OperatorEstimators onto the EstimatorManagerNew copy. */
+  void collectOperatorEstimators();
   /** for mpi test (it's trivial for 1 rank)
    *
    * only used by test_manager_mpi.cpp so implemented there.  

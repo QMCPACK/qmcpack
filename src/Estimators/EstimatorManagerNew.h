@@ -12,12 +12,16 @@
 #ifndef QMCPLUSPLUS_ESTIMATORMANAGERNEW_H
 #define QMCPLUSPLUS_ESTIMATORMANAGERNEW_H
 
+#include <memory>
+
 #include "Configuration.h"
 #include "Utilities/Timer.h"
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/EstimatorManagerInterface.h"
+#include "EstimatorInput.h"
+#include "OperatorEstBase.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
@@ -44,7 +48,7 @@ public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
   typedef ScalarEstimatorBase EstimatorType;
-  using FPRBuffer =  std::vector<FullPrecRealType>;
+  using FPRBuffer = std::vector<FullPrecRealType>;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///name of the primary estimator name
@@ -106,6 +110,11 @@ public:
    */
   int add(EstimatorType* newestimator) { return add(newestimator, MainEstimatorName); }
 
+  /** add a "non" physical operator
+   *
+   */
+  int addEstOperator(OperatorEstBase& op_est);
+
   ///return a pointer to the estimator aname
   EstimatorType* getEstimator(const std::string& a);
 
@@ -116,7 +125,7 @@ public:
   inline RealType variance(int i) const { return Estimators[i]->variance(); }
 
   ///process xml tag associated with estimators
-  bool put(QMCHamiltonian& H, xmlNodePtr cur);
+  bool put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur);
 
   /** reset the estimator
    */
@@ -156,6 +165,9 @@ public:
    *  returns the total weight across all crowds. 
    */
   RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
+
+  void collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& op_ests);
+
 
   /** get the average of per-block energy and variance of all the blocks
    * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
@@ -232,10 +244,19 @@ protected:
   std::vector<EstimatorType*> Estimators;
   ///convenient descriptors for hdf5
   std::vector<observable_helper*> h5desc;
+  /** OperatorEst Observables
+   *
+   * since the operator estimators are also a close set at compile time
+   * they could be treated just like the inputs.
+   * However the idea of a shared interface is much more straight forward for
+   * them.
+   */
+  std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
   /////estimators of composite data
   //CompositeEstimatorSet* CompEstimators;
   ///Timer
   Timer MyTimer;
+  std::vector<EstimatorInput> estimator_inputs_;
 
 private:
   ///number of maximum data for a scalar.dat

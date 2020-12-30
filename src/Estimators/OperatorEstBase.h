@@ -20,6 +20,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "QMCHamiltonians/observable_helper.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "type_traits/DataLocality.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -35,11 +36,7 @@ class OperatorEstBase
 {
 public:
   using QMCT = QMCTraits;
-  typedef ParticleSet::Buffer_t BufferType;
-  ///typedef for the walker
-  typedef ParticleSet::Walker_t Walker_t;
-  ///typedef for the ParticleScalar
-  typedef ParticleSet::Scalar_t ParticleScalar_t;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///enum to denote energy domain of operators
   enum energy_domains
@@ -59,22 +56,15 @@ public:
     quantum_quantum
   };
 
+  /// locality for accumulation data
+  DataLocality data_locality_;
 
-  ///data locality with respect to walker buffer
-  enum data_locality
-  {
-    main_block = 0,
-    separate
-  };
-
-  ///quantum_domain of the (particle) operator, default = no_quantum_domain
+  /// quantum_domain of the (particle) operator, default = no_quantum_domain
   quantum_domains quantum_domain;
-  ///energy domain of the operator (kinetic/potential), default = no_energy_domain
+  /// energy domain of the operator (kinetic/potential), default = no_energy_domain
   energy_domains energy_domain;
 
-  ///data locality with respect to walker buffer
-
-  ///enum for UpdateMode
+  /// enum for UpdateMode
   enum
   {
     PRIMARY     = 0,
@@ -87,10 +77,6 @@ public:
 
   ///set the current update mode
   std::bitset<8> UpdateMode;
-  ///starting index of this object
-  int myIndex;
-  ///number of dependents: to be removed
-  int Dependants;
   ///current value
   QMCT::FullPrecRealType Value;
   ///a new value for a proposed move
@@ -98,17 +84,16 @@ public:
   /// This is used to store the value for force on the source
   /// ParticleSet.  It is accumulated if setComputeForces(true).
   ParticleSet::ParticlePos_t IonForce;
-  ///reference to the current walker
-  Walker_t* tWalker;
   //Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
   ///name of this object
   std::string myName;
-  ///name of dependent object: to be removed
-  std::string depName;
 
-  ///constructor
+  QMCT::FullPrecRealType walkers_weight_; 
+
+  QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
+///constructor
   OperatorEstBase();
-
+  OperatorEstBase(const OperatorEstBase& oth);
   ///virtual destructor
   virtual ~OperatorEstBase() {}
 
@@ -152,81 +137,13 @@ public:
 
   inline bool isNonLocal() const { return UpdateMode[NONLOCAL]; }
 
-  /** named values to  the property list
-   * @param plist RecordNameProperty
-   *
-   * Previously addObservables but it is renamed and a non-virtial function.
+  /** Accumulate whatever it is you are accumulating with respect to walkers
    */
-  inline void addValue(QMCT::PropertySetType& plist)
-  {
-    if (!UpdateMode[COLLECTABLE])
-      myIndex = plist.add(myName.c_str());
-  }
+  virtual void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) = 0;
 
-  /** Evaluate the local energy contribution of this component
-   *@param P input configuration containing N particles
-   *@return the value of the Hamiltonian component
-   */
-  virtual QMCT::FullPrecRealType evaluate(ParticleSet& P) = 0;
-  /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluate(const RefVector<OperatorEstBase>& O_list, const RefVector<ParticleSet>& P_list);
+  virtual void collect(const OperatorEstBase& oeb) = 0;
 
-  virtual QMCT::FullPrecRealType rejectedMove(ParticleSet& P) { return 0; }
-  /** Evaluate the local energy contribution of this component with Toperators updated if requested
-   *@param P input configuration containing N particles
-   *@return the value of the Hamiltonian component
-   */
-  virtual QMCT::FullPrecRealType evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
-
-  /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluateWithToperator(const RefVector<OperatorEstBase>& O_list, const RefVector<ParticleSet>& P_list)
-  {
-    mw_evaluate(O_list, P_list);
-  }
-
-  /** evaluate value and derivatives wrt the optimizables
-   *
-   * Default uses evaluate
-   */
-  virtual QMCT::FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P,
-                                                             const opt_variables_type& optvars,
-                                                             const std::vector<QMCT::ValueType>& dlogpsi,
-                                                             std::vector<QMCT::ValueType>& dhpsioverpsi)
-  {
-    return evaluate(P);
-  }
-
-  /** evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  
-  * @param P target particle set (electrons)
-  * @param ions source particle set (ions)
-  * @param psi Trial wave function
-  * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
-  * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
-  * @return Contribution of OperatorBase to Local Energy.
-  */
-  virtual QMCT::FullPrecRealType evaluateWithIonDerivs(ParticleSet& P,
-                                                       ParticleSet& ions,
-                                                       TrialWaveFunction& psi,
-                                                       ParticleSet::ParticlePos_t& hf_term,
-                                                       ParticleSet::ParticlePos_t& pulay_term)
-  {
-    return evaluate(P);
-  }
-  /** update data associated with a particleset
-   * @param s source particle set
-   *
-   * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.
-   */
-  virtual void update_source(ParticleSet& s) {}
-
-  /** return an average value by collective operation
-   */
-  virtual QMCT::FullPrecRealType getEnsembleAverage() { return 0.0; }
-
-  /** write about the class */
-  virtual bool get(std::ostream& os) const = 0;
-
-  virtual OperatorEstBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
+  virtual OperatorEstBase* clone() = 0;
 };
 } // namespace qmcplusplus
 #endif

@@ -355,6 +355,14 @@ if (add_estimator_tests)
     )
 
   SIMPLE_RUN_AND_CHECK(
+    short-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_spindens_vmcbatch_short${IFEXT}.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_vmcbatch_short.s000.stat_ref_spindensity.dat
+    )
+
+  SIMPLE_RUN_AND_CHECK(
     short-diamondC_1x1x1_pp-dmc-estimator-spindensity
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_spindens_dmc_short.in.xml
@@ -370,6 +378,7 @@ if (add_estimator_tests)
     check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_long -r qmc-ref/qmc_spindens_long.s000.stat_ref_spindensity.dat
     )
 
+  
   SIMPLE_RUN_AND_CHECK(
     long-diamondC_1x1x1_pp-dmc-estimator-spindensity
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -531,6 +540,14 @@ IF(NOT QMC_CUDA)
       check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short_mw -r qmc-ref/det_qmc_spindens_short_mw.s000.stat_ref_spindensity_4_4.dat
       )
 
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_spindens_short_vmcbatched.in.xml
+      1 1
+      check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short -r qmc-ref/det_qmc_vmcbatch_spindens_short.s000.stat_ref_spindensity_1_1.dat
+      )
+    
     SIMPLE_RUN_AND_CHECK(
       deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
