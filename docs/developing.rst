@@ -71,18 +71,8 @@ Includes
 Related header files should be included without any path.
 Header files from external projects and standard libraries should be includes using the ``<iostream>`` convention, while headers that are part of the QMCPACK project should be included using the ``"our_header.h"`` convention.
 
-As we are modernizing the use of CMake in QMCPACK and reorganizing source files, header file inclusion changes from legacy stle to a new style for modern CMake.
-
-Legacy style
-^^^^^^^^^^^^
-Header files should be included with the full path based on the ``src`` directory.
-For example, the file ``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
-
-::
-
-  #include "QMCWaveFunctions/SPOSet.h"
-
-Even if the included file is located in the same directory as the including file, this rule should be obeyed.
+We are now using a new header file inclusion style following the modern CMake transition in QMCPACK, while the legacy code mays still use the legacy style.
+Newly written code and refactored code should be transitioned to the new style.
 
 New style for modern CMake
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -104,6 +94,17 @@ If the compiled file is not part of the same target as `qmcparticle`, the target
 ::
 
   TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle)
+
+Legacy style
+^^^^^^^^^^^^
+Header files should be included with the full path based on the ``src`` directory.
+For example, the file ``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
+
+::
+
+  #include "QMCWaveFunctions/SPOSet.h"
+
+Even if the included file is located in the same directory as the including file, this rule should be obeyed.
 
 Ordering
 ^^^^^^^^
