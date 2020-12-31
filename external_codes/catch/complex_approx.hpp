@@ -2,6 +2,7 @@
 #define CATCH_COMPLEX_APPROX
 
 #include <complex>
+#include <limits>
 
 // Copy and modify the Approx class to handle complex numbers
 
