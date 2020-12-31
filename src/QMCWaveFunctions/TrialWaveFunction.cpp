@@ -368,11 +368,13 @@ void TrialWaveFunction::flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>
   for (int iw = 0; iw < wf_list.size(); iw++)
     copyToP(p_list[iw], wf_list[iw]);
 
-  // In cases where recompute is needed, ignore the logPsi contribution
-  // and ignore G and L.
+  // Recompute is usually used to prepare the wavefunction for NLPP derivatives.
+  // (e.g compute the matrix inverse for determinants)
+  // Call mw_evaluateLog for the wavefunction components that were skipped previously.
+  // Ignore logPsi, G and L.
   if (recompute)
     for (int i = 0, ii = RECOMPUTE_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
-      if (wavefunction_components[i]->Optimizable)
+      if (!wavefunction_components[i]->Optimizable)
       {
         ScopedTimer z_timer(wf_list[0].get().WFC_timers_[ii]);
         const auto wfc_list(extractWFCRefList(wf_list, i));
