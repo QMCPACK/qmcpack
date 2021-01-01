@@ -15,6 +15,8 @@
 #ifndef QMCPLUSPLUS_OPERATORESTBASE_H
 #define QMCPLUSPLUS_OPERATORESTBASE_H
 
+#include <variant>
+
 #include "Particle/ParticleSet.h"
 #include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"
@@ -35,8 +37,12 @@ class TrialWaveFunction;
 class OperatorEstBase
 {
 public:
-  using QMCT = QMCTraits;
-  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using QMCT      = QMCTraits;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+
+  /** the type in this variant changes based on data locality
+   */
+  using Data = std::variant<std::unique_ptr<std::vector<QMCT::RealType>>, std::shared_ptr<std::vector<QMCT::RealType>>>;
 
   ///enum to denote energy domain of operators
   enum energy_domains
@@ -88,10 +94,10 @@ public:
   ///name of this object
   std::string myName;
 
-  QMCT::FullPrecRealType walkers_weight_; 
+  QMCT::FullPrecRealType walkers_weight_;
 
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
-///constructor
+  ///constructor
   OperatorEstBase();
   OperatorEstBase(const OperatorEstBase& oth);
   ///virtual destructor
@@ -143,7 +149,23 @@ public:
 
   virtual void collect(const OperatorEstBase& oeb) = 0;
 
+  virtual void write() = 0;
+
+  Data& get_data() { return data_; };
+  /*** add to OperatorEstimator descriptor for hdf5
+   * @param h5desc contains a set of hdf5 descriptors for a scalar observable
+   * @param gid hdf5 group to which the observables belong
+   *
+   * The default implementation does nothing. The derived classes which compute
+   * big data, e.g. density, should overwrite this function.
+   */
+  virtual void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
+
   virtual OperatorEstBase* clone() = 0;
+
+
+protected:
+  Data data_;
 };
 } // namespace qmcplusplus
 #endif

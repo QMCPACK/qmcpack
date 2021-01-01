@@ -47,14 +47,7 @@ public:
   // this is a bit of a mess to get from SpeciesSet
   std::vector<int> species_size_;
 
-  /** the type in this variant changes based on data locality
-   */
-  
-  using Data = std::variant<std::unique_ptr<std::vector<QMCT::RealType>>,
-               std::shared_ptr<std::vector<QMCT::RealType>>>;
-
-  Data data_;
-
+  Data& get_data() {return data_;}
   //constructor/destructor
   SpinDensityNew(SpinDensityInput& sdi, const SpeciesSet& species);
   ~SpinDensityNew() {}
@@ -65,6 +58,17 @@ public:
   void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets);
 
   void collect(const OperatorEstBase&  oeb);
+
+  void write();
+
+  /** this gets us into the hdf5 file
+   *
+   *  Just parroting for now don't fully understand.
+   *, needs to be unraveled and simplified the hdf5 output is another 
+   *  big state big coupling design.
+   */
+  void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+
 private:
   /** data management
    */

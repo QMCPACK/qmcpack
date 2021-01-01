@@ -117,4 +117,29 @@ void SpinDensityNew::report(const std::string& pad)
   app_log() << pad << "end SpinDensity report" << std::endl;
 }
 
+void SpinDensityNew::write()
+{
+  
+}
+
+void SpinDensityNew::registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const
+{
+  hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
+
+  //vector<int> ng(DIM);
+  //for(int d=0;d<DIM;++d)
+  //  ng[d] = grid[d];
+
+  std::vector<int> ng(1);
+  ng[0] = input_.get_npoints();
+
+  for (int s = 0; s < species_.size(); ++s)
+  {
+    observable_helper* oh = new observable_helper(species_.speciesName[s]);
+    oh->set_dimensions(ng, 0);
+    oh->open(sgid);
+    h5desc.push_back(oh);
+  }
+}
+
 } // namespace qmcplusplus
