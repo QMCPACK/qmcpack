@@ -42,7 +42,7 @@ OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 
 OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
 {
-  OperatorBase* myclone = new ACForce(qp, ions, psi_in, ham_in);
+  OperatorBase* myclone = new ACForce(ions, qp, psi_in, ham_in);
   return myclone;
 }
 
