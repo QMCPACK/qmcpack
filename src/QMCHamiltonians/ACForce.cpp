@@ -25,13 +25,12 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
       psi(psi_in),
       ham(H),
       FirstForceIndex(-1),
-      Nions(0),
+      Nions(ions.getTotalNum()),
       useSpaceWarp(false),
       swt(target, source)
 {
   prefix = "ACForce";
   myName = prefix;
-  Nions  = ions.getTotalNum();
 
   hf_force.resize(Nions);
   pulay_force.resize(Nions);
@@ -126,7 +125,7 @@ void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
       plist.add(wfgradname1.str());
       plist.add(wfgradname2.str());
 
-      //Remove when ACForce is production ready.
+      //TODO: Remove when ACForce is production ready.
       //      if(useSpaceWarp)
       //      {
       //        std::ostringstream swctname1;
@@ -156,7 +155,7 @@ void ACForce::setObservables(PropertySetType& plist)
       plist[myindex++] = -Value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       plist[myindex++] = -(wf_grad[iat][iondim] + sw_grad[iat][iondim]);
 
-      //Remove when ACForce is production ready
+      //TODO: Remove when ACForce is production ready
       //      if(useSpaceWarp)
       //      {
       //        plist[myindex++] = -sw_pulay[iat][iondim];
@@ -177,6 +176,7 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
       plist[myindex++] = -(pulay_force[iat][iondim] + sw_pulay[iat][iondim]);
       plist[myindex++] = -Value * (wf_grad[iat][iondim] + sw_grad[iat][iondim]);
       plist[myindex++] = -(wf_grad[iat][iondim] + sw_grad[iat][iondim]);
+      //TODO: Remove when ACForce is production ready
       //      if(useSpaceWarp)
       //      {
       //        plist[myindex++] = -sw_pulay[iat][iondim];

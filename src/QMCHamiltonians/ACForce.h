@@ -67,7 +67,7 @@ struct ACForce : public OperatorBase
 
   //For indexing observables
   IndexType FirstForceIndex;
-  IndexType Nions;
+  const IndexType Nions;
 
   //Temporary Nion x 3 dimensional arrays for force storage.
   Force_t hf_force;
