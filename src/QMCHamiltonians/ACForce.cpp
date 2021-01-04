@@ -88,15 +88,16 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   wf_grad     = 0;
   sw_pulay    = 0;
   sw_grad     = 0;
-  Force_t el_grad;
-  el_grad.resize(P.getTotalNum());
-  el_grad = 0;
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
   Value = ham.evaluateIonDerivs(P, ions, psi, hf_force, pulay_force, wf_grad);
 
   if (useSpaceWarp)
   {
+    Force_t el_grad;
+    el_grad.resize(P.getTotalNum());
+    el_grad = 0;
+
     ham.evaluateElecGrad(P, psi, el_grad, delta);
     swt.computeSWT(P, ions, el_grad, P.G, sw_pulay, sw_grad);
   }
