@@ -23,11 +23,13 @@ namespace qmcplusplus
  *       J. Chem. Phys., 133, 23411 (2010), https://doi.org/10.1063/1.3516208 
  *
  */
-struct SpaceWarpTransformation : public QMCTraits
+class SpaceWarpTransformation : public QMCTraits
 {
   typedef ParticleSet::ParticleScalar_t ParticleScalar_t;
   typedef ParticleSet::ParticlePos_t Force_t;
   typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
+
+  public:
 
   SpaceWarpTransformation(ParticleSet& elns, const ParticleSet& ions);
   ~SpaceWarpTransformation(){};
@@ -43,16 +45,6 @@ struct SpaceWarpTransformation : public QMCTraits
   {
     swpow = swpow_in;
   }; 
-
-  /** Computes intermediate matrices required to build all space warp components and gradients.
-   *  The intermediates calculated are "warpval" and "gradval".
-   *
-   * \param[in] P, the electron particle set.  
-   * \param[in] ions, the ion particle set.  
-   */
-  void computeSWTIntermediates(ParticleSet& P,
-                               const ParticleSet& ions); 
-                                                         
 
   /** Generates required space warp quantities to generate the actual "Space Warp" contribution to the
    *  iat-th force component.
@@ -81,7 +73,19 @@ struct SpaceWarpTransformation : public QMCTraits
                   Force_t& el_contribution,
                   Force_t& psi_contribution); 
                                               
-                                              
+  private:
+
+                                            
+  /** Computes intermediate matrices required to build all space warp components and gradients.
+   *  The intermediates calculated are "warpval" and "gradval".
+   *
+   * \param[in] P, the electron particle set.  
+   * \param[in] ions, the ion particle set.  
+   */
+  void computeSWTIntermediates(ParticleSet& P,
+                               const ParticleSet& ions); 
+                                                         
+
 
   const int myTableIndex;
   const int Nelec;
