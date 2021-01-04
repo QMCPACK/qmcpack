@@ -33,7 +33,7 @@ COPY_DIRECTORY_USING_SYMLINK_LIMITED function in Cmake/macros.cmake.
 ::
 
   qmc-ref/qmc_ref for reference data folder.
-  *.opt.xml/*.ncpp.xml/*.BFD.xml for pseudo-potential files.
+  *.opt.xml/*.ncpp.xml/*.BFD.xml/*.ccECP.xml for pseudo-potential files.
   *.py/*.sh for result checking helper scripts.
   *.wfj.xml/*.wfnoj.xml/*.wfs.xml for standalone wavefunction input files.
   *.structure.xml/*.ptcl.xml for standalone structure/particleset input files.
