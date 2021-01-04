@@ -246,6 +246,10 @@ struct OperatorBase : public QMCTraits
    *@return the value of the Hamiltonian component
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
+  /** Evaluate the local energy contribution of this component, deterministically based on current state.
+   *@param P input configuration containing N particles
+   *@return the value of the Hamiltonian component
+   */
   virtual Return_t evaluateDeterministic(ParticleSet& P);
   /** Evaluate the contribution of this component of multiple walkers */
   virtual void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list);

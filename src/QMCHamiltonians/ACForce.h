@@ -55,7 +55,8 @@ struct ACForce : public OperatorBase
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P);
 
-  RealType delta; //finite difference time step
+  ///Finite difference timestep
+  RealType delta; 
 
   //** Internal variables **/
   //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
@@ -65,11 +66,11 @@ struct ACForce : public OperatorBase
   TrialWaveFunction& psi;
   QMCHamiltonian& ham;
 
-  //For indexing observables
+  ///For indexing observables
   IndexType FirstForceIndex;
   const IndexType Nions;
 
-  //Temporary Nion x 3 dimensional arrays for force storage.
+  ///Temporary Nion x 3 dimensional arrays for force storage.
   Force_t hf_force;
   Force_t pulay_force;
   Force_t wf_grad;
@@ -77,7 +78,10 @@ struct ACForce : public OperatorBase
   Force_t sw_grad;
 
   bool useSpaceWarp;
+
+  ///The space warp transformation class.
   SpaceWarpTransformation swt;
+
   //Class info.
   std::string prefix;
   //We also set the following from the OperatorBase class.
