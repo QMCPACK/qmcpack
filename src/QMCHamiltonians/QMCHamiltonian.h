@@ -231,10 +231,10 @@ public:
    */
   FullPrecRealType evaluate(ParticleSet& P);
 
-  /** evaluate Local Energy deterministically.  Defaults to evaluate(P) for operators without a stochastic component. For the nonlocal PP, the quadrature grid is not rerandomized.  
+  /** evaluate Local Energy deterministically.  Defaults to evaluate(P) for operators 
+   * without a stochastic component. For the nonlocal PP, the quadrature grid is not rerandomized.  
    * @param P ParticleSet
    * @return Local energy. 
-   *
    */
   FullPrecRealType evaluateDeterministic(ParticleSet& P);
   /** batched version of evaluate for LocalEnergy 
