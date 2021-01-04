@@ -4,11 +4,9 @@
 namespace qmcplusplus
 {
 
-SpaceWarpTransformation::SpaceWarpTransformation(ParticleSet& elns, ParticleSet& ions):
-      myTableIndex(elns.addTable(ions)), swpow(4.0)
+SpaceWarpTransformation::SpaceWarpTransformation(ParticleSet& elns, const ParticleSet& ions):
+      myTableIndex(elns.addTable(ions)), Nelec(elns.getTotalNum()), Nions(ions.getTotalNum()), swpow(4.0)
 {
-  Nelec=elns.getTotalNum();
-  Nions=ions.getTotalNum(); 
   warpval.resize(Nelec,Nions);
   gradval.resize(Nelec,Nions);
 }
@@ -25,7 +23,7 @@ SpaceWarpTransformation::RealType SpaceWarpTransformation::df(RealType r)
 //Space warp functions have the form w_I(r_i) = F(|r_i-R_I)/Sum_J F(|r_i-R_J|).  Hence the intermediate we will 
 //precompute is the matrix "warpval[i][J] = F(|r_i-R_J|) and gradval[i][J]=Grad(F(|r_i-R_J|)).  
 //This allows the calculation of any space warp value or gradient by a matrix lookup, combined with a sum over columns.  
-void SpaceWarpTransformation::computeSWTIntermediates(ParticleSet& P, ParticleSet& ions)
+void SpaceWarpTransformation::computeSWTIntermediates(ParticleSet& P, const ParticleSet& ions)
 {
   const DistanceTableData& d_ab(P.getDistTable(myTableIndex));
   for (size_t iel = 0; iel < Nelec; ++iel)
@@ -59,7 +57,7 @@ void SpaceWarpTransformation::getSWT(int iat, ParticleScalar_t& w, Force_t& grad
   }
 }
 //This function returns Sum_i w_I(r_i) Grad_i(E_L) (as el_contribution)  and Sum_i[ w_I(r_i)Grad_i(logpsi)+0.5*Grad_i(w_I(r_i)) (as psi_contribution).  See Eq (15) and (16) respectively.
-void SpaceWarpTransformation::computeSWT(ParticleSet& P, ParticleSet& ions, Force_t& dEl, ParticleGradient_t& dlogpsi, Force_t& el_contribution, Force_t& psi_contribution)
+void SpaceWarpTransformation::computeSWT(ParticleSet& P, const ParticleSet& ions, Force_t& dEl, ParticleGradient_t& dlogpsi, Force_t& el_contribution, Force_t& psi_contribution)
 {
   el_contribution=0;
   psi_contribution=0;
