@@ -93,6 +93,12 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P)
   return Value;
 }
 
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(ParticleSet& P)
+{
+  evaluateImpl(P, false, true);
+  return Value;
+}
+
 void NonLocalECPotential::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
 {
   mw_evaluateImpl(O_list, P_list, false);
@@ -116,7 +122,7 @@ void NonLocalECPotential::mw_evaluateWithToperator(const RefVector<OperatorBase>
     mw_evaluateImpl(O_list, P_list, false);
 }
 
-void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
+void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid)
 {
   if (Tmove)
     nonLocalOps.reset();
@@ -133,7 +139,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
 #endif
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
+      if (!keepGrid)
+        PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
   const auto& myTable = P.getDistTable(myTableIndex);
   // clear all the electron and ion neighbor lists

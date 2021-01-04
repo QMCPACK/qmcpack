@@ -35,6 +35,10 @@ OperatorBase::OperatorBase() : myIndex(-1), Dependants(0), Value(0.0), tWalker(0
   UpdateMode.set(PRIMARY, 1);
 }
 
+/** The correct behavior of this routine requires estimators with non-deterministic components
+ * in their evaluate() function to override this function.
+ */
+OperatorBase::Return_t OperatorBase::evaluateDeterministic(ParticleSet& P) { return evaluate(P); }
 /** Take o_list and p_list update evaluation result variables in o_list?
  *
  * really should reduce vector of local_energies. matching the ordering and size of o list

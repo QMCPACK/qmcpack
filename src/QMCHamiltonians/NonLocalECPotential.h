@@ -43,7 +43,7 @@ public:
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
-
+  Return_t evaluateDeterministic(ParticleSet& P) override;
   void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
@@ -151,8 +151,9 @@ private:
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
    * @param Tmove whether Txy for Tmove is updated
+   * @param keepGrid.  If true, does not randomize the quadrature grid before evaluation.  
    */
-  void evaluateImpl(ParticleSet& P, bool Tmove);
+  void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
 
   /** the actual implementation for batched walkers, used by mw_evaluate and mw_evaluateWithToperator
    * @param O_list the list of NonLocalECPotential in a walker batch
