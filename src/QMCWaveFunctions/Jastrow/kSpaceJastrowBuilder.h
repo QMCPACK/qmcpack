@@ -24,10 +24,10 @@ class ParticleSet;
 
 struct kSpaceJastrowBuilder : public WaveFunctionComponentBuilder
 {
-  ParticleSet sourcePtcl;
+  const ParticleSet& sourcePtcl;
   std::map<std::string, kSpaceJastrow::SymmetryType> SymmMap;
   // One-body constructor
-  kSpaceJastrowBuilder(Communicate *comm, ParticleSet& target, ParticleSet& source)
+  kSpaceJastrowBuilder(Communicate *comm, ParticleSet& target, const ParticleSet& source)
       : WaveFunctionComponentBuilder(comm, target), sourcePtcl(source)
   {
     // nothing for now

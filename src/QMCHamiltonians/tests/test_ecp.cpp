@@ -127,9 +127,9 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
     double so_d_ref = so_d[i];
     double so_f_ref = so_f[i];
 
-    double so_p_val = getSplinedSOPot(ecp.pp_so, 0, r);
-    double so_d_val = getSplinedSOPot(ecp.pp_so, 1, r);
-    double so_f_val = getSplinedSOPot(ecp.pp_so, 2, r);
+    double so_p_val = getSplinedSOPot(ecp.pp_so.get(), 0, r);
+    double so_d_val = getSplinedSOPot(ecp.pp_so.get(), 1, r);
+    double so_f_val = getSplinedSOPot(ecp.pp_so.get(), 2, r);
 
     REQUIRE(so_p_val == Approx(so_p_ref));
     REQUIRE(so_d_val == Approx(so_d_ref));
@@ -284,7 +284,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   bool okay2 = ecp.read_pp_file("Na.BFD.xml");
 
-  NonLocalECPComponent* nlpp = ecp.pp_nonloc;
+  NonLocalECPComponent* nlpp = ecp.pp_nonloc.get();
 
   //This line is required because the randomized quadrature Lattice is set by
   //random number generator in NonLocalECPotential.  We take the unrotated
@@ -534,7 +534,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   bool okay3 = ecp.read_pp_file("so_ecp_test.xml");
   REQUIRE(okay3);
 
-  SOECPComponent* sopp = ecp.pp_so;
+  SOECPComponent* sopp = ecp.pp_so.get();
   REQUIRE(sopp != nullptr);
   copyGridUnrotatedForTest(*sopp);
 

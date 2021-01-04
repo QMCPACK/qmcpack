@@ -18,11 +18,11 @@
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
-class NonLocalECPComponent;
 template<typename T>
 struct NLPPJob;
 
@@ -33,8 +33,6 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
-
-  ~NonLocalECPotential();
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
@@ -92,7 +90,7 @@ public:
 
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
-  void addComponent(int groupID, NonLocalECPComponent* pp);
+  void addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& pp);
 
   /** set the internal RNG pointer as the given pointer
    * @param rng input RNG pointer
@@ -113,7 +111,7 @@ protected:
   ///the set of local-potentials (one for each ion)
   std::vector<NonLocalECPComponent*> PP;
   ///unique NonLocalECPComponent to remove
-  std::vector<NonLocalECPComponent*> PPset;
+  std::vector<std::unique_ptr<NonLocalECPComponent>> PPset;
   ///reference to the center ion
   ParticleSet& IonConfig;
   ///target TrialWaveFunction

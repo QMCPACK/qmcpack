@@ -179,7 +179,7 @@ public:
   EstimatorManagerBase* Estimators;
 
   ///Traces manager
-  TraceManager* Traces;
+  std::unique_ptr<TraceManager> Traces;
 
   ///return the random generators
   inline std::vector<RandomGenerator_t*>& getRng() { return Rng; }
