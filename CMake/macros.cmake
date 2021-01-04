@@ -37,13 +37,14 @@ FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
     ENDFOREACH()
 ENDFUNCTION()
 
-# Copy selected files only. h5, NLPP, wavefunction, structure and the used one input file are copied.
+# Copy selected files only. h5, pseudopotentials, wavefunction, structure and the used one input file are copied.
 FUNCTION( COPY_DIRECTORY_USING_SYMLINK_LIMITED SRC_DIR DST_DIR ${ARGN})
     FILE(MAKE_DIRECTORY "${DST_DIR}")
     # Find all the files but not subdirectories
     FILE(GLOB FILE_FOLDER_NAMES LIST_DIRECTORIES TRUE
         "${SRC_DIR}/qmc_ref" "${SRC_DIR}/qmc-ref" "${SRC_DIR}/*.h5"
         "${SRC_DIR}/*.opt.xml" "${SRC_DIR}/*.ncpp.xml" "${SRC_DIR}/*.BFD.xml"
+        "${SRC_DIR}/*.ccECP.xml"
         "${SRC_DIR}/*.py" "${SRC_DIR}/*.sh" "${SRC_DIR}/*.restart.xml"
         "${SRC_DIR}/Li.xml" "${SRC_DIR}/H.xml" "${SRC_DIR}/*.L2_test.xml" "${SRC_DIR}/*.opt_L2.xml"
         "${SRC_DIR}/*.wfnoj.xml" "${SRC_DIR}/*.wfj.xml" "${SRC_DIR}/*.wfs*.xml"
