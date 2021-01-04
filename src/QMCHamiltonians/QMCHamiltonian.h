@@ -236,7 +236,7 @@ public:
    * @return Local energy. 
    *
    */
-  FullPrecRealType evaluateDeterministic(ParticleSet& P); 
+  FullPrecRealType evaluateDeterministic(ParticleSet& P);
   /** batched version of evaluate for LocalEnergy 
    *
    *  Encapsulation is ignored for H_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
@@ -294,8 +294,11 @@ public:
   * @param EGrad an Nelec x 3 real array which corresponds to d/d[r_i]_j E_L
   * @param A finite difference step size if applicable.  Default is to use finite diff with delta=1e-5.
   * @return EGrad.  Function itself returns nothing.
-  */    
-  void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos_t& EGrad, RealType delta=1e-5);
+  */
+  void evaluateElecGrad(ParticleSet& P,
+                        TrialWaveFunction& psi,
+                        ParticleSet::ParticlePos_t& EGrad,
+                        RealType delta = 1e-5);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
