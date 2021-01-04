@@ -32,40 +32,64 @@ struct SpaceWarpTransformation : public QMCTraits
   SpaceWarpTransformation(ParticleSet& elns, const ParticleSet& ions);
   ~SpaceWarpTransformation(){};
 
+  RealType f(RealType r);  ///< Space warp transformation function F.  Argument is distance.
+  RealType df(RealType r); ///< The derivative of F w.r.t. r.
 
-  RealType f(RealType r);  //space warp transformation function F.
-  RealType df(RealType r); //The gradient of F(r)
-
-  void setPow(RealType swpow_in)
+  /** Sets the exponent for power law space warp transformation
+   *
+   * \param[in] swpow_in the exponent
+   */ 
+  inline void setPow(RealType swpow_in)
   {
     swpow = swpow_in;
-  }; //This sets the exponent for the power law space warp transformation.
+  }; 
 
+  /** Computes intermediate matrices required to build all space warp components and gradients.
+   *  The intermediates calculated are "warpval" and "gradval".
+   *
+   * \param[in] P, the electron particle set.  
+   * \param[in] ions, the ion particle set.  
+   */
   void computeSWTIntermediates(ParticleSet& P,
-                               const ParticleSet& ions); //This computes the intermediate matrices required to build all
-                                                         //space warp components and gradients.
+                               const ParticleSet& ions); 
+                                                         
 
+  /** Generates required space warp quantities to generate the actual "Space Warp" contribution to the
+   *  iat-th force component.
+   *  \param[in] iat the ion index for the force.  
+   *  \param[out] w, w_iat(r_i) for each i, where i is the electron index. 
+   *  \param[out] grad_w,  grad_i w_iat(r_i) for each i, where i is the electron index.
+   */
   void getSWT(int iat,
               ParticleScalar_t& w,
-              Force_t& grad_w); //For each ion component iat, this generates all the required space warp quantities to
-                                //generate the "space warp" contribution to the iat-th force component.
-
+              Force_t& grad_w); 
+                                
+  /** Takes in precomputed grad(E_L) and grad(logPsi) and computes the ZV and ZB space warp contributions 
+   *  to the force.
+   *
+   *  \param[in] elec, electron particle set. 
+   *  \param[in] ions, ion particle set.
+   *  \param[in] dEl, grad_i(E_L) for each electron i. E_L is the local energy.
+   *  \param[in] dlogpsi, grad_i(logPsi) for each electron i.  
+   *  \param[out] el_contribution, The zero-variance contribution from space warp.
+   *  \param[out] psi_contribution, the zero-bias contribution from space warp.  Modifies the grad_I(logPsi) terms.
+   */   
   void computeSWT(ParticleSet& elec,
                   const ParticleSet& ions,
                   Force_t& dEl,
                   ParticleGradient_t& dlogpsi,
                   Force_t& el_contribution,
-                  Force_t& psi_contribution); //Takes in precomputed grad(E_L) and grad(logPsi), and uses
-                                              //this to compute the ZV (el_contribution) and ZB (psi_contribution)
-                                              //space warp contributions.
+                  Force_t& psi_contribution); 
+                                              
+                                              
 
   const int myTableIndex;
   const int Nelec;
   const int Nions;
 
-  RealType swpow;           //Power of space warp transformation.  Right now, r^{-swpow}.
-  Matrix<RealType> warpval; //Nelec x Nion matrix of F(|r_i-R_J|)
-  Matrix<PosType> gradval;  //Nelec x Nion matrix of \nabla_i F(|r_i-R_J|)
+  RealType swpow;           ///< Power of space warp transformation.  Right now, r^{-swpow}.
+  Matrix<RealType> warpval; ///< Nelec x Nion matrix of F(|r_i-R_J|)
+  Matrix<PosType> gradval;  ///< Nelec x Nion matrix of \nabla_i F(|r_i-R_J|)
 };
 } // namespace qmcplusplus
 #endif
