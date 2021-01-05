@@ -325,6 +325,19 @@ void QMCCostFunctionBatched::checkConfigurations()
       for (int ib = 0; ib < curr_crowd_size; ib++)
       {
         samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
+
+        // Set the RNG used in QMCHamiltonian.  This is used to offset the grid
+        // during spherical integration in the non-local pseudopotential.
+        // The RNG state gets reset to the same starting point in correlatedSampling
+        // to use the same grid offsets in the correlated sampling values.
+        // Currently this code sets the RNG to the same state for every configuration
+        // on this node.  Every configuration of electrons is different, and so in
+        // theory using the same spherical integration grid should not be a problem.
+        // If this needs to be changed, one possibility is to advance the RNG state
+        // differently for each configuration.  Make sure the same initialization is
+        // performed in correlatedSampling.
+        *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
+        h_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
       }
 
       // Compute distance tables.
@@ -536,6 +549,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
             samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
             // Copy the saved RNG state
             *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
+            h0_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
           }
 
           // Update distance tables, etc for the loaded sample positions
