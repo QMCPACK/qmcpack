@@ -50,22 +50,6 @@ SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn)
   data_            = createLocalData(data_size, data_locality_);
 }
 
-// I suspect this can be a pure function outside of the class.
-// In this case at least we don't care to copy the data_ as we are going to reduce these later and don't want
-// to end up with a multiplicative factor if we already have data.
-SpinDensityNew::Data SpinDensityNew::createLocalData(size_t size, DataLocality data_locality)
-{
-  Data new_data;
-  if (data_locality == DataLocality::crowd)
-  {
-    new_data = std::make_unique<std::vector<QMCT::RealType>>(size, 0);
-  }
-  else
-  {
-    throw std::runtime_error("currently SpinDensityNew only supports crowd level datalocality");
-  }
-  return new_data;
-}
 
 /** Gets called every step and writes to likely thread local data.
  *

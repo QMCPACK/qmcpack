@@ -70,9 +70,6 @@ public:
   void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const;
 
 private:
-  /** data management
-   */
-  static Data createLocalData(size_t size, DataLocality data_locality);
 
   //local functions
   void reset();

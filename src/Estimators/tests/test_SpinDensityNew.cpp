@@ -95,6 +95,8 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   sdn.accumulate(ref_walkers, ref_psets);
 
   std::vector<QMCT::RealType>& data_ref = sdn.get_data_ref();
+  // There should be a check that the discretization of particle locations expressed in lattice coords
+  // is correct.  This just checks it hasn't changed from how it was in SpinDensity which lacked testing.
   CHECK(data_ref[555] == 4);
   CHECK(data_ref[1777] == 4);
 }

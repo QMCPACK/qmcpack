@@ -152,8 +152,11 @@ public:
 
   virtual OperatorEstBase* clone() = 0;
 
-
 protected:
+  /** data management
+   */
+  static Data createLocalData(size_t size, DataLocality data_locality);
+
   Data data_;
 };
 } // namespace qmcplusplus

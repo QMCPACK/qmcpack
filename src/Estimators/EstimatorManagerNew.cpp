@@ -392,7 +392,6 @@ void EstimatorManagerNew::reduceOperatorEstimators()
                       auto&
                           data) { std::copy_n(operator_recv_buffer.begin(), operator_data_sizes[iop], data->begin()); },
                   operator_ests_[iop]->get_data());
-        RealType invTotWgt = 1.0 / PropertyCache[weightInd];
         // and then we'd do the normalization.
       }
     }

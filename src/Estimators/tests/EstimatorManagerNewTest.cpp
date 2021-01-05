@@ -12,6 +12,7 @@
 #include "EstimatorManagerNewTest.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Platforms/Host/OutputManager.h"
+#include "FakeOperatorEstimator.h"
 
 namespace qmcplusplus {
 namespace testing {
@@ -48,6 +49,29 @@ void EstimatorManagerNewTest::fakeSomeScalarSamples()
 
   em.get_AverageCache().resize(4);
   em.get_SquaredAverageCache().resize(4);
+}
+
+void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
+{
+  em.operator_ests_.emplace_back(new FakeOperatorEstimator(comm_->size(), DataLocality::crowd));
+  std::visit([rank](auto& data) {
+               (*data.get())[rank] += rank;
+               (*data.get())[rank*10] += rank*10;
+             }, em.operator_ests_[0]->get_data());
+}
+
+std::vector<QMCTraits::RealType> EstimatorManagerNewTest::generateGoodOperatorData(int num_ranks)
+{
+  std::vector<QMCT::RealType> good_data(num_ranks * 10, 0.0);
+  if(comm_->rank() == 0)
+  {
+    for(int ir = 0; ir < num_ranks; ++ir)
+    {
+      good_data[ir] += ir;
+      good_data[ir*10] += ir*10;
+    }
+  }
+  return good_data;
 }
 
 void EstimatorManagerNewTest::collectScalarEstimators()
