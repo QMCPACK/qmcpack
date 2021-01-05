@@ -127,30 +127,19 @@ public:
   ///return whether the quantum domain is valid
   bool quantum_domain_valid(quantum_domains qdomain);
 
-  ///return whether the quantum domain is valid
-  inline bool quantum_domain_valid() { return quantum_domain_valid(quantum_domain); }
-
-  inline bool is_classical() { return quantum_domain == classical; }
-  inline bool is_quantum() { return quantum_domain == quantum; }
-  inline bool is_classical_classical() { return quantum_domain == classical_classical; }
-  inline bool is_quantum_classical() { return quantum_domain == quantum_classical; }
-  inline bool is_quantum_quantum() { return quantum_domain == quantum_quantum; }
-
   /** return the mode i
    * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
    */
   inline bool getMode(int i) { return UpdateMode[i]; }
-
-  inline bool isNonLocal() const { return UpdateMode[NONLOCAL]; }
-
   /** Accumulate whatever it is you are accumulating with respect to walkers
    */
   virtual void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) = 0;
 
   virtual void collect(const OperatorEstBase& oeb) = 0;
 
-  virtual void write() = 0;
-
+  std::vector<QMCT::RealType>& get_data_ref() { return std::visit([](auto& data) -> std::vector<QMCT::RealType>& {
+        return *data; }, data_); }
+  
   Data& get_data() { return data_; };
   /*** add to OperatorEstimator descriptor for hdf5
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable

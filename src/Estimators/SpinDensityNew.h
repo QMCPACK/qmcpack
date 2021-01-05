@@ -47,7 +47,6 @@ public:
   // this is a bit of a mess to get from SpeciesSet
   std::vector<int> species_size_;
 
-  Data& get_data() {return data_;}
   //constructor/destructor
   SpinDensityNew(SpinDensityInput& sdi, const SpeciesSet& species);
   ~SpinDensityNew() {}
@@ -57,9 +56,10 @@ public:
   OperatorEstBase* clone();
   void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets);
 
+  /** this allows the EstimatorManagerNew to reduce without needing to know the details
+   *  of SpinDensityNew's data.
+   */
   void collect(const OperatorEstBase&  oeb);
-
-  void write();
 
   /** this gets us into the hdf5 file
    *

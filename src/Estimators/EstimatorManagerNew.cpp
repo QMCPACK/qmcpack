@@ -222,6 +222,7 @@ void EstimatorManagerNew::stopBlock(unsigned long accept,
   PropertyCache[weightInd] = block_weight;
   PropertyCache[cpuInd]    = cpu_block_time;
   makeBlockAverages(accept, reject);
+  reduceOperatorEstimators();
 }
 
 /** Called at end of block in Unified Driver
@@ -351,37 +352,49 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
     H5Fflush(h_file, H5F_SCOPE_LOCAL);
   }
   RecordCount++;
+}
 
-
-  std::vector<size_t> operator_data_sizes;
-  operator_data_sizes.reserve(operator_ests_.size());
-  RefVector<OperatorEstBase> ref_op_ests = convertUPtrToRefVector(operator_ests_);
-  std::for_each(ref_op_ests.begin(), ref_op_ests.end(), [&operator_data_sizes](OperatorEstBase& op_est) {
-                                                                std::visit([&operator_data_sizes](auto& data) { operator_data_sizes.push_back(data->size()); }, op_est.get_data());
-  });
-  size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end()));
-  // I think we should have a blocked mpi send, that has buffers for this.
-  std::vector<double> operator_send_buffer(nops, 0.0);
-  std::vector<double> operator_recv_buffer(nops, 0.0);
-  for (int iop = 0; iop < operator_ests_.size(); ++iop)
+void EstimatorManagerNew::reduceOperatorEstimators()
+{
+  if (operator_ests_.size() > 0)
   {
-    auto cur = operator_send_buffer.begin();
-    std::visit([&cur](auto& data) { copy(data->begin(), data->end(), cur); }, operator_ests_[iop]->get_data());
-
-    // This is necessary to use mpi3's C++ style reduce
-#ifdef HAVE_MPI
-    my_comm_->comm.reduce_n(operator_send_buffer.begin(), operator_data_sizes[iop], operator_recv_buffer.begin(),
-                            std::plus<>{}, 0);
-#else
-    operator_recv_buffer = operator_send_buffer;
-#endif
-    if (my_comm_->rank() == 0)
+    std::vector<size_t> operator_data_sizes(operator_ests_.size());
+    RefVector<OperatorEstBase> ref_op_ests = convertUPtrToRefVector(operator_ests_);
+    for (int iop = 0; iop < operator_data_sizes.size(); ++iop)
     {
-      std::visit([&operator_recv_buffer, &operator_data_sizes,
-                  iop](auto& data) { std::copy_n(operator_recv_buffer.begin(), operator_data_sizes[iop], data->begin()); },
-                 operator_ests_[iop]->get_data());
-      RealType invTotWgt = 1.0 / PropertyCache[weightInd];
-      // and then we'd do the normalization.
+      operator_data_sizes[iop] =
+          std::visit([](auto& data) -> size_t { return data->size(); }, operator_ests_[iop]->get_data());
+    }
+    size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end()));
+    // I think we should have a blocked mpi send, that has buffers for this.
+    std::vector<double> operator_send_buffer;
+    std::vector<double> operator_recv_buffer;
+    operator_send_buffer.reserve(nops);
+    operator_recv_buffer.reserve(nops);
+    for (int iop = 0; iop < operator_ests_.size(); ++iop)
+    {
+      operator_send_buffer.resize(operator_data_sizes[iop]);
+      operator_recv_buffer.resize(operator_data_sizes[iop]);
+      auto cur = operator_send_buffer.begin();
+      std::visit([&cur](auto& data) { copy(data->begin(), data->end(), cur); }, operator_ests_[iop]->get_data());
+
+      // This is necessary to use mpi3's C++ style reduce
+#ifdef HAVE_MPI
+      my_comm_->comm.reduce_n(operator_send_buffer.begin(), operator_data_sizes[iop], operator_recv_buffer.begin(),
+                              std::plus<>{}, 0);
+#else
+      operator_recv_buffer = operator_send_buffer;
+#endif
+      if (my_comm_->rank() == 0)
+      {
+        std::
+            visit([&operator_recv_buffer, &operator_data_sizes, iop](
+                      auto&
+                          data) { std::copy_n(operator_recv_buffer.begin(), operator_data_sizes[iop], data->begin()); },
+                  operator_ests_[iop]->get_data());
+        RealType invTotWgt = 1.0 / PropertyCache[weightInd];
+        // and then we'd do the normalization.
+      }
     }
   }
 }

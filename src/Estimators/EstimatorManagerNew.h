@@ -110,8 +110,13 @@ public:
    */
   int add(EstimatorType* newestimator) { return add(newestimator, MainEstimatorName); }
 
-  /** add a "non" physical operator
+  /** add a "non" physical operator estimator 
    *
+   *  this is a dratically reduced version of OperatorBase right now it just supports
+   *  what the SpinDensityNew estimator needs
+   *
+   *  What is actually important is that it has its own locality aware data and
+   *  EstimatorManagerNew doesn't know about or manage that data.
    */
   int addEstOperator(OperatorEstBase& op_est);
 
@@ -265,6 +270,8 @@ private:
   /// collect data and write
   void makeBlockAverages(unsigned long accept, unsigned long reject);
 
+  void reduceOperatorEstimators();
+  
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;

@@ -67,6 +67,11 @@ SpinDensityNew::Data SpinDensityNew::createLocalData(size_t size, DataLocality d
   return new_data;
 }
 
+/** Gets called every step and writes to likely thread local data.
+ *
+ *  I tried for readable and not doing the optimizers job.
+ *  The offsets into bare data are already bad enough.
+ */
 void SpinDensityNew::accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
 {
   std::visit(
@@ -74,13 +79,14 @@ void SpinDensityNew::accumulate(RefVector<MCPWalker>& walkers, RefVector<Particl
         for (int iw = 0; iw < walkers.size(); ++iw)
         {
           QMCT::RealType weight = walkers[iw].get().Weight;
+          // for testing
           walkers_weight_ += weight;
           int p = 0;
           for (int s = 0; s < species_.size(); ++s)
-            for (int ps = 0; ps < species_.attribName.size(); ++ps, ++p)
+            for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
             {
               QMCT::PosType u = input_.get_cell().toUnit(psets[iw].get().R[p] - input_.get_corner());
-              int point       = 0;
+              int point       = input_.get_npoints() * s;
               for (int d = 0; d < QMCT::DIM; ++d)
                 point +=
                     input_.get_gdims()[d] * ((int)(input_.get_grid()[d] * (u[d] - std::floor(u[d])))); //periodic only
@@ -115,11 +121,6 @@ void SpinDensityNew::report(const std::string& pad)
     app_log() << pad << "    species[" << s << "]"
               << " = " << species_.speciesName[s] << " " << species_.attribName.size() << std::endl;
   app_log() << pad << "end SpinDensity report" << std::endl;
-}
-
-void SpinDensityNew::write()
-{
-  
 }
 
 void SpinDensityNew::registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const
