@@ -12,11 +12,14 @@
 #ifndef QMCPLUSPLUS_VALIDSPINDENSITYINPUT_H
 #define QMCPLUSPLUS_VALIDSPINDENSITYINPUT_H
 
+#include <array>
+
 namespace qmcplusplus
 {
 namespace testing
 {
-  constexpr std::array<const char*, 2> valid_spin_density_input_sections{
+// clang-format: off
+constexpr std::array<const char*, 2> valid_spin_density_input_sections{
     R"(
 <estimator name="spindensity_new" type="spindensity" report="yes">
   <parameter name="grid">
@@ -47,7 +50,9 @@ namespace testing
   </parameter>
 </estimator>
 )"};
-}
-}
+
+// clang-format: on
+} // namespace testing
+} // namespace qmcplusplus
 
 #endif /* QMCPLUSPLUS_VALIDSPINDENSITYINPUT_H */

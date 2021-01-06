@@ -12,8 +12,8 @@
 
 #include "catch.hpp"
 
-#include "SpinDensityInput.h"
 #include "ValidSpinDensityInput.h"
+#include "SpinDensityInput.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 
