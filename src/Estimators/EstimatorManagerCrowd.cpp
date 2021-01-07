@@ -31,8 +31,10 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
   for (int i = 0; i < em.Estimators.size(); i++)
     scalar_estimators_.push_back(em.Estimators[i]->clone());
   MainEstimator = scalar_estimators_[EstimatorMap[MainEstimatorName]];
-  std::for_each(em.operator_ests_.begin(), em.operator_ests_.end(),
-                [this](UPtr<OperatorEstBase>& upeb) { operator_ests_.emplace_back(upeb->clone()); });
+  for(UPtr<OperatorEstBase>& upeb : em.operator_ests_)
+  {
+    operator_ests_.emplace_back(upeb->clone());
+  }
 }
 
 void EstimatorManagerCrowd::accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)

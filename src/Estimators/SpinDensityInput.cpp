@@ -13,6 +13,7 @@
 #include <cmath>
 
 #include "OhmmsData/AttributeSet.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -77,18 +78,18 @@ void SpinDensityInput::readXML(xmlNodePtr cur)
 
   if (have_dr && have_grid)
   {
-    APP_ABORT("SpinDensity::put  dr and grid are provided, this is ambiguous");
+    throw UniformCommunicateError("SpinDensity::put  dr and grid are provided, this is ambiguous");
   }
   else if (!have_dr && !have_grid)
-    APP_ABORT("SpinDensity::put  must provide dr or grid");
+    throw UniformCommunicateError("SpinDensity::put  must provide dr or grid");
 
   if (have_corner && have_center)
-    APP_ABORT("SpinDensity::put  corner and center are provided, this is ambiguous");
+    throw UniformCommunicateError("SpinDensity::put  corner and center are provided, this is ambiguous");
   if (have_cell)
   {
     cell_.set(axes);
     if (!have_corner && !have_center)
-      APP_ABORT("SpinDensity::put  must provide corner or center");
+      throw UniformCommunicateError("SpinDensity::put  must provide corner or center");
   }
 
   if (have_center)

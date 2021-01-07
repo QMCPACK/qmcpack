@@ -200,9 +200,9 @@ void EstimatorManagerNew::start(int blocks, bool record)
     h_file = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     for (int i = 0; i < Estimators.size(); i++)
       Estimators[i]->registerObservables(h5desc, h_file);
-    for (int iop = 0; iop < operator_ests_.size(); ++iop)
+    for (UPtr<OperatorEstBase>& uope : operator_ests_)
     {
-      operator_ests_[iop]->registerOperatorEstimator(h5desc, h_file);
+      uope->registerOperatorEstimator(h5desc, h_file);
     }
   }
 }
@@ -479,7 +479,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
         spdi.readXML(cur);
 
         // Only this should be in EstimatorManagerNew
-        operator_ests_.emplace_back(new SpinDensityNew(std::move(spdi), pset.mySpecies));
+        operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.mySpecies));
       }
       else
         extra.push_back(est_name);

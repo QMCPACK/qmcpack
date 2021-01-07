@@ -24,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 /** Class that collects density per species of particle
  *
  *  commonly used for spin up and down electrons
@@ -35,7 +34,7 @@ class SpinDensityNew : public OperatorEstBase
 public:
   using POLT    = PtclOnLatticeTraits;
   using Lattice = POLT::ParticleLayout_t;
-  using QMCT = QMCTraits;
+  using QMCT    = QMCTraits;
 
   //  typedef std::vector<RealType> dens_t;
   //  typedef std::vector<PosType> pts_t;
@@ -49,12 +48,11 @@ public:
 
   //constructor/destructor
   SpinDensityNew(SpinDensityInput&& sdi, const SpeciesSet& species);
-  ~SpinDensityNew() {}
   SpinDensityNew(const SpinDensityNew& sdn);
-  
+
   //standard interface
-  OperatorEstBase* clone();
-  void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets);
+  OperatorEstBase* clone() override;
+  void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of SpinDensityNew's data.
@@ -69,10 +67,9 @@ public:
    *, needs to be unraveled and simplified the hdf5 output is another 
    *  big state big coupling design.
    */
-  void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const override;
 
 private:
-
   //local functions
   void reset();
   void report(const std::string& pad);

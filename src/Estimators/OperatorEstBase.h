@@ -57,7 +57,7 @@ public:
   OperatorEstBase();
   OperatorEstBase(const OperatorEstBase& oth);
   ///virtual destructor
-  virtual ~OperatorEstBase() {}
+  virtual ~OperatorEstBase() = default;
 
   /** Accumulate whatever it is you are accumulating with respect to walkers
    * 
