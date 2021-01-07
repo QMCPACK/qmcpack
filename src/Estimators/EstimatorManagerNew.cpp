@@ -200,7 +200,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
     h_file = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     for (int i = 0; i < Estimators.size(); i++)
       Estimators[i]->registerObservables(h5desc, h_file);
-    for (UPtr<OperatorEstBase>& uope : operator_ests_)
+    for (auto& uope : operator_ests_)
     {
       uope->registerOperatorEstimator(h5desc, h_file);
     }
