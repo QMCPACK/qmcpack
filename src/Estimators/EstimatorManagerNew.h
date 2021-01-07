@@ -271,7 +271,7 @@ private:
   void makeBlockAverages(unsigned long accept, unsigned long reject);
 
   void reduceOperatorEstimators();
-  
+
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;

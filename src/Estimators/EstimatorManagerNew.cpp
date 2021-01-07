@@ -381,7 +381,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     {
       operator_send_buffer.resize(operator_data_sizes[iop]);
       operator_recv_buffer.resize(operator_data_sizes[iop]);
-      auto cur = operator_send_buffer.begin();
+      auto cur   = operator_send_buffer.begin();
       auto& data = operator_ests_[iop]->get_data_ref();
       copy(data.begin(), data.end(), cur);
 
@@ -474,7 +474,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
         //estimator_inputs_.emplace_back(EstimatorInput{std::in_place_type<SpinDensityInput>});
         //estimator_input_.emplace_back(SpinDensityInput);
         //SpinDensityInput& spdi = std::get<SpinDensityInput>(estimator_inputs_.back());
-        
+
         SpinDensityInput spdi;
         spdi.readXML(cur);
 

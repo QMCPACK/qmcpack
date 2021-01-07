@@ -14,7 +14,8 @@
 
 namespace qmcplusplus
 {
-SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& species) : input_(std::move(input)), species_(species)
+SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& species)
+    : input_(std::move(input)), species_(species)
 {
   myName = "SpinDensity";
   std::cout << "SpinDensity constructor called\n";

@@ -80,7 +80,7 @@ public:
   virtual void collect(const RefVector<OperatorEstBase>& oebs);
 
   std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
-  
+
   Data& get_data() { return data_; };
   /*** add to OperatorEstimator descriptor for hdf5
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable

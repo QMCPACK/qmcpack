@@ -107,4 +107,4 @@ TEST_CASE("EstimatorManagerNew::reduceOperatorestimators()", "[estimators]")
   }
 }
 
-}
+} // namespace qmcplusplus

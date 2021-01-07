@@ -17,14 +17,11 @@
 
 namespace qmcplusplus
 {
-OperatorEstBase::OperatorEstBase() : walkers_weight_(0)
-{
-  data_locality_ = DataLocality::crowd;
-}
+OperatorEstBase::OperatorEstBase() : walkers_weight_(0) { data_locality_ = DataLocality::crowd; }
 
 OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth) : walkers_weight_(0)
 {
-  data_locality_ = oth.data_locality_;     
+  data_locality_ = oth.data_locality_;
 }
 
 // I suspect this can be a pure function outside of the class.
