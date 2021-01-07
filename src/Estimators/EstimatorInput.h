@@ -30,8 +30,8 @@ namespace qmcplusplus
  *  
  *  using EstimatorInput = std::variant<SpinDensityInput,DensityMatrices1BInput,...>;
  */
-  using EstimatorInput = SpinDensityInput;
+using EstimatorInput = SpinDensityInput;
 
-}
+} // namespace qmcplusplus
 
 #endif

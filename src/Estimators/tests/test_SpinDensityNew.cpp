@@ -43,8 +43,8 @@ TEST_CASE("SpinDensityNew", "[estimators]")
 TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
 {
   using MCPWalker = OperatorEstBase::MCPWalker;
-  using QMCT = QMCTraits;
-  
+  using QMCT      = QMCTraits;
+
   Libxml2Document doc;
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
   REQUIRE(okay);
@@ -52,27 +52,28 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   SpinDensityInput sdi;
   sdi.readXML(node);
   SpeciesSet species_set;
-  int ispecies                      = species_set.addSpecies("u");
-  ispecies = species_set.addSpecies("d");
-  CHECK( ispecies == 1 );
-  int iattribute                    = species_set.addAttribute("membersize");
+  int ispecies = species_set.addSpecies("u");
+  ispecies     = species_set.addSpecies("d");
+  CHECK(ispecies == 1);
+  int iattribute             = species_set.addAttribute("membersize");
   species_set(iattribute, 0) = 1;
   species_set(iattribute, 1) = 1;
 
   SpinDensityNew sdn(std::move(sdi), species_set);
   std::vector<MCPWalker> walkers;
   int nwalkers = 4;
-  for(int iw = 0; iw < nwalkers; ++iw)
+  for (int iw = 0; iw < nwalkers; ++iw)
     walkers.emplace_back(2);
-  
+
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
-  Lattice.R = ParticleSet::Tensor_t(3.37316115,3.37316115,0.00000000,0.00000000,3.37316115,3.37316115,3.37316115,0.00000000,3.37316115);
+  Lattice.R = ParticleSet::Tensor_t(3.37316115, 3.37316115, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
+                                    0.00000000, 3.37316115);
   Lattice.reset();
 
   std::vector<ParticleSet> psets;
 
-  for(int iw = 0; iw < nwalkers; ++iw)
+  for (int iw = 0; iw < nwalkers; ++iw)
   {
     psets.emplace_back();
     ParticleSet& pset = psets.back();
@@ -90,7 +91,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   // walkers[3].R[0] = {0.5,0.5,0.5};
   // walkers[3].R[1] = {0.2,0.2,0.2};
   auto ref_walkers = makeRefVector<MCPWalker>(walkers);
-  auto ref_psets = makeRefVector<ParticleSet>(psets);
+  auto ref_psets   = makeRefVector<ParticleSet>(psets);
 
   sdn.accumulate(ref_walkers, ref_psets);
 

@@ -37,7 +37,7 @@ class DistanceTableData;
 class StructFact;
 
 /** Specialized paritlce class for atomistic simulations
- *oo 
+ *
  * Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
  * The ParticleLayout class represents a supercell with/without periodic boundary
  * conditions. The ParticleLayout class also takes care of spatial decompositions
