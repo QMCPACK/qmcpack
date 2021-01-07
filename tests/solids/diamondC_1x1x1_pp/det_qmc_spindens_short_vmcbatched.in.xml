@@ -83,7 +83,7 @@
    </qmcsystem>
    <qmc method="vmc_batch" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
-          <estimator name="spindensity_new" type="spindensity" report="yes">
+          <estimator name="SpinDensityNew" type="spindensity_new" report="yes">
        <parameter name="grid">
          10 10 10
        </parameter>
