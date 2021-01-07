@@ -17,20 +17,14 @@
 
 namespace qmcplusplus
 {
-OperatorEstBase::OperatorEstBase() : Value(0.0), walkers_weight_(0)
+OperatorEstBase::OperatorEstBase() : walkers_weight_(0)
 {
-  quantum_domain = no_quantum_domain;
-  energy_domain  = no_energy_domain;
   data_locality_ = DataLocality::crowd;
-  UpdateMode.set(PRIMARY, 1);
 }
 
 OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth) : walkers_weight_(0)
 {
-  quantum_domain = oth.quantum_domain;
-  energy_domain = oth.energy_domain;
   data_locality_ = oth.data_locality_;     
-  UpdateMode.set(PRIMARY, 1);
 }
 
 // I suspect this can be a pure function outside of the class.
@@ -49,59 +43,5 @@ OperatorEstBase::Data OperatorEstBase::createLocalData(size_t size, DataLocality
   }
   return new_data;
 }
-
-void OperatorEstBase::set_energy_domain(energy_domains edomain)
-{
-  if (energy_domain_valid(edomain))
-    energy_domain = edomain;
-  else
-    APP_ABORT("QMCHamiltonainBase::set_energy_domain\n  input energy domain is invalid");
-}
-
-void OperatorEstBase::set_quantum_domain(quantum_domains qdomain)
-{
-  if (quantum_domain_valid(qdomain))
-    quantum_domain = qdomain;
-  else
-    APP_ABORT("QMCHamiltonainBase::set_quantum_domain\n  input quantum domain is invalid");
-}
-
-void OperatorEstBase::one_body_quantum_domain(const ParticleSet& P)
-{
-  if (P.is_classical())
-    quantum_domain = classical;
-  else if (P.is_quantum())
-    quantum_domain = quantum;
-  else
-    APP_ABORT("OperatorEstBase::one_body_quantum_domain\n  quantum domain of input particles is invalid");
-}
-
-void OperatorEstBase::two_body_quantum_domain(const ParticleSet& P)
-{
-  if (P.is_classical())
-    quantum_domain = classical_classical;
-  else if (P.is_quantum())
-    quantum_domain = quantum_quantum;
-  else
-    APP_ABORT("OperatorEstBase::two_body_quantum_domain(P)\n  quantum domain of input particles is invalid");
-}
-
-void OperatorEstBase::two_body_quantum_domain(const ParticleSet& P1, const ParticleSet& P2)
-{
-  bool c1 = P1.is_classical();
-  bool c2 = P2.is_classical();
-  bool q1 = P1.is_quantum();
-  bool q2 = P2.is_quantum();
-  if (c1 && c2)
-    quantum_domain = classical_classical;
-  else if ((q1 && c2) || (c1 && q2))
-    quantum_domain = quantum_classical;
-  else if (q1 && q2)
-    quantum_domain = quantum_quantum;
-  else
-    APP_ABORT("OperatorEstBase::two_body_quantum_domain(P1,P2)\n  quantum domain of input particles is invalid");
-}
-
-bool OperatorEstBase::quantum_domain_valid(quantum_domains qdomain) { return qdomain != no_quantum_domain; }
 
 } // namespace qmcplusplus

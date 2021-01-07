@@ -41,8 +41,6 @@ OperatorEstBase* SpinDensityNew::clone()
 SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn)
     : input_(sdn.input_), species_(sdn.species_), species_size_(sdn.species_size_)
 {
-  quantum_domain = sdn.quantum_domain;
-  energy_domain  = sdn.energy_domain;
   data_locality_ = sdn.data_locality_;
 
   std::cout << "SpinDensity copy constructor called\n";
