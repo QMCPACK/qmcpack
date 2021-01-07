@@ -37,7 +37,7 @@ TEST_CASE("SpinDensityNew", "[estimators]")
   int ispecies                      = species_set.addSpecies("C");
   int iattribute                    = species_set.addAttribute("membersize");
   species_set(iattribute, ispecies) = 2;
-  SpinDensityNew(sdi, species_set);
+  SpinDensityNew(std::move(sdi), species_set);
 }
 
 TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
@@ -59,7 +59,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   species_set(iattribute, 0) = 1;
   species_set(iattribute, 1) = 1;
 
-  SpinDensityNew sdn(sdi, species_set);
+  SpinDensityNew sdn(std::move(sdi), species_set);
   std::vector<MCPWalker> walkers;
   int nwalkers = 4;
   for(int iw = 0; iw < nwalkers; ++iw)

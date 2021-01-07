@@ -14,9 +14,10 @@
 #include "Platforms/Host/OutputManager.h"
 #include "FakeOperatorEstimator.h"
 
-namespace qmcplusplus {
-namespace testing {
-
+namespace qmcplusplus
+{
+namespace testing
+{
 EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) : em(comm), comm_(comm)
 {
   int num_ranks = comm_->size();
@@ -24,7 +25,6 @@ EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) :
     throw std::runtime_error("Bad Rank Count, test expects different number of ranks.");
 
   app_log() << "running on " << num_ranks << '\n';
-  
 }
 
 void EstimatorManagerNewTest::fakeSomeScalarSamples()
@@ -54,21 +54,20 @@ void EstimatorManagerNewTest::fakeSomeScalarSamples()
 void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
 {
   em.operator_ests_.emplace_back(new FakeOperatorEstimator(comm_->size(), DataLocality::crowd));
-  std::visit([rank](auto& data) {
-               (*data.get())[rank] += rank;
-               (*data.get())[rank*10] += rank*10;
-             }, em.operator_ests_[0]->get_data());
+  std::vector<QMCT::RealType>& data = em.operator_ests_[0]->get_data_ref();
+  data[rank] += rank;
+  data[rank * 10] += rank * 10;
 }
 
 std::vector<QMCTraits::RealType> EstimatorManagerNewTest::generateGoodOperatorData(int num_ranks)
 {
   std::vector<QMCT::RealType> good_data(num_ranks * 10, 0.0);
-  if(comm_->rank() == 0)
+  if (comm_->rank() == 0)
   {
-    for(int ir = 0; ir < num_ranks; ++ir)
+    for (int ir = 0; ir < num_ranks; ++ir)
     {
       good_data[ir] += ir;
-      good_data[ir*10] += ir*10;
+      good_data[ir * 10] += ir * 10;
     }
   }
   return good_data;
@@ -80,5 +79,5 @@ void EstimatorManagerNewTest::collectScalarEstimators()
   em.collectScalarEstimators(est_list);
 }
 
-}
-}
+} // namespace testing
+} // namespace qmcplusplus

@@ -42,7 +42,7 @@ public:
 
   /** the type in this variant changes based on data locality
    */
-  using Data = std::variant<std::unique_ptr<std::vector<QMCT::RealType>>, std::shared_ptr<std::vector<QMCT::RealType>>>;
+  using Data = UPtr<std::vector<QMCT::RealType>>;
 
   /// locality for accumulation data
   DataLocality data_locality_;
@@ -61,19 +61,25 @@ public:
 
   /** Accumulate whatever it is you are accumulating with respect to walkers
    * 
-   *  This method is assumed to be called from a concurrent context
-   *  This method is responsible for being thread safe.
+   *  This method is assumed to be called from the crowd context
+   *  It provides parallelism with respect to computational effort of the estimator
+   *  without causing a global sync.
+   *  Depending on data locality the accumlation of the result may be different from
+   *  the single thread write directly into the OperatorEstimator data.
    */
   virtual void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) = 0;
 
-  /** This is assumed to be called from only one thread with respect to oeb
+  /** Reduce estimator result data from crowds to rank
    *
-   *  oeb's Data will be written to in a non thread safe manner.
+   *  This is assumed to be called from only from one thread per crowds->rank
+   *  reduction. Implied is this is during a global sync or there is a guarantee
+   *  that the crowd operator estimators accumulation data is not being written to.
+   *
+   *  There could be concurrent operations inside the scope of the collect call.
    */
-  virtual void collect(const OperatorEstBase& oeb) = 0;
+  virtual void collect(const RefVector<OperatorEstBase>& oebs);
 
-  std::vector<QMCT::RealType>& get_data_ref() { return std::visit([](auto& data) -> std::vector<QMCT::RealType>& {
-        return *data; }, data_); }
+  std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
   
   Data& get_data() { return data_; };
   /*** add to OperatorEstimator descriptor for hdf5

@@ -48,7 +48,7 @@ public:
   std::vector<int> species_size_;
 
   //constructor/destructor
-  SpinDensityNew(SpinDensityInput& sdi, const SpeciesSet& species);
+  SpinDensityNew(SpinDensityInput&& sdi, const SpeciesSet& species);
   ~SpinDensityNew() {}
   SpinDensityNew(const SpinDensityNew& sdn);
   
@@ -58,8 +58,10 @@ public:
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of SpinDensityNew's data.
+   *
+   *  can use base class default until crowd level SpinDensity estimators don't have a copy of the density grid.
    */
-  void collect(const OperatorEstBase&  oeb);
+  //void collect(const OperatorEstBase&  oeb);
 
   /** this gets us into the hdf5 file
    *

@@ -44,4 +44,12 @@ OperatorEstBase::Data OperatorEstBase::createLocalData(size_t size, DataLocality
   return new_data;
 }
 
+void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
+{
+  for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
+  {
+    std::transform(data_->begin(), data_->end(), crowd_oeb.get_data()->begin(), data_->begin(), std::plus<>{});
+  }
+}
+
 } // namespace qmcplusplus

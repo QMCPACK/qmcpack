@@ -263,17 +263,24 @@ QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
 
 
 /** Reduces OperatorEstimator data from Crowds to the managers OperatorEstimator data
+ *
+ *  The it is a vector of each crowds vector of references to their OperatorEstimators.
+ *  A particular OperatorEstimators reduction via a call to collect may be straight forward 
+ *  if the crowd context OperatorEstimator holds a copy of the estimator data structure
+ *  or more complex if it just collects for instance a list of writes to locations
+ *  in the data structure.
  */
 void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
 {
-  for (int icrowd = 0; icrowd < crowd_op_ests.size(); ++icrowd)
+  for (int iop = 0; iop < operator_ests_.size(); ++iop)
   {
-    const RefVector<OperatorEstBase>& op_ests = crowd_op_ests[icrowd];
-
-    for (int i = 0; i < op_ests.size(); ++i)
+    RefVector<OperatorEstBase> this_op_est_for_all_crowds;
+    for (int icrowd = 0; icrowd < crowd_op_ests.size(); ++icrowd)
     {
-      operator_ests_[i]->collect(op_ests[i]);
+      this_op_est_for_all_crowds.emplace_back(crowd_op_ests[icrowd][iop]);
     }
+
+    operator_ests_[iop]->collect(this_op_est_for_all_crowds);
   }
 }
 
@@ -362,8 +369,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     RefVector<OperatorEstBase> ref_op_ests = convertUPtrToRefVector(operator_ests_);
     for (int iop = 0; iop < operator_data_sizes.size(); ++iop)
     {
-      operator_data_sizes[iop] =
-          std::visit([](auto& data) -> size_t { return data->size(); }, operator_ests_[iop]->get_data());
+      operator_data_sizes[iop] = operator_ests_[iop]->get_data()->size();
     }
     size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end()));
     // I think we should have a blocked mpi send, that has buffers for this.
@@ -376,7 +382,8 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       operator_send_buffer.resize(operator_data_sizes[iop]);
       operator_recv_buffer.resize(operator_data_sizes[iop]);
       auto cur = operator_send_buffer.begin();
-      std::visit([&cur](auto& data) { copy(data->begin(), data->end(), cur); }, operator_ests_[iop]->get_data());
+      auto& data = operator_ests_[iop]->get_data_ref();
+      copy(data.begin(), data.end(), cur);
 
       // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
@@ -387,11 +394,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
 #endif
       if (my_comm_->rank() == 0)
       {
-        std::
-            visit([&operator_recv_buffer, &operator_data_sizes, iop](
-                      auto&
-                          data) { std::copy_n(operator_recv_buffer.begin(), operator_data_sizes[iop], data->begin()); },
-                  operator_ests_[iop]->get_data());
+        copy(operator_recv_buffer.begin(), operator_recv_buffer.end(), data.begin());
         // and then we'd do the normalization.
       }
     }
@@ -467,11 +470,16 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
       else if (est_name == "spindensity_new")
       {
         // Eventually this should be getting read before Estimator Manager New is constructed
-        // EMN will be constructed with a vector of EstimatorInputs
-        estimator_inputs_.emplace_back(EstimatorInput{std::in_place_type<SpinDensityInput>});
-        SpinDensityInput& spdi = std::get<SpinDensityInput>(estimator_inputs_.back());
+        // EMN will be constructed with EstimatorManagerNewInput which will contain a vector of EstimatorInputs
+        //estimator_inputs_.emplace_back(EstimatorInput{std::in_place_type<SpinDensityInput>});
+        //estimator_input_.emplace_back(SpinDensityInput);
+        //SpinDensityInput& spdi = std::get<SpinDensityInput>(estimator_inputs_.back());
+        
+        SpinDensityInput spdi;
         spdi.readXML(cur);
-        operator_ests_.emplace_back(new SpinDensityNew(spdi, pset.mySpecies));
+
+        // Only this should be in EstimatorManagerNew
+        operator_ests_.emplace_back(new SpinDensityNew(std::move(spdi), pset.mySpecies));
       }
       else
         extra.push_back(est_name);

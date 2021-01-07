@@ -14,7 +14,7 @@
 
 namespace qmcplusplus
 {
-SpinDensityNew::SpinDensityNew(SpinDensityInput& input, const SpeciesSet& species) : input_(input), species_(species)
+SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& species) : input_(std::move(input)), species_(species)
 {
   myName = "SpinDensity";
   std::cout << "SpinDensity constructor called\n";
@@ -44,7 +44,7 @@ SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn)
   data_locality_ = sdn.data_locality_;
 
   std::cout << "SpinDensity copy constructor called\n";
-  size_t data_size = std::visit([](auto& other_data) -> size_t { return other_data.get()->size(); }, sdn.data_);
+  size_t data_size = sdn.data_->size();
   data_            = createLocalData(data_size, data_locality_);
 }
 
@@ -56,34 +56,28 @@ SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn)
  */
 void SpinDensityNew::accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
 {
-  std::visit(
-      [this, &walkers, &psets](auto& data) {
-        for (int iw = 0; iw < walkers.size(); ++iw)
-        {
-          QMCT::RealType weight = walkers[iw].get().Weight;
-          // for testing
-          walkers_weight_ += weight;
-          int p = 0;
-          for (int s = 0; s < species_.size(); ++s)
-            for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
-            {
-              QMCT::PosType u = input_.get_cell().toUnit(psets[iw].get().R[p] - input_.get_corner());
-              int point       = input_.get_npoints() * s;
-              for (int d = 0; d < QMCT::DIM; ++d)
-                point +=
-                    input_.get_gdims()[d] * ((int)(input_.get_grid()[d] * (u[d] - std::floor(u[d])))); //periodic only
-              (*data.get())[point] += weight;
-            }
-        }
-      },
-      data_);
-};
+  auto accum_per_walker = [this](MCPWalker& walker, ParticleSet& pset) {
+    QMCT::RealType weight = walker.Weight;
+    // for testing
+    walkers_weight_ += weight;
+    int p                             = 0;
+    std::vector<QMCT::RealType>& data = *data_;
+    for (int s = 0; s < species_.size(); ++s)
+      for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
+      {
+        QMCT::PosType u = input_.get_cell().toUnit(pset.R[p] - input_.get_corner());
+        size_t point    = input_.get_npoints() * s;
+        for (int d = 0; d < QMCT::DIM; ++d)
+          point += input_.get_gdims()[d] * ((int)(input_.get_grid()[d] * (u[d] - std::floor(u[d])))); //periodic only
+        data[point] += weight;
+      }
+  };
 
-void SpinDensityNew::collect(const OperatorEstBase& oeb)
-{
-  const SpinDensityNew& sdn = dynamic_cast<const SpinDensityNew&>(oeb);
-  std::visit([](auto& data_here, const auto& data_there){std::transform(data_here->begin(),data_here->end(),data_there->begin(),data_here->begin(), std::plus<>{});}, data_, sdn.data_);
-}
+  for (int iw = 0; iw < walkers.size(); ++iw)
+  {
+    accum_per_walker(walkers[iw], psets[iw]);
+  }
+};
 
 void SpinDensityNew::report(const std::string& pad)
 {

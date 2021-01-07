@@ -31,8 +31,6 @@ public:
 
   void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) override {}
 
-  void collect(const OperatorEstBase& oeb) override {}
-
   void registerOperatorEstimator(std::vector<observable_helper*>& h5dec, hid_t gid) const override {}
 
   OperatorEstBase* clone() override { return new FakeOperatorEstimator(*this); }

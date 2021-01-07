@@ -23,7 +23,7 @@ FakeOperatorEstimator::FakeOperatorEstimator(int num_ranks, DataLocality data_lo
 
 FakeOperatorEstimator::FakeOperatorEstimator(const FakeOperatorEstimator& foe)
 {
-  size_t data_size = std::visit([](auto& other_data) -> size_t { return other_data.get()->size(); }, foe.data_);
+  size_t data_size = foe.data_->size();
   data_ = createLocalData(data_size, data_locality_);
 }
 
