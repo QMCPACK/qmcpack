@@ -32,8 +32,10 @@ void test_lcao_spinor()
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(1);
@@ -58,15 +60,16 @@ void test_lcao_spinor()
   tspecies(chargeIdx, upIdx) = -1;
 
 
-  elec_.addTable(ions_, DT_SOA);
+  elec_.addTable(ions_);
   elec_.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   const char* particles = "<tmp> \
    <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
+     <basisset transform=\"yes\"/> \
      <sposet name=\"myspo\" size=\"1\"/> \
    </sposet_builder> \
    </tmp> \
@@ -79,10 +82,14 @@ void test_lcao_spinor()
   xmlNodePtr root = doc.getRoot();
 
   xmlNodePtr bnode   = xmlFirstElementChild(root);
-  xmlNodePtr sponode = xmlFirstElementChild(bnode);
-
   LCAOSpinorBuilder bb(elec_, ions_, c, bnode);
-  std::unique_ptr<SPOSet> spo(bb.createSPOSetFromXML(sponode));
+
+  // only pick up the last sposet
+  std::unique_ptr<SPOSet> spo;
+  processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "sposet")
+      spo.reset(bb.createSPOSetFromXML(element));
+  });
   REQUIRE(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -188,6 +195,187 @@ void test_lcao_spinor()
   }
 }
 
+void test_lcao_spinor_excited()
+{
+  app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  app_log() << "!! LCAO SpinorSet from HDF with excited  !!\n";
+  app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+
+  using ValueType = SPOSet::ValueType;
+  using RealType  = SPOSet::RealType;
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
+
+  ions_.setName("ion");
+  ions_.create(1);
+
+  ions_.R[0][0]        = 0.00000000;
+  ions_.R[0][1]        = 0.00000000;
+  ions_.R[0][2]        = 0.00000000;
+  SpeciesSet& ispecies = ions_.getSpeciesSet();
+  int hIdx             = ispecies.addSpecies("H");
+  ions_.update();
+
+  elec_.setName("elec");
+  elec_.create(1);
+  elec_.R[0][0]  = 0.1;
+  elec_.R[0][1]  = -0.3;
+  elec_.R[0][2]  = 1.7;
+  elec_.spins[0] = 0.6;
+
+  SpeciesSet& tspecies       = elec_.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx) = -1;
+
+
+  elec_.addTable(ions_);
+  elec_.update();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
+
+  const char* particles = "<tmp> \
+   <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
+     <basisset name=\"myset\" transform=\"yes\"/> \
+     <sposet name=\"myspo\" basisset=\"myset\" size=\"1\"> \
+       <occupation mode=\"excited\"> \
+         -1 2 \
+       </occupation> \
+     </sposet> \
+   </sposet_builder> \
+   </tmp> \
+";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  xmlNodePtr bnode   = xmlFirstElementChild(root);
+  LCAOSpinorBuilder bb(elec_, ions_, c, bnode);
+
+  // only pick up the last sposet
+  std::unique_ptr<SPOSet> spo;
+  processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "sposet")
+      spo.reset(bb.createSPOSetFromXML(element));
+  });
+  REQUIRE(spo);
+
+  const int OrbitalSetSize = spo->getOrbitalSetSize();
+  REQUIRE(OrbitalSetSize == 1);
+
+  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t dspsiM(elec_.R.size(), spo->getOrbitalSetSize()); //spin gradient
+  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+
+  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+
+  ValueType val(0.0008237860500019983, 1.0474021389417806e-05);
+  ValueType vdx(-0.00041189302538224967, -5.237010699556317e-06);
+  ValueType vdy(0.0012356790748129446, 1.5711032081710294e-05);
+  ValueType vdz(-0.007002181424606922, -8.90291818048377e-05);
+  ValueType vlp(0.04922415803252472, 0.0006258601782677606);
+  ValueType vds(-0.0010017050778321178, -5.584596565578559e-05);
+  const RealType eps = 1e-4;
+
+  for (unsigned int iat = 0; iat < 1; iat++)
+  {
+    REQUIRE(psiM[iat][0] == ComplexApprox(val).epsilon(eps));
+    REQUIRE(dpsiM[iat][0][0] == ComplexApprox(vdx).epsilon(eps));
+    REQUIRE(dpsiM[iat][0][1] == ComplexApprox(vdy).epsilon(eps));
+    REQUIRE(dpsiM[iat][0][2] == ComplexApprox(vdz).epsilon(eps));
+    REQUIRE(d2psiM[iat][0] == ComplexApprox(vlp).epsilon(eps));
+  }
+
+  //temporary arrays for holding the values of the up and down channels respectively.
+  SPOSet::ValueVector_t psi_work;
+
+  //temporary arrays for holding the gradients of the up and down channels respectively.
+  SPOSet::GradVector_t dpsi_work;
+
+  //temporary arrays for holding the laplacians of the up and down channels respectively.
+  SPOSet::ValueVector_t d2psi_work;
+  psi_work.resize(OrbitalSetSize);
+  dpsi_work.resize(OrbitalSetSize);
+  d2psi_work.resize(OrbitalSetSize);
+
+  //We worked hard to generate nice reference data above.  Let's generate a test for evaluateV
+  //and evaluateVGL by perturbing the electronic configuration by dR, and then make
+  //single particle moves that bring it back to our original R reference values.
+
+  //Our perturbation vector.
+  ParticleSet::ParticlePos_t dR;
+  dR.resize(1);
+  dR[0][0] = 0.1;
+  dR[0][1] = 0.2;
+  dR[0][2] = 0.1;
+
+  //The new R of our perturbed particle set. Ma
+  ParticleSet::ParticlePos_t Rnew;
+  Rnew.resize(1);
+  Rnew    = elec_.R + dR;
+  elec_.R = Rnew;
+  elec_.update();
+
+  //Now we test evaluateValue()
+  for (unsigned int iat = 0; iat < 1; iat++)
+  {
+    psi_work = 0.0;
+    elec_.makeMove(iat, -dR[iat], false);
+    spo->evaluateValue(elec_, iat, psi_work);
+
+    REQUIRE(psi_work[0] == ComplexApprox(val));
+    elec_.rejectMove(iat);
+  }
+
+  //Now we test evaluateVGL()
+  for (unsigned int iat = 0; iat < 1; iat++)
+  {
+    psi_work   = 0.0;
+    dpsi_work  = 0.0;
+    d2psi_work = 0.0;
+
+    elec_.makeMove(iat, -dR[iat], false);
+    spo->evaluateVGL(elec_, iat, psi_work, dpsi_work, d2psi_work);
+
+    REQUIRE(psi_work[0] == ComplexApprox(val).epsilon(eps));
+    REQUIRE(dpsi_work[0][0] == ComplexApprox(vdx).epsilon(eps));
+    REQUIRE(dpsi_work[0][1] == ComplexApprox(vdy).epsilon(eps));
+    REQUIRE(dpsi_work[0][2] == ComplexApprox(vdz).epsilon(eps));
+    REQUIRE(d2psi_work[0] == ComplexApprox(vlp).epsilon(eps));
+    elec_.rejectMove(iat);
+  }
+
+  //Now we test evaluateSpin:
+  SPOSet::ValueVector_t dspsi_work;
+  dspsi_work.resize(OrbitalSetSize);
+
+  for (unsigned int iat = 0; iat < 1; iat++)
+  {
+    psi_work   = 0.0;
+    dspsi_work = 0.0;
+
+    elec_.makeMove(iat, -dR[iat], false);
+    spo->evaluate_spin(elec_, iat, psi_work, dspsi_work);
+
+    REQUIRE(psi_work[0] == ComplexApprox(val).epsilon(eps));
+    REQUIRE(dspsi_work[0] == ComplexApprox(vds).epsilon(eps));
+
+    elec_.rejectMove(iat);
+  }
+}
+
 TEST_CASE("ReadMolecularOrbital GTO spinor", "[wavefunction]") { test_lcao_spinor(); }
+TEST_CASE("ReadMolecularOrbital GTO spinor with excited", "[wavefunction]") { test_lcao_spinor_excited(); }
 
 } // namespace qmcplusplus

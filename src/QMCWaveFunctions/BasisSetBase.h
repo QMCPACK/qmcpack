@@ -117,8 +117,6 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   /**@}*/
   ///resize the basis set
   virtual void setBasisSetSize(int nbs) = 0;
-  ///reset the target particle set
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
   virtual void evaluateWithHessian(const ParticleSet& P, int iat)            = 0;
   virtual void evaluateWithThirdDeriv(const ParticleSet& P, int iat)         = 0;
@@ -145,6 +143,7 @@ struct SoaBasisSetBase
   ///size of the basis set
   int BasisSetSize;
 
+  virtual ~SoaBasisSetBase() = default;
   inline int getBasisSetSize() { return BasisSetSize; }
 
   virtual SoaBasisSetBase<T>* makeClone() const = 0;

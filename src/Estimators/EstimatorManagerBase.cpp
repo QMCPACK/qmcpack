@@ -19,7 +19,7 @@
 #include <functional>
 
 #include "Particle/MCWalkerConfiguration.h"
-#include "Estimators/EstimatorManagerBase.h"
+#include "EstimatorManagerBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -33,7 +33,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
 //leave it for serialization debug
@@ -319,8 +319,6 @@ void EstimatorManagerBase::stopBlock(const std::vector<EstimatorManagerBase*>& e
     PropertyCache += est[i]->PropertyCache;
   for (int i = 1; i < PropertyCache.size(); i++)
     PropertyCache[i] *= tnorm;
-  //for(int i=0; i<num_threads; ++i)
-  //varAccumulator(est[i]->varAccumulator.mean());
   collectBlockAverages();
 }
 
@@ -355,7 +353,7 @@ void EstimatorManagerBase::collectBlockAverages()
   }
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
-  varAccumulator(SquaredAverageCache[0] - AverageCache[0] * AverageCache[0]);
+  varAccumulator(SquaredAverageCache[0]);
   if (Archive)
   {
     *Archive << std::setw(10) << RecordCount;
@@ -397,39 +395,23 @@ void EstimatorManagerBase::accumulate(MCWalkerConfiguration& W,
     Collectables->accumulate_all(W.Collectables, 1.0);
 }
 
-void EstimatorManagerBase::getEnergyAndWeight(RealType& e, RealType& w, RealType& var)
+void EstimatorManagerBase::getApproximateEnergyVariance(RealType& e, RealType& var)
 {
   if (Options[COLLECT]) //need to broadcast the value
   {
     RealType tmp[3];
-    tmp[0] = energyAccumulator.result();
-    tmp[1] = energyAccumulator.count();
-    tmp[2] = varAccumulator.mean();
+    tmp[0] = energyAccumulator.count();
+    tmp[1] = energyAccumulator.result();
+    tmp[2] = varAccumulator.result();
     myComm->bcast(tmp, 3);
-    e   = tmp[0];
-    w   = tmp[1];
-    var = tmp[2];
+    e   = tmp[1] / tmp[0];
+    var = tmp[2] / tmp[0] - e * e;
   }
   else
   {
-    e   = energyAccumulator.result();
-    w   = energyAccumulator.count();
-    var = varAccumulator.mean();
+    e   = energyAccumulator.mean();
+    var = varAccumulator.mean() - e * e;
   }
-}
-
-void EstimatorManagerBase::getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var)
-{
-  LocalEnergyOnlyEstimator energynow;
-  energynow.clear();
-  energynow.accumulate(W, W.begin(), W.end(), 1.0);
-  std::vector<RealType> tmp(3);
-  tmp[0] = energynow.scalars[0].result();
-  tmp[1] = energynow.scalars[0].result2();
-  tmp[2] = energynow.scalars[0].count();
-  myComm->allreduce(tmp);
-  eavg = tmp[0] / tmp[2];
-  var  = tmp[1] / tmp[2] - eavg * eavg;
 }
 
 EstimatorManagerBase::EstimatorType* EstimatorManagerBase::getMainEstimator()

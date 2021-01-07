@@ -48,7 +48,7 @@ private:
 TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
-  Concurrency::OverrideMaxThreads<> override(8);
+  Concurrency::OverrideMaxCapacity<> override(8);
   Communicate* comm;
   comm = OHMMS::Controller;
   outputManager.pause();
@@ -64,16 +64,20 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
   MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
   wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
 
   MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
-  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                          hamiltonian_pool.getPrimary(), comm->rank());
+  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
   SampleStack samples;
-  DMCBatched dmcdriver(std::move(qmcdriver_input), std::move(dmcdriver_input), population, *(wavefunction_pool.getPrimary()),
-                                    *(hamiltonian_pool.getPrimary()), wavefunction_pool, comm);
+  WalkerConfigurations walker_confs;
+  DMCBatched dmcdriver(std::move(qmcdriver_input), std::move(dmcdriver_input),
+                       MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
+                                    wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary())
+
+
+                           ,
+                       *(wavefunction_pool.getPrimary()), *(hamiltonian_pool.getPrimary()), comm);
 
   // setStatus must be called before process
   std::string root_name{"Test"};
@@ -88,11 +92,9 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 
   dmcdriver.process(node);
   CHECK(dmcdriver.getNewBranchEngine() != nullptr);
-  CHECK(dmcdriver.get_living_walkers() == 32);
-  CHECK(population.get_num_global_walkers() == 32);
-  CHECK(population.get_num_local_walkers() == 32);
-  QMCTraits::IndexType reserved_walkers = population.get_num_local_walkers() + population.get_dead_walkers().size();
-  CHECK(reserved_walkers == 48);
+  CHECK(dmcdriver.get_num_living_walkers() == 8);
+  const QMCTraits::IndexType reserved_walkers = dmcdriver.get_num_living_walkers() + dmcdriver.get_num_dead_walkers();
+  CHECK(reserved_walkers == 10);
   // What else should we expect after process
 }
 

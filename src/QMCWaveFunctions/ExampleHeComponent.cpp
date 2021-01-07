@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/ExampleHeComponent.h"
+#include "ExampleHeComponent.h"
 #include "OhmmsData/AttributeSet.h"
 
 /**@file ExampleHeComponent.cpp

@@ -17,7 +17,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
 #include "Platforms/Host/OutputManager.h"
@@ -36,7 +36,7 @@
 #include <random>
 
 #include "AFQMC/Utilities/test_utils.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/Hamiltonian.hpp"
@@ -86,6 +86,7 @@ void wfn_fac(boost::mpi3::communicator& world)
     int NAEA             = file_data.NAEA;
     int NAEB             = file_data.NAEB;
     WALKER_TYPES type    = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL             = (type == NONCOLLINEAR) ? 2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -110,9 +111,6 @@ void wfn_fac(boost::mpi3::communicator& world)
     auto TG   = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
-
-    // initialize TG buffer
-    make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
@@ -160,7 +158,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
       auto initial_guess = WfnFac.getInitialGuess(wfn_name);
       REQUIRE(initial_guess.size(0) == 2);
-      REQUIRE(initial_guess.size(1) == NMO);
+      REQUIRE(initial_guess.size(1) == NPOL * NMO);
       REQUIRE(initial_guess.size(2) == NAEA);
 
       if (type == COLLINEAR)
@@ -298,7 +296,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
       //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
       REQUIRE(initial_guess.size(0) == 2);
-      REQUIRE(initial_guess.size(1) == NMO);
+      REQUIRE(initial_guess.size(1) == NPOL * NMO);
       REQUIRE(initial_guess.size(2) == NAEA);
 
       if (type == COLLINEAR)
@@ -402,8 +400,6 @@ void wfn_fac(boost::mpi3::communicator& world)
       if (TG.Node().root())
         remove("dummy.h5");
     }
-
-    destroy_shm_buffer_generators();
   }
 }
 
@@ -431,6 +427,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     int NAEA             = file_data.NAEA;
     int NAEB             = file_data.NAEB;
     WALKER_TYPES type    = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL             = (type == NONCOLLINEAR) ? 2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -455,9 +452,6 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     auto TGwfn = TaskGroup_(gTG, std::string("WfnTG"), ngroups, gTG.getTotalCores());
     int nwalk  = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
-
-    // initialize TG buffer
-    make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
@@ -503,7 +497,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
 
     if (type == COLLINEAR)
@@ -662,7 +656,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
 
     if (type == COLLINEAR)
@@ -788,8 +782,6 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     // remove temporary file
     if (TG.Node().root())
       remove("dummy.h5");
-
-    destroy_shm_buffer_generators();
   }
 }
 
@@ -1114,7 +1106,6 @@ const char *wlk_xml_block =
     }
 
 #endif
-    destroy_shm_buffer_generators();
   }
 }
 #endif
@@ -1124,18 +1115,19 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if (not world.root())
     infoLog.pause();
+  auto node = world.split_shared(world.rank());
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  auto node = world.split_shared(world.rank());
 
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   wfn_fac<Alloc>(world);
-  destroy_shm_buffer_generators();
+  release_memory_managers();
 }
 
 TEST_CASE("wfn_fac_distributed", "[wavefunction_factory]")
@@ -1155,9 +1147,10 @@ TEST_CASE("wfn_fac_distributed", "[wavefunction_factory]")
   int ngrp(world.size() / node.size());
   using Alloc = shared_allocator<ComplexType>;
 #endif
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   wfn_fac_distributed<Alloc>(world, ngrp);
-  destroy_shm_buffer_generators();
+  release_memory_managers();
 }
 
 

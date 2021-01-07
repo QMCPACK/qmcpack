@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/MPC.h"
+#include "MPC.h"
 #include "Lattice/ParticleBConds.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/AttributeSet.h"
@@ -30,12 +30,7 @@ namespace qmcplusplus
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
 MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : VlongSpline(0),
-      DensitySpline(0),
-      Ecut(cutoff),
-      d_aa_ID(ptcl.addTable(ptcl, DT_SOA_PREFERRED)),
-      PtclRef(&ptcl),
-      FirstTime(true)
+    : VlongSpline(0), DensitySpline(0), Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
 {
   initBreakup();
 }
@@ -193,7 +188,7 @@ void MPC::init_f_G()
   f_0 += 0.4 * M_PI * L * L * volInv;
   // std::cerr << "f_0 = " << f_0/volInv << std::endl;
   double worst = 0.0, worstLin = 0.0, worstQuad = 0.0;
-  int iworst   = 0;
+  int iworst = 0;
   for (int iG = 0; iG < numG; iG++)
   {
     TinyVector<double, 2> g_12(g_G_2N[iG], g_G_4N[iG]);

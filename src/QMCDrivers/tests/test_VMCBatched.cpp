@@ -31,7 +31,7 @@ class VMCBatchedTest
 public:
   VMCBatchedTest()
   {
-    Concurrency::OverrideMaxThreads<> override(8);
+    Concurrency::OverrideMaxCapacity<> override(8);
     Communicate* comm;
     OHMMS::Controller->initialize(0, NULL);
     comm_ = OHMMS::Controller;
@@ -40,7 +40,7 @@ public:
   void testCalcDefaultLocalWalkers()
   {
     using namespace testing;
-    Concurrency::OverrideMaxThreads<> override(8);
+    Concurrency::OverrideMaxCapacity<> override(8);
     Communicate* comm;
     OHMMS::Controller->initialize(0, NULL);
     comm = OHMMS::Controller;
@@ -54,10 +54,10 @@ public:
     MinimalParticlePool mpp;
     ParticleSetPool particle_pool = mpp(comm);
     MinimalWaveFunctionPool wfp;
-    WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+    WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
     wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
     MinimalHamiltonianPool mhp;
-    HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
+    HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
 
 
       

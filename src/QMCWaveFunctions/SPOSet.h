@@ -54,12 +54,6 @@ public:
   typedef ParticleSet::Walker_t Walker_t;
   typedef std::map<std::string, SPOSet*> SPOPool_t;
 
-  /** name of the object
-   *
-   * Several user classes can own SPOSet and use objectName as counter
-   */
-  std::string objectName;
-
   /** constructor */
   SPOSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false);
 
@@ -67,9 +61,7 @@ public:
    *
    * Derived class destructor needs to pay extra attention to freeing memory shared among clones of SPOSet.
    */
-  virtual ~SPOSet()
-  {
-  }
+  virtual ~SPOSet() {}
 
   // accessor function to Optimizable
   inline bool isOptimizable() const { return Optimizable; }
@@ -187,14 +179,6 @@ public:
                                      const std::vector<std::vector<int>>& lookup_tbl)
   {}
 
-
-  /** reset the target particleset
-   *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
-   *  Ye: Only AoS needs it, SoA LCAO doesn't need this. Reseting pointers is a state machine very hard to maintain.
-   *  This interface should be removed with AOS.
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
-
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals
    * Ye: I prefer to remove this interface in the future. SPOSet builders need to handle the size correctly.
@@ -213,17 +197,6 @@ public:
    * @param psi values of the SPO
    */
   virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) = 0;
-
-  /** evaluate the values of this single-particle orbital sets of multiple walkers
-   * @param spo_list the list of SPOSet pointers in a walker batch
-   * @param P_list the list of ParticleSet pointers in a walker batch
-   * @param iat active particle
-   * @param psi_v_list the list of value vector pointers in a walker batch
-   */
-  virtual void mw_evaluateValue(const RefVector<SPOSet>& spo_list,
-                                const RefVector<ParticleSet>& P_list,
-                                int iat,
-                                const RefVector<ValueVector_t>& psi_v_list);
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
@@ -443,6 +416,11 @@ public:
    */
   virtual void finalizeConstruction() {}
 
+  /// set object name
+  void setName(const std::string& name) { myName = name; }
+  /// return object name
+  const std::string& getName() const { return myName; }
+
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
 
@@ -488,6 +466,8 @@ protected:
   opt_variables_type myVars;
   ///name of the class
   std::string className;
+  /// name of the object, unique identifier
+  std::string myName;
 };
 
 typedef SPOSet* SPOSetPtr;

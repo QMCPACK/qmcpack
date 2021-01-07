@@ -71,7 +71,7 @@ then
 fi
 
 # options common to all cases
-CTEST_FLAGS="-DQMC_DATA=$QMC_DATA -DENABLE_TIMERS=1"
+CTEST_FLAGS="-DQMC_DATA=$QMC_DATA"
 
 # compiler dependent options
 if [[ $sys == *"ClangDev"* ]]; then
@@ -81,12 +81,12 @@ if [[ $sys == *"ClangDev"* ]]; then
   export CC=mpicc
   export CXX=mpicxx
 
-  CTEST_FLAGS="$CTEST_FLAGS -DCMAKE_C_FLAGS=-march=skylake -DCMAKE_CXX_FLAGS=-march=skylake -DENABLE_MKL=1"
+  CTEST_FLAGS="$CTEST_FLAGS -DCMAKE_C_FLAGS=-march=skylake -DCMAKE_CXX_FLAGS=-march=skylake"
   if [[ $sys == *"Offload-CUDA"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DCUDA_HOST_COMPILER=`which gcc`;-DCUDA_PROPAGATE_HOST_FLAGS=OFF;-DQMC_NIO_MAX_SIZE=16'"
     CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=1 -DCUDA_ARCH=sm_61"
     CTEST_LABELS="-L deterministic -LE unstable"
-    export N_CONCURRENT_TESTS=1
+    export N_CONCURRENT_TESTS=4
   else
     CTEST_FLAGS="$CTEST_FLAGS -DQE_BIN=$QE_BIN"
     CTEST_LABELS="-L 'deterministic|performance' -LE unstable"
@@ -103,7 +103,7 @@ elif [[ $sys == *"Intel"* ]]; then
   if [[ $sys == *"-CUDA2"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=1 -DCUDA_ARCH=sm_61 -DQMC_OPTIONS='-DQMC_NIO_MAX_SIZE=16'"
     CTEST_LABELS="-L 'deterministic|performance' -LE unstable"
-    export N_CONCURRENT_TESTS=1
+    export N_CONCURRENT_TESTS=4
   elif [[ $sys == *"-legacy-CUDA"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DQMC_CUDA=1 -DCUDA_ARCH=sm_61 -DQMC_OPTIONS='-DQMC_NIO_MAX_SIZE=16'"
     CTEST_LABELS="-L 'deterministic|performance' -LE unstable"

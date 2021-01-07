@@ -58,6 +58,11 @@ void WalkerSetBase<Alloc, Ptr>::parse(xmlNodePtr cur)
     app_log() << " Using a non-collinear (GHF) walker. \n";
     walkerType = NONCOLLINEAR;
   }
+  else if (type.find("noncollinear") != std::string::npos)
+  {
+    app_log() << " Using a non-collinear (GHF) walker. \n";
+    walkerType = NONCOLLINEAR;
+  }
   else if (type.find("collinear") != std::string::npos)
   {
     app_log() << " Using a collinear (UHF/ROHF) walker. \n";

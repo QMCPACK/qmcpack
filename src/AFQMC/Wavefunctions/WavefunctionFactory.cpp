@@ -15,24 +15,22 @@
 
 #include <random>
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/Matrix/csr_hdf5_readers.hpp"
-#include "AFQMC/Wavefunctions/WavefunctionFactory.h"
+#include "WavefunctionFactory.h"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Wavefunctions/NOMSD.hpp"
 #include "AFQMC/Wavefunctions/PHMSD.hpp"
 #include "AFQMC/HamiltonianOperations/HamOpsIO.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
 Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
                                             TaskGroup_& TGwfn,
                                             xmlNodePtr cur,
@@ -88,6 +86,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
   int NMO  = AFinfo.NMO;
   int NAEA = AFinfo.NAEA;
   int NAEB = AFinfo.NAEB;
+  int NPOL = (walker_type == NONCOLLINEAR) ? 2 : 1;
+  if ((walker_type == NONCOLLINEAR) && (NAEB != 0))
+    APP_ABORT(" Error in Wavefunctions/WavefunctionFactory::fromASCII: noncollinear && NAEB!=0. \n\n\n ");
 
   std::ifstream in;
   in.open(filename.c_str());
@@ -114,7 +115,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
           read_ph_wavefunction(in, ndets_to_read, walker_type, TGwfn.Node(), NMO, NAEA, NAEB, PsiT_MO);
       assert(abij.number_of_configurations() == ndets_to_read);
       int NEL = (walker_type == NONCOLLINEAR) ? (NAEA + NAEB) : NAEA;
-      int N_  = (walker_type == NONCOLLINEAR) ? 2 * NMO : NMO;
+      int N_  = NPOL * NMO;
       ComplexType one(1.0, 0.0);
       if (walker_type == COLLINEAR)
         PsiT.reserve(2 * ndets_to_read);
@@ -290,14 +291,15 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
     auto guess = initial_guess.find(name);
     if (guess == initial_guess.end())
     {
-      auto newg = initial_guess.insert(std::make_pair(name, boost::multi::array<ComplexType, 3>({2, NMO, NAEA})));
-      int iC    = (walker_type != COLLINEAR ? initial_configuration : 2 * initial_configuration);
+      auto newg =
+          initial_guess.insert(std::make_pair(name, boost::multi::array<ComplexType, 3>({2, NPOL * NMO, NAEA})));
+      int iC = (walker_type != COLLINEAR ? initial_configuration : 2 * initial_configuration);
       if (iC >= PsiT.size())
         APP_ABORT(" Error: initial_configuration > ndets_to_read \n");
       if (!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n");
       using ma::conj;
-      std::fill_n((newg.first)->second.origin(), 2 * NMO * NAEA, ComplexType(0.0, 0.0));
+      std::fill_n((newg.first)->second.origin(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
       {
         auto pbegin = PsiT[iC].pointers_begin();
         auto pend   = PsiT[iC].pointers_end();
@@ -329,22 +331,14 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
 
     if (TGwfn.TG_local().size() > 1)
     {
-      SlaterDetOperations SDetOp(
-          SlaterDetOperations_shared<ComplexType>(((walker_type != NONCOLLINEAR) ? (NMO) : (2 * NMO)),
-                                                  ((walker_type != NONCOLLINEAR) ? (NAEA) : (NAEA + NAEB))));
+      SlaterDetOperations SDetOp(SlaterDetOperations_shared<ComplexType>(NPOL * NMO, NAEA));
       return Wavefunction(NOMSD<devcsr_Matrix>(AFinfo, cur, TGwfn, std::move(SDetOp), std::move(HOps), std::move(ci),
                                                std::move(PsiT), walker_type, NCE, targetNW));
     }
     else
     {
       SlaterDetOperations SDetOp(
-          SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>(((walker_type != NONCOLLINEAR)
-                                                                                        ? (NMO)
-                                                                                        : (2 * NMO)),
-                                                                                   ((walker_type != NONCOLLINEAR)
-                                                                                        ? (NAEA)
-                                                                                        : (NAEA + NAEB)),
-                                                                                   device_buffer_generator.get()));
+          SlaterDetOperations_serial<ComplexType, DeviceBufferManager>(NPOL * NMO, NAEA, DeviceBufferManager{}));
       return Wavefunction(NOMSD<devcsr_Matrix>(AFinfo, cur, TGwfn, std::move(SDetOp), std::move(HOps), std::move(ci),
                                                std::move(PsiT), walker_type, NCE, targetNW));
     }
@@ -362,6 +356,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
      */
 
     // assuming walker_type==COLLINEAR for now, specialize a type for perfect pairing PHMSD
+    // MAM: generatlize for NONCOLLINEAR later!!!
     if (walker_type != COLLINEAR)
       APP_ABORT("Error: PHMSD requires a COLLINEAR calculation.\n");
     std::vector<PsiT_Matrix> PsiT_MO;
@@ -717,6 +712,9 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
   int NMO  = AFinfo.NMO;
   int NAEA = AFinfo.NAEA;
   int NAEB = AFinfo.NAEB;
+  int NPOL = (walker_type == NONCOLLINEAR) ? 2 : 1;
+  if ((walker_type == NONCOLLINEAR) && (NAEB != 0))
+    APP_ABORT(" Error in Wavefunctions/WavefunctionFactory::fromASCII: noncollinear && NAEB!=0. \n\n\n ");
 
   std::vector<int> excitations;
 
@@ -832,9 +830,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
 
     if (TGwfn.TG_local().size() > 1)
     {
-      SlaterDetOperations SDetOp(
-          SlaterDetOperations_shared<ComplexType>(((walker_type != NONCOLLINEAR) ? (NMO) : (2 * NMO)),
-                                                  ((walker_type != NONCOLLINEAR) ? (NAEA) : (NAEA + NAEB))));
+      SlaterDetOperations SDetOp(SlaterDetOperations_shared<ComplexType>(NPOL * NMO, NAEA));
       if (dense_trial == "yes")
       {
         using MType = ComplexMatrix<node_allocator<ComplexType>>;
@@ -858,13 +854,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
     else
     {
       SlaterDetOperations SDetOp(
-          SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>(((walker_type != NONCOLLINEAR)
-                                                                                        ? (NMO)
-                                                                                        : (2 * NMO)),
-                                                                                   ((walker_type != NONCOLLINEAR)
-                                                                                        ? (NAEA)
-                                                                                        : (NAEA + NAEB)),
-                                                                                   device_buffer_generator.get()));
+          SlaterDetOperations_serial<ComplexType, DeviceBufferManager>(NPOL * NMO, NAEA, DeviceBufferManager{}));
       if (dense_trial == "yes")
       {
         using MType = ComplexMatrix<node_allocator<ComplexType>>;
@@ -1125,6 +1115,7 @@ void WavefunctionFactory::getInitialGuess(hdf_archive& dump,
                                           int NAEB,
                                           WALKER_TYPES walker_type)
 {
+  int NPOL = (walker_type == NONCOLLINEAR) ? 2 : 1;
   std::vector<int> dims(5);
   if (!dump.readEntry(dims, "dims"))
   {
@@ -1135,19 +1126,19 @@ void WavefunctionFactory::getInitialGuess(hdf_archive& dump,
   auto guess = initial_guess.find(name);
   if (guess == initial_guess.end())
   {
-    auto newg = initial_guess.insert(std::make_pair(name, boost::multi::array<ComplexType, 3>({2, NMO, NAEA})));
+    auto newg = initial_guess.insert(std::make_pair(name, boost::multi::array<ComplexType, 3>({2, NPOL * NMO, NAEA})));
     if (!newg.second)
       APP_ABORT(" Error: Problems adding new initial guess. \n");
     using ma::conj;
-    std::fill_n((newg.first)->second.origin(), 2 * NMO * NAEA, ComplexType(0.0, 0.0));
+    std::fill_n((newg.first)->second.origin(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
     {
-      boost::multi::array<ComplexType, 2> Psi0Alpha({NMO, NAEA});
+      boost::multi::array<ComplexType, 2> Psi0Alpha({NPOL * NMO, NAEA});
       if (!dump.readEntry(Psi0Alpha, "Psi0_alpha"))
       {
         app_error() << " Error in WavefunctionFactory: Initial wavefunction Psi0_alpha not found. \n";
         APP_ABORT("");
       }
-      for (int i = 0; i < NMO; i++)
+      for (int i = 0; i < NPOL * NMO; i++)
         for (int j = 0; j < NAEA; j++)
           ((newg.first)->second)[0][i][j] = Psi0Alpha[i][j];
     }

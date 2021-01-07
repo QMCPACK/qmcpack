@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && c++ -std=c++2a -Wall -Wextra `#-Wfatal-errors` -D_TEST_BOOST_MULTI_DETAIL_MEMORY $0x.cpp -o $0x.x && time $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x&&$0x&&rm -f $0x; exit
 #endif
 #ifndef BOOST_MULTI_DETAIL_MEMORY_HPP
 #define BOOST_MULTI_DETAIL_MEMORY_HPP
@@ -302,32 +302,9 @@ template<> struct uninitialized_fill_aux<1>{template<class Alloc, class O, class
 };
 #endif
 
-template<class T, typename = decltype(std::declval<T const&>().default_allocator())>
-std::true_type           has_default_allocator_aux(T const&);
-std::false_type          has_default_allocator_aux(...);
-template<class T> struct has_default_allocator : decltype(has_default_allocator_aux(std::declval<T>())){};
-
-template<class Pointer, class T = void> struct pointer_traits;
-
-template<class P>
-struct pointer_traits<P, std::enable_if_t<has_default_allocator<P>{}> > : std::pointer_traits<P>{
-	static auto default_allocator_of(typename pointer_traits::pointer const& p){return p.default_allocator();}
-	using default_allocator_type = decltype(std::declval<P const&>().default_allocator());
-};
-template<class P>
-struct pointer_traits<P, std::enable_if_t<not has_default_allocator<P>{}> > : std::pointer_traits<P>{
-//	using default_allocator_type = std::allocator<std::decay_t<typename std::iterator_traits<P>::value_type> >;
-	using default_allocator_type = std::allocator<std::decay_t<typename std::pointer_traits<P>::element_type> >;
-	static default_allocator_type default_allocator_of(typename pointer_traits::pointer const&){return {};}
-};
-
-template<class P>
-typename pointer_traits<P>::default_allocator_type 
-default_allocator_of(P const& p){return pointer_traits<P>::default_allocator_of(p);}
-
 }}
 
-#if _TEST_BOOST_MULTI_DETAIL_MEMORY
+#if not __INCLUDE_LEVEL__ // _TEST_BOOST_MULTI_DETAIL_MEMORY
 
 #include<vector>
 
@@ -347,12 +324,15 @@ int main(){
 		static_assert(std::is_same<decltype(a), std::allocator<double>>{}, "!");
 	//	what(typename std::iterator_traits<double*>::value_type{});
 	}
+#if 0
 	{
 		std::vector<double>::iterator it;
 		auto a = multi::default_allocator_of(it);
 	//	what(typename std::iterator_traits<decltype(it)>::value_type{});
 		static_assert(std::is_same<decltype(a), std::allocator<double>>{}, "!");
 	}
+#endif
+
 }
 #endif
 #endif

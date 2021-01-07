@@ -15,9 +15,10 @@
 #ifndef QMCPLUSPLUS_COMPOSITE_SPOSET_H
 #define QMCPLUSPLUS_COMPOSITE_SPOSET_H
 
-#include <QMCWaveFunctions/SPOSet.h>
-#include <QMCWaveFunctions/BasisSetBase.h>
-#include <QMCWaveFunctions/SPOSetBuilder.h>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
 {
@@ -47,8 +48,6 @@ public:
   //SPOSet interface methods
   ///size is determined by component sposets and nothing else
   inline void setOrbitalSetSize(int norbs) {}
-
-  void resetTargetParticleSet(ParticleSet& P);
 
   SPOSet* makeClone() const;
 
@@ -94,12 +93,15 @@ public:
 
 struct CompositeSPOSetBuilder : public SPOSetBuilder
 {
-  CompositeSPOSetBuilder(Communicate* comm) : SPOSetBuilder(comm) {}
+  CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory) : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory) {}
 
   //SPOSetBuilder interface
   SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
   SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
+
+  /// reference to the sposet_builder_factory
+  const SPOSetBuilderFactory& sposet_builder_factory_;
 };
 } // namespace qmcplusplus
 

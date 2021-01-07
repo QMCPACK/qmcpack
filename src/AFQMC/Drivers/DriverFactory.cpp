@@ -7,10 +7,10 @@
 #include "mpi3/communicator.hpp"
 
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Drivers/DriverFactory.h"
+#include "DriverFactory.h"
 #include "AFQMC/Drivers/AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Walkers/WalkerSetFactory.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
@@ -97,8 +97,12 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   m_param.put(cur);
 
   // hard restriction for now
+  bool first(false);
   if (ncores < 0)
+  {
+    first  = true;
     ncores = ncores_per_TG;
+  }
   else if (ncores != ncores_per_TG)
     APP_ABORT(" Error: Current implementation requires the same ncores in all execution blocks. \n");
 
@@ -207,7 +211,8 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   // setting TG buffer generator here, as soon as localTG is available from any TG
   // defaults to 20MB. Read from input!!!
   std::size_t buffer_size(20);
-  make_localTG_buffer_generator(TGwfn.TG_local(), buffer_size * 1024L * 1024L);
+  if (first)
+    LocalTGBufferManager local_buffer(TGwfn.TG_local(), buffer_size * 1024uL * 1024uL);
 
   // walker set and type
   WalkerSet& wset          = WSetFac.getWalkerSet(TGHandler.getTG(1), wset_name, rng);

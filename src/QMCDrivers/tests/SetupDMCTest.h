@@ -27,17 +27,10 @@ namespace testing
 class SetupDMCTest : public SetupPools
 {
 public:
-  SetupDMCTest(int nranks = 4)
-      : population(comm->size(),
-                   particle_pool->getParticleSet("e"),
-                   wavefunction_pool->getPrimary(),
-                   hamiltonian_pool->getPrimary(),
-                   comm->rank()),
-        num_ranks(nranks),
-        qmcdrv_input(3)
+  SetupDMCTest(int nranks = 4) : num_ranks(nranks), qmcdrv_input(3)
   {
-    if (Concurrency::maxThreads<>() < 8)
-      num_crowds = Concurrency::maxThreads<>();
+    if (Concurrency::maxCapacity<>() < 8)
+      num_crowds = Concurrency::maxCapacity<>();
   }
 
   DMCBatched operator()()
@@ -53,15 +46,17 @@ public:
     DMCDriverInput dmc_input_copy(dmcdrv_input);
     return {std::move(qmc_input_copy),
             std::move(dmc_input_copy),
-            population,
+            MCPopulation(comm->size(), comm->rank(), walker_confs, particle_pool->getParticleSet("e"),
+                         wavefunction_pool->getPrimary(), hamiltonian_pool->getPrimary()),
+
+
             *(wavefunction_pool->getPrimary()),
             *(hamiltonian_pool->getPrimary()),
-            *(wavefunction_pool),
             comm};
   }
 
 public:
-  MCPopulation population;
+  WalkerConfigurations walker_confs;
 
   Libxml2Document doc;
   xmlNodePtr node;

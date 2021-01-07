@@ -45,26 +45,26 @@ e_scf=mf.kernel()
 import numpy as np
 coords=np.zeros((1,3))
 
-print '    // BEGIN generated C++ input from %s (pyscf version %s) on %s\n'%(__file__,__version__,datetime.datetime.now())
+print('    // BEGIN generated C++ input from %s (pyscf version %s) on %s\n'%(__file__,__version__,datetime.datetime.now()))
 for i in range(7):
 
     coords[0][0]=-10+3.333333*i
     coords[0][1]=-10+3.333333*i
     coords[0][2]=-10+3.333333*i
 
-    print '    //Move electron 0 to position %s a.u.:'%(str(coords))
-    print '    elec.R[0] = { %s, %s, %s };'%(str(coords[0][0]),str(coords[0][1]),str(coords[0][2]))
-    print '    elec.update();'
-    print '    sposet->evaluate(elec, 0, values);\n'
+    print('    //Move electron 0 to position %s a.u.:'%(str(coords)))
+    print('    elec.R[0] = { %s, %s, %s };'%(str(coords[0][0]),str(coords[0][1]),str(coords[0][2])))
+    print('    elec.update();')
+    print('    sposet->evaluate(elec, 0, values);\n')
 
-    print '    // Position %s a.u.'%(str(coords))
+    print('    // Position %s a.u.'%(str(coords)))
     ao = cell.pbc_eval_gto('GTOval', coords, kpt=kpts[0])
 
     for spo_idx in range(len(mf.mo_coeff[0])):
 
-        print '    // Verifying values of SPO %s'%(str(spo_idx))
-        print '    REQUIRE(std::real(values[%d]) == Approx(%s));'%(spo_idx,str(numpy.dot(numpy.array(mf.mo_coeff)[0].T,ao[0].T)[spo_idx].real))
-        print '    REQUIRE(std::imag(values[%d]) == Approx(%s));\n'%(spo_idx,str(numpy.dot(numpy.array(mf.mo_coeff)[0].T,ao[0].T)[spo_idx].imag))
+        print('    // Verifying values of SPO %s'%(str(spo_idx)))
+        print('    REQUIRE(std::real(values[%d]) == Approx(%s));'%(spo_idx,str(numpy.dot(numpy.array(mf.mo_coeff)[0].T,ao[0].T)[spo_idx].real)))
+        print('    REQUIRE(std::imag(values[%d]) == Approx(%s));\n'%(spo_idx,str(numpy.dot(numpy.array(mf.mo_coeff)[0].T,ao[0].T)[spo_idx].imag)))
 
-print '    // END generated C++ input from %s (pyscf version %s) on %s'%(__file__,__version__,datetime.datetime.now())
+print('    // END generated C++ input from %s (pyscf version %s) on %s'%(__file__,__version__,datetime.datetime.now()))
 

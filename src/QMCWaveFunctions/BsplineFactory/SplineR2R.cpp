@@ -13,9 +13,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Message/OpenMP.h>
-#include <QMCWaveFunctions/BsplineFactory/SplineR2R.h>
-#include <spline2/MultiBsplineEval.hpp>
+#include "Message/OpenMP.h"
+#include "SplineR2R.h"
+#include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 
 namespace qmcplusplus

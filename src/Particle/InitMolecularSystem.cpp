@@ -19,7 +19,7 @@
 /**@file InitMolecularSystem.cpp
  * @brief Implements InitMolecuarSystem operators.
  */
-#include "Particle/InitMolecularSystem.h"
+#include "InitMolecularSystem.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/DistanceTableData.h"
@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 typedef QMCTraits::RealType RealType;
 
-InitMolecularSystem::InitMolecularSystem(ParticleSetPool* pset, const char* aname)
+InitMolecularSystem::InitMolecularSystem(ParticleSetPool& pset, const char* aname)
     : OhmmsElementBase(aname), ptclPool(pset)
 {}
 
@@ -41,13 +41,13 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
   hAttrib.add(source, "source");
   hAttrib.add(volume, "use_volume");
   hAttrib.put(cur);
-  ParticleSet* els = ptclPool->getParticleSet(target);
+  ParticleSet* els = ptclPool.getParticleSet(target);
   if (els == 0)
   {
     ERRORMSG("No target particle " << target << " exists.")
     return false;
   }
-  ParticleSet* ions = ptclPool->getParticleSet(source);
+  ParticleSet* ions = ptclPool.getParticleSet(source);
   if (ions == 0)
   {
     ERRORMSG("No source particle " << source << " exists.")
@@ -99,7 +99,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   if (ions->getTotalNum() == 1)
     return initAtom(ions, els);
 
-  const int d_ii_ID = ions->addTable(*ions, DT_SOA_PREFERRED);
+  const int d_ii_ID = ions->addTable(*ions);
   ions->update();
   const auto& d_ii = ions->getDistTable(d_ii_ID);
   const ParticleSet::ParticleIndex_t& grID(ions->GroupID);

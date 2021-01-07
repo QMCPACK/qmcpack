@@ -17,7 +17,7 @@
 /**@file HamiltonianPool.cpp
  * @brief Implements HamiltonianPool operators.
  */
-#include "QMCHamiltonians/HamiltonianPool.h"
+#include "HamiltonianPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
@@ -26,11 +26,24 @@
 
 namespace qmcplusplus
 {
-HamiltonianPool::HamiltonianPool(Communicate* c, const char* aname)
-    : MPIObjectBase(c), curH(0), ptclPool(0), psiPool(0), curDoc(0)
+HamiltonianPool::HamiltonianPool(ParticleSetPool& pset_pool,
+                                 WaveFunctionPool& psi_pool,
+                                 Communicate* c,
+                                 const char* aname)
+    : MPIObjectBase(c), curH(0), ptcl_pool_(pset_pool), psi_pool_(psi_pool), curDoc(0)
 {
   ClassName = "HamiltonianPool";
   myName    = aname;
+}
+
+HamiltonianPool::~HamiltonianPool()
+{
+  PoolType::iterator it(myPool.begin());
+  while (it != myPool.end())
+  {
+    delete (*it).second;
+    ++it;
+  }
 }
 
 bool HamiltonianPool::put(xmlNodePtr cur)
@@ -43,7 +56,7 @@ bool HamiltonianPool::put(xmlNodePtr cur)
   hAttrib.add(role, "role");
   hAttrib.add(target, "target");
   hAttrib.put(cur);
-  ParticleSet* qp = ptclPool->getParticleSet(target);
+  ParticleSet* qp = ptcl_pool_.getParticleSet(target);
   if (qp == 0)
   {
     //never a good thing
@@ -58,7 +71,7 @@ bool HamiltonianPool::put(xmlNodePtr cur)
   PoolType::iterator hit(myPool.find(id));
   if (hit == myPool.end())
   {
-    curH = new HamiltonianFactory(qp, ptclPool->getPool(), psiPool->getPool(), myComm);
+    curH = new HamiltonianFactory(id, *qp, ptcl_pool_.getPool(), psi_pool_.getPool(), myComm);
     curH->setName(id);
     myPool[id] = curH;
   }
@@ -66,7 +79,7 @@ bool HamiltonianPool::put(xmlNodePtr cur)
     curH = (*hit).second;
   bool success = curH->put(cur);
   if (set2Primary)
-    primaryH = curH->targetH;
+    primaryH = curH->getH();
   return success;
 }
 
@@ -77,7 +90,7 @@ bool HamiltonianPool::get(std::ostream& os) const
   {
     os << "  Hamiltonian " << (*it).first << std::endl;
     ;
-    (*it).second->targetH->get(os);
+    (*it).second->getH()->get(os);
     ++it;
   }
   os << std::endl;

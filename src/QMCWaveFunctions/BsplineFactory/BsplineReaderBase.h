@@ -19,11 +19,11 @@
  */
 #ifndef QMCPLUSPLUS_BSPLINE_READER_BASE_H
 #define QMCPLUSPLUS_BSPLINE_READER_BASE_H
-#include <mpi/collectives.h>
-#include <mpi/point2point.h>
+#include "mpi/collectives.h"
+#include "mpi/point2point.h"
 namespace qmcplusplus
 {
-class SPOSetInputInfo;
+struct SPOSetInputInfo;
 
 /**
  * Each SplineC2X needs a reader derived from BsplineReaderBase.

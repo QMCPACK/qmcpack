@@ -25,7 +25,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class BMakeFuncBase;
+struct BMakeFuncBase;
 
 struct AGPLambda
 {

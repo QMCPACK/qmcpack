@@ -51,7 +51,7 @@ void test_cartesian_ao()
     int hIdx             = ispecies.addSpecies("H");
     ions.update();
 
-    elec.addTable(ions, DT_SOA);
+    elec.addTable(ions);
     elec.update();
 
     Libxml2Document doc;
@@ -73,7 +73,6 @@ void test_cartesian_ao()
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector_t values;
@@ -87,8 +86,6 @@ void test_cartesian_ao()
 
     //generated from ao_order_test.py
     REQUIRE(values[0] == Approx(0.48224527310155046).epsilon(1E-6));
-
-    SPOSetBuilderFactory::clear();
   }
 }
 
@@ -121,7 +118,7 @@ void test_dirac_ao()
     int hIdx             = ispecies.addSpecies("H");
     ions.update();
 
-    elec.addTable(ions, DT_SOA);
+    elec.addTable(ions);
     elec.update();
 
     Libxml2Document doc;
@@ -143,7 +140,6 @@ void test_dirac_ao()
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector_t values;
@@ -157,8 +153,6 @@ void test_dirac_ao()
 
     //from ao_order_test.py
     REQUIRE(values[0] == Approx(0.35953790416302006).epsilon(1E-6));
-
-    SPOSetBuilderFactory::clear();
   }
 }
 

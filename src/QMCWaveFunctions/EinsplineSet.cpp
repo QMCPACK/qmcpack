@@ -15,10 +15,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <CPU/e2iphi.h>
-#include "QMCWaveFunctions/EinsplineSet.h"
-#include <einspline/multi_bspline.h>
-#include <config/stdlib/math.hpp>
+#include "CPU/e2iphi.h"
+#include "EinsplineSet.h"
+#include "einspline/multi_bspline.h"
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {
@@ -46,8 +46,6 @@ inline void EinsplineSetExtended<StorageType>::computePhaseFactors(const TinyVec
 
 
 EinsplineSet::UnitCellType EinsplineSet::GetLattice() { return SuperLattice; }
-
-void EinsplineSet::resetTargetParticleSet(ParticleSet& e) {}
 
 void EinsplineSet::resetSourceParticleSet(ParticleSet& ions) {}
 
@@ -137,10 +135,6 @@ inline void EinsplineMultiEval(multi_UBspline_3d_z* restrict spline,
 
 template<typename StorageType>
 void EinsplineSetExtended<StorageType>::resetParameters(const opt_variables_type& active)
-{}
-
-template<typename StorageType>
-void EinsplineSetExtended<StorageType>::resetTargetParticleSet(ParticleSet& e)
 {}
 
 template<typename StorageType>

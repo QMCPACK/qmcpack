@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/StressPBC.h"
+#include "StressPBC.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/DeterminantOperators.h"
@@ -29,9 +29,9 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
       Psi(Psi0),
       PtclTarg(elns),
       PtclA(ions),
-      ei_table_index(elns.addTable(ions, DT_SOA_PREFERRED)),
-      ee_table_index(elns.addTable(elns, DT_SOA_PREFERRED)),
-      ii_table_index(ions.addTable(ions, DT_SOA_PREFERRED)),
+      ei_table_index(elns.addTable(ions)),
+      ee_table_index(elns.addTable(elns)),
+      ii_table_index(ions.addTable(ions)),
       firstTimeStress(true)
 {
   ReportEngine PRE("StressPBC", "StressPBC");
@@ -46,11 +46,10 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
     CalculateIonIonStress();
     firstTimeStress = false;
   }
-  RealType vinv = -1./PtclTarg.Lattice.Volume;
-  app_log() << "\n====ion-ion stress ====\n"
-            << stress_IonIon*vinv << std::endl;
-  app_log()<<"\n e-e const = "<< stress_ee_const*vinv << std::endl;
-  app_log()<<"\n e-I const = "<< stress_eI_const*vinv << std::endl;
+  RealType vinv = -1. / PtclTarg.Lattice.Volume;
+  app_log() << "\n====ion-ion stress ====\n" << stress_IonIon * vinv << std::endl;
+  app_log() << "\n e-e const = " << stress_ee_const * vinv << std::endl;
+  app_log() << "\n e-I const = " << stress_eI_const * vinv << std::endl;
 }
 
 void StressPBC::initBreakup(ParticleSet& P)
@@ -115,23 +114,23 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
     }
     res += Zspec[i] * esum;
   }
- 
+
   return res;
 }
 
 SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AB(ParticleSet& P)
 {
-  const auto& d_ab = P.getDistTable(ei_table_index);
+  const auto& d_ab                   = P.getDistTable(ei_table_index);
   SymTensor<RealType, OHMMS_DIM> res = 0.0;
   //Loop over distinct eln-ion pairs
   for (int jpart = 0; jpart < NptclB; jpart++)
   {
     const auto& drijs = d_ab.getDisplRow(jpart);
-    const auto& rijs = d_ab.getDistRow(jpart);
-    const RealType e = Qat[jpart];
+    const auto& rijs  = d_ab.getDistRow(jpart);
+    const RealType e  = Qat[jpart];
     for (int iat = 0; iat < NptclA; iat++)
     {
-      res += Zat[iat]*e*AA->evaluateSR_dstrain(drijs[iat], rijs[iat]);
+      res += Zat[iat] * e * AA->evaluateSR_dstrain(drijs[iat], rijs[iat]);
     }
   }
   return res;
@@ -145,8 +144,8 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateSR_AA(ParticleSet& 
   for (int ipart = 0; ipart < NptclB; ipart++)
   {
     SymTensor<RealType, OHMMS_DIM> esum = 0.0;
-    const auto& drijs = d_aa.getDisplRow(ipart);
-    const auto& rijs = d_aa.getDistRow(ipart);
+    const auto& drijs                   = d_aa.getDisplRow(ipart);
+    const auto& rijs                    = d_aa.getDistRow(ipart);
     for (int jpart = 0; jpart < ipart; jpart++)
     {
       esum += P.Z[jpart] * AA->evaluateSR_dstrain(drijs[jpart], rijs[jpart]);
@@ -194,7 +193,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
         temp *= 0.5;
       stress_aa += Z1 * Zmyspec[spec2] * temp;
     } //spec2
-  } //spec1
+  }   //spec1
 
   return stress_aa;
 }
@@ -277,25 +276,26 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
 
 StressPBC::Return_t StressPBC::evaluate(ParticleSet& P)
 {
-  const RealType vinv(-1.0/P.Lattice.Volume);
-  stress = 0.0;
-  stress_ee = 0.0;
-  stress_ei = 0.0;
+  const RealType vinv(-1.0 / P.Lattice.Volume);
+  stress     = 0.0;
+  stress_ee  = 0.0;
+  stress_ei  = 0.0;
   stress_kin = 0.0;
 
-  stress_ei += vinv*evaluateLR_AB(PtclTarg);
-  stress_ei += vinv*evaluateSR_AB(PtclTarg);
-  stress_ei += vinv*stress_eI_const;
+  stress_ei += vinv * evaluateLR_AB(PtclTarg);
+  stress_ei += vinv * evaluateSR_AB(PtclTarg);
+  stress_ei += vinv * stress_eI_const;
 
-  stress_ee += vinv*evaluateLR_AA(PtclTarg);
-  stress_ee += vinv*evaluateSR_AA(PtclTarg, ee_table_index);
-  stress_ee += vinv*stress_ee_const;
+  stress_ee += vinv * evaluateLR_AA(PtclTarg);
+  stress_ee += vinv * evaluateSR_AA(PtclTarg, ee_table_index);
+  stress_ee += vinv * stress_ee_const;
 
 
-  stress_kin += vinv*evaluateKineticSymTensor(P);
+  stress_kin += vinv * evaluateKineticSymTensor(P);
 
-  stress = stress_ee+stress_ei+stress_kin;
-  if (addionion) stress += vinv*stress_IonIon;
+  stress = stress_ee + stress_ei + stress_kin;
+  if (addionion)
+    stress += vinv * stress_IonIon;
 
   return 0.0;
 }

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMCLinearOpt.h"
+#include "VMCLinearOpt.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -37,10 +37,8 @@ using WP = WalkerProperties::Indexes;
 VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
-                           HamiltonianPool& hpool,
-                           WaveFunctionPool& ppool,
                            Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, comm, "VMCLinearOpt"),
       UseDrift("yes"),
       NumOptimizables(0),
       w_beta(0.0),
@@ -50,7 +48,6 @@ VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
 //     myRNWarmupSteps(0), logoffset(2.0), logepsilon(0), beta_errorbars(0), alpha_errorbars(0),
 {
   RootName = "vmc";
-  QMCType  = "VMCLinearOpt";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
   DumpConfig = false;
@@ -491,7 +488,6 @@ void VMCLinearOpt::resetRun()
   for (int ip = 0; ip < NumThreads; ++ip)
     app_log() << "    Sample size for thread " << ip << " = " << samples_th[ip] << std::endl;
   app_log() << "  Warmup Steps " << nWarmupSteps << std::endl;
-  //     if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
   //    app_log() << "  Warmup Steps " << nWarmupSteps << std::endl;
   if (Movers.empty())
   {
@@ -539,7 +535,7 @@ void VMCLinearOpt::resetRun()
         //             CSMovers[ip]=
         Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         //           }
-        //Movers[ip]->resetRun(branchEngine,estimatorClones[ip]);
+        //Movers[ip]->resetRun(branchEngine.get(),estimatorClones[ip]);
       }
       else
       {
@@ -561,7 +557,7 @@ void VMCLinearOpt::resetRun()
         //             CSMovers[ip]=
         Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         //           }
-        //Movers[ip]->resetRun(branchEngine,estimatorClones[ip]);
+        //Movers[ip]->resetRun(branchEngine.get(),estimatorClones[ip]);
       }
       if (ip == 0)
         app_log() << os.str() << std::endl;
@@ -582,8 +578,8 @@ void VMCLinearOpt::resetRun()
     int ip = omp_get_thread_num();
     Movers[ip]->put(qmcNode);
     //       CSMovers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-    //       CSMovers[ip]->resetRun(branchEngine,estimatorClones[ip]);
+    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
+    //       CSMovers[ip]->resetRun(branchEngine.get(),estimatorClones[ip]);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     else

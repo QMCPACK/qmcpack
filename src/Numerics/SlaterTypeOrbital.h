@@ -14,7 +14,6 @@
 
 #ifndef QMCPLUSPLUS_SLATERTYPEORBITAL_H
 #define QMCPLUSPLUS_SLATERTYPEORBITAL_H
-#include "Numerics/OptimizableFunctorBase.h"
 #include <cmath>
 
 /** class to evaluate the normalization factors for the Slater-Type orbitals
@@ -22,6 +21,7 @@
 template<class T>
 struct STONorm
 {
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
   std::vector<T> Factorial;
 
   explicit STONorm(int nmax = 1) { set(nmax); }
@@ -54,9 +54,10 @@ struct STONorm
  * where n-1 is the number of nodes.
  */
 template<class T>
-struct GenericSTO : public OptimizableFunctorBase
+struct GenericSTO
 {
-  typedef T value_type;
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
+  typedef T real_type;
 
   int ID;
   ///Principal number
@@ -71,7 +72,7 @@ struct GenericSTO : public OptimizableFunctorBase
 
   /** constructor with a known contraction factor
    */
-  explicit GenericSTO(int power, real_type z, real_type norm = 1.0) : N(-1), Power(power), Z(z), Norm(norm) {}
+  explicit GenericSTO(int power, real_type z, real_type norm) : N(-1), Power(power), Z(z), Norm(norm) {}
 
   /** constructor with a set of quantum numbers
    * @param n principal quantum number
@@ -82,9 +83,6 @@ struct GenericSTO : public OptimizableFunctorBase
    * Contraction factor is the normalization factor evaluated based on N and Z.
    */
   explicit GenericSTO(int n, int l, real_type z) : N(n), Power(n - l - 1), Z(z) { reset(); }
-
-
-  OptimizableFunctorBase* makeClone() const { return new GenericSTO<T>(*this); }
 
   inline void reset()
   {
@@ -158,14 +156,6 @@ struct GenericSTO : public OptimizableFunctorBase
     return rnl;
   }
 
-  bool put(xmlNodePtr cur) { return true; }
-
-  void checkInVariables(opt_variables_type& active) {}
-  void checkOutVariables(const opt_variables_type& active) {}
-  void resetParameters(const opt_variables_type& active)
-  {
-    //DO NOTHING FOR NOW
-  }
 };
 
 /**class for Slater-type orbitals,
@@ -177,6 +167,7 @@ struct GenericSTO : public OptimizableFunctorBase
 template<class T>
 struct RadialSTO
 {
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
   typedef T real_type;
   int NminusOne;
   T Z;

@@ -28,11 +28,10 @@ public:
   virtual void checkOutVariables(const opt_variables_type& active) {}
   virtual void resetParameters(const opt_variables_type& active) {}
   virtual void reportStatus(std::ostream& os) {}
-  virtual void resetTargetParticleSet(ParticleSet& P) {}
 
   TinyVector<ValueType, 3> coeff;
 
-  LinearOrbital()
+  LinearOrbital() : WaveFunctionComponent("LinearOrbital")
   {
     coeff[0] = 1.0;
     coeff[1] = 2.0;

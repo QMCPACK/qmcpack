@@ -11,13 +11,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/SpaceGrid.h>
-#include <OhmmsData/AttributeSet.h>
-#include <Utilities/string_utils.h>
+#include "SpaceGrid.h"
+#include "OhmmsData/AttributeSet.h"
+#include "Utilities/string_utils.h"
 #include <cmath>
-#include <OhmmsPETE/OhmmsArray.h>
+#include "OhmmsPETE/OhmmsArray.h"
 
-#include <Message/OpenMP.h>
+#include "Message/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -1038,7 +1038,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       //accumulate values for static particles (static particles == cell centers)
       for (p = ndparticles, cell_index = 0; p < nparticles; p++, cell_index++)
       {
-        for (v = 0; v < nvalues; v++, buf_index++)
+        for (v = 0; v < nvalues; v++)
           cellsamples(cell_index, v) += values(p, v);
         cellsamples(cell_index, nvalues) += 1.0;
       }

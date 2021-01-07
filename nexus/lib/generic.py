@@ -64,22 +64,22 @@ sorted_generic = sorted_py2
 
 
 def log(*items,**kwargs):
-    indent=None
-    logfile=generic_settings.devlog
+    indent  = None
+    logfile = generic_settings.devlog
     if len(kwargs)>0:
-        n=0
-        if 'indent' in kwargs:
-            indent = kwargs['indent']
-            n+=1
+        indent  = kwargs.pop('indent' ,None   )
+        logfile = kwargs.pop('logfile',logfile)
+        n       = kwargs.pop('n',0)
+        if n!=0:
+            if indent is None:
+                indent = n*'  '
+            else:
+                indent = n*indent
+            #end if
         #end if
-        if 'logfile' in kwargs:
-            logfile = kwargs['logfile']
-            n+=1
-        #end if
-        if n!=len(kwargs):
-            valid = 'indent logfile'.split()
-            invalid = set(kwargs.keys())-set(valid)
-            error('invalid keyword arguments provided\ninvalid keywords: {0}\nvalid options are: {1}'.format(sorted(invalid),valid))
+        if len(kwargs)>0:
+            valid = 'indent logfile n'.split()
+            error('Invalid keyword arguments provided.\nInvalid keywords: {0}\nValid options are: {1}'.format(sorted(kwargs.keys()),valid),'log')
         #end if
     #end if
     if len(items)==1 and isinstance(items[0],str):

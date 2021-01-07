@@ -19,7 +19,7 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
-#include "QMCDrivers/WaveFunctionTester.h"
+#include "WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
@@ -39,9 +39,8 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
                                        ParticleSetPool& ptclPool,
-                                       WaveFunctionPool& ppool,
                                        Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+    : QMCDriver(w, psi, h, comm, "WaveFunctionTester"),
       PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
@@ -826,10 +825,10 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       {
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
-        DiracDeterminantBase* det = sd->Dets[isd];
-        LogValueType logpsi2          = det->evaluateLog(W, G, L); // this won't work with backflow
-        fail_log << "  Slater Determiant " << isd << " (for particles " << det->getFirstIndex() << " to "
-                 << det->getLastIndex() << ") log psi = " << logpsi2 << std::endl;
+        DiracDeterminantBase& det = *sd->Dets[isd];
+        LogValueType logpsi2      = det.evaluateLog(W, G, L); // this won't work with backflow
+        fail_log << "  Slater Determiant " << isd << " (for particles " << det.getFirstIndex() << " to "
+                 << det.getLastIndex() << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
         if (std::real(logpsi2) < -40.0)
@@ -844,7 +843,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.R[it->index] = it->r;
           W.update();
 
-          LogValueType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
+          LogValueType logpsi0 = det.evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
           ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
@@ -857,7 +856,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         }
         fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-        if (!checkGradients(det->getFirstIndex(), det->getLastIndex(), G, L, G1, L1, fail_log, 2))
+        if (!checkGradients(det.getFirstIndex(), det.getLastIndex(), G, L, G1, L1, fail_log, 2))
         {
           all_okay = false;
         }
@@ -875,7 +874,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
           ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
           ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
-          RealType logpsi3 = det->evaluateLog(W, G, L);
+          RealType logpsi3 = det.evaluateLog(W, G, L);
           FiniteDifference::ValueVector logpsi_vals;
           FiniteDifference::PosChangeVector::iterator it;
           for (it = positions.begin(); it != positions.end(); it++)
@@ -898,7 +897,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           }
           fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-          if (!checkGradients(det->getFirstIndex(), det->getLastIndex(), G, L, G1, L1, fail_log, 3))
+          if (!checkGradients(det.getFirstIndex(), det.getLastIndex(), G, L, G1, L1, fail_log, 3))
           {
             all_okay = false;
           }

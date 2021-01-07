@@ -42,18 +42,16 @@ class MCPopulation;
  * generated from VMC.
  */
 
-class QMCOptimizeBatched : public QMCDriver
+class QMCOptimizeBatched : public QMCDriverNew
 {
 public:
   ///Constructor.
   QMCOptimizeBatched(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
-                     HamiltonianPool& hpool,
-                     WaveFunctionPool& ppool,
                      QMCDriverInput&& qmcdriver_input,
                      VMCDriverInput&& vmcdriver_input,
-                     MCPopulation& population,
+                     MCPopulation&& population,
                      SampleStack& samples,
                      Communicate* comm);
 
@@ -63,7 +61,7 @@ public:
   ///Run the Optimization algorithm.
   bool run();
   ///process xml node
-  bool put(xmlNodePtr cur);
+  void process(xmlNodePtr cur);
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
 
@@ -77,8 +75,6 @@ private:
   int NumParts;
   ///total number of VMC walkers
   int NumOfVMCWalkers;
-  ///need to know HamiltonianPool to use OMP
-  HamiltonianPool& hamPool;
   ///target cost function to optimize
   //QMCCostFunction* optTarget;
   std::unique_ptr<QMCCostFunctionBase> optTarget;
@@ -101,16 +97,15 @@ private:
 
   void generateSamples();
 
-  /// Generic QMC driver input
-  QMCDriverInput qmcdriver_input_;
-
   /// VMC-specific driver input
   VMCDriverInput vmcdriver_input_;
 
-  MCPopulation& population_;
-
   /// Samples to use in optimizer
   SampleStack& samples_;
+
+  // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
+  // which still takes an MCWalkerConfiguration in the constructor.
+  MCWalkerConfiguration& W;
 };
 } // namespace qmcplusplus
 #endif

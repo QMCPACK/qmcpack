@@ -1,7 +1,11 @@
 # Check compiler version
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.4 )
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0 )
   MESSAGE(STATUS "Compiler Version ${CMAKE_CXX_COMPILER_VERSION}")
-  MESSAGE(FATAL_ERROR "Requires clang 3.4 or higher ")
+  MESSAGE(FATAL_ERROR "Requires clang 7.0 or higher ")
+ENDIF()
+
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0 AND QMC_CXX_STANDARD EQUAL 17 AND BUILD_AFQMC )
+  MESSAGE(FATAL_ERROR "Avoid Clang 11.0.0 which cannot compile AFQMC properly with C++17!")
 ENDIF()
 
 # Set the std
@@ -38,6 +42,18 @@ ADD_DEFINITIONS( -Drestrict=__restrict__ )
 
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fstrict-aliasing")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing -D__forceinline=inline")
+
+# treat VLA as error
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Werror=vla")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")
+
+# set compiler warnings
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-variable -Wno-overloaded-virtual -Wno-unused-private-field -Wno-unused-local-typedef")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+IF( CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0 )
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmisleading-indentation")
+ENDIF()
+
 
 # Set extra optimization specific flags
 SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer -ffast-math" )

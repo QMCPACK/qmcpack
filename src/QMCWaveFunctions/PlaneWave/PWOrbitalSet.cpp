@@ -14,7 +14,7 @@
 
 
 #include "Message/Communicate.h"
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalSet.h"
+#include "PWOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
@@ -41,13 +41,6 @@ void PWOrbitalSet::resetParameters(const opt_variables_type& optVariables)
 }
 
 void PWOrbitalSet::setOrbitalSetSize(int norbs) {}
-
-void PWOrbitalSet::resetTargetParticleSet(ParticleSet& P)
-{
-  // Not sure what to do here, if anything
-  //app_error() << "PWOrbitalSet::resetTargetParticleSet not yet coded." << std::endl;
-  //OHMMS::Controller->abort();
-}
 
 void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
 {

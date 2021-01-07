@@ -46,9 +46,9 @@ struct NLjob
 #endif
 
 ///forward declaration of WaveFunctionComponent
-class WaveFunctionComponent;
+struct WaveFunctionComponent;
 ///forward declaration of DiffWaveFunctionComponent
-class DiffWaveFunctionComponent;
+struct DiffWaveFunctionComponent;
 
 typedef WaveFunctionComponent* WaveFunctionComponentPtr;
 typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
@@ -126,15 +126,19 @@ struct WaveFunctionComponent : public QMCTraits
   ValueVectorType d2LogPsi;
   /** Name of the class derived from WaveFunctionComponent
    */
-  std::string ClassName;
+  const std::string ClassName;
+  /** Name of the object
+   * It is required to be different for objects of the same derived type like multiple J1.
+   * It can be left empty for object which is unique per many-body WF.
+   */
+  const std::string myName;
   ///list of variables this WaveFunctionComponent handles
   opt_variables_type myVars;
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
   /// default constructor
-  WaveFunctionComponent();
-  //WaveFunctionComponent(const WaveFunctionComponent& old);
+  WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
 
   ///default destructor
   virtual ~WaveFunctionComponent() {}
@@ -166,11 +170,6 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;
-
-  /** reset properties, e.g., distance tables, for a new target ParticleSet
-   * @param P ParticleSet
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
   /** evaluate the value of the WaveFunctionComponent from scratch
    * @param P  active ParticleSet
@@ -290,11 +289,9 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat the index of a particle
    * @param grad_iat Gradient for the active particle
    */
-  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
-    return ValueType();
-  }
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+
+  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat);
 
   /** evaluate the ratio of the new to old WaveFunctionComponent value and the new spin gradient
    * Default implementation assumes that WaveFunctionComponent does not explicitly depend on Spin.
@@ -319,12 +316,13 @@ struct WaveFunctionComponent : public QMCTraits
                             const RefVector<ParticleSet>& P_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
-                            std::vector<GradType>& grad_new)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      ratios[iw] = WFC_list[iw].get().ratioGrad(P_list[iw], iat, grad_new[iw]);
-  }
+                            std::vector<GradType>& grad_new);
+
+  virtual void mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& WFC_list,
+                                 const RefVector<ParticleSet>& P_list,
+                                 int iat,
+                                 std::vector<PsiValueType>& ratios,
+                                 std::vector<GradType>& grad_new);
 
   /** a move for iat-th particle is accepted. Update the current content.
    * @param P target ParticleSet
@@ -485,12 +483,6 @@ struct WaveFunctionComponent : public QMCTraits
    * If not true, return a proxy class
    */
   virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
-
-  /** Intended as a handle to break 
-   *
-   *  
-   */
-  //virtual WaveFunctionComponentPtr makeThrScope(std::vector<std::pair<int,int>>& ptcl_group_indexes) const = 0;
 
   /** Return the Chiesa kinetic energy correction
    */

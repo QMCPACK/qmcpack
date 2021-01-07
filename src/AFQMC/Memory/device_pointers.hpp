@@ -62,7 +62,7 @@ public:
   }
 
   template<class>
-  friend class device_reference;
+  friend struct device_reference;
   //friend class device_reference<typename std::decay<T>::type>;
   operator device_reference<T const>() const& { return device_reference<T const>{impl_}; }
 
@@ -273,7 +273,7 @@ struct device_pointer<void> : base_device_pointer
   using element_type = T;
   using value_type   = void;
   void* impl_;
-  friend class memory_resource;
+  friend struct memory_resource;
   device_pointer(std::nullptr_t = nullptr) : impl_(nullptr) {}
   device_pointer(device_pointer const& other) = default;
   template<typename Q>
@@ -313,8 +313,8 @@ struct device_pointer : base_device_pointer
   using rebind_const      = device_pointer<const T>;
   //  static const int memory_type = GPU_MEMORY_POINTER_TYPE;
   using default_allocator_type = device_allocator<value_type>;
-  friend class device_allocator<value_type>;
-  friend class device_pointer<typename std::decay<T>::type>;
+  friend struct device_allocator<value_type>;
+  friend struct device_pointer<typename std::decay<T>::type>;
   default_allocator_type default_allocator() const { return device_allocator<value_type>{}; };
   device_pointer() = default;
   device_pointer(std::nullptr_t) : impl_(nullptr) {}

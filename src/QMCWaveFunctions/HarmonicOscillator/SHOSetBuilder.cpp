@@ -11,18 +11,19 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h>
-#include <QMCWaveFunctions/SPOSetInputInfo.h>
-#include <OhmmsData/AttributeSet.h>
-#include <Utilities/IteratorUtility.h>
-#include <Utilities/string_utils.h>
+#include "SHOSetBuilder.h"
+#include "QMCWaveFunctions/SPOSetInputInfo.h"
+#include "OhmmsData/AttributeSet.h"
+#include "Utilities/IteratorUtility.h"
+#include "Utilities/string_utils.h"
 
 
 namespace qmcplusplus
 {
-SHOSetBuilder::SHOSetBuilder(ParticleSet& P, Communicate* comm) : SPOSetBuilder(comm), Ps(P)
+SHOSetBuilder::SHOSetBuilder(ParticleSet& P, Communicate* comm) : SPOSetBuilder("SHO", comm), Ps(P)
 {
-  legacy = false;
+  ClassName = "SHOSetBuilder";
+  legacy    = false;
   app_log() << "Constructing SHOSetBuilder" << std::endl;
   reset();
 }
@@ -74,6 +75,7 @@ SPOSet* SHOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input)
   attrib.add(center, "center");
   attrib.add(nstates, "size");
   attrib.put(cur);
+
   if (energy < 0.0)
     energy = 1.0;
   if (mass < 0.0 && length < 0.0)

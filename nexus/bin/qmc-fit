@@ -191,7 +191,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         error('must provide one equilibration length per scalar file\nnumber of equils provided: {0}\nnumber of scalar files provided: {1}\nequils provided: {2}\nscalar files provided: {3}'.format(len(equils),len(scalar_files),equils,scalar_files))
     #end if
 
-    if isinstance(reblock_factors,int):
+    if isinstance(reblock_factors,(int,np.int_)):
         reblock_factors = len(scalar_files)*[reblock_factors]
     elif reblock_factors is not None and len(reblock_factors)!=len(scalar_files):
         error('must provide one reblocking factor per scalar file\nnumber of reblock_factors provided: {0}\nnumber of scalar files provided: {1}\nreblock_factors provided: {2}\nscalar files provided: {3}'.format(len(reblock_factors),len(scalar_files),reblock_factors,scalar_files))

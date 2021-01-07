@@ -13,11 +13,11 @@
 #endif
 
 #include <boost/version.hpp>
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Hamiltonians/HamiltonianFactory.h"
+#include "HamiltonianFactory.h"
 #include "AFQMC/Hamiltonians/HamiltonianFactory_Helper.h"
 
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
@@ -173,6 +173,14 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   if (htype == KPFactorized || htype == KPTHC)
     nkpts = Idata[2];
 #endif
+
+  // MAM: this is wrong in NONCOLLINEAR, but how do I know what
+  // walker type it is right here???
+  // Might need to read dimensions ahead of time from hdf5 file and check consistensy
+  // later
+  // Also, OneBodyHamiltonian doesn't make much sense now that you have KP classes.
+  // Consider refactoring this part of the code...
+  // It is not really used now, you can just read H1 in Sparse class too...
 
   // 1 body hamiltonian: Why isn't this in shared memory!!!
   boost::multi::array<ValueType, 2> H1({NMO, NMO});

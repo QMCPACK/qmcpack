@@ -175,6 +175,25 @@ IF (NOT QMC_CUDA)
                     9 H4_DESCENT_SCALARS
                     TRUE)
 
+  LIST(APPEND H4_TARGET_DESCENT_SCALARS "totenergy" "-2.04604154 0.003")
+
+  QMC_RUN_AND_CHECK(short-H4-target-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-descent
+                    optm-target-descent.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_DESCENT_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-target-descent
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-descent
+                    optm-target-descent.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_DESCENT_SCALARS
+                    TRUE)
 
   LIST(APPEND H4_HYBRID_SCALARS "totenergy" "-2.140736 0.003")
 
@@ -194,6 +213,26 @@ IF (NOT QMC_CUDA)
                     1 16
                     ${MP_SUCCESS}
 		    9 H4_HYBRID_SCALARS
+                    TRUE)
+  
+  LIST(APPEND H4_TARGET_HYBRID_SCALARS "totenergy" "-2.13527301 0.003")
+
+  QMC_RUN_AND_CHECK(short-H4-target-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-hybrid
+                    optm-target-hybrid.xml
+                    16 1
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_HYBRID_SCALARS
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-target-hybrid
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-target-hybrid
+                    optm-target-hybrid.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    9 H4_TARGET_HYBRID_SCALARS
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly

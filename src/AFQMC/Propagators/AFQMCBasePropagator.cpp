@@ -1,10 +1,10 @@
 
 #include "Configuration.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Memory/utilities.hpp"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/config.h"
-#include "AFQMC/Propagators/AFQMCBasePropagator.h"
+#include "AFQMCBasePropagator.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 // TODO: Remove this
@@ -140,6 +140,7 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
                 << "\n";
   }
 
+  // MAM: make this more generic, needs changes for noncollinear
   if (external_field != std::string(""))
   {
     //    read_external_field(H1ext);
@@ -187,7 +188,7 @@ void AFQMCBasePropagator::reset_nextra(int nextra)
         break;
       }
     }
-    local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank())));
+    local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
   }
   if (last_task_index < 0 || last_task_index >= nextra)
     APP_ABORT("Error: Problems in AFQMCBasePropagator::reset_nextra()\n");

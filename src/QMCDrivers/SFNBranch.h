@@ -15,9 +15,9 @@
 
 #include <array>
 #include <Configuration.h>
-#include <OhmmsData/ParameterSet.h>
-#include <Estimators/BlockHistogram.h>
-#include <Estimators/accumulators.h>
+#include "OhmmsData/ParameterSet.h"
+#include "Estimators/BlockHistogram.h"
+#include "Estimators/accumulators.h"
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
 #include "QMCDrivers/WalkerControlBase.h"
@@ -69,7 +69,7 @@ class EstimatorManagerNew;
  *         1. Which calls reset which crucially calculates and update logN state.
  *      bb. updates all the walker id's of walkers in MCWC.
  * 6. checkParameters
- *   a. getCurrentStatistics from SFNB's estimator
+ *   a. getApproximateEnergyVariance from SFNB's estimator
  *   b. set ETrial, EREF, SIGMA2 from estimator
  *   c. clear EnergyHist and VarianceHist
  *
@@ -84,7 +84,7 @@ class EstimatorManagerNew;
  *   e. set WC's TrialEnergy
  *   d. multiply walkers.Colelctables *= the inverse weight.
  *   f. call SFNB's estimator accumilator on MCWC
- */  
+ */
 struct SFNBranch : public QMCTraits
 {
   typedef SFNBranch ThisType;
@@ -176,7 +176,7 @@ struct SFNBranch : public QMCTraits
     VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?
   };
   using SBVP = SimpleBranchVectorParameter;
-  
+
   /** controlling parameters of full precision real type
    *
    * Mostly internal
@@ -204,8 +204,8 @@ struct SFNBranch : public QMCTraits
   std::unique_ptr<WalkerControlBase> WalkerController;
   ///Backup WalkerController for mixed DMC
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
-  
-  ///TODO: Should not be raw pointer 
+
+  ///TODO: Should not be raw pointer
   EstimatorManagerNew* MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;
@@ -423,8 +423,7 @@ struct SFNBranch : public QMCTraits
    * @param fname name of the configuration file
    * @param overwrite NOT USED
    */
-  void write(Communicate& comm,
-             const std::string& fname, bool overwrite = true);
+  void write(Communicate& comm, const std::string& fname, bool overwrite = true);
 
   void read(const std::string& fname);
 
@@ -447,6 +446,8 @@ private:
                        FullPrecRealType targetSigma,
                        FullPrecRealType maxSigma,
                        int Nelec = 0);
+  /// if yes, disable branching for debugging or benchmarking
+  std::string debug_disable_branching_;
 };
 
 std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);

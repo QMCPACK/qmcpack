@@ -63,7 +63,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       : ForceBase(s, s),
         Pa(s),
         Pb(s),
-        myTableIndex(s.addTable(s, DT_SOA_PREFERRED)),
+        myTableIndex(s.addTable(s)),
         is_AA(true),
         is_active(active),
         ComputeForces(computeForces)
@@ -71,14 +71,14 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     set_energy_domain(potential);
     two_body_quantum_domain(s, s);
     nCenters = s.getTotalNum();
-    prefix = "F_AA";
+    prefix   = "F_AA";
 
     if (!is_active) //precompute the value
     {
       if (!copy)
         s.update();
       Value = evaluateAA(s.getDistTable(myTableIndex), s.Z.first_address());
-      if ( ComputeForces )
+      if (ComputeForces)
         evaluateAAForces(s.getDistTable(myTableIndex), s.Z.first_address());
     }
   }
@@ -93,7 +93,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       : ForceBase(s, t),
         Pa(s),
         Pb(t),
-        myTableIndex(t.addTable(s, DT_SOA_PREFERRED)),
+        myTableIndex(t.addTable(s)),
         is_AA(false),
         is_active(active),
         ComputeForces(false)
@@ -151,7 +151,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       for (size_t iat = 1; iat < nCenters; ++iat)
       {
         const auto& dist = d.getDistRow(iat);
-        T q                           = Z[iat];
+        T q              = Z[iat];
         for (size_t j = 0; j < iat; ++j)
           res += q * Z[j] / dist[j];
       }
@@ -165,13 +165,13 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     forces = 0.0;
     for (size_t iat = 1; iat < nCenters; ++iat)
     {
-      const auto& dist = d.getDistRow(iat);
+      const auto& dist  = d.getDistRow(iat);
       const auto& displ = d.getDisplRow(iat);
-      T q                           = Z[iat];
+      T q               = Z[iat];
       for (size_t j = 0; j < iat; ++j)
       {
         forces[iat] += -q * Z[j] * displ[j] / (dist[j] * dist[j] * dist[j]);
-        forces[j]   -= -q * Z[j] * displ[j] / (dist[j] * dist[j] * dist[j]);
+        forces[j] -= -q * Z[j] * displ[j] / (dist[j] * dist[j] * dist[j]);
       }
     }
   }
@@ -194,7 +194,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       for (size_t b = 0; b < nTargets; ++b)
       {
         const auto& dist = d.getDistRow(b);
-        T e                           = czero;
+        T e              = czero;
         for (size_t a = 0; a < nCenters; ++a)
           e += Za[a] / dist[a];
         res += e * Zb[b];
@@ -208,29 +208,29 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   /** evaluate AA-type interactions */
   inline T evaluate_spAA(const DistanceTableData& d, const ParticleScalar_t* restrict Z)
   {
-    T res                 = 0.0;
+    T res = 0.0;
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
     Va_samp                     = 0.0;
     for (size_t iat = 1; iat < nCenters; ++iat)
     {
       const auto& dist = d.getDistRow(iat);
-      T q                           = Z[iat];
+      T q              = Z[iat];
       for (size_t j = 0; j < iat; ++j)
       {
-        pairpot = 0.5*q * Z[j] / dist[j];
+        pairpot = 0.5 * q * Z[j] / dist[j];
         Va_samp(iat) += pairpot;
-        Va_samp(j)   += pairpot;
-        res          += pairpot;
+        Va_samp(j) += pairpot;
+        res += pairpot;
       }
     }
     res *= 2.0;
 #if defined(TRACE_CHECK)
-    auto sptmp = streaming_particles;
+    auto sptmp          = streaming_particles;
     streaming_particles = false;
-    T Vnow  = res;
-    T Vsum  = Va_samp.sum();
-    T Vorig = evaluateAA(d, Z);
+    T Vnow              = res;
+    T Vsum              = Va_samp.sum();
+    T Vorig             = evaluateAA(d, Z);
     if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
     {
       app_log() << "versiontest: CoulombPotential::evaluateAA()" << std::endl;
@@ -255,35 +255,35 @@ struct CoulombPotential : public OperatorBase, public ForceBase
                          const ParticleScalar_t* restrict Za,
                          const ParticleScalar_t* restrict Zb)
   {
-    T res                 = 0.0;
+    T res = 0.0;
     T pairpot;
     Array<RealType, 1>& Va_samp = *Va_sample;
     Array<RealType, 1>& Vb_samp = *Vb_sample;
     Va_samp                     = 0.0;
     Vb_samp                     = 0.0;
-    const size_t nTargets = d.targets();
+    const size_t nTargets       = d.targets();
     for (size_t b = 0; b < nTargets; ++b)
     {
       const auto& dist = d.getDistRow(b);
-      T z = 0.5*Zb[b];
+      T z              = 0.5 * Zb[b];
       for (size_t a = 0; a < nCenters; ++a)
       {
-        pairpot = z*Za[a] / dist[a];
+        pairpot = z * Za[a] / dist[a];
         Va_samp(a) += pairpot;
         Vb_samp(b) += pairpot;
-        res        += pairpot;
+        res += pairpot;
       }
     }
     res *= 2.0;
 
 #if defined(TRACE_CHECK)
-    auto sptmp = streaming_particles;
+    auto sptmp          = streaming_particles;
     streaming_particles = false;
-    T Vnow  = res;
-    T Vasum = Va_samp.sum();
-    T Vbsum = Vb_samp.sum();
-    T Vsum  = Vasum + Vbsum;
-    T Vorig = evaluateAB(d, Za, Zb);
+    T Vnow              = res;
+    T Vasum             = Va_samp.sum();
+    T Vbsum             = Vb_samp.sum();
+    T Vsum              = Vasum + Vbsum;
+    T Vorig             = evaluateAB(d, Za, Zb);
     if (std::abs(Vorig - Vnow) > TraceManager::trace_tol)
     {
       app_log() << "versiontest: CoulombPotential::evaluateAB()" << std::endl;
@@ -340,10 +340,10 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
   inline Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms)
+                                        ParticleSet& ions,
+                                        TrialWaveFunction& psi,
+                                        ParticleSet::ParticlePos_t& hf_terms,
+                                        ParticleSet::ParticlePos_t& pulay_terms)
   {
     if (is_active)
       Value = evaluate(P); // No forces for the active

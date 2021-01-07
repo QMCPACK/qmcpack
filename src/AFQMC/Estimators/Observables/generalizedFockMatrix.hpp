@@ -21,21 +21,19 @@
 #include <string>
 #include <iostream>
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/Timer.h"
 
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
 /* 
  * Observable class that calculates the walker averaged "full" 1 RDM.
  * In this context, "full" means that no contraction over the RDM is
@@ -71,8 +69,8 @@ class generalizedFockMatrix : public AFQMCInfo
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
-  using buffer_alloc_type = device_buffer_type<ComplexType>;
-  using Static3Tensor     = boost::multi::static_array<ComplexType, 3, buffer_alloc_type>;
+  using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
+  using Static3Tensor    = boost::multi::static_array<ComplexType, 3, stack_alloc_type>;
 
 public:
   generalizedFockMatrix(afqmc::TaskGroup_& tg_,
@@ -108,7 +106,7 @@ public:
     using std::fill_n;
     writer = (TG.getGlobalRank() == 0);
 
-    DMAverage = std::move(mpi3CTensor({2, nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage = mpi3CTensor({2, nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
     fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -140,11 +138,11 @@ public:
     {
       if (denom.size(0) != nw)
       {
-        denom = std::move(mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()}));
+        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (DMWork.size(0) != 3 || DMWork.size(1) != nw || DMWork.size(2) != dm_size)
       {
-        DMWork = std::move(mpi3CTensor({3, nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+        DMWork = mpi3CTensor({3, nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
@@ -156,7 +154,8 @@ public:
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
-    Static3Tensor gFock({2, nw, dm_size}, device_buffer_generator->template get_allocator<ComplexType>());
+    DeviceBufferManager buffer_manager;
+    Static3Tensor gFock({2, nw, dm_size}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     HamOp->generalizedFockMatrix(G, gFock[0], gFock[1]);
 

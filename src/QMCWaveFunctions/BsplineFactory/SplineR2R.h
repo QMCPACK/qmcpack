@@ -17,9 +17,9 @@
 #define QMCPLUSPLUS_SPLINE_R2R_H
 
 #include <memory>
-#include <QMCWaveFunctions/BsplineFactory/BsplineSet.h>
-#include <OhmmsSoA/VectorSoaContainer.h>
-#include <spline2/MultiBspline.hpp>
+#include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
+#include "spline2/MultiBspline.hpp"
 #include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
@@ -189,8 +189,8 @@ public:
                              GGGVector_t& grad_grad_grad_psi) override;
 
   template<class BSPLINESPO>
-  friend class SplineSetReader;
-  friend class BsplineReaderBase;
+  friend struct SplineSetReader;
+  friend struct BsplineReaderBase;
 };
 
 extern template class SplineR2R<float>;

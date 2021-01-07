@@ -29,7 +29,6 @@
 
 namespace qmcplusplus
 {
-
 void test_C_diamond()
 {
   std::ostringstream section_name;
@@ -81,7 +80,7 @@ void test_C_diamond()
     elec.Lattice.R(2, 2) = 3.37316115;
     elec.Lattice.reset();
 
-    elec.addTable(ions, DT_SOA);
+    elec.addTable(ions);
     elec.update();
 
     Libxml2Document doc2;
@@ -103,7 +102,6 @@ void test_C_diamond()
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector_t values;
@@ -112,7 +110,7 @@ void test_C_diamond()
     // BEGIN generated C++ input from Carbon1x1x1-tw1_gen_mos.py (pyscf version 1.6.2) on 2019-11-19 15:08:42.652893
 
     //Move electron 0 to position [[-10. -10. -10.]] a.u.:
-    elec.R[0] = { -10.0, -10.0, -10.0 };
+    elec.R[0] = {-10.0, -10.0, -10.0};
     elec.update();
     sposet->evaluateValue(elec, 0, values);
 
@@ -222,7 +220,7 @@ void test_C_diamond()
     REQUIRE(std::imag(values[25]) == Approx(-0.03615194381469279));
 
     //Move electron 0 to position [[-6.666667 -6.666667 -6.666667]] a.u.:
-    elec.R[0] = { -6.666667, -6.666667, -6.666667 };
+    elec.R[0] = {-6.666667, -6.666667, -6.666667};
     elec.update();
     sposet->evaluateValue(elec, 0, values);
 
@@ -332,7 +330,7 @@ void test_C_diamond()
     REQUIRE(std::imag(values[25]) == Approx(-0.6716776823047774));
 
     //Move electron 0 to position [[-3.333334 -3.333334 -3.333334]] a.u.:
-    elec.R[0] = { -3.333334, -3.333334, -3.333334 };
+    elec.R[0] = {-3.333334, -3.333334, -3.333334};
     elec.update();
     sposet->evaluateValue(elec, 0, values);
 
@@ -442,7 +440,7 @@ void test_C_diamond()
     REQUIRE(std::imag(values[25]) == Approx(-0.057434079996872056));
 
     //Move electron 0 to position [[-9.99999999e-07 -9.99999999e-07 -9.99999999e-07]] a.u.:
-    elec.R[0] = { -9.999999992515995e-07, -9.999999992515995e-07, -9.999999992515995e-07 };
+    elec.R[0] = {-9.999999992515995e-07, -9.999999992515995e-07, -9.999999992515995e-07};
     elec.update();
     sposet->evaluateValue(elec, 0, values);
 
@@ -552,7 +550,7 @@ void test_C_diamond()
     REQUIRE(std::imag(values[25]) == Approx(-0.8579924081605256));
 
     //Move electron 0 to position [[3.333332 3.333332 3.333332]] a.u.:
-    elec.R[0] = { 3.3333320000000004, 3.3333320000000004, 3.3333320000000004 };
+    elec.R[0] = {3.3333320000000004, 3.3333320000000004, 3.3333320000000004};
     elec.update();
     sposet->evaluateValue(elec, 0, values);
 
@@ -662,7 +660,7 @@ void test_C_diamond()
     REQUIRE(std::imag(values[25]) == Approx(-0.08028180462518811));
 
     //Move electron 0 to position [[6.666665 6.666665 6.666665]] a.u.:
-    elec.R[0] = { 6.666665000000002, 6.666665000000002, 6.666665000000002 };
+    elec.R[0] = {6.666665000000002, 6.666665000000002, 6.666665000000002};
     elec.update();
     sposet->evaluateValue(elec, 0, values);
 
@@ -772,7 +770,7 @@ void test_C_diamond()
     REQUIRE(std::imag(values[25]) == Approx(-0.928839302822032));
 
     //Move electron 0 to position [[9.999998 9.999998 9.999998]] a.u.:
-    elec.R[0] = { 9.999998000000001, 9.999998000000001, 9.999998000000001 };
+    elec.R[0] = {9.999998000000001, 9.999998000000001, 9.999998000000001};
     elec.update();
     sposet->evaluateValue(elec, 0, values);
 
@@ -882,8 +880,6 @@ void test_C_diamond()
     REQUIRE(std::imag(values[25]) == Approx(-0.10326287192308459));
 
     // END generated C++ input from Carbon1x1x1-tw1_gen_mos.py (pyscf version 1.6.2) on 2019-11-19 15:08:42.847403
-
-    SPOSetBuilderFactory::clear();
   }
 }
 

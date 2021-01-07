@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
+#include "DiracDeterminantBatched.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 #include "Numerics/MatrixOperators.h"
@@ -23,14 +23,12 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DET_ENGINE_TYPE>
-DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase(spos, first),
+DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos, int first)
+    : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first),
       ndelay(1),
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
       H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
-{
-  ClassName = "DiracDeterminantBatched";
-}
+{}
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
@@ -746,9 +744,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateDerivatives(ParticleSet& 
 }
 
 template<typename DET_ENGINE_TYPE>
-DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYPE>::makeCopy(SPOSetPtr spo) const
+DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYPE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminantBatched<DET_ENGINE_TYPE>* dclone = new DiracDeterminantBatched<DET_ENGINE_TYPE>(spo);
+  DiracDeterminantBatched<DET_ENGINE_TYPE>* dclone = new DiracDeterminantBatched<DET_ENGINE_TYPE>(std::move(spo));
   dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
   return dclone;
 }

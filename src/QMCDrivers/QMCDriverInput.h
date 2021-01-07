@@ -14,7 +14,7 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "io/InputTypes.hpp"
+#include "QMCDrivers/InputTypes.hpp"
 
 namespace qmcplusplus
 {
@@ -60,6 +60,8 @@ protected:
 
   int qmc_section_count_;
 
+  bool scoped_profiling_ = false;
+
   /** @ingroup Input Parameters for QMCDriver base class
    *  @{
    *  All input determined variables should be here
@@ -83,7 +85,7 @@ protected:
   IndexType walkers_per_rank_  = 0;
   IndexType requested_samples_ = 0;
   IndexType sub_steps_         = 1;
-  // max unecessary in this context
+  // max unnecessary in this context
   IndexType max_blocks_               = 1;
   IndexType max_steps_                = 1;
   IndexType warmup_steps_             = 0;
@@ -145,6 +147,7 @@ public:
 
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }
+  bool get_scoped_profiling() const { return scoped_profiling_; }
 
   const std::string get_drift_modifier() const { return drift_modifier_; }
   RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }

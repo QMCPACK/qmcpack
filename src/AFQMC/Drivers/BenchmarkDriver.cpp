@@ -5,16 +5,16 @@
 
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include <Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 #include "Message/OpenMP.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Configuration.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Drivers/BenchmarkDriver.h"
+#include "BenchmarkDriver.h"
 
 namespace qmcplusplus
 {

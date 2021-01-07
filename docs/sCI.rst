@@ -179,8 +179,7 @@ The following steps show how to run from Hartree-Fock to selected CI using QP2, 
   This means that we will be simulating the molecule in all electrons
   within the cc-pVTZ basis set. Other options are, of course, possible
   such as using ECPs, different spin multiplicities, etc. For more
-  details, see the QP tutorial at
-https://quantumpackage.github.io/qp2/
+  details, see the QP tutorial at https://quantumpackage.github.io/qp2/
 
   A directory called ``C2O2H3N.ezfio`` is created and contains all the
   relevant data to run the SCF Hartree-Fock calculation. Note that because

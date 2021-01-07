@@ -24,14 +24,11 @@ PROJECT(qmctools)
 SET(MOSRCS
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
-  GamesXmlParser.cpp
   GamesAsciiParser.cpp
   DiracParser.cpp
   CasinoParser.cpp
   BParser.cpp
   BMakeFunc.cpp
-  GamesFMOParser.cpp
-  QPParser.cpp
   LCAOHDFParser.cpp
 )
 

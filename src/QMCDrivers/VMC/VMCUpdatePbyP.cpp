@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMCUpdatePbyP.h"
+#include "VMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "Message/OpenMP.h"
 #if !defined(REMOVE_TRACEMANAGER)

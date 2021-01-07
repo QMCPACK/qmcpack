@@ -1150,7 +1150,7 @@ class SemilocalPP(Pseudopotential):
                 if self.name!=None:
                     lab = self.name+' '+lab
                 #end if
-                v = self.evaluate_channel(r,c,rpow,rmin-1e-12,with_local,with_L2)
+                v = self.evaluate_channel(r,c,rpow,rmin-1e-12,False,with_local,with_L2)
                 rng = r>rmin-1e-12
                 r = r[rng]
                 if metric=='r2':

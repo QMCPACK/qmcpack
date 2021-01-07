@@ -16,7 +16,7 @@
  */
 
 #include "Configuration.h"
-#include "Particle/VirtualParticleSet.h"
+#include "VirtualParticleSet.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/createDistanceTable.h"
 #include "QMCHamiltonians/NLPPJob.h"
@@ -35,7 +35,7 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(
 
   //create distancetables
   for (int i = 0; i < refPS.getNumDistTables(); ++i)
-    addTable(refPS.getDistTable(i).origin(), refPS.getDistTable(0).DTType);
+    addTable(refPS.getDistTable(i).origin());
 }
 
 /// move virtual particles to new postions and update distance tables

@@ -5,15 +5,15 @@
 #include <random>
 
 #include "Configuration.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Propagators/PropagatorFactory.h"
+#include "PropagatorFactory.h"
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
 namespace qmcplusplus
@@ -64,7 +64,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
     substractMF = false;
 
   if (substractMF)
-    app_log() << " Using mean-field substraction in propagator: " << name << "\n";
+    app_log() << " Using mean-field subtraction in propagator: " << name << "\n";
 
   // buld mean field expectation value of the Cholesky matrix
   CVector vMF(iextensions<1u>{wfn.local_number_of_cholesky_vectors()}, allocator{});
@@ -89,9 +89,9 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
   for (int i = 0; i < vMF_.size(); i++)
     v_ = std::max(v_, std::abs(vMF_[i]));
   TG.Global().all_reduce_n(&v_, 1, &vmax, boost::mpi3::max<>());
-  app_log() << " Largest component of Mean-field substraction potential: " << vmax << std::endl;
+  app_log() << " Largest component of Mean-field subtraction potential: " << vmax << std::endl;
   if (vmax > vbias_bound)
-    app_log() << " WARNING: Mean-field substraction potential has components outside vbias_bound.\n"
+    app_log() << " WARNING: Mean-field subtraction potential has components outside vbias_bound.\n"
               << "          Consider increasing vbias_bound. max(vMF[n]), vbias_bound: " << vmax << " " << vbias_bound
               << std::endl;
 

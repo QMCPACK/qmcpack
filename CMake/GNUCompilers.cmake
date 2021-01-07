@@ -1,6 +1,6 @@
 # Check compiler version
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0 )
-MESSAGE(FATAL_ERROR "Requires gcc 5.0 or higher ")
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0 )
+MESSAGE(FATAL_ERROR "Requires gcc 7.0 or higher ")
 ENDIF()
 
 # Set the std
@@ -31,7 +31,6 @@ SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Werror=vla")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")
 
 # set compiler warnings
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcomment -Wmisleading-indentation -Wmaybe-uninitialized -Wuninitialized -Wreorder -Wno-unknown-pragmas -Wno-sign-compare")
 
 # Set extra optimization specific flags

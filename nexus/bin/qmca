@@ -1184,20 +1184,46 @@ QMCA examples:
             avg_data    = obj()
             if opt.average_all or weights is not None or len(batch_prefixes)==1:
                 # average all data together
-                if weights is None:
-                    weights = len(prefixes)*[1.0]
-                elif len(weights)!=len(prefixes):
-                    self.error('one weight must be provided per file prefix for averaging\nyou provided {0} weights for {1} prefixes\nweights provided: {2}\nprefixes provided: {3}'.format(len(weights),len(prefixes),weights,prefixes))
+                if weights is not None:
+                    if len(weights)!=len(prefixes):
+                        self.error('one weight must be provided per file prefix for averaging\nyou provided {0} weights for {1} prefixes\nweights provided: {2}\nprefixes provided: {3}'.format(len(weights),len(prefixes),weights,prefixes))
+                    #end if
+                else:
+                    uniform_weights = len(prefixes)*[1.0]
+                    if opt.twist_info=='ignore':
+                        weights = uniform_weights
+                    else:
+                        weights = []
+                        for prefix in sorted(prefixes):
+                            twist_info_file = prefix+'.twist_info.dat'
+                            if os.path.exists(twist_info_file):
+                                fobj = open(twist_info_file)
+                                try:
+                                    weight = float(fobj.read().strip().split()[0])
+                                    weights.append(weight)
+                                except:
+                                    None
+                                #end try
+                            #end if
+                        #end for
+                        if len(weights)!=len(prefixes):
+                            if opt.twist_info=='require':
+                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                            else:
+                                weights = uniform_weights
+                            #end if
+                        #end if
+                    #end if
                 #end if
                 adata = obj()
                 ns=0
                 for series in serieslist:
-                    np = 0
+                    npf = 0
                     for prefix in sorted(data.keys()):
                         pdata = data[prefix]
-                        w = weights[np]
+                        w = weights[npf]
                         d = pdata[series]
-                        if np==0:
+                        if npf==0:
                             avg = d.copy()
                             di = d.info
                             avg.info.set(
@@ -1209,7 +1235,7 @@ QMCA examples:
                             avg.zero()
                         #end if
                         avg.accumulate(d,w)
-                        np+=1
+                        npf+=1
                     #end for
                     avg.normalize()
                     file_list.append(avg.info.filepath)
@@ -1251,12 +1277,12 @@ QMCA examples:
                         #end if
                     #end if
                     for series in serieslist:
-                        np = 0
+                        npf = 0
                         for prefix in sorted(prefixes):
                             pdata = data[prefix]
-                            w = weights[np]
+                            w = weights[npf]
                             d = pdata[series]
-                            if np==0:
+                            if npf==0:
                                 avg = d.copy()
                                 di = d.info
                                 avg.info.set(
@@ -1268,7 +1294,7 @@ QMCA examples:
                                 avg.zero()
                             #end if
                             avg.accumulate(d,w)
-                            np+=1
+                            npf+=1
                         #end for
                         avg.normalize()
                         file_list.append(avg.info.filepath)
@@ -1407,11 +1433,11 @@ QMCA examples:
             for quantity in quantities:
                 for mode in range(len(modes)):
                     if modes[mode]:
-                        np = 0
+                        npf = 0
                         for prefix in prefix_list:
-                            first_prefix = np==0
-                            last_prefix  = np==len(self.data)-1
-                            np+=1
+                            first_prefix = npf==0
+                            last_prefix  = npf==len(self.data)-1
+                            npf+=1
                             if first_prefix or not opt.overlay:
                                 fig = plt.figure()
                                 ax = fig.add_subplot(111)

@@ -15,9 +15,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
+#include "kSpaceJastrow.h"
 #include "LongRange/StructFact.h"
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 #include "CPU/e2iphi.h"
 #include <sstream>
 #include <algorithm>
@@ -225,7 +225,7 @@ void kSpaceJastrow::sortGvecs(std::vector<PosType>& gvecs, std::vector<kSpaceCoe
   }
 }
 
-kSpaceJastrow::kSpaceJastrow(ParticleSet& ions,
+kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions,
                              ParticleSet& elecs,
                              SymmetryType oneBodySymm,
                              RealType oneBodyCutoff,
@@ -235,7 +235,7 @@ kSpaceJastrow::kSpaceJastrow(ParticleSet& ions,
                              RealType twoBodyCutoff,
                              std::string twobodyid,
                              bool twoBodySpin)
-    : Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
+    : WaveFunctionComponent("kSpaceJastrow", elecs.getName()), Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
 {
   Optimizable   = true;
   Prefactor     = 1.0 / elecs.Lattice.Volume;
@@ -353,21 +353,6 @@ void kSpaceJastrow::setCoefficients(std::vector<RealType>& oneBodyCoefs, std::ve
       TwoBodySymmCoefs[i].cG = twoBodyCoefs[i];
       myVars[kk++]           = twoBodyCoefs[i];
       TwoBodySymmCoefs[i].set(TwoBodyCoefs);
-    }
-  }
-}
-
-void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int i = 0; i < TwoBodyGvecs.size(); i++)
-  {
-    TwoBody_rhoG[i] = ComplexType();
-    for (int iat = 0; iat < num_elecs; iat++)
-    {
-      RealType phase, s, c;
-      phase = dot(TwoBodyGvecs[i], P.R[iat]);
-      qmcplusplus::sincos(phase, &s, &c);
-      TwoBody_rhoG[i] += ComplexType(c, s);
     }
   }
 }
@@ -790,31 +775,11 @@ WaveFunctionComponentPtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
   return kj;
 }
 
-WaveFunctionComponentPtr kSpaceJastrow::makeThrScope(PtclGrpIndexes& pgi) const
-{
-  // It looks to me like the els dependence is gone and the particle set is passed with evals.
-  kSpaceJastrow* kj = new kSpaceJastrow(Ions);
-  kj->copyFrom(*this);
-  // kSpaceJastrow *kj = new kSpaceJastrow(*this);
-  // kj->VarMap.clear();
-  // for (int i=0; i<OneBodySymmCoefs.size(); i++) {
-  //   std::stringstream name_real, name_imag;
-  //   name_real << OneBodyID << "_" << 2*i;
-  //   name_imag << OneBodyID << "_" << 2*i+1;
-  //   kj->VarMap[name_real.str()] = &(kj->OneBodySymmCoefs[i].cG.real());
-  //   kj->VarMap[name_imag.str()] = &(kj->OneBodySymmCoefs[i].cG.imag());
-  // }
-  // for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
-  //   std::stringstream name;
-  //   name << TwoBodyID << "_" << i;
-  //   kj->VarMap[name.str()] = &(kj->TwoBodySymmCoefs[i].cG);
-  // }
-  return kj;
-}
-
 /** constructor to initialize Ions
  */
-kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions) : Ions(ions) {}
+kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions)
+    : WaveFunctionComponent("kSpaceJastrow", ions.getName()), Ions(ions)
+{}
 
 void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
 {

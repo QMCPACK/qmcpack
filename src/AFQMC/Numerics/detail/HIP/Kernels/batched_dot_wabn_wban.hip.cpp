@@ -16,7 +16,7 @@
 #include <thrust/complex.h>
 #include "uninitialized_array.hpp"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -138,8 +138,8 @@ void batched_dot_wabn_wban(int nbatch,
                      nchol, reinterpret_cast<thrust::complex<double> const*>(alpha),
                      reinterpret_cast<thrust::complex<double> const*>(Tab),
                      reinterpret_cast<thrust::complex<double>*>(y), incy);
-  qmc_hip::hip_check(hipGetLastError(), "batched_dot_wabn_wban");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_dot_wabn_wban");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_dot_wabn_wban");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_dot_wabn_wban");
 }
 
 void batched_dot_wabn_wban(int nbatch,
@@ -157,8 +157,8 @@ void batched_dot_wabn_wban(int nbatch,
                      nchol, reinterpret_cast<thrust::complex<float> const*>(alpha),
                      reinterpret_cast<thrust::complex<float> const*>(Tab), reinterpret_cast<thrust::complex<float>*>(y),
                      incy);
-  qmc_hip::hip_check(hipGetLastError(), "batched_dot_wabn_wban");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_dot_wabn_wban");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_dot_wabn_wban");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_dot_wabn_wban");
 }
 
 void batched_dot_wabn_wban(int nbatch,
@@ -176,8 +176,8 @@ void batched_dot_wabn_wban(int nbatch,
                      nchol, reinterpret_cast<thrust::complex<float> const*>(alpha),
                      reinterpret_cast<thrust::complex<float> const*>(Tab),
                      reinterpret_cast<thrust::complex<double>*>(y), incy);
-  qmc_hip::hip_check(hipGetLastError(), "batched_dot_wabn_wban");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_dot_wabn_wban");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_dot_wabn_wban");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_dot_wabn_wban");
 }
 
 // anb/bna
@@ -196,8 +196,8 @@ void batched_dot_wanb_wbna(int nbatch,
                      nchol, reinterpret_cast<thrust::complex<double> const*>(alpha),
                      reinterpret_cast<thrust::complex<double> const*>(Tab),
                      reinterpret_cast<thrust::complex<double>*>(y), incy);
-  qmc_hip::hip_check(hipGetLastError(), "batched_dot_wanb_wbna");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_dot_wanb_wbna");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_dot_wanb_wbna");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_dot_wanb_wbna");
 }
 
 void batched_dot_wanb_wbna(int nbatch,
@@ -215,8 +215,8 @@ void batched_dot_wanb_wbna(int nbatch,
                      nchol, reinterpret_cast<thrust::complex<float> const*>(alpha),
                      reinterpret_cast<thrust::complex<float> const*>(Tab), reinterpret_cast<thrust::complex<float>*>(y),
                      incy);
-  qmc_hip::hip_check(hipGetLastError(), "batched_dot_wanb_wbna");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_dot_wanb_wbna");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_dot_wanb_wbna");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_dot_wanb_wbna");
 }
 
 void batched_dot_wanb_wbna(int nbatch,
@@ -234,8 +234,8 @@ void batched_dot_wanb_wbna(int nbatch,
                      nchol, reinterpret_cast<thrust::complex<float> const*>(alpha),
                      reinterpret_cast<thrust::complex<float> const*>(Tab),
                      reinterpret_cast<thrust::complex<double>*>(y), incy);
-  qmc_hip::hip_check(hipGetLastError(), "batched_dot_wanb_wbna");
-  qmc_hip::hip_check(hipDeviceSynchronize(), "batched_dot_wanb_wbna");
+  qmc_hip::hip_kernel_check(hipGetLastError(), "batched_dot_wanb_wbna");
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize(), "batched_dot_wanb_wbna");
 }
 
 

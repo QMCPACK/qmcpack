@@ -57,7 +57,7 @@ private:
    * reads the various coefficient matricies and broadcast
    * after this, we have up/dn LCAOrbitalSet that can be registered to the SpinorSet
    */
-  bool putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn);
+  bool putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr);
 };
 } // namespace qmcplusplus
 #endif

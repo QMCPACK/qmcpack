@@ -20,7 +20,7 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "Particle/DistanceTableData.h"
-#include <QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h>
+#include "QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h"
 
 namespace qmcplusplus
 {
@@ -145,7 +145,7 @@ struct SoaCuspCorrection
    * @param ions ionic system
    * @param els electronic system
    */
-  SoaCuspCorrection(ParticleSet& ions, ParticleSet& els) : myTableIndex(els.addTable(ions, DT_SOA))
+  SoaCuspCorrection(ParticleSet& ions, ParticleSet& els) : myTableIndex(els.addTable(ions))
   {
     NumCenters = ions.getTotalNum();
     NumTargets = els.getTotalNum();

@@ -15,7 +15,7 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPPJob.h"
 
 namespace qmcplusplus

@@ -15,10 +15,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
+#include "CoulombPBCAB_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {
@@ -87,10 +87,10 @@ void CoulombPBCAB_CUDA::initBreakup(ParticleSet& P)
 #endif
 }
 
-void CoulombPBCAB_CUDA::add(int groupID, RadFunctorType* ppot)
+void CoulombPBCAB_CUDA::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 {
   RadFunctorType* savefunc = Vspec[groupID];
-  CoulombPBCAB::add(groupID, ppot);
+  CoulombPBCAB::add(groupID, std::move(ppot));
   RadFunctorType* rfunc = Vspec[groupID];
   if (rfunc != savefunc)
   {

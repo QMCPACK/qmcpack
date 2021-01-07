@@ -12,11 +12,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/CompositeSPOSet.h>
-#include <Utilities/IteratorUtility.h>
+#include "CompositeSPOSet.h"
+#include "Utilities/IteratorUtility.h"
 #include <algorithm>
-#include <OhmmsData/AttributeSet.h>
-#include <QMCWaveFunctions/SPOSetBuilderFactory.h>
+#include "OhmmsData/AttributeSet.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
 {
@@ -91,13 +91,6 @@ void CompositeSPOSet::report()
     app_log() << "    " << i << std::endl;
     components[i]->basic_report("      ");
   }
-}
-
-
-void CompositeSPOSet::resetTargetParticleSet(ParticleSet& P)
-{
-  for (int c = 0; c < components.size(); ++c)
-    components[c]->resetTargetParticleSet(P);
 }
 
 
@@ -235,10 +228,11 @@ SPOSet* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     return 0;
   }
+
   CompositeSPOSet* spo_now = new CompositeSPOSet;
   for (int i = 0; i < spolist.size(); ++i)
   {
-    SPOSet* spo = get_sposet(spolist[i]);
+    SPOSet* spo = sposet_builder_factory_.getSPOSet(spolist[i]);
     if (spo)
       spo_now->add(spo);
   }

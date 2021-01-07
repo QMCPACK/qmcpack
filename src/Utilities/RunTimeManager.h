@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_RUNTIME_MANAGER_H
 #define QMCPLUSPLUS_RUNTIME_MANAGER_H
 
-#include <Utilities/Clock.h>
+#include "Utilities/Clock.h"
 #include <string>
 
 
@@ -27,7 +27,7 @@ class RunTimeManager
 {
 public:
   void start() { start_time = CLOCK()(); }
-  double elapsed() { return CLOCK()() - start_time; }
+  inline double elapsed() { return CLOCK()() - start_time; }
   // Initialize the start time at static class initialization time
   RunTimeManager() { start(); }
 
@@ -36,6 +36,9 @@ private:
 };
 
 extern RunTimeManager<CPUClock> run_time_manager;
+
+extern template class RunTimeManager<CPUClock>;
+extern template class RunTimeManager<FakeCPUClock>;
 
 template<class CLOCK = CPUClock>
 class LoopTimer
@@ -85,8 +88,8 @@ public:
   std::string time_limit_message(const std::string& driverName, int block);
 };
 
-extern template class RunTimeManager<CPUClock>;
-extern template class RunTimeManager<FakeCPUClock>;
+extern template class RunTimeControl<CPUClock>;
+extern template class RunTimeControl<FakeCPUClock>;
 
 } // namespace qmcplusplus
 #endif

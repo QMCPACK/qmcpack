@@ -20,8 +20,8 @@
 /**@file QMCMain.cpp
  * @brief Implments QMCMain operators.
  */
-#include "QMCApp/QMCMain.h"
-#include "Platforms/accelerators.hpp"
+#include "QMCMain.h"
+#include "accelerators.hpp"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -37,9 +37,9 @@
 #include "Message/OpenMP.h"
 #include <queue>
 #include <cstring>
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
@@ -63,6 +63,8 @@ QMCMain::QMCMain(Communicate* c)
 {
   Communicate NodeComm;
   NodeComm.initializeAsNodeComm(*OHMMS::Controller);
+  // assign accelerators within a node
+  const int num_accelerators = assignAccelerators(NodeComm);
 
   app_summary() << "\n=====================================================\n"
                 << "                    QMCPACK " << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "."
@@ -77,18 +79,19 @@ QMCMain::QMCMain(Communicate* c)
   // clang-format off
   app_summary()
 #if !defined(HAVE_MPI)
-      << "\n  Built without MPI. Running in serial or with OMP threading only." << std::endl
+      << "\n  Built without MPI. Running in serial or with OMP threads." << std::endl
 #endif
       << "\n  Total number of MPI ranks = " << OHMMS::Controller->size()
       << "\n  Number of MPI groups      = " << myComm->getNumGroups()
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << NodeComm.size()
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(QMC_CUDA) || defined(ENABLE_ROCM)
+      << "\n  Accelerators per node     = " << num_accelerators
+#endif
       << std::endl;
   // clang-format on
 
-  // assign accelerators within a node
-  assignAccelerators(NodeComm);
 #pragma omp parallel
   {
     const int L1_tid = omp_get_thread_num();
@@ -114,7 +117,27 @@ QMCMain::QMCMain(Communicate* c)
                 << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION)
                 << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
-                << "\n\n  Structure-of-arrays (SoA) optimization enabled" << std::endl;
+                << std::endl;
+
+  // Record features configured in cmake or selected via command-line arguments to the printout
+  app_summary() << std::endl;
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_ROCM)
+  app_summary() << "  CPU only build" << std::endl;
+#else
+#if defined(ENABLE_OFFLOAD)
+  app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
+#endif
+#if defined(ENABLE_CUDA) || defined(QMC_CUDA)
+  app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
+#endif
+#if defined(ENABLE_ROCM)
+  app_summary() << "  ROCM acceleration build option is enabled" << std::endl;
+#endif
+#endif
+#ifdef ENABLE_TIMERS
+  app_summary() << "  Timer build option is enabled. Current timer level is "
+                << timer_manager.get_timer_threshold_string() << std::endl;
+#endif
   app_summary() << std::endl;
   app_summary().flush();
 }
@@ -297,7 +320,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       if (cname == "qmc")
       {
         //prevent completed is set
-        bool success = executeQMCSection(tcur, iter > 0);
+        bool success = executeQMCSection(tcur, true);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
@@ -308,6 +331,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       tcur = tcur->next;
     }
   }
+  // Destroy the last driver at the end of a loop with no further reuse of a driver needed.
+  last_driver.reset(nullptr);
 }
 
 bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
@@ -384,7 +409,7 @@ bool QMCMain::validateXML()
   }
   if (qmc_common.use_density)
   {
-    app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl;
+    app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl << std::endl;
   }
 
   //initialize the random number generator
@@ -439,7 +464,7 @@ bool QMCMain::validateXML()
     }
     else if (cname == "init")
     {
-      InitMolecularSystem moinit(ptclPool);
+      InitMolecularSystem moinit(*ptclPool);
       moinit.put(cur);
     }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -535,6 +560,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 
 /** prepare for a QMC run
  * @param cur qmc element
+ * @param reuse if true, the current call is from a loop
  * @return true, if a valid QMCDriver is set.
  */
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
@@ -543,24 +569,28 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run              = false;
 
-  if (!population_)
-  {
-    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(),
-                                       hamPool->getPrimary(), myComm->rank()));
-  }
-  if (reuse)
+  if (reuse && last_driver)
     qmc_driver = std::move(last_driver);
   else
   {
     QMCDriverFactory driver_factory;
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
-    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
-                                             *ptclPool, *psiPool, *hamPool, *population_, myComm);
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+
+    qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
     append_run = das.append_run;
   }
 
   if (qmc_driver)
   {
+    if (last_branch_engine_legacy_driver)
+    {
+      last_branch_engine_legacy_driver->resetRun(cur);
+      qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
+    }
+
+    if (last_branch_engine_new_unified_driver)
+      qmc_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
+
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
@@ -580,12 +610,14 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer* t1 = timer_manager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
-    t1->start();
     qmc_driver->run();
-    t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    last_driver = std::move(qmc_driver);
+    // transfer the states of a driver before its destruction
+    last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
+    last_branch_engine_new_unified_driver = qmc_driver->getNewBranchEngine();
+    // save the driver in a driver loop
+    if (reuse)
+      last_driver = std::move(qmc_driver);
     return true;
   }
   else

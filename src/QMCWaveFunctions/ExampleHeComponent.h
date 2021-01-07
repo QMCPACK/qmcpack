@@ -27,10 +27,10 @@ class ExampleHeComponent : public WaveFunctionComponent
 {
 public:
   ExampleHeComponent(const ParticleSet& ions, ParticleSet& els)
-      : ions_(ions), my_table_ee_idx_(els.addTable(els, DT_SOA)), my_table_ei_idx_(els.addTable(ions, DT_SOA))
-  {
-    ClassName = "ExampleHeComponent";
-  };
+      : WaveFunctionComponent("ExampleHeComponent"),
+        ions_(ions),
+        my_table_ee_idx_(els.addTable(els)),
+        my_table_ei_idx_(els.addTable(ions)){};
 
   using OptVariablesType = optimize::VariableSet;
   using PtclGrpIndexes   = QMCTraits::PtclGrpIndexes;
@@ -41,8 +41,6 @@ public:
 
 
   void reportStatus(std::ostream& os) override {}
-
-  void resetTargetParticleSet(ParticleSet& P) override {}
 
   LogValueType evaluateLog(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,

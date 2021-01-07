@@ -17,16 +17,16 @@
 #define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/MatrixUpdateOMP.h"
+#include "QMCWaveFunctions/Fermion/MatrixUpdateOMPTarget.h"
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 #include "QMCWaveFunctions/Fermion/MatrixDelayedUpdateCUDA.h"
 #endif
 #include "Platforms/PinnedAllocator.h"
-#include "OpenMP/OMPallocator.hpp"
+#include "OMPTarget/OMPallocator.hpp"
 
 namespace qmcplusplus
 {
-template<typename DET_ENGINE_TYPE = MatrixUpdateOMP<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+template<typename DET_ENGINE_TYPE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
@@ -42,19 +42,17 @@ public:
   using mGradType  = TinyVector<mValueType, DIM>;
 
   template<typename DT>
-  using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
-  template<typename DT>
   using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadPinnedValueVector_t    = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
-  using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadAllocator<ValueType>>;
+  using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
 
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBatched(SPOSetPtr const spos, int first = 0);
+  DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos, int first = 0);
 
   // copy constructor and assign operator disabled
   DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
@@ -164,7 +162,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantBatched* makeCopy(SPOSet* spo) const override;
+  DiracDeterminantBatched* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 

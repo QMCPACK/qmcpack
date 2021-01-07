@@ -61,7 +61,7 @@ int main(int argc, char** argv)
   bool show_usage = false;
   bool show_warn  = false;
   /* For a successful execution of the code, atleast 3 arguments will need to be
-   * provided along with the exectuable. Therefore, print usage information if
+   * provided along with the executable. Therefore, print usage information if
    * argc is less than 4.
    */
   if (argc < 4)

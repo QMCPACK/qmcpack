@@ -28,6 +28,10 @@
 #include <ittnotify.h>
 #endif
 
+#ifdef USE_NVTX_API
+#include <nvToolsExt.h>
+#endif
+
 #define USE_STACK_TIMERS
 
 namespace qmcplusplus
@@ -41,7 +45,8 @@ enum timer_levels
                     // It is for setting a threshold to turn all timers off.
   timer_level_coarse,
   timer_level_medium,
-  timer_level_fine
+  timer_level_fine,
+  num_timer_levels // this is not a timer level but to count the elements in this enum
 };
 
 extern bool timer_max_level_exceeded;

@@ -27,11 +27,13 @@ public:
   UnifiedDriverWalkerControlMPITest();
   void testMultiplicity(std::vector<int>& rank_counts_expanded, std::vector<int>& rank_counts_after);
   void testPopulationDiff(std::vector<int>& rank_counts_before, std::vector<int>& rank_counts_after);
+  void makeValidWalkers();
 
 private:
   void reportWalkersPerRank(Communicate* c, MCPopulation& pop);
 
   SetupPools dpools_;
+  WalkerConfigurations walker_confs;
   UPtr<MCPopulation> pop_;
   WalkerControlMPI wc_;
 };

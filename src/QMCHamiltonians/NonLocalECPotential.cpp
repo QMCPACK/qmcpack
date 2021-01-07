@@ -15,7 +15,7 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/NonLocalECPotential.h"
+#include "NonLocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPPJob.h"
 #include "Utilities/IteratorUtility.h"
@@ -48,12 +48,12 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);
-  myTableIndex = els.addTable(ions, DT_SOA_PREFERRED);
+  myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
   //els.resizeSphere(NumIons);
   PP.resize(NumIons, nullptr);
   prefix = "FNL";
-  PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
+  PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
   PulayTerm.resize(NumIons);
   UpdateMode.set(NONLOCAL, 1);
   nlpp_jobs.resize(els.groups());
@@ -63,17 +63,6 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
     nlpp_jobs[ig].reserve(2 * els.groupsize(ig));
   }
 }
-
-///destructor
-NonLocalECPotential::~NonLocalECPotential()
-{
-  delete_iter(PPset.begin(), PPset.end());
-  //map<int,NonLocalECPComponent*>::iterator pit(PPset.begin()), pit_end(PPset.end());
-  //while(pit != pit_end) {
-  //   delete (*pit).second; ++pit;
-  //}
-}
-
 
 #if !defined(REMOVE_TRACEMANAGER)
 void NonLocalECPotential::contribute_particle_quantities() { request.contribute_array(myName); }
@@ -104,6 +93,12 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P)
   return Value;
 }
 
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(ParticleSet& P)
+{
+  evaluateImpl(P, false, true);
+  return Value;
+}
+
 void NonLocalECPotential::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
 {
   mw_evaluateImpl(O_list, P_list, false);
@@ -127,7 +122,7 @@ void NonLocalECPotential::mw_evaluateWithToperator(const RefVector<OperatorBase>
     mw_evaluateImpl(O_list, P_list, false);
 }
 
-void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
+void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid)
 {
   if (Tmove)
     nonLocalOps.reset();
@@ -144,7 +139,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
 #endif
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
+      if (!keepGrid)
+        PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
   const auto& myTable = P.getDistTable(myTableIndex);
   // clear all the electron and ion neighbor lists
@@ -156,28 +152,21 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
   if (ComputeForces)
   {
     forces = 0;
-    if (myTable.DTType == DT_SOA)
+    for (int jel = 0; jel < P.getTotalNum(); jel++)
     {
-      for (int jel = 0; jel < P.getTotalNum(); jel++)
-      {
-        const auto& dist               = myTable.getDistRow(jel);
-        const auto& displ              = myTable.getDisplRow(jel);
-        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-        for (int iat = 0; iat < NumIons; iat++)
-          if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-          {
-            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
-            if (Tmove)
-              PP[iat]->contributeTxy(jel, Txy);
-            Value += pairpot;
-            NeighborIons.push_back(iat);
-            IonNeighborElecs.getNeighborList(iat).push_back(jel);
-          }
-      }
-    }
-    else
-    {
-      APP_ABORT("NonLocalECPotential::evaluate():  Forces not imlpemented for AoS build\n");
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < NumIons; iat++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        {
+          RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
+          if (Tmove)
+            PP[iat]->contributeTxy(jel, Txy);
+          Value += pairpot;
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        }
     }
   }
   else
@@ -262,8 +251,6 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
 
     if (ComputeForces)
       APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
-    if (myTable.DTType != DT_SOA)
-      APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): not imlpemented for AoS builds\n");
 
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
@@ -376,29 +363,22 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
   for (int jel = 0; jel < P.getTotalNum(); jel++)
     ElecNeighborIons.getNeighborList(jel).clear();
 
-  if (myTable.DTType == DT_SOA)
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
-    for (int jel = 0; jel < P.getTotalNum(); jel++)
-    {
-      const auto& dist               = myTable.getDistRow(jel);
-      const auto& displ              = myTable.getDisplRow(jel);
-      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-      for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        {
-          Value +=
-              PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
-          if (Tmove)
-            PP[iat]->contributeTxy(jel, Txy);
-          NeighborIons.push_back(iat);
-          IonNeighborElecs.getNeighborList(iat).push_back(jel);
-        }
-    }
+    const auto& dist               = myTable.getDistRow(jel);
+    const auto& displ              = myTable.getDisplRow(jel);
+    std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+    for (int iat = 0; iat < NumIons; iat++)
+      if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+      {
+        Value += PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
+        if (Tmove)
+          PP[iat]->contributeTxy(jel, Txy);
+        NeighborIons.push_back(iat);
+        IonNeighborElecs.getNeighborList(iat).push_back(jel);
+      }
   }
-  else
-  {
-    APP_ABORT("NonLocalECPotential::evaluate():  Forces not imlpemented for AoS build\n");
-  }
+
   hf_terms -= forces;
   pulay_terms -= PulayTerm;
   return Value;
@@ -511,9 +491,9 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
       continue;
     RealType old_distance = 0.0;
     RealType new_distance = 0.0;
-    old_distance = myTable.getDistRow(iel)[iat];
-    new_distance = myTable.getTempDists()[iat];
-    bool moved = false;
+    old_distance          = myTable.getDistRow(iel)[iat];
+    new_distance          = myTable.getTempDists()[iat];
+    bool moved            = false;
     // move out
     if (old_distance < PP[iat]->getRmax() && new_distance >= PP[iat]->getRmax())
     {
@@ -545,25 +525,20 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
   }
 }
 
-void NonLocalECPotential::addComponent(int groupID, NonLocalECPComponent* ppot)
+void NonLocalECPotential::addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& ppot)
 {
   for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
-      PP[iat] = ppot;
-  PPset[groupID] = ppot;
+      PP[iat] = ppot.get();
+  PPset[groupID] = std::move(ppot);
 }
 
 OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
-  {
     if (PPset[ig])
-    {
-      NonLocalECPComponent* ppot = PPset[ig]->makeClone(qp);
-      myclone->addComponent(ig, ppot);
-    }
-  }
+      myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));
   return myclone;
 }
 

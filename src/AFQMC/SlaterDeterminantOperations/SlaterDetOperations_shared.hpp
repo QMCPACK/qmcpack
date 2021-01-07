@@ -24,19 +24,17 @@
 
 #include "mpi3/shared_communicator.hpp"
 #include "type_traits/scalar_traits.h"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<host_allocator_generator_type> host_buffer_generator;
-
 template<class T = ComplexType>
-class SlaterDetOperations_shared : public SlaterDetOperations_base<T, host_allocator_generator_type>
+class SlaterDetOperations_shared : public SlaterDetOperations_base<T, HostBufferManager>
 {
 public:
-  using Base         = SlaterDetOperations_base<T, host_allocator_generator_type>;
+  using Base         = SlaterDetOperations_base<T, HostBufferManager>;
   using communicator = boost::mpi3::shared_communicator;
   using shmTVector   = boost::multi::array<T, 1, shared_allocator<T>>;
 
@@ -52,13 +50,11 @@ public:
   using IVector = typename Base::IVector;
   using TVector = typename Base::TVector;
 
-  SlaterDetOperations_shared()
-      : SlaterDetOperations_base<T, host_allocator_generator_type>(host_buffer_generator.get()), SM_TMats(nullptr)
+  SlaterDetOperations_shared() : SlaterDetOperations_base<T, HostBufferManager>(HostBufferManager{}), SM_TMats(nullptr)
   {}
 
   SlaterDetOperations_shared(int NMO, int NAEA)
-      : SlaterDetOperations_base<T, host_allocator_generator_type>(NMO, NAEA, host_buffer_generator.get()),
-        SM_TMats(nullptr)
+      : SlaterDetOperations_base<T, HostBufferManager>(NMO, NAEA, HostBufferManager{}), SM_TMats(nullptr)
   {}
 
   ~SlaterDetOperations_shared() {}
@@ -84,8 +80,8 @@ public:
     assert(SM_TMats->num_elements() >= NAEA * (NAEA + NMO));
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NAEA, NAEA});
     boost::multi::array_ref<T, 2> TNM(to_address(SM_TMats->origin()) + NAEA * NAEA, {NAEA, NMO});
-    TVector WORK(iextensions<1u>{work_size}, buffer_generator->template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{NMO + 1}, buffer_generator->template get_allocator<int>());
+    TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(iextensions<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::MixedDensityMatrix<T>(hermA, B, std::forward<MatC>(C), LogOverlapFactor,
                                                                    TNN, TNM, IWORK, WORK, comm, compact, herm);
   }
@@ -115,8 +111,8 @@ public:
     boost::multi::array_ref<T, 2> TAB(to_address(SM_TMats->origin()) + cnt, {Nact, NEL});
     cnt += TAB.num_elements();
     boost::multi::array_ref<T, 2> TNM(to_address(SM_TMats->origin()) + cnt, {NEL, NMO});
-    TVector WORK(iextensions<1u>{work_size}, buffer_generator->template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{NMO + 1}, buffer_generator->template get_allocator<int>());
+    TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(iextensions<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::MixedDensityMatrixForWoodbury<T>(hermA, B, std::forward<MatC>(C),
                                                                               LogOverlapFactor, std::forward<MatQ>(QQ0),
                                                                               ref, TNN, TAB, TNM, IWORK, WORK, comm,
@@ -131,7 +127,7 @@ public:
     assert(SM_TMats->num_elements() >= 2 * NAEA * NAEA);
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NAEA, NAEA});
     boost::multi::array_ref<T, 2> TNN2(to_address(SM_TMats->origin()) + NAEA * NAEA, {NAEA, NAEA});
-    IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_generator->template get_allocator<int>());
+    IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2, comm, herm);
   }
 
@@ -152,22 +148,35 @@ public:
     assert(SM_TMats->num_elements() >= NEL * (Nact + NEL));
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NEL, NEL});
     boost::multi::array_ref<T, 2> TMN(to_address(SM_TMats->origin()) + NEL * NEL, {Nact, NEL});
-    TVector WORK(iextensions<1u>{work_size}, buffer_generator->template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{Nact + 1}, buffer_generator->template get_allocator<int>());
+    TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(iextensions<1u>{Nact + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::OverlapForWoodbury<T>(hermA, B, LogOverlapFactor, std::forward<MatC>(QQ0),
                                                                    ref, TNN, TMN, IWORK, WORK, comm);
   }
 
   template<class Mat, class MatP1, class MatV>
-  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, int order = 6, char TA = 'N')
+  void Propagate(Mat&& A,
+                 const MatP1& P1,
+                 const MatV& V,
+                 communicator& comm,
+                 int order         = 6,
+                 char TA           = 'N',
+                 bool noncollinear = false)
   {
+    int npol = noncollinear ? 2 : 1;
     int NMO  = A.size(0);
     int NAEA = A.size(1);
-    set_shm_buffer(comm, 3 * NAEA * NMO);
-    assert(SM_TMats->num_elements() >= 3 * NAEA * NAEA);
+    int M    = NMO / npol;
+    assert(NMO % npol == 0);
+    assert(P1.size(0) == NMO);
+    assert(P1.size(1) == NMO);
+    assert(V.size(0) == M);
+    assert(V.size(1) == M);
+    set_shm_buffer(comm, NAEA * (NMO + 2 * M));
+    assert(SM_TMats->num_elements() >= NAEA * (NMO + 2 * M));
     boost::multi::array_ref<T, 2> T0(to_address(SM_TMats->origin()), {NMO, NAEA});
-    boost::multi::array_ref<T, 2> T1(to_address(SM_TMats->origin()) + NMO * NAEA, {NMO, NAEA});
-    boost::multi::array_ref<T, 2> T2(to_address(SM_TMats->origin()) + 2 * NMO * NAEA, {NMO, NAEA});
+    boost::multi::array_ref<T, 2> T1(to_address(T0.origin()) + T0.num_elements(), {M, NAEA});
+    boost::multi::array_ref<T, 2> T2(to_address(T1.origin()) + T1.num_elements(), {M, NAEA});
     using ma::H;
     using ma::T;
     if (comm.root())
@@ -180,7 +189,8 @@ public:
         ma::product(P1, std::forward<Mat>(A), T0);
     }
     comm.barrier();
-    SlaterDeterminantOperations::shm::apply_expM(V, T0, T1, T2, comm, order, TA);
+    for (int p = 0; p < npol; ++p)
+      SlaterDeterminantOperations::shm::apply_expM(V, T0.sliced(p * M, (p + 1) * M), T1, T2, comm, order, TA);
     comm.barrier();
     if (comm.root())
     {
@@ -230,7 +240,12 @@ public:
   }
 
   template<class MatA, class MatP1, class MatV>
-  void BatchedPropagate(std::vector<MatA>& Ai, const MatP1& P1, const MatV& V, int order = 6, char TA = 'N')
+  void BatchedPropagate(std::vector<MatA>& Ai,
+                        const MatP1& P1,
+                        const MatV& V,
+                        int order         = 6,
+                        char TA           = 'N',
+                        bool noncollinear = false)
   {
     APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedPropagate \n");
   }
@@ -248,7 +263,7 @@ public:
   }
 
 protected:
-  using Base::buffer_generator;
+  using Base::buffer_manager;
   using Base::work_size;
 
   // shm temporary matrices

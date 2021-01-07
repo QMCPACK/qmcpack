@@ -1,5 +1,5 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX -DADD_ $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework \
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+$CXXX $CXXFLAGS $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework \
 `#-Wl,-rpath,/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -L/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core` \
 &&$0x&&rm $0x;exit
 #endif
@@ -9,164 +9,67 @@ $CXX -DADD_ $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework \
 #define MULTI_ADAPTORS_BLAS_GEMV_HPP
 
 #include "../blas/core.hpp"
+
 #include "./../../detail/../utility.hpp"
-#include "././../../detail/.././array_ref.hpp"
-//#include "../../../../detail/utility.hpp"
+#include "./../../detail/../array_ref.hpp"
+
+//#include<cblas64.h>
+
+#include "../blas/operations.hpp"
 
 namespace boost{
-namespace multi{
-namespace blas{
+namespace multi{namespace blas{
 
-//struct trans{enum : char{N='N', T='T', C='C'};};
+using multi::blas::core::gemv;
 
-//struct conj{template<class T> auto operator()(T const& t) const{using std::conj; return conj(t);}};
+template<class A, std::enable_if_t<not is_conjugated<A>{}, int> =0>
+auto gemv_base_aux(A&& a){return base(a);}
 
-template<class Trans, class T, class ItA, class Size, class Itx, class Ity>
-Ity gemv_n(Trans IN, T a, ItA A_first, Size n, Itx x_first, T beta, Ity y_first){
-	assert( IN == 'N' or IN == 'T' or IN == 'C' );
-//	assert( A_first->stride() == 1 );
-	gemv(IN, size(*A_first), n, a, base(A_first), stride(A_first), base(x_first), stride(x_first), beta, base(y_first), stride(y_first));
-	switch(IN){
-		case 'N' : return y_first + size(*A_first);
-		case 'T' : return y_first + n;
-		case 'C' : return y_first + n;
+template<class A, std::enable_if_t<    is_conjugated<A>{}, int> =0>
+auto gemv_base_aux(A&& a){return underlying(base(a));}
+
+template<class A, class X, class Y>
+auto gemv(typename A::element alpha, A const& a, X const& x, typename A::element beta, Y&& y)
+->decltype(gemv('N', x.size(), y.size(), alpha, gemv_base_aux(a), a.rotated().stride(), x.base(), x.stride(), beta, y.base(), y.stride()), std::forward<Y>(y)){
+	assert(a.rotated().size() == x.size());
+	assert(a.size() == y.size());
+	
+	auto base_A = gemv_base_aux(a);
+	
+	assert(stride(a)==1 or stride(~a)==1);
+	
+	assert(y.size() == a.size());
+	     if(stride( a)==1 and not is_conjugated<A>{})        gemv('N'                          , size(y), size(x),  alpha, base_A, stride(~a), base(x), stride(x),  beta, base(y), stride(y));
+	else if(stride(~a)==1 and not is_conjugated<A>{})        gemv('T'                          , size(x), size(y),  alpha, base_A, stride( a), base(x), stride(x),  beta, base(y), stride(y));
+	else if(stride(~a)==1 and     is_conjugated<A>{})        gemv('C'                          , size(x), size(y),  alpha, base_A, stride( a), base(x), stride(x),  beta, base(y), stride(y));
+	else if(stride( a)==1 and     is_conjugated<A>{}){
+		assert(0&&"case not supported by blas");
+	//	cblas_zgemv(CblasRowMajor, CblasConjTrans, size(x), size(y), &alpha, base_A, stride(~a), base(x), stride(x), &beta, base(y), stride(y));
 	}
-	return y_first;
-}
-
-template<class Trans, class T, class ItA, class Itx, class Ity>
-Ity gemv(Trans IN, T a, ItA A_first, ItA A_last, Itx x_first, T beta, Ity y_first){
-//	assert( stride(A_first) == stride(A_last) and A_first->size()==A_last->size() );
-	return gemv_n(IN, a, A_first, std::distance(A_first, A_last), x_first, beta, y_first);
-}
-
-template<class Trans, class T, class A2D, class X1D, class Y1D>
-Y1D&& gemv(Trans IN, T a, A2D const& A, X1D const& x, T beta, Y1D&& y){
-	assert( not(IN == 'T') or size(A) == size(y) );
-	assert( not(IN == 'N') or size(A) == size(x) );
-	assert( not(IN == 'C') or size(A) == size(x) );
-	using std::begin; using std::end;
-	auto e = gemv(IN, a, begin(A), end(A), begin(x), beta, begin(y)); (void)e;
-	assert( e == end(y) );
-	return std::forward<Y1D>(y);
-} //y := alpha*A*x + beta*y,
-
-template<class T, class A2D, class X1D, class Y1D>
-Y1D&& gemv(T a, A2D const& A, X1D const& x, T beta, Y1D&& y){
-	return stride(A)==1?gemv('N', a, rotated(A), x, beta, y):gemv('T', a, A, x, beta, y);
+	
+	return std::forward<Y>(y);
 }
 
 template<class A2D, class X1D, class Y1D>
-Y1D&& gemv(A2D const& A, X1D const& x, Y1D&& y){
-	return gemv(1., A, x, 0., std::forward<Y1D>(y));
+auto gemv(A2D const& A, X1D const& x, Y1D&& y)
+->decltype(gemv(1., A, x, 0., std::forward<Y1D>(y))){
+	return gemv(1., A, x, 0., std::forward<Y1D>(y));}
+
+template<class Alloc, class A2D, class X1D, typename T = typename A2D::element>
+NODISCARD("")
+auto gemv(A2D const& A, X1D const& x, Alloc const& alloc = {})->std::decay_t<
+decltype(gemv(1., A, x, 0., multi::array<T, 1, Alloc>(A.size(), alloc)))>{
+	return gemv(1., A, x, 0., multi::array<T, 1, Alloc>(A.size(), alloc));}
+
+template<class A2D, class X1D>
+NODISCARD("")
+auto gemv(A2D const& A, X1D const& x){
+	return gemv(A, x, get_allocator(x));
 }
 
-//template<class A, class B, class RowIt, class ConstIt, class It>
-//It gemv(A const& a, RowIt M_first, RowIt M_last, ConstIt X_first, B const& b, It Y_first){
-//	using std::transform; using std::inner_product; using std::begin; using std::end;
-//	return transform(M_first, M_last, Y_first, Y_first, [&](auto const& r, auto const& e){
-//		return a*inner_product(begin(r), end(r), X_first, typename std::iterator_traits<It>::value_type{0}) + b*e;
-//	});
-//}
-//template<class A, class B, class RowIt, class ConstIt, class It, class Conj>
-//It gemv(A const& a, RowIt M_first, RowIt M_last, ConstIt X_first, B const& b, It Y_first, Conj&& /*conj*/){
-//	std::cout<< __LINE__ <<std::endl;
-//	using std::transform; using std::inner_product; using std::begin; using std::end;
-//	return transform(M_first, M_last, Y_first, Y_first, [&](auto&& r, auto&& e){
-//		return a*inner_product(begin(r), end(r), X_first, typename std::iterator_traits<It>::value_type{0}/*, std::plus<>{}, [&](auto const& a, auto const& b){return conj(a)*b;}*/) + b*e;
-//	});
-//}
-
-#if 0
-template<class AB, class RowIt, class ConstIt, class It>
-It gemv(AB const& a, RowIt M_first, RowIt M_last, ConstIt X_first, AB const& b, It Y_first){
-	assert( stride(M_first) == stride(M_last) );
-	std::cout<< __LINE__ <<std::endl;
-	using std::distance;
-#ifndef NO_BLAS
-	     if(stride(*M_first) == 1){std::cout<< __LINE__ <<std::endl; gemv(blas::trans::T, M_first->size(), std::distance(M_first, M_last), a, base(M_first), stride( M_first), base(X_first), stride(X_first), b, base(Y_first), stride(Y_first));}
-	else if(stride( M_first) == 1){std::cout<< __LINE__ <<std::endl; gemv(blas::trans::N, std::distance(M_first, M_last),M_first->size(), a, base(M_first), stride(*M_first), base(X_first), stride(X_first), b, base(Y_first), stride(Y_first));}
-	else
-#endif
-#ifdef NO_GENERICBLAS
-		assert(0);
-#else
-		gemv<AB, AB>(a, M_first, M_last, X_first, b, Y_first);
-#endif
-	return Y_first + std::distance(M_first, M_last);
+namespace operators{
+	template<class A2D, class X1D> auto operator%(A2D const& A, X1D const& x) DECLRETURN(gemv(A, x))
 }
-
-template<class RowIt, class ConstIt, class It>
-It gemv(std::complex<double> const& a, RowIt M_first, RowIt M_last, ConstIt X_first, std::complex<double> const& b, It Y_first, blas::conj&&){
-	using AB = std::complex<double>;
-	std::cout<< __LINE__ <<std::endl;
-	assert( stride(M_first) == stride(M_last) );
-	using std::distance;
-	
-	if(stride( M_first) == 1){
-	 	std::cout<< __LINE__ << " " << stride(*M_first) << " " << std::distance(M_first, M_last) << " " << M_first->size() << std::endl;
-     	gemv(trans::C, std::distance(M_first, M_last), M_first->size(), a, base(M_first), stride(*M_first), base(X_first), stride(X_first), b, base(Y_first), stride(Y_first));
-     	std::cout<< __LINE__ << " " << stride(*M_first) << " " << std::distance(M_first, M_last) << " " << M_first->size() << std::endl;
-//			assert(0);
-     }else{
-     	gemv<AB, AB>(a, M_first, M_last, X_first, b, Y_first, blas::conj{});
-     }
-
-#if 0
-	
-#ifndef NO_BLAS
-	     if(stride( M_first) == 1){
-	     	std::cout<< __LINE__ << " " << stride(*M_first) << " " << std::distance(M_first, M_last) << " " << M_first->size() << std::endl;
-	     	gemv('C', std::distance(M_first, M_last), M_first->size(), a, base(M_first), stride(*M_first), base(X_first), stride(X_first), b, base(Y_first), stride(Y_first));
-	     	std::cout<< __LINE__ << " " << stride(*M_first) << " " << std::distance(M_first, M_last) << " " << M_first->size() << std::endl;
-//			assert(0);
-	     }
-	else
-#endif
-#ifdef NO_GENERICBLAS
-	assert(0);
-#else
-	gemv<AB, AB>(a, M_first, M_last, X_first, b, Y_first, blas::conj{});
-#endif
-#endif
- 	std::cout<< __LINE__ << " " << stride(*M_first) << " " << std::distance(M_first, M_last) << " " << M_first->size() << std::endl;
-	return Y_first;// + std::distance(M_first, M_last);
-}
-
-template<class T, class A2D, class X1D, class Y1D>
-Y1D gemv(T const& a, A2D const& A, X1D const& x, T const& b, Y1D&& y){
-	std::cout<< __LINE__ <<std::endl;
-	assert( size(x)==std::get<1>(shape(A)) and size(y)==std::get<0>(shape(A)) );
-	auto last = gemv(a, begin(A), end(A), begin(x), b, begin(y));
-	assert( last == end(y) );
-	return std::forward<Y1D>(y);
-	
-//	else if(IN == 'N') 
-//	assert( std::get<1>(strides(A)) == 1 ); // gemv is not implemented for arrays with non-leading stride != 1
-	auto m = std::get<1>(shape(A));
-	auto n = std::get<0>(shape(A));
-	if(std::get<1>(strides(A)) == 1){
-	//	if(IN=='T' or IN=='H') 
-		assert( size(x)==std::get<1>(A.shape()) and size(y)==std::get<0>(A.shape()));
-		gemv(trans::T, m, n, a, origin(A), std::get<0>(strides(A)), origin(x), stride(x), b, origin(y), stride(y));
-	}else if(std::get<0>(strides(A)) == 1){
-		assert( size(x) == std::get<0>(A.shape()) and size(y) == std::get<1>(A.shape()));
-		gemv(trans::N, m, n, a, origin(A), std::get<1>(strides(A)), origin(x), stride(x), b, origin(y), stride(y));
-	}else{assert(0);}
-	return std::forward<Y1D>(y);
-} //y := alpha*A*x + beta*y,
-
-template<class T, class A2D, class X1D, class Y1D, class Conj>
-Y1D&& gemv(T const& a, A2D const& A, X1D const& x, T const& b, Y1D&& y, Conj&& c){
-	std::cout<<__LINE__ <<std::endl;
-	assert( size(x)==std::get<1>(shape(A)) and size(y)==std::get<0>(shape(A)) );
-//	auto last = 
-	gemv(a, begin(A), end(A), begin(x), b, begin(y), std::forward<Conj>(c));
-	std::cout<< __LINE__ <<std::endl;
-//	assert( last == end(y) );
-	return std::forward<Y1D>(y);
-} //y := alpha*A*x + beta*y,
-#endif
 
 }}}
 
@@ -179,35 +82,174 @@ Y1D&& gemv(T const& a, A2D const& A, X1D const& x, T const& b, Y1D&& y, Conj&& c
 #include "../../array.hpp"
 #include "../../utility.hpp"
 
+#include "../blas/dot.hpp"
+#include "../blas/axpy.hpp"
+#include "../blas/nrm2.hpp"
+#include "../blas/gemm.hpp"
+
 #include<complex>
 #include<cassert>
 #include<iostream>
 #include<numeric>
 #include<algorithm>
+#include<random>
 
 using std::cout;
 namespace multi = boost::multi;
 
-BOOST_AUTO_TEST_CASE(multi_blas_gemv){
+template<class T> void what(T&&) = delete;
+
+BOOST_AUTO_TEST_CASE(multi_blas_gemv_real){
 	namespace blas = multi::blas;
 
 	using std::abs;
+	multi::array<double, 2> const M = {
+		{ 9., 24., 30., 9.},
+		{ 4., 10., 12., 7.},
+		{14., 16., 36., 1.}
+	};
+	multi::array<double, 1> const X = {1.1,2.1,3.1, 4.1};
 	{
-		multi::array<double, 2> const M = {
-			{ 9., 24., 30., 9.},
-			{ 4., 10., 12., 7.},
-			{14., 16., 36., 1.}
-		};
-		assert( M[2][0] == 14. );
-		multi::array<double, 1> const X = {1.1,2.1,3.1, 4.1};
 		multi::array<double, 1> Y = {4.,5.,6.};
-		double a = 1.1, b = 1.2;
-		blas::gemv('T', a, M, X, b, Y); // y = a*M*x + b*y
+		double const a = 1.1, b = 1.2;
+		blas::gemv(a, M, X, b, Y); // y = a*M*x + b*y
 
-		multi::array<double, 1> const Y3 = {214.02, 106.43, 188.37}; // = 1.1 {{9., 24., 30., 9.}, {4., 10., 12., 7.}, {14., 16., 36., 1.}}.{1.1, 2.1, 3.1, 4.1} + 1.2 {4., 5., 6.}
-//		cout << abs(Y[1] - Y3[1]) << std::endl;
-		assert( abs(Y[1] - Y3[1]) < 2e-14 );
+		multi::array<double, 1> const Y3 = {214.02, 106.43, 188.37};
+		BOOST_REQUIRE( abs(Y[1] - Y3[1]) < 2e-14 );
 	}
+	{
+		auto Y = blas::gemv(M, X);
+		BOOST_REQUIRE((
+			Y == decltype(Y){
+				blas::dot(M[0], X),
+				blas::dot(M[1], X),
+				blas::dot(M[2], X)
+			}
+		));
+		BOOST_REQUIRE(std::equal(begin(Y), end(Y), begin(M), [&X](auto&& y, auto&& m){return y==blas::dot(m, X);}));
+	}
+	{
+		multi::array<double, 1> const a = {1., 2., 3.};
+		multi::array<double, 1> const b = {4., 5., 6.};
+		BOOST_REQUIRE(
+			blas::gemv(multi::array<double, 2>({a}), b)[0] == blas::dot(a, b)
+		);
+	}
+	{
+		multi::array<double, 2> const MT = ~M;
+		using boost::test_tools::tolerance;
+	//	using blas::gemv; BOOST_TEST_REQUIRE( nrm2(blas::axpy(-1., gemv(~+~M, X), gemv(M, X)))() == 0.,  tt::tolerance(1e-13) );
+		using namespace blas;
+		using namespace blas::operators;
+	//	blas::nrm2(X);
+		BOOST_TEST_REQUIRE( (((~+~M)%X - M%X)^2) == 0., tolerance(1e-13) );
+	}
+}
+
+BOOST_AUTO_TEST_CASE(multi_blas_gemv_real_complex){
+	namespace blas = multi::blas;
+	using complex = std::complex<double>; //#define I *std::complex<double>(0, 1)
+	using std::abs;
+	multi::array<complex, 2> const M = {
+		{ 9., 24., 30., 9.},
+		{ 4., 10., 12., 7.},
+		{14., 16., 36., 1.}
+	};
+	multi::array<complex, 1> const X = {1.1, 2.1, 3.1, 4.1};
+	{
+		multi::array<complex, 1> Y = {4., 5., 6.};
+		double const a = 1.1, b = 1.2;
+		blas::gemv(a, M, X, b, Y); // y = a*M*x + b*y
+		
+		multi::array<complex, 1> const Y3 = {214.02, 106.43, 188.37};
+		
+		using namespace blas::operators;
+		BOOST_TEST_REQUIRE( ((Y - Y3)^2)  == 0. , boost::test_tools::tolerance(1e-13) );
+	
+	}
+}
+
+BOOST_AUTO_TEST_CASE(multi_blas_gemv_complex){
+	
+	namespace blas = multi::blas;
+	using complex = std::complex<double>; std::complex<double> const I{0, 1};
+	
+	using std::abs;
+	multi::array<complex, 2> const M = {{2. + 3.*I, 2. + 1.*I, 1. + 2.*I}, {4. + 2.*I, 2. + 4.*I, 3. + 1.*I}, 
+ {7. + 1.*I, 1. + 5.*I, 0. + 3.*I}};
+	multi::array<complex, 1> const X = {1. + 2.*I, 2. + 1.*I, 9. + 2.*I};
+	using namespace blas::operators;
+	BOOST_REQUIRE(( blas::gemv(   M, X) == multi::array<complex, 1>{4. + 31.*I, 25. + 35.*I, -4. + 53.*I} ));
+	
+	auto MT = +~M;
+	BOOST_REQUIRE(( blas::gemv(~MT, X) == multi::array<complex, 1>{4. + 31.*I, 25. + 35.*I, -4. + 53.*I} ));
+	
+	auto MH = +*~M;
+	BOOST_REQUIRE( blas::gemv(~M, X) == (multi::array<complex, 1>{63. + 38.*I, -1. + 62.*I, -4. + 36.*I}) );
+	BOOST_REQUIRE( blas::gemv(~M, X) == blas::gemv(MT, X) );// == multi::array<complex, 1>{4. + 31.*I, 25. + 35.*I, -4. + 53.*I} ));
+	
+	BOOST_REQUIRE( blas::gemv(*M, X) == (multi::array<complex, 1>{26. - 15.*I, 45. - 3.*I, 22. - 23.*I}) );
+	
+//	BOOST_REQUIRE( blas::gemv(~*M, X) == (multi::array<complex, 1>{83. + 6.*I, 31. - 46.*I, 18. - 26.*I}) ); // not supported by blas
+
+}
+
+BOOST_AUTO_TEST_CASE(multi_blas_gemv_temporary){
+
+	using complex = std::complex<double>;
+	
+	multi::array<complex, 2> const A = {
+		{1., 0., 0.}, 
+		{0., 1., 0.},
+		{0., 0., 1.}
+	};
+	
+	auto const B = []{
+		multi::array<complex, 2> B({3, 3});
+		auto rand = [d=std::normal_distribution<>{}, g=std::mt19937{}]()mutable{return complex{d(g), d(g)};};
+		std::generate(B.elements().begin(), B.elements().end(), rand);
+		return B;
+	}();
+	
+	namespace blas = multi::blas;
+	
+	using namespace blas::operators;
+	BOOST_TEST( ( (A%(~B)[0] - ( ~(A*B)  )[0])^2) == 0. );
+	BOOST_TEST( ( (A%(~B)[0] - ((~B)*(~A))[0])^2) == 0. );
+
+}
+
+#if 0
+	{
+		auto Y = blas::gemv(M, X);
+		BOOST_REQUIRE((
+			Y == decltype(Y){
+				blas::dot(M[0], X),
+				blas::dot(M[1], X),
+				blas::dot(M[2], X)
+			}
+		));
+		BOOST_REQUIRE(std::equal(begin(Y), end(Y), begin(M), [&X](auto&& y, auto&& m){return y==blas::dot(m, X);}));
+	}
+	{
+		multi::array<double, 1> const a = {1., 2., 3.};
+		multi::array<double, 1> const b = {4., 5., 6.};
+		BOOST_REQUIRE(
+			blas::gemv(multi::array<double, 2>({a}), b)[0] == blas::dot(a, b)
+		);
+	}
+	{
+		multi::array<double, 2> const MT = ~M;
+		using boost::test_tools::tolerance;
+	//	using blas::gemv; BOOST_TEST_REQUIRE( nrm2(blas::axpy(-1., gemv(~+~M, X), gemv(M, X)))() == 0.,  tt::tolerance(1e-13) );
+		using namespace blas;
+		using namespace blas::operators;
+	//	blas::nrm2(X);
+		BOOST_TEST_REQUIRE( (((~+~M|X)-(M|X))^2) == 0., tolerance(1e-13) );
+	}
+#endif
+
+
 #if 0
 	{
 		double const M[3][4] = {
@@ -283,7 +325,6 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv){
 		assert( abs(Y[1] - Y3[1]) < 2e-14 );
 	}
 #endif
-}
 
 #endif
 #endif

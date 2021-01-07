@@ -15,14 +15,14 @@
 
 #include "Configuration.h"
 #include "type_traits/container_traits_multi.h"
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/kp_utilities.hpp"
 #include "AFQMC/Utilities/hdf5_consistency_helper.hpp"
-#include "AFQMC/Hamiltonians/RealDenseHamiltonian.h"
+#include "RealDenseHamiltonian.h"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
 
 
@@ -71,7 +71,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
     ndown = PsiT[1].size(0);
   int NEL = nup + ndown;
 
-  // distribute work over equivalent nodes in TGprop.TG() accross TG.Global()
+  // distribute work over equivalent nodes in TGprop.TG() across TG.Global()
   auto Qcomm(TG.Global().split(TGprop.getLocalGroupNumber(), TG.Global().rank()));
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   auto distNode(TG.Node().split(TGprop.getLocalGroupNumber(), TG.Node().rank()));
@@ -234,7 +234,7 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
     CMatrix lak({nup, NMO});
     for (int nd = 0; nd < ndet; nd++)
     {
-      // all nodes accross Qcomm share same segment {nc0,ncN}
+      // all nodes across Qcomm share same segment {nc0,ncN}
       for (int nc = 0; nc < local_ncv; nc++)
       {
         if (nc % Qcomm.size() != Qcomm.rank())

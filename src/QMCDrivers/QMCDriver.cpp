@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/QMCDriver.h"
+#include "QMCDriver.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -25,8 +25,8 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
-#include "HDFVersion.h"
-#include <qmc_common.h>
+#include "hdf/HDFVersion.h"
+#include "Utilities/qmc_common.h"
 #include <limits>
 #include <typeinfo>
 
@@ -45,19 +45,20 @@ namespace qmcplusplus
 QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
-                     WaveFunctionPool& ppool,
-                     Communicate* comm)
+                     Communicate* comm,
+                     const std::string& QMC_driver_type,
+                     bool enable_profiling)
     : MPIObjectBase(comm),
       Estimators(0),
-      Traces(0),
-      branchEngine(0),
       DriftModifier(0),
       qmcNode(NULL),
+      QMCType(QMC_driver_type),
       W(w),
       Psi(psi),
       H(h),
-      psiPool(ppool),
-      wOut(0)
+      wOut(0),
+      driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;
   AppendRun    = false;
@@ -154,7 +155,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 #endif
 #endif
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute", "int");
-  QMCType = "invalid";
   ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
@@ -204,9 +204,9 @@ void QMCDriver::process(xmlNodePtr cur)
   int numCopies = (H1.empty()) ? 1 : H1.size();
   W.resetWalkerProperty(numCopies);
   //create branchEngine first
-  if (branchEngine == 0)
+  if (!branchEngine)
   {
-    branchEngine = new BranchEngineType(Tau, W.getGlobalNumWalkers());
+    branchEngine = std::make_unique<BranchEngineType>(Tau, W.getGlobalNumWalkers());
   }
   //execute the put function implemented by the derived classes
   put(cur);
@@ -223,9 +223,9 @@ void QMCDriver::process(xmlNodePtr cur)
   DriftModifier->parseXML(cur);
 #if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
-  if (Traces == 0)
+  if (!Traces)
   {
-    Traces = new TraceManager(myComm);
+    Traces = std::make_unique<TraceManager>(myComm);
   }
   Traces->put(traces_xml, allow_traces, RootName);
 #endif

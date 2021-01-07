@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ForceChiesaPBCAA.h"
+#include "ForceChiesaPBCAA.h"
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -23,17 +23,21 @@
 namespace qmcplusplus
 {
 ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime)
-    : ForceBase(ions, elns), PtclA(ions), first_time(firsttime), d_aa_ID(ions.addTable(ions, DT_SOA_PREFERRED)), d_ei_ID(elns.addTable(ions, DT_SOA_PREFERRED))
+    : ForceBase(ions, elns),
+      PtclA(ions),
+      first_time(firsttime),
+      d_aa_ID(ions.addTable(ions)),
+      d_ei_ID(elns.addTable(ions))
 {
   ReportEngine PRE("ForceChiesaPBCAA", "ForceChiesaPBCAA");
   myName = "Chiesa_Force_Base_PBCAB";
   prefix = "FChiesaPBC";
   //Defaults for the chiesa S-wave polynomial filtering.
-  Rcut    = 0.4;
-  m_exp   = 2;
-  N_basis = 4;
-  forces  = 0.0;
-  forces_IonIon     = 0.0;
+  Rcut          = 0.4;
+  m_exp         = 2;
+  N_basis       = 4;
+  forces        = 0.0;
+  forces_IonIon = 0.0;
   ions.turnOnPerParticleSK();
   //This sets up the long range breakups.
   initBreakup(elns);
@@ -86,11 +90,11 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
   Qspec.resize(NumSpeciesB);
   for (int spec = 0; spec < NumSpeciesA; spec++)
   {
-    Zspec[spec]       = tspeciesA(ChargeAttribIndxA, spec);
+    Zspec[spec] = tspeciesA(ChargeAttribIndxA, spec);
   }
   for (int spec = 0; spec < NumSpeciesB; spec++)
   {
-    Qspec[spec]       = tspeciesB(ChargeAttribIndxB, spec);
+    Qspec[spec] = tspeciesB(ChargeAttribIndxB, spec);
   }
   RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
@@ -220,10 +224,7 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
   return true;
 }
 
-void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P)
-{
-  dAB->resetTargetParticleSet(P);
-}
+void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P) { dAB->resetTargetParticleSet(P); }
 
 void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
@@ -242,8 +243,8 @@ OperatorBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   tmp->h.resize(N_basis);
   tmp->h = h; // terms in fitting polynomial
   tmp->c.resize(N_basis);
-  tmp->c         = c; // polynomial coefficients
-  tmp->addionion = addionion;
+  tmp->c             = c; // polynomial coefficients
+  tmp->addionion     = addionion;
   tmp->forces_IonIon = forces_IonIon;
   tmp->initBreakup(qp);
   return tmp;

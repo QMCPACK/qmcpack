@@ -16,10 +16,10 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTWITHBACKFLOW_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTWITHBACKFLOW_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/Fermion/DiracDeterminant.h>
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
+#include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "Utilities/TimerManager.h"
 
@@ -33,8 +33,8 @@ class MultiSlaterDeterminantWithBackflow : public MultiSlaterDeterminant
 public:
   ///constructor
   MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
-                                     SPOSetProxyPtr upspo,
-                                     SPOSetProxyPtr dnspo,
+                                     std::unique_ptr<SPOSetProxyForMSD>&& upspo,
+                                     std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
                                      BackflowTransformation* tr);
 
   ///destructor

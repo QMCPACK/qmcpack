@@ -17,9 +17,9 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
-#include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
-#include <QMCWaveFunctions/SPOSet.h>
-#include <config/stdlib/math.hpp>
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "config/stdlib/math.hpp"
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
@@ -42,7 +42,6 @@ struct RealEGOSet : public SPOSet
   RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
 
   void resetParameters(const opt_variables_type& optVariables) override {}
-  inline void resetTargetParticleSet(ParticleSet& P) override {}
   void setOrbitalSetSize(int norbs) override {}
 
   SPOSet* makeClone() const override { return new RealEGOSet(*this); }

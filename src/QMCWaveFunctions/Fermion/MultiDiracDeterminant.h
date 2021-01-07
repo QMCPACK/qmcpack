@@ -56,7 +56,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminant(SPOSetPtr const& spos, int first = 0);
+  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first = 0);
 
   ///default destructor
   ~MultiDiracDeterminant();
@@ -75,7 +75,7 @@ public:
    */
   SPOSetPtr clonePhi() const;
 
-  SPOSetPtr getPhi() { return Phi; };
+  SPOSetPtr getPhi() { return Phi.get(); };
 
   inline IndexType rows() const { return NumPtcls; }
 
@@ -178,7 +178,6 @@ public:
 
 
   inline void reportStatus(std::ostream& os) {}
-  void resetTargetParticleSet(ParticleSet& P) { Phi->resetTargetParticleSet(P); }
 
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
@@ -404,7 +403,7 @@ public:
   ///index of the particle (or row)
   int WorkingIndex;
   ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetPtr Phi;
+  std::unique_ptr<SPOSet> Phi;
   /// number of determinants handled by this object
   int NumDets;
   ///bool to cleanup

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/DMC_CUDA.h"
+#include "DMC_CUDA.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/QMCUpdateBase.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -37,9 +37,9 @@ using WP = WalkerProperties::Indexes;
 DMCcuda::DMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 WaveFunctionPool& ppool,
-                 Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm),
+                 Communicate* comm,
+                 bool enable_profiling)
+    : QMCDriver(w, psi, h, comm, "DMCcuda", enable_profiling),
       myWarmupSteps(0),
       Mover(0),
       NLop(w.getTotalNum()),
@@ -49,7 +49,6 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
       HTimer(*timer_manager.createTimer("DMCcuda::Hamiltonian"))
 {
   RootName = "dmc";
-  QMCType  = "DMCcuda";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
   //m_param.add(myWarmupSteps,"warmupSteps","int");
@@ -348,7 +347,7 @@ void DMCcuda::resetUpdateEngine()
     W.loadEnsemble();
     branchEngine->initWalkerController(W, false, false);
     Mover = new DMCUpdatePbyPWithRejectionFast(W, Psi, H, Random);
-    Mover->resetRun(branchEngine, Estimators, nullptr, DriftModifier);
+    Mover->resetRun(branchEngine.get(), Estimators, nullptr, DriftModifier);
     //Mover->initWalkersForPbyP(W.begin(),W.end());
   }
   else

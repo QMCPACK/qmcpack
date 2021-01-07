@@ -14,13 +14,16 @@
  *  @brief Class for determining elapsed run time enabling simulations to adjust to time limits.
 
  */
-#include <Utilities/RunTimeManager.h>
+#include "RunTimeManager.h"
 #include <sstream>
 
 
 namespace qmcplusplus
 {
 RunTimeManager<CPUClock> run_time_manager;
+
+template class RunTimeManager<CPUClock>;
+template class RunTimeManager<FakeCPUClock>;
 
 template<class CLOCK>
 double LoopTimer<CLOCK>::get_time_per_iteration()

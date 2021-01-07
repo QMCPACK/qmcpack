@@ -22,7 +22,7 @@
 #include <iomanip>
 #include <cmath>
 #include "OhmmsData/libxmldefs.h"
-#include "QMCTools/BMakeFunc.h"
+#include "BMakeFunc.h"
 #include "config/stdlib/Constants.h"
 
 std::vector<double> BMakeFuncBase::YlmNorm;

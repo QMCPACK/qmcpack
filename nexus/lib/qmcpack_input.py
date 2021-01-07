@@ -1804,7 +1804,7 @@ class qmcsystem(QIxml):
 
 class simulationcell(QIxml):
     attributes = ['name','tilematrix']
-    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','lr_tol','rs','nparticles','scale','uc_grid']
+    parameters = ['lattice','reciprocal','bconds','lr_dim_cutoff','lr_tol','lr_handler','rs','nparticles','scale','uc_grid']
 #end class simulationcell
 
 class particleset(QIxml):
@@ -2507,8 +2507,8 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace','target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme']
-    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno)
+    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme','l2_diffusion']
+    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno,l2_diffusion=yesno)
 #end class dmc
 
 class rmc(QIxml):
@@ -2664,6 +2664,7 @@ Names.set_expanded_names(
     localenergy      = 'LocalEnergy',
     lr_dim_cutoff    = 'LR_dim_cutoff',
     lr_tol           = 'LR_tol',
+    lr_handler       = 'LR_handler',
     minmethod        = 'MinMethod',
     one_body         = 'One-Body',
     speciesa         = 'speciesA',
@@ -2698,6 +2699,7 @@ Names.set_expanded_names(
     l_local          = 'l-local',
     pbcimages        = 'PBCimages',
     dla              = 'DLA',
+    l2_diffusion     = 'L2_diffusion',
     )
 # afqmc names
 Names.set_afqmc_expanded_names(
@@ -4229,15 +4231,18 @@ class QmcpackInputTemplate(SimulationInputTemplate):
 
 
 
-def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,system=None):
+def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler=None,system=None):
     bconds = tuple(bconds)
     sc = simulationcell(bconds=bconds)
     periodic = 'p' in bconds
     axes_valid = system!=None and len(system.structure.axes)>0
     if periodic:
         sc.lr_dim_cutoff = lr_dim_cutoff
-        if lr_tol!=None:
+        if lr_tol is not None:
             sc.lr_tol = lr_tol
+        #end if
+        if lr_handler is not None:
+            sc.lr_handler = lr_handler
         #end if
         if not axes_valid:
             QmcpackInput.class_error('invalid axes in generate_simulationcell\nargument system must be provided\naxes of the structure must have non-zero dimension')
@@ -6235,6 +6240,7 @@ gen_basic_input_defaults = obj(
     buffer         = None,             
     lr_dim_cutoff  = 15,               
     lr_tol         = None,               
+    lr_handler     = None,               
     remove_cell    = False,            
     randomsrc      = False,            
     meshfactor     = 1.0,              
@@ -6364,6 +6370,7 @@ def generate_basic_input(**kwargs):
         bconds        = kw.bconds,
         lr_dim_cutoff = kw.lr_dim_cutoff,
         lr_tol        = kw.lr_tol,
+        lr_handler    = kw.lr_handler,
         system        = kw.system,
         )
 

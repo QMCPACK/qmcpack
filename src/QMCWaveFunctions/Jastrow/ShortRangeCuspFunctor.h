@@ -542,7 +542,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
 
         // sanity check that this node has been specified as an array type
         if (type != "Array")
-          PRE.error("ShortRangeCuspFunctor expected coefficients paramter array type to be \"Array\"", true);
+          PRE.error("ShortRangeCuspFunctor expected coefficients parameter array type to be \"Array\"", true);
 
         // read in the vector of coefficients
         putContent(B, childPtr);
