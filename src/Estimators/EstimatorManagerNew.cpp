@@ -15,7 +15,6 @@
 #include <algorithm>
 
 #include "EstimatorManagerNew.h"
-#include "EstimatorInput.h"
 #include "SpinDensityNew.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
@@ -371,34 +370,36 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     {
       operator_data_sizes[iop] = operator_ests_[iop]->get_data()->size();
     }
-    size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end()));
-    // I think we should have a blocked mpi send, that has buffers for this.
+    // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced firt.
+    size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end())) + 1;
     std::vector<double> operator_send_buffer;
     std::vector<double> operator_recv_buffer;
     operator_send_buffer.reserve(nops);
     operator_recv_buffer.reserve(nops);
     for (int iop = 0; iop < operator_ests_.size(); ++iop)
     {
-      operator_send_buffer.resize(operator_data_sizes[iop]);
-      operator_recv_buffer.resize(operator_data_sizes[iop]);
+      auto& estimator = *operator_ests_[iop];
+      auto& data = estimator.get_data_ref();
+      size_t adjusted_size = data.size() + 1;
+      operator_send_buffer.resize(adjusted_size);
+      operator_recv_buffer.resize(adjusted_size);
       auto cur   = operator_send_buffer.begin();
-      auto& data = operator_ests_[iop]->get_data_ref();
-      copy(data.begin(), data.end(), cur);
+      data[data.size()] = estimator.get_walkers_weight();
+      std::copy_n(data.begin(), adjusted_size, cur);
 
       // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
-      my_comm_->comm.reduce_n(operator_send_buffer.begin(), operator_data_sizes[iop], operator_recv_buffer.begin(),
+      my_comm_->comm.reduce_n(operator_send_buffer.begin(), adjusted_size, operator_recv_buffer.begin(),
                               std::plus<>{}, 0);
 #else
       operator_recv_buffer = operator_send_buffer;
 #endif
       if (my_comm_->rank() == 0)
       {
-        copy(operator_recv_buffer.begin(), operator_recv_buffer.end(), data.begin());
-	std::cout << "Weight after mpi reduce:" << PropertyCache[weightInd] << '\n';
-        RealType invTotWgt = 1.0 / PropertyCache[weightInd];
+	std::copy_n(operator_recv_buffer.begin(), data.size(), data.begin());
+	size_t reduced_walker_weights = operator_recv_buffer[data.size()];
+        RealType invTotWgt = 1.0 / reduced_walker_weights;
         operator_ests_[iop]->normalize(invTotWgt);
-        // and then we'd do the normalization.
       }
     }
   }
@@ -472,16 +473,8 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
       }
       else if (est_name == "SpinDensityNew")
       {
-        // Eventually this should be getting read before Estimator Manager New is constructed
-        // EMN will be constructed with EstimatorManagerNewInput which will contain a vector of EstimatorInputs
-        //estimator_inputs_.emplace_back(EstimatorInput{std::in_place_type<SpinDensityInput>});
-        //estimator_input_.emplace_back(SpinDensityInput);
-        //SpinDensityInput& spdi = std::get<SpinDensityInput>(estimator_inputs_.back());
-
         SpinDensityInput spdi;
         spdi.readXML(cur);
-
-        // Only this should be in EstimatorManagerNew
         operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.mySpecies));
       }
       else

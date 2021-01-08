@@ -20,7 +20,6 @@
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/EstimatorManagerInterface.h"
-#include "EstimatorInput.h"
 #include "OperatorEstBase.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -261,7 +260,6 @@ protected:
   //CompositeEstimatorSet* CompEstimators;
   ///Timer
   Timer MyTimer;
-  std::vector<EstimatorInput> estimator_inputs_;
 
 private:
   ///number of maximum data for a scalar.dat
