@@ -50,8 +50,6 @@ public:
   ///name of this object
   std::string myName;
 
-  QMCT::FullPrecRealType walkers_weight_;
-
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase();
@@ -95,7 +93,11 @@ public:
 
   virtual OperatorEstBase* clone() = 0;
 
+  QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
 protected:
+  QMCT::FullPrecRealType walkers_weight_;
+
+
   /** data management
    */
   static Data createLocalData(size_t size, DataLocality data_locality);

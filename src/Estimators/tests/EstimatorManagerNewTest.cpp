@@ -54,9 +54,11 @@ void EstimatorManagerNewTest::fakeSomeScalarSamples()
 void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
 {
   em.operator_ests_.emplace_back(new FakeOperatorEstimator(comm_->size(), DataLocality::crowd));
-  std::vector<QMCT::RealType>& data = em.operator_ests_[0]->get_data_ref();
+  FakeOperatorEstimator& foe = dynamic_cast<FakeOperatorEstimator&>(*(em.operator_ests_.back()));
+  std::vector<QMCT::RealType>& data = foe.get_data_ref();
   data[rank] += rank;
   data[rank * 10] += rank * 10;
+  foe.set_walker_weights(1);
 }
 
 std::vector<QMCTraits::RealType> EstimatorManagerNewTest::generateGoodOperatorData(int num_ranks)
