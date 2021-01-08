@@ -556,7 +556,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   NumOfVMCWalkers = W.getActiveWalkers();
 
 
-  // Hack to correctly order timer with object lifetime scope
+  // Destroy old object to stop timer to correctly order timer with object lifetime scope
   vmcEngine.reset(nullptr);
   // create VMC engine
   // if (vmcEngine == 0)
