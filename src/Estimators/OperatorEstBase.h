@@ -15,8 +15,6 @@
 #ifndef QMCPLUSPLUS_OPERATORESTBASE_H
 #define QMCPLUSPLUS_OPERATORESTBASE_H
 
-#include <variant>
-
 #include "Particle/ParticleSet.h"
 #include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"

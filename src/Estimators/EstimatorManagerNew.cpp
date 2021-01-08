@@ -11,7 +11,6 @@
 
 #include <functional>
 #include <numeric>
-#include <variant>
 #include <algorithm>
 
 #include "EstimatorManagerNew.h"

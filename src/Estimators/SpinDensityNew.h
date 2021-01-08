@@ -15,7 +15,6 @@
 #include "SpinDensityInput.h"
 
 #include <vector>
-#include <variant>
 
 #include "Configuration.h"
 #include "OperatorEstBase.h"
