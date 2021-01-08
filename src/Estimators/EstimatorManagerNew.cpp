@@ -395,6 +395,9 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       if (my_comm_->rank() == 0)
       {
         copy(operator_recv_buffer.begin(), operator_recv_buffer.end(), data.begin());
+	std::cout << "Weight after mpi reduce:" << PropertyCache[weightInd] << '\n';
+        RealType invTotWgt = 1.0 / PropertyCache[weightInd];
+        operator_ests_[iop]->normalize(invTotWgt);
         // and then we'd do the normalization.
       }
     }
@@ -467,7 +470,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
         add(new CSEnergyEstimator(H, nPsi), MainEstimatorName);
         app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
       }
-      else if (est_name == "spindensity_new")
+      else if (est_name == "SpinDensityNew")
       {
         // Eventually this should be getting read before Estimator Manager New is constructed
         // EMN will be constructed with EstimatorManagerNewInput which will contain a vector of EstimatorInputs

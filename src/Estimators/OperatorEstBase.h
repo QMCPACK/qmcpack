@@ -79,6 +79,8 @@ public:
    */
   virtual void collect(const RefVector<OperatorEstBase>& oebs);
 
+  virtual void normalize(QMCT::RealType invToWgt);
+  
   std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
 
   Data& get_data() { return data_; };
