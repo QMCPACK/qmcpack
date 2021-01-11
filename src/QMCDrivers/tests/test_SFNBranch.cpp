@@ -51,7 +51,7 @@ public:
 
   SFNBranch operator()(ParticleSet& p_set, TrialWaveFunction& twf, QMCHamiltonian& ham)
   {
-    pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), walker_confs, &p_set, &twf, &ham);
+    pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), walker_confs_, &p_set, &twf, &ham);
     // MCPopulation owns it walkers it cannot just take refs so we just create and then update its walkers.
     pop_->createWalkers(2);
 
@@ -90,7 +90,7 @@ private:
 
   Communicate* comm_;
   UPtr<EstimatorManagerNew> emb_;
-  WalkerConfigurations walker_confs;
+  WalkerConfigurations walker_confs_;
   UPtr<MCPopulation> pop_;
   UPtr<Libxml2Document> doc_;
 
