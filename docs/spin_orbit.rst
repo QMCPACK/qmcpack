@@ -65,7 +65,7 @@ where we now utilize determinants of spinors, as opposed to the usual product of
       </sposet_builder>
       <determinantset>
         <slaterdeterminant>
-          <determinant id="det" group="u" sposet="myspo" size="10"\>
+          <determinant id="det" group="u" sposet="myspo" size="10"/>
         </slaterdeterminant>
       </determinantset>
       <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
