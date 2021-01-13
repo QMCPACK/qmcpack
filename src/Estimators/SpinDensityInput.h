@@ -43,7 +43,8 @@ public:
   TinyVector<int, DIM> get_grid() const { return grid_; }
   int get_npoints() const { return npoints_; }
   bool get_write_report() const { return write_report_; }
-
+  bool get_save_memory() const { return save_memory_; }
+  
   struct DerivedParameters
   {
     PosType corner;
@@ -73,7 +74,7 @@ private:
   TinyVector<int, DIM> grid_;
   int npoints_;
   bool write_report_;
-
+  bool save_memory_;
   /** these are necessary for calculateDerivedParameters
    *  
    *  If we are going to later write out a canonical input for

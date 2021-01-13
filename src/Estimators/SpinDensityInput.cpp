@@ -20,10 +20,12 @@ namespace qmcplusplus
 
 void SpinDensityInput::readXML(xmlNodePtr cur)
 {
-  std::string  write_report;
+  std::string write_report;
+  std::string save_memory;
   OhmmsAttributeSet attrib;
   attrib.add(myName_, "name");
   attrib.add(write_report, "report");
+  attrib.add(save_memory, "save_memory");
   attrib.put(cur);
 
   Tensor<Real, DIM> axes;
@@ -87,6 +89,11 @@ void SpinDensityInput::readXML(xmlNodePtr cur)
       write_report_ = true;
   else
       write_report_ = false;
+
+  if (save_memory == "yes")
+    save_memory_ = true;
+  else
+    save_memory_ = false;
   
   // weird legacy stuff
   // if (write_report == "yes")

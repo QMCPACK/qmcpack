@@ -31,6 +31,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& speci
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
 
   species_size_ = getSpeciesSize(species_);
+
   data_ = createLocalData(getFullDataSize(), data_locality_);
 }
 
