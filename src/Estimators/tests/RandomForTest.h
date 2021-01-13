@@ -14,7 +14,7 @@
 
 #include <vector>
 #include "Configuration.h"
-#include "Utilities/StdRand.h"
+#include "Utilities/StdRandom.h"
 
 namespace qmcplusplus
 {
