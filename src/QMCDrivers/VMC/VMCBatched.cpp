@@ -176,9 +176,11 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   timers.buffer_timer.start();
   TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(), crowd.get_walker_elecs(), crowd.get_mcp_wfbuffers());
 
-  auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker) { pset.saveWalker(walker); };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
+  // auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker) { pset.saveWalker(walker); };
+  // for (int iw = 0; iw < crowd.size(); ++iw)
+  //   saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
+  
+  ParticleSet::flex_saveWalker(walker_elecs, walkers);
   timers.buffer_timer.stop();
 
   timers.hamiltonian_timer.start();

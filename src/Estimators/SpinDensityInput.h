@@ -17,7 +17,14 @@
 
 namespace qmcplusplus
 {
-/** Native representation for Spin Density Estimators input parameters
+/** Native representation for Spin Density Estimators inputs
+ *
+ *  This class servers three purposes all related to properly handling
+ *  and verifying the spin density input.
+ *  1. An immutable representation of actual user input
+ *  2. Parse the xml node of SpinDensityNew input.
+ *  3. Hold the logic of calculating derived parameters.
+ *
  */
 class SpinDensityInput
 {
@@ -30,14 +37,30 @@ public:
 
 public:
   SpinDensityInput(){};
-  SpinDensityInput(Lattice lattice);
   void readXML(xmlNodePtr cur);
   Lattice get_cell() const { return cell_; }
   PosType get_corner() const { return corner_; }
   TinyVector<int, DIM> get_grid() const { return grid_; }
-  TinyVector<int, DIM> get_gdims() const { return gdims_; }
   int get_npoints() const { return npoints_; }
   bool get_write_report() const { return write_report_; }
+
+  struct DerivedParameters
+  {
+    PosType corner;
+    TinyVector<int, DIM> grid;
+    TinyVector<int, DIM> gdims;
+    size_t npoints;
+  };
+
+  /** Derived parameters of SpinDensity
+   *
+   *  These require the cell the SpinDensity is evaluated over,
+   *  the caller (SpinDensityNew) either gets this from the input and
+   *  passes it back or passes in the cell from the relevant ParticleSet.
+   *
+   */
+  DerivedParameters
+      calculateDerivedParameters(Lattice& lattice);
 
 private:
   ///name of this Estimator
@@ -45,11 +68,22 @@ private:
 
   Lattice cell_;
   PosType corner_;
+  PosType dr_;
+  PosType center_;
   TinyVector<int, DIM> grid_;
-  // Striding of elements of the grid.
-  TinyVector<int, DIM> gdims_;
   int npoints_;
   bool write_report_;
+
+  /** these are necessary for calculateDerivedParameters
+   *  
+   *  If we are going to later write out a canonical input for
+   *  this input then they are needed as well.
+   */
+  bool have_dr_     = false;
+  bool have_grid_   = false;
+  bool have_center_ = false;
+  bool have_corner_ = false;
+  bool have_cell_   = false;
 };
 
 } // namespace qmcplusplus

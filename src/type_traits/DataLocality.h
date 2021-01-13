@@ -21,6 +21,7 @@ enum class DataLocality
   process = 0,
   rank,
   crowd,
+  queue,
   walker
 };
 

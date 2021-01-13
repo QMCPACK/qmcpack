@@ -17,6 +17,7 @@
 #include "SpinDensityNew.h"
 #include "Utilities/SpeciesSet.h"
 #include "ParticleSet.h"
+#include "SpinDensityTesting.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -25,10 +26,42 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("SpinDensityNew", "[estimators]")
+void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEstBase>& crowd_sdns)
+{
+  using QMCT = QMCTraits;
+
+  for (int iops = 0; iops < ncrowds; ++iops)
+  {
+    std::vector<OperatorEstBase::MCPWalker> walkers;
+    int nwalkers = 4;
+    for (int iw = 0; iw < nwalkers; ++iw)
+      walkers.emplace_back(2);
+
+    std::vector<ParticleSet> psets;
+
+    crowd_sdns.emplace_back(std::make_unique<SpinDensityNew>(sdn));
+    SpinDensityNew& crowd_sdn = dynamic_cast<SpinDensityNew&>(*(crowd_sdns.back()));
+
+    for (int iw = 0; iw < nwalkers; ++iw)
+    {
+      psets.emplace_back();
+      ParticleSet& pset = psets.back();
+      pset.create(2);
+      pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
+      pset.R[1] = ParticleSet::PosType(1.68658058, 1.68658058, 1.68658058);
+    }
+
+    auto ref_walkers = makeRefVector<OperatorEstBase::MCPWalker>(walkers);
+    auto ref_psets   = makeRefVector<ParticleSet>(psets);
+
+    crowd_sdn.accumulate(ref_walkers, ref_psets);
+  }
+}
+
+TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, SpeciesSet)", "[estimators]")
 {
   Libxml2Document doc;
-  bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
+  bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[testing::valid_spindensity_input_grid]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi;
@@ -37,7 +70,26 @@ TEST_CASE("SpinDensityNew", "[estimators]")
   int ispecies                      = species_set.addSpecies("C");
   int iattribute                    = species_set.addAttribute("membersize");
   species_set(iattribute, ispecies) = 2;
+  SpinDensityInput sdi_copy         = sdi;
   SpinDensityNew(std::move(sdi), species_set);
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  CHECK_THROWS(SpinDensityNew(std::move(sdi_copy), lattice, species_set));
+}
+
+TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[estimators]")
+{
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[testing::valid_spindensity_input_no_cell]);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+  SpinDensityInput sdi;
+  sdi.readXML(node);
+  SpeciesSet species_set;
+  int ispecies                      = species_set.addSpecies("C");
+  int iattribute                    = species_set.addAttribute("membersize");
+  species_set(iattribute, ispecies) = 2;
+  auto lattice                      = testing::makeTestLattice();
+  SpinDensityNew(std::move(sdi), lattice, species_set);
 }
 
 TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
@@ -65,12 +117,6 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   for (int iw = 0; iw < nwalkers; ++iw)
     walkers.emplace_back(2);
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R = ParticleSet::Tensor_t(3.37316115, 3.37316115, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
-                                    0.00000000, 3.37316115);
-  Lattice.reset();
-
   std::vector<ParticleSet> psets;
 
   for (int iw = 0; iw < nwalkers; ++iw)
@@ -82,14 +128,6 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
     pset.R[1] = ParticleSet::PosType(1.68658058, 1.68658058, 1.68658058);
   }
 
-  // walkers[0].R[0] = {0.5,0.5,0.5};
-  // walkers[0].R[1] = {0.2,0.2,0.2};
-  // walkers[1].R[0] = {0.5,0.5,0.5};
-  // walkers[1].R[1] = {0.2,0.2,0.2};
-  // walkers[2].R[0] = {0.5,0.5,0.5};
-  // walkers[2].R[1] = {0.2,0.2,0.2};
-  // walkers[3].R[0] = {0.5,0.5,0.5};
-  // walkers[3].R[1] = {0.2,0.2,0.2};
   auto ref_walkers = makeRefVector<MCPWalker>(walkers);
   auto ref_psets   = makeRefVector<ParticleSet>(psets);
 
@@ -102,5 +140,83 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   CHECK(data_ref[1777] == 4);
 }
 
-TEST_CASE("SpinDensityNew::collect", "[estimators]") {}
+TEST_CASE("SpinDensityNew::collect(DataLocality::crowd)", "[estimators]")
+{
+  {
+    using MCPWalker = OperatorEstBase::MCPWalker;
+    using QMCT      = QMCTraits;
+
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    SpinDensityInput sdi;
+    sdi.readXML(node);
+    SpeciesSet species_set;
+    int ispecies = species_set.addSpecies("u");
+    ispecies     = species_set.addSpecies("d");
+    CHECK(ispecies == 1);
+    int iattribute             = species_set.addAttribute("membersize");
+    species_set(iattribute, 0) = 1;
+    species_set(iattribute, 1) = 1;
+
+    SpinDensityNew sdn(std::move(sdi), species_set);
+
+    UPtrVector<OperatorEstBase> crowd_sdns;
+    int ncrowds = 2;
+
+    accumulateFromPsets(ncrowds, sdn, crowd_sdns);
+
+    RefVector<OperatorEstBase> crowd_oeb_refs = convertUPtrToRefVector(crowd_sdns);
+    sdn.collect(crowd_oeb_refs);
+
+    std::vector<QMCT::RealType>& data_ref = sdn.get_data_ref();
+    // There should be a check that the discretization of particle locations expressed in lattice coords
+    // is correct.  This just checks it hasn't changed from how it was in SpinDensity which lacked testing.
+    CHECK(data_ref[555] == 4 * ncrowds);
+    CHECK(data_ref[1777] == 4 * ncrowds);
+  }
+}
+
+TEST_CASE("SpinDensityNew::collect(DataLocality::rank)", "[estimators]")
+{
+  {
+    using MCPWalker = OperatorEstBase::MCPWalker;
+    using QMCT      = QMCTraits;
+
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    SpinDensityInput sdi;
+    sdi.readXML(node);
+    SpeciesSet species_set;
+    int ispecies = species_set.addSpecies("u");
+    ispecies     = species_set.addSpecies("d");
+    CHECK(ispecies == 1);
+    int iattribute             = species_set.addAttribute("membersize");
+    species_set(iattribute, 0) = 1;
+    species_set(iattribute, 1) = 1;
+
+    SpinDensityNew sdn(std::move(sdi), species_set, DataLocality::rank);
+
+    auto lattice = testing::makeTestLattice();
+
+    UPtrVector<OperatorEstBase> crowd_sdns;
+    int ncrowds = 2;
+
+    accumulateFromPsets(ncrowds, sdn, crowd_sdns);
+
+    RefVector<OperatorEstBase> crowd_oeb_refs = convertUPtrToRefVector(crowd_sdns);
+    sdn.collect(crowd_oeb_refs);
+
+    std::vector<QMCT::RealType>& data_ref = sdn.get_data_ref();
+    // There should be a check that the discretization of particle locations expressed in lattice coords
+    // is correct.  This just checks it hasn't changed from how it was in SpinDensity which lacked testing.
+    CHECK(data_ref[555] == 4 * ncrowds);
+    CHECK(data_ref[1777] == 4 * ncrowds);
+  }
+}
+
+
 } // namespace qmcplusplus
