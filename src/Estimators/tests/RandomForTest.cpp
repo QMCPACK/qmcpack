@@ -16,7 +16,6 @@ namespace qmcplusplus
 {
 namespace testing
 {
-
 RandomForTest::RandomForTest() { rng.init(0, 1, 111); }
 
 std::vector<RandomForTest::Real> RandomForTest::getRealRandoms(int ncount)
@@ -31,7 +30,7 @@ void RandomForTest::makeRngReals(std::vector<Real>& rngReals)
 {
   // until c++ std = 17
   //std::generate(rng_reals.begin(), rng_reals.end(), rng());
-  for(auto& rng_real : rngReals)
+  for (auto& rng_real : rngReals)
     rng_real = rng();
 }
 
