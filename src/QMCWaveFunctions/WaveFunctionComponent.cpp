@@ -38,16 +38,35 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
     throw std::runtime_error("WaveFunctionComponent ClassName cannot be empty!");
 }
 
-// WaveFunctionComponent::WaveFunctionComponent(const WaveFunctionComponent& old):
-//   Optimizable(old.Optimizable), UseBuffer(old.UseBuffer),
-//   dPsi(old.dPsi),dLogPsi(old.dLogPsi),d2LogPsi(old.d2LogPsi),
-//   ClassName(old.ClassName),myVars(old.myVars)
-// {
-//   //
-//   //if(dLogPsi.size()) dLogPsi.resize(dLogPsi.size());
-//   //if(d2LogPsi.size()) dLogPsi.resize(d2LogPsi.size());
-//   //if(dPsi) dPsi=old.dPsi->makeClone();
-// }
+void WaveFunctionComponent::mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
+                                           const RefVector<ParticleSet>& P_list,
+                                           const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                                           const RefVector<ParticleSet::ParticleLaplacian_t>& L_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    WFC_list[iw].get().evaluateLog(P_list[iw], G_list[iw], L_list[iw]);
+}
+
+void WaveFunctionComponent::mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                                        const RefVector<ParticleSet>& P_list,
+                                        int iat,
+                                        std::vector<GradType>& grad_now)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    grad_now[iw] = WFC_list[iw].get().evalGrad(P_list[iw].get(), iat);
+}
+
+void WaveFunctionComponent::mw_calcRatio(const RefVector<WaveFunctionComponent>& WFC_list,
+                                         const RefVector<ParticleSet>& P_list,
+                                         int iat,
+                                         std::vector<PsiValueType>& ratios)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    ratios[iw] = WFC_list[iw].get().ratio(P_list[iw], iat);
+}
 
 
 PsiValueType WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
@@ -83,6 +102,46 @@ void WaveFunctionComponent::mw_ratioGradAsync(const RefVector<WaveFunctionCompon
   mw_ratioGrad(WFC_list, P_list, iat, ratios, grad_new);
 }
 
+void WaveFunctionComponent::mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& WFC_list,
+                                                 const RefVector<ParticleSet>& P_list,
+                                                 int iat,
+                                                 const std::vector<bool>& isAccepted,
+                                                 bool safe_to_delay)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    if (isAccepted[iw])
+      WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
+    else
+      WFC_list[iw].get().restore(iat);
+}
+
+void WaveFunctionComponent::mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    WFC_list[iw].get().completeUpdates();
+}
+
+WaveFunctionComponent::LogValueType WaveFunctionComponent::evaluateGL(ParticleSet& P,
+                                                                      ParticleSet::ParticleGradient_t& G,
+                                                                      ParticleSet::ParticleLaplacian_t& L,
+                                                                      bool fromscratch)
+{
+  return evaluateLog(P, G, L);
+}
+
+void WaveFunctionComponent::mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                                          const RefVector<ParticleSet>& P_list,
+                                          const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                                          const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                                          std::vector<LogValueType> log_values,
+                                          bool from_scratch)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    log_values[iw] = WFC_list[iw].get().evaluateGL(P_list[iw], G_list[iw], L_list[iw], from_scratch);
+}
 
 void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d) { dPsi = d; }
 
