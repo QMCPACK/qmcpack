@@ -29,7 +29,7 @@ public:
   void makeRngReals(std::vector<Real>& rng_reals);
 
 private:
-  StdRand<Real> rng;
+  StdRandom<Real> rng;
 };
 } // namespace testing
 } // namespace qmcplusplus

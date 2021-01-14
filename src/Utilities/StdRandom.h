@@ -28,11 +28,12 @@
 namespace qmcplusplus
 {
 template<typename T>
-class StdRand
+class StdRandom
 {
 public:
   using result_type = T;
-  using uint_type   = std::uint_fast64_t;
+  using Engine = std::mt19937;
+  using uint_type   = Engine::result_type;
   void init(int i, int nstr, int iseed_in, uint_type offset = 1)
   {
     uint_type baseSeed = iseed_in;
@@ -68,32 +69,14 @@ public:
 
 public:
   // Non const allows use of default copy constructor
-  // We copy construct from children a boggling amount, is the aim to repeat sequences?
-  // But then why does MomentumEstimator make a copy too...
-  // Shouldn't the chain of custody for the prng's be practically
-  // the most important thing in a QMC code?
   std::string ClassName{"StdRand"};
-  std::string EngineName{"std::mersenne_twister_engine"};
+  std::string EngineName{"std::mt19937"};
 
 private:
   static constexpr double min = 0.0;
   static constexpr double max = 1.0;
   std::uniform_real_distribution<T> distribution{min, max};
-  std::mersenne_twister_engine<std::uint_fast32_t,
-                               32,
-                               624,
-                               397,
-                               31,
-                               0x9908b0df,
-                               11,
-                               0xffffffff,
-                               7,
-                               0x9d2c5680,
-                               15,
-                               0xefc60000,
-                               18,
-                               1812433253>
-      engine;
+  Engine engine;
 
   ///context number
   int myContext;
