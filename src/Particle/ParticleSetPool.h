@@ -56,6 +56,11 @@ public:
   bool putTileMatrix(xmlNodePtr cur);
 
   /** initialize the supercell shared by all the particle sets
+   *
+   *  return value is never checked anywhere
+   *  side effect SimulationCell UPtr<ParticleLayout_t> is set
+   *  to particle layout created on heap.
+   *  This is later directly assigned to pset member variable Lattice.
    */
   bool putLattice(xmlNodePtr cur);
   ///return true, if the pool is empty

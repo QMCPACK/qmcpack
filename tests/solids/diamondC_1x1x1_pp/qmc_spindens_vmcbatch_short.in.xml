@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det_qmc_spindens_short" series="0">
+   <project id="det_qmc_dens_short" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="71"/>
@@ -83,24 +83,23 @@
    </qmcsystem>
    <qmc method="vmc_batch" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <estimator name="SpinDensityNew" type="spindensity_new" report="yes">
+     <estimator name="SpinDensityNew" type="spindensity_new" report="yes" save_memory="yes">
        <parameter name="grid">
-         10 10 10
+         200 200 200
        </parameter>
        <parameter name="center">
          0.0 0.0 0.0
        </parameter>
        <parameter name="cell">
-         3.37316115        3.37316115        0.00000000
-         0.00000000        3.37316115        3.37316115
-         3.37316115        0.00000000        3.37316115
+                  3.37316115        3.37316115        0.00000000
+                  0.00000000        3.37316115        3.37316115
+                  3.37316115        0.00000000        3.37316115
        </parameter>
      </estimator>
-      <parameter name="walkers"             >    1               </parameter>
-      <parameter name="blocks"              >    3               </parameter>
-      <parameter name="steps"               >    3               </parameter>
-      <parameter name="subSteps"            >    2               </parameter>
-      <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    3               </parameter>
+      <parameter name="walkers"             >    4            </parameter>
+      <parameter name="blocks"              >    1000         </parameter>
+      <parameter name="steps"               >    20           </parameter>
+      <parameter name="timestep"            >    0.3          </parameter>
+      <parameter name="warmupSteps"         >    100          </parameter>
    </qmc>
 </simulation>

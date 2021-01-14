@@ -19,7 +19,7 @@ namespace qmcplusplus
 namespace testing
 {
 // clang-format: off
-constexpr std::array<const char*, 2> valid_spin_density_input_sections{
+constexpr std::array<const char*, 3> valid_spin_density_input_sections{
     R"(
 <estimator name="spindensity_new" type="spindensity" report="yes">
   <parameter name="grid">
@@ -49,9 +49,23 @@ constexpr std::array<const char*, 2> valid_spin_density_input_sections{
     3.37316115        0.00000000        3.37316115
   </parameter>
 </estimator>
+)",
+    R"(
+<estimator name="spindensity_new" type="spindensity" report="yes">
+  <parameter name="dr">
+    .4777 .4777 .4777
+  </parameter>
+  <parameter name="center">
+    0.0 0.0 0.0
+  </parameter>
+</estimator>
 )"};
 
 // clang-format: on
+constexpr int valid_spindensity_input_grid    = 0;
+constexpr int valid_spindensity_input_dr      = 1;
+constexpr int valid_spindensity_input_no_cell = 2;
+
 } // namespace testing
 } // namespace qmcplusplus
 

@@ -35,23 +35,50 @@ public:
   using Lattice = POLT::ParticleLayout_t;
   using QMCT    = QMCTraits;
 
-  //  typedef std::vector<RealType> dens_t;
-  //  typedef std::vector<PosType> pts_t;
-
   //data members
   SpinDensityInput input_;
   SpeciesSet species_;
 
+  /** @ingroup SpinDensity mutable parameters
+   *
+   *  they should be limited to values that can be changed from input
+   *  or are not present explicitly in the SpinDensityInput
+   *  @{
+   */
+
+  /// Lattice is always local since it is either in the input or a constructor argument.
+  Lattice lattice_;
+  SpinDensityInput::DerivedParameters derived_parameters_;
+  /**}@*/
+  
   // this is a bit of a mess to get from SpeciesSet
   std::vector<int> species_size_;
 
-  //constructor/destructor
-  SpinDensityNew(SpinDensityInput&& sdi, const SpeciesSet& species);
+  /** Constructor for SpinDensityInput that contains an explicitly defined cell
+   */
+  SpinDensityNew(SpinDensityInput&& sdi, const SpeciesSet& species, DataLocality dl = DataLocality::crowd);
+  /** Constructor for SpinDensityInput without explicitly defined cell
+   *
+   *  the crystal lattice should come from the same particle set as the species set.
+   *  in case you are tempted to just pass the ParticleSet don't. It clouds the data dependence of
+   *  constructing the estimator and creates a strong coupling between the classes.
+   *
+   *  Ideally when validating input is built up enough there would be only one constructor with
+   *  signature
+   *
+   *      SpinDensityNew(SpinDensityInput&& sdi, SpinDensityInput::DerivedParameters&& dev_par, SpeciesSet species, DataLocality dl);
+   */
+  SpinDensityNew(SpinDensityInput&& sdi, const Lattice&, const SpeciesSet& species, const DataLocality dl = DataLocality::crowd);
   SpinDensityNew(const SpinDensityNew& sdn);
 
+  void startBlock(int steps) override;
   //standard interface
   OperatorEstBase* clone() override;
   void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) override;
+
+  /** These absolutely must be of this derived type
+   */
+  void collect(const RefVector<OperatorEstBase>& operator_estimators) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of SpinDensityNew's data.
@@ -69,7 +96,11 @@ public:
   void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const override;
 
 private:
-  //local functions
+  static std::vector<int> getSpeciesSize(SpeciesSet& species);
+  /** derived_parameters_ must be valid i.e. initialized with call to input_.calculateDerivedParameters
+   */
+  size_t getFullDataSize();
+  void accumulateToData(size_t point, QMCT::RealType weight);
   void reset();
   void report(const std::string& pad);
 };
