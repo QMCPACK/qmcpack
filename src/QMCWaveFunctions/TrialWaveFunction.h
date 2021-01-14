@@ -365,11 +365,13 @@ public:
 
   /** compute gradients and laplacian of the TWF with respect to each particle.
    *  See WaveFunctionComponent::evaluateGL for more detail */
-  RealType evaluateGL(ParticleSet& P);
+  LogValueType evaluateGL(ParticleSet& P, bool fromscratch);
   /* flexible batched version of evaluateGL.
-   * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE
    */
-  void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
+  static void flex_evaluateGL(const RefVector<TrialWaveFunction>& WF_list,
+                              const RefVector<ParticleSet>& P_list,
+                              std::vector<LogValueType>& log_values,
+                              bool fromscratch);
 
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */

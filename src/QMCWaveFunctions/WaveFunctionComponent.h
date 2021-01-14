@@ -388,13 +388,11 @@ struct WaveFunctionComponent : public QMCTraits
    * @param G_list the list of Gradients pointers in a walker batch, \f$\nabla\ln\Psi\f$
    * @param L_list the list of Laplacians pointers in a walker batch, \f$\nabla^2\ln\Psi\f$
    * @param from_scratch if true, all the internal data are recomputed from scratch
-   * @param log_values values the log WF values of walkers in a batch
    */
   virtual void mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
                              const RefVector<ParticleSet>& P_list,
                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
-                             std::vector<LogValueType> log_values,
                              bool from_scratch);
 
   /** For particle-by-particle move. Requests space in the buffer
