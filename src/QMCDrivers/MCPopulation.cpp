@@ -69,9 +69,6 @@ MCPopulation::~MCPopulation()
  */
 void MCPopulation::allocateWalkerStuffInplace(int walker_index)
 {
-  walker_trial_wavefunctions_[walker_index]->registerData(*(walker_elec_particle_sets_[walker_index]),
-                                                          walkers_[walker_index]->DataSet);
-  walkers_[walker_index]->DataSet.allocate();
 }
 
 void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
@@ -93,10 +90,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     walker_ptr        = std::make_unique<MCPWalker>(num_particles_);
     walker_ptr->R     = elec_particle_set_->R;
     walker_ptr->spins = elec_particle_set_->spins;
-    // Side effect of this changes size of walker_ptr->Properties if done after registerData() you end up with
-    // a bad buffer.
     walker_ptr->Properties = elec_particle_set_->Properties;
-    walker_ptr->registerData();
   };
 
   walker_weights_.resize(num_walkers_plus_reserve, 1.0);
@@ -142,18 +136,6 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   }
 
   outputManager.resume();
-
-  RefVector<WFBuffer> mcp_wfbuffers;
-  mcp_wfbuffers.reserve(num_walkers_plus_reserve);
-  std::for_each(walkers_.begin(), walkers_.end(),
-                [&mcp_wfbuffers](auto& walker) { mcp_wfbuffers.push_back((*walker).DataSet); });
-
-  TrialWaveFunction::flex_registerData(walker_trial_wavefunctions_, walker_elec_particle_sets_, mcp_wfbuffers);
-
-  std::for_each(walkers_.begin(), walkers_.end(), [](auto& walker) {
-    MCPWalker& this_walker = *walker;
-    this_walker.DataSet.allocate();
-  });
 
   // kill and spawn walkers update the state variable num_local_walkers_
   // so it must start at the number of reserved walkers
@@ -225,7 +207,6 @@ WalkerElementsRef MCPopulation::spawnWalker()
 
     //walkers_.back()->R          = elec_particle_set_->R;
     //walkers_.back()->Properties = elec_particle_set_->Properties;
-    //walkers_.back()->registerData();
 
     walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));
     walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
@@ -233,9 +214,6 @@ WalkerElementsRef MCPopulation::spawnWalker()
     walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
     walker_hamiltonians_.back().reset(
         hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));
-    // Dito
-    //walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
-    //walkers_.back()->DataSet.allocate();
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight       = 1.0;
   }
@@ -276,7 +254,6 @@ void MCPopulation::killWalker(MCPWalker& walker)
   {
     if (&walker == (*it_walkers).get())
     {
-      (*it_walkers)->DataSet.zero();
       dead_walkers_.push_back(std::move(*it_walkers));
       walkers_.erase(it_walkers);
       dead_walker_elec_particle_sets_.push_back(std::move(*it_psets));

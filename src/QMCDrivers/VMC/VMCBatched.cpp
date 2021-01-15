@@ -40,7 +40,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
-  timers.buffer_timer.start();
   crowd.loadWalkers();
 
   // Consider favoring lambda followed by for over walkers
@@ -48,12 +47,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   auto& walker_twfs      = crowd.get_walker_twfs();
   auto& walkers          = crowd.get_walkers();
   auto& walker_elecs     = crowd.get_walker_elecs();
-  auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker) {
-    twf.copyFromBuffer(pset, walker.DataSet);
-  };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    copyTWFFromBuffer(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
-  timers.buffer_timer.stop();
 
   timers.movepbyp_timer.start();
   const int num_walkers = crowd.size();
@@ -174,8 +167,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   timers.movepbyp_timer.stop();
 
   timers.buffer_timer.start();
-  TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(), crowd.get_walker_elecs(), crowd.get_mcp_wfbuffers());
-
   auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker) { pset.saveWalker(walker); };
   for (int iw = 0; iw < crowd.size(); ++iw)
     saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
