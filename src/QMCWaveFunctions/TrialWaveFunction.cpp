@@ -827,8 +827,7 @@ void TrialWaveFunction::flex_evaluateGL(const RefVector<TrialWaveFunction>& wf_l
       wavefunction_components[i]->mw_evaluateGL(wfc_list, p_list, g_list, l_list, fromscratch);
       for (int iw = 0; iw < wf_list.size(); iw++)
       {
-        wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
-        wf_list[iw].get().PhaseValue += std::imag(wfc_list[iw].get().LogValue);
+        log_values[iw] += wfc_list[iw].get().LogValue;
       }
     }
     for (int iw = 0; iw < wf_list.size(); iw++)
@@ -847,7 +846,7 @@ void TrialWaveFunction::flex_evaluateGL(const RefVector<TrialWaveFunction>& wf_l
   }
   else if (wf_list.size() == 1)
   {
-    wf_list[0].get().evaluateGL(p_list[0], fromscratch);
+    log_values[0] = wf_list[0].get().evaluateGL(p_list[0], fromscratch);
     // Ye: temporal workaround to have WF.G/L always defined.
     // remove when KineticEnergy use WF.G/L instead of P.G/L
     wf_list[0].get().G = p_list[0].get().G;
