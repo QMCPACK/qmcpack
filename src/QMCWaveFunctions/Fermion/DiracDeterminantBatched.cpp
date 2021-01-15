@@ -331,6 +331,19 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
     }
   }
 }
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateGL(
+    ParticleSet& P,
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L,
+    bool fromscratch)
+{
+  if (fromscratch)
+    evaluateLog(P, G, L);
+  else
+    updateAfterSweep(P, G, L);
+  return LogValue;
+}
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
@@ -347,14 +360,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
     WFBufferType& buf,
     bool fromscratch)
 {
-  if (fromscratch)
-  {
-    LogValue = evaluateLog(P, P.G, P.L);
-  }
-  else
-  {
-    updateAfterSweep(P, P.G, P.L);
-  }
+  evaluateGL(P, P.G, P.L, fromscratch);
   BufferTimer.start();
   buf.put(psiMinv.first_address(), psiMinv.last_address());
   buf.put(dpsiM.first_address(), dpsiM.last_address());
@@ -744,7 +750,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateDerivatives(ParticleSet& 
 }
 
 template<typename DET_ENGINE_TYPE>
-DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYPE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
+DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYPE>::makeCopy(
+    std::shared_ptr<SPOSet>&& spo) const
 {
   DiracDeterminantBatched<DET_ENGINE_TYPE>* dclone = new DiracDeterminantBatched<DET_ENGINE_TYPE>(std::move(spo));
   dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);

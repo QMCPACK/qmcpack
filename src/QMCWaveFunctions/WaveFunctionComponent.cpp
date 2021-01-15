@@ -135,11 +135,11 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVector<WaveFunctionComponent>
                                           const RefVector<ParticleSet>& P_list,
                                           const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                                           const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
-                                          bool from_scratch)
+                                          bool fromscratch)
 {
 #pragma omp parallel for
   for (int iw = 0; iw < WFC_list.size(); iw++)
-    WFC_list[iw].get().evaluateGL(P_list[iw], G_list[iw], L_list[iw], from_scratch);
+    WFC_list[iw].get().evaluateGL(P_list[iw], G_list[iw], L_list[iw], fromscratch);
 }
 
 void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d) { dPsi = d; }
