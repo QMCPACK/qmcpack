@@ -691,6 +691,15 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
   }
 }
 
+void ParticleSet::rejectMove(Index_t iat)
+{
+#ifndef NDEBUG
+  if (iat != activePtcl)
+    throw std::runtime_error("Bug detected by rejectMove! Request electron is not active!");
+#endif
+  activePtcl = -1;
+}
+
 void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
 {
   if (P_list.size() > 1)
