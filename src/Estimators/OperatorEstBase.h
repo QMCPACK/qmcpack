@@ -50,7 +50,7 @@ public:
 
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
-  OperatorEstBase();
+  OperatorEstBase(DataLocality dl);
   OperatorEstBase(const OperatorEstBase& oth);
   ///virtual destructor
   virtual ~OperatorEstBase() = default;
@@ -76,6 +76,8 @@ public:
   virtual void collect(const RefVector<OperatorEstBase>& oebs);
 
   virtual void normalize(QMCT::RealType invToWgt);
+
+  virtual void startBlock(int steps) = 0;
   
   std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
 

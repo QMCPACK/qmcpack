@@ -9,22 +9,28 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_DATALOCALITY_H
-#define QMCPLUSPLUS_DATALOCALITY_H
+#ifndef QMCPLUSPLUS_RANDOMFORTEST_H
+#define QMCPLUSPLUS_RANDOMFORTEST_H
+
+#include <vector>
+#include "Configuration.h"
+#include "Utilities/StdRandom.h"
 
 namespace qmcplusplus
 {
-
-///data locality with respect to walker buffer
-enum class DataLocality
+namespace testing
 {
-  process = 0,
-  rank,
-  crowd,
-  queue,
-  walker
+class RandomForTest
+{
+public:
+  using Real = QMCTraits::RealType;
+  RandomForTest();
+  std::vector<Real> getRealRandoms(int ncount);
+  void makeRngReals(std::vector<Real>& rng_reals);
+
+private:
+  StdRandom<Real> rng;
 };
-
-}
-
+} // namespace testing
+} // namespace qmcplusplus
 #endif

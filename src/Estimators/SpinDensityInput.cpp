@@ -20,20 +20,14 @@ namespace qmcplusplus
 
 void SpinDensityInput::readXML(xmlNodePtr cur)
 {
-  std::string  write_report;
+  std::string write_report;
+  std::string save_memory;
   OhmmsAttributeSet attrib;
   attrib.add(myName_, "name");
   attrib.add(write_report, "report");
+  attrib.add(save_memory, "save_memory");
   attrib.put(cur);
 
-  bool have_dr     = false;
-  bool have_grid   = false;
-  bool have_center = false;
-  bool have_corner = false;
-  bool have_cell   = false;
-
-  PosType dr;
-  PosType center;
   Tensor<Real, DIM> axes;
 
   int test_moves = 0;
@@ -47,27 +41,27 @@ void SpinDensityInput::readXML(xmlNodePtr cur)
       const XMLAttrString name(element, "name");
       if (name == "dr")
       {
-        have_dr = true;
-        putContent(dr, element);
+        have_dr_ = true;
+        putContent(dr_, element);
       }
       else if (name == "grid")
       {
-        have_grid = true;
+        have_grid_ = true;
         putContent(grid_, element);
       }
       else if (name == "corner")
       {
-        have_corner = true;
+        have_corner_ = true;
         putContent(corner_, element);
       }
       else if (name == "center")
       {
-        have_center = true;
-        putContent(center, element);
+        have_center_ = true;
+        putContent(center_, element);
       }
       else if (name == "cell")
       {
-        have_cell = true;
+        have_cell_ = true;
         putContent(axes, element);
       }
       else if (name == "test_moves")
@@ -76,45 +70,63 @@ void SpinDensityInput::readXML(xmlNodePtr cur)
     element = element->next;
   }
 
-  if (have_dr && have_grid)
-  {
-    throw UniformCommunicateError("SpinDensity::put  dr and grid are provided, this is ambiguous");
-  }
-  else if (!have_dr && !have_grid)
-    throw UniformCommunicateError("SpinDensity::put  must provide dr or grid");
+  if (have_dr_ && have_grid_)
+    throw UniformCommunicateError("SpinDensity input dr and grid are provided, this is ambiguous");
+  else if (!have_dr_ && !have_grid_)
+    throw UniformCommunicateError("SpinDensity input must provide dr or grid");
 
-  if (have_corner && have_center)
-    throw UniformCommunicateError("SpinDensity::put  corner and center are provided, this is ambiguous");
-  if (have_cell)
+  if (have_corner_ && have_center_)
+    throw UniformCommunicateError("SpinDensity input corner and center are provided, this is ambiguous");
+
+  if (have_cell_)
   {
     cell_.set(axes);
-    if (!have_corner && !have_center)
-      throw UniformCommunicateError("SpinDensity::put  must provide corner or center");
+    if (!have_corner_ && !have_center_)
+      throw UniformCommunicateError("SpinDensity input must provide corner or center with explicitly defined cell");
   }
 
-  if (have_center)
-    corner_ = center - cell_.Center;
-
-  if (have_dr)
-    for (int d = 0; d < DIM; ++d)
-        grid_[d] = (int)std::ceil(std::sqrt(dot(cell_.Rv[d], cell_.Rv[d])) / dr[d]);
-
-  npoints_ = 1;
-  for (int d = 0; d < DIM; ++d)
-    npoints_ *= grid_[d];
-  gdims_[0] = npoints_ / grid_[0];
-  for (int d = 1; d < DIM; ++d)
-    gdims_[d] = gdims_[d - 1] / grid_[d];
   if (write_report == "yes")
       write_report_ = true;
   else
       write_report_ = false;
+
+  if (save_memory == "yes")
+    save_memory_ = true;
+  else
+    save_memory_ = false;
   
   // weird legacy stuff
   // if (write_report == "yes")
   //   report("  ");
   // if (test_moves > 0)
   //   test(test_moves, *Ptmp);
+}
+
+SpinDensityInput::DerivedParameters SpinDensityInput::calculateDerivedParameters(Lattice& lattice)
+{
+  PosType corner = 0.0;
+  if (have_center_)
+    corner = center_ - lattice.Center;
+  else if (have_corner_)
+    corner = corner_;
+
+  TinyVector<int, DIM> grid;
+  if (have_dr_)
+    for (int d = 0; d < DIM; ++d)
+        grid[d] = (int)std::ceil(std::sqrt(dot(lattice.Rv[d], lattice.Rv[d])) / dr_[d]);
+  else if (have_grid_)
+    grid = grid_;
+  
+  size_t npoints = 1;
+  for (int d = 0; d < DIM; ++d)
+    npoints *= grid[d];
+
+  TinyVector<int, DIM> gdims;
+  gdims[0] = npoints / grid[0];
+  for (int d = 1; d < DIM; ++d)
+    gdims[d] = gdims[d - 1] / grid[d];
+  return {corner, grid, gdims, npoints};
+
 }
 
 } // namespace qmcplusplus

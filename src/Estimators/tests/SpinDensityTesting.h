@@ -9,22 +9,21 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_DATALOCALITY_H
-#define QMCPLUSPLUS_DATALOCALITY_H
+#ifndef QMCPLUSPLUS_SPINDENSITYTESTING_H
+#define QMCPLUSPLUS_SPINDENSITYTESTING_H
+
+#include "ParticleSet.h"
 
 namespace qmcplusplus
 {
-
-///data locality with respect to walker buffer
-enum class DataLocality
+namespace testing
 {
-  process = 0,
-  rank,
-  crowd,
-  queue,
-  walker
-};
+
+using POLT    = PtclOnLatticeTraits;
+using Lattice = POLT::ParticleLayout_t;
+
+Lattice makeTestLattice();
 
 }
-
+}
 #endif

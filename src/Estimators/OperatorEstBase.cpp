@@ -17,12 +17,9 @@
 
 namespace qmcplusplus
 {
-OperatorEstBase::OperatorEstBase() : walkers_weight_(0) { data_locality_ = DataLocality::crowd; }
+OperatorEstBase::OperatorEstBase(DataLocality dl) : data_locality_(dl), walkers_weight_(0) {}
 
-OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth) : walkers_weight_(0)
-{
-  data_locality_ = oth.data_locality_;
-}
+OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth) : data_locality_(oth.data_locality_), walkers_weight_(0) {}
 
 // I suspect this can be a pure function outside of the class.
 // In this case at least we don't care to copy the data_ as we are going to reduce these later and don't want
@@ -30,14 +27,7 @@ OperatorEstBase::OperatorEstBase(const OperatorEstBase& oth) : walkers_weight_(0
 OperatorEstBase::Data OperatorEstBase::createLocalData(size_t size, DataLocality data_locality)
 {
   Data new_data;
-  if (data_locality == DataLocality::crowd)
-  {
-    new_data = std::make_unique<std::vector<QMCT::RealType>>(size, 0);
-  }
-  else
-  {
-    throw std::runtime_error("currently SpinDensityNew only supports crowd level datalocality");
-  }
+  new_data = std::make_unique<std::vector<QMCT::RealType>>(size, 0);
   return new_data;
 }
 
@@ -56,7 +46,7 @@ void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_oper
 void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
 {
   auto& data = *data_;
-  for (QMCT::RealType& elem: data)
+  for (QMCT::RealType& elem : data)
     elem *= invTotWgt;
   walkers_weight_ = 0;
 }
