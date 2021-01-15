@@ -156,6 +156,20 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(logpsi == Approx(-5.932711221043984));
 #endif
 
+  auto logpsi_cplx = psi.evaluateGL(elec_, false);
+#if defined(QMC_COMPLEX)
+  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+#else
+  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+#endif
+
+  logpsi_cplx = psi.evaluateGL(elec_, true);
+#if defined(QMC_COMPLEX)
+  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+#else
+  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+#endif
+
   // make a TrialWaveFunction Clone
   TrialWaveFunction* psi_clone = psi.makeClone(elec_clone);
 
@@ -457,6 +471,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(det_up->getPsiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
   REQUIRE(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
 #endif
+
+  std::vector<LogValueType> log_values(wf_ref_list.size());
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, log_values, false);
+  std::vector<LogValueType> log_values_fromscratch(wf_ref_list.size());
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, log_values, true);
+  for (int iw = 0; iw < log_values.size(); iw++)
+    REQUIRE(LogComplexApprox(log_values[iw]) == log_values_fromscratch[iw]);
 
   //FIXME more thinking and fix about ownership and schope are needed for exiting clean
   delete psi_clone;

@@ -89,7 +89,9 @@ public:
 
   // expose CPU interfaces
   using WaveFunctionComponent::evaluateDerivatives;
+  using WaveFunctionComponent::evaluateGL;
   using WaveFunctionComponent::evaluateLog;
+  using WaveFunctionComponent::mw_evaluateGL;
   using WaveFunctionComponent::mw_evaluateLog;
   using WaveFunctionComponent::recompute;
 

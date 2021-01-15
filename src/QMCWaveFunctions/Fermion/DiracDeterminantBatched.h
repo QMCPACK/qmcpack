@@ -153,6 +153,11 @@ public:
 
   void recompute(ParticleSet& P) override;
 
+  LogValueType evaluateGL(ParticleSet& P,
+                          ParticleSet::ParticleGradient_t& G,
+                          ParticleSet::ParticleLaplacian_t& L,
+                          bool fromscratch) override;
+
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   /** cloning function

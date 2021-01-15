@@ -337,18 +337,25 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateGL(
+    ParticleSet& P,
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L,
+    bool fromscratch)
+{
+  if (fromscratch)
+    evaluateLog(P, G, L);
+  else
+    updateAfterSweep(P, G, L);
+  return LogValue;
+}
+
+template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
                                                                                          WFBufferType& buf,
                                                                                          bool fromscratch)
 {
-  if (fromscratch)
-  {
-    LogValue = evaluateLog(P, P.G, P.L);
-  }
-  else
-  {
-    updateAfterSweep(P, P.G, P.L);
-  }
+  evaluateGL(P, P.G, P.L, fromscratch);
   BufferTimer.start();
   buf.forward(Bytes_in_WFBuffer);
   buf.put(LogValue);

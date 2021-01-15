@@ -164,6 +164,11 @@ public:
 
   void recompute(ParticleSet& P) override;
 
+  LogValueType evaluateGL(ParticleSet& P,
+                          ParticleSet::ParticleGradient_t& G,
+                          ParticleSet::ParticleLaplacian_t& L,
+                          bool fromscratch) override;
+
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   /** cloning function
@@ -183,7 +188,7 @@ public:
 #else
   ValueMatrix_t& getPsiMinv() { return psiM; }
 #endif
-  
+
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM_temp;
 
