@@ -424,8 +424,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 #endif
 
-  std::vector<LogValueType> log_values(wf_ref_list.size());
-  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, log_values, false);
   std::vector<PosType> displ(2);
   displ[0] = displ[1] = {0.1, 0.2, 0.3};
 
@@ -478,12 +476,13 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(det_up->getPsiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
   REQUIRE(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
 #endif
-  //std::vector<LogValueType> log_values(wf_ref_list.size());
-  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, log_values, false);
-  std::vector<LogValueType> log_values_fromscratch(wf_ref_list.size());
-  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, log_values_fromscratch, true);
+  std::vector<LogValueType> log_values(wf_ref_list.size());
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, false);
   for (int iw = 0; iw < log_values.size(); iw++)
-    REQUIRE(LogComplexApprox(log_values[iw]) == log_values_fromscratch[iw]);
+    log_values[iw] = {wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()};
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, true);
+  for (int iw = 0; iw < log_values.size(); iw++)
+    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()});
 
 #endif
 }
