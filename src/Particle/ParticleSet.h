@@ -371,8 +371,9 @@ public:
   }
 
   /** reject the move
+   * @param iat the electron whose proposed move gets rejected.
    */
-  void rejectMove(Index_t iat) { activePtcl = -1; }
+  void rejectMove(Index_t iat);
   /// batched version of rejectMove
   static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
   {

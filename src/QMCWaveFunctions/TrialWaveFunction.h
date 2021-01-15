@@ -370,7 +370,6 @@ public:
    */
   static void flex_evaluateGL(const RefVector<TrialWaveFunction>& WF_list,
                               const RefVector<ParticleSet>& P_list,
-                              std::vector<LogValueType>& log_values,
                               bool fromscratch);
 
   /** register all the wavefunction components in buffer.
