@@ -171,7 +171,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
   // make a TrialWaveFunction Clone
-  TrialWaveFunction* psi_clone = psi.makeClone(elec_clone);
+  std::unique_ptr<TrialWaveFunction> psi_clone(psi.makeClone(elec_clone));
 
   elec_clone.update();
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
@@ -231,7 +231,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   std::vector<TrialWaveFunction*> WF_list(2, nullptr);
   WF_list[0] = &psi;
-  WF_list[1] = psi_clone;
+  WF_list[1] = psi_clone.get();
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
@@ -485,8 +485,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   for (int iw = 0; iw < log_values.size(); iw++)
     REQUIRE(LogComplexApprox(log_values[iw]) == log_values_fromscratch[iw]);
 
-  //FIXME more thinking and fix about ownership and schope are needed for exiting clean
-  delete psi_clone;
 #endif
 }
 
