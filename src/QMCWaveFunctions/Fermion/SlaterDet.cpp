@@ -155,6 +155,37 @@ void SlaterDet::mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
   }
 }
 
+SlaterDet::LogValueType SlaterDet::evaluateGL(ParticleSet& P,
+                                              ParticleSet::ParticleGradient_t& G,
+                                              ParticleSet::ParticleLaplacian_t& L,
+                                              bool from_scratch)
+{
+  LogValue = 0.0;
+  for (int i = 0; i < Dets.size(); ++i)
+    LogValue += Dets[i]->evaluateGL(P, G, L, from_scratch);
+  return LogValue;
+}
+
+void SlaterDet::mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                              const RefVector<ParticleSet>& P_list,
+                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                              bool fromscratch)
+{
+  constexpr LogValueType czero(0);
+
+  for (WaveFunctionComponent& wfc : WFC_list)
+    wfc.LogValue = czero;
+
+  for (int i = 0; i < Dets.size(); ++i)
+  {
+    const auto Det_list(extract_DetRef_list(WFC_list, i));
+    Dets[i]->mw_evaluateGL(Det_list, P_list, G_list, L_list, fromscratch);
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+      WFC_list[iw].get().LogValue += Det_list[iw].get().LogValue;
+  }
+}
+
 void SlaterDet::recompute(ParticleSet& P)
 {
   for (int i = 0; i < Dets.size(); ++i)

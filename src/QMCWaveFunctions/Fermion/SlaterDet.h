@@ -71,6 +71,17 @@ public:
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) override;
 
+  virtual LogValueType evaluateGL(ParticleSet& P,
+                                  ParticleSet::ParticleGradient_t& G,
+                                  ParticleSet::ParticleLaplacian_t& L,
+                                  bool fromscratch) override;
+
+  virtual void mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                             const RefVector<ParticleSet>& P_list,
+                             const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                             const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                             bool fromscratch) override;
+
   virtual void recompute(ParticleSet& P) override;
 
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;

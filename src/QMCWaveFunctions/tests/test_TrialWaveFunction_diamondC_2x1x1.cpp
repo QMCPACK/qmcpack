@@ -156,8 +156,22 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(logpsi == Approx(-5.932711221043984));
 #endif
 
+  auto logpsi_cplx = psi.evaluateGL(elec_, false);
+#if defined(QMC_COMPLEX)
+  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+#else
+  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+#endif
+
+  logpsi_cplx = psi.evaluateGL(elec_, true);
+#if defined(QMC_COMPLEX)
+  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+#else
+  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+#endif
+
   // make a TrialWaveFunction Clone
-  TrialWaveFunction* psi_clone = psi.makeClone(elec_clone);
+  std::unique_ptr<TrialWaveFunction> psi_clone(psi.makeClone(elec_clone));
 
   elec_clone.update();
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
@@ -217,7 +231,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   std::vector<TrialWaveFunction*> WF_list(2, nullptr);
   WF_list[0] = &psi;
-  WF_list[1] = psi_clone;
+  WF_list[1] = psi_clone.get();
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
@@ -438,9 +452,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction::flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
 
   elec_accept_list.clear();
+  RefVector<ParticleSet> elec_reject_list;
   for (int iw = 0; iw < isAccepted.size(); iw++)
-    elec_accept_list.push_back(p_ref_list[iw]);
+    if (isAccepted[iw])
+      elec_accept_list.push_back(p_ref_list[iw]);
+    else
+      elec_reject_list.push_back(p_ref_list[iw]);
   ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id_next);
+  ParticleSet::flex_rejectMove(elec_reject_list, moved_elec_id_next);
   TrialWaveFunction::flex_completeUpdates(wf_ref_list);
 
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
@@ -457,9 +476,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(det_up->getPsiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
   REQUIRE(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
 #endif
+  std::vector<LogValueType> log_values(wf_ref_list.size());
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, false);
+  for (int iw = 0; iw < log_values.size(); iw++)
+    log_values[iw] = {wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()};
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, true);
+  for (int iw = 0; iw < log_values.size(); iw++)
+    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()});
 
-  //FIXME more thinking and fix about ownership and schope are needed for exiting clean
-  delete psi_clone;
 #endif
 }
 
