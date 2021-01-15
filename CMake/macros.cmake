@@ -259,7 +259,7 @@ ENDFUNCTION()
 
 function(QMC_RUN_AND_CHECK_CUSTOM_SCALAR)
     set(OPTIONS SHOULD_FAIL)
-    set(ONE_VALUE_ARGS BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SERIES SCALAR_VALUES)
+    set(ONE_VALUE_ARGS BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SERIES SCALAR_VALUES EQUILIBRATION)
     # Eventually many want to support multiple SERIES/SCALAR_VALUES pairs
     #SET(MULTI_VALUE_ARGS SERIES SCALAR_VALUES)
 
@@ -279,6 +279,11 @@ function(QMC_RUN_AND_CHECK_CUSTOM_SCALAR)
     set(BASE_DIR ${QRC_BASE_DIR})
     set(PREFIX ${QRC_PREFIX})
     set(INPUT_FILE ${QRC_INPUT_FILE})
+
+    set(EQUIL 2)
+    if (DEFINED QRC_EQUILIBRATION)
+      set(EQUIL ${QRC_EQUILIBRATION})
+    endif()
 
     set( TEST_ADDED FALSE )
     set( TEST_LABELS "")
@@ -315,7 +320,7 @@ function(QMC_RUN_AND_CHECK_CUSTOM_SCALAR)
         else()
           set( TEST_NAME "${FULL_NAME}-${SCALAR_NAME}" )
         endif()
-        set(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 --name ${SCALAR_NAME} --ref-value ${SCALAR_VALUE} --ref-error ${SCALAR_ERROR})
+        set(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e ${EQUIL} --name ${SCALAR_NAME} --ref-value ${SCALAR_VALUE} --ref-error ${SCALAR_ERROR})
         add_test( NAME ${TEST_NAME}
                   COMMAND ${CHECK_CMD}
                   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"

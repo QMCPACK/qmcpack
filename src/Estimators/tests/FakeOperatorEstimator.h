@@ -33,6 +33,8 @@ public:
 
   void registerOperatorEstimator(std::vector<observable_helper*>& h5dec, hid_t gid) const override {}
 
+  void startBlock(int nsteps) override {}
+  
   OperatorEstBase* clone() override { return new FakeOperatorEstimator(*this); }
 
   void set_walker_weights(QMCT::RealType weight) { walkers_weight_ = weight; }

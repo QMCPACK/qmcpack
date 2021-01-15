@@ -99,17 +99,17 @@ TEST_CASE("EstimatorManagerNew::reduceOperatorestimators()", "[estimators]")
 
   if (c->rank() == 0)
   {
-    auto& test_data = embt.get_operator_data();
+    auto& test_data          = embt.get_operator_data();
     QMCTraits::RealType norm = 1.0 / static_cast<QMCTraits::RealType>(num_ranks);
-    for ( size_t i = 0; i < test_data.size(); ++i)
+    for (size_t i = 0; i < test_data.size(); ++i)
+    {
+      QMCTraits::RealType norm_good_data = good_data[i] * norm;
+      if (norm_good_data != test_data[i])
       {
-	QMCTraits::RealType norm_good_data = good_data[i] * norm;
-	if ( norm_good_data != test_data[i] )
-	  {
-	    FAIL_CHECK("norm_good_data " << norm_good_data << " != test_data " << test_data[i] << " at index " << i);
-	    break;
-	  }
+        FAIL_CHECK("norm_good_data " << norm_good_data << " != test_data " << test_data[i] << " at index " << i);
+        break;
       }
+    }
   }
 }
 

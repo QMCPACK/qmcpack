@@ -9,22 +9,21 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_DATALOCALITY_H
-#define QMCPLUSPLUS_DATALOCALITY_H
+#include "SpinDensityTesting.h"
 
 namespace qmcplusplus
 {
-
-///data locality with respect to walker buffer
-enum class DataLocality
+namespace testing
 {
-  process = 0,
-  rank,
-  crowd,
-  queue,
-  walker
-};
-
+Lattice makeTestLattice()
+{
+  Lattice lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R = ParticleSet::Tensor_t(3.37316115, 3.37316115, 0.00000000, 0.00000000, 3.37316115, 3.37316115, 3.37316115,
+                                    0.00000000, 3.37316115);
+  lattice.reset();
+  lattice.explicitly_defined = true;
+  return lattice;
 }
-
-#endif
+} // namespace testing
+} // namespace qmcplusplus

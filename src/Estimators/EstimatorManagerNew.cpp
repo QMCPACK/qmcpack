@@ -474,7 +474,14 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
       {
         SpinDensityInput spdi;
         spdi.readXML(cur);
-        operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.mySpecies));
+        DataLocality dl = DataLocality::crowd;
+        if (spdi.get_save_memory())
+          dl = DataLocality::rank;
+        if (spdi.get_cell().explicitly_defined)
+          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.mySpecies, dl));
+        else
+          operator_ests_.emplace_back(
+              std::make_unique<SpinDensityNew>(std::move(spdi), pset.Lattice, pset.mySpecies, dl));
       }
       else
         extra.push_back(est_name);

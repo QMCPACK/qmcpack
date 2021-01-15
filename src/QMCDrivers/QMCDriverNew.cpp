@@ -162,6 +162,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   branch_engine_->put(cur);
   estimator_manager_->put(H, *population_.get_golden_electrons(), cur);
 
+  
   crowds_.resize(awc.walkers_per_crowd.size());
 
   // at this point we can finally construct the Crowd objects.
@@ -405,7 +406,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
-
+  
   auto doesDoinTheseLastMatter = [](MCPWalker& walker) {
     walker.ReleasedNodeAge    = 0;
     walker.ReleasedNodeWeight = 0;

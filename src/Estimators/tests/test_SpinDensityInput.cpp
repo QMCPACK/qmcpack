@@ -12,9 +12,10 @@
 
 #include "catch.hpp"
 
-#include "ValidSpinDensityInput.h"
 #include "SpinDensityInput.h"
-
+#include "ValidSpinDensityInput.h"
+#include "SpinDensityTesting.h"
+#include "ParticleSet.h"
 #include "OhmmsData/Libxml2Doc.h"
 
 #include <stdio.h>
@@ -24,7 +25,11 @@ namespace qmcplusplus
 {
 TEST_CASE("SpinDensityInput::readXML", "[estimators]")
 {
-  auto xml_test = [](const char* input_xml) {
+  using POLT    = PtclOnLatticeTraits;
+  using Lattice = POLT::ParticleLayout_t;
+
+  for (auto input_xml : testing::valid_spin_density_input_sections)
+  {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);
     REQUIRE(okay);
@@ -32,13 +37,21 @@ TEST_CASE("SpinDensityInput::readXML", "[estimators]")
 
     SpinDensityInput sdi;
     sdi.readXML(node);
-    CHECK(sdi.get_npoints() == 1000);
+
+    Lattice lattice;
+    if (sdi.get_cell().explicitly_defined == true)
+      lattice = sdi.get_cell();
+    else
+      lattice = testing::makeTestLattice();
+
+    SpinDensityInput::DerivedParameters dev_par = sdi.calculateDerivedParameters(lattice);
+
+    CHECK(dev_par.npoints == 1000);
     TinyVector<int, SpinDensityInput::DIM> grid(10, 10, 10);
-    CHECK(sdi.get_grid() == grid);
+    CHECK(dev_par.grid == grid);
     TinyVector<int, SpinDensityInput::DIM> gdims(100, 10, 1);
-    CHECK(sdi.get_gdims() == gdims);
-  };
-  std::for_each(testing::valid_spin_density_input_sections.begin(),testing::valid_spin_density_input_sections.end(), xml_test);
+    CHECK(dev_par.gdims == gdims);
+  }
 }
 
 } // namespace qmcplusplus

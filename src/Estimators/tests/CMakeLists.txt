@@ -15,7 +15,7 @@ SET(SRC_DIR estimators)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRCS test_accumulator.cpp test_local_energy_est.cpp FakeOperatorEstimator.cpp EstimatorManagerBaseTest.cpp EstimatorManagerNewTest.cpp test_manager.cpp test_EstimatorManagerNew.cpp test_trace_manager.cpp test_SpinDensityInput.cpp test_SpinDensityNew.cpp)
+SET(SRCS test_accumulator.cpp test_local_energy_est.cpp FakeOperatorEstimator.cpp EstimatorManagerBaseTest.cpp EstimatorManagerNewTest.cpp test_manager.cpp test_EstimatorManagerNew.cpp test_trace_manager.cpp RandomForTest.cpp SpinDensityTesting.cpp test_SpinDensityInput.cpp test_SpinDensityNew.cpp)
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil qmcestimators_unit)
