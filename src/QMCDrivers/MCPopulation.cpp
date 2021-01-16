@@ -207,11 +207,9 @@ WalkerElementsRef MCPopulation::spawnWalker()
     //walkers_.back()->Properties = elec_particle_set_->Properties;
 
     walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));
-    walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
-    walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
-    walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
-    walker_hamiltonians_.back().reset(
-        hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));
+    walker_trial_wavefunctions_.emplace_back(trial_wf_->makeClone(*walker_elec_particle_sets_.back()));
+    walker_hamiltonians_.emplace_back(
+        hamiltonian_->makeClone(*walker_elec_particle_sets_.back(), *walker_trial_wavefunctions_.back()));
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight       = 1.0;
   }
