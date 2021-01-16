@@ -368,7 +368,6 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   auto& walker_twfs         = crowd.get_walker_twfs();
-  auto& mcp_buffers         = crowd.get_mcp_wfbuffers();
   auto& walker_elecs        = crowd.get_walker_elecs();
   auto& walkers             = crowd.get_walkers();
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();

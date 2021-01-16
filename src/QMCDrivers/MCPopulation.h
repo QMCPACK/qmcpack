@@ -116,8 +116,6 @@ public:
   WalkerElementsRef spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
-  void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
-  void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
 
   /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction

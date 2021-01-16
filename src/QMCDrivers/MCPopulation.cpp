@@ -65,12 +65,6 @@ MCPopulation::~MCPopulation()
     saveWalkerConfigurations();
 }
 
-/** we could also search for walker_ptr
- */
-void MCPopulation::allocateWalkerStuffInplace(int walker_index)
-{
-}
-
 void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 {
   IndexType num_walkers_plus_reserve = static_cast<IndexType>(num_walkers * reserve);
@@ -91,6 +85,8 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     walker_ptr->R     = elec_particle_set_->R;
     walker_ptr->spins = elec_particle_set_->spins;
     walker_ptr->Properties = elec_particle_set_->Properties;
+    walker_ptr->registerData();
+    walker_ptr->DataSet.allocate();
   };
 
   walker_weights_.resize(num_walkers_plus_reserve, 1.0);
@@ -199,6 +195,8 @@ WalkerElementsRef MCPopulation::spawnWalker()
                   << " outside of reserves, this ideally should never happend." << std::endl;
     MCPWalker last_walker = *(walkers_.back());
     walkers_.push_back(std::make_unique<MCPWalker>(last_walker));
+    walkers_.back()->registerData();
+    walkers_.back()->DataSet.allocate();
 
     // There is no value in doing this here because its going to be wiped out
     // When we load from the receive buffer. It also won't necessarily be correct

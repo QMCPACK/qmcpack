@@ -808,8 +808,11 @@ void TrialWaveFunction::flex_evaluateGL(const RefVector<TrialWaveFunction>& wf_l
     const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
     const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
 
+    const int num_particles = p_list[0].get().getTotalNum();
     for (TrialWaveFunction& wfs : wf_list)
     {
+      wfs.G.resize(num_particles);
+      wfs.L.resize(num_particles);
       wfs.G          = czero;
       wfs.L          = czero;
       wfs.LogValue   = czero;
