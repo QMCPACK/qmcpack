@@ -191,11 +191,13 @@ public:
   const UPtrVector<MCPWalker>& get_walkers() const { return walkers_; }
   const UPtrVector<MCPWalker>& get_dead_walkers() const { return dead_walkers_; }
 
-  UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
-  UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
+  UPtrVector<ParticleSet>& get_elec_particle_sets() { return walker_elec_particle_sets_; }
 
   UPtrVector<TrialWaveFunction>& get_twfs() { return walker_trial_wavefunctions_; }
   UPtrVector<TrialWaveFunction>& get_dead_twfs() { return dead_walker_trial_wavefunctions_; }
+
+  UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
+  UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
 
   /** Non threadsafe access to walkers and their elements
    *  

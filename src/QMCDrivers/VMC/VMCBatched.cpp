@@ -320,8 +320,8 @@ bool VMCBatched::run()
 
       if (collect_samples_)
       {
-        auto& walkers = population_.get_walkers();
-        for (auto& walker : walkers)
+        const auto& elec_psets = population_.get_elec_particle_sets();
+        for (const auto& walker : elec_psets)
         {
           samples_.appendSample(MCSample(*walker));
         }
