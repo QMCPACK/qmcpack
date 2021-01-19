@@ -64,10 +64,8 @@ private:
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
   size_t size_dataset_;
-  // could be
-  // std::shared_ptr<TrialWaveFunction> trial_wf_;
-  // std::shared_ptr<ParticleSet> elec_particle_set_;
-  // std::shared_ptr<QMCHamiltonian> hamiltonian_;
+  // walker weights
+  std::vector<QMCTraits::FullPrecRealType> walker_weights_;
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
@@ -118,22 +116,14 @@ public:
   WalkerElementsRef spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
-  void createWalkerInplace(UPtr<MCPWalker>& walker_ptr);
-  void allocateWalkerStuffInplace(int walker_index);
   /** }@ */
 
-  void createWalkers();
   /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
    *
    *  \param[in] num_walkers number of living walkers in initial population
    *  \param[in] reserve multiple above that to reserve >=1.0
    */
   void createWalkers(IndexType num_walkers, RealType reserve = 1.0);
-  void createWalkers(int num_crowds_,
-                     int num_walkers_per_crowd_,
-                     IndexType num_walkers,
-                     const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& pos);
-
 
   /** distributes walkers and their "cloned" elements to the elements of a vector
    *  of unique_ptr to "walker_consumers". 
@@ -201,11 +191,13 @@ public:
   const UPtrVector<MCPWalker>& get_walkers() const { return walkers_; }
   const UPtrVector<MCPWalker>& get_dead_walkers() const { return dead_walkers_; }
 
-  UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
-  UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
+  UPtrVector<ParticleSet>& get_elec_particle_sets() { return walker_elec_particle_sets_; }
 
   UPtrVector<TrialWaveFunction>& get_twfs() { return walker_trial_wavefunctions_; }
   UPtrVector<TrialWaveFunction>& get_dead_twfs() { return dead_walker_trial_wavefunctions_; }
+
+  UPtrVector<QMCHamiltonian>& get_hamiltonians() { return walker_hamiltonians_; }
+  UPtrVector<QMCHamiltonian>& get_dead_hamiltonians() { return dead_walker_hamiltonians_; }
 
   /** Non threadsafe access to walkers and their elements
    *  

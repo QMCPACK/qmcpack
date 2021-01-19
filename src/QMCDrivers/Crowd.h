@@ -34,7 +34,6 @@ class Crowd
 {
 public:
   using MCPWalker        = MCPopulation::MCPWalker;
-  using WFBuffer         = MCPopulation::WFBuffer;
   using GradType         = QMCTraits::GradType;
   using RealType         = QMCTraits::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
@@ -86,7 +85,6 @@ public:
   std::vector<std::reference_wrapper<TrialWaveFunction>>& get_walker_twfs() { return walker_twfs_; }
   std::vector<std::reference_wrapper<QMCHamiltonian>>& get_walker_hamiltonians() { return walker_hamiltonians_; }
 
-  RefVector<WFBuffer>& get_mcp_wfbuffers() { return mcp_wfbuffers_; }
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
   int size() const { return mcp_walkers_.size(); }
 
@@ -104,7 +102,6 @@ private:
    * @{
    */
   RefVector<MCPWalker> mcp_walkers_;
-  RefVector<WFBuffer> mcp_wfbuffers_;
   RefVector<ParticleSet> walker_elecs_;
   RefVector<TrialWaveFunction> walker_twfs_;
   RefVector<QMCHamiltonian> walker_hamiltonians_;
