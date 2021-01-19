@@ -46,7 +46,7 @@
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="targetwalkers"> 256 </parameter>
     <parameter name="reconfiguration">   no </parameter>
-    <parameter name="warmupSteps">  400 </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
     <parameter name="timestep">  0.001 </parameter>
     <parameter name="steps">   100 </parameter>
     <parameter name="blocks">  400 </parameter>
