@@ -40,20 +40,11 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
-  timers.buffer_timer.start();
-  crowd.loadWalkers();
-
   // Consider favoring lambda followed by for over walkers
   // more compact, descriptive and less error prone.
   auto& walker_twfs      = crowd.get_walker_twfs();
   auto& walkers          = crowd.get_walkers();
   auto& walker_elecs     = crowd.get_walker_elecs();
-  auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker) {
-    twf.copyFromBuffer(pset, walker.DataSet);
-  };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    copyTWFFromBuffer(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
-  timers.buffer_timer.stop();
 
   timers.movepbyp_timer.start();
   const int num_walkers = crowd.size();
@@ -174,15 +165,19 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   timers.movepbyp_timer.stop();
 
   timers.buffer_timer.start();
-  TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(), crowd.get_walker_elecs(), crowd.get_mcp_wfbuffers());
-
-  // auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker) { pset.saveWalker(walker); };
-  // for (int iw = 0; iw < crowd.size(); ++iw)
-  //   saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
-  
-  ParticleSet::flex_saveWalker(walker_elecs, walkers);
-  timers.buffer_timer.stop();
-
+  TrialWaveFunction::flex_evaluateGL(crowd.get_walker_twfs(), crowd.get_walker_elecs(), recompute);
+#ifndef NDEBUG
+  std::vector<TrialWaveFunction::LogValueType> log_values(crowd.get_walker_twfs().size());
+  for (int iw = 0; iw < log_values.size(); iw++)
+    log_values[iw] = {crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()};
+  std::cout << "G " << std::endl << crowd.get_walker_twfs()[0].get().G << std::endl;
+  std::cout << "L " << std::endl << crowd.get_walker_twfs()[0].get().L << std::endl;
+  TrialWaveFunction::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
+  std::cout << "G " << std::endl << crowd.get_walker_twfs()[0].get().G << std::endl;
+  std::cout << "L " << std::endl << crowd.get_walker_twfs()[0].get().L << std::endl;
+  for (int iw = 0; iw < log_values.size(); iw++)
+    std::cout << "Logpsi walker[" << iw<< "] " << log_values[iw] << " ref " << TrialWaveFunction::LogValueType{crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()} << std::endl;
+#endif
   timers.hamiltonian_timer.start();
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
@@ -325,8 +320,8 @@ bool VMCBatched::run()
 
       if (collect_samples_)
       {
-        auto& walkers = population_.get_walkers();
-        for (auto& walker : walkers)
+        const auto& elec_psets = population_.get_elec_particle_sets();
+        for (const auto& walker : elec_psets)
         {
           samples_.appendSample(MCSample(*walker));
         }

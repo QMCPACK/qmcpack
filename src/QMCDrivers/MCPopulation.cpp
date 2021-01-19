@@ -65,19 +65,6 @@ MCPopulation::~MCPopulation()
     saveWalkerConfigurations();
 }
 
-/** Default creates walkers equal to num_local_walkers_ and zeroed positions
- */
-//void MCPopulation::createWalkers() { createWalkers(num_local_walkers_); }
-
-/** we could also search for walker_ptr
- */
-void MCPopulation::allocateWalkerStuffInplace(int walker_index)
-{
-  walker_trial_wavefunctions_[walker_index]->registerData(*(walker_elec_particle_sets_[walker_index]),
-                                                          walkers_[walker_index]->DataSet);
-  walkers_[walker_index]->DataSet.allocate();
-}
-
 void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 {
   IndexType num_walkers_plus_reserve = static_cast<IndexType>(num_walkers * reserve);
@@ -92,21 +79,22 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   // This pattern is begging for a micro benchmark, is this really better
   // than the simpler walkers_.pushback;
   walkers_.resize(num_walkers_plus_reserve);
-  auto createWalker = [this](UPtr<MCPWalker>& walker_ptr) {
+  for (auto& walker_ptr : walkers_)
+  {
     walker_ptr        = std::make_unique<MCPWalker>(num_particles_);
     walker_ptr->R     = elec_particle_set_->R;
     walker_ptr->spins = elec_particle_set_->spins;
-    // Side effect of this changes size of walker_ptr->Properties if done after registerData() you end up with
-    // a bad buffer.
     walker_ptr->Properties = elec_particle_set_->Properties;
     walker_ptr->registerData();
+    walker_ptr->DataSet.allocate();
   };
 
-  for (auto& walker_ptr : walkers_)
-    createWalker(walker_ptr);
-
+  walker_weights_.resize(num_walkers_plus_reserve, 1.0);
   for (int iw = 0; iw < std::min(walkers_.size(), walker_configs_ref_.WalkerList.size()); iw++)
+  {
     *walkers_[iw] = *walker_configs_ref_[iw];
+    walker_weights_[iw] = walker_configs_ref_[iw]->Weight;
+  }
 
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
@@ -126,10 +114,8 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   // of what different wave function components depend on. I'm going to try and create a hollow elec PS
   // with an eye toward removing the ParticleSet dependency of WFC components in the future.
   walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
-  std::for_each(walker_elec_particle_sets_.begin(), walker_elec_particle_sets_.end(),
-                [this](std::unique_ptr<ParticleSet>& elec_ps_ptr) {
-                  elec_ps_ptr = std::make_unique<ParticleSet>(*elec_particle_set_);
-                });
+  for (auto& elec_ps_ptr : walker_elec_particle_sets_)
+    elec_ps_ptr = std::make_unique<ParticleSet>(*elec_particle_set_);
 
   auto it_weps = walker_elec_particle_sets_.begin();
   walker_trial_wavefunctions_.resize(num_walkers_plus_reserve);
@@ -146,18 +132,6 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   }
 
   outputManager.resume();
-
-  RefVector<WFBuffer> mcp_wfbuffers;
-  mcp_wfbuffers.reserve(num_walkers_plus_reserve);
-  std::for_each(walkers_.begin(), walkers_.end(),
-                [&mcp_wfbuffers](auto& walker) { mcp_wfbuffers.push_back((*walker).DataSet); });
-
-  TrialWaveFunction::flex_registerData(walker_trial_wavefunctions_, walker_elec_particle_sets_, mcp_wfbuffers);
-
-  std::for_each(walkers_.begin(), walkers_.end(), [](auto& walker) {
-    MCPWalker& this_walker = *walker;
-    this_walker.DataSet.allocate();
-  });
 
   // kill and spawn walkers update the state variable num_local_walkers_
   // so it must start at the number of reserved walkers
@@ -221,6 +195,8 @@ WalkerElementsRef MCPopulation::spawnWalker()
                   << " outside of reserves, this ideally should never happend." << std::endl;
     MCPWalker last_walker = *(walkers_.back());
     walkers_.push_back(std::make_unique<MCPWalker>(last_walker));
+    walkers_.back()->registerData();
+    walkers_.back()->DataSet.allocate();
 
     // There is no value in doing this here because its going to be wiped out
     // When we load from the receive buffer. It also won't necessarily be correct
@@ -229,17 +205,11 @@ WalkerElementsRef MCPopulation::spawnWalker()
 
     //walkers_.back()->R          = elec_particle_set_->R;
     //walkers_.back()->Properties = elec_particle_set_->Properties;
-    //walkers_.back()->registerData();
 
     walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));
-    walker_trial_wavefunctions_.push_back(UPtr<TrialWaveFunction>{});
-    walker_trial_wavefunctions_.back().reset(trial_wf_->makeClone(*(walker_elec_particle_sets_.back())));
-    walker_hamiltonians_.push_back(UPtr<QMCHamiltonian>{});
-    walker_hamiltonians_.back().reset(
-        hamiltonian_->makeClone(*(walker_elec_particle_sets_.back()), *(walker_trial_wavefunctions_.back())));
-    // Dito
-    //walker_trial_wavefunctions_.back()->registerData(*(walker_elec_particle_sets_.back()), walkers_.back()->DataSet);
-    //walkers_.back()->DataSet.allocate();
+    walker_trial_wavefunctions_.emplace_back(trial_wf_->makeClone(*walker_elec_particle_sets_.back()));
+    walker_hamiltonians_.emplace_back(
+        hamiltonian_->makeClone(*walker_elec_particle_sets_.back(), *walker_trial_wavefunctions_.back()));
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight       = 1.0;
   }
@@ -280,7 +250,6 @@ void MCPopulation::killWalker(MCPWalker& walker)
   {
     if (&walker == (*it_walkers).get())
     {
-      (*it_walkers)->DataSet.zero();
       dead_walkers_.push_back(std::move(*it_walkers));
       walkers_.erase(it_walkers);
       dead_walker_elec_particle_sets_.push_back(std::move(*it_psets));
@@ -320,56 +289,16 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
   }
 }
 
-/** Creates walkers doing their first touch in their crowd (thread) context
- *
- *  This is basically premature optimization but I wanted to check if this sort of thing
- *  would work.  It seems to. This sort of structure not an #omp parallel section must be used in the driver.
- *  No new bare openmp directives should be added to code with updated design.
- */
-// void MCPopulation::createWalkers(int num_crowds,
-//                                  int walkers_per_crowd,
-//                                  IndexType num_walkers,
-//                                  const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
-// {
-//   walkers_.resize(num_walkers);
-
-//   ParallelExecutor<> do_per_crowd(num_crowds);
-
-//   std::vector<std::unique_ptr<std::vector<std::unique_ptr<MCPWalker>>>> walkers_per_crowd_per_slot;
-//   walkers_per_crowd_per_slot.resize(num_crowds);
-//   auto first_touch_create_walkers =
-//       [this, &walkers_per_crowd,
-//        &positions](int crowd_index, std::vector<std::unique_ptr<std::vector<std::unique_ptr<MCPWalker>>>>& wpcps) {
-//         wpcps[crowd_index] = std::make_unique<std::vector<std::unique_ptr<MCPWalker>>>(walkers_per_crowd);
-//         std::vector<std::unique_ptr<MCPWalker>>& this_crowds_walkers = *(wpcps[crowd_index]);
-//         this_crowds_walkers.resize(walkers_per_crowd);
-//         for (int i = 0; i < walkers_per_crowd; ++i)
-//         {
-//           std::unique_ptr<MCPWalker>& walker_uptr = this_crowds_walkers[i];
-//           walker_uptr.reset(new MCPWalker(num_particles_));
-//           walker_uptr->R.resize(num_particles_);
-//           walker_uptr->R = positions;
-//         }
-//       };
-//   do_per_crowd(first_touch_create_walkers, walkers_per_crowd_per_slot);
-
-//   auto walkers_it = walkers_.begin();
-//   std::for_each(walkers_per_crowd_per_slot.begin(), walkers_per_crowd_per_slot.end(),
-//                 [&walkers_it](std::unique_ptr<std::vector<std::unique_ptr<MCPWalker>>>& per_crowd_ptr) {
-//                   std::vector<std::unique_ptr<MCPWalker>>& walkers_per_crowd = *per_crowd_ptr;
-//                   for (int i = 0; i < walkers_per_crowd.size(); ++i)
-//                   {
-//                     *walkers_it = std::move(walkers_per_crowd[i]);
-//                     ++walkers_it;
-//                   }
-//                 });
-// }
-
 void MCPopulation::saveWalkerConfigurations()
 {
   walker_configs_ref_.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
+  {
     walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
+    // FIXME: if is just a temporal safeguard.
+    if (iw < walker_weights_.size())
+      walker_configs_ref_[iw]->Weight = walker_weights_[iw];
+  }
 }
 
 

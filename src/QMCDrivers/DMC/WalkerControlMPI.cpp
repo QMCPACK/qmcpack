@@ -565,11 +565,6 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
       // \todo narrow these down to a minimum and manage to reason out the state of a valid fat walker.
       this_pset.saveWalker(this_walker);
       this_walker.updateBuffer();
-      TrialWaveFunction& this_twf = message.walker_elements.twf;
-#ifndef NDEBUG
-      this_twf.evaluateLog(this_pset);
-#endif
-      this_twf.updateBuffer(this_pset, this_walker.DataSet);
       send_requests.emplace_back(myComm->comm.isend_n(message.walker_elements.walker.DataSet.data(),
                                                       message.walker_elements.walker.DataSet.size(),
                                                       message.target_rank));
@@ -620,9 +615,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
           // Jastrow evaluations in evaluateLog.
           this_pset.update();
           TrialWaveFunction& this_twf = recv_message_list[im].walker_elements.twf;
-          this_twf.copyFromBuffer(this_pset, this_walker.DataSet);          
           this_twf.evaluateLog(this_pset);
-          this_twf.updateBuffer(this_pset, this_walker.DataSet);
           recv_completed[im] = 1;
         }
       }

@@ -795,8 +795,7 @@ TrialWaveFunction::LogValueType TrialWaveFunction::evaluateGL(ParticleSet& P, bo
   PhaseValue = std::imag(logpsi);
   return logpsi;
 }
-/* flexible batched version of evaluateGL.
-   */
+
 void TrialWaveFunction::flex_evaluateGL(const RefVector<TrialWaveFunction>& wf_list,
                                         const RefVector<ParticleSet>& p_list,
                                         bool fromscratch)
@@ -809,10 +808,15 @@ void TrialWaveFunction::flex_evaluateGL(const RefVector<TrialWaveFunction>& wf_l
     const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
     const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
 
-    for (int iw = 0; iw < wf_list.size(); iw++)
+    const int num_particles = p_list[0].get().getTotalNum();
+    for (TrialWaveFunction& wfs : wf_list)
     {
-      p_list[iw].get().G = czero; // Ye: remove when all the WFC uses WF.G/L
-      p_list[iw].get().L = czero; // Ye: remove when all the WFC uses WF.G/L
+      wfs.G.resize(num_particles);
+      wfs.L.resize(num_particles);
+      wfs.G          = czero;
+      wfs.L          = czero;
+      wfs.LogValue   = czero;
+      wfs.PhaseValue = czero;
     }
 
     auto& wavefunction_components = wf_list[0].get().Z;
@@ -825,8 +829,8 @@ void TrialWaveFunction::flex_evaluateGL(const RefVector<TrialWaveFunction>& wf_l
       wavefunction_components[i]->mw_evaluateGL(wfc_list, p_list, g_list, l_list, fromscratch);
       for (int iw = 0; iw < wf_list.size(); iw++)
       {
-        wf_list[iw].get().LogValue   = std::real(wfc_list[iw].get().LogValue);
-        wf_list[iw].get().PhaseValue = std::imag(wfc_list[iw].get().LogValue);
+        wf_list[iw].get().LogValue   += std::real(wfc_list[iw].get().LogValue);
+        wf_list[iw].get().PhaseValue += std::imag(wfc_list[iw].get().LogValue);
       }
     }
     auto copyToP = [](ParticleSet& pset, TrialWaveFunction& twf) {
