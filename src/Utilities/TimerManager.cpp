@@ -92,7 +92,9 @@ void TimerManager<TIMER>::push_timer(TIMER* t)
   // current_timer() can be nullptr when the stack was empty.
   if (t == current_timer())
   {
-    std::cerr << "Timer loop: " << t->get_name() << std::endl;
+    std::cerr << "Timer " << t->get_name() << " instance is already at the top of the stack. "
+                 "start() is being called again. This often happens when stop() is not paired properly with start(). "
+              << "ScopedTimer uses RAII and managers timer start/stop much safer." << std::endl;
     throwErrorMessageOnceAndPrintOnlyAfter("TimerManager push_timer error!");
   }
   else
