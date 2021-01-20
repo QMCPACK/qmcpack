@@ -62,6 +62,18 @@ void TimerManager<TIMER>::initializeTimer(TIMER& t)
 }
 
 template<class TIMER>
+void TimerManager<TIMER>::throwErrorMessageOnceAndPrintOnlyAfter(const std::string& msg)
+{
+  if (stop_throw_already_in_bad_state)
+    std::cerr << msg << std::flush;
+  else
+  {
+    stop_throw_already_in_bad_state = true;
+    throw std::runtime_error(msg);
+  }
+}
+
+template<class TIMER>
 TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels mytimer)
 {
   TIMER* t = nullptr;
@@ -74,6 +86,38 @@ TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels 
   return t;
 }
 
+template<class TIMER>
+void TimerManager<TIMER>::push_timer(TIMER* t)
+{
+  // current_timer() can be nullptr when the stack was empty.
+  if (t == current_timer())
+  {
+    std::cerr << "Timer loop: " << t->get_name() << std::endl;
+    throwErrorMessageOnceAndPrintOnlyAfter("TimerManager push_timer error!");
+  }
+  else
+    CurrentTimerStack.push_back(t);
+}
+
+template<class TIMER>
+void TimerManager<TIMER>::pop_timer(TIMER* t)
+{
+  TIMER* stack_top = current_timer();
+  if (stack_top == nullptr)
+  {
+    std::cerr << "Timer stack pop failed on an empty stack! Requested \"" << t->get_name() << "\"." << std::endl;
+    throwErrorMessageOnceAndPrintOnlyAfter("TimerManager pop_timer error!");
+  }
+  else if (t != stack_top)
+  {
+    std::cerr << "Timer stack pop not matching push! "
+              << "Expect \"" << t->get_name() << "\" but \"" << stack_top->get_name() << "\" on the top."
+              << std::endl;
+    throwErrorMessageOnceAndPrintOnlyAfter("TimerManager pop_timer error!");
+  }
+  else
+    CurrentTimerStack.pop_back();
+}
 
 template<class TIMER>
 void TimerManager<TIMER>::reset()

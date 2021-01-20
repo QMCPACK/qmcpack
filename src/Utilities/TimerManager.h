@@ -42,7 +42,7 @@ namespace qmcplusplus
 template<class TIMER>
 class TimerManager
 {
-protected:
+private:
   /// All the timers created by this manager
   std::vector<std::unique_ptr<TIMER>> TimerList;
   /// The stack of nested active timers
@@ -57,7 +57,11 @@ protected:
   std::map<timer_id_t, std::string> timer_id_name;
   /// name to timer id mapping
   std::map<std::string, timer_id_t> timer_name_to_id;
+  /// if true, the manager is in bad state and should not throw
+  bool stop_throw_already_in_bad_state;
 
+  /// After the first call to this function, all the calls will print error only without throw
+  void throwErrorMessageOnceAndPrintOnlyAfter(const std::string& msg);
   void initializeTimer(TIMER& t);
 
   void print_flat(Communicate* comm);
@@ -68,7 +72,7 @@ public:
   __itt_domain* task_domain;
 #endif
 
-  TimerManager() : timer_threshold(timer_level_coarse), max_timer_id(1), max_timers_exceeded(false)
+  TimerManager() : timer_threshold(timer_level_coarse), max_timer_id(1), max_timers_exceeded(false), stop_throw_already_in_bad_state(false)
   {
 #ifdef USE_VTUNE_TASKS
     task_domain = __itt_domain_create("QMCPACK");
@@ -78,9 +82,9 @@ public:
   /// Create a new timer object registred in this manager. This call is thread-safe.
   TIMER* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
-  void push_timer(TIMER* t) { CurrentTimerStack.push_back(t); }
+  void push_timer(TIMER* t);
 
-  void pop_timer() { CurrentTimerStack.pop_back(); }
+  void pop_timer(TIMER* t);
 
   TIMER* current_timer()
   {

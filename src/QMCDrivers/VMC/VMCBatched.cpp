@@ -178,6 +178,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   for (int iw = 0; iw < log_values.size(); iw++)
     std::cout << "Logpsi walker[" << iw<< "] " << log_values[iw] << " ref " << TrialWaveFunction::LogValueType{crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()} << std::endl;
 #endif
+  timers.buffer_timer.stop();
   timers.hamiltonian_timer.start();
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
