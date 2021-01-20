@@ -72,7 +72,11 @@ public:
   __itt_domain* task_domain;
 #endif
 
-  TimerManager() : timer_threshold(timer_level_coarse), max_timer_id(1), max_timers_exceeded(false), stop_throw_already_in_bad_state(false)
+  TimerManager()
+      : timer_threshold(timer_level_coarse),
+        max_timer_id(1),
+        max_timers_exceeded(false),
+        stop_throw_already_in_bad_state(false)
   {
 #ifdef USE_VTUNE_TASKS
     task_domain = __itt_domain_create("QMCPACK");

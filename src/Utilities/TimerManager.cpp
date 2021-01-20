@@ -92,7 +92,8 @@ void TimerManager<TIMER>::push_timer(TIMER* t)
   // current_timer() can be nullptr when the stack was empty.
   if (t == current_timer())
   {
-    std::cerr << "Timer " << t->get_name() << " instance is already at the top of the stack. "
+    std::cerr << "Timer " << t->get_name()
+              << " instance is already at the top of the stack. "
                  "start() is being called again. This often happens when stop() is not paired properly with start(). "
               << "ScopedTimer uses RAII and managers timer start/stop much safer." << std::endl;
     throwErrorMessageOnceAndPrintOnlyAfter("TimerManager push_timer error!");
@@ -113,8 +114,7 @@ void TimerManager<TIMER>::pop_timer(TIMER* t)
   else if (t != stack_top)
   {
     std::cerr << "Timer stack pop not matching push! "
-              << "Expect \"" << t->get_name() << "\" but \"" << stack_top->get_name() << "\" on the top."
-              << std::endl;
+              << "Expect \"" << t->get_name() << "\" but \"" << stack_top->get_name() << "\" on the top." << std::endl;
     throwErrorMessageOnceAndPrintOnlyAfter("TimerManager pop_timer error!");
   }
   else
