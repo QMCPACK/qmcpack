@@ -37,7 +37,7 @@ class Rmg(Simulation):
 
 
     def app_command(self):
-        return self.app_name
+        return self.app_name+' '+self.infile
     #end def app_command
 
 
