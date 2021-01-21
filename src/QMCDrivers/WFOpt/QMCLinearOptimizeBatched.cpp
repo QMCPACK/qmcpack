@@ -129,12 +129,12 @@ void QMCLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>* 
   // reset the root name
   optTarget->setRootName(get_root_name());
   optTarget->setWaveFunctionNode(wfNode);
-  app_log() << "     Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+  app_log() << "     Reading configurations from h5FileRoot " << std::endl;
 
   // get configuration from the previous run
   Timer t1;
   initialize_timer_.start();
-  optTarget->getConfigurations(h5FileRoot);
+  optTarget->getConfigurations("");
   optTarget->setRng(vmcEngine->getRng());
   optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
                                         MinMethod); // computes derivative ratios and pass into engine

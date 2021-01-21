@@ -173,6 +173,7 @@ public:
   ///common operation to start optimization, used by the derived classes
   void start();
 #ifdef HAVE_LMY_ENGINE
+  using ValueType = QMCTraits::ValueType;
   void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
                     DescentEngine& descentEngineObj,
                     std::string MinMethod);
