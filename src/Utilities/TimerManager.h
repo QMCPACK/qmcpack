@@ -42,7 +42,7 @@ namespace qmcplusplus
 template<class TIMER>
 class TimerManager
 {
-protected:
+private:
   /// All the timers created by this manager
   std::vector<std::unique_ptr<TIMER>> TimerList;
   /// The stack of nested active timers
@@ -68,7 +68,10 @@ public:
   __itt_domain* task_domain;
 #endif
 
-  TimerManager() : timer_threshold(timer_level_coarse), max_timer_id(1), max_timers_exceeded(false)
+  TimerManager()
+      : timer_threshold(timer_level_coarse),
+        max_timer_id(1),
+        max_timers_exceeded(false)
   {
 #ifdef USE_VTUNE_TASKS
     task_domain = __itt_domain_create("QMCPACK");
@@ -78,9 +81,9 @@ public:
   /// Create a new timer object registred in this manager. This call is thread-safe.
   TIMER* createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
-  void push_timer(TIMER* t) { CurrentTimerStack.push_back(t); }
+  void push_timer(TIMER* t);
 
-  void pop_timer() { CurrentTimerStack.pop_back(); }
+  void pop_timer(TIMER* t);
 
   TIMER* current_timer()
   {
