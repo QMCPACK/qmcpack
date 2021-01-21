@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <algorithm>
 #include <array>
+#include <stdexcept>
 #include <libxml/xmlwriter.h>
 #include "Configuration.h"
 #include "Message/OpenMP.h"
@@ -62,18 +63,6 @@ void TimerManager<TIMER>::initializeTimer(TIMER& t)
 }
 
 template<class TIMER>
-void TimerManager<TIMER>::throwErrorMessageOnceAndPrintOnlyAfter(const std::string& msg)
-{
-  if (stop_throw_already_in_bad_state)
-    std::cerr << msg << std::flush;
-  else
-  {
-    stop_throw_already_in_bad_state = true;
-    throw std::runtime_error(msg);
-  }
-}
-
-template<class TIMER>
 TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels mytimer)
 {
   TIMER* t = nullptr;
@@ -96,7 +85,7 @@ void TimerManager<TIMER>::push_timer(TIMER* t)
               << " instance is already at the top of the stack. "
                  "start() is being called again. This often happens when stop() is not paired properly with start(). "
               << "ScopedTimer uses RAII and managers timer start/stop much safer." << std::endl;
-    throwErrorMessageOnceAndPrintOnlyAfter("TimerManager push_timer error!");
+    throw std::runtime_error("TimerManager push_timer error!");
   }
   else
     CurrentTimerStack.push_back(t);
@@ -109,13 +98,13 @@ void TimerManager<TIMER>::pop_timer(TIMER* t)
   if (stack_top == nullptr)
   {
     std::cerr << "Timer stack pop failed on an empty stack! Requested \"" << t->get_name() << "\"." << std::endl;
-    throwErrorMessageOnceAndPrintOnlyAfter("TimerManager pop_timer error!");
+    throw std::runtime_error("TimerManager pop_timer error!");
   }
   else if (t != stack_top)
   {
     std::cerr << "Timer stack pop not matching push! "
               << "Expect \"" << t->get_name() << "\" but \"" << stack_top->get_name() << "\" on the top." << std::endl;
-    throwErrorMessageOnceAndPrintOnlyAfter("TimerManager pop_timer error!");
+    throw std::runtime_error("TimerManager pop_timer error!");
   }
   else
     CurrentTimerStack.pop_back();
