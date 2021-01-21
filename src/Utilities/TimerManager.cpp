@@ -84,7 +84,7 @@ void TimerManager<TIMER>::push_timer(TIMER* t)
     std::cerr << "Timer " << t->get_name()
               << " instance is already at the top of the stack. "
                  "start() is being called again. This often happens when stop() is not paired properly with start(). "
-              << "ScopedTimer uses RAII and managers timer start/stop much safer." << std::endl;
+              << "ScopedTimer uses RAII and manages timer start/stop more safely." << std::endl;
     throw std::runtime_error("TimerManager push_timer error!");
   }
   else
@@ -103,7 +103,8 @@ void TimerManager<TIMER>::pop_timer(TIMER* t)
   else if (t != stack_top)
   {
     std::cerr << "Timer stack pop not matching push! "
-              << "Expect \"" << t->get_name() << "\" but \"" << stack_top->get_name() << "\" on the top." << std::endl;
+              << "Expecting \"" << t->get_name() << "\" but \"" << stack_top->get_name() << "\" is on the top."
+              << std::endl;
     throw std::runtime_error("TimerManager pop_timer error!");
   }
   else
