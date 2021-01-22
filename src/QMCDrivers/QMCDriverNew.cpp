@@ -83,10 +83,25 @@ int QMCDriverNew::addObservable(const std::string& aname)
 QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
 
 
+// The Rng pointers are transferred from global storage (RandomNumberControl::Children)
+// to local storage (Rng) for the duration of QMCDriverNew.
+// They are transferred to local storage in createRngsStepContext (called from startup,
+// which is usually called from the "process" function in the derived class.)
+// The local storage is moved back to the global storage in the destructor.
+// In optimization, there are two instances of QMCDriverNew - one for the optimizer and one
+// for the vmc engine.   As long as the vmc engine calls process first, it gets valid
+// Rng pointers.  The optimizer is called second and gets nullptr, but it doesn't use Rng,
+// so it doesn't matter.
+// Upon restore, the vmc engine would need to be restored last (otherwise the global storage gets
+// the nullptr from the optimizer).  However, the order is fixed by the order the destructors
+// are called.
+// To work around the issue, check the local pointer for nullptr before restoring to global storage.
+
 QMCDriverNew::~QMCDriverNew()
 {
   for (int i = 0; i < Rng.size(); ++i)
-    RandomNumberControl::Children[i] = Rng[i].release();
+    if (Rng[i] != nullptr)
+      RandomNumberControl::Children[i] = Rng[i].release();
 }
 
 void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)

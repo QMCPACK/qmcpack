@@ -26,6 +26,8 @@ ELSE()
 
   # Test batched version of optimizer
 
+ LIST(APPEND He_batch_VMC_SCALARS "totenergy" "-2.2273099 0.000001")
+
   SIMPLE_RUN_AND_CHECK(
     deterministic-He_ae-opt-batch
     "${CMAKE_SOURCE_DIR}/tests/molecules/He_ae"
@@ -40,7 +42,7 @@ ELSE()
                     det_He_opt_batch.xml
                     1 1
                     TRUE
-                    2 He_VMC_SCALARS # VMC
+                    2 He_batch_VMC_SCALARS # VMC
                     )
 
 ENDIF()

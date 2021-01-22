@@ -12,8 +12,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_COSTFUNCTION_H
-#define QMCPLUSPLUS_COSTFUNCTION_H
+#ifndef QMCPLUSPLUS_COSTFUNCTION_BATCHED_H
+#define QMCPLUSPLUS_COSTFUNCTION_BATCHED_H
 
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
