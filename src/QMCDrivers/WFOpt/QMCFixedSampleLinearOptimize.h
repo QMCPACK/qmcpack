@@ -25,6 +25,7 @@
 #endif
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
+#include "QMCDrivers/WFOpt/OutputMatrix.h"
 
 namespace qmcplusplus
 {
@@ -188,6 +189,15 @@ private:
 
   //whether to use hybrid method
   bool doHybrid;
+
+  // Output Hamiltonian and overlap matrices
+  bool do_output_matrices_;
+
+  // Flag to open the files on first pass and print header line
+  bool output_matrices_initialized_;
+
+  OutputMatrix output_hamiltonian_;
+  OutputMatrix output_overlap_;
 };
 } // namespace qmcplusplus
 #endif

@@ -99,7 +99,9 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
       opt_num_crowds_(1),
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
-      current_optimizer_type_(OptimizerType::NONE)
+      current_optimizer_type_(OptimizerType::NONE),
+      do_output_matrices_(false),
+      output_matrices_initialized_(false)
 
 {
   IsQMCDriver = false;
@@ -207,6 +209,14 @@ QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatche
 
 bool QMCFixedSampleLinearOptimizeBatched::run()
 {
+  if (do_output_matrices_ && !output_matrices_initialized_) {
+    numParams = optTarget->getNumParams();
+    int N = numParams + 1;
+    output_overlap_.init_file(get_root_name(),"ovl",N);
+    output_hamiltonian_.init_file(get_root_name(),"ham",N);
+    output_matrices_initialized_ = true;
+  }
+
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -457,13 +467,17 @@ bool QMCFixedSampleLinearOptimizeBatched::put(xmlNodePtr q)
   std::string useGPU("yes");
   std::string vmcMove("pbyp");
   std::string ReportToH5("no");
+  std::string OutputMatrices("no");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
+  oAttrib.add(OutputMatrices, "output_matrices");
 
   oAttrib.put(q);
   m_param.put(q);
+
+  do_output_matrices_ = (OutputMatrices != "no");
 
   doHybrid = false;
 
@@ -1235,6 +1249,11 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   // build the overlap and hamiltonian matrices
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
+
+  if (do_output_matrices_) {
+    output_overlap_.output(ovlMat);
+    output_hamiltonian_.output(hamMat);
+  }
 
   // apply the identity shift
   for (int i = 1; i < N; i++)
