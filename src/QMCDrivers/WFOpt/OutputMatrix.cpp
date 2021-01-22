@@ -27,7 +27,7 @@ void OutputMatrix::init_file(const std::string& root_name, const std::string& na
   // Assume that the root_name has the series suffix (".s000").
   // Remove the series suffix to get the project id
   std::string fname = root_name.substr(0, namelen - 5) + "." + name + ".s000.scalar.dat";
-  app_log() << "Output file: " << fname << std::endl;
+  app_log() << "Output matrix file: " << fname << std::endl;
 
   output_file_.open(fname);
   output_file_ << "# Index ";
