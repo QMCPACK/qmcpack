@@ -42,7 +42,7 @@ class UnifiedDriverWalkerControlMPITest;
  * process. Inherited classes implement other WalkerControl algorithms by implementing
  * branch function.
  * - 2006/10/18
- * -- curData and accumData are added.
+ * -- curData is added.
  * -- branch function handles averaging of the local energies to apply the weight over the
  *   current walker sample correctly.
  * -- removes an extra global reduction.
@@ -62,7 +62,7 @@ public:
   ///typedef of IndexType
   typedef QMCTraits::IndexType IndexType;
 
-  /** An enum to access curData and accumData for reduction
+  /** An enum to access curData for reduction
    *
    * curData is larger than this //LE_MAX + n_node * T
    */
@@ -76,10 +76,6 @@ public:
     R2ACCEPTED_INDEX,
     R2PROPOSED_INDEX,
     FNSIZE_INDEX,
-    RNONESIZE_INDEX,
-    RNSIZE_INDEX,
-    B_ENERGY_INDEX,
-    B_WGT_INDEX,
     SENTWALKERS_INDEX,
     LE_MAX
   };
@@ -99,14 +95,10 @@ public:
     FullPrecRealType wsum{0.0};
     FullPrecRealType ecum{0.0};
     FullPrecRealType w2sum{0.0};
-    FullPrecRealType besum{0.0};
-    FullPrecRealType bwgtsum{0.0};
     FullPrecRealType r2_accepted{0.0};
     FullPrecRealType r2_proposed{0.0};
     int nfn{0};
-    int nrn{0};
     int ngoodfn{0};
-    int ncr{0};
     int nc{0};
   };
 
@@ -115,7 +107,7 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControl(Communicate* c, bool rn = false);
+  WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
   virtual ~WalkerControl();
@@ -138,20 +130,6 @@ public:
   /** set the trial energy
    */
   inline void setTrialEnergy(FullPrecRealType et) { trialEnergy = et; }
-
-  /** return a value accumulated during a block
-   * @param i index of the data
-   *
-   * use enum for i, see DMCEnergyEstimator
-   */
-  inline FullPrecRealType getValue(int i) { return accumData[i]; }
-
-  /** return a current value
-   * @param i index of the data
-   *
-   * use enum for i, see DMCEnergyEstimator
-   */
-  inline FullPrecRealType getCurrentValue(int i) { return curData[i]; }
 
   /** legacy: return global population
    *  update properties without branching 
@@ -230,9 +208,6 @@ public:
     ensemble_property_ = ensemble_property;
   }
   IndexType get_num_contexts() const { return num_contexts_; }
-  void set_write_release_nodes(bool write_release_nodes) { write_release_nodes_ = write_release_nodes; }
-  IndexType get_method() const { return method_; }
-  void set_method(IndexType method) { method_ = method; }
 
 protected:
   /** makes adjustments to local population based on adjust
@@ -248,9 +223,10 @@ protected:
    */
   static void onRankSpawn(MCPopulation& pop, PopulationAdjustment& adjust);
 
-
-  ///id for the method
-  IndexType method_;
+  ///random number generator
+  RandomGenerator_t& rng_;
+  ///if true, use fixed population
+  bool use_fixed_pop_;
   ///minimum number of walkers
   IndexType n_min_;
   ///maximum number of walkers
@@ -282,16 +258,12 @@ protected:
   IndexType num_contexts_;
   ///0 is default
   IndexType SwapMode;
-  ///any accumulated data over a block
-  std::vector<FullPrecRealType> accumData;
   ///any temporary data includes many ridiculous conversions of integral types to and from fp
   std::vector<FullPrecRealType> curData;
   ///temporary storage for good and bad walkers
   std::vector<Walker_t*> good_w, bad_w;
   ///temporary storage for copy counters
   std::vector<int> ncopy_w;
-  ///Add released-node fields to .dmc.dat file
-  bool write_release_nodes_;
   ///Use non-blocking isend/irecv
   bool use_nonblocking;
 
@@ -299,17 +271,12 @@ protected:
   MCDataType<FullPrecRealType> ensemble_property_;
 
   friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
-private:
-  /** unified: Refactoring possibly dead releaseNodesCode out
-   * @{
-   */
-  static auto rn_walkerCalcAdjust(MCPWalker& walker, WalkerAdjustmentCriteria wac);
 
-  static auto addReleaseNodeWalkers(PopulationAdjustment& adjust,
-                                    WalkerAdjustmentCriteria& wac,
-                                    std::vector<WalkerElementsRef>& good_walkers_rn,
-                                    std::vector<int>& copies_to_make_rn);
-  /**}@*/
+private:
+  /// for dynamic population, based on random numbers
+  void calculateWalkerDynamicPopulationMultiplicity();
+  /// for fixed population, based on comb
+  void calculateWalkerFixedPopulationMultiplicity();
 
   /** unified: CalcAdjust segmenting
    * @{

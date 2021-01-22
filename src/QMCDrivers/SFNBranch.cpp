@@ -139,8 +139,7 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
     population.syncWalkersPerNode(MyEstimator->getCommunicator());
     iParam[B_TARGETWALKERS] = population.get_num_global_walkers();
   }
-  WalkerController = std::make_unique<WalkerControl>(MyEstimator->getCommunicator());
-  WalkerController->set_method(0); // 0 dynamic population, 1 is fixed population
+  WalkerController = std::make_unique<WalkerControl>(MyEstimator->getCommunicator(), Random);
   WalkerController->setMinMax(iParam[B_TARGETWALKERS], 0);
   if (!BranchMode[B_RESTART])
   {
@@ -155,7 +154,7 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
     {
       app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
       BackupWalkerController = std::move(WalkerController); //save the main controller
-      WalkerController = std::make_unique<WalkerControl>(MyEstimator->getCommunicator());
+      WalkerController       = std::make_unique<WalkerControl>(MyEstimator->getCommunicator(), Random);
       BranchMode.set(B_POPCONTROL, 0);
     }
     //PopHist.clear();
@@ -315,13 +314,6 @@ void SFNBranch::branch(int iter, MCPopulation& population)
   //accumulate collectables and energies for scalar.dat
   FullPrecRealType wgt_inv = WalkerController->get_num_contexts() / wc_ensemble_prop.Weight;
   //walkers.Collectables *= wgt_inv;
-}
-
-void SFNBranch::setRN(bool rn)
-{
-  RN = rn;
-  WalkerController->set_write_release_nodes(rn);
-  WalkerController->start();
 }
 
 void SFNBranch::checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers)
