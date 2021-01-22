@@ -20,12 +20,12 @@
 #include "Estimators/accumulators.h"
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
-#include "QMCDrivers/WalkerControlBase.h"
 #include "QMCDrivers/Crowd.h"
 #include <bitset>
 
 namespace qmcplusplus
 {
+class WalkerControl;
 class EstimatorManagerNew;
 
 /** Manages the state of QMC sections and handles population control for DMCs
@@ -201,9 +201,9 @@ struct SFNBranch : public QMCTraits
   ///save xml element
   xmlNodePtr myNode;
   ///WalkerController
-  std::unique_ptr<WalkerControlBase> WalkerController;
+  std::unique_ptr<WalkerControl> WalkerController;
   ///Backup WalkerController for mixed DMC
-  std::unique_ptr<WalkerControlBase> BackupWalkerController;
+  std::unique_ptr<WalkerControl> BackupWalkerController;
 
   ///TODO: Should not be raw pointer
   EstimatorManagerNew* MyEstimator;
@@ -248,7 +248,7 @@ struct SFNBranch : public QMCTraits
   ///copy constructor
   SFNBranch(const SFNBranch& abranch);
 
-  ~SFNBranch() {}
+  ~SFNBranch();
 
   inline bool phaseChanged(RealType psi0) const
   {
@@ -438,9 +438,6 @@ struct SFNBranch : public QMCTraits
   void setRN(bool rn);
 
 private:
-  ///default constructor (disabled)
-  SFNBranch() {}
-
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,
                        FullPrecRealType targetSigma,

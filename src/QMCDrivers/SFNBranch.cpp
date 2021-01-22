@@ -11,11 +11,10 @@
 
 
 #include "SFNBranch.h"
-#include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include <numeric>
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
-#include "QMCDrivers/WalkerControlBase.h"
+#include "QMCDrivers/DMC/WalkerControl.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
@@ -83,6 +82,8 @@ SFNBranch::SFNBranch(const SFNBranch& abranch)
   reset();
 }
 
+SFNBranch::~SFNBranch() = default;
+
 void SFNBranch::registerParameters()
 {
   m_param.add(iParam[B_WARMUPSTEPS], "warmupSteps", "int");
@@ -138,7 +139,9 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
     population.syncWalkersPerNode(MyEstimator->getCommunicator());
     iParam[B_TARGETWALKERS] = population.get_num_global_walkers();
   }
-  WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
+  WalkerController = std::make_unique<WalkerControl>(MyEstimator->getCommunicator());
+  WalkerController->set_method(0); // 0 dynamic population, 1 is fixed population
+  WalkerController->setMinMax(iParam[B_TARGETWALKERS], 0);
   if (!BranchMode[B_RESTART])
   {
     fromscratch = true;
@@ -152,8 +155,7 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
     {
       app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
       BackupWalkerController = std::move(WalkerController); //save the main controller
-      WalkerController.reset(
-          createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true));
+      WalkerController = std::make_unique<WalkerControl>(MyEstimator->getCommunicator());
       BranchMode.set(B_POPCONTROL, 0);
     }
     //PopHist.clear();

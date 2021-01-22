@@ -67,6 +67,7 @@ SET(QMCDRIVERS
   DMC/DMCDriverInput.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
+  DMC/WalkerControl.cpp
   DMC/SODMCUpdatePbyPFast.cpp
   RMC/RMC.cpp
   RMC/RMCUpdatePbyP.cpp
