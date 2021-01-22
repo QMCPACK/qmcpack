@@ -68,7 +68,7 @@ Control options
     Allowed:      "Exx Only" "NEB Relax" "Band Structure Only" "Psi Plot" "Plot" 
                   "Constant Pressure And Energy" "TDDFT" "Dimer Relax" "Constant 
                   Temperature And Energy" "Constant Volume And Energy" "Relax 
-                  Structure" "Quench Electrons" 
+                  Structure" "Quench Electrons"   
     Description:  Type of calculation to perform. 
 
     Key name:     cell_relax
@@ -3045,6 +3045,80 @@ class RmgInputSpec(DevBase):
 #end class RmgInputSpec
 
 input_spec = RmgInputSpec()
+
+
+class RmgCalcModes(DevBase):
+    def __init__(self):
+        self.full_calc = obj(
+            scf         = 'Quench Electrons',
+            exx         = 'Exx Only',
+            neb         = 'NEB Relax', 
+            band        = 'Band Structure Only',
+            relax       = 'Relax Structure',
+            dimer_relax = 'Dimer Relax',
+            md_PE       = 'Constant Pressure And Energy',
+            md_TE       = 'Constant Temperature And Energy',
+            md_VE       = 'Constant Volume And Energy',
+            tddft       = 'TDDFT',
+            plot        = 'Plot',
+            psi_plot    = 'Psi Plot',
+            )
+
+        self.short_calc = obj()
+        for k,v in self.full_calc.items():
+            self.short_calc[v] = k
+        #end for
+        self.full_calc_modes  = set(self.full_calc.values())
+        self.short_calc_modes = set(self.short_calc.values())
+    #end def __init__
+
+    def is_full_mode(self,mode):
+        return mode in self.full_calc_modes
+    #end def is_full_mode
+
+    def is_short_mode(self,mode):
+        return mode in self.short_calc_modes
+    #end def is_short_mode
+
+    def full_mode(self,short_mode):
+        mode = None
+        if short_mode in self.full_calc:
+            mode = self.full_calc[short_mode]
+        #end if
+        return mode
+    #end def full_mode
+
+    def short_mode(self,full_mode):
+        mode = None
+        if full_mode in self.short_calc:
+            mode = self.short_calc[full_mode]
+        #end if
+        return mode
+    #end def short_mode
+
+    def mode_match(self,text,short=False):
+        mode = None
+        text = text.lower()
+        for full_mode in self.full_calc_modes:
+            if full_mode.lower() in text:
+                if not short:
+                    mode = full_mode
+                else:
+                    mode = self.short_mode(full_mode)
+                #end if
+                break
+            #end if
+        #end for
+        return mode
+    #end def mode_match
+        
+#end class RmgCalcModes
+
+rmg_modes = RmgCalcModes()
+
+
+
+
 
 
 
