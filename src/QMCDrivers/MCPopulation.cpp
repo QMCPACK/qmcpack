@@ -81,9 +81,9 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   walkers_.resize(num_walkers_plus_reserve);
   for (auto& walker_ptr : walkers_)
   {
-    walker_ptr        = std::make_unique<MCPWalker>(num_particles_);
-    walker_ptr->R     = elec_particle_set_->R;
-    walker_ptr->spins = elec_particle_set_->spins;
+    walker_ptr             = std::make_unique<MCPWalker>(num_particles_);
+    walker_ptr->R          = elec_particle_set_->R;
+    walker_ptr->spins      = elec_particle_set_->spins;
     walker_ptr->Properties = elec_particle_set_->Properties;
     walker_ptr->registerData();
     walker_ptr->DataSet.allocate();
@@ -92,7 +92,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   walker_weights_.resize(num_walkers_plus_reserve, 1.0);
   for (int iw = 0; iw < std::min(walkers_.size(), walker_configs_ref_.WalkerList.size()); iw++)
   {
-    *walkers_[iw] = *walker_configs_ref_[iw];
+    *walkers_[iw]       = *walker_configs_ref_[iw];
     walker_weights_[iw] = walker_configs_ref_[iw]->Weight;
   }
 
@@ -272,7 +272,6 @@ void MCPopulation::killWalker(MCPWalker& walker)
 void MCPopulation::syncWalkersPerNode(Communicate* comm)
 {
   std::vector<IndexType> num_local_walkers_per_node(comm->size(), 0);
-  ;
 
   num_local_walkers_per_node[comm->rank()] = num_local_walkers_;
   comm->allreduce(num_local_walkers_per_node);
@@ -287,6 +286,33 @@ void MCPopulation::set_variational_parameters(const opt_variables_type& active)
   {
     (*it_twfs).get()->resetParameters(active);
   }
+}
+
+void MCPopulation::checkIntegrity() const
+{
+  // check active walkers
+  const size_t num_local_walkers_active = num_local_walkers_;
+  if (walkers_.size() != num_local_walkers_active)
+    throw std::runtime_error("walkers_ has inconsistent size");
+  if (walker_elec_particle_sets_.size() != num_local_walkers_active)
+    throw std::runtime_error("walker_elec_particle_sets_ has inconsistent size");
+  if (walker_trial_wavefunctions_.size() != num_local_walkers_active)
+    throw std::runtime_error("walker_trial_wavefunctions_ has inconsistent size");
+  if (walker_trial_wavefunctions_.size() != num_local_walkers_active)
+    throw std::runtime_error("walker_trial_wavefunctions_ has inconsistent size");
+  if (walker_hamiltonians_.size() != num_local_walkers_active)
+    throw std::runtime_error("walker_hamiltonians_ has inconsistent size");
+
+  // check dead walkers
+  const size_t num_local_walkers_dead = dead_walkers_.size();
+  if (dead_walker_elec_particle_sets_.size() != num_local_walkers_dead)
+    throw std::runtime_error("dead_walker_elec_particle_sets_ has inconsistent size");
+  if (dead_walker_trial_wavefunctions_.size() != num_local_walkers_dead)
+    throw std::runtime_error("dead_walker_trial_wavefunctions_ has inconsistent size");
+  if (dead_walker_trial_wavefunctions_.size() != num_local_walkers_dead)
+    throw std::runtime_error("dead_walker_trial_wavefunctions_ has inconsistent size");
+  if (dead_walker_hamiltonians_.size() != num_local_walkers_dead)
+    throw std::runtime_error("dead_walker_hamiltonians_ has inconsistent size");
 }
 
 void MCPopulation::saveWalkerConfigurations()

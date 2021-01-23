@@ -218,10 +218,7 @@ void SFNBranch::branch(int iter, MCPopulation& population)
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population.get_walkers()));
 
   FullPrecRealType pop_now;
-  if (debug_disable_branching_ != "yes" && (BranchMode[B_DMCSTAGE] || iter))
-    pop_now = WalkerController->branch(iter, population);
-  else
-    pop_now = WalkerController->doNotBranch(iter, population); //do not branch for the first step of a warmup
+  pop_now = WalkerController->branch(iter, population);
 
   //population for trial energy modification should not include any released node walkers.
   MCDataType<FullPrecRealType>& wc_ensemble_prop = WalkerController->get_ensemble_property();

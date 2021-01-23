@@ -550,7 +550,7 @@ bool DMCBatched::run()
           crowd_ref.accumulate(population_.get_num_global_walkers());
       }
 
-      branch_engine_->branch(step, population_);
+      branch_engine_->branch(block * qmcdriver_input_.get_max_steps() + step, population_);
 
       for (UPtr<Crowd>& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();

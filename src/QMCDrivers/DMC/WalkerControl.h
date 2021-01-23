@@ -130,39 +130,7 @@ public:
    */
   inline void setTrialEnergy(FullPrecRealType et) { trialEnergy = et; }
 
-  /** legacy: return global population
-   *  update properties without branching 
-   *
-   */
-  int doNotBranch(int iter, MCWalkerConfiguration& W);
-
-  /** unified driver: return global population
-   *  update properties without branching
-   */
-  FullPrecRealType doNotBranch(int iter, MCPopulation& pop);
-
-  /** legacy: sort Walkers between good and bad and prepare branching
-   *
-   *  not a sort changes internal state of walkers to copy and how many of each copy
-   */
-  int sortWalkers(MCWalkerConfiguration& W);
-
   static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
-
-  /** unified: create data structure needed to do population adjustment
-   *
-   *  refactored sortWalkers
-   *  This data structure contains what was updated in the state.
-   */
-  PopulationAdjustment calcPopulationAdjustment(MCPopulation& pop);
-
-  /** unified: do the actual adjustment
-   *
-   *  unfortunately right now this requires knowledge of the global context, seems unnecessary
-   *  but this is why MCPopulation is handed in.
-   *  This does was applyNmaxNmin used to.
-   */
-  void limitPopulation(PopulationAdjustment& adjust);
 
   /** legacy: apply per node limit Nmax and Nmin
    */
@@ -176,12 +144,6 @@ public:
 
   /** reset to accumulate data */
   virtual void reset();
-
-  /** legacy: perform branch and swap walkers as required 
-   *
-   *  \return global population
-   */
-  virtual int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
   /** unified: perform branch and swap walkers as required 
    *
@@ -209,19 +171,6 @@ public:
   IndexType get_num_contexts() const { return num_contexts_; }
 
 protected:
-  /** makes adjustments to local population based on adjust
-   *
-   * \param[inout] pop the local population
-   * \param[inout] the population adjustment 
-   */
-  static void onRankKill(MCPopulation& pop, PopulationAdjustment& adjust);
-  /** makes adjustments to local population based on adjust
-   *
-   * \param[inout] pop the local population
-   * \param[in]    the population adjustment, it is not updated to reflect local state and is now invalid.
-   */
-  static void onRankSpawn(MCPopulation& pop, PopulationAdjustment& adjust);
-
   ///random number generator
   RandomGenerator_t& rng_;
   ///if true, use fixed population
@@ -272,23 +221,7 @@ protected:
   friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
 
 private:
-  /// for dynamic population, based on random numbers
-  void calculateWalkerDynamicPopulationMultiplicity();
-  /// for fixed population, based on comb
-  void calculateWalkerFixedPopulationMultiplicity();
-
   void computeCurData(const UPtrVector<MCPWalker>& walkers);
-
-  /** unified: CalcAdjust segmenting
-   * @{
-   */
-  static auto walkerCalcAdjust(MCPWalker& walker, WalkerAdjustmentCriteria wac);
-
-  static void updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& data,
-                                          WalkerAdjustmentCriteria wac,
-                                          PopulationAdjustment& adjust,
-                                          MCPopulation& pop);
-  /**}@*/
 };
 
 } // namespace qmcplusplus
