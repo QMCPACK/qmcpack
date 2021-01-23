@@ -72,8 +72,6 @@ public:
     ENERGY_SQ_INDEX,
     WALKERSIZE_INDEX,
     WEIGHT_INDEX,
-    MULTIPLICITY_INDEX,
-    EREF_INDEX,
     R2ACCEPTED_INDEX,
     R2PROPOSED_INDEX,
     FNSIZE_INDEX,
@@ -278,6 +276,8 @@ private:
   void calculateWalkerDynamicPopulationMultiplicity();
   /// for fixed population, based on comb
   void calculateWalkerFixedPopulationMultiplicity();
+
+  void computeCurData(const UPtrVector<MCPWalker>& walkers);
 
   /** unified: CalcAdjust segmenting
    * @{

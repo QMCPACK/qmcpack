@@ -155,9 +155,9 @@ int WalkerControl::doNotBranch(int iter, MCWalkerConfiguration& W)
 {
   MCWalkerConfiguration::iterator it(W.begin());
   MCWalkerConfiguration::iterator it_end(W.end());
-  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0;
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
-  int nfn(0), ngoodfn(0), nc(0);
+  int nfn(0), nc(0);
   for (; it != it_end; ++it)
   {
     bool inFN = (((*it)->ReleasedNodeAge) == 0);
@@ -175,8 +175,6 @@ int WalkerControl::doNotBranch(int iter, MCWalkerConfiguration& W)
       esum += wgt * e;
       e2sum += wgt * e * e;
       wsum += wgt;
-      w2sum += wgt * wgt;
-      ecum += e;
     }
   }
   //temp is an array to perform reduction operations
@@ -185,7 +183,6 @@ int WalkerControl::doNotBranch(int iter, MCWalkerConfiguration& W)
   curData[ENERGY_SQ_INDEX]  = e2sum;
   curData[WALKERSIZE_INDEX] = W.getActiveWalkers();
   curData[WEIGHT_INDEX]     = wsum;
-  curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;
   curData[R2PROPOSED_INDEX] = r2_proposed;
   curData[FNSIZE_INDEX]     = nfn;
@@ -201,7 +198,7 @@ int WalkerControl::doNotBranch(int iter, MCWalkerConfiguration& W)
 QMCTraits::FullPrecRealType WalkerControl::doNotBranch(int iter, MCPopulation& pop)
 {
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(pop.get_walkers()));
-  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0;
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
   int nfn(0), ngoodfn(0), nc(0);
   for (MCPWalker& walker : walkers)
@@ -221,8 +218,6 @@ QMCTraits::FullPrecRealType WalkerControl::doNotBranch(int iter, MCPopulation& p
       esum += wgt * e;
       e2sum += wgt * e * e;
       wsum += wgt;
-      w2sum += wgt * wgt;
-      ecum += e;
     }
   }
   //temp is an array to perform reduction operations
@@ -231,7 +226,6 @@ QMCTraits::FullPrecRealType WalkerControl::doNotBranch(int iter, MCPopulation& p
   curData[ENERGY_SQ_INDEX]  = e2sum;
   curData[WALKERSIZE_INDEX] = pop.get_num_local_walkers();
   curData[WEIGHT_INDEX]     = wsum;
-  curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;
   curData[R2PROPOSED_INDEX] = r2_proposed;
   curData[FNSIZE_INDEX]     = nfn;
@@ -257,7 +251,6 @@ int WalkerControl::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType t
   measureProperties(iter);
   W.EnsembleProperty = ensemble_property_;
   //un-biased variance but we use the saimple one
-  //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
   int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
   applyNmaxNmin(current_population);
   int nw_tot = copyWalkers(W);
@@ -327,6 +320,28 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
     6. unpack received walkers, apply walker count floor and ceiling.
    */
 
+  auto& walkers = pop.get_walkers();
+
+  if (use_fixed_pop_)
+  {
+    computeCurData(walkers);
+    // convert  node local num of walkers after combing
+    // curData[LE_MAX + MyContext] = wsum to num_total_copies
+    // calculate walker->Multiplicity;
+  }
+  else
+  {
+    // no branching at the first iteration to avoid large population change.
+    if (iter == 0)
+      for (auto& walker : walkers)
+        walker->Multiplicity = 1.0;
+    else
+      for (auto& walker : walkers)
+        walker->Multiplicity = static_cast<int>(walker->Weight + rng_());
+    computeCurData(walkers);
+  }
+  // at this point, curData[LE_MAX + MyContext] and walker->Multiplicity are ready.
+
   // For measuring properties sortWalkers had important side effects
   PopulationAdjustment adjust(calcPopulationAdjustment(pop));
   measureProperties(iter);
@@ -351,6 +366,45 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
 
   // At this point Weight == global_walkers
   return pop.get_num_global_walkers();
+}
+
+void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers)
+{
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0;
+  FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
+  int num_good_walkers(0), num_total_copies(0);
+  for (const auto& walker : walkers)
+  {
+    const int num_copies = static_cast<int>(walker->Multiplicity);
+    if (num_copies > 0)
+    {
+      num_good_walkers++;
+      num_total_copies += num_copies;
+      // Ye : not sure about these r2
+      r2_accepted += walker->Properties(WP::R2ACCEPTED);
+      r2_proposed += walker->Properties(WP::R2PROPOSED);
+      FullPrecRealType e   = walker->Properties(WP::LOCALENERGY);
+      FullPrecRealType wgt = walker->Weight;
+      esum += wgt * e;
+      e2sum += wgt * e * e;
+      wsum += wgt;
+    }
+  }
+  //temp is an array to perform reduction operations
+  std::fill(curData.begin(), curData.end(), 0);
+  curData[ENERGY_INDEX]       = esum;
+  curData[ENERGY_SQ_INDEX]    = e2sum;
+  curData[WALKERSIZE_INDEX]   = walkers.size(); // num of all the current walkers (good+bad)
+  curData[WEIGHT_INDEX]       = wsum;
+  curData[R2ACCEPTED_INDEX]   = r2_accepted;
+  curData[R2PROPOSED_INDEX]   = r2_proposed;
+  curData[FNSIZE_INDEX]       = num_good_walkers; // num of good walkers before branching
+  if (use_fixed_pop_)
+    curData[LE_MAX + MyContext] = wsum; // node sum of walker weights
+  else
+    curData[LE_MAX + MyContext] = num_total_copies; // node num of walkers after local branching
+
+  myComm->allreduce(curData);
 }
 
 void WalkerControl::Write2XYZ(MCWalkerConfiguration& W)
@@ -382,9 +436,9 @@ int WalkerControl::sortWalkers(MCWalkerConfiguration& W)
   std::vector<int> ncopy_rn;
   NumWalkers = 0;
   MCWalkerConfiguration::iterator it_end(W.end());
-  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0;
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
-  int nfn(0), ngoodfn(0), nc(0);
+  int nfn(0), nc(0);
   while (it != it_end)
   {
     bool inFN = (((*it)->ReleasedNodeAge) == 0);
@@ -399,8 +453,6 @@ int WalkerControl::sortWalkers(MCWalkerConfiguration& W)
       esum += wgt * e;
       e2sum += wgt * e * e;
       wsum += wgt;
-      w2sum += wgt * wgt;
-      ecum += e;
     }
 
     if ((nc) && (inFN))
@@ -428,11 +480,10 @@ int WalkerControl::sortWalkers(MCWalkerConfiguration& W)
   curData[ENERGY_SQ_INDEX]  = e2sum;
   curData[WALKERSIZE_INDEX] = W.getActiveWalkers();
   curData[WEIGHT_INDEX]     = wsum;
-  curData[EREF_INDEX]       = ecum;
   curData[R2ACCEPTED_INDEX] = r2_accepted;
   curData[R2PROPOSED_INDEX] = r2_proposed;
   // This is really an integral type but is implicitly converted
-  curData[FNSIZE_INDEX]   = good_w.size();
+  curData[FNSIZE_INDEX] = good_w.size();
   return NumWalkers;
 }
 
@@ -447,8 +498,6 @@ auto WalkerControl::walkerCalcAdjust(MCPWalker& walker, WalkerAdjustmentCriteria
   wac.esum += wgt * local_energy;
   wac.e2sum += wgt * local_energy * local_energy;
   wac.wsum += wgt;
-  wac.w2sum += wgt * wgt;
-  wac.ecum += local_energy;
   return wac;
 }
 
@@ -463,7 +512,6 @@ void WalkerControl::updateCurDataWithCalcAdjust(std::vector<FullPrecRealType>& d
   data[ENERGY_SQ_INDEX]  = wac.e2sum;
   data[WALKERSIZE_INDEX] = pop.get_num_local_walkers();
   data[WEIGHT_INDEX]     = wac.wsum;
-  data[EREF_INDEX]       = wac.ecum;
   data[R2ACCEPTED_INDEX] = wac.r2_accepted;
   data[R2PROPOSED_INDEX] = wac.r2_proposed;
   data[FNSIZE_INDEX]     = adjustment.good_walkers.size();
