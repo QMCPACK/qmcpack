@@ -104,11 +104,9 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
       output_matrices_initialized_(false)
 
 {
-  IsQMCDriver = false;
   //set the optimization flag
-  qmc_driver_mode.set(QMC_OPTIMIZE, 1);
+  qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
-  RootName = "pot";
   m_param.add(Max_iterations, "max_its", "int");
   m_param.add(nstabilizers, "nstabilizers", "int");
   m_param.add(stabilizerScale, "stabilizerscale", "double");
@@ -462,7 +460,7 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
 * @param q current xmlNode
 * @return true if successful
 */
-bool QMCFixedSampleLinearOptimizeBatched::put(xmlNodePtr q)
+void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
 {
   std::string useGPU("yes");
   std::string vmcMove("pbyp");
@@ -481,16 +479,24 @@ bool QMCFixedSampleLinearOptimizeBatched::put(xmlNodePtr q)
 
   doHybrid = false;
 
+
   if (MinMethod == "hybrid")
   {
     doHybrid = true;
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
-    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
   }
   else
-    return processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
+
+  // This code is also called when setting up vmcEngine.  Would be nice to not duplicate the call.
+  QMCDriverNew::AdjustedWalkerCounts awc =
+      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
+                              qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+  QMCDriverNew::startup(q, awc);
+
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
@@ -564,11 +570,6 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
     }
     cur = cur->next;
   }
-  // no walkers exist, add 10
-  if (W.getActiveWalkers() == 0)
-    addWalkers(omp_get_max_threads());
-  NumOfVMCWalkers = W.getActiveWalkers();
-
 
   // Destroy old object to stop timer to correctly order timer with object lifetime scope
   vmcEngine.reset(nullptr);
@@ -586,7 +587,8 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 
 
-  vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
+  bool AppendRun = false;
+  vmcEngine->setStatus(get_root_name(), h5_file_root_, AppendRun);
   vmcEngine->process(qsave);
 
   vmcEngine->enable_sample_collection();
@@ -1188,7 +1190,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
   // set the number samples to be initial one
   optTarget->setNumSamples(init_num_samp);
-  nTargetSamples = init_num_samp;
 
   //app_log() << "block first second third end " << block_first << block_second << block_third << endl;
   // return whether the cost function's report counter is positive
