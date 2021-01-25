@@ -171,10 +171,15 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
       for (auto& walker : walkers)
         walker->Multiplicity = static_cast<int>(walker->Weight + rng_());
     computeCurData(walkers);
+    for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
+      NumPerNode[i] = static_cast<int>(curData[j]);
   }
   // at this point, curData[LE_MAX + MyContext] and walker->Multiplicity are ready.
 
-  // kill walkers, actually put  them in deadlist
+  //const int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  //std::cout << "debug " << iter << " current_population " << current_population << std::endl;
+
+  // kill walkers, actually put them in deadlist
   RefVector<MCPWalker> bad_walkers;
   bad_walkers.reserve(walkers.size());
   for (auto& walker : walkers)
@@ -383,62 +388,6 @@ std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Co
   future_walkers[comm->rank()] = n_walkers;
   comm->allreduce(future_walkers);
   return future_walkers;
-}
-
-/** copy good walkers to W
- *
- *  Good walkers are copied based on the registered number of copies
- *  Bad walkers are recycled to avoid memory allocation and deallocation.
- */
-int WalkerControl::copyWalkers(MCWalkerConfiguration& W)
-{
-  // save current good walker size.
-  const int size_good_w = good_w.size();
-  std::vector<int> copy_list;
-  for (int i = 0; i < size_good_w; i++)
-  {
-    for (int j = 0; j < ncopy_w[i]; j++)
-    {
-      if (bad_w.empty())
-      {
-        good_w.push_back(nullptr);
-      }
-      else
-      {
-        good_w.push_back(bad_w.back());
-        bad_w.pop_back();
-      }
-      copy_list.push_back(i);
-    }
-  }
-
-#pragma omp parallel for
-  for (int i = size_good_w; i < good_w.size(); i++)
-  {
-    auto& wRef    = good_w[copy_list[i - size_good_w]];
-    auto& awalker = good_w[i];
-    if (awalker == nullptr)
-      awalker = new Walker_t(*wRef);
-    else
-      *awalker = *wRef;
-    // not fully sure this is correct or even used
-    awalker->ID       = (i - size_good_w) * num_contexts_ + MyContext;
-    awalker->ParentID = wRef->ParentID;
-  }
-
-  //clear the WalkerList to populate them with the good walkers
-  W.clear();
-  W.insert(W.begin(), good_w.begin(), good_w.end());
-
-  //remove bad walkers if there are any left
-  for (int i = 0; i < bad_w.size(); i++)
-    delete bad_w[i];
-
-  //clear good_w and ncopy_w for the next branch
-  good_w.clear();
-  bad_w.clear();
-  ncopy_w.clear();
-  return W.getActiveWalkers();
 }
 
 bool WalkerControl::put(xmlNodePtr cur)

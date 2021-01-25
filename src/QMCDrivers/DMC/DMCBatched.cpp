@@ -317,8 +317,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   dmc_timers.tmove_timer.stop();
-
-  setMultiplicities(sft.dmcdrv_input, walkers, step_context.get_random_gen());
 }
 
 DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& did_walker_move,
@@ -435,27 +433,6 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
     stalled_new_walker_energy                   = stalled_old_walker_energy;
     stalled.gf_accs[iw].get()                   = 1.0;
     stalled_walker.Weight *= sft.branch_engine.branchWeight(stalled_new_walker_energy, stalled_old_walker_energy);
-  }
-}
-
-void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
-                                   RefVector<MCPWalker>& walkers,
-                                   RandomGenerator_t& rng)
-{
-  auto setMultiplicity = [&dmcdriver_input, &rng](MCPWalker& walker) {
-    constexpr FullPrecRealType onehalf(0.5);
-    constexpr FullPrecRealType cone(1);
-    walker.Multiplicity = walker.Weight;
-    if (walker.Age > dmcdriver_input.get_max_age())
-      walker.Multiplicity = std::min(onehalf, walker.Weight);
-    else if (walker.Age > 0)
-      walker.Multiplicity = std::min(cone, walker.Weight);
-    walker.Multiplicity += rng();
-  };
-
-  for (int iw = 0; iw < walkers.size(); ++iw)
-  {
-    setMultiplicity(walkers[iw]);
   }
 }
 

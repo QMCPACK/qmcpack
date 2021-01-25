@@ -131,10 +131,6 @@ private:
                              ContextForSteps& move_context,
                              bool recompute);
 
-  static void setMultiplicities(const DMCDriverInput& dmcdriver_input,
-                                RefVector<MCPWalker>& walkers,
-                                RandomGenerator_t& rng);
-
   /** Allows us to build complete reference set for walkers.
    */
   struct DMCPerWalkerRefs

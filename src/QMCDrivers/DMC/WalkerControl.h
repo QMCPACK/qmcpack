@@ -136,10 +136,6 @@ public:
    */
   int applyNmaxNmin(int current_population);
 
-  /** legacy: copy good walkers to W
-   */
-  int copyWalkers(MCWalkerConfiguration& W);
-
   void Write2XYZ(MCWalkerConfiguration& W);
 
   /** reset to accumulate data */
@@ -187,7 +183,7 @@ protected:
   FullPrecRealType trialEnergy;
   ///target sigma to limit fluctuations of the trial energy
   FullPrecRealType target_sigma_;
-  ///number of particle per node
+  ///number of walkers on each node after branching before load balancing
   std::vector<int> NumPerNode;
   ///offset of the particle index
   std::vector<int> OffSet;
