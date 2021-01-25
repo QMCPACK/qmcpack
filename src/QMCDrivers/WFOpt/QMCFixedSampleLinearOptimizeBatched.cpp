@@ -99,7 +99,10 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
       opt_num_crowds_(1),
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
-      current_optimizer_type_(OptimizerType::NONE)
+      current_optimizer_type_(OptimizerType::NONE),
+      do_output_matrices_(false),
+      output_matrices_initialized_(false),
+      freeze_parameters_(false)
 
 {
   //set the optimization flag
@@ -205,6 +208,15 @@ QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatche
 
 bool QMCFixedSampleLinearOptimizeBatched::run()
 {
+  if (do_output_matrices_ && !output_matrices_initialized_)
+  {
+    numParams = optTarget->getNumParams();
+    int N     = numParams + 1;
+    output_overlap_.init_file(get_root_name(), "ovl", N);
+    output_hamiltonian_.init_file(get_root_name(), "ham", N);
+    output_matrices_initialized_ = true;
+  }
+
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -455,13 +467,34 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   std::string useGPU("yes");
   std::string vmcMove("pbyp");
   std::string ReportToH5("no");
+  std::string OutputMatrices("no");
+  std::string FreezeParameters("no");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
+  m_param.add(OutputMatrices, "output_matrices", "string");
+  m_param.add(FreezeParameters, "freeze_parameters", "string");
+
   oAttrib.put(q);
   m_param.put(q);
+
+  do_output_matrices_ = (OutputMatrices != "no");
+  freeze_parameters_  = (FreezeParameters != "no");
+
+  // Use freeze_parameters with output_matrices to generate multiple lines in the output with
+  // the same parameters so statistics can be computed in post-processing.
+
+  if (freeze_parameters_)
+  {
+    app_log() << std::endl;
+    app_warning() << "  The option 'freeze_parameters' is enabled.  Variational parameters will not be updated.  This "
+                     "run will not perform variational parameter optimization!"
+                  << std::endl;
+    app_log() << std::endl;
+  }
+
 
   doHybrid = false;
 
@@ -482,7 +515,6 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
       adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                               qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
   QMCDriverNew::startup(q, awc);
-
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
@@ -1237,6 +1269,12 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
 
+  if (do_output_matrices_)
+  {
+    output_overlap_.output(ovlMat);
+    output_hamiltonian_.output(hamMat);
+  }
+
   // apply the identity shift
   for (int i = 1; i < N; i++)
   {
@@ -1275,8 +1313,11 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   optTarget->setneedGrads(false);
 
   // prepare to use the middle shift's update as the guiding function for a new sample
-  for (int i = 0; i < numParams; i++)
-    optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
+  if (!freeze_parameters_)
+  {
+    for (int i = 0; i < numParams; i++)
+      optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
+  }
 
   RealType largestChange(0);
   int max_element = 0;
