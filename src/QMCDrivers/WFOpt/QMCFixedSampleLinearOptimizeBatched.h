@@ -209,6 +209,9 @@ private:
 
   OutputMatrix output_hamiltonian_;
   OutputMatrix output_overlap_;
+
+  // Freeze variational parameters.  Do not update them during each step.
+  bool freeze_parameters_;
 };
 } // namespace qmcplusplus
 #endif

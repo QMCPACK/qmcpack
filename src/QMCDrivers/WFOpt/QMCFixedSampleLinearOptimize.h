@@ -40,10 +40,7 @@ class QMCFixedSampleLinearOptimize : public QMCLinearOptimize, private NRCOptimi
 {
 public:
   ///Constructor.
-  QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
-                               TrialWaveFunction& psi,
-                               QMCHamiltonian& h,
-                               Communicate* comm);
+  QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
   ~QMCFixedSampleLinearOptimize();
@@ -198,6 +195,9 @@ private:
 
   OutputMatrix output_hamiltonian_;
   OutputMatrix output_overlap_;
+
+  // Freeze variational parameters.  Do not update them during each step.
+  bool freeze_parameters_;
 };
 } // namespace qmcplusplus
 #endif
