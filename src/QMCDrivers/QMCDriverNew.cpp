@@ -310,6 +310,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
                                     RealType reserve,
                                     const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
+  ScopedTimer local_timer(&(timers_.create_walkers_timer));
   // ensure nwalkers local walkers in population_
   if (population_.get_walkers().size() == 0)
   {
