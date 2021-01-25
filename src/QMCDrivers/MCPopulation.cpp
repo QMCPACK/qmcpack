@@ -79,22 +79,35 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   // This pattern is begging for a micro benchmark, is this really better
   // than the simpler walkers_.pushback;
   walkers_.resize(num_walkers_plus_reserve);
-  for (auto& walker_ptr : walkers_)
+  walker_weights_.resize(num_walkers_plus_reserve, 1.0);
+  walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
+  walker_trial_wavefunctions_.resize(num_walkers_plus_reserve);
+  walker_hamiltonians_.resize(num_walkers_plus_reserve);
+
+  outputManager.pause();
+
+  #pragma omp parallel for
+  for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
-    walker_ptr             = std::make_unique<MCPWalker>(num_particles_);
-    walker_ptr->R          = elec_particle_set_->R;
-    walker_ptr->spins      = elec_particle_set_->spins;
-    walker_ptr->Properties = elec_particle_set_->Properties;
-    walker_ptr->registerData();
-    walker_ptr->DataSet.allocate();
+    walkers_[iw]             = std::make_unique<MCPWalker>(num_particles_);
+    walkers_[iw]->R          = elec_particle_set_->R;
+    walkers_[iw]->spins      = elec_particle_set_->spins;
+    walkers_[iw]->Properties = elec_particle_set_->Properties;
+    walkers_[iw]->registerData();
+    walkers_[iw]->DataSet.allocate();
+
+    if (iw < walker_configs_ref_.WalkerList.size())
+    {
+      *walkers_[iw]       = *walker_configs_ref_[iw];
+      walker_weights_[iw] = walker_configs_ref_[iw]->Weight;
+    }
+
+    walker_elec_particle_sets_[iw] = std::make_unique<ParticleSet>(*elec_particle_set_);
+    walker_trial_wavefunctions_[iw].reset(trial_wf_->makeClone(*walker_elec_particle_sets_[iw]));
+    walker_hamiltonians_[iw].reset(hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]));
   };
 
-  walker_weights_.resize(num_walkers_plus_reserve, 1.0);
-  for (int iw = 0; iw < std::min(walkers_.size(), walker_configs_ref_.WalkerList.size()); iw++)
-  {
-    *walkers_[iw]       = *walker_configs_ref_[iw];
-    walker_weights_[iw] = walker_configs_ref_[iw]->Weight;
-  }
+  outputManager.resume();
 
   int num_walkers_created = 0;
   for (auto& walker_ptr : walkers_)
@@ -107,31 +120,6 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
       walker_ptr->ParentID = walker_ptr->ID;
     }
   }
-
-  outputManager.pause();
-
-  // Sadly the wfc makeClone interface depends on the full particle set as a way to not to keep track
-  // of what different wave function components depend on. I'm going to try and create a hollow elec PS
-  // with an eye toward removing the ParticleSet dependency of WFC components in the future.
-  walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
-  for (auto& elec_ps_ptr : walker_elec_particle_sets_)
-    elec_ps_ptr = std::make_unique<ParticleSet>(*elec_particle_set_);
-
-  auto it_weps = walker_elec_particle_sets_.begin();
-  walker_trial_wavefunctions_.resize(num_walkers_plus_reserve);
-  auto it_wtw = walker_trial_wavefunctions_.begin();
-  walker_hamiltonians_.resize(num_walkers_plus_reserve);
-  auto it_ham = walker_hamiltonians_.begin();
-  while (it_wtw != walker_trial_wavefunctions_.end())
-  {
-    it_wtw->reset(trial_wf_->makeClone(**it_weps));
-    it_ham->reset(hamiltonian_->makeClone(**it_weps, **it_wtw));
-    ++it_weps;
-    ++it_wtw;
-    ++it_ham;
-  }
-
-  outputManager.resume();
 
   // kill and spawn walkers update the state variable num_local_walkers_
   // so it must start at the number of reserved walkers
