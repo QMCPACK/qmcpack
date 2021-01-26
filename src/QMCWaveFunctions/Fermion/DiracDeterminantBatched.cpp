@@ -170,7 +170,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
-  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
+  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), NumOrbitals * WFC_list.size(), phi_vgl_v.capacity());
   Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view, ratios_local,
                                       grad_new_local);
   SPOVGLTimer.stop();
@@ -432,7 +432,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
-  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
+  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), NumOrbitals * WFC_list.size(), phi_vgl_v.capacity());
   // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
   // We may implement mw_evaluateVandDetRatio in the future.
   Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view, ratios_local,
