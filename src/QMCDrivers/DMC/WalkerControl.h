@@ -130,14 +130,6 @@ public:
    */
   inline void setTrialEnergy(FullPrecRealType et) { trialEnergy = et; }
 
-  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
-
-  /** legacy: apply per node limit Nmax and Nmin
-   */
-  int applyNmaxNmin(int current_population);
-
-  void Write2XYZ(MCWalkerConfiguration& W);
-
   /** reset to accumulate data */
   virtual void reset();
 
@@ -217,7 +209,36 @@ protected:
   friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
 
 private:
+  static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
+
+  /** legacy: apply per node limit Nmax and Nmin
+   */
+  int applyNmaxNmin(int current_population);
+
+  void Write2XYZ(MCWalkerConfiguration& W);
+
   void computeCurData(const UPtrVector<MCPWalker>& walkers);
+
+  /** creates the distribution plan
+   *
+   *  populates the minus and plus vectors they contain 1 copy of a partition index 
+   *  for each adjustment in population to the context.
+   *  \param[in] num_per_node as if all walkers were copied out to multiplicity
+   *  \param[out] fair_offset running population count at each partition boundary
+   *  \param[out] minus list of partition indexes one occurance for each walker removed
+   *  \param[out] plus list of partition indexes one occurance for each walker added
+   */
+  static void determineNewWalkerPopulation(const std::vector<int>& num_per_node,
+                                           std::vector<int>& fair_offset,
+                                           std::vector<int>& minus,
+                                           std::vector<int>& plus);
+
+  void swapWalkersSimple(MCPopulation& pop);
+
+  TimerList_t myTimers;
+
+  // Number of walkers sent during the exchange
+  IndexType NumWalkersSent;
 };
 
 } // namespace qmcplusplus
