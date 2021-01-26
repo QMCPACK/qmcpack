@@ -317,8 +317,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   dmc_timers.tmove_timer.stop();
-
-  setMultiplicities(sft.dmcdrv_input, walkers, step_context.get_random_gen());
 }
 
 DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& did_walker_move,
@@ -438,27 +436,6 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
   }
 }
 
-void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
-                                   RefVector<MCPWalker>& walkers,
-                                   RandomGenerator_t& rng)
-{
-  auto setMultiplicity = [&dmcdriver_input, &rng](MCPWalker& walker) {
-    constexpr FullPrecRealType onehalf(0.5);
-    constexpr FullPrecRealType cone(1);
-    walker.Multiplicity = walker.Weight;
-    if (walker.Age > dmcdriver_input.get_max_age())
-      walker.Multiplicity = std::min(onehalf, walker.Weight);
-    else if (walker.Age > 0)
-      walker.Multiplicity = std::min(cone, walker.Weight);
-    walker.Multiplicity += rng();
-  };
-
-  for (int iw = 0; iw < walkers.size(); ++iw)
-  {
-    setMultiplicity(walkers[iw]);
-  }
-}
-
 void DMCBatched::runDMCStep(int crowd_id,
                             const StateForThread& sft,
                             DriverTimers& timers,
@@ -550,7 +527,7 @@ bool DMCBatched::run()
           crowd_ref.accumulate(population_.get_num_global_walkers());
       }
 
-      branch_engine_->branch(step, population_);
+      branch_engine_->branch(block * qmcdriver_input_.get_max_steps() + step, population_);
 
       for (UPtr<Crowd>& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();

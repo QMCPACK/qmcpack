@@ -257,6 +257,7 @@ protected:
   {
     NewTimer& checkpoint_timer;
     NewTimer& run_steps_timer;
+    NewTimer& create_walkers_timer;
     NewTimer& init_walkers_timer;
     NewTimer& buffer_timer;
     NewTimer& movepbyp_timer;
@@ -265,6 +266,7 @@ protected:
     DriverTimers(const std::string& prefix)
         : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
           run_steps_timer(*timer_manager.createTimer(prefix + "RunSteps", timer_level_medium)),
+          create_walkers_timer(*timer_manager.createTimer(prefix + "CreateWalkers", timer_level_medium)),
           init_walkers_timer(*timer_manager.createTimer(prefix + "InitWalkers", timer_level_medium)),
           buffer_timer(*timer_manager.createTimer(prefix + "Buffer", timer_level_medium)),
           movepbyp_timer(*timer_manager.createTimer(prefix + "MovePbyP", timer_level_medium)),

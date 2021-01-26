@@ -11,11 +11,10 @@
 
 
 #include "SFNBranch.h"
-#include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include <numeric>
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
-#include "QMCDrivers/WalkerControlBase.h"
+#include "QMCDrivers/DMC/WalkerControl.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
@@ -83,6 +82,8 @@ SFNBranch::SFNBranch(const SFNBranch& abranch)
   reset();
 }
 
+SFNBranch::~SFNBranch() = default;
+
 void SFNBranch::registerParameters()
 {
   m_param.add(iParam[B_WARMUPSTEPS], "warmupSteps", "int");
@@ -138,7 +139,8 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
     population.syncWalkersPerNode(MyEstimator->getCommunicator());
     iParam[B_TARGETWALKERS] = population.get_num_global_walkers();
   }
-  WalkerController.reset(createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode));
+  WalkerController = std::make_unique<WalkerControl>(MyEstimator->getCommunicator(), Random);
+  WalkerController->setMinMax(iParam[B_TARGETWALKERS], 0);
   if (!BranchMode[B_RESTART])
   {
     fromscratch = true;
@@ -152,8 +154,7 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
     {
       app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
       BackupWalkerController = std::move(WalkerController); //save the main controller
-      WalkerController.reset(
-          createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode, true));
+      WalkerController       = std::make_unique<WalkerControl>(MyEstimator->getCommunicator(), Random);
       BranchMode.set(B_POPCONTROL, 0);
     }
     //PopHist.clear();
@@ -217,10 +218,7 @@ void SFNBranch::branch(int iter, MCPopulation& population)
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population.get_walkers()));
 
   FullPrecRealType pop_now;
-  if (debug_disable_branching_ != "yes" && (BranchMode[B_DMCSTAGE] || iter))
-    pop_now = WalkerController->branch(iter, population);
-  else
-    pop_now = WalkerController->doNotBranch(iter, population); //do not branch for the first step of a warmup
+  pop_now = WalkerController->branch(iter, population, iter == 0);
 
   //population for trial energy modification should not include any released node walkers.
   MCDataType<FullPrecRealType>& wc_ensemble_prop = WalkerController->get_ensemble_property();
@@ -313,13 +311,6 @@ void SFNBranch::branch(int iter, MCPopulation& population)
   //accumulate collectables and energies for scalar.dat
   FullPrecRealType wgt_inv = WalkerController->get_num_contexts() / wc_ensemble_prop.Weight;
   //walkers.Collectables *= wgt_inv;
-}
-
-void SFNBranch::setRN(bool rn)
-{
-  RN = rn;
-  WalkerController->set_write_release_nodes(rn);
-  WalkerController->start();
 }
 
 void SFNBranch::checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers)

@@ -229,6 +229,9 @@ public:
   /// Set variational parameters for the per-walker copies of the wavefunction.
   void set_variational_parameters(const opt_variables_type& active);
 
+  /// check if all the internal vector contain consistent sizes;
+  void checkIntegrity() const;
+
   WalkerConfigurations& getWalkerConfigsRef() { return walker_configs_ref_; }
 
   // save walker configurations to walker_configs_ref_
