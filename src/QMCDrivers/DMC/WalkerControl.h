@@ -71,7 +71,7 @@ public:
    *
    *  \return global population
    */
-  virtual FullPrecRealType branch(int iter, MCPopulation& pop);
+  virtual FullPrecRealType branch(int iter, MCPopulation& pop, bool do_not_branch);
 
   virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
   {

@@ -154,7 +154,7 @@ void WalkerControl::measureProperties(int iter)
 
 void WalkerControl::reset() { std::fill(curData.begin(), curData.end(), 0.0); }
 
-QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
+QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   /* dynamic population
     1. compute multiplicity. If iter 0, multiplicity = 1
@@ -182,7 +182,7 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
   else
   {
     // no branching at the first iteration to avoid large population change.
-    if (iter == 0)
+    if (do_not_branch)
       for (auto& walker : walkers)
         walker->Multiplicity = 1.0;
     else
@@ -230,11 +230,12 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
     throw std::runtime_error("Potential bug! Population num_global_walkers mismatched!");
 #endif
 
-  for (UPtr<MCPWalker>& walker : pop.get_walkers())
-  {
-    walker->Weight       = 1.0;
-    walker->Multiplicity = 1.0;
-  }
+  if (!do_not_branch)
+    for (UPtr<MCPWalker>& walker : pop.get_walkers())
+    {
+      walker->Weight       = 1.0;
+      walker->Multiplicity = 1.0;
+    }
 
   return pop.get_num_global_walkers();
 }

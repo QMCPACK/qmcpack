@@ -218,7 +218,7 @@ void SFNBranch::branch(int iter, MCPopulation& population)
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population.get_walkers()));
 
   FullPrecRealType pop_now;
-  pop_now = WalkerController->branch(iter, population);
+  pop_now = WalkerController->branch(iter, population, iter == 0);
 
   //population for trial energy modification should not include any released node walkers.
   MCDataType<FullPrecRealType>& wc_ensemble_prop = WalkerController->get_ensemble_property();
