@@ -86,7 +86,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 
   outputManager.pause();
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
     walkers_[iw]             = std::make_unique<MCPWalker>(num_particles_);
@@ -104,7 +104,8 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 
     walker_elec_particle_sets_[iw] = std::make_unique<ParticleSet>(*elec_particle_set_);
     walker_trial_wavefunctions_[iw].reset(trial_wf_->makeClone(*walker_elec_particle_sets_[iw]));
-    walker_hamiltonians_[iw].reset(hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]));
+    walker_hamiltonians_[iw].reset(
+        hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]));
   };
 
   outputManager.resume();
@@ -181,18 +182,12 @@ WalkerElementsRef MCPopulation::spawnWalker()
   {
     app_warning() << "Spawning walker number " << walkers_.size() + 1
                   << " outside of reserves, this ideally should never happend." << std::endl;
-    MCPWalker last_walker = *(walkers_.back());
-    walkers_.push_back(std::make_unique<MCPWalker>(last_walker));
-    walkers_.back()->registerData();
-    walkers_.back()->DataSet.allocate();
+    walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back())));
 
     // There is no value in doing this here because its going to be wiped out
     // When we load from the receive buffer. It also won't necessarily be correct
     // Because the buffer is changed by Hamiltonians and wavefunctions that
     // Add to the dataSet.
-
-    //walkers_.back()->R          = elec_particle_set_->R;
-    //walkers_.back()->Properties = elec_particle_set_->Properties;
 
     walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));
     walker_trial_wavefunctions_.emplace_back(trial_wf_->makeClone(*walker_elec_particle_sets_.back()));

@@ -30,25 +30,8 @@
 
 namespace qmcplusplus
 {
-namespace testing
-{
-class UnifiedDriverWalkerControlMPITest;
-}
-
-
-/** Base class to control the walkers for DMC simulations.
- *
- * The virtual functions are implemented for a serial execution with a usual birth/death
- * process. Inherited classes implement other WalkerControl algorithms by implementing
- * branch function.
- * - 2006/10/18
- * -- curData is added.
- * -- branch function handles averaging of the local energies to apply the weight over the
- *   current walker sample correctly.
- * -- removes an extra global reduction.
- *   --- curData should be used for global reductions
- * - 2007/11/07
- * -- added functions to dump dmc histograms
+/** Class for controlling the walkers for DMC simulations.
+ * w and w/o MPI. Fixed and dynamic population in one place.
  */
 class WalkerControl : public MPIObjectBase
 {
@@ -206,9 +189,10 @@ protected:
   ///ensemble properties
   MCDataType<FullPrecRealType> ensemble_property_;
 
-  friend class qmcplusplus::testing::UnifiedDriverWalkerControlMPITest;
-
 private:
+  /// kill dead walkers in the population
+  static void killDeadWalkersOnRank(MCPopulation& pop);
+
   static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
 
   /** legacy: apply per node limit Nmax and Nmin
@@ -217,6 +201,7 @@ private:
 
   void Write2XYZ(MCWalkerConfiguration& W);
 
+  /// compute curData
   void computeCurData(const UPtrVector<MCPWalker>& walkers);
 
   /** creates the distribution plan
@@ -233,7 +218,20 @@ private:
                                            std::vector<int>& minus,
                                            std::vector<int>& plus);
 
+#if defined(HAVE_MPI)
+  /** swap Walkers with Recv/Send or Irecv/Isend
+ *
+ * The algorithm ensures that the load per node can differ only by one walker.
+ * Each MPI rank can only send or receive or be silent.
+ * The communication is one-dimensional and very local.
+ * If multiple copies of a walker need to be sent to the target rank, only send one.
+ * The number of copies is communicated ahead via blocking send/recv.
+ * Then the walkers are transferred via blocking or non-blocking send/recv.
+ * The blocking send/recv may become serialized and worsen load imbalance.
+ * Non blocking send/recv algorithm avoids serialization completely.
+ */
   void swapWalkersSimple(MCPopulation& pop);
+#endif
 
   TimerList_t myTimers;
 

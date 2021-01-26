@@ -42,13 +42,13 @@ enum WC_Timers
 };
 
 TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControlMPI::branch"},
-                                                           {WC_imbalance, "WalkerControlMPI::imbalance"},
-                                                           {WC_prebalance, "WalkerControlMPI::pre-loadbalance"},
-                                                           {WC_copyWalkers, "WalkerControlMPI::copyWalkers"},
-                                                           {WC_allreduce, "WalkerControlMPI::allreduce"},
-                                                           {WC_loadbalance, "WalkerControlMPI::loadbalance"},
-                                                           {WC_send, "WalkerControlMPI::send"},
-                                                           {WC_recv, "WalkerControlMPI::recv"}};
+                                                      {WC_imbalance, "WalkerControlMPI::imbalance"},
+                                                      {WC_prebalance, "WalkerControlMPI::pre-loadbalance"},
+                                                      {WC_copyWalkers, "WalkerControlMPI::copyWalkers"},
+                                                      {WC_allreduce, "WalkerControlMPI::allreduce"},
+                                                      {WC_loadbalance, "WalkerControlMPI::loadbalance"},
+                                                      {WC_send, "WalkerControlMPI::send"},
+                                                      {WC_recv, "WalkerControlMPI::recv"}};
 
 WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop)
     : MPIObjectBase(c),
@@ -200,18 +200,13 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
   }
   // at this point, curData[LE_MAX + MyContext] and walker->Multiplicity are ready.
 
-  //const int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
-  //std::cout << "debug " << iter << " current_population " << current_population << std::endl;
+#if defined(HAVE_MPI)
+  // load balancing over MPI
+  swapWalkersSimple(pop);
+#endif
 
-  // kill walkers, actually put them in deadlist
-  RefVector<MCPWalker> bad_walkers;
-  bad_walkers.reserve(walkers.size());
-  for (auto& walker : walkers)
-    if (static_cast<int>(walker->Multiplicity) == 0)
-      bad_walkers.push_back(*walker);
-  for (MCPWalker& bad_walker : bad_walkers)
-    pop.killWalker(bad_walker);
-  bad_walkers.clear();
+  // kill dead walker to be recycled by the following copy
+  killDeadWalkersOnRank(pop);
 
   // copy good walkers
   const size_t good_walkers = walkers.size();
@@ -435,33 +430,15 @@ void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per
 #endif
 }
 
-/** swap Walkers with Recv/Send or Irecv/Isend
- *
- * The algorithm ensures that the load per node can differ only by one walker.
- * Each MPI rank can only send or receive or be silent.
- * The communication is one-dimensional and very local.
- * If multiple copies of a walker need to be sent to the target rank, only send one.
- * The number of copies is communicated ahead via blocking send/recv.
- * Then the walkers are transferred via blocking or non-blocking send/recv.
- * The blocking send/recv may become serialized and worsen load imbalance.
- * Non blocking send/recv algorithm avoids serialization completely.
- */
+#if defined(HAVE_MPI)
 void WalkerControl::swapWalkersSimple(MCPopulation& pop)
 {
+  // kill walkers, actually put them in deadlist for be recycled for receiving walkers
+  killDeadWalkersOnRank(pop);
+
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(NumPerNode, FairOffSet, minus, plus);
 
-  if (good_w.empty() && bad_w.empty())
-  {
-    app_error() << "It should never happen that no walkers, "
-                << "neither good nor bad, exist on a node. "
-                << "Please report to developers. " << std::endl;
-    APP_ABORT("WalkerControlMPI::swapWalkersSimple no existing walker");
-  }
-
-  Walker_t& wRef(*(good_w.empty() ? bad_w[0] : good_w[0]));
-  std::vector<Walker_t*> newW;
-  std::vector<int> ncopy_newW;
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname, "test.%d", MyContext);
@@ -482,34 +459,36 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   }
   fout << std::endl;
 #endif
-  int nswap = plus.size();
+
+  auto& good_walkers = pop.get_walkers();
+  const int nswap    = plus.size();
   // sort good walkers by the number of copies
-  assert(good_w.size() == ncopy_w.size());
   std::vector<std::pair<int, int>> ncopy_pairs;
-  for (int iw = 0; iw < ncopy_w.size(); iw++)
-    ncopy_pairs.push_back(std::make_pair(ncopy_w[iw], iw));
+  for (int iw = 0; iw < good_walkers.size(); iw++)
+    ncopy_pairs.push_back(std::make_pair(static_cast<int>(good_walkers[iw]->Multiplicity), iw));
   std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
 
-  int nsend = 0;
   struct job
   {
     const int walkerID;
     const int target;
     job(int wid, int target_in) : walkerID(wid), target(target_in){};
   };
+
+  int nsend = 0;
   std::vector<job> job_list;
+  std::vector<WalkerElementsRef> newW;
+  std::vector<int> ncopy_newW;
+
   for (int ic = 0; ic < nswap; ic++)
   {
+    int nsentcopy = 0;
     if (plus[ic] == MyContext)
     {
-      // always send the last good walker
-      Walker_t*& awalker = good_w[ncopy_pairs.back().second];
-
+      // always send the last good walker with most copies
       // count the possible copies in one send
-      int nsentcopy = 0;
-
       for (int id = ic + 1; id < nswap; id++)
-        if (plus[ic] == plus[id] && minus[ic] == minus[id] && ncopy_pairs.back().first > 0)
+        if (plus[ic] == plus[id] && minus[ic] == minus[id] && ncopy_pairs.back().first > 1)
         { // increment copy counter
           ncopy_pairs.back().first--;
           nsentcopy++;
@@ -529,46 +508,39 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
 
       // update counter and cursor
       ++nsend;
-      ic += nsentcopy;
 
       // update copy counter
-      if (ncopy_pairs.back().first > 0)
+      if (ncopy_pairs.back().first > 1)
       {
         ncopy_pairs.back().first--;
         std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
       }
       else
       {
+        good_walkers[ncopy_pairs.back().second]->Multiplicity = 0.0;
         ncopy_pairs.pop_back();
-        bad_w.push_back(awalker);
       }
     }
+
     if (minus[ic] == MyContext)
     {
-      Walker_t* awalker(nullptr);
-      if (!bad_w.empty())
-      {
-        awalker = bad_w.back();
-        bad_w.pop_back();
-      }
+      newW.push_back(pop.spawnWalker());
 
-      int nsentcopy = 0;
       // recv the number of copies from the target
       myComm->comm.receive_n(&nsentcopy, 1, plus[ic]);
-      job_list.push_back(job(newW.size(), plus[ic]));
+      job_list.push_back(job(newW.size() - 1, plus[ic]));
       if (plus[ic] != plus[ic + nsentcopy] || minus[ic] != minus[ic + nsentcopy])
-        APP_ABORT("WalkerControlMPI::swapWalkersSimple send/recv pair checking failed!");
+        throw std::runtime_error("WalkerControlMPI::swapWalkersSimple send/recv pair checking failed!");
 #ifdef MCWALKERSET_MPI_DEBUG
       fout << "rank " << minus[ic] << " recvs a walker with " << nsentcopy << " copies from rank " << plus[ic]
            << std::endl;
 #endif
 
-      // save the new walker
-      newW.push_back(awalker);
       ncopy_newW.push_back(nsentcopy);
-      // update cursor
-      ic += nsentcopy;
     }
+
+    // update cursor
+    ic += nsentcopy;
   }
 
   if (nsend > 0)
@@ -576,12 +548,12 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
     std::vector<mpi3::request> requests;
     // mark all walkers not in send
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
-      good_w[jobit->walkerID]->SendInProgress = false;
+      good_walkers[jobit->walkerID]->SendInProgress = false;
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
     {
       // pack data and send
-      Walker_t*& awalker = good_w[jobit->walkerID];
-      size_t byteSize    = awalker->byteSize();
+      auto& awalker   = good_walkers[jobit->walkerID];
+      size_t byteSize = awalker->byteSize();
       if (!awalker->SendInProgress)
       {
         awalker->updateBuffer();
@@ -614,17 +586,19 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
     {
       // recv and unpack data
-      Walker_t*& awalker = newW[jobit->walkerID];
-      if (!awalker)
-        awalker = new Walker_t(wRef);
-      size_t byteSize = awalker->byteSize();
+      auto& walker_elements = newW[jobit->walkerID];
+      auto& awalker         = walker_elements.walker;
+      size_t byteSize       = awalker.byteSize();
       if (use_nonblocking)
-        requests.push_back(myComm->comm.ireceive_n(awalker->DataSet.data(), byteSize, jobit->target));
+        requests.push_back(myComm->comm.ireceive_n(awalker.DataSet.data(), byteSize, jobit->target));
       else
       {
         myTimers[WC_recv]->start();
-        myComm->comm.receive_n(awalker->DataSet.data(), byteSize, jobit->target);
-        awalker->copyFromBuffer();
+        myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
+        awalker.copyFromBuffer();
+        walker_elements.pset.loadWalker(awalker, true);
+        walker_elements.pset.update();
+        walker_elements.twf.evaluateLog(walker_elements.pset);
         myTimers[WC_recv]->stop();
       }
     }
@@ -640,7 +614,11 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
           {
             if (requests[im].completed())
             {
-              newW[job_list[im].walkerID]->copyFromBuffer();
+              auto& walker_elements = newW[job_list[im].walkerID];
+              walker_elements.walker.copyFromBuffer();
+              walker_elements.pset.loadWalker(walker_elements.walker, true);
+              walker_elements.pset.update();
+              walker_elements.twf.evaluateLog(walker_elements.pset);
               not_completed[im] = false;
             }
             else
@@ -650,25 +628,39 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       requests.clear();
     }
   }
+
   //save the number of walkers sent
   NumWalkersSent = nsend;
-  // rebuild good_w and ncopy_w
-  std::vector<Walker_t*> good_w_temp(good_w);
-  good_w.resize(ncopy_pairs.size());
-  ncopy_w.resize(ncopy_pairs.size());
-  for (int iw = 0; iw < ncopy_pairs.size(); iw++)
-  {
-    good_w[iw]  = good_w_temp[ncopy_pairs[iw].second];
-    ncopy_w[iw] = ncopy_pairs[iw].first;
-  }
-  //add walkers from other node
-  if (newW.size())
-  {
-    good_w.insert(good_w.end(), newW.begin(), newW.end());
-    ncopy_w.insert(ncopy_w.end(), ncopy_newW.begin(), ncopy_newW.end());
-  }
 
-  assert(std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) == num_per_node[MyContext]);
+  // rebuild Multiplicity
+  for (int iw = 0; iw < ncopy_pairs.size(); iw++)
+    good_walkers[ncopy_pairs[iw].second]->Multiplicity = ncopy_pairs[iw].first;
+
+  for (int iw = 0; iw < newW.size(); iw++)
+    newW[iw].walker.Multiplicity = ncopy_newW[iw] + 1;
+
+#ifndef NDEBUG
+  FullPrecRealType TotalMultiplicity = 0;
+  for (int iw = 0; iw < good_walkers.size(); iw++)
+    TotalMultiplicity += good_walkers[iw]->Multiplicity;
+  if (static_cast<int>(TotalMultiplicity) != FairOffSet[MyContext + 1] - FairOffSet[MyContext])
+    throw std::runtime_error("Multiplicity check failed in WalkerControl::swapWalkersSimple!");
+#endif
+}
+#endif
+
+void WalkerControl::killDeadWalkersOnRank(MCPopulation& pop)
+{
+  // kill walkers, actually put them in deadlist
+  RefVector<MCPWalker> bad_walkers;
+  auto& walkers = pop.get_walkers();
+  bad_walkers.reserve(walkers.size());
+  for (auto& walker : walkers)
+    if (static_cast<int>(walker->Multiplicity) == 0)
+      bad_walkers.push_back(*walker);
+  for (MCPWalker& bad_walker : bad_walkers)
+    pop.killWalker(bad_walker);
+  bad_walkers.clear();
 }
 
 std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers)
@@ -695,17 +687,11 @@ bool WalkerControl::put(xmlNodePtr cur)
 
   // validating input
   if (nonblocking == "yes")
-  {
     use_nonblocking = true;
-  }
   else if (nonblocking == "no")
-  {
     use_nonblocking = false;
-  }
   else
-  {
-    APP_ABORT("WalkerControl::put unknown use_nonblocking option " + nonblocking);
-  }
+    myComm->barrier_and_abort("WalkerControl::put unknown use_nonblocking option " + nonblocking);
 
   setMinMax(nw_target, nw_max);
 

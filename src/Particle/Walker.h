@@ -206,6 +206,8 @@ public:
     //static_cast<Matrix<FullPrecRealType>>(Properties) = 0.0;
   }
 
+  Walker(const Walker& a) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a); }
+
   inline int addPropertyHistory(int leng)
   {
     int newL                            = PropertyHistory.size();
@@ -251,8 +253,6 @@ public:
     }
     return mean;
   }
-
-  inline ~Walker() {}
 
   ///assignment operator
   inline Walker& operator=(const Walker& a)
