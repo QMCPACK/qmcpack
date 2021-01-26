@@ -56,19 +56,18 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fi
       use_fixed_pop_(use_fixed_pop),
       n_min_(1),
       n_max_(10),
-      MaxCopy(2),
+      max_copy_(2),
       target_sigma_(10),
       dmcStream(0),
-      NumWalkersCreated(0),
       SwapMode(0),
-      NumWalkersSent(0)
+      use_nonblocking_(true),
+      saved_num_walkers_sent_(0)
 {
-  num_contexts_ = myComm->size();
-  MyContext     = myComm->rank();
-  curData.resize(LE_MAX + num_contexts_);
-  NumPerNode.resize(num_contexts_);
-  OffSet.resize(num_contexts_ + 1);
-  FairOffSet.resize(num_contexts_ + 1);
+  num_ranks_ = myComm->size();
+  rank_num_  = myComm->rank();
+  curData.resize(LE_MAX + num_ranks_);
+  num_per_node_.resize(num_ranks_);
+  fair_offset_.resize(num_ranks_ + 1);
 
   setup_timers(myTimers, WalkerControlTimerNames, timer_level_medium);
 }
@@ -85,7 +84,7 @@ WalkerControl::~WalkerControl()
 
 void WalkerControl::start()
 {
-  if (MyContext == 0)
+  if (rank_num_ == 0)
   {
     std::string hname(myComm->getName());
     hname.append(".dmc.dat");
@@ -109,11 +108,6 @@ void WalkerControl::start()
       dmcFname = hname;
     }
   }
-}
-
-void WalkerControl::setWalkerID(MCPopulation& population)
-{
-  start(); //do the normal start
 }
 
 /** Depends on alot of state
@@ -144,8 +138,8 @@ void WalkerControl::measureProperties(int iter)
     (*dmcStream) << std::setw(10) << iter << std::setw(20) << ensemble_property_.Energy << std::setw(20)
                  << ensemble_property_.Variance << std::setw(20) << ensemble_property_.Weight << std::setw(20)
                  << ensemble_property_.NumSamples << std::setw(20)
-                 << curData[SENTWALKERS_INDEX] / static_cast<double>(num_contexts_);
-    (*dmcStream) << std::setw(20) << trialEnergy << std::setw(20)
+                 << curData[SENTWALKERS_INDEX] / static_cast<double>(num_ranks_);
+    (*dmcStream) << std::setw(20) << trial_energy_ << std::setw(20)
                  << ensemble_property_.R2Accepted / ensemble_property_.R2Proposed;
     (*dmcStream) << std::setw(20) << ensemble_property_.LivingFraction;
     // Work around for bug with deterministic scalar trace test on select compiler/architectures.
@@ -170,10 +164,10 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
     1. compute curData, collect weight on every rank
     2. compute multiplicity by comb method
 
-    3. figure out final distribution
+    3. figure out final distribution, apply walker count ceiling
     4. collect good, bad walkers
     5. communicate walkers
-    6. unpack received walkers, apply walker count floor and ceiling.
+    6. unpack received walkers, apply walker count floor
    */
 
   auto& walkers = pop.get_walkers();
@@ -182,7 +176,7 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
   {
     computeCurData(walkers);
     // convert  node local num of walkers after combing
-    // curData[LE_MAX + MyContext] = wsum to num_total_copies
+    // curData[LE_MAX + rank_num_] = wsum to num_total_copies
     // calculate walker->Multiplicity;
   }
   else
@@ -195,10 +189,13 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
       for (auto& walker : walkers)
         walker->Multiplicity = static_cast<int>(walker->Weight + rng_());
     computeCurData(walkers);
-    for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
-      NumPerNode[i] = static_cast<int>(curData[j]);
+    for (int i = 0, j = LE_MAX; i < num_ranks_; i++, j++)
+      num_per_node_[i] = static_cast<int>(curData[j]);
   }
-  // at this point, curData[LE_MAX + MyContext] and walker->Multiplicity are ready.
+  // at this point, curData[LE_MAX + rank_num_] and walker->Multiplicity are ready.
+
+  measureProperties(iter);
+  pop.set_ensemble_property(ensemble_property_);
 
 #if defined(HAVE_MPI)
   // load balancing over MPI
@@ -216,7 +213,6 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
     while (num_copies > 1)
     {
       auto walker_elements = pop.spawnWalker();
-      pop.checkIntegrity();
       walker_elements.walker = *walkers[iw];
       walker_elements.pset.loadWalker(walker_elements.walker, true);
       walker_elements.pset.update();
@@ -225,10 +221,14 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
     }
   }
 
-  measureProperties(iter);
-  pop.set_ensemble_property(ensemble_property_);
-
+  const int current_num_global_walkers = std::accumulate(num_per_node_.begin(), num_per_node_.end(), 0);
+  pop.set_num_global_walkers(current_num_global_walkers);
+#ifndef NDEBUG
+  pop.checkIntegrity();
   pop.syncWalkersPerNode(myComm);
+  if (current_num_global_walkers != pop.get_num_global_walkers())
+    throw std::runtime_error("Potential bug! Population num_global_walkers mismatched!");
+#endif
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
@@ -236,7 +236,6 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop)
     walker->Multiplicity = 1.0;
   }
 
-  // At this point Weight == global_walkers
   return pop.get_num_global_walkers();
 }
 
@@ -271,11 +270,11 @@ void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers)
   curData[R2ACCEPTED_INDEX]  = r2_accepted;
   curData[R2PROPOSED_INDEX]  = r2_proposed;
   curData[FNSIZE_INDEX]      = num_good_walkers; // num of good walkers before branching
-  curData[SENTWALKERS_INDEX] = NumWalkersSent;
+  curData[SENTWALKERS_INDEX] = saved_num_walkers_sent_;
   if (use_fixed_pop_)
-    curData[LE_MAX + MyContext] = wsum; // node sum of walker weights
+    curData[LE_MAX + rank_num_] = wsum; // node sum of walker weights
   else
-    curData[LE_MAX + MyContext] = num_total_copies; // node num of walkers after local branching
+    curData[LE_MAX + rank_num_] = num_total_copies; // node num of walkers after local branching
 
   myComm->allreduce(curData);
 }
@@ -296,111 +295,6 @@ void WalkerControl::Write2XYZ(MCWalkerConfiguration& W)
   }
 }
 
-/** legacy population limiting
- */
-int WalkerControl::applyNmaxNmin(int current_population)
-{
-  // limit Nmax
-  int current_max = (current_population + num_contexts_ - 1) / num_contexts_;
-  if (current_max > n_max_)
-  {
-    app_warning() << "Exceeding Max Walkers per MPI rank : " << n_max_ << ". Ceiling is applied" << std::endl;
-    int nsub = current_population - n_max_ * num_contexts_;
-    for (int inode = 0; inode < num_contexts_; inode++)
-      if (NumPerNode[inode] > n_max_)
-      {
-        int n_remove = std::min(nsub, NumPerNode[inode] - n_max_);
-        NumPerNode[inode] -= n_remove;
-        nsub -= n_remove;
-
-        if (inode == MyContext)
-        {
-          for (int iw = 0; iw < ncopy_w.size(); iw++)
-          {
-            int n_remove_walker = std::min(ncopy_w[iw], n_remove);
-            ncopy_w[iw] -= n_remove_walker;
-            n_remove -= n_remove_walker;
-            if (n_remove == 0)
-              break;
-          }
-
-          if (n_remove > 0)
-          {
-            app_warning() << "Removing copies of good walkers is not enough. "
-                          << "Removing good walkers." << std::endl;
-            do
-            {
-              bad_w.push_back(good_w.back());
-              good_w.pop_back();
-              ncopy_w.pop_back();
-              --n_remove;
-            } while (n_remove > 0 && !good_w.empty());
-          }
-
-          if (n_remove)
-            APP_ABORT("WalkerControl::applyNmaxNmin not able to remove sufficient walkers on a node!");
-          if (std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) != NumPerNode[inode])
-            APP_ABORT("WalkerControl::applyNmaxNmin walker removal mismatch!");
-        }
-
-        if (nsub == 0)
-          break;
-      }
-
-    if (nsub)
-      APP_ABORT("WalkerControl::applyNmaxNmin not able to remove sufficient walkers overall!");
-  }
-
-  // limit Nmin
-  if (current_population / num_contexts_ < n_min_)
-  {
-    app_warning() << "The number of walkers is running lower than Min Walkers per MPI rank : " << n_min_
-                  << ". Floor is applied" << std::endl;
-    int nadd = n_min_ * num_contexts_ - current_population;
-    for (int inode = 0; inode < num_contexts_; inode++)
-      if (NumPerNode[inode] > 0 && NumPerNode[inode] < n_min_)
-      {
-        int n_insert = std::min(nadd, n_min_ - NumPerNode[inode]);
-        NumPerNode[inode] += n_insert;
-        nadd -= n_insert;
-
-        if (inode == MyContext)
-        {
-          int n_avg_insert_per_walker = (n_insert + ncopy_w.size() - 1) / ncopy_w.size();
-          for (int iw = 0; iw < ncopy_w.size(); iw++)
-          {
-            int n_insert_walker = std::min(n_avg_insert_per_walker, n_insert);
-            ncopy_w[iw] += n_insert_walker;
-            n_insert -= n_insert_walker;
-            if (n_insert == 0)
-              break;
-          }
-
-          if (std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) != NumPerNode[inode])
-            APP_ABORT("WalkerControl::applyNmaxNmin walker insertion mismatch!");
-        }
-
-        if (nadd == 0)
-          break;
-      }
-
-    if (nadd)
-      app_warning() << "WalkerControl::applyNmaxNmin not able to add sufficient walkers overall!" << std::endl;
-  }
-
-  // check current population
-  current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
-  // at least one walker after load-balancing
-  if (current_population / num_contexts_ == 0)
-  {
-    app_error() << "Some MPI ranks have no walkers after load balancing. This should not happen."
-                << "Improve the trial wavefunction or adjust the simulation parameters." << std::endl;
-    APP_ABORT("WalkerControl::sortWalkers");
-  }
-
-  return current_population;
-}
-
 // determine new walker population on each node
 void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per_node,
                                                  std::vector<int>& fair_offset,
@@ -412,7 +306,6 @@ void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per
   FairDivideLow(current_population, num_contexts, fair_offset);
   for (int ip = 0; ip < num_contexts; ip++)
   {
-    // (FairOffSet[ip + 1] - FairOffSet[ip]) gives the partiion ip walker pop
     int dn = num_per_node[ip] - (fair_offset[ip + 1] - fair_offset[ip]);
     if (dn > 0)
       plus.insert(plus.end(), dn, ip);
@@ -437,16 +330,16 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   killDeadWalkersOnRank(pop);
 
   std::vector<int> minus, plus;
-  determineNewWalkerPopulation(NumPerNode, FairOffSet, minus, plus);
+  determineNewWalkerPopulation(num_per_node_, fair_offset_, minus, plus);
 
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
-  sprintf(fname, "test.%d", MyContext);
+  sprintf(fname, "test.%d", rank_num_);
   std::ofstream fout(fname, std::ios::app);
   //fout << NumSwaps << " " << Cur_pop << " ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << NumPerNode[ic] << " ";
+  //for(int ic=0; ic<NumContexts; ic++) fout << num_per_node_[ic] << " ";
   //fout << " | ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << FairOffSet[ic+1]-FairOffSet[ic] << " ";
+  //for(int ic=0; ic<NumContexts; ic++) fout << fair_offset_[ic+1]-fair_offset_[ic] << " ";
   //fout << " | ";
   for (int ic = 0; ic < plus.size(); ic++)
   {
@@ -483,7 +376,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   for (int ic = 0; ic < nswap; ic++)
   {
     int nsentcopy = 0;
-    if (plus[ic] == MyContext)
+    if (plus[ic] == rank_num_)
     {
       // always send the last good walker with most copies
       // count the possible copies in one send
@@ -522,7 +415,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       }
     }
 
-    if (minus[ic] == MyContext)
+    if (minus[ic] == rank_num_)
     {
       newW.push_back(pop.spawnWalker());
 
@@ -559,7 +452,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         awalker->updateBuffer();
         awalker->SendInProgress = true;
       }
-      if (use_nonblocking)
+      if (use_nonblocking_)
         requests.push_back(myComm->comm.isend_n(awalker->DataSet.data(), byteSize, jobit->target));
       else
       {
@@ -568,7 +461,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         myTimers[WC_send]->stop();
       }
     }
-    if (use_nonblocking)
+    if (use_nonblocking_)
     {
       // wait all the isend
       for (int im = 0; im < requests.size(); im++)
@@ -589,7 +482,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
       auto& walker_elements = newW[jobit->walkerID];
       auto& awalker         = walker_elements.walker;
       size_t byteSize       = awalker.byteSize();
-      if (use_nonblocking)
+      if (use_nonblocking_)
         requests.push_back(myComm->comm.ireceive_n(awalker.DataSet.data(), byteSize, jobit->target));
       else
       {
@@ -602,7 +495,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         myTimers[WC_recv]->stop();
       }
     }
-    if (use_nonblocking)
+    if (use_nonblocking_)
     {
       std::vector<bool> not_completed(requests.size(), true);
       bool completed = false;
@@ -630,7 +523,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   }
 
   //save the number of walkers sent
-  NumWalkersSent = nsend;
+  saved_num_walkers_sent_ = nsend;
 
   // rebuild Multiplicity
   for (int iw = 0; iw < ncopy_pairs.size(); iw++)
@@ -643,7 +536,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   FullPrecRealType TotalMultiplicity = 0;
   for (int iw = 0; iw < good_walkers.size(); iw++)
     TotalMultiplicity += good_walkers[iw]->Multiplicity;
-  if (static_cast<int>(TotalMultiplicity) != FairOffSet[MyContext + 1] - FairOffSet[MyContext])
+  if (static_cast<int>(TotalMultiplicity) != fair_offset_[rank_num_ + 1] - fair_offset_[rank_num_])
     throw std::runtime_error("Multiplicity check failed in WalkerControl::swapWalkersSimple!");
 #endif
 }
@@ -660,7 +553,9 @@ void WalkerControl::killDeadWalkersOnRank(MCPopulation& pop)
       bad_walkers.push_back(*walker);
   for (MCPWalker& bad_walker : bad_walkers)
     pop.killWalker(bad_walker);
-  bad_walkers.clear();
+#ifndef NDEBUG
+  pop.checkIntegrity();
+#endif
 }
 
 std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers)
@@ -678,7 +573,7 @@ bool WalkerControl::put(xmlNodePtr cur)
   std::string nonblocking = "yes";
   ParameterSet params;
   params.add(target_sigma_, "sigmaBound", "double");
-  params.add(MaxCopy, "maxCopy", "int");
+  params.add(max_copy_, "maxCopy", "int");
   params.add(nw_target, "targetwalkers", "int");
   params.add(nw_max, "max_walkers", "int");
   params.add(nonblocking, "use_nonblocking", "string");
@@ -687,9 +582,9 @@ bool WalkerControl::put(xmlNodePtr cur)
 
   // validating input
   if (nonblocking == "yes")
-    use_nonblocking = true;
+    use_nonblocking_ = true;
   else if (nonblocking == "no")
-    use_nonblocking = false;
+    use_nonblocking_ = false;
   else
     myComm->barrier_and_abort("WalkerControl::put unknown use_nonblocking option " + nonblocking);
 
@@ -698,10 +593,10 @@ bool WalkerControl::put(xmlNodePtr cur)
   app_log() << "  WalkerControl parameters " << std::endl;
   //app_log() << "    energyBound = " << targetEnergyBound << std::endl;
   //app_log() << "    sigmaBound = " << targetSigma << std::endl;
-  app_log() << "    maxCopy = " << MaxCopy << std::endl;
+  app_log() << "    maxCopy = " << max_copy_ << std::endl;
   app_log() << "    Max Walkers per MPI rank " << n_max_ << std::endl;
   app_log() << "    Min Walkers per MPI rank " << n_min_ << std::endl;
-  app_log() << "    Using " << (use_nonblocking ? "non-" : "") << "blocking send/recv" << std::endl;
+  app_log() << "    Using " << (use_nonblocking_ ? "non-" : "") << "blocking send/recv" << std::endl;
   return true;
 }
 
@@ -709,7 +604,7 @@ void WalkerControl::setMinMax(int nw_in, int nmax_in)
 {
   if (nw_in > 0)
   {
-    int npernode = nw_in / num_contexts_;
+    int npernode = nw_in / num_ranks_;
     if (use_fixed_pop_)
     {
       n_max_ = npernode;
@@ -717,7 +612,7 @@ void WalkerControl::setMinMax(int nw_in, int nmax_in)
     }
     else
     {
-      n_max_ = MaxCopy * npernode + 1;
+      n_max_ = max_copy_ * npernode + 1;
       n_min_ = npernode / 5 + 1;
       if (nmax_in > 0)
         n_max_ = nmax_in;

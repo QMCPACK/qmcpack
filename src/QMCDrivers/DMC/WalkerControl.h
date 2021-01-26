@@ -45,46 +45,6 @@ public:
   ///typedef of IndexType
   typedef QMCTraits::IndexType IndexType;
 
-  /** An enum to access curData for reduction
-   *
-   * curData is larger than this //LE_MAX + n_node * T
-   */
-  enum
-  {
-    ENERGY_INDEX = 0,
-    ENERGY_SQ_INDEX,
-    WALKERSIZE_INDEX,
-    WEIGHT_INDEX,
-    R2ACCEPTED_INDEX,
-    R2PROPOSED_INDEX,
-    FNSIZE_INDEX,
-    SENTWALKERS_INDEX,
-    LE_MAX
-  };
-
-  struct PopulationAdjustment
-  {
-    int num_walkers{0}; // This is the number of walkers we are adjusting to
-    std::vector<WalkerElementsRef> good_walkers;
-    std::vector<int> copies_to_make;
-    std::vector<WalkerElementsRef> bad_walkers;
-  };
-
-  struct WalkerAdjustmentCriteria
-  {
-    FullPrecRealType esum{0.0};
-    FullPrecRealType e2sum{0.0};
-    FullPrecRealType wsum{0.0};
-    FullPrecRealType ecum{0.0};
-    FullPrecRealType w2sum{0.0};
-    FullPrecRealType r2_accepted{0.0};
-    FullPrecRealType r2_proposed{0.0};
-    int nfn{0};
-    int ngoodfn{0};
-    int nc{0};
-  };
-
-
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
@@ -92,26 +52,17 @@ public:
   WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
-  virtual ~WalkerControl();
+  ~WalkerControl();
 
   /** start a block */
   void start();
-
-  /** legacy: start controller  and initialize the IDs of walkers*/
-  void setWalkerID(MCWalkerConfiguration& walkers);
-
-  /** unified driver: start controller
-   *
-   *  WalkerID's are initialized by MCPopulation, SOC
-   */
-  void setWalkerID(MCPopulation& population);
 
   /** take averages and writes to a file */
   void measureProperties(int iter);
 
   /** set the trial energy
    */
-  inline void setTrialEnergy(FullPrecRealType et) { trialEnergy = et; }
+  inline void setTrialEnergy(FullPrecRealType et) { trial_energy_ = et; }
 
   /** reset to accumulate data */
   virtual void reset();
@@ -139,65 +90,13 @@ public:
   {
     ensemble_property_ = ensemble_property;
   }
-  IndexType get_num_contexts() const { return num_contexts_; }
-
-protected:
-  ///random number generator
-  RandomGenerator_t& rng_;
-  ///if true, use fixed population
-  bool use_fixed_pop_;
-  ///minimum number of walkers
-  IndexType n_min_;
-  ///maximum number of walkers
-  IndexType n_max_;
-  ///maximum copy per walker
-  IndexType MaxCopy;
-  ///current number of walkers per processor
-  IndexType NumWalkers;
-  ///trial energy energy
-  FullPrecRealType trialEnergy;
-  ///target sigma to limit fluctuations of the trial energy
-  FullPrecRealType target_sigma_;
-  ///number of walkers on each node after branching before load balancing
-  std::vector<int> NumPerNode;
-  ///offset of the particle index
-  std::vector<int> OffSet;
-  ///offset of the particle index for a fair distribution
-  std::vector<int> FairOffSet;
-
-  ///filename for dmc.dat
-  std::string dmcFname;
-  ///file to save energy histogram
-  std::ofstream* dmcStream;
-  ///Number of walkers created by this node
-  IndexType NumWalkersCreated;
-  ///context id
-  IndexType MyContext;
-  ///number of contexts
-  IndexType num_contexts_;
-  ///0 is default
-  IndexType SwapMode;
-  ///any temporary data includes many ridiculous conversions of integral types to and from fp
-  std::vector<FullPrecRealType> curData;
-  ///temporary storage for good and bad walkers
-  std::vector<Walker_t*> good_w, bad_w;
-  ///temporary storage for copy counters
-  std::vector<int> ncopy_w;
-  ///Use non-blocking isend/irecv
-  bool use_nonblocking;
-
-  ///ensemble properties
-  MCDataType<FullPrecRealType> ensemble_property_;
+  IndexType get_num_contexts() const { return num_ranks_; }
 
 private:
   /// kill dead walkers in the population
   static void killDeadWalkersOnRank(MCPopulation& pop);
 
   static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
-
-  /** legacy: apply per node limit Nmax and Nmin
-   */
-  int applyNmaxNmin(int current_population);
 
   void Write2XYZ(MCWalkerConfiguration& W);
 
@@ -220,23 +119,74 @@ private:
 
 #if defined(HAVE_MPI)
   /** swap Walkers with Recv/Send or Irecv/Isend
- *
- * The algorithm ensures that the load per node can differ only by one walker.
- * Each MPI rank can only send or receive or be silent.
- * The communication is one-dimensional and very local.
- * If multiple copies of a walker need to be sent to the target rank, only send one.
- * The number of copies is communicated ahead via blocking send/recv.
- * Then the walkers are transferred via blocking or non-blocking send/recv.
- * The blocking send/recv may become serialized and worsen load imbalance.
- * Non blocking send/recv algorithm avoids serialization completely.
- */
+   *
+   * The algorithm ensures that the load per node can differ only by one walker.
+   * Each MPI rank can only send or receive or be silent.
+   * The communication is one-dimensional and very local.
+   * If multiple copies of a walker need to be sent to the target rank, only send one.
+   * The number of copies is communicated ahead via blocking send/recv.
+   * Then the walkers are transferred via blocking or non-blocking send/recv.
+   * The blocking send/recv may become serialized and worsen load imbalance.
+   * Non blocking send/recv algorithm avoids serialization completely.
+   */
   void swapWalkersSimple(MCPopulation& pop);
 #endif
 
-  TimerList_t myTimers;
+  /** An enum to access curData for reduction
+   *
+   * curData is larger than this //LE_MAX + n_node * T
+   */
+  enum
+  {
+    ENERGY_INDEX = 0,
+    ENERGY_SQ_INDEX,
+    WALKERSIZE_INDEX,
+    WEIGHT_INDEX,
+    R2ACCEPTED_INDEX,
+    R2PROPOSED_INDEX,
+    FNSIZE_INDEX,
+    SENTWALKERS_INDEX,
+    LE_MAX
+  };
 
-  // Number of walkers sent during the exchange
-  IndexType NumWalkersSent;
+  ///random number generator
+  RandomGenerator_t& rng_;
+  ///if true, use fixed population
+  bool use_fixed_pop_;
+  ///minimum number of walkers
+  IndexType n_min_;
+  ///maximum number of walkers
+  IndexType n_max_;
+  ///maximum copy per walker
+  IndexType max_copy_;
+  ///trial energy energy
+  FullPrecRealType trial_energy_;
+  ///target sigma to limit fluctuations of the trial energy
+  FullPrecRealType target_sigma_;
+  ///number of walkers on each node after branching before load balancing
+  std::vector<int> num_per_node_;
+  ///offset of the particle index for a fair distribution
+  std::vector<int> fair_offset_;
+  ///filename for dmc.dat
+  std::string dmcFname;
+  ///file to save energy histogram
+  std::ofstream* dmcStream;
+  ///context id
+  IndexType rank_num_;
+  ///number of contexts
+  IndexType num_ranks_;
+  ///0 is default
+  IndexType SwapMode;
+  ///any temporary data includes many ridiculous conversions of integral types to and from fp
+  std::vector<FullPrecRealType> curData;
+  ///Use non-blocking isend/irecv
+  bool use_nonblocking_;
+  ///ensemble properties
+  MCDataType<FullPrecRealType> ensemble_property_;
+  ///timers
+  TimerList_t myTimers;
+  ///Number of walkers sent during the exchange
+  IndexType saved_num_walkers_sent_;
 };
 
 } // namespace qmcplusplus
