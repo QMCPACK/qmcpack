@@ -65,15 +65,15 @@ public:
   inline void setTrialEnergy(FullPrecRealType et) { trial_energy_ = et; }
 
   /** reset to accumulate data */
-  virtual void reset();
+  void reset();
 
   /** unified: perform branch and swap walkers as required 
    *
    *  \return global population
    */
-  virtual FullPrecRealType branch(int iter, MCPopulation& pop, bool do_not_branch);
+  FullPrecRealType branch(int iter, MCPopulation& pop, bool do_not_branch);
 
-  virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
+  FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
   {
     return 1.0 / (static_cast<FullPrecRealType>(ngen) * tau);
   }
