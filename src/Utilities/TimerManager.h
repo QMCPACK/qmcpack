@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <string>
+#include <mutex>
 #include <map>
 #include "NewTimer.h"
 #include "config.h"
@@ -45,6 +46,8 @@ class TimerManager
 private:
   /// All the timers created by this manager
   std::vector<std::unique_ptr<TIMER>> TimerList;
+  /// mutex for TimerList
+  std::mutex timer_list_lock_;
   /// The stack of nested active timers
   std::vector<TIMER*> CurrentTimerStack;
   /// The threshold for active timers

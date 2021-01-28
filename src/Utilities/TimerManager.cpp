@@ -66,8 +66,8 @@ template<class TIMER>
 TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels mytimer)
 {
   TIMER* t = nullptr;
-#pragma omp critical
   {
+    const std::lock_guard<std::mutex> lock(timer_list_lock_);
     TimerList.push_back(std::make_unique<TIMER>(myname, this, mytimer));
     t = TimerList.back().get();
     initializeTimer(*t);
