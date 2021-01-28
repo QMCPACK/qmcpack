@@ -8,6 +8,7 @@ import numpy as np
 from generic import obj
 from developer import to_str
 from fileio import TextFile
+from unit_converter import convert
 from simulation import SimulationAnalyzer
 from structure import generate_structure
 from rmg_input import RmgInput,rmg_modes
@@ -65,6 +66,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         
         self.path         = path
         self.outfile_name = filename
+        self.input        = None
 
         if analyze:
             self.analyze()
@@ -106,7 +108,14 @@ class RmgAnalyzer(SimulationAnalyzer):
         f = logfile
         mode = None
         if f.seek('Calculation type',1) != -1:
-            mode = rmg_modes.mode_match(f.readline(),short=True)
+            line = f.readline().lower()
+            if 'quench electrons' in line:
+                mode = 'scf'
+            elif 'band structure' in line:
+                mode = 'band'
+            else:
+                mode = rmg_modes.mode_match(line,short=True)
+            #end if
             setup_info.run_mode = mode
         #end if
         setup_start = None
@@ -114,6 +123,9 @@ class RmgAnalyzer(SimulationAnalyzer):
         if mode=='scf':
             setup_start = 'Files'
             setup_end   = 'Diagonalization using'
+        elif mode=='band':
+            setup_start = 'Files'
+            setup_end   = 'converged in'
         else:
             # don't know how to handle other cases yet
             None
@@ -216,7 +228,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                             #end for
                             setup_info[bname] = bvalues
                         else:
-                            other_blocks[bname] = body,lines
+                            other_blocks[bname] = header,body,lines
                         #end if
                     #end for
                     # additional processing for specific blocks
@@ -266,7 +278,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                     #end if
                     if 'k_points' in other_blocks:
                         try:
-                            body,lines = other_blocks.k_points
+                            header,body,lines = other_blocks.k_points
                             del other_blocks.k_points
                             for i,line in enumerate(lines):
                                 if 'Weight in crystal unit' in line:
@@ -294,8 +306,15 @@ class RmgAnalyzer(SimulationAnalyzer):
                     k = 'initial_ionic_positions_and_displacements'
                     if k in other_blocks:
                         try:
-                            body,lines = other_blocks[k]
+                            header,body,lines = other_blocks[k]
                             del other_blocks[k]
+                            h = header.lower()
+                            punits = None
+                            if 'bohr' in h:
+                                punits = 'B'
+                            elif 'angstrom' in h:
+                                punits = 'A'
+                            #end if
                             pos = []
                             spec = []
                             for i,line in enumerate(lines):
@@ -312,6 +331,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                                 #end if
                             #end for
                             setup_info.ion_positions = obj(
+                                units     = punits,
                                 atoms     = np.array(spec,dtype=object),
                                 positions = np.array(pos,dtype=float),
                                 )
@@ -324,33 +344,49 @@ class RmgAnalyzer(SimulationAnalyzer):
         #end if
         if 'lattice_setup' in setup_info and 'ion_positions' in setup_info:
             try:
-                units = setup_info.lattice_setup.get('units','B')
-                axes  = setup_info.lattice_setup.axes
-                elem  = setup_info.ion_positions.atoms
-                pos   = setup_info.ion_positions.positions
-                kpu   = None
-                kw    = None
-                if units=='a0':
-                    units = 'B'
-                elif units!='B':
-                    units = 'A' # assume for now
+                aunits = setup_info.lattice_setup.get('units','B')
+                axes   = setup_info.lattice_setup.axes
+                elem   = setup_info.ion_positions.atoms
+                pos    = setup_info.ion_positions.positions
+                punits = setup_info.ion_positions.units
+                kpu    = None
+                kw     = None
+                if aunits=='a0':
+                    aunits = 'B'
+                elif aunits!='B':
+                    aunits = 'A' # assume for now
                 #end if
+                units = 'B'
+                axes = convert(axes,aunits,units)
+                pos  = convert(pos,punits,units)
                 s = generate_structure(
                     units = units,
                     axes  = axes,
                     elem  = elem,
                     pos   = pos,
                     )
-                if 'k_points' in setup_info:
+                if 'k_points' in setup_info and 'kpoints_crystal' in setup_info.k_points:
                     kpu = setup_info.k_points.kpoints_crystal
-                    kw  = setup_info.k_points.kweights
-                    kp  = np.dot(kpu,s.kaxes)
-                    s.add_kpoints(kpoints=kp,kweights=kw)
+                    if len(kpu)>0:
+                        kw  = setup_info.k_points.kweights
+                        kp  = np.dot(kpu,s.kaxes)
+                        s.add_kpoints(kpoints=kp,kweights=kw)
+                    #end if
                 #end if
                 setup_info.structure = s
             except:
                 None
             #end try
+        #end if
+        if 'files' in setup_info and 'control_input_file' in setup_info.files:
+            filepath = os.path.join(self.path,setup_info.files.control_input_file)
+            if os.path.exists(filepath):
+                try:
+                    self.input = RmgInput(filepath)
+                except:
+                    None
+                #end try
+            #end if
         #end if
         self.setup_info = setup_info
     #end def read_setup_info
@@ -369,18 +405,21 @@ class RmgAnalyzer(SimulationAnalyzer):
             t = f.readtokens()
             results.energy = float(t[-2])
             results.energy_units = t[-1]
+        elif mode=='band':
+            None
         else:
-            self.warn('unrecognized run mode: {}'.format(mode))
+            self.warn('Results not read.\nUnrecognized run mode: {}'.format(mode))
         #end if
         self.results = results
     #end def read_results
 
 
-    def return_input_structure(self):
+    def return_initial_structure(self):
         s = None
         if 'setup_info' in self and 'structure' in self.setup_info:
             s = self.setup_info.structure.copy()
         #end if
         return s
-    #end def return_input_structure
+    #end def return_initial_structure
+
 #end class RmgAnalyzer

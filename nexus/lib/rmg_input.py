@@ -3,7 +3,9 @@ import numpy as np
 
 from generic import obj
 from developer import DevBase,error
+from unit_converter import convert
 from pseudopotential import pp_elem_label
+from structure import generate_structure
 from simulation import SimulationInput
 
 
@@ -3240,6 +3242,76 @@ class RmgInput(SimulationInput):
     def is_valid(self):
         return self.check_valid(exit=False)
     #end def is_valid
+
+
+    def return_structure(self,units='B'):
+        axes       = self.get('lattice_vector',None)
+        axes_unit  = self.get('lattice_units','bohr')
+        lattice    = self.get('bravais_lattice_type','orthorhombic primitive')
+        a          = self.get('a_length',0.0)
+        b          = self.get('b_length',0.0)
+        c          = self.get('c_length',0.0)
+
+        coord_type = self.get('atomic_coordinate_type','absolute')
+        coord_unit = self.get('crds_units','bohr')
+        atom_data  = self.get('atoms',obj())
+        atoms      = atom_data.get('atoms',None)
+        positions  = atom_data.get('positions',None)
+
+        unit_dict = dict(angstrom='A',bohr='B')
+        coord_unit = unit_dict[coord_unit.lower()]
+        axes_unit  = unit_dict[axes_unit.lower()]
+
+        if axes is not None:
+            axes = np.array(axes,dtype=float)
+        else:
+            lattice_orig = lattice
+            lattice = lattice.lower()
+            if lattice=='cubic primitive':
+                axes = np.diag((a,a,a))
+            elif lattice=='tetragonal primitive':
+                axes = np.diag((a,a,c))
+            elif lattice=='orthorhombic primitive':
+                axes = np.diag((a,b,c))
+            elif lattice=='cubic body centered':
+                axes = 0.5*a*np.array([[ 1, 1,-1],
+                                       [-1, 1, 1],
+                                       [ 1,-1, 1]],dtype=float)
+            elif lattice=='cubic face centered':
+                axes = 0.5*a*np.array([[ 1, 1, 0],
+                                       [ 0, 1, 1],
+                                       [ 1, 0, 1]],dtype=float)
+            elif lattice=='hexagonal primitive':
+                axes = np.array([[   a,              0, 0],
+                                 [-a/2, np.sqrt(3)/2*a, 0],
+                                 [   0,              0, c]],dtype=float)
+            else:
+                # cubic body centered, hexagonal primitive not yet supported
+                self.error('Structure extraction failed.\nLattice type "{}" is currently unsupported.'.format(lattice_orig))
+            #end if
+        #end if
+        axes = convert(axes,axes_unit,units)
+
+        if atoms is None or positions is None:
+            self.error('Structure extraction failed.\nEither atoms or positions could not be obtained.')
+        #end if
+        atoms     = np.array(atoms,dtype=object)
+        positions = np.array(positions,dtype=float)
+        if coord_type.lower()=='cell relative':
+            positions = np.dot(positions,axes)
+        else:
+            positions = convert(positions,coord_unit,units)
+        #end if
+        
+        s = generate_structure(
+            units = units,
+            axes  = axes,
+            elem  = atoms,
+            pos   = positions,
+            )
+
+        return s
+    #end def return_structure
 #end class RmgInput
 
 
