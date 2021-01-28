@@ -248,19 +248,16 @@ void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers)
   for (const auto& walker : walkers)
   {
     const int num_copies = static_cast<int>(walker->Multiplicity);
-    if (num_copies > 0)
-    {
-      num_good_walkers++;
-      num_total_copies += num_copies;
-      // Ye : not sure about these r2
-      r2_accepted += walker->Properties(WP::R2ACCEPTED);
-      r2_proposed += walker->Properties(WP::R2PROPOSED);
-      FullPrecRealType e   = walker->Properties(WP::LOCALENERGY);
-      FullPrecRealType wgt = walker->Weight;
-      esum += wgt * e;
-      e2sum += wgt * e * e;
-      wsum += wgt;
-    }
+    num_good_walkers += num_copies > 0 ? 1 : 0;
+    num_total_copies += num_copies;
+    // Ye : not sure about these r2
+    r2_accepted += walker->Properties(WP::R2ACCEPTED);
+    r2_proposed += walker->Properties(WP::R2PROPOSED);
+    FullPrecRealType e   = walker->Properties(WP::LOCALENERGY);
+    FullPrecRealType wgt = walker->Weight;
+    esum += wgt * e;
+    e2sum += wgt * e * e;
+    wsum += wgt;
   }
   //temp is an array to perform reduction operations
   std::fill(curData.begin(), curData.end(), 0);
