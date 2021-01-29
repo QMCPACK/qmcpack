@@ -256,6 +256,7 @@ protected:
    * them.
    */
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
+
   /////estimators of composite data
   //CompositeEstimatorSet* CompEstimators;
   ///Timer
@@ -269,7 +270,9 @@ private:
   void makeBlockAverages(unsigned long accept, unsigned long reject);
 
   void reduceOperatorEstimators();
-
+  void writeOperatorEstimators();
+  void zeroOperatorEstimators();
+  
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;

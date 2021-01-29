@@ -93,7 +93,7 @@ public:
    *, needs to be unraveled and simplified the hdf5 output is another 
    *  big state big coupling design.
    */
-  void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const override;
+  void registerOperatorEstimator(hid_t gid) override;
 
 private:
   static std::vector<int> getSpeciesSize(SpeciesSet& species);

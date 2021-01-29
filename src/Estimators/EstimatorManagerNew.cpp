@@ -200,7 +200,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
       Estimators[i]->registerObservables(h5desc, h_file);
     for (auto& uope : operator_ests_)
     {
-      uope->registerOperatorEstimator(h5desc, h_file);
+      uope->registerOperatorEstimator(h_file);
     }
   }
 }
@@ -221,6 +221,8 @@ void EstimatorManagerNew::stopBlock(unsigned long accept,
   PropertyCache[cpuInd]    = cpu_block_time;
   makeBlockAverages(accept, reject);
   reduceOperatorEstimators();
+  writeOperatorEstimators();
+  zeroOperatorEstimators();
 }
 
 /** Called at end of block in Unified Driver
@@ -277,7 +279,6 @@ void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<
     {
       this_op_est_for_all_crowds.emplace_back(crowd_op_ests[icrowd][iop]);
     }
-
     operator_ests_[iop]->collect(this_op_est_for_all_crowds);
   }
 }
@@ -343,19 +344,22 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
   varAccumulator(SquaredAverageCache[0]);
-  if (Archive)
-  {
-    *Archive << std::setw(10) << RecordCount;
-    int maxobjs = std::min(BlockAverages.size(), max4ascii);
-    for (int j = 0; j < maxobjs; j++)
-      *Archive << std::setw(FieldWidth) << AverageCache[j];
-    for (int j = 0; j < PropertyCache.size(); j++)
-      *Archive << std::setw(FieldWidth) << PropertyCache[j];
-    *Archive << std::endl;
-    for (int o = 0; o < h5desc.size(); ++o)
-      h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
-    H5Fflush(h_file, H5F_SCOPE_LOCAL);
-  }
+
+  //Do not assume h_file is valid
+  if (h_file)
+    if (Archive)
+    {
+      *Archive << std::setw(10) << RecordCount;
+      int maxobjs = std::min(BlockAverages.size(), max4ascii);
+      for (int j = 0; j < maxobjs; j++)
+        *Archive << std::setw(FieldWidth) << AverageCache[j];
+      for (int j = 0; j < PropertyCache.size(); j++)
+        *Archive << std::setw(FieldWidth) << PropertyCache[j];
+      *Archive << std::endl;
+      for (int o = 0; o < h5desc.size(); ++o)
+        h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
+      H5Fflush(h_file, H5F_SCOPE_LOCAL);
+    }
   RecordCount++;
 }
 
@@ -385,7 +389,6 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       auto cur = operator_send_buffer.begin();
       std::copy_n(data.begin(), data.size(), cur);
       operator_send_buffer[data.size()] = estimator.get_walkers_weight();
-
       // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
       my_comm_->comm.reduce_n(operator_send_buffer.begin(), adjusted_size, operator_recv_buffer.begin(), std::plus<>{},
@@ -397,11 +400,30 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       {
         std::copy_n(operator_recv_buffer.begin(), data.size(), data.begin());
         size_t reduced_walker_weights = operator_recv_buffer[data.size()];
-        RealType invTotWgt            = 1.0 / reduced_walker_weights;
+        RealType invTotWgt            = 1.0 / static_cast<double>(reduced_walker_weights);
         operator_ests_[iop]->normalize(invTotWgt);
       }
     }
   }
+}
+
+void EstimatorManagerNew::writeOperatorEstimators()
+{
+  if (my_comm_->rank() == 0)
+  {
+    if (h_file)
+    {
+      for (auto& op_est : operator_ests_)
+        op_est->write();
+      H5Fflush(h_file, H5F_SCOPE_LOCAL);
+    }
+  }
+}
+
+void EstimatorManagerNew::zeroOperatorEstimators()
+{
+  for (auto& op_est : operator_ests_)
+    op_est->zero();
 }
 
 void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& var)

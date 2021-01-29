@@ -167,16 +167,17 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   timers.buffer_timer.start();
   TrialWaveFunction::flex_evaluateGL(crowd.get_walker_twfs(), crowd.get_walker_elecs(), recompute);
 #ifndef NDEBUG
-  std::vector<TrialWaveFunction::LogValueType> log_values(crowd.get_walker_twfs().size());
-  for (int iw = 0; iw < log_values.size(); iw++)
-    log_values[iw] = {crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()};
-  std::cout << "G " << std::endl << crowd.get_walker_twfs()[0].get().G << std::endl;
-  std::cout << "L " << std::endl << crowd.get_walker_twfs()[0].get().L << std::endl;
-  TrialWaveFunction::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
-  std::cout << "G " << std::endl << crowd.get_walker_twfs()[0].get().G << std::endl;
-  std::cout << "L " << std::endl << crowd.get_walker_twfs()[0].get().L << std::endl;
-  for (int iw = 0; iw < log_values.size(); iw++)
-    std::cout << "Logpsi walker[" << iw<< "] " << log_values[iw] << " ref " << TrialWaveFunction::LogValueType{crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()} << std::endl;
+  // This creates an unendurable about of output in Debug
+  // std::vector<TrialWaveFunction::LogValueType> log_values(crowd.get_walker_twfs().size());
+  // for (int iw = 0; iw < log_values.size(); iw++)
+  //   log_values[iw] = {crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()};
+  // std::cout << "G " << std::endl << crowd.get_walker_twfs()[0].get().G << std::endl;
+  // std::cout << "L " << std::endl << crowd.get_walker_twfs()[0].get().L << std::endl;
+  // TrialWaveFunction::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
+  // std::cout << "G " << std::endl << crowd.get_walker_twfs()[0].get().G << std::endl;
+  // std::cout << "L " << std::endl << crowd.get_walker_twfs()[0].get().L << std::endl;
+  // for (int iw = 0; iw < log_values.size(); iw++)
+  //   std::cout << "Logpsi walker[" << iw<< "] " << log_values[iw] << " ref " << TrialWaveFunction::LogValueType{crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()} << std::endl;
 #endif
   timers.buffer_timer.stop();
   timers.hamiltonian_timer.start();

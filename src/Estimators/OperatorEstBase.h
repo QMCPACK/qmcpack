@@ -88,15 +88,24 @@ public:
    *
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
+   *
+   * Since Operator Estimators own their data they can't just stuff an index in here and call it a day
+   * they need to have the indexes for their h5desc.  This whole hdf5 design could use some help.
    */
-  virtual void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
+  virtual void registerOperatorEstimator(hid_t gid) {}
 
   virtual OperatorEstBase* clone() = 0;
 
+  void write();
+
+  void zero();
+  
   QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
 protected:
   QMCT::FullPrecRealType walkers_weight_;
 
+  // convenient Descriptors hdf5 for Operator Estimators only non null on rank scope OperatorEstimator  
+  UPtrVector<observable_helper> h5desc_;
 
   /** data management
    */

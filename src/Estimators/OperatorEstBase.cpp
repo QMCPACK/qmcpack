@@ -38,9 +38,10 @@ void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_oper
     std::transform(data_->begin(), data_->end(), crowd_oeb.get_data()->begin(), data_->begin(), std::plus<>{});
     // For debugging purposes
     walkers_weight_ += crowd_oeb.walkers_weight_;
-    crowd_oeb.walkers_weight_ = 0;
+    crowd_oeb.zero();
   }
-  std::cout << "spindens walkers weight: " << walkers_weight_ << '\n';
+  //  std::for_each(data_->begin(), data_->end(), [](auto elem){ std::cout << elem << " "; });
+  // std::cout << '\n';
 }
 
 void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
@@ -48,6 +49,17 @@ void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
   auto& data = *data_;
   for (QMCT::RealType& elem : data)
     elem *= invTotWgt;
+}
+
+void OperatorEstBase::write()
+{
+  for (auto& h5d : h5desc_)
+    h5d->write(data_->data(), nullptr);
+}
+
+void OperatorEstBase::zero()
+{
+  std::fill(data_->begin(), data_->end(), 0.0);
   walkers_weight_ = 0;
 }
 
