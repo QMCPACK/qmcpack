@@ -139,6 +139,7 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
     population.syncWalkersPerNode(MyEstimator->getCommunicator());
     iParam[B_TARGETWALKERS] = population.get_num_global_walkers();
   }
+  app_log() << "  Creating WalkerControl" << std::endl;
   WalkerController = std::make_unique<WalkerControl>(MyEstimator->getCommunicator(), Random);
   WalkerController->setMinMax(iParam[B_TARGETWALKERS], 0);
   if (!BranchMode[B_RESTART])
