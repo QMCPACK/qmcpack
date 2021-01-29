@@ -158,6 +158,13 @@ public:
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch) override;
 
+  void mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                     const RefVector<ParticleSet>& P_list,
+                     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                     bool fromscratch) override;
+
+
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   /** cloning function
