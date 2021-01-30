@@ -60,7 +60,7 @@ public:
   /** take averages and writes to a file */
   void writeDMCdat(int iter, const std::vector<FullPrecRealType>& curData);
 
-  /** set the trial energy
+  /** set the trial energy for writing to dmc.dat
    */
   inline void setTrialEnergy(FullPrecRealType et) { trial_energy_ = et; }
 
@@ -69,11 +69,6 @@ public:
    *  \return global population
    */
   FullPrecRealType branch(int iter, MCPopulation& pop, bool do_not_branch);
-
-  FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
-  {
-    return 1.0 / (static_cast<FullPrecRealType>(ngen) * tau);
-  }
 
   bool put(xmlNodePtr cur);
 
@@ -94,8 +89,6 @@ private:
   static void killDeadWalkersOnRank(MCPopulation& pop);
 
   static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
-
-  void Write2XYZ(MCWalkerConfiguration& W);
 
   /// compute curData
   void computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData);

@@ -273,22 +273,6 @@ void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::ve
   myComm->allreduce(curData);
 }
 
-void WalkerControl::Write2XYZ(MCWalkerConfiguration& W)
-{
-  std::ofstream fout("bad.xyz");
-  MCWalkerConfiguration::iterator it(W.begin());
-  MCWalkerConfiguration::iterator it_end(W.end());
-  int nptcls(W.getTotalNum());
-  while (it != it_end)
-  {
-    fout << nptcls << std::endl
-         << "# E = " << (*it)->Properties(WP::LOCALENERGY) << " Wgt= " << (*it)->Weight << std::endl;
-    for (int i = 0; i < nptcls; i++)
-      fout << "H " << (*it)->R[i] << std::endl;
-    ++it;
-  }
-}
-
 // determine new walker population on each node
 void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per_node,
                                                  std::vector<int>& fair_offset,
