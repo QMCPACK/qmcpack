@@ -409,11 +409,6 @@ struct SFNBranch : public QMCTraits
    */
   void branch(int iter, MCPopulation& population);
 
-  /** restart averaging
-   * @param counter Counter to determine the cummulative average will be reset.
-   */
-  void flush(int counter);
-
   /** reset the internal parameters */
   void reset();
 

@@ -58,14 +58,11 @@ public:
   void start();
 
   /** take averages and writes to a file */
-  void measureProperties(int iter);
+  void writeDMCdat(int iter, const std::vector<FullPrecRealType>& curData);
 
   /** set the trial energy
    */
   inline void setTrialEnergy(FullPrecRealType et) { trial_energy_ = et; }
-
-  /** reset to accumulate data */
-  void reset();
 
   /** unified: perform branch and swap walkers as required 
    *
@@ -101,7 +98,7 @@ private:
   void Write2XYZ(MCWalkerConfiguration& W);
 
   /// compute curData
-  void computeCurData(const UPtrVector<MCPWalker>& walkers);
+  void computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData);
 
   /** creates the distribution plan
    *
@@ -172,9 +169,9 @@ private:
   ///file to save energy histogram
   std::ofstream* dmcStream;
   ///context id
-  IndexType rank_num_;
+  const IndexType rank_num_;
   ///number of contexts
-  IndexType num_ranks_;
+  const IndexType num_ranks_;
   ///0 is default
   IndexType SwapMode;
   ///any temporary data includes many ridiculous conversions of integral types to and from fp

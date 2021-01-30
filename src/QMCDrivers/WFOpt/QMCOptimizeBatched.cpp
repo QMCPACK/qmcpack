@@ -117,7 +117,6 @@ void QMCOptimizeBatched::generateSamples()
   app_log() << "<optimization-report>" << std::endl;
 
   t1.restart();
-  branch_engine_->flush(0);
   branch_engine_->reset();
 
   samples_.resetSampleCount();

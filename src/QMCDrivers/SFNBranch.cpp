@@ -185,10 +185,7 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
                     population.get_num_particles());
     vParam[SBVP::TAUEFF] = tau * R2Accepted.result() / R2Proposed.result();
   }
-  //reset controller
-  WalkerController->reset();
-  if (BackupWalkerController)
-    BackupWalkerController->reset();
+
   app_log() << "  QMC counter      = " << iParam[B_COUNTER] << std::endl;
   app_log() << "  time step        = " << vParam[SBVP::TAU] << std::endl;
   app_log() << "  effective time step = " << vParam[SBVP::TAUEFF] << std::endl;
@@ -204,12 +201,6 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
   app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
 
   return int(round(double(iParam[B_TARGETWALKERS]) / double(nwtot_now)));
-}
-
-void SFNBranch::flush(int counter)
-{
-  if (counter == 0 && WalkerController)
-    WalkerController->reset();
 }
 
 void SFNBranch::branch(int iter, MCPopulation& population)
