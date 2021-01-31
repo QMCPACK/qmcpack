@@ -57,7 +57,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  QMCDriverInput qmcdriver_input(3);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
   DMCDriverInput dmcdriver_input;
   dmcdriver_input.readXML(node);
@@ -71,7 +71,8 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
   SampleStack samples;
   WalkerConfigurations walker_confs;
-  DMCBatched dmcdriver(std::move(qmcdriver_input), std::move(dmcdriver_input),
+  ProjectData test_project;
+  DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), std::move(dmcdriver_input),
                        MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                     wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary())
 

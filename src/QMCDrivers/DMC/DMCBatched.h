@@ -71,7 +71,8 @@ public:
   };
 
   /// Constructor.
-  DMCBatched(QMCDriverInput&& qmcdriver_input,
+  DMCBatched(const ProjectData& project_info,
+             QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
              MCPopulation&& pop,
              TrialWaveFunction& psi,
@@ -188,7 +189,10 @@ private:
 
   static MovedStalled buildMovedStalled(const std::vector<int>& did_walker_move, const DMCPerWalkerRefRefs& refs);
 
-  static void handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers, bool recompute);
+  static void handleMovedWalkers(DMCPerWalkerRefs& moved,
+                                 const StateForThread& sft,
+                                 DriverTimers& timers,
+                                 bool recompute);
   static void handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft, bool recompute);
   // struct DMCTimers
   // {

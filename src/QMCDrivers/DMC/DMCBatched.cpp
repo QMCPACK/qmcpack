@@ -33,13 +33,14 @@ using WP = WalkerProperties::Indexes;
  *
  *  Note you must call the Base constructor before the derived class sets QMCType
  */
-DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
+DMCBatched::DMCBatched(const ProjectData& project_info,
+                       QMCDriverInput&& qmcdriver_input,
                        DMCDriverInput&& input,
                        MCPopulation&& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h,
+    : QMCDriverNew(project_info, std::move(qmcdriver_input), std::move(pop), psi, h,
                    "DMCBatched::", comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
@@ -264,17 +265,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   //To use the flex interfaces we have to build RefVectors for walker that moved and walkers that didn't
 
-  auto& walker_hamiltonians  = crowd.get_walker_hamiltonians();
+  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
 
-  DMCPerWalkerRefRefs per_walker_ref_refs{walkers,
-                                          walker_twfs,
-                                          walker_hamiltonians,
-                                          walker_elecs,
-                                          old_walker_energies,
-                                          new_walker_energies,
-                                          rr_proposed,
-                                          rr_accepted,
-                                          gf_acc};
+  DMCPerWalkerRefRefs per_walker_ref_refs{walkers,      walker_twfs,         walker_hamiltonians,
+                                          walker_elecs, old_walker_energies, new_walker_energies,
+                                          rr_proposed,  rr_accepted,         gf_acc};
 
   MovedStalled these = buildMovedStalled(did_walker_move, per_walker_ref_refs);
 
@@ -363,7 +358,10 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
   return these;
 }
 
-void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers, bool recompute)
+void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved,
+                                    const StateForThread& sft,
+                                    DriverTimers& timers,
+                                    bool recompute)
 {
   if (moved.walkers.size() > 0)
   {

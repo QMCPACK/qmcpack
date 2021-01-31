@@ -21,14 +21,22 @@ namespace qmcplusplus
 {
 /** Constructor maintains proper ownership of input parameters
    */
-VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
+VMCBatched::VMCBatched(const ProjectData& project_info,
+                       QMCDriverInput&& qmcdriver_input,
                        VMCDriverInput&& input,
                        MCPopulation&& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h, "VMCBatched::", comm, "VMCBatched"),
+    : QMCDriverNew(project_info,
+                   std::move(qmcdriver_input),
+                   std::move(pop),
+                   psi,
+                   h,
+                   "VMCBatched::",
+                   comm,
+                   "VMCBatched"),
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)
@@ -42,9 +50,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 {
   // Consider favoring lambda followed by for over walkers
   // more compact, descriptive and less error prone.
-  auto& walker_twfs      = crowd.get_walker_twfs();
-  auto& walkers          = crowd.get_walkers();
-  auto& walker_elecs     = crowd.get_walker_elecs();
+  auto& walker_twfs  = crowd.get_walker_twfs();
+  auto& walkers      = crowd.get_walkers();
+  auto& walker_elecs = crowd.get_walker_elecs();
 
   timers.movepbyp_timer.start();
   const int num_walkers = crowd.size();
@@ -176,7 +184,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::cout << "G " << std::endl << crowd.get_walker_twfs()[0].get().G << std::endl;
   std::cout << "L " << std::endl << crowd.get_walker_twfs()[0].get().L << std::endl;
   for (int iw = 0; iw < log_values.size(); iw++)
-    std::cout << "Logpsi walker[" << iw<< "] " << log_values[iw] << " ref " << TrialWaveFunction::LogValueType{crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()} << std::endl;
+    std::cout << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref "
+              << TrialWaveFunction::LogValueType{crowd.get_walker_twfs()[iw].get().getLogPsi(),
+                                                 crowd.get_walker_twfs()[iw].get().getPhase()}
+              << std::endl;
 #endif
   timers.buffer_timer.stop();
   timers.hamiltonian_timer.start();

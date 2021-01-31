@@ -430,7 +430,7 @@ struct SFNBranch : public QMCTraits
   ///finalize the simulation
   void finalize(Communicate& comm, const int global_walkers, RefVector<MCPWalker>& walkers);
 
-  /// set variance and energy
+  /// set energy and variance, used for initializing reference values for branching.
   void setEnergyVariance(FullPrecRealType energy, FullPrecRealType variance);
 
 private:

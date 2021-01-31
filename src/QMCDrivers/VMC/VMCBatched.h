@@ -62,7 +62,8 @@ public:
 
 public:
   /// Constructor.
-  VMCBatched(QMCDriverInput&& qmcdriver_input,
+  VMCBatched(const ProjectData& project_info,
+             QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
              MCPopulation&& pop,
              TrialWaveFunction& psi,

@@ -32,6 +32,7 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "OhmmsApp/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -40,7 +41,8 @@ namespace qmcplusplus
  *  Num crowds must be less than omp_get_max_threads because RandomNumberControl is global c lib function
  *  masquerading as a C++ object.
  */
-QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
+QMCDriverNew::QMCDriverNew(const ProjectData& project_info,
+                           QMCDriverInput&& input,
                            MCPopulation&& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
@@ -59,10 +61,9 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       timers_(timer_prefix),
       driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
+      project_info_(project_info),
       setNonLocalMoveHandler_(snlm_handler)
 {
-  rotation = 0;
-
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
   max_disp_sq_ = input.get_max_disp_sq();
   if (max_disp_sq_ < 0)
@@ -171,7 +172,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   branch_engine_->put(cur);
   estimator_manager_->put(H, *population_.get_golden_electrons(), cur);
 
-  
+
   crowds_.resize(awc.walkers_per_crowd.size());
 
   // at this point we can finally construct the Crowd objects.
@@ -247,35 +248,6 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   // }
   // else
   //   qmc_common.is_restart = false;
-}
-
-std::string QMCDriverNew::getRotationName(std::string root_name)
-{
-  std::string r_RootName;
-  if (rotation % 2 == 0)
-  {
-    r_RootName = root_name;
-  }
-  else
-  {
-    r_RootName = root_name + ".bk";
-  }
-  rotation++;
-  return r_RootName;
-}
-
-std::string QMCDriverNew::getLastRotationName(std::string root_name)
-{
-  std::string r_RootName;
-  if ((rotation - 1) % 2 == 0)
-  {
-    r_RootName = root_name;
-  }
-  else
-  {
-    r_RootName = root_name + ".bk";
-  }
-  return r_RootName;
 }
 
 void QMCDriverNew::recordBlock(int block)
@@ -415,7 +387,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
-  
+
   auto doesDoinTheseLastMatter = [](MCPWalker& walker) {
     walker.ReleasedNodeAge    = 0;
     walker.ReleasedNodeWeight = 0;
@@ -534,7 +506,7 @@ void QMCDriverNew::endBlock()
   unsigned long block_reject = 0;
 
   std::vector<RefVector<OperatorEstBase>> crowd_operator_estimators;
-  
+
   for (const UPtr<Crowd>& crowd : crowds_)
   {
     crowd->stopBlock();
@@ -549,7 +521,7 @@ void QMCDriverNew::endBlock()
     // This seems altogether easier and more sane.
     crowd_operator_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_operator_estimators());
   }
-  
+
 #ifdef DEBUG_PER_STEP_ACCEPT_REJECT
   app_warning() << "accept: " << block_accept << "   reject: " << block_reject;
   FullPrecRealType total_accept_ratio =

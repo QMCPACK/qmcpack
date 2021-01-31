@@ -51,6 +51,7 @@ struct SFNBranch;
 class EstimatorManagerNew;
 class TrialWaveFunction;
 class QMCHamiltonian;
+class ProjectData;
 
 namespace testing
 {
@@ -114,7 +115,8 @@ protected:
 
 public:
   /// Constructor.
-  QMCDriverNew(QMCDriverInput&& input,
+  QMCDriverNew(const ProjectData& project_info,
+               QMCDriverInput&& input,
                MCPopulation&& population,
                TrialWaveFunction& psi,
                QMCHamiltonian& h,
@@ -123,9 +125,42 @@ public:
                const std::string& QMC_driver_type,
                SetNonLocalMoveHandler = &QMCDriverNew::defaultSetNonLocalMoveHandler);
 
+  ///Move Constructor
   QMCDriverNew(QMCDriverNew&&) = default;
+  ///Copy Constructor (disabled).
+  QMCDriverNew(const QMCDriverNew&) = delete;
+  ///Copy operator (disabled).
+  QMCDriverNew& operator=(const QMCDriverNew&) = delete;
 
   virtual ~QMCDriverNew() override;
+
+  bool putQMCInfo(xmlNodePtr cur);
+
+  /** Adjust populations local walkers to this number
+  * @param nwalkers number of walkers to add
+  *
+  */
+  void makeLocalWalkers(int nwalkers,
+                        RealType reserve,
+                        const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
+
+  DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
+
+  /** record the state of the block
+   * @param block current block
+   *
+   * virtual function with a default implementation
+   */
+  virtual void recordBlock(int block) override;
+
+  /** finalize a qmc section
+   * @param block current block
+   * @param dumpwalkers if true, dump walkers
+   *
+   * Accumulate energy and weight is written to a hdf5 file.
+   * Finialize the estimators
+   */
+  bool finalize(int block, bool dumpwalkers = true);
 
   ///return current step
   inline IndexType current() const { return current_step_; }
@@ -178,6 +213,7 @@ public:
   ///return the i-th random generator
   inline RandomGenerator_t& getRng(int i) override { return (*Rng[i]); }
 
+  const std::string& get_root_name() const override { return root_name_; }
   std::string getEngineName() override { return QMCType; }
   unsigned long getDriverMode() override { return qmc_driver_mode_.to_ulong(); }
 
@@ -388,7 +424,6 @@ protected:
 
   /** }@ */
 
-
   DriverTimers timers_;
 
   ///time the driver lifetime
@@ -396,44 +431,8 @@ protected:
   ///profile the driver lifetime
   ScopedProfiler driver_scope_profiler_;
 
-public:
-  ///Copy Constructor (disabled).
-  QMCDriverNew(const QMCDriverNew&) = delete;
-  ///Copy operator (disabled).
-  QMCDriverNew& operator=(const QMCDriverNew&) = delete;
-
-  bool putQMCInfo(xmlNodePtr cur);
-
-  /** Adjust populations local walkers to this number
-  * @param nwalkers number of walkers to add
-  *
-  */
-  void makeLocalWalkers(int nwalkers,
-                        RealType reserve,
-                        const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
-
-  DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
-
-  /** record the state of the block
-   * @param block current block
-   *
-   * virtual function with a default implementation
-   */
-  virtual void recordBlock(int block) override;
-
-  /** finalize a qmc section
-   * @param block current block
-   * @param dumpwalkers if true, dump walkers
-   *
-   * Accumulate energy and weight is written to a hdf5 file.
-   * Finialize the estimators
-   */
-  bool finalize(int block, bool dumpwalkers = true);
-
-  int rotation;
-  const std::string& get_root_name() const override { return root_name_; }
-  std::string getRotationName(std::string RootName);
-  std::string getLastRotationName(std::string RootName);
+  /// project info for accessing global fileroot and series id
+  const ProjectData& project_info_;
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);

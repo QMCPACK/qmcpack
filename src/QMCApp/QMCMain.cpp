@@ -573,7 +573,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver = std::move(last_driver);
   else
   {
-    QMCDriverFactory driver_factory;
+    QMCDriverFactory driver_factory(myProject);
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
 
     qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);

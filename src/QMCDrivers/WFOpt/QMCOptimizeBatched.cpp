@@ -28,7 +28,8 @@
 
 namespace qmcplusplus
 {
-QMCOptimizeBatched::QMCOptimizeBatched(MCWalkerConfiguration& w,
+QMCOptimizeBatched::QMCOptimizeBatched(const ProjectData& project_info,
+                                       MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
                                        QMCDriverInput&& qmcdriver_input,
@@ -36,7 +37,8 @@ QMCOptimizeBatched::QMCOptimizeBatched(MCWalkerConfiguration& w,
                                        MCPopulation&& population,
                                        SampleStack& samples,
                                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input),
+    : QMCDriverNew(project_info,
+                   std::move(qmcdriver_input),
                    std::move(population),
                    psi,
                    h,
@@ -177,7 +179,7 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
   {
     QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
     VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
-    vmcEngine = new VMCBatched(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
+    vmcEngine = new VMCBatched(project_info_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
                                             population_.get_golden_electrons(), &Psi, &H),
                                Psi, H, samples_, myComm);

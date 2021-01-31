@@ -20,13 +20,14 @@
 
 namespace qmcplusplus
 {
-QMCDriverInterface* VMCFactoryNew::create(MCPopulation&& pop,
+QMCDriverInterface* VMCFactoryNew::create(const ProjectData& project_info,
+                                          MCPopulation&& pop,
                                           TrialWaveFunction& psi,
                                           QMCHamiltonian& h,
                                           SampleStack& samples,
                                           Communicate* comm)
 {
-  QMCDriverInput qmcdriver_input(qmc_counter_);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(input_node_);
   VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(input_node_);
@@ -34,7 +35,8 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation&& pop,
 
   if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMCBatched(std::move(qmcdriver_input), std::move(vmcdriver_input), std::move(pop), psi, h, samples, comm);
+    qmc = new VMCBatched(project_info, std::move(qmcdriver_input), std::move(vmcdriver_input), std::move(pop), psi, h,
+                         samples, comm);
   }
   else
   {

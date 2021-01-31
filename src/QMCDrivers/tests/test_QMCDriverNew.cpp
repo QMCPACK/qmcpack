@@ -37,7 +37,7 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_tiny_index]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  QMCDriverInput qmcdriver_input(1);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
@@ -84,7 +84,7 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  QMCDriverInput qmcdriver_input(3);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
@@ -127,7 +127,7 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  QMCDriverInput qmcdriver_input(3);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);

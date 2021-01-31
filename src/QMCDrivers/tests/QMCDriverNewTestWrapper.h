@@ -16,6 +16,7 @@
 #include "Particle/SampleStack.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "OhmmsApp/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -34,7 +35,8 @@ public:
                           QMCHamiltonian& h,
                           SampleStack samples,
                           Communicate* comm)
-      : QMCDriverNew(std::move(input),
+      : QMCDriverNew(test_project,
+                     std::move(input),
                      std::move(population),
                      psi,
                      h,
@@ -136,6 +138,7 @@ public:
   };
 
 private:
+  ProjectData test_project;
 };
 
 template<class CONCURRENCY>
