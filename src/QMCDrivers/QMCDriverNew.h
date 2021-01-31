@@ -35,7 +35,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Estimators/EstimatorManagerNew.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/Crowd.h"
 #include "QMCDrivers/QMCDriverInterface.h"
@@ -53,6 +52,7 @@ namespace qmcplusplus
 class HDFWalkerOutput;
 class TraceManager;
 struct SFNBranch;
+class EstimatorManagerNew;
 
 namespace testing
 {
@@ -349,7 +349,7 @@ protected:
    *  Can be transferred via branch manager one driver to the next indefinitely
    *  TODO:  Modify Branch manager and others to clear this up.
    */
-  EstimatorManagerNew* estimator_manager_;
+  std::unique_ptr<EstimatorManagerNew> estimator_manager_;
 
   ///record engine for walkers
   HDFWalkerOutput* wOut;

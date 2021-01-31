@@ -156,17 +156,11 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   }
 
   //create and initialize estimator
-  estimator_manager_ = branch_engine_->getEstimatorManager();
-  if (!estimator_manager_)
-  {
-    estimator_manager_ = new EstimatorManagerNew(myComm);
-    // TODO: remove this when branch engine no longer depends on estimator_mamanger_
-    branch_engine_->setEstimatorManager(estimator_manager_);
-    // This used to get updated as a side effect of setStatus
-    branch_engine_->read(h5_file_root_);
-  }
-  else
-    estimator_manager_->reset();
+  estimator_manager_ = std::make_unique<EstimatorManagerNew>(myComm);
+  // TODO: remove this when branch engine no longer depends on estimator_mamanger_
+  branch_engine_->setEstimatorManager(estimator_manager_.get());
+  // This used to get updated as a side effect of setStatus
+  branch_engine_->read(h5_file_root_);
 
   if (!drift_modifier_)
     drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
