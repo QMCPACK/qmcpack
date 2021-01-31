@@ -24,6 +24,8 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
+#include "Utilities/RandomGenerator.h"
+
 // #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 
 //#include <boost/archive/binary_oarchive.hpp>

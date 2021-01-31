@@ -24,11 +24,20 @@
 #include "Particle/Walker.h"
 #include "QMCDrivers/WalkerElementsRef.h"
 #include "OhmmsPETE/OhmmsVector.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Utilities/FairDivide.h"
+
+// forward declaration
+namespace optimize
+{
+  struct VariableSet;
+}
+
 namespace qmcplusplus
 {
+
+// forward declaration
+class TrialWaveFunction;
+class QMCHamiltonian;
 class MCPopulation
 {
 public:
@@ -38,6 +47,7 @@ public:
   using Properties       = MCPWalker::PropertyContainer_t;
   using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using opt_variables_type = optimize::VariableSet;
 
 private:
   // Potential thread safety issue

@@ -15,6 +15,7 @@
 #include "Configuration.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/CommOperators.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus

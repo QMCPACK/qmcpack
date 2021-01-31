@@ -24,6 +24,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
 {

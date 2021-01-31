@@ -32,11 +32,7 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/WaveFunctionPool.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCDrivers/MCPopulation.h"
-#include "QMCDrivers/Crowd.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SFNBranch.h"
@@ -53,6 +49,8 @@ class HDFWalkerOutput;
 class TraceManager;
 struct SFNBranch;
 class EstimatorManagerNew;
+class TrialWaveFunction;
+class QMCHamiltonian;
 
 namespace testing
 {
