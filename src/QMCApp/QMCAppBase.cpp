@@ -82,5 +82,5 @@ void QMCAppBase::saveXml()
   }
 }
 
-std::string& QMCAppBase::getTitle() { return myProject.m_title; }
+const std::string& QMCAppBase::getTitle() const { return myProject.getTitle(); }
 } // namespace qmcplusplus

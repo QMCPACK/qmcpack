@@ -31,8 +31,9 @@ namespace qmcplusplus
  * Should not modify the name, since composite types, such as MDRunData, use the name.
  *
  */
-struct ProjectData : public OhmmsElementBase
+class ProjectData : public OhmmsElementBase
 {
+public:
   /// constructor
   ProjectData(const char* aname = 0);
 
@@ -56,20 +57,26 @@ struct ProjectData : public OhmmsElementBase
 
   void setCommunicator(Communicate* c);
 
-  ///returns the name of the project
-  inline const char* CurrentMainRoot() const { return m_projectmain.c_str(); }
+  ///returns the title of the project
+  inline const std::string& getTitle() const { return m_title; }
 
-  ///returns the name of the project
-  inline const char* CurrentRoot() const { return m_projectroot.c_str(); }
+  ///returns the projectmain of the project
+  inline const std::string& CurrentMainRoot() const { return m_projectmain; }
 
-  ///returns the name of the project
-  inline const char* NextRoot() const { return m_nextroot.c_str(); }
+  ///returns the projectroot of the project
+  inline const std::string& CurrentRoot() const { return m_projectroot; }
+
+  ///returns the nextroot of the project
+  inline const std::string& NextRoot() const { return m_nextroot; }
 
   /** return the root of the previous sequence
    * @param oldroot is composed by the m_title and m_series
    */
   bool PreviousRoot(std::string& oldroot) const;
 
+  int getSeriesIndex() const { return m_series; }
+
+private:
   ///title of the project
   std::string m_title;
 
