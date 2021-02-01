@@ -78,7 +78,7 @@ private:
   {
     doc_ = std::make_unique<Libxml2Document>();
     doc_->parseFromString(xml);
-    sfnb.myNode = doc_->getRoot();
+    sfnb.put(doc_->getRoot());
   }
 
   Communicate* comm_;

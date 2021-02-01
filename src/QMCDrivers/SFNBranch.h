@@ -27,8 +27,6 @@ namespace qmcplusplus
 {
 /** Manages the state of QMC sections and handles population control for DMCs
  *
- * \todo: Remove Estimator dependency, only has come dependency. Express accumulate in
- *       the actual DMC algorithm (i.e. in DMCBatched.cpp)
  * \todo: Remove duplicate reading of Driver XML section with own copies of input
  *       parameters.
  * \todo: Rename, it is the only branching class so its name is too much
@@ -40,51 +38,30 @@ namespace qmcplusplus
  * progress of a qmc section. It implements several methods to control the
  * population and trial energy during a DMC and evaluate the properties of
  * a population, e.g., energy, variance, population etc.
- * It owns WalkerController (pointer to a WalkerControlBase object) which
- * manages the population (killing and duplicating walkers) and
- * load balancing among multiple MPI tasks.
- * \see {http://qmcpack.cmscc.org/qmc-basics}
+  * \see {http://qmcpack.cmscc.org/qmc-basics}
  *
- * Steps in 'Legacy' SFNB states machine
+ * Steps in SFNB states machine
  * 1. Construction (gets global walker number (rank or section wide?)
- * 2. setEstimatorManager (also makes bootstrapping SFNB state dependent on valid Communicate*)
  * 3. put(reads driver XML node yet again)
- * 4. setWalkerController (Maybe a WalkerController pointer is passed in)
- * 5. InitWalkerController 
- *   a. Creates walkercontroller if WalkerController is a nullptr
- *   b. If TargetWalkers isn't known
+ * 4. InitParam
+ *   a. If TargetWalkers isn't known
  *      aa. allreduce and updates MCMW globalWalkers.
- *      bb. resets walker offsets
- *      cc. sets target walkers to whatever current total active walkers is.
- *   c. resets WalkerController
- *   d. If not a restart
+ *      bb. sets target walkers to whatever current total active walkers is.
+ *   b. If not a restart
  *      aa. saves fixW and killWalker to internal params, otherwise just discards.
  *      bb. updates SFNB copy of MAX/MINWALKRS from walker controller, 
  *          these were set in constructer but I guess thats ony if this is a restart
- *   e. setWalkerId
- *      aa. call start()
- *         1. Which calls reset which crucially calculates and update logN state.
- *      bb. updates all the walker id's of walkers in MCWC.
- * 6. checkParameters
- *   a. getApproximateEnergyVariance from SFNB's estimator
- *   b. set ETrial, EREF, SIGMA2 from estimator
- *   c. clear EnergyHist and VarianceHist
- *
- * Finally branch can be called! It will be called once each step.
- *
- * 7. call branch (iter and MCMW)
+ * 7. updateParam after each walker control branch (outside SFNBranch)
  *   a. Not first iter during warmup then call WalkerController branch.
  *      else call WC doNotBranch, returns pop_now
  *   b. copy a bunch a state from WC to SFNB (should be with respect to pop_now - number of released nodes)
  *   c. If using taueff update that based on acceptance ration and current tau.
  *   d. If not warmup calculate ETRIAL based on EREF and feedback * log(TargetWalkers) - log(pop_now) 
  *   e. set WC's TrialEnergy
- *   d. multiply walkers.Colelctables *= the inverse weight.
- *   f. call SFNB's estimator accumilator on MCWC
  */
-struct SFNBranch : public QMCTraits
+class SFNBranch : public QMCTraits
 {
-  typedef SFNBranch ThisType;
+public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   /*! enum for booleans
@@ -113,15 +90,9 @@ struct SFNBranch : public QMCTraits
     B_MODE_MAX = 10 /**< size of BranchMode */
   };
 
-  /** booleans to set the branch modes
-   * \since 2008-05-05
-   */
-  typedef std::bitset<B_MODE_MAX> BranchModeType;
-  BranchModeType BranchMode;
+  using BranchModeType = std::bitset<B_MODE_MAX>;
 
   /*! enum for iParam std::bitset<B_IPARAM_MAX>
-   * \since 2008-05-05
-   *
    * When introducing a new iParam, check if B_IPARAM_MAX is sufficiently large. Use multiples of 8
    * Why?  Much easier to use bool flags.  Are these ever serialized?
    */
@@ -138,8 +109,7 @@ struct SFNBranch : public QMCTraits
   /** input parameters of integer types
    * \since 2008-05-05
    */
-  typedef TinyVector<int, B_IPARAM_MAX> IParamType;
-  IParamType iParam;
+  using IParamType = TinyVector<int, B_IPARAM_MAX>;
 
   /** enum for vParam 
    *
@@ -176,47 +146,6 @@ struct SFNBranch : public QMCTraits
     const FullPrecRealType& operator[](PAR_ENUM sbvp) const { return Base::operator[](static_cast<size_t>(sbvp)); }
   };
   using VParamType = VParams<SBVP>;
-  VParamType vParam;
-
-  /** number of remaning steps for a specific tasks
-   *
-   * set differently for BranchMode[B_DMCSTAGE]
-   */
-  int ToDoSteps;
-  ///save xml element
-  xmlNodePtr myNode;
-  ///a simple accumulator for energy
-  accumulator_set<FullPrecRealType> EnergyHist;
-  ///a simple accumulator for variance
-  accumulator_set<FullPrecRealType> VarianceHist;
-  ///a simple accumulator for energy
-  accumulator_set<RealType> R2Accepted;
-  ///a simple accumulator for energy
-  accumulator_set<RealType> R2Proposed;
-  ///a simple accumulator for reptation's center slice
-  accumulator_set<RealType> R2Center;
-  /////histogram of populations
-  //BlockHistogram<RealType> PopHist;
-  /////histogram of populations
-  //BlockHistogram<RealType> DMCEnergyHist;
-  ///scheme of branching cutoff
-  std::string branching_cutoff_scheme;
-  ///set of parameters
-  ParameterSet m_param;
-  ///string parameters
-  std::vector<std::string> sParam;
-
-  /// Used for the average scaling
-  FullPrecRealType ScaleSum;
-  unsigned long ScaleNum;
-  //@TODO move these to private
-  ///LogJacob
-  RealType LogJacobRef;
-  ///LogNorm
-  std::vector<RealType> LogNorm;
-
-  ///Releasednode
-  bool RN;
 
   ///Constructor
   SFNBranch(RealType tau, int nideal);
@@ -380,12 +309,59 @@ struct SFNBranch : public QMCTraits
   ///finalize the simulation
   void printStatus() const;
 
+  friend std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);
+
 private:
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,
                        FullPrecRealType targetSigma,
                        FullPrecRealType maxSigma,
                        int Nelec = 0);
+
+  BranchModeType BranchMode;
+
+  IParamType iParam;
+
+  VParamType vParam;
+  /** number of remaning steps for a specific tasks
+   *
+   * set differently for BranchMode[B_DMCSTAGE]
+   */
+  int ToDoSteps;
+  ///save xml element
+  xmlNodePtr myNode;
+  ///a simple accumulator for energy
+  accumulator_set<FullPrecRealType> EnergyHist;
+  ///a simple accumulator for variance
+  accumulator_set<FullPrecRealType> VarianceHist;
+  ///a simple accumulator for energy
+  accumulator_set<RealType> R2Accepted;
+  ///a simple accumulator for energy
+  accumulator_set<RealType> R2Proposed;
+  ///a simple accumulator for reptation's center slice
+  accumulator_set<RealType> R2Center;
+  /////histogram of populations
+  //BlockHistogram<RealType> PopHist;
+  /////histogram of populations
+  //BlockHistogram<RealType> DMCEnergyHist;
+  ///scheme of branching cutoff
+  std::string branching_cutoff_scheme;
+  ///set of parameters
+  ParameterSet m_param;
+  ///string parameters
+  std::vector<std::string> sParam;
+
+  /// Used for the average scaling
+  FullPrecRealType ScaleSum;
+  unsigned long ScaleNum;
+  //@TODO move these to private
+  ///LogJacob
+  RealType LogJacobRef;
+  ///LogNorm
+  std::vector<RealType> LogNorm;
+
+  ///Releasednode
+  bool RN;
 };
 
 std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);
