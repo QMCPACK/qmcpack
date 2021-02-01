@@ -22,6 +22,7 @@
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "QMCDrivers/DMC/WalkerControl.h"
 
 namespace qmcplusplus
 {
@@ -49,6 +50,8 @@ DMCBatched::DMCBatched(const ProjectData& project_info,
 {
 }
 // clang-format on
+
+DMCBatched::~DMCBatched() = default;
 
 void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
 {
@@ -441,24 +444,26 @@ void DMCBatched::process(xmlNodePtr node)
   {
     myComm->barrier_and_abort(ue.what());
   }
-}
 
-bool DMCBatched::run()
-{
   {
     ReportEngine PRE("DMC", "resetUpdateEngines");
     Timer init_timer;
     // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
     // I'd like to do away with this method in DMCBatched.
 
-    // false indicates we do not support kill at node crossings.
-    branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
+    app_log() << "  Creating WalkerControler" << std::endl;
+    WalkerController = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
+    WalkerController->setMinMax(population_.get_num_global_walkers(), 0);
+
+    WalkerController->start();
+    WalkerController->put(node);
 
     std::ostringstream o;
     if (dmcdriver_input_.get_reconfiguration())
       o << "  Fixed population using reconfiguration method\n";
     else
       o << "  Fluctuating population\n";
+
     o << "  Persistent walkers are killed after " << dmcdriver_input_.get_max_age() << " MC sweeps\n";
     o << "  BranchInterval = " << dmcdriver_input_.get_branch_interval() << "\n";
     o << "  Steps per block = " << qmcdriver_input_.get_max_steps() << "\n";
@@ -467,7 +472,10 @@ bool DMCBatched::run()
 
     app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
   }
+}
 
+bool DMCBatched::run()
+{
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
   estimator_manager_->start(num_blocks);
@@ -482,9 +490,14 @@ bool DMCBatched::run()
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
-    FullPrecRealType ene, var;
-    population_.measureGlobalEnergyVariance(*myComm, ene, var);
-    branch_engine_->setEnergyVariance(ene, var);
+  }
+
+  {
+    FullPrecRealType energy, variance;
+    population_.measureGlobalEnergyVariance(*myComm, energy, variance);
+    // false indicates we do not support kill at node crossings.
+    branch_engine_->initParam(population_, energy, variance, dmcdriver_input_.get_reconfiguration(), false);
+    WalkerController->setTrialEnergy(branch_engine_->getEtrial());
   }
 
   ParallelExecutor<> crowd_task;
@@ -520,7 +533,13 @@ bool DMCBatched::run()
           crowd_ref.accumulate(population_.get_num_global_walkers());
       }
 
-      branch_engine_->branch(block * qmcdriver_input_.get_max_steps() + step, population_);
+      {
+        int iter                 = block * qmcdriver_input_.get_max_steps() + step;
+        const int population_now = WalkerController->branch(iter, population_, iter == 0);
+        branch_engine_->updateParamAfterPopControl(population_now, WalkerController->get_ensemble_property(),
+                                                   population_.get_num_particles());
+        WalkerController->setTrialEnergy(branch_engine_->getEtrial());
+      }
 
       for (UPtr<Crowd>& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();

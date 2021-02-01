@@ -168,7 +168,6 @@ void QMCLinearOptimizeBatched::generateSamples()
   app_log() << "<optimization-report>" << std::endl;
   t1.restart();
   //     W.reset();
-  branch_engine_->reset();
   samples_.resetSampleCount();
   population_.set_variational_parameters(optTarget->getOptVariables());
 

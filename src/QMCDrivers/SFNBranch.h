@@ -130,21 +130,12 @@ struct SFNBranch : public QMCTraits
    */
   enum
   {
-    B_WARMUPSTEPS = 0 /**< warmup steps, valid when BranchMode[D_DMCSTAGE] == 0 */
-    ,
-    B_ENERGYUPDATEINTERVAL = 1 /**< frequency of the trial energy updates, default 1 */
-    ,
-    B_COUNTER = 2 /**< counter for tracking object state */
-    ,
-    B_TARGETWALKERS = 3 /**< target total number of walkers per mpi group */
-    ,
-    B_MAXWALKERS = 4 /**< maximum number of walkers per node */
-    ,
-    B_MINWALKERS = 5 /**< minimum number of walkers per node */
-    ,
-    B_BRANCHINTERVAL = 6 /**< interval between branch, see population control */
-    ,
-    B_IPARAM_MAX = 8 /**< size of iParam */
+    B_WARMUPSTEPS = 0,      /**< warmup steps, valid when BranchMode[D_DMCSTAGE] == 0 */
+    B_ENERGYUPDATEINTERVAL, /**< frequency of the trial energy updates, default 1 */
+    B_COUNTER,              /**< counter for tracking object state */
+    B_TARGETWALKERS,        /**< target total number of walkers per mpi group */
+    B_BRANCHINTERVAL,       /**< interval between branch, see population control */
+    B_IPARAM_MAX            /**< size of iParam */
   };
 
   /** input parameters of integer types
@@ -199,11 +190,6 @@ struct SFNBranch : public QMCTraits
   FullPrecRealType logN;
   ///save xml element
   xmlNodePtr myNode;
-  ///WalkerController
-  std::unique_ptr<WalkerControl> WalkerController;
-  ///Backup WalkerController for mixed DMC
-  std::unique_ptr<WalkerControl> BackupWalkerController;
-
   ///TODO: Should not be raw pointer
   EstimatorManagerNew* MyEstimator;
   ///a simple accumulator for energy
@@ -273,13 +259,13 @@ struct SFNBranch : public QMCTraits
    * */
   void setEstimatorManager(EstimatorManagerNew* est) { MyEstimator = est; }
 
-  /** initialize  the WalkerController
+  /** initialize branching parameters
    * @param pop Population of Walkers
    * @param fixW true, if reconfiguration with the fixed number of walkers is used
    * @param killwalker 
    * @return number of copies to make in case targetwalkers changed
    */
-  int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
+  int initParam(const MCPopulation& population, FullPrecRealType ene, FullPrecRealType var, bool fixW, bool killwalker);
 
   /** return the bare branch weight
    *
@@ -400,10 +386,7 @@ struct SFNBranch : public QMCTraits
    * @param iter current step
    * @param w Walker configuration
    */
-  void branch(int iter, MCPopulation& population);
-
-  /** reset the internal parameters */
-  void reset();
+  void updateParamAfterPopControl(int pop_int, const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec);
 
   bool put(xmlNodePtr cur);
 
@@ -413,17 +396,12 @@ struct SFNBranch : public QMCTraits
   ///finalize the simulation
   void printStatus() const;
 
-  /// set energy and variance, used for initializing reference values for branching.
-  void setEnergyVariance(FullPrecRealType energy, FullPrecRealType variance);
-
 private:
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,
                        FullPrecRealType targetSigma,
                        FullPrecRealType maxSigma,
                        int Nelec = 0);
-  /// if yes, disable branching for debugging or benchmarking
-  std::string debug_disable_branching_;
 };
 
 std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);

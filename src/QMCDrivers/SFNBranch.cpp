@@ -14,7 +14,6 @@
 #include <numeric>
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
-#include "QMCDrivers/DMC/WalkerControl.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "Particle/Reptile.h"
 #include "type_traits/template_types.hpp"
@@ -32,7 +31,7 @@ enum
   DUMMYOPT
 };
 
-SFNBranch::SFNBranch(RealType tau, int nideal) : MyEstimator(nullptr), debug_disable_branching_("no")
+SFNBranch::SFNBranch(RealType tau, int nideal) : MyEstimator(nullptr)
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -52,21 +51,17 @@ SFNBranch::SFNBranch(RealType tau, int nideal) : MyEstimator(nullptr), debug_dis
   iParam[B_ENERGYUPDATEINTERVAL] = 1;
   iParam[B_BRANCHINTERVAL]       = 1;
   iParam[B_TARGETWALKERS]        = 0;
-  iParam[B_MAXWALKERS]           = nideal;
-  iParam[B_MINWALKERS]           = nideal;
   iParam[B_COUNTER]              = -1;
   //default is no
   sParam.resize(DUMMYOPT, "no");
   //default is classic
   branching_cutoff_scheme = "classic";
   registerParameters();
-  // No
-  //reset();
 }
 
 /** copy constructor
  *
- * Copy only selected data members and WalkerController is never copied.
+ * Copy only selected data members.
  */
 SFNBranch::SFNBranch(const SFNBranch& abranch)
     : BranchMode(abranch.BranchMode),
@@ -74,12 +69,9 @@ SFNBranch::SFNBranch(const SFNBranch& abranch)
       vParam(abranch.vParam),
       MyEstimator(0),
       branching_cutoff_scheme(abranch.branching_cutoff_scheme),
-      sParam(abranch.sParam),
-      debug_disable_branching_(abranch.debug_disable_branching_)
+      sParam(abranch.sParam)
 {
   registerParameters();
-  //would like to remove this
-  reset();
 }
 
 SFNBranch::~SFNBranch() = default;
@@ -110,104 +102,53 @@ void SFNBranch::registerParameters()
   m_param.add(sParam[USETAUOPT], "useBareTau", "option");
   m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration", "opt");
   m_param.add(branching_cutoff_scheme, "branching_cutoff_scheme", "option");
-  m_param.add(debug_disable_branching_, "debug_disable_branching", "option");
 }
 
-int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool killwalker)
+int SFNBranch::initParam(const MCPopulation& population,
+                         FullPrecRealType ene,
+                         FullPrecRealType var,
+                         bool fixW,
+                         bool killwalker)
 {
+  app_log() << "  START ALL OVER " << std::endl;
+  BranchMode.set(B_POPCONTROL, !fixW); //fixW -> 0
+  BranchMode.set(B_KILLNODES, killwalker);
+
   BranchMode.set(B_DMC, 1);                               //set DMC
   BranchMode.set(B_DMCSTAGE, iParam[B_WARMUPSTEPS] == 0); //use warmup
-  bool fromscratch     = false;
-  FullPrecRealType tau = vParam[SBVP::TAU];
+  vParam[SBVP::ETRIAL] = ene;
+  vParam[SBVP::EREF]   = ene;
+  vParam[SBVP::SIGMA2] = var;
+  vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
+  /// FIXME, magic number 50
+  setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], 50, population.get_num_particles());
 
   int nwtot_now = population.get_num_global_walkers();
-
-  if (WalkerController != nullptr)
-    throw std::runtime_error("Unified Driver initWalkerController called with existing WalkerController\n"
-                             "this is a violation SFNBranch is created to a valid state only\n"
-                             "once in the Unified Driver design.");
-
   if (iParam[B_TARGETWALKERS] == 0)
-  {
-    // has "important" side effect of updating the walker offsets
-    population.syncWalkersPerNode(MyEstimator->getCommunicator());
-    iParam[B_TARGETWALKERS] = population.get_num_global_walkers();
-  }
-  app_log() << "  Creating WalkerControl" << std::endl;
-  WalkerController = std::make_unique<WalkerControl>(MyEstimator->getCommunicator(), Random);
-  WalkerController->setMinMax(iParam[B_TARGETWALKERS], 0);
-  if (!BranchMode[B_RESTART])
-  {
-    fromscratch = true;
-    app_log() << "  START ALL OVER " << std::endl;
-    vParam[SBVP::TAUEFF] = tau;
-    BranchMode.set(B_POPCONTROL, !fixW); //fixW -> 0
-    BranchMode.set(B_KILLNODES, killwalker);
-    iParam[B_MAXWALKERS] = WalkerController->get_n_max();
-    iParam[B_MINWALKERS] = WalkerController->get_n_min();
-    if (!fixW && sParam[MIXDMCOPT] == "yes")
-    {
-      app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
-      BackupWalkerController = std::move(WalkerController); //save the main controller
-      WalkerController       = std::make_unique<WalkerControl>(MyEstimator->getCommunicator(), Random);
-      BranchMode.set(B_POPCONTROL, 0);
-    }
-    //PopHist.clear();
-    //PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],5));
-  }
+    iParam[B_TARGETWALKERS] = nwtot_now;
 
-  // start used to be buried in the WalkerController initializing MCWC's walkers ID's
-  WalkerController->start();
+  logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
 
-  //else
-  //{
-  //  BranchMode.set(B_DMCSTAGE,0);//always reset warmup
-  //}
-
-  //update the simulation parameters
-  WalkerController->put(myNode);
-  //assign current Eref and a large number for variance
-  WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
-  this->reset();
-  int allow_flux = 50; // std::min(static_cast<int>(population.get_num_global_walkers() * 0.10), 50);
-  if (fromscratch)
-  {
-    //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
-    // Was check MCWC's particle set for number of R which I take to mean number of particles
-    // will this assumption change if various spin freedoms also are added to ParticleSet?
-    setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], allow_flux,
-                    population.get_num_particles());
-    vParam[SBVP::TAUEFF] = tau * R2Accepted.result() / R2Proposed.result();
-  }
-
-  app_log() << "  QMC counter      = " << iParam[B_COUNTER] << std::endl;
-  app_log() << "  time step        = " << vParam[SBVP::TAU] << std::endl;
-  app_log() << "  effective time step = " << vParam[SBVP::TAUEFF] << std::endl;
-  app_log() << "  trial energy     = " << vParam[SBVP::ETRIAL] << std::endl;
-  app_log() << "  reference energy = " << vParam[SBVP::EREF] << std::endl;
-  app_log() << "  Feedback = " << vParam[SBVP::FEEDBACK] << std::endl;
-  app_log() << "  reference variance = " << vParam[SBVP::SIGMA2] << std::endl;
-  app_log() << "  target walkers = " << iParam[B_TARGETWALKERS] << std::endl;
-  app_log() << "  branching cutoff scheme " << branching_cutoff_scheme << std::endl;
-  app_log() << "  branch cutoff = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX] << std::endl;
-  app_log() << "  Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS]
+  app_log() << "  QMC counter             = " << iParam[B_COUNTER] << std::endl;
+  app_log() << "  time step               = " << vParam[SBVP::TAU] << std::endl;
+  app_log() << "  effective time step     = " << vParam[SBVP::TAUEFF] << std::endl;
+  app_log() << "  trial energy            = " << vParam[SBVP::ETRIAL] << std::endl;
+  app_log() << "  reference energy        = " << vParam[SBVP::EREF] << std::endl;
+  app_log() << "  reference variance      = " << vParam[SBVP::SIGMA2] << std::endl;
+  app_log() << "  Feedback                = " << vParam[SBVP::FEEDBACK] << std::endl;
+  app_log() << "  target walkers          = " << iParam[B_TARGETWALKERS] << std::endl;
+  app_log() << "  branching cutoff scheme = " << branching_cutoff_scheme << std::endl;
+  app_log() << "  branch cutoff, max      = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX]
             << std::endl;
   app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
 
   return int(round(double(iParam[B_TARGETWALKERS]) / double(nwtot_now)));
 }
 
-void SFNBranch::branch(int iter, MCPopulation& population)
+void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec)
 {
-  //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
-  //RealType pop_now= WalkerController->branch(iter,walkers,0.1);
-  RefVector<MCPWalker> walkers(convertUPtrToRefVector(population.get_walkers()));
-
-  FullPrecRealType pop_now;
-  pop_now = WalkerController->branch(iter, population, iter == 0);
-
+  FullPrecRealType pop_now = pop_int;
   //population for trial energy modification should not include any released node walkers.
-  MCDataType<FullPrecRealType>& wc_ensemble_prop = WalkerController->get_ensemble_property();
   pop_now -= wc_ensemble_prop.RNSamples;
   //current energy
   vParam[SBVP::ENOW] = wc_ensemble_prop.Energy;
@@ -262,7 +203,7 @@ void SFNBranch::branch(int iter, MCPopulation& population)
     if (ToDoSteps == 0) //warmup is done
     {
       vParam[SBVP::SIGMA2] = VarianceHist.mean();
-      setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], 10, population.get_num_particles());
+      setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], 10, Nelec);
       app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << std::endl;
       if (BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[SBVP::TAUEFF]
@@ -283,26 +224,33 @@ void SFNBranch::branch(int iter, MCPopulation& population)
       {
         app_log() << "Switching to DMC with fluctuating populations" << std::endl;
         BranchMode.set(B_POPCONTROL, 1); //use standard DMC
-        WalkerController       = std::move(BackupWalkerController);
-        BackupWalkerController = 0;
-        vParam[SBVP::ETRIAL]   = vParam[SBVP::EREF];
+        vParam[SBVP::ETRIAL] = vParam[SBVP::EREF];
         app_log() << "  Etrial     = " << vParam[SBVP::ETRIAL] << std::endl;
-        WalkerController->start();
       }
       //This is not necessary
       //EnergyHist(DMCEnergyHist.mean());
     }
   }
-  WalkerController->setTrialEnergy(vParam[SBVP::ETRIAL]);
-  //accumulate collectables and energies for scalar.dat
-  FullPrecRealType wgt_inv = WalkerController->get_num_contexts() / wc_ensemble_prop.Weight;
-  //walkers.Collectables *= wgt_inv;
 }
 
 void SFNBranch::printStatus() const
 {
   std::ostringstream o;
-  if (WalkerController)
+  //running RMC
+  if (BranchMode[B_RMC])
+  {
+    o << "====================================================";
+    o << "\n  End of a RMC block";
+    o << "\n    QMC counter                   = " << iParam[B_COUNTER];
+    o << "\n    time step                     = " << vParam[SBVP::TAU];
+    o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];
+    o << "\n    reference energy              = " << vParam[SBVP::EREF];
+    o << "\n    reference variance            = " << vParam[SBVP::SIGMA2];
+    o << "\n    cutoff energy                 = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX];
+    o << "\n    QMC Status (BranchMode)       = " << BranchMode;
+    o << "\n====================================================";
+  }
+  else // running DMC
   {
     o << "====================================================";
     o << "\n  End of a DMC block";
@@ -314,22 +262,7 @@ void SFNBranch::printStatus() const
     o << "\n    reference variance            = " << vParam[SBVP::SIGMA2];
     o << "\n    target walkers                = " << iParam[B_TARGETWALKERS];
     o << "\n    branch cutoff                 = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX];
-    o << "\n    Max and min walkers per node  = " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS];
     o << "\n    Feedback                      = " << vParam[SBVP::FEEDBACK];
-    o << "\n    QMC Status (BranchMode)       = " << BranchMode;
-    o << "\n====================================================";
-  }
-  //running RMC
-  else if (BranchMode[B_RMC])
-  {
-    o << "====================================================";
-    o << "\n  End of a RMC block";
-    o << "\n    QMC counter                   = " << iParam[B_COUNTER];
-    o << "\n    time step                     = " << vParam[SBVP::TAU];
-    o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];
-    o << "\n    reference energy              = " << vParam[SBVP::EREF];
-    o << "\n    reference variance            = " << vParam[SBVP::SIGMA2];
-    o << "\n    cutoff energy                 = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX];
     o << "\n    QMC Status (BranchMode)       = " << BranchMode;
     o << "\n====================================================";
   }
@@ -350,57 +283,8 @@ bool SFNBranch::put(xmlNodePtr cur)
 {
   //save it
   myNode = cur;
-  //check dmc/vmc and decide to create WalkerControllerBase
   m_param.put(cur);
-  reset();
   return true;
-}
-
-/** Calculates and saves various action components, also does necessary updates for running averages.
- *
- */
-void SFNBranch::reset()
-{
-  //use effective time step of BranchInterval*Tau
-  //Feed = 1.0/(static_cast<RealType>(NumGeneration*BranchInterval)*Tau);
-  //logN = Feed*std::log(static_cast<RealType>(Nideal));
-  //JNKIM passive
-  //BranchMode.set(B_DMC,1);//set DMC
-  //BranchMode.set(B_DMCSTAGE,0);//set warmup
-  if (WalkerController)
-  {
-    //this is to compare the time step errors
-    BranchMode.set(B_USETAUEFF, sParam[USETAUOPT] == "no");
-    if (BranchMode[B_DMCSTAGE]) //
-      ToDoSteps = iParam[B_ENERGYUPDATEINTERVAL] - 1;
-    else
-      ToDoSteps = iParam[B_WARMUPSTEPS];
-    if (BranchMode[B_POPCONTROL])
-    {
-      //logN = Feedback*std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
-      logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
-      if (vParam[SBVP::FEEDBACK] == 0.0)
-        vParam[SBVP::FEEDBACK] = 1.0;
-    }
-    else
-    {
-      //may set Eref to a safe value
-      //if(EnergyHistory.count()<5) Eref -= vParam[EnergyWindowIndex];
-      vParam[SBVP::ETRIAL]   = vParam[SBVP::EREF];
-      vParam[SBVP::FEEDBACK] = 0.0;
-      logN                   = 0.0;
-    }
-    //       vParam(abranch.vParam)
-    WalkerController->start();
-  }
-  else
-    std::cerr << "Calling reset with no WalkerController and therefore nothing to do. Why?\n";
-}
-
-void SFNBranch::setEnergyVariance(FullPrecRealType energy, FullPrecRealType variance)
-{
-  vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] = energy;
-  vParam[SBVP::SIGMA2]                      = variance;
 }
 
 void SFNBranch::setBranchCutoff(FullPrecRealType variance,

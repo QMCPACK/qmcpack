@@ -70,7 +70,7 @@ public:
    *
    *  \return global population
    */
-  FullPrecRealType branch(int iter, MCPopulation& pop, bool do_not_branch);
+  int branch(int iter, MCPopulation& pop, bool do_not_branch);
 
   bool put(xmlNodePtr cur);
 

@@ -147,7 +147,7 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   }
 }
 
-QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
+int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   /* dynamic population
     1. compute multiplicity. If iter 0, multiplicity = 1
@@ -208,7 +208,7 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop, b
     size_t num_copies = static_cast<int>(walkers[iw]->Multiplicity);
     while (num_copies > 1)
     {
-      auto walker_elements = pop.spawnWalker();
+      auto walker_elements   = pop.spawnWalker();
       walker_elements.walker = *walkers[iw];
       walker_elements.pset.loadWalker(walker_elements.walker, true);
       walker_elements.pset.update();

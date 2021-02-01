@@ -66,13 +66,11 @@ public:
 
     createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
 
-    sfnb.initWalkerController(*pop_, false, false);
+    sfnb.initParam(*pop_, 0, 0, false, false);
 
     UPtrVector<Crowd> crowds;
     crowds.emplace_back(std::make_unique<Crowd>(*emb_));
     crowds.emplace_back(std::make_unique<Crowd>(*emb_));
-
-    sfnb.branch(0, *pop_);
 
     return sfnb;
   }

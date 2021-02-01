@@ -22,6 +22,7 @@
 namespace qmcplusplus
 {
 class DriverModifierBase;
+class WalkerControl;
 
 namespace testing
 {
@@ -86,6 +87,8 @@ public:
 
   DMCBatched(DMCBatched&&) = default;
 
+  ~DMCBatched();
+
   /** DMCBatched driver will eventually ignore cur
    *
    *  This is the shared entry point
@@ -124,6 +127,8 @@ private:
   DMCTimers dmc_timers_;
   /// Interval between branching
   IndexType branch_interval_;
+  ///walker controller for load-balance
+  std::unique_ptr<WalkerControl> WalkerController;
 
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
