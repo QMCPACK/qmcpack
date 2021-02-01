@@ -169,8 +169,6 @@ struct SFNBranch : public QMCTraits
     BRANCHCUTOFF,
     BRANCHFILTER,
     SIGMA2,
-    ACC_ENERGY,
-    ACC_SAMPLES,
     FEEDBACK,
     FILTERSCALE,
     VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?
@@ -221,8 +219,6 @@ struct SFNBranch : public QMCTraits
   //BlockHistogram<RealType> PopHist;
   /////histogram of populations
   //BlockHistogram<RealType> DMCEnergyHist;
-  ///root name
-  std::string RootName;
   ///scheme of branching cutoff
   std::string branching_cutoff_scheme;
   ///set of parameters
@@ -414,19 +410,9 @@ struct SFNBranch : public QMCTraits
 
   bool put(xmlNodePtr cur);
 
-  /** write the state
-   * @param fname name of the configuration file
-   * @param overwrite NOT USED
-   */
-  void write(Communicate& comm, const std::string& fname, bool overwrite = true);
-
-  void read(const std::string& fname);
-
   /** create map between the parameter name and variables */
   void registerParameters();
 
-  ///start a run
-  void start(const std::string& froot, bool append = false);
   ///finalize the simulation
   void finalize(Communicate& comm, const int global_walkers, RefVector<MCPWalker>& walkers);
 

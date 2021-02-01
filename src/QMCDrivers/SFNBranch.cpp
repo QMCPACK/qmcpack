@@ -16,7 +16,6 @@
 #include "Utilities/RandomGenerator.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "Estimators/EstimatorManagerNew.h"
-#include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
 #include "type_traits/template_types.hpp"
 
@@ -110,13 +109,6 @@ void SFNBranch::registerParameters()
   m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration", "opt");
   m_param.add(branching_cutoff_scheme, "branching_cutoff_scheme", "option");
   m_param.add(debug_disable_branching_, "debug_disable_branching", "option");
-}
-
-void SFNBranch::start(const std::string& froot, bool append)
-{
-  RootName              = froot;
-  MyEstimator->RootName = froot;
-  MyEstimator->reset();
 }
 
 int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool killwalker)
@@ -384,7 +376,6 @@ void SFNBranch::finalize(Communicate& comm, const int global_walkers, RefVector<
     o << "\n====================================================";
   }
   app_log() << o.str() << std::endl;
-  write(comm, RootName, true);
 }
 
 /**  Parse the xml file for parameters
@@ -446,50 +437,6 @@ void SFNBranch::reset()
   }
   else
     std::cerr << "Calling reset with no WalkerController and therefore nothing to do. Why?\n";
-}
-
-void SFNBranch::write(Communicate& comm, const std::string& fname, bool overwrite)
-{
-  RootName = fname;
-  if (comm.rank() == 0)
-  {
-    //\since 2008-06-24
-    vParam[SBVP::ACC_ENERGY]  = EnergyHist.result();
-    vParam[SBVP::ACC_SAMPLES] = EnergyHist.count();
-    BranchIO<SFNBranch> hh(*this, MyEstimator->getCommunicator());
-    bool success = hh.write(fname);
-  }
-}
-
-void SFNBranch::read(const std::string& fname)
-{
-  BranchMode.set(B_RESTART, 0);
-  if (fname.empty())
-    return;
-  vParam[SBVP::ACC_ENERGY]  = EnergyHist.result();
-  vParam[SBVP::ACC_SAMPLES] = EnergyHist.count();
-  BranchIO<SFNBranch> hh(*this, MyEstimator->getCommunicator());
-  BranchModeType bmode(BranchMode);
-  bool success = hh.read(fname);
-  if (success && R2Proposed.good() && bmode[B_POPCONTROL] == BranchMode[B_POPCONTROL])
-  {
-    BranchMode.set(B_RESTART, 1);
-    app_log() << "    Restarting, cummulative properties:"
-              << "\n      energy     = " << EnergyHist.mean() << "\n      variance   = " << VarianceHist.mean()
-              << "\n      r2accepted = " << R2Accepted.mean() << "\n      r2proposed = " << R2Proposed.mean()
-              << std::endl;
-  }
-  else
-  {
-    if (BranchMode[B_POPCONTROL] != bmode[B_POPCONTROL])
-    {
-      app_log() << "  Population control method has changed from " << BranchMode[B_POPCONTROL] << " to "
-                << bmode[B_POPCONTROL] << std::endl;
-      BranchMode[B_POPCONTROL] = bmode[B_POPCONTROL];
-    }
-  }
-
-  app_log().flush();
 }
 
 void SFNBranch::setEnergyVariance(FullPrecRealType energy, FullPrecRealType variance)

@@ -159,8 +159,6 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   estimator_manager_ = std::make_unique<EstimatorManagerNew>(myComm);
   // TODO: remove this when branch engine no longer depends on estimator_mamanger_
   branch_engine_->setEstimatorManager(estimator_manager_.get());
-  // This used to get updated as a side effect of setStatus
-  branch_engine_->read(h5_file_root_);
 
   if (!drift_modifier_)
     drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
@@ -185,11 +183,6 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   // Once they are created move contexts can be created.
   createRngsStepContexts(crowds_.size());
-
-  // if (wOut == 0)
-  //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
-  branch_engine_->start(root_name_);
-  branch_engine_->write(getCommRef(), root_name_);
 
   // PD: not really sure what the point of this is.  Seems to just go to output
   branch_engine_->advanceQMCCounter();
@@ -254,7 +247,6 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     timers_.checkpoint_timer.start();
-    branch_engine_->write(getCommRef(), root_name_, true); //save energy_history
     RandomNumberControl::write(root_name_, myComm);
     timers_.checkpoint_timer.stop();
   }
