@@ -35,8 +35,6 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
-#include "QMCDrivers/SFNBranch.h"
-#include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "OhmmsApp/ProjectData.h"
@@ -189,12 +187,6 @@ public:
   void createRngsStepContexts(int num_crowds);
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
-
-  ///set the BranchEngineType
-  void setNewBranchEngine(std::unique_ptr<SFNBranch>&& be) override { branch_engine_ = std::move(be); }
-
-  ///return BranchEngineType*
-  std::unique_ptr<SFNBranch> getNewBranchEngine() override { return std::move(branch_engine_); }
 
   int addObservable(const std::string& aname);
 

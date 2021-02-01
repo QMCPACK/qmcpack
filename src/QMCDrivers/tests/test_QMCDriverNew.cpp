@@ -66,7 +66,6 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
 
   REQUIRE(qmcdriver.getBranchEngine() == nullptr);
   qmcdriver.process(node);
-  REQUIRE(qmcdriver.getNewBranchEngine() != nullptr);
   REQUIRE(qmcdriver.get_num_living_walkers() == 1);
 
   // What else should we expect after process

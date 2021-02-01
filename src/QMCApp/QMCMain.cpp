@@ -588,9 +588,6 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
       qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
     }
 
-    if (last_branch_engine_new_unified_driver)
-      qmc_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
-
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
@@ -614,7 +611,6 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
     // transfer the states of a driver before its destruction
     last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
-    last_branch_engine_new_unified_driver = qmc_driver->getNewBranchEngine();
     // save the driver in a driver loop
     if (reuse)
       last_driver = std::move(qmc_driver);

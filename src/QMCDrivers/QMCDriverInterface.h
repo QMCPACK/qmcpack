@@ -61,8 +61,6 @@ public:
 
   virtual void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) {}
   virtual std::unique_ptr<BranchEngineType> getBranchEngine() { return nullptr; }
-  virtual void setNewBranchEngine(std::unique_ptr<SFNBranch>&& be) {}
-  virtual std::unique_ptr<SFNBranch> getNewBranchEngine() { return nullptr; }
 };
 
 } // namespace qmcplusplus
