@@ -53,8 +53,18 @@ void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
 
 void OperatorEstBase::write()
 {
+  // We have to do this to deal with the legacy design that Observables using
+  // collectables in mixed precision were accumulated in float but always written
+  // to hdf5 in double.
+  #ifdef MIXED_PRECISION
+  std::vector<QMCT::FullPrecRealType> expanded_data(data_->size(), 0.0);
+  std::copy_n(data_->begin(), data_->size(), expanded_data.begin());
+  for (auto& h5d : h5desc_)
+    h5d->write(expanded_data.data(), nullptr);
+  #else
   for (auto& h5d : h5desc_)
     h5d->write(data_->data(), nullptr);
+  #endif
 }
 
 void OperatorEstBase::zero()
