@@ -14,7 +14,6 @@
 #include <numeric>
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
-#include "Estimators/EstimatorManagerNew.h"
 #include "Particle/Reptile.h"
 #include "type_traits/template_types.hpp"
 
@@ -31,7 +30,7 @@ enum
   DUMMYOPT
 };
 
-SFNBranch::SFNBranch(RealType tau, int nideal) : MyEstimator(nullptr)
+SFNBranch::SFNBranch(RealType tau, int nideal)
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -67,7 +66,6 @@ SFNBranch::SFNBranch(const SFNBranch& abranch)
     : BranchMode(abranch.BranchMode),
       iParam(abranch.iParam),
       vParam(abranch.vParam),
-      MyEstimator(0),
       branching_cutoff_scheme(abranch.branching_cutoff_scheme),
       sParam(abranch.sParam)
 {
@@ -127,8 +125,6 @@ int SFNBranch::initParam(const MCPopulation& population,
   if (iParam[B_TARGETWALKERS] == 0)
     iParam[B_TARGETWALKERS] = nwtot_now;
 
-  logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
-
   app_log() << "  QMC counter             = " << iParam[B_COUNTER] << std::endl;
   app_log() << "  time step               = " << vParam[SBVP::TAU] << std::endl;
   app_log() << "  effective time step     = " << vParam[SBVP::TAUEFF] << std::endl;
@@ -147,7 +143,8 @@ int SFNBranch::initParam(const MCPopulation& population,
 
 void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec)
 {
-  FullPrecRealType pop_now = pop_int;
+  FullPrecRealType logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
+  FullPrecRealType pop_now = static_cast<FullPrecRealType>(pop_int);
   //population for trial energy modification should not include any released node walkers.
   pop_now -= wc_ensemble_prop.RNSamples;
   //current energy

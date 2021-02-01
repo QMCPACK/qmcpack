@@ -25,9 +25,6 @@
 
 namespace qmcplusplus
 {
-class WalkerControl;
-class EstimatorManagerNew;
-
 /** Manages the state of QMC sections and handles population control for DMCs
  *
  * \todo: Remove Estimator dependency, only has come dependency. Express accumulate in
@@ -186,12 +183,8 @@ struct SFNBranch : public QMCTraits
    * set differently for BranchMode[B_DMCSTAGE]
    */
   int ToDoSteps;
-  ///Feed*log(N)
-  FullPrecRealType logN;
   ///save xml element
   xmlNodePtr myNode;
-  ///TODO: Should not be raw pointer
-  EstimatorManagerNew* MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;
   ///a simple accumulator for variance
@@ -249,15 +242,6 @@ struct SFNBranch : public QMCTraits
    */
   inline void advanceQMCCounter() { iParam[B_COUNTER]++; }
   inline void regressQMCCounter() { iParam[B_COUNTER]--; }
-
-  /** get the EstimatorManager */
-  EstimatorManagerNew* getEstimatorManager() { return MyEstimator; }
-
-  /** set the EstimatorManager
-   * @param est estimator created by the first QMCDriver
-   * this assumes estimator managers are reused section to section
-   * */
-  void setEstimatorManager(EstimatorManagerNew* est) { MyEstimator = est; }
 
   /** initialize branching parameters
    * @param pop Population of Walkers

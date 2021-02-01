@@ -62,8 +62,6 @@ public:
 
     SFNBranch sfnb(tau_, num_global_walkers_);
 
-    sfnb.setEstimatorManager(emb_.get());
-
     createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
 
     sfnb.initParam(*pop_, 0, 0, false, false);

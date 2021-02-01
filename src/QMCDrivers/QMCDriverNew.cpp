@@ -160,9 +160,6 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
     branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
-  // TODO: remove this when branch engine no longer depends on estimator_mamanger_
-  branch_engine_->setEstimatorManager(estimator_manager_.get());
-
   // I don't think its at all good that the branch engine gets mutated here
   // Carrying the population on is one thing but a branch engine seems like it
   // should be fresh per section.
