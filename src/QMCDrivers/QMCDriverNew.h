@@ -46,7 +46,6 @@ namespace qmcplusplus
 //forward declarations: Do not include headers if not needed
 class HDFWalkerOutput;
 class TraceManager;
-struct SFNBranch;
 class EstimatorManagerNew;
 class TrialWaveFunction;
 class QMCHamiltonian;
@@ -320,11 +319,8 @@ protected:
 
   std::vector<std::unique_ptr<Crowd>> crowds_;
 
-
   std::string h5_file_root_;
 
-  ///branch engine
-  std::unique_ptr<SFNBranch> branch_engine_;
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 

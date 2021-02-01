@@ -99,7 +99,9 @@ bool QMCOptimizeBatched::run()
   app_log() << "</opt>" << std::endl;
   app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
   app_log() << "  <log>" << std::endl;
-  optTarget->setTargetEnergy(branch_engine_->getEref());
+  // FIXME: Ye to Mark: branch_engine_ of QMCOptimizeBatched doesn't hold anything.
+  // Hopefully this was not affecting anything.
+  //optTarget->setTargetEnergy(branch_engine_->getEref());
   t1.restart();
   bool success = optSolver->optimize(optTarget.get());
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;

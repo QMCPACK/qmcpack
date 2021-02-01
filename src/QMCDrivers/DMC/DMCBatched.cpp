@@ -23,6 +23,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
+#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {
@@ -451,10 +452,12 @@ void DMCBatched::process(xmlNodePtr node)
     // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
     // I'd like to do away with this method in DMCBatched.
 
-    app_log() << "  Creating WalkerControler" << std::endl;
+    app_log() << "  Creating the branching engine and walker controler" << std::endl;
+    branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
+    branch_engine_->put(node);
+
     WalkerController = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
     WalkerController->setMinMax(population_.get_num_global_walkers(), 0);
-
     WalkerController->start();
     WalkerController->put(node);
 

@@ -17,12 +17,12 @@
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
-#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {
 class DriverModifierBase;
 class WalkerControl;
+class SFNBranch;
 
 namespace testing
 {
@@ -127,6 +127,8 @@ private:
   DMCTimers dmc_timers_;
   /// Interval between branching
   IndexType branch_interval_;
+  ///branch engine
+  std::unique_ptr<SFNBranch> branch_engine_;
   ///walker controller for load-balance
   std::unique_ptr<WalkerControl> WalkerController;
 

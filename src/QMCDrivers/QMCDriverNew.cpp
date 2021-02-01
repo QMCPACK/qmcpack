@@ -155,17 +155,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
-  if (!branch_engine_)
-  {
-    branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
-  }
-
-  // I don't think its at all good that the branch engine gets mutated here
-  // Carrying the population on is one thing but a branch engine seems like it
-  // should be fresh per section.
-  branch_engine_->put(cur);
   estimator_manager_->put(H, *population_.get_golden_electrons(), cur);
-
 
   crowds_.resize(awc.walkers_per_crowd.size());
 
@@ -180,9 +170,6 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   // Once they are created move contexts can be created.
   createRngsStepContexts(crowds_.size());
-
-  // PD: not really sure what the point of this is.  Seems to just go to output
-  branch_engine_->advanceQMCCounter();
 }
 
 /** QMCDriverNew ignores h5name if you want to read and h5 config you have to explicitly
