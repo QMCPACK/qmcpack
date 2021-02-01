@@ -430,6 +430,9 @@ struct SFNBranch : public QMCTraits
   ///finalize the simulation
   void finalize(Communicate& comm, const int global_walkers, RefVector<MCPWalker>& walkers);
 
+  /// set variance and energy
+  void setEnergyVariance(FullPrecRealType energy, FullPrecRealType variance);
+
 private:
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,

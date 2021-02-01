@@ -492,6 +492,12 @@ void SFNBranch::read(const std::string& fname)
   app_log().flush();
 }
 
+void SFNBranch::setEnergyVariance(FullPrecRealType energy, FullPrecRealType variance)
+{
+  vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] = energy;
+  vParam[SBVP::SIGMA2]                      = variance;
+}
+
 void SFNBranch::setBranchCutoff(FullPrecRealType variance,
                                 FullPrecRealType targetSigma,
                                 FullPrecRealType maxSigma,

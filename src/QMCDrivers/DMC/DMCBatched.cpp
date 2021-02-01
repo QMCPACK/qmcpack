@@ -492,6 +492,9 @@ bool DMCBatched::run()
     ScopedTimer local_timer(&(timers_.init_walkers_timer));
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    FullPrecRealType ene, var;
+    population_.measureGlobalEnergyVariance(*myComm, ene, var);
+    branch_engine_->setEnergyVariance(ene, var);
   }
 
   ParallelExecutor<> crowd_task;
