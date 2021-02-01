@@ -79,6 +79,11 @@ public:
              QMCHamiltonian& h,
              Communicate* comm);
 
+  /// Copy Constructor (disabled)
+  DMCBatched(const DMCBatched&) = delete;
+  /// Copy operator (disabled).
+  DMCBatched& operator=(const DMCBatched&) = delete;
+
   DMCBatched(DMCBatched&&) = default;
 
   /** DMCBatched driver will eventually ignore cur
@@ -119,11 +124,6 @@ private:
   DMCTimers dmc_timers_;
   /// Interval between branching
   IndexType branch_interval_;
-  void resetUpdateEngines();
-  /// Copy Constructor (disabled)
-  DMCBatched(const DMCBatched&) = delete;
-  /// Copy operator (disabled).
-  DMCBatched& operator=(const DMCBatched&) = delete;
 
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,

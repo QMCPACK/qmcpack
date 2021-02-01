@@ -280,10 +280,6 @@ struct SFNBranch : public QMCTraits
    */
   int initWalkerController(MCPopulation& pop, bool fixW, bool killwalker);
 
-  /** determine trial and reference energies
-   */
-  void checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers);
-
   /** return the bare branch weight
    *
    * This is equivalent to calling branchWeight(enew,eold,1.0,1.0)

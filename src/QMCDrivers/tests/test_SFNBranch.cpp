@@ -68,9 +68,6 @@ public:
 
     sfnb.initWalkerController(*pop_, false, false);
 
-
-    sfnb.checkParameters(pop_->get_num_global_walkers(), walkers);
-
     UPtrVector<Crowd> crowds;
     crowds.emplace_back(std::make_unique<Crowd>(*emb_));
     crowds.emplace_back(std::make_unique<Crowd>(*emb_));

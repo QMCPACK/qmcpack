@@ -297,31 +297,6 @@ void SFNBranch::branch(int iter, MCPopulation& population)
   //walkers.Collectables *= wgt_inv;
 }
 
-void SFNBranch::checkParameters(const int global_walkers, RefVector<MCPWalker>& walkers)
-{
-  std::ostringstream o;
-  if (!BranchMode[B_DMCSTAGE])
-  {
-    FullPrecRealType e, sigma2;
-    MyEstimator->getApproximateEnergyVariance(e, sigma2);
-    vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] = e;
-    vParam[SBVP::SIGMA2]                      = sigma2;
-    EnergyHist.clear();
-    VarianceHist.clear();
-    //DMCEnergyHist.clear();
-    EnergyHist(vParam[SBVP::EREF]);
-    VarianceHist(vParam[SBVP::SIGMA2]);
-//DMCEnergyHist(vParam[SBVP::EREF]);
-#ifndef NDEBUG
-    o << "SFNBranch::checkParameters " << std::endl;
-    o << "  Average Energy of a population  = " << e << std::endl;
-    o << "  Energy Variance = " << vParam[SBVP::SIGMA2] << std::endl;
-#endif
-  }
-  app_log() << o.str() << std::endl;
-  app_log().flush();
-}
-
 void SFNBranch::printStatus() const
 {
   std::ostringstream o;

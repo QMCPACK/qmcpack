@@ -56,36 +56,6 @@ void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
                                       dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
 }
 
-void DMCBatched::resetUpdateEngines()
-{
-  ReportEngine PRE("DMC", "resetUpdateEngines");
-  Timer init_timer;
-  // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
-  // I'd like to do away with this method in DMCBatched.
-
-  // false indicates we do not support kill at node crossings.
-  branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
-
-  estimator_manager_->reset();
-
-  RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
-
-  branch_engine_->checkParameters(population_.get_num_global_walkers(), walkers);
-
-  std::ostringstream o;
-  if (dmcdriver_input_.get_reconfiguration())
-    o << "  Fixed population using reconfiguration method\n";
-  else
-    o << "  Fluctuating population\n";
-  o << "  Persistent walkers are killed after " << dmcdriver_input_.get_max_age() << " MC sweeps\n";
-  o << "  BranchInterval = " << dmcdriver_input_.get_branch_interval() << "\n";
-  o << "  Steps per block = " << qmcdriver_input_.get_max_steps() << "\n";
-  o << "  Number of blocks = " << qmcdriver_input_.get_max_blocks() << "\n";
-  app_log() << o.str() << std::endl;
-
-  app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
-}
-
 void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 Crowd& crowd,
                                 DriverTimers& timers,
@@ -475,7 +445,29 @@ void DMCBatched::process(xmlNodePtr node)
 
 bool DMCBatched::run()
 {
-  resetUpdateEngines();
+  {
+    ReportEngine PRE("DMC", "resetUpdateEngines");
+    Timer init_timer;
+    // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
+    // I'd like to do away with this method in DMCBatched.
+
+    // false indicates we do not support kill at node crossings.
+    branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
+
+    std::ostringstream o;
+    if (dmcdriver_input_.get_reconfiguration())
+      o << "  Fixed population using reconfiguration method\n";
+    else
+      o << "  Fluctuating population\n";
+    o << "  Persistent walkers are killed after " << dmcdriver_input_.get_max_age() << " MC sweeps\n";
+    o << "  BranchInterval = " << dmcdriver_input_.get_branch_interval() << "\n";
+    o << "  Steps per block = " << qmcdriver_input_.get_max_steps() << "\n";
+    o << "  Number of blocks = " << qmcdriver_input_.get_max_blocks() << "\n";
+    app_log() << o.str() << std::endl;
+
+    app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
+  }
+
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
   estimator_manager_->start(num_blocks);
