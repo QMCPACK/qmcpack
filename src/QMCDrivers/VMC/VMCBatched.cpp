@@ -353,7 +353,20 @@ bool VMCBatched::run()
 
   // second argument was !wrotesample so if W.dumpEnsemble returns false or
   // dump_config is false from input then dump_walkers
-  return finalize(num_blocks, true);
+  {
+    std::ostringstream o;
+    FullPrecRealType ene, var;
+    population_.measureGlobalEnergyVariance(*myComm, ene, var);
+    o << "====================================================";
+    o << "\n  End of a VMC block";
+    o << "\n    QMC counter        = " << project_info_.getSeriesIndex();
+    o << "\n    time step          = " << qmcdriver_input_.get_tau();
+    o << "\n    reference energy   = " << ene;
+    o << "\n    reference variance = " << var;
+    o << "\n====================================================";
+    app_log() << o.str() << std::endl;
+  }
+  return true;
 }
 
 void VMCBatched::enable_sample_collection()

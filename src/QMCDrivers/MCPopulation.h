@@ -161,7 +161,7 @@ public:
   }
 
   void syncWalkersPerNode(Communicate* comm);
-  void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance);
+  void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
 
   /**@ingroup Accessors
    * @{

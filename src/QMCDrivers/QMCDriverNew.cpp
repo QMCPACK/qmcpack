@@ -32,7 +32,6 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Message/UniformCommunicateError.h"
-#include "OhmmsApp/ProjectData.h"
 
 namespace qmcplusplus
 {

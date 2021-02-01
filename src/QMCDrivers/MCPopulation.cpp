@@ -265,7 +265,7 @@ void MCPopulation::syncWalkersPerNode(Communicate* comm)
   num_global_walkers_ = std::accumulate(num_local_walkers_per_node.begin(), num_local_walkers_per_node.end(), 0);
 }
 
-void MCPopulation::measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance)
+void MCPopulation::measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const
 {
   std::vector<FullPrecRealType> weight_energy_variance(3, 0.0);
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)

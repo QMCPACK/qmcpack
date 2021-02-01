@@ -39,6 +39,7 @@
 #include "QMCDrivers/BranchIO.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
+#include "OhmmsApp/ProjectData.h"
 
 class Communicate;
 
@@ -51,7 +52,6 @@ struct SFNBranch;
 class EstimatorManagerNew;
 class TrialWaveFunction;
 class QMCHamiltonian;
-class ProjectData;
 
 namespace testing
 {
