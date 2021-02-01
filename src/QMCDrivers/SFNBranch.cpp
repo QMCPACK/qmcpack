@@ -44,6 +44,7 @@ SFNBranch::SFNBranch(RealType tau, int nideal) : MyEstimator(nullptr), debug_dis
   vParam[SBVP::TAUEFF]      = tau;
   vParam[SBVP::FEEDBACK]    = 1.0;
   vParam[SBVP::FILTERSCALE] = 10;
+  vParam[SBVP::SIGMA_BOUND] = 10;
   R2Accepted(1.0e-10);
   R2Proposed(1.0e-10);
   //set the default values for integer parameters
@@ -104,6 +105,7 @@ void SFNBranch::registerParameters()
   m_param.add(vParam[SBVP::FILTERSCALE], "filterscale", "double");
   //feed back parameter for population control
   m_param.add(vParam[SBVP::FEEDBACK], "feedback", "double");
+  m_param.add(vParam[SBVP::SIGMA_BOUND], "sigmaBound", "double");
   //turn on/off effective tau onl for time-step error comparisons
   m_param.add(sParam[USETAUOPT], "useBareTau", "option");
   m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration", "opt");
@@ -173,7 +175,7 @@ int SFNBranch::initWalkerController(MCPopulation& population, bool fixW, bool ki
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
     // Was check MCWC's particle set for number of R which I take to mean number of particles
     // will this assumption change if various spin freedoms also are added to ParticleSet?
-    setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), allow_flux,
+    setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], allow_flux,
                     population.get_num_particles());
     vParam[SBVP::TAUEFF] = tau * R2Accepted.result() / R2Proposed.result();
   }
@@ -260,7 +262,7 @@ void SFNBranch::branch(int iter, MCPopulation& population)
     if (ToDoSteps == 0) //warmup is done
     {
       vParam[SBVP::SIGMA2] = VarianceHist.mean();
-      setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), 10, population.get_num_particles());
+      setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], 10, population.get_num_particles());
       app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << std::endl;
       if (BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[SBVP::TAUEFF]

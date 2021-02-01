@@ -169,6 +169,7 @@ struct SFNBranch : public QMCTraits
     BRANCHCUTOFF,
     BRANCHFILTER,
     SIGMA2,
+    SIGMA_BOUND,
     FEEDBACK,
     FILTERSCALE,
     VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?

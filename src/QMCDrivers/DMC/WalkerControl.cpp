@@ -58,7 +58,6 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fi
       n_min_(1),
       n_max_(10),
       max_copy_(2),
-      target_sigma_(10),
       dmcStream(0),
       rank_num_(c->rank()),
       num_ranks_(c->size()),
@@ -551,7 +550,6 @@ bool WalkerControl::put(xmlNodePtr cur)
   int nw_target = 0, nw_max = 0;
   std::string nonblocking = "yes";
   ParameterSet params;
-  params.add(target_sigma_, "sigmaBound", "double");
   params.add(max_copy_, "maxCopy", "int");
   params.add(nw_target, "targetwalkers", "int");
   params.add(nw_max, "max_walkers", "int");

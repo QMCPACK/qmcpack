@@ -78,7 +78,6 @@ public:
 
   int get_n_max() const { return n_max_; }
   int get_n_min() const { return n_min_; }
-  FullPrecRealType get_target_sigma() const { return target_sigma_; }
   MCDataType<FullPrecRealType>& get_ensemble_property() { return ensemble_property_; }
   void set_ensemble_property(MCDataType<FullPrecRealType>& ensemble_property)
   {
@@ -153,8 +152,6 @@ private:
   IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
-  ///target sigma to limit fluctuations of the trial energy
-  FullPrecRealType target_sigma_;
   ///number of walkers on each node after branching before load balancing
   std::vector<int> num_per_node_;
   ///offset of the particle index for a fair distribution
