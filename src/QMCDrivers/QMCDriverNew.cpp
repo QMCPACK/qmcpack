@@ -255,7 +255,6 @@ void QMCDriverNew::recordBlock(int block)
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
-  branch_engine_->finalize(getCommRef(), population_.get_num_global_walkers(), walkers);
 
   if (qmcdriver_input_.get_dump_config())
     RandomNumberControl::write(root_name_, myComm);

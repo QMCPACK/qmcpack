@@ -356,7 +356,7 @@ bool VMCBatched::run()
   {
     std::ostringstream o;
     FullPrecRealType ene, var;
-    population_.measureGlobalEnergyVariance(*myComm, ene, var);
+    estimator_manager_->getApproximateEnergyVariance(ene, var);
     o << "====================================================";
     o << "\n  End of a VMC block";
     o << "\n    QMC counter        = " << project_info_.getSeriesIndex();
@@ -366,7 +366,7 @@ bool VMCBatched::run()
     o << "\n====================================================";
     app_log() << o.str() << std::endl;
   }
-  return true;
+  return finalize(num_blocks, true);
 }
 
 void VMCBatched::enable_sample_collection()

@@ -322,13 +322,13 @@ void SFNBranch::checkParameters(const int global_walkers, RefVector<MCPWalker>& 
   app_log().flush();
 }
 
-void SFNBranch::finalize(Communicate& comm, const int global_walkers, RefVector<MCPWalker>& walkers)
+void SFNBranch::printStatus() const
 {
   std::ostringstream o;
   if (WalkerController)
   {
     o << "====================================================";
-    o << "\n  SFNBranch::finalize after a DMC block";
+    o << "\n  End of a DMC block";
     o << "\n    QMC counter                   = " << iParam[B_COUNTER];
     o << "\n    time step                     = " << vParam[SBVP::TAU];
     o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];
@@ -337,7 +337,7 @@ void SFNBranch::finalize(Communicate& comm, const int global_walkers, RefVector<
     o << "\n    reference variance            = " << vParam[SBVP::SIGMA2];
     o << "\n    target walkers                = " << iParam[B_TARGETWALKERS];
     o << "\n    branch cutoff                 = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX];
-    o << "\n    Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS];
+    o << "\n    Max and min walkers per node  = " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS];
     o << "\n    Feedback                      = " << vParam[SBVP::FEEDBACK];
     o << "\n    QMC Status (BranchMode)       = " << BranchMode;
     o << "\n====================================================";
@@ -346,7 +346,7 @@ void SFNBranch::finalize(Communicate& comm, const int global_walkers, RefVector<
   else if (BranchMode[B_RMC])
   {
     o << "====================================================";
-    o << "\n  SFNBranch::finalize after a RMC block";
+    o << "\n  End of a RMC block";
     o << "\n    QMC counter                   = " << iParam[B_COUNTER];
     o << "\n    time step                     = " << vParam[SBVP::TAU];
     o << "\n    effective time step           = " << vParam[SBVP::TAUEFF];
@@ -354,25 +354,6 @@ void SFNBranch::finalize(Communicate& comm, const int global_walkers, RefVector<
     o << "\n    reference variance            = " << vParam[SBVP::SIGMA2];
     o << "\n    cutoff energy                 = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX];
     o << "\n    QMC Status (BranchMode)       = " << BranchMode;
-    o << "\n====================================================";
-  }
-  else
-  {
-    //running VMC
-    FullPrecRealType e, sigma2;
-    MyEstimator->getApproximateEnergyVariance(e, sigma2);
-    vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] = e;
-    vParam[SBVP::SIGMA2]                      = sigma2;
-    //this is just to avoid diving by n-1  == 0
-    EnergyHist(vParam[SBVP::EREF]);
-    //add Eref to the DMCEnergyHistory
-    //DMCEnergyHist(vParam[SBVP::EREF]);
-    o << "====================================================";
-    o << "\n  SFNBranch::finalize after a VMC block";
-    o << "\n    QMC counter        = " << iParam[B_COUNTER];
-    o << "\n    time step          = " << vParam[SBVP::TAU];
-    o << "\n    reference energy   = " << vParam[SBVP::EREF];
-    o << "\n    reference variance = " << vParam[SBVP::SIGMA2];
     o << "\n====================================================";
   }
   app_log() << o.str() << std::endl;

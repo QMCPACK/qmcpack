@@ -537,6 +537,8 @@ bool DMCBatched::run()
     }
     endBlock();
   }
+
+  branch_engine_->printStatus();
   return finalize(num_blocks, true);
 }
 
