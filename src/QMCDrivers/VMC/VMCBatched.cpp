@@ -242,6 +242,12 @@ void VMCBatched::process(xmlNodePtr node)
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+
+    if (vmcdriver_input_.get_use_drift())
+      app_log() << "  Random walking with drift" << std::endl;
+    else
+      app_log() << "  Random walking without drift" << std::endl;
+
     Base::startup(node, awc);
   }
   catch (const UniformCommunicateError& ue)

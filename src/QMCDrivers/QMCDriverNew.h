@@ -303,7 +303,7 @@ protected:
     {}
   };
 
-  QMCDriverInput qmcdriver_input_;
+  const QMCDriverInput qmcdriver_input_;
 
   /** @ingroup Driver mutable input values
    *

@@ -54,8 +54,8 @@ public:
     IndexType step;
     int block;
     bool recomputing_blocks;
-    StateForThread(QMCDriverInput& qmci,
-                   DMCDriverInput& dmci,
+    StateForThread(const QMCDriverInput& qmci,
+                   const DMCDriverInput& dmci,
                    DriftModifierBase& drift_mod,
                    SFNBranch& branch_eng,
                    MCPopulation& pop)
@@ -120,7 +120,7 @@ public:
   void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
 
 private:
-  DMCDriverInput dmcdriver_input_;
+  const DMCDriverInput dmcdriver_input_;
 
   /** I think its better if these have there own type and variable name
    */
