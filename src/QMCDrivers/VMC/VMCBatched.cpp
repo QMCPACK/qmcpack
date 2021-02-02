@@ -48,6 +48,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
+  assert(QMCDriverNew::checkLogAndGL(crowd));
+
   // Consider favoring lambda followed by for over walkers
   // more compact, descriptive and less error prone.
   auto& walker_twfs  = crowd.get_walker_twfs();
@@ -174,22 +176,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.buffer_timer.start();
   TrialWaveFunction::flex_evaluateGL(crowd.get_walker_twfs(), crowd.get_walker_elecs(), recompute);
-#ifndef NDEBUG
-  std::vector<TrialWaveFunction::LogValueType> log_values(crowd.get_walker_twfs().size());
-  for (int iw = 0; iw < log_values.size(); iw++)
-    log_values[iw] = {crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()};
-  std::cout << "G " << std::endl << crowd.get_walker_twfs()[0].get().G << std::endl;
-  std::cout << "L " << std::endl << crowd.get_walker_twfs()[0].get().L << std::endl;
-  TrialWaveFunction::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
-  std::cout << "G " << std::endl << crowd.get_walker_twfs()[0].get().G << std::endl;
-  std::cout << "L " << std::endl << crowd.get_walker_twfs()[0].get().L << std::endl;
-  for (int iw = 0; iw < log_values.size(); iw++)
-    std::cout << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref "
-              << TrialWaveFunction::LogValueType{crowd.get_walker_twfs()[iw].get().getLogPsi(),
-                                                 crowd.get_walker_twfs()[iw].get().getPhase()}
-              << std::endl;
-#endif
+  assert(QMCDriverNew::checkLogAndGL(crowd));
   timers.buffer_timer.stop();
+
   timers.hamiltonian_timer.start();
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
@@ -377,6 +366,5 @@ void VMCBatched::enable_sample_collection()
   app_log() << "VMCBatched Driver collecting samples, samples_per_node = "
             << compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()) << '\n';
 }
-
 
 } // namespace qmcplusplus

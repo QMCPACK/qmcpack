@@ -273,6 +273,9 @@ protected:
 
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
+  /// check logpsi and grad and lap against values computed from scratch
+  static bool checkLogAndGL(Crowd& crowd);
+
   /** The timers for the driver.
    *
    * This cleans up the driver constructor, and a reference to this structure 
