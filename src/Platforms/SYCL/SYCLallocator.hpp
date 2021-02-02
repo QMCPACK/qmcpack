@@ -23,24 +23,29 @@
 #include "allocator_traits.hpp"
 #include "CPU/SIMD/alignment.config.h"
 #include <CL/sycl.hpp>
-//#include "oneapi/mkl.hpp"
-#include "oneapi/mkl/lapack.hpp"
-#include "oneapi/mkl/blas.hpp"
 namespace sycl = cl::sycl;
 
 namespace qmcplusplus
 {
+
+struct SYCLAllocatorBase{
+  public:
+    // ensure same context is used for all allocators/types
+    // and kernel execution
+    // an optimization should be a shared context and multiple queues
+    inline static sycl::queue q;
+};
 /** allocator for SYCL unified memory
  * @tparm T data type
  */
 template<typename T>
-struct SYCLManagedAllocator
+struct SYCLManagedAllocator : SYCLAllocatorBase
 {
   typedef T value_type;
   typedef size_t size_type;
   typedef T* pointer;
   typedef const T* const_pointer;
-  sycl::queue q;
+  //inline static sycl::queue q;
 
   SYCLManagedAllocator() = default;
   template<class U>
@@ -57,12 +62,7 @@ struct SYCLManagedAllocator
   {
     sycl::device dev = q.get_device();
     sycl::context ctx = q.get_context();
-    // TODO: clean this after debugging is finished
-    auto out = static_cast<T*>(sycl::malloc_shared(n * sizeof(T), dev, ctx));
-    std::cout << "SYCL_DEBUG allocation" << std::endl;
-    return out;
-    //return  static_cast<T*>(sycl::malloc_shared(n * sizeof(T), dev, ctx));
-
+    return  static_cast<T*>(sycl::malloc_shared(n * sizeof(T), dev, ctx));
   }
   void deallocate(T* p, std::size_t) { 
     sycl::device dev = q.get_device();

@@ -15,67 +15,9 @@
 
 #include <CL/sycl.hpp>
 #include <complex>
-//#include "oneapi/mkl.hpp"
-#include "oneapi/mkl/lapack.hpp"
-#include "oneapi/mkl/blas.hpp"
 namespace sycl = cl::sycl;
 
-/** helper function for delayed update algorithm
- * W matrix is applied and copy selected rows of Ainv into V
- */
-
-//void applyW_stageV_sycl(const int *delay_list_gpu, const int delay_count,
-//                        float* temp_gpu, const int numorbs, const int ndelay,
-//                        float* V_gpu, const float* Ainv,
-//                        sycl::queue q);
-//
-//void applyW_stageV_sycl(const int *delay_list_gpu, const int delay_count,
-//                        std::complex<float>* temp_gpu, const int numorbs, const int ndelay,
-//                        std::complex<float>* V_gpu, const std::complex<float>* Ainv,
-//                        sycl::queue q);
-//
-//void applyW_stageV_sycl(const int *delay_list_gpu, const int delay_count,
-//                        double* temp_gpu, const int numorbs, const int ndelay,
-//                        double* V_gpu, const double* Ainv,
-//                        sycl::queue q);
-//
-//void applyW_stageV_sycl(const int *delay_list_gpu, const int delay_count,
-//                        std::complex<double>* temp_gpu, const int numorbs, const int ndelay,
-//                        std::complex<double>* V_gpu, const std::complex<double>* Ainv,
-//                        sycl::queue q);
-
-/** create identity matrix on the device
- */
-//void make_identity_matrix_sycl(const int nrows, double* mat, const int lda, sycl::queue q);
-//
-//void make_identity_matrix_sycl(const int nrows, std::complex<double>* mat, const int lda, sycl::queue q);
-//
-///** extract matrix diagonal
-// */
-//void extract_matrix_diagonal_sycl(const int nrows, const double* mat, const int lda, double* diag, sycl::queue q);
-//
-//void extract_matrix_diagonal_sycl(const int nrows, const std::complex<double>* mat, const int lda, std::complex<double>* diag, sycl::queue q);
-
-/** copy matrix with precision difference
- */
-//void copy_matrix_sycl(const int nrows, const int ncols, const double* mat_in, const int lda, float* mat_out, const int ldb, sycl::queue q);
-//
-//void copy_matrix_sycl(const int nrows, const int ncols, const float* mat_in, const int lda, double* mat_out, const int ldb, sycl::queue q);
-//
-//void copy_matrix_sycl(const int nrows, const int ncols, const std::complex<double>* mat_in, const int lda, std::complex<float>* mat_out, const int ldb, sycl::queue q);
-//
-//void copy_matrix_sycl(const int nrows, const int ncols, const std::complex<float>* mat_in, const int lda, std::complex<double>* mat_out, const int ldb, sycl::queue q);
-//void copy_matrix_sycl(int nrows, int ncols, double* mat_in, int lda, float* mat_out, int ldb, sycl::queue q);
-//
-//void copy_matrix_sycl(int nrows, int ncols, float* mat_in, int lda, double* mat_out, int ldb, sycl::queue q);
-//
-//void copy_matrix_sycl(int nrows, int ncols, std::complex<double>* mat_in, int lda, std::complex<float>* mat_out, int ldb, sycl::queue q);
-//
-//void copy_matrix_sycl(int nrows, int ncols, std::complex<float>* mat_in, int lda, std::complex<double>* mat_out, int ldb, sycl::queue q);
-
-
-///////////////////////////////////////////////
-//TODO: put this back in delayed_update_helper.cpp when cmake is fixed?
+#include <iostream>
 
 /** helper kernel for delayed update algorithm
  * W matrix is applied and copy selected rows of Ainv into V
@@ -207,26 +149,6 @@ void copy_matrix_kernel(const int nrows, const int ncols, const T_IN*  mat_in, c
   }
 }
 
-//template<typename T_IN, typename T_OUT>
-//void copy_matrix_sycl(const int nrows, const int ncols, const T_IN *mat_in,
-//                      const int lda, T_OUT *mat_out, const int ldb,
-//                      sycl::queue q)
-//{
-//  const int BS = 128;
-//  const int NB1 = (ncols+BS-1)/BS;
-//  const int NB2 = (nrows+BS-1)/BS;
-//  sycl::range<2> dimBlock(BS, 1);
-//  sycl::range<2> dimGrid(NB1, NB2);
-//
-//  q.submit([&](sycl::handler &cgh) {
-//    cgh.parallel_for(
-//        sycl::nd_range<2>(dimGrid * dimBlock, dimBlock),
-//        [=](sycl::nd_item<2> item_ct1) {
-//          copy_matrix_kernel<T_IN, T_OUT, BS>(nrows, ncols, mat_in, lda,
-//                                              mat_out, ldb, item_ct1);
-//        });
-//  });
-//}
 template<typename T_IN, typename T_OUT>
 void copy_matrix_sycl(int nrows, int ncols, T_IN *mat_in,
                       int lda, T_OUT *mat_out, int ldb,
@@ -237,7 +159,7 @@ void copy_matrix_sycl(int nrows, int ncols, T_IN *mat_in,
   const int NB2 = (nrows+BS-1)/BS;
   sycl::range<2> dimBlock(BS, 1);
   sycl::range<2> dimGrid(NB1, NB2);
-
+   
   q.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(
         sycl::nd_range<2>(dimGrid * dimBlock, dimBlock),

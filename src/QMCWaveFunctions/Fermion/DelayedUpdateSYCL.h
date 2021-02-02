@@ -18,7 +18,8 @@
 #include "SYCL/SYCLallocator.hpp"
 #include "QMCWaveFunctions/detail/SYCL/delayed_update_helper.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-
+#include "oneapi/mkl/lapack.hpp"
+#include "oneapi/mkl/blas.hpp"
 namespace qmcplusplus
 {
 /// helper class for the prefetched range of a vector
@@ -97,7 +98,8 @@ class DelayedUpdateSYCL
   //cublasHandle_t h_cublas;
   //cusolverDnHandle_t h_cusolver;
   //cudaStream_t hstream;
-  sycl::queue q;
+  //SYCLManagedAllocator<T> myalloc;
+  sycl::queue q = SYCLManagedAllocator<T_FP>::q;
 
   inline void waitStream() { q.wait(); }
 
@@ -117,7 +119,6 @@ public:
    */
   inline void resize(int norb, int delay)
   {
-    std::cout << "SYCL_DEBUG resize" << std::endl;
     //tempMat.resize(norb, delay);
     V.resize(delay, norb);
     U.resize(delay, norb);
@@ -153,7 +154,6 @@ public:
   std::enable_if_t<std::is_same<TMAT, T_FP>::value>
   invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& LogValue)
   {
-    std::cout << "SYCL_DEBUG invert_transpose !mixed" << std::endl;
     // safe mechanism
     delay_count = 0;
     int norb    = logdetT.rows();
@@ -222,14 +222,15 @@ public:
   std::enable_if_t<!std::is_same<TMAT, T_FP>::value>
   invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& LogValue)
   {
-    std::cout << "SYCL_DEBUG invert_transpose  mixed" << std::endl;
     // safe mechanism
     delay_count = 0;
     int norb    = logdetT.rows();
 
     q.memcpy(Mat1_gpu.data(), logdetT.data(), logdetT.size() * sizeof(T));
     q.wait();
+
     copy_matrix_sycl(norb, norb, (T*)Mat1_gpu.data(), norb, Mat2_gpu.data(), norb, q);
+    q.wait();
 
     oneapi::mkl::lapack::getrf(q, norb, norb, Mat2_gpu.data(), norb, ipiv_gpu.data(), work_gpu.data(), work_gpu.size());
     q.wait();
@@ -245,14 +246,16 @@ public:
     if (ipiv[0] != 0)
     {
       //TODO: fix
-      std::ostringstream err;
-      err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
-      std::cerr << err.str();
-      throw std::runtime_error(err.str());
+      //std::ostringstream err;
+      //err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
+      std::cout << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
+      //std::cerr << err.str();
+      //throw std::runtime_error(err.str());
     } else {
-      std::ostringstream err;
-      err << "cusolver::getrf calculation succeeded" << std::endl;
-      std::cerr << err.str();
+      //std::ostringstream err;
+      std::cout << "cusolver::getrf calculation succeeded" << std::endl;
+      //err << "cusolver::getrf calculation succeeded" << std::endl;
+      //std::cerr << err.str();
     }
     make_identity_matrix_sycl(norb, Mat1_gpu.data(), norb, q);
     oneapi::mkl::lapack::getrs(q, oneapi::mkl::transpose::trans, norb, norb, Mat2_gpu.data(), norb, ipiv_gpu.data(), Mat1_gpu.data(), norb, work_gpu.data(), work_gpu.size());
@@ -268,10 +271,11 @@ public:
     if (ipiv[0] != 0)
     {
       //TODO: fix
-      std::ostringstream err;
-      err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
-      std::cerr << err.str();
-      throw std::runtime_error(err.str());
+      //std::ostringstream err;
+      std::cout << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
+      //err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
+      //std::cerr << err.str();
+      //throw std::runtime_error(err.str());
     }
   }
 
@@ -280,7 +284,6 @@ public:
    */
   inline void initializeInv(const Matrix<T>& Ainv)
   {
-    std::cout << "SYCL_DEBUG initializeInv" << std::endl;
     q.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T));
     q.wait();
 
@@ -295,7 +298,6 @@ public:
   template<typename VVT>
   inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, VVT& invRow)
   {
-    std::cout << "SYCL_DEBUG getInvRow" << std::endl;
     if (!prefetched_range.checkRange(rowchanged))
     {
       int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
@@ -330,7 +332,6 @@ public:
   template<typename VVT>
   inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
   {
-    std::cout << "SYCL_DEBUG acceptRow" << std::endl;
     // update Binv from delay_count to delay_count+1
     const T cminusone(-1);
     const T czero(0);
@@ -366,7 +367,6 @@ public:
    */
   inline void updateInvMat(Matrix<T>& Ainv, bool transfer_to_host = true)
   {
-    std::cout << "SYCL_DEBUG updateInvMat" << std::endl;
     // update the inverse matrix
     if (delay_count > 0)
     {
