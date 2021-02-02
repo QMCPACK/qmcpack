@@ -92,6 +92,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
+  assert(QMCDriverNew::checkLogAndGL(crowd));
+
   int nnode_crossing(0);
   auto& walker_twfs  = crowd.get_walker_twfs();
   auto& walkers      = crowd.get_walkers();
@@ -281,6 +283,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   handleMovedWalkers(these.moved, sft, timers, recompute);
   handleStalledWalkers(these.stalled, sft, recompute);
 
+  assert(QMCDriverNew::checkLogAndGL(crowd));
+
   dmc_timers.tmove_timer.start();
   std::vector<int> walker_non_local_moves_accepted(
       QMCHamiltonian::flex_makeNonLocalMoves(crowd.get_walker_hamiltonians(), crowd.get_walker_elecs()));
@@ -313,6 +317,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
       }
     }
     TrialWaveFunction::flex_evaluateGL(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs, false);
+    assert(QMCDriverNew::checkLogAndGL(crowd));
     ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
   }
 

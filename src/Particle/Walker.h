@@ -304,6 +304,8 @@ public:
     //Drift = a.Drift;
     Properties.copy(a.Properties);
     DataSet = a.DataSet;
+    block_end = a.block_end;
+    scalar_end = a.scalar_end;
     if (PropertyHistory.size() != a.PropertyHistory.size())
       PropertyHistory.resize(a.PropertyHistory.size());
     for (int i = 0; i < PropertyHistory.size(); i++)
@@ -436,10 +438,14 @@ public:
     DataSet.add(ReleasedNodeAge);
     DataSet.add(ReleasedNodeWeight);
     // vectors
+    assert(R.size() != 0);
     DataSet.add(R.first_address(), R.last_address());
+    assert(spins.size() != 0);
     DataSet.add(spins.first_address(), spins.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
+    assert(G.size() != 0);
     DataSet.add(G.first_address(), G.last_address());
+    assert(L.size() != 0);
     DataSet.add(L.first_address(), L.last_address());
 #endif
     //Don't add the nLocal but the actual allocated size.  We want to register once for the life of a
@@ -469,13 +475,18 @@ public:
 
   void copyFromBuffer()
   {
+    assert(DataSet.size() != 0);
     DataSet.rewind();
     DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
     // vectors
+    assert(R.size() != 0);
     DataSet.get(R.first_address(), R.last_address());
+    assert(spins.size() != 0);
     DataSet.get(spins.first_address(), spins.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
+    assert(G.size() != 0);
     DataSet.get(G.first_address(), G.last_address());
+    assert(L.size() != 0);
     DataSet.get(L.first_address(), L.last_address());
 #endif
     DataSet.get(Properties.data(), Properties.data() + Properties.capacity());
