@@ -35,11 +35,11 @@ using WP = WalkerProperties::Indexes;
  */
 DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
                        DMCDriverInput&& input,
-                       MCPopulation& pop,
+                       MCPopulation&& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h,
+    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h,
                    "DMCBatched::", comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
@@ -92,25 +92,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
-  timers.buffer_timer.start();
-  // We copy positions from the walkers to elec particles sets for all the crowds walkers
-  // we might have received a few updates over the wire (from MPI)
-  // ** None of the per walker objects have referential integrity step to step **
-  crowd.loadWalkers();
+  assert(QMCDriverNew::checkLogAndGL(crowd));
 
   int nnode_crossing(0);
   auto& walker_twfs  = crowd.get_walker_twfs();
   auto& walkers      = crowd.get_walkers();
   auto& walker_elecs = crowd.get_walker_elecs();
-
-  // Note this resets the identities of all the walker TWFs
-  auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker) {
-    twf.copyFromBuffer(pset, walker.DataSet);
-  };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    copyTWFFromBuffer(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
-
-  timers.buffer_timer.stop();
 
   const int num_walkers = crowd.size();
   //This generates an entire steps worth of deltas.
@@ -280,13 +267,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   //To use the flex interfaces we have to build RefVectors for walker that moved and walkers that didn't
 
   auto& walker_hamiltonians  = crowd.get_walker_hamiltonians();
-  auto& walker_mcp_wfbuffers = crowd.get_mcp_wfbuffers();
 
   DMCPerWalkerRefRefs per_walker_ref_refs{walkers,
                                           walker_twfs,
                                           walker_hamiltonians,
                                           walker_elecs,
-                                          walker_mcp_wfbuffers,
                                           old_walker_energies,
                                           new_walker_energies,
                                           rr_proposed,
@@ -295,8 +280,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   MovedStalled these = buildMovedStalled(did_walker_move, per_walker_ref_refs);
 
-  handleMovedWalkers(these.moved, sft, timers);
-  handleStalledWalkers(these.stalled, sft);
+  handleMovedWalkers(these.moved, sft, timers, recompute);
+  handleStalledWalkers(these.stalled, sft, recompute);
+
+  assert(QMCDriverNew::checkLogAndGL(crowd));
 
   dmc_timers.tmove_timer.start();
   std::vector<int> walker_non_local_moves_accepted(
@@ -327,17 +314,14 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         moved_nonlocal.walker_twfs.push_back(walker_twfs[iw]);
         moved_nonlocal.walker_elecs.push_back(walker_elecs[iw]);
         moved_nonlocal.walker_hamiltonians.push_back(walker_hamiltonians[iw]);
-        moved_nonlocal.walker_mcp_wfbuffers.push_back(walker_mcp_wfbuffers[iw]);
       }
     }
-    TrialWaveFunction::flex_updateBuffer(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs,
-                                         moved_nonlocal.walker_mcp_wfbuffers);
+    TrialWaveFunction::flex_evaluateGL(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs, false);
+    assert(QMCDriverNew::checkLogAndGL(crowd));
     ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
   }
 
   dmc_timers.tmove_timer.stop();
-
-  setMultiplicities(sft.dmcdrv_input, walkers, step_context.get_random_gen());
 }
 
 DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& did_walker_move,
@@ -361,7 +345,6 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
       these.moved.walker_twfs.push_back(refs.walker_twfs[iw]);
       these.moved.walker_hamiltonians.push_back(refs.walker_hamiltonians[iw]);
       these.moved.walker_elecs.push_back(refs.walker_elecs[iw]);
-      these.moved.walker_mcp_wfbuffers.push_back(refs.walker_mcp_wfbuffers[iw]);
       these.moved.old_energies.push_back(refs.old_energies[iw]);
       these.moved.new_energies.push_back(refs.new_energies[iw]);
       these.moved.rr_proposed.push_back(refs.rr_proposed[iw]);
@@ -375,7 +358,6 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
       these.stalled.walker_twfs.push_back(refs.walker_twfs[iw]);
       these.stalled.walker_hamiltonians.push_back(refs.walker_hamiltonians[iw]);
       these.stalled.walker_elecs.push_back(refs.walker_elecs[iw]);
-      these.stalled.walker_mcp_wfbuffers.push_back(refs.walker_mcp_wfbuffers[iw]);
       these.stalled.old_energies.push_back(refs.old_energies[iw]);
       these.stalled.new_energies.push_back(refs.new_energies[iw]);
       these.stalled.rr_proposed.push_back(refs.rr_proposed[iw]);
@@ -386,12 +368,12 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
   return these;
 }
 
-void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers)
+void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers, bool recompute)
 {
   if (moved.walkers.size() > 0)
   {
     timers.buffer_timer.start();
-    TrialWaveFunction::flex_updateBuffer(moved.walker_twfs, moved.walker_elecs, moved.walker_mcp_wfbuffers);
+    TrialWaveFunction::flex_evaluateGL(moved.walker_twfs, moved.walker_elecs, recompute);
     std::for_each(moved.walkers.begin(), moved.walkers.end(), [](MCPWalker& walker) { walker.Age = 0; });
     ParticleSet::flex_saveWalker(moved.walker_elecs, moved.walkers);
     timers.buffer_timer.stop();
@@ -432,12 +414,12 @@ void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThrea
   }
 }
 
-void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft)
+void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft, bool recompute)
 {
   for (int iw = 0; iw < stalled.walkers.size(); ++iw)
   {
     std::cout << "A walker has stalled.\n";
-    TrialWaveFunction::flex_updateBuffer(stalled.walker_twfs, stalled.walker_elecs, stalled.walker_mcp_wfbuffers);
+    TrialWaveFunction::flex_evaluateGL(stalled.walker_twfs, stalled.walker_elecs, recompute);
     std::for_each(stalled.walkers.begin(), stalled.walkers.end(), [](MCPWalker& walker) { walker.Age = 0; });
     ParticleSet::flex_saveWalker(stalled.walker_elecs, stalled.walkers);
 
@@ -456,27 +438,6 @@ void DMCBatched::handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForT
     stalled_new_walker_energy                   = stalled_old_walker_energy;
     stalled.gf_accs[iw].get()                   = 1.0;
     stalled_walker.Weight *= sft.branch_engine.branchWeight(stalled_new_walker_energy, stalled_old_walker_energy);
-  }
-}
-
-void DMCBatched::setMultiplicities(const DMCDriverInput& dmcdriver_input,
-                                   RefVector<MCPWalker>& walkers,
-                                   RandomGenerator_t& rng)
-{
-  auto setMultiplicity = [&dmcdriver_input, &rng](MCPWalker& walker) {
-    constexpr FullPrecRealType onehalf(0.5);
-    constexpr FullPrecRealType cone(1);
-    walker.Multiplicity = walker.Weight;
-    if (walker.Age > dmcdriver_input.get_max_age())
-      walker.Multiplicity = std::min(onehalf, walker.Weight);
-    else if (walker.Age > 0)
-      walker.Multiplicity = std::min(cone, walker.Weight);
-    walker.Multiplicity += rng();
-  };
-
-  for (int iw = 0; iw < walkers.size(); ++iw)
-  {
-    setMultiplicity(walkers[iw]);
   }
 }
 
@@ -548,7 +509,7 @@ bool DMCBatched::run()
     dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
         ? qmcdriver_input_.get_recalculate_properties_period()
         : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
-    dmc_state.recomputing_blocks = qmcdriver_input_.get_blocks_between_recompute();
+    dmc_state.recomputing_blocks            = qmcdriver_input_.get_blocks_between_recompute();
 
     for (UPtr<Crowd>& crowd : crowds_)
       crowd->startBlock(qmcdriver_input_.get_max_steps());
@@ -571,7 +532,7 @@ bool DMCBatched::run()
           crowd_ref.accumulate(population_.get_num_global_walkers());
       }
 
-      branch_engine_->branch(step, population_);
+      branch_engine_->branch(block * qmcdriver_input_.get_max_steps() + step, population_);
 
       for (UPtr<Crowd>& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();

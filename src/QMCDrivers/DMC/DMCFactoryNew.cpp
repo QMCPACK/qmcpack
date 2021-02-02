@@ -15,7 +15,7 @@
 
 namespace qmcplusplus
 {
-QMCDriverInterface* DMCFactoryNew::create(MCPopulation& pop,
+QMCDriverInterface* DMCFactoryNew::create(MCPopulation&& pop,
                                           TrialWaveFunction& psi,
                                           QMCHamiltonian& h,
                                           Communicate* comm)
@@ -24,7 +24,8 @@ QMCDriverInterface* DMCFactoryNew::create(MCPopulation& pop,
   qmcdriver_input.readXML(input_node_);
   DMCDriverInput dmcdriver_input;
   dmcdriver_input.readXML(input_node_);
-  QMCDriverInterface* qmc = new DMCBatched(std::move(qmcdriver_input), std::move(dmcdriver_input), pop, psi, h, comm);
+  QMCDriverInterface* qmc =
+      new DMCBatched(std::move(qmcdriver_input), std::move(dmcdriver_input), std::move(pop), psi, h, comm);
   // This can probably be eliminated completely since we only support PbyP
   qmc->setUpdateMode(dmc_mode_ & 1);
   return qmc;

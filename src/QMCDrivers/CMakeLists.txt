@@ -39,6 +39,7 @@ SET(QMCDRIVERS
   WFOpt/QMCCorrelatedSamplingLinearOptimize.cpp
   WFOpt/QMCFixedSampleLinearOptimize.cpp
   WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
+  WFOpt/OutputMatrix.cpp
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
   WFOpt/QMCCostFunctionBase.cpp
@@ -67,6 +68,7 @@ SET(QMCDRIVERS
   DMC/DMCDriverInput.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
+  DMC/WalkerControl.cpp
   DMC/SODMCUpdatePbyPFast.cpp
   RMC/RMC.cpp
   RMC/RMCUpdatePbyP.cpp

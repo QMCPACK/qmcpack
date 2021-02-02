@@ -56,7 +56,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminant(SPOSetPtr const spos, int first = 0);
+  DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first = 0);
 
   // copy constructor and assign operator disabled
   DiracDeterminant(const DiracDeterminant& s) = delete;
@@ -168,6 +168,11 @@ public:
 
   void recompute(ParticleSet& P) override;
 
+  LogValueType evaluateGL(ParticleSet& P,
+                          ParticleSet::ParticleGradient_t& G,
+                          ParticleSet::ParticleLaplacian_t& L,
+                          bool fromscratch) override;
+
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
   /** cloning function
@@ -177,7 +182,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminant* makeCopy(SPOSet* spo) const override;
+  DiracDeterminant* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
@@ -187,7 +192,7 @@ public:
 #else
   ValueMatrix_t& getPsiMinv() { return psiM; }
 #endif
-  
+
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM_temp;
 

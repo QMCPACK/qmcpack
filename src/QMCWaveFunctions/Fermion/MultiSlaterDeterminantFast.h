@@ -18,8 +18,6 @@
 #include <Configuration.h>
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
-#include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
@@ -57,7 +55,6 @@ public:
   NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer;
 
   typedef SPOSet* SPOSetPtr;
-  typedef SPOSetProxyForMSD* SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
@@ -182,9 +179,6 @@ public:
   Matrix<RealType> dpsia_up, dLa_up;
   Matrix<RealType> dpsia_dn, dLa_dn;
   Array<GradType, OHMMS_DIM> dGa_up, dGa_dn;
-
-  // debug, erase later
-  //      MultiSlaterDeterminant *msd;
 };
 
 } // namespace qmcplusplus

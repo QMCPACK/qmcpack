@@ -23,7 +23,7 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet* qp = new ParticleSet;
+  auto qp = std::make_unique<ParticleSet>();
   std::vector<int> agroup(1);
   agroup[0] = 2;
   qp->setName("e");
@@ -45,7 +45,7 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   qp->update();
 
   WaveFunctionFactory::PtclPoolType particle_set_map;
-  particle_set_map["e"] = qp;
+  particle_set_map["e"] = qp.get();
 
 
   WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);

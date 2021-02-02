@@ -3,6 +3,8 @@
 # Update packages that track master
 # Currently only llvm
 # Intended to be run nightly/weekly etc.
+#
+# Implicitly assume that cuda version for llvm from spack is compatible with system installed driver
 
 echo --- Update Script START `date`
 
@@ -14,6 +16,6 @@ else
 fi
 
 spack uninstall -y llvm@master
-spack install llvm@master ^python@${python_version}%gcc@${gcc_vnew}
+spack install llvm@master +cuda cuda_arch=70 ^python@${python_version}%gcc@${gcc_vnew}
 
 echo --- Update Script END `date`

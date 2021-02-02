@@ -394,9 +394,9 @@ void WalkerControlBase::onRankSpawn(MCPopulation& pop, PopulationAdjustment& adj
     {
       WalkerElementsRef walker_elements = pop.spawnWalker();
       walker_elements.walker            = adjust.good_walkers[iw].walker;
-      walker_elements.twf.copyFromBuffer(walker_elements.pset, walker_elements.walker.DataSet);
+      walker_elements.pset.loadWalker(walker_elements.walker, true);
+      walker_elements.pset.update();
       walker_elements.twf.evaluateLog(walker_elements.pset);
-      walker_elements.twf.updateBuffer(walker_elements.pset, walker_elements.walker.DataSet);
 
       // IF these are really unique ID's they should be UUID's or something
       // old algorithm seems to reuse them in a way that I'm not sure avoids

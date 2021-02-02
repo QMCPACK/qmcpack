@@ -260,10 +260,10 @@ public:
 
   /** compute G and L after the sweep
    */
-  void evaluateGL(ParticleSet& P,
-                  ParticleSet::ParticleGradient_t& G,
-                  ParticleSet::ParticleLaplacian_t& L,
-                  bool fromscratch = false);
+  LogValueType evaluateGL(ParticleSet& P,
+                          ParticleSet::ParticleGradient_t& G,
+                          ParticleSet::ParticleLaplacian_t& L,
+                          bool fromscratch = false);
 
   inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
@@ -448,7 +448,7 @@ WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
         fcmap[F[ij]] = fc;
       }
     }
-  j2copy->KEcorr = KEcorr;
+  j2copy->KEcorr      = KEcorr;
   j2copy->Optimizable = Optimizable;
   return j2copy;
 }
@@ -649,15 +649,14 @@ typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSe
                                                                       ParticleSet::ParticleGradient_t& G,
                                                                       ParticleSet::ParticleLaplacian_t& L)
 {
-  evaluateGL(P, G, L, true);
-  return LogValue;
+  return evaluateGL(P, G, L, true);
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
-                                  ParticleSet::ParticleGradient_t& G,
-                                  ParticleSet::ParticleLaplacian_t& L,
-                                  bool fromscratch)
+WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
+                                                                 ParticleSet::ParticleGradient_t& G,
+                                                                 ParticleSet::ParticleLaplacian_t& L,
+                                                                 bool fromscratch)
 {
   if (fromscratch)
     recompute(P);
@@ -669,7 +668,7 @@ void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
     L[iat] += d2Uat[iat];
   }
 
-  LogValue = -LogValue * 0.5;
+  return LogValue = -LogValue * 0.5;
 }
 
 template<typename FT>

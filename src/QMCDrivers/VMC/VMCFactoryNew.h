@@ -39,7 +39,7 @@ public:
       : vmc_mode_(vmode), input_node_(cur), qmc_counter_(qmc_counter)
   {}
 
-  QMCDriverInterface* create(MCPopulation& pop,
+  QMCDriverInterface* create(MCPopulation&& pop,
                              TrialWaveFunction& psi,
                              QMCHamiltonian& h,
                              SampleStack& samples,

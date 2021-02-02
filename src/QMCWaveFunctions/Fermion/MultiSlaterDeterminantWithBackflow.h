@@ -33,8 +33,8 @@ class MultiSlaterDeterminantWithBackflow : public MultiSlaterDeterminant
 public:
   ///constructor
   MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl,
-                                     SPOSetProxyPtr upspo,
-                                     SPOSetProxyPtr dnspo,
+                                     std::unique_ptr<SPOSetProxyForMSD>&& upspo,
+                                     std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
                                      BackflowTransformation* tr);
 
   ///destructor

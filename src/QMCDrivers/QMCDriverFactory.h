@@ -42,6 +42,7 @@ public:
   {
     std::bitset<QMC_MODE_MAX> what_to_do;
     bool append_run         = false;
+    bool enable_profiling   = false;
     std::string traces_tag  = "none";
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };
@@ -50,22 +51,8 @@ public:
   //QMCDriverFactory() ;
 
   /** read the current QMC Section */
-  DriverAssemblyState readSection(int curSeries, xmlNodePtr cur);
+  DriverAssemblyState readSection(xmlNodePtr cur) const;
 
-  /** set the active qmcDriver
-   *  The unique_ptr's take care of killing the old driver if it exists */
-  std::unique_ptr<QMCDriverInterface> newQMCDriver(std::unique_ptr<QMCDriverInterface> last_driver,
-                                                   int curSeries,
-                                                   xmlNodePtr cur,
-                                                   DriverAssemblyState& das,
-                                                   MCWalkerConfiguration& qmc_system,
-                                                   ParticleSetPool& particle_pool,
-                                                   WaveFunctionPool& wave_function_pool,
-                                                   HamiltonianPool& hamiltonian_pool,
-                                                   MCPopulation& population,
-                                                   Communicate* comm);
-
-private:
   /** create a new QMCDriver
    *
    *  Broken out for unit tests
@@ -76,8 +63,7 @@ private:
                                                       ParticleSetPool& particle_pool,
                                                       WaveFunctionPool& wave_function_pool,
                                                       HamiltonianPool& hamiltonian_pool,
-                                                      MCPopulation& population,
-                                                      Communicate* comm);
+                                                      Communicate* comm) const;
 };
 } // namespace qmcplusplus
 #endif

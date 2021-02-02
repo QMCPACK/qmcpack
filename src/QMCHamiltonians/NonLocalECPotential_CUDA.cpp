@@ -52,10 +52,8 @@ OperatorBase* NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunc
 {
   NonLocalECPotential_CUDA* myclone = new NonLocalECPotential_CUDA(IonConfig, qp, psi, UsePBC);
   for (int ig = 0; ig < PPset.size(); ++ig)
-  {
     if (PPset[ig])
-      myclone->addComponent(ig, PPset[ig]->makeClone(qp));
-  }
+      myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));
   return myclone;
 }
 

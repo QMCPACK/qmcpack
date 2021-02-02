@@ -36,7 +36,7 @@ protected:
    *  Do not write out blocks of gets for variables like this
    *  there is are code_generation tools in QMCPACK_ROOT/utils/code_tools
    */
-  bool use_drift_ = true;
+  bool use_drift_                  = true;
   IndexType samples_per_thread_    = -1;
   IndexType samples_               = -1;
   IndexType steps_between_samples_ = -1;

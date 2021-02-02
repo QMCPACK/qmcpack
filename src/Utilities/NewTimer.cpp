@@ -57,9 +57,6 @@ void TimerType<CLOCK>::start()
     {
       if (manager)
       {
-        if (this == manager->current_timer())
-          std::cerr << "Timer loop: " << name << std::endl;
-
         // compute current_stack_key
         TimerType* parent = manager->current_timer();
         if (parent)
@@ -103,26 +100,22 @@ void TimerType<CLOCK>::stop()
       if (omp_get_ancestor_thread_num(level) != 0)
         is_true_master = false;
     if (is_true_master)
-#endif
     {
       double elapsed = CLOCK()() - start_time;
       total_time += elapsed;
       num_calls++;
 
-#ifdef USE_STACK_TIMERS
       per_stack_total_time[current_stack_key] += elapsed;
       per_stack_num_calls[current_stack_key] += 1;
 
       if (manager)
-      {
-        if (this != manager->current_timer())
-          std::cerr << "Timer stack pop not matching push! "
-                    << "Expect \"" << name << "\" but \"" << manager->current_timer()->name << "\" on the top."
-                    << std::endl;
-        manager->pop_timer();
-      }
-#endif
+        manager->pop_timer(this);
     }
+#else
+    double elapsed = CLOCK()() - start_time;
+    total_time += elapsed;
+    num_calls++;
+#endif
   }
 }
 #endif

@@ -5,7 +5,7 @@
 
   <!-- input from gaussian converter -->
   <include href="C2.structure.xml"/>
-  <include href="C2.wfj-H5.xml"/>
+  <include href="C2-H5.wfj.xml"/>
 
   <!--  Hamiltonian -->
   <hamiltonian name="h0" type="generic" target="e">

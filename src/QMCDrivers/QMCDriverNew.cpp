@@ -41,7 +41,7 @@ namespace qmcplusplus
  *  masquerading as a C++ object.
  */
 QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
-                           MCPopulation& population,
+                           MCPopulation&& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
                            const std::string timer_prefix,
@@ -49,15 +49,16 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
                            const std::string& QMC_driver_type,
                            SetNonLocalMoveHandler snlm_handler)
     : MPIObjectBase(comm),
-      qmcdriver_input_(input),
-      branch_engine_(nullptr),
+      qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
-      population_(population),
+      population_(std::move(population)),
       Psi(psi),
       H(h),
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),
+      driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       setNonLocalMoveHandler_(snlm_handler)
 {
   rotation = 0;
@@ -82,10 +83,25 @@ int QMCDriverNew::addObservable(const std::string& aname)
 QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
 
 
+// The Rng pointers are transferred from global storage (RandomNumberControl::Children)
+// to local storage (Rng) for the duration of QMCDriverNew.
+// They are transferred to local storage in createRngsStepContext (called from startup,
+// which is usually called from the "process" function in the derived class.)
+// The local storage is moved back to the global storage in the destructor.
+// In optimization, there are two instances of QMCDriverNew - one for the optimizer and one
+// for the vmc engine.   As long as the vmc engine calls process first, it gets valid
+// Rng pointers.  The optimizer is called second and gets nullptr, but it doesn't use Rng,
+// so it doesn't matter.
+// Upon restore, the vmc engine would need to be restored last (otherwise the global storage gets
+// the nullptr from the optimizer).  However, the order is fixed by the order the destructors
+// are called.
+// To work around the issue, check the local pointer for nullptr before restoring to global storage.
+
 QMCDriverNew::~QMCDriverNew()
 {
   for (int i = 0; i < Rng.size(); ++i)
-    RandomNumberControl::Children[i] = Rng[i].release();
+    if (Rng[i] != nullptr)
+      RandomNumberControl::Children[i] = Rng[i].release();
 }
 
 void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
@@ -136,7 +152,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   if (!branch_engine_)
   {
-    branch_engine_ = new SFNBranch(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
+    branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
   }
 
   //create and initialize estimator
@@ -159,8 +175,9 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   // Carrying the population on is one thing but a branch engine seems like it
   // should be fresh per section.
   branch_engine_->put(cur);
-  estimator_manager_->put(H, cur);
+  estimator_manager_->put(H, *population_.get_golden_electrons(), cur);
 
+  
   crowds_.resize(awc.walkers_per_crowd.size());
 
   // at this point we can finally construct the Crowd objects.
@@ -293,6 +310,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
                                     RealType reserve,
                                     const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
+  ScopedTimer local_timer(&(timers_.create_walkers_timer));
   // ensure nwalkers local walkers in population_
   if (population_.get_walkers().size() == 0)
   {
@@ -366,7 +384,6 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   auto& walker_twfs         = crowd.get_walker_twfs();
-  auto& mcp_buffers         = crowd.get_mcp_wfbuffers();
   auto& walker_elecs        = crowd.get_walker_elecs();
   auto& walkers             = crowd.get_walkers();
   auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
@@ -375,31 +392,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (ParticleSet& pset : walker_elecs)
     pset.update();
 
-  // We reuse the DataSet.
-  auto cleanDataSet = [](MCPWalker& walker, ParticleSet& pset, TrialWaveFunction& twf) {
-    if (walker.DataSet.size())
-    {
-      // These appear to be uneeded and harmful.
-      //walker.DataSet.zero();
-      //walker.DataSet.rewind();
-    }
-    else
-    {
-      walker.registerData();
-      twf.registerData(pset, walker.DataSet);
-      walker.DataSet.allocate();
-    }
-  };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    cleanDataSet(walkers[iw], walker_elecs[iw], walker_twfs[iw]);
-
-  auto copyFrom = [](TrialWaveFunction& twf, ParticleSet& pset, WFBuffer& wfb) { twf.copyFromBuffer(pset, wfb); };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    copyFrom(walker_twfs[iw], walker_elecs[iw], mcp_buffers[iw]);
-
   TrialWaveFunction::flex_evaluateLog(walker_twfs, walker_elecs);
-
-  TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(), crowd.get_walker_elecs(), crowd.get_mcp_wfbuffers());
 
   // For consistency this should be in ParticleSet as a flex call, but I think its a problem
   // in the algorithm logic and should be removed.
@@ -428,7 +421,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
-
+  
   auto doesDoinTheseLastMatter = [](MCPWalker& walker) {
     walker.ReleasedNodeAge    = 0;
     walker.ReleasedNodeWeight = 0;
@@ -533,15 +526,21 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   return awc;
 }
 
+/** The scalar estimator collection is quite strange
+ *
+ */
 void QMCDriverNew::endBlock()
 {
   RefVector<ScalarEstimatorBase> all_scalar_estimators;
+
   FullPrecRealType total_block_weight = 0.0;
   // Collect all the ScalarEstimatorsFrom EMCrowds
   double cpu_block_time      = 0.0;
   unsigned long block_accept = 0;
   unsigned long block_reject = 0;
 
+  std::vector<RefVector<OperatorEstBase>> crowd_operator_estimators;
+  
   for (const UPtr<Crowd>& crowd : crowds_)
   {
     crowd->stopBlock();
@@ -552,7 +551,11 @@ void QMCDriverNew::endBlock()
     block_accept += crowd->get_accept();
     block_reject += crowd->get_reject();
     cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
+
+    // This seems altogether easier and more sane.
+    crowd_operator_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_operator_estimators());
   }
+  
 #ifdef DEBUG_PER_STEP_ACCEPT_REJECT
   app_warning() << "accept: " << block_accept << "   reject: " << block_reject;
   FullPrecRealType total_accept_ratio =
@@ -560,10 +563,63 @@ void QMCDriverNew::endBlock()
   std::cerr << "   total_accept_ratio: << " << total_accept_ratio << '\n';
 #endif
   estimator_manager_->collectScalarEstimators(all_scalar_estimators);
+  estimator_manager_->collectOperatorEstimators(crowd_operator_estimators);
+
   /// get the average cpu_block time per crowd
   /// cpu_block_time /= crowds_.size();
 
   estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight, cpu_block_time);
+}
+
+bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
+{
+  bool success = true;
+  std::vector<TrialWaveFunction::LogValueType> log_values(crowd.get_walker_twfs().size());
+  std::vector<ParticleSet::ParticleGradient_t> Gs;
+  std::vector<ParticleSet::ParticleLaplacian_t> Ls;
+  Gs.reserve(log_values.size());
+  Ls.reserve(log_values.size());
+
+  for (int iw = 0; iw < log_values.size(); iw++)
+  {
+    log_values[iw] = {crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()};
+    Gs.push_back(crowd.get_walker_twfs()[iw].get().G);
+    Ls.push_back(crowd.get_walker_twfs()[iw].get().L);
+  }
+
+  ParticleSet::flex_update(crowd.get_walker_elecs());
+  TrialWaveFunction::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
+
+  const RealType threashold = 100 * std::numeric_limits<RealType>::epsilon();
+  for (int iw = 0; iw < log_values.size(); iw++)
+  {
+    auto& ref_G = crowd.get_walker_twfs()[iw].get().G;
+    auto& ref_L = crowd.get_walker_twfs()[iw].get().L;
+    TrialWaveFunction::LogValueType ref_log{crowd.get_walker_twfs()[iw].get().getLogPsi(),
+                                            crowd.get_walker_twfs()[iw].get().getPhase()};
+    if (std::norm(std::exp(log_values[iw]) - std::exp(ref_log)) > std::norm(std::exp(ref_log)) * threashold)
+    {
+      success = false;
+      std::cout << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
+    }
+    for (int iel = 0; iel < ref_G.size(); iel++)
+    {
+      auto grad_diff = ref_G[iel] - Gs[iw][iel];
+      if (std::sqrt(std::norm(dot(grad_diff, grad_diff))) >
+          std::sqrt(std::norm(dot(ref_G[iel], ref_G[iel]))) * threashold)
+      {
+        success = false;
+        std::cout << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << std::endl;
+      }
+      auto lap_diff = ref_L[iel] - Ls[iw][iel];
+      if (std::norm(lap_diff) > std::norm(ref_L[iel]) * threashold)
+      {
+        success = false;
+        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << std::endl;
+      }
+    }
+  }
+  return success;
 }
 
 } // namespace qmcplusplus
