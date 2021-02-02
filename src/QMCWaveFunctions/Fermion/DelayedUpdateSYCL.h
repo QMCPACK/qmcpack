@@ -78,8 +78,10 @@ class DelayedUpdateSYCL
    */
   Matrix<T_FP, SYCLManagedAllocator<T_FP>> Mat2_gpu;
   /// pivot array + info
+  // TODO:ipiv_gpu was int, needed to change to long for oneapi mkl call
+  //      maybe need to check any transfer between ipiv/ipiv_gpu to make sure it's still ok?
   Vector<int, SYCLManagedAllocator<int>> ipiv;
-  Vector<int, SYCLManagedAllocator<int>> ipiv_gpu;
+  Vector<long, SYCLManagedAllocator<long>> ipiv_gpu;
   /// workspace
   Vector<T_FP, SYCLManagedAllocator<T_FP>> work_gpu;
   /// diagonal terms of LU matrix
@@ -115,6 +117,7 @@ public:
    */
   inline void resize(int norb, int delay)
   {
+    std::cout << "SYCL_DEBUG resize" << std::endl;
     //tempMat.resize(norb, delay);
     V.resize(delay, norb);
     U.resize(delay, norb);
@@ -138,7 +141,7 @@ public:
     // prepare cusolver auxiliary arrays
     ipiv.resize(norb + 1);
     ipiv_gpu.resize(norb + 1);
-    const int lwork = oneapi::mkl::lapack::getrf_scratchpad_size(q, norb, norb, Mat2_gpu.data());
+    const int lwork = oneapi::mkl::lapack::getrf_scratchpad_size<T_FP>(q, norb, norb, norb);
     work_gpu.resize(lwork);
   }
 
@@ -150,6 +153,7 @@ public:
   std::enable_if_t<std::is_same<TMAT, T_FP>::value>
   invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& LogValue)
   {
+    std::cout << "SYCL_DEBUG invert_transpose !mixed" << std::endl;
     // safe mechanism
     delay_count = 0;
     int norb    = logdetT.rows();
@@ -170,14 +174,20 @@ public:
 
     if (ipiv[0] != 0)
     {
+      // TODO: this was copied from CUDA implementation, oneapi doesn't return info in the same way
       std::ostringstream err;
-      err << "oneapi::mkl::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
+      err << "oneapi::mkl::lapack::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
       std::cerr << err.str();
       throw std::runtime_error(err.str());
+    } else {
+      std::ostringstream err;
+      err << "oneapi::mkl::lapack::getrf calculation succeeded" << std::endl;
+      std::cerr << err.str();
     }
     make_identity_matrix_sycl(norb, Mat2_gpu.data(), q);
 
     //Todo check if CUBLAS_OP_T == oneapi::mkl::transpose::trans
+    //TODO: this is still incorrect (see mixed version below)
     oneapi::mkl::lapack::getrs(q, oneapi::mkl::transpose::trans, norb, norb, Mat1_gpu.data(), norb, ipiv_gpu.data(), work_gpu.data(), work_gpu.size());
     q.wait();
 
@@ -192,10 +202,15 @@ public:
     q.wait();
     if (ipiv[0] != 0)
     {
+      // TODO: fix this
       std::ostringstream err;
-      err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
+      err << "oneapi::mkl::lapack::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
       std::cerr << err.str();
       throw std::runtime_error(err.str());
+    } else {
+      std::ostringstream err;
+      err << "oneapi::mkl::lapack::getrs calculation succeeded" << std::endl;
+      std::cerr << err.str();
     }
   }
 
@@ -207,6 +222,7 @@ public:
   std::enable_if_t<!std::is_same<TMAT, T_FP>::value>
   invert_transpose(const Matrix<TMAT>& logdetT, Matrix<TMAT>& Ainv, std::complex<TREAL>& LogValue)
   {
+    std::cout << "SYCL_DEBUG invert_transpose  mixed" << std::endl;
     // safe mechanism
     delay_count = 0;
     int norb    = logdetT.rows();
@@ -221,20 +237,25 @@ public:
 
     q.memcpy(ipiv.data(), ipiv_gpu.data(), ipiv_gpu.size() * sizeof(int));
     q.wait();
-    extract_matrix_diagonal_cuda(norb, Mat2_gpu.data(), norb, LU_diag_gpu.data(), q);
+    extract_matrix_diagonal_sycl(norb, Mat2_gpu.data(), norb, LU_diag_gpu.data(), q);
     q.memcpy(LU_diag.data(), LU_diag_gpu.data(), LU_diag.size() * sizeof(T_FP));
     q.wait();
     // check LU success
     waitStream();
     if (ipiv[0] != 0)
     {
+      //TODO: fix
       std::ostringstream err;
       err << "cusolver::getrf calculation failed with devInfo = " << ipiv[0] << std::endl;
       std::cerr << err.str();
       throw std::runtime_error(err.str());
+    } else {
+      std::ostringstream err;
+      err << "cusolver::getrf calculation succeeded" << std::endl;
+      std::cerr << err.str();
     }
     make_identity_matrix_sycl(norb, Mat1_gpu.data(), norb, q);
-    oneapi::mkl::lapack::getrs(q, oneapi::mkl::transpose::trans, norb, norb, Mat2_gpu.data(), norb, ipiv_gpu.data(), work_gpu.data(), work_gpu.size());
+    oneapi::mkl::lapack::getrs(q, oneapi::mkl::transpose::trans, norb, norb, Mat2_gpu.data(), norb, ipiv_gpu.data(), Mat1_gpu.data(), norb, work_gpu.data(), work_gpu.size());
     q.wait();
 
     copy_matrix_sycl(norb, norb, Mat1_gpu.data(), norb, (T*)Mat2_gpu.data(), norb, q);
@@ -246,6 +267,7 @@ public:
 
     if (ipiv[0] != 0)
     {
+      //TODO: fix
       std::ostringstream err;
       err << "cusolver::getrs calculation failed with devInfo = " << ipiv[0] << std::endl;
       std::cerr << err.str();
@@ -258,6 +280,7 @@ public:
    */
   inline void initializeInv(const Matrix<T>& Ainv)
   {
+    std::cout << "SYCL_DEBUG initializeInv" << std::endl;
     q.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T));
     q.wait();
 
@@ -272,6 +295,7 @@ public:
   template<typename VVT>
   inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, VVT& invRow)
   {
+    std::cout << "SYCL_DEBUG getInvRow" << std::endl;
     if (!prefetched_range.checkRange(rowchanged))
     {
       int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
@@ -306,6 +330,7 @@ public:
   template<typename VVT>
   inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
   {
+    std::cout << "SYCL_DEBUG acceptRow" << std::endl;
     // update Binv from delay_count to delay_count+1
     const T cminusone(-1);
     const T czero(0);
@@ -341,6 +366,7 @@ public:
    */
   inline void updateInvMat(Matrix<T>& Ainv, bool transfer_to_host = true)
   {
+    std::cout << "SYCL_DEBUG updateInvMat" << std::endl;
     // update the inverse matrix
     if (delay_count > 0)
     {
@@ -353,23 +379,23 @@ public:
         q.memcpy(U_gpu.data(), U.data(), norb * delay_count * sizeof(T));
         q.wait();
 
-     oneapi::mkl::blas::gemm(q, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans , delay_count, norb, norb, &cone, U_gpu.data(),
-                                    norb, Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv);
+     oneapi::mkl::blas::gemm(q, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans , delay_count, norb, norb, cone, U_gpu.data(),
+                                    norb, Ainv_gpu.data(), norb, czero, temp_gpu.data(), lda_Binv);
     q.wait();
 
         q.memcpy(delay_list_gpu.data(), delay_list.data(), delay_count * sizeof(int));
         q.wait();
-      applyW_stageV_stream(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(),
+      applyW_stageV_sycl(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(),
                          Ainv_gpu.data(), q);
         q.wait();
         q.memcpy(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T));
         q.wait();
-        oneapi::mkl::blas::gemm(q, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,norb, delay_count, delay_count, &cone,
-                                    V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
+        oneapi::mkl::blas::gemm(q, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans,norb, delay_count, delay_count, cone,
+                                    V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, czero, U_gpu.data(), norb);
         q.wait();
 
-        oneapi::mkl::blas::gemm(q, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans, norb, norb, delay_count, &cminusone,
-                                   U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
+        oneapi::mkl::blas::gemm(q, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::nontrans, norb, norb, delay_count, cminusone,
+                                   U_gpu.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb);
         q.wait();
 
       delay_count = 0;

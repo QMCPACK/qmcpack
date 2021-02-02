@@ -23,7 +23,9 @@
 #include "allocator_traits.hpp"
 #include "CPU/SIMD/alignment.config.h"
 #include <CL/sycl.hpp>
-
+//#include "oneapi/mkl.hpp"
+#include "oneapi/mkl/lapack.hpp"
+#include "oneapi/mkl/blas.hpp"
 namespace sycl = cl::sycl;
 
 namespace qmcplusplus
@@ -55,7 +57,12 @@ struct SYCLManagedAllocator
   {
     sycl::device dev = q.get_device();
     sycl::context ctx = q.get_context();
-    return  static_cast<T*>(sycl::malloc_shared(n * sizeof(T), dev, ctx));
+    // TODO: clean this after debugging is finished
+    auto out = static_cast<T*>(sycl::malloc_shared(n * sizeof(T), dev, ctx));
+    std::cout << "SYCL_DEBUG allocation" << std::endl;
+    return out;
+    //return  static_cast<T*>(sycl::malloc_shared(n * sizeof(T), dev, ctx));
+
   }
   void deallocate(T* p, std::size_t) { 
     sycl::device dev = q.get_device();

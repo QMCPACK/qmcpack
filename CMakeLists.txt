@@ -768,9 +768,10 @@ IF(ENABLE_ONEAPI)
 
   ADD_LIBRARY(ONEAPI::DPCPP INTERFACE IMPORTED)
   SET_TARGET_PROPERTIES(ONEAPI::DPCPP PROPERTIES INTERFACE_COMPILE_OPTIONS "-fsycl"
-                                                 INTERFACE_COMPILE_DEFINITIONS "ENABLE_SYCL;MKL_ILP64"
+                                                 INTERFACE_COMPILE_DEFINITIONS "ENABLE_SYCL;MKL_ILP64;ENABLE_ONEAPI"
                                                  INTERFACE_LINK_OPTIONS "-fsycl"
-                                                 INTERFACE_LINK_LIBRARIES "-lmkl_sycl;-lmkl_intel_ilp64;-lmkl_sequential;-lmkl_core")
+                                                 INTERFACE_LINK_LIBRARIES "-mkl;-fsycl;-lmkl_sycl;-mkl;-fiopenmp;-fopenmp-targets=spir64")
+                                               #INTERFACE_LINK_LIBRARIES "-lmkl_sycl;-lmkl_intel_ilp64;-lmkl_sequential;-lmkl_core")
 ENDIF(ENABLE_ONEAPI)
 
 ######################################################

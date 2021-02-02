@@ -1,6 +1,8 @@
 #include <CL/sycl.hpp>
 #include "QMCWaveFunctions/detail/SYCL/delayed_update_helper.h"
-
+//#include "oneapi/mkl.hpp"
+#include "oneapi/mkl/lapack.hpp"
+#include "oneapi/mkl/blas.hpp"
 namespace sycl = cl::sycl;
 
 int main()

@@ -24,11 +24,19 @@
 
 namespace qmcplusplus
 {
-#ifdef ENABLE_CUDA
-using DiracDet = DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
-#else
-using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
-#endif
+//TODO: fix this when cmake is fixed
+//#ifdef ENABLE_CUDA
+//  std::ostream &gout = std::cout << "SYCL_DEBUG enable CUDA" << std::endl;
+//  using DiracDet = DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+//#else
+//  #ifdef ENABLE_ONEAPI
+//  std::ostream &gout = std::cout << "SYCL_DEBUG enable ONEAPI" << std::endl;
+    using DiracDet = DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+//  #else
+//    std::ostream &gout = std::cout << "SYCL_DEBUG default" << std::endl;
+//    using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+//  #endif
+//#endif
 
 using LogValueType = TrialWaveFunction::LogValueType;
 using PsiValueType = TrialWaveFunction::PsiValueType;

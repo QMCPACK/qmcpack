@@ -697,6 +697,8 @@ DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) co
 }
 
 template class DiracDeterminant<>;
+//TODO: put ifdef ENABLE_SYCL when cmake is fixed
+template class DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #if defined(ENABLE_CUDA)
 template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif

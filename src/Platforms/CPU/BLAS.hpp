@@ -232,7 +232,7 @@ namespace BLAS
     cgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
 
-#if defined(HAVE_MKL)
+#if !defined(HAVE_MKL)
   inline static void gemv(char trans_in,
                           int n,
                           int m,
@@ -367,7 +367,7 @@ namespace BLAS
                                         int strideC,
                                         int batchSize)
   {
-#ifdef HAVE_MKL
+#if !defined(HAVE_MKL)
     // MKL has batched gemm, but with pointer interface. Translate here
     std::vector<const void*> Aptrs(batchSize);
     std::vector<const void*> Bptrs(batchSize);
@@ -407,7 +407,7 @@ namespace BLAS
                                  int ldc,
                                  int batchSize)
   {
-#ifdef HAVE_MKL
+#if !defined(HAVE_MKL)
     gemm_batch(CblasColMajor, &Atrans, &Btrans, &M, &N, &K, &alpha, A, &lda, B, &ldb, &beta, C, &ldc, 1, &batchSize);
 #else
     // No batched gemm, :-( gemm loop
