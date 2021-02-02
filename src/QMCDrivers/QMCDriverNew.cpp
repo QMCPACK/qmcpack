@@ -571,4 +571,55 @@ void QMCDriverNew::endBlock()
   estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight, cpu_block_time);
 }
 
+bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
+{
+  bool success = true;
+  std::vector<TrialWaveFunction::LogValueType> log_values(crowd.get_walker_twfs().size());
+  std::vector<ParticleSet::ParticleGradient_t> Gs;
+  std::vector<ParticleSet::ParticleLaplacian_t> Ls;
+  Gs.reserve(log_values.size());
+  Ls.reserve(log_values.size());
+
+  for (int iw = 0; iw < log_values.size(); iw++)
+  {
+    log_values[iw] = {crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()};
+    Gs.push_back(crowd.get_walker_twfs()[iw].get().G);
+    Ls.push_back(crowd.get_walker_twfs()[iw].get().L);
+  }
+
+  ParticleSet::flex_update(crowd.get_walker_elecs());
+  TrialWaveFunction::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
+
+  const RealType threashold = 100 * std::numeric_limits<RealType>::epsilon();
+  for (int iw = 0; iw < log_values.size(); iw++)
+  {
+    auto& ref_G = crowd.get_walker_twfs()[iw].get().G;
+    auto& ref_L = crowd.get_walker_twfs()[iw].get().L;
+    TrialWaveFunction::LogValueType ref_log{crowd.get_walker_twfs()[iw].get().getLogPsi(),
+                                            crowd.get_walker_twfs()[iw].get().getPhase()};
+    if (std::norm(std::exp(log_values[iw]) - std::exp(ref_log)) > std::norm(std::exp(ref_log)) * threashold)
+    {
+      success = false;
+      std::cout << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
+    }
+    for (int iel = 0; iel < ref_G.size(); iel++)
+    {
+      auto grad_diff = ref_G[iel] - Gs[iw][iel];
+      if (std::sqrt(std::norm(dot(grad_diff, grad_diff))) >
+          std::sqrt(std::norm(dot(ref_G[iel], ref_G[iel]))) * threashold)
+      {
+        success = false;
+        std::cout << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << std::endl;
+      }
+      auto lap_diff = ref_L[iel] - Ls[iw][iel];
+      if (std::norm(lap_diff) > std::norm(ref_L[iel]) * threashold)
+      {
+        success = false;
+        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << std::endl;
+      }
+    }
+  }
+  return success;
+}
+
 } // namespace qmcplusplus
