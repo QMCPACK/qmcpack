@@ -721,7 +721,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
   using Alloc = shared_allocator<ComplexType>;
   // HOps, ci, PsiT, NCE
   hdf_archive dump(TGwfn.Global());
-  if (!dump.open(filename, H5F_ACC_RDONLY))
+  if (!dump.open(filename, H5F_ACC_RDWR))
   {
     app_error() << " Error hdf5 file in WavefunctionFactory. \n";
     APP_ABORT("");
