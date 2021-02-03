@@ -19,7 +19,7 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
 {
   QMCDriverInput qmcdriver_input(qmc_counter);
   qmcdriver_input.readXML(cur);
-  VMCDriverInput vmcdriver_input(qmc_counter);
+  VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(cur);
 
   QMCOptimizeBatched* opt = new QMCOptimizeBatched(w, psi, h, std::move(qmcdriver_input), std::move(vmcdriver_input),
@@ -38,7 +38,7 @@ QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
 {
   QMCDriverInput qmcdriver_input(qmc_counter);
   qmcdriver_input.readXML(cur);
-  VMCDriverInput vmcdriver_input(qmc_counter);
+  VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(cur);
 
   QMCFixedSampleLinearOptimizeBatched* opt =
