@@ -170,10 +170,10 @@ private:
    */
   struct DMCPerWalkerRefRefs
   {
-    RefVector<MCPWalker>& walkers;
-    RefVector<TrialWaveFunction>& walker_twfs;
-    RefVector<QMCHamiltonian>& walker_hamiltonians;
-    RefVector<ParticleSet>& walker_elecs;
+    const RefVector<MCPWalker>& walkers;
+    const RefVector<TrialWaveFunction>& walker_twfs;
+    const RefVector<QMCHamiltonian>& walker_hamiltonians;
+    const RefVector<ParticleSet>& walker_elecs;
     std::vector<FullPrecRealType>& old_energies;
     std::vector<FullPrecRealType>& new_energies;
     std::vector<RealType>& rr_proposed;
