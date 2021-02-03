@@ -193,13 +193,21 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
   writeDMCdat(iter, curData);
   pop.set_ensemble_property(ensemble_property_);
 
+  auto untouched_walkers = walkers.size();
 #if defined(HAVE_MPI)
+  // kill walkers, actually put them in deadlist for be recycled for receiving walkers
+  killDeadWalkersOnRank(pop);
+  // ranks receiving walkers from other ranks have the lowest walker count now.
+  untouched_walkers = std::min(untouched_walkers, walkers.size());
+
   // load balancing over MPI
   swapWalkersSimple(pop);
 #endif
 
   // kill dead walker to be recycled by the following copy
   killDeadWalkersOnRank(pop);
+  // ranks sending walkers from other ranks have the lowest walker count now.
+  untouched_walkers = std::min(untouched_walkers, walkers.size());
 
   // copy good walkers
   const size_t good_walkers = walkers.size();
@@ -211,10 +219,17 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       auto walker_elements   = pop.spawnWalker();
       walker_elements.walker = *walkers[iw];
       walker_elements.pset.loadWalker(walker_elements.walker, true);
-      walker_elements.pset.update();
-      walker_elements.twf.evaluateLog(walker_elements.pset);
       num_copies--;
     }
+  }
+
+  {
+    const size_t num_walkers = walkers.size();
+    // recomputed received and duplicated walkers, the first untouched_walkers walkers doesn't need to be updated.
+    auto p_list = convertUPtrToRefVectorSubset(pop.get_elec_particle_sets(), untouched_walkers, num_walkers - untouched_walkers);
+    auto wf_list = convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
+    ParticleSet::flex_update(p_list);
+    TrialWaveFunction::flex_evaluateLog(wf_list, p_list);
   }
 
   const int current_num_global_walkers = std::accumulate(num_per_node_.begin(), num_per_node_.end(), 0);
@@ -304,9 +319,6 @@ void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per
 #if defined(HAVE_MPI)
 void WalkerControl::swapWalkersSimple(MCPopulation& pop)
 {
-  // kill walkers, actually put them in deadlist for be recycled for receiving walkers
-  killDeadWalkersOnRank(pop);
-
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(num_per_node_, fair_offset_, minus, plus);
 
@@ -468,8 +480,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
         awalker.copyFromBuffer();
         walker_elements.pset.loadWalker(awalker, true);
-        walker_elements.pset.update();
-        walker_elements.twf.evaluateLog(walker_elements.pset);
         myTimers[WC_recv]->stop();
       }
     }
@@ -488,8 +498,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
               auto& walker_elements = newW[job_list[im].walkerID];
               walker_elements.walker.copyFromBuffer();
               walker_elements.pset.loadWalker(walker_elements.walker, true);
-              walker_elements.pset.update();
-              walker_elements.twf.evaluateLog(walker_elements.pset);
               not_completed[im] = false;
             }
             else
