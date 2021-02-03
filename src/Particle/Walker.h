@@ -206,7 +206,13 @@ public:
     //static_cast<Matrix<FullPrecRealType>>(Properties) = 0.0;
   }
 
+#if defined(QMC_CUDA)
+  //some member variables in CUDA build cannot be and should not be copied
+  //use default copy constructor to skip actual data copy
+  Walker(const Walker& a) = default;
+#else
   Walker(const Walker& a) : Properties(1, WP::NUMPROPERTIES, 1, WP::MAXPROPERTIES) { makeCopy(a); }
+#endif
 
   inline int addPropertyHistory(int leng)
   {
