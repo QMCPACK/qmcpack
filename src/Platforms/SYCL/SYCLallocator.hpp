@@ -27,13 +27,13 @@ namespace sycl = cl::sycl;
 
 namespace qmcplusplus
 {
-
-struct SYCLAllocatorBase{
-  public:
-    // ensure same context is used for all allocators/types
-    // and kernel execution
-    // an optimization should be a shared context and multiple queues
-    inline static sycl::queue q;
+struct SYCLAllocatorBase
+{
+public:
+  // ensure same context is used for all allocators/types and kernel execution
+  // the quick and dirty implentation for now is to just use one queue for everything
+  // eventually, this should be changed to a single shared context allowing multiple queues
+  inline static sycl::queue q;
 };
 /** allocator for SYCL unified memory
  * @tparm T data type
@@ -45,7 +45,6 @@ struct SYCLManagedAllocator : SYCLAllocatorBase
   typedef size_t size_type;
   typedef T* pointer;
   typedef const T* const_pointer;
-  //inline static sycl::queue q;
 
   SYCLManagedAllocator() = default;
   template<class U>
@@ -60,16 +59,16 @@ struct SYCLManagedAllocator : SYCLAllocatorBase
 
   T* allocate(std::size_t n)
   {
-    sycl::device dev = q.get_device();
+    sycl::device dev  = q.get_device();
     sycl::context ctx = q.get_context();
-    return  static_cast<T*>(sycl::malloc_shared(n * sizeof(T), dev, ctx));
+    return static_cast<T*>(sycl::malloc_shared(n * sizeof(T), dev, ctx));
   }
-  void deallocate(T* p, std::size_t) { 
-    sycl::device dev = q.get_device();
-    sycl::context ctx = q.get_context();    
-    sycl::free(p,ctx); 
-}
-
+  void deallocate(T* p, std::size_t)
+  {
+    sycl::device dev  = q.get_device();
+    sycl::context ctx = q.get_context();
+    sycl::free(p, ctx);
+  }
 };
 
 template<class T1, class T2>
@@ -105,15 +104,8 @@ struct SYCLAllocator
     typedef SYCLAllocator<U> other;
   };
 
-  T* allocate(std::size_t n)
-  {
-    throw("SYCLAllocator::allocate not yet implemented");
-  }
-  void deallocate(T* p, std::size_t) {
-    throw("SYCLAllocator::deallocate not yet implemented");
-  }
-
-
+  T* allocate(std::size_t n) { throw("SYCLAllocator::allocate not yet implemented"); }
+  void deallocate(T* p, std::size_t) { throw("SYCLAllocator::deallocate not yet implemented"); }
 };
 
 template<class T1, class T2>
@@ -155,14 +147,8 @@ struct SYCLHostAllocator
     typedef SYCLHostAllocator<U> other;
   };
 
-  T* allocate(std::size_t n)
-  {
-    throw("SYCLHostAllocator::allocate not yet implemented");
-  }
-  void deallocate(T* p, std::size_t) { 
-    throw("SYCLHostAllocator::deallocate not yet implemented");  
-  }
-
+  T* allocate(std::size_t n) { throw("SYCLHostAllocator::allocate not yet implemented"); }
+  void deallocate(T* p, std::size_t) { throw("SYCLHostAllocator::deallocate not yet implemented"); }
 };
 
 template<class T1, class T2>
@@ -200,15 +186,9 @@ struct SYCLLockedPageAllocator : public ULPHA
     typedef SYCLLockedPageAllocator<U, V> other;
   };
 
-  value_type* allocate(std::size_t n)
-  {
-    throw("SYCLLockedPageAllocator::allocate not yet implemented");
-  }
+  value_type* allocate(std::size_t n) { throw("SYCLLockedPageAllocator::allocate not yet implemented"); }
 
-  void deallocate(value_type* pt, std::size_t n)
-  {
-    throw("SYCLLockedPageAllocator::dellalocate not yet implemented");
-  }
+  void deallocate(value_type* pt, std::size_t n) { throw("SYCLLockedPageAllocator::dellalocate not yet implemented"); }
 };
 
 } // namespace qmcplusplus

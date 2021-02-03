@@ -482,7 +482,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
     log_values[iw] = {wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()};
   TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
-    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()});
+    REQUIRE(LogComplexApprox(log_values[iw]) ==
+            LogValueType{wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()});
 
 #endif
 }

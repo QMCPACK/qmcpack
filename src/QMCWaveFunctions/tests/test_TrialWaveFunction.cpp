@@ -31,7 +31,7 @@ namespace qmcplusplus
 //#else
 //  #ifdef ENABLE_ONEAPI
 //  std::ostream &gout = std::cout << "SYCL_DEBUG enable ONEAPI" << std::endl;
-    using DiracDet = DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+using DiracDet = DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 //  #else
 //    std::ostream &gout = std::cout << "SYCL_DEBUG default" << std::endl;
 //    using DiracDet = DiracDeterminant<DelayedUpdate<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
