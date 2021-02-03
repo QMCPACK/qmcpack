@@ -597,6 +597,31 @@ IF(NOT QMC_CUDA)
       check_stats.py -s 1 -q 1rdm -e 0 -c 8 -p det_qmc_1rdm_short_vmc_dmc -r qmc-ref/det_qmc_1rdm_short_vmc_dmc.s001.stat_ref_1rdm_4_4${OFEXT}.dat
       )
 
+  # momemtum distribution test
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-estimator-momentum
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_momentum_short.in.xml
+      1 1
+      check_stats.py -s 0 -q momentum -e 0 -c 5 -p det_qmc_momentum_short -r qmc-ref/det_qmc_momentum_short.s000.stat_ref_momentum_1_1.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_momentum_short_vmc_dmc.in.xml
+      1 1
+      check_stats.py -s 1 -q momentum -e 0 -c 5 -p det_qmc_momentum_short_vmc_dmc -r qmc-ref/det_qmc_momentum_short_vmc_dmc.s001.stat_ref_momentum_1_1${OFEXT}.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_momentum_short_vmc_dmc.in.xml
+      4 4
+      check_stats.py -s 1 -q momentum -e 0 -c 5 -p det_qmc_momentum_short_vmc_dmc -r qmc-ref/det_qmc_momentum_short_vmc_dmc.s001.stat_ref_momentum_4_4${OFEXT}.dat
+      ) 
+
   endif()
 
 
