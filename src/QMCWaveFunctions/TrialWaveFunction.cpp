@@ -117,6 +117,10 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
 #endif
   }
+
+  G = P.G;
+  L = P.L;
+
   LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   return LogValue;

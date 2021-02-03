@@ -20,6 +20,10 @@ QMCDriverInterface* DMCFactoryNew::create(MCPopulation&& pop,
                                           QMCHamiltonian& h,
                                           Communicate* comm)
 {
+#if defined(QMC_CUDA)
+  comm->barrier_and_abort("DMC batched driver is not supported by legacy CUDA builds.");
+#endif
+
   QMCDriverInput qmcdriver_input(qmc_counter_);
   qmcdriver_input.readXML(input_node_);
   DMCDriverInput dmcdriver_input;
