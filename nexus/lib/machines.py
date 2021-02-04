@@ -2114,8 +2114,13 @@ class Cori(NerscMachine):
             self.procs_per_node = 2
             self.cores_per_node = 32
             self.ram_per_node   = 128
+        elif 'amd' in job.constraint:
+            self.nodes = 20
+            self.procs_per_node = 2
+            self.cores_per_node = 32
+            self.ram_per_node   = 2048
         else:
-            self.error('SLURM input "constraint" must contain either "knl" or "haswell"\nyou provided: {0}'.format(job.constraint))
+            self.error('SLURM input "constraint" must contain either "knl", "haswell", or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
         #end if
         if job.core_spec is not None:
             self.cores_per_node -= job.core_spec
@@ -2128,8 +2133,10 @@ class Cori(NerscMachine):
             hyperthreads   = 4
         elif 'haswell' in job.constraint:
             hyperthreads   = 2
+        elif 'amd' in job.constraint:
+            hyperthreads   = 2
         else:
-            self.error('SLURM input "constraint" must contain either "knl" or "haswell"\nyou provided: {0}'.format(job.constraint))
+            self.error('SLURM input "constraint" must contain either "knl", "haswell" or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
         #end if
         cpus_per_task = int(floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
         c='#!/bin/bash\n'

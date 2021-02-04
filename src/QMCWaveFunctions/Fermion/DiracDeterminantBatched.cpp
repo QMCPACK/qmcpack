@@ -23,8 +23,8 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DET_ENGINE_TYPE>
-DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase("DiracDeterminantBatched", spos, first),
+DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos, int first)
+    : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first),
       ndelay(1),
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
       H2DTimer(*timer_manager.createTimer("DiracDeterminantBatched::H2D", timer_level_fine))
@@ -170,7 +170,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
-  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
+  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), NumOrbitals * WFC_list.size(), phi_vgl_v.capacity());
   Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view, ratios_local,
                                       grad_new_local);
   SPOVGLTimer.stop();
@@ -331,6 +331,19 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
     }
   }
 }
+template<typename DET_ENGINE_TYPE>
+typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateGL(
+    ParticleSet& P,
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L,
+    bool fromscratch)
+{
+  if (fromscratch)
+    evaluateLog(P, G, L);
+  else
+    updateAfterSweep(P, G, L);
+  return LogValue;
+}
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
@@ -347,14 +360,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
     WFBufferType& buf,
     bool fromscratch)
 {
-  if (fromscratch)
-  {
-    LogValue = evaluateLog(P, P.G, P.L);
-  }
-  else
-  {
-    updateAfterSweep(P, P.G, P.L);
-  }
+  evaluateGL(P, P.G, P.L, fromscratch);
   BufferTimer.start();
   buf.put(psiMinv.first_address(), psiMinv.last_address());
   buf.put(dpsiM.first_address(), dpsiM.last_address());
@@ -426,7 +432,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
   ratios_local.resize(WFC_list.size());
   grad_new_local.resize(WFC_list.size());
 
-  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), phi_vgl_v.size(), phi_vgl_v.capacity());
+  VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), NumOrbitals * WFC_list.size(), phi_vgl_v.capacity());
   // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
   // We may implement mw_evaluateVandDetRatio in the future.
   Phi->mw_evaluateVGLandDetRatioGrads(phi_list, P_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view, ratios_local,
@@ -744,9 +750,10 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateDerivatives(ParticleSet& 
 }
 
 template<typename DET_ENGINE_TYPE>
-DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYPE>::makeCopy(SPOSetPtr spo) const
+DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYPE>::makeCopy(
+    std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminantBatched<DET_ENGINE_TYPE>* dclone = new DiracDeterminantBatched<DET_ENGINE_TYPE>(spo);
+  DiracDeterminantBatched<DET_ENGINE_TYPE>* dclone = new DiracDeterminantBatched<DET_ENGINE_TYPE>(std::move(spo));
   dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
   return dclone;
 }

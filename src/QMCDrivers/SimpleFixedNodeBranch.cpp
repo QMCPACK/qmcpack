@@ -87,6 +87,8 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
   reset();
 }
 
+SimpleFixedNodeBranch::~SimpleFixedNodeBranch() = default;
+
 void SimpleFixedNodeBranch::registerParameters()
 {
   m_param.add(iParam[B_WARMUPSTEPS], "warmupSteps", "int");

@@ -53,7 +53,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   //els.resizeSphere(NumIons);
   PP.resize(NumIons, nullptr);
   prefix = "FNL";
-  PPset.resize(IonConfig.getSpeciesSet().getTotalNum(), 0);
+  PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
   PulayTerm.resize(NumIons);
   UpdateMode.set(NONLOCAL, 1);
   nlpp_jobs.resize(els.groups());
@@ -63,17 +63,6 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
     nlpp_jobs[ig].reserve(2 * els.groupsize(ig));
   }
 }
-
-///destructor
-NonLocalECPotential::~NonLocalECPotential()
-{
-  delete_iter(PPset.begin(), PPset.end());
-  //map<int,NonLocalECPComponent*>::iterator pit(PPset.begin()), pit_end(PPset.end());
-  //while(pit != pit_end) {
-  //   delete (*pit).second; ++pit;
-  //}
-}
-
 
 #if !defined(REMOVE_TRACEMANAGER)
 void NonLocalECPotential::contribute_particle_quantities() { request.contribute_array(myName); }
@@ -104,6 +93,12 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P)
   return Value;
 }
 
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(ParticleSet& P)
+{
+  evaluateImpl(P, false, true);
+  return Value;
+}
+
 void NonLocalECPotential::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
 {
   mw_evaluateImpl(O_list, P_list, false);
@@ -127,7 +122,7 @@ void NonLocalECPotential::mw_evaluateWithToperator(const RefVector<OperatorBase>
     mw_evaluateImpl(O_list, P_list, false);
 }
 
-void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
+void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid)
 {
   if (Tmove)
     nonLocalOps.reset();
@@ -144,7 +139,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove)
 #endif
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
+      if (!keepGrid)
+        PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
   const auto& myTable = P.getDistTable(myTableIndex);
   // clear all the electron and ion neighbor lists
@@ -529,25 +525,20 @@ void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, in
   }
 }
 
-void NonLocalECPotential::addComponent(int groupID, NonLocalECPComponent* ppot)
+void NonLocalECPotential::addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& ppot)
 {
   for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
-      PP[iat] = ppot;
-  PPset[groupID] = ppot;
+      PP[iat] = ppot.get();
+  PPset[groupID] = std::move(ppot);
 }
 
 OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
-  {
     if (PPset[ig])
-    {
-      NonLocalECPComponent* ppot = PPset[ig]->makeClone(qp);
-      myclone->addComponent(ig, ppot);
-    }
-  }
+      myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));
   return myclone;
 }
 

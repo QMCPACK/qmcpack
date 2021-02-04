@@ -42,6 +42,7 @@ SET(HAMSRCS
   SpinDensity.cpp
   SpeciesKineticEnergy.cpp
   LatticeDeviationEstimator.cpp
+  SpaceWarpTransformation.cpp
   )
 
 IF(OHMMS_DIM MATCHES 3)

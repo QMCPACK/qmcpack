@@ -67,11 +67,10 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(max_disp_sq_, "maxDisplSq", "double");
 
   OhmmsAttributeSet aAttrib;
-
   // first stage in from QMCDriverFactory
   aAttrib.add(qmc_method_, "method");
   aAttrib.add(update_mode_, "move");
-
+  aAttrib.add(scoped_profiling_, "profiling");
 
   aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor
