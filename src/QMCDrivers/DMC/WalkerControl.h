@@ -173,7 +173,7 @@ private:
   ///ensemble properties
   MCDataType<FullPrecRealType> ensemble_property_;
   ///timers
-  TimerList_t myTimers;
+  TimerList_t my_timers_;
   ///Number of walkers sent during the exchange
   IndexType saved_num_walkers_sent_;
 };

@@ -52,8 +52,7 @@ public:
     SFNBranch& branch_engine;
     IndexType recalculate_properties_period;
     IndexType step;
-    int block;
-    bool recomputing_blocks;
+    bool is_recomputing_block;
     StateForThread(const QMCDriverInput& qmci,
                    const DMCDriverInput& dmci,
                    DriftModifierBase& drift_mod,
