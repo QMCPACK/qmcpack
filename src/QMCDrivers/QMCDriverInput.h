@@ -37,25 +37,6 @@ public:
   QMCDriverInput& operator=(QMCDriverInput&&);
 
 protected:
-  /** @ingroup Type dependent behavior
-   * @{
-   * @brief use simple metaprogramming in anticipation of single executable
-   */
-  /** call recompute at the end of each block in the mixed precision case.
-   */
-  template<typename RT = RealType, typename FPRT = FullPrecisionRealType>
-  int defaultBlocksBetweenRecompute()
-  {
-    return 0;
-  }
-
-  template<typename RT = RealType, typename FPRT = FullPrecisionRealType, std::enable_if_t<std::is_same<RT, FPRT>{}>>
-  int defaultBlocksBetweenRecompute()
-  {
-    return 1;
-  }
-  /** @}
-   */
 
   bool scoped_profiling_ = false;
 
@@ -90,7 +71,8 @@ protected:
   IndexType samples_per_thread_       = 0;
   RealType tau_                       = 0.1;
   IndexType max_cpu_secs_             = 360000;
-  IndexType blocks_between_recompute_ = defaultBlocksBetweenRecompute<>();
+  // call recompute at the end of each block in the full/mixed precision case.
+  IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 0 : 1;
   bool append_run_                    = false;
 
   // from QMCDriverFactory
