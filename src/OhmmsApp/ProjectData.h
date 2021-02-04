@@ -57,16 +57,22 @@ public:
 
   void setCommunicator(Communicate* c);
 
-  ///returns the title of the project
+  /** returns the title of the project
+   * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
+   * translate to m_title = "det_qmc_short_sdbatch_vmcbatch_mwalkers"
+   */
   inline const std::string& getTitle() const { return m_title; }
 
-  ///returns the projectmain of the project
+  /** returns the projectmain of the project, the series id is incremented at every QMC section
+   * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
+   * translate to m_projectmain = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s000"
+   */
   inline const std::string& CurrentMainRoot() const { return m_projectmain; }
 
-  ///returns the projectroot of the project
-  inline const std::string& CurrentRoot() const { return m_projectroot; }
-
-  ///returns the nextroot of the project
+  /** returns the nextroot of the project, the series id is incremented at every QMC section
+   * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
+   * translate to m_projectmain = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s001"
+   */
   inline const std::string& NextRoot() const { return m_nextroot; }
 
   /** return the root of the previous sequence

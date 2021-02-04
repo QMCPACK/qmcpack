@@ -163,7 +163,7 @@ public:
   inline IndexType current() const { return current_step_; }
 
   /** Set the status of the QMCDriver
-   * @param aname the root file name
+   * @param aname the root file name, ignored
    * @param h5name root name of the master hdf5 file containing previous qmcrun
    * @param append if true, the run is a continuation of the previous qmc
    *
@@ -204,7 +204,6 @@ public:
   ///return the i-th random generator
   inline RandomGenerator_t& getRng(int i) override { return (*Rng[i]); }
 
-  const std::string& get_root_name() const override { return root_name_; }
   std::string getEngineName() override { return QMCType; }
   unsigned long getDriverMode() override { return qmc_driver_mode_.to_ulong(); }
 
@@ -275,6 +274,8 @@ protected:
 
   /// check logpsi and grad and lap against values computed from scratch
   static bool checkLogAndGL(Crowd& crowd);
+
+  const std::string& get_root_name() const override { return project_info_.CurrentMainRoot(); }
 
   /** The timers for the driver.
    *

@@ -177,9 +177,8 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
  */
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
-  root_name_ = aname;
   app_log() << "\n========================================================="
-            << "\n  Start " << QMCType << "\n  File Root " << root_name_;
+            << "\n  Start " << QMCType << "\n  File Root " << project_info_.CurrentMainRoot();
   app_log() << "\n=========================================================" << std::endl;
 
   if (h5name.size())

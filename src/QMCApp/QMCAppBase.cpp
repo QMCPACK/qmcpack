@@ -72,9 +72,6 @@ void QMCAppBase::saveXml()
   if (!XmlDocStack.empty())
   {
     std::string newxml(myProject.CurrentMainRoot());
-    //string newxml(myProject.CurrentRoot());
-    //myProject.PreviousRoot(newxml);
-    //myProject.rewind();
     newxml.append(".cont.xml");
     app_log() << "\n========================================================="
               << "\n  A new xml input file : " << newxml << std::endl;

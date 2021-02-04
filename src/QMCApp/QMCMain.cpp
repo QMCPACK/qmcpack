@@ -566,7 +566,6 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run              = false;
 
   if (reuse && last_driver)
@@ -593,7 +592,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     if (!FirstQMC && !append_run)
       myProject.advance();
 
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), "", append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.
