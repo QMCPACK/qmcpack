@@ -258,5 +258,4 @@ void BranchIO<SFNB>::bcast_state()
 }
 
 template class BranchIO<SimpleFixedNodeBranch>;
-template class BranchIO<SFNBranch>;
 } // namespace qmcplusplus

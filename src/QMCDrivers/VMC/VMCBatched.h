@@ -55,14 +55,15 @@ public:
     int block;
     bool recomputing_blocks;
 
-    StateForThread(QMCDriverInput& qmci, VMCDriverInput& vmci, DriftModifierBase& drift_mod, MCPopulation& pop)
+    StateForThread(const QMCDriverInput& qmci, const VMCDriverInput& vmci, DriftModifierBase& drift_mod, MCPopulation& pop)
         : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
     {}
   };
 
 public:
   /// Constructor.
-  VMCBatched(QMCDriverInput&& qmcdriver_input,
+  VMCBatched(const ProjectData& project_info,
+             QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
              MCPopulation&& pop,
              TrialWaveFunction& psi,
@@ -109,7 +110,7 @@ public:
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
-  VMCDriverInput vmcdriver_input_;
+  const VMCDriverInput vmcdriver_input_;
   QMCRunType getRunType() { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;

@@ -12,6 +12,10 @@
 
 #include "catch.hpp"
 
+#include <iostream>
+#include <stdio.h>
+#include <string>
+#include <sstream>
 #include "Utilities/RandomGenerator.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -21,11 +25,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
-#include <iostream>
-#include <stdio.h>
-#include <string>
-#include <sstream>
-
+#include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -36,7 +36,8 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  QMCDriverFactory driver_factory;
+  ProjectData test_project;
+  QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_index]);
@@ -68,7 +69,8 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  QMCDriverFactory driver_factory;
+  ProjectData test_project;
+  QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
@@ -99,7 +101,8 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  QMCDriverFactory driver_factory;
+  ProjectData test_project;
+  QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_index]);
@@ -130,7 +133,8 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  QMCDriverFactory driver_factory;
+  ProjectData test_project;
+  QMCDriverFactory driver_factory(test_project);
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);

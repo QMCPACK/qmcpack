@@ -195,8 +195,6 @@ public:
    */
   int copyWalkers(MCWalkerConfiguration& W);
 
-  void Write2XYZ(MCWalkerConfiguration& W);
-
   /** reset to accumulate data */
   virtual void reset();
 
@@ -211,11 +209,6 @@ public:
    *  \return global population
    */
   virtual FullPrecRealType branch(int iter, MCPopulation& pop);
-
-  virtual FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
-  {
-    return 1.0 / (static_cast<FullPrecRealType>(ngen) * tau);
-  }
 
   bool put(xmlNodePtr cur);
 

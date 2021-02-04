@@ -62,20 +62,13 @@ public:
 
     SFNBranch sfnb(tau_, num_global_walkers_);
 
-    sfnb.setEstimatorManager(emb_.get());
-
     createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
 
-    sfnb.initWalkerController(*pop_, false, false);
-
-
-    sfnb.checkParameters(pop_->get_num_global_walkers(), walkers);
+    sfnb.initParam(*pop_, 0, 0, false, false);
 
     UPtrVector<Crowd> crowds;
     crowds.emplace_back(std::make_unique<Crowd>(*emb_));
     crowds.emplace_back(std::make_unique<Crowd>(*emb_));
-
-    sfnb.branch(0, *pop_);
 
     return sfnb;
   }
@@ -85,7 +78,7 @@ private:
   {
     doc_ = std::make_unique<Libxml2Document>();
     doc_->parseFromString(xml);
-    sfnb.myNode = doc_->getRoot();
+    sfnb.put(doc_->getRoot());
   }
 
   Communicate* comm_;

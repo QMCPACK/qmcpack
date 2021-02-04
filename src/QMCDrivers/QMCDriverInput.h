@@ -27,11 +27,10 @@ public:
   using RealType              = QMCTraits::RealType;
   using FullPrecisionRealType = QMCTraits::FullPrecRealType;
 
-  QMCDriverInput(int qmc_section_count);
   void readXML(xmlNodePtr cur);
 
   // To allow compile check if move constructor is still implicit
-  QMCDriverInput()                      = delete;
+  QMCDriverInput()                      = default;
   QMCDriverInput(const QMCDriverInput&) = default;
   QMCDriverInput& operator=(const QMCDriverInput&) = default;
   QMCDriverInput(QMCDriverInput&&);
@@ -57,8 +56,6 @@ protected:
   }
   /** @}
    */
-
-  int qmc_section_count_;
 
   bool scoped_profiling_ = false;
 
@@ -118,7 +115,6 @@ protected:
    */
 
 public:
-  int get_qmc_section_count() const { return qmc_section_count_; }
   int get_RollBackBlocks() const { return RollBackBlocks_; }
   int get_store_config_period() const { return store_config_period_; }
   int get_recalculate_properties_period() const { return recalculate_properties_period_; }

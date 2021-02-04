@@ -24,6 +24,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
 {
@@ -57,15 +58,13 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fi
       n_min_(1),
       n_max_(10),
       max_copy_(2),
-      target_sigma_(10),
       dmcStream(0),
+      rank_num_(c->rank()),
+      num_ranks_(c->size()),
       SwapMode(0),
       use_nonblocking_(true),
       saved_num_walkers_sent_(0)
 {
-  num_ranks_ = myComm->size();
-  rank_num_  = myComm->rank();
-  curData.resize(LE_MAX + num_ranks_);
   num_per_node_.resize(num_ranks_);
   fair_offset_.resize(num_ranks_ + 1);
 
@@ -110,11 +109,7 @@ void WalkerControl::start()
   }
 }
 
-/** Depends on alot of state
- *
- *  Does not depend on state refactored to  PopulationAdjustment directly
- */
-void WalkerControl::measureProperties(int iter)
+void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& curData)
 {
   //taking average over the walkers
   FullPrecRealType wgtInv(1.0 / curData[WEIGHT_INDEX]);
@@ -152,9 +147,7 @@ void WalkerControl::measureProperties(int iter)
   }
 }
 
-void WalkerControl::reset() { std::fill(curData.begin(), curData.end(), 0.0); }
-
-QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
+int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   /* dynamic population
     1. compute multiplicity. If iter 0, multiplicity = 1
@@ -172,9 +165,12 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop, b
 
   auto& walkers = pop.get_walkers();
 
+  ///any temporary data includes many ridiculous conversions of integral types to and from fp
+  std::vector<FullPrecRealType> curData(LE_MAX + num_ranks_, 0.0);
+
   if (use_fixed_pop_)
   {
-    computeCurData(walkers);
+    computeCurData(walkers, curData);
     // convert  node local num of walkers after combing
     // curData[LE_MAX + rank_num_] = wsum to num_total_copies
     // calculate walker->Multiplicity;
@@ -188,22 +184,30 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop, b
     else
       for (auto& walker : walkers)
         walker->Multiplicity = static_cast<int>(walker->Weight + rng_());
-    computeCurData(walkers);
+    computeCurData(walkers, curData);
     for (int i = 0, j = LE_MAX; i < num_ranks_; i++, j++)
       num_per_node_[i] = static_cast<int>(curData[j]);
   }
   // at this point, curData[LE_MAX + rank_num_] and walker->Multiplicity are ready.
 
-  measureProperties(iter);
+  writeDMCdat(iter, curData);
   pop.set_ensemble_property(ensemble_property_);
 
+  auto untouched_walkers = walkers.size();
 #if defined(HAVE_MPI)
+  // kill walkers, actually put them in deadlist for be recycled for receiving walkers
+  killDeadWalkersOnRank(pop);
+  // ranks receiving walkers from other ranks have the lowest walker count now.
+  untouched_walkers = std::min(untouched_walkers, walkers.size());
+
   // load balancing over MPI
   swapWalkersSimple(pop);
 #endif
 
   // kill dead walker to be recycled by the following copy
   killDeadWalkersOnRank(pop);
+  // ranks sending walkers from other ranks have the lowest walker count now.
+  untouched_walkers = std::min(untouched_walkers, walkers.size());
 
   // copy good walkers
   const size_t good_walkers = walkers.size();
@@ -212,13 +216,20 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop, b
     size_t num_copies = static_cast<int>(walkers[iw]->Multiplicity);
     while (num_copies > 1)
     {
-      auto walker_elements = pop.spawnWalker();
+      auto walker_elements   = pop.spawnWalker();
       walker_elements.walker = *walkers[iw];
       walker_elements.pset.loadWalker(walker_elements.walker, true);
-      walker_elements.pset.update();
-      walker_elements.twf.evaluateLog(walker_elements.pset);
       num_copies--;
     }
+  }
+
+  {
+    const size_t num_walkers = walkers.size();
+    // recomputed received and duplicated walkers, the first untouched_walkers walkers doesn't need to be updated.
+    auto p_list = convertUPtrToRefVectorSubset(pop.get_elec_particle_sets(), untouched_walkers, num_walkers - untouched_walkers);
+    auto wf_list = convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
+    ParticleSet::flex_update(p_list);
+    TrialWaveFunction::flex_evaluateLog(wf_list, p_list);
   }
 
   const int current_num_global_walkers = std::accumulate(num_per_node_.begin(), num_per_node_.end(), 0);
@@ -240,7 +251,7 @@ QMCTraits::FullPrecRealType WalkerControl::branch(int iter, MCPopulation& pop, b
   return pop.get_num_global_walkers();
 }
 
-void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers)
+void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData)
 {
   FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
@@ -277,22 +288,6 @@ void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers)
   myComm->allreduce(curData);
 }
 
-void WalkerControl::Write2XYZ(MCWalkerConfiguration& W)
-{
-  std::ofstream fout("bad.xyz");
-  MCWalkerConfiguration::iterator it(W.begin());
-  MCWalkerConfiguration::iterator it_end(W.end());
-  int nptcls(W.getTotalNum());
-  while (it != it_end)
-  {
-    fout << nptcls << std::endl
-         << "# E = " << (*it)->Properties(WP::LOCALENERGY) << " Wgt= " << (*it)->Weight << std::endl;
-    for (int i = 0; i < nptcls; i++)
-      fout << "H " << (*it)->R[i] << std::endl;
-    ++it;
-  }
-}
-
 // determine new walker population on each node
 void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per_node,
                                                  std::vector<int>& fair_offset,
@@ -324,9 +319,6 @@ void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per
 #if defined(HAVE_MPI)
 void WalkerControl::swapWalkersSimple(MCPopulation& pop)
 {
-  // kill walkers, actually put them in deadlist for be recycled for receiving walkers
-  killDeadWalkersOnRank(pop);
-
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(num_per_node_, fair_offset_, minus, plus);
 
@@ -488,8 +480,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
         awalker.copyFromBuffer();
         walker_elements.pset.loadWalker(awalker, true);
-        walker_elements.pset.update();
-        walker_elements.twf.evaluateLog(walker_elements.pset);
         myTimers[WC_recv]->stop();
       }
     }
@@ -508,8 +498,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
               auto& walker_elements = newW[job_list[im].walkerID];
               walker_elements.walker.copyFromBuffer();
               walker_elements.pset.loadWalker(walker_elements.walker, true);
-              walker_elements.pset.update();
-              walker_elements.twf.evaluateLog(walker_elements.pset);
               not_completed[im] = false;
             }
             else
@@ -570,7 +558,6 @@ bool WalkerControl::put(xmlNodePtr cur)
   int nw_target = 0, nw_max = 0;
   std::string nonblocking = "yes";
   ParameterSet params;
-  params.add(target_sigma_, "sigmaBound", "double");
   params.add(max_copy_, "maxCopy", "int");
   params.add(nw_target, "targetwalkers", "int");
   params.add(nw_max, "max_walkers", "int");

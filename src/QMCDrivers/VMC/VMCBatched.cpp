@@ -21,14 +21,22 @@ namespace qmcplusplus
 {
 /** Constructor maintains proper ownership of input parameters
    */
-VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
+VMCBatched::VMCBatched(const ProjectData& project_info,
+                       QMCDriverInput&& qmcdriver_input,
                        VMCDriverInput&& input,
                        MCPopulation&& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h, "VMCBatched::", comm, "VMCBatched"),
+    : QMCDriverNew(project_info,
+                   std::move(qmcdriver_input),
+                   std::move(pop),
+                   psi,
+                   h,
+                   "VMCBatched::",
+                   comm,
+                   "VMCBatched"),
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)
@@ -234,6 +242,12 @@ void VMCBatched::process(xmlNodePtr node)
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+
+    if (vmcdriver_input_.get_use_drift())
+      app_log() << "  Random walking with drift" << std::endl;
+    else
+      app_log() << "  Random walking without drift" << std::endl;
+
     Base::startup(node, awc);
   }
   catch (const UniformCommunicateError& ue)
@@ -334,6 +348,19 @@ bool VMCBatched::run()
 
   // second argument was !wrotesample so if W.dumpEnsemble returns false or
   // dump_config is false from input then dump_walkers
+  {
+    std::ostringstream o;
+    FullPrecRealType ene, var;
+    estimator_manager_->getApproximateEnergyVariance(ene, var);
+    o << "====================================================";
+    o << "\n  End of a VMC block";
+    o << "\n    QMC counter        = " << project_info_.getSeriesIndex();
+    o << "\n    time step          = " << qmcdriver_input_.get_tau();
+    o << "\n    reference energy   = " << ene;
+    o << "\n    reference variance = " << var;
+    o << "\n====================================================";
+    app_log() << o.str() << std::endl;
+  }
   return finalize(num_blocks, true);
 }
 
