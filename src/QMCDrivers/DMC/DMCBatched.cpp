@@ -35,14 +35,14 @@ using WP = WalkerProperties::Indexes;
  *
  *  Note you must call the Base constructor before the derived class sets QMCType
  */
-DMCBatched::DMCBatched(const ProjectData& project_info,
+DMCBatched::DMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
                        DMCDriverInput&& input,
                        MCPopulation&& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        Communicate* comm)
-    : QMCDriverNew(project_info, std::move(qmcdriver_input), std::move(pop), psi, h,
+    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop), psi, h,
                    "DMCBatched::", comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),

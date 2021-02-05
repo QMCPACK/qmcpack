@@ -71,7 +71,7 @@ public:
   };
 
   /// Constructor.
-  DMCBatched(const ProjectData& project_info,
+  DMCBatched(const ProjectData& project_data,
              QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
              MCPopulation&& pop,
