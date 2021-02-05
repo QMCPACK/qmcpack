@@ -92,6 +92,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
   const int WorkingIndex = iat - FirstIndex;
   GradType g             = simd::dot(psiMinv[WorkingIndex], dpsiM[WorkingIndex], NumOrbitals);
   RatioTimer.stop();
+  assert(checkG(g));
   return g;
 }
 
@@ -117,8 +118,12 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveF
   }
 
   det_engine_.mw_evalGrad(engine_list, dpsiM_row_list, WorkingIndex, grad_now);
-
   RatioTimer.stop();
+
+#ifndef NDEBUG
+  for (int iw = 0; iw < nw; iw++)
+    checkG(grad_now[iw]);
+#endif
 }
 
 template<typename DET_ENGINE_TYPE>

@@ -553,8 +553,9 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
       auto lap_diff = ref_L[iel] - Ls[iw][iel];
       if (std::norm(lap_diff) > std::norm(ref_L[iel]) * threashold)
       {
-        success = false;
-        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << std::endl;
+        // very hard to check mixed precision case, only print, no error out
+        success = !std::is_same<RealType, FullPrecRealType>::value;
+        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel] << std::endl;
       }
     }
   }

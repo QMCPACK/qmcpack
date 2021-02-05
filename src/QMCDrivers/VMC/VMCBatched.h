@@ -51,8 +51,8 @@ public:
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     IndexType recalculate_properties_period;
-    IndexType step;
-    bool is_recomputing_block;
+    IndexType step = -1;
+    bool is_recomputing_block = false;
 
     StateForThread(const QMCDriverInput& qmci, const VMCDriverInput& vmci, DriftModifierBase& drift_mod, MCPopulation& pop)
         : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
