@@ -51,8 +51,8 @@ public:
     const MCPopulation& population;
     SFNBranch& branch_engine;
     IndexType recalculate_properties_period;
-    IndexType step;
-    bool is_recomputing_block;
+    IndexType step = -1;
+    bool is_recomputing_block = false;
     StateForThread(const QMCDriverInput& qmci,
                    const DMCDriverInput& dmci,
                    DriftModifierBase& drift_mod,
