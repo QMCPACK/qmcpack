@@ -63,6 +63,8 @@ public:
       resize_impl(rhs.nLocal);
       if (allocator_traits<Alloc>::is_host_accessible)
         std::copy_n(rhs.data(), nLocal, X);
+      else
+        allocator_traits<Alloc>::fill_n(X, nLocal, T());
     }
   }
 
@@ -75,6 +77,8 @@ public:
       resize(rhs.nLocal);
     if (allocator_traits<Alloc>::is_host_accessible)
       std::copy_n(rhs.data(), nLocal, X);
+    else
+      allocator_traits<Alloc>::fill_n(X, nLocal, T());
     return *this;
   }
 

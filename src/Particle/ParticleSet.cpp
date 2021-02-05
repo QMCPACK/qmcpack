@@ -691,6 +691,12 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
   }
 }
 
+void  ParticleSet::flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update)
+{
+  for (int iw = 0; iw < P_list.size(); iw++)
+    P_list[iw].get().acceptMove(iat, partial_table_update);
+}
+
 void ParticleSet::rejectMove(Index_t iat)
 {
 #ifndef NDEBUG
