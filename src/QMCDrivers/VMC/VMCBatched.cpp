@@ -306,6 +306,8 @@ bool VMCBatched::run()
                std::ref(crowds_));
   }
 
+  app_log() << "Warm-up is completed!" << std::endl;
+
   for (int block = 0; block < num_blocks; ++block)
   {
     vmc_loop.start();

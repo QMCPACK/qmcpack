@@ -25,6 +25,7 @@
 #include "config.h"
 #include "cudaError.h"
 #include "allocator_traits.hpp"
+#include "CUDAfill.hpp"
 #include "CPU/SIMD/alignment.config.h"
 
 namespace qmcplusplus
@@ -119,6 +120,7 @@ template<typename T>
 struct allocator_traits<CUDAAllocator<T>>
 {
   const static bool is_host_accessible = false;
+  static void fill_n(T* ptr, size_t n, const T& value) { CUDAfill_n(ptr, n, value); }
 };
 
 /** allocator for CUDA host pinned memory
@@ -191,7 +193,8 @@ struct CUDALockedPageAllocator : public ULPHA
   {
     static_assert(std::is_same<T, value_type>::value, "CUDALockedPageAllocator and ULPHA data types must agree!");
     value_type* pt = ULPHA::allocate(n);
-    cudaErrorCheck(cudaHostRegister(pt, n*sizeof(T), cudaHostRegisterDefault), "cudaHostRegister failed in CUDALockedPageAllocator!");
+    cudaErrorCheck(cudaHostRegister(pt, n * sizeof(T), cudaHostRegisterDefault),
+                   "cudaHostRegister failed in CUDALockedPageAllocator!");
     return pt;
   }
 
