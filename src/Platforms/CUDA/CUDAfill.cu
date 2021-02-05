@@ -23,7 +23,7 @@ void CUDAfill_n(T* ptr, size_t n, const T& value)
   if (value != T())
     throw std::runtime_error("CUDAfill_n doesn't support fill non T() values!");
   // setting 0 value on each byte should be 0 for int, float and double.
-  cudaErrorCheck(cudaMemset(ptr, 0, n * sizeof(T)), "Memset failed in CUDAAllocator!");
+  cudaErrorCheck(cudaMemset(ptr, 0, n * sizeof(T)), "Memset failed in CUDAfill_n!");
 }
 
 template void CUDAfill_n<int>(int* ptr, size_t n, const int& value);
