@@ -160,7 +160,6 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
 
   if (basisset_map_.size() == 0)
     throw std::runtime_error("No basisset found in the XML input!");
-
 }
 
 LCAOrbitalBuilder::~LCAOrbitalBuilder()
@@ -480,9 +479,8 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = lcwc =
-        new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, std::unique_ptr<BasisSet_t>(myBasisSet),
-                                        optimize == "yes");
+    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, std::unique_ptr<BasisSet_t>(myBasisSet),
+                                                  optimize == "yes");
   }
   else
     lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet), optimize == "yes");

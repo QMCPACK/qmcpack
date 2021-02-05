@@ -255,13 +255,16 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       else
       {
         app_summary() << "    Using a list of determinants for multi-deterimant expansion." << std::endl;
-        auto spo_up = std::make_unique<SPOSetProxyForMSD>(std::move(spo_alpha_clone), targetPtcl.first(0), targetPtcl.last(0));
-        auto spo_dn = std::make_unique<SPOSetProxyForMSD>(std::move(spo_beta_clone), targetPtcl.first(1), targetPtcl.last(1));
+        auto spo_up =
+            std::make_unique<SPOSetProxyForMSD>(std::move(spo_alpha_clone), targetPtcl.first(0), targetPtcl.last(0));
+        auto spo_dn =
+            std::make_unique<SPOSetProxyForMSD>(std::move(spo_beta_clone), targetPtcl.first(1), targetPtcl.last(1));
         if (UseBackflow)
         {
           app_summary() << "    Using backflow transformation." << std::endl;
-          multislaterdet_0 = new MultiSlaterDeterminantWithBackflow(targetPtcl, std::move(spo_up), std::move(spo_dn), BFTrans);
-          success          = createMSD(multislaterdet_0, cur);
+          multislaterdet_0 =
+              new MultiSlaterDeterminantWithBackflow(targetPtcl, std::move(spo_up), std::move(spo_dn), BFTrans);
+          success = createMSD(multislaterdet_0, cur);
         }
         else
         {
@@ -461,7 +464,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
         adet = new DiracDeterminantBatched<
-            MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex);
+            MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                         firstIndex);
       }
       else
 #endif
@@ -478,7 +482,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       if (useGPU == "yes")
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
-        adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex);
+        adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                                firstIndex);
       }
       else
 #endif
@@ -1399,8 +1404,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   std::unordered_map<std::string, int> MyMapDn;
 
   app_log() << " Sorting unique CIs" << std::endl;
-  ///This loop will find all unique Determinants in and store them "unsorted" in a new container uniqueConfg_up 
-  ///and uniqueConfg_dn. The sorting is not done here 
+  ///This loop will find all unique Determinants in and store them "unsorted" in a new container uniqueConfg_up
+  ///and uniqueConfg_dn. The sorting is not done here
   for (int ni = 0; ni < ndets; ni++)
   {
     if (std::abs(CIcoeff[ni]) < cutoff)

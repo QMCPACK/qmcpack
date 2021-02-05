@@ -43,7 +43,11 @@ public:
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SlaterDetBuilder(Communicate* comm, SPOSetBuilderFactory& factory, ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+  SlaterDetBuilder(Communicate* comm,
+                   SPOSetBuilderFactory& factory,
+                   ParticleSet& els,
+                   TrialWaveFunction& psi,
+                   PtclPoolType& psets);
 
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
