@@ -9,7 +9,7 @@
 namespace qmcplusplus
 {
 QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
-                                       const int qmc_counter,
+                                       const ProjectData& project_info,
                                        MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
@@ -17,18 +17,18 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
                                        SampleStack& samples,
                                        Communicate* comm)
 {
-  QMCDriverInput qmcdriver_input(qmc_counter);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(cur);
   VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(cur);
 
-  QMCOptimizeBatched* opt = new QMCOptimizeBatched(w, psi, h, std::move(qmcdriver_input), std::move(vmcdriver_input),
-                                                   std::move(pop), samples, comm);
+  QMCOptimizeBatched* opt = new QMCOptimizeBatched(project_info, w, psi, h, std::move(qmcdriver_input),
+                                                   std::move(vmcdriver_input), std::move(pop), samples, comm);
   return opt;
 }
 
 QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
-                                                              const int qmc_counter,
+                                                              const ProjectData& project_info,
                                                               MCWalkerConfiguration& w,
                                                               TrialWaveFunction& psi,
                                                               QMCHamiltonian& h,
@@ -36,14 +36,14 @@ QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
                                                               SampleStack& samples,
                                                               Communicate* comm)
 {
-  QMCDriverInput qmcdriver_input(qmc_counter);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(cur);
   VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(cur);
 
   QMCFixedSampleLinearOptimizeBatched* opt =
-      new QMCFixedSampleLinearOptimizeBatched(w, psi, h, std::move(qmcdriver_input), std::move(vmcdriver_input),
-                                              std::move(pop), samples, comm);
+      new QMCFixedSampleLinearOptimizeBatched(project_info, w, psi, h, std::move(qmcdriver_input),
+                                              std::move(vmcdriver_input), std::move(pop), samples, comm);
   return opt;
 }
 

@@ -31,7 +31,7 @@ TEST_CASE("VMCFactory Instantiation", "[drivers]")
   std::bitset<QMC_MODE_MAX> vmc_mode;
   vmc_mode[UPDATE_MODE] = true;
   int qmc_counter       = 0;
-  VMCFactoryNew vmc_factory(node, vmc_mode[UPDATE_MODE], qmc_counter);
+  VMCFactoryNew vmc_factory(node, vmc_mode[UPDATE_MODE]);
 }
 
 } // namespace qmcplusplus

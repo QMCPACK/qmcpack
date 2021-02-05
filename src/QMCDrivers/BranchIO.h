@@ -13,9 +13,6 @@
 
 
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-#include "QMCDrivers/SFNBranch.h"
-
-//#include <boost/archive/text_oarchive.hpp>
 
 #ifndef QMCPLUSPLUS_BRANCHIO_H
 #define QMCPLUSPLUS_BRANCHIO_H
@@ -46,7 +43,6 @@ public:
 };
 
 extern template class BranchIO<SimpleFixedNodeBranch>;
-extern template class BranchIO<SFNBranch>;
 
 } // namespace qmcplusplus
 #endif

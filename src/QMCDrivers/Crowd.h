@@ -80,10 +80,10 @@ public:
   auto beginElectrons() { return walker_elecs_.begin(); }
   auto endElectrons() { return walker_elecs_.end(); }
 
-  RefVector<MCPWalker>& get_walkers() { return mcp_walkers_; }
-  std::vector<std::reference_wrapper<ParticleSet>>& get_walker_elecs() { return walker_elecs_; }
-  std::vector<std::reference_wrapper<TrialWaveFunction>>& get_walker_twfs() { return walker_twfs_; }
-  std::vector<std::reference_wrapper<QMCHamiltonian>>& get_walker_hamiltonians() { return walker_hamiltonians_; }
+  const RefVector<MCPWalker>& get_walkers() const { return mcp_walkers_; }
+  const RefVector<ParticleSet>& get_walker_elecs() const { return walker_elecs_; }
+  const RefVector<TrialWaveFunction>& get_walker_twfs() const { return walker_twfs_; }
+  const RefVector<QMCHamiltonian>& get_walker_hamiltonians() const { return walker_hamiltonians_; }
 
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
   int size() const { return mcp_walkers_.size(); }

@@ -943,8 +943,8 @@ int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
 }
 
 
-std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list,
-                                                        RefVector<ParticleSet>& p_list)
+std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(const RefVector<QMCHamiltonian>& h_list,
+                                                        const RefVector<ParticleSet>& p_list)
 {
   QMCHamiltonian& db_hamiltonian = h_list[0].get();
 
