@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
   <project id="det_qmc_short-MD-C4_AE_Mol_Ground_QP" series="0"/>
-  <random seed="64"/>
+    <random seed="19"/>
 
   <include href="C4_AE_Mol_QP.structure.xml"/>
   <include href="C4_AE_Mol_QP_Ground.wfnoj.xml"/>

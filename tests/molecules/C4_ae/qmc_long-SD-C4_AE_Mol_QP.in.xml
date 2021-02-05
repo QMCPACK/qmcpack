@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="qmc_short-MD-C4_AE_Mol_Excited_pyscf" series="0"/>
+  <project id="qmc_long-SD-C4_AE_Mol_QP" series="0"/>
 
-  <include href="MD-C4_AE_Mol_pyscf.structure.xml"/>
-  <include href="C4_AE_Mol_pyscf_Excited.wfnoj.xml"/>
+  <include href="C4_AE_Mol_QP.structure.xml"/>
+  <include href="SD-C4_AE_Mol_QP.wfnoj.xml"/>
   <hamiltonian name="h0" type="generic" target="e">
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
     <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
@@ -13,7 +13,7 @@
       <estimator name="LocalEnergy" hdf5="no"/>
       <parameter name="walkers"             >    16              </parameter>
       <parameter name="blocks"              >    1000            </parameter>
-      <parameter name="steps"               >    8.0             </parameter>
+      <parameter name="steps"               >    600.0            </parameter>
       <parameter name="subSteps"            >    2               </parameter>
       <parameter name="timestep"            >    0.3             </parameter>
       <parameter name="warmupSteps"         >    100             </parameter>

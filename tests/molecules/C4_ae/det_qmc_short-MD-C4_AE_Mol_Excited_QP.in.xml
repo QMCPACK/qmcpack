@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
   <project id="det_qmc_short-MD-C4_AE_Mol_Excited_QP" series="0"/>
-  <random seed="125"/>
+    <random seed="864"/>
 
   <include href="C4_AE_Mol_QP.structure.xml"/>
   <include href="C4_AE_Mol_QP_Excited.wfnoj.xml"/>
@@ -10,7 +10,6 @@
     <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
     <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
   </hamiltonian>
-
    <qmc method="vmc" move="pbyp">
       <estimator name="LocalEnergy" hdf5="no"/>
       <parameter name="walkers"             >    1               </parameter>
@@ -20,5 +19,4 @@
       <parameter name="timestep"            >    0.3             </parameter>
       <parameter name="warmupSteps"         >    3               </parameter>
    </qmc>
-
 </simulation>
