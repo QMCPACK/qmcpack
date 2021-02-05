@@ -12,7 +12,7 @@
 
 SET(CUDA_SRCS
   cuBLAS_missing_functions.cu
-  CUDAfill.cu
+  CUDAfill.cpp
 )
 
 CUDA_ADD_LIBRARY(platform_cuda ${CUDA_SRCS})
