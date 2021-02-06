@@ -23,7 +23,6 @@
 
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantTableLegacy.h"
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #endif
@@ -257,49 +256,32 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
 
         if (fastAlg == "new")
         {
-          app_summary() << "    Using an optimized algorithm in the table method code path." << std::endl;
-          auto msd_table_legacy = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets));
-          msd_table_legacy->initialize();
-          success = createMSDFast(msd_table_legacy->Dets,
-                                  *msd_table_legacy->C2node,
-                                  *msd_table_legacy->C,
-                                  *msd_table_legacy->CSFcoeff,
-                                  *msd_table_legacy->DetsPerCSF,
-                                  *msd_table_legacy->CSFexpansion,
-                                  msd_table_legacy->usingCSF,
-                                  *msd_table_legacy->myVars,
-                                  msd_table_legacy->Optimizable,
-                                  msd_table_legacy->CI_Optimizable,
-                                  cur);
-
-          // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
-          // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
-          // and then remove the orbital rotation parameters
-          msd_table_legacy->buildOptVariables();
-          multislaterdetfast_0 = msd_table_legacy;
+          app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
+          multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), true);
         }
         else
         {
-          auto msd_table = new MultiSlaterDeterminantTableLegacy(targetPtcl, std::move(dets));
-          msd_table->initialize();
-          success = createMSDFast(msd_table->Dets,
-                                  *msd_table->C2node,
-                                  *msd_table->C,
-                                  *msd_table->CSFcoeff,
-                                  *msd_table->DetsPerCSF,
-                                  *msd_table->CSFexpansion,
-                                  msd_table->usingCSF,
-                                  *msd_table->myVars,
-                                  msd_table->Optimizable,
-                                  msd_table->CI_Optimizable,
-                                  cur);
-
-          // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
-          // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
-          // and then remove the orbital rotation parameters
-          msd_table->buildOptVariables();
-          multislaterdetfast_0 = msd_table;
+          app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
+          multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), false);
         }
+
+         multislaterdetfast_0->initialize();
+         success = createMSDFast(multislaterdetfast_0->Dets,
+                                 *multislaterdetfast_0->C2node,
+                                 *multislaterdetfast_0->C,
+                                 *multislaterdetfast_0->CSFcoeff,
+                                 *multislaterdetfast_0->DetsPerCSF,
+                                 *multislaterdetfast_0->CSFexpansion,
+                                 multislaterdetfast_0->usingCSF,
+                                 *multislaterdetfast_0->myVars,
+                                 multislaterdetfast_0->Optimizable,
+                                 multislaterdetfast_0->CI_Optimizable,
+                                 cur);
+
+        // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
+        // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
+        // and then remove the orbital rotation parameters
+        multislaterdetfast_0->buildOptVariables();
       }
       else
       {

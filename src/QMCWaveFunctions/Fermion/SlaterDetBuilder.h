@@ -60,7 +60,7 @@ private:
   PtclPoolType& ptclPool;
   SlaterDeterminant_t* slaterdet_0;
   MultiSlaterDeterminant_t* multislaterdet_0;
-  WaveFunctionComponent* multislaterdetfast_0;
+  MultiSlaterDeterminantFast* multislaterdetfast_0;
 
   bool UseBackflow;
   BackflowTransformation* BFTrans;

@@ -72,7 +72,7 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl, std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets);
+  MultiSlaterDeterminantFast(ParticleSet& targetPtcl, std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets, bool use_pre_computing);
 
   ///destructor
   ~MultiSlaterDeterminantFast();
@@ -105,12 +105,16 @@ public:
                            ParticleSet::ParticleLaplacian_t& L) override;
 
   void prepareGroup(ParticleSet& P, int ig) override;
+
   GradType evalGrad(ParticleSet& P, int iat) override;
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   PsiValueType ratio_impl(ParticleSet& P, int iat);
+  PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
+
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     // the base class routine may probably work, just never tested.
@@ -196,6 +200,8 @@ private:
 
   ///the last particle of each group
   std::vector<int> Last;
+  ///use pre-compute (fast) algorithm
+  const bool use_pre_computing_;
 };
 
 } // namespace qmcplusplus

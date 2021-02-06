@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
-                                                       std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets)
+                                                       std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets, bool use_pre_computing)
     : WaveFunctionComponent("MultiSlaterDeterminantFast"),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
       EvalGradTimer(*timer_manager.createTimer(ClassName + "::evalGrad")),
@@ -29,7 +29,8 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
       UpdateTimer(*timer_manager.createTimer(ClassName + "::updateBuffer")),
       EvaluateTimer(*timer_manager.createTimer(ClassName + "::evaluate")),
       AccRejTimer(*timer_manager.createTimer(ClassName + "::Accept_Reject")),
-      CI_Optimizable(false)
+      CI_Optimizable(false),
+     use_pre_computing_(use_pre_computing)
 {
   registerTimers();
   //Optimizable=true;
@@ -70,7 +71,7 @@ WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp)
   for (auto& det : Dets)
     dets_clone.emplace_back(std::make_unique<MultiDiracDeterminant>(*det));
 
-  MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp, std::move(dets_clone));
+  MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp, std::move(dets_clone), use_pre_computing_);
   if (usingBF)
   {
     BackflowTransformation* tr = BFTrans->makeClone(tqp);
@@ -258,6 +259,42 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   return psi;
 }
 
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no_precompute(ParticleSet& P,
+                                                                              int iat,
+                                                                              bool newpos,
+                                                                              GradType& g_at)
+{
+  const bool upspin = getDetID(iat) == 0;
+  const int spin0   = (upspin) ? 0 : 1;
+  const int spin1   = (upspin) ? 1 : 0;
+
+  if (newpos)
+    Dets[spin0]->evaluateDetsAndGradsForPtclMove(P, iat);
+  else
+    Dets[spin0]->evaluateGrads(P, iat);
+
+  const GradMatrix_t& grads            = (newpos) ? Dets[spin0]->new_grads : Dets[spin0]->grads;
+  const ValueType* restrict detValues0 = (newpos) ? Dets[spin0]->new_detValues.data() : Dets[spin0]->detValues.data();
+  const ValueType* restrict detValues1 = Dets[spin1]->detValues.data();
+  const size_t* restrict det0          = (*C2node)[spin0].data();
+  const size_t* restrict det1          = (*C2node)[spin1].data();
+  const ValueType* restrict cptr       = C->data();
+  const size_t nc                      = C->size();
+  const size_t noffset                 = Dets[spin0]->FirstIndex;
+  PsiValueType psi(0);
+  for (size_t i = 0; i < nc; ++i)
+  {
+    const size_t d0 = det0[i];
+    //const size_t d1=det1[i];
+    //psi +=  cptr[i]*detValues0[d0]        * detValues1[d1];
+    //g_at += cptr[i]*grads(d0,iat-noffset) * detValues1[d1];
+    const ValueType t = cptr[i] * detValues1[det1[i]];
+    psi += t * detValues0[d0];
+    g_at += t * grads(d0, iat - noffset);
+  }
+  return psi;
+}
+
 WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
 {
   if (usingBF)
@@ -266,8 +303,14 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
   }
 
   ScopedTimer local_timer(&EvalGradTimer);
+
   GradType grad_iat;
-  PsiValueType psi = evalGrad_impl(P, iat, false, grad_iat);
+  PsiValueType psi;
+  if (use_pre_computing_)
+    psi = evalGrad_impl(P, iat, false, grad_iat);
+  else
+    psi = evalGrad_impl_no_precompute(P, iat, false, grad_iat);
+
   grad_iat *= (PsiValueType(1.0) / psi);
   return grad_iat;
 }
@@ -283,7 +326,12 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
   UpdateMode = ORB_PBYP_PARTIAL;
 
   GradType dummy;
-  PsiValueType psiNew = evalGrad_impl(P, iat, true, dummy);
+  PsiValueType psiNew;
+  if (use_pre_computing_)
+    psiNew = evalGrad_impl(P, iat, true, dummy);
+  else
+    psiNew = evalGrad_impl_no_precompute(P, iat, true, dummy);
+
   grad_iat += static_cast<ValueType>(PsiValueType(1.0) / psiNew) * dummy;
   curRatio = psiNew / psiCurrent;
   return curRatio;
@@ -308,6 +356,27 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
   return psi;
 }
 
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_precompute(ParticleSet& P, int iat)
+{
+  const bool upspin = getDetID(iat) == 0;
+  const int spin0   = (upspin) ? 0 : 1;
+  const int spin1   = (upspin) ? 1 : 0;
+
+  Dets[spin0]->evaluateDetsForPtclMove(P, iat);
+
+  const ValueType* restrict detValues0 = Dets[spin0]->new_detValues.data(); //always new
+  const ValueType* restrict detValues1 = Dets[spin1]->detValues.data();
+  const size_t* restrict det0          = (*C2node)[spin0].data();
+  const size_t* restrict det1          = (*C2node)[spin1].data();
+  const ValueType* restrict cptr       = C->data();
+  const size_t nc                      = C->size();
+
+  PsiValueType psi = 0;
+  for (size_t i = 0; i < nc; ++i)
+    psi += cptr[i] * detValues0[det0[i]] * detValues1[det1[i]];
+  return psi;
+}
+
 // use ci_node for this routine only
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat)
 {
@@ -318,7 +387,13 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
 
   ScopedTimer local_timer(&RatioTimer);
   UpdateMode          = ORB_PBYP_RATIO;
-  PsiValueType psiNew = ratio_impl(P, iat);
+
+  PsiValueType psiNew;
+  if (use_pre_computing_)
+    psiNew = ratio_impl(P, iat);
+  else
+    psiNew = ratio_impl_no_precompute(P, iat);
+    
   curRatio            = psiNew / psiCurrent;
   return curRatio;
 }
@@ -792,6 +867,7 @@ void MultiSlaterDeterminantFast::registerTimers()
 
 void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
 {
+  if (!use_pre_computing_) return;
   // This function computes
   // C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
   // Since only one electron group is moved at the time, identified by det_id, We precompute C_otherDs[det_id][i]:
