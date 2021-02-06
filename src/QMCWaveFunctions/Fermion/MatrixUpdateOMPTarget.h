@@ -18,8 +18,9 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "Platforms/OMPTarget/ompBLAS.hpp"
-#include "Platforms/OMPTarget/ompReduction.hpp"
+#include "OMPTarget/ompBLAS.hpp"
+#include "OMPTarget/ompReduction.hpp"
+#include "ResourceCollection.h"
 
 
 namespace qmcplusplus
@@ -102,6 +103,10 @@ public:
     psiMinv.resize(norb, getAlignedSize<T>(norb));
     psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
   }
+
+  void createResource(ResourceCollection& collection) {}
+  void acquireResource(ResourceCollection& collection) {}
+  void releaseResource(ResourceCollection& collection) {}
 
   OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
 

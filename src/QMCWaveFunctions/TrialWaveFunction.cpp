@@ -19,6 +19,7 @@
 #include <stdexcept>
 
 #include "TrialWaveFunction.h"
+#include "ResourceCollection.h"
 #include "Utilities/IteratorUtility.h"
 #include "Concurrency/Info.hpp"
 
@@ -38,8 +39,9 @@ typedef enum
 
 static const std::vector<std::string> suffixes{"V", "VGL", "accept", "NLratio", "recompute", "buffer", "derivs"};
 
-TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking)
+TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, bool create_local_resource)
     : myName(aname),
+      twf_resource_(std::make_unique<ResourceCollection>("TrialWaveFunction")),
       BufferCursor(0),
       BufferCursor_scalar(0),
       PhaseValue(0.0),
@@ -81,6 +83,8 @@ void TrialWaveFunction::stopOptimization()
  */
 void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm)
 {
+  if (twf_resource_)
+    aterm->createResource(*twf_resource_);
   Z.push_back(aterm);
 
   std::string aname = aterm->ClassName;
@@ -1150,7 +1154,7 @@ void TrialWaveFunction::reset() {}
 
 TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
-  TrialWaveFunction* myclone   = new TrialWaveFunction(myName, use_tasking_);
+  TrialWaveFunction* myclone   = new TrialWaveFunction(myName, use_tasking_, false);
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
@@ -1272,6 +1276,18 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
     for (int j = 0; j < t.size(); ++j)
       ratios[j] *= t[j];
   }
+}
+
+void TrialWaveFunction::acquireResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Z.size(); ++i)
+    Z[i]->acquireResource(collection);
+}
+
+void TrialWaveFunction::releaseResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Z.size(); ++i)
+    Z[i]->releaseResource(collection);
 }
 
 RefVector<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(const RefVector<TrialWaveFunction>& wf_list,

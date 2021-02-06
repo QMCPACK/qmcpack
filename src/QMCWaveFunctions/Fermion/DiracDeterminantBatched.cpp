@@ -788,6 +788,24 @@ DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYP
   return dclone;
 }
 
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::createResource(ResourceCollection& collection)
+{
+  det_engine_.createResource(collection);
+}
+
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::acquireResource(ResourceCollection& collection)
+{
+  det_engine_.acquireResource(collection);
+}
+
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::releaseResource(ResourceCollection& collection)
+{
+  det_engine_.releaseResource(collection);
+}
+
 template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
 template class DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;

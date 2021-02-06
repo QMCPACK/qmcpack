@@ -99,6 +99,10 @@ public:
   using WaveFunctionComponent::registerData;
   using WaveFunctionComponent::updateBuffer;
 
+  using WaveFunctionComponent::createResource;
+  using WaveFunctionComponent::acquireResource;
+  using WaveFunctionComponent::releaseResource;
+
   using WaveFunctionComponent::acceptMove;
   using WaveFunctionComponent::completeUpdates;
   using WaveFunctionComponent::evalGrad;

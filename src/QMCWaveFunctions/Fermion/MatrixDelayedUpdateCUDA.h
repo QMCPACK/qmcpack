@@ -24,6 +24,8 @@
 #include "CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "CUDA/CUDAallocator.hpp"
+#include "ResourceCollection.h"
+
 
 namespace qmcplusplus
 {
@@ -388,6 +390,10 @@ public:
     psiMinv.resize(norb, getAlignedSize<T>(norb));
     psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
   }
+
+  void createResource(ResourceCollection& collection) {}
+  void acquireResource(ResourceCollection& collection) {}
+  void releaseResource(ResourceCollection& collection) {}
 
   inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
 
