@@ -9,10 +9,10 @@ parameters based on the measured energies, variance, and statistics.
 
 -->
   <!--Name and Series number of the project.-->
-  <project id="C2" series="0"/>
+  <project id="C4_AE_Mol_QP" series="0"/>
   <!--Link to the location of the Atomic Coordinates and the location of the Wavefunction.-->
-  <include href="C2.structure.xml"/>
-  <include href="C2.wfnoj.xml"/>
+  <include href="C4_AE_Mol_QP.structure.xml"/>
+  <include href="C4_AE_Mol_QP.wfnoj.xml"/>
   <!--Hamiltonian of the system.
 -->
   <hamiltonian name="h0" type="generic" target="e">

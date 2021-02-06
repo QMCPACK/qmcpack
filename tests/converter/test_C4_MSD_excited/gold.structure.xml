@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <qmcsystem>
-  <particleset name="ion0" size="2">
+  <particleset name="ion0" size="4">
     <group name="C">
       <parameter name="charge">6</parameter>
       <parameter name="valence">6</parameter>
@@ -8,17 +8,19 @@
     </group>
     <attrib name="position" datatype="posArray">
   0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
-  2.3480414016e+00  0.0000000000e+00  0.0000000000e+00
+  1.6865805662e+00  1.6865805662e+00  1.6865805662e+00
+  3.3731611512e+00  3.3731611512e+00  0.0000000000e+00
+  5.0597417174e+00  5.0597417174e+00  1.6865805662e+00
 </attrib>
     <attrib name="ionid" datatype="stringArray">
- C C 
+ C C C C 
 </attrib>
   </particleset>
   <particleset name="e" random="yes" randomsrc="ion0">
-    <group name="u" size="6">
+    <group name="u" size="12">
       <parameter name="charge">-1</parameter>
     </group>
-    <group name="d" size="6">
+    <group name="d" size="12">
       <parameter name="charge">-1</parameter>
     </group>
   </particleset>
