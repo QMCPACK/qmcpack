@@ -37,7 +37,7 @@ typedef enum
   TIMER_SKIP
 } TimerEnum;
 
-static const std::vector<std::string> suffixes{"V", "VGL", "accept", "NLratio", "recompute", "buffer", "derivs"};
+static const std::vector<std::string> suffixes{"V", "VGL", "accept", "NLratio", "recompute", "buffer", "derivs","preparegroup"};
 
 TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking)
     : myName(aname),
