@@ -92,6 +92,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       RealType sqrttau     = std::sqrt(tauovermass);
       int start_index      = step_context.getPtclGroupStart(ig);
       int end_index        = step_context.getPtclGroupEnd(ig);
+      TrialWaveFunction::flex_prepareGroup(crowd.get_walker_twfs(), crowd.get_walker_elecs(),ig);
       for (int iat = start_index; iat < end_index; ++iat)
       {
         // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes

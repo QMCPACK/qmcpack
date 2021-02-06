@@ -328,6 +328,14 @@ public:
                                  std::vector<PsiValueType>& ratios,
                                  std::vector<GradType>& grad_new);
 
+  static void flex_prepareGroup(const RefVector<TrialWaveFunction>& WF_list,
+                                 const RefVector<ParticleSet>& P_list,
+                                 int ig);
+                                 
+
+  static void flex_prepareAllGroups(const RefVector<TrialWaveFunction>& WF_list,
+                                 const RefVector<ParticleSet>& P_list );
+                                 
   /** Prepare internal data for updating WFC correspond to a particle group
    *  Particle groups usually correspond to determinants of different spins.
    *  This call can be used to handle precomputation for PbyP moves.

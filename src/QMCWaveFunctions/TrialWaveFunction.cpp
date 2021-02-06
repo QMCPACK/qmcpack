@@ -33,6 +33,7 @@ typedef enum
   RECOMPUTE_TIMER,
   BUFFER_TIMER,
   DERIVS_TIMER,
+  PREPAREGROUP_TIMER,
   TIMER_SKIP
 } TimerEnum;
 
@@ -471,11 +472,42 @@ void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
     Z[i]->prepareGroup(P, ig);
 }
 
+void TrialWaveFunction::flex_prepareGroup(const RefVector<TrialWaveFunction>& wf_list,
+                                 const RefVector<ParticleSet>& P_list,
+                                 int ig)
+{
+  if (wf_list.size() > 1)
+  {
+    ScopedTimer local_timer(wf_list[0].get().TWF_timers_[PREPAREGROUP_TIMER]);
+    const int num_wfc             = wf_list[0].get().Z.size();
+    auto& wavefunction_components = wf_list[0].get().Z;
+
+    for (int i = 0, ii = PREPAREGROUP_TIMER; i < num_wfc; i++, ii += TIMER_SKIP)
+    {
+      ScopedTimer z_timer(wf_list[0].get().WFC_timers_[ii]);
+      const auto wfc_list(extractWFCRefList(wf_list, i));
+      wavefunction_components[i]->mw_prepareGroup(wfc_list,P_list,ig);
+    }
+  }
+  else if (wf_list.size() == 1)
+  {
+      for (int i = 0; i < wf_list[0].get().Z.size(); ++i)
+            wf_list[0].get().Z[i]->prepareGroup(P_list[0], ig); 
+  }
+}
+
 void TrialWaveFunction::prepareAllGroups(ParticleSet& P)
 {
   for (int ig = 0; ig < P.groups(); ++ig)
     for (int i = 0; i < Z.size(); ++i)
       Z[i]->prepareGroup(P, ig);
+}
+
+void TrialWaveFunction::flex_prepareAllGroups(const RefVector<TrialWaveFunction>& WF_list,
+                                 const RefVector<ParticleSet>& P_list)
+{
+  for (int ig = 0; ig < P_list[0].get().groups(); ++ig)
+      flex_prepareGroup(WF_list,P_list,ig);
 }
 
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
