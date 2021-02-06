@@ -220,13 +220,9 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void prepareGroup(ParticleSet& P, int ig) {}
 
   virtual void mw_prepareGroup(const RefVector<WaveFunctionComponent>& WFC_list,
-                           const RefVector<ParticleSet>& P_list,
-                           int ig)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-       WFC_list[iw].get().prepareGroup(P_list[iw],ig); 
-  }
+                               const RefVector<ParticleSet>& P_list,
+                               int ig);
+
   /** return the current gradient for the iat-th particle
    * @param P quantum particle set
    * @param iat particle index

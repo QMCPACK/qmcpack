@@ -28,8 +28,8 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
       RatioGradTimer(*timer_manager.createTimer(ClassName + "::ratioGrad")),
       PrepareGroupTimer(*timer_manager.createTimer(ClassName + "::prepareGroup")),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::updateBuffer")),
-      EvaluateTimer(*timer_manager.createTimer(ClassName + "::evaluate")),
       AccRejTimer(*timer_manager.createTimer(ClassName + "::Accept_Reject")),
+      EvaluateTimer(*timer_manager.createTimer(ClassName + "::evaluate")),
       CI_Optimizable(false),
       use_pre_computing_(use_pre_computing)
 {

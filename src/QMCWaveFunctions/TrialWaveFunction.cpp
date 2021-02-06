@@ -26,7 +26,7 @@ namespace qmcplusplus
 {
 typedef enum
 {
-  V_TIMER,
+  V_TIMER = 0,
   VGL_TIMER,
   ACCEPT_TIMER,
   NL_TIMER,
@@ -37,7 +37,8 @@ typedef enum
   TIMER_SKIP
 } TimerEnum;
 
-static const std::vector<std::string> suffixes{"V", "VGL", "accept", "NLratio", "recompute", "buffer", "derivs","preparegroup"};
+static const std::vector<std::string> suffixes{"V",         "VGL",    "accept", "NLratio",
+                                               "recompute", "buffer", "derivs", "preparegroup"};
 
 TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking)
     : myName(aname),
@@ -49,6 +50,8 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking)
       OneOverM(1.0),
       use_tasking_(tasking)
 {
+  if (suffixes.size() != TIMER_SKIP)
+    throw std::runtime_error("TrialWaveFunction::TrialWaveFunction mismatched timer enums and suffixes");
   for (auto& suffix : suffixes)
   {
     std::string timer_name = "WaveFunction:" + myName + "::" + suffix;
@@ -473,8 +476,8 @@ void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
 }
 
 void TrialWaveFunction::flex_prepareGroup(const RefVector<TrialWaveFunction>& wf_list,
-                                 const RefVector<ParticleSet>& P_list,
-                                 int ig)
+                                          const RefVector<ParticleSet>& P_list,
+                                          int ig)
 {
   if (wf_list.size() > 1)
   {
@@ -486,13 +489,13 @@ void TrialWaveFunction::flex_prepareGroup(const RefVector<TrialWaveFunction>& wf
     {
       ScopedTimer z_timer(wf_list[0].get().WFC_timers_[ii]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
-      wavefunction_components[i]->mw_prepareGroup(wfc_list,P_list,ig);
+      wavefunction_components[i]->mw_prepareGroup(wfc_list, P_list, ig);
     }
   }
   else if (wf_list.size() == 1)
   {
-      for (int i = 0; i < wf_list[0].get().Z.size(); ++i)
-            wf_list[0].get().Z[i]->prepareGroup(P_list[0], ig); 
+    for (int i = 0; i < wf_list[0].get().Z.size(); ++i)
+      wf_list[0].get().Z[i]->prepareGroup(P_list[0], ig);
   }
 }
 
@@ -504,10 +507,10 @@ void TrialWaveFunction::prepareAllGroups(ParticleSet& P)
 }
 
 void TrialWaveFunction::flex_prepareAllGroups(const RefVector<TrialWaveFunction>& WF_list,
-                                 const RefVector<ParticleSet>& P_list)
+                                              const RefVector<ParticleSet>& P_list)
 {
   for (int ig = 0; ig < P_list[0].get().groups(); ++ig)
-      flex_prepareGroup(WF_list,P_list,ig);
+    flex_prepareGroup(WF_list, P_list, ig);
 }
 
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
@@ -872,7 +875,7 @@ void TrialWaveFunction::flex_evaluateGL(const RefVector<TrialWaveFunction>& wf_l
       wavefunction_components[i]->mw_evaluateGL(wfc_list, p_list, g_list, l_list, fromscratch);
       for (int iw = 0; iw < wf_list.size(); iw++)
       {
-        wf_list[iw].get().LogValue   += std::real(wfc_list[iw].get().LogValue);
+        wf_list[iw].get().LogValue += std::real(wfc_list[iw].get().LogValue);
         wf_list[iw].get().PhaseValue += std::imag(wfc_list[iw].get().LogValue);
       }
     }
