@@ -2416,7 +2416,7 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetFromH5()
     app_log() << "WARNING!! THE HDF5 Contains CI coefficients for " << nbexcitedstates 
               << ". By default, the ground state coefficients will be loaded ( ext_level=0). If you want to evaluate "
                  "an excited for which the coefficients are stored in the HDF5 file, modify the value of ext_level "
-                 "Using [1," << nbexcitedstates "]" <<std::endl;
+                 "Using [1," << nbexcitedstates<< "]" <<std::endl;
     xmlNewProp(detlist, (const xmlChar*)"ext_level", (const xmlChar*)"0");
   }
   if (!debug)
