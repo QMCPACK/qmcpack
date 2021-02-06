@@ -29,6 +29,35 @@
 
 namespace qmcplusplus
 {
+
+struct CUDALinearAlgebraHandles : public Resource
+{
+  // CUDA specific variables
+  cudaStream_t hstream;
+  cublasHandle_t h_cublas;
+
+  CUDALinearAlgebraHandles() : Resource("MatrixDelayedUpdateCUDA")
+  {
+    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
+    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
+    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
+  }
+
+  CUDALinearAlgebraHandles(const CUDALinearAlgebraHandles&) : CUDALinearAlgebraHandles()
+  { }
+
+  ~CUDALinearAlgebraHandles()
+  {
+    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
+    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
+  }
+
+  Resource* makeClone() const override
+  {
+    return new CUDALinearAlgebraHandles(*this);
+  }
+};
+
 /** implements dirac matrix delayed update using OpenMP offload and CUDA.
  * It is used as DET_ENGINE_TYPE in DiracDeterminantBatched.
  * @tparam T base precision for most computation
@@ -126,11 +155,12 @@ class MatrixDelayedUpdateCUDA
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
-  // CUDA specific variables
-  cudaStream_t hstream;
-  cublasHandle_t h_cublas;
+  // CUDA stream, cublas handle object
+  std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
+  // index in the resource collection when created.
+  int resource_index;
 
-  inline void waitStream() { cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!"); }
+  inline void waitStream() { cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!"); }
   // ensure no previous delay left
   inline void guard_no_delay() const
   {
@@ -253,7 +283,7 @@ class MatrixDelayedUpdateCUDA
     }
 
     cudaErrorCheck(cudaMemcpyAsync(prepare_inv_row_buffer_H2D_dev_ptr, prepare_inv_row_buffer_H2D.data(),
-                                   prepare_inv_row_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
+                                   prepare_inv_row_buffer_H2D.size(), cudaMemcpyHostToDevice, cuda_handles_->hstream),
                    "cudaMemcpyAsync prepare_inv_row_buffer_H2D failed!");
 
     T** oldRow_mw_ptr  = reinterpret_cast<T**>(prepare_inv_row_buffer_H2D_dev_ptr);
@@ -266,19 +296,19 @@ class MatrixDelayedUpdateCUDA
 
     // save Ainv[rowchanged] to invRow
     //std::copy_n(Ainv[rowchanged], norb, invRow.data());
-    cudaErrorCheck(cuBLAS_MFs::copy_batched(hstream, norb, oldRow_mw_ptr, 1, invRow_mw_ptr, 1, nw),
+    cudaErrorCheck(cuBLAS_MFs::copy_batched(cuda_handles_->hstream, norb, oldRow_mw_ptr, 1, invRow_mw_ptr, 1, nw),
                    "cuBLAS_MFs::copy_batched failed!");
     // multiply V (NxK) Binv(KxK) U(KxN) invRow right to the left
     //BLAS::gemv('T', norb, delay_count, cone, U_gpu.data(), norb, invRow.data(), 1, czero, p_gpu.data(), 1);
     //BLAS::gemv('N', delay_count, delay_count, -cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
     //BLAS::gemv('N', norb, delay_count, cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
-    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cone_dev_ptr, U_mw_ptr, norb,
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(cuda_handles_->hstream, 'T', norb, delay_count, cone_dev_ptr, U_mw_ptr, norb,
                                             invRow_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, nw),
                    "cuBLAS_MFs::gemv_batched failed!");
-    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'N', delay_count, delay_count, cminusone_dev_ptr, Binv_mw_ptr,
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(cuda_handles_->hstream, 'N', delay_count, delay_count, cminusone_dev_ptr, Binv_mw_ptr,
                                             lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvRow_mw_ptr, 1, nw),
                    "cuBLAS_MFs::gemv_batched failed!");
-    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'N', norb, delay_count, cone_dev_ptr, V_mw_ptr, norb,
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(cuda_handles_->hstream, 'N', norb, delay_count, cone_dev_ptr, V_mw_ptr, norb,
                                             BinvRow_mw_ptr, 1, cone_dev_ptr, invRow_mw_ptr, 1, nw),
                    "cuBLAS_MFs::gemv_batched failed!");
     // mark row prepared
@@ -327,7 +357,7 @@ class MatrixDelayedUpdateCUDA
     resize_fill_constant_arrays(n_accepted);
 
     cudaErrorCheck(cudaMemcpyAsync(updateRow_buffer_H2D_dev_ptr, updateRow_buffer_H2D.data(),
-                                   updateRow_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
+                                   updateRow_buffer_H2D.size(), cudaMemcpyHostToDevice, cuda_handles_->hstream),
                    "cudaMemcpyAsync updateRow_buffer_H2D failed!");
 
     {
@@ -342,17 +372,17 @@ class MatrixDelayedUpdateCUDA
       T* ratio_inv_mw   = reinterpret_cast<T*>(updateRow_buffer_H2D_dev_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1,
+      cudaErrorCheck(cuBLAS_MFs::gemv_batched(cuda_handles_->hstream, 'T', norb, norb, cone_dev_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1,
                                               czero_dev_ptr, temp_mw_ptr, 1, n_accepted),
                      "cuBLAS_MFs::gemv_batched failed!");
 
-      cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
+      cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(cuda_handles_->hstream, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
                                                    rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
                                                    n_accepted),
                      "CUDA::copyAinvRow_saveGL_cuda failed!");
 
 
-      cudaErrorCheck(cuBLAS_MFs::ger_batched(hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
+      cudaErrorCheck(cuBLAS_MFs::ger_batched(cuda_handles_->hstream, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
                                              Ainv_mw_ptr, lda, n_accepted),
                      "cuBLAS_MFs::ger_batched failed!");
     }
@@ -360,18 +390,11 @@ class MatrixDelayedUpdateCUDA
 
 public:
   /// default constructor
-  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0)
-  {
-    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
-    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
-  }
+  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0), resource_index(-1) { }
 
-  ~MatrixDelayedUpdateCUDA()
-  {
-    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
-  }
+  MatrixDelayedUpdateCUDA(const MatrixDelayedUpdateCUDA&) = delete;
+
+  ~MatrixDelayedUpdateCUDA() { }
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -391,9 +414,23 @@ public:
     psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
   }
 
-  void createResource(ResourceCollection& collection) {}
-  void acquireResource(ResourceCollection& collection) {}
-  void releaseResource(ResourceCollection& collection) {}
+  void createResource(ResourceCollection& collection)
+  {
+    resource_index = collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
+  }
+
+  void acquireResource(ResourceCollection& collection)
+  {
+    auto res_ptr = dynamic_cast<CUDALinearAlgebraHandles*>(collection.lendResource(resource_index).release());
+    if (!res_ptr)
+      throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast failed");
+   cuda_handles_.reset(res_ptr);
+  }
+
+  void releaseResource(ResourceCollection& collection)
+  {
+    collection.takebackResource(resource_index, std::move(cuda_handles_));
+  }
 
   inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
 
@@ -406,6 +443,10 @@ public:
   template<typename TREAL, typename OMPALLOC>
   inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T, OMPALLOC>& Ainv, std::complex<TREAL>& LogValue)
   {
+    // this is to make unit tests friendly without the need of setup resources.
+    if (!cuda_handles_)
+      cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
+
     guard_no_delay();
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
     detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
@@ -436,7 +477,7 @@ public:
     }
 
     cudaErrorCheck(cudaMemcpyAsync(evalGrad_buffer_H2D_dev_ptr, evalGrad_buffer_H2D.data(), evalGrad_buffer_H2D.size(),
-                                   cudaMemcpyHostToDevice, hstream),
+                                   cudaMemcpyHostToDevice, cuda_handles_->hstream),
                    "cudaMemcpyAsync evalGrad_buffer_H2D failed!");
 
     resizeGradsArray(nw, GT::Size);
@@ -445,10 +486,10 @@ public:
     const T** dpsiM_row_ptr = reinterpret_cast<const T**>(evalGrad_buffer_H2D_dev_ptr) + nw;
 
     const int norb = psiMinv.rows();
-    cudaErrorCheck(CUDA::calcGradients_cuda(hstream, norb, invRow_ptr, dpsiM_row_ptr, grads_value_dev_ptr, nw),
+    cudaErrorCheck(CUDA::calcGradients_cuda(cuda_handles_->hstream, norb, invRow_ptr, dpsiM_row_ptr, grads_value_dev_ptr, nw),
                    "CUDA::calcGradients_cuda failed!");
     cudaErrorCheck(cudaMemcpyAsync(grads_value_v.data(), grads_value_dev_ptr, grads_value_v.size() * sizeof(T),
-                                   cudaMemcpyDeviceToHost, hstream),
+                                   cudaMemcpyDeviceToHost, cuda_handles_->hstream),
                    "cudaMemcpyAsync grads_value_v failed!");
     waitStream();
 
@@ -556,7 +597,7 @@ public:
     }
 
     cudaErrorCheck(cudaMemcpyAsync(accept_rejectRow_buffer_H2D_dev_ptr, accept_rejectRow_buffer_H2D.data(),
-                                   accept_rejectRow_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
+                                   accept_rejectRow_buffer_H2D.size(), cudaMemcpyHostToDevice, cuda_handles_->hstream),
                    "cudaMemcpyAsync prepare_inv_row_buffer_H2D failed!");
 
     T** invRow_mw_ptr       = reinterpret_cast<T**>(accept_rejectRow_buffer_H2D_dev_ptr);
@@ -576,28 +617,28 @@ public:
     T* ratio_inv_mw_ptr     = reinterpret_cast<T*>(accept_rejectRow_buffer_H2D_dev_ptr + sizeof(T*) * nw * 14);
 
     //std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
-    cudaErrorCheck(cuBLAS_MFs::copy_batched(hstream, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw),
+    cudaErrorCheck(cuBLAS_MFs::copy_batched(cuda_handles_->hstream, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw),
                    "cuBLAS_MFs::copy_batched failed!");
     // handle accepted walkers
     // the new Binv is [[X Y] [Z y]]
     //BLAS::gemv('T', norb, delay_count + 1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
-    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cminusone_dev_ptr, V_mw_ptr, norb,
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(cuda_handles_->hstream, 'T', norb, delay_count, cminusone_dev_ptr, V_mw_ptr, norb,
                                             phiV_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, n_accepted),
                    "cuBLAS_MFs::gemv_batched failed!");
     // Y
     //BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
     //           lda_Binv);
-    cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', delay_count, delay_count, ratio_inv_mw_ptr, Binv_mw_ptr,
+    cudaErrorCheck(cuBLAS_MFs::gemv_batched(cuda_handles_->hstream, 'T', delay_count, delay_count, ratio_inv_mw_ptr, Binv_mw_ptr,
                                             lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvCol_mw_ptr, lda_Binv, n_accepted),
                    "cuBLAS_MFs::gemv_batched failed!");
     // X
     //BLAS::ger(delay_count, delay_count, cone, Binv[delay_count], 1, Binv.data() + delay_count, lda_Binv,
     //          Binv.data(), lda_Binv);
-    cudaErrorCheck(cuBLAS_MFs::ger_batched(hstream, delay_count, delay_count, cone_dev_ptr, BinvRow_mw_ptr, 1,
+    cudaErrorCheck(cuBLAS_MFs::ger_batched(cuda_handles_->hstream, delay_count, delay_count, cone_dev_ptr, BinvRow_mw_ptr, 1,
                                            BinvCol_mw_ptr, lda_Binv, Binv_mw_ptr, lda_Binv, n_accepted),
                    "cuBLAS_MFs::ger_batched failed!");
     // y and Z
-    cudaErrorCheck(CUDA::add_delay_list_save_y_VGL_batched(hstream, delay_list_mw_ptr, rowchanged, delay_count,
+    cudaErrorCheck(CUDA::add_delay_list_save_y_VGL_batched(cuda_handles_->hstream, delay_list_mw_ptr, rowchanged, delay_count,
                                                            Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr, phiV_mw_ptr,
                                                            dpsiM_mw_in, d2psiM_mw_in, U_row_mw_ptr, dpsiM_mw_out,
                                                            d2psiM_mw_out, norb, n_accepted, nw),
@@ -635,7 +676,7 @@ public:
     }
 
     cudaErrorCheck(cudaMemcpyAsync(updateInv_buffer_H2D_dev_ptr, updateInv_buffer_H2D.data(),
-                                   updateInv_buffer_H2D.size(), cudaMemcpyHostToDevice, hstream),
+                                   updateInv_buffer_H2D.size(), cudaMemcpyHostToDevice, cuda_handles_->hstream),
                    "cudaMemcpyAsync updateInv_buffer_H2D failed!");
 
     T** U_mw_ptr            = reinterpret_cast<T**>(updateInv_buffer_H2D_dev_ptr);
@@ -659,15 +700,15 @@ public:
     {
       const int lda_Binv = Binv_gpu.cols();
       constexpr T cone(1), czero(0), cminusone(-1);
-      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone,
+      cublasErrorCheck(cuBLAS::gemm_batched(cuda_handles_->h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone,
                                             U_mw_ptr, norb, Ainv_mw_ptr, lda, &czero, tempMat_mw_ptr, lda_Binv, nw),
                        "cuBLAS::gemm_batched failed!");
-      cudaErrorCheck(CUDA::applyW_batched(hstream, delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv, nw),
+      cudaErrorCheck(CUDA::applyW_batched(cuda_handles_->hstream, delay_list_mw_ptr, delay_count, tempMat_mw_ptr, lda_Binv, nw),
                      "CUDA::applyW_batched failed!");
-      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone,
+      cublasErrorCheck(cuBLAS::gemm_batched(cuda_handles_->h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone,
                                             V_mw_ptr, norb, Binv_mw_ptr, lda_Binv, &czero, U_mw_ptr, norb, nw),
                        "cuBLAS::gemm_batched failed!");
-      cublasErrorCheck(cuBLAS::gemm_batched(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
+      cublasErrorCheck(cuBLAS::gemm_batched(cuda_handles_->h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
                                             U_mw_ptr, norb, tempMat_mw_ptr, lda_Binv, &cone, Ainv_mw_ptr, lda, nw),
                        "cuBLAS::gemm_batched failed!");
     }
@@ -739,7 +780,7 @@ public:
 
     for (This_t& engine : engines)
       cudaErrorCheck(cudaMemcpyAsync(engine.psiMinv.data(), engine.psiMinv_dev_ptr, engine.psiMinv.size() * sizeof(T),
-                                     cudaMemcpyDeviceToHost, hstream),
+                                     cudaMemcpyDeviceToHost, cuda_handles_->hstream),
                      "cudaMemcpyAsync Ainv failed!");
     waitStream();
   }

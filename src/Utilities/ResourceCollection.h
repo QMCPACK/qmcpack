@@ -28,8 +28,8 @@ public:
   void printResources();
 
   size_t addResource(std::unique_ptr<Resource>&& res);
-  std::unique_ptr<Resource> lendResource(size_t id);
-  void takebackResource(size_t i, std::unique_ptr<Resource>&& res);
+  std::unique_ptr<Resource> lendResource(int index);
+  void takebackResource(int index, std::unique_ptr<Resource>&& res);
 
 private:
   const std::string name_;

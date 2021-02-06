@@ -60,7 +60,7 @@ public:
 
 private:
   std::unique_ptr<MemoryResource> external_memory_handle;
-  size_t resource_index = -1;
+  int resource_index = -1;
 };
 
 TEST_CASE("ResourceCollection", "[utilities]")

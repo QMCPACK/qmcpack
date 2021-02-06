@@ -24,11 +24,12 @@ size_t ResourceCollection::addResource(std::unique_ptr<Resource>&& res)
   return id;
 }
 
-std::unique_ptr<Resource> ResourceCollection::lendResource(size_t id) { return std::move(collection[id]); }
+std::unique_ptr<Resource> ResourceCollection::lendResource(int index) { return std::move(collection[index]); }
 
-void ResourceCollection::takebackResource(size_t id, std::unique_ptr<Resource>&& res)
+void ResourceCollection::takebackResource(int index, std::unique_ptr<Resource>&& res)
 {
-  collection[id] = std::move(res);
+  //add checks for index
+  collection[index] = std::move(res);
 }
 
 } // namespace qmcplusplus
