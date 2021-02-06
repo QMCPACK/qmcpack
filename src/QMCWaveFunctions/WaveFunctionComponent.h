@@ -212,8 +212,10 @@ struct WaveFunctionComponent : public QMCTraits
   }
 
   /** Prepare internal data for updating WFC correspond to a particle group
-   *  Particle groups usually correspond to determinants of different spins.
-   *  This call can be used to handle precomputation for PbyP moves.
+   * It should be called before moving particles of a given group.
+   * This call can be used to handle the precomputation of data used for moving this group of particle.
+   * Such data should be static with respect to the moves of particles within this group.
+   * Particle groups usually correspond to determinants of different spins.
    * @param P quantum particle set
    * @param ig particle group index
    */
