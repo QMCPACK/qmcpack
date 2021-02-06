@@ -124,7 +124,7 @@ LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS "ionion" "-
                     1 16
                     TRUE
                     0 diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS #VMC 
-
+                    )
 
 
 #Data generated using utils/make_ref_data.sh diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT vmc_short_excited_noj.s000.scalar.dat  qmc_ref_excited_long.s000.scalar.dat 
@@ -144,7 +144,7 @@ LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "ionion" "
                     1 16
                     TRUE
                     0 diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS #VMC 
-
+                    )
 
 
 
