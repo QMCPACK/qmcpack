@@ -266,18 +266,12 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), false);
         }
 
-         multislaterdetfast_0->initialize();
-         success = createMSDFast(multislaterdetfast_0->Dets,
-                                 *multislaterdetfast_0->C2node,
-                                 *multislaterdetfast_0->C,
-                                 *multislaterdetfast_0->CSFcoeff,
-                                 *multislaterdetfast_0->DetsPerCSF,
-                                 *multislaterdetfast_0->CSFexpansion,
-                                 multislaterdetfast_0->usingCSF,
-                                 *multislaterdetfast_0->myVars,
-                                 multislaterdetfast_0->Optimizable,
-                                 multislaterdetfast_0->CI_Optimizable,
-                                 cur);
+        multislaterdetfast_0->initialize();
+        success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
+                                *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
+                                *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
+                                *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
+                                multislaterdetfast_0->CI_Optimizable, cur);
 
         // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
         // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
@@ -538,7 +532,17 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   return true;
 }
 
-bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets, std::vector<std::vector<size_t>>& C2node, std::vector<ValueType>& C, std::vector<ValueType>& CSFcoeff, std::vector<size_t>& DetsPerCSF, std::vector<RealType>& CSFexpansion, bool& usingCSF, opt_variables_type& myVars, bool& Optimizable, bool& CI_Optimizable, xmlNodePtr cur)
+bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
+                                     std::vector<std::vector<size_t>>& C2node,
+                                     std::vector<ValueType>& C,
+                                     std::vector<ValueType>& CSFcoeff,
+                                     std::vector<size_t>& DetsPerCSF,
+                                     std::vector<RealType>& CSFexpansion,
+                                     bool& usingCSF,
+                                     opt_variables_type& myVars,
+                                     bool& Optimizable,
+                                     bool& CI_Optimizable,
+                                     xmlNodePtr cur)
 {
   bool success = true;
   std::vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
@@ -565,19 +569,18 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    success = readDetListH5(cur, uniqueConfg_up, uniqueConfg_dn, C2node[0], C2node[1], CItags,
-                            C, optimizeCI, nels_up, nels_dn);
+    success = readDetListH5(cur, uniqueConfg_up, uniqueConfg_dn, C2node[0], C2node[1], CItags, C, optimizeCI, nels_up,
+                            nels_dn);
   }
   else
-    success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, C2node[0], C2node[1], CItags,
-                          C, optimizeCI, nels_up, nels_dn, CSFcoeff, DetsPerCSF,
-                          CSFexpansion, usingCSF);
+    success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, C2node[0], C2node[1], CItags, C, optimizeCI, nels_up,
+                          nels_dn, CSFcoeff, DetsPerCSF, CSFexpansion, usingCSF);
   if (!success)
     return false;
 
   // you should choose the det with highest weight for reference
-  Dets[0]->ReferenceDeterminant  = 0; // for now
-  Dets[0]->NumDets               = uniqueConfg_up.size();
+  Dets[0]->ReferenceDeterminant           = 0; // for now
+  Dets[0]->NumDets                        = uniqueConfg_up.size();
   std::vector<ci_configuration2>& list_up = *Dets[0]->ciConfigList;
   list_up.resize(uniqueConfg_up.size());
   for (int i = 0; i < list_up.size(); i++)
@@ -594,8 +597,8 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   }
   Dets[0]->set(targetPtcl.first(0), nels_up, Dets[0]->Phi->getOrbitalSetSize());
 
-  Dets[1]->ReferenceDeterminant  = 0; // for now
-  Dets[1]->NumDets               = uniqueConfg_dn.size();
+  Dets[1]->ReferenceDeterminant           = 0; // for now
+  Dets[1]->NumDets                        = uniqueConfg_dn.size();
   std::vector<ci_configuration2>& list_dn = *Dets[1]->ciConfigList;
   list_dn.resize(uniqueConfg_dn.size());
   for (int i = 0; i < list_dn.size(); i++)

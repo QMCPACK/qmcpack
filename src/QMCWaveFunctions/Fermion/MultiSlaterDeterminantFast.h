@@ -69,7 +69,9 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl, std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets, bool use_pre_computing);
+  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
+                             std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
+                             bool use_pre_computing);
 
   ///destructor
   ~MultiSlaterDeterminantFast();

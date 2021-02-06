@@ -20,7 +20,8 @@
 namespace qmcplusplus
 {
 MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
-                                                       std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets, bool use_pre_computing)
+                                                       std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
+                                                       bool use_pre_computing)
     : WaveFunctionComponent("MultiSlaterDeterminantFast"),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
       EvalGradTimer(*timer_manager.createTimer(ClassName + "::evalGrad")),
@@ -30,7 +31,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
       EvaluateTimer(*timer_manager.createTimer(ClassName + "::evaluate")),
       AccRejTimer(*timer_manager.createTimer(ClassName + "::Accept_Reject")),
       CI_Optimizable(false),
-     use_pre_computing_(use_pre_computing)
+      use_pre_computing_(use_pre_computing)
 {
   registerTimers();
   //Optimizable=true;
@@ -260,9 +261,9 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
 }
 
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no_precompute(ParticleSet& P,
-                                                                              int iat,
-                                                                              bool newpos,
-                                                                              GradType& g_at)
+                                                                                            int iat,
+                                                                                            bool newpos,
+                                                                                            GradType& g_at)
 {
   const bool upspin = getDetID(iat) == 0;
   const int spin0   = (upspin) ? 0 : 1;
@@ -386,15 +387,15 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
   }
 
   ScopedTimer local_timer(&RatioTimer);
-  UpdateMode          = ORB_PBYP_RATIO;
+  UpdateMode = ORB_PBYP_RATIO;
 
   PsiValueType psiNew;
   if (use_pre_computing_)
     psiNew = ratio_impl(P, iat);
   else
     psiNew = ratio_impl_no_precompute(P, iat);
-    
-  curRatio            = psiNew / psiCurrent;
+
+  curRatio = psiNew / psiCurrent;
   return curRatio;
 }
 
@@ -867,7 +868,8 @@ void MultiSlaterDeterminantFast::registerTimers()
 
 void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
 {
-  if (!use_pre_computing_) return;
+  if (!use_pre_computing_)
+    return;
   // This function computes
   // C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
   // Since only one electron group is moved at the time, identified by det_id, We precompute C_otherDs[det_id][i]:
