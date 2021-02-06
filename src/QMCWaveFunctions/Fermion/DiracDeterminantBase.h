@@ -193,6 +193,21 @@ protected:
   ValueMatrix_t dummy_vmt;
 #endif
 
+  bool checkG(const GradType& g)
+  {
+    auto g_norm = std::norm(dot(g, g));
+    if (std::isnan(g_norm))
+      throw std::runtime_error("gradient of NaN");
+    if (std::isinf(g_norm))
+      throw std::runtime_error("gradient of inf");
+    if (g_norm < std::abs(std::numeric_limits<RealType>::epsilon()))
+    {
+      std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
+      throw std::runtime_error("gradient of zero");
+    }
+    return true;
+  }
+
   /// register all the timers
   void registerTimers()
   {

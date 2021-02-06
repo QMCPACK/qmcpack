@@ -19,8 +19,6 @@
 
 namespace qmcplusplus
 {
-QMCDriverInput::QMCDriverInput(int qmc_section_count) : qmc_section_count_(qmc_section_count) {}
-
 /** Reads qmc section xml node parameters
  *
  * All shared parameters are read here

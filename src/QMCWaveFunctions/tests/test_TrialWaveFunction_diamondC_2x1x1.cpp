@@ -461,6 +461,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id_next);
   ParticleSet::flex_rejectMove(elec_reject_list, moved_elec_id_next);
   TrialWaveFunction::flex_completeUpdates(wf_ref_list);
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, false);
 
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
             << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]

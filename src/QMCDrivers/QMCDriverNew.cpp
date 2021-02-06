@@ -40,7 +40,8 @@ namespace qmcplusplus
  *  Num crowds must be less than omp_get_max_threads because RandomNumberControl is global c lib function
  *  masquerading as a C++ object.
  */
-QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
+QMCDriverNew::QMCDriverNew(const ProjectData& project_info,
+                           QMCDriverInput&& input,
                            MCPopulation&& population,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
@@ -59,9 +60,13 @@ QMCDriverNew::QMCDriverNew(QMCDriverInput&& input,
       timers_(timer_prefix),
       driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
+      project_info_(project_info),
       setNonLocalMoveHandler_(snlm_handler)
 {
-  rotation = 0;
+  //create and initialize estimator
+  estimator_manager_ = std::make_unique<EstimatorManagerNew>(myComm);
+
+  drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
 
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
   max_disp_sq_ = input.get_max_disp_sq();
@@ -150,34 +155,8 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
-  if (!branch_engine_)
-  {
-    branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
-  }
-
-  //create and initialize estimator
-  estimator_manager_ = branch_engine_->getEstimatorManager();
-  if (!estimator_manager_)
-  {
-    estimator_manager_ = new EstimatorManagerNew(myComm);
-    // TODO: remove this when branch engine no longer depends on estimator_mamanger_
-    branch_engine_->setEstimatorManager(estimator_manager_);
-    // This used to get updated as a side effect of setStatus
-    branch_engine_->read(h5_file_root_);
-  }
-  else
-    estimator_manager_->reset();
-
-  if (!drift_modifier_)
-    drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
-
-  // I don't think its at all good that the branch engine gets mutated here
-  // Carrying the population on is one thing but a branch engine seems like it
-  // should be fresh per section.
-  branch_engine_->put(cur);
   estimator_manager_->put(H, *population_.get_golden_electrons(), cur);
 
-  
   crowds_.resize(awc.walkers_per_crowd.size());
 
   // at this point we can finally construct the Crowd objects.
@@ -191,14 +170,6 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   // Once they are created move contexts can be created.
   createRngsStepContexts(crowds_.size());
-
-  // if (wOut == 0)
-  //   wOut = new HDFWalkerOutput(W, root_name_, myComm);
-  branch_engine_->start(root_name_);
-  branch_engine_->write(getCommRef(), root_name_);
-
-  // PD: not really sure what the point of this is.  Seems to just go to output
-  branch_engine_->advanceQMCCounter();
 }
 
 /** QMCDriverNew ignores h5name if you want to read and h5 config you have to explicitly
@@ -206,9 +177,8 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
  */
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
-  root_name_ = aname;
   app_log() << "\n========================================================="
-            << "\n  Start " << QMCType << "\n  File Root " << root_name_;
+            << "\n  Start " << QMCType << "\n  File Root " << project_info_.CurrentMainRoot();
   app_log() << "\n=========================================================" << std::endl;
 
   if (h5name.size())
@@ -255,41 +225,11 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   //   qmc_common.is_restart = false;
 }
 
-std::string QMCDriverNew::getRotationName(std::string root_name)
-{
-  std::string r_RootName;
-  if (rotation % 2 == 0)
-  {
-    r_RootName = root_name;
-  }
-  else
-  {
-    r_RootName = root_name + ".bk";
-  }
-  rotation++;
-  return r_RootName;
-}
-
-std::string QMCDriverNew::getLastRotationName(std::string root_name)
-{
-  std::string r_RootName;
-  if ((rotation - 1) % 2 == 0)
-  {
-    r_RootName = root_name;
-  }
-  else
-  {
-    r_RootName = root_name + ".bk";
-  }
-  return r_RootName;
-}
-
 void QMCDriverNew::recordBlock(int block)
 {
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     timers_.checkpoint_timer.start();
-    branch_engine_->write(getCommRef(), root_name_, true); //save energy_history
     RandomNumberControl::write(root_name_, myComm);
     timers_.checkpoint_timer.stop();
   }
@@ -298,7 +238,6 @@ void QMCDriverNew::recordBlock(int block)
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
-  branch_engine_->finalize(getCommRef(), population_.get_num_global_walkers(), walkers);
 
   if (qmcdriver_input_.get_dump_config())
     RandomNumberControl::write(root_name_, myComm);
@@ -421,7 +360,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
-  
+
   auto doesDoinTheseLastMatter = [](MCPWalker& walker) {
     walker.ReleasedNodeAge    = 0;
     walker.ReleasedNodeWeight = 0;
@@ -540,7 +479,7 @@ void QMCDriverNew::endBlock()
   unsigned long block_reject = 0;
 
   std::vector<RefVector<OperatorEstBase>> crowd_operator_estimators;
-  
+
   for (const UPtr<Crowd>& crowd : crowds_)
   {
     crowd->stopBlock();
@@ -555,7 +494,7 @@ void QMCDriverNew::endBlock()
     // This seems altogether easier and more sane.
     crowd_operator_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_operator_estimators());
   }
-  
+
 #ifdef DEBUG_PER_STEP_ACCEPT_REJECT
   app_warning() << "accept: " << block_accept << "   reject: " << block_reject;
   FullPrecRealType total_accept_ratio =
@@ -614,8 +553,9 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
       auto lap_diff = ref_L[iel] - Ls[iw][iel];
       if (std::norm(lap_diff) > std::norm(ref_L[iel]) * threashold)
       {
-        success = false;
-        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << std::endl;
+        // very hard to check mixed precision case, only print, no error out
+        success = !std::is_same<RealType, FullPrecRealType>::value;
+        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel] << std::endl;
       }
     }
   }
