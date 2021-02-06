@@ -17,18 +17,15 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
+#include "QMCHamiltonians/NLPPJob.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
 {
-
-template<typename T>
-struct NLPPJob;
 
 /** Contains a set of radial grid potentials around a center.
 */

@@ -36,30 +36,6 @@ class DistanceTableData;
 
 class StructFact;
 
-/** Monte Carlo Data of an ensemble
- *
- * The quantities are shared by all the nodes in a group
- * - NumSamples number of samples
- * - Weight     total weight of a sample
- * - Energy     average energy of a sample
- * - Variance   variance
- * - LivingFraction fraction of walkers alive each step.
- */
-template<typename T>
-struct MCDataType
-{
-  T NumSamples;
-  T RNSamples;
-  T Weight;
-  T Energy;
-  T AlternateEnergy;
-  T Variance;
-  T R2Accepted;
-  T R2Proposed;
-  T LivingFraction;
-};
-
-
 /** Specialized paritlce class for atomistic simulations
  *
  * Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
@@ -88,9 +64,6 @@ public:
   quantum_domains quantum_domain;
 
   //@{ public data members
-  ///property of an ensemble represented by this ParticleSet
-  //MCDataType<FullPrecRealType> EnsembleProperty;
-
   ///ParticleLayout
   ParticleLayout_t Lattice, PrimitiveLattice;
   ///Long-range box
@@ -157,7 +130,7 @@ public:
   SpeciesSet mySpecies;
 
   ///Structure factor
-  StructFact* SK;
+  std::unique_ptr<StructFact> SK;
 
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
@@ -391,15 +364,12 @@ public:
    */
   void acceptMove(Index_t iat, bool partial_table_update = false);
   /// batched version of acceptMove
-  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update = false)
-  {
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().acceptMove(iat, partial_table_update);
-  }
+  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update = false);
 
   /** reject the move
+   * @param iat the electron whose proposed move gets rejected.
    */
-  void rejectMove(Index_t iat) { activePtcl = -1; }
+  void rejectMove(Index_t iat);
   /// batched version of rejectMove
   static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
   {

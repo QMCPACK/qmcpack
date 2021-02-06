@@ -42,9 +42,6 @@ struct WalkerReconfiguration : public WalkerControlBase
   /** perform branch and swap walkers as required */
   int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
-  /** return 0.0 to disable feedback method */
-  FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau) { return 0.0; }
-
   /** return the surviving Walkers
    */
   int getIndexPermutation(MCWalkerConfiguration& W);

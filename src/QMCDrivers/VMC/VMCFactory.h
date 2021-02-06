@@ -32,7 +32,8 @@ public:
   QMCDriverInterface* create(MCWalkerConfiguration& w,
                              TrialWaveFunction& psi,
                              QMCHamiltonian& h,
-                             Communicate* comm);
+                             Communicate* comm,
+                             bool enable_profiling);
 };
 } // namespace qmcplusplus
 

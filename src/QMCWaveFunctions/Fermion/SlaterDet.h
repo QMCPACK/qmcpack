@@ -35,7 +35,7 @@ class SlaterDet : public WaveFunctionComponent
 public:
   typedef DiracDeterminantBase Determinant_t;
   ///container for the DiracDeterminants
-  std::vector<Determinant_t*> Dets;
+  std::vector<std::unique_ptr<Determinant_t>> Dets;
 
   /**  constructor
    * @param targetPtcl target Particleset
@@ -68,6 +68,17 @@ public:
                               const RefVector<ParticleSet>& P_list,
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) override;
+
+  virtual LogValueType evaluateGL(ParticleSet& P,
+                                  ParticleSet::ParticleGradient_t& G,
+                                  ParticleSet::ParticleLaplacian_t& L,
+                                  bool fromscratch) override;
+
+  virtual void mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                             const RefVector<ParticleSet>& P_list,
+                             const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                             const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                             bool fromscratch) override;
 
   virtual void recompute(ParticleSet& P) override;
 

@@ -64,7 +64,6 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
       SameMass(true),
       ThreadID(0),
       activePtcl(-1),
-      SK(0),
       Properties(0, 0, 1, WP::MAXPROPERTIES),
       myTwist(0.0),
       ParentName("0"),
@@ -81,7 +80,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       ThreadID(0),
       activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
-      SK(0),
       Properties(p.Properties),
       myTwist(0.0),
       ParentName(p.parentName()),
@@ -107,7 +105,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   if (p.SK)
   {
     LRBox = p.LRBox;               //copy LRBox
-    SK    = new StructFact(*p.SK); //safe to use the copy constructor
+    SK    = std::make_unique<StructFact>(*p.SK); //safe to use the copy constructor
     //R.InUnit=p.R.InUnit;
     //createSK();
     //SK->DoUpdate=p.SK->DoUpdate;
@@ -123,8 +121,6 @@ ParticleSet::~ParticleSet()
 {
   DEBUG_MEMORY("ParticleSet::~ParticleSet");
   delete_iter(DistTables.begin(), DistTables.end());
-  if (SK)
-    delete SK;
 }
 
 void ParticleSet::create(int numPtcl)
@@ -517,7 +513,7 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& 
         P_list[iw].get().DistTables[i]->move(P_list[iw], new_positions[iw], iat, maybe_accept);
     }
 
-    StructFact* SK = P_list[0].get().SK;
+    auto& SK = P_list[0].get().SK;
     if (SK && SK->DoUpdate)
     {
 #pragma omp for
@@ -693,6 +689,21 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
     o << "  Illegal acceptMove " << iat << " != " << activePtcl;
     APP_ABORT(o.str());
   }
+}
+
+void  ParticleSet::flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update)
+{
+  for (int iw = 0; iw < P_list.size(); iw++)
+    P_list[iw].get().acceptMove(iat, partial_table_update);
+}
+
+void ParticleSet::rejectMove(Index_t iat)
+{
+#ifndef NDEBUG
+  if (iat != activePtcl)
+    throw std::runtime_error("Bug detected by rejectMove! Request electron is not active!");
+#endif
+  activePtcl = -1;
 }
 
 void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)

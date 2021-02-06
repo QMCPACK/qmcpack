@@ -24,6 +24,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
 {
@@ -394,9 +395,9 @@ void WalkerControlBase::onRankSpawn(MCPopulation& pop, PopulationAdjustment& adj
     {
       WalkerElementsRef walker_elements = pop.spawnWalker();
       walker_elements.walker            = adjust.good_walkers[iw].walker;
-      walker_elements.twf.copyFromBuffer(walker_elements.pset, walker_elements.walker.DataSet);
+      walker_elements.pset.loadWalker(walker_elements.walker, true);
+      walker_elements.pset.update();
       walker_elements.twf.evaluateLog(walker_elements.pset);
-      walker_elements.twf.updateBuffer(walker_elements.pset, walker_elements.walker.DataSet);
 
       // IF these are really unique ID's they should be UUID's or something
       // old algorithm seems to reuse them in a way that I'm not sure avoids
@@ -433,22 +434,6 @@ QMCTraits::FullPrecRealType WalkerControlBase::branch(int iter, MCPopulation& po
 
   // At this point Weight == global_walkers
   return pop.get_num_global_walkers();
-}
-
-void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
-{
-  std::ofstream fout("bad.xyz");
-  MCWalkerConfiguration::iterator it(W.begin());
-  MCWalkerConfiguration::iterator it_end(W.end());
-  int nptcls(W.getTotalNum());
-  while (it != it_end)
-  {
-    fout << nptcls << std::endl
-         << "# E = " << (*it)->Properties(WP::LOCALENERGY) << " Wgt= " << (*it)->Weight << std::endl;
-    for (int i = 0; i < nptcls; i++)
-      fout << "H " << (*it)->R[i] << std::endl;
-    ++it;
-  }
 }
 
 /** evaluate curData and mark the bad/good walkers.

@@ -31,7 +31,8 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet elec;
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& elec(*elec_uptr);
   elec.setName("e");
   elec.create({1, 1});
   elec.R[0] = 0.0;
@@ -43,7 +44,8 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  ParticleSet ions;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions(*ions_uptr);
   ions.setName("ion0");
   ions.create(1);
   ions.R[0]            = 0.0;
@@ -55,8 +57,8 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   elec.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec);
-  ptcl.addParticleSet(&ions);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);

@@ -18,8 +18,6 @@
 #include <Configuration.h>
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
-#include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
@@ -57,7 +55,6 @@ public:
   NewTimer &AccRejTimer, &EvaluateTimer;
 
   typedef SPOSet* SPOSetPtr;
-  typedef SPOSetProxyForMSD* SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;

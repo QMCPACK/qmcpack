@@ -171,7 +171,7 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///Evaluates madelung and background contributions to total energy.
   Return_t evalConsts(bool report = true);
   ///Adds a local pseudopotential channel "ppot" to all source species of type "groupID".
-  void add(int groupID, RadFunctorType* ppot);
+  void add(int groupID, std::unique_ptr<RadFunctorType>&& ppot);
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
 

@@ -19,8 +19,6 @@
 
 namespace qmcplusplus
 {
-QMCDriverInput::QMCDriverInput(int qmc_section_count) : qmc_section_count_(qmc_section_count) {}
-
 /** Reads qmc section xml node parameters
  *
  * All shared parameters are read here
@@ -67,11 +65,10 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(max_disp_sq_, "maxDisplSq", "double");
 
   OhmmsAttributeSet aAttrib;
-
   // first stage in from QMCDriverFactory
   aAttrib.add(qmc_method_, "method");
   aAttrib.add(update_mode_, "move");
-
+  aAttrib.add(scoped_profiling_, "profiling");
 
   aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor

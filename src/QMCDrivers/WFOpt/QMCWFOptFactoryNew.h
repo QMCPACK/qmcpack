@@ -28,22 +28,23 @@ class MCWalkerConfiguration;
 class HamiltonianPool;
 class QMCOptimize;
 class QMCFixedSampleLinearOptimizeBatched;
+class ProjectData;
 
 QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
-                                       const int qmc_counter,
+                                       const ProjectData& project_info,
                                        MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
-                                       MCPopulation& pop,
+                                       MCPopulation&& pop,
                                        SampleStack& samples,
                                        Communicate* comm);
 
 QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
-                                                              const int qmc_counter,
+                                                              const ProjectData& project_info,
                                                               MCWalkerConfiguration& w,
                                                               TrialWaveFunction& psi,
                                                               QMCHamiltonian& h,
-                                                              MCPopulation& pop,
+                                                              MCPopulation&& pop,
                                                               SampleStack& samples,
                                                               Communicate* comm);
 } // namespace qmcplusplus

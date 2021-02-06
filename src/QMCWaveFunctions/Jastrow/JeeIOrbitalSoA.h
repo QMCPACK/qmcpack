@@ -408,8 +408,7 @@ public:
 
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    evaluateGL(P, G, L, true);
-    return LogValue;
+    return evaluateGL(P, G, L, true);
   }
 
   PsiValueType ratio(ParticleSet& P, int iat)
@@ -847,10 +846,10 @@ public:
     build_compact_list(P);
   }
 
-  void evaluateGL(ParticleSet& P,
-                  ParticleSet::ParticleGradient_t& G,
-                  ParticleSet::ParticleLaplacian_t& L,
-                  bool fromscratch = false)
+  LogValueType evaluateGL(ParticleSet& P,
+                          ParticleSet::ParticleGradient_t& G,
+                          ParticleSet::ParticleLaplacian_t& L,
+                          bool fromscratch = false)
   {
     if (fromscratch)
       recompute(P);
@@ -862,7 +861,7 @@ public:
       L[iat] += d2Uat[iat];
     }
 
-    LogValue = -LogValue * 0.5;
+    return LogValue = -LogValue * 0.5;
   }
 
   void evaluateDerivatives(ParticleSet& P,

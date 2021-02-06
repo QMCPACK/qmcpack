@@ -21,14 +21,22 @@ namespace qmcplusplus
 {
 /** Constructor maintains proper ownership of input parameters
    */
-VMCBatched::VMCBatched(QMCDriverInput&& qmcdriver_input,
+VMCBatched::VMCBatched(const ProjectData& project_info,
+                       QMCDriverInput&& qmcdriver_input,
                        VMCDriverInput&& input,
-                       MCPopulation& pop,
+                       MCPopulation&& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), pop, psi, h, "VMCBatched::", comm, "VMCBatched"),
+    : QMCDriverNew(project_info,
+                   std::move(qmcdriver_input),
+                   std::move(pop),
+                   psi,
+                   h,
+                   "VMCBatched::",
+                   comm,
+                   "VMCBatched"),
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)
@@ -40,20 +48,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
-  timers.buffer_timer.start();
-  crowd.loadWalkers();
+  assert(QMCDriverNew::checkLogAndGL(crowd));
 
   // Consider favoring lambda followed by for over walkers
   // more compact, descriptive and less error prone.
-  auto& walker_twfs      = crowd.get_walker_twfs();
-  auto& walkers          = crowd.get_walkers();
-  auto& walker_elecs     = crowd.get_walker_elecs();
-  auto copyTWFFromBuffer = [](TrialWaveFunction& twf, ParticleSet& pset, MCPWalker& walker) {
-    twf.copyFromBuffer(pset, walker.DataSet);
-  };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    copyTWFFromBuffer(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
-  timers.buffer_timer.stop();
+  auto& walker_twfs  = crowd.get_walker_twfs();
+  auto& walkers      = crowd.get_walkers();
+  auto& walker_elecs = crowd.get_walker_elecs();
 
   timers.movepbyp_timer.start();
   const int num_walkers = crowd.size();
@@ -174,11 +175,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   timers.movepbyp_timer.stop();
 
   timers.buffer_timer.start();
-  TrialWaveFunction::flex_updateBuffer(crowd.get_walker_twfs(), crowd.get_walker_elecs(), crowd.get_mcp_wfbuffers());
-
-  auto saveElecPosAndGLToWalkers = [](ParticleSet& pset, ParticleSet::Walker_t& walker) { pset.saveWalker(walker); };
-  for (int iw = 0; iw < crowd.size(); ++iw)
-    saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
+  TrialWaveFunction::flex_evaluateGL(crowd.get_walker_twfs(), crowd.get_walker_elecs(), recompute);
+  assert(QMCDriverNew::checkLogAndGL(crowd));
   timers.buffer_timer.stop();
 
   timers.hamiltonian_timer.start();
@@ -225,13 +223,11 @@ void VMCBatched::runVMCStep(int crowd_id,
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   int max_steps = sft.qmcdrv_input.get_max_steps();
-  bool is_recompute_block =
-      sft.recomputing_blocks ? (1 + sft.block) % sft.qmcdrv_input.get_blocks_between_recompute() == 0 : false;
   // \todo delete
   RealType cnorm = 1.0 / static_cast<RealType>(crowd.size());
   IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
-  bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps);
+  bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
   crowd.accumulate(sft.population.get_num_global_walkers());
 }
@@ -244,6 +240,12 @@ void VMCBatched::process(xmlNodePtr node)
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+
+    if (vmcdriver_input_.get_use_drift())
+      app_log() << "  Random walking with drift" << std::endl;
+    else
+      app_log() << "  Random walking without drift" << std::endl;
+
     Base::startup(node, awc);
   }
   catch (const UniformCommunicateError& ue)
@@ -304,12 +306,16 @@ bool VMCBatched::run()
                std::ref(crowds_));
   }
 
+  app_log() << "Warm-up is completed!" << std::endl;
+
   for (int block = 0; block < num_blocks; ++block)
   {
     vmc_loop.start();
     vmc_state.recalculate_properties_period =
         (qmc_driver_mode_[QMC_UPDATE_MODE]) ? qmcdriver_input_.get_recalculate_properties_period() : 0;
-    vmc_state.recomputing_blocks = qmcdriver_input_.get_blocks_between_recompute();
+    vmc_state.is_recomputing_block = qmcdriver_input_.get_blocks_between_recompute()
+        ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+        : false;
 
     estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
 
@@ -323,8 +329,8 @@ bool VMCBatched::run()
 
       if (collect_samples_)
       {
-        auto& walkers = population_.get_walkers();
-        for (auto& walker : walkers)
+        const auto& elec_psets = population_.get_elec_particle_sets();
+        for (const auto& walker : elec_psets)
         {
           samples_.appendSample(MCSample(*walker));
         }
@@ -344,6 +350,19 @@ bool VMCBatched::run()
 
   // second argument was !wrotesample so if W.dumpEnsemble returns false or
   // dump_config is false from input then dump_walkers
+  {
+    std::ostringstream o;
+    FullPrecRealType ene, var;
+    estimator_manager_->getApproximateEnergyVariance(ene, var);
+    o << "====================================================";
+    o << "\n  End of a VMC block";
+    o << "\n    QMC counter        = " << project_info_.getSeriesIndex();
+    o << "\n    time step          = " << qmcdriver_input_.get_tau();
+    o << "\n    reference energy   = " << ene;
+    o << "\n    reference variance = " << var;
+    o << "\n====================================================";
+    app_log() << o.str() << std::endl;
+  }
   return finalize(num_blocks, true);
 }
 
@@ -355,6 +374,5 @@ void VMCBatched::enable_sample_collection()
   app_log() << "VMCBatched Driver collecting samples, samples_per_node = "
             << compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()) << '\n';
 }
-
 
 } // namespace qmcplusplus

@@ -318,7 +318,7 @@ public:
    */
   ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat);
 
-  /** batched version of ratioGrad 
+  /** batched version of ratioGrad
    *
    *  all vector sizes must match
    */
@@ -379,12 +379,21 @@ public:
   /* flexible batched version of completeUpdates.  */
   static void flex_completeUpdates(const RefVector<TrialWaveFunction>& WF_list);
 
+  /** compute gradients and laplacian of the TWF with respect to each particle.
+   *  See WaveFunctionComponent::evaluateGL for more detail */
+  LogValueType evaluateGL(ParticleSet& P, bool fromscratch);
+  /* flexible batched version of evaluateGL.
+   */
+  static void flex_evaluateGL(const RefVector<TrialWaveFunction>& WF_list,
+                              const RefVector<ParticleSet>& P_list,
+                              bool fromscratch);
+
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
 
   /* flexible batched version of registerData.
-   * 
+   *
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    * The strange mix of argument types reflect this being called from MCPopulation instead
    * of Crowd like most of the flex functions.
@@ -397,7 +406,7 @@ public:
    *  See WaveFunctionComponent::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
-  /* flexible batched version of updateBuffer. 
+  /* flexible batched version of updateBuffer.
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
   static void flex_updateBuffer(const RefVector<TrialWaveFunction>& WF_list,
@@ -408,7 +417,7 @@ public:
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
-  /* flexible batched version of copyFromBuffer. 
+  /* flexible batched version of copyFromBuffer.
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
   void flex_copyFromBuffer(const RefVector<TrialWaveFunction>& WF_list,
@@ -457,11 +466,6 @@ public:
   }
 
   RealType getReciprocalMass() { return OneOverM; }
-
-  /* flexible batched version of evaluateGL.
-   * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE
-   */
-  void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
 
   const std::string& getName() const { return myName; }
 

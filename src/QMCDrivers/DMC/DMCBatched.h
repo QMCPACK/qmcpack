@@ -17,11 +17,12 @@
 #include "QMCDrivers/DMC/DMCDriverInput.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/ContextForSteps.h"
-#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {
 class DriverModifierBase;
+class WalkerControl;
+class SFNBranch;
 
 namespace testing
 {
@@ -50,11 +51,10 @@ public:
     const MCPopulation& population;
     SFNBranch& branch_engine;
     IndexType recalculate_properties_period;
-    IndexType step;
-    int block;
-    bool recomputing_blocks;
-    StateForThread(QMCDriverInput& qmci,
-                   DMCDriverInput& dmci,
+    IndexType step = -1;
+    bool is_recomputing_block = false;
+    StateForThread(const QMCDriverInput& qmci,
+                   const DMCDriverInput& dmci,
                    DriftModifierBase& drift_mod,
                    SFNBranch& branch_eng,
                    MCPopulation& pop)
@@ -71,14 +71,22 @@ public:
   };
 
   /// Constructor.
-  DMCBatched(QMCDriverInput&& qmcdriver_input,
+  DMCBatched(const ProjectData& project_info,
+             QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
-             MCPopulation& pop,
+             MCPopulation&& pop,
              TrialWaveFunction& psi,
              QMCHamiltonian& h,
              Communicate* comm);
 
+  /// Copy Constructor (disabled)
+  DMCBatched(const DMCBatched&) = delete;
+  /// Copy operator (disabled).
+  DMCBatched& operator=(const DMCBatched&) = delete;
+
   DMCBatched(DMCBatched&&) = default;
+
+  ~DMCBatched();
 
   /** DMCBatched driver will eventually ignore cur
    *
@@ -111,18 +119,17 @@ public:
   void setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian);
 
 private:
-  DMCDriverInput dmcdriver_input_;
+  const DMCDriverInput dmcdriver_input_;
 
   /** I think its better if these have there own type and variable name
    */
   DMCTimers dmc_timers_;
   /// Interval between branching
   IndexType branch_interval_;
-  void resetUpdateEngines();
-  /// Copy Constructor (disabled)
-  DMCBatched(const DMCBatched&) = delete;
-  /// Copy operator (disabled).
-  DMCBatched& operator=(const DMCBatched&) = delete;
+  ///branch engine
+  std::unique_ptr<SFNBranch> branch_engine_;
+  ///walker controller for load-balance
+  std::unique_ptr<WalkerControl> WalkerController;
 
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
@@ -130,10 +137,6 @@ private:
                              DMCTimers& dmc_timers,
                              ContextForSteps& move_context,
                              bool recompute);
-
-  static void setMultiplicities(const DMCDriverInput& dmcdriver_input,
-                                RefVector<MCPWalker>& walkers,
-                                RandomGenerator_t& rng);
 
   /** Allows us to build complete reference set for walkers.
    */
@@ -143,7 +146,6 @@ private:
     RefVector<TrialWaveFunction> walker_twfs;
     RefVector<QMCHamiltonian> walker_hamiltonians;
     RefVector<ParticleSet> walker_elecs;
-    RefVector<WFBuffer> walker_mcp_wfbuffers;
     RefVector<FullPrecRealType> old_energies;
     RefVector<FullPrecRealType> new_energies;
     RefVector<RealType> rr_proposed;
@@ -155,7 +157,6 @@ private:
       walker_twfs.reserve(nwalkers);
       walker_hamiltonians.reserve(nwalkers);
       walker_elecs.reserve(nwalkers);
-      walker_mcp_wfbuffers.reserve(nwalkers);
       old_energies.reserve(nwalkers);
       new_energies.reserve(nwalkers);
       rr_proposed.reserve(nwalkers);
@@ -168,11 +169,10 @@ private:
    */
   struct DMCPerWalkerRefRefs
   {
-    RefVector<MCPWalker>& walkers;
-    RefVector<TrialWaveFunction>& walker_twfs;
-    RefVector<QMCHamiltonian>& walker_hamiltonians;
-    RefVector<ParticleSet>& walker_elecs;
-    RefVector<WFBuffer>& walker_mcp_wfbuffers;
+    const RefVector<MCPWalker>& walkers;
+    const RefVector<TrialWaveFunction>& walker_twfs;
+    const RefVector<QMCHamiltonian>& walker_hamiltonians;
+    const RefVector<ParticleSet>& walker_elecs;
     std::vector<FullPrecRealType>& old_energies;
     std::vector<FullPrecRealType>& new_energies;
     std::vector<RealType>& rr_proposed;
@@ -195,8 +195,11 @@ private:
 
   static MovedStalled buildMovedStalled(const std::vector<int>& did_walker_move, const DMCPerWalkerRefRefs& refs);
 
-  static void handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers);
-  static void handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft);
+  static void handleMovedWalkers(DMCPerWalkerRefs& moved,
+                                 const StateForThread& sft,
+                                 DriverTimers& timers,
+                                 bool recompute);
+  static void handleStalledWalkers(DMCPerWalkerRefs& stalled, const StateForThread& sft, bool recompute);
   // struct DMCTimers
   // {
   //   NewTimer& dmc_movePbyP;
