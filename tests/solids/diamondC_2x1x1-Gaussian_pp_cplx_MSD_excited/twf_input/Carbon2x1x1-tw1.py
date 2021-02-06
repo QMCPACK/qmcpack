@@ -32,17 +32,17 @@ kpts=array([[ 0.07761248,  0.07761248, -0.07761248],[ 0.54328733,  0.54328733, -
 
 mydf = df.GDF(cell,kpts)
 mydf.auxbasis = 'weigend'
-#mydf._cderi_to_save = 'df_ints.h5'
-#mydf.build()                     
+mydf._cderi_to_save = 'df_ints.h5'
+mydf.build()                     
 mf = scf.KROHF(cell,kpts).density_fit()
 mf.exxdiv = 'ewald'
 mf.max_cycle = 200
 mf.with_df = mydf
 mf.chkfile ='diamond-scf.chk'
 mf.with_df._cderi = 'df_ints.h5'
-dm=mf.from_chk('diamond-scf.chk')
-e_scf=mf.kernel(dm)
-#e_scf=mf.kernel()
+#dm=mf.from_chk('diamond-scf.chk')
+#e_scf=mf.kernel(dm)
+e_scf=mf.kernel()
 
 ener = open('e_scf','w')
 ener.write('%s\n' % (e_scf))
