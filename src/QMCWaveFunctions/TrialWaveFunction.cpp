@@ -499,20 +499,6 @@ void TrialWaveFunction::flex_prepareGroup(const RefVector<TrialWaveFunction>& wf
   }
 }
 
-void TrialWaveFunction::prepareAllGroups(ParticleSet& P)
-{
-  for (int ig = 0; ig < P.groups(); ++ig)
-    for (int i = 0; i < Z.size(); ++i)
-      Z[i]->prepareGroup(P, ig);
-}
-
-void TrialWaveFunction::flex_prepareAllGroups(const RefVector<TrialWaveFunction>& WF_list,
-                                              const RefVector<ParticleSet>& P_list)
-{
-  for (int ig = 0; ig < P_list[0].get().groups(); ++ig)
-    flex_prepareGroup(WF_list, P_list, ig);
-}
-
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
 {
   ScopedTimer local_timer(TWF_timers_[VGL_TIMER]);
