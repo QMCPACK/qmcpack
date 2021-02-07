@@ -77,11 +77,20 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_invertPsiM(const RefVector<Wav
     }
   }
   else
+  {
+    RefVector<DET_ENGINE_TYPE> engine_list;
+    RefVector<LogValueType> log_value_list;
+    engine_list.reserve(nw);
+
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& diracdet = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-      diracdet.det_engine_.invert_transpose(logdetT_list[iw], diracdet.LogValue);
+      auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+      engine_list.push_back(det.det_engine_);
+      log_value_list.push_back(det.LogValue);
     }
+
+    det_engine_.mw_invert_transpose(engine_list, logdetT_list, log_value_list);
+  }
 }
 
 ///reset the size: with the number of particles and number of orbtials
@@ -858,7 +867,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVector<Wave
 
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+    auto& det          = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
     auto* psiM_vgl_ptr = det.psiM_vgl.data();
     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4]) nowait")
     psiM_temp_list.push_back(det.psiM_temp);

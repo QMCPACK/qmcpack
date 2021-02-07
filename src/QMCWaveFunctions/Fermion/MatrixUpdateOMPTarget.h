@@ -126,6 +126,22 @@ public:
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
 
+  template<typename TREAL>
+  inline void mw_invert_transpose(const RefVector<This_t>& engines,
+                                  const RefVector<const Matrix<T>>& logdetT_list,
+                                  const RefVector<std::complex<TREAL>>& LogValues)
+  {
+    for (int iw = 0; iw < engines.size(); iw++)
+    {
+      auto& Ainv = engines[iw].get().psiMinv;
+      Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
+      detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
+      T* Ainv_ptr = Ainv.data();
+      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+    }
+    PRAGMA_OFFLOAD("omp taskwait")
+  }
+
   template<typename GT>
   inline void mw_evalGrad(const RefVector<This_t>& engines,
                           const std::vector<const T*>& dpsiM_row_list,
