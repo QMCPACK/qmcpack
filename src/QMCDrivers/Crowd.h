@@ -76,8 +76,16 @@ public:
 
   void setRNGForHamiltonian(RandomGenerator_t& rng);
 
+  /** initialize crowd-owned resources shared by walkers in the crowd
+   */
   void initializeResources(const ResourceCollection& twf_resource);
+  /** lend crowd-owned resources to the crowd leader walker
+   * Note: use RAII CrowdResourceLock whenever possible
+   */
   void lendResources();
+  /** take back crowd-owned resources from the crowd leader walker
+   * Note: use RAII CrowdResourceLock whenever possible
+   */
   void takebackResources();
 
   auto beginWalkers() { return mcp_walkers_.begin(); }
@@ -103,8 +111,6 @@ public:
   unsigned long get_reject() { return n_reject_; }
 
 private:
-  // true if shared_resources are lent out
-  bool is_shared_resource_lent;
   /** @name Walker Vectors
    *
    *  A single index into these ordered lists constitutes a complete 
@@ -132,6 +138,8 @@ private:
   /** @} */
 };
 
+/** Lock for a crowd lending and taking back shared resource to its consumer objects.
+ */
 class CrowdResourceLock
 {
 public:
@@ -141,6 +149,10 @@ public:
   }
 
   ~CrowdResourceLock() { locked_crowd_.takebackResources(); }
+
+  CrowdResourceLock(const CrowdResourceLock&) = delete;
+  CrowdResourceLock(CrowdResourceLock&&) = delete;
+
 private:
   Crowd& locked_crowd_;
 };

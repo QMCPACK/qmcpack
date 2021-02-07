@@ -14,7 +14,7 @@
 namespace qmcplusplus
 {
 
-Crowd::Crowd(EstimatorManagerNew& emb) : is_shared_resource_lent(false), estimator_manager_crowd_(emb) {}
+Crowd::Crowd(EstimatorManagerNew& emb) : estimator_manager_crowd_(emb) {}
 
 Crowd::~Crowd() = default;
 
@@ -66,9 +66,9 @@ void Crowd::lendResources()
 {
   if (walker_twfs_.size() > 0)
   {
-    if (is_shared_resource_lent)
+    if (twfs_shared_resource_->is_lent())
       throw std::runtime_error("Crowd::lendResources resources are out already!");
-    is_shared_resource_lent = true;
+    twfs_shared_resource_->lock();
     twfs_shared_resource_->rewind();
     walker_twfs_[0].get().acquireResource(*twfs_shared_resource_);
   }
@@ -78,11 +78,11 @@ void Crowd::takebackResources()
 {
   if (walker_twfs_.size() > 0)
   {
-    if (!is_shared_resource_lent)
+    if (!twfs_shared_resource_->is_lent())
       throw std::runtime_error("Crowd::takebackResources resources was not lent out!");
-    is_shared_resource_lent = false;
     twfs_shared_resource_->rewind();
     walker_twfs_[0].get().releaseResource(*twfs_shared_resource_);
+    twfs_shared_resource_->unlock();
   }
 }
 

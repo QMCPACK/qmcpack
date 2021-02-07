@@ -30,14 +30,48 @@ public:
   void printResources() const;
 
   size_t addResource(std::unique_ptr<Resource>&& res);
-  void rewind() { cursor_index_ = 0; }
   std::unique_ptr<Resource> lendResource();
   void takebackResource(std::unique_ptr<Resource>&& res);
+
+  void rewind(size_t cursor = 0) { cursor_index_ = cursor; }
+
+  bool is_lent() const { return is_lent_; }
+
+  void lock() { is_lent_ = true; }
+  void unlock() { is_lent_ = false; }
 
 private:
   const std::string name_;
   size_t cursor_index_;
   std::vector<std::unique_ptr<Resource>> collection_;
+  bool is_lent_ = false;
 };
+
+template <class CONSUMER>
+class ResourceCollectionLock
+{
+public:
+  ResourceCollectionLock(ResourceCollection& res_ref, CONSUMER& consumer_ref, size_t cursor = 0)
+    : resource(res_ref), consumer(consumer_ref), cursor_begin_(cursor)
+  {
+    resource.rewind(cursor_begin_);
+    consumer.acquireResource(resource);
+  }
+
+  ~ResourceCollectionLock()
+  {
+    resource.rewind(cursor_begin_);
+    consumer.releaseResource(resource);
+  }
+
+  ResourceCollectionLock(const ResourceCollectionLock&) = delete;
+  ResourceCollectionLock(ResourceCollectionLock&&) = delete;
+
+private:
+  ResourceCollection& resource;
+  CONSUMER& consumer;
+  const size_t cursor_begin_;
+};
+
 } // namespace qmcplusplus
 #endif

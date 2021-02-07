@@ -407,8 +407,13 @@ public:
                            const RefVector<ParticleSet>& P_list,
                            const RefVector<WFBufferType>& buf_list) const;
 
+  /** acquire external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
   void acquireResource(ResourceCollection& collection);
-
+  /** release external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
   void releaseResource(ResourceCollection& collection);
 
   RealType KECorrection() const;

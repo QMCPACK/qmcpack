@@ -26,6 +26,8 @@ public:
 
 private:
   const std::string name_;
+  int index_in_collection_ = -1;
+  friend class ResourceCollection;
 };
 } // namespace qmcplusplus
 #endif

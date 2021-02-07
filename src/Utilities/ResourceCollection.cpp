@@ -34,22 +34,27 @@ void ResourceCollection::printResources() const
 
 size_t ResourceCollection::addResource(std::unique_ptr<Resource>&& res)
 {
-  size_t id = collection_.size();
+  size_t index = collection_.size();
+  res->index_in_collection_ = index;
   collection_.emplace_back(std::move(res));
-  return id;
+  return index;
 }
 
 std::unique_ptr<Resource> ResourceCollection::lendResource()
 {
   if (cursor_index_ >= collection_.size())
-    throw std::runtime_error("ResourceCollection::lendResource no more resource to lend. Bug in the code.");
+    throw std::runtime_error("ResourceCollection::lendResource BUG no more resource to lend.");
+  if (cursor_index_ != collection_[cursor_index_]->index_in_collection_)
+    throw std::runtime_error("ResourceCollection::lendResource BUG mismatched cursor index and recorded index in the resource.");
   return std::move(collection_[cursor_index_++]);
 }
 
 void ResourceCollection::takebackResource(std::unique_ptr<Resource>&& res)
 {
   if (cursor_index_ >= collection_.size())
-    throw std::runtime_error("ResourceCollection::takebackResource cannot take back resources more than owned. Bug in the code.");
+    throw std::runtime_error("ResourceCollection::takebackResource BUG cannot take back resources more than owned.");
+  if (cursor_index_ != res->index_in_collection_)
+    throw std::runtime_error("ResourceCollection::takebackResource BUG mismatched cursor index and recorded index in the resource.");
   collection_[cursor_index_++] = std::move(res);
 }
 
