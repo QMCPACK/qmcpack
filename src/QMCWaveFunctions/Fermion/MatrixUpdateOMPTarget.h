@@ -112,9 +112,9 @@ public:
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv_dev_ptr + row_id * psiMinv.cols(); }
 
-  /** compute the inverse of the transpose of matrix A
+  /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    * @param logdetT orbital value matrix
-   * @param Ainv inverse matrix
+   * @param LogValue log(det(logdetT))
    */
   template<typename TREAL>
   inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)

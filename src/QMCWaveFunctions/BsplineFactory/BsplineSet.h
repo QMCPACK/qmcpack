@@ -169,12 +169,12 @@ public:
 
       for (int iw = 0; iw < nw; iw++)
       {
-        mw_psi_v.push_back(ValueVector_t(logdet_list[iw].get()[i], OrbitalSetSize));
-        mw_dpsi_v.push_back(GradVector_t(dlogdet_list[iw].get()[i], OrbitalSetSize));
-        mw_d2psi_v.push_back(ValueVector_t(d2logdet_list[iw].get()[i], OrbitalSetSize));
-        psi_v_list.push_back(mw_psi_v[iw]);
-        dpsi_v_list.push_back(mw_dpsi_v[iw]);
-        d2psi_v_list.push_back(mw_d2psi_v[iw]);
+        mw_psi_v.emplace_back(logdet_list[iw].get()[i], OrbitalSetSize);
+        mw_dpsi_v.emplace_back(dlogdet_list[iw].get()[i], OrbitalSetSize);
+        mw_d2psi_v.emplace_back(d2logdet_list[iw].get()[i], OrbitalSetSize);
+        psi_v_list.push_back(mw_psi_v.back());
+        dpsi_v_list.push_back(mw_dpsi_v.back());
+        d2psi_v_list.push_back(mw_d2psi_v.back());
       }
 
       mw_evaluateVGL(spo_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);

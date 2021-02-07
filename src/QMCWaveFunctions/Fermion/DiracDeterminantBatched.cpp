@@ -390,29 +390,13 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVector<Wav
   else
   {
     const auto nw = WFC_list.size();
-    {
-      ScopedTimer d2h(&D2HTimer);
-
-      RefVector<DET_ENGINE_TYPE> engine_list;
-      engine_list.reserve(nw);
-
-      for (int iw = 0; iw < nw; iw++)
-      {
-        auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-        engine_list.push_back(det.det_engine_);
-        auto& my_psiM_vgl  = det.psiM_vgl;
-        auto* psiM_vgl_ptr = my_psiM_vgl.data();
-        PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
-      }
-
-      det_engine_.mw_transferAinv_D2H(engine_list);
-
-      PRAGMA_OFFLOAD("omp taskwait")
-    }
+    RefVector<DET_ENGINE_TYPE> engine_list;
+    engine_list.reserve(nw);
 
     if (UpdateMode == ORB_PBYP_RATIO)
-    { //need to compute dpsiM and d2psiM. Do not touch psiM!
+    { //need to compute dpsiM and d2psiM. psiMinv is not touched!
       ScopedTimer spo_timer(&SPOVGLTimer);
+
       RefVector<SPOSet> phi_list;
       RefVector<ValueMatrix_t> psiM_temp_list;
       RefVector<GradMatrix_t> dpsiM_list;
@@ -425,6 +409,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVector<Wav
       for (int iw = 0; iw < nw; iw++)
       {
         auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+        engine_list.push_back(det.det_engine_);
         phi_list.push_back(*det.Phi);
         psiM_temp_list.push_back(det.psiM_temp);
         dpsiM_list.push_back(det.dpsiM);
@@ -432,9 +417,27 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVector<Wav
       }
 
       Phi->mw_evaluate_notranspose(phi_list, P_list, FirstIndex, LastIndex, psiM_temp_list, dpsiM_list, d2psiM_list);
+      det_engine_.mw_transferAinv_D2H(engine_list);
       //FIXME maybe need the same transfer as recompute
     }
-    for (int iw = 0; iw < WFC_list.size(); iw++)
+    else
+    { // transfer dpsiM, d2psiM, psiMinv to host
+      ScopedTimer d2h(&D2HTimer);
+
+      for (int iw = 0; iw < nw; iw++)
+      {
+        auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+        engine_list.push_back(det.det_engine_);
+        auto& my_psiM_vgl  = det.psiM_vgl;
+        auto* psiM_vgl_ptr = my_psiM_vgl.data();
+        PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
+      }
+
+      det_engine_.mw_transferAinv_D2H(engine_list);
+      PRAGMA_OFFLOAD("omp taskwait")
+    }
+
+    for (int iw = 0; iw < nw; iw++)
     {
       auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
       det.computeGL(G_list[iw], L_list[iw]);
@@ -826,7 +829,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVector<Wave
                                                             const RefVector<ParticleSet>& P_list)
 {
   const auto nw = WFC_list.size();
-  /*
   {
     ScopedTimer spo_timer(&SPOVGLTimer);
 
@@ -850,7 +852,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVector<Wave
 
     Phi->mw_evaluate_notranspose(phi_list, P_list, FirstIndex, LastIndex, psiM_temp_list, dpsiM_list, d2psiM_list);
   }
-  */
 
   RefVector<const ValueMatrix_t> psiM_temp_list;
   psiM_temp_list.reserve(nw);
@@ -858,14 +859,12 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVector<Wave
   for (int iw = 0; iw < nw; iw++)
   {
     auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    det.Phi->evaluate_notranspose(P_list[iw], FirstIndex, LastIndex, det.psiM_temp, det.dpsiM, det.d2psiM);
     auto* psiM_vgl_ptr = det.psiM_vgl.data();
-    PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
-    //det.invertPsiM(det.psiM_temp);
+    PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4]) nowait")
     psiM_temp_list.push_back(det.psiM_temp);
   }
-
   mw_invertPsiM(WFC_list, psiM_temp_list);
+  PRAGMA_OFFLOAD("omp taskwait")
 }
 
 template<typename DET_ENGINE_TYPE>
