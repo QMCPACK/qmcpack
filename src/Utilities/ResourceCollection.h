@@ -24,6 +24,7 @@ class ResourceCollection
 {
 public:
   ResourceCollection(const std::string& name);
+  ResourceCollection(const ResourceCollection&);
   const std::string& getName() const { return name_; }
   void printResources();
 

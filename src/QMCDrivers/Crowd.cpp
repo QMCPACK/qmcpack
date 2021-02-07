@@ -9,9 +9,15 @@
 
 #include "Crowd.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
+
+Crowd::Crowd(EstimatorManagerNew& emb) : is_shared_resource_lent(false), estimator_manager_crowd_(emb) {}
+
+Crowd::~Crowd() = default;
+
 void Crowd::clearWalkers()
 {
   // We're clearing the refs to the objects not the referred to objects.
@@ -48,6 +54,34 @@ void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 {
   for (QMCHamiltonian& ham : walker_hamiltonians_)
     ham.setRandomGenerator(&rng);
+}
+
+void Crowd::initializeResources(const ResourceCollection& twf_resource)
+{
+  if (!twfs_shared_resource_)
+   twfs_shared_resource_ = std::make_unique<ResourceCollection>(twf_resource);
+}
+
+void Crowd::lendResources()
+{
+  if (walker_twfs_.size() > 0)
+  {
+    if (is_shared_resource_lent)
+      throw std::runtime_error("Crowd::lendResources resources are out already!");
+    is_shared_resource_lent = true;
+    walker_twfs_[0].get().acquireResource(*twfs_shared_resource_);
+  }
+}
+
+void Crowd::takebackResources()
+{
+  if (walker_twfs_.size() > 0)
+  {
+    if (!is_shared_resource_lent)
+      throw std::runtime_error("Crowd::takebackResources resources was not lent out!");
+    is_shared_resource_lent = false;
+    walker_twfs_[0].get().releaseResource(*twfs_shared_resource_);
+  }
 }
 
 void Crowd::startBlock(int num_steps)

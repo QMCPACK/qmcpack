@@ -407,9 +407,9 @@ public:
                            const RefVector<ParticleSet>& P_list,
                            const RefVector<WFBufferType>& buf_list) const;
 
-void acquireResource(ResourceCollection& collection);
+  void acquireResource(ResourceCollection& collection);
 
-void releaseResource(ResourceCollection& collection);
+  void releaseResource(ResourceCollection& collection);
 
   RealType KECorrection() const;
 
@@ -457,6 +457,8 @@ void releaseResource(ResourceCollection& collection);
   const std::string& getName() const { return myName; }
 
   bool use_tasking() const { return use_tasking_; }
+
+  const ResourceCollection& getResource() const { return *twf_resource_; }
 
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);

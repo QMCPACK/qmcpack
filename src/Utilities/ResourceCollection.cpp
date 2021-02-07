@@ -15,6 +15,12 @@ namespace qmcplusplus
 {
 ResourceCollection::ResourceCollection(const std::string& name) : name_(name) {}
 
+ResourceCollection::ResourceCollection(const ResourceCollection& ref) : name_(ref.getName())
+{
+  for (auto& res : collection)
+    addResource(std::unique_ptr<Resource>(res->makeClone()));
+}
+
 void ResourceCollection::printResources() {}
 
 size_t ResourceCollection::addResource(std::unique_ptr<Resource>&& res)

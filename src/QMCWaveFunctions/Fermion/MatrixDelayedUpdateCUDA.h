@@ -392,8 +392,6 @@ public:
 
   MatrixDelayedUpdateCUDA(const MatrixDelayedUpdateCUDA&) = delete;
 
-  ~MatrixDelayedUpdateCUDA() {}
-
   /** resize the internal storage
    * @param norb number of electrons/orbitals
    * @param delay, maximum delay 0<delay<=norb
@@ -441,7 +439,7 @@ public:
   template<typename TREAL>
   inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)
   {
-    // this is to make unit tests friendly without the need of setup resources.
+    // make this class unit tests friendly without the need of setup resources.
     if (!cuda_handles_)
       cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
 
@@ -459,7 +457,7 @@ public:
                                   const RefVector<const Matrix<T>>& logdetT_list,
                                   const RefVector<std::complex<TREAL>>& LogValues)
   {
-    // this is to make unit tests friendly without the need of setup resources.
+    // make this class unit tests friendly without the need of setup resources.
     if (!cuda_handles_)
       cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
 

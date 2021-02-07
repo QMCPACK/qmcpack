@@ -14,11 +14,13 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/EstimatorManagerCrowd.h"
-#include "Utilities/RandomGenerator.h"
+#include "RandomGenerator.h"
 
 namespace qmcplusplus
 {
 
+// forward declaration
+class ResourceCollection;
 
 /** Driver synchronized step context
  * 
@@ -39,8 +41,9 @@ public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** This is the data structure for walkers within a crowd
    */
-  Crowd(EstimatorManagerNew& emb) : estimator_manager_crowd_(emb) {}
+  Crowd(EstimatorManagerNew& emb);
 
+  ~Crowd();
   /** Because so many vectors allocate them upfront.
    *
    *  could be premature optimization
@@ -73,6 +76,10 @@ public:
 
   void setRNGForHamiltonian(RandomGenerator_t& rng);
 
+  void initializeResources(const ResourceCollection& twf_resource);
+  void lendResources();
+  void takebackResources();
+
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
   auto beginTrialWaveFunctions() { return walker_twfs_.begin(); }
@@ -94,7 +101,10 @@ public:
   unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
   unsigned long get_accept() { return n_accept_; }
   unsigned long get_reject() { return n_reject_; }
+
 private:
+  // true if shared_resources are lent out
+  bool is_shared_resource_lent;
   /** @name Walker Vectors
    *
    *  A single index into these ordered lists constitutes a complete 
@@ -109,6 +119,8 @@ private:
   
   EstimatorManagerCrowd estimator_manager_crowd_;
 
+  std::unique_ptr<ResourceCollection> twfs_shared_resource_;
+
   /** @name Step State
    * 
    *  Should be per walker? 
@@ -119,5 +131,19 @@ private:
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
 };
+
+class CrowdResourceLock
+{
+public:
+  CrowdResourceLock(Crowd& locked_crowd) : locked_crowd_(locked_crowd)
+  {
+    locked_crowd_.lendResources();
+  }
+
+  ~CrowdResourceLock() { locked_crowd_.takebackResources(); }
+private:
+  Crowd& locked_crowd_;
+};
+
 } // namespace qmcplusplus
 #endif
