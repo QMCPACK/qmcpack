@@ -145,14 +145,14 @@ public:
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
-/*
   void mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
                       const RefVector<ParticleSet>& P_list,
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) override;
-*/
 
   void recompute(ParticleSet& P) override;
+
+  void mw_recompute(const RefVector<WaveFunctionComponent>& WFC_list, const RefVector<ParticleSet>& P_list);
 
   LogValueType evaluateGL(ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
@@ -164,7 +164,6 @@ public:
                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                      bool fromscratch) override;
-
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
@@ -234,8 +233,10 @@ private:
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
-  /// invert psiM or its copies
+  /// invert logdetT(psiM), result is in the engine.
   void invertPsiM(const ValueMatrix_t& logdetT);
+  void mw_invertPsiM(const RefVector<WaveFunctionComponent>& WFC_list,
+                     const RefVector<const ValueMatrix_t>& logdetT_list);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();

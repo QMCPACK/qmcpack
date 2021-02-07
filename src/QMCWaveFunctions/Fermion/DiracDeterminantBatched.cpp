@@ -49,11 +49,40 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::set(int first, int nel, int delay
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::invertPsiM(const ValueMatrix_t& logdetT)
 {
-  InverseTimer.start();
-  det_engine_.invert_transpose(logdetT, LogValue);
-  InverseTimer.stop();
+  ScopedTimer inverse_timer(&InverseTimer);
+  if (NumPtcls == 1)
+  {
+    ValueType det = logdetT(0, 0);
+    psiMinv(0, 0) = RealType(1) / det;
+    LogValue      = convertValueToLog(det);
+  }
+  else
+    det_engine_.invert_transpose(logdetT, LogValue);
 }
 
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_invertPsiM(const RefVector<WaveFunctionComponent>& WFC_list,
+                                                             const RefVector<const ValueMatrix_t>& logdetT_list)
+{
+  ScopedTimer inverse_timer(&InverseTimer);
+  const auto nw = WFC_list.size();
+  if (NumPtcls == 1)
+  {
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& diracdet         = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+      ValueType det          = logdetT_list[iw].get()(0, 0);
+      diracdet.psiMinv(0, 0) = RealType(1) / det;
+      diracdet.LogValue      = convertValueToLog(det);
+    }
+  }
+  else
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& diracdet = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+      diracdet.det_engine_.invert_transpose(logdetT_list[iw], diracdet.LogValue);
+    }
+}
 
 ///reset the size: with the number of particles and number of orbtials
 template<typename DET_ENGINE_TYPE>
@@ -336,17 +365,16 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
   if (fromscratch)
     evaluateLog(P, G, L);
   else
-{
-  if (UpdateMode == ORB_PBYP_RATIO)
-  { //need to compute dpsiM and d2psiM. Do not touch psiM!
-    SPOVGLTimer.start();
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
-    //FIXME maybe need the same transfer as recompute
-    SPOVGLTimer.stop();
-  }
+  {
+    if (UpdateMode == ORB_PBYP_RATIO)
+    { //need to compute dpsiM and d2psiM. Do not touch psiM!
+      ScopedTimer spo_timer(&SPOVGLTimer);
+      Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+      //FIXME maybe need the same transfer as recompute
+    }
 
-  computeGL(G, L);
-}
+    computeGL(G, L);
+  }
   return LogValue;
 }
 
@@ -382,31 +410,30 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVector<Wav
       PRAGMA_OFFLOAD("omp taskwait")
     }
 
-  if (UpdateMode == ORB_PBYP_RATIO)
-  { //need to compute dpsiM and d2psiM. Do not touch psiM!
-    SPOVGLTimer.start();
-  RefVector<SPOSet> phi_list;
-    RefVector<ValueMatrix_t> psiMinv_list;
-    RefVector<GradMatrix_t> dpsiM_list;
-    RefVector<ValueMatrix_t> d2psiM_list;
-  phi_list.reserve(WFC_list.size());
-    psiMinv_list.reserve(nw);
-    dpsiM_list.reserve(nw);
-    d2psiM_list.reserve(nw);
+    if (UpdateMode == ORB_PBYP_RATIO)
+    { //need to compute dpsiM and d2psiM. Do not touch psiM!
+      ScopedTimer spo_timer(&SPOVGLTimer);
+      RefVector<SPOSet> phi_list;
+      RefVector<ValueMatrix_t> psiM_temp_list;
+      RefVector<GradMatrix_t> dpsiM_list;
+      RefVector<ValueMatrix_t> d2psiM_list;
+      phi_list.reserve(WFC_list.size());
+      psiM_temp_list.reserve(nw);
+      dpsiM_list.reserve(nw);
+      d2psiM_list.reserve(nw);
 
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-    {
-      auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-      phi_list.push_back(*det.Phi);
-      psiMinv_list.push_back(det.psiMinv);
-      dpsiM_list.push_back(det.dpsiM);
-      d2psiM_list.push_back(det.d2psiM);
+      for (int iw = 0; iw < nw; iw++)
+      {
+        auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+        phi_list.push_back(*det.Phi);
+        psiM_temp_list.push_back(det.psiM_temp);
+        dpsiM_list.push_back(det.dpsiM);
+        d2psiM_list.push_back(det.d2psiM);
+      }
+
+      Phi->mw_evaluate_notranspose(phi_list, P_list, FirstIndex, LastIndex, psiM_temp_list, dpsiM_list, d2psiM_list);
+      //FIXME maybe need the same transfer as recompute
     }
-
-    Phi->mw_evaluate_notranspose(phi_list, P_list, FirstIndex, LastIndex, psiMinv_list, dpsiM_list, d2psiM_list);
-    //FIXME maybe need the same transfer as recompute
-    SPOVGLTimer.stop();
-  }
     for (int iw = 0; iw < WFC_list.size(); iw++)
     {
       auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
@@ -414,7 +441,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVector<Wav
     }
   }
 }
-
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
@@ -767,42 +793,79 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
   return LogValue;
 }
 
-/*
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
                                                               const RefVector<ParticleSet>& P_list,
                                                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                                                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list)
 {
-  
+  mw_recompute(WFC_list, P_list);
+
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+  {
+    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+    det.computeGL(G_list[iw], L_list[iw]);
+  }
 }
-*/
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
 {
-  SPOVGLTimer.start();
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
-  // mw_evaluate_notranspose will be needed. if Phi supports offload, it only guarantees device ready in results.
-  // if Phi is not offload. A transfer of dpsiM, d2psiM to device is needed.
-  // now evaluate_notranspose only guarantees host. So always transfer.
-  //if(!Phi->isOMPoffload())
   {
+    ScopedTimer spo_timer(&SPOVGLTimer);
+    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
     auto* psiM_vgl_ptr = psiM_vgl.data();
     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
   }
 
-  SPOVGLTimer.stop();
-  if (NumPtcls == 1)
+  invertPsiM(psiM_temp);
+}
+
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVector<WaveFunctionComponent>& WFC_list,
+                                                            const RefVector<ParticleSet>& P_list)
+{
+  const auto nw = WFC_list.size();
+  /*
   {
-    ValueType det = psiM_temp(0, 0);
-    psiMinv(0, 0) = RealType(1) / det;
-    LogValue      = convertValueToLog(det);
+    ScopedTimer spo_timer(&SPOVGLTimer);
+
+    RefVector<SPOSet> phi_list;
+    RefVector<ValueMatrix_t> psiM_temp_list;
+    RefVector<GradMatrix_t> dpsiM_list;
+    RefVector<ValueMatrix_t> d2psiM_list;
+    phi_list.reserve(WFC_list.size());
+    psiM_temp_list.reserve(nw);
+    dpsiM_list.reserve(nw);
+    d2psiM_list.reserve(nw);
+
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+      phi_list.push_back(*det.Phi);
+      psiM_temp_list.push_back(det.psiM_temp);
+      dpsiM_list.push_back(det.dpsiM);
+      d2psiM_list.push_back(det.d2psiM);
+    }
+
+    Phi->mw_evaluate_notranspose(phi_list, P_list, FirstIndex, LastIndex, psiM_temp_list, dpsiM_list, d2psiM_list);
   }
-  else
+  */
+
+  RefVector<const ValueMatrix_t> psiM_temp_list;
+  psiM_temp_list.reserve(nw);
+
+  for (int iw = 0; iw < nw; iw++)
   {
-    invertPsiM(psiM_temp);
+    auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+    det.Phi->evaluate_notranspose(P_list[iw], FirstIndex, LastIndex, det.psiM_temp, det.dpsiM, det.d2psiM);
+    auto* psiM_vgl_ptr = det.psiM_vgl.data();
+    PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
+    //det.invertPsiM(det.psiM_temp);
+    psiM_temp_list.push_back(det.psiM_temp);
   }
+
+  mw_invertPsiM(WFC_list, psiM_temp_list);
 }
 
 template<typename DET_ENGINE_TYPE>
