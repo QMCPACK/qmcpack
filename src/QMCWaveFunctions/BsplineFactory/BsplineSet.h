@@ -133,6 +133,54 @@ public:
     }
   }
 
+  virtual void mw_evaluate_notranspose(const RefVector<SPOSet>& spo_list,
+                                       const RefVector<ParticleSet>& P_list,
+                                       int first,
+                                       int last,
+                                       const RefVector<ValueMatrix_t>& logdet_list,
+                                       const RefVector<GradMatrix_t>& dlogdet_list,
+                                       const RefVector<ValueMatrix_t>& d2logdet_list) override
+  {
+    typedef ValueMatrix_t::value_type value_type;
+    typedef GradMatrix_t::value_type grad_type;
+
+    const size_t nw = spo_list.size();
+    std::vector<ValueVector_t> mw_psi_v;
+    std::vector<GradVector_t> mw_dpsi_v;
+    std::vector<ValueVector_t> mw_d2psi_v;
+    RefVector<ValueVector_t> psi_v_list;
+    RefVector<GradVector_t> dpsi_v_list;
+    RefVector<ValueVector_t> d2psi_v_list;
+    mw_psi_v.reserve(nw);
+    mw_dpsi_v.reserve(nw);
+    mw_d2psi_v.reserve(nw);
+    psi_v_list.reserve(nw);
+    dpsi_v_list.reserve(nw);
+    d2psi_v_list.reserve(nw);
+
+    for (int iat = first, i = 0; iat < last; ++iat, ++i)
+    {
+      mw_psi_v.clear();
+      mw_dpsi_v.clear();
+      mw_d2psi_v.clear();
+      psi_v_list.clear();
+      dpsi_v_list.clear();
+      d2psi_v_list.clear();
+
+      for (int iw = 0; iw < nw; iw++)
+      {
+        mw_psi_v.push_back(ValueVector_t(logdet_list[iw].get()[i], OrbitalSetSize));
+        mw_dpsi_v.push_back(GradVector_t(dlogdet_list[iw].get()[i], OrbitalSetSize));
+        mw_d2psi_v.push_back(ValueVector_t(d2logdet_list[iw].get()[i], OrbitalSetSize));
+        psi_v_list.push_back(mw_psi_v[iw]);
+        dpsi_v_list.push_back(mw_dpsi_v[iw]);
+        d2psi_v_list.push_back(mw_d2psi_v[iw]);
+      }
+
+      mw_evaluateVGL(spo_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+    }
+  }
+
   virtual void evaluate_notranspose(const ParticleSet& P,
                                     int first,
                                     int last,
