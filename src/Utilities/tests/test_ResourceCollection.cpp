@@ -40,12 +40,12 @@ public:
   {
     external_memory_handle = std::make_unique<MemoryResource>("test_res");
     external_memory_handle->data.resize(5);
-    resource_index = collection.addResource(std::move(external_memory_handle));
+    collection.addResource(std::move(external_memory_handle));
   }
 
   void acquireResource(ResourceCollection& collection)
   {
-    auto res_ptr = dynamic_cast<MemoryResource*>(collection.lendResource(resource_index).release());
+    auto res_ptr = dynamic_cast<MemoryResource*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("WFCResourceConsumer::acquireResource dynamic_cast failed");
     external_memory_handle.reset(res_ptr);
@@ -53,14 +53,13 @@ public:
 
   void releaseResource(ResourceCollection& collection)
   {
-    collection.takebackResource(resource_index, std::move(external_memory_handle));
+    collection.takebackResource(std::move(external_memory_handle));
   }
 
   MemoryResource* getPtr() const { return external_memory_handle.get(); }
 
 private:
   std::unique_ptr<MemoryResource> external_memory_handle;
-  int resource_index = -1;
 };
 
 TEST_CASE("ResourceCollection", "[utilities]")
@@ -76,6 +75,7 @@ TEST_CASE("ResourceCollection", "[utilities]")
   REQUIRE(wfc.getPtr() != nullptr);
   REQUIRE(wfc.getPtr()->data.size() == 5);
 
+  res_collection.rewind();
   wfc.releaseResource(res_collection);
   REQUIRE(wfc.getPtr() == nullptr);
 }

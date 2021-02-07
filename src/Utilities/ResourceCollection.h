@@ -26,15 +26,18 @@ public:
   ResourceCollection(const std::string& name);
   ResourceCollection(const ResourceCollection&);
   const std::string& getName() const { return name_; }
-  void printResources();
+  size_t size() const { return collection_.size(); }
+  void printResources() const;
 
   size_t addResource(std::unique_ptr<Resource>&& res);
-  std::unique_ptr<Resource> lendResource(int index);
-  void takebackResource(int index, std::unique_ptr<Resource>&& res);
+  void rewind() { cursor_index_ = 0; }
+  std::unique_ptr<Resource> lendResource();
+  void takebackResource(std::unique_ptr<Resource>&& res);
 
 private:
   const std::string name_;
-  std::vector<std::unique_ptr<Resource>> collection;
+  size_t cursor_index_;
+  std::vector<std::unique_ptr<Resource>> collection_;
 };
 } // namespace qmcplusplus
 #endif

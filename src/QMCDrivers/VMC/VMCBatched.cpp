@@ -220,6 +220,7 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
+  CrowdResourceLock crowd_res_lock(crowd);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   int max_steps = sft.qmcdrv_input.get_max_steps();
@@ -296,6 +297,7 @@ bool VMCBatched::run()
   auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                           UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
     Crowd& crowd = *(crowds[crowd_id]);
+    CrowdResourceLock crowd_res_lock(crowd);
     advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], false);
   };
 

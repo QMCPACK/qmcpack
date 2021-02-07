@@ -59,7 +59,7 @@ void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 void Crowd::initializeResources(const ResourceCollection& twf_resource)
 {
   if (!twfs_shared_resource_)
-   twfs_shared_resource_ = std::make_unique<ResourceCollection>(twf_resource);
+    twfs_shared_resource_ = std::make_unique<ResourceCollection>(twf_resource);
 }
 
 void Crowd::lendResources()
@@ -69,6 +69,7 @@ void Crowd::lendResources()
     if (is_shared_resource_lent)
       throw std::runtime_error("Crowd::lendResources resources are out already!");
     is_shared_resource_lent = true;
+    twfs_shared_resource_->rewind();
     walker_twfs_[0].get().acquireResource(*twfs_shared_resource_);
   }
 }
@@ -80,6 +81,7 @@ void Crowd::takebackResources()
     if (!is_shared_resource_lent)
       throw std::runtime_error("Crowd::takebackResources resources was not lent out!");
     is_shared_resource_lent = false;
+    twfs_shared_resource_->rewind();
     walker_twfs_[0].get().releaseResource(*twfs_shared_resource_);
   }
 }

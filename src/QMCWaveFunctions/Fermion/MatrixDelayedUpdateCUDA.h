@@ -152,8 +152,6 @@ class MatrixDelayedUpdateCUDA
 
   // CUDA stream, cublas handle object
   std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
-  // index in the resource collection when created.
-  int resource_index;
 
   inline void waitStream()
   {
@@ -388,7 +386,7 @@ class MatrixDelayedUpdateCUDA
 
 public:
   /// default constructor
-  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0), resource_index(-1) {}
+  MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0) {}
 
   MatrixDelayedUpdateCUDA(const MatrixDelayedUpdateCUDA&) = delete;
 
@@ -412,12 +410,13 @@ public:
 
   void createResource(ResourceCollection& collection)
   {
-    resource_index = collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
+    auto resource_index = collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
+    app_log() << "    Shared resource created in MatrixDelayedUpdateCUDA. Index " << resource_index << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection)
   {
-    auto res_ptr = dynamic_cast<CUDALinearAlgebraHandles*>(collection.lendResource(resource_index).release());
+    auto res_ptr = dynamic_cast<CUDALinearAlgebraHandles*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast failed");
     cuda_handles_.reset(res_ptr);
@@ -425,7 +424,7 @@ public:
 
   void releaseResource(ResourceCollection& collection)
   {
-    collection.takebackResource(resource_index, std::move(cuda_handles_));
+    collection.takebackResource(std::move(cuda_handles_));
   }
 
   inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
