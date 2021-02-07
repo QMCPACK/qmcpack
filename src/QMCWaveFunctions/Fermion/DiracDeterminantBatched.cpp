@@ -47,11 +47,10 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::set(int first, int nel, int delay
 }
 
 template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::invertPsiM(const ValueMatrix_t& logdetT,
-                                                          OffloadPinnedValueMatrix_t& invMat)
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::invertPsiM(const ValueMatrix_t& logdetT)
 {
   InverseTimer.start();
-  det_engine_.invert_transpose(logdetT, invMat, LogValue);
+  det_engine_.invert_transpose(logdetT, LogValue);
   InverseTimer.stop();
 }
 
@@ -199,7 +198,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::acceptMove(ParticleSet& P, int ia
   const int WorkingIndex = iat - FirstIndex;
   LogValue += convertValueToLog(curRatio);
   UpdateTimer.start();
-  det_engine_.updateRow(psiMinv, WorkingIndex, psiV, curRatio);
+  det_engine_.updateRow(WorkingIndex, psiV, curRatio);
   if (UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex], dpsiV.data(), NumOrbitals);
@@ -301,6 +300,13 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
     SPOVGLTimer.stop();
   }
 
+  computeGL(G, L);
+}
+
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::computeGL(ParticleSet::ParticleGradient_t& G,
+                                                         ParticleSet::ParticleLaplacian_t& L) const
+{
   if (NumPtcls == 1)
   {
     ValueType y = psiMinv(0, 0);
@@ -312,10 +318,10 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
   {
     for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
     {
-      mValueType dot_temp = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
-      mGradType rv        = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
+      mGradType rv   = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
+      mValueType lap = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
       G[iat] += rv;
-      L[iat] += dot_temp - dot(rv, rv);
+      L[iat] += lap - dot(rv, rv);
     }
   }
 }
@@ -330,7 +336,17 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
   if (fromscratch)
     evaluateLog(P, G, L);
   else
-    updateAfterSweep(P, G, L);
+{
+  if (UpdateMode == ORB_PBYP_RATIO)
+  { //need to compute dpsiM and d2psiM. Do not touch psiM!
+    SPOVGLTimer.start();
+    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+    //FIXME maybe need the same transfer as recompute
+    SPOVGLTimer.stop();
+  }
+
+  computeGL(G, L);
+}
   return LogValue;
 }
 
@@ -345,13 +361,14 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVector<Wav
     mw_evaluateLog(WFC_list, P_list, G_list, L_list);
   else
   {
+    const auto nw = WFC_list.size();
     {
       ScopedTimer d2h(&D2HTimer);
 
       RefVector<DET_ENGINE_TYPE> engine_list;
-      engine_list.reserve(WFC_list.size());
+      engine_list.reserve(nw);
 
-      for (int iw = 0; iw < WFC_list.size(); iw++)
+      for (int iw = 0; iw < nw; iw++)
       {
         auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
         engine_list.push_back(det.det_engine_);
@@ -365,10 +382,35 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVector<Wav
       PRAGMA_OFFLOAD("omp taskwait")
     }
 
+  if (UpdateMode == ORB_PBYP_RATIO)
+  { //need to compute dpsiM and d2psiM. Do not touch psiM!
+    SPOVGLTimer.start();
+  RefVector<SPOSet> phi_list;
+    RefVector<ValueMatrix_t> psiMinv_list;
+    RefVector<GradMatrix_t> dpsiM_list;
+    RefVector<ValueMatrix_t> d2psiM_list;
+  phi_list.reserve(WFC_list.size());
+    psiMinv_list.reserve(nw);
+    dpsiM_list.reserve(nw);
+    d2psiM_list.reserve(nw);
+
     for (int iw = 0; iw < WFC_list.size(); iw++)
     {
       auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-      det.updateAfterSweep(P_list[iw], G_list[iw], L_list[iw]);
+      phi_list.push_back(*det.Phi);
+      psiMinv_list.push_back(det.psiMinv);
+      dpsiM_list.push_back(det.dpsiM);
+      d2psiM_list.push_back(det.d2psiM);
+    }
+
+    Phi->mw_evaluate_notranspose(phi_list, P_list, FirstIndex, LastIndex, psiMinv_list, dpsiM_list, d2psiM_list);
+    //FIXME maybe need the same transfer as recompute
+    SPOVGLTimer.stop();
+  }
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+    {
+      auto& det = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
+      det.computeGL(G_list[iw], L_list[iw]);
     }
   }
 }
@@ -531,9 +573,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatiosAlltoOne(ParticleSe
   SPOVTimer.start();
   Phi->evaluateValue(P, -1, psiV_host_view);
   SPOVTimer.stop();
-  ValueMatrix_t psiMinv_host_view(psiMinv.data(), psiMinv.rows(), NumOrbitals);
   //FIXME due to padding in psiMinv
-  MatrixOperators::product(psiMinv_host_view, psiV.data(), &ratios[FirstIndex]);
+  MatrixOperators::product(psiMinv, psiV.data(), &ratios[FirstIndex]);
 }
 
 
@@ -585,7 +626,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateHessian(ParticleSet& P, H
   grad_grad_source_psiM.resize(psiMinv.rows(), NumOrbitals);
   //IM A HACK.  Assumes evaluateLog has already been executed.
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
-  invertPsiM(psiM_temp, psiMinv);
+  invertPsiM(psiM_temp);
 
   phi_alpha_Minv      = 0.0;
   grad_phi_Minv       = 0.0;
@@ -722,26 +763,20 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
     ParticleSet::ParticleLaplacian_t& L)
 {
   recompute(P);
-
-  if (NumPtcls == 1)
-  {
-    ValueType y = psiMinv(0, 0);
-    GradType rv = y * dpsiM(0, 0);
-    G[FirstIndex] += rv;
-    L[FirstIndex] += y * d2psiM(0, 0) - dot(rv, rv);
-  }
-  else
-  {
-    for (int i = 0, iat = FirstIndex; i < NumPtcls; i++, iat++)
-    {
-      mGradType rv   = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
-      mValueType lap = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
-      G[iat] += rv;
-      L[iat] += lap - dot(rv, rv);
-    }
-  }
+  computeGL(G, L);
   return LogValue;
 }
+
+/*
+template<typename DET_ENGINE_TYPE>
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
+                                                              const RefVector<ParticleSet>& P_list,
+                                                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                                                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list)
+{
+  
+}
+*/
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
@@ -766,7 +801,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
   }
   else
   {
-    invertPsiM(psiM_temp, psiMinv);
+    invertPsiM(psiM_temp);
   }
 }
 

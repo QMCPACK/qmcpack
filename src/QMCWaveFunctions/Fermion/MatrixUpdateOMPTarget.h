@@ -116,9 +116,10 @@ public:
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
    */
-  template<typename TREAL, typename OMPALLOC>
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T, OMPALLOC>& Ainv, std::complex<TREAL>& LogValue)
+  template<typename TREAL>
+  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)
   {
+    auto& Ainv = psiMinv;
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
     detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
     T* Ainv_ptr = Ainv.data();
@@ -170,9 +171,10 @@ public:
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
-  template<typename VVT, typename RATIOT, typename OMPALLOC>
-  inline void updateRow(Matrix<T, OMPALLOC>& Ainv, int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
+  template<typename VVT, typename RATIOT>
+  inline void updateRow(int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
   {
+    auto& Ainv = psiMinv;
     // update the inverse matrix
     constexpr T cone(1);
     constexpr T czero(0);

@@ -440,14 +440,15 @@ public:
    * @param logdetT orbital value matrix
    * @param Ainv inverse matrix
    */
-  template<typename TREAL, typename OMPALLOC>
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T, OMPALLOC>& Ainv, std::complex<TREAL>& LogValue)
+  template<typename TREAL>
+  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)
   {
     // this is to make unit tests friendly without the need of setup resources.
     if (!cuda_handles_)
       cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
 
     guard_no_delay();
+    auto& Ainv = psiMinv;
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
     detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
     T* Ainv_ptr = Ainv.data();
@@ -497,10 +498,11 @@ public:
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
-  template<typename VVT, typename RATIOT, typename OMPALLOC>
-  void updateRow(Matrix<T, OMPALLOC>& Ainv, int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
+  template<typename VVT, typename RATIOT>
+  void updateRow(int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
   {
     guard_no_delay();
+    auto& Ainv = psiMinv;
     // update the inverse matrix
     constexpr T cone(1), czero(0);
     const int norb = Ainv.rows();

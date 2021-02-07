@@ -145,11 +145,12 @@ public:
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
-  //Ye: TODO, good performance needs batched SPO evaluation.
-  //void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
-  //                    const std::vector<ParticleSet*>& P_list,
-  //                    const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
-  //                    const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list) override;
+/*
+  void mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
+                      const RefVector<ParticleSet>& P_list,
+                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) override;
+*/
 
   void recompute(ParticleSet& P) override;
 
@@ -186,7 +187,7 @@ public:
   auto& getPsiMinv() const { return psiMinv; }
 
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_engine_
-  OffloadPinnedValueMatrix_t psiMinv;
+  ValueMatrix_t psiMinv;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
   OffloadVGLVector_t psiM_vgl;
@@ -230,8 +231,11 @@ public:
   std::vector<GradType> grad_new_local;
 
 private:
+  /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
+  void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
+
   /// invert psiM or its copies
-  void invertPsiM(const ValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& invMat);
+  void invertPsiM(const ValueMatrix_t& logdetT);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
