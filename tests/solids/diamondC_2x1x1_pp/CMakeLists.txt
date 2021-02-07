@@ -109,6 +109,16 @@ IF(NOT QMC_CUDA)
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
+  #4 batches of 16 walkers in one rank, batched slater det
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_dmcbatch-4b_sdbatch_jas
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_sdbatch_vmcbatch_dmcbatch
+                    qmc_short_sdbatch_vmcbatch_dmcbatch.in.xml
+                    1 4
+                    TRUE
+                    1 DIAMOND2_DMC_SCALARS # DMC
+                    )
+
   # 4 batches of 16 walkers over 4 ranks
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_4r_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -614,7 +624,7 @@ IF(NOT QMC_CUDA)
                     1 DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS # VMC cycle 2
                     )
 
-  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-sdbatch-vmcbatch-mwalkers_sdj
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-mwalkers_sdbatch_jas
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short_sdbatch_vmcbatch_mwalkers
                     det_qmc_short_sdbatch_vmcbatch_mwalkers.in.xml
