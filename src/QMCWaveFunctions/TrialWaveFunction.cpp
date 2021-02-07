@@ -41,7 +41,6 @@ static const std::vector<std::string> suffixes{"V", "VGL", "accept", "NLratio", 
 
 TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, bool create_local_resource)
     : myName(aname),
-      twf_resource_(std::make_unique<ResourceCollection>("TrialWaveFunction")),
       BufferCursor(0),
       BufferCursor_scalar(0),
       PhaseValue(0.0),
@@ -50,6 +49,9 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, boo
       OneOverM(1.0),
       use_tasking_(tasking)
 {
+  if (create_local_resource)
+    twf_resource_ = std::make_unique<ResourceCollection>("TrialWaveFunction");
+
   for (auto& suffix : suffixes)
   {
     std::string timer_name = "WaveFunction:" + myName + "::" + suffix;
