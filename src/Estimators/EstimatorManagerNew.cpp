@@ -225,10 +225,6 @@ void EstimatorManagerNew::stopBlock(unsigned long accept,
   zeroOperatorEstimators();
 }
 
-/** Called at end of block in Unified Driver
- *
- *  Seems broken if there is more than one ScalarEstimator per crowd.
- */
 QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
     const RefVector<ScalarEstimatorBase>& estimators)
 {
@@ -261,15 +257,6 @@ QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
   return tot_weight;
 }
 
-
-/** Reduces OperatorEstimator data from Crowds to the managers OperatorEstimator data
- *
- *  The it is a vector of each crowds vector of references to their OperatorEstimators.
- *  A particular OperatorEstimators reduction via a call to collect may be straight forward 
- *  if the crowd context OperatorEstimator holds a copy of the estimator data structure
- *  or more complex if it just collects for instance a list of writes to locations
- *  in the data structure.
- */
 void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
 {
   for (int iop = 0; iop < operator_ests_.size(); ++iop)
@@ -283,8 +270,6 @@ void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<
   }
 }
 
-// blocks don't close frequently enough that we should be sweating the mpi transfers at all.
-// all this Cache stuff is premature optimization because someone wanted to be very fancy
 void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long rejects)
 {
   // accumulate unsigned long counters over ranks.
