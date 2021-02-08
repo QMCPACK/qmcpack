@@ -53,14 +53,21 @@ public:
       : DTD_BConds<T, D, SC>(source.Lattice),
         DistanceTableData(source, target),
         r_dr_device_ptr_(nullptr),
-        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") + target.getName() + "_" + source.getName(), timer_level_fine)),
-        copy_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::copy_") + target.getName() + "_" + source.getName(), timer_level_fine)),
-        eval_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") + target.getName() + "_" + source.getName(), timer_level_fine))
+        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") +
+                                                      target.getName() + "_" + source.getName(),
+                                                  timer_level_fine)),
+        copy_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::copy_") + target.getName() +
+                                                   "_" + source.getName(),
+                                               timer_level_fine)),
+        eval_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") +
+                                                   target.getName() + "_" + source.getName(),
+                                               timer_level_fine))
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());
-    if (!coordinates_soa) throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
+    if (!coordinates_soa)
+      throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
     resize(source.getTotalNum(), target.getTotalNum());
-    #pragma omp target enter data map(to:this[:1])
+    PRAGMA_OFFLOAD("omp target enter data map(to : this[:1])")
   }
 
   void resize(int ns, int nt)
@@ -72,10 +79,10 @@ public:
 
     // initialize memory containers and views
     const int N_sources_padded = getAlignedSize<T>(N_sources);
-    const int stride_size = N_sources_padded * (D + 1);
+    const int stride_size      = N_sources_padded * (D + 1);
     r_dr_memorypool_.resize(stride_size * N_targets);
     auto* pool_ptr = r_dr_memorypool_.data();
-    #pragma omp target data use_device_ptr(pool_ptr)
+    PRAGMA_OFFLOAD("omp target data use_device_ptr(pool_ptr)")
     {
       r_dr_device_ptr_ = pool_ptr;
     }
@@ -85,7 +92,8 @@ public:
     for (int i = 0; i < N_targets; ++i)
     {
       distances_[i].attachReference(r_dr_memorypool_.data() + i * stride_size, N_sources);
-      displacements_[i].attachReference(N_sources, N_sources_padded, r_dr_memorypool_.data() + i * stride_size + N_sources_padded);
+      displacements_[i].attachReference(N_sources, N_sources_padded,
+                                        r_dr_memorypool_.data() + i * stride_size + N_sources_padded);
     }
 
     // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
@@ -94,12 +102,12 @@ public:
     temp_dr_.resize(N_sources);
   }
 
-  SoaDistanceTableABOMPTarget()                             = delete;
+  SoaDistanceTableABOMPTarget()                                   = delete;
   SoaDistanceTableABOMPTarget(const SoaDistanceTableABOMPTarget&) = delete;
 
   ~SoaDistanceTableABOMPTarget()
   {
-    #pragma omp target exit data map(delete:this[:1])
+    PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])")
   }
 
   /** evaluate the full table */
@@ -122,7 +130,7 @@ public:
 
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
-    const int num_teams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const int num_teams        = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     {
       ScopedTimer offload(&offload_timer_);
@@ -141,12 +149,13 @@ public:
             pos[idim] = target_pos_ptr[iat * D + idim];
 
           const size_t stride_size = N_sources_padded * (D + 1);
-          auto* r_iat_ptr  = r_dr_ptr + iat * stride_size;
-          auto* dr_iat_ptr = r_iat_ptr + N_sources_padded;
+          auto* r_iat_ptr          = r_dr_ptr + iat * stride_size;
+          auto* dr_iat_ptr         = r_iat_ptr + N_sources_padded;
 
           PRAGMA_OFFLOAD("omp parallel for simd")
           for (int iel = first; iel < last; iel++)
-            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded, iel);
+            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
+                                                          iel);
         }
     }
   }
@@ -164,23 +173,27 @@ public:
    * After offloading the computation of distances and displacements, the per-walker result is transferred back walker by walker in place.
    * The runtime overhead is very high for small problem size with many walkers.
    */
-  inline void mw_evaluate_transfer_inplace(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
+  inline void mw_evaluate_transfer_inplace(const RefVector<DistanceTableData>& dt_list,
+                                           const RefVector<ParticleSet>& p_list)
   {
-    const size_t nw = dt_list.size();
+    const size_t nw      = dt_list.size();
     size_t count_targets = 0;
-    for (ParticleSet& p: p_list)
+    for (ParticleSet& p : p_list)
       count_targets += p.getTotalNum();
     const size_t total_targets = count_targets;
 
     // This is horrible optimization putting different data types in a single buffer but allows a single H2D transfer
     constexpr size_t realtype_size = sizeof(RealType);
-    constexpr size_t int_size = sizeof(int);
-    constexpr size_t ptr_size = sizeof(RealType*);
-    offload_input.resize(total_targets * D * realtype_size + total_targets * int_size + (nw + total_targets) * ptr_size);
+    constexpr size_t int_size      = sizeof(int);
+    constexpr size_t ptr_size      = sizeof(RealType*);
+    offload_input.resize(total_targets * D * realtype_size + total_targets * int_size +
+                         (nw + total_targets) * ptr_size);
     auto target_positions = reinterpret_cast<RealType*>(offload_input.data());
-    auto walker_id_ptr = reinterpret_cast<int*>(offload_input.data() + total_targets * D * realtype_size);
-    auto source_ptrs = reinterpret_cast<RealType**>(offload_input.data() + total_targets * D * realtype_size + total_targets * int_size);
-    auto output_ptrs = reinterpret_cast<RealType**>(offload_input.data() + total_targets * D * realtype_size + total_targets * int_size + nw * ptr_size);
+    auto walker_id_ptr    = reinterpret_cast<int*>(offload_input.data() + total_targets * D * realtype_size);
+    auto source_ptrs      = reinterpret_cast<RealType**>(offload_input.data() + total_targets * D * realtype_size +
+                                                    total_targets * int_size);
+    auto output_ptrs      = reinterpret_cast<RealType**>(offload_input.data() + total_targets * D * realtype_size +
+                                                    total_targets * int_size + nw * ptr_size);
 
     const int N_sources_padded = getAlignedSize<T>(N_sources);
     offload_output.resize(total_targets * N_sources_padded * (D + 1));
@@ -194,22 +207,22 @@ public:
       assert(N_sources == dt.N_sources);
 
       auto& RSoA_OMPTarget = static_cast<const RealSpacePositionsOMPTarget&>(dt.Origin->getCoordinates());
-      source_ptrs[iw] = const_cast<RealType*>(RSoA_OMPTarget.getDevicePtr());
+      source_ptrs[iw]      = const_cast<RealType*>(RSoA_OMPTarget.getDevicePtr());
 
       for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
       {
         for (size_t idim = 0; idim < D; idim++)
           target_positions[count_targets * D + idim] = pset.R[iat][idim];
 
-        walker_id_ptr[count_targets]   = iw;
-        output_ptrs[count_targets] = dt.r_dr_device_ptr_ + iat * N_sources_padded * (D + 1);
+        walker_id_ptr[count_targets] = iw;
+        output_ptrs[count_targets]   = dt.r_dr_device_ptr_ + iat * N_sources_padded * (D + 1);
       }
     }
 
-    const int N_sources_local  = N_sources;
+    const int N_sources_local = N_sources;
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
-    const int num_teams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const int num_teams        = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto* input_ptr = offload_input.data();
 
@@ -223,8 +236,10 @@ public:
         {
           auto* target_pos_ptr = reinterpret_cast<RealType*>(input_ptr);
           const int walker_id  = reinterpret_cast<int*>(input_ptr + total_targets * D * realtype_size)[iat];
-          auto* source_pos_ptr = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size + total_targets * int_size)[walker_id];
-          auto* r_iat_ptr      = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size + total_targets * int_size + nw * ptr_size)[iat];
+          auto* source_pos_ptr = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size +
+                                                              total_targets * int_size)[walker_id];
+          auto* r_iat_ptr      = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size +
+                                                         total_targets * int_size + nw * ptr_size)[iat];
           auto* dr_iat_ptr     = r_iat_ptr + N_sources_padded;
 
           const int first = ChunkSizePerTeam * team_id;
@@ -236,7 +251,8 @@ public:
 
           PRAGMA_OFFLOAD("omp parallel for simd")
           for (int iel = first; iel < last; iel++)
-            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded, iel);
+            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
+                                                          iel);
         }
     }
 
@@ -244,11 +260,11 @@ public:
       ScopedTimer copy(&copy_timer_);
       for (size_t iw = 0; iw < nw; iw++)
       {
-        auto& dt = static_cast<SoaDistanceTableABOMPTarget&>(dt_list[iw].get());
+        auto& dt       = static_cast<SoaDistanceTableABOMPTarget&>(dt_list[iw].get());
         auto* pool_ptr = dt.r_dr_memorypool_.data();
-        #pragma omp target update from(pool_ptr[:dt.r_dr_memorypool_.size()]) nowait depend(inout:total_targets)
+        PRAGMA_OFFLOAD("omp target update from(pool_ptr[:dt.r_dr_memorypool_.size()]) nowait depend(inout : total_targets)")
       }
-      #pragma omp taskwait
+      PRAGMA_OFFLOAD("omp taskwait")
     }
   }
 
@@ -256,22 +272,24 @@ public:
    * After offloading the computation of distances and displacements, the result for all the walkers is transferred back together in one shot
    * and then copied to per-walker data structure. Memory copy on the CPU is still costly and not beneficial for large problem size with a few walkers.
    */
-  inline void mw_evaluate_fuse_transfer(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
+  inline void mw_evaluate_fuse_transfer(const RefVector<DistanceTableData>& dt_list,
+                                        const RefVector<ParticleSet>& p_list)
   {
-    const size_t nw = dt_list.size();
+    const size_t nw      = dt_list.size();
     size_t count_targets = 0;
-    for (ParticleSet& p: p_list)
+    for (ParticleSet& p : p_list)
       count_targets += p.getTotalNum();
     const size_t total_targets = count_targets;
 
     // This is horrible optimization putting different data types in a single buffer but allows a single H2D transfer
     const size_t realtype_size = sizeof(RealType);
-    const size_t int_size = sizeof(int);
-    const size_t ptr_size = sizeof(RealType*);
+    const size_t int_size      = sizeof(int);
+    const size_t ptr_size      = sizeof(RealType*);
     offload_input.resize(total_targets * D * realtype_size + total_targets * int_size + nw * ptr_size);
     auto target_positions = reinterpret_cast<RealType*>(offload_input.data());
-    auto walker_id_ptr = reinterpret_cast<int*>(offload_input.data() + total_targets * D * realtype_size);
-    auto source_ptrs = reinterpret_cast<RealType**>(offload_input.data() + total_targets * D * realtype_size + total_targets * int_size);
+    auto walker_id_ptr    = reinterpret_cast<int*>(offload_input.data() + total_targets * D * realtype_size);
+    auto source_ptrs      = reinterpret_cast<RealType**>(offload_input.data() + total_targets * D * realtype_size +
+                                                    total_targets * int_size);
 
     particle_id.resize(total_targets);
 
@@ -287,22 +305,22 @@ public:
       assert(N_sources == dt.N_sources);
 
       auto& RSoA_OMPTarget = static_cast<const RealSpacePositionsOMPTarget&>(dt.Origin->getCoordinates());
-      source_ptrs[iw] = const_cast<RealType*>(RSoA_OMPTarget.getDevicePtr());
+      source_ptrs[iw]      = const_cast<RealType*>(RSoA_OMPTarget.getDevicePtr());
 
       for (size_t iat = 0; iat < pset.getTotalNum(); ++iat, ++count_targets)
       {
         for (size_t idim = 0; idim < D; idim++)
           target_positions[count_targets * D + idim] = pset.R[iat][idim];
 
-        walker_id_ptr[count_targets]   = iw;
-        particle_id[count_targets] = iat;
+        walker_id_ptr[count_targets] = iw;
+        particle_id[count_targets]   = iat;
       }
     }
 
-    const int N_sources_local  = N_sources;
+    const int N_sources_local = N_sources;
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
     const int ChunkSizePerTeam = 256;
-    const int num_teams         = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+    const int num_teams        = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto* r_dr_ptr  = offload_output.data();
     auto* input_ptr = offload_input.data();
@@ -317,7 +335,8 @@ public:
         {
           auto* target_pos_ptr = reinterpret_cast<RealType*>(input_ptr);
           const int walker_id  = reinterpret_cast<int*>(input_ptr + total_targets * D * realtype_size)[iat];
-          auto* source_pos_ptr = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size + total_targets * int_size)[walker_id];
+          auto* source_pos_ptr = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size +
+                                                              total_targets * int_size)[walker_id];
           auto* r_iat_ptr      = r_dr_ptr + iat * N_sources_padded * (D + 1);
           auto* dr_iat_ptr     = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
 
@@ -330,7 +349,8 @@ public:
 
           PRAGMA_OFFLOAD("omp parallel for simd")
           for (int iel = first; iel < last; iel++)
-            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded, iel);
+            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
+                                                          iel);
         }
     }
 
@@ -340,7 +360,7 @@ public:
       {
         const int wid = walker_id_ptr[iat];
         const int pid = particle_id[iat];
-        auto& dt = static_cast<SoaDistanceTableABOMPTarget&>(dt_list[wid].get());
+        auto& dt      = static_cast<SoaDistanceTableABOMPTarget&>(dt_list[wid].get());
         assert(N_sources_padded == dt.displacements_[pid].capacity());
         auto offset = offload_output.data() + iat * N_sources_padded * (D + 1);
         std::copy_n(offset, N_sources_padded, dt.distances_[pid].data());
@@ -352,13 +372,13 @@ public:
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
-    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
-                                           N_sources);
+    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
+                                           0, N_sources);
     // If the full table is not ready all the time, overwrite the current value.
     // If this step is missing, DT values can be undefined in case a move is rejected.
     if (!need_full_table_)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->getCoordinates().getAllParticlePos(), distances_[iat].data(),
-                                             displacements_[iat], 0, N_sources);
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->getCoordinates().getAllParticlePos(),
+                                             distances_[iat].data(), displacements_[iat], 0, N_sources);
   }
 
   ///update the stripe for jat-th particle
