@@ -61,7 +61,7 @@ public:
 
 public:
   /// Constructor.
-  VMCBatched(const ProjectData& project_info,
+  VMCBatched(const ProjectData& project_data,
              QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
              MCPopulation&& pop,
