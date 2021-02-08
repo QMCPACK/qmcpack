@@ -13,6 +13,8 @@
 #ifndef QMCPLUSPLUS_ACCESS_TRAITS_H
 #define QMCPLUSPLUS_ACCESS_TRAITS_H
 
+#include <algorithm>
+
 namespace qmcplusplus
 {
 /** template class defines whether the memory allocated by the allocator is host accessible
@@ -21,6 +23,11 @@ template<class Allocator>
 struct allocator_traits
 {
   const static bool is_host_accessible = true;
+  template<typename T>
+  static void fill_n(T* ptr, size_t n, const T& value)
+  {
+    std::fill_n(ptr, n, value);
+  }
 };
 
 template<class Allocator>

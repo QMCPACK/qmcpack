@@ -102,6 +102,11 @@ public:
             const std::string& QMC_driver_type,
             bool enable_profiling = false);
 
+  ///Copy Constructor (disabled).
+  QMCDriver(const QMCDriver&) = delete;
+  ///Copy operator (disabled).
+  QMCDriver& operator=(const QMCDriver&) = delete;
+
   virtual ~QMCDriver() override;
 
   ///return current step
@@ -331,11 +336,6 @@ protected:
   ///turn on spin moves
   std::string SpinMoves;
   RealType SpinMass;
-
-  ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver&) = delete;
-  ///Copy operator (disabled).
-  QMCDriver& operator=(const QMCDriver&) = delete;
 
   bool putQMCInfo(xmlNodePtr cur);
 

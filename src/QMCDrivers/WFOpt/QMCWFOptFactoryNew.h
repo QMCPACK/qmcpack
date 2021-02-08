@@ -28,9 +28,10 @@ class MCWalkerConfiguration;
 class HamiltonianPool;
 class QMCOptimize;
 class QMCFixedSampleLinearOptimizeBatched;
+class ProjectData;
 
 QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
-                                       const int qmc_counter,
+                                       const ProjectData& project_info,
                                        MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
@@ -39,7 +40,7 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
                                        Communicate* comm);
 
 QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
-                                                              const int qmc_counter,
+                                                              const ProjectData& project_info,
                                                               MCWalkerConfiguration& w,
                                                               TrialWaveFunction& psi,
                                                               QMCHamiltonian& h,

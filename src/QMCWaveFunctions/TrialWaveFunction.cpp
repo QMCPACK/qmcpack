@@ -117,6 +117,10 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
 #endif
   }
+
+  G = P.G;
+  L = P.L;
+
   LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   return LogValue;
@@ -170,13 +174,7 @@ void TrialWaveFunction::flex_evaluateLog(const RefVector<TrialWaveFunction>& wf_
       copyToP(p_list[iw], wf_list[iw]);
   }
   else if (wf_list.size() == 1)
-  {
     wf_list[0].get().evaluateLog(p_list[0]);
-    // Ye: temporal workaround to have WF.G/L always defined.
-    // remove when KineticEnergy use WF.G/L instead of P.G/L
-    wf_list[0].get().G = p_list[0].get().G;
-    wf_list[0].get().L = p_list[0].get().L;
-  }
 }
 
 void TrialWaveFunction::recompute(ParticleSet& P)

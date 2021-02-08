@@ -22,6 +22,8 @@
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "QMCDrivers/DMC/WalkerControl.h"
+#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {
@@ -33,13 +35,14 @@ using WP = WalkerProperties::Indexes;
  *
  *  Note you must call the Base constructor before the derived class sets QMCType
  */
-DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
+DMCBatched::DMCBatched(const ProjectData& project_info,
+                       QMCDriverInput&& qmcdriver_input,
                        DMCDriverInput&& input,
                        MCPopulation&& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input), std::move(pop), psi, h,
+    : QMCDriverNew(project_info, std::move(qmcdriver_input), std::move(pop), psi, h,
                    "DMCBatched::", comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
@@ -49,40 +52,12 @@ DMCBatched::DMCBatched(QMCDriverInput&& qmcdriver_input,
 }
 // clang-format on
 
+DMCBatched::~DMCBatched() = default;
+
 void DMCBatched::setNonLocalMoveHandler(QMCHamiltonian& golden_hamiltonian)
 {
   golden_hamiltonian.setNonLocalMoves(dmcdriver_input_.get_non_local_move(), qmcdriver_input_.get_tau(),
                                       dmcdriver_input_.get_alpha(), dmcdriver_input_.get_gamma());
-}
-
-void DMCBatched::resetUpdateEngines()
-{
-  ReportEngine PRE("DMC", "resetUpdateEngines");
-  Timer init_timer;
-  // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
-  // I'd like to do away with this method in DMCBatched.
-
-  // false indicates we do not support kill at node crossings.
-  branch_engine_->initWalkerController(population_, dmcdriver_input_.get_reconfiguration(), false);
-
-  estimator_manager_->reset();
-
-  RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
-
-  branch_engine_->checkParameters(population_.get_num_global_walkers(), walkers);
-
-  std::ostringstream o;
-  if (dmcdriver_input_.get_reconfiguration())
-    o << "  Fixed population using reconfiguration method\n";
-  else
-    o << "  Fluctuating population\n";
-  o << "  Persistent walkers are killed after " << dmcdriver_input_.get_max_age() << " MC sweeps\n";
-  o << "  BranchInterval = " << dmcdriver_input_.get_branch_interval() << "\n";
-  o << "  Steps per block = " << qmcdriver_input_.get_max_steps() << "\n";
-  o << "  Number of blocks = " << qmcdriver_input_.get_max_blocks() << "\n";
-  app_log() << o.str() << std::endl;
-
-  app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
 }
 
 void DMCBatched::advanceWalkers(const StateForThread& sft,
@@ -92,6 +67,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
+  assert(QMCDriverNew::checkLogAndGL(crowd));
+
   int nnode_crossing(0);
   auto& walker_twfs  = crowd.get_walker_twfs();
   auto& walkers      = crowd.get_walkers();
@@ -264,59 +241,56 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   //To use the flex interfaces we have to build RefVectors for walker that moved and walkers that didn't
 
-  auto& walker_hamiltonians  = crowd.get_walker_hamiltonians();
+  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
 
-  DMCPerWalkerRefRefs per_walker_ref_refs{walkers,
-                                          walker_twfs,
-                                          walker_hamiltonians,
-                                          walker_elecs,
-                                          old_walker_energies,
-                                          new_walker_energies,
-                                          rr_proposed,
-                                          rr_accepted,
-                                          gf_acc};
+  DMCPerWalkerRefRefs per_walker_ref_refs{walkers,      walker_twfs,         walker_hamiltonians,
+                                          walker_elecs, old_walker_energies, new_walker_energies,
+                                          rr_proposed,  rr_accepted,         gf_acc};
 
   MovedStalled these = buildMovedStalled(did_walker_move, per_walker_ref_refs);
 
   handleMovedWalkers(these.moved, sft, timers, recompute);
   handleStalledWalkers(these.stalled, sft, recompute);
 
-  dmc_timers.tmove_timer.start();
-  std::vector<int> walker_non_local_moves_accepted(
-      QMCHamiltonian::flex_makeNonLocalMoves(crowd.get_walker_hamiltonians(), crowd.get_walker_elecs()));
+  assert(QMCDriverNew::checkLogAndGL(crowd));
 
-  //could be premature optimization
-  int num_moved_nonlocal   = 0;
-  int total_moved_nonlocal = 0;
-  for (int iw = 0; iw < walkers.size(); ++iw)
   {
-    if (walker_non_local_moves_accepted[iw] > 0)
-    {
-      num_moved_nonlocal++;
-      total_moved_nonlocal += walker_non_local_moves_accepted[iw];
-      crowd.incNonlocalAccept();
-    }
-  }
+    ScopedTimer tmove_timer(&dmc_timers.tmove_timer);
+    std::vector<int> walker_non_local_moves_accepted(
+        QMCHamiltonian::flex_makeNonLocalMoves(crowd.get_walker_hamiltonians(), crowd.get_walker_elecs()));
 
-  if (num_moved_nonlocal > 0)
-  {
-    DMCPerWalkerRefs moved_nonlocal(num_moved_nonlocal);
-
-    for (int iw = 0; iw < these.moved.walkers.size(); ++iw)
+    //could be premature optimization
+    int num_moved_nonlocal   = 0;
+    int total_moved_nonlocal = 0;
+    for (int iw = 0; iw < walkers.size(); ++iw)
     {
       if (walker_non_local_moves_accepted[iw] > 0)
       {
-        moved_nonlocal.walkers.push_back(walkers[iw]);
-        moved_nonlocal.walker_twfs.push_back(walker_twfs[iw]);
-        moved_nonlocal.walker_elecs.push_back(walker_elecs[iw]);
-        moved_nonlocal.walker_hamiltonians.push_back(walker_hamiltonians[iw]);
+        num_moved_nonlocal++;
+        total_moved_nonlocal += walker_non_local_moves_accepted[iw];
+        crowd.incNonlocalAccept();
       }
     }
-    TrialWaveFunction::flex_evaluateGL(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs, false);
-    ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
-  }
 
-  dmc_timers.tmove_timer.stop();
+    if (num_moved_nonlocal > 0)
+    {
+      DMCPerWalkerRefs moved_nonlocal(num_moved_nonlocal);
+
+      for (int iw = 0; iw < these.moved.walkers.size(); ++iw)
+      {
+        if (walker_non_local_moves_accepted[iw] > 0)
+        {
+          moved_nonlocal.walkers.push_back(walkers[iw]);
+          moved_nonlocal.walker_twfs.push_back(walker_twfs[iw]);
+          moved_nonlocal.walker_elecs.push_back(walker_elecs[iw]);
+          moved_nonlocal.walker_hamiltonians.push_back(walker_hamiltonians[iw]);
+        }
+      }
+      TrialWaveFunction::flex_evaluateGL(moved_nonlocal.walker_twfs, moved_nonlocal.walker_elecs, false);
+      assert(QMCDriverNew::checkLogAndGL(crowd));
+      ParticleSet::flex_saveWalker(moved_nonlocal.walker_elecs, moved_nonlocal.walkers);
+    }
+  }
 }
 
 DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& did_walker_move,
@@ -363,7 +337,10 @@ DMCBatched::MovedStalled DMCBatched::buildMovedStalled(const std::vector<int>& d
   return these;
 }
 
-void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved, const StateForThread& sft, DriverTimers& timers, bool recompute)
+void DMCBatched::handleMovedWalkers(DMCPerWalkerRefs& moved,
+                                    const StateForThread& sft,
+                                    DriverTimers& timers,
+                                    bool recompute)
 {
   if (moved.walkers.size() > 0)
   {
@@ -448,13 +425,10 @@ void DMCBatched::runDMCStep(int crowd_id,
     return;
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
-  int max_steps = sft.qmcdrv_input.get_max_steps();
-  // This is migraine inducing here and in the original driver, I believe they are the same in
-  // VMC(Batched)/DMC(Batched) needs another check and unit test
-  bool is_recompute_block =
-      sft.recomputing_blocks ? (1 + sft.block) % sft.qmcdrv_input.get_blocks_between_recompute() == 0 : false;
-  IndexType step           = sft.step;
-  bool recompute_this_step = (is_recompute_block && (step + 1) == max_steps);
+  int max_steps  = sft.qmcdrv_input.get_max_steps();
+  IndexType step = sft.step;
+  // Are we entering the the last step of a block to recompute at?
+  bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id], recompute_this_step);
 }
 
@@ -473,11 +447,40 @@ void DMCBatched::process(xmlNodePtr node)
   {
     myComm->barrier_and_abort(ue.what());
   }
+
+  {
+    ReportEngine PRE("DMC", "resetUpdateEngines");
+    Timer init_timer;
+    // Here DMC loads "Ensemble of cloned MCWalkerConfigurations"
+    // I'd like to do away with this method in DMCBatched.
+
+    app_log() << "  Creating the branching engine and walker controler" << std::endl;
+    branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
+    branch_engine_->put(node);
+
+    WalkerController = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
+    WalkerController->setMinMax(population_.get_num_global_walkers(), 0);
+    WalkerController->start();
+    WalkerController->put(node);
+
+    std::ostringstream o;
+    if (dmcdriver_input_.get_reconfiguration())
+      o << "  Fixed population using reconfiguration method\n";
+    else
+      o << "  Fluctuating population\n";
+
+    o << "  Persistent walkers are killed after " << dmcdriver_input_.get_max_age() << " MC sweeps\n";
+    o << "  BranchInterval = " << dmcdriver_input_.get_branch_interval() << "\n";
+    o << "  Steps per block = " << qmcdriver_input_.get_max_steps() << "\n";
+    o << "  Number of blocks = " << qmcdriver_input_.get_max_blocks() << "\n";
+    app_log() << o.str() << std::endl;
+
+    app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
+  }
 }
 
 bool DMCBatched::run()
 {
-  resetUpdateEngines();
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
   estimator_manager_->start(num_blocks);
@@ -494,6 +497,14 @@ bool DMCBatched::run()
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
+  {
+    FullPrecRealType energy, variance;
+    population_.measureGlobalEnergyVariance(*myComm, energy, variance);
+    // false indicates we do not support kill at node crossings.
+    branch_engine_->initParam(population_, energy, variance, dmcdriver_input_.get_reconfiguration(), false);
+    WalkerController->setTrialEnergy(branch_engine_->getEtrial());
+  }
+
   ParallelExecutor<> crowd_task;
 
   for (int block = 0; block < num_blocks; ++block)
@@ -504,7 +515,9 @@ bool DMCBatched::run()
     dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
         ? qmcdriver_input_.get_recalculate_properties_period()
         : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
-    dmc_state.recomputing_blocks            = qmcdriver_input_.get_blocks_between_recompute();
+    dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
+                 ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+                 : false;
 
     for (UPtr<Crowd>& crowd : crowds_)
       crowd->startBlock(qmcdriver_input_.get_max_steps());
@@ -527,7 +540,13 @@ bool DMCBatched::run()
           crowd_ref.accumulate(population_.get_num_global_walkers());
       }
 
-      branch_engine_->branch(block * qmcdriver_input_.get_max_steps() + step, population_);
+      {
+        int iter = block * qmcdriver_input_.get_max_steps() + step;
+        const int population_now = WalkerController->branch(iter, population_, iter == 0);
+        branch_engine_->updateParamAfterPopControl(population_now, WalkerController->get_ensemble_property(),
+                                                   population_.get_num_particles());
+        WalkerController->setTrialEnergy(branch_engine_->getEtrial());
+      }
 
       for (UPtr<Crowd>& crowd_ptr : crowds_)
         crowd_ptr->clearWalkers();
@@ -536,6 +555,8 @@ bool DMCBatched::run()
     }
     endBlock();
   }
+
+  branch_engine_->printStatus();
   return finalize(num_blocks, true);
 }
 

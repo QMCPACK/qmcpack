@@ -54,15 +54,15 @@ public:
   virtual void requestTraces(bool allow_traces)                         = 0;
   virtual void process(xmlNodePtr cur)                                  = 0;
   virtual QMCRunType getRunType()                                       = 0;
-  virtual const std::string& get_root_name() const                      = 0;
   virtual std::string getEngineName()                                   = 0;
   virtual unsigned long getDriverMode()                                 = 0;
   virtual ~QMCDriverInterface() {}
 
   virtual void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) {}
   virtual std::unique_ptr<BranchEngineType> getBranchEngine() { return nullptr; }
-  virtual void setNewBranchEngine(std::unique_ptr<SFNBranch>&& be) {}
-  virtual std::unique_ptr<SFNBranch> getNewBranchEngine() { return nullptr; }
+
+protected:
+  virtual const std::string& get_root_name() const = 0;
 };
 
 } // namespace qmcplusplus

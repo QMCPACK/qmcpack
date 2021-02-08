@@ -280,7 +280,7 @@ bool QMCMain::execute()
     HDFVersion cur_version;
     v_str << cur_version[0] << " " << cur_version[1];
     xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
-    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot());
+    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
@@ -566,14 +566,13 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run              = false;
 
   if (reuse && last_driver)
     qmc_driver = std::move(last_driver);
   else
   {
-    QMCDriverFactory driver_factory;
+    QMCDriverFactory driver_factory(myProject);
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
 
     qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
@@ -588,15 +587,12 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
       qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
     }
 
-    if (last_branch_engine_new_unified_driver)
-      qmc_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
-
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
       myProject.advance();
 
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), "", append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.
@@ -614,7 +610,6 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
     // transfer the states of a driver before its destruction
     last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
-    last_branch_engine_new_unified_driver = qmc_driver->getNewBranchEngine();
     // save the driver in a driver loop
     if (reuse)
       last_driver = std::move(qmc_driver);

@@ -356,7 +356,7 @@ public:
       l2_ptr->evaluateD(P, iel, D);
   }
 
-  static std::vector<int> flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list);
+  static std::vector<int> flex_makeNonLocalMoves(const RefVector<QMCHamiltonian>& h_list, const RefVector<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable

@@ -484,7 +484,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
 
   // map from [0:2*NMO) to [0:NMO) in collinear case
-  int k0_alpha, k0_beta, kN_alpha = 0, kN_beta = 0;
+  int k0_alpha = 0, k0_beta = 0, kN_alpha = 0, kN_beta = 0;
   if (k0 >= 0)
   {
     k0_alpha = std::min(k0, NMO);
@@ -494,10 +494,6 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
       k0_beta = std::max(k0, NMO) - NMO;
       kN_beta = std::max(kN, NMO) - NMO;
     }
-  }
-  else
-  {
-    k0_alpha = k0_beta = kN_alpha = kN_beta = 0;
   }
 
   int ak0, ak1;
