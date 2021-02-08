@@ -126,10 +126,10 @@ public:
 
     {
       ScopedTimer offload(&offload_timer_);
-      #pragma omp target teams distribute collapse(2) num_teams(N_targets*num_teams) \
-        map(to: source_pos_ptr[:N_sources_padded*D]) \
-        map(always, to: target_pos_ptr[:N_targets*D]) \
-        map(always, from: r_dr_ptr[:r_dr_memorypool_.size()])
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(N_targets*num_teams) \
+                        map(to: source_pos_ptr[:N_sources_padded*D]) \
+                        map(always, to: target_pos_ptr[:N_targets*D]) \
+                        map(always, from: r_dr_ptr[:r_dr_memorypool_.size()])")
       for (int iat = 0; iat < N_targets_local; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -144,8 +144,9 @@ public:
           auto* r_iat_ptr  = r_dr_ptr + iat * stride_size;
           auto* dr_iat_ptr = r_iat_ptr + N_sources_padded;
 
-          DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
-                                                        first, last);
+          PRAGMA_OFFLOAD("omp parallel for simd")
+          for (int iel = first; iel < last; iel++)
+            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded, iel);
         }
     }
   }
@@ -214,9 +215,9 @@ public:
 
     {
       ScopedTimer offload(&offload_timer_);
-      #pragma omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
-        map(always, to: input_ptr[:offload_input.size()]) \
-        nowait depend(out: total_targets)
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
+                        map(always, to: input_ptr[:offload_input.size()]) \
+                        nowait depend(out: total_targets)")
       for (int iat = 0; iat < total_targets; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -233,8 +234,9 @@ public:
           for (int idim = 0; idim < D; idim++)
             pos[idim] = target_pos_ptr[iat * D + idim];
 
-          DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
-                                                        first, last);
+          PRAGMA_OFFLOAD("omp parallel for simd")
+          for (int iel = first; iel < last; iel++)
+            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded, iel);
         }
     }
 
@@ -307,9 +309,9 @@ public:
 
     {
       ScopedTimer offload(&offload_timer_);
-      #pragma omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
-        map(always, to: input_ptr[:offload_input.size()]) \
-        map(always, from: r_dr_ptr[:offload_output.size()])
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
+                        map(always, to: input_ptr[:offload_input.size()]) \
+                        map(always, from: r_dr_ptr[:offload_output.size()])")
       for (int iat = 0; iat < total_targets; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -326,8 +328,9 @@ public:
           for (int idim = 0; idim < D; idim++)
             pos[idim] = target_pos_ptr[iat * D + idim];
 
-          DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
-                                                      first, last);
+          PRAGMA_OFFLOAD("omp parallel for simd")
+          for (int iel = first; iel < last; iel++)
+            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded, iel);
         }
     }
 
