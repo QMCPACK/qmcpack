@@ -82,11 +82,11 @@ public:
   /** lend crowd-owned resources to the crowd leader walker
    * Note: use RAII CrowdResourceLock whenever possible
    */
-  void lendResources();
+  void lendResources(size_t receiver);
   /** take back crowd-owned resources from the crowd leader walker
    * Note: use RAII CrowdResourceLock whenever possible
    */
-  void takebackResources();
+  void takebackResources(size_t receiver);
 
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
@@ -143,18 +143,19 @@ private:
 class CrowdResourceLock
 {
 public:
-  CrowdResourceLock(Crowd& locked_crowd) : locked_crowd_(locked_crowd)
+  CrowdResourceLock(Crowd& locked_crowd, size_t receiver = 0) : locked_crowd_(locked_crowd), receiver_(receiver)
   {
-    locked_crowd_.lendResources();
+    locked_crowd_.lendResources(receiver_);
   }
 
-  ~CrowdResourceLock() { locked_crowd_.takebackResources(); }
+  ~CrowdResourceLock() { locked_crowd_.takebackResources(receiver_); }
 
   CrowdResourceLock(const CrowdResourceLock&) = delete;
   CrowdResourceLock(CrowdResourceLock&&) = delete;
 
 private:
   Crowd& locked_crowd_;
+  const size_t receiver_;
 };
 
 } // namespace qmcplusplus
