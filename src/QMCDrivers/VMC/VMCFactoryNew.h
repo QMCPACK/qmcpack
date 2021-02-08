@@ -37,7 +37,7 @@ private:
 public:
   VMCFactoryNew(xmlNodePtr cur, const int vmode) : vmc_mode_(vmode), input_node_(cur) {}
 
-  QMCDriverInterface* create(const ProjectData& project_info,
+  QMCDriverInterface* create(const ProjectData& project_data,
                              MCPopulation&& pop,
                              TrialWaveFunction& psi,
                              QMCHamiltonian& h,

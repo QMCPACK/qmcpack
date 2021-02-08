@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 /** Constructor maintains proper ownership of input parameters
    */
-VMCBatched::VMCBatched(const ProjectData& project_info,
+VMCBatched::VMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
                        VMCDriverInput&& input,
                        MCPopulation&& pop,
@@ -29,7 +29,7 @@ VMCBatched::VMCBatched(const ProjectData& project_info,
                        QMCHamiltonian& h,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(project_info,
+    : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(pop),
                    psi,
@@ -357,7 +357,7 @@ bool VMCBatched::run()
     estimator_manager_->getApproximateEnergyVariance(ene, var);
     o << "====================================================";
     o << "\n  End of a VMC block";
-    o << "\n    QMC counter        = " << project_info_.getSeriesIndex();
+    o << "\n    QMC counter        = " << project_data_.getSeriesIndex();
     o << "\n    time step          = " << qmcdriver_input_.get_tau();
     o << "\n    reference energy   = " << ene;
     o << "\n    reference variance = " << var;
