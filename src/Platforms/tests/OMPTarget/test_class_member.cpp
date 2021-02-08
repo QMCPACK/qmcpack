@@ -23,7 +23,7 @@ namespace qmcplusplus
 template<typename T>
 struct maptest
 {
-  const static size_t size = 6;
+  static const size_t size = 6;
   T data[size];
 
   PRAGMA_OFFLOAD("omp declare target")

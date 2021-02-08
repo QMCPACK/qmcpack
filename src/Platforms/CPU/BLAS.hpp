@@ -745,27 +745,27 @@ struct LAPACK
            IWORK, LIWORK, INFO);
   }
 
-  void static getrf(const int& n, const int& m, double* a, const int& n0, int* piv, int& st)
+  static void getrf(const int& n, const int& m, double* a, const int& n0, int* piv, int& st)
   {
     dgetrf(n, m, a, n0, piv, st);
   }
 
-  void static getrf(const int& n, const int& m, float* a, const int& n0, int* piv, int& st)
+  static void getrf(const int& n, const int& m, float* a, const int& n0, int* piv, int& st)
   {
     sgetrf(n, m, a, n0, piv, st);
   }
 
-  void static getrf(const int& n, const int& m, std::complex<double>* a, const int& n0, int* piv, int& st)
+  static void getrf(const int& n, const int& m, std::complex<double>* a, const int& n0, int* piv, int& st)
   {
     zgetrf(n, m, a, n0, piv, st);
   }
 
-  void static getrf(const int& n, const int& m, std::complex<float>* a, const int& n0, int* piv, int& st)
+  static void getrf(const int& n, const int& m, std::complex<float>* a, const int& n0, int* piv, int& st)
   {
     cgetrf(n, m, a, n0, piv, st);
   }
 
-  void static getri(int n,
+  static void getri(int n,
                     float* restrict a,
                     int n0,
                     int const* restrict piv,
@@ -776,7 +776,7 @@ struct LAPACK
     sgetri(n, a, n0, piv, work, n1, status);
   }
 
-  void static getri(int n,
+  static void getri(int n,
                     double* restrict a,
                     int n0,
                     int const* restrict piv,
@@ -787,7 +787,7 @@ struct LAPACK
     dgetri(n, a, n0, piv, work, n1, status);
   }
 
-  void static getri(int n,
+  static void getri(int n,
                     std::complex<float>* restrict a,
                     int n0,
                     int const* restrict piv,
@@ -798,7 +798,7 @@ struct LAPACK
     cgetri(n, a, n0, piv, work, n1, status);
   }
 
-  void static getri(int n,
+  static void getri(int n,
                     std::complex<double>* restrict a,
                     int n0,
                     int const* restrict piv,
@@ -809,7 +809,7 @@ struct LAPACK
     zgetri(n, a, n0, piv, work, n1, status);
   }
 
-  void static geqrf(int M,
+  static void geqrf(int M,
                     int N,
                     std::complex<double>* A,
                     const int LDA,
@@ -821,12 +821,12 @@ struct LAPACK
     zgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static geqrf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+  static void geqrf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
     dgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static geqrf(int M,
+  static void geqrf(int M,
                     int N,
                     std::complex<float>* A,
                     const int LDA,
@@ -838,12 +838,12 @@ struct LAPACK
     cgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static geqrf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
+  static void geqrf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
   {
     sgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gelqf(int M,
+  static void gelqf(int M,
                     int N,
                     std::complex<double>* A,
                     const int LDA,
@@ -855,12 +855,12 @@ struct LAPACK
     zgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gelqf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+  static void gelqf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
     dgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gelqf(int M,
+  static void gelqf(int M,
                     int N,
                     std::complex<float>* A,
                     const int LDA,
@@ -872,12 +872,12 @@ struct LAPACK
     cgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gelqf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
+  static void gelqf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
   {
     sgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gqr(int M,
+  static void gqr(int M,
                   int N,
                   int K,
                   std::complex<double>* A,
@@ -890,12 +890,12 @@ struct LAPACK
     zungqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gqr(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+  static void gqr(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
     dorgqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gqr(int M,
+  static void gqr(int M,
                   int N,
                   int K,
                   std::complex<float>* A,
@@ -908,12 +908,12 @@ struct LAPACK
     cungqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gqr(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
+  static void gqr(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
   {
     sorgqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static glq(int M,
+  static void glq(int M,
                   int N,
                   int K,
                   std::complex<double>* A,
@@ -926,12 +926,12 @@ struct LAPACK
     zunglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static glq(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+  static void glq(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
     dorglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static glq(int M,
+  static void glq(int M,
                   int N,
                   int K,
                   std::complex<float>* A,
@@ -944,27 +944,27 @@ struct LAPACK
     cunglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static glq(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int const LWORK, int& INFO)
+  static void glq(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int const LWORK, int& INFO)
   {
     sorglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static potrf(const char& UPLO, const int& N, float* A, const int& LDA, int& INFO)
+  static void potrf(const char& UPLO, const int& N, float* A, const int& LDA, int& INFO)
   {
     spotrf(UPLO, N, A, LDA, INFO);
   }
 
-  void static potrf(const char& UPLO, const int& N, double* A, const int& LDA, int& INFO)
+  static void potrf(const char& UPLO, const int& N, double* A, const int& LDA, int& INFO)
   {
     dpotrf(UPLO, N, A, LDA, INFO);
   }
 
-  void static potrf(const char& UPLO, const int& N, std::complex<float>* A, const int& LDA, int& INFO)
+  static void potrf(const char& UPLO, const int& N, std::complex<float>* A, const int& LDA, int& INFO)
   {
     cpotrf(UPLO, N, A, LDA, INFO);
   }
 
-  void static potrf(const char& UPLO, const int& N, std::complex<double>* A, const int& LDA, int& INFO)
+  static void potrf(const char& UPLO, const int& N, std::complex<double>* A, const int& LDA, int& INFO)
   {
     zpotrf(UPLO, N, A, LDA, INFO);
   }
