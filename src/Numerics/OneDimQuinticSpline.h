@@ -156,7 +156,7 @@ private:
   }
 
 public:
-  inline value_type splint(point_type r) const
+  inline value_type splint(point_type r) const override
   {
     if (r < r_min)
     {
@@ -172,7 +172,7 @@ public:
   }
 
 
-  inline value_type splint(point_type r, value_type& du, value_type& d2u) const
+  inline value_type splint(point_type r, value_type& du, value_type& d2u) const override
   {
     if (r < r_min)
     {
@@ -202,7 +202,7 @@ public:
     return quinticInterpolateThirdDeriv(cL, m_Y[Loc], B[Loc], m_Y2[Loc], D[Loc], E[Loc], F[Loc], du, d2u, d3u);
   }
 
-  inline void spline(int imin, value_type yp1, int imax, value_type ypn)
+  inline void spline(int imin, value_type yp1, int imax, value_type ypn) override
   {
     first_deriv = yp1;
     last_deriv  = ypn;
@@ -224,7 +224,7 @@ public:
     ConstValue = m_Y[imax];
   }
 
-  inline void spline() { spline(0, 0.0, m_grid->size() - 1, 0.0); }
+  inline void spline() override { spline(0, 0.0, m_grid->size() - 1, 0.0); }
 };
 
 
