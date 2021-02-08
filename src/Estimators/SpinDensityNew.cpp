@@ -34,7 +34,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& speci
 
   data_ = createLocalData(getFullDataSize(), data_locality_);
 
-  if(input_.get_write_report())
+  if (input_.get_write_report())
     report("  ");
 }
 
@@ -54,9 +54,9 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
     throw std::runtime_error("SpinDensityNew cannot be constructed from a lattice that is not explicitly defined");
 
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
-  species_size_ = getSpeciesSize(species_);
-  data_ = createLocalData(getFullDataSize(), data_locality_);
-  if(input_.get_write_report())
+  species_size_       = getSpeciesSize(species_);
+  data_               = createLocalData(getFullDataSize(), data_locality_);
+  if (input_.get_write_report())
     report("  ");
 }
 
@@ -133,7 +133,7 @@ void SpinDensityNew::accumulate(RefVector<MCPWalker>& walkers, RefVector<Particl
     walkers_weight_ += weight;
     int p                             = 0;
     std::vector<QMCT::RealType>& data = *data_;
-    size_t offset = 0;
+    size_t offset                     = 0;
     for (int s = 0; s < species_.size(); ++s, offset += dp_.npoints)
       for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
       {
@@ -186,7 +186,7 @@ void SpinDensityNew::collect(const RefVector<OperatorEstBase>& type_erased_opera
         (*data_)[point] += weight;
         walkers_weight_ += weight;
       }
-      oeb.walkers_weight_ = 0;
+      oeb.zero();
     }
   }
   else if (data_locality_ == DataLocality::crowd)

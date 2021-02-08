@@ -46,6 +46,7 @@ public:
   typedef QMCTraits::FullPrecRealType RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
+  using QMCT = QMCTraits;
   typedef ScalarEstimatorBase EstimatorType;
   using FPRBuffer = std::vector<FullPrecRealType>;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;

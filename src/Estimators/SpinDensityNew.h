@@ -71,12 +71,23 @@ public:
   SpinDensityNew(SpinDensityInput&& sdi, const Lattice&, const SpeciesSet& species, const DataLocality dl = DataLocality::crowd);
   SpinDensityNew(const SpinDensityNew& sdn);
 
+  /** This allows us to allocate the necessary data for the DataLocality::queue 
+   */
   void startBlock(int steps) override;
-  //standard interface
+
+  /** standard interface
+   */
   OperatorEstBase* clone() override;
+
+  /** accumulate 1 or more walkers of SpinDensity samples
+   */
   void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) override;
 
-  /** These absolutely must be of this derived type
+  /** this allows the EstimatorManagerNew to reduce without needing to know the details
+   *  of SpinDensityNew's data.
+   *
+   *  can use base class default until crowd level SpinDensity
+   *  estimators don't have a copy of the density grid.
    */
   void collect(const RefVector<OperatorEstBase>& operator_estimators) override;
 

@@ -375,8 +375,8 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     }
     // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced firt.
     size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end())) + 1;
-    std::vector<double> operator_send_buffer;
-    std::vector<double> operator_recv_buffer;
+    std::vector<RealType> operator_send_buffer;
+    std::vector<RealType> operator_recv_buffer;
     operator_send_buffer.reserve(nops);
     operator_recv_buffer.reserve(nops);
     for (int iop = 0; iop < operator_ests_.size(); ++iop)
@@ -384,10 +384,9 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       auto& estimator      = *operator_ests_[iop];
       auto& data           = estimator.get_data_ref();
       size_t adjusted_size = data.size() + 1;
-      operator_send_buffer.resize(adjusted_size);
-      operator_recv_buffer.resize(adjusted_size);
-      auto cur = operator_send_buffer.begin();
-      std::copy_n(data.begin(), data.size(), cur);
+      operator_send_buffer.resize(adjusted_size, 0.0);
+      operator_recv_buffer.resize(adjusted_size, 0.0);
+      std::copy_n(data.begin(), data.size(), operator_send_buffer.begin());
       operator_send_buffer[data.size()] = estimator.get_walkers_weight();
       // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
@@ -400,7 +399,7 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       {
         std::copy_n(operator_recv_buffer.begin(), data.size(), data.begin());
         size_t reduced_walker_weights = operator_recv_buffer[data.size()];
-        RealType invTotWgt            = 1.0 / static_cast<double>(reduced_walker_weights);
+        RealType invTotWgt            = 1.0 / static_cast<QMCT::RealType>(reduced_walker_weights);
         operator_ests_[iop]->normalize(invTotWgt);
       }
     }
