@@ -165,8 +165,12 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
       APP_ABORT("");
     }
     SpRMatrix_ref L(to_address(Likn.origin()), Likn.extensions());
-    hyperslab_proxy<SpRMatrix_ref, 2> hslab(L, std::array<int, 2>{NMO * NMO, global_ncvecs},
-                                            std::array<int, 2>{NMO * NMO, local_ncv}, std::array<int, 2>{0, nc0});
+    hyperslab_proxy<SpRMatrix_ref, 2> hslab(L,
+                                            std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
+                                                                  static_cast<size_t>(global_ncvecs)},
+                                            std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
+                                                                  static_cast<size_t>(local_ncv)},
+                                            std::array<size_t, 2>{0, static_cast<size_t>(nc0)});
     std::vector<int> shape;
     if (dump.getShape<boost::multi::array<RealType, 2>>("L", shape))
     {
