@@ -497,29 +497,26 @@ void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticle
     SK->makeMove(iat, newpos);
 }
 
-void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
+void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& p_list,
                                                   Index_t iat,
                                                   const std::vector<SingleParticlePos_t>& new_positions,
                                                   bool maybe_accept)
 {
-  ScopedTimer compute_newpos_scope(P_list[0].get().myTimers[PS_newpos]);
-  const int dist_tables_size = P_list[0].get().DistTables.size();
-#pragma omp parallel
+  ParticleSet& leader = p_list[0];
+  ScopedTimer compute_newpos_scope(leader.myTimers[PS_newpos]);
+  const int dist_tables_size = leader.DistTables.size();
+  for (int i = 0; i < dist_tables_size; ++i)
   {
-    for (int i = 0; i < dist_tables_size; ++i)
-    {
-#pragma omp for
-      for (int iw = 0; iw < P_list.size(); iw++)
-        P_list[iw].get().DistTables[i]->move(P_list[iw], new_positions[iw], iat, maybe_accept);
-    }
+    const auto dt_list(extractDTRefList(p_list, i));
+    leader.DistTables[i]->mw_move(dt_list, p_list, new_positions, iat, maybe_accept);
+  }
 
-    auto& SK = P_list[0].get().SK;
-    if (SK && SK->DoUpdate)
-    {
-#pragma omp for
-      for (int iw = 0; iw < P_list.size(); iw++)
-        P_list[iw].get().SK->makeMove(iat, new_positions[iw]);
-    }
+  auto& SK = leader.SK;
+  if (SK && SK->DoUpdate)
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < p_list.size(); iw++)
+      p_list[iw].get().SK->makeMove(iat, new_positions[iw]);
   }
 }
 
