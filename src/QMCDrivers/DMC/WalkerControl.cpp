@@ -66,6 +66,7 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fi
       num_ranks_(c->size()),
       SwapMode(0),
       use_nonblocking_(true),
+      debug_disable_branching_(false),
       saved_num_walkers_sent_(0)
 {
   num_per_node_.resize(num_ranks_);
@@ -152,6 +153,7 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
 
 int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
+  if (debug_disable_branching_) do_not_branch = true;
   /* dynamic population
     1. compute multiplicity. If iter 0, multiplicity = 1
     2. compute curData, collect multiplicity on every rank
@@ -579,11 +581,13 @@ bool WalkerControl::put(xmlNodePtr cur)
 {
   int nw_target = 0, nw_max = 0;
   std::string nonblocking = "yes";
+  std::string debug_disable_branching = "no";
   ParameterSet params;
   params.add(max_copy_, "maxCopy", "int");
   params.add(nw_target, "targetwalkers", "int");
   params.add(nw_max, "max_walkers", "int");
   params.add(nonblocking, "use_nonblocking", "string");
+  params.add(debug_disable_branching, "debug_disable_branching", "string");
 
   bool success = params.put(cur);
 
@@ -595,6 +599,13 @@ bool WalkerControl::put(xmlNodePtr cur)
   else
     myComm->barrier_and_abort("WalkerControl::put unknown use_nonblocking option " + nonblocking);
 
+  if (debug_disable_branching == "yes")
+    debug_disable_branching_ = true;
+  else if (debug_disable_branching == "no")
+    debug_disable_branching_ = false;
+  else
+    myComm->barrier_and_abort("WalkerControl::put unknown debug_disable_branching option " + debug_disable_branching);
+
   setMinMax(nw_target, nw_max);
 
   app_log() << "  WalkerControl parameters " << std::endl;
@@ -604,6 +615,8 @@ bool WalkerControl::put(xmlNodePtr cur)
   app_log() << "    Max Walkers per MPI rank " << n_max_ << std::endl;
   app_log() << "    Min Walkers per MPI rank " << n_min_ << std::endl;
   app_log() << "    Using " << (use_nonblocking_ ? "non-" : "") << "blocking send/recv" << std::endl;
+  if (debug_disable_branching_)
+    app_log() << "    Disable branching for debugging as the user input request." << std::endl;
   return true;
 }
 
