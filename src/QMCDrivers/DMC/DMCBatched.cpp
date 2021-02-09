@@ -93,10 +93,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     // local list to handle accept/reject
     std::vector<bool> isAccepted;
-    std::vector<std::reference_wrapper<ParticleSet>> elec_accept_list, elec_reject_list;
     isAccepted.reserve(num_walkers);
-    elec_accept_list.reserve(num_walkers);
-    elec_reject_list.reserve(num_walkers);
 
     //save the old energies for branching needs.
     std::vector<FullPrecRealType> old_energies(num_walkers);
@@ -203,8 +200,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
             prob[iw] = std::norm(ratios[iw]) * std::exp(log_gb[iw] - log_gf[iw]);
 
           isAccepted.clear();
-          elec_accept_list.clear();
-          elec_reject_list.clear();
 
           for (int iw = 0; iw < num_walkers; ++iw)
           {
@@ -213,22 +208,19 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
             {
               crowd.incAccept();
               isAccepted.push_back(true);
-              elec_accept_list.push_back(crowd.get_walker_elecs()[iw]);
               rr_accepted[iw] += rr[iw];
             }
             else
             {
               crowd.incReject();
               isAccepted.push_back(false);
-              elec_reject_list.push_back(crowd.get_walker_elecs()[iw]);
             }
           }
 
           TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted,
                                                     true);
 
-          ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
-          ParticleSet::flex_rejectMove(elec_reject_list, iat);
+          ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted, true);
         }
       }
 

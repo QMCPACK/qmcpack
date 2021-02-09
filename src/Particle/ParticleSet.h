@@ -363,19 +363,15 @@ public:
    * This can be used on moves proposed on randomly selected electrons.
    */
   void acceptMove(Index_t iat, bool partial_table_update = false);
-  /// batched version of acceptMove
-  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update = false);
-
   /** reject the move
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMove(Index_t iat);
-  /// batched version of rejectMove
-  static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
-  {
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().rejectMove(iat);
-  }
+  /// batched version of acceptMove and rejectMove fused
+  static void flex_accept_rejectMove(const RefVector<ParticleSet>& P_list,
+                                     Index_t iat,
+                                     const std::vector<bool>& isAccepted,
+                                     bool partial_table_update = false);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }

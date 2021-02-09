@@ -688,12 +688,6 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
   }
 }
 
-void  ParticleSet::flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update)
-{
-  for (int iw = 0; iw < P_list.size(); iw++)
-    P_list[iw].get().acceptMove(iat, partial_table_update);
-}
-
 void ParticleSet::rejectMove(Index_t iat)
 {
 #ifndef NDEBUG
@@ -701,6 +695,18 @@ void ParticleSet::rejectMove(Index_t iat)
     throw std::runtime_error("Bug detected by rejectMove! Request electron is not active!");
 #endif
   activePtcl = -1;
+}
+
+void ParticleSet::flex_accept_rejectMove(const RefVector<ParticleSet>& P_list,
+                                         Index_t iat,
+                                         const std::vector<bool>& isAccepted,
+                                         bool partial_table_update)
+{
+  for (int iw = 0; iw < P_list.size(); iw++)
+    if (isAccepted[iw])
+      P_list[iw].get().acceptMove(iat, partial_table_update);
+    else
+      P_list[iw].get().rejectMove(iat);
 }
 
 void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
