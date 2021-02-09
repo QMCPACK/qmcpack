@@ -325,6 +325,14 @@ public:
                                     GradMatrix_t& dlogdet,
                                     ValueMatrix_t& d2logdet) = 0;
 
+  virtual void mw_evaluate_notranspose(const RefVector<SPOSet>& spo_list,
+                                       const RefVector<ParticleSet>& P_list,
+                                       int first,
+                                       int last,
+                                       const RefVector<ValueMatrix_t>& logdet_list,
+                                       const RefVector<GradMatrix_t>& dlogdet_list,
+                                       const RefVector<ValueMatrix_t>& d2logdet_list);
+
   /** evaluate the values, gradients and hessians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
    * @param first starting index of the particles

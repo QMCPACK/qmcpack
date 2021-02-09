@@ -108,6 +108,19 @@ void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMa
   APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
 }
 
+void SPOSet::mw_evaluate_notranspose(const RefVector<SPOSet>& spo_list,
+                                     const RefVector<ParticleSet>& P_list,
+                                     int first,
+                                     int last,
+                                     const RefVector<ValueMatrix_t>& logdet_list,
+                                     const RefVector<GradMatrix_t>& dlogdet_list,
+                                     const RefVector<ValueMatrix_t>& d2logdet_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw].get().evaluate_notranspose(P_list[iw], first, last, logdet_list[iw], dlogdet_list[iw], d2logdet_list[iw]);
+}
+
 void SPOSet::evaluate_notranspose(const ParticleSet& P,
                                   int first,
                                   int last,

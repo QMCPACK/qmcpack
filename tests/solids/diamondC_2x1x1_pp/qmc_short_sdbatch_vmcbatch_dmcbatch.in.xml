@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_short_vmcbatch_dmcbatch" series="0">
+   <project id="qmc_short_sdbatch_vmcbatch_dmcbatch" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <qmcsystem>
@@ -41,7 +41,7 @@
       </particleset>
       <wavefunction name="psi0" target="e">
          <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
-            <slaterdeterminant batch="no">
+            <slaterdeterminant batch="yes">
                <determinant id="updet" size="8">
                   <occupation mode="ground" spindataset="0"/>
                </determinant>

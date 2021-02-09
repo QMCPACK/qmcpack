@@ -59,9 +59,6 @@ bool EstimatorManagerNewTest::testMakeBlockAverages()
   return true;
 }
 
-
-void EstimatorManagerNewTest::testReduceOperatorEstimators() { em.reduceOperatorEstimators(); }
-
 } // namespace testing
 
 TEST_CASE("EstimatorManagerNew::makeBlockAverages()", "[estimators]")
@@ -95,11 +92,15 @@ TEST_CASE("EstimatorManagerNew::reduceOperatorestimators()", "[estimators]")
 
   embt.fakeSomeOperatorEstimatorSamples(c->rank());
   std::vector<QMCTraits::RealType> good_data = embt.generateGoodOperatorData(num_ranks);
+
+  // Normalization is done by reduceOperatorEstimators based on the the total weight of the
+  // estimators for that block.
   embt.testReduceOperatorEstimators();
 
   if (c->rank() == 0)
   {
     auto& test_data          = embt.get_operator_data();
+      
     QMCTraits::RealType norm = 1.0 / static_cast<QMCTraits::RealType>(num_ranks);
     for (size_t i = 0; i < test_data.size(); ++i)
     {

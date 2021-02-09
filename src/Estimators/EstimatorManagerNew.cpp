@@ -200,7 +200,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
       Estimators[i]->registerObservables(h5desc, h_file);
     for (auto& uope : operator_ests_)
     {
-      uope->registerOperatorEstimator(h5desc, h_file);
+      uope->registerOperatorEstimator(h_file);
     }
   }
 }
@@ -221,12 +221,10 @@ void EstimatorManagerNew::stopBlock(unsigned long accept,
   PropertyCache[cpuInd]    = cpu_block_time;
   makeBlockAverages(accept, reject);
   reduceOperatorEstimators();
+  writeOperatorEstimators();
+  zeroOperatorEstimators();
 }
 
-/** Called at end of block in Unified Driver
- *
- *  Seems broken if there is more than one ScalarEstimator per crowd.
- */
 QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
     const RefVector<ScalarEstimatorBase>& estimators)
 {
@@ -259,15 +257,6 @@ QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
   return tot_weight;
 }
 
-
-/** Reduces OperatorEstimator data from Crowds to the managers OperatorEstimator data
- *
- *  The it is a vector of each crowds vector of references to their OperatorEstimators.
- *  A particular OperatorEstimators reduction via a call to collect may be straight forward 
- *  if the crowd context OperatorEstimator holds a copy of the estimator data structure
- *  or more complex if it just collects for instance a list of writes to locations
- *  in the data structure.
- */
 void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
 {
   for (int iop = 0; iop < operator_ests_.size(); ++iop)
@@ -277,13 +266,10 @@ void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<
     {
       this_op_est_for_all_crowds.emplace_back(crowd_op_ests[icrowd][iop]);
     }
-
     operator_ests_[iop]->collect(this_op_est_for_all_crowds);
   }
 }
 
-// blocks don't close frequently enough that we should be sweating the mpi transfers at all.
-// all this Cache stuff is premature optimization because someone wanted to be very fancy
 void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long rejects)
 {
   // accumulate unsigned long counters over ranks.
@@ -343,19 +329,22 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
   varAccumulator(SquaredAverageCache[0]);
-  if (Archive)
-  {
-    *Archive << std::setw(10) << RecordCount;
-    int maxobjs = std::min(BlockAverages.size(), max4ascii);
-    for (int j = 0; j < maxobjs; j++)
-      *Archive << std::setw(FieldWidth) << AverageCache[j];
-    for (int j = 0; j < PropertyCache.size(); j++)
-      *Archive << std::setw(FieldWidth) << PropertyCache[j];
-    *Archive << std::endl;
-    for (int o = 0; o < h5desc.size(); ++o)
-      h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
-    H5Fflush(h_file, H5F_SCOPE_LOCAL);
-  }
+
+  //Do not assume h_file is valid
+  if (h_file)
+    if (Archive)
+    {
+      *Archive << std::setw(10) << RecordCount;
+      int maxobjs = std::min(BlockAverages.size(), max4ascii);
+      for (int j = 0; j < maxobjs; j++)
+        *Archive << std::setw(FieldWidth) << AverageCache[j];
+      for (int j = 0; j < PropertyCache.size(); j++)
+        *Archive << std::setw(FieldWidth) << PropertyCache[j];
+      *Archive << std::endl;
+      for (int o = 0; o < h5desc.size(); ++o)
+        h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
+      H5Fflush(h_file, H5F_SCOPE_LOCAL);
+    }
   RecordCount++;
 }
 
@@ -371,8 +360,8 @@ void EstimatorManagerNew::reduceOperatorEstimators()
     }
     // 1 larger because we put the weight in to avoid dependence of the Scalar estimators being reduced firt.
     size_t nops = *(std::max_element(operator_data_sizes.begin(), operator_data_sizes.end())) + 1;
-    std::vector<double> operator_send_buffer;
-    std::vector<double> operator_recv_buffer;
+    std::vector<RealType> operator_send_buffer;
+    std::vector<RealType> operator_recv_buffer;
     operator_send_buffer.reserve(nops);
     operator_recv_buffer.reserve(nops);
     for (int iop = 0; iop < operator_ests_.size(); ++iop)
@@ -380,12 +369,10 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       auto& estimator      = *operator_ests_[iop];
       auto& data           = estimator.get_data_ref();
       size_t adjusted_size = data.size() + 1;
-      operator_send_buffer.resize(adjusted_size);
-      operator_recv_buffer.resize(adjusted_size);
-      auto cur = operator_send_buffer.begin();
-      std::copy_n(data.begin(), data.size(), cur);
+      operator_send_buffer.resize(adjusted_size, 0.0);
+      operator_recv_buffer.resize(adjusted_size, 0.0);
+      std::copy_n(data.begin(), data.size(), operator_send_buffer.begin());
       operator_send_buffer[data.size()] = estimator.get_walkers_weight();
-
       // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
       my_comm_->comm.reduce_n(operator_send_buffer.begin(), adjusted_size, operator_recv_buffer.begin(), std::plus<>{},
@@ -397,11 +384,30 @@ void EstimatorManagerNew::reduceOperatorEstimators()
       {
         std::copy_n(operator_recv_buffer.begin(), data.size(), data.begin());
         size_t reduced_walker_weights = operator_recv_buffer[data.size()];
-        RealType invTotWgt            = 1.0 / reduced_walker_weights;
+        RealType invTotWgt            = 1.0 / static_cast<QMCT::RealType>(reduced_walker_weights);
         operator_ests_[iop]->normalize(invTotWgt);
       }
     }
   }
+}
+
+void EstimatorManagerNew::writeOperatorEstimators()
+{
+  if (my_comm_->rank() == 0)
+  {
+    if (h_file)
+    {
+      for (auto& op_est : operator_ests_)
+        op_est->write();
+      H5Fflush(h_file, H5F_SCOPE_LOCAL);
+    }
+  }
+}
+
+void EstimatorManagerNew::zeroOperatorEstimators()
+{
+  for (auto& op_est : operator_ests_)
+    op_est->zero();
 }
 
 void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& var)

@@ -97,7 +97,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian_t L;
 
-  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false);
+  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false, bool create_local_resource = true);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -120,7 +120,6 @@ public:
 
   /** add a WaveFunctionComponent
    * @param aterm a WaveFunctionComponent pointer
-   * @param aname a name to the added WaveFunctionComponent object for printing
    */
   void addComponent(WaveFunctionComponent* aterm);
 
@@ -408,6 +407,15 @@ public:
                            const RefVector<ParticleSet>& P_list,
                            const RefVector<WFBufferType>& buf_list) const;
 
+  /** acquire external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  void acquireResource(ResourceCollection& collection);
+  /** release external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  void releaseResource(ResourceCollection& collection);
+
   RealType KECorrection() const;
 
   void evaluateDerivatives(ParticleSet& P,
@@ -455,11 +463,18 @@ public:
 
   bool use_tasking() const { return use_tasking_; }
 
+  const ResourceCollection& getResource() const { return *twf_resource_; }
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
   ///getName is in the way
   const std::string myName;
+
+  /** a collection of shared resource used by TWF
+   * created for the gold object of TWF not clones.
+   */
+  std::unique_ptr<ResourceCollection> twf_resource_;
 
   ///starting index of the buffer
   size_t BufferCursor;
