@@ -176,6 +176,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.buffer_timer.start();
   TrialWaveFunction::flex_evaluateGL(crowd.get_walker_twfs(), crowd.get_walker_elecs(), recompute);
+
   assert(QMCDriverNew::checkLogAndGL(crowd));
   timers.buffer_timer.stop();
 
