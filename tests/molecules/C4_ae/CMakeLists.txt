@@ -14,7 +14,7 @@ IF (NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-C4_sd-ae-qp-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
                     qmc_short-SD-C4_AE_Mol_QP
-                    qmc_short-SD-C4_AE_Mol_QP.in.xml 
+                    qmc_short-SD-C4_AE_Mol_QP.in.xml
                     1 16
                     TRUE
                     0 C4_SD_AE_QP_SHORT # VMC
@@ -32,7 +32,7 @@ IF (NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(long-C4_sd-ae-qp-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
                     qmc_long-SD-C4_AE_Mol_QP
-                    qmc_long-SD-C4_AE_Mol_QP.in.xml 
+                    qmc_long-SD-C4_AE_Mol_QP.in.xml
                     1 16
                     TRUE
                     0 C4_SD_AE_QP_LONG # VMC
@@ -40,19 +40,19 @@ IF (NOT QMC_CUDA)
 
 #Nb_Det = 211
 #Ground:
-#E               =   -151.05936895837109     
-#Vnn             =    56.960598986007938     
-#Ven             =   -464.01242694605406     
-#Vee             =    106.35022537160214     
-#T               =    149.64423363007290     
- 
+#E               =   -151.05936895837109
+#Vnn             =    56.960598986007938
+#Ven             =   -464.01242694605406
+#Vee             =    106.35022537160214
+#T               =    149.64423363007290
+
 
 #Excited:
-#E               =   -150.89066382584013     
-#Vnn             =    56.960598986007938     
-#Ven             =   -463.18948426388619     
-#Vee             =    106.03958987195335     
-#T               =    149.30063158008477     
+#E               =   -150.89066382584013
+#Vnn             =    56.960598986007938
+#Ven             =   -463.18948426388619
+#Vee             =    106.03958987195335
+#T               =    149.30063158008477
 
 
   LIST(APPEND C4_MD_AE_EXCITED_QP_SHORT "totenergy" "-150.89066382584013 0.062212972577")
@@ -89,62 +89,61 @@ IF (NOT QMC_CUDA)
                     TRUE
                     0 C4_MD_AE_GROUND_QP_SHORT # VMC
                     )
- 
+
 #--- Deterministic
-  
+
 # Deterministic tests for 1 node & 1 thread
-# FOR det_qmc_short-SD-C4_AE_Mol_QP.s000.scalar.dat
- # LIST(APPEND DET_C4_SD_AE_QP_SHORT "kinetic" "25.57801835 0.00001")
- # LIST(APPEND DET_C4_SD_AE_QP_SHORT "totenergy" "-147.14097018 0.00001")
- # LIST(APPEND DET_C4_SD_AE_QP_SHORT "potential" "-172.71898854 0.00001")
- # LIST(APPEND DET_C4_SD_AE_QP_SHORT "eeenergy" "101.53797646 0.00001")
- # LIST(APPEND DET_C4_SD_AE_QP_SHORT "ionion" "56.96059899 0.00001")
- # LIST(APPEND DET_C4_SD_AE_QP_SHORT "samples" "9 0.0")
- # QMC_RUN_AND_CHECK(deterministic-C4_sd-ae-qp-vmc
- #                   "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
- #                   det_qmc_short-SD-C4_AE_Mol_QP
- #                   det_qmc_short-SD-C4_AE_Mol_QP.in.xml
- #                   1 1
- #                   TRUE
- #                   0 DET_C4_SD_AE_QP_SHORT # VMC
- #                   )
- #
+## FOR det_qmc_short-SD-C4_AE_Mol_QP.s000.scalar.dat
+#  LIST(APPEND DET_C4_SD_AE_QP "kinetic" "25.57801835 0.00001")
+#  LIST(APPEND DET_C4_SD_AE_QP "totenergy" "-147.14097018 0.00001")
+#  LIST(APPEND DET_C4_SD_AE_QP "potential" "-172.71898854 0.00001")
+#  LIST(APPEND DET_C4_SD_AE_QP "eeenergy" "101.53797646 0.00001")
+#  LIST(APPEND DET_C4_SD_AE_QP "ionion" "56.96059899 0.00001")
+#  LIST(APPEND DET_C4_SD_AE_QP "samples" "9 0.0")
+#  QMC_RUN_AND_CHECK(deterministic-C4_sd-ae-qp-vmc
+#                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
+#                    det_qmc_short-SD-C4_AE_Mol_QP
+#                    det_qmc_short-SD-C4_AE_Mol_QP.in.xml
+#                    1 1
+#                    TRUE
+#                    0 DET_C4_SD_AE_QP # VMC
+#                    )
+
 ## FOR det_qmc_short-MD-C4_AE_Mol_Ground_QP.s000.scalar.dat
- # LIST(APPEND DET_C4_MD_AE_GROUND_QP_SHORT "kinetic" "99.09812052 0.00001")
- # LIST(APPEND DET_C4_MD_AE_GROUND_QP_SHORT "totenergy" "-146.85148712 0.00001")
- # LIST(APPEND DET_C4_MD_AE_GROUND_QP_SHORT "potential" "-245.94960764 0.00001")
- # LIST(APPEND DET_C4_MD_AE_GROUND_QP_SHORT "eeenergy" "96.78479850  0.00001")
- # LIST(APPEND DET_C4_MD_AE_GROUND_QP_SHORT "ionion" "56.96059899 0.00001")
- # LIST(APPEND DET_C4_MD_AE_GROUND_QP_SHORT "samples" "9 0.0")
- # QMC_RUN_AND_CHECK(deterministic-C4_md-ae-ground-qp-vmc
- #                   "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
- #                   det_qmc_short-MD-C4_AE_Mol_Ground_QP
- #                   det_qmc_short-MD-C4_AE_Mol_Ground_QP.in.xml
- #                   1 1
- #                   TRUE
- #                   0 DET_C4_MD_AE_GROUND_QP_SHORT # VMC
- #                   )
- #
+#  LIST(APPEND DET_C4_MD_AE_GROUND_QP "kinetic" "99.09812052 0.00001")
+#  LIST(APPEND DET_C4_MD_AE_GROUND_QP "totenergy" "-146.85148712 0.00001")
+#  LIST(APPEND DET_C4_MD_AE_GROUND_QP "potential" "-245.94960764 0.00001")
+#  LIST(APPEND DET_C4_MD_AE_GROUND_QP "eeenergy" "96.78479850  0.00001")
+#  LIST(APPEND DET_C4_MD_AE_GROUND_QP "ionion" "56.96059899 0.00001")
+#  LIST(APPEND DET_C4_MD_AE_GROUND_QP "samples" "9 0.0")
+#  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-ground-qp-vmc
+#                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
+#                    det_qmc_short-MD-C4_AE_Mol_Ground_QP
+#                    det_qmc_short-MD-C4_AE_Mol_Ground_QP.in.xml
+#                    1 1
+#                    TRUE
+#                    0 DET_C4_MD_AE_GROUND_QP # VMC
+#                    )
+
 ## FOR det_qmc_short-MD-C4_AE_Mol_Excited_QP.s000.scalar.dat
- # LIST(APPEND DET_C4_MD_AE_EXCITED_QP_SHORT "kinetic" "25.92674520 0.00001")
- # LIST(APPEND DET_C4_MD_AE_EXCITED_QP_SHORT "totenergy" "-145.57864234 0.00001")
- # LIST(APPEND DET_C4_MD_AE_EXCITED_QP_SHORT "potential" "-171.50538754 0.00001")
-##  LIST(APPEND DET_C4_MD_AE_EXCITED_QP_SHORT "eeenergy" "102.16100082 0.00001")
-#  LIST(APPEND DET_C4_MD_AE_EXCITED_QP_SHORT "ionion" "56.96059899 0.00001")
-#  LIST(APPEND DET_C4_MD_AE_EXCITED_QP_SHORT "samples" "9 0.0")
+#  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "kinetic" "25.92674520 0.00001")
+#  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "totenergy" "-145.57864234 0.00001")
+#  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "potential" "-171.50538754 0.00001")
+#  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "eeenergy" "102.16100082 0.00001")
+#  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "ionion" "56.96059899 0.00001")
+#  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "samples" "9 0.0")
 #  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-excited-qp-vmc
 #                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
 #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP
 #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP.in.xml
 #                    1 1
 #                    TRUE
-#                    0 DET_C4_MD_AE_EXCITED_QP_SHORT # VMC
-#                    )
-#
+#                    0 DET_C4_MD_AE_EXCITED_QP # VMC
+#                     )
 
- ELSE()
+  ELSE()
     MESSAGE_VERBOSE("Skipping C4_ae tests because Pure real WF are not supported by complex build (QMC_COMPLEX=1)")
- ENDIF()
+  ENDIF()
 ELSE()
     MESSAGE_VERBOSE("Skipping C4_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
