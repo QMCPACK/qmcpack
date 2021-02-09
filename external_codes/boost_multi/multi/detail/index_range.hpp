@@ -88,7 +88,7 @@ public:
 	using reference       = const_reference;
 	using const_pointer   = value_type;
 	using pointer         = value_type;
-	constexpr range() = default;
+	range() = default;
 	template<class Range, typename = std::enable_if_t<std::is_same<std::decay_t<Range>, value_type>{}> >
 	constexpr range(Range&& o) : first_{std::forward<Range>(o).first()}, last_{std::forward<Range>(o).last()}{}
 //	constexpr range(value_type const& fl) : first_{fl}, last_{fl + 1}{}
@@ -146,13 +146,12 @@ public:
 		return s.empty()?os<<"[)":os <<"["<< s.first() <<", "<< s.last() <<")";
 	}
 	friend constexpr const_iterator begin(range const& self){return self.begin();}
-	friend const_iterator end(range const& self){return self.end();}
+	friend constexpr const_iterator end(range const& self){return self.end();}
 //	constexpr range& operator=(range const&) = default;
 	friend constexpr auto operator==(range const& a, range const& b){
 		return (a.empty() and b.empty()) or (a.first_==b.first_ and a.last_==b.last_);
 	}
-	friend constexpr 
-	bool operator!=(range const& r1, range const& r2){return not(r1 == r2);}
+	friend constexpr bool operator!=(range const& r1, range const& r2){return not(r1 == r2);}
 	constexpr range::const_iterator find(value_type const& value) const{
 		auto first = begin();
 		if(value >= last_ or value < first_) return end();
@@ -173,7 +172,7 @@ public:
 };
 
 template<class IndexType = std::true_type, typename IndexTypeLast = IndexType>
-range<IndexType, IndexTypeLast> make_range(IndexType first, IndexTypeLast last){
+constexpr range<IndexType, IndexTypeLast> make_range(IndexType first, IndexTypeLast last){
 	return {first, last};
 }
 
@@ -181,8 +180,8 @@ template<class IndexType = std::ptrdiff_t>
 class intersecting_range{
 	range<IndexType> impl_{std::numeric_limits<IndexType>::min(), std::numeric_limits<IndexType>::max()};
 	intersecting_range() = default;	
-	explicit intersecting_range(IndexType first, IndexType last) = delete;//: impl_{first, last}{}
-	static intersecting_range make(IndexType first, IndexType last){
+	constexpr explicit intersecting_range(IndexType first, IndexType last) = delete;//: impl_{first, last}{}
+	static constexpr intersecting_range make(IndexType first, IndexType last){
 		intersecting_range ret; ret.impl_ = range<IndexType>{first, last}; return ret;
 	}
 	friend constexpr auto intersection(intersecting_range const& self, range<IndexType> const& other){
@@ -219,23 +218,23 @@ struct extension_t : public range<IndexType, IndexTypeLast>{
 		if(self.first() == 0) return os <<"["<< self.last() <<"]";
 		return os << static_cast<range<IndexType> const&>(self);
 	}
-	IndexType start () const{return this->first();}
-	IndexType finish() const{return this->last ();}
+	constexpr IndexType start () const{return this->first();}
+	constexpr IndexType finish() const{return this->last ();}
 	friend constexpr auto operator==(extension_t const& a, extension_t const& b){return static_cast<range<IndexType> const&>(a)==static_cast<range<IndexType> const&>(b);}
 	friend constexpr auto operator!=(extension_t const& a, extension_t const& b){return not(a==b);}
 };
 
 template<class IndexType = std::ptrdiff_t, class IndexTypeLast = decltype(std::declval<IndexType>() + 1)>
-extension_t<IndexType, IndexTypeLast> make_extension_t(IndexType f, IndexTypeLast l){return {f, l};}
+constexpr extension_t<IndexType, IndexTypeLast> make_extension_t(IndexType f, IndexTypeLast l){return {f, l};}
 
 template<class IndexTypeLast = std::ptrdiff_t>
-auto make_extension_t(IndexTypeLast l){return make_extension_t(IndexTypeLast{0}, l);}
+constexpr auto make_extension_t(IndexTypeLast l){return make_extension_t(IndexTypeLast{0}, l);}
 
 }}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#if not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #include <boost/hana/integral_constant.hpp>
 #include <boost/iterator/transform_iterator.hpp>

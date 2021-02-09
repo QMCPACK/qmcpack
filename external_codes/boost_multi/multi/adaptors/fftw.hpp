@@ -197,8 +197,8 @@ auto fftw_plan_many_dft(It1 first, It1 last, It2 d_first, int sign, unsigned fla
 	auto istrides = to_array<int>(strides(*first));
 	auto ostrides = to_array<int>(strides(*d_first));
 
-	std::array<std::tuple<int, int, int>, std::decay_t<decltype(*It1{})>::dimensionality> ssn;
-	for(std::size_t i = 0; i != ssn.size(); ++i) ssn[i] = std::make_tuple(istrides[i], ostrides[i], ion[i]);
+	std::array<std::array<int, 3>, std::decay_t<decltype(*It1{})>::rank::value> ssn;
+	for(std::size_t i = 0; i != ssn.size(); ++i) ssn[i] = {istrides[i], ostrides[i], ion[i]};
 	std::sort(ssn.begin(), ssn.end(), std::greater<>{});
 
 	for(std::size_t i = 0; i != ssn.size(); ++i){
@@ -210,7 +210,7 @@ auto fftw_plan_many_dft(It1 first, It1 last, It2 d_first, int sign, unsigned fla
 	int istride = istrides.back();
 	auto inembed = istrides; inembed.fill(0);
 	int ostride = ostrides.back();
-	auto onembed = ostrides; onembed.fill(0);	
+	auto onembed = ostrides; onembed.fill(0);
 	for(std::size_t i = 1; i != onembed.size(); ++i){
 		assert(ostrides[i-1] >= ostrides[i]); // otherwise ordering is incompatible
 		assert(ostrides[i-1]%ostrides[i]==0);
@@ -359,10 +359,10 @@ public:
 		fftw_flops(impl_.get(), &r.add, &r.mul, &r.fma);
 		return r;
 	}
-	std::string string_print() const{
-		return std::unique_ptr<char>{fftw_sprint_plan(impl_.get())}.get();
-	}
-	friend std::ostream& operator<<(std::ostream& os, plan const& p){return os<<p.string_print()<<'\n';}
+	//std::string string_print() const{
+	//	return std::unique_ptr<char>{fftw_sprint_plan(impl_.get())}.get();
+	//}
+	//friend std::ostream& operator<<(std::ostream& os, plan const& p){return os<<p.string_print()<<'\n';}
 #if HAVE_FFTW3_THREADS
 public:
 	static void make_thread_safe(){

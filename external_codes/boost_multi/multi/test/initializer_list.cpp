@@ -239,6 +239,13 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_2d){
 	}
 }
 
+BOOST_AUTO_TEST_CASE(multi_tests_static_array_initializer_list){
+	multi::static_array<std::complex<double>, 2> SA = {
+		{1. , 2.},
+		{3. , 4.},
+	};
+}
+
 BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_3d){
 	{
 		multi::array<double, 3> const A = 
@@ -259,6 +266,9 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_3d){
 		;
 		BOOST_REQUIRE( A[1][1][0] == 34.4 and A[1][1][1] == 4.   );
 	}
+}
+
+BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_3d_string){
 	{
 		using std::string;
 		multi::array<string, 3> B3 = {

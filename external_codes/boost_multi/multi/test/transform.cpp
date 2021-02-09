@@ -25,94 +25,99 @@ T default_construct(){return *(T*)(&default_construct<T>);} // nvcc needs this i
 template<class T, std::enable_if_t<not std::is_empty<T>{}, int> =0> 
 T default_construct(){return {};}
 
+
+template<class It, class F> class involuter;
+
 template<class Ref, class Involution>
 class involuted{
 protected:
 	Ref r_;
 	MULTI_NO_UNIQUE_ADDRESS Involution f_;
 public:
-	using decay_type =std::decay_t<decltype(std::declval<Involution>()(std::declval<Ref>()))>;
-	explicit involuted(Ref r) : involuted(
-		std::forward<Ref>(r), 
-		default_construct<Involution>()
-//		[&]()->Involution{if constexpr(std::is_empty<Involution>{}) return*(Involution*)this;else return {};}()
-	){
-	///	static_assert( std::is_trivially_default_constructible<std::decay_t<Involution>>{}, "!" );
-	//	static_assert( std::is_empty<Involution>{}, "!" );
-	}
-	explicit involuted(Ref r, Involution f) : r_{std::forward<Ref>(r)}, f_{f}{}
-	involuted& operator=(involuted const& other)=delete;//{r_ = other.r_; return *this;}
-public:
-	involuted(involuted const&) = delete;
-#if __cplusplus >= 201703L
-	involuted(involuted&&) = delete;
-#else
-	involuted(involuted&&) = default;
-#endif
-	operator decay_type() const&{return f_(r_);}
-	decltype(auto) operator&()&&{return involuter<decltype(&std::declval<Ref>()), Involution>{&r_, f_};}
+	using decay_type = std::decay_t<decltype(std::declval<Involution>()(std::declval<Ref>()))>;
+	constexpr involuted(Ref r, Involution f) : r_{std::forward<Ref>(r)}, f_{f}{}
+	constexpr explicit involuted(Ref r) : r_{std::forward<Ref>(r)}, f_{}{}
+	involuted(involuted const&) = default;
+	involuted(involuted&&)      = default;
+	constexpr involuted& operator=(involuted const& other)=delete;
+	constexpr operator decay_type() const{return f_(r_);}
+	constexpr auto operator&()&&{return involuter<decltype(&std::declval<Ref>()), Involution>{&r_, f_};}
 	template<class DecayType>
-	auto operator=(DecayType&& other)&&
-	->decltype(r_=f_(std::forward<DecayType>(other)), *this){
-		return r_=f_(std::forward<DecayType>(other)), *this;}
+	constexpr auto operator=(DecayType const& other)&
+	->decltype(r_=f_(other), *this){
+		return r_=f_(other), *this;}
 	template<class DecayType>
-	auto operator=(DecayType&& other)&
-	->decltype(r_=f_(std::forward<DecayType>(other)), *this){
-		return r_=f_(std::forward<DecayType>(other)), *this;}
-	template<class OtherRef>
-	auto operator=(involuted<OtherRef, Involution> const& o)&
-	->decltype(r_=f_==o.f_?std::forward<decltype(o.r_)>(o.r_):f_(o), *this){
-		return r_=f_==o.f_?std::forward<decltype(o.r_)>(o.r_):f_(o), *this;}
+	constexpr auto operator=(DecayType const& other)&&{return std::move(operator=(other));}
+
+	constexpr involuted& operator=(involuted&& other) = default;
 	template<class DecayType>
 	auto operator==(DecayType&& other) const&
 	->decltype(this->operator decay_type()==other){
 		return this->operator decay_type()==other;}
-	template<class Any> friend auto operator<<(Any&& a, involuted const& self)->decltype(a << std::declval<decay_type>()){return a << self.operator decay_type();}
+};
+
+template<class It, class F>
+class involuter{
+	It it_;
+	MULTI_NO_UNIQUE_ADDRESS F f_;
+	template<class, class> friend class involuter;
+public:
+	using pointer           = involuter<typename std::iterator_traits<It>::pointer, F>;
+	using element_type      = typename std::pointer_traits<It>::element_type;
+	using difference_type   = typename std::pointer_traits<It>::difference_type;
+	template<class U> 
+	using rebind            = involuter<typename std::pointer_traits<It>::template rebind<U>, F>;
+	using reference         = involuted<typename std::iterator_traits<It>::reference, F>;
+	using value_type        = typename std::iterator_traits<It>::value_type;
+	using iterator_category = typename std::iterator_traits<It>::iterator_category;
+	explicit constexpr involuter(It it) : it_{std::move(it)}, f_{}{}
+	constexpr involuter(It it, F f) : it_{std::move(it)}, f_{std::move(f)}{}
+	involuter(involuter const& other) = default;
+	template<class Other> involuter(involuter<Other, F> const& o) : it_{o.it_}, f_{o.f_}{}
+	constexpr auto       operator*() const{return reference{*it_, f_};}
+	constexpr bool       operator==(involuter const& o) const{return it_==o.it_;}
+	constexpr bool       operator!=(involuter const& o) const{return it_!=o.it_;}
+	constexpr involuter& operator+=(typename involuter::difference_type n){it_+=n; return *this;}
+	constexpr involuter  operator+(typename involuter::difference_type n) const{return {it_+n, f_};}
+	constexpr pointer    operator->() const{return {&*it_, f_};}
 };
 
 #if defined(__cpp_deduction_guides)
 template<class T, class F> involuted(T&&, F)->involuted<T const, F>;
-//template<class T, class F> involuted(T&, F)->involuted<T&, F>;
-//template<class T, class F> involuted(T const&, F)->involuted<T const&, F>;
 #endif
 
-template<class It, class F>
-class involuter{//: public std::iterator_traits<It>{
-	It it_;
-	MULTI_NO_UNIQUE_ADDRESS F f_;
-public:
-	template<class T> using rebind = involuter<typename std::pointer_traits<It>::template rebind<T>, F>;
-	using reference = involuted<typename std::iterator_traits<It>::reference, F>;
-	using difference_type = typename std::pointer_traits<It>::difference_type;
+template<class Ref> using negated = involuted<Ref, std::negate<>>;
+template<class It>  using negater = involuter<It , std::negate<>>;
 
-	using value_type = typename std::iterator_traits<It>::value_type;
-	using pointer  = void;
-	using iterator_category = typename std::iterator_traits<It>::iterator_category;
-	involuter(It it) : involuter(
-		std::move(it), 
-		default_construct<F>()
-//		[&]{if constexpr(sizeof(F)<=1) return *(F*)(this); else return F{};}()
-	){}
-	involuter(It it, F f) : it_{std::move(it)}, f_{std::move(f)}{}
-	auto operator*() const{return reference{*it_, f_};}
-	involuter& operator+=(typename involuter::difference_type n){it_+=n; return *this;}
-	involuter operator+(typename involuter::difference_type n) const{return {it_+n, f_};}
-	decltype(auto) operator->() const{
-		return involuter<typename std::iterator_traits<It>::pointer, F>{&*it_, f_};
-	}
+class basic_conjugate_t{
+	template<int N> struct prio : std::conditional_t<N!=0, prio<N-1>, std::true_type>{};
+	template<class T> static auto _(prio<0>, T const& t) DECLRETURN(std::conj(t))
+	template<class T> static auto _(prio<1>, T const& t) DECLRETURN(     conj(t))
+	template<class T> static auto _(prio<2>, T const& t) DECLRETURN(  T::conj(t))
+	template<class T> static auto _(prio<3>, T const& t) DECLRETURN(   t.conj( ))
+public:
+	template<class T> static auto _(T const& t) DECLRETURN(_(prio<3>{}, t))
+} basic_conjugate;
+
+template<class T = void>
+struct conjugate : private basic_conjugate_t{
+	constexpr auto operator()(T const& arg) const DECLRETURN(_(arg))
 };
 
-template<class ComplexRef> using negated = test::involuted<ComplexRef, decltype(neg)>;
-template<class ComplexIt>  using negater = test::involuter<ComplexIt, decltype(neg)>;
+template<>
+struct conjugate<> : private basic_conjugate_t{
+	template<class T> 
+	constexpr auto operator()(T const& arg) const DECLRETURN(_(arg))
+};
 
-MAYBE_UNUSED static auto conj = [](std::complex<double> const& a){return std::conj(std::forward<decltype(a)>(a));};
+//MAYBE_UNUSED static auto conj = [](std::complex<double> const& a){return std::conj(std::forward<decltype(a)>(a));};
 
 #if defined(__NVCC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsubobject-linkage"
 #endif
-template<class ComplexRef> struct conjd : test::involuted<ComplexRef, decltype(::test::conj)>{
-	conjd(ComplexRef r) : test::involuted<ComplexRef, decltype(conj)>(r){}
+template<class ComplexRef> struct conjd : test::involuted<ComplexRef, conjugate<>>{
+	conjd(ComplexRef r) : test::involuted<ComplexRef, conjugate<>>(r){}
 	decltype(auto) real() const{return this->r_.real();}
 	decltype(auto) imag() const{return negated<decltype(this->r_.imag())>(this->r_.imag());}//-this->r_.imag();}//negated<std::decay_t<decltype(this->r_.imag())>>(this->r_.imag());} 
 	friend decltype(auto) real(conjd const& self){using std::real; return real(static_cast<typename conjd::decay_type>(self));}
@@ -126,7 +131,7 @@ template<class ComplexRef> struct conjd : test::involuted<ComplexRef, decltype(:
 template<class T> conjd(T&&)->conjd<T>;
 #endif
 
-template<class Complex> using conjr = test::involuter<Complex, decltype(conj)>;
+template<class Complex> using conjr = test::involuter<Complex, conjugate<>>;
 
 #if 0
 template<class It, class F, class InvF = decltype(inverse(std::declval<F>()))>
@@ -288,7 +293,7 @@ BOOST_AUTO_TEST_CASE(transformed_array){
 		};
 		auto&& d2DC = multi::make_array_ref(test::involuter<double*, decltype(test::neg)>{&Z[0][0], test::neg}, {4, 5});
 
-		d2DC[1][1] = -66;
+		d2DC[1][1] = -66.;
 		BOOST_REQUIRE( Z[1][1] == 66 );
 	#endif
 
