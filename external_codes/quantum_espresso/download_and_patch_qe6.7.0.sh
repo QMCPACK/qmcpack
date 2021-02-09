@@ -44,6 +44,7 @@ fi
 
 cd ${codename}
 patch -f -p1 -i ../add_pw2qmcpack_to_${codename}.diff
+cp ../pw2qmcpack.f90 PP/src #TODO: delete this when working (add to patch)
 cd ..
 if [ -e $codename/PP/src/pw2qmcpack.f90 ]; then
 echo --- SUCCESS: ${codename} patched for pw2qmcpack converter
