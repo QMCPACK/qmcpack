@@ -1,0 +1,139 @@
+Start testing: Jan 16 22:39 PST
+----------------------------------------------------------
+1/4 Testing: combinations.cpp.x
+1/4 Test: combinations.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/fftw/test/build/combinations.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/fftw/test/build
+"combinations.cpp.x" start time: Jan 16 22:39 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+memory size 433.521 MB
+case 0, 1, 1, 1, 
+cpu_oplac 0.375075s wall, CPU (96.0%)
+cpu_oplac planned 0.352699s wall, CPU (99.2%)
+cpu_iplac 0.368171s wall, CPU (100.5%)
+cpu_iplac planned 0.366849s wall, CPU (100.9%)
+cpu_iplac planned measured 0.356276s wall, CPU (101.0%)
+cpu_alloc 0.875233s wall, CPU (100.5%)
+cpu_move 0.366111s wall, CPU (98.3%)
+case 0, 1, 1, 0, 
+cpu_oplac 0.335842s wall, CPU (101.2%)
+cpu_oplac planned 0.328614s wall, CPU (103.5%)
+cpu_iplac 0.334371s wall, CPU (98.7%)
+cpu_iplac planned 0.320320s wall, CPU (99.9%)
+cpu_iplac planned measured 0.323474s wall, CPU (102.0%)
+cpu_alloc 0.848941s wall, CPU (100.1%)
+cpu_move 0.327940s wall, CPU (100.6%)
+case 1, 0, 0, 0, 
+cpu_oplac 0.066205s wall, CPU (105.7%)
+cpu_oplac planned 0.067492s wall, CPU (88.9%)
+cpu_iplac 0.072076s wall, CPU (97.1%)
+cpu_iplac planned 0.062647s wall, CPU (95.8%)
+cpu_iplac planned measured 0.061764s wall, CPU (97.1%)
+cpu_alloc 0.594064s wall, CPU (101.0%)
+cpu_move 0.072984s wall, CPU (95.9%)
+case 1, 1, 0, 0, 
+cpu_oplac 0.258644s wall, CPU (100.5%)
+cpu_oplac planned 0.256045s wall, CPU (97.6%)
+cpu_iplac 0.262077s wall, CPU (103.0%)
+cpu_iplac planned 0.247934s wall, CPU (100.8%)
+cpu_iplac planned measured 0.247986s wall, CPU (100.8%)
+cpu_alloc 0.783677s wall, CPU (99.5%)
+cpu_move 0.267355s wall, CPU (101.0%)
+case 0, 0, 1, 0, 
+cpu_oplac 0.131570s wall, CPU (98.8%)
+cpu_oplac planned 0.132594s wall, CPU (98.0%)
+cpu_iplac 0.132455s wall, CPU (98.1%)
+cpu_iplac planned 0.131852s wall, CPU (98.6%)
+cpu_iplac planned measured 0.135991s wall, CPU (102.9%)
+cpu_alloc 0.654297s wall, CPU (99.3%)
+cpu_move 0.151493s wall, CPU (99.0%)
+case 0, 0, 0, 0, 
+cpu_oplac 0.048359s wall, CPU (82.7%)
+cpu_oplac planned 0.047563s wall, CPU (105.1%)
+cpu_iplac 0.000049s wall, CPU (n/a%)
+cpu_iplac planned 0.000001s wall, CPU (n/a%)
+cpu_iplac planned measured 0.000001s wall, CPU (n/a%)
+cpu_alloc 0.562920s wall, CPU (99.5%)
+cpu_move 0.012884s wall, CPU (77.6%)
+
+[1;32;49m*** No errors detected
+[0;39;49m
+<end of output>
+Test time =  20.33 sec
+----------------------------------------------------------
+Test Passed.
+"combinations.cpp.x" end time: Jan 16 22:39 PST
+"combinations.cpp.x" time elapsed: 00:00:20
+----------------------------------------------------------
+
+2/4 Testing: core.cpp.x
+2/4 Test: core.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/fftw/test/build/core.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/fftw/test/build
+"core.cpp.x" start time: Jan 16 22:39 PST
+Output:
+----------------------------------------------------------
+Running 7 test cases...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"core.cpp.x" end time: Jan 16 22:39 PST
+"core.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/4 Testing: transpose.cpp.x
+3/4 Test: transpose.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/fftw/test/build/transpose.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/fftw/test/build
+"transpose.cpp.x" start time: Jan 16 22:39 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+memory size 1617.54 MB
+transposition with aux   3.588490s wall, CPU (100.0%)
+fftw trans mve 1 thread  0.488287s wall, CPU (100.4%)
+fftw transpose fun thread  0.436707s wall, CPU (100.8%)
+fftw transpose 1 thread  0.463277s wall, CPU (101.5%)
+
+[1;32;49m*** No errors detected
+[0;39;49m
+<end of output>
+Test time =  15.49 sec
+----------------------------------------------------------
+Test Passed.
+"transpose.cpp.x" end time: Jan 16 22:40 PST
+"transpose.cpp.x" time elapsed: 00:00:15
+----------------------------------------------------------
+
+4/4 Testing: transpose_square.cpp.x
+4/4 Test: transpose_square.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/fftw/test/build/transpose_square.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/fftw/test/build
+"transpose_square.cpp.x" start time: Jan 16 22:40 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+memory size 1073.74 MB
+fftw trans mve 1 thread  0.162827s wall, CPU (98.3%)
+fftw trans mve 1 thread  0.160835s wall, CPU (99.5%)
+auxiliary copy           3.693943s wall, CPU (100.2%)
+transposition with loop   4.071665s wall, CPU (100.0%)
+transposition with loop 2 4.151600s wall, CPU (100.0%)
+
+[1;32;49m*** No errors detected
+[0;39;49m
+<end of output>
+Test time =  37.28 sec
+----------------------------------------------------------
+Test Passed.
+"transpose_square.cpp.x" end time: Jan 16 22:40 PST
+"transpose_square.cpp.x" time elapsed: 00:00:37
+----------------------------------------------------------
+
+End testing: Jan 16 22:40 PST

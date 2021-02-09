@@ -1,0 +1,21 @@
+Start testing: Jan 25 19:20 PST
+----------------------------------------------------------
+4/10 Testing: herk.cpp.x
+4/10 Test: herk.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/herk.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++
+"herk.cpp.x" start time: Jan 25 19:20 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"herk.cpp.x" end time: Jan 25 19:20 PST
+"herk.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jan 25 19:20 PST

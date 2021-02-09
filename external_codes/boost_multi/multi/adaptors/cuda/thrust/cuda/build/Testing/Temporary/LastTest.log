@@ -1,0 +1,22 @@
+Start testing: Jan 29 16:36 PST
+----------------------------------------------------------
+1/1 Testing: managed
+1/1 Test: managed
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/cuda/build/test/managed"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/cuda/build/test
+"managed" start time: Jan 29 16:36 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+<end of output>
+Test time =   0.21 sec
+----------------------------------------------------------
+Test Passed.
+"managed" end time: Jan 29 16:36 PST
+"managed" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jan 29 16:36 PST

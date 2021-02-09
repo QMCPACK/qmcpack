@@ -1,0 +1,77 @@
+Determining if the function sgemm_ exists failed with the following output:
+Change Dir: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_e7e67/fast && /usr/bin/make -f CMakeFiles/cmTC_e7e67.dir/build.make CMakeFiles/cmTC_e7e67.dir/build
+make[1]: Entering directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_e7e67.dir/CheckFunctionExists.cxx.o
+/usr/bin/clang++    -DCHECK_FUNCTION_EXISTS=sgemm_   -o CMakeFiles/cmTC_e7e67.dir/CheckFunctionExists.cxx.o -c /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CheckFunctionExists/CheckFunctionExists.cxx
+Linking CXX executable cmTC_e7e67
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e7e67.dir/link.txt --verbose=1
+/usr/bin/clang++   -DCHECK_FUNCTION_EXISTS=sgemm_    CMakeFiles/cmTC_e7e67.dir/CheckFunctionExists.cxx.o  -o cmTC_e7e67 
+/usr/bin/ld: CMakeFiles/cmTC_e7e67.dir/CheckFunctionExists.cxx.o: in function `main':
+CheckFunctionExists.cxx:(.text+0x17): undefined reference to `sgemm_'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+make[1]: *** [CMakeFiles/cmTC_e7e67.dir/build.make:87: cmTC_e7e67] Error 1
+make[1]: Leaving directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_e7e67/fast] Error 2
+
+
+
+Performing C++ SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_f5b8e/fast && /usr/bin/make -f CMakeFiles/cmTC_f5b8e.dir/build.make CMakeFiles/cmTC_f5b8e.dir/build
+make[1]: Entering directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_f5b8e.dir/src.cxx.o
+/usr/bin/clang++    -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_f5b8e.dir/src.cxx.o -c /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp/src.cxx
+Linking CXX executable cmTC_f5b8e
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f5b8e.dir/link.txt --verbose=1
+/usr/bin/clang++   -DCMAKE_HAVE_LIBC_PTHREAD    CMakeFiles/cmTC_f5b8e.dir/src.cxx.o  -o cmTC_f5b8e 
+/usr/bin/ld: CMakeFiles/cmTC_f5b8e.dir/src.cxx.o: in function `main':
+src.cxx:(.text+0x35): undefined reference to `pthread_create'
+/usr/bin/ld: src.cxx:(.text+0x41): undefined reference to `pthread_detach'
+/usr/bin/ld: src.cxx:(.text+0x53): undefined reference to `pthread_join'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+make[1]: *** [CMakeFiles/cmTC_f5b8e.dir/build.make:87: cmTC_f5b8e] Error 1
+make[1]: Leaving directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_f5b8e/fast] Error 2
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_10374/fast && /usr/bin/make -f CMakeFiles/cmTC_10374.dir/build.make CMakeFiles/cmTC_10374.dir/build
+make[1]: Entering directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_10374.dir/CheckFunctionExists.cxx.o
+/usr/bin/clang++    -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_10374.dir/CheckFunctionExists.cxx.o -c /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
+Linking CXX executable cmTC_10374
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_10374.dir/link.txt --verbose=1
+/usr/bin/clang++   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_10374.dir/CheckFunctionExists.cxx.o  -o cmTC_10374  -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+make[1]: *** [CMakeFiles/cmTC_10374.dir/build.make:87: cmTC_10374] Error 1
+make[1]: Leaving directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_10374/fast] Error 2
+
+
+

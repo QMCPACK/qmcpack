@@ -1,0 +1,6 @@
+gemm.cpp.x 23 0.000838013
+numeric.cpp.x 16 0.000138814
+herk.cpp.x 50 0.000110102
+gemv.cpp.x 1 0.0059666
+copy.cpp.x 0 0
+---

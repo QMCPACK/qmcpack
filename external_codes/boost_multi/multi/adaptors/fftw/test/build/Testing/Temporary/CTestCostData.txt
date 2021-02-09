@@ -1,0 +1,5 @@
+combinations.cpp.x 1 20.3323
+core.cpp.x 1 0.00377805
+transpose.cpp.x 1 15.4883
+transpose_square.cpp.x 1 37.2815
+---

@@ -1,0 +1,6 @@
+array.cu.x 19 0
+vector.cu.x 44 0.00463943
+herk.cu.x 0 0
+gemm.cu.x 38 0.000132114
+---
+array.cu.x

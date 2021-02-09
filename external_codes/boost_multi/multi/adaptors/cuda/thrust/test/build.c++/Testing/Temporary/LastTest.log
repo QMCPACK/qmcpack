@@ -1,0 +1,22 @@
+Start testing: Jan 26 21:56 PST
+----------------------------------------------------------
+1/1 Testing: vector.cu.x
+1/1 Test: vector.cu.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/build.c++/vector.cu.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/build.c++
+"vector.cu.x" start time: Jan 26 21:56 PST
+Output:
+----------------------------------------------------------
+Running 2 test cases...
+/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/vector.cu(40): fatal error: in "vector2": critical check false has failed
+
+*** 1 failure is detected in the test module "C++ Unit Tests for Multi CUDA thrust"
+<end of output>
+Test time =   0.25 sec
+----------------------------------------------------------
+Test Failed.
+"vector.cu.x" end time: Jan 26 21:56 PST
+"vector.cu.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jan 26 21:56 PST

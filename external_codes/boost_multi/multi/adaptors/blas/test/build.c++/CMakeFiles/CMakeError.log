@@ -1,0 +1,77 @@
+Determining if the function sgemm_ exists failed with the following output:
+Change Dir: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_a16c8/fast && /usr/bin/make -f CMakeFiles/cmTC_a16c8.dir/build.make CMakeFiles/cmTC_a16c8.dir/build
+make[1]: Entering directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_a16c8.dir/CheckFunctionExists.cxx.o
+/usr/bin/c++    -DCHECK_FUNCTION_EXISTS=sgemm_   -o CMakeFiles/cmTC_a16c8.dir/CheckFunctionExists.cxx.o -c /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CheckFunctionExists/CheckFunctionExists.cxx
+Linking CXX executable cmTC_a16c8
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a16c8.dir/link.txt --verbose=1
+/usr/bin/c++   -DCHECK_FUNCTION_EXISTS=sgemm_    CMakeFiles/cmTC_a16c8.dir/CheckFunctionExists.cxx.o  -o cmTC_a16c8 
+/usr/bin/ld: CMakeFiles/cmTC_a16c8.dir/CheckFunctionExists.cxx.o: in function `main':
+CheckFunctionExists.cxx:(.text+0x14): undefined reference to `sgemm_'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_a16c8.dir/build.make:87: cmTC_a16c8] Error 1
+make[1]: Leaving directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_a16c8/fast] Error 2
+
+
+
+Performing C++ SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_f6844/fast && /usr/bin/make -f CMakeFiles/cmTC_f6844.dir/build.make CMakeFiles/cmTC_f6844.dir/build
+make[1]: Entering directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_f6844.dir/src.cxx.o
+/usr/bin/c++    -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_f6844.dir/src.cxx.o -c /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp/src.cxx
+Linking CXX executable cmTC_f6844
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f6844.dir/link.txt --verbose=1
+/usr/bin/c++   -DCMAKE_HAVE_LIBC_PTHREAD    CMakeFiles/cmTC_f6844.dir/src.cxx.o  -o cmTC_f6844 
+/usr/bin/ld: CMakeFiles/cmTC_f6844.dir/src.cxx.o: in function `main':
+src.cxx:(.text+0x46): undefined reference to `pthread_create'
+/usr/bin/ld: src.cxx:(.text+0x52): undefined reference to `pthread_detach'
+/usr/bin/ld: src.cxx:(.text+0x63): undefined reference to `pthread_join'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_f6844.dir/build.make:87: cmTC_f6844] Error 1
+make[1]: Leaving directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_f6844/fast] Error 2
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_1bddd/fast && /usr/bin/make -f CMakeFiles/cmTC_1bddd.dir/build.make CMakeFiles/cmTC_1bddd.dir/build
+make[1]: Entering directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_1bddd.dir/CheckFunctionExists.cxx.o
+/usr/bin/c++    -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_1bddd.dir/CheckFunctionExists.cxx.o -c /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
+Linking CXX executable cmTC_1bddd
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1bddd.dir/link.txt --verbose=1
+/usr/bin/c++   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_1bddd.dir/CheckFunctionExists.cxx.o  -o cmTC_1bddd  -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_1bddd.dir/build.make:87: cmTC_1bddd] Error 1
+make[1]: Leaving directory '/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.c++/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_1bddd/fast] Error 2
+
+
+

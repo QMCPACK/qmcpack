@@ -1,0 +1,30 @@
+Start testing: Jan 26 21:46 PST
+----------------------------------------------------------
+1/1 Testing: vector.cu.x
+1/1 Test: vector.cu.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/build/vector.cu.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/build
+"vector.cu.x" start time: Jan 26 21:46 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+H has size 4
+H[0] = 14
+H[1] = 20
+H[2] = 38
+H[3] = 46
+H now has size 2
+D[0] = 99
+D[1] = 88
+
+[1;32;49m*** No errors detected
+[0;39;49m
+<end of output>
+Test time =   0.15 sec
+----------------------------------------------------------
+Test Passed.
+"vector.cu.x" end time: Jan 26 21:46 PST
+"vector.cu.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jan 26 21:46 PST

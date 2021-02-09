@@ -1,0 +1,4 @@
+managed 2 0.0666052
+array.cu.x 2 0.0639103
+vector.cu.x 2 0.0600388
+---

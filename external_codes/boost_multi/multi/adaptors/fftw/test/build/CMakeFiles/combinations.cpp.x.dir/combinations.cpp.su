@@ -1,0 +1,805 @@
+lazy_ostream.hpp:33:29:boost::unit_test::lazy_ostream::~lazy_ostream()	16	static
+lazy_ostream.hpp:33:29:virtual boost::unit_test::lazy_ostream::~lazy_ostream()	32	static
+lazy_ostream.hpp:35:29:static boost::unit_test::lazy_ostream& boost::unit_test::lazy_ostream::instance()	16	static
+lazy_ostream.hpp:43:29:virtual std::ostream& boost::unit_test::lazy_ostream::operator()(std::ostream&) const	16	static
+lazy_ostream.hpp:45:29:boost::unit_test::lazy_ostream::lazy_ostream(bool)	16	static
+char_traits.h:329:7:static constexpr std::size_t std::char_traits<char>::length(const char_type*)	48	static
+typeinfo:120:10:bool std::type_info::operator==(const std::type_info&) const	32	static
+new:173:33:void* operator new(std::size_t, void*)	16	static
+limits:1740:7:static constexpr double std::numeric_limits<double>::min()	16	static
+limits:1743:7:static constexpr double std::numeric_limits<double>::max()	16	static
+limits:1781:7:static constexpr double std::numeric_limits<double>::infinity()	16	static
+ios_base.h:705:5:std::streamsize std::ios_base::precision(std::streamsize)	16	static
+atomic:759:17:constexpr std::atomic<int>::atomic(std::atomic<int>::__integral_type)	32	static
+sp_counted_base_std_atomic.hpp:30:13:void boost::detail::atomic_increment(std::atomic_int_least32_t*)	16	static
+sp_counted_base_std_atomic.hpp:35:27:int_least32_t boost::detail::atomic_decrement(std::atomic_int_least32_t*)	16	static
+sp_counted_base_std_atomic.hpp:74:5:boost::detail::sp_counted_base::sp_counted_base()	32	static
+sp_counted_base_std_atomic.hpp:78:13:boost::detail::sp_counted_base::~sp_counted_base()	16	static
+sp_counted_base_std_atomic.hpp:78:13:virtual boost::detail::sp_counted_base::~sp_counted_base()	32	static
+sp_counted_base_std_atomic.hpp:89:18:virtual void boost::detail::sp_counted_base::destroy()	32	static
+sp_counted_base_std_atomic.hpp:98:10:void boost::detail::sp_counted_base::add_ref_copy()	32	static
+sp_counted_base_std_atomic.hpp:108:10:void boost::detail::sp_counted_base::release()	32	static
+sp_counted_base_std_atomic.hpp:122:10:void boost::detail::sp_counted_base::weak_release()	32	static
+stl_algobase.h:198:5:constexpr const _Tp& std::min(const _Tp&, const _Tp&) [with _Tp = long unsigned int]	16	static
+shared_count.hpp:122:21:constexpr boost::detail::shared_count::shared_count()	16	static
+shared_count.hpp:425:5:boost::detail::shared_count::~shared_count()	32	static
+shared_count.hpp:433:5:boost::detail::shared_count::shared_count(const boost::detail::shared_count&)	32	static
+shared_count.hpp:470:10:void boost::detail::shared_count::swap(boost::detail::shared_count&)	16	static
+shared_ptr.hpp:242:13:)	16	static
+assertion_result.hpp:45:25:void boost::test_tools::assertion_result::dummy::nonnull()	16	static
+shared_ptr.hpp:341:25:boost::shared_ptr<boost::basic_wrap_stringstream<char> >::~shared_ptr()	32	static
+assertion_result.hpp:52:5:boost::test_tools::assertion_result::assertion_result(bool)	32	static
+assertion_result.hpp:60:25:bool boost::test_tools::assertion_result::operator!() const	32	static
+assertion_result.hpp:62:5:boost::test_tools::assertion_result::operator boost::test_tools::assertion_result::safe_bool() const	48	static
+assertion_result.hpp:65:5:boost::test_tools::assertion_result::readonly_property65::readonly_property65(write_param_t)	32	static
+wrap_stringstream.hpp:40:7:boost::basic_wrap_stringstream<char>::basic_wrap_stringstream()	32	static
+assertion_result.hpp:69:25:boost::wrap_stringstream& boost::test_tools::assertion_result::message()	48	static
+assertion_result.hpp:76:25:boost::test_tools::assertion_result::const_string boost::test_tools::assertion_result::message() const	32	static
+fwd.hpp:45:13:bool boost::test_tools::tt_detail::dummy_cond()	16	static
+assertion_result.hpp:39:23:boost::test_tools::assertion_result::~assertion_result()	32	static
+stl_type_index.hpp:93:12:boost::typeindex::stl_type_index::stl_type_index(const type_info_t&)	16	static
+stl_type_index.hpp:117:43:const type_info_t& boost::typeindex::stl_type_index::type_info() const	16	static
+stl_type_index.hpp:206:13:bool boost::typeindex::stl_type_index::equal(const boost::typeindex::stl_type_index&) const	32	static
+function_base.hpp:603:3:boost::function_base::function_base()	16	static
+function_base.hpp:689:8:bool boost::function_base::has_trivial_copy_and_destroy() const	16	static
+fixture.hpp:37:13:boost::unit_test::test_unit_fixture::~test_unit_fixture()	16	static
+fixture.hpp:37:13:virtual boost::unit_test::test_unit_fixture::~test_unit_fixture()	32	static
+fixture.hpp:35:23:constexpr boost::unit_test::test_unit_fixture::test_unit_fixture()	16	static
+function_template.hpp:1048:7:boost::function<void()>::~function()	32	static
+decorator.hpp:94:13:boost::unit_test::decorator::base::~base()	16	static
+decorator.hpp:94:13:virtual boost::unit_test::decorator::base::~base()	32	static
+decorator.hpp:82:23:constexpr boost::unit_test::decorator::base::base()	16	static
+shared_ptr.hpp:341:25:boost::shared_ptr<boost::unit_test::test_unit_fixture>::~shared_ptr()	32	static
+decorator.hpp:233:29:boost::unit_test::decorator::fixture_t::fixture_t(boost::unit_test::test_unit_fixture_ptr)	32	static
+test_unit.hpp:265:1:boost::unit_test::test_case* boost::unit_test::make_test_case(const boost::function<void()>&, boost::unit_test::const_string, boost::unit_test::const_string, std::size_t)	176	static
+unit_test_suite.hpp:386:6:bool init_unit_test()	16	static
+unit_test.hpp:61:1:int main(int, char**)	32	static
+type_traits:62:17:constexpr std::integral_constant<_Tp, __v>::operator std::integral_constant<_Tp, __v>::value_type() const [with _Tp = bool; _Tp __v = false]	16	static
+index_range.hpp:96:12:constexpr boost::multi::range<IndexType, IndexTypeLast>::range(IndexType, IndexTypeLast) [with IndexType = long int; IndexTypeLast = long int]	16	static
+layout.hpp:117:25:constexpr const base_& boost::multi::extensions_t<1>::base() const	16	static
+layout.hpp:118:12:constexpr boost::multi::extensions_t<1>::extensions_t(const std::tuple<boost::multi::extension_t<long int, long int> >&)	16	static
+complex:615:3:double std::__complex_abs(__complex__ double)	32	static
+complex:1232:26:constexpr std::complex<double>::complex(double, double)	16	static
+complex:1252:7:constexpr double std::complex<double>::real() const	16	static
+complex:1256:7:constexpr double std::complex<double>::imag() const	16	static
+complex:1280:7:std::complex<double>& std::complex<double>::operator=(double)	16	static
+complex:1361:36:constexpr std::complex<double>::_ComplexT std::complex<double>::__rep() const	16	static
+fftw.hpp:316:6:void boost::multi::fftw::initialize_threads()	16	static
+fftw.hpp:319:6:void boost::multi::fftw::cleanup()	16	static
+fftw.hpp:344:7:void boost::multi::fftw::plan::execute() const	32	static
+fftw.hpp:354:7:void boost::multi::fftw::plan::operator()() const	32	static
+chrono:346:2:constexpr std::chrono::duration<_Rep, _Period>::rep std::chrono::duration<_Rep, _Period>::count() const [with _Rep = long int; _Period = std::ratio<1, 1000000000>]	16	static
+chrono:331:23:constexpr std::chrono::duration<_Rep, _Period>::duration(const _Rep2&) [with _Rep2 = long int; <template-parameter-2-2> = void; _Rep = long int; _Period = std::ratio<1, 1000000000>]	16	static
+combinations.cpp:25:2:watch::watch(std::string)	48	static
+combinations.cpp:26:2:watch::~watch()	80	static
+wrap_stringstream.hpp:40:7:boost::basic_wrap_stringstream<char>::~basic_wrap_stringstream()	32	static
+combinations.cpp:31:1:void fft_combinations_invoker()	496	static
+layout.hpp:132:15:>()) && (4 >= 1)), bool>::type <anonymous> = true][inherited from std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >]	64	static
+array.hpp:743:17:boost::multi::array<std::complex<double>, 4>::array(boost::multi::layout_t<4, long int>::extensions_type, const allocator_type&) [inherited from boost::multi::static_array<std::complex<double>, 4, std::allocator<std::complex<double> > >]	48	static
+array.hpp:929:2:boost::multi::array<T, D, A>::~array() [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	32	static
+combinations.cpp:38:4:fft_combinations::test_method()::<lambda()>::<lambda()>	64	static
+combinations.cpp:35:18:fft_combinations::test_method()::<lambda()>	160	static
+layout.hpp:373:22:constexpr boost::multi::layout_t<D, SSize>::size_type boost::multi::layout_t<D, SSize>::size() const [with long int D = 4; SSize = long int]	32	static
+layout.hpp:366:22:constexpr boost::multi::layout_t<D, SSize>::size_type boost::multi::layout_t<D, SSize>::num_elements() const [with long int D = 4; SSize = long int]	48	static
+array.hpp:746:2:boost::multi::array<T, D, A>::array(const boost::multi::array<T, D, A>&) [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	32	static
+fftw.hpp:325:7:boost::multi::fftw::plan::~plan()	32	static
+combinations.cpp:31:1:void fft_combinations::test_method()	1312	dynamic,bounded
+combinations.cpp:101:1:void fftw_4D_power_benchmark_invoker()	496	static
+decorator.hpp:210:23:constexpr boost::unit_test::decorator::enable_if_impl::enable_if_impl()	32	static
+decorator.hpp:210:23:boost::unit_test::decorator::enable_if_impl::~enable_if_impl()	32	static
+decorator.hpp:210:23:virtual boost::unit_test::decorator::enable_if_impl::~enable_if_impl()	32	static
+decorator.hpp:216:7:constexpr boost::unit_test::decorator::enable_if<false>::enable_if()	32	static
+tuple:626:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	96	static
+tuple:216:19:) [with _UHead = int; _UTail = {int, int, int}; <template-parameter-2-3> = void; long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	96	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = int]	16	static
+tuple:216:19:) [with _UHead = int; _UTail = {int, int}; <template-parameter-2-3> = void; long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	64	static
+tuple:216:19:) [with _UHead = int; _UTail = {int}; <template-parameter-2-3> = void; long unsigned int _Idx = 2; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	64	static
+tuple:348:19:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(_UHead&&) [with _UHead = int; long unsigned int _Idx = 3; _Head = boost::multi::extension_t<long int>]	48	static
+index_range.hpp:213:12:constexpr boost::multi::extension_t<IndexType, IndexTypeLast>::extension_t(IndexType) [with IndexType = long int; IndexTypeLast = long int]	32	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = int; long unsigned int _Idx = 3; _Head = boost::multi::extension_t<long int>]	48	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = int; long unsigned int _Idx = 2; _Head = boost::multi::extension_t<long int>]	48	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = int; long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>]	48	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = int; long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>]	48	static
+combinations.cpp:111:2:fftw_4D_power_benchmark::test_method()::<lambda()>	48	static
+combinations.cpp:111:69:fftw_4D_power_benchmark::test_method()::<lambda()>::~<lambda>()	32	static
+combinations.cpp:114:2:fftw_4D_power_benchmark::test_method()::<lambda()>	48	static
+combinations.cpp:114:69:fftw_4D_power_benchmark::test_method()::<lambda()>::~<lambda>()	32	static
+array_ref.hpp:1149:47:constexpr typename boost::multi::basic_array<T, 1, ElementPtr, Layout>::reference boost::multi::basic_array<T, 1, ElementPtr, Layout>::operator[](boost::multi::index) && [with T = std::complex<double>; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<1>]	32	static
+layout.hpp:327:17:constexpr auto boost::multi::layout_t<D, SSize>::operator()(boost::multi::layout_t<D, SSize>::index) const [with long int D = 2; SSize = long int]	16	static
+array_ref.hpp:1074:15:constexpr boost::multi::basic_array<std::complex<double>, 1, std::complex<double>*, boost::multi::layout_t<1> >::basic_array(const layout_t&, std::complex<double>* const&) [inherited from boost::multi::array_types<std::complex<double>, 1, std::complex<double>*, boost::multi::layout_t<1> >]	48	static
+array_ref.hpp:405:20:constexpr auto boost::multi::basic_array<T, D, ElementPtr, Layout>::at_(boost::multi::index) const [with T = std::complex<double>; long int D = 2; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<2>]	144	static
+array_ref.hpp:410:31:constexpr typename boost::multi::basic_array<T, D, ElementPtr, Layout>::types::reference boost::multi::basic_array<T, D, ElementPtr, Layout>::operator[](boost::multi::index) && [with T = std::complex<double>; long int D = 2; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<2>]	64	static
+layout.hpp:327:17:constexpr auto boost::multi::layout_t<D, SSize>::operator()(boost::multi::layout_t<D, SSize>::index) const [with long int D = 3; SSize = long int]	16	static
+array_ref.hpp:405:20:constexpr auto boost::multi::basic_array<T, D, ElementPtr, Layout>::at_(boost::multi::index) const [with T = std::complex<double>; long int D = 3; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<3, long int>]	176	static
+array_ref.hpp:410:31:constexpr typename boost::multi::basic_array<T, D, ElementPtr, Layout>::types::reference boost::multi::basic_array<T, D, ElementPtr, Layout>::operator[](boost::multi::index) && [with T = std::complex<double>; long int D = 3; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<3, long int>]	64	static
+layout.hpp:327:17:constexpr auto boost::multi::layout_t<D, SSize>::operator()(boost::multi::layout_t<D, SSize>::index) const [with long int D = 4; SSize = long int]	16	static
+array_ref.hpp:405:20:constexpr auto boost::multi::basic_array<T, D, ElementPtr, Layout>::at_(boost::multi::index) const [with T = std::complex<double>; long int D = 4; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<4, long int>]	208	static
+array_ref.hpp:411:31:constexpr typename boost::multi::basic_array<T, D, ElementPtr, Layout>::types::reference boost::multi::basic_array<T, D, ElementPtr, Layout>::operator[](boost::multi::index) & [with T = std::complex<double>; long int D = 4; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<4, long int>]	64	static
+array_ref.hpp:349:12:constexpr boost::multi::basic_array<T, D, ElementPtr, Layout>::basic_array(const layout_type&, const ElementPtr&) [with T = std::complex<double>; long int D = 3; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<3, long int>]	48	static
+array_ref.hpp:346:24:constexpr boost::multi::basic_array<T, D, ElementPtr, Layout>::layout_type boost::multi::basic_array<T, D, ElementPtr, Layout>::layout() const [with T = std::complex<double>; long int D = 4; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<4, long int>]	48	static
+array_ref.hpp:95:28:constexpr const layout_t& boost::multi::array_types<T, D, ElementPtr, Layout>::layout() const [with T = std::complex<double>; long int D = 4; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<4, long int>]	16	static
+combinations.cpp:122:2:fftw_4D_power_benchmark::test_method()::<lambda()>	48	static
+combinations.cpp:122:72:fftw_4D_power_benchmark::test_method()::<lambda()>::~<lambda>()	32	static
+combinations.cpp:125:2:fftw_4D_power_benchmark::test_method()::<lambda()>	48	static
+combinations.cpp:125:72:fftw_4D_power_benchmark::test_method()::<lambda()>::~<lambda>()	32	static
+combinations.cpp:128:2:fftw_4D_power_benchmark::test_method()::<lambda()>	48	static
+combinations.cpp:128:72:fftw_4D_power_benchmark::test_method()::<lambda()>::~<lambda>()	32	static
+combinations.cpp:131:2:fftw_4D_power_benchmark::test_method()::<lambda()>	256	static
+combinations.cpp:131:78:fftw_4D_power_benchmark::test_method()::<lambda()>::~<lambda>()	32	static
+combinations.cpp:135:2:fftw_4D_power_benchmark::test_method()::<lambda()>	256	static
+combinations.cpp:135:78:fftw_4D_power_benchmark::test_method()::<lambda()>::~<lambda>()	32	static
+combinations.cpp:101:1:void fftw_4D_power_benchmark::test_method()	960	dynamic,bounded
+char_traits.h:100:7:static constexpr bool __gnu_cxx::char_traits<_CharT>::eq(const char_type&, const char_type&) [with _CharT = char]	16	static
+char_traits.h:161:5:static constexpr std::size_t __gnu_cxx::char_traits<_CharT>::length(const char_type*) [with _CharT = char]	64	static
+basic_string.h:150:14:std::__cxx11::basic_string<char>::_Alloc_hider::~_Alloc_hider()	32	static
+basic_cstring.hpp:197:1:boost::unit_test::basic_cstring<CharT>::basic_cstring(const boost::unit_test::basic_cstring<CharT>&) [with CharT = const char]	16	static
+basic_cstring.hpp:187:1:boost::unit_test::basic_cstring<CharT>::basic_cstring() [with CharT = const char]	32	static
+atomic_base.h:279:17:constexpr std::__atomic_base<_IntTp>::__atomic_base(std::__atomic_base<_IntTp>::__int_type) [with _ITp = int]	16	static
+shared_ptr.hpp:352:21:constexpr boost::shared_ptr<T>::shared_ptr() [with T = boost::basic_wrap_stringstream<char>]	32	static
+class_properties.hpp:60:21:bool boost::unit_test::class_property<PropertyType>::operator!() const [with PropertyType = bool]	16	static
+class_properties.hpp:131:21:boost::unit_test::readonly_property<PropertyType>::readonly_property(boost::unit_test::readonly_property<PropertyType>::write_param_t) [with PropertyType = bool]	32	static
+operator_bool.hpp:61:10:bool boost::shared_ptr<T>::operator!() const [with T = boost::basic_wrap_stringstream<char>]	16	static
+shared_ptr.hpp:696:28:void boost::shared_ptr<T>::reset(Y*) [with Y = boost::basic_wrap_stringstream<char>; T = boost::basic_wrap_stringstream<char>]	64	static
+shared_ptr.hpp:726:55:typename boost::detail::sp_dereference<T>::type boost::shared_ptr<T>::operator*() const [with T = boost::basic_wrap_stringstream<char>]	32	static
+shared_ptr.hpp:732:57:typename boost::detail::sp_member_access<T>::type boost::shared_ptr<T>::operator->() const [with T = boost::basic_wrap_stringstream<char>]	32	static
+wrap_stringstream.hpp:92:1:const std::__cxx11::basic_string<_CharT>& boost::basic_wrap_stringstream<CharT>::str() [with CharT = char]	80	static
+basic_cstring.hpp:207:1:boost::unit_test::basic_cstring<CharT>::basic_cstring(const std_string&) [with CharT = const char]	48	static
+basic_string.h:525:7:std::__cxx11::basic_string<_CharT, _Traits, _Alloc>::basic_string(const _CharT*, const _Alloc&) [with <template-parameter-2-1> = std::allocator<char>; _CharT = char; _Traits = std::char_traits<char>; _Alloc = std::allocator<char>]	64	static
+function_template.hpp:756:5:boost::function0<R>::~function0() [with R = void]	32	static
+shared_ptr.hpp:422:5:boost::shared_ptr<T>::shared_ptr(const boost::shared_ptr<T>&) [with T = boost::unit_test::test_unit_fixture]	32	static
+basic_cstring.hpp:479:1:boost::unit_test::basic_cstring<CharT>::value_type* boost::unit_test::basic_cstring<CharT>::begin() [with CharT = const char]	16	static
+basic_cstring.hpp:258:1:boost::unit_test::basic_cstring<CharT>::size_type boost::unit_test::basic_cstring<CharT>::size() const [with CharT = const char]	16	static
+basic_cstring.hpp:79:5:boost::unit_test::basic_cstring<CharT>::basic_cstring(boost::unit_test::basic_cstring<CharT>::pointer, LenType) [with LenType = long unsigned int; CharT = const char]	16	static
+basic_cstring.hpp:217:1:boost::unit_test::basic_cstring<CharT>::basic_cstring(boost::unit_test::basic_cstring<CharT>::pointer) [with CharT = const char]	48	static
+basic_cstring.hpp:393:1:boost::unit_test::basic_cstring<CharT>::self_type& boost::unit_test::basic_cstring<CharT>::trim(boost::unit_test::basic_cstring<CharT>) [with CharT = const char]	64	static
+tuple:588:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1326:5:>&) [with long unsigned int __i = 0; _Elements = {boost::multi::extension_t<long int, long int>}]	32	static
+index_range.hpp:143:22:constexpr boost::multi::range<IndexType, IndexTypeLast>::size_type boost::multi::range<IndexType, IndexTypeLast>::size() const [with IndexType = long int; IndexTypeLast = long int]	16	static
+tuple:1470:5:) [with _Elements = {const boost::multi::extension_t<long int, long int>&}]	32	static
+layout.hpp:164:12:I = {0, 1}; <template-parameter-2-3> = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; long int D = 2]	48	static
+layout.hpp:137:12:constexpr boost::multi::extensions_t<D>::extensions_t(const Array&) [with Array = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; <template-parameter-2-2> = boost::multi::extension_t<long int>&&; long int D = 2]	32	static
+tuple:1597:5:) [with _Tpls = {std::tuple<boost::multi::extension_t<long int, long int> >, const std::tuple<boost::multi::extension_t<long int, long int> >&}; <template-parameter-1-2> = void]	80	static
+unique_ptr.h:236:2:std::unique_ptr<_Tp, _Dp>::unique_ptr(std::unique_ptr<_Tp, _Dp>::pointer, std::__enable_if_t<(! std::is_lvalue_reference<_Del>::value), _Del&&>) [with _Del = void (*)(fftw_plan_s*); <template-parameter-2-2> = void; _Tp = fftw_plan_s; _Dp = void (*)(fftw_plan_s*)]	64	static
+unique_ptr.h:286:7:std::unique_ptr<_Tp, _Dp>::~unique_ptr() [with _Tp = fftw_plan_s; _Dp = void (*)(fftw_plan_s*)]	64	static
+unique_ptr.h:360:7:std::unique_ptr<_Tp, _Dp>::pointer std::unique_ptr<_Tp, _Dp>::get() const [with _Tp = fftw_plan_s; _Dp = void (*)(fftw_plan_s*)]	32	static
+chrono:649:2:constexpr std::chrono::time_point<_Clock, _Dur>::duration std::chrono::time_point<_Clock, _Dur>::time_since_epoch() const [with _Clock = std::chrono::_V2::system_clock; _Dur = std::chrono::duration<long int, std::ratio<1, 1000000000> >]	16	static
+chrono:762:7:constexpr typename std::common_type<_Duration1, _Duration2>::type std::chrono::operator-(const std::chrono::time_point<_Clock, _Duration1>&, const std::chrono::time_point<_Clock, _Duration2>&) [with _Clock = std::chrono::_V2::system_clock; _Dur1 = std::chrono::duration<long int, std::ratio<1, 1000000000> >; _Dur2 = std::chrono::duration<long int, std::ratio<1, 1000000000> >]	64	static
+chrono:338:14:constexpr std::chrono::duration<_Rep, _Period>::duration(const std::chrono::duration<_Rep, _Period>&) [with _Rep2 = long int; _Period2 = std::ratio<1, 1000000000>; <template-parameter-2-3> = void; _Rep = double; _Period = std::ratio<1>]	48	static
+chrono:346:2:constexpr std::chrono::duration<_Rep, _Period>::rep std::chrono::duration<_Rep, _Period>::count() const [with _Rep = double; _Period = std::ratio<1>]	16	static
+wrap_stringstream.hpp:83:1:boost::basic_wrap_stringstream<CharT>& boost::basic_wrap_stringstream<CharT>::ref() [with CharT = char]	16	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char]	32	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [17]]	32	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [15]]	32	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [16]]	32	static
+fixture.hpp:112:6:void boost::unit_test::setup_conditional(U&) [with U = fft_combinations]	48	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [13]]	32	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [19]]	32	static
+fixture.hpp:118:6:void boost::unit_test::teardown_conditional(U&) [with U = fft_combinations]	48	static
+function_template.hpp:1061:3:boost::function<R()>::function(Functor, typename boost::enable_if_<(! boost::is_integral<Functor>::value), int>::type) [with Functor = void (*)(); R = void]	48	static
+fpc_tolerance.hpp:76:1:boost::unit_test::decorator::fixture_t boost::unit_test::decorator::tolerance(FPT) [with FPT = double]	80	static
+allocator.h:138:7:std::allocator< <template-parameter-1-1> >::allocator() [with _Tp = std::complex<double>]	32	static
+allocator.h:153:7:std::allocator< <template-parameter-1-1> >::~allocator() [with _Tp = std::complex<double>]	32	static
+types.hpp:83:16:Ns = {0, 1, 2}]	64	static
+types.hpp:87:16:constexpr auto boost::multi::detail::tail(const Tuple&) [with Tuple = boost::multi::extensions_t<4>]	48	static
+layout.hpp:373:22:constexpr boost::multi::layout_t<D, SSize>::size_type boost::multi::layout_t<D, SSize>::size() const [with long int D = 3; SSize = long int]	32	static
+index_range.hpp:130:28:constexpr boost::multi::range<IndexType, IndexTypeLast>::const_reference boost::multi::range<IndexType, IndexTypeLast>::first() const [with IndexType = long int; IndexTypeLast = long int]	16	static
+tuple:1326:5:>&) [with long unsigned int __i = 0; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:198:7:>&) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:163:7:static constexpr const _Head& std::_Head_base<_Idx, _Head, false>::_M_head(const std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>]	16	static
+types.hpp:83:16:Ns = {0, 1}]	64	static
+types.hpp:87:16:constexpr auto boost::multi::detail::tail(const Tuple&) [with Tuple = boost::multi::extensions_t<3>]	48	static
+layout.hpp:373:22:constexpr boost::multi::layout_t<D, SSize>::size_type boost::multi::layout_t<D, SSize>::size() const [with long int D = 2; SSize = long int]	32	static
+tuple:1326:5:>&) [with long unsigned int __i = 0; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:198:7:>&) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+types.hpp:83:16:Ns = {0}]	48	static
+types.hpp:87:16:constexpr auto boost::multi::detail::tail(const Tuple&) [with Tuple = boost::multi::extensions_t<2>]	48	static
+layout.hpp:252:17:constexpr auto boost::multi::layout_t<1, SSize>::stride(boost::multi::dimensionality_type) const [with SSize = long int]	32	static
+layout.hpp:240:22:constexpr boost::multi::layout_t<1, SSize>::size_type boost::multi::layout_t<1, SSize>::size() const [with SSize = long int]	16	static
+tuple:1326:5:>&) [with long unsigned int __i = 0; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	32	static
+tuple:198:7:>&) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	32	static
+layout.hpp:223:12:constexpr boost::multi::layout_t<1, SSize>::layout_t(boost::multi::layout_t<1, SSize>::index_extension, const boost::multi::layout_t<0>&) [with SSize = long int]	48	static
+tuple:1320:5:>&) [with long unsigned int __i = 0; _Elements = {boost::multi::extension_t<long int, long int>}]	32	static
+layout.hpp:192:12:constexpr boost::multi::layout_t<0, SSize>::layout_t(const extensions_type&) [with SSize = long int]	16	static
+layout.hpp:230:12:constexpr boost::multi::layout_t<1, SSize>::layout_t(boost::multi::layout_t<1, SSize>::extensions_type) [with SSize = long int]	80	static
+layout.hpp:340:12:constexpr boost::multi::layout_t<D, SSize>::layout_t(const extensions_type&) [with long int D = 2; SSize = long int]	96	static
+layout.hpp:340:12:constexpr boost::multi::layout_t<D, SSize>::layout_t(const extensions_type&) [with long int D = 3; SSize = long int]	128	static
+layout.hpp:164:12:I = {0, 1, 2}; <template-parameter-2-3> = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; long int D = 3]	64	static
+layout.hpp:137:12:constexpr boost::multi::extensions_t<D>::extensions_t(const Array&) [with Array = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; <template-parameter-2-2> = boost::multi::extension_t<long int>&&; long int D = 3]	32	static
+layout.hpp:340:12:constexpr boost::multi::layout_t<D, SSize>::layout_t(const extensions_type&) [with long int D = 4; SSize = long int]	160	static
+tuple:1470:5:) [with _Elements = {const boost::multi::extension_t<long int, long int>&, const boost::multi::extension_t<long int, long int>&, const boost::multi::extension_t<long int, long int>&}]	64	static
+tuple:1326:5:>&) [with long unsigned int __i = 1; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const boost::multi::extensions_t<4>&]	16	static
+tuple:1314:5:>&) [with long unsigned int __i = 1; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:198:7:>&) [with long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:163:7:static constexpr const _Head& std::_Head_base<_Idx, _Head, false>::_M_head(const std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>]	16	static
+tuple:1326:5:>&) [with long unsigned int __i = 2; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 2; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	32	static
+tuple:198:7:>&) [with long unsigned int _Idx = 2; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	32	static
+tuple:163:7:static constexpr const _Head& std::_Head_base<_Idx, _Head, false>::_M_head(const std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 2; _Head = boost::multi::extension_t<long int>]	16	static
+tuple:1326:5:>&) [with long unsigned int __i = 3; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 3; _Head = boost::multi::extension_t<long int>; _Tail = {}]	32	static
+tuple:337:7:static constexpr const _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(const std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 3; _Head = boost::multi::extension_t<long int>]	32	static
+tuple:163:7:static constexpr const _Head& std::_Head_base<_Idx, _Head, false>::_M_head(const std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 3; _Head = boost::multi::extension_t<long int>]	16	static
+tuple:588:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	48	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const boost::multi::extension_t<long int>&]	16	static
+tuple:210:17:) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	48	static
+tuple:210:17:) [with long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	48	static
+tuple:343:17:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(const _Head&) [with long unsigned int _Idx = 2; _Head = boost::multi::extension_t<long int>]	32	static
+tuple:125:17:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(const _Head&) [with long unsigned int _Idx = 2; _Head = boost::multi::extension_t<long int>]	16	static
+array.hpp:25:34:boost::multi::array_allocator<std::allocator<std::complex<double> > >::~array_allocator()	32	static
+adl.hpp:446:39:) const [with As = {std::allocator<std::complex<double> >&, std::complex<double>*&, long int}]	80	static
+array.hpp:78:7:auto boost::multi::static_array<T, D, Alloc>::uninitialized_default_construct() [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	64	static
+array.hpp:210:11:boost::multi::static_array<T, D, Alloc>::static_array(typename boost::multi::static_array<T, D, Alloc>::extensions_type, const allocator_type&) [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	256	static
+array.hpp:278:2:boost::multi::static_array<T, D, Alloc>::~static_array() [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	32	static
+array.hpp:318:38:typename boost::multi::static_array<T, D, Alloc>::element_ptr boost::multi::static_array<T, D, Alloc>::data_elements() & [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	16	static
+stl_algo.h:4459:5:void std::generate(_FIter, _FIter, _Generator) [with _FIter = std::complex<double>*; _Generator = fft_combinations::test_method()::<lambda()>::<lambda()>]	48	static
+array.hpp:784:2:boost::multi::array<T, D, A>::array(boost::multi::array<T, D, A>&&) [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	64	static
+layout.hpp:366:22:constexpr boost::multi::layout_t<D, SSize>::size_type boost::multi::layout_t<D, SSize>::num_elements() const [with long int D = 3; SSize = long int]	48	static
+allocator.h:138:7:std::allocator< <template-parameter-1-1> >::allocator() [with _Tp = std::array<bool, 4>]	32	static
+allocator.h:153:7:std::allocator< <template-parameter-1-1> >::~allocator() [with _Tp = std::array<bool, 4>]	32	static
+stl_vector.h:622:7:std::vector<_Tp, _Alloc>::vector(std::initializer_list<_Tp>, const allocator_type&) [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	80	static
+stl_vector.h:675:7:std::vector<_Tp, _Alloc>::~vector() [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	32	static
+stl_vector.h:808:7:std::vector<_Tp, _Alloc>::iterator std::vector<_Tp, _Alloc>::begin() [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	48	static
+stl_vector.h:826:7:std::vector<_Tp, _Alloc>::iterator std::vector<_Tp, _Alloc>::end() [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	48	static
+stl_iterator.h:907:5:bool __gnu_cxx::operator!=(const __gnu_cxx::__normal_iterator<_Iterator, _Container>&, const __gnu_cxx::__normal_iterator<_Iterator, _Container>&) [with _Iterator = std::array<bool, 4>*; _Container = std::vector<std::array<bool, 4> >]	48	static
+stl_iterator.h:827:7:__gnu_cxx::__normal_iterator<_Iterator, _Container>& __gnu_cxx::__normal_iterator<_Iterator, _Container>::operator++() [with _Iterator = std::array<bool, 4>*; _Container = std::vector<std::array<bool, 4> >]	16	static
+stl_iterator.h:819:7:__gnu_cxx::__normal_iterator<_Iterator, _Container>::reference __gnu_cxx::__normal_iterator<_Iterator, _Container>::operator*() const [with _Iterator = std::array<bool, 4>*; _Container = std::vector<std::array<bool, 4> >]	16	static
+range_access.h:48:5:begin()) std::begin(_Container&) [with _Container = std::array<bool, 4>]	32	static
+range_access.h:68:5:end()) std::end(_Container&) [with _Container = std::array<bool, 4>]	32	static
+stream_iterator.h:188:7:std::ostream_iterator<_Tp, _CharT, _Traits>::ostream_iterator(std::ostream_iterator<_Tp, _CharT, _Traits>::ostream_type&, const _CharT*) [with _Tp = bool; _CharT = char; _Traits = std::char_traits<char>]	16	static
+stl_algobase.h:465:5:_OI std::copy(_II, _II, _OI) [with _II = bool*; _OI = std::ostream_iterator<bool>]	96	static
+utility.hpp:156:16:num_elements())> boost::multi::num_elements(const A&) [with A = boost::multi::static_array<std::complex<double>, 4, std::allocator<std::complex<double> > >; <template-parameter-1-2> = void]	32	static
+adl.hpp:292:39:) const [with As = {const std::complex<double>*&, long int&, std::complex<double>*&}]	80	static
+adl.hpp:307:16:constexpr auto boost::multi::xtd::alloc_uninitialized_copy_n(std::allocator<_CharT>&, InputIt, Size, ForwardIt) [with T = std::complex<double>; InputIt = const std::complex<double>*; Size = long int; ForwardIt = std::complex<double>*]	48	static
+adl.hpp:486:48:) const [with As = {std::allocator<std::complex<double> >&, const std::complex<double>*&, long int&, std::complex<double>*&}]	96	static
+adl.hpp:490:39:) const [with As = {std::allocator<std::complex<double> >&, const std::complex<double>*&, long int&, std::complex<double>*&}]	112	static
+array.hpp:39:7:auto boost::multi::array_allocator<Allocator>::uninitialized_copy_n(It, boost::multi::size_type, typename std::allocator_traits<_Alloc>::pointer) [with It = const std::complex<double>*; Allocator = std::allocator<std::complex<double> >]	48	static
+array.hpp:82:29:auto boost::multi::static_array<T, D, Alloc>::uninitialized_copy_elements(It) [with It = const std::complex<double>*; T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	48	static
+array.hpp:239:2:boost::multi::static_array<T, D, Alloc>::static_array(const boost::multi::static_array<T, D, Alloc>&) [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	128	static
+fftw.hpp:485:6:decltype (boost::multi::fftw::dft(which, a, forward<O>(o), boost::multi::fftw::forward)) boost::multi::fftw::dft_forward(std::array<bool, (+ D)>, const A&, O&&) [with A = boost::multi::array<std::complex<double>, 4>; O = boost::multi::array<std::complex<double>, 4>&; long int D = 4]	48	static
+fftw.hpp:333:4:) [with As = {std::array<bool, 4>&, const boost::multi::array<std::complex<double>, 4, std::allocator<std::complex<double> > >&, boost::multi::array<std::complex<double>, 4, std::allocator<std::complex<double> > >&, const int&}; <template-parameter-1-2> = fftw_plan_s*]	112	static
+fftw.hpp:468:41:) [with A = {std::array<bool, 4>&, boost::multi::array<std::complex<double>, 4, std::allocator<std::complex<double> > >&}]	48	static
+fftw.hpp:333:4:) [with As = {std::array<bool, 4>&, boost::multi::array<std::complex<double>, 4, std::allocator<std::complex<double> > >&, boost::multi::array<std::complex<double>, 4, std::allocator<std::complex<double> > >&, const int&}; <template-parameter-1-2> = fftw_plan_s*]	112	static
+fftw.hpp:480:6:decltype (boost::multi::fftw::dft(which, a, boost::multi::fftw::forward)) boost::multi::fftw::dft_forward(std::array<bool, (+ D)>, const A&) [with A = boost::multi::array<std::complex<double>, 4>; long int D = 4]	64	static
+complex:361:5:std::complex<_Tp> std::operator-(const std::complex<_Tp>&, const std::complex<_Tp>&) [with _Tp = double]	64	static
+complex:623:5:_Tp std::abs(const std::complex<_Tp>&) [with _Tp = double]	32	static
+assertion.hpp:393:5:boost::test_tools::assertion::value_expr<T> boost::test_tools::assertion::seed::operator->*(T&&) const [with T = double]	48	static
+assertion.hpp:216:5:boost::test_tools::assertion::binary_expr<ExprType, T, boost::test_tools::assertion::op::EQ<ValType, typename boost::test_tools::assertion::expression_base<ExprType, ValType>::RhsT<T>::type> > boost::test_tools::assertion::expression_base<ExprType, ValType>::operator==(T&&) [with T = double; ExprType = boost::test_tools::assertion::value_expr<double>; ValType = double]	64	static
+assertion_result.hpp:39:23:boost::test_tools::assertion_result::assertion_result(const boost::test_tools::assertion_result&)	32	static
+assertion.hpp:361:33:boost::test_tools::assertion_result boost::test_tools::assertion::binary_expr<Lhs, Rhs, OP>::evaluate(bool) const [with LExpr = boost::test_tools::assertion::value_expr<double>; Rhs = double; OP = boost::test_tools::assertion::op::EQ<double, double, void>]	576	static
+lazy_ostream.hpp:79:1:boost::unit_test::lazy_ostream_impl<boost::unit_test::lazy_ostream, T> boost::unit_test::operator<<(const boost::unit_test::lazy_ostream&, const T&) [with T = boost::unit_test::basic_cstring<const char>]	48	static
+move.h:99:5:constexpr typename std::remove_reference<_Tp>::type&& std::move(_Tp&&) [with _Tp = boost::multi::array<std::complex<double>, 4>&]	16	static
+fftw.hpp:468:41:) [with A = {std::array<bool, 4>&, boost::multi::array<std::complex<double>, 4, std::allocator<std::complex<double> > >}]	48	static
+layout.hpp:372:27:constexpr bool boost::multi::layout_t<D, SSize>::empty() const [with long int D = 4; SSize = long int]	32	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [24]]	32	static
+fixture.hpp:112:6:void boost::unit_test::setup_conditional(U&) [with U = fftw_4D_power_benchmark]	48	static
+fixture.hpp:118:6:void boost::unit_test::teardown_conditional(U&) [with U = fftw_4D_power_benchmark]	48	static
+stl_numeric.h:87:5:void std::iota(_ForwardIterator, _ForwardIterator, _Tp) [with _ForwardIterator = std::complex<double>*; _Tp = double]	48	static
+complex:468:5:constexpr bool std::operator==(const std::complex<_Tp>&, const _Tp&) [with _Tp = double]	32	static
+basic_string.h:6121:5:std::__cxx11::basic_string<_CharT, _Traits, _Allocator> std::operator+(std::__cxx11::basic_string<_CharT, _Traits, _Allocator>&&, const _CharT*) [with _CharT = char; _Traits = std::char_traits<char>; _Alloc = std::allocator<char>]	48	static
+fftw.hpp:454:6:decltype ((boost::multi::fftw::dft(which, i, i, s), forward<In>(i))) boost::multi::fftw::dft(std::array<bool, (+ D)>, In&&, boost::multi::fftw::sign) [with In = boost::multi::array<std::complex<double>, 4>&; long int D = 4]	32	static
+layout.hpp:283:17:constexpr auto boost::multi::layout_t<1, SSize>::operator()(boost::multi::layout_t<1, SSize>::index) const [with SSize = long int]	16	static
+array_ref.hpp:1146:53:constexpr typename boost::multi::basic_array<T, 1, ElementPtr, Layout>::reference boost::multi::basic_array<T, 1, ElementPtr, Layout>::operator[](boost::multi::index) & [with T = std::complex<double>; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<1>]	48	static
+array_ref.hpp:346:24:constexpr boost::multi::basic_array<T, D, ElementPtr, Layout>::layout_type boost::multi::basic_array<T, D, ElementPtr, Layout>::layout() const [with T = std::complex<double>; long int D = 2; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<2>]	48	static
+array_ref.hpp:92:29:constexpr boost::multi::array_types<T, D, ElementPtr, Layout>::element_ptr boost::multi::array_types<T, D, ElementPtr, Layout>::base() const [with T = std::complex<double>; long int D = 2; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<2>]	16	static
+array_ref.hpp:108:12:constexpr boost::multi::array_types<T, D, ElementPtr, Layout>::array_types(const layout_t&, const element_ptr&) [with T = std::complex<double>; long int D = 1; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<1>]	16	static
+array_ref.hpp:346:24:constexpr boost::multi::basic_array<T, D, ElementPtr, Layout>::layout_type boost::multi::basic_array<T, D, ElementPtr, Layout>::layout() const [with T = std::complex<double>; long int D = 3; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<3, long int>]	48	static
+array_ref.hpp:92:29:constexpr boost::multi::array_types<T, D, ElementPtr, Layout>::element_ptr boost::multi::array_types<T, D, ElementPtr, Layout>::base() const [with T = std::complex<double>; long int D = 3; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<3, long int>]	16	static
+array_ref.hpp:349:12:constexpr boost::multi::basic_array<T, D, ElementPtr, Layout>::basic_array(const layout_type&, const ElementPtr&) [with T = std::complex<double>; long int D = 2; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<2>]	48	static
+array_ref.hpp:92:29:constexpr boost::multi::array_types<T, D, ElementPtr, Layout>::element_ptr boost::multi::array_types<T, D, ElementPtr, Layout>::base() const [with T = std::complex<double>; long int D = 4; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<4, long int>]	16	static
+array_ref.hpp:108:12:constexpr boost::multi::array_types<T, D, ElementPtr, Layout>::array_types(const layout_t&, const element_ptr&) [with T = std::complex<double>; long int D = 3; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<3, long int>]	24	static
+complex:486:5:constexpr bool std::operator!=(const std::complex<_Tp>&, const _Tp&) [with _Tp = double]	32	static
+fftw.hpp:411:6:decltype ((boost::multi::fftw::plan{which, i, o, s}(), forward<Out>(o))) boost::multi::fftw::dft(std::array<bool, (+ D)>, const In&, Out&&, boost::multi::fftw::sign) [with In = boost::multi::array<std::complex<double>, 4>; Out = boost::multi::array<std::complex<double>, 4>&; long unsigned int D = 4]	96	static
+complex:463:5:constexpr bool std::operator==(const std::complex<_Tp>&, const std::complex<_Tp>&) [with _Tp = double]	48	static
+basic_string.h:263:9:void std::__cxx11::basic_string<_CharT, _Traits, _Alloc>::_M_construct(_InIterator, _InIterator) [with _InIterator = const char*; _CharT = char; _Traits = std::char_traits<char>; _Alloc = std::allocator<char>]	48	static
+move.h:99:5:constexpr typename std::remove_reference<_Tp>::type&& std::move(_Tp&&) [with _Tp = std::__cxx11::basic_string<char>&]	16	static
+basic_cstring.hpp:178:1:static boost::unit_test::basic_cstring<CharT>::value_type* boost::unit_test::basic_cstring<CharT>::null_str() [with CharT = const char]	16	static
+class_properties.hpp:54:21:boost::unit_test::class_property<PropertyType>::class_property(boost::unit_test::class_property<PropertyType>::write_param_t) [with PropertyType = bool]	16	static
+shared_ptr.hpp:377:14:boost::shared_ptr<T>::shared_ptr(Y*) [with Y = boost::basic_wrap_stringstream<char>; T = boost::basic_wrap_stringstream<char>]	48	static
+shared_ptr.hpp:764:10:void boost::shared_ptr<T>::swap(boost::shared_ptr<T>&) [with T = boost::basic_wrap_stringstream<char>]	32	static
+function_template.hpp:868:10:void boost::function0<R>::clear() [with R = void]	32	static
+function_template.hpp:677:18:boost::function0<R>::vtable_type* boost::function0<R>::get_vtable() const [with R = void]	16	static
+bcs_char_traits.hpp:82:24:static std::size_t boost::unit_test::ut_detail::bcs_char_traits_impl<CharT>::length(boost::unit_test::ut_detail::bcs_char_traits_impl<CharT>::const_char*) [with CharT = const char]	48	static
+basic_cstring.hpp:330:1:boost::unit_test::basic_cstring<CharT>::self_type& boost::unit_test::basic_cstring<CharT>::trim_left(boost::unit_test::basic_cstring<CharT>) [with CharT = const char]	96	static
+basic_cstring.hpp:374:1:boost::unit_test::basic_cstring<CharT>::self_type& boost::unit_test::basic_cstring<CharT>::trim_right(boost::unit_test::basic_cstring<CharT>) [with CharT = const char]	96	static
+tuple:343:17:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(const _Head&) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 0; _Head = boost::multi::extension_t<long int>; _Tail = {}]	32	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = long int&]	16	static
+tuple:1326:5:>&) [with long unsigned int __i = 1; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:945:19:constexpr std::tuple<_T1, _T2>::tuple(const _T1&, const _T2&) [with _Dummy = void; typename std::enable_if<(std::_TC<std::is_same<_Dummy, void>::value, _T1, _T2>::_ConstructibleTuple<_T1, _T2>() && std::_TC<std::is_same<_Dummy, void>::value, _T1, _T2>::_ImplicitlyConvertibleTuple<_T1, _T2>()), bool>::type <anonymous> = true; _T1 = boost::multi::extension_t<long int>; _T2 = boost::multi::extension_t<long int>]	48	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = std::tuple<boost::multi::extension_t<long int, long int> >]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const std::tuple<boost::multi::extension_t<long int, long int> >&]	16	static
+tuple:1572:9:_Is = {0}; _Tp = std::tuple<boost::multi::extension_t<long int, long int> >; _Tpls = {const std::tuple<boost::multi::extension_t<long int, long int> >&}]	80	static
+move.h:99:5:constexpr typename std::remove_reference<_Tp>::type&& std::move(_Tp&&) [with _Tp = void (*&)(fftw_plan_s*)]	16	static
+unique_ptr.h:150:7:std::__uniq_ptr_impl<_Tp, _Dp>::__uniq_ptr_impl(std::__uniq_ptr_impl<_Tp, _Dp>::pointer, _Del&&) [with _Del = void (*)(fftw_plan_s*); _Tp = fftw_plan_s; _Dp = void (*)(fftw_plan_s*)]	64	static
+unique_ptr.h:153:18:std::__uniq_ptr_impl<_Tp, _Dp>::pointer& std::__uniq_ptr_impl<_Tp, _Dp>::_M_ptr() [with _Tp = fftw_plan_s; _Dp = void (*)(fftw_plan_s*)]	32	static
+unique_ptr.h:365:7:std::unique_ptr<_Tp, _Dp>::deleter_type& std::unique_ptr<_Tp, _Dp>::get_deleter() [with _Tp = fftw_plan_s; _Dp = void (*)(fftw_plan_s*)]	32	static
+move.h:99:5:constexpr typename std::remove_reference<_Tp>::type&& std::move(_Tp&&) [with _Tp = fftw_plan_s*&]	16	static
+unique_ptr.h:154:18:std::__uniq_ptr_impl<_Tp, _Dp>::pointer std::__uniq_ptr_impl<_Tp, _Dp>::_M_ptr() const [with _Tp = fftw_plan_s; _Dp = void (*)(fftw_plan_s*)]	32	static
+chrono:463:7:constexpr typename std::common_type<std::chrono::duration<_Rep1, _Period1>, std::chrono::duration<_Rep2, _Period2> >::type std::chrono::operator-(const std::chrono::duration<_Rep1, _Period1>&, const std::chrono::duration<_Rep2, _Period2>&) [with _Rep1 = long int; _Period1 = std::ratio<1, 1000000000>; _Rep2 = long int; _Period2 = std::ratio<1, 1000000000>]	96	static
+chrono:191:7:constexpr std::chrono::__enable_if_is_duration<_ToDur> std::chrono::duration_cast(const std::chrono::duration<_Rep, _Period>&) [with _ToDur = std::chrono::duration<double>; _Rep = long int; _Period = std::ratio<1, 1000000000>]	32	static
+wrap_stringstream.hpp:74:1:boost::basic_wrap_stringstream<CharT>::wrapped_stream& boost::basic_wrap_stringstream<CharT>::stream() [with CharT = char]	16	static
+fixture.hpp:98:58:void boost::unit_test::impl_fixture::call_setup<has_setup>::operator()(U&) [with U = fft_combinations; bool has_setup = false]	16	static
+fixture.hpp:104:58:void boost::unit_test::impl_fixture::call_teardown<has_teardown>::operator()(U&) [with U = fft_combinations; bool has_teardown = false]	16	static
+function_template.hpp:711:5:boost::function0<R>::function0(Functor, typename boost::enable_if_<(! boost::is_integral<Functor>::value), int>::type) [with Functor = void (*)(); R = void]	48	static
+fixture.hpp:131:14:boost::unit_test::class_based_fixture<F, Arg>::class_based_fixture(const Arg&) [with F = boost::test_tools::local_fpc_tolerance<double>; Arg = double]	32	static
+shared_ptr.hpp:377:14:boost::shared_ptr<T>::shared_ptr(Y*) [with Y = boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>; T = boost::unit_test::test_unit_fixture]	48	static
+new_allocator.h:80:7:__gnu_cxx::new_allocator<_Tp>::new_allocator() [with _Tp = std::complex<double>]	16	static
+new_allocator.h:89:7:__gnu_cxx::new_allocator<_Tp>::~new_allocator() [with _Tp = std::complex<double>]	16	static
+array.hpp:32:2:typename std::allocator_traits<_Alloc>::pointer boost::multi::array_allocator<Allocator>::allocate(typename std::allocator_traits<_Alloc>::size_type) [with Allocator = std::allocator<std::complex<double> >]	32	static
+layout.hpp:381:18:constexpr boost::multi::layout_t<D, SSize>::index boost::multi::layout_t<D, SSize>::stride() const [with long int D = 3; SSize = long int]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const boost::multi::extensions_t<3>&]	16	static
+tuple:1326:5:>&) [with long unsigned int __i = 1; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1326:5:>&) [with long unsigned int __i = 2; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1470:5:) [with _Elements = {const boost::multi::extension_t<long int, long int>&, const boost::multi::extension_t<long int, long int>&}]	64	static
+layout.hpp:381:18:constexpr boost::multi::layout_t<D, SSize>::index boost::multi::layout_t<D, SSize>::stride() const [with long int D = 2; SSize = long int]	16	static
+layout.hpp:366:22:constexpr boost::multi::layout_t<D, SSize>::size_type boost::multi::layout_t<D, SSize>::num_elements() const [with long int D = 2; SSize = long int]	48	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const boost::multi::extensions_t<2>&]	16	static
+layout.hpp:261:22:constexpr boost::multi::layout_t<1, SSize>::size_type boost::multi::layout_t<1, SSize>::num_elements() const [with SSize = long int]	32	static
+tuple:1309:5:>&) [with long unsigned int __i = 0; _Head = boost::multi::extension_t<long int>; _Tail = {}]	32	static
+tuple:125:17:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(const _Head&) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>]	16	static
+tuple:125:17:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(const _Head&) [with long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>]	16	static
+array.hpp:30:2:boost::multi::array_allocator<Allocator>::array_allocator(const allocator_type&) [with Allocator = std::allocator<std::complex<double> >]	32	static
+array_ref.hpp:1413:12:constexpr boost::multi::array_ref<T, D, ElementPtr>::array_ref(typename boost::multi::array_ref<T, D, ElementPtr>::element_ptr, typename boost::multi::array_ref<T, D, ElementPtr>::extensions_type) [with T = std::complex<double>; long int D = 4; ElementPtr = std::complex<double>*]	192	static
+array.hpp:29:18:boost::multi::array_allocator<Allocator>::allocator_type& boost::multi::array_allocator<Allocator>::alloc() [with Allocator = std::allocator<std::complex<double> >]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = std::allocator<std::complex<double> >&]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = std::complex<double>*&]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = long int]	16	static
+adl.hpp:441:48:) const [with As = {std::allocator<std::complex<double> >&, std::complex<double>*&, long int}]	64	static
+array.hpp:87:7:void boost::multi::static_array<T, D, Alloc>::destroy() [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	48	static
+array.hpp:258:7:void boost::multi::static_array<T, D, Alloc>::deallocate() [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	48	static
+array.hpp:47:17:boost::multi::array_allocator<Allocator>::allocator_type boost::multi::array_allocator<Allocator>::get_allocator() const [with Allocator = std::allocator<std::complex<double> >]	32	static
+array.hpp:783:2:boost::multi::array<T, D, A>::array(boost::multi::array<T, D, A>&&, const typename boost::multi::array<T, D, A>::allocator_type&) [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	64	static
+new_allocator.h:80:7:__gnu_cxx::new_allocator<_Tp>::new_allocator() [with _Tp = std::array<bool, 4>]	16	static
+new_allocator.h:89:7:__gnu_cxx::new_allocator<_Tp>::~new_allocator() [with _Tp = std::array<bool, 4>]	16	static
+stl_vector.h:125:14:std::_Vector_base<std::array<bool, 4>, std::allocator<std::array<bool, 4> > >::_Vector_impl::~_Vector_impl()	32	static
+stl_vector.h:290:7:std::_Vector_base<_Tp, _Alloc>::_Vector_base(const allocator_type&) [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	32	static
+stl_vector.h:330:7:std::_Vector_base<_Tp, _Alloc>::~_Vector_base() [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	32	static
+initializer_list:75:7:constexpr const _E* std::initializer_list<_E>::begin() const [with _E = std::array<bool, 4>]	16	static
+initializer_list:79:7:constexpr const _E* std::initializer_list<_E>::end() const [with _E = std::array<bool, 4>]	48	static
+stl_iterator_base_funcs.h:138:5:constexpr typename std::iterator_traits<_Iterator>::difference_type std::distance(_InputIterator, _InputIterator) [with _InputIterator = const std::array<bool, 4>*]	32	static
+stl_vector.h:1574:2:void std::vector<_Tp, _Alloc>::_M_range_initialize(_ForwardIterator, _ForwardIterator, std::forward_iterator_tag) [with _ForwardIterator = const std::array<bool, 4>*; _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	80	static
+stl_vector.h:273:7:std::_Vector_base<_Tp, _Alloc>::_Tp_alloc_type& std::_Vector_base<_Tp, _Alloc>::_M_get_Tp_allocator() [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	16	static
+stl_construct.h:203:5:void std::_Destroy(_ForwardIterator, _ForwardIterator, std::allocator<_T2>&) [with _ForwardIterator = std::array<bool, 4>*; _Tp = std::array<bool, 4>]	48	static
+stl_iterator.h:806:7:__gnu_cxx::__normal_iterator<_Iterator, _Container>::__normal_iterator(const _Iterator&) [with _Iterator = std::array<bool, 4>*; _Container = std::vector<std::array<bool, 4> >]	16	static
+stl_iterator.h:871:7:const _Iterator& __gnu_cxx::__normal_iterator<_Iterator, _Container>::base() const [with _Iterator = std::array<bool, 4>*; _Container = std::vector<std::array<bool, 4> >]	16	static
+array:126:7:constexpr std::array<_Tp, _Nm>::value_type* std::array<_Tp, _Nm>::begin() [with _Tp = bool; long unsigned int _Nm = 4]	32	static
+array:134:7:constexpr std::array<_Tp, _Nm>::value_type* std::array<_Tp, _Nm>::end() [with _Tp = bool; long unsigned int _Nm = 4]	32	static
+cpp_type_traits.h:428:5:_Iterator std::__miter_base(_Iterator) [with _Iterator = bool*]	16	static
+stream_iterator.h:192:7:std::ostream_iterator<_Tp, _CharT, _Traits>::ostream_iterator(const std::ostream_iterator<_Tp, _CharT, _Traits>&) [with _Tp = bool; _CharT = char; _Traits = std::char_traits<char>]	16	static
+stl_algobase.h:438:5:_OI std::__copy_move_a2(_II, _II, _OI) [with bool _IsMove = false; _II = bool*; _OI = std::ostream_iterator<bool>]	128	static
+utility.hpp:370:6:extensions()) boost::multi::extensions(const T&) [with T = boost::multi::static_array<std::complex<double>, 4, std::allocator<std::complex<double> > >; <template-parameter-1-2> = void]	48	static
+array.hpp:317:38:boost::multi::static_array<T, D, Alloc>::element_const_ptr boost::multi::static_array<T, D, Alloc>::data_elements() const & [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	16	static
+array.hpp:310:37:typename boost::multi::static_array<T, D, Alloc>::element_ptr boost::multi::static_array<T, D, Alloc>::data() [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	32	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const std::complex<double>*&]	16	static
+adl.hpp:288:48:) const [with As = {const std::complex<double>*&, long int&, std::complex<double>*&}]	64	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = boost::multi::array<std::complex<double>, 4>&]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = std::array<bool, 4>&]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const boost::multi::array<std::complex<double>, 4>&]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const int&]	16	static
+layout.hpp:257:17:constexpr auto boost::multi::layout_t<1, SSize>::sizes() const [with SSize = long int]	48	static
+layout.hpp:397:17:constexpr auto boost::multi::layout_t<D, SSize>::sizes() const [with long int D = 2; SSize = long int]	64	static
+layout.hpp:397:17:constexpr auto boost::multi::layout_t<D, SSize>::sizes() const [with long int D = 3; SSize = long int]	80	static
+layout.hpp:397:17:constexpr auto boost::multi::layout_t<D, SSize>::sizes() const [with long int D = 4; SSize = long int]	80	static
+tuple:1419:5:>&) [with _TElements = {long int, long int, long int, long int}; _UElements = {long int, long int, long int, long int}]	32	static
+utility.hpp:280:16:sizes()) boost::multi::sizes(const Array&) [with Array = boost::multi::array<std::complex<double>, 4>; <template-parameter-1-2> = void]	48	static
+tuple:1597:5:) [with _Tpls = {std::tuple<long int>, std::tuple<long int, long int, long int>}; <template-parameter-1-2> = void]	80	static
+tuple:1470:5:) [with _Elements = {long int}]	32	static
+fftw.hpp:170:45:constexpr auto boost::multi::to_array(const Tpl&) [with T = long int; Tpl = std::tuple<long int, long int, long int, long int>]	48	static
+layout.hpp:384:25:constexpr boost::multi::layout_t<D, SSize>::strides_type boost::multi::layout_t<D, SSize>::strides() const [with long int D = 4; SSize = long int]	80	static
+layout.hpp:381:18:constexpr boost::multi::layout_t<D, SSize>::index boost::multi::layout_t<D, SSize>::stride() const [with long int D = 4; SSize = long int]	16	static
+array:126:7:constexpr std::array<_Tp, _Nm>::value_type* std::array<_Tp, _Nm>::begin() [with _Tp = fftw_iodim64_do_not_use_me; long unsigned int _Nm = 4]	32	static
+array:234:7:constexpr std::array<_Tp, _Nm>::value_type* std::array<_Tp, _Nm>::data() [with _Tp = fftw_iodim64_do_not_use_me; long unsigned int _Nm = 4]	32	static
+array:59:7:static constexpr _Tp* std::__array_traits<_Tp, _Nm>::_S_ptr(const _Tp (&)[_Nm]) [with _Tp = fftw_iodim64_do_not_use_me; long unsigned int _Nm = 4]	16	static
+array.hpp:326:53:constexpr boost::multi::static_array<T, D, Alloc>::element_const_ptr boost::multi::static_array<T, D, Alloc>::base() const [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	32	static
+array.hpp:325:53:constexpr typename boost::multi::static_array<T, D, Alloc>::element_ptr boost::multi::static_array<T, D, Alloc>::base() [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	32	static
+tuple:1419:5:>&) [with _TElements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}; _UElements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	32	static
+layout.hpp:412:28:constexpr boost::multi::layout_t<D, SSize>::extensions_type boost::multi::layout_t<D, SSize>::extensions() const [with long int D = 4; SSize = long int]	208	static
+layout.hpp:164:12:I = {0, 1, 2, 3}; <template-parameter-2-3> = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; long int D = 4]	64	static
+layout.hpp:137:12:constexpr boost::multi::extensions_t<D>::extensions_t(const Array&) [with Array = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; <template-parameter-2-2> = boost::multi::extension_t<long int>&&; long int D = 4]	32	static
+tuple:1597:5:) [with _Tpls = {std::tuple<boost::multi::extension_t<long int, long int> >, const std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >&}; <template-parameter-1-2> = void]	80	static
+tuple:1470:5:) [with _Elements = {boost::multi::extension_t<long int, long int>}]	32	static
+layout.hpp:401:28:constexpr boost::multi::layout_t<D, SSize>::index_extension boost::multi::layout_t<D, SSize>::extension() const & [with long int D = 4; SSize = long int]	64	static
+fftw.hpp:245:11:fftw_plan_s* boost::multi::fftw_plan_dft(std::array<bool, (+ D)>, In&&, Out&&, int, unsigned int) [with In = const boost::multi::array<std::complex<double>, 4>&; Out = boost::multi::array<std::complex<double>, 4>&; long int D = 4; <template-parameter-1-4> = void; <template-parameter-1-5> = double (*)[2]]	576	dynamic,bounded
+unique_ptr.h:374:16:std::unique_ptr<_Tp, _Dp>::operator bool() const [with _Tp = fftw_plan_s; _Dp = void (*)(fftw_plan_s*)]	32	static
+fftw.hpp:245:11:fftw_plan_s* boost::multi::fftw_plan_dft(std::array<bool, (+ D)>, In&&, Out&&, int, unsigned int) [with In = boost::multi::array<std::complex<double>, 4>&; Out = boost::multi::array<std::complex<double>, 4>&; long int D = 4; <template-parameter-1-4> = void; <template-parameter-1-5> = double (*)[2]]	576	dynamic,bounded
+fftw.hpp:449:6:std::decay_t<decltype (boost::multi::fftw::dft(which, i, R(boost::multi::extensions(i), boost::multi::get_allocator(i)), s))> boost::multi::fftw::dft(std::array<bool, (+ D)>, const In&, boost::multi::fftw::sign) [with In = boost::multi::array<std::complex<double>, 4>; long int D = 4; R = boost::multi::array<std::complex<double>, 4>]	272	static
+complex:1337:9:std::complex<double>& std::complex<double>::operator-=(const std::complex<_Tp>&) [with _Tp = double]	32	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = double]	16	static
+assertion.hpp:264:33:boost::test_tools::assertion::value_expr<T>::value_expr(T&&) [with T = double]	32	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = boost::test_tools::assertion::value_expr<double>]	16	static
+assertion.hpp:340:5:boost::test_tools::assertion::binary_expr<Lhs, Rhs, OP>::binary_expr(LExpr&&, Rhs&&) [with LExpr = boost::test_tools::assertion::value_expr<double>; Rhs = double; OP = boost::test_tools::assertion::op::EQ<double, double, void>]	64	static
+assertion.hpp:352:33:boost::test_tools::assertion::binary_expr<Lhs, Rhs, OP>::result_type boost::test_tools::assertion::binary_expr<Lhs, Rhs, OP>::value() const [with LExpr = boost::test_tools::assertion::value_expr<double>; Rhs = double; OP = boost::test_tools::assertion::op::EQ<double, double, void>]	64	static
+shared_ptr.hpp:422:5:boost::shared_ptr<T>::shared_ptr(const boost::shared_ptr<T>&) [with T = boost::basic_wrap_stringstream<char>]	32	static
+assertion.hpp:356:33:void boost::test_tools::assertion::binary_expr<Lhs, Rhs, OP>::report(std::ostream&) const [with LExpr = boost::test_tools::assertion::value_expr<double>; Rhs = double; OP = boost::test_tools::assertion::op::EQ<double, double, void>]	32	static
+lazy_ostream.hpp:58:5:boost::unit_test::lazy_ostream_impl<PrevType, T, StorageT>::lazy_ostream_impl(const PrevType&, const T&) [with PrevType = boost::unit_test::lazy_ostream; T = boost::unit_test::basic_cstring<const char>; StorageT = const boost::unit_test::basic_cstring<const char>&]	48	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = boost::multi::array<std::complex<double>, 4>]	16	static
+fftw.hpp:454:6:decltype ((boost::multi::fftw::dft(which, i, i, s), forward<In>(i))) boost::multi::fftw::dft(std::array<bool, (+ D)>, In&&, boost::multi::fftw::sign) [with In = boost::multi::array<std::complex<double>, 4>; long int D = 4]	32	static
+layout.hpp:369:24:constexpr bool boost::multi::layout_t<D, SSize>::is_empty() const [with long int D = 4; SSize = long int]	16	static
+fixture.hpp:98:58:void boost::unit_test::impl_fixture::call_setup<has_setup>::operator()(U&) [with U = fftw_4D_power_benchmark; bool has_setup = false]	16	static
+fixture.hpp:104:58:void boost::unit_test::impl_fixture::call_teardown<has_teardown>::operator()(U&) [with U = fftw_4D_power_benchmark; bool has_teardown = false]	16	static
+array_ref.hpp:92:29:constexpr boost::multi::array_types<T, D, ElementPtr, Layout>::element_ptr boost::multi::array_types<T, D, ElementPtr, Layout>::base() const [with T = std::complex<double>; long int D = 1; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<1>]	16	static
+array_ref.hpp:95:28:constexpr const layout_t& boost::multi::array_types<T, D, ElementPtr, Layout>::layout() const [with T = std::complex<double>; long int D = 2; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<2>]	16	static
+array_ref.hpp:95:28:constexpr const layout_t& boost::multi::array_types<T, D, ElementPtr, Layout>::layout() const [with T = std::complex<double>; long int D = 3; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<3, long int>]	16	static
+array_ref.hpp:108:12:constexpr boost::multi::array_types<T, D, ElementPtr, Layout>::array_types(const layout_t&, const element_ptr&) [with T = std::complex<double>; long int D = 2; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<2>]	24	static
+fftw.hpp:333:4:) [with As = {std::array<bool, 4>&, const boost::multi::array<std::complex<double>, 4, std::allocator<std::complex<double> > >&, boost::multi::array<std::complex<double>, 4, std::allocator<std::complex<double> > >&, int&}; <template-parameter-1-2> = fftw_plan_s*]	112	static
+basic_string.h:243:9:void std::__cxx11::basic_string<_CharT, _Traits, _Alloc>::_M_construct_aux(_InIterator, _InIterator, std::__false_type) [with _InIterator = const char*; _CharT = char; _Traits = std::char_traits<char>; _Alloc = std::allocator<char>]	64	static
+shared_ptr.hpp:283:42:void boost::detail::sp_pointer_construct(boost::shared_ptr<X>*, Y*, boost::detail::shared_count&) [with T = boost::basic_wrap_stringstream<char>; Y = boost::basic_wrap_stringstream<char>]	64	static
+move.h:99:5:constexpr typename std::remove_reference<_Tp>::type&& std::move(_Tp&&) [with _Tp = boost::basic_wrap_stringstream<char>*&]	16	static
+move.h:182:5:typename std::enable_if<std::__and_<std::__not_<std::__is_tuple_like<_Tp> >, std::is_move_constructible<_Tp>, std::is_move_assignable<_Tp> >::value>::type std::swap(_Tp&, _Tp&) [with _Tp = boost::basic_wrap_stringstream<char>*]	48	static
+function_template.hpp:502:14:void boost::detail::function::basic_vtable0<R>::clear(boost::detail::function::function_buffer&) const [with R = void]	32	static
+bcs_char_traits.hpp:60:17:static bool boost::unit_test::ut_detail::bcs_char_traits_impl<CharT>::eq(CharT, CharT) [with CharT = const char]	16	static
+basic_cstring.hpp:267:1:bool boost::unit_test::basic_cstring<CharT>::is_empty() const [with CharT = const char]	16	static
+basic_cstring.hpp:572:1:static boost::unit_test::basic_cstring<CharT>::self_type boost::unit_test::basic_cstring<CharT>::default_trim_ex() [with CharT = const char]	32	static
+basic_cstring.hpp:405:1:boost::unit_test::basic_cstring<CharT>& boost::unit_test::basic_cstring<CharT>::operator=(const boost::unit_test::basic_cstring<CharT>&) [with CharT = const char]	16	static
+basic_cstring.hpp:497:1:boost::unit_test::basic_cstring<CharT>::value_type* boost::unit_test::basic_cstring<CharT>::end() [with CharT = const char]	16	static
+bcs_char_traits.hpp:93:24:static boost::unit_test::ut_detail::bcs_char_traits_impl<CharT>::const_char* boost::unit_test::ut_detail::bcs_char_traits_impl<CharT>::find(boost::unit_test::ut_detail::bcs_char_traits_impl<CharT>::const_char*, std::size_t, CharT) [with CharT = const char]	48	static
+basic_cstring.hpp:317:1:boost::unit_test::basic_cstring<CharT>::self_type& boost::unit_test::basic_cstring<CharT>::trim_left(boost::unit_test::basic_cstring<CharT>::iterator) [with CharT = const char]	32	static
+basic_cstring.hpp:361:1:boost::unit_test::basic_cstring<CharT>::self_type& boost::unit_test::basic_cstring<CharT>::trim_right(boost::unit_test::basic_cstring<CharT>::iterator) [with CharT = const char]	32	static
+tuple:337:7:static constexpr const _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(const std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 1; _Head = boost::multi::extension_t<long int>; _Tail = {}]	32	static
+tuple:210:17:) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	48	static
+tuple:1332:5:>&&) [with long unsigned int __i = 0; _Elements = {boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1572:9:_Is = {0}; _Tp = const std::tuple<boost::multi::extension_t<long int, long int> >&; _Tpls = {}]	80	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = void (*)(fftw_plan_s*)]	16	static
+tuple:968:19:constexpr std::tuple<_T1, _T2>::tuple(_U1&&, _U2&&) [with _U1 = fftw_plan_s*&; _U2 = void (*)(fftw_plan_s*); typename std::enable_if<((std::_TC<true, _T1, _T2>::_MoveConstructibleTuple<_U1, _U2>() && std::_TC<true, _T1, _T2>::_ImplicitlyMoveConvertibleTuple<_U1, _U2>()) && (! std::is_same<typename std::remove_cv<typename std::remove_reference<_SrcTuple>::type>::type, std::allocator_arg_t>::value)), bool>::type <anonymous> = true; _T1 = fftw_plan_s*; _T2 = void (*)(fftw_plan_s*)]	64	static
+tuple:1320:5:>&) [with long unsigned int __i = 0; _Elements = {fftw_plan_s*, void (*)(fftw_plan_s*)}]	32	static
+unique_ptr.h:155:18:_Dp& std::__uniq_ptr_impl<_Tp, _Dp>::_M_deleter() [with _Tp = fftw_plan_s; _Dp = void (*)(fftw_plan_s*)]	32	static
+tuple:1326:5:>&) [with long unsigned int __i = 0; _Elements = {fftw_plan_s*, void (*)(fftw_plan_s*)}]	32	static
+chrono:149:4:static constexpr _ToDur std::chrono::__duration_cast_impl<_ToDur, _CF, _CR, true, false>::__cast(const std::chrono::duration<_Rep, _Period>&) [with _Rep = long int; _Period = std::ratio<1, 1000000000>; _ToDur = std::chrono::duration<double>; _CF = std::ratio<1, 1000000000>; _CR = double]	64	static
+function_template.hpp:912:10:void boost::function0<R>::assign_to(Functor) [with Functor = void (*)(); R = void]	48	static
+scoped_ptr.hpp:65:14:boost::scoped_ptr<T>::scoped_ptr(T*) [with T = boost::test_tools::local_fpc_tolerance<double>]	16	static
+scoped_ptr.hpp:83:5:boost::scoped_ptr<T>::~scoped_ptr() [with T = boost::test_tools::local_fpc_tolerance<double>]	32	static
+shared_ptr.hpp:283:42:void boost::detail::sp_pointer_construct(boost::shared_ptr<X>*, Y*, boost::detail::shared_count&) [with T = boost::unit_test::test_unit_fixture; Y = boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>]	64	static
+alloc_traits.h:443:7:static _Tp* std::allocator_traits<std::allocator<_CharT> >::allocate(std::allocator_traits<std::allocator<_CharT> >::allocator_type&, std::allocator_traits<std::allocator<_CharT> >::size_type) [with _Tp = std::complex<double>]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 1; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 2; _Head = boost::multi::extension_t<long int>; _Tail = {}]	32	static
+tuple:334:7:static constexpr _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>]	32	static
+allocator.h:141:7:std::allocator< <template-parameter-1-1> >::allocator(const std::allocator< <template-parameter-1-1> >&) [with _Tp = std::complex<double>]	32	static
+array_ref.hpp:349:12:constexpr boost::multi::basic_array<T, D, ElementPtr, Layout>::basic_array(const layout_type&, const ElementPtr&) [with T = std::complex<double>; long int D = 4; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<4, long int>]	48	static
+adl.hpp:177:6:std::decay_t<decltype ((std::allocator_traits<_Alloc>::construct(alloc, std::addressof((* first))), first))> boost::multi::xtd::alloc_uninitialized_default_construct_n(Alloc&, ForwardIt, Size) [with Alloc = std::allocator<std::complex<double> >; ForwardIt = std::complex<double>*; Size = long int; T = std::complex<double>]	96	static
+array.hpp:86:7:void boost::multi::static_array<T, D, Alloc>::destroy_aux(std::true_type) [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	16	static
+alloc_traits.h:469:7:static void std::allocator_traits<std::allocator<_CharT> >::deallocate(std::allocator_traits<std::allocator<_CharT> >::allocator_type&, std::allocator_traits<std::allocator<_CharT> >::pointer, std::allocator_traits<std::allocator<_CharT> >::size_type) [with _Tp = std::complex<double>]	48	static
+layout.hpp:221:2:constexpr boost::multi::layout_t<1, SSize>::layout_t() [with SSize = long int]	16	static
+layout.hpp:338:2:constexpr boost::multi::layout_t<D, SSize>::layout_t() [with long int D = 2; SSize = long int]	32	static
+layout.hpp:338:2:constexpr boost::multi::layout_t<D, SSize>::layout_t() [with long int D = 3; SSize = long int]	32	static
+layout.hpp:338:2:constexpr boost::multi::layout_t<D, SSize>::layout_t() [with long int D = 4; SSize = long int]	32	static
+array.hpp:104:2:boost::multi::static_array<T, D, Alloc>::static_array(boost::multi::static_array<T, D, Alloc>&&, const allocator_type&) [with T = std::complex<double>; long int D = 4; Alloc = std::allocator<std::complex<double> >]	192	static
+stl_vector.h:133:2:std::_Vector_base<_Tp, _Alloc>::_Vector_impl::_Vector_impl(const _Tp_alloc_type&) [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	32	static
+stl_vector.h:347:7:void std::_Vector_base<_Tp, _Alloc>::_M_deallocate(std::_Vector_base<_Tp, _Alloc>::pointer, std::size_t) [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	48	static
+initializer_list:71:7:constexpr std::initializer_list<_E>::size_type std::initializer_list<_E>::size() const [with _E = std::array<bool, 4>]	16	static
+stl_iterator_base_types.h:205:5:constexpr typename std::iterator_traits<_Iterator>::iterator_category std::__iterator_category(const _Iter&) [with _Iter = const std::array<bool, 4>*]	16	static
+stl_iterator_base_funcs.h:98:5:constexpr typename std::iterator_traits<_Iterator>::difference_type std::__distance(_RandomAccessIterator, _RandomAccessIterator, std::random_access_iterator_tag) [with _RandomAccessIterator = const std::array<bool, 4>*]	16	static
+stl_vector.h:1764:7:static std::vector<_Tp, _Alloc>::size_type std::vector<_Tp, _Alloc>::_S_check_init_len(std::vector<_Tp, _Alloc>::size_type, const allocator_type&) [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	64	static
+stl_vector.h:340:7:std::_Vector_base<_Tp, _Alloc>::pointer std::_Vector_base<_Tp, _Alloc>::_M_allocate(std::size_t) [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	32	static
+stl_uninitialized.h:305:5:_ForwardIterator std::__uninitialized_copy_a(_InputIterator, _InputIterator, _ForwardIterator, std::allocator<_Tp>&) [with _InputIterator = const std::array<bool, 4>*; _ForwardIterator = std::array<bool, 4>*; _Tp = std::array<bool, 4>]	48	static
+stl_construct.h:127:5:void std::_Destroy(_ForwardIterator, _ForwardIterator) [with _ForwardIterator = std::array<bool, 4>*]	32	static
+array:234:7:constexpr std::array<_Tp, _Nm>::value_type* std::array<_Tp, _Nm>::data() [with _Tp = bool; long unsigned int _Nm = 4]	32	static
+stl_algobase.h:280:5:_Iterator std::__niter_base(_Iterator) [with _Iterator = bool*]	16	static
+stl_algobase.h:280:5:_Iterator std::__niter_base(_Iterator) [with _Iterator = std::ostream_iterator<bool>]	32	static
+stl_algobase.h:393:5:_OI std::__copy_move_a(_II, _II, _OI) [with bool _IsMove = false; _II = bool*; _OI = std::ostream_iterator<bool>]	96	static
+stl_algobase.h:295:5:_Iterator std::__niter_wrap(const _Iterator&, _Iterator) [with _Iterator = std::ostream_iterator<bool>]	48	static
+array_ref.hpp:1472:51:constexpr typename boost::multi::array_ref<T, D, ElementPtr>::element_ptr boost::multi::array_ref<T, D, ElementPtr>::data() const & [with T = std::complex<double>; long int D = 4; ElementPtr = std::complex<double>*]	16	static
+stl_uninitialized.h:830:5:_ForwardIterator std::uninitialized_copy_n(_InputIterator, _Size, _ForwardIterator) [with _InputIterator = const std::complex<double>*; _Size = long int; _ForwardIterator = std::complex<double>*]	48	static
+tuple:1597:5:) [with _Tpls = {std::tuple<long int>, std::tuple<long int>}; <template-parameter-1-2> = void]	80	static
+tuple:1597:5:) [with _Tpls = {std::tuple<long int>, std::tuple<long int, long int>}; <template-parameter-1-2> = void]	80	static
+tuple:1326:5:>&) [with long unsigned int __i = 0; _Elements = {long int, long int, long int, long int}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 0; _Head = long int; _Tail = {long int, long int, long int}]	32	static
+tuple:198:7:>&) [with long unsigned int _Idx = 0; _Head = long int; _Tail = {long int, long int, long int}]	32	static
+tuple:163:7:static constexpr const _Head& std::_Head_base<_Idx, _Head, false>::_M_head(const std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 0; _Head = long int]	16	static
+tuple:1392:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __i, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<long int, long int, long int, long int>; _Up = std::tuple<long int, long int, long int, long int>; long unsigned int __i = 0; long unsigned int __size = 4]	48	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = std::tuple<long int>]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = std::tuple<long int, long int, long int>]	16	static
+tuple:1572:9:_Is = {0}; _Tp = std::tuple<long int>; _Tpls = {std::tuple<long int, long int, long int>}]	80	static
+tuple:626:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {long int}]	48	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const std::tuple<long int, long int, long int, long int>&]	16	static
+tuple:1326:5:>&) [with long unsigned int __i = 1; _Elements = {long int, long int, long int, long int}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 1; _Head = long int; _Tail = {long int, long int}]	32	static
+tuple:198:7:>&) [with long unsigned int _Idx = 1; _Head = long int; _Tail = {long int, long int}]	32	static
+tuple:163:7:static constexpr const _Head& std::_Head_base<_Idx, _Head, false>::_M_head(const std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 1; _Head = long int]	16	static
+tuple:1326:5:>&) [with long unsigned int __i = 2; _Elements = {long int, long int, long int, long int}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 2; _Head = long int; _Tail = {long int}]	32	static
+tuple:198:7:>&) [with long unsigned int _Idx = 2; _Head = long int; _Tail = {long int}]	32	static
+tuple:163:7:static constexpr const _Head& std::_Head_base<_Idx, _Head, false>::_M_head(const std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 2; _Head = long int]	16	static
+tuple:1326:5:>&) [with long unsigned int __i = 3; _Elements = {long int, long int, long int, long int}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 3; _Head = long int; _Tail = {}]	32	static
+tuple:337:7:static constexpr const _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(const std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 3; _Head = long int]	32	static
+tuple:163:7:static constexpr const _Head& std::_Head_base<_Idx, _Head, false>::_M_head(const std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 3; _Head = long int]	16	static
+layout.hpp:49:66:I = {0, 1, 2, 3}]	32	static
+layout.hpp:384:25:constexpr boost::multi::layout_t<D, SSize>::strides_type boost::multi::layout_t<D, SSize>::strides() const [with long int D = 3; SSize = long int]	80	static
+array:185:7:constexpr std::array<_Tp, _Nm>::value_type& std::array<_Tp, _Nm>::operator[](std::array<_Tp, _Nm>::size_type) [with _Tp = bool; long unsigned int _Nm = 4]	32	static
+array:185:7:constexpr std::array<_Tp, _Nm>::value_type& std::array<_Tp, _Nm>::operator[](std::array<_Tp, _Nm>::size_type) [with _Tp = long int; long unsigned int _Nm = 4]	32	static
+index_range.hpp:141:17:constexpr bool boost::multi::range<IndexType, IndexTypeLast>::empty() const [with IndexType = long int; IndexTypeLast = long int]	16	static
+index_range.hpp:151:24:constexpr auto boost::multi::operator==(const boost::multi::range<long int, long int>&, const boost::multi::range<long int, long int>&)	32	static
+index_range.hpp:223:24:constexpr auto boost::multi::operator==(const boost::multi::extension_t<long int>&, const boost::multi::extension_t<long int>&)	32	static
+tuple:1392:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __i, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; _Up = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; long unsigned int __i = 0; long unsigned int __size = 4]	48	static
+layout.hpp:412:28:constexpr boost::multi::layout_t<D, SSize>::extensions_type boost::multi::layout_t<D, SSize>::extensions() const [with long int D = 3; SSize = long int]	176	static
+layout.hpp:139:25:constexpr const base_& boost::multi::extensions_t<D>::base() const [with long int D = 3]	16	static
+tuple:588:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	64	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >&]	16	static
+tuple:1572:9:_Is = {0}; _Tp = std::tuple<boost::multi::extension_t<long int, long int> >; _Tpls = {const std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >&}]	80	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = boost::multi::extension_t<long int>]	16	static
+tuple:626:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {boost::multi::extension_t<long int, long int>}]	48	static
+index_range.hpp:91:2:constexpr boost::multi::range<IndexType, IndexTypeLast>::range() [with IndexType = long int; IndexTypeLast = long int]	16	static
+index_range.hpp:214:12:constexpr boost::multi::extension_t<IndexType, IndexTypeLast>::extension_t() [with IndexType = long int; IndexTypeLast = long int]	32	static
+index_range.hpp:212:12:constexpr boost::multi::extension_t<IndexType, IndexTypeLast>::extension_t(IndexType, IndexTypeLast) [with IndexType = long int; IndexTypeLast = long int]	48	static
+utility.hpp:370:6:extensions()) boost::multi::extensions(const T&) [with T = boost::multi::array<std::complex<double>, 4>; <template-parameter-1-2> = void]	48	static
+array.hpp:785:40:boost::multi::static_array<std::complex<double>, 4, std::allocator<std::complex<double> > >::allocator_type boost::multi::get_allocator(const boost::multi::array<std::complex<double>, 4>&)	48	static
+fftw.hpp:411:6:decltype ((boost::multi::fftw::plan{which, i, o, s}(), forward<Out>(o))) boost::multi::fftw::dft(std::array<bool, (+ D)>, const In&, Out&&, boost::multi::fftw::sign) [with In = boost::multi::array<std::complex<double>, 4>; Out = boost::multi::array<std::complex<double>, 4>; long unsigned int D = 4]	96	static
+assertion.hpp:261:5:boost::test_tools::assertion::value_expr<T>::value_expr(boost::test_tools::assertion::value_expr<T>&&) [with T = double]	32	static
+fpc_op.hpp:207:1:static boost::test_tools::assertion_result boost::test_tools::assertion::op::EQ<Lhs, Rhs, typename boost::enable_if_c<(((boost::math::fpc::tolerance_based<T>::value && boost::math::fpc::tolerance_based<Rhs>::value) || (boost::math::fpc::tolerance_based<T>::value && boost::is_arithmetic<To>::value)) || (boost::is_arithmetic<T>::value && boost::math::fpc::tolerance_based<Rhs>::value))>::type>::eval(const Lhs&, const Rhs&) [with Lhs = double; Rhs = double]	64	static
+assertion.hpp:274:33:const T& boost::test_tools::assertion::value_expr<T>::value() const [with T = double]	16	static
+fpc_op.hpp:207:1:static void boost::test_tools::assertion::op::EQ<Lhs, Rhs, typename boost::enable_if_c<(((boost::math::fpc::tolerance_based<T>::value && boost::math::fpc::tolerance_based<Rhs>::value) || (boost::math::fpc::tolerance_based<T>::value && boost::is_arithmetic<To>::value)) || (boost::is_arithmetic<T>::value && boost::math::fpc::tolerance_based<Rhs>::value))>::type>::report(std::ostream&, const PrevExprType&, const Rhs&) [with PrevExprType = boost::test_tools::assertion::value_expr<double>; Lhs = double; Rhs = double]	80	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = int&]	16	static
+stl_iterator_base_funcs.h:138:5:constexpr typename std::iterator_traits<_Iterator>::difference_type std::distance(_InputIterator, _InputIterator) [with _InputIterator = const char*]	32	static
+basic_string.tcc:206:7:void std::__cxx11::basic_string<_CharT, _Traits, _Alloc>::_M_construct(_InIterator, _InIterator, std::forward_iterator_tag) [with _FwdIterator = const char*; _CharT = char; _Traits = std::char_traits<char>; _Alloc = std::allocator<char>]	80	static
+shared_count.hpp:136:32:boost::detail::shared_count::shared_count(Y*) [with Y = boost::basic_wrap_stringstream<char>]	48	static
+decorator.hpp:230:23:boost::unit_test::decorator::fixture_t::~fixture_t()	32	static
+decorator.hpp:230:23:virtual boost::unit_test::decorator::fixture_t::~fixture_t()	32	static
+basic_cstring.hpp:79:5:boost::unit_test::basic_cstring<CharT>::basic_cstring(boost::unit_test::basic_cstring<CharT>::pointer, LenType) [with LenType = int; CharT = const char]	16	static
+basic_cstring.hpp:285:1:void boost::unit_test::basic_cstring<CharT>::clear() [with CharT = const char]	16	static
+tuple:337:7:static constexpr const _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(const std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>]	32	static
+tuple:343:17:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(const _Head&) [with long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>]	32	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = boost::multi::extension_t<long int>&&]	16	static
+tuple:1587:2:) [with _Us = {boost::multi::extension_t<long int, long int>, const boost::multi::extension_t<long int, long int>&}; _Ret = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >]	64	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = fftw_plan_s*&]	16	static
+tuple:216:19:) [with _UHead = fftw_plan_s*&; _UTail = {void (*)(fftw_plan_s*)}; <template-parameter-2-3> = void; long unsigned int _Idx = 0; _Head = fftw_plan_s*; _Tail = {void (*)(fftw_plan_s*)}]	64	static
+tuple:1309:5:>&) [with long unsigned int __i = 0; _Head = fftw_plan_s*; _Tail = {void (*)(fftw_plan_s*)}]	32	static
+tuple:1320:5:>&) [with long unsigned int __i = 1; _Elements = {fftw_plan_s*, void (*)(fftw_plan_s*)}]	32	static
+tuple:1314:5:>&) [with long unsigned int __i = 0; _Head = fftw_plan_s*; _Tail = {void (*)(fftw_plan_s*)}]	32	static
+chrono:331:23:constexpr std::chrono::duration<_Rep, _Period>::duration(const _Rep2&) [with _Rep2 = double; <template-parameter-2-2> = void; _Rep = double; _Period = std::ratio<1>]	16	static
+function_base.hpp:395:9:static void boost::detail::function::functor_manager<Functor>::manage(const boost::detail::function::function_buffer&, boost::detail::function::function_buffer&, boost::detail::function::functor_manager_operation_type) [with Functor = void (*)()]	64	static
+function_template.hpp:112:9:static void boost::detail::function::void_function_invoker0<FunctionPtr, R>::invoke(boost::detail::function::function_buffer&) [with FunctionPtr = void (*)(); R = void]	48	static
+function_template.hpp:490:14:bool boost::detail::function::basic_vtable0<R>::assign_to(F, boost::detail::function::function_buffer&) const [with F = void (*)(); R = void]	48	static
+checked_delete.hpp:31:31:void boost::checked_delete(T*) [with T = boost::test_tools::local_fpc_tolerance<double>]	48	static
+shared_count.hpp:136:32:boost::detail::shared_count::shared_count(Y*) [with Y = boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>]	48	static
+new_allocator.h:102:7:_Tp* __gnu_cxx::new_allocator<_Tp>::allocate(__gnu_cxx::new_allocator<_Tp>::size_type, const void*) [with _Tp = std::complex<double>]	48	static
+tuple:198:7:>&) [with long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	32	static
+tuple:337:7:static constexpr const _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(const std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 2; _Head = boost::multi::extension_t<long int>]	32	static
+tuple:160:7:static constexpr _Head& std::_Head_base<_Idx, _Head, false>::_M_head(std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>]	16	static
+new_allocator.h:83:7:__gnu_cxx::new_allocator<_Tp>::new_allocator(const __gnu_cxx::new_allocator<_Tp>&) [with _Tp = std::complex<double>]	16	static
+array_ref.hpp:108:12:constexpr boost::multi::array_types<T, D, ElementPtr, Layout>::array_types(const layout_t&, const element_ptr&) [with T = std::complex<double>; long int D = 4; ElementPtr = std::complex<double>*; Layout = boost::multi::layout_t<4, long int>]	24	static
+stl_iterator_base_funcs.h:202:5:constexpr void std::advance(_InputIterator&, _Distance) [with _InputIterator = std::complex<double>*; _Distance = long int]	48	static
+move.h:138:5:constexpr _Tp* std::addressof(_Tp&) [with _Tp = std::complex<double>]	32	static
+alloc_traits.h:482:2:) [with _Up = std::complex<double>; _Args = {}; _Tp = std::complex<double>]	32	static
+alloc_traits.h:495:2:static void std::allocator_traits<std::allocator<_CharT> >::destroy(std::allocator_traits<std::allocator<_CharT> >::allocator_type&, _Up*) [with _Up = std::complex<double>; _Tp = std::complex<double>]	32	static
+new_allocator.h:119:7:void __gnu_cxx::new_allocator<_Tp>::deallocate(__gnu_cxx::new_allocator<_Tp>::pointer, __gnu_cxx::new_allocator<_Tp>::size_type) [with _Tp = std::complex<double>]	48	static
+allocator.h:141:7:std::allocator< <template-parameter-1-1> >::allocator(const std::allocator< <template-parameter-1-1> >&) [with _Tp = std::array<bool, 4>]	32	static
+stl_vector.h:94:2:std::_Vector_base<_Tp, _Alloc>::_Vector_impl_data::_Vector_impl_data() [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	16	static
+alloc_traits.h:469:7:static void std::allocator_traits<std::allocator<_CharT> >::deallocate(std::allocator_traits<std::allocator<_CharT> >::allocator_type&, std::allocator_traits<std::allocator<_CharT> >::pointer, std::allocator_traits<std::allocator<_CharT> >::size_type) [with _Tp = std::array<bool, 4>]	48	static
+stl_vector.h:1773:7:static std::vector<_Tp, _Alloc>::size_type std::vector<_Tp, _Alloc>::_S_max_size(const _Tp_alloc_type&) [with _Tp = std::array<bool, 4>; _Alloc = std::allocator<std::array<bool, 4> >]	64	static
+alloc_traits.h:443:7:static _Tp* std::allocator_traits<std::allocator<_CharT> >::allocate(std::allocator_traits<std::allocator<_CharT> >::allocator_type&, std::allocator_traits<std::allocator<_CharT> >::size_type) [with _Tp = std::array<bool, 4>]	32	static
+stl_uninitialized.h:115:5:_ForwardIterator std::uninitialized_copy(_InputIterator, _InputIterator, _ForwardIterator) [with _InputIterator = const std::array<bool, 4>*; _ForwardIterator = std::array<bool, 4>*]	64	static
+stl_construct.h:117:9:static void std::_Destroy_aux<true>::__destroy(_ForwardIterator, _ForwardIterator) [with _ForwardIterator = std::array<bool, 4>*]	16	static
+array:59:7:static constexpr _Tp* std::__array_traits<_Tp, _Nm>::_S_ptr(const _Tp (&)[_Nm]) [with _Tp = bool; long unsigned int _Nm = 4]	16	static
+stl_algobase.h:337:2:static _OI std::__copy_move<false, false, std::random_access_iterator_tag>::__copy_m(_II, _II, _OI) [with _II = bool*; _OI = std::ostream_iterator<bool>]	64	static
+stl_iterator_base_types.h:205:5:constexpr typename std::iterator_traits<_Iterator>::iterator_category std::__iterator_category(const _Iter&) [with _Iter = const std::complex<double>*]	16	static
+stl_uninitialized.h:782:5:_ForwardIterator std::__uninitialized_copy_n(_RandomAccessIterator, _Size, _ForwardIterator, std::random_access_iterator_tag) [with _RandomAccessIterator = const std::complex<double>*; _Size = long int; _ForwardIterator = std::complex<double>*]	48	static
+tuple:1572:9:_Is = {0}; _Tp = std::tuple<long int>; _Tpls = {std::tuple<long int>}]	80	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = std::tuple<long int, long int>]	16	static
+tuple:1572:9:_Is = {0}; _Tp = std::tuple<long int>; _Tpls = {std::tuple<long int, long int>}]	80	static
+tuple:1392:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __i, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<long int, long int, long int, long int>; _Up = std::tuple<long int, long int, long int, long int>; long unsigned int __i = 1; long unsigned int __size = 4]	48	static
+tuple:1332:5:>&&) [with long unsigned int __i = 0; _Elements = {long int}]	32	static
+tuple:1572:9:_Is = {0, 1, 2}; _Tp = std::tuple<long int, long int, long int>; _Tpls = {}]	96	static
+tuple:348:19:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(_UHead&&) [with _UHead = long int; long unsigned int _Idx = 0; _Head = long int]	48	static
+layout.hpp:255:17:constexpr auto boost::multi::layout_t<1, SSize>::strides() const [with SSize = long int]	48	static
+layout.hpp:384:25:constexpr boost::multi::layout_t<D, SSize>::strides_type boost::multi::layout_t<D, SSize>::strides() const [with long int D = 2; SSize = long int]	64	static
+array:55:7:static constexpr _Tp& std::__array_traits<_Tp, _Nm>::_S_ref(const _Tp (&)[_Nm], std::size_t) [with _Tp = bool; long unsigned int _Nm = 4]	16	static
+array:55:7:static constexpr _Tp& std::__array_traits<_Tp, _Nm>::_S_ref(const _Tp (&)[_Nm], std::size_t) [with _Tp = long int; long unsigned int _Nm = 4]	16	static
+tuple:1392:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __i, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; _Up = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; long unsigned int __i = 1; long unsigned int __size = 4]	48	static
+layout.hpp:401:28:constexpr boost::multi::layout_t<D, SSize>::index_extension boost::multi::layout_t<D, SSize>::extension() const & [with long int D = 3; SSize = long int]	64	static
+layout.hpp:412:28:constexpr boost::multi::layout_t<D, SSize>::extensions_type boost::multi::layout_t<D, SSize>::extensions() const [with long int D = 2; SSize = long int]	144	static
+layout.hpp:139:25:constexpr const base_& boost::multi::extensions_t<D>::base() const [with long int D = 2]	16	static
+tuple:1597:5:) [with _Tpls = {std::tuple<boost::multi::extension_t<long int, long int> >, const std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >&}; <template-parameter-1-2> = void]	80	static
+tuple:210:17:) [with long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	64	static
+tuple:1572:9:_Is = {0, 1, 2}; _Tp = const std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >&; _Tpls = {}]	96	static
+tuple:348:19:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(_UHead&&) [with _UHead = boost::multi::extension_t<long int>; long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>]	48	static
+fpc_tolerance.hpp:37:1:FPT& boost::test_tools::fpc_tolerance() [with FPT = double]	16	static
+fpc_op.hpp:207:1:static bool boost::test_tools::assertion::op::EQ<Lhs, Rhs, typename boost::enable_if_c<(((boost::math::fpc::tolerance_based<T>::value && boost::math::fpc::tolerance_based<Rhs>::value) || (boost::math::fpc::tolerance_based<T>::value && boost::is_arithmetic<To>::value)) || (boost::is_arithmetic<T>::value && boost::math::fpc::tolerance_based<Rhs>::value))>::type>::eval_direct(const Lhs&, const Rhs&) [with Lhs = double; Rhs = double]	16	static
+assertion_result.hpp:39:23:boost::test_tools::assertion_result::assertion_result(boost::test_tools::assertion_result&&)	32	static
+fpc_op.hpp:109:1:boost::test_tools::assertion_result boost::test_tools::assertion::op::compare_fpv(const Lhs&, const Rhs&, boost::test_tools::assertion::op::EQ<Lhs, Rhs>*) [with FPT = double; Lhs = double; Rhs = double]	160	static
+assertion.hpp:278:33:void boost::test_tools::assertion::value_expr<T>::report(std::ostream&) const [with T = double]	48	static
+fpc_op.hpp:207:1:static const char* boost::test_tools::assertion::op::EQ<Lhs, Rhs, typename boost::enable_if_c<(((boost::math::fpc::tolerance_based<T>::value && boost::math::fpc::tolerance_based<Rhs>::value) || (boost::math::fpc::tolerance_based<T>::value && boost::is_arithmetic<To>::value)) || (boost::is_arithmetic<T>::value && boost::math::fpc::tolerance_based<Rhs>::value))>::type>::revert() [with Lhs = double; Rhs = double]	16	static
+print_helper.hpp:209:1:boost::test_tools::tt_detail::print_helper_t<T> boost::test_tools::tt_detail::print_helper(const T&) [with T = double]	48	static
+print_helper.hpp:218:1:std::ostream& boost::test_tools::tt_detail::operator<<(std::ostream&, const boost::test_tools::tt_detail::print_helper_t<T>&) [with T = double]	48	static
+type_traits.h:152:5:bool __gnu_cxx::__is_null_pointer(_Type*) [with _Type = const char]	16	static
+stl_iterator_base_types.h:205:5:constexpr typename std::iterator_traits<_Iterator>::iterator_category std::__iterator_category(const _Iter&) [with _Iter = const char*]	16	static
+stl_iterator_base_funcs.h:98:5:constexpr typename std::iterator_traits<_Iterator>::difference_type std::__distance(_RandomAccessIterator, _RandomAccessIterator, std::random_access_iterator_tag) [with _RandomAccessIterator = const char*]	16	static
+sp_counted_impl.hpp:81:14:boost::detail::sp_counted_impl_p<X>::sp_counted_impl_p(X*) [with X = boost::basic_wrap_stringstream<char>]	32	static
+checked_delete.hpp:31:31:void boost::checked_delete(T*) [with T = boost::basic_wrap_stringstream<char>]	48	static
+tuple:968:19:constexpr std::tuple<_T1, _T2>::tuple(_U1&&, _U2&&) [with _U1 = boost::multi::extension_t<long int>; _U2 = const boost::multi::extension_t<long int>&; typename std::enable_if<((std::_TC<true, _T1, _T2>::_MoveConstructibleTuple<_U1, _U2>() && std::_TC<true, _T1, _T2>::_ImplicitlyMoveConvertibleTuple<_U1, _U2>()) && (! std::is_same<typename std::remove_cv<typename std::remove_reference<_SrcTuple>::type>::type, std::allocator_arg_t>::value)), bool>::type <anonymous> = true; _T1 = boost::multi::extension_t<long int>; _T2 = boost::multi::extension_t<long int>]	64	static
+tuple:348:19:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(_UHead&&) [with _UHead = void (*)(fftw_plan_s*); long unsigned int _Idx = 1; _Head = void (*)(fftw_plan_s*)]	48	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = fftw_plan_s*&; long unsigned int _Idx = 0; _Head = fftw_plan_s*]	32	static
+tuple:195:7:>&) [with long unsigned int _Idx = 0; _Head = fftw_plan_s*; _Tail = {void (*)(fftw_plan_s*)}]	32	static
+tuple:1309:5:>&) [with long unsigned int __i = 1; _Head = void (*)(fftw_plan_s*); _Tail = {}]	32	static
+tuple:198:7:>&) [with long unsigned int _Idx = 0; _Head = fftw_plan_s*; _Tail = {void (*)(fftw_plan_s*)}]	32	static
+type_index.hpp:211:19:boost::typeindex::type_index boost::typeindex::type_id() [with T = void (*)()]	16	static
+function_base.hpp:322:9:static void boost::detail::function::functor_manager<Functor>::manager(const boost::detail::function::function_buffer&, boost::detail::function::function_buffer&, boost::detail::function::functor_manager_operation_type, boost::detail::function::function_ptr_tag) [with Functor = void (*)()]	48	static
+function_template.hpp:512:9:bool boost::detail::function::basic_vtable0<R>::assign_to(FunctionPtr, boost::detail::function::function_buffer&, boost::detail::function::function_ptr_tag) const [with FunctionPtr = void (*)(); R = void]	48	static
+fpc_tolerance.hpp:52:5:boost::test_tools::local_fpc_tolerance<FPT>::~local_fpc_tolerance() [with FPT = double]	32	static
+sp_counted_impl.hpp:81:14:boost::detail::sp_counted_impl_p<X>::sp_counted_impl_p(X*) [with X = boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>]	32	static
+fixture.hpp:128:7:boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>::~class_based_fixture()	32	static
+fixture.hpp:128:7:virtual boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>::~class_based_fixture()	32	static
+checked_delete.hpp:31:31:void boost::checked_delete(T*) [with T = boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>]	32	static
+layout.hpp:114:37:>()) && (1 >= 1)), bool>::type <anonymous> = true][inherited from std::tuple<boost::multi::extension_t<long int, long int> >]	32	static
+layout.hpp:274:28:constexpr boost::multi::layout_t<1, SSize>::extensions_type boost::multi::layout_t<1, SSize>::extensions() const [with SSize = long int]	64	static
+new_allocator.h:132:7:__gnu_cxx::new_allocator<_Tp>::size_type __gnu_cxx::new_allocator<_Tp>::max_size() const [with _Tp = std::complex<double>]	16	static
+stl_iterator_base_types.h:205:5:constexpr typename std::iterator_traits<_Iterator>::iterator_category std::__iterator_category(const _Iter&) [with _Iter = std::complex<double>*]	16	static
+stl_iterator_base_funcs.h:174:5:constexpr void std::__advance(_RandomAccessIterator&, _Distance, std::random_access_iterator_tag) [with _RandomAccessIterator = std::complex<double>*; _Distance = long int]	16	static
+move.h:47:5:constexpr _Tp* std::__addressof(_Tp&) [with _Tp = std::complex<double>]	16	static
+new_allocator.h:144:2:) [with _Up = std::complex<double>; _Args = {}; _Tp = std::complex<double>]	32	static
+new_allocator.h:151:2:void __gnu_cxx::new_allocator<_Tp>::destroy(_Up*) [with _Up = std::complex<double>; _Tp = std::complex<double>]	16	static
+new_allocator.h:83:7:__gnu_cxx::new_allocator<_Tp>::new_allocator(const __gnu_cxx::new_allocator<_Tp>&) [with _Tp = std::array<bool, 4>]	16	static
+new_allocator.h:119:7:void __gnu_cxx::new_allocator<_Tp>::deallocate(__gnu_cxx::new_allocator<_Tp>::pointer, __gnu_cxx::new_allocator<_Tp>::size_type) [with _Tp = std::array<bool, 4>]	48	static
+alloc_traits.h:505:7:static std::allocator_traits<std::allocator<_CharT> >::size_type std::allocator_traits<std::allocator<_CharT> >::max_size(const allocator_type&) [with _Tp = std::array<bool, 4>]	32	static
+new_allocator.h:102:7:_Tp* __gnu_cxx::new_allocator<_Tp>::allocate(__gnu_cxx::new_allocator<_Tp>::size_type, const void*) [with _Tp = std::array<bool, 4>]	48	static
+stl_uninitialized.h:99:9:static _ForwardIterator std::__uninitialized_copy<true>::__uninit_copy(_InputIterator, _InputIterator, _ForwardIterator) [with _InputIterator = const std::array<bool, 4>*; _ForwardIterator = std::array<bool, 4>*]	48	static
+stream_iterator.h:213:7:std::ostream_iterator<_Tp, _CharT, _Traits>& std::ostream_iterator<_Tp, _CharT, _Traits>::operator*() [with _Tp = bool; _CharT = char; _Traits = std::char_traits<char>]	16	static
+stream_iterator.h:202:7:std::ostream_iterator<_Tp, _CharT, _Traits>& std::ostream_iterator<_Tp, _CharT, _Traits>::operator=(const _Tp&) [with _Tp = bool; _CharT = char; _Traits = std::char_traits<char>]	32	static
+stream_iterator.h:217:7:std::ostream_iterator<_Tp, _CharT, _Traits>& std::ostream_iterator<_Tp, _CharT, _Traits>::operator++() [with _Tp = bool; _CharT = char; _Traits = std::char_traits<char>]	16	static
+stl_uninitialized.h:115:5:_ForwardIterator std::uninitialized_copy(_InputIterator, _InputIterator, _ForwardIterator) [with _InputIterator = const std::complex<double>*; _ForwardIterator = std::complex<double>*]	64	static
+tuple:1572:9:_Is = {0}; _Tp = std::tuple<long int>; _Tpls = {}]	80	static
+tuple:1572:9:_Is = {0, 1}; _Tp = std::tuple<long int, long int>; _Tpls = {}]	80	static
+tuple:1392:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __i, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<long int, long int, long int, long int>; _Up = std::tuple<long int, long int, long int, long int>; long unsigned int __i = 2; long unsigned int __size = 4]	48	static
+tuple:1320:5:>&) [with long unsigned int __i = 0; _Elements = {long int}]	32	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = long int&&]	16	static
+tuple:1332:5:>&&) [with long unsigned int __i = 0; _Elements = {long int, long int, long int}]	32	static
+tuple:1332:5:>&&) [with long unsigned int __i = 1; _Elements = {long int, long int, long int}]	32	static
+tuple:1332:5:>&&) [with long unsigned int __i = 2; _Elements = {long int, long int, long int}]	32	static
+tuple:1587:2:) [with _Us = {long int, long int, long int, long int}; _Ret = std::tuple<long int, long int, long int, long int>]	96	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = long int; long unsigned int _Idx = 0; _Head = long int]	32	static
+tuple:1392:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __i, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; _Up = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; long unsigned int __i = 2; long unsigned int __size = 4]	48	static
+layout.hpp:401:28:constexpr boost::multi::layout_t<D, SSize>::index_extension boost::multi::layout_t<D, SSize>::extension() const & [with long int D = 2; SSize = long int]	64	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >&]	16	static
+tuple:1572:9:_Is = {0}; _Tp = std::tuple<boost::multi::extension_t<long int, long int> >; _Tpls = {const std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >&}]	80	static
+tuple:210:17:) [with long unsigned int _Idx = 1; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	48	static
+tuple:1587:2:) [with _Us = {boost::multi::extension_t<long int, long int>, const boost::multi::extension_t<long int, long int>&, const boost::multi::extension_t<long int, long int>&, const boost::multi::extension_t<long int, long int>&}; _Ret = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >]	96	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = boost::multi::extension_t<long int>; long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>]	32	static
+fpc_op.hpp:80:1:boost::test_tools::assertion_result boost::test_tools::assertion::op::compare_fpv_near_zero(const FPT&, boost::test_tools::assertion::op::EQ<Lhs, Rhs>*) [with FPT = double; Lhs = double; Rhs = double]	96	static
+floating_point_comparison.hpp:233:17:boost::math::fpc::close_at_tolerance<FPT>::close_at_tolerance(ToleranceType, boost::math::fpc::strength) [with ToleranceType = double; FPT = double]	48	static
+stl_algobase.h:222:5:constexpr const _Tp& std::max(const _Tp&, const _Tp&) [with _Tp = double]	16	static
+stl_algobase.h:198:5:constexpr const _Tp& std::min(const _Tp&, const _Tp&) [with _Tp = double]	16	static
+floating_point_comparison.hpp:262:25:bool boost::math::fpc::close_at_tolerance<FPT>::operator()(FPT, FPT) const [with FPT = double]	96	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [40]]	32	static
+floating_point_comparison.hpp:249:25:FPT boost::math::fpc::close_at_tolerance<FPT>::tested_rel_diff() const [with FPT = double]	16	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = double]	32	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [4]]	32	static
+floating_point_comparison.hpp:243:25:FPT boost::math::fpc::close_at_tolerance<FPT>::fraction_tolerance() const [with FPT = double]	16	static
+shared_ptr.hpp:634:5:boost::shared_ptr<T>::shared_ptr(boost::shared_ptr<T>&&) [with T = boost::basic_wrap_stringstream<char>]	32	static
+print_helper.hpp:188:17:boost::test_tools::tt_detail::print_helper_t<T>::print_helper_t(const T&) [with T = double]	16	static
+print_helper.hpp:83:13:void boost::test_tools::tt_detail::print_log_value<T>::operator()(std::ostream&, const T&) [with T = double]	80	static
+tuple:216:19:) [with _UHead = boost::multi::extension_t<long int>; _UTail = {const boost::multi::extension_t<long int, long int>&}; <template-parameter-2-3> = void; long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	64	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = void (*)(fftw_plan_s*); long unsigned int _Idx = 1; _Head = void (*)(fftw_plan_s*)]	32	static
+tuple:160:7:static constexpr _Head& std::_Head_base<_Idx, _Head, false>::_M_head(std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 0; _Head = fftw_plan_s*]	16	static
+tuple:334:7:static constexpr _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 1; _Head = void (*)(fftw_plan_s*)]	32	static
+tuple:163:7:static constexpr const _Head& std::_Head_base<_Idx, _Head, false>::_M_head(const std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 0; _Head = fftw_plan_s*]	16	static
+stl_type_index.hpp:226:23:static boost::typeindex::stl_type_index boost::typeindex::stl_type_index::type_id() [with T = void (*)()]	32	static
+function_base.hpp:259:9:static void boost::detail::function::functor_manager_common<Functor>::manage_ptr(const boost::detail::function::function_buffer&, boost::detail::function::function_buffer&, boost::detail::function::functor_manager_operation_type) [with Functor = void (*)()]	64	static
+layout.hpp:269:35:constexpr boost::multi::layout_t<1, SSize>::index_extension boost::multi::layout_t<1, SSize>::extension() const & [with SSize = long int]	64	static
+new_allocator.h:132:7:__gnu_cxx::new_allocator<_Tp>::size_type __gnu_cxx::new_allocator<_Tp>::max_size() const [with _Tp = std::array<bool, 4>]	16	static
+stl_algobase.h:465:5:_OI std::copy(_II, _II, _OI) [with _II = const std::array<bool, 4>*; _OI = std::array<bool, 4>*]	64	static
+stl_uninitialized.h:76:9:static _ForwardIterator std::__uninitialized_copy<_TrivialValueTypes>::__uninit_copy(_InputIterator, _InputIterator, _ForwardIterator) [with _InputIterator = const std::complex<double>*; _ForwardIterator = std::complex<double>*; bool _TrivialValueTypes = false]	64	static
+tuple:1587:2:) [with _Us = {long int, long int}; _Ret = std::tuple<long int, long int>]	64	static
+tuple:1332:5:>&&) [with long unsigned int __i = 0; _Elements = {long int, long int}]	32	static
+tuple:1332:5:>&&) [with long unsigned int __i = 1; _Elements = {long int, long int}]	32	static
+tuple:1587:2:) [with _Us = {long int, long int, long int}; _Ret = std::tuple<long int, long int, long int>]	64	static
+tuple:1392:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __i, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<long int, long int, long int, long int>; _Up = std::tuple<long int, long int, long int, long int>; long unsigned int __i = 3; long unsigned int __size = 4]	48	static
+tuple:1309:5:>&) [with long unsigned int __i = 0; _Head = long int; _Tail = {}]	32	static
+tuple:1320:5:>&) [with long unsigned int __i = 0; _Elements = {long int, long int, long int}]	32	static
+tuple:1320:5:>&) [with long unsigned int __i = 1; _Elements = {long int, long int, long int}]	32	static
+tuple:1320:5:>&) [with long unsigned int __i = 2; _Elements = {long int, long int, long int}]	32	static
+tuple:626:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {long int, long int, long int, long int}]	96	static
+tuple:1392:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __i, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; _Up = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; long unsigned int __i = 3; long unsigned int __size = 4]	48	static
+tuple:1572:9:_Is = {0, 1}; _Tp = const std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >&; _Tpls = {}]	80	static
+tuple:210:17:) [with long unsigned int _Idx = 2; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>}]	48	static
+tuple:626:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	96	static
+floating_point_comparison.hpp:300:17:boost::math::fpc::small_with_tolerance<FPT>::small_with_tolerance(FPT) [with FPT = double]	32	static
+floating_point_comparison.hpp:307:17:bool boost::math::fpc::small_with_tolerance<FPT>::operator()(FPT) const [with FPT = double]	32	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [36]]	32	static
+wrap_stringstream.hpp:64:1:boost::basic_wrap_stringstream<CharT>& boost::operator<<(boost::basic_wrap_stringstream<CharT>&, const T&) [with CharT = char; T = char [5]]	32	static
+floating_point_comparison.hpp:193:1:FPT boost::math::fpc::fpc_detail::fraction_tolerance(ToleranceType) [with FPT = double; ToleranceType = double]	16	static
+floating_point_comparison.hpp:142:1:FPT boost::math::fpc::fpc_detail::fpt_abs(FPT) [with FPT = double]	16	static
+floating_point_comparison.hpp:175:1:FPT boost::math::fpc::fpc_detail::safe_fpt_division(FPT, FPT) [with FPT = double]	32	static
+print_helper.hpp:97:21:std::streamsize boost::test_tools::tt_detail::print_log_value<T>::set_precision(std::ostream&, mpl_::false_) [with T = double]	32	static
+print_helper.hpp:61:27:std::ostream& boost::test_tools::tt_detail::impl::boost_test_print_type_impl::operator()(std::ostream&, const R&) const [with R = double]	48	static
+tuple:160:7:static constexpr _Head& std::_Head_base<_Idx, _Head, false>::_M_head(std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 1; _Head = void (*)(fftw_plan_s*)]	16	static
+type_index_facade.hpp:187:13:bool boost::typeindex::operator==(const TypeInfo&, const boost::typeindex::type_index_facade<Derived, TypeInfo>&) [with Derived = boost::typeindex::stl_type_index; TypeInfo = std::type_info]	48	static
+cpp_type_traits.h:428:5:_Iterator std::__miter_base(_Iterator) [with _Iterator = const std::array<bool, 4>*]	16	static
+stl_algobase.h:438:5:_OI std::__copy_move_a2(_II, _II, _OI) [with bool _IsMove = false; _II = const std::array<bool, 4>*; _OI = std::array<bool, 4>*]	64	static
+stl_construct.h:74:5:) [with _T1 = std::complex<double>; _Args = {const std::complex<double>&}]	48	static
+tuple:968:19:constexpr std::tuple<_T1, _T2>::tuple(_U1&&, _U2&&) [with _U1 = long int; _U2 = long int; typename std::enable_if<((std::_TC<true, _T1, _T2>::_MoveConstructibleTuple<_U1, _U2>() && std::_TC<true, _T1, _T2>::_ImplicitlyMoveConvertibleTuple<_U1, _U2>()) && (! std::is_same<typename std::remove_cv<typename std::remove_reference<_SrcTuple>::type>::type, std::allocator_arg_t>::value)), bool>::type <anonymous> = true; _T1 = long int; _T2 = long int]	64	static
+tuple:1320:5:>&) [with long unsigned int __i = 0; _Elements = {long int, long int}]	32	static
+tuple:1320:5:>&) [with long unsigned int __i = 1; _Elements = {long int, long int}]	32	static
+tuple:626:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {long int, long int, long int}]	80	static
+tuple:1411:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __size, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<long int, long int, long int, long int>; _Up = std::tuple<long int, long int, long int, long int>; long unsigned int __size = 4]	16	static
+tuple:334:7:static constexpr _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 0; _Head = long int]	32	static
+tuple:1309:5:>&) [with long unsigned int __i = 0; _Head = long int; _Tail = {long int, long int}]	32	static
+tuple:1309:5:>&) [with long unsigned int __i = 1; _Head = long int; _Tail = {long int}]	32	static
+tuple:1309:5:>&) [with long unsigned int __i = 2; _Head = long int; _Tail = {}]	32	static
+tuple:216:19:) [with _UHead = long int; _UTail = {long int, long int, long int}; <template-parameter-2-3> = void; long unsigned int _Idx = 0; _Head = long int; _Tail = {long int, long int, long int}]	96	static
+tuple:1411:7:static constexpr bool std::__tuple_compare<_Tp, _Up, __size, __size>::__eq(const _Tp&, const _Up&) [with _Tp = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; _Up = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >; long unsigned int __size = 4]	16	static
+tuple:1587:2:) [with _Us = {boost::multi::extension_t<long int, long int>, const boost::multi::extension_t<long int, long int>&, const boost::multi::extension_t<long int, long int>&}; _Ret = std::tuple<boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int> >]	64	static
+tuple:343:17:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(const _Head&) [with long unsigned int _Idx = 3; _Head = boost::multi::extension_t<long int>]	32	static
+tuple:216:19:) [with _UHead = boost::multi::extension_t<long int>; _UTail = {const boost::multi::extension_t<long int, long int>&, const boost::multi::extension_t<long int, long int>&, const boost::multi::extension_t<long int, long int>&}; <template-parameter-2-3> = void; long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	96	static
+floating_point_comparison.hpp:153:17:static FPT boost::math::fpc::fpc_detail::fpt_specialized_limits<FPT>::max_value() [with FPT = double]	16	static
+floating_point_comparison.hpp:152:17:static FPT boost::math::fpc::fpc_detail::fpt_specialized_limits<FPT>::min_value() [with FPT = double]	16	static
+print_helper.hpp:52:23:std::ostream& boost::test_tools::tt_detail::impl::boost_test_print_type(std::ostream&, const T&) [with T = double]	32	static
+type_index_facade.hpp:154:35:constexpr bool boost::typeindex::operator==(const boost::typeindex::type_index_facade<Derived, TypeInfo>&, const boost::typeindex::type_index_facade<Derived, TypeInfo>&) [with Derived = boost::typeindex::stl_type_index; TypeInfo = std::type_info]	32	static
+stl_algobase.h:280:5:_Iterator std::__niter_base(_Iterator) [with _Iterator = const std::array<bool, 4>*]	16	static
+stl_algobase.h:280:5:_Iterator std::__niter_base(_Iterator) [with _Iterator = std::array<bool, 4>*]	16	static
+stl_algobase.h:393:5:_OI std::__copy_move_a(_II, _II, _OI) [with bool _IsMove = false; _II = const std::array<bool, 4>*; _OI = std::array<bool, 4>*]	64	static
+stl_algobase.h:295:5:_Iterator std::__niter_wrap(const _Iterator&, _Iterator) [with _Iterator = std::array<bool, 4>*]	16	static
+move.h:74:5:constexpr _Tp&& std::forward(typename std::remove_reference<_Tp>::type&) [with _Tp = const std::complex<double>&]	16	static
+tuple:216:19:) [with _UHead = long int; _UTail = {long int}; <template-parameter-2-3> = void; long unsigned int _Idx = 0; _Head = long int; _Tail = {long int}]	64	static
+tuple:1309:5:>&) [with long unsigned int __i = 0; _Head = long int; _Tail = {long int}]	32	static
+tuple:1309:5:>&) [with long unsigned int __i = 1; _Head = long int; _Tail = {}]	32	static
+tuple:216:19:) [with _UHead = long int; _UTail = {long int, long int}; <template-parameter-2-3> = void; long unsigned int _Idx = 0; _Head = long int; _Tail = {long int, long int}]	64	static
+tuple:160:7:static constexpr _Head& std::_Head_base<_Idx, _Head, false>::_M_head(std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 0; _Head = long int]	16	static
+tuple:195:7:>&) [with long unsigned int _Idx = 0; _Head = long int; _Tail = {long int, long int}]	32	static
+tuple:195:7:>&) [with long unsigned int _Idx = 1; _Head = long int; _Tail = {long int}]	32	static
+tuple:334:7:static constexpr _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 2; _Head = long int]	32	static
+tuple:216:19:) [with _UHead = long int; _UTail = {long int, long int}; <template-parameter-2-3> = void; long unsigned int _Idx = 1; _Head = long int; _Tail = {long int, long int}]	64	static
+tuple:626:19: (_Elements) >= 1)), bool>::type <anonymous> = true; _Elements = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	80	static
+tuple:125:17:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(const _Head&) [with long unsigned int _Idx = 3; _Head = boost::multi::extension_t<long int>]	16	static
+stl_algobase.h:375:2:static _Tp* std::__copy_move<_IsMove, true, std::random_access_iterator_tag>::__copy_m(const _Tp*, const _Tp*, _Tp*) [with _Tp = std::array<bool, 4>; bool _IsMove = false]	64	static
+tuple:348:19:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(_UHead&&) [with _UHead = long int; long unsigned int _Idx = 1; _Head = long int]	48	static
+tuple:195:7:>&) [with long unsigned int _Idx = 0; _Head = long int; _Tail = {long int}]	32	static
+tuple:334:7:static constexpr _Head& std::_Tuple_impl<_Idx, _Head>::_M_head(std::_Tuple_impl<_Idx, _Head>&) [with long unsigned int _Idx = 1; _Head = long int]	32	static
+tuple:216:19:) [with _UHead = long int; _UTail = {long int}; <template-parameter-2-3> = void; long unsigned int _Idx = 1; _Head = long int; _Tail = {long int}]	64	static
+tuple:160:7:static constexpr _Head& std::_Head_base<_Idx, _Head, false>::_M_head(std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 1; _Head = long int]	16	static
+tuple:160:7:static constexpr _Head& std::_Head_base<_Idx, _Head, false>::_M_head(std::_Head_base<_Idx, _Head, false>&) [with long unsigned int _Idx = 2; _Head = long int]	16	static
+tuple:216:19:) [with _UHead = long int; _UTail = {long int}; <template-parameter-2-3> = void; long unsigned int _Idx = 2; _Head = long int; _Tail = {long int}]	64	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = long int; long unsigned int _Idx = 1; _Head = long int]	32	static
+tuple:216:19:) [with _UHead = boost::multi::extension_t<long int>; _UTail = {const boost::multi::extension_t<long int, long int>&, const boost::multi::extension_t<long int, long int>&}; <template-parameter-2-3> = void; long unsigned int _Idx = 0; _Head = boost::multi::extension_t<long int>; _Tail = {boost::multi::extension_t<long int, long int>, boost::multi::extension_t<long int, long int>}]	64	static
+tuple:348:19:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(_UHead&&) [with _UHead = long int; long unsigned int _Idx = 2; _Head = long int]	48	static
+tuple:348:19:constexpr std::_Tuple_impl<_Idx, _Head>::_Tuple_impl(_UHead&&) [with _UHead = long int; long unsigned int _Idx = 3; _Head = long int]	48	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = long int; long unsigned int _Idx = 2; _Head = long int]	32	static
+tuple:132:19:constexpr std::_Head_base<_Idx, _Head, false>::_Head_base(_UHead&&) [with _UHead = long int; long unsigned int _Idx = 3; _Head = long int]	32	static
+sp_counted_impl.hpp:68:46:boost::detail::sp_counted_impl_p<boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double> >::~sp_counted_impl_p()	32	static
+sp_counted_impl.hpp:68:46:virtual boost::detail::sp_counted_impl_p<boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double> >::~sp_counted_impl_p()	32	static
+sp_counted_impl.hpp:68:46:boost::detail::sp_counted_impl_p<boost::basic_wrap_stringstream<char> >::~sp_counted_impl_p()	32	static
+sp_counted_impl.hpp:68:46:virtual boost::detail::sp_counted_impl_p<boost::basic_wrap_stringstream<char> >::~sp_counted_impl_p()	32	static
+decorator.hpp:216:7:boost::unit_test::decorator::enable_if<false>::~enable_if()	32	static
+decorator.hpp:216:7:virtual boost::unit_test::decorator::enable_if<false>::~enable_if()	32	static
+lazy_ostream.hpp:56:7:boost::unit_test::lazy_ostream_impl<boost::unit_test::lazy_ostream, boost::unit_test::basic_cstring<const char>, const boost::unit_test::basic_cstring<const char>&>::~lazy_ostream_impl()	32	static
+lazy_ostream.hpp:56:7:virtual boost::unit_test::lazy_ostream_impl<boost::unit_test::lazy_ostream, boost::unit_test::basic_cstring<const char>, const boost::unit_test::basic_cstring<const char>&>::~lazy_ostream_impl()	32	static
+combinations.cpp:141:1:void __static_initialization_and_destruction_0(int, int)	160	static
+sp_counted_impl.hpp:88:18:void boost::detail::sp_counted_impl_p<X>::dispose() [with X = boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>]	32	static
+sp_counted_impl.hpp:96:20:void* boost::detail::sp_counted_impl_p<X>::get_deleter(const sp_typeinfo_&) [with X = boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>]	16	static
+sp_counted_impl.hpp:101:20:void* boost::detail::sp_counted_impl_p<X>::get_local_deleter(const sp_typeinfo_&) [with X = boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>]	16	static
+sp_counted_impl.hpp:106:20:void* boost::detail::sp_counted_impl_p<X>::get_untyped_deleter() [with X = boost::unit_test::class_based_fixture<boost::test_tools::local_fpc_tolerance<double>, double>]	16	static
+sp_counted_impl.hpp:88:18:void boost::detail::sp_counted_impl_p<X>::dispose() [with X = boost::basic_wrap_stringstream<char>]	32	static
+sp_counted_impl.hpp:96:20:void* boost::detail::sp_counted_impl_p<X>::get_deleter(const sp_typeinfo_&) [with X = boost::basic_wrap_stringstream<char>]	16	static
+sp_counted_impl.hpp:101:20:void* boost::detail::sp_counted_impl_p<X>::get_local_deleter(const sp_typeinfo_&) [with X = boost::basic_wrap_stringstream<char>]	16	static
+sp_counted_impl.hpp:106:20:void* boost::detail::sp_counted_impl_p<X>::get_untyped_deleter() [with X = boost::basic_wrap_stringstream<char>]	16	static
+fixture.hpp:135:21:void boost::unit_test::class_based_fixture<F, Arg>::setup() [with F = boost::test_tools::local_fpc_tolerance<double>; Arg = double]	48	static
+fixture.hpp:136:21:void boost::unit_test::class_based_fixture<F, Arg>::teardown() [with F = boost::test_tools::local_fpc_tolerance<double>; Arg = double]	32	static
+decorator.hpp:219:29:void boost::unit_test::decorator::enable_if<condition>::apply(boost::unit_test::test_unit&) [with bool condition = false]	32	static
+decorator.hpp:220:29:boost::unit_test::decorator::base_ptr boost::unit_test::decorator::enable_if<condition>::clone() const [with bool condition = false]	48	static
+lazy_ostream.hpp:65:29:std::ostream& boost::unit_test::lazy_ostream_impl<PrevType, T, StorageT>::operator()(std::ostream&) const [with PrevType = boost::unit_test::lazy_ostream; T = boost::unit_test::basic_cstring<const char>; StorageT = const boost::unit_test::basic_cstring<const char>&]	32	static
+fpc_tolerance.hpp:47:5:boost::test_tools::local_fpc_tolerance<FPT>::local_fpc_tolerance(FPT) [with FPT = double]	48	static
+scoped_ptr.hpp:91:10:void boost::scoped_ptr<T>::reset(T*) [with T = boost::test_tools::local_fpc_tolerance<double>]	48	static
+scoped_ptr.hpp:97:9:T& boost::scoped_ptr<T>::operator*() const [with T = boost::test_tools::local_fpc_tolerance<double>]	32	static
+fixture.hpp:112:6:void boost::unit_test::setup_conditional(U&) [with U = boost::test_tools::local_fpc_tolerance<double>]	48	static
+fixture.hpp:118:6:void boost::unit_test::teardown_conditional(U&) [with U = boost::test_tools::local_fpc_tolerance<double>]	48	static
+shared_ptr.hpp:377:14:boost::shared_ptr<T>::shared_ptr(Y*) [with Y = boost::unit_test::decorator::enable_if<false>; T = boost::unit_test::decorator::base]	48	static
+io.hpp:51:1:std::basic_ostream<_CharT, _Traits>& boost::unit_test::operator<<(std::basic_ostream<_CharT, _Traits>&, const boost::unit_test::basic_cstring<CharT2>&) [with CharT1 = char; Tr = std::char_traits<char>; CharT2 = const char]	128	static
+scoped_ptr.hpp:117:10:void boost::scoped_ptr<T>::swap(boost::scoped_ptr<T>&) [with T = boost::test_tools::local_fpc_tolerance<double>]	16	static
+fixture.hpp:98:58:void boost::unit_test::impl_fixture::call_setup<has_setup>::operator()(U&) [with U = boost::test_tools::local_fpc_tolerance<double>; bool has_setup = false]	16	static
+fixture.hpp:104:58:void boost::unit_test::impl_fixture::call_teardown<has_teardown>::operator()(U&) [with U = boost::test_tools::local_fpc_tolerance<double>; bool has_teardown = false]	16	static
+shared_ptr.hpp:283:42:void boost::detail::sp_pointer_construct(boost::shared_ptr<X>*, Y*, boost::detail::shared_count&) [with T = boost::unit_test::decorator::base; Y = boost::unit_test::decorator::enable_if<false>]	64	static
+basic_cstring.hpp:488:1:const value_type* boost::unit_test::basic_cstring<CharT>::begin() const [with CharT = const char]	16	static
+basic_cstring.hpp:506:1:const value_type* boost::unit_test::basic_cstring<CharT>::end() const [with CharT = const char]	16	static
+shared_count.hpp:136:32:boost::detail::shared_count::shared_count(Y*) [with Y = boost::unit_test::decorator::enable_if<false>]	48	static
+sp_counted_impl.hpp:81:14:boost::detail::sp_counted_impl_p<X>::sp_counted_impl_p(X*) [with X = boost::unit_test::decorator::enable_if<false>]	32	static
+checked_delete.hpp:31:31:void boost::checked_delete(T*) [with T = boost::unit_test::decorator::enable_if<false>]	32	static
+sp_counted_impl.hpp:68:46:boost::detail::sp_counted_impl_p<boost::unit_test::decorator::enable_if<false> >::~sp_counted_impl_p()	32	static
+sp_counted_impl.hpp:68:46:virtual boost::detail::sp_counted_impl_p<boost::unit_test::decorator::enable_if<false> >::~sp_counted_impl_p()	32	static
+sp_counted_impl.hpp:88:18:void boost::detail::sp_counted_impl_p<X>::dispose() [with X = boost::unit_test::decorator::enable_if<false>]	32	static
+sp_counted_impl.hpp:96:20:void* boost::detail::sp_counted_impl_p<X>::get_deleter(const sp_typeinfo_&) [with X = boost::unit_test::decorator::enable_if<false>]	16	static
+sp_counted_impl.hpp:101:20:void* boost::detail::sp_counted_impl_p<X>::get_local_deleter(const sp_typeinfo_&) [with X = boost::unit_test::decorator::enable_if<false>]	16	static
+sp_counted_impl.hpp:106:20:void* boost::detail::sp_counted_impl_p<X>::get_untyped_deleter() [with X = boost::unit_test::decorator::enable_if<false>]	16	static
+combinations.cpp:141:1:cpp)	16	static

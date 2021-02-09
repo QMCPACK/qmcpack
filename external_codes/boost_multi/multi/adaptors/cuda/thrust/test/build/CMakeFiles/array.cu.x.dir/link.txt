@@ -1,0 +1,1 @@
+/usr/bin/g++  CMakeFiles/array.cu.x.dir/array.cu.o -o array.cu.x  /usr/lib/x86_64-linux-gnu/libboost_unit_test_framework.so.1.71.0  -L"/usr/local/cuda-11.1/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.1/targets/x86_64-linux/lib" -lcudadevrt -lcudart_static -lrt -lpthread -ldl

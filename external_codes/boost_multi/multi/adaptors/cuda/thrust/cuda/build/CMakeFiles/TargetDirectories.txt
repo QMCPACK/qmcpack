@@ -1,0 +1,5 @@
+/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/cuda/build/CMakeFiles/rebuild_cache.dir
+/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/cuda/build/CMakeFiles/edit_cache.dir
+/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/cuda/build/test/CMakeFiles/rebuild_cache.dir
+/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/cuda/build/test/CMakeFiles/edit_cache.dir
+/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/cuda/build/test/CMakeFiles/managed.dir

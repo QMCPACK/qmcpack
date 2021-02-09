@@ -1,0 +1,60 @@
+Start testing: Feb 01 11:01 PST
+----------------------------------------------------------
+1/3 Testing: managed
+1/3 Test: managed
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/.build/cuda/test/managed"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/.build/cuda/test
+"managed" start time: Feb 01 11:01 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"managed" end time: Feb 01 11:01 PST
+"managed" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/3 Testing: array.cu.x
+2/3 Test: array.cu.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/.build/test/array.cu.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/.build/test
+"array.cu.x" start time: Feb 01 11:01 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"array.cu.x" end time: Feb 01 11:01 PST
+"array.cu.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/3 Testing: vector.cu.x
+3/3 Test: vector.cu.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/.build/test/vector.cu.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/.build/test
+"vector.cu.x" start time: Feb 01 11:01 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+<end of output>
+Test time =   0.12 sec
+----------------------------------------------------------
+Test Passed.
+"vector.cu.x" end time: Feb 01 11:01 PST
+"vector.cu.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Feb 01 11:01 PST

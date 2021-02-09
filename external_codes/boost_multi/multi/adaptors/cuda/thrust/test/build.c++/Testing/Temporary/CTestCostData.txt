@@ -1,0 +1,3 @@
+vector.cu.x 1 0
+---
+vector.cu.x

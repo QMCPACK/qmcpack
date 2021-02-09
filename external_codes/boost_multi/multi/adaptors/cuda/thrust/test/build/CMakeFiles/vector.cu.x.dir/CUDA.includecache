@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/vector.cu
+boost/test/unit_test.hpp
+-
+thrust/host_vector.h
+-
+thrust/device_vector.h
+-
+

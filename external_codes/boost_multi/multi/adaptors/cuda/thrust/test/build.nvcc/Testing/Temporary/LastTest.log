@@ -1,0 +1,21 @@
+Start testing: Jan 27 19:34 PST
+----------------------------------------------------------
+1/2 Testing: array.cu.x
+1/2 Test: array.cu.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/build.nvcc/array.cu.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/build.nvcc
+"array.cu.x" start time: Jan 27 19:34 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+*** No errors detected
+<end of output>
+Test time =   0.30 sec
+----------------------------------------------------------
+Test Passed.
+"array.cu.x" end time: Jan 27 19:34 PST
+"array.cu.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jan 27 19:34 PST

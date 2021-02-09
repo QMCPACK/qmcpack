@@ -1,0 +1,21 @@
+Start testing: Jan 27 17:50 PST
+----------------------------------------------------------
+1/1 Testing: vector.cu.x
+1/1 Test: vector.cu.x
+Command: "/usr/bin/valgrind" "--log-file=/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/build.nvcc/Testing/Temporary/MemoryChecker.1.log" "--leak-check=full" "--error-exitcode=1" "/home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/build.nvcc/vector.cu.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/cuda/thrust/test/build.nvcc
+"vector.cu.x" start time: Jan 27 17:50 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+*** No errors detected
+<end of output>
+Test time =   2.07 sec
+----------------------------------------------------------
+Test Failed.
+"vector.cu.x" end time: Jan 27 17:50 PST
+"vector.cu.x" time elapsed: 00:00:02
+----------------------------------------------------------
+
+End testing: Jan 27 17:50 PST

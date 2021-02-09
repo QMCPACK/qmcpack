@@ -1,0 +1,11 @@
+axpy.cpp.x 11 0.000498669
+copy.cpp.x 10 0.000575493
+dot.cpp.x 11 0.000539538
+gemv.cpp.x 11 0.000559471
+gemm.cpp.x 11 0.00122416
+herk.cpp.x 10 0.000520835
+numeric.cpp.x 11 0.000498897
+scal.cpp.x 11 0.000432905
+traits.cpp.x 11 0.000436501
+trsm.cpp.x 11 0.000802874
+---

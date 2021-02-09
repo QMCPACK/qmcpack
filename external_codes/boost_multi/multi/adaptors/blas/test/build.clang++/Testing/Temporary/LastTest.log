@@ -1,0 +1,183 @@
+Start testing: Jan 24 21:00 PST
+----------------------------------------------------------
+1/10 Testing: axpy.cpp.x
+1/10 Test: axpy.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/axpy.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"axpy.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 8 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"axpy.cpp.x" end time: Jan 24 21:00 PST
+"axpy.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/10 Testing: copy.cpp.x
+2/10 Test: copy.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/copy.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"copy.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 9 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"copy.cpp.x" end time: Jan 24 21:00 PST
+"copy.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/10 Testing: dot.cpp.x
+3/10 Test: dot.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/dot.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"dot.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 13 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"dot.cpp.x" end time: Jan 24 21:00 PST
+"dot.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/10 Testing: gemv.cpp.x
+4/10 Test: gemv.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/gemv.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"gemv.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 7 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"gemv.cpp.x" end time: Jan 24 21:00 PST
+"gemv.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/10 Testing: gemm.cpp.x
+5/10 Test: gemm.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/gemm.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"gemm.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 42 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"gemm.cpp.x" end time: Jan 24 21:00 PST
+"gemm.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/10 Testing: herk.cpp.x
+6/10 Test: herk.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/herk.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"herk.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 1 test case...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"herk.cpp.x" end time: Jan 24 21:00 PST
+"herk.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/10 Testing: numeric.cpp.x
+7/10 Test: numeric.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/numeric.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"numeric.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 5 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"numeric.cpp.x" end time: Jan 24 21:00 PST
+"numeric.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/10 Testing: scal.cpp.x
+8/10 Test: scal.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/scal.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"scal.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 3 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"scal.cpp.x" end time: Jan 24 21:00 PST
+"scal.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/10 Testing: traits.cpp.x
+9/10 Test: traits.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/traits.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"traits.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 2 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"traits.cpp.x" end time: Jan 24 21:00 PST
+"traits.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/10 Testing: trsm.cpp.x
+10/10 Test: trsm.cpp.x
+Command: "/home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++/trsm.cpp.x"
+Directory: /home/correaa/prj/inq/external_libs/multi/adaptors/blas/test/build.clang++
+"trsm.cpp.x" start time: Jan 24 21:00 PST
+Output:
+----------------------------------------------------------
+Running 15 test cases...
+
+*** No errors detected
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"trsm.cpp.x" end time: Jan 24 21:00 PST
+"trsm.cpp.x" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jan 24 21:00 PST
