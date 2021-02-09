@@ -40,7 +40,7 @@ namespace qmcplusplus
  *  Num crowds must be less than omp_get_max_threads because RandomNumberControl is global c lib function
  *  masquerading as a C++ object.
  */
-QMCDriverNew::QMCDriverNew(const ProjectData& project_info,
+QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            QMCDriverInput&& input,
                            MCPopulation&& population,
                            TrialWaveFunction& psi,
@@ -60,7 +60,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_info,
       timers_(timer_prefix),
       driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
-      project_info_(project_info),
+      project_data_(project_data),
       setNonLocalMoveHandler_(snlm_handler)
 {
   //create and initialize estimator
@@ -178,7 +178,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
   app_log() << "\n========================================================="
-            << "\n  Start " << QMCType << "\n  File Root " << project_info_.CurrentMainRoot();
+            << "\n  Start " << QMCType << "\n  File Root " << project_data_.CurrentMainRoot();
   app_log() << "\n=========================================================" << std::endl;
 
   if (h5name.size())
