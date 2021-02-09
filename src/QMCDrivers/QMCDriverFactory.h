@@ -48,7 +48,7 @@ public:
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };
 
-  QMCDriverFactory(const ProjectData& project_info);
+  QMCDriverFactory(const ProjectData& project_data);
 
   /** default constructor **/
   //QMCDriverFactory() ;
@@ -70,7 +70,7 @@ public:
 
 private:
   /// project info for accessing global fileroot and series id
-  const ProjectData& project_info_;
+  const ProjectData& project_data_;
 };
 } // namespace qmcplusplus
 #endif

@@ -9,3 +9,4 @@ qmcpack_manual.pdf
 .DS_Store
 /build_*/
 docs/_build
+nexus/tests/unit/*output

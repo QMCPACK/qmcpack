@@ -71,7 +71,7 @@ public:
   };
 
   /// Constructor.
-  DMCBatched(const ProjectData& project_info,
+  DMCBatched(const ProjectData& project_data,
              QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
              MCPopulation&& pop,
@@ -129,7 +129,7 @@ private:
   ///branch engine
   std::unique_ptr<SFNBranch> branch_engine_;
   ///walker controller for load-balance
-  std::unique_ptr<WalkerControl> WalkerController;
+  std::unique_ptr<WalkerControl> walker_controller_;
 
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,

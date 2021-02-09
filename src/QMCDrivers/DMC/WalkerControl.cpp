@@ -25,6 +25,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -234,13 +235,20 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     }
   }
 
+  if (walkers.size() - untouched_walkers > 0)
   {
     ScopedTimer recomputing_timer(my_timers_[WC_recomputing]);
+
+    if (!twfs_shared_resource_)
+      twfs_shared_resource_ = std::make_unique<ResourceCollection>(pop.get_golden_twf().getResource());
+
     const size_t num_walkers = walkers.size();
     // recomputed received and duplicated walkers, the first untouched_walkers walkers doesn't need to be updated.
     auto p_list =
         convertUPtrToRefVectorSubset(pop.get_elec_particle_sets(), untouched_walkers, num_walkers - untouched_walkers);
     auto wf_list = convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
+
+    ResourceCollectionLock<TrialWaveFunction> resource_lock(*twfs_shared_resource_, wf_list[0]);
     // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
     ParticleSet::flex_update(p_list);
     TrialWaveFunction::flex_evaluateLog(wf_list, p_list);
