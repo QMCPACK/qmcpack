@@ -82,11 +82,7 @@ public:
     const int N_sources_padded = getAlignedSize<T>(N_sources);
     const int stride_size      = N_sources_padded * (D + 1);
     r_dr_memorypool_.resize(stride_size * N_targets);
-    auto* pool_ptr = r_dr_memorypool_.data();
-    PRAGMA_OFFLOAD("omp target data use_device_ptr(pool_ptr)")
-    {
-      r_dr_device_ptr_ = pool_ptr;
-    }
+    r_dr_device_ptr_ = getOffloadDevicePtr(r_dr_memorypool_.data());
 
     distances_.resize(N_targets);
     displacements_.resize(N_targets);

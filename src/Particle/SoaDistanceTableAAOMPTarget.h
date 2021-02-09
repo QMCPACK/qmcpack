@@ -13,7 +13,11 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_DTDIMPL_AA_OMPTARGET_H
 #define QMCPLUSPLUS_DTDIMPL_AA_OMPTARGET_H
+
 #include "CPU/SIMD/algorithm.hpp"
+#include "OMPTarget/OMPallocator.hpp"
+#include "Platforms/PinnedAllocator.h"
+#include "Particle/RealSpacePositionsOMPTarget.h"
 
 namespace qmcplusplus
 {
@@ -37,12 +41,19 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target) : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
   {
+    auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
+    if (!coordinates_soa)
+      throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
     resize(target.getTotalNum());
+    PRAGMA_OFFLOAD("omp target enter data map(to : this[:1])")
   }
 
   SoaDistanceTableAAOMPTarget()                          = delete;
   SoaDistanceTableAAOMPTarget(const SoaDistanceTableAAOMPTarget&) = delete;
-  ~SoaDistanceTableAAOMPTarget() {}
+  ~SoaDistanceTableAAOMPTarget()
+  {
+    PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])")
+  }
 
   size_t compute_size(int N)
   {
