@@ -14,11 +14,13 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/EstimatorManagerCrowd.h"
-#include "Utilities/RandomGenerator.h"
+#include "RandomGenerator.h"
 
 namespace qmcplusplus
 {
 
+// forward declaration
+class ResourceCollection;
 
 /** Driver synchronized step context
  * 
@@ -39,8 +41,9 @@ public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** This is the data structure for walkers within a crowd
    */
-  Crowd(EstimatorManagerNew& emb) : estimator_manager_crowd_(emb) {}
+  Crowd(EstimatorManagerNew& emb);
 
+  ~Crowd();
   /** Because so many vectors allocate them upfront.
    *
    *  could be premature optimization
@@ -73,6 +76,18 @@ public:
 
   void setRNGForHamiltonian(RandomGenerator_t& rng);
 
+  /** initialize crowd-owned resources shared by walkers in the crowd
+   */
+  void initializeResources(const ResourceCollection& twf_resource);
+  /** lend crowd-owned resources to the crowd leader walker
+   * Note: use RAII CrowdResourceLock whenever possible
+   */
+  void lendResources(size_t receiver);
+  /** take back crowd-owned resources from the crowd leader walker
+   * Note: use RAII CrowdResourceLock whenever possible
+   */
+  void takebackResources(size_t receiver);
+
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
   auto beginTrialWaveFunctions() { return walker_twfs_.begin(); }
@@ -94,6 +109,7 @@ public:
   unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
   unsigned long get_accept() { return n_accept_; }
   unsigned long get_reject() { return n_reject_; }
+
 private:
   /** @name Walker Vectors
    *
@@ -109,6 +125,8 @@ private:
   
   EstimatorManagerCrowd estimator_manager_crowd_;
 
+  std::unique_ptr<ResourceCollection> twfs_shared_resource_;
+
   /** @name Step State
    * 
    *  Should be per walker? 
@@ -119,5 +137,26 @@ private:
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
 };
+
+/** Lock for a crowd lending and taking back shared resource to its consumer objects.
+ */
+class CrowdResourceLock
+{
+public:
+  CrowdResourceLock(Crowd& locked_crowd, size_t receiver = 0) : locked_crowd_(locked_crowd), receiver_(receiver)
+  {
+    locked_crowd_.lendResources(receiver_);
+  }
+
+  ~CrowdResourceLock() { locked_crowd_.takebackResources(receiver_); }
+
+  CrowdResourceLock(const CrowdResourceLock&) = delete;
+  CrowdResourceLock(CrowdResourceLock&&) = delete;
+
+private:
+  Crowd& locked_crowd_;
+  const size_t receiver_;
+};
+
 } // namespace qmcplusplus
 #endif

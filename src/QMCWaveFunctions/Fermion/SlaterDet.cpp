@@ -208,6 +208,24 @@ void SlaterDet::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   }
 }
 
+void SlaterDet::createResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Dets.size(); ++i)
+    Dets[i]->createResource(collection);
+}
+
+void SlaterDet::acquireResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Dets.size(); ++i)
+    Dets[i]->acquireResource(collection);
+}
+
+void SlaterDet::releaseResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Dets.size(); ++i)
+    Dets[i]->releaseResource(collection);
+}
+
 void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
 {
   DEBUG_PSIBUFFER(" SlaterDet::registerData ", buf.current());

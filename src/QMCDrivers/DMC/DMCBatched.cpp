@@ -421,8 +421,11 @@ void DMCBatched::runDMCStep(int crowd_id,
                             UPtrVector<Crowd>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
+
   if (crowd.size() == 0)
     return;
+
+  CrowdResourceLock crowd_res_lock(crowd);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   int max_steps  = sft.qmcdrv_input.get_max_steps();

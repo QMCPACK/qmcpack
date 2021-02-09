@@ -320,6 +320,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<ContextForSteps>& context_for_steps)
 {
   Crowd& crowd = *(crowds[crowd_id]);
+  CrowdResourceLock crowd_res_lock(crowd);
+
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   auto& walker_twfs         = crowd.get_walker_twfs();
