@@ -231,7 +231,7 @@ public:
   //  m_grid->locate(r);
   //}
 
-  inline value_type splint(point_type r) const
+  inline value_type splint(point_type r) const override
   {
     if (r < r_min)
     {
@@ -255,7 +255,7 @@ public:
    *@param d2u return the 2nd derivative
    *@return the value of the function
   */
-  inline value_type splint(point_type r, value_type& du, value_type& d2u) const
+  inline value_type splint(point_type r, value_type& du, value_type& d2u) const override
   {
     if (r < r_min)
     //linear-extrapolation returns y[0]+y'*(r-r[0])
@@ -318,7 +318,7 @@ public:
    *and each object can have its own range of valid grid points.
    *r_min and r_max are used to specify the range.
    */
-  inline void spline(int imin, value_type yp1, int imax, value_type ypn)
+  inline void spline(int imin, value_type yp1, int imax, value_type ypn) override
   {
     first_deriv = yp1;
     last_deriv  = ypn;
@@ -333,7 +333,7 @@ public:
     //FirstAddress[2]=m_Y2.data()+imin;
   }
 
-  inline void spline() { spline(0, 0.0, m_grid->size() - 1, 0.0); }
+  inline void spline() override { spline(0, 0.0, m_grid->size() - 1, 0.0); }
 };
 
 

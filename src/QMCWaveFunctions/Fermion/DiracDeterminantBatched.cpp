@@ -102,6 +102,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
     norb = nel; // for morb == -1 (default)
   psiM_vgl.resize(nel * norb);
   psiM_vgl_dev_ptr = getOffloadDevicePtr(psiM_vgl.data());
+  // attach pointers VGL
   psiM_temp.attachReference(psiM_vgl.data(0), nel, norb);
   dpsiM.attachReference(reinterpret_cast<GradType*>(psiM_vgl.data(1)), nel, norb);
   d2psiM.attachReference(psiM_vgl.data(4), nel, norb);
@@ -285,6 +286,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
   if (!Phi->isOMPoffload() && n_accepted > 0)
   {
     auto* phi_vgl_v_ptr = phi_vgl_v.data();
+    // transfer host to device, total size 5, v(1) + g(3) + l(1)
     PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
   }
 
@@ -439,6 +441,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVector<Wav
         engine_list.push_back(det.det_engine_);
         auto& my_psiM_vgl  = det.psiM_vgl;
         auto* psiM_vgl_ptr = my_psiM_vgl.data();
+        // transfer device to host, total size 4, g(3) + l(1)
         PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
       }
 
@@ -490,6 +493,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::copyFromBuffer(ParticleSet& P, WF
   PRAGMA_OFFLOAD("omp target update to(psiMinv_ptr[:psiMinv.size()])")
   auto* psiM_vgl_ptr           = psiM_vgl.data();
   const size_t psiM_vgl_stride = psiM_vgl.capacity();
+  // transfer host to device, total size 4, g(3) + l(1)
   PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl_stride:psiM_vgl_stride*4])")
   buf.get(LogValue);
   BufferTimer.stop();
@@ -827,6 +831,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
     ScopedTimer spo_timer(&SPOVGLTimer);
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
     auto* psiM_vgl_ptr = psiM_vgl.data();
+    // transfer host to device, total size 4, g(3) + l(1)
     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
   }
 

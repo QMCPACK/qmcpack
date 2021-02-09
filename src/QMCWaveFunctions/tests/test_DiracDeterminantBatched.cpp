@@ -334,18 +334,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 
   check_matrix(ddc.psiMinv, a_update1);
 
-  try
-  {
-    grad = ddc.evalGrad(elec, 1);
-  }
-  catch (const std::exception& exc)
-  {
-    if (exc.what() == std::string("gradient of zero"))
-      std::cout << "caught expected std::exception from ddc.evalGrad : " << exc.what() << ". Caused by FakeSPO."
-                << std::endl;
-    else
-      throw exc;
-  }
+  grad = ddc.evalGrad(elec, 1);
 
   PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
@@ -365,18 +354,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1, true);
 
-  try
-  {
-    grad = ddc.evalGrad(elec, 2);
-  }
-  catch (const std::exception& exc)
-  {
-    if (exc.what() == std::string("gradient of zero"))
-      std::cout << "caught expected std::exception from ddc.evalGrad : " << exc.what() << ". Caused by FakeSPO."
-                << std::endl;
-    else
-      throw exc;
-  }
+  grad = ddc.evalGrad(elec, 2);
 
   PsiValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),

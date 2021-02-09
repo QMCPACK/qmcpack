@@ -31,7 +31,7 @@ public:
 
   void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) override {}
 
-  void registerOperatorEstimator(std::vector<observable_helper*>& h5dec, hid_t gid) const override {}
+  void registerOperatorEstimator(hid_t gid) override {}
 
   void startBlock(int nsteps) override {}
   
