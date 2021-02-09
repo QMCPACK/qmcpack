@@ -775,7 +775,7 @@ void ParticleSet::saveWalker(Walker_t& awalker)
   //awalker.DataSet.rewind();
 }
 
-void ParticleSet::flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers)
+void ParticleSet::flex_saveWalker(const RefVector<ParticleSet>& psets, const RefVector<Walker_t>& walkers)
 {
   int num_sets    = psets.size();
   auto saveWalker = [](ParticleSet& pset, Walker_t& walker) {

@@ -18,7 +18,6 @@
 
 namespace qmcplusplus
 {
-
 // forward declaration
 class ResourceCollection;
 
@@ -66,7 +65,7 @@ public:
    *  That is legacy "reset" pattern is considered deprecated
    */
   void clearWalkers();
-  
+
   void accumulate(int global_walkers)
   {
     if (this->size() == 0)
@@ -101,6 +100,9 @@ public:
   const RefVector<QMCHamiltonian>& get_walker_hamiltonians() const { return walker_hamiltonians_; }
 
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
+
+  ResourceCollection& getTWFSharedResource() { return *twfs_shared_resource_; }
+
   int size() const { return mcp_walkers_.size(); }
 
   void incReject() { ++n_reject_; }
@@ -122,7 +124,7 @@ private:
   RefVector<TrialWaveFunction> walker_twfs_;
   RefVector<QMCHamiltonian> walker_hamiltonians_;
   /** }@ */
-  
+
   EstimatorManagerCrowd estimator_manager_crowd_;
 
   std::unique_ptr<ResourceCollection> twfs_shared_resource_;
@@ -132,8 +134,8 @@ private:
    *  Should be per walker? 
    *  @{
    */
-  unsigned long n_reject_ = 0;
-  unsigned long n_accept_ = 0;
+  unsigned long n_reject_          = 0;
+  unsigned long n_accept_          = 0;
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
 };
@@ -151,7 +153,7 @@ public:
   ~CrowdResourceLock() { locked_crowd_.takebackResources(receiver_); }
 
   CrowdResourceLock(const CrowdResourceLock&) = delete;
-  CrowdResourceLock(CrowdResourceLock&&) = delete;
+  CrowdResourceLock(CrowdResourceLock&&)      = delete;
 
 private:
   Crowd& locked_crowd_;
