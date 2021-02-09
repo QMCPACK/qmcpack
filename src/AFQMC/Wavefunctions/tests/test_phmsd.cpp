@@ -68,12 +68,7 @@ void test_read_phmsd(boost::mpi3::communicator& world)
 {
   using pointer = device_ptr<ComplexType>;
 
-  if (not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping read_phmsd. Wavefunction file not found. \n";
-    app_log() << " Run unit test with --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("test_read_phmsd", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -191,12 +186,7 @@ void test_phmsd(boost::mpi3::communicator& world)
 {
   using pointer = device_ptr<ComplexType>;
 
-  if (not file_exists(UTEST_WFN) || not file_exists(UTEST_HAMIL))
-  {
-    app_log() << " Skipping read_phmsd. Wavefunction and/or Hamiltonian file not found. \n";
-    app_log() << " Run unit test with --wfn /path/to/wfn.h5 and --hamil /path/to/hamil.h5.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("read_phmsd", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     GlobalTaskGroup gTG(world);

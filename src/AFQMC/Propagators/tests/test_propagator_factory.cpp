@@ -64,12 +64,7 @@ using namespace afqmc;
 
 void propg_fac_shared(boost::mpi3::communicator& world)
 {
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("propg_fac_shared", UTEST_WFN, UTEST_HAMIL))
   {
     timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
@@ -241,12 +236,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
 
 void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
 {
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("propg_fac_distributed", UTEST_WFN, UTEST_HAMIL))
   {
     timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
