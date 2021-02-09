@@ -36,14 +36,14 @@ using WP = WalkerProperties::Indexes;
  *
  *  Note you must call the Base constructor before the derived class sets QMCType
  */
-DMCBatched::DMCBatched(const ProjectData& project_info,
+DMCBatched::DMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
                        DMCDriverInput&& input,
                        MCPopulation&& pop,
                        TrialWaveFunction& psi,
                        QMCHamiltonian& h,
                        Communicate* comm)
-    : QMCDriverNew(project_info, std::move(qmcdriver_input), std::move(pop), psi, h,
+    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop), psi, h,
                    "DMCBatched::", comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
@@ -369,10 +369,10 @@ void DMCBatched::process(xmlNodePtr node)
     branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
     branch_engine_->put(node);
 
-    WalkerController = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
-    WalkerController->setMinMax(population_.get_num_global_walkers(), 0);
-    WalkerController->start();
-    WalkerController->put(node);
+    walker_controller_ = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
+    walker_controller_->setMinMax(population_.get_num_global_walkers(), 0);
+    walker_controller_->start();
+    walker_controller_->put(node);
 
     std::ostringstream o;
     if (dmcdriver_input_.get_reconfiguration())
@@ -413,7 +413,7 @@ bool DMCBatched::run()
     population_.measureGlobalEnergyVariance(*myComm, energy, variance);
     // false indicates we do not support kill at node crossings.
     branch_engine_->initParam(population_, energy, variance, dmcdriver_input_.get_reconfiguration(), false);
-    WalkerController->setTrialEnergy(branch_engine_->getEtrial());
+    walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
   }
 
   ParallelExecutor<> crowd_task;
@@ -453,10 +453,10 @@ bool DMCBatched::run()
 
       {
         int iter                 = block * qmcdriver_input_.get_max_steps() + step;
-        const int population_now = WalkerController->branch(iter, population_, iter == 0);
-        branch_engine_->updateParamAfterPopControl(population_now, WalkerController->get_ensemble_property(),
+        const int population_now = walker_controller_->branch(iter, population_, iter == 0);
+        branch_engine_->updateParamAfterPopControl(population_now, walker_controller_->get_ensemble_property(),
                                                    population_.get_num_particles());
-        WalkerController->setTrialEnergy(branch_engine_->getEtrial());
+        walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
       }
 
       for (UPtr<Crowd>& crowd_ptr : crowds_)

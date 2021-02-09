@@ -32,7 +32,7 @@
 
 namespace qmcplusplus
 {
-QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_info,
+QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_data,
                                                    MCWalkerConfiguration& w,
                                                    TrialWaveFunction& psi,
                                                    QMCHamiltonian& h,
@@ -42,7 +42,7 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_in
                                                    SampleStack& samples,
                                                    Communicate* comm,
                                                    const std::string& QMC_driver_type)
-    : QMCDriverNew(project_info,
+    : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(population),
                    psi,

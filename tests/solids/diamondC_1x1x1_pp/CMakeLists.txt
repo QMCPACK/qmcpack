@@ -360,7 +360,7 @@ if (add_estimator_tests)
   #   "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   #   qmc_spindens_vmcbatch_short${IFEXT}.in.xml
   #   ${NMPI} ${NOMP}
-  #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_vmcbatch_short.s000.stat_ref_spindensity.dat
+  #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
   #   )
 
   SIMPLE_RUN_AND_CHECK(

@@ -151,7 +151,7 @@ public:
   //  g2 = v2*fac;
   //}
 
-  inline int state_size() const { return uni.engine().state_size; }
+  inline size_t state_size() const { return uni.engine().state_size; }
 
   inline void read(std::istream& rin) { rin >> uni.engine(); }
 
