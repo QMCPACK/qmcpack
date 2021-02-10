@@ -248,8 +248,9 @@ HamiltonianOperations FactorizedSparseHamiltonian::getHamiltonianOperations(bool
 
   // hack until parallel hdf is in place
   bool write_hdf = false;
-  if (TGwfn.Global().root())
-    write_hdf = !dump.closed();
+  // YY 2021-02-10: disable hamiltonian checkpoint for RDONLY ham h5
+  //if (TGwfn.Global().root())
+  //  write_hdf = !dump.closed();
   //    if(TGwfn.Global().root()) write_hdf = (dump.file_id != hdf_archive::is_closed);
   TGwfn.Global().broadcast_value(write_hdf);
 
