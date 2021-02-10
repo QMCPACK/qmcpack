@@ -592,12 +592,14 @@ public:
                 gpu::device_vector<int>& NumCoreElecs,
                 gpu::device_vector<CUDA_PRECISION*>& QuadPosList,
                 gpu::device_vector<CUDA_PRECISION*>& RatioList,
-                int numQuadPoints);
+                int numQuadPoints,
+                ComputeType ct = ComputeType::ALL);
 
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios);
+                std::vector<ValueType>& psi_ratios,
+                ComputeType ct = ComputeType::ALL);
 
   void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
   void update(std::vector<Walker_t*>& walkers, int iat) { update(NULL, walkers, iat, NULL, 0); }

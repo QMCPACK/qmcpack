@@ -13,7 +13,6 @@
 
 namespace qmcplusplus
 {
-
 Crowd::Crowd(EstimatorManagerNew& emb) : estimator_manager_crowd_(emb) {}
 
 Crowd::~Crowd() = default;
