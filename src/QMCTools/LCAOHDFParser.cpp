@@ -170,6 +170,7 @@ void LCAOHDFParser::parse(const std::string& fname)
     {
       hin.read(ci_size, "NbDet");
       hin.read(ci_nstates, "nstate");
+      hin.read(nbexcitedstates, "nexcitedstate");
       CIcoeff.clear();
       CIalpha.clear();
       CIbeta.clear();
