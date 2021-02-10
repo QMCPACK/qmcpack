@@ -596,8 +596,7 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
   CALL xml_Close(xmlfile)
   
 ! **********************************************************************
-  
-  !! close the file
+
   !!DO ik = 0, nk-1
   ik=0
    ! NOT create a xml input file for each k-point
@@ -607,168 +606,123 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
    !    tmp = TRIM( tmp_dir ) // TRIM( prefix )// '.wfs.xml'
    !  ENDIF
    tmp = TRIM( tmp_dir ) // TRIM( prefix )// '.wfs.xml'
-     CALL iotk_open_write(iun, FILE=TRIM(tmp), ROOT="qmcsystem", IERR=ierr )
-     ! <wavefunction name="psi0">
-     CALL iotk_write_attr (attr,"name","psi0",first=.true.)
-     CALL iotk_write_attr (attr,"target","e")
-     CALL iotk_write_begin(iun, "wavefunction",ATTR=attr)
-       write(iun,'(a)') '<!-- Uncomment this out to use plane-wave basis functions'
-       CALL iotk_write_attr (attr,"type","PW",first=.true.)
-       CALL iotk_write_attr (attr,"href",TRIM(h5name))
-       CALL iotk_write_attr (attr,"version","1.10")
-       CALL iotk_write_begin(iun, "determinantset",ATTR=attr)
-       write(iun,'(a)') '--> '
-       CALL iotk_write_attr (attr,"type","bspline",first=.true.)
-       CALL iotk_write_attr (attr,"href",TRIM(h5name))
-       CALL iotk_write_attr (attr,"sort","1")
-       CALL iotk_write_attr (attr,"tilematrix","1 0 0 0 1 0 0 0 1")
-       CALL iotk_write_attr (attr,"twistnum","0")
-       CALL iotk_write_attr (attr,"source","ion0")
-       CALL iotk_write_attr (attr,"version","0.10")
-       CALL iotk_write_begin(iun, "determinantset",ATTR=attr)
-          CALL iotk_write_attr (attr,"ecut",ecutwfc/2,first=.true.)
-          ! basisset to overwrite cutoff to a smaller value
-          !CALL iotk_write_begin(iun, "basisset",ATTR=attr)
-          !   ! add grid to use spline on FFT grid
-          !   CALL iotk_write_attr (attr,"dir","0",first=.true.)
-          !   CALL iotk_write_attr (attr,"npts",nr1s)
-          !   CALL iotk_write_attr (attr,"closed","no")
-          !   CALL iotk_write_empty(iun, "grid",ATTR=attr)
-          !   CALL iotk_write_attr (attr,"dir","1",first=.true.)
-          !   CALL iotk_write_attr (attr,"npts",nr2s)
-          !   CALL iotk_write_attr (attr,"closed","no")
-          !   CALL iotk_write_empty(iun, "grid",ATTR=attr)
-          !   CALL iotk_write_attr (attr,"dir","2",first=.true.)
-          !   CALL iotk_write_attr (attr,"npts",nr3s)
-          !   CALL iotk_write_attr (attr,"closed","no")
-          !   CALL iotk_write_empty(iun, "grid",ATTR=attr)
-          !CALL iotk_write_end(iun, "basisset")
-          
-          !CALL iotk_write_attr (attr,"href",TRIM(h5name),first=.true.)
-          !CALL iotk_write_empty(iun, "coefficients",ATTR=attr)
+  CALL xml_OpenFile(filename = TRIM(tmp), XF = xmlfile, PRETTY_PRINT = .true., &
+                            REPLACE = .true., NAMESPACE = .true.)
+  CALL xml_NewElement(xmlfile, "qmcsystem")
+    ! <wavefunction name="psi0">
+    CALL xml_NewElement(xmlfile, "wavefunction")
+    CALL xml_AddAttribute(xmlfile, "name", "psi0")
+    CALL xml_AddAttribute(xmlfile, "target", "e")
+      CALL xml_AddComment(xmlfile,'Uncomment this out to use plane-wave basis functions' // new_line('a') // &
+         '    <determinantset type="PW" href="' // TRIM(h5name) // '" version="1.10">' // new_line('a'))
+      CALL xml_NewElement(xmlfile, "determinantset")
+      CALL xml_AddAttribute(xmlfile, "type", "bspline")
+      CALL xml_AddAttribute(xmlfile, "href",TRIM(h5name))
+      CALL xml_AddAttribute(xmlfile,"sort","1")
+      CALL xml_AddAttribute(xmlfile,"tilematrix","1 0 0 0 1 0 0 0 1")
+      CALL xml_AddAttribute(xmlfile,"twistnum","0")
+      CALL xml_AddAttribute(xmlfile,"source","ion0")
+      CALL xml_AddAttribute(xmlfile,"version","0.10")
   
-          ! write the index of the twist angle
-          !!!! remove twistIndex and twistAngle
-          !using determinantset@twistnum
-          !CALL iotk_write_attr (attr,"name","twistIndex",first=.true.)
-          !CALL iotk_write_begin(iun, "h5tag",ATTR=attr)
-          !write(iun,*) ik
-          !CALL iotk_write_end(iun, "h5tag")
-
-          !CALL iotk_write_attr (attr,"name","twistAngle",first=.true.)
-          !CALL iotk_write_begin(iun, "h5tag",ATTR=attr)
-          !g_red(1)=at(1,1)*xk(1,ik+1)+at(2,1)*xk(2,ik+1)+at(3,1)*xk(3,ik+1)
-          !g_red(2)=at(1,2)*xk(1,ik+1)+at(2,2)*xk(2,ik+1)+at(3,2)*xk(3,ik+1)
-          !g_red(3)=at(1,3)*xk(1,ik+1)+at(2,3)*xk(2,ik+1)+at(3,3)*xk(3,ik+1)
-          !!write(iun,100) xk(1,ik+1),xk(2,ik+1),xk(3,ik+1)
-          !write(iun,100) g_red(1),g_red(2),g_red(3)
-          !CALL iotk_write_end(iun, "h5tag")
-          !write(iun,'(a)') '<!-- Uncomment this out for bspline wavefunctions '
-          !!CALL iotk_write_attr (attr,"name","eigenstates",first=.true.)
-          !!CALL iotk_write_begin(iun, "h5tag",ATTR=attr)
-          !!write(iun,'(a)') TRIM(eigname)
-          !!CALL iotk_write_end(iun, "h5tag")
-          !write(iun,'(a)') '--> '
-
-  
-          CALL iotk_write_begin(iun, "slaterdeterminant")
+        CALL xml_NewElement(xmlfile, "slaterdeterminant")
              ! build determinant for up electrons
-             CALL iotk_write_attr (attr,"id","updet",first=.true.)
-             CALL iotk_write_attr (attr,"size",nup)
-             CALL iotk_write_begin(iun, "determinant",ATTR=attr)
-                CALL iotk_write_attr (attr,"mode","ground",first=.true.)
-                CALL iotk_write_attr (attr,"spindataset",0)
-                CALL iotk_write_begin(iun, "occupation",ATTR=attr)
-                CALL iotk_write_end(iun, "occupation")
-             CALL iotk_write_end(iun, "determinant")
-  
+          CALL xml_NewElement(xmlfile, "determinant")
+          CALL xml_AddAttribute(xmlfile,"id","updet")
+          CALL xml_AddAttribute(xmlfile,"size",nup)
+            CALL xml_NewElement(xmlfile, "occupation")
+            CALL xml_AddAttribute(xmlfile,"mode","ground")
+            CALL xml_AddAttribute(xmlfile,"spindataset",0)
+            CALL xml_EndElement(xmlfile, "occupation")
+          CALL xml_EndElement(xmlfile, "determinant")
              ! build determinant for down electrons
-             CALL iotk_write_attr (attr,"id","downdet",first=.true.)
-             CALL iotk_write_attr (attr,"size",ndown)
-             IF( lsda ) CALL iotk_write_attr (attr,"ref","updet")
-             CALL iotk_write_begin(iun, "determinant",ATTR=attr)
-               CALL iotk_write_attr (attr,"mode","ground",first=.true.)
-               IF( lsda ) THEN
-                 CALL iotk_write_attr (attr,"spindataset",1)
-               ELSE
-                 CALL iotk_write_attr (attr,"spindataset",0)
-               ENDIF
-               CALL iotk_write_begin(iun, "occupation",ATTR=attr)
-               CALL iotk_write_end(iun, "occupation")
-             CALL iotk_write_end(iun, "determinant")
-          CALL iotk_write_end(iun, "slaterdeterminant")
+          CALL xml_NewElement(xmlfile, "determinant")
+          CALL xml_AddAttribute(xmlfile,"id","downdet")
+          CALL xml_AddAttribute(xmlfile,"size",ndown)
+          IF( lsda ) CALL xml_AddAttribute(xmlfile,"ref","updet")
+            CALL xml_NewElement(xmlfile, "occupation")
+            CALL xml_AddAttribute(xmlfile,"mode","ground")
+            IF( lsda ) THEN
+              CALL xml_AddAttribute(xmlfile,"spindataset",1)
+            ELSE
+              CALL xml_AddAttribute(xmlfile,"spindataset",0)
+            ENDIF
+            CALL xml_EndElement(xmlfile, "occupation")
+          CALL xml_EndElement(xmlfile, "determinant")
+        CALL xml_EndElement(xmlfile, "slaterdeterminant")
+      CALL xml_EndElement(xmlfile, "determinantset")
   
-       CALL iotk_write_end(iun, "determinantset")
 
        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       ! two-body jastro
+       ! two-body jastrow
        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       CALL iotk_write_attr (attr,"name","J2",first=.true.)
-       CALL iotk_write_attr (attr,"type","Two-Body");
-       CALL iotk_write_attr (attr,"function","Bspline");
-       CALL iotk_write_attr (attr,"print","yes");
-       CALL iotk_write_begin(iun, "jastrow",ATTR=attr)
+      CALL xml_NewElement(xmlfile, "jastrow")
+      CALL xml_AddAttribute(xmlfile,"name","J2")
+      CALL xml_AddAttribute(xmlfile,"type","Two-Body");
+      CALL xml_AddAttribute(xmlfile,"function","Bspline");
+      CALL xml_AddAttribute(xmlfile,"print","yes");
 
          ! for uu
-         CALL iotk_write_attr (attr,"speciesA","u",first=.true.)
-         CALL iotk_write_attr (attr,"speciesB","u")
-         !CALL iotk_write_attr (attr,"rcut","10")
-         CALL iotk_write_attr (attr,"size","8")
-         CALL iotk_write_begin(iun, "correlation",ATTR=attr)
-           CALL iotk_write_attr (attr,"id","uu",first=.true.)
-           CALL iotk_write_attr (attr,"type","Array")
-           CALL iotk_write_begin(iun, "coefficients",ATTR=attr)
-           write(iun,*) "0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0"
-           CALL iotk_write_end(iun, "coefficients")
-         CALL iotk_write_end(iun, "correlation")
+        CALL xml_NewElement(xmlfile, "correlation")
+        CALL xml_AddAttribute(xmlfile,"speciesA","u")
+        CALL xml_AddAttribute(xmlfile,"speciesB","u")
+        !CALL xml_AddAttribute(xmlfile,"rcut","10")
+        CALL xml_AddAttribute(xmlfile,"size","8")
+          CALL xml_NewElement(xmlfile, "coefficients")
+          CALL xml_AddAttribute(xmlfile,"id","uu")
+          CALL xml_AddAttribute(xmlfile,"type","Array")
+          CALL xml_AddCharacters(xmlfile, new_line('a') //  "0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0")
+          CALL xml_AddNewline(xmlfile)
+          CALL xml_EndElement(xmlfile, "coefficients")
+        CALL xml_EndElement(xmlfile, "correlation")
 
          ! for ud
-         CALL iotk_write_attr (attr,"speciesA","u",first=.true.)
-         CALL iotk_write_attr (attr,"speciesB","d")
-         !CALL iotk_write_attr (attr,"rcut","10")
-         CALL iotk_write_attr (attr,"size","8")
-         CALL iotk_write_begin(iun, "correlation",ATTR=attr)
-           CALL iotk_write_attr (attr,"id","ud",first=.true.)
-           CALL iotk_write_attr (attr,"type","Array")
-           CALL iotk_write_begin(iun, "coefficients",ATTR=attr)
-           write(iun,*) "0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0"
-           CALL iotk_write_end(iun, "coefficients")
-         CALL iotk_write_end(iun, "correlation")
-
-       CALL iotk_write_end(iun, "jastrow")
+        CALL xml_NewElement(xmlfile, "correlation")
+        CALL xml_AddAttribute(xmlfile,"speciesA","u")
+        CALL xml_AddAttribute(xmlfile,"speciesB","d")
+        !CALL xml_AddAttribute(xmlfile,"rcut","10")
+        CALL xml_AddAttribute(xmlfile,"size","8")
+          CALL xml_NewElement(xmlfile, "coefficients")
+          CALL xml_AddAttribute(xmlfile,"id","ud")
+          CALL xml_AddAttribute(xmlfile,"type","Array")
+          CALL xml_AddCharacters(xmlfile, new_line('a') //  "0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0")
+          CALL xml_AddNewline(xmlfile)
+          CALL xml_EndElement(xmlfile, "coefficients")
+        CALL xml_EndElement(xmlfile, "correlation")
+      CALL xml_EndElement(xmlfile, "jastrow")
 
        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       ! one-body jastro
+       ! one-body jastrow
        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       CALL iotk_write_attr (attr,"name","J1",first=.true.)
-       CALL iotk_write_attr (attr,"type","One-Body");
-       CALL iotk_write_attr (attr,"function","Bspline");
-       CALL iotk_write_attr (attr,"source","ion0");
-       CALL iotk_write_attr (attr,"print","yes");
-       CALL iotk_write_begin(iun, "jastrow",ATTR=attr)
+      CALL xml_NewElement(xmlfile, "jastrow")
+      CALL xml_AddAttribute(xmlfile,"name","J1")
+      CALL xml_AddAttribute(xmlfile,"type","One-Body");
+      CALL xml_AddAttribute(xmlfile,"function","Bspline");
+      CALL xml_AddAttribute(xmlfile,"source","ion0");
+      CALL xml_AddAttribute(xmlfile,"print","yes");
 
        DO na=1,ntyp
          tmp=TRIM(atm(na))
          tmp_combo='e'//TRIM(atm(na))
 
          !h5len=LEN_TRIM(tmp)
-         CALL iotk_write_attr (attr,"elementType",TRIM(tmp),first=.true.)
-         !CALL iotk_write_attr (attr,"rcut","10")
-         CALL iotk_write_attr (attr,"size","8")
-         CALL iotk_write_begin(iun, "correlation",ATTR=attr)
+        CALL xml_NewElement(xmlfile, "correlation")
+        CALL xml_AddAttribute(xmlfile,"elementType",TRIM(tmp))
+        !CALL xml_AddAttribute(xmlfile,"rcut","10")
+        CALL xml_AddAttribute(xmlfile,"size","8")
 
-         CALL iotk_write_attr (attr,"id",TRIM(tmp_combo),first=.true.)
-         CALL iotk_write_attr (attr,"type","Array")
-         CALL iotk_write_begin(iun, "coefficients",ATTR=attr)
-         write(iun,*) "0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0"
-         CALL iotk_write_end(iun, "coefficients")
-         CALL iotk_write_end(iun, "correlation")
+          CALL xml_NewElement(xmlfile, "coefficients")
+          CALL xml_AddAttribute(xmlfile,"id",TRIM(tmp_combo))
+          CALL xml_AddAttribute(xmlfile,"type","Array")
+          CALL xml_AddCharacters(xmlfile, new_line('a') //  "0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0")
+          CALL xml_AddNewline(xmlfile)
+          CALL xml_EndElement(xmlfile, "coefficients")
+        CALL xml_EndElement(xmlfile, "correlation")
        ENDDO
-       CALL iotk_write_end(iun, "jastrow")
+      CALL xml_EndElement(xmlfile, "jastrow")
+    CALL xml_EndElement(xmlfile, "wavefunction")
+  CALL xml_EndElement(xmlfile, "qmcsystem")
+  CALL xml_Close(xmlfile)
      
-     CALL iotk_write_end(iun, "wavefunction")
-  
-     CALL iotk_close_write(iun)
   !ENDDO
 
   endif ! ionode
