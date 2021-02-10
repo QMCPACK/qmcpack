@@ -116,7 +116,10 @@ protected:
   ParticleSet& IonConfig;
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
-
+  ///true if we should compute forces
+  bool ComputeForces;
+  ///true, determinant localization approximation(DLA) is enabled
+  bool use_DLA;
 private:
   ///number of ions
   int NumIons;
@@ -134,10 +137,6 @@ private:
   std::vector<bool> elecTMAffected;
   ///non local operator
   NonLocalTOperator nonLocalOps;
-  ///true if we should compute forces
-  bool ComputeForces;
-  ///true, determinant localization approximation(DLA) is enabled
-  bool use_DLA;
   ///Pulay force vector
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)
