@@ -186,6 +186,7 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
   use fft_interfaces,       ONLY : invfft, fwfft
   USE dfunct, ONLY : newd
   USE symm_base,            ONLY : nsym, s, ftau
+  USE Fox_wxml
 
   IMPLICIT NONE
   LOGICAL :: write_psir, expand_kp, debug
@@ -231,6 +232,12 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
   REAL(DP) :: xk_cryst(3)
 
   INTEGER :: npwx_tot, igk_g;
+! **********************************************************************
+  TYPE(xmlf_t) :: xmlfile
+  CHARACTER(len=256) :: small_buf
+  CHARACTER(len=4096) :: large_buf
+  INTEGER :: i
+! **********************************************************************
   
   NULLIFY(psiRptr)
   NULLIFY(psiCptr)
@@ -423,49 +430,71 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
 
   if(ionode) then
   !! create a file for particle set
+
   tmp = TRIM( tmp_dir ) // TRIM( prefix )// '.ptcl.xml'
-  CALL iotk_open_write(iun, FILE=TRIM(tmp), ROOT="qmcsystem", IERR=ierr )
+  CALL xml_OpenFile(filename = TRIM(tmp), XF = xmlfile, PRETTY_PRINT = .true., &
+                            REPLACE = .true., NAMESPACE = .true.)
 
-  CALL iotk_write_attr (attr,"name","global",first=.true.)
-  CALL iotk_write_begin(iun, "simulationcell",ATTR=attr)
-  CALL iotk_write_attr (attr,"name","lattice",first=.true.)
-  CALL iotk_write_attr (attr,"units","bohr")
-  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
-   
-  lattice_real=alat*at
-  WRITE(iun,100) lattice_real(1,1), lattice_real(2,1), lattice_real(3,1)
-  WRITE(iun,100) lattice_real(1,2), lattice_real(2,2), lattice_real(3,2)
-  WRITE(iun,100) lattice_real(1,3), lattice_real(2,3), lattice_real(3,3)
+  CALL xml_NewElement(xmlfile, "qmcsystem")
+  CALL xml_NewElement(xmlfile, "simulationcell")
+  CALL xml_AddAttribute(xmlfile, "name", "global")
 
+
+  CALL xml_NewElement(xmlfile, "parameter")
+  CALL xml_AddAttribute(xmlfile, "name", "lattice")
+  CALL xml_AddAttribute(xmlfile, "units", "bohr")
+  lattice_real = alat*at
+  large_buf=''
+  small_buf=''
+  do i=1,3
+    WRITE(small_buf,100) lattice_real(1,i), lattice_real(2,i), lattice_real(3,i)
+    large_buf = TRIM(large_buf) // new_line('a') // TRIM(small_buf)
+  enddo
+  CALL xml_AddCharacters(xmlfile, TRIM(large_buf))
+  CALL xml_AddNewline(xmlfile)
+  
   CALL esh5_write_supercell(lattice_real)
+  
+  CALL xml_EndElement(xmlfile, "parameter")
+  
+  
+  CALL xml_NewElement(xmlfile, "parameter")
+  CALL xml_AddAttribute(xmlfile, "name", "reciprocal")
+  CALL xml_AddAttribute(xmlfile, "units", "2pi/bohr")
+  large_buf=''
+  small_buf=''
+  do i=1,3
+    WRITE(small_buf,100) bg_qmc(1:3,i)
+    large_buf = TRIM(large_buf) // new_line('a') // TRIM(small_buf)
+  enddo
+  CALL xml_AddCharacters(xmlfile, TRIM(large_buf))
+  CALL xml_AddNewline(xmlfile)
+  CALL xml_EndElement(xmlfile, "parameter")
 
-  CALL iotk_write_end(iun, "parameter")
-  CALL iotk_write_attr (attr,"name","reciprocal",first=.true.)
-  CALL iotk_write_attr (attr,"units","2pi/bohr")
-  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
-  WRITE(iun,100) bg_qmc(1,1), bg_qmc(2,1), bg_qmc(3,1)
-  WRITE(iun,100) bg_qmc(1,2), bg_qmc(2,2), bg_qmc(3,2)
-  WRITE(iun,100) bg_qmc(1,3), bg_qmc(2,3), bg_qmc(3,3)
-  CALL iotk_write_end(iun, "parameter")
 
-  CALL iotk_write_attr (attr,"name","bconds",first=.true.)
-  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
-  WRITE(iun,'(a)') 'p p p'
-  CALL iotk_write_end(iun, "parameter")
+  CALL xml_NewElement(xmlfile, "parameter")
+  CALL xml_AddAttribute(xmlfile, "name", "bconds")
+  CALL xml_AddCharacters(xmlfile, new_line('a') // 'p p p')
+  CALL xml_AddNewline(xmlfile)
+  CALL xml_EndElement(xmlfile, "parameter")
 
-  CALL iotk_write_attr (attr,"name","LR_dim_cutoff",first=.true.)
-  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
-  WRITE(iun,'(a)') '15'
-  CALL iotk_write_end(iun, "parameter")
-  CALL iotk_write_end(iun, "simulationcell")
+
+  CALL xml_NewElement(xmlfile, "parameter")
+  CALL xml_AddAttribute(xmlfile, "name", "LR_dim_cutoff")
+  CALL xml_AddCharacters(xmlfile, new_line('a') // '15')
+  CALL xml_AddNewline(xmlfile)
+  CALL xml_EndElement(xmlfile, "parameter")
+
+
+  CALL xml_EndElement(xmlfile, "simulationcell")
 
   ! <particleset name="ions">
-  CALL iotk_write_attr (attr,"name","ion0",first=.true.)
-  CALL iotk_write_attr (attr,"size",nat)
-  CALL iotk_write_begin(iun, "particleset",ATTR=attr)
-
+  CALL xml_NewElement(xmlfile, "particleset")
+  CALL xml_AddAttribute(xmlfile, "name", "ion0")
+  CALL xml_AddAttribute(xmlfile, "size", nat)
+  
   CALL esh5_open_atoms(nat,ntyp)
-
+  
   ! ionic species --> group
   DO na=1,ntyp
 
@@ -473,46 +502,58 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
   h5len=LEN_TRIM(tmp)
   CALL esh5_write_species(na,tmp,h5len,atomic_number(tmp),zv(na))
 
-  CALL iotk_write_attr (attr,"name",TRIM(atm(na)),first=.true.)
-  CALL iotk_write_begin(iun, "group",ATTR=attr)
+  CALL xml_NewElement(xmlfile, "group")
+  CALL xml_AddAttribute(xmlfile, "name", TRIM(atm(na)))
   ! charge
-  CALL iotk_write_attr (attr,"name","charge",first=.true.)
-  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
-  write(iun,"(8X, F3.1)") zv(na)
-  CALL iotk_write_end(iun, "parameter")
+  CALL xml_NewElement(xmlfile, "parameter")
+  CALL xml_AddAttribute(xmlfile, "name", "charge")
+  small_buf=''
+  write(small_buf,"(8X, F3.1)") zv(na)
+  CALL xml_AddCharacters(xmlfile, new_line('a') // TRIM(small_buf))
+  CALL xml_AddNewline(xmlfile)
+  CALL xml_EndElement(xmlfile, "parameter")
   ! atomic number
-  CALL iotk_write_attr (attr,"name","atomicnumber",first=.true.)
-  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
-  write(iun,"(8X, I3)") atomic_number(TRIM(atm(na)))
-  CALL iotk_write_end(iun, "parameter")
+  CALL xml_NewElement(xmlfile, "parameter")
+  CALL xml_AddAttribute(xmlfile, "name", "atomicnumber")
+  small_buf=''
+  write(small_buf,"(8X, I3)") atomic_number(TRIM(atm(na)))
+  CALL xml_AddCharacters(xmlfile, new_line('a') // TRIM(small_buf))
+  CALL xml_AddNewline(xmlfile)
+  CALL xml_EndElement(xmlfile, "parameter")
   !
-  CALL iotk_write_end(iun, "group")
+  CALL xml_EndElement(xmlfile, "group")
   ENDDO
 
-
   ! <attrib name="ionid"/>
-  CALL iotk_write_attr (attr,"name","ionid",first=.true.)
-  CALL iotk_write_attr (attr,"datatype","stringArray")
-  CALL iotk_write_begin(iun, "attrib",ATTR=attr)
-  write(iun,'(a)') (TRIM(atm(ityp(na))),na=1,nat)
-  CALL iotk_write_end(iun, "attrib")
+  CALL xml_NewElement(xmlfile, "attrib")
+  CALL xml_AddAttribute(xmlfile, "name", "ionid")
+  CALL xml_AddAttribute(xmlfile, "datatype", "stringArray")
+  do na=1,nat
+  CALL xml_AddCharacters(xmlfile, new_line('a') // TRIM(atm(ityp(na))))
+  enddo
+  CALL xml_AddNewline(xmlfile)
+  CALL xml_EndElement(xmlfile, "attrib")
 
   ! <attrib name="position"/>
-  CALL iotk_write_attr (attr,"name","position",first=.true.)
-  CALL iotk_write_attr (attr,"datatype","posArray")
-  CALL iotk_write_attr (attr,"condition","0")
-  CALL iotk_write_begin(iun, "attrib",ATTR=attr)
+  CALL xml_NewElement(xmlfile, "attrib")
+  CALL xml_AddAttribute(xmlfile, "name", "position")
+  CALL xml_AddAttribute(xmlfile, "datatype", "posArray")
+  CALL xml_AddAttribute(xmlfile, "condition", 0)
+
   ! write in cartesian coordinates in bohr
   ! problem with xyz ordering inrelation to real-space grid
   DO na = 1, nat
   tau_r(1,na)=alat*tau(1,na)
   tau_r(2,na)=alat*tau(2,na)
   tau_r(3,na)=alat*tau(3,na)
-  WRITE(iun,100) (tau_r(j,na),j=1,3)
+  small_buf=''
+  WRITE(small_buf,100) (tau_r(j,na),j=1,3)
+  CALL xml_AddCharacters(xmlfile, new_line('a') // TRIM(small_buf))
   ENDDO
-  !write(iun,100) tau
-  CALL iotk_write_end(iun, "attrib")
-  CALL iotk_write_end(iun, "particleset")
+  CALL xml_AddNewline(xmlfile)
+  CALL xml_EndElement(xmlfile, "attrib")
+
+  CALL xml_EndElement(xmlfile, "particleset")
 
   !cartesian positions
   CALL esh5_write_positions(tau_r)
@@ -520,35 +561,42 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
 
   CALL esh5_close_atoms()
   ! </particleset>
-
+  
   ! <particleset name="e">
-  CALL iotk_write_attr (attr,"name","e",first=.true.)
-  CALL iotk_write_attr (attr,"random","yes")
-  CALL iotk_write_attr (attr,"random_source","ion0")
-  CALL iotk_write_begin(iun, "particleset",ATTR=attr)
+  CALL xml_NewElement(xmlfile, "particleset")
+  CALL xml_AddAttribute(xmlfile, "name", "e")
+  CALL xml_AddAttribute(xmlfile, "random", "yes")
+  CALL xml_AddAttribute(xmlfile, "random_source", "ion0")
 
   ! <group name="u" size="" >
-  CALL iotk_write_attr (attr,"name","u",first=.true.)
-  CALL iotk_write_attr (attr,"size",nup)
-  CALL iotk_write_begin(iun, "group",ATTR=attr)
-  CALL iotk_write_attr (attr,"name","charge",first=.true.)
-  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
-  write(iun,*) -1
-  CALL iotk_write_end(iun, "parameter")
-  CALL iotk_write_end(iun, "group")
+  CALL xml_NewElement(xmlfile, "group")
+  CALL xml_AddAttribute(xmlfile, "name", "u")
+  CALL xml_AddAttribute(xmlfile, "size", nup)
+
+  CALL xml_NewElement(xmlfile, "parameter")
+  CALL xml_AddAttribute(xmlfile, "name", "charge")
+  CALL xml_AddCharacters(xmlfile, new_line('a') // "-1")
+  CALL xml_AddNewline(xmlfile)
+  CALL xml_EndElement(xmlfile, "parameter")
+  CALL xml_EndElement(xmlfile, "group")
 
   ! <group name="d" size="" >
-  CALL iotk_write_attr (attr,"name","d",first=.true.)
-  CALL iotk_write_attr (attr,"size",ndown)
-  CALL iotk_write_begin(iun, "group",ATTR=attr)
-  CALL iotk_write_attr (attr,"name","charge",first=.true.)
-  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
-  write(iun,*) -1
-  CALL iotk_write_end(iun, "parameter")
-  CALL iotk_write_end(iun, "group")
-  CALL iotk_write_end(iun, "particleset")
-  CALL iotk_close_write(iun)
+  CALL xml_NewElement(xmlfile, "group")
+  CALL xml_AddAttribute(xmlfile, "name", "d")
+  CALL xml_AddAttribute(xmlfile, "size", ndown)
 
+  CALL xml_NewElement(xmlfile, "parameter")
+  CALL xml_AddAttribute(xmlfile, "name", "charge")
+  CALL xml_AddCharacters(xmlfile, new_line('a') // "-1")
+  CALL xml_AddNewline(xmlfile)
+  CALL xml_EndElement(xmlfile, "parameter")
+  CALL xml_EndElement(xmlfile, "group")
+  CALL xml_EndElement(xmlfile, "particleset")
+  CALL xml_EndElement(xmlfile, "qmcsystem")
+  CALL xml_Close(xmlfile)
+  
+! **********************************************************************
+  
   !! close the file
   !!DO ik = 0, nk-1
   ik=0
