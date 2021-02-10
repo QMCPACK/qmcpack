@@ -353,22 +353,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(const RefVecto
 }
 
 template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::updateAfterSweep(ParticleSet& P,
-                                                                ParticleSet::ParticleGradient_t& G,
-                                                                ParticleSet::ParticleLaplacian_t& L)
-{
-  if (UpdateMode == ORB_PBYP_RATIO)
-  { //need to compute dpsiM and d2psiM. Do not touch psiM!
-    SPOVGLTimer.start();
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
-    //FIXME maybe need the same transfer as recompute
-    SPOVGLTimer.stop();
-  }
-
-  computeGL(G, L);
-}
-
-template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::computeGL(ParticleSet::ParticleGradient_t& G,
                                                          ParticleSet::ParticleLaplacian_t& L) const
 {
@@ -406,7 +390,6 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
     { //need to compute dpsiM and d2psiM. Do not touch psiM!
       ScopedTimer spo_timer(&SPOVGLTimer);
       Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
-      //FIXME maybe need the same transfer as recompute
     }
 
     computeGL(G, L);
