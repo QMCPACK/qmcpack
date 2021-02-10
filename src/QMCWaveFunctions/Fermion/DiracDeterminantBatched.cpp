@@ -546,7 +546,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto& det      = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    det.UpdateMode = ORB_PBYP_PARTIAL;
+    det.UpdateMode = ORB_PBYP_RATIO;
     ratios[iw] = det.curRatio = ratios_local[iw];
   }
 }
