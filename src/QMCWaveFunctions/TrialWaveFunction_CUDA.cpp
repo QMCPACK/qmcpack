@@ -288,15 +288,20 @@ void TrialWaveFunction::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, 
 void TrialWaveFunction::NLratios(MCWalkerConfiguration& W,
                                  std::vector<NLjob>& jobList,
                                  std::vector<PosType>& quadPoints,
-                                 std::vector<ValueType>& psi_ratios)
+                                 std::vector<ValueType>& psi_ratios,
+                                 ComputeType ct)
 {
   for (int i = 0; i < psi_ratios.size(); i++)
     psi_ratios[i] = 1.0;
   for (int i = 0, ii = NL_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    WFC_timers_[ii]->start();
-    Z[i]->NLratios(W, jobList, quadPoints, psi_ratios);
-    WFC_timers_[ii]->stop();
+      if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
+          (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+      {
+        WFC_timers_[ii]->start();
+        Z[i]->NLratios(W, jobList, quadPoints, psi_ratios);
+        WFC_timers_[ii]->stop();
+      }
   }
 }
 
@@ -306,13 +311,18 @@ void TrialWaveFunction::NLratios(MCWalkerConfiguration& W,
                                  gpu::device_vector<int>& NumCoreElecs,
                                  gpu::device_vector<CUDA_PRECISION*>& QuadPosList,
                                  gpu::device_vector<CUDA_PRECISION*>& RatioList,
-                                 int numQuadPoints)
+                                 int numQuadPoints,
+                                 ComputeType ct)
 {
   for (int i = 0, ii = NL_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    WFC_timers_[ii]->start();
-    Z[i]->NLratios(W, Rlist, ElecList, NumCoreElecs, QuadPosList, RatioList, numQuadPoints);
-    WFC_timers_[ii]->stop();
+      if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
+          (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+      {
+        WFC_timers_[ii]->start();
+        Z[i]->NLratios(W, Rlist, ElecList, NumCoreElecs, QuadPosList, RatioList, numQuadPoints);
+        WFC_timers_[ii]->stop();
+      }
   }
 }
 
