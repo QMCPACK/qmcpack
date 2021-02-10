@@ -175,8 +175,6 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
   USE mp_world, ONLY: world_comm, mpime
   USE io_files, ONLY: nd_nmbr, nwordwfc, iunwfc, iun => iunsat, tmp_dir, prefix
   USE wavefunctions, ONLY : evc, psic
-  use iotk_module
-  use iotk_xtox_interf
   USE mp_global,            ONLY: inter_pool_comm, intra_pool_comm, nproc_pool, kunit
   USE mp_global,            ONLY: npool, my_pool_id, intra_image_comm
   USE mp_pools,             ONLY: me_pool
@@ -185,7 +183,7 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
   use fft_base,             ONLY : dffts
   use fft_interfaces,       ONLY : invfft, fwfft
   USE dfunct, ONLY : newd
-  USE symm_base,            ONLY : nsym, s, ftau
+  USE symm_base,            ONLY : nsym, s, ft
   USE Fox_wxml
 
   IMPLICIT NONE
@@ -226,7 +224,6 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
   COMPLEX(DP), ALLOCATABLE :: tmp_evc(:)
 
   CHARACTER(256)          :: tmp,h5name,eigname,tmp_combo
-  CHARACTER(iotk_attlenx) :: attr
   
   INTEGER :: rest, nbase, basekindex, nktot
   REAL(DP) :: xk_cryst(3)
@@ -234,7 +231,7 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
   INTEGER :: npwx_tot, igk_g;
 ! **********************************************************************
   TYPE(xmlf_t) :: xmlfile
-  CHARACTER(len=256) :: small_buf
+  CHARACTER(len=256) :: small_buf, tmp_buf1, tmp_buf2, tmp_buf3
   CHARACTER(len=4096) :: large_buf
   INTEGER :: i
 ! **********************************************************************
@@ -412,11 +409,19 @@ SUBROUTINE compute_qmcpack(write_psir, expand_kp, debug)
   bg_qmc(:,:)=bg(:,:)/alat
 
   if((npool>1) .and. (my_pool_id>0)) then
-    h5name = TRIM( prefix ) // '.pwscf.h5' // "_part"//trim(iotk_itoa(my_pool_id))
+    tmp_buf1=''
+    write(tmp_buf1,*) my_pool_id
+    h5name = TRIM( prefix ) // '.pwscf.h5' // "_part"//trim(tmp_buf1)
   else
     h5name = TRIM( prefix ) // '.pwscf.h5'
   endif
-  eigname = "eigenstates_"//trim(iotk_itoa(nr1s))//'_'//trim(iotk_itoa(nr2s))//'_'//trim(iotk_itoa(nr3s))
+  tmp_buf1=''
+  tmp_buf2=''
+  tmp_buf3=''
+  write(tmp_buf1,*) nr1s
+  write(tmp_buf2,*) nr2s
+  write(tmp_buf3,*) nr3s
+  eigname = "eigenstates_"//trim(tmp_buf1)//'_'//trim(tmp_buf2)//'_'//trim(tmp_buf3)
 
   tmp = TRIM( tmp_dir )//TRIM( h5name ) 
   h5len = LEN_TRIM(tmp)
@@ -1178,7 +1183,7 @@ CALL stop_clock( 'big_loop' )
   USE io_global,            ONLY : stdout
   USE wvfct,                ONLY : nbnd, npwx, npw, wg, et
   USE klist,                ONLY : wk, ngk, nks
-  USE symm_base,            ONLY : nsym, s, ftau
+  USE symm_base,            ONLY : nsym, s, ft
   USE lsda_mod,             ONLY: lsda
   use fft_base,             ONLY : dffts
 !  use fft_interfaces,       ONLY : invfft
@@ -1299,7 +1304,7 @@ CALL stop_clock( 'big_loop' )
   USE io_global,  ONLY : stdout, ionode
   !
   USE io_global,            ONLY : stdout
-  USE symm_base,            ONLY : nsym, s, ftau
+  USE symm_base,            ONLY : nsym, s, ft
   use fft_base,             ONLY : dffts
 
   !
@@ -1311,6 +1316,10 @@ CALL stop_clock( 'big_loop' )
   logical :: exst
   REAL (DP)         :: eps =1.d-6
 
+  integer :: s_scaled(3,3,nsym), ftau(3,nsym)
+
+  call scale_sym_ops(nsym, s, ft, dffts%nr1, dffts%nr2, dffts%nr3, &
+                     s_scaled, ftau)
   !
   do ir=1, nxxs
     rir(ir) = ir
@@ -1319,7 +1328,7 @@ CALL stop_clock( 'big_loop' )
   do k = 1, dffts%nr3
    do j = 1, dffts%nr2
     do i = 1, dffts%nr1
-      call ruotaijk (s(1,1,is), ftau(1,is), i, j, k, &
+      call rotate_grid_point (s_scaled(1,1,is), ftau(1,is), i, j, k, &
               dffts%nr1,dffts%nr2,dffts%nr3, ri, rj , rk )
       ir =   i + ( j-1)*dffts%nr1x + ( k-1)*dffts%nr1x*dffts%nr2x
       rir(ir) = ri + (rj-1)*dffts%nr1x + (rk-1)*dffts%nr1x*dffts%nr2x
