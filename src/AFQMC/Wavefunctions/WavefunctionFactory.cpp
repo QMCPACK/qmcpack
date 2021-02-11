@@ -1052,7 +1052,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
     //        HOps through the index corresponding 0/1.
     // never add coulomb to half rotated v2 tensor in PHMSD
     getInitialGuess(dump, name, NMO, NAEA, NAEB, walker_type);
-    auto HOps(h.getHamiltonianOperations(false, false, CLOSED, PsiT, cutvn, cutv2, TGprop, TGwfn, dump));
+    auto HOps(h.getHamiltonianOperations(false, false, CLOSED, PsiT, cutvn, cutv2, TGprop, TGwfn, restart));
     TGwfn.node_barrier();
     // setup configuration couplings
     using index_aos = ma::sparse::array_of_sequences<int, int, shared_allocator<int>, ma::sparse::is_root>;
