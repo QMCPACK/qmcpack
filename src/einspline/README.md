@@ -7,3 +7,23 @@ and evaluation of interpolating cubic basis splines (B-splines) in 1, 2, and 3 d
 On 2018-02-20 the original einspline library was released under the BSD-3-clause license
 ( https://opensource.org/licenses/BSD-3-Clause ), as noted at
 https://sourceforge.net/p/einspline/code/443/ .
+
+
+# Folder structure
+9 test related files not coverged by unit tests.
+
+The CPU part. Then following head files should be included by QMC subroutines on demand
+```
+bspline.h		single unifrom bspline
+nubspline.h		single nonunifrom bspline
+multi_bspline.h		multiple unifrom bspline
+multi_nubspline.h	multiple nonunifrom bspline
+```
+
+suffix
+```
+_structs.h		data structure
+_create.h		initialization function declariation
+_eval_s/d/c/z.h		evaluation function declariation
+_eval_?_std/sse.cpp	the implementation selected by CMakeLists.txt
+```
