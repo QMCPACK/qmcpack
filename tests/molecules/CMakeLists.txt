@@ -6,6 +6,7 @@
 
 SUBDIRS("Li2_STO_ae")
 SUBDIRS("C2_pp")
+SUBDIRS("C4_ae")
 SUBDIRS("LiH_ae_gms")
 SUBDIRS("LiH_ae_pyscf")
 SUBDIRS("O_ae_pyscf_UHF")

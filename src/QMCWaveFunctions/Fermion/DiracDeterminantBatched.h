@@ -74,8 +74,6 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  void updateAfterSweep(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
-
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
@@ -132,6 +130,10 @@ public:
                             const std::vector<bool>& isAccepted,
                             bool safe_to_delay = false) override;
 
+  /** complete any left over determinant matrix updates.
+   * Usually this is the end of pbyp moves for a given spin of electrons
+   * The psiM, dpsiM, d2psiM should be up-to-date on both device and host sides.
+   */
   void completeUpdates() override;
 
   void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override;
@@ -140,7 +142,9 @@ public:
    */
   void restore(int iat) override;
 
-  ///evaluate log of a determinant for a particle set
+  /** evaluate log of a determinant for a particle set
+   * This is the most defensive call. The psiM, dpsiM, d2psiM should be up-to-date on both device and host sides.
+   */
   LogValueType evaluateLog(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
