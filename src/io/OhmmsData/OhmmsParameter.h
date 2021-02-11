@@ -44,7 +44,13 @@
  \endhtmlonly
  */
 
-enum class TagStatus { NORMAL, DEPRECATED, DELETED };
+enum class TagStatus
+{
+  OPTIONAL, // there is a default value
+  REQUIRED, // no default value, input required.
+  DEPRECATED, // deprecated input tag. Input becomes optional
+  DELETED // deleted input tag. Hard stop if detected.
+};
 
 inline void checkTagStatus(const std::string& tagname, TagStatus status)
 {
@@ -74,17 +80,30 @@ class OhmmsParameter : public OhmmsElementBase
   TagStatus tag_staus_;
   //@}
 
+  void checkValues()
+  {
+    if (!candidate_values_.empty() && std::find(candidate_values_.begin(), candidate_values_.end(), ref_) == candidate_values_.end())
+    {
+      std::ostringstream msg;
+      msg << "Input tag \"" << myName << "\" value \"" << ref_ << "\" is not valid. Candidate values are : ";
+      for (const auto& value : candidate_values_)
+        msg << " \"" << value << "\"";
+      msg << std::endl;
+      throw std::runtime_error(msg.str());
+    }
+  }
+
 public:
   /*!\fn OhmmsParameter(T& a, const char* aname, const char* uname)
    *\param a the value to be referenced
    *\param aname the name of this object
    *\param candidate_values valid input values
    */
-  OhmmsParameter(T& a, const char* aname, std::vector<T>&& candidate_values = {}, TagStatus status = TagStatus::NORMAL)
+  OhmmsParameter(T& a, const char* aname, std::vector<T>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
       : OhmmsElementBase(aname), ref_(a), candidate_values_(std::move(candidate_values)), node_(NULL), tag_staus_(status)
   {
-    // set default value.
-    if (!candidate_values_.empty())
+    // set default value
+    if (status!=TagStatus::REQUIRED && !candidate_values_.empty())
       ref_ = candidate_values_[0];
   }
 
@@ -95,7 +114,7 @@ public:
     return true;
   }
 
-  /*!inline bool put(xmlNodePtr cur)
+  /*!inline bool put(xmlNodePtr cur), used by ParameterSet
    *\param cur the current xmlNode whose content is assigned to ref_
    */
   inline bool put(xmlNodePtr cur)
@@ -103,26 +122,17 @@ public:
     checkTagStatus(myName, tag_staus_);
     node_ = cur;
     putContent(ref_, cur);
-/*
-    if (!candidate_values_.empty() && std::find(candidate_values_.begin(), candidate_values_.end(), ref_) == candidate_values_.end())
-    {
-      std::ostringstream msg;
-      msg << "Input tag \"" << myName << "\" value \"" << ref_ << "\" is not valid. Candidate values are : ";
-      for (const auto& value : candidate_values_)
-        msg << " \"" << value << "\"";
-      msg << std::endl;
-      throw std::runtime_error(msg.str());
-    }
-*/
+    checkValues();
     return true;
   }
 
 
-  ///read from std::istream
+  ///read from std::istream, used by OhmmsAttributeSet
   inline bool put(std::istream& is)
   {
     checkTagStatus(myName, tag_staus_);
     is >> ref_;
+    checkValues();
     return true;
   }
 
@@ -172,7 +182,7 @@ public:
    *\param aname the name of this object
    *\param candidate_values valid input values
    */
-  OhmmsParameter(bool& a, const char* aname, std::vector<bool>&& candidate_values = {}, TagStatus status = TagStatus::NORMAL)
+  OhmmsParameter(bool& a, const char* aname, std::vector<bool>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
       : OhmmsElementBase(aname), ref_(a), candidate_values_(std::move(candidate_values)), node_(NULL), tag_staus_(status)
   {
     // set default value.

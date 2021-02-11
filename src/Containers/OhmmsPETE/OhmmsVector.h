@@ -315,18 +315,36 @@ inline void evaluate(Vector<T, C>& lhs, const Op& op, const Expression<RHS>& rhs
     throw std::runtime_error("Error in evaluate: LHS and RHS don't conform in OhmmsVector.");
   }
 }
-// I/O
-template<class T, class C>
-std::ostream& operator<<(std::ostream& out, const Vector<T, C>& rhs)
+
+template<class T, class Alloc>
+bool operator==(const Vector<T, Alloc>& lhs, const Vector<T, Alloc>& rhs)
 {
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  if (lhs.size() == rhs.size())
+  {
+    for (int i = 0; i < rhs.size(); i++)
+      if (lhs[i] != rhs[i])
+        return false;
+    return true;
+  }
+  else
+    return false;
+}
+
+// I/O
+template<class T, class Alloc>
+std::ostream& operator<<(std::ostream& out, const Vector<T, Alloc>& rhs)
+{
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator<< requires host accessible Vector.");
   for (int i = 0; i < rhs.size(); i++)
     out << rhs[i] << std::endl;
   return out;
 }
 
-template<class T, class C>
-std::istream& operator>>(std::istream& is, Vector<T, C>& rhs)
+template<class T, class Alloc>
+std::istream& operator>>(std::istream& is, Vector<T, Alloc>& rhs)
 {
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator>> requires host accessible Vector.");
   //printTinyVector<TinyVector<T,D> >::print(out,rhs);
   for (int i = 0; i < rhs.size(); i++)
     is >> rhs[i];
