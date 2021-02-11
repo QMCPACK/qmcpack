@@ -40,14 +40,14 @@ bool BenchmarkDriver::parse(xmlNodePtr cur)
 
   ncores_per_TG = 1;
   ParameterSet m_param;
-  m_param.add(benchmark_list, "list", "string");
-  m_param.add(maxnW, "maxnw", "int");
-  m_param.add(delnW, "delnw", "int");
-  m_param.add(nrepeat, "repeat", "int");
-  m_param.add(ncores_per_TG, "ncores_per_TG", "int");
-  m_param.add(ncores_per_TG, "ncores", "int");
-  m_param.add(ncores_per_TG, "cores", "int");
-  m_param.add(dt, "timestep", "double");
+  m_param.add(benchmark_list, "list");
+  m_param.add(maxnW, "maxnw");
+  m_param.add(delnW, "delnw");
+  m_param.add(nrepeat, "repeat");
+  m_param.add(ncores_per_TG, "ncores_per_TG");
+  m_param.add(ncores_per_TG, "ncores");
+  m_param.add(ncores_per_TG, "cores");
+  m_param.add(dt, "timestep");
   m_param.put(cur);
 
   return true;

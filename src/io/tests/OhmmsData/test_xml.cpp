@@ -164,9 +164,9 @@ TEST_CASE("ParameterSet", "[xml]")
   int p1_val = 0;
   int p2_val = 0;
   int p3_val = 0;
-  param.add(p1_val, "p1", "none");
-  param.add(p2_val, "p2", "none");
-  param.add(p3_val, "p3", "none");
+  param.add(p1_val, "p1");
+  param.add(p2_val, "p2");
+  param.add(p3_val, "p3");
   param.put(root);
 
   REQUIRE(p1_val == 1);

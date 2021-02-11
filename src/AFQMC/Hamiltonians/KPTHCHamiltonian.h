@@ -40,8 +40,8 @@ public:
 
     std::string str("yes");
     ParameterSet m_param;
-    m_param.add(cutoff_cholesky, "cutoff_cholesky", "double");
-    m_param.add(fileName, "filename", "std::string");
+    m_param.add(cutoff_cholesky, "cutoff_cholesky");
+    m_param.add(fileName, "filename");
     m_param.put(cur);
   }
 

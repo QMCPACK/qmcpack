@@ -57,12 +57,12 @@ struct OhmmsAttributeSet
    *@param aname the name of the added attribute
    */
   template<class PDT>
-  void add(PDT& aparam, const std::string& aname)
+  void add(PDT& aparam, const std::string& aname, std::vector<PDT>&& candidate_values = {}, TagStatus status = TagStatus::NORMAL)
   {
     iterator it(m_param.find(aname));
     if (it == m_param.end())
     {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname.c_str(), "none");
+      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname.c_str(), std::move(candidate_values), status);
     }
   }
 

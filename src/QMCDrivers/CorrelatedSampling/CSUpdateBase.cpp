@@ -32,7 +32,7 @@ CSUpdateBase::CSUpdateBase(MCWalkerConfiguration& w,
                            RandomGenerator_t& rg)
     : QMCUpdateBase(w, *psipool[0], *hpool[0], rg), nPsi(0), useDriftOption("no"), H1(hpool), Psi1(psipool)
 {
-  myParams.add(useDriftOption, "useDrift", "string");
+  myParams.add(useDriftOption, "useDrift");
 }
 
 CSUpdateBase::~CSUpdateBase()

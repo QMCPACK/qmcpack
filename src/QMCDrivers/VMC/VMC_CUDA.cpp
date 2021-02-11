@@ -46,12 +46,12 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(nTargetSamples, "targetWalkers", "int");
-  m_param.add(w_beta, "beta", "double");
-  m_param.add(w_alpha, "alpha", "double");
-  m_param.add(GEVtype, "GEVMethod", "string");
+  m_param.add(UseDrift, "useDrift");
+  m_param.add(UseDrift, "usedrift");
+  m_param.add(nTargetSamples, "targetWalkers");
+  m_param.add(w_beta, "beta");
+  m_param.add(w_alpha, "alpha");
+  m_param.add(GEVtype, "GEVMethod");
 
   H.setRandomGenerator(&Random);
 }

@@ -28,8 +28,8 @@ public:
     {
       ParameterSet m_param;
       std::string str2;
-      m_param.add(str2, "timers", "std::string");
-      m_param.add(nwfacts, "nhist", "int");
+      m_param.add(str2, "timers");
+      m_param.add(nwfacts, "nhist");
       m_param.put(cur);
 
       std::transform(str2.begin(), str2.end(), str2.begin(), (int (*)(int))tolower);

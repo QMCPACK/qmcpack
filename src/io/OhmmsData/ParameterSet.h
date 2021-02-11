@@ -120,14 +120,14 @@ struct ParameterSet : public OhmmsElementBase
    *The condition will be used to convert the external unit to the internal unit.
    */
   template<class PDT>
-  inline void add(PDT& aparam, const char* aname_in, const char* uname)
+  inline void add(PDT& aparam, const char* aname_in, std::vector<PDT>&& candidate_values = {}, TagStatus status = TagStatus::NORMAL)
   {
     std::string aname(aname_in);
     tolower(aname);
     iterator it = m_param.find(aname);
     if (it == m_param.end())
     {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname.c_str(), uname);
+      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname.c_str(), std::move(candidate_values), status);
     }
   }
 
