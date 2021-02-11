@@ -614,6 +614,8 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   vmcEngine->enable_sample_collection();
 
+  // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
+  checkNumCrowdsLTNumThreads(opt_num_crowds_);
   if (opt_num_crowds_ == 0)
     opt_num_crowds_ = Concurrency::maxCapacity<>();
 

@@ -156,12 +156,12 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
   param_set.add(opt_num_crowds, "opt_num_crowds", "int");
   param_set.put(q);
 
+  // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
+  checkNumCrowdsLTNumThreads(opt_num_crowds);
   if (opt_num_crowds == 0)
     opt_num_crowds = Concurrency::maxCapacity<>();
 
   app_log() << " Number of crowds for optimizer: " << opt_num_crowds << std::endl;
-
-
 
   while (cur != NULL)
   {
