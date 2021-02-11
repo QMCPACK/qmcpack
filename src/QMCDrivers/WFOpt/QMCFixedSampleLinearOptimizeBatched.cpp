@@ -25,6 +25,7 @@
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
+#include "Concurrency/Info.hpp"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include <cassert>
@@ -98,7 +99,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       block_second(false),
       block_third(false),
       crowd_size_(1),
-      opt_num_crowds_(1),
+      opt_num_crowds_(0),
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
       current_optimizer_type_(OptimizerType::NONE),
@@ -612,6 +613,13 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine->process(qsave);
 
   vmcEngine->enable_sample_collection();
+
+  // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
+  checkNumCrowdsLTNumThreads(opt_num_crowds_);
+  if (opt_num_crowds_ == 0)
+    opt_num_crowds_ = Concurrency::maxCapacity<>();
+
+  app_log() << " Number of crowds for optimizer: " << opt_num_crowds_ << std::endl;
 
   bool success = true;
   //allways reset optTarget
