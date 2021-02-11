@@ -142,6 +142,8 @@ private:
 
   ///random number generator
   RandomGenerator_t& rng_;
+  /// TWF resource collection
+  std::unique_ptr<ResourceCollection> twfs_shared_resource_;
   ///if true, use fixed population
   bool use_fixed_pop_;
   ///minimum number of walkers

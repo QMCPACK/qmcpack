@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 /** Constructor maintains proper ownership of input parameters
    */
-VMCBatched::VMCBatched(const ProjectData& project_info,
+VMCBatched::VMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
                        VMCDriverInput&& input,
                        MCPopulation&& pop,
@@ -29,7 +29,7 @@ VMCBatched::VMCBatched(const ProjectData& project_info,
                        QMCHamiltonian& h,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(project_info,
+    : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(pop),
                    psi,
@@ -179,6 +179,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.buffer_timer.start();
   TrialWaveFunction::flex_evaluateGL(crowd.get_walker_twfs(), crowd.get_walker_elecs(), recompute);
+
   assert(QMCDriverNew::checkLogAndGL(crowd));
   timers.buffer_timer.stop();
 
@@ -223,6 +224,7 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
+  CrowdResourceLock crowd_res_lock(crowd);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   int max_steps = sft.qmcdrv_input.get_max_steps();
@@ -299,6 +301,7 @@ bool VMCBatched::run()
   auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                           UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
     Crowd& crowd = *(crowds[crowd_id]);
+    CrowdResourceLock crowd_res_lock(crowd);
     advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], false);
   };
 
@@ -359,7 +362,7 @@ bool VMCBatched::run()
     estimator_manager_->getApproximateEnergyVariance(ene, var);
     o << "====================================================";
     o << "\n  End of a VMC block";
-    o << "\n    QMC counter        = " << project_info_.getSeriesIndex();
+    o << "\n    QMC counter        = " << project_data_.getSeriesIndex();
     o << "\n    time step          = " << qmcdriver_input_.get_tau();
     o << "\n    reference energy   = " << ene;
     o << "\n    reference variance = " << var;

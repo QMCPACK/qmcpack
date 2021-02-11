@@ -74,8 +74,6 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  void updateAfterSweep(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
-
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
@@ -132,6 +130,10 @@ public:
                             const std::vector<bool>& isAccepted,
                             bool safe_to_delay = false) override;
 
+  /** complete any left over determinant matrix updates.
+   * Usually this is the end of pbyp moves for a given spin of electrons
+   * The psiM, dpsiM, d2psiM should be up-to-date on both device and host sides.
+   */
   void completeUpdates() override;
 
   void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override;
@@ -140,18 +142,21 @@ public:
    */
   void restore(int iat) override;
 
-  ///evaluate log of a determinant for a particle set
+  /** evaluate log of a determinant for a particle set
+   * This is the most defensive call. The psiM, dpsiM, d2psiM should be up-to-date on both device and host sides.
+   */
   LogValueType evaluateLog(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
-  //Ye: TODO, good performance needs batched SPO evaluation.
-  //void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
-  //                    const std::vector<ParticleSet*>& P_list,
-  //                    const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
-  //                    const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list) override;
+  void mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
+                      const RefVector<ParticleSet>& P_list,
+                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) override;
 
   void recompute(ParticleSet& P) override;
+
+  void mw_recompute(const RefVector<WaveFunctionComponent>& WFC_list, const RefVector<ParticleSet>& P_list);
 
   LogValueType evaluateGL(ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
@@ -164,8 +169,11 @@ public:
                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                      bool fromscratch) override;
 
-
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
+
+  void createResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection) override;
+  void releaseResource(ResourceCollection& collection) override;
 
   /** cloning function
    * @param tqp target particleset
@@ -182,7 +190,7 @@ public:
   auto& getPsiMinv() const { return psiMinv; }
 
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_engine_
-  OffloadPinnedValueMatrix_t psiMinv;
+  ValueMatrix_t psiMinv;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
   OffloadVGLVector_t psiM_vgl;
@@ -226,8 +234,13 @@ public:
   std::vector<GradType> grad_new_local;
 
 private:
-  /// invert psiM or its copies
-  void invertPsiM(const ValueMatrix_t& logdetT, OffloadPinnedValueMatrix_t& invMat);
+  /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
+  void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
+
+  /// invert logdetT(psiM), result is in the engine.
+  void invertPsiM(const ValueMatrix_t& logdetT);
+  void mw_invertPsiM(const RefVector<WaveFunctionComponent>& WFC_list,
+                     const RefVector<const ValueMatrix_t>& logdetT_list);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();

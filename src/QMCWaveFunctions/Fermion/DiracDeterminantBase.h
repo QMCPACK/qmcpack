@@ -99,6 +99,10 @@ public:
   using WaveFunctionComponent::registerData;
   using WaveFunctionComponent::updateBuffer;
 
+  using WaveFunctionComponent::createResource;
+  using WaveFunctionComponent::acquireResource;
+  using WaveFunctionComponent::releaseResource;
+
   using WaveFunctionComponent::acceptMove;
   using WaveFunctionComponent::completeUpdates;
   using WaveFunctionComponent::evalGrad;
@@ -195,12 +199,12 @@ protected:
 
   bool checkG(const GradType& g)
   {
-    auto g_norm = std::norm(dot(g, g));
-    if (std::isnan(g_norm))
+    auto g_mag = std::abs(dot(g, g));
+    if (std::isnan(g_mag))
       throw std::runtime_error("gradient of NaN");
-    if (std::isinf(g_norm))
+    if (std::isinf(g_mag))
       throw std::runtime_error("gradient of inf");
-    if (g_norm < std::abs(std::numeric_limits<RealType>::epsilon()))
+    if (g_mag < std::abs(std::numeric_limits<RealType>::epsilon()))
     {
       std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
       throw std::runtime_error("gradient of zero");

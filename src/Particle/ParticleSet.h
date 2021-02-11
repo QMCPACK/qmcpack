@@ -419,7 +419,7 @@ public:
    *
    *  just the R, G, and L
    */
-  static void flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers);
+  static void flex_saveWalker(const RefVector<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
    *

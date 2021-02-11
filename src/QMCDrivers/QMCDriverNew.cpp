@@ -40,7 +40,7 @@ namespace qmcplusplus
  *  Num crowds must be less than omp_get_max_threads because RandomNumberControl is global c lib function
  *  masquerading as a C++ object.
  */
-QMCDriverNew::QMCDriverNew(const ProjectData& project_info,
+QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            QMCDriverInput&& input,
                            MCPopulation&& population,
                            TrialWaveFunction& psi,
@@ -60,7 +60,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_info,
       timers_(timer_prefix),
       driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
-      project_info_(project_info),
+      project_data_(project_data),
       setNonLocalMoveHandler_(snlm_handler)
 {
   //create and initialize estimator
@@ -178,7 +178,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
   app_log() << "\n========================================================="
-            << "\n  Start " << QMCType << "\n  File Root " << project_info_.CurrentMainRoot();
+            << "\n  Start " << QMCType << "\n  File Root " << project_data_.CurrentMainRoot();
   app_log() << "\n=========================================================" << std::endl;
 
   if (h5name.size())
@@ -320,6 +320,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<ContextForSteps>& context_for_steps)
 {
   Crowd& crowd = *(crowds[crowd_id]);
+  CrowdResourceLock crowd_res_lock(crowd);
+
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   auto& walker_twfs         = crowd.get_walker_twfs();
@@ -529,14 +531,14 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
   ParticleSet::flex_update(crowd.get_walker_elecs());
   TrialWaveFunction::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
 
-  const RealType threashold = 100 * std::numeric_limits<RealType>::epsilon();
+  const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
   for (int iw = 0; iw < log_values.size(); iw++)
   {
     auto& ref_G = crowd.get_walker_twfs()[iw].get().G;
     auto& ref_L = crowd.get_walker_twfs()[iw].get().L;
     TrialWaveFunction::LogValueType ref_log{crowd.get_walker_twfs()[iw].get().getLogPsi(),
                                             crowd.get_walker_twfs()[iw].get().getPhase()};
-    if (std::norm(std::exp(log_values[iw]) - std::exp(ref_log)) > std::norm(std::exp(ref_log)) * threashold)
+    if (std::abs(std::exp(log_values[iw]) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
     {
       success = false;
       std::cout << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
@@ -544,18 +546,18 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     for (int iel = 0; iel < ref_G.size(); iel++)
     {
       auto grad_diff = ref_G[iel] - Gs[iw][iel];
-      if (std::sqrt(std::norm(dot(grad_diff, grad_diff))) >
-          std::sqrt(std::norm(dot(ref_G[iel], ref_G[iel]))) * threashold)
+      if (std::sqrt(std::abs(dot(grad_diff, grad_diff))) >
+          std::sqrt(std::abs(dot(ref_G[iel], ref_G[iel]))) * threshold)
       {
         success = false;
-        std::cout << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << std::endl;
+        std::cout << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << " Delta " << grad_diff << std::endl;
       }
       auto lap_diff = ref_L[iel] - Ls[iw][iel];
-      if (std::norm(lap_diff) > std::norm(ref_L[iel]) * threashold)
+      if (std::abs(lap_diff) > std::abs(ref_L[iel]) * threshold)
       {
         // very hard to check mixed precision case, only print, no error out
         success = !std::is_same<RealType, FullPrecRealType>::value;
-        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel] << std::endl;
+        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel] << " Delta " << lap_diff << std::endl;
       }
     }
   }

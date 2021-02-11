@@ -64,12 +64,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
 {
   using pointer = device_ptr<ComplexType>;
 
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("ham_ops_basic_serial", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);

@@ -112,7 +112,7 @@ protected:
 
 public:
   /// Constructor.
-  QMCDriverNew(const ProjectData& project_info,
+  QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
                MCPopulation&& population,
                TrialWaveFunction& psi,
@@ -275,7 +275,7 @@ protected:
   /// check logpsi and grad and lap against values computed from scratch
   static bool checkLogAndGL(Crowd& crowd);
 
-  const std::string& get_root_name() const override { return project_info_.CurrentMainRoot(); }
+  const std::string& get_root_name() const override { return project_data_.CurrentMainRoot(); }
 
   /** The timers for the driver.
    *
@@ -424,7 +424,7 @@ protected:
   ScopedProfiler driver_scope_profiler_;
 
   /// project info for accessing global fileroot and series id
-  const ProjectData& project_info_;
+  const ProjectData& project_data_;
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);

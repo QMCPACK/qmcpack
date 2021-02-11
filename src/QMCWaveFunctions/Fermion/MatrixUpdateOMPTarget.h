@@ -18,8 +18,9 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "Platforms/OMPTarget/ompBLAS.hpp"
-#include "Platforms/OMPTarget/ompReduction.hpp"
+#include "OMPTarget/ompBLAS.hpp"
+#include "OMPTarget/ompReduction.hpp"
+#include "ResourceCollection.h"
 
 
 namespace qmcplusplus
@@ -103,21 +104,42 @@ public:
     psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
   }
 
+  void createResource(ResourceCollection& collection) {}
+  void acquireResource(ResourceCollection& collection) {}
+  void releaseResource(ResourceCollection& collection) {}
+
   OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv_dev_ptr + row_id * psiMinv.cols(); }
 
-  /** compute the inverse of the transpose of matrix A
+  /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    * @param logdetT orbital value matrix
-   * @param Ainv inverse matrix
+   * @param LogValue log(det(logdetT))
    */
-  template<typename TREAL, typename OMPALLOC>
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T, OMPALLOC>& Ainv, std::complex<TREAL>& LogValue)
+  template<typename TREAL>
+  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)
   {
+    auto& Ainv = psiMinv;
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
     detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
     T* Ainv_ptr = Ainv.data();
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+  }
+
+  template<typename TREAL>
+  inline void mw_invert_transpose(const RefVector<This_t>& engines,
+                                  const RefVector<const Matrix<T>>& logdetT_list,
+                                  const RefVector<std::complex<TREAL>>& LogValues)
+  {
+    for (int iw = 0; iw < engines.size(); iw++)
+    {
+      auto& Ainv = engines[iw].get().psiMinv;
+      Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
+      detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
+      T* Ainv_ptr = Ainv.data();
+      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+    }
+    PRAGMA_OFFLOAD("omp taskwait")
   }
 
   template<typename GT>
@@ -165,9 +187,10 @@ public:
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
-  template<typename VVT, typename RATIOT, typename OMPALLOC>
-  inline void updateRow(Matrix<T, OMPALLOC>& Ainv, int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
+  template<typename VVT, typename RATIOT>
+  inline void updateRow(int rowchanged, const VVT& phiV, RATIOT c_ratio_in)
   {
+    auto& Ainv = psiMinv;
     // update the inverse matrix
     constexpr T cone(1);
     constexpr T czero(0);

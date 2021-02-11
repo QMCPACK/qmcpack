@@ -22,6 +22,7 @@
 #include "ParticleBase/ParticleAttrib.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerElementsRef.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Utilities/FairDivide.h"
@@ -36,7 +37,6 @@ namespace qmcplusplus
 {
 
 // forward declaration
-class TrialWaveFunction;
 class QMCHamiltonian;
 class MCPopulation
 {
@@ -151,6 +151,7 @@ public:
     auto walker_index = 0;
     for (int i = 0; i < walker_consumers.size(); ++i)
     {
+      walker_consumers[i]->initializeResources(trial_wf_->getResource());
       for (int j = 0; j < walkers_per_crowd[i]; ++j)
       {
         walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index],
@@ -189,6 +190,8 @@ public:
   const ParticleSet& get_ions() const { return ions_; }
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
   ParticleSet* get_golden_electrons() { return elec_particle_set_; }
+  const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }
+
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
 

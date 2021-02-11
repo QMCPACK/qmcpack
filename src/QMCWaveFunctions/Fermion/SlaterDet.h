@@ -93,6 +93,12 @@ public:
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
+  void createResource(ResourceCollection& collection) override;
+
+  void acquireResource(ResourceCollection& collection) override;
+
+  void releaseResource(ResourceCollection& collection) override;
+
   virtual inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
     return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);

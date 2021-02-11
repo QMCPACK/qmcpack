@@ -389,7 +389,11 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
   // whether to use an optimizable slater determinant
   std::string optimize("no");
+#if defined(ENABLE_OFFLOAD)
+  std::string use_batch("yes");
+#else
   std::string use_batch("no");
+#endif
 #if defined(ENABLE_CUDA)
   std::string useGPU("yes");
 #else
