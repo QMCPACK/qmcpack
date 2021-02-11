@@ -6147,8 +6147,10 @@ vmc_batched_defaults = obj(
     steps            = 10,
     substeps         = 3,
     timestep         = 0.3,
+    usedrift         = False,
     checkpoint       = None,
     maxcpusecs       = None,
+    crowds           = None,
     )
 vmc_test_batched_defaults = obj(
     warmupsteps = 10,
@@ -6578,8 +6580,10 @@ def generate_batched_vmc_calculations(
     steps            ,
     substeps         ,
     timestep         ,
+    usedrift         ,
     checkpoint       ,
     maxcpusecs       ,
+    crowds           ,
     loc              = 'generate_vmc_calculations',
     ):
     
@@ -6593,12 +6597,14 @@ def generate_batched_vmc_calculations(
         steps       = steps,
         substeps    = substeps,
         timestep    = timestep,
+        usedrift    = usedrift,
         )
     optional_vmc_inputs = obj(
         total_walkers = total_walkers,
         walkers_per_rank = walkers_per_rank,
-        #checkpoint       = checkpoint,
+        #checkpoint       = checkpoint, # no checkpointing support yet
         maxcpusecs       = maxcpusecs,
+        crowds           = crowds,
         )
     for name,value in optional_vmc_inputs.items():
         if value is not None:
@@ -6776,8 +6782,8 @@ gen_basic_input_defaults = obj(
     J3_rcut        = 5.0,              
     J1_rcut_open   = 5.0,              
     J2_rcut_open   = 10.0,
-    driver         = 'legacy',
-    qmc            = None, # opt,vmc,vmc_test,dmc,dmc_test
+    driver         = 'legacy', # legacy,batched
+    qmc            = None,     # opt,vmc,vmc_test,dmc,dmc_test
     )
 
 def generate_basic_input(**kwargs):
