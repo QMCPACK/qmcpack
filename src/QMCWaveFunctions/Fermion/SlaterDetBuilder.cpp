@@ -255,13 +255,16 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       else
       {
         app_summary() << "    Using a list of determinants for multi-deterimant expansion." << std::endl;
-        auto spo_up = std::make_unique<SPOSetProxyForMSD>(std::move(spo_alpha_clone), targetPtcl.first(0), targetPtcl.last(0));
-        auto spo_dn = std::make_unique<SPOSetProxyForMSD>(std::move(spo_beta_clone), targetPtcl.first(1), targetPtcl.last(1));
+        auto spo_up =
+            std::make_unique<SPOSetProxyForMSD>(std::move(spo_alpha_clone), targetPtcl.first(0), targetPtcl.last(0));
+        auto spo_dn =
+            std::make_unique<SPOSetProxyForMSD>(std::move(spo_beta_clone), targetPtcl.first(1), targetPtcl.last(1));
         if (UseBackflow)
         {
           app_summary() << "    Using backflow transformation." << std::endl;
-          multislaterdet_0 = new MultiSlaterDeterminantWithBackflow(targetPtcl, std::move(spo_up), std::move(spo_dn), BFTrans);
-          success          = createMSD(multislaterdet_0, cur);
+          multislaterdet_0 =
+              new MultiSlaterDeterminantWithBackflow(targetPtcl, std::move(spo_up), std::move(spo_dn), BFTrans);
+          success = createMSD(multislaterdet_0, cur);
         }
         else
         {
@@ -360,7 +363,11 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
   // whether to use an optimizable slater determinant
   std::string optimize("no");
+#if defined(ENABLE_OFFLOAD)
+  std::string use_batch("yes");
+#else
   std::string use_batch("no");
+#endif
 #if defined(ENABLE_CUDA)
   std::string useGPU("yes");
 #else
@@ -461,7 +468,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
         adet = new DiracDeterminantBatched<
-            MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex);
+            MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                         firstIndex);
       }
       else
 #endif
@@ -478,7 +486,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       if (useGPU == "yes")
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
-        adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone), firstIndex);
+        adet = new DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(std::move(psi_clone),
+                                                                                                firstIndex);
       }
       else
 #endif
@@ -1234,6 +1243,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
                                      int nels_dn)
 {
   bool success = true;
+  int extlevel(0);
   uniqueConfg_up.clear();
   uniqueConfg_dn.clear();
   C2node_up.clear();
@@ -1281,6 +1291,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   spoAttrib.add(ndets, "size");
   spoAttrib.add(Dettype, "type");
   spoAttrib.add(nstates, "nstates");
+  spoAttrib.add(extlevel, "ext_level");
   spoAttrib.add(cutoff, "cutoff");
   spoAttrib.add(multidetH5path, "href");
   spoAttrib.add(CICoeffH5path, "opt_coeffs");
@@ -1329,7 +1340,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   CIcoeff.resize(ndets);
   ConfigTag.resize(ndets);
 
-  readCoeffs(hin, CIcoeff, ndets);
+  readCoeffs(hin, CIcoeff, ndets, extlevel);
 
   ///IF OPTIMIZED COEFFICIENTS ARE PRESENT IN opt_coeffs Path
   ///THEY ARE READ FROM DIFFERENT HDF5 the replace the previous coeff
@@ -1355,7 +1366,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     coeffin.read(OptCiSize, "NbDet");
     CIcoeffopt.resize(OptCiSize);
 
-    readCoeffs(coeffin, CIcoeffopt, ndets);
+    readCoeffs(coeffin, CIcoeffopt, ndets, extlevel);
 
     coeffin.close();
 
@@ -1397,6 +1408,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   std::unordered_map<std::string, int> MyMapDn;
 
   app_log() << " Sorting unique CIs" << std::endl;
+  ///This loop will find all unique Determinants in and store them "unsorted" in a new container uniqueConfg_up
+  ///and uniqueConfg_dn. The sorting is not done here
   for (int ni = 0; ni < ndets; ni++)
   {
     if (std::abs(CIcoeff[ni]) < cutoff)

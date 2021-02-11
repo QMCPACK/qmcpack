@@ -178,7 +178,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     app_summary() << std::endl;
     app_summary() << " Particle Set" << std::endl;
     app_summary() << " ------------" << std::endl;
-    app_summary() << "  Name: " << id << std::endl;
+    app_summary() << "  Name: " << id << "  Offload : " << useGPU << std::endl;
     app_summary() << std::endl;
 
     // select OpenMP offload implementation in ParticleSet.

@@ -105,7 +105,6 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     }
 
     walker_elec_particle_sets_[iw] = std::make_unique<ParticleSet>(*elec_particle_set_);
-#pragma omp critical
     walker_trial_wavefunctions_[iw].reset(trial_wf_->makeClone(*walker_elec_particle_sets_[iw]));
     walker_hamiltonians_[iw].reset(
         hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]));
