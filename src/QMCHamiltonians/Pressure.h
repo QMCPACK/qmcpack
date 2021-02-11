@@ -76,7 +76,7 @@ struct Pressure : public OperatorBase
   //       attrib.add(RPAPCorr,"etype" );
   //       attrib.add(RPAPfunc,"functor" );
   //       attrib.put(cur);
-  //       nattrib.add(RPAKCut,"kc","double");
+  //       nattrib.add(RPAKCut,"kc");
   //       nattrib.put(cur);
 
   //       if (RPAPCorr=="ZB"){

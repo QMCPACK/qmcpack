@@ -267,7 +267,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
       LatticeParser lat(ref_.Lattice);
       lat.put(cur);
       //ParameterSet params;
-      //params.add(uc_grid,"uc_grid","int");
+      //params.add(uc_grid,"uc_grid");
       //params.put(cur);
     }
     else if (cname == attrib_tag)

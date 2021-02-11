@@ -51,9 +51,9 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
   RootName = "dmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  //m_param.add(myWarmupSteps,"warmupSteps","int");
-  //m_param.add(nTargetSamples,"targetWalkers","int");
-  m_param.add(ScaleWeight, "scaleweight", "string");
+  //m_param.add(myWarmupSteps,"warmupSteps");
+  //m_param.add(nTargetSamples,"targetWalkers");
+  m_param.add(ScaleWeight, "scaleweight");
 
   H.setRandomGenerator(&Random);
 }
@@ -413,11 +413,11 @@ bool DMCcuda::put(xmlNodePtr q)
 
   BranchInterval = -1;
   ParameterSet p;
-  p.add(BranchInterval, "branchInterval", "string");
-  p.add(BranchInterval, "branchinterval", "string");
-  p.add(BranchInterval, "substeps", "int");
-  p.add(BranchInterval, "subSteps", "int");
-  p.add(BranchInterval, "sub_steps", "int");
+  p.add(BranchInterval, "branchInterval");
+  p.add(BranchInterval, "branchinterval");
+  p.add(BranchInterval, "substeps");
+  p.add(BranchInterval, "subSteps");
+  p.add(BranchInterval, "sub_steps");
   p.put(q);
   return true;
 }

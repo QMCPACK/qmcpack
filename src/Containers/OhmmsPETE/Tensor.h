@@ -521,6 +521,21 @@ std::istream& operator>>(std::istream& is, Tensor<T, D>& rhs)
   return is;
 }
 
+template<class T, unsigned D>
+bool operator==(const Tensor<T, D>& lhs, const Tensor<T, D>& rhs)
+{
+  for (int i = 0; i < D * D; i++)
+    if (lhs[i] != rhs[i])
+      return false;
+  return true;
+}
+
+template<class T, unsigned D>
+bool operator!=(const Tensor<T, D>& lhs, const Tensor<T, D>& rhs)
+{
+  return !(lhs == rhs);
+}
+
 } // namespace qmcplusplus
 // include header files for SymTensor and AntiSymTensor in order
 // to define constructors for Tensor using these types
