@@ -999,7 +999,7 @@ private:
 public:
 	HD constexpr array_iterator operator+(difference_type n) const{array_iterator ret{*this}; ret+=n; return ret;}
 	[[deprecated("use base for iterator")]] constexpr element_ptr data() const{return data_;}
-	constexpr element_ptr base()              const&   {return   data_;} friend
+	constexpr element_ptr base()              const&   {return   data_;}
 	friend element_ptr base(array_iterator const& s){return s.data_;} // workaround intel 19 bug not being able to deal with constexpr correctly
 	constexpr stride_type stride()              const&   {return   stride_;} friend
 	constexpr stride_type stride(array_iterator const& s){return s.stride_;}
