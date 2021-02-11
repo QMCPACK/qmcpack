@@ -50,6 +50,10 @@ namespace managed{
 		template<class P> void destroy(P* p){p->~T();}
 		constexpr bool operator==(allocator<T> const&) const{return true;}
 		constexpr bool operator!=(allocator<T> const&) const{return false;}
+		template<class InputIt, class ForwardIt>
+		constexpr ForwardIt alloc_uninitialized_copy(InputIt first, InputIt last, ForwardIt d_first) const{
+			return ForwardIt{adl_uninitialized_copy(first, last, d_first)};
+		}		
 		template<class InputIt, class Size, class ForwardIt>
 		constexpr ForwardIt alloc_uninitialized_copy_n(InputIt first, Size count, ForwardIt d_first) const{
 			return ForwardIt{adl_uninitialized_copy_n(first, count, d_first)};

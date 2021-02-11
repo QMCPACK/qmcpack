@@ -1,5 +1,5 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
+$CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -12,7 +12,32 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 namespace multi = boost::multi;
 namespace utf = boost::unit_test;
 
-BOOST_AUTO_TEST_CASE(multi_array_ptr, *utf::timeout(2)){
+template<class T> T&& fwd_array(T&& t){
+	return std::forward<T>(t);}
+
+BOOST_AUTO_TEST_CASE(multi_array_ptr_equality){
+	multi::array<double, 2> A = {
+		{1., 2., 3.},
+		{4., 5., 6.},
+		{7., 8., 9.},
+		{1., 2., 3.}
+	};
+	BOOST_REQUIRE(  A[2] ==  A[2] );
+	BOOST_REQUIRE( &A[2] == &A[2] );
+	BOOST_REQUIRE( &A[2] == &fwd_array(A[2]) );
+	BOOST_REQUIRE( &fwd_array(A[2]) == &A[2] );
+
+//	auto const& A2 = fwd_array(A[2]);
+	auto const& AC2 = A[2];
+	BOOST_REQUIRE( AC2[0] == A[2][0] );
+	BOOST_REQUIRE( AC2.base() == A[2].base() );
+	BOOST_REQUIRE( &AC2 == &A[2] );
+
+	auto const& ac2 = AC2; //fwd_array(A[2]);
+	BOOST_REQUIRE( &ac2 == &A[2] );
+}
+
+BOOST_AUTO_TEST_CASE(multi_array_ptr){
 	{
 		double a[4][5] = {
 			{ 0,  1,  2,  3,  4}, 
