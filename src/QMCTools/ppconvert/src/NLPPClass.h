@@ -60,7 +60,7 @@ public:
   double FindCutoff();
   void WriteChannelLog(XMLWriterClass& writer, bool writeVl);
   void WriteChannelLinear(XMLWriterClass& writer, double dr, double rmax, bool writeVl);
-  ChannelPotentialClass() : n_principal(0)
+  ChannelPotentialClass() : l(0), n_principal(0), Cutoff(0.)
   {
     HasProjector = false;
     Occupation   = 0.0;
