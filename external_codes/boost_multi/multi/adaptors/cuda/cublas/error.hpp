@@ -1,10 +1,10 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-$CXXX $CXXFLAGS $0 -o $0x `pkg-config --cflags --libs cudart-11.0 cublas-11.0 blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
+$CXXX $CXXFLAGS $0 -o $0.$X `pkg-config --cflags --libs cudart-11.0 cublas-11.0 blas` -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #endif
 // © Alfredo A. Correa 2020
 
-#ifndef MULTI_ADAPTORS_CUBLAS_ERROR_HPP
-#define MULTI_ADAPTORS_CUBLAS_ERROR_HPP
+#ifndef MULTI_ADAPTORS_CUDA_CUBLAS_ERROR_HPP
+#define MULTI_ADAPTORS_CUDA_CUBLAS_ERROR_HPP
 
 #include<cublas_v2.h> // cublasStatus_t
 
@@ -13,9 +13,7 @@ $CXXX $CXXFLAGS $0 -o $0x `pkg-config --cflags --libs cudart-11.0 cublas-11.0 bl
 #include<type_traits> // std::underlying_type
 
 namespace boost{
-namespace multi{
-
-namespace cublas{
+namespace multi::cuda::cublas{
 
 enum class error : typename std::underlying_type<cublasStatus_t>::type{
 	success               = CUBLAS_STATUS_SUCCESS,
@@ -57,11 +55,10 @@ inline std::error_code make_error_code(cublas::error err) noexcept{
 }
 
 }
-
-}}
+}
 
 namespace std{
-	template<> struct is_error_code_enum<::boost::multi::cublas::error> : true_type{};
+	template<> struct is_error_code_enum<::boost::multi::cuda::cublas::error> : true_type{};
 }
 
 #if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_CUDA
@@ -70,8 +67,8 @@ namespace std{
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../../array.hpp"
-#include "../../utility.hpp"
+//#include "../../array.hpp"
+//#include "../../utility.hpp"
 
 //#include "../../adaptors/cuda.hpp"
 //#include "../../adaptors/blas.hpp"
@@ -85,7 +82,7 @@ namespace multi = boost::multi;
 BOOST_AUTO_TEST_CASE(multi_cublas_error){
 
 	BOOST_CHECK_THROW(
-		throw (std::system_error{multi::cublas::make_error_code(multi::cublas::error::not_initialized), "error test"}), 
+		throw (std::system_error{multi::cuda::cublas::make_error_code(multi::cuda::cublas::error::not_initialized), "error test"}), 
 		std::system_error
 	);
 

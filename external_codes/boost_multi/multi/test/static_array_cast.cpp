@@ -18,12 +18,13 @@ template<class It, class F> class involuter;
 
 template<class Ref, class Involution>
 class involuted{
+protected:
 	Ref r_;
 	MULTI_NO_UNIQUE_ADDRESS Involution f_;
 public:
 	using decay_type = std::decay_t<decltype(std::declval<Involution>()(std::declval<Ref>()))>;
-	involuted(Ref r, Involution f) : r_{std::forward<Ref>(r)}, f_{f}{}
-	explicit involuted(Ref r) : r_{std::forward<Ref>(r)}, f_{}{}
+	constexpr involuted(Ref r, Involution f) : r_{std::forward<Ref>(r)}, f_{f}{}
+	constexpr explicit involuted(Ref r) : r_{std::forward<Ref>(r)}, f_{}{}
 	involuted(involuted const&) = default;
 	involuted(involuted&&)      = default;
 	constexpr involuted& operator=(involuted const& other)=delete;
@@ -34,6 +35,10 @@ public:
 	->decltype(r_=f_(std::forward<DecayType>(other)), *this){
 		return r_=f_(std::forward<DecayType>(other)), *this;}
 	constexpr involuted& operator=(involuted&& other) = default;
+	template<class DecayType>
+	auto operator==(DecayType&& other) const&
+	->decltype(this->operator decay_type()==other){
+		return this->operator decay_type()==other;}
 };
 
 template<class It, class F>
@@ -61,6 +66,10 @@ public:
 	constexpr involuter  operator+(typename involuter::difference_type n) const{return {it_+n, f_};}
 	constexpr pointer    operator->() const{return {&*it_, f_};}
 };
+
+#if defined(__cpp_deduction_guides)
+template<class T, class F> involuted(T&&, F)->involuted<T const, F>;
+#endif
 
 template<class Ref> using negated = involuted<Ref, std::negate<>>;
 template<class It>  using negater = involuter<It, std::negate<>>;
@@ -113,12 +122,12 @@ BOOST_AUTO_TEST_CASE(static_array_cast){
 	BOOST_REQUIRE( mA == mA_ref );
 }
 {
-	constexpr std::array<int, 2> exts = {4, 5};
+//	constexpr std::array<int, 2> exts = {4, 5};
 
-	multi::array<double, 2> A(exts);
+	multi::array<double, 2> A({4, 5});
 	std::iota(begin(elements(A)), end(elements(A)), 0.);
 
-	multi::array<double, 2> mA(exts);
+	multi::array<double, 2> mA({4, 5});
 	std::transform(begin(elements(A)), end(elements(A)), begin(elements(mA)), std::negate<>{});
 
 	auto&& mA_ref = A.static_array_cast<double, negater<double*>>();
