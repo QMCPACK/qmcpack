@@ -331,6 +331,13 @@ bool operator==(const Vector<T, Alloc>& lhs, const Vector<T, Alloc>& rhs)
     return false;
 }
 
+template<class T, class Alloc>
+bool operator!=(const Vector<T, Alloc>& lhs, const Vector<T, Alloc>& rhs)
+{
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  return !(lhs == rhs);
+}
+
 // I/O
 template<class T, class Alloc>
 std::ostream& operator<<(std::ostream& out, const Vector<T, Alloc>& rhs)

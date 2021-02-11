@@ -97,7 +97,8 @@ public:
   /*!\fn OhmmsParameter(T& a, const char* aname, const char* uname)
    *\param a the value to be referenced
    *\param aname the name of this object
-   *\param candidate_values valid input values
+   *\param candidate_values candidate values to be checked against, the first element is the default value. It can be left empty for backward compatibility or unbounded input.
+   *\param status Tag status, See TagStatus enum.
    */
   OhmmsParameter(T& a, const char* aname, std::vector<T>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
       : OhmmsElementBase(aname), ref_(a), candidate_values_(std::move(candidate_values)), node_(NULL), tag_staus_(status)
