@@ -102,11 +102,11 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(hdf_walker_output, "walker_output", "std::string");
-      m_param.add(nskip_walker_output, "nskip_output", "int");
-      m_param.add(rot_file, "rotation", "std::string");
-      m_param.add(path, "path", "std::string");
-      m_param.add(str, "with_index_list", "std::string");
+      m_param.add(hdf_walker_output, "walker_output");
+      m_param.add(nskip_walker_output, "nskip_output");
+      m_param.add(rot_file, "rotation");
+      m_param.add(path, "path");
+      m_param.add(str, "with_index_list");
       m_param.put(cur);
     }
 

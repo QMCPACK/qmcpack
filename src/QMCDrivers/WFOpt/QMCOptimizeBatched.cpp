@@ -152,8 +152,8 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
   int crowd_size     = 1;
   int opt_num_crowds = 0;
   ParameterSet param_set;
-  param_set.add(crowd_size, "opt_crowd_size", "int");
-  param_set.add(opt_num_crowds, "opt_num_crowds", "int");
+  param_set.add(crowd_size, "opt_crowd_size");
+  param_set.add(opt_num_crowds, "opt_num_crowds");
   param_set.put(q);
 
   // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount

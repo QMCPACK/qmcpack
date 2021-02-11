@@ -90,10 +90,10 @@ bool RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
   ParameterSet m_param;
   bool usedrift      = true;
   std::string action = "SLA";
-  m_param.add(usedrift, "useDrift", "bool");
-  m_param.add(action, "Action", "string");
-  m_param.add(equilSteps, "equilsteps", "int");
-  m_param.add(equilSteps, "equilSteps", "int");
+  m_param.add(usedrift, "useDrift");
+  m_param.add(action, "Action");
+  m_param.add(equilSteps, "equilsteps");
+  m_param.add(equilSteps, "equilSteps");
   m_param.put(cur);
 
   if (usedrift == true)

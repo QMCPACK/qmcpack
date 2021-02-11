@@ -580,10 +580,10 @@ bool WalkerControl::put(xmlNodePtr cur)
   int nw_target = 0, nw_max = 0;
   std::string nonblocking = "yes";
   ParameterSet params;
-  params.add(max_copy_, "maxCopy", "int");
-  params.add(nw_target, "targetwalkers", "int");
-  params.add(nw_max, "max_walkers", "int");
-  params.add(nonblocking, "use_nonblocking", "string");
+  params.add(max_copy_, "maxCopy");
+  params.add(nw_target, "targetwalkers");
+  params.add(nw_max, "max_walkers");
+  params.add(nonblocking, "use_nonblocking");
 
   bool success = params.put(cur);
 
