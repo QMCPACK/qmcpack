@@ -99,8 +99,8 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(rot_file, "rotation", "std::string");
-      m_param.add(path, "path", "std::string");
+      m_param.add(rot_file, "rotation");
+      m_param.add(path, "path");
       m_param.put(cur);
     }
 

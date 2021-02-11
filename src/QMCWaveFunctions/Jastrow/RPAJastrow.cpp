@@ -66,8 +66,8 @@ bool RPAJastrow::put(xmlNodePtr cur)
   Kc                = -1.0;
   std::string ID_Rs = "RPA_rs";
   ParameterSet params;
-  params.add(Rs, "rs", "double");
-  params.add(Kc, "kc", "double");
+  params.add(Rs, "rs");
+  params.add(Kc, "kc");
   params.put(cur);
   buildOrbital(MyName, useL, useS, rpafunc, Rs, Kc);
   return true;

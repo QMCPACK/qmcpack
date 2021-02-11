@@ -44,6 +44,12 @@ TEST_CASE("vector", "[OhmmsPETE]")
   REQUIRE(B[0] == Approx(3.1));
   REQUIRE(B[1] == Approx(3.1));
   REQUIRE(B[2] == Approx(3.1));
+  REQUIRE(B == B);
+  REQUIRE(!(B == A));
+
+  vec_t C(2);
+  REQUIRE(A != B);
+  REQUIRE(A != B);
 }
 
 TEST_CASE("VectorViewer", "[OhmmsPETE]")
