@@ -116,14 +116,14 @@ struct ParameterSet : public OhmmsElementBase
    *@param status Tag status, See OhmmsParameter.h for more details
    */
   template<class PDT>
-  inline void add(PDT& aparam, const char* aname_in, std::vector<PDT>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
+  inline void add(PDT& aparam, const std::string& aname_in, std::vector<PDT>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
   {
     std::string aname(aname_in);
     tolower(aname);
     iterator it = m_param.find(aname);
     if (it == m_param.end())
     {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname.c_str(), std::move(candidate_values), status);
+      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname, std::move(candidate_values), status);
     }
   }
 

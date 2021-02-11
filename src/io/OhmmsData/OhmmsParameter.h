@@ -94,14 +94,14 @@ class OhmmsParameter : public OhmmsElementBase
   }
 
 public:
-  /*!\fn OhmmsParameter(T& a, const char* aname, const char* uname)
+  /*!\fn OhmmsParameter(...) constructor
    *\param a the value to be referenced
    *\param aname the name of this object
    *\param candidate_values candidate values to be checked against, the first element is the default value. It can be left empty for backward compatibility or unbounded input.
    *\param status Tag status, See TagStatus enum.
    */
-  OhmmsParameter(T& a, const char* aname, std::vector<T>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
-      : OhmmsElementBase(aname), ref_(a), candidate_values_(std::move(candidate_values)), node_(NULL), tag_staus_(status)
+  OhmmsParameter(T& a, const std::string& aname, std::vector<T>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
+      : OhmmsElementBase(aname.c_str()), ref_(a), candidate_values_(std::move(candidate_values)), node_(NULL), tag_staus_(status)
   {
     // set default value
     if (status!=TagStatus::REQUIRED && !candidate_values_.empty())
@@ -183,8 +183,8 @@ public:
    *\param aname the name of this object
    *\param candidate_values valid input values
    */
-  OhmmsParameter(bool& a, const char* aname, std::vector<bool>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
-      : OhmmsElementBase(aname), ref_(a), candidate_values_(std::move(candidate_values)), node_(NULL), tag_staus_(status)
+  OhmmsParameter(bool& a, const std::string& aname, std::vector<bool>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
+      : OhmmsElementBase(aname.c_str()), ref_(a), candidate_values_(std::move(candidate_values)), node_(NULL), tag_staus_(status)
   {
     // set default value.
     if (!candidate_values_.empty())

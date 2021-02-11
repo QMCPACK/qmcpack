@@ -64,7 +64,7 @@ struct OhmmsAttributeSet
     iterator it(m_param.find(aname));
     if (it == m_param.end())
     {
-      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname.c_str(), std::move(candidate_values), status);
+      m_param[aname] = new OhmmsParameter<PDT>(aparam, aname, std::move(candidate_values), status);
     }
   }
 
