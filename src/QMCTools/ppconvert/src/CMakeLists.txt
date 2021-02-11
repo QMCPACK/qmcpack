@@ -1,4 +1,3 @@
-#add_executable(ppconvert EXCLUDE_FROM_ALL "") # Requires "make ppconvert" to generate executable 
 add_executable(ppconvert) # Build ppconvert with standard make invocation 
 
 add_subdirectory(common)
