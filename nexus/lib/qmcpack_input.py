@@ -2530,6 +2530,9 @@ class rmc(QIxml):
 #end class rmc
 
 class vmc_batch(QIxml):
+    # Do not assume all of the parameters below are supported.
+    # These were simply copied over from legacy drivers because the 
+    # batched driver compatible inputs have yet not been listed anywhere. 
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ['method','move','profiling','kdelay']
@@ -2539,6 +2542,9 @@ class vmc_batch(QIxml):
 #end class vmc_batch
 
 class dmc_batch(QIxml):
+    # Do not assume all of the parameters below are supported.
+    # These were simply copied over from legacy drivers because the 
+    # batched driver compatible inputs have yet not been listed anywhere. 
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ['method','move','profiling','kdelay']
@@ -2548,6 +2554,9 @@ class dmc_batch(QIxml):
 #end class dmc_batch
 
 class linear_batch(QIxml):
+    # Do not assume all of the parameters below are supported.
+    # These were simply copied over from legacy drivers because the 
+    # batched driver compatible inputs have yet not been listed anywhere. 
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ['method','move','profiling','kdelay']
@@ -6139,6 +6148,7 @@ vmc_batched_defaults = obj(
     substeps         = 3,
     timestep         = 0.3,
     checkpoint       = None,
+    maxcpusecs       = None,
     )
 vmc_test_batched_defaults = obj(
     warmupsteps = 10,
@@ -6569,6 +6579,7 @@ def generate_batched_vmc_calculations(
     substeps         ,
     timestep         ,
     checkpoint       ,
+    maxcpusecs       ,
     loc              = 'generate_vmc_calculations',
     ):
     
@@ -6582,8 +6593,18 @@ def generate_batched_vmc_calculations(
         steps       = steps,
         substeps    = substeps,
         timestep    = timestep,
-        #checkpoint  = checkpoint,
         )
+    optional_vmc_inputs = obj(
+        total_walkers = total_walkers,
+        walkers_per_rank = walkers_per_rank,
+        #checkpoint       = checkpoint,
+        maxcpusecs       = maxcpusecs,
+        )
+    for name,value in optional_vmc_inputs.items():
+        if value is not None:
+            vmc_inputs[name] = value
+        #end if
+    #end for
 
     vmc_calcs = [vmc_batch(**vmc_inputs)]
 
