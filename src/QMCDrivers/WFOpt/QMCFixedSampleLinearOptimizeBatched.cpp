@@ -43,7 +43,8 @@ namespace qmcplusplus
 using MatrixOperators::product;
 
 
-QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
+QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
+                                                                         MCWalkerConfiguration& w,
                                                                          TrialWaveFunction& psi,
                                                                          QMCHamiltonian& h,
                                                                          QMCDriverInput&& qmcdriver_input,
@@ -51,7 +52,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(MCWalke
                                                                          MCPopulation&& population,
                                                                          SampleStack& samples,
                                                                          Communicate* comm)
-    : QMCLinearOptimizeBatched(w,
+    : QMCLinearOptimizeBatched(project_data,
+                               w,
                                psi,
                                h,
                                std::move(qmcdriver_input),
@@ -597,7 +599,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
   VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
   vmcEngine =
-      std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
+      std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                    MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
                                                 population_.get_golden_electrons(), &Psi, &H),
                                    Psi, H, samples_, myComm);

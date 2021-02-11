@@ -42,7 +42,8 @@ class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched,
 {
 public:
   ///Constructor.
-  QMCFixedSampleLinearOptimizeBatched(MCWalkerConfiguration& w,
+  QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
+                                      MCWalkerConfiguration& w,
                                       TrialWaveFunction& psi,
                                       QMCHamiltonian& h,
                                       QMCDriverInput&& qmcdriver_input,

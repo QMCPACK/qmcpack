@@ -103,14 +103,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
-#ifndef NDEBUG
-  ValueType g_norm = simd::dot(g.data(), g.data(), g.Size);
-  if (std::abs(g_norm) < std::abs(std::numeric_limits<QMCTraits::ValueType>::epsilon()))
-  {
-    std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
-    throw std::runtime_error("gradient of zero");
-  }
-#endif
+  assert(checkG(g));
   return g;
 }
 

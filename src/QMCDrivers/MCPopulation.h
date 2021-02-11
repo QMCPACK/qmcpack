@@ -22,13 +22,22 @@
 #include "ParticleBase/ParticleAttrib.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerElementsRef.h"
 #include "OhmmsPETE/OhmmsVector.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Utilities/FairDivide.h"
+
+// forward declaration
+namespace optimize
+{
+  struct VariableSet;
+}
+
 namespace qmcplusplus
 {
+
+// forward declaration
+class QMCHamiltonian;
 class MCPopulation
 {
 public:
@@ -38,6 +47,7 @@ public:
   using Properties       = MCPWalker::PropertyContainer_t;
   using IndexType        = QMCTraits::IndexType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using opt_variables_type = optimize::VariableSet;
 
 private:
   // Potential thread safety issue
@@ -65,7 +75,7 @@ private:
   std::vector<RealType> ptcl_inv_mass_;
   size_t size_dataset_;
   // walker weights
-  std::vector<QMCTraits::FullPrecRealType> walker_weights_;
+  std::vector<FullPrecRealType> walker_weights_;
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
@@ -141,6 +151,7 @@ public:
     auto walker_index = 0;
     for (int i = 0; i < walker_consumers.size(); ++i)
     {
+      walker_consumers[i]->initializeResources(trial_wf_->getResource());
       for (int j = 0; j < walkers_per_crowd[i]; ++j)
       {
         walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index],
@@ -149,6 +160,10 @@ public:
       }
     }
   }
+
+  void syncWalkersPerNode(Communicate* comm);
+  void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
+
   /**@ingroup Accessors
    * @{
    */
@@ -175,7 +190,8 @@ public:
   const ParticleSet& get_ions() const { return ions_; }
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
   ParticleSet* get_golden_electrons() { return elec_particle_set_; }
-  void syncWalkersPerNode(Communicate* comm);
+  const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }
+
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
 

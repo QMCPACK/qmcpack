@@ -32,7 +32,8 @@
 
 namespace qmcplusplus
 {
-QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
+QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_data,
+                                                   MCWalkerConfiguration& w,
                                                    TrialWaveFunction& psi,
                                                    QMCHamiltonian& h,
                                                    QMCDriverInput&& qmcdriver_input,
@@ -41,7 +42,8 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
                                                    SampleStack& samples,
                                                    Communicate* comm,
                                                    const std::string& QMC_driver_type)
-    : QMCDriverNew(std::move(qmcdriver_input),
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
                    std::move(population),
                    psi,
                    h,
@@ -166,8 +168,6 @@ void QMCLinearOptimizeBatched::generateSamples()
   app_log() << "<optimization-report>" << std::endl;
   t1.restart();
   //     W.reset();
-  branch_engine_->flush(0);
-  branch_engine_->reset();
   samples_.resetSampleCount();
   population_.set_variational_parameters(optTarget->getOptVariables());
 

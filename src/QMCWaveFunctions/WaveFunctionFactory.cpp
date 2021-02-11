@@ -63,7 +63,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   app_summary() << std::endl;
   app_summary() << " Many-body wavefunction" << std::endl;
   app_summary() << " -------------------" << std::endl;
-  app_summary() << "  Name: " << myName << "   tasking: " << (targetPsi->use_tasking() ? "yes" : "no") << std::endl;
+  app_summary() << "  Name: " << myName << "   Tasking: " << (targetPsi->use_tasking() ? "yes" : "no") << std::endl;
   app_summary() << std::endl;
 
   ReportEngine PRE(ClassName, "build");

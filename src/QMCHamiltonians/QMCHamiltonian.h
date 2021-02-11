@@ -255,8 +255,8 @@ public:
 
   /** batched version of evaluate Local energy with Toperators updated.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(RefVector<QMCHamiltonian>& H_list,
-                                                                                  RefVector<ParticleSet>& P_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(const RefVector<QMCHamiltonian>& H_list,
+                                                                                  const RefVector<ParticleSet>& P_list);
 
 
   /** evaluate energy and derivatives wrt to the variables
@@ -356,7 +356,7 @@ public:
       l2_ptr->evaluateD(P, iel, D);
   }
 
-  static std::vector<int> flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list);
+  static std::vector<int> flex_makeNonLocalMoves(const RefVector<QMCHamiltonian>& h_list, const RefVector<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable

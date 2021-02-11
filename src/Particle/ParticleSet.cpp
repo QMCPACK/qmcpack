@@ -691,6 +691,12 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
   }
 }
 
+void  ParticleSet::flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update)
+{
+  for (int iw = 0; iw < P_list.size(); iw++)
+    P_list[iw].get().acceptMove(iat, partial_table_update);
+}
+
 void ParticleSet::rejectMove(Index_t iat)
 {
 #ifndef NDEBUG
@@ -769,7 +775,7 @@ void ParticleSet::saveWalker(Walker_t& awalker)
   //awalker.DataSet.rewind();
 }
 
-void ParticleSet::flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers)
+void ParticleSet::flex_saveWalker(const RefVector<ParticleSet>& psets, const RefVector<Walker_t>& walkers)
 {
   int num_sets    = psets.size();
   auto saveWalker = [](ParticleSet& pset, Walker_t& walker) {

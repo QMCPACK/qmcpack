@@ -54,25 +54,28 @@ void EstimatorManagerNewTest::fakeSomeScalarSamples()
 void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
 {
   em.operator_ests_.emplace_back(new FakeOperatorEstimator(comm_->size(), DataLocality::crowd));
-  FakeOperatorEstimator& foe = dynamic_cast<FakeOperatorEstimator&>(*(em.operator_ests_.back()));
+  FakeOperatorEstimator& foe        = dynamic_cast<FakeOperatorEstimator&>(*(em.operator_ests_.back()));
   std::vector<QMCT::RealType>& data = foe.get_data_ref();
-  data[rank] += rank;
-  data[rank * 10] += rank * 10;
+  for (int id = 0; id < data.size(); ++id)
+  {
+    if (id > rank)
+      data[id] += rank + 1;
+  }
   foe.set_walker_weights(1);
 }
 
 std::vector<QMCTraits::RealType> EstimatorManagerNewTest::generateGoodOperatorData(int num_ranks)
 {
-  std::vector<QMCT::RealType> good_data(num_ranks * 10, 0.0);
-  if (comm_->rank() == 0)
+  std::vector<QMCT::RealType> data(num_ranks * 10, 0.0);
+  for (int ir = 0; ir < num_ranks; ++ir)
   {
-    for (int ir = 0; ir < num_ranks; ++ir)
+    for (int id = 0; id < data.size(); ++id)
     {
-      good_data[ir] += ir;
-      good_data[ir * 10] += ir * 10;
+      if (id > ir)
+        data[id] += ir + 1;
     }
   }
-  return good_data;
+  return data;
 }
 
 void EstimatorManagerNewTest::collectScalarEstimators()
@@ -80,6 +83,8 @@ void EstimatorManagerNewTest::collectScalarEstimators()
   RefVector<ScalarEstimatorBase> est_list = makeRefVector<ScalarEstimatorBase>(estimators_);
   em.collectScalarEstimators(est_list);
 }
+
+void EstimatorManagerNewTest::testReduceOperatorEstimators() { em.reduceOperatorEstimators(); }
 
 } // namespace testing
 } // namespace qmcplusplus

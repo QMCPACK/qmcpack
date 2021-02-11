@@ -34,6 +34,7 @@ class MCWalkerConfiguration;
 class QMCDriverInterface;
 class WaveFunctionPool;
 class HamiltonianPool;
+class ProjectData;
 
 class QMCDriverFactory
 {
@@ -46,6 +47,8 @@ public:
     std::string traces_tag  = "none";
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };
+
+  QMCDriverFactory(const ProjectData& project_data);
 
   /** default constructor **/
   //QMCDriverFactory() ;
@@ -64,6 +67,10 @@ public:
                                                       WaveFunctionPool& wave_function_pool,
                                                       HamiltonianPool& hamiltonian_pool,
                                                       Communicate* comm) const;
+
+private:
+  /// project info for accessing global fileroot and series id
+  const ProjectData& project_data_;
 };
 } // namespace qmcplusplus
 #endif

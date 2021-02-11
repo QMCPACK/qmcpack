@@ -46,6 +46,7 @@ public:
   typedef QMCTraits::FullPrecRealType RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
+  using QMCT = QMCTraits;
   typedef ScalarEstimatorBase EstimatorType;
   using FPRBuffer = std::vector<FullPrecRealType>;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
@@ -165,13 +166,24 @@ public:
 
   /** At end of block collect the scalar estimators for the entire rank
    *   
+   *  \todo remove assumption of one ScalarEstimator per crowd.
+   *  see how OperatorEstimators are handled
+   *
    *  Each is currently accumulates on for crowd of 1 or more walkers
    *  returns the total weight across all crowds. 
    */
   RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
 
+  /** Reduces OperatorEstimator data from Crowds to the manager's OperatorEstimator data
+   *
+   *  \param[in] op_ests - vector of each crowds vector of references to their OperatorEstimators.
+   *
+   *  A particular OperatorEstimators reduction via a call to collect may be straight forward
+   *  if the crowd context OperatorEstimator holds a copy of the estimator data structure
+   *  or more complex if it just collects for instance a list of writes to locations
+   *  in the data structure.
+   */
   void collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& op_ests);
-
 
   /** get the average of per-block energy and variance of all the blocks
    * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
@@ -256,6 +268,7 @@ protected:
    * them.
    */
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
+
   /////estimators of composite data
   //CompositeEstimatorSet* CompEstimators;
   ///Timer
@@ -268,7 +281,28 @@ private:
   /// collect data and write
   void makeBlockAverages(unsigned long accept, unsigned long reject);
 
+  /** do the rank wise reduction of the OperatorEstimators
+   *
+   *  Why do this here?
+   *  1. Operator estimators don't know about the concurrency model
+   *  2. EstimatorManager owns the resources:
+   *       send & receive buffers
+   *  3. The operation is generic as long as OperatorEstimator satisfies
+   *     the requirement that get_data_ref() returns a reference to
+   *     std::vector<RealType>
+   *
+   *  Implementation makes the assumption that sending each OperatorEstimator
+   *  separately is the correct memory use vs. mpi message balance.
+   */
   void reduceOperatorEstimators();
+  /** Write OperatorEstimator data to *.stat.h5
+   *
+   *  Note that OperatorEstimator owns its own observable_helpers
+   */
+  void writeOperatorEstimators();
+  /** OperatorEstimators need to be zeroed out after the block is finished.
+   */
+  void zeroOperatorEstimators();
 
   ///add header to an std::ostream
   void addHeader(std::ostream& o);

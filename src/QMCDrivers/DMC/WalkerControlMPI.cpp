@@ -19,6 +19,7 @@
 #include "WalkerControlMPI.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/FairDivide.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
 {

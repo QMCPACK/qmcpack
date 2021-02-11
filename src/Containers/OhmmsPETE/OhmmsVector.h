@@ -48,8 +48,7 @@ public:
     if (n)
     {
       resize_impl(n);
-      if (allocator_traits<Alloc>::is_host_accessible)
-        std::fill_n(X, n, val);
+      allocator_traits<Alloc>::fill_n(X, n, val);
     }
   }
 
@@ -64,6 +63,8 @@ public:
       resize_impl(rhs.nLocal);
       if (allocator_traits<Alloc>::is_host_accessible)
         std::copy_n(rhs.data(), nLocal, X);
+      else
+        allocator_traits<Alloc>::fill_n(X, nLocal, T());
     }
   }
 
@@ -76,6 +77,8 @@ public:
       resize(rhs.nLocal);
     if (allocator_traits<Alloc>::is_host_accessible)
       std::copy_n(rhs.data(), nLocal, X);
+    else
+      allocator_traits<Alloc>::fill_n(X, nLocal, T());
     return *this;
   }
 
@@ -101,15 +104,13 @@ public:
   }
 
   //! Destructor
-  virtual ~Vector()
-  {
-    free();
-  }
+  virtual ~Vector() { free(); }
 
   // Attach to pre-allocated memory
   inline void attachReference(T* ref, size_t n)
   {
-    if (nAllocated) {
+    if (nAllocated)
+    {
       free();
       // std::cerr << "Allocated OhmmsVector attachReference called.\n" << std::endl;
       // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
@@ -126,28 +127,21 @@ public:
   ///resize
   inline void resize(size_t n, Type_t val = Type_t())
   {
-    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Vector and Alloc data types must agree!");
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value,
+                  "Vector and Alloc data types must agree!");
     if (nLocal > nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
-    if(allocator_traits<Alloc>::is_host_accessible)
+
+    if (n > nAllocated)
     {
-      if (n > nAllocated)
-      {
-        resize_impl(n);
-        std::fill_n(X, n, val);
-      }
-      else
-      {
-        if (n > nLocal) std::fill_n(X + nLocal, n - nLocal, val);
-        nLocal = n;
-      }
+      resize_impl(n);
+      allocator_traits<Alloc>::fill_n(X, n, val);
     }
     else
     {
-      if (n > nAllocated)
-        resize_impl(n);
-      else
-        nLocal = n;
+      if (n > nLocal)
+        allocator_traits<Alloc>::fill_n(X + nLocal, n - nLocal, val);
+      nLocal = n;
     }
     return;
   }
@@ -156,8 +150,8 @@ public:
   inline void clear() { nLocal = 0; }
 
   ///zero
-  inline void zero() { std::fill_n(X, nAllocated, T()); }
-  
+  inline void zero() { allocator_traits<Alloc>::fill_n(X, nAllocated, T()); }
+
   ///free
   inline void free()
   {

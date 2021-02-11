@@ -15,6 +15,7 @@
 #include "Configuration.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/CommOperators.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
@@ -104,7 +105,6 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     }
 
     walker_elec_particle_sets_[iw] = std::make_unique<ParticleSet>(*elec_particle_set_);
-#pragma omp critical
     walker_trial_wavefunctions_[iw].reset(trial_wf_->makeClone(*walker_elec_particle_sets_[iw]));
     walker_hamiltonians_[iw].reset(
         hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]));
@@ -264,6 +264,22 @@ void MCPopulation::syncWalkersPerNode(Communicate* comm)
   num_global_walkers_ = std::accumulate(num_local_walkers_per_node.begin(), num_local_walkers_per_node.end(), 0);
 }
 
+void MCPopulation::measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const
+{
+  std::vector<FullPrecRealType> weight_energy_variance(3, 0.0);
+  for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
+  {
+    auto w = walkers_[iw]->Weight;
+    auto e = walker_hamiltonians_[iw]->getLocalEnergy();
+    weight_energy_variance[0] += w;
+    weight_energy_variance[1] += w * e;
+    weight_energy_variance[2] += w * e * e;
+  }
+
+  comm.allreduce(weight_energy_variance);
+  ener = weight_energy_variance[1] / weight_energy_variance[0];
+  variance = weight_energy_variance[2] / weight_energy_variance[0] - ener * ener;
+}
 
 void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 {
