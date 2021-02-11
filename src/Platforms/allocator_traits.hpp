@@ -22,7 +22,7 @@ namespace qmcplusplus
 template<class Allocator>
 struct allocator_traits
 {
-  const static bool is_host_accessible = true;
+  static const bool is_host_accessible = true;
   template<typename T>
   static void fill_n(T* ptr, size_t n, const T& value)
   {

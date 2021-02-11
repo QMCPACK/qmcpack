@@ -782,8 +782,8 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateWithToperator(ParticleS
 }
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateWithToperator(
-    RefVector<QMCHamiltonian>& h_list,
-    RefVector<ParticleSet>& p_list)
+    const RefVector<QMCHamiltonian>& h_list,
+    const RefVector<ParticleSet>& p_list)
 {
   std::vector<FullPrecRealType> local_energies(h_list.size(), 0.0);
   if (h_list.size() > 1)

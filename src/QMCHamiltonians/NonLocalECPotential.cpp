@@ -38,13 +38,13 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
       myRNG(nullptr),
       IonConfig(ions),
       Psi(psi),
+      ComputeForces(computeForces),
+      use_DLA(enable_DLA),
       Peln(els),
       ElecNeighborIons(els),
       IonNeighborElecs(ions),
       UseTMove(TMOVE_OFF),
-      nonLocalOps(els.getTotalNum()),
-      ComputeForces(computeForces),
-      use_DLA(enable_DLA)
+      nonLocalOps(els.getTotalNum())
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions, els);

@@ -45,10 +45,10 @@ struct NLjob
 };
 #endif
 
-///forward declaration of WaveFunctionComponent
+///forward declaration
 struct WaveFunctionComponent;
-///forward declaration of DiffWaveFunctionComponent
 struct DiffWaveFunctionComponent;
+class ResourceCollection;
 
 typedef WaveFunctionComponent* WaveFunctionComponentPtr;
 typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
@@ -472,6 +472,18 @@ struct WaveFunctionComponent : public QMCTraits
     for (int iw = 0; iw < wfc_list.size(); iw++)
       wfc_list[iw].get().copyFromBuffer(p_list[iw], buf_list[iw]);
   }
+
+  /** initialize a shared resource and hand it to collection
+   */
+  virtual void createResource(ResourceCollection& collection) {}
+
+  /** acquire a shared resource from collection
+   */
+  virtual void acquireResource(ResourceCollection& collection) {}
+
+  /** return a shared resource to collection
+   */
+  virtual void releaseResource(ResourceCollection& collection) {}
 
   /** make clone
    * @param tqp target Quantum ParticleSet
