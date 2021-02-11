@@ -538,7 +538,7 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     auto& ref_L = crowd.get_walker_twfs()[iw].get().L;
     TrialWaveFunction::LogValueType ref_log{crowd.get_walker_twfs()[iw].get().getLogPsi(),
                                             crowd.get_walker_twfs()[iw].get().getPhase()};
-    if (std::norm(std::exp(log_values[iw]) - std::exp(ref_log)) > std::norm(std::exp(ref_log)) * threashold)
+    if (std::abs(std::exp(log_values[iw]) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threashold)
     {
       success = false;
       std::cout << "Logpsi walker[" << iw << "] " << log_values[iw] << " ref " << ref_log << std::endl;
@@ -546,14 +546,14 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     for (int iel = 0; iel < ref_G.size(); iel++)
     {
       auto grad_diff = ref_G[iel] - Gs[iw][iel];
-      if (std::sqrt(std::norm(dot(grad_diff, grad_diff))) >
-          std::sqrt(std::norm(dot(ref_G[iel], ref_G[iel]))) * threashold)
+      if (std::sqrt(std::abs(dot(grad_diff, grad_diff))) >
+          std::sqrt(std::abs(dot(ref_G[iel], ref_G[iel]))) * threashold)
       {
         success = false;
         std::cout << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << std::endl;
       }
       auto lap_diff = ref_L[iel] - Ls[iw][iel];
-      if (std::norm(lap_diff) > std::norm(ref_L[iel]) * threashold)
+      if (std::abs(lap_diff) > std::abs(ref_L[iel]) * threashold)
       {
         // very hard to check mixed precision case, only print, no error out
         success = !std::is_same<RealType, FullPrecRealType>::value;
