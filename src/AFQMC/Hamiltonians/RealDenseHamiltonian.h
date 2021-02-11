@@ -37,11 +37,11 @@ public:
       batched = "yes";
     std::string str("yes");
     ParameterSet m_param;
-    m_param.add(fileName, "filename", "std::string");
+    m_param.add(fileName, "filename");
     if (TG.TG_local().size() == 1)
-      m_param.add(batched, "batched", "std::string");
+      m_param.add(batched, "batched");
     if (TG.TG_local().size() == 1)
-      m_param.add(ooc, "ooc", "std::string");
+      m_param.add(ooc, "ooc");
     m_param.put(cur);
 
     if (omp_get_num_threads() > 1 && (batched != "yes" && batched != "true"))

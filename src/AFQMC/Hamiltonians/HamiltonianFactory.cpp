@@ -71,11 +71,11 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   std::string alt      = "";
 
   ParameterSet m_param;
-  m_param.add(cutoff1bar, "cutoff_1bar", "double");
-  m_param.add(fileName, "filename", "std::string");
-  m_param.add(number_of_TGs, "nblocks", "int");
-  m_param.add(n_reading_cores, "num_io_cores", "int");
-  m_param.add(alt, "alternate", "std::string");
+  m_param.add(cutoff1bar, "cutoff_1bar");
+  m_param.add(fileName, "filename");
+  m_param.add(number_of_TGs, "nblocks");
+  m_param.add(n_reading_cores, "num_io_cores");
+  m_param.add(alt, "alternate");
   m_param.put(cur);
 
   // make or get TG

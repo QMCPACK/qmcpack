@@ -151,8 +151,8 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
   int crowd_size     = 1;
   int num_opt_crowds = 1;
   ParameterSet param_set;
-  param_set.add(crowd_size, "opt_crowd_size", "int");
-  param_set.add(num_opt_crowds, "opt_num_crowds", "int");
+  param_set.add(crowd_size, "opt_crowd_size");
+  param_set.add(num_opt_crowds, "opt_num_crowds");
   param_set.put(q);
 
   while (cur != NULL)
