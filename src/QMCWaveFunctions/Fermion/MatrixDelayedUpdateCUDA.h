@@ -642,13 +642,13 @@ public:
     cudaErrorCheck(cuBLAS_MFs::copy_batched(cuda_handles_->hstream, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw),
                    "cuBLAS_MFs::copy_batched failed!");
     // handle accepted walkers
-    // the new Binv is [[X Y] [Z y]]
+    // the new Binv is [[X Y] [Z sigma]]
     //BLAS::gemv('T', norb, delay_count + 1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
     cudaErrorCheck(cuBLAS_MFs::gemv_batched(cuda_handles_->hstream, 'T', norb, delay_count, cminusone_dev_ptr, V_mw_ptr,
                                             norb, phiV_mw_ptr, 1, czero_dev_ptr, p_mw_ptr, 1, n_accepted),
                    "cuBLAS_MFs::gemv_batched failed!");
     // Y
-    //BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
+    //BLAS::gemv('T', delay_count, delay_count, sigma, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
     //           lda_Binv);
     cudaErrorCheck(cuBLAS_MFs::gemv_batched(cuda_handles_->hstream, 'T', delay_count, delay_count, ratio_inv_mw_ptr,
                                             Binv_mw_ptr, lda_Binv, p_mw_ptr, 1, czero_dev_ptr, BinvCol_mw_ptr, lda_Binv,
@@ -661,11 +661,11 @@ public:
                                            BinvRow_mw_ptr, 1, BinvCol_mw_ptr, lda_Binv, Binv_mw_ptr, lda_Binv,
                                            n_accepted),
                    "cuBLAS_MFs::ger_batched failed!");
-    // y and Z
-    cudaErrorCheck(CUDA::add_delay_list_save_y_VGL_batched(cuda_handles_->hstream, delay_list_mw_ptr, rowchanged,
-                                                           delay_count, Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr,
-                                                           phiV_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, U_row_mw_ptr,
-                                                           dpsiM_mw_out, d2psiM_mw_out, norb, n_accepted, nw),
+    // sigma and Z
+    cudaErrorCheck(CUDA::add_delay_list_save_sigma_VGL_batched(cuda_handles_->hstream, delay_list_mw_ptr, rowchanged,
+                                                               delay_count, Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr,
+                                                               phiV_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, U_row_mw_ptr,
+                                                               dpsiM_mw_out, d2psiM_mw_out, norb, n_accepted, nw),
                    "CUDA::add_delay_list_save_y_VGL_batched failed!");
     delay_count++;
     // update Ainv when maximal delay is reached

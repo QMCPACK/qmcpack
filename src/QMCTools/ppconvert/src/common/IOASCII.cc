@@ -189,7 +189,7 @@ namespace IO {
 	  
 
   /// Just a shortcut to look at two characters at a time.
-  bool checkPair(blitz::Array<char,1> &buffer,int counter,char* toSee)
+  bool checkPair(blitz::Array<char,1> &buffer,int counter,char const* toSee)
   {
     if (counter+1>=buffer.size()){
       return false;
