@@ -77,10 +77,11 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   ///save the current node
   xmlNodePtr curRoot = cur;
   xmlNodePtr BFnode  = nullptr;
-  bool success = true, FastMSD = true;
+  bool success = true;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
+  std::string msd_algorithm;
 
   if (sposet_builder_factory_.empty())
   { //always create one, using singleton and just to access the member functions
@@ -196,22 +197,32 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       app_summary() << std::endl;
 
       multiDet = true;
+
       if (slaterdet_0)
-      {
         APP_ABORT("can't combine slaterdet with multideterminant.");
-      }
+
       if (multislaterdet_0 || multislaterdetfast_0)
-      {
         APP_ABORT("multideterminant is already instantiated.");
-      }
+
       std::string spo_alpha_name;
       std::string spo_beta_name;
-      std::string fastAlg("yes");
+      std::string fastAlg;
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add(spo_alpha_name, "spo_up");
       spoAttrib.add(spo_beta_name, "spo_dn");
-      spoAttrib.add(fastAlg, "Fast");
+      spoAttrib.add(fastAlg, "Fast", {"", "yes", "no"}, TagStatus::DEPRECATED);
+      spoAttrib.add(msd_algorithm, "algorithm", {"", "precomputed_table_method", "table_method", "all_determinants"});
       spoAttrib.put(cur);
+
+      if (msd_algorithm.empty())
+      {
+        if(fastAlg.empty())
+          msd_algorithm = "precomputed_table_method";
+        else if(fastAlg == "yes")
+          msd_algorithm = "table_method";
+        else
+          msd_algorithm = "all_determinants";
+      }
 
       SPOSetPtr spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
       SPOSetPtr spo_beta  = sposet_builder_factory_.getSPOSet(spo_beta_name);
@@ -234,23 +245,42 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       else
         spo_beta_clone.reset(spo_beta->makeClone());
 
-      FastMSD = (fastAlg == "yes");
-      if (FastMSD)
+      if (msd_algorithm == "precomputed_table_method" || msd_algorithm == "table_method")
       {
         app_summary() << "    Using Bryan's table method." << std::endl;
         if (UseBackflow)
         {
           APP_ABORT("Backflow is not implemented with the table method.");
         }
-        MultiDiracDeterminant* up_det = 0;
-        MultiDiracDeterminant* dn_det = 0;
-        app_log() << "      Creating base determinant (up) for MSD expansion. \n";
-        up_det = new MultiDiracDeterminant(std::move(spo_alpha_clone), 0);
-        app_log() << "      Creating base determinant (down) for MSD expansion. \n";
-        dn_det = new MultiDiracDeterminant(std::move(spo_beta_clone), 1);
 
-        multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, up_det, dn_det);
-        success              = createMSDFast(multislaterdetfast_0, cur);
+        std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
+        app_log() << "      Creating base determinant (up) for MSD expansion. \n";
+        dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_alpha_clone), 0));
+        app_log() << "      Creating base determinant (down) for MSD expansion. \n";
+        dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_beta_clone), 1));
+
+        if (msd_algorithm == "precomputed_table_method")
+        {
+          app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
+          multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), true);
+        }
+        else
+        {
+          app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
+          multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), false);
+        }
+
+        multislaterdetfast_0->initialize();
+        success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
+                                *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
+                                *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
+                                *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
+                                multislaterdetfast_0->CI_Optimizable, cur);
+
+        // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
+        // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
+        // and then remove the orbital rotation parameters
+        multislaterdetfast_0->buildOptVariables();
       }
       else
       {
@@ -296,10 +326,10 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
     BFTrans = bfbuilder.buildBackflowTransformation(BFnode);
     if (multiDet)
     {
-      if (FastMSD)
-        multislaterdetfast_0->setBF(BFTrans);
-      else
+      if (msd_algorithm == "all_determinants")
         multislaterdet_0->setBF(BFTrans);
+      else
+        myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
     }
     else
     {
@@ -311,10 +341,10 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   //only single slater determinant
   if (multiDet)
   {
-    if (FastMSD)
-      return multislaterdetfast_0;
-    else
+    if (msd_algorithm == "all_determinants")
       return multislaterdet_0;
+    else
+      return multislaterdetfast_0;
   }
   else
     return slaterdet_0;
@@ -510,16 +540,25 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   return true;
 }
 
-bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur)
+bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
+                                     std::vector<std::vector<size_t>>& C2node,
+                                     std::vector<ValueType>& C,
+                                     std::vector<ValueType>& CSFcoeff,
+                                     std::vector<size_t>& DetsPerCSF,
+                                     std::vector<RealType>& CSFexpansion,
+                                     bool& usingCSF,
+                                     opt_variables_type& myVars,
+                                     bool& Optimizable,
+                                     bool& CI_Optimizable,
+                                     xmlNodePtr cur)
 {
   bool success = true;
   std::vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
   std::vector<std::string> CItags;
 
   bool optimizeCI;
-  int nels_up = multiSD->nels_up;
-  int nels_dn = multiSD->nels_dn;
-  multiSD->initialize();
+  int nels_up = targetPtcl.groupsize(0);
+  int nels_dn = targetPtcl.groupsize(1);
   //Check id multideterminants are in HDF5
 
   xmlNodePtr curTemp = cur, DetListNode = nullptr;
@@ -538,19 +577,19 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    success = readDetListH5(cur, uniqueConfg_up, uniqueConfg_dn, *(multiSD->C2node_up), *(multiSD->C2node_dn), CItags,
-                            *(multiSD->C), optimizeCI, nels_up, nels_dn);
+    success = readDetListH5(cur, uniqueConfg_up, uniqueConfg_dn, C2node[0], C2node[1], CItags, C, optimizeCI, nels_up,
+                            nels_dn);
   }
   else
-    success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, *(multiSD->C2node_up), *(multiSD->C2node_dn), CItags,
-                          *(multiSD->C), optimizeCI, nels_up, nels_dn, *(multiSD->CSFcoeff), *(multiSD->DetsPerCSF),
-                          *(multiSD->CSFexpansion), multiSD->usingCSF);
+    success = readDetList(cur, uniqueConfg_up, uniqueConfg_dn, C2node[0], C2node[1], CItags, C, optimizeCI, nels_up,
+                          nels_dn, CSFcoeff, DetsPerCSF, CSFexpansion, usingCSF);
   if (!success)
     return false;
+
   // you should choose the det with highest weight for reference
-  multiSD->Dets[0]->ReferenceDeterminant  = 0; // for now
-  multiSD->Dets[0]->NumDets               = uniqueConfg_up.size();
-  std::vector<ci_configuration2>& list_up = *(multiSD->Dets[0]->ciConfigList);
+  Dets[0]->ReferenceDeterminant           = 0; // for now
+  Dets[0]->NumDets                        = uniqueConfg_up.size();
+  std::vector<ci_configuration2>& list_up = *Dets[0]->ciConfigList;
   list_up.resize(uniqueConfg_up.size());
   for (int i = 0; i < list_up.size(); i++)
   {
@@ -564,10 +603,11 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
       APP_ABORT("Error in SlaterDetBuilder::createMSDFast, problems with ci configuration list. \n");
     }
   }
-  multiSD->Dets[0]->set(multiSD->FirstIndex_up, nels_up, multiSD->Dets[0]->Phi->getOrbitalSetSize());
-  multiSD->Dets[1]->ReferenceDeterminant  = 0; // for now
-  multiSD->Dets[1]->NumDets               = uniqueConfg_dn.size();
-  std::vector<ci_configuration2>& list_dn = *(multiSD->Dets[1]->ciConfigList);
+  Dets[0]->set(targetPtcl.first(0), nels_up, Dets[0]->Phi->getOrbitalSetSize());
+
+  Dets[1]->ReferenceDeterminant           = 0; // for now
+  Dets[1]->NumDets                        = uniqueConfg_dn.size();
+  std::vector<ci_configuration2>& list_dn = *Dets[1]->ciConfigList;
   list_dn.resize(uniqueConfg_dn.size());
   for (int i = 0; i < list_dn.size(); i++)
   {
@@ -581,8 +621,8 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
       APP_ABORT("Error in SlaterDetBuilder::createMSDFast, problems with ci configuration list. \n");
     }
   }
-  multiSD->Dets[1]->set(multiSD->FirstIndex_dn, nels_dn, multiSD->Dets[1]->Phi->getOrbitalSetSize());
-  if (multiSD->CSFcoeff->size() == 1)
+  Dets[1]->set(targetPtcl.first(1), nels_dn, Dets[1]->Phi->getOrbitalSetSize());
+  if (CSFcoeff.size() == 1)
     optimizeCI = false;
   if (optimizeCI)
   {
@@ -593,46 +633,34 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
     spoAttrib.put(cur);
     if (resetCI == "yes")
     {
-      if (multiSD->usingCSF)
-        for (int i = 1; i < multiSD->CSFcoeff->size(); i++)
-          (*(multiSD->CSFcoeff))[i] = 0;
+      if (usingCSF)
+        for (int i = 1; i < CSFcoeff.size(); i++)
+          CSFcoeff[i] = 0;
       else
-        for (int i = 1; i < multiSD->C->size(); i++)
-          (*(multiSD->C))[i] = 0;
+        for (int i = 1; i < C.size(); i++)
+          C[i] = 0;
       app_log() << "CI coefficients are reset. \n";
     }
-    multiSD->Optimizable = multiSD->CI_Optimizable = true;
-    if (multiSD->usingCSF)
-    {
-      //          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
-      for (int i = 1; i < multiSD->CSFcoeff->size(); i++)
-      {
-        //std::stringstream sstr;
-        //sstr << "CIcoeff" << "_" << i;
-        multiSD->myVars->insert(CItags[i], (*(multiSD->CSFcoeff))[i], true, optimize::LINEAR_P);
-      }
-    }
+    Optimizable = CI_Optimizable = true;
+    if (usingCSF)
+      for (int i = 1; i < CSFcoeff.size(); i++)
+        myVars.insert(CItags[i], CSFcoeff[i], true, optimize::LINEAR_P);
     else
-    {
-      //          multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
-      for (int i = 1; i < multiSD->C->size(); i++)
-      {
-        multiSD->myVars->insert(CItags[i], (*(multiSD->C))[i], true, optimize::LINEAR_P);
-      }
-    }
+      for (int i = 1; i < C.size(); i++)
+        myVars.insert(CItags[i], C[i], true, optimize::LINEAR_P);
   }
   else
   {
     app_log() << "CI coefficients are not optimizable. \n";
-    multiSD->CI_Optimizable = false;
+    CI_Optimizable = false;
   }
 
-  if (multiSD->Dets[0]->Optimizable == true || multiSD->Dets[1]->Optimizable == true)
+  if (Dets[0]->Optimizable == true || Dets[1]->Optimizable == true)
   {
     //safety checks for orbital optimization
-    if (multiSD->Dets[0]->Optimizable != multiSD->Dets[1]->Optimizable)
+    if (Dets[0]->Optimizable != Dets[1]->Optimizable)
       APP_ABORT("Optimizing the SPOSet of only one spin is not supported!\n");
-    if (multiSD->usingCSF)
+    if (usingCSF)
       APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization!\n");
 
     //checks that the hartree fock determinant is the first in the multislater expansion
@@ -647,12 +675,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
                  "preserved!\n";
 
     // mark the overall optimization flag
-    multiSD->Optimizable = true;
-
-    // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
-    // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
-    // and then remove the orbital rotation parameters
-    multiSD->buildOptVariables();
+    Optimizable = true;
   }
 
   return success;

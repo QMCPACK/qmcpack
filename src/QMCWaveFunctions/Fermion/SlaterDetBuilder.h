@@ -78,7 +78,17 @@ private:
 
   bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
 
-  bool createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur);
+  bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
+                     std::vector<std::vector<size_t>>& C2node,
+                     std::vector<ValueType>& C,
+                     std::vector<ValueType>& CSFcoeff,
+                     std::vector<size_t>& DetsPerCSF,
+                     std::vector<RealType>& CSFexpansion,
+                     bool& usingCSF,
+                     opt_variables_type& myVars,
+                     bool& Optimizable,
+                     bool& CI_Optimizable,
+                     xmlNodePtr cur);
 
   bool readDetList(xmlNodePtr cur,
                    std::vector<ci_configuration>& uniqueConfg_up,

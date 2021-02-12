@@ -59,7 +59,10 @@ struct OhmmsAttributeSet
    *@param status Tag status, See OhmmsParameter.h for more details
    */
   template<class PDT>
-  void add(PDT& aparam, const std::string& aname, std::vector<PDT>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
+  void add(PDT& aparam,
+           const std::string& aname,
+           std::vector<PDT>&& candidate_values = {},
+           TagStatus status                    = TagStatus::OPTIONAL)
   {
     iterator it(m_param.find(aname));
     if (it == m_param.end())

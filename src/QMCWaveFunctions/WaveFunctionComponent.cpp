@@ -48,6 +48,15 @@ void WaveFunctionComponent::mw_evaluateLog(const RefVector<WaveFunctionComponent
     WFC_list[iw].get().evaluateLog(P_list[iw], G_list[iw], L_list[iw]);
 }
 
+void WaveFunctionComponent::mw_prepareGroup(const RefVector<WaveFunctionComponent>& WFC_list,
+                                            const RefVector<ParticleSet>& P_list,
+                                            int ig)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    WFC_list[iw].get().prepareGroup(P_list[iw], ig);
+}
+
 void WaveFunctionComponent::mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list,
                                         const RefVector<ParticleSet>& P_list,
                                         int iat,
