@@ -118,7 +118,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
 TEST_CASE("LiH multi Slater dets", "[wavefunction]")
 {
   app_log() << "-----------------------------------------------------------------" << std::endl;
-  app_log() << "LiH_msd using the table method" << std::endl;
+  app_log() << "LiH_msd using the table method no precomputation" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
     <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
@@ -135,7 +135,7 @@ TEST_CASE("LiH multi Slater dets", "[wavefunction]")
       </sposet> \
     </sposet_collection> \
     <determinantset> \
-      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\"> \
+      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\" algorithm=\"table_method\"> \
         <detlist size=\"1487\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
       </multideterminant> \
     </determinantset> \
@@ -144,7 +144,7 @@ TEST_CASE("LiH multi Slater dets", "[wavefunction]")
   test_LiH_msd(spo_xml_string1, "spo-up", 85, 105);
 
   app_log() << "-----------------------------------------------------------------" << std::endl;
-  app_log() << "LiH_msd using the traditional slow method" << std::endl;
+  app_log() << "LiH_msd using the traditional slow method with all the determinants" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1_slow = "<wavefunction name=\"psi0\" target=\"e\"> \
     <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
@@ -161,7 +161,7 @@ TEST_CASE("LiH multi Slater dets", "[wavefunction]")
       </sposet> \
     </sposet_collection> \
     <determinantset> \
-      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\" Fast=\"no\"> \
+      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\"  algorithm=\"all_determinants\"> \
         <detlist size=\"1487\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
       </multideterminant> \
     </determinantset> \
@@ -187,7 +187,7 @@ TEST_CASE("LiH multi Slater dets", "[wavefunction]")
       </sposet> \
     </sposet_collection> \
     <determinantset> \
-      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\" Fast=\"new\"> \
+      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\" algorithm=\"precomputed_table_method\"> \
         <detlist size=\"1487\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
       </multideterminant> \
     </determinantset> \

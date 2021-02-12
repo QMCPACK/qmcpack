@@ -77,10 +77,11 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   ///save the current node
   xmlNodePtr curRoot = cur;
   xmlNodePtr BFnode  = nullptr;
-  bool success = true, FastMSD = true;
+  bool success = true;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
+  std::string msd_algorithm;
 
   if (sposet_builder_factory_.empty())
   { //always create one, using singleton and just to access the member functions
@@ -196,22 +197,32 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       app_summary() << std::endl;
 
       multiDet = true;
+
       if (slaterdet_0)
-      {
         APP_ABORT("can't combine slaterdet with multideterminant.");
-      }
+
       if (multislaterdet_0 || multislaterdetfast_0)
-      {
         APP_ABORT("multideterminant is already instantiated.");
-      }
+
       std::string spo_alpha_name;
       std::string spo_beta_name;
-      std::string fastAlg("new");
+      std::string fastAlg;
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add(spo_alpha_name, "spo_up");
       spoAttrib.add(spo_beta_name, "spo_dn");
-      spoAttrib.add(fastAlg, "Fast");
+      spoAttrib.add(fastAlg, "Fast", {"", "yes", "no"}, TagStatus::DEPRECATED);
+      spoAttrib.add(msd_algorithm, "algorithm", {"", "precomputed_table_method", "table_method", "all_determinants"});
       spoAttrib.put(cur);
+
+      if (msd_algorithm.empty())
+      {
+        if(fastAlg.empty())
+          msd_algorithm = "precomputed_table_method";
+        else if(fastAlg == "yes")
+          msd_algorithm = "table_method";
+        else
+          msd_algorithm = "all_determinants";
+      }
 
       SPOSetPtr spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
       SPOSetPtr spo_beta  = sposet_builder_factory_.getSPOSet(spo_beta_name);
@@ -234,14 +245,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       else
         spo_beta_clone.reset(spo_beta->makeClone());
 
-      if (fastAlg == "yes" || fastAlg == "new")
-        FastMSD = true;
-      else if (fastAlg == "no")
-        FastMSD = false;
-      else
-        throw std::runtime_error("Input value for 'Fast' should be yes/no/new");
-
-      if (FastMSD)
+      if (msd_algorithm == "precomputed_table_method" || msd_algorithm == "table_method")
       {
         app_summary() << "    Using Bryan's table method." << std::endl;
         if (UseBackflow)
@@ -255,7 +259,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         app_log() << "      Creating base determinant (down) for MSD expansion. \n";
         dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_beta_clone), 1));
 
-        if (fastAlg == "new")
+        if (msd_algorithm == "precomputed_table_method")
         {
           app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
           multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), true);
@@ -322,10 +326,10 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
     BFTrans = bfbuilder.buildBackflowTransformation(BFnode);
     if (multiDet)
     {
-      if (FastMSD)
-        myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
-      else
+      if (msd_algorithm == "all_determinants")
         multislaterdet_0->setBF(BFTrans);
+      else
+        myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
     }
     else
     {
@@ -337,10 +341,10 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   //only single slater determinant
   if (multiDet)
   {
-    if (FastMSD)
-      return multislaterdetfast_0;
-    else
+    if (msd_algorithm == "all_determinants")
       return multislaterdet_0;
+    else
+      return multislaterdetfast_0;
   }
   else
     return slaterdet_0;
