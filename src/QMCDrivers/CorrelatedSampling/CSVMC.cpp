@@ -41,11 +41,11 @@ CSVMC::CSVMC(MCWalkerConfiguration& w,
     : QMCDriver(w, psi, h, comm, "CSVMC"), UseDrift("yes"), multiEstimator(0), Mover(0)
 {
   RootName = "csvmc";
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(UseDrift, "use_drift", "string");
+  m_param.add(UseDrift, "useDrift");
+  m_param.add(UseDrift, "usedrift");
+  m_param.add(UseDrift, "use_drift");
   equilBlocks = -1;
-  m_param.add(equilBlocks, "equilBlocks", "int");
+  m_param.add(equilBlocks, "equilBlocks");
   qmc_driver_mode.set(QMC_MULTIPLE, 1);
 }
 
@@ -58,8 +58,8 @@ bool CSVMC::put(xmlNodePtr q)
 {
   int target_min = -1;
   ParameterSet p;
-  p.add(target_min, "minimumtargetwalkers", "int");
-  p.add(target_min, "minimumsamples", "int");
+  p.add(target_min, "minimumtargetwalkers");
+  p.add(target_min, "minimumsamples");
   p.put(q);
 
   app_log() << "\n<vmc function=\"put\">"

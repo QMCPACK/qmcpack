@@ -18,7 +18,7 @@ $CXXX $CXXFLAGS $0 -o $0.$X&&$0.$X&&rm $0.$X;exit
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_CONFIG_NO_UNIQUE_ADDRESS
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__ // _TEST_MULTI_CONFIG_NO_UNIQUE_ADDRESS
 
 class A{};
 

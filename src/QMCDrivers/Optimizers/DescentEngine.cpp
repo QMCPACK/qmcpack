@@ -55,29 +55,29 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   std::string ramp_eta_str("no");
 
   ParameterSet m_param;
-  m_param.add(excited, "targetExcited", "string");
-  m_param.add(omega_, "omega", "double");
+  m_param.add(excited, "targetExcited");
+  m_param.add(omega_, "omega");
   // Type of descent method being used
-  m_param.add(flavor_, "flavor", "string");
+  m_param.add(flavor_, "flavor");
   // Step size inputs for different parameter types
-  m_param.add(tjf_2body_eta_, "TJF_2Body_eta", "double");
-  m_param.add(tjf_1body_eta_, "TJF_1Body_eta", "double");
-  m_param.add(f_eta_, "F_eta", "double");
-  m_param.add(ci_eta_, "CI_eta", "double");
-  m_param.add(gauss_eta_, "Gauss_eta", "double");
-  m_param.add(orb_eta_, "Orb_eta", "double");
+  m_param.add(tjf_2body_eta_, "TJF_2Body_eta");
+  m_param.add(tjf_1body_eta_, "TJF_1Body_eta");
+  m_param.add(f_eta_, "F_eta");
+  m_param.add(ci_eta_, "CI_eta");
+  m_param.add(gauss_eta_, "Gauss_eta");
+  m_param.add(orb_eta_, "Orb_eta");
   // Whether to gradually ramp up step sizes and over how many steps
-  m_param.add(ramp_eta_str, "Ramp_eta", "string");
-  m_param.add(ramp_num_, "Ramp_num", "int");
+  m_param.add(ramp_eta_str, "Ramp_eta");
+  m_param.add(ramp_num_, "Ramp_num");
   // If using descent as part of hybrid method, how many parameter difference
   // vectors to store
-  m_param.add(store_num_, "Stored_Vectors", "int");
-  m_param.add(print_deriv_, "print_derivs", "string");
+  m_param.add(store_num_, "Stored_Vectors");
+  m_param.add(print_deriv_, "print_derivs");
 
   // When to start storing samples for a final average and when to start
   // computing it
-  m_param.add(collection_step_, "collection_step", "int");
-  m_param.add(compute_step_, "compute_step", "int");
+  m_param.add(collection_step_, "collection_step");
+  m_param.add(compute_step_, "compute_step");
 
   app_log() << "Omega from input file: " << omega_ << std::endl;
   app_log() << "Current collection step: " << collection_step_ << std::endl;

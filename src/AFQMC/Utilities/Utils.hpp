@@ -59,7 +59,7 @@ T get_parameter(Factory& F, std::string const& obj_name, std::string const& pnam
   {
     T res(def);
     ParameterSet m_param;
-    m_param.add(res, pname.c_str(), type_to_string<T>().c_str());
+    m_param.add(res, pname.c_str());
     m_param.put(cur);
     return res;
   }

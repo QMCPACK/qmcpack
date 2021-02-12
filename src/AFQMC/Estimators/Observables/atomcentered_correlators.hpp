@@ -117,7 +117,7 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(orb_file, "filename", "std::string");
+      m_param.add(orb_file, "filename");
       m_param.put(cur);
     }
 

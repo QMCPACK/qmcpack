@@ -583,11 +583,11 @@ bool WalkerControl::put(xmlNodePtr cur)
   std::string nonblocking = "yes";
   std::string debug_disable_branching = "no";
   ParameterSet params;
-  params.add(max_copy_, "maxCopy", "int");
-  params.add(nw_target, "targetwalkers", "int");
-  params.add(nw_max, "max_walkers", "int");
-  params.add(nonblocking, "use_nonblocking", "string");
-  params.add(debug_disable_branching, "debug_disable_branching", "string");
+  params.add(max_copy_, "maxCopy");
+  params.add(nw_target, "targetwalkers");
+  params.add(nw_max, "max_walkers");
+  params.add(nonblocking, "use_nonblocking");
+  params.add(debug_disable_branching, "debug_disable_branching");
 
   bool success = params.put(cur);
 

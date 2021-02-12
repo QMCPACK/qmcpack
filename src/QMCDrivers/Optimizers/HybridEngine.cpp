@@ -42,7 +42,7 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
     {
       std::string children_MinMethod;
       ParameterSet m_param;
-      m_param.add(children_MinMethod, "MinMethod", "string");
+      m_param.add(children_MinMethod, "MinMethod");
       m_param.put(cur);
 
       if (children_MinMethod.empty())
