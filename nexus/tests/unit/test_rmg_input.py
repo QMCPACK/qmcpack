@@ -930,7 +930,7 @@ def test_generate():
             O         = 6,
             )
         nio8.structure.freeze(negate=True)
-        s_trans,rmg_inputs,R,tmatrix = nio8.structure.rmg_transform(all_results=True)
+        s_trans,rmg_inputs,R,tmatrix,bv = nio8.structure.rmg_transform(all_results=True)
         nio8.structure = s_trans
         assert(value_eq(R,np.eye(3,dtype=float)))
         assert(tmatrix is None)

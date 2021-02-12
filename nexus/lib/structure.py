@@ -3797,9 +3797,12 @@ class Structure(Sobj):
     #end def become_primitive
             
 
-    def add_kpoints(self,kpoints,kweights=None,unique=False,recenter=True):
+    def add_kpoints(self,kpoints,kweights=None,unique=False,recenter=True,cell_unit=False):
         if kweights is None:
             kweights = ones((len(kpoints),))
+        #end if
+        if cell_unit:
+            kpoints = np.dot(array(kpoints),self.kaxes)
         #end if
         self.kpoints  = append(self.kpoints,kpoints,axis=0)
         self.kweights = append(self.kweights,kweights)
@@ -5438,11 +5441,40 @@ class Structure(Sobj):
             else:
                 self.error('Unrecognized length units in structure "{}"'.format(s_trans.units))
             #end if
+            bl_type = self.rmg_lattices[rmg_lattice]
+            axes = s_trans.axes
+            if bl_type=='Cubic Primitive':
+                a = axes[0,0]
+                b = a
+                c = a
+            elif bl_type=='Tetragonal Primitive':
+                a = axes[0,0]
+                b = a
+                c = axes[2,2]
+            elif bl_type=='Orthorhombic Primitive':
+                a = axes[0,0]
+                b = axes[1,1]
+                c = axes[2,2]
+            elif bl_type=='Cubic Body Centered':
+                a = np.linalg.norm(axes[0])*2/np.sqrt(3.)
+                b = a
+                c = a
+            elif bl_type=='Cubic Face Centered':
+                a = np.linalg.norm(axes[0])*2/np.sqrt(2.)
+                b = a
+                c = a
+            elif bl_type=='Hexagonal Primitive':
+                a = np.linalg.norm(axes[0])
+                b = a
+                c = np.linalg.norm(axes[2])
+            else:
+                self.error('Unrecognized RMG bravais_lattice_type "{}"'.format(bl_type))
+            #end if
             rmg_inputs = obj(
-                bravais_lattice_type = self.rmg_lattices[rmg_lattice],
-                a_length             = np.linalg.norm(s_trans.axes[0]),
-                b_length             = np.linalg.norm(s_trans.axes[1]),
-                c_length             = np.linalg.norm(s_trans.axes[2]),
+                bravais_lattice_type = bl_type,
+                a_length             = a,
+                b_length             = b,
+                c_length             = c,
                 length_units         = rmg_units,
                 )
         #end if

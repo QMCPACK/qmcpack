@@ -9,7 +9,7 @@ from generic import obj
 from developer import to_str
 from fileio import TextFile
 from unit_converter import convert
-from simulation import SimulationAnalyzer
+from simulation import SimulationAnalyzer,Simulation
 from structure import generate_structure
 from rmg_input import RmgInput,rmg_modes
 
@@ -50,18 +50,23 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def calculation_shortmode
 
 
-    def __init__(self,log_file=None,analyze=False):
-        if log_file is None:
+    def __init__(self,arg0=None,analyze=False):
+        if arg0 is None:
             return
-        elif isinstance(log_file,str):
-            if not os.path.exists(log_file):
+        elif isinstance(arg0,Simulation):
+            sim = arg0
+            path     = sim.locdir
+            filename = sim.infile
+        else:
+            log_file = arg0
+            if not isinstance(log_file,str):
+                self.error('invalid type provided for log_file\nType expected: str\nType provided: {}'.format(log_file.__class__.__name__))
+            elif not os.path.exists(log_file):
                 self.error('RMG log output file does not exist.\nPath provided: {}'.format(log_file))
             elif not os.path.isfile(log_file):
                 self.error('Path provided for RMG log output is not a file.\nPath provided: {}'.format(log_file))
             #end if
             path,filename = os.path.split(log_file)
-        else:
-            self.error('invalid type provided for log_file\nType expected: str\nType provided: {}'.format(log_file.__class__.__name__))
         #end if
         
         self.path         = path

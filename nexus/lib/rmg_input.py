@@ -2392,6 +2392,9 @@ def write_double(v):
 
 def write_integer_array(v):
     s = '"'
+    if isinstance(v,np.ndarray):
+        v = v.flatten()
+    #end if
     for i in v:
         s+='{} '.format(i)
     #end for
@@ -2400,8 +2403,11 @@ def write_integer_array(v):
 
 def write_double_array(v):
     s = '"'
+    if isinstance(v,np.ndarray):
+        v = v.flatten()
+    #end if
     for d in v:
-        s+=double_fmt.format(i).strip()+' '
+        s+=double_fmt.format(d).strip()+' '
     #end for
     return s[:-1]+'"'
 #end def write_double_array
@@ -3363,7 +3369,15 @@ def generate_any_rmg_input(**kwargs):
         b        = 'bohr',
         angstrom = 'angstrom',
         bohr     = 'bohr'
-        )[default_units]
+        )[default_units.lower()]
+
+    rmg_units_map = obj(
+        angstrom = 'Angstrom',
+        bohr     = 'Bohr',
+        alat     = 'Alat',
+        a        = 'Angstrom',
+        b        = 'Bohr',
+        )
 
     # generate RMG input
     ri = RmgInput()
@@ -3406,6 +3420,7 @@ def generate_any_rmg_input(**kwargs):
         #end if
         if 'crds_units' not in ri:
             cu = default_units
+            
         else:
             cu = ri.crds_units.lower()
         #end if
@@ -3414,7 +3429,11 @@ def generate_any_rmg_input(**kwargs):
         elif cu=='bohr':
             system.change_units('B')
         else:
-            error('invalid crds_units.\nExpected "Angstrom" or "Bohr".\nReceived: {}'.format(cu),loc)
+            error('Invalid crds_units.\nExpected "Angstrom" or "Bohr".\nReceived: {}'.format(cu),loc)
+        #end if
+        rmg_length_units = rmg_units_map[cu]
+        if 'crd_units' not in ri and 'atomic_coordinate_type' in ri and ri.atomic_coordinate_type=='Absolute':
+            ri.crd_units = rmg_length_units
         #end if
         s = system.structure
         elem = np.array(s.elem)
@@ -3424,7 +3443,7 @@ def generate_any_rmg_input(**kwargs):
         elif act=='cell relative':
             pos = s.pos_unit().copy()
         else:
-            error('invalid atomic_coordinate_type.\nExpected "Absolute" or "Cell Relative".\nReceived: {}'.format(cu),loc)
+            error('Invalid atomic_coordinate_type.\nExpected "Absolute" or "Cell Relative".\nReceived: {}'.format(cu),loc)
         #end if
         movable = None
         if s.frozen is not None:
@@ -3457,6 +3476,10 @@ def generate_any_rmg_input(**kwargs):
                 )
         #end if
 
+        # set lattice vectors
+        ri.lattice_units  = rmg_length_units
+        ri.lattice_vector = s.axes.copy()
+
         # set wavefunction grid
         if wf_grid_spacing is not None:
             wf_grid = []
@@ -3472,14 +3495,27 @@ def generate_any_rmg_input(**kwargs):
         #end if
 
         # set occupations
-        if virtual_frac is not None:
+        has_states = False
+        has_states |= 'states_count_and_occupation' in ri
+        has_states |= 'states_count_and_occupation_up' in ri and 'states_count_and_occupation_down' in ri
+        if not has_states and virtual_frac is not None:
+            states_keys = [
+                'states_count_and_occupation',
+                'states_count_and_occupation_up',
+                'states_count_and_occupation_down',
+                ]
+            for k in states_keys:
+                if k in ri:
+                    del ri[k]
+                #end if
+            #end for
             nup,ndn = system.particles.electron_counts()
             nvirt = int(np.ceil(virtual_frac*max(nup,ndn)))
             nptot = max(nup,ndn) + nvirt
             nup_virt = nptot-nup
             ndn_virt = nptot-ndn
             if nup==ndn and not spin_polarized:
-                occ    = '{} 2.0 {} 0.0'.format(nup,nup_virt)
+                occ_up = '{} 2.0 {} 0.0'.format(nup,nup_virt)
                 ri.states_count_and_occupation = occ_up
             else:
                 occ_up = '{} 1.0 {} 0.0'.format(nup,nup_virt)
