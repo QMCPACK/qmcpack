@@ -27,17 +27,19 @@ namespace qmcplusplus
 {
 typedef enum
 {
-  V_TIMER,
+  V_TIMER = 0,
   VGL_TIMER,
   ACCEPT_TIMER,
   NL_TIMER,
   RECOMPUTE_TIMER,
   BUFFER_TIMER,
   DERIVS_TIMER,
+  PREPAREGROUP_TIMER,
   TIMER_SKIP
 } TimerEnum;
 
-static const std::vector<std::string> suffixes{"V", "VGL", "accept", "NLratio", "recompute", "buffer", "derivs"};
+static const std::vector<std::string> suffixes{"V",         "VGL",    "accept", "NLratio",
+                                               "recompute", "buffer", "derivs", "preparegroup"};
 
 TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, bool create_local_resource)
     : myName(aname),
@@ -49,6 +51,8 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, boo
       OneOverM(1.0),
       use_tasking_(tasking)
 {
+  if (suffixes.size() != TIMER_SKIP)
+    throw std::runtime_error("TrialWaveFunction::TrialWaveFunction mismatched timer enums and suffixes");
   if (create_local_resource)
     twf_resource_ = std::make_unique<ResourceCollection>("TrialWaveFunction");
 
@@ -469,6 +473,36 @@ void TrialWaveFunction::flex_calcRatio(const RefVector<TrialWaveFunction>& wf_li
   }
   else if (wf_list.size() == 1)
     ratios[0] = wf_list[0].get().calcRatio(p_list[0], iat);
+}
+
+void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
+{
+  for (int i = 0; i < Z.size(); ++i)
+    Z[i]->prepareGroup(P, ig);
+}
+
+void TrialWaveFunction::flex_prepareGroup(const RefVector<TrialWaveFunction>& wf_list,
+                                          const RefVector<ParticleSet>& P_list,
+                                          int ig)
+{
+  if (wf_list.size() > 1)
+  {
+    ScopedTimer local_timer(wf_list[0].get().TWF_timers_[PREPAREGROUP_TIMER]);
+    const int num_wfc             = wf_list[0].get().Z.size();
+    auto& wavefunction_components = wf_list[0].get().Z;
+
+    for (int i = 0, ii = PREPAREGROUP_TIMER; i < num_wfc; i++, ii += TIMER_SKIP)
+    {
+      ScopedTimer z_timer(wf_list[0].get().WFC_timers_[ii]);
+      const auto wfc_list(extractWFCRefList(wf_list, i));
+      wavefunction_components[i]->mw_prepareGroup(wfc_list, P_list, ig);
+    }
+  }
+  else if (wf_list.size() == 1)
+  {
+    for (int i = 0; i < wf_list[0].get().Z.size(); ++i)
+      wf_list[0].get().Z[i]->prepareGroup(P_list[0], ig);
+  }
 }
 
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
