@@ -36,11 +36,6 @@ SPOSet::SPOSet(bool use_OMP_offload, bool ion_deriv, bool optimizable)
   className = "invalid";
 }
 
-void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
-{
-  APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
-}
-
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                ValueVector_t& psi,
                                const ValueVector_t& psiinv,
@@ -149,7 +144,7 @@ SPOSet* SPOSet::makeClone() const
   return 0;
 }
 
-void SPOSet::basic_report(const std::string& pad)
+void SPOSet::basic_report(const std::string& pad) const
 {
   app_log() << pad << "size = " << size() << std::endl;
   app_log() << pad << "state info:" << std::endl;
@@ -204,6 +199,11 @@ void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, Va
 }
 
 #ifdef QMC_CUDA
+
+void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
+{
+  APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
+}
 
 void SPOSet::evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi)
 {
