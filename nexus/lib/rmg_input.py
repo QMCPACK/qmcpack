@@ -3480,6 +3480,15 @@ def generate_any_rmg_input(**kwargs):
         ri.lattice_units  = rmg_length_units
         ri.lattice_vector = s.axes.copy()
 
+        # set kpoints
+        if len(s.kpoints)>0:
+            kpu = s.kpoints_unit()
+            ri.kpoints = obj(
+                kpoints = kpu.copy(),
+                weights = s.kweights.copy(),
+                )
+        #end if
+
         # set wavefunction grid
         if wf_grid_spacing is not None:
             wf_grid = []
