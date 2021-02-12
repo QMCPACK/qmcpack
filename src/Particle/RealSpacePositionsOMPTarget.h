@@ -28,12 +28,11 @@ namespace qmcplusplus
 class RealSpacePositionsOMPTarget : public DynamicCoordinates
 {
 public:
-  RealSpacePositionsOMPTarget() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA_device_ptr(nullptr), is_host_position_changed_(false) {}
+  RealSpacePositionsOMPTarget() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), is_host_position_changed_(false) {}
   RealSpacePositionsOMPTarget(const RealSpacePositionsOMPTarget& in)
       : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA(in.RSoA)
   {
     RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
-    RSoA_device_ptr = getOffloadDevicePtr(RSoA.data());
     updateH2D();
   }
 
@@ -48,7 +47,6 @@ public:
     {
       RSoA.resize(n);
       RSoA_hostview.attachReference(RSoA.size(), RSoA.capacity(), RSoA.data());
-      RSoA_device_ptr = getOffloadDevicePtr(RSoA.data());
     }
   }
 
@@ -135,7 +133,7 @@ public:
       updateH2D();
   }
 
-  RealType* getDevicePtr() const { return RSoA_device_ptr; }
+  const RealType* getDevicePtr() const { return RSoA.device_data(); }
 
 private:
   ///particle positions in SoA layout
@@ -152,9 +150,6 @@ private:
 
   /// accept list
   Vector<int, OMPallocator<int, PinnedAlignedAllocator<int>>> nw_accept_list;
-
-  /// the pointer of RSoA memory on the device
-  RealType* RSoA_device_ptr;
 
   ///host view of RSoA
   PosVectorSoa RSoA_hostview;
