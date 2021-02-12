@@ -217,8 +217,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   else
   {
     //No SO channels found. Delete pp_so
-    delete pp_so;
-    pp_so = 0;
+    pp_so.reset();
   }
 }
 
@@ -302,8 +301,8 @@ bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
     app_error() << "Could not open file " << fname << std::endl;
     APP_ABORT("ECPComponentBuilder::parseCasino");
   }
-  if (pp_nonloc == 0)
-    pp_nonloc = new NonLocalECPComponent;
+  if (!pp_nonloc)
+    pp_nonloc = std::make_unique<NonLocalECPComponent>();
   OhmmsAsciiParser aParser;
   int npts = 0, idummy;
   std::string eunits("rydberg");
@@ -463,8 +462,7 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
   else
   {
     //only one component, remove non-local potentials
-    delete pp_nonloc;
-    pp_nonloc = 0;
+    pp_nonloc.reset();
   }
   {
     // Spline local potential on original grid
@@ -491,7 +489,7 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
     }
     newPloc[0]        = 0.0;
     newPloc[nloc - 1] = 1.0;
-    pp_loc            = new RadialPotentialType(grid_loc, newPloc);
+    pp_loc            = std::make_unique<RadialPotentialType>(grid_loc, newPloc);
     pp_loc->spline(0, dy0, nloc - 1, 0.0);
     // for (double r=0.0; r<3.50001; r+=0.001)
     //   fprintf (stderr, "%10.5f %10.5f\n", r, pp_loc->splint(r));

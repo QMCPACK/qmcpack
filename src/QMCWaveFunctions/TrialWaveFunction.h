@@ -97,7 +97,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian_t L;
 
-  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false);
+  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false, bool create_local_resource = true);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -120,7 +120,6 @@ public:
 
   /** add a WaveFunctionComponent
    * @param aterm a WaveFunctionComponent pointer
-   * @param aname a name to the added WaveFunctionComponent object for printing
    */
   void addComponent(WaveFunctionComponent* aterm);
 
@@ -318,7 +317,7 @@ public:
    */
   ValueType calcRatioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat);
 
-  /** batched version of ratioGrad 
+  /** batched version of ratioGrad
    *
    *  all vector sizes must match
    */
@@ -363,12 +362,21 @@ public:
   /* flexible batched version of completeUpdates.  */
   static void flex_completeUpdates(const RefVector<TrialWaveFunction>& WF_list);
 
+  /** compute gradients and laplacian of the TWF with respect to each particle.
+   *  See WaveFunctionComponent::evaluateGL for more detail */
+  LogValueType evaluateGL(ParticleSet& P, bool fromscratch);
+  /* flexible batched version of evaluateGL.
+   */
+  static void flex_evaluateGL(const RefVector<TrialWaveFunction>& WF_list,
+                              const RefVector<ParticleSet>& P_list,
+                              bool fromscratch);
+
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
 
   /* flexible batched version of registerData.
-   * 
+   *
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    * The strange mix of argument types reflect this being called from MCPopulation instead
    * of Crowd like most of the flex functions.
@@ -381,7 +389,7 @@ public:
    *  See WaveFunctionComponent::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
-  /* flexible batched version of updateBuffer. 
+  /* flexible batched version of updateBuffer.
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
   static void flex_updateBuffer(const RefVector<TrialWaveFunction>& WF_list,
@@ -392,12 +400,21 @@ public:
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
-  /* flexible batched version of copyFromBuffer. 
+  /* flexible batched version of copyFromBuffer.
    * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
    */
   void flex_copyFromBuffer(const RefVector<TrialWaveFunction>& WF_list,
                            const RefVector<ParticleSet>& P_list,
                            const RefVector<WFBufferType>& buf_list) const;
+
+  /** acquire external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  void acquireResource(ResourceCollection& collection);
+  /** release external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  void releaseResource(ResourceCollection& collection);
 
   RealType KECorrection() const;
 
@@ -442,20 +459,22 @@ public:
 
   RealType getReciprocalMass() { return OneOverM; }
 
-  /* flexible batched version of evaluateGL.
-   * TODO: split the computation from updateBuffer to evaluateGL. Expected to be called by KE
-   */
-  void flex_evaluateGL(const std::vector<TrialWaveFunction*>& WF_list, const std::vector<ParticleSet*>& P_list) const;
-
   const std::string& getName() const { return myName; }
 
   bool use_tasking() const { return use_tasking_; }
+
+  const ResourceCollection& getResource() const { return *twf_resource_; }
 
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
   ///getName is in the way
   const std::string myName;
+
+  /** a collection of shared resource used by TWF
+   * created for the gold object of TWF not clones.
+   */
+  std::unique_ptr<ResourceCollection> twf_resource_;
 
   ///starting index of the buffer
   size_t BufferCursor;
@@ -573,12 +592,14 @@ public:
                 gpu::device_vector<int>& NumCoreElecs,
                 gpu::device_vector<CUDA_PRECISION*>& QuadPosList,
                 gpu::device_vector<CUDA_PRECISION*>& RatioList,
-                int numQuadPoints);
+                int numQuadPoints,
+                ComputeType ct = ComputeType::ALL);
 
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios);
+                std::vector<ValueType>& psi_ratios,
+                ComputeType ct = ComputeType::ALL);
 
   void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
   void update(std::vector<Walker_t*>& walkers, int iat) { update(NULL, walkers, iat, NULL, 0); }

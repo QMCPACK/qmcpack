@@ -36,6 +36,8 @@ Quantum Monte Carlo Methods
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``trace``      | text         |              | no          | ???                             |
   +----------------+--------------+--------------+-------------+---------------------------------+
+  | ``profiling``  | text         | yes/no       | no          | Activate resume/pause control   |
+  +----------------+--------------+--------------+-------------+---------------------------------+
   | ``checkpoint`` | integer      | -1, 0, n     | -1          | Checkpoint frequency            |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``record``     | integer      | n            | 0           | Save configuration ever n steps |
@@ -58,6 +60,17 @@ Additional information:
 -  ``gpu``: When the executable is compiled with CUDA, the target
    computing device can be chosen by this switch. With a regular
    CPU-only compilation, this option is not effective.
+
+-  ``profiling``: Performance profiling tools by default profile complete application executions.
+   This is largely unnecessary if the focus is a QMC section instead of any initialization
+   and additional QMC sections for equilibrating walkers.
+   Setting this flag to ``yes`` for the QMC sections of interest and starting the tool with
+   data collection paused from the beginning help reducing the profiling workflow
+   and amount of collected data. Additional restriction may be imposed by profiling tools.
+   For example, NVIDIA profilers can only be turned on and off once and thus only the first QMC
+   section with ``profiling="yes"`` will be profiled.
+   VTune instead allows pause and resume for unlimited times and thus multiple selected QMC sections
+   can be profiled in a single run.
 
 -  ``checkpoint``: This enables and disables checkpointing and
    specifying the frequency of output. Possible values are:
@@ -214,11 +227,11 @@ Additional information:
   recompute) by default when not using mixed precision. Recomputing
   introduces a performance penalty dependent on system size.
 
--  ``spinMoves`` Determines whether or not the spin variables are sampled following 
+- ``spinMoves`` Determines whether or not the spin variables are sampled following
   :cite:`Melton2016-1` and :cite:`Melton2016-2`. If a relativistic calculation is desired using pseudopotentials,
   spin variable sampling is required.
 
--  ``spinMass`` If spin sampling is on using ``spinMoves`` == yes, the spin mass determines the rate 
+- ``spinMass`` If spin sampling is on using ``spinMoves`` == yes, the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`.
 
 An example VMC section for a simple VMC run:
@@ -765,7 +778,7 @@ Additional information and recommendations:
  
  -  For reporting quantities such as a final energy and associated uncertainty,
     an average over many descent steps can be taken. The parameters for 
-   ``collection_step`` and ``compute_step`` help automate this task. 
+    ``collection_step`` and ``compute_step`` help automate this task.
     After the descent iteration specified by ``collection_step``, a 
     history of local energy values will be kept for determining a final 
     error and average, which will be computed and given in the output 

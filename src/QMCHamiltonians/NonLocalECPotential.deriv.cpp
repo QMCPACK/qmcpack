@@ -13,6 +13,7 @@
 
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "CPU/BLAS.hpp"
 #include "Utilities/Timer.h"
 
 namespace qmcplusplus

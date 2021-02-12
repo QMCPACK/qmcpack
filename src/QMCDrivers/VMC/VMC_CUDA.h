@@ -32,7 +32,8 @@ public:
   VMCcuda(MCWalkerConfiguration& w,
           TrialWaveFunction& psi,
           QMCHamiltonian& h,
-          Communicate* comm);
+          Communicate* comm,
+          bool enable_profiling);
 
   bool run();
   bool runWithDrift();

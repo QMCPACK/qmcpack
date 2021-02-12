@@ -483,8 +483,8 @@ std::complex<double> determinant_from_geqrf_gpu(int N, double* m, int lda, doubl
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
   std::complex<double> res;
-  qmc_hip::hip_kernel_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr), sizeof(std::complex<double>),
-                               hipMemcpyDeviceToHost));
+  qmc_hip::hip_kernel_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr),
+                                      sizeof(std::complex<double>), hipMemcpyDeviceToHost));
   thrust::device_free(d_ptr);
   return res;
 }
@@ -503,8 +503,8 @@ std::complex<double> determinant_from_geqrf_gpu(int N,
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
   std::complex<double> res;
-  qmc_hip::hip_kernel_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr), sizeof(std::complex<double>),
-                               hipMemcpyDeviceToHost));
+  qmc_hip::hip_kernel_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr),
+                                      sizeof(std::complex<double>), hipMemcpyDeviceToHost));
   thrust::device_free(d_ptr);
   return res;
 }
@@ -551,8 +551,8 @@ std::complex<double> determinant_from_getrf_gpu(int N,
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
   std::complex<double> res;
-  qmc_hip::hip_kernel_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr), sizeof(std::complex<double>),
-                               hipMemcpyDeviceToHost));
+  qmc_hip::hip_kernel_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr),
+                                      sizeof(std::complex<double>), hipMemcpyDeviceToHost));
   thrust::device_free(d_ptr);
   return res;
 }

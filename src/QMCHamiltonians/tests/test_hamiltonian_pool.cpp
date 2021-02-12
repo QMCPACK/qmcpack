@@ -47,14 +47,12 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   xmlNodePtr root = doc.getRoot();
 
   ParticleSetPool pp(c);
-  ParticleSet* qp = createElectronParticleSet();
-  pp.addParticleSet(qp);
+  std::unique_ptr<ParticleSet> qp(createElectronParticleSet());
+  pp.addParticleSet(std::move(qp));
 
   WaveFunctionPool wfp(pp, c);
 
-  WaveFunctionFactory::PtclPoolType ptcl_pool;
-  ptcl_pool["e"]                  = qp;
-  WaveFunctionFactory* wf_factory = new WaveFunctionFactory("psi0", *qp, ptcl_pool, c);
+  WaveFunctionFactory* wf_factory = new WaveFunctionFactory("psi0", *pp.getPool()["e"], pp.getPool(), c);
   wfp.getPool()["psi0"] = wf_factory;
   wfp.setPrimary(wf_factory->getTWF());
 

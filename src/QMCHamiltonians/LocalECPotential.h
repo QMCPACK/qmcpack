@@ -44,7 +44,7 @@ struct LocalECPotential : public OperatorBase
   ///temporary energy per particle for pbyp move
   RealType PPtmp;
   ///unique set of local ECP to cleanup
-  std::vector<RadialPotentialType*> PPset;
+  std::vector<std::unique_ptr<RadialPotentialType>> PPset;
   ///PP[iat] is the local potential for the iat-th particle
   std::vector<RadialPotentialType*> PP;
   ///effective charge per ion
@@ -62,8 +62,6 @@ struct LocalECPotential : public OperatorBase
   const ParticleSet& Pion;
 
   LocalECPotential(const ParticleSet& ions, ParticleSet& els);
-
-  ~LocalECPotential();
 
   void resetTargetParticleSet(ParticleSet& P);
 
@@ -100,7 +98,7 @@ struct LocalECPotential : public OperatorBase
    * @param ppot local pseudopotential
    * @param z effective charge of groupID particle
    */
-  void add(int groupID, RadialPotentialType* ppot, RealType z);
+  void add(int groupID, std::unique_ptr<RadialPotentialType>&& ppot, RealType z);
 };
 } // namespace qmcplusplus
 #endif

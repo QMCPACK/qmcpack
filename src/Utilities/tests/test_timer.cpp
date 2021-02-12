@@ -333,14 +333,13 @@ TEST_CASE("test stack exceeded message")
     FakeTimer* t = tm.createTimer(name.str());
     timer_list.push_back(t);
   }
+
   for (int i = 0; i < StackKey::max_level + 1; i++)
-  {
     timer_list[i]->start();
-  }
-  for (int i = 0; i < StackKey::max_level + 1; i++)
-  {
+
+  for (int i = StackKey::max_level; i >= 0; i--)
     timer_list[i]->stop();
-  }
+
   REQUIRE(timer_max_level_exceeded == true);
 
   //tm.print_stack(NULL);

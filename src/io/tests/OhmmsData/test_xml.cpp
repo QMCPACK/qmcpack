@@ -129,7 +129,7 @@ TEST_CASE("putContent", "[xml]")
 TEST_CASE("AttributeSet", "[xml]")
 {
   const char* content = " \
-<simulation name=\"here\"> \
+<simulation name=\"here\" deprecated_tag=\"lmn\"> \
 </simulation>";
   Libxml2Document doc;
   bool okay = doc.parseFromString(content);
@@ -139,12 +139,23 @@ TEST_CASE("AttributeSet", "[xml]")
   OhmmsAttributeSet pattrib;
   string name  = "default_name";
   string other = "default";
+  string deprecated_tag;
   pattrib.add(name, "name");
   pattrib.add(other, "other");
-  pattrib.put(root);
+  pattrib.add(deprecated_tag, "deprecated_tag", {"abc", "def"}, TagStatus::DEPRECATED);
+  try
+  {
+    pattrib.put(root);
+  }
+  catch(std::runtime_error& exception)
+  {
+    std::cout << "Caught exception : " << exception.what() << std::endl;
+    REQUIRE(std::string(exception.what()).find("is not valid") != std::string::npos);
+  }
 
   REQUIRE(name == "here");
   REQUIRE(other == "default");
+  REQUIRE(deprecated_tag == "lmn");
 }
 
 
@@ -164,9 +175,9 @@ TEST_CASE("ParameterSet", "[xml]")
   int p1_val = 0;
   int p2_val = 0;
   int p3_val = 0;
-  param.add(p1_val, "p1", "none");
-  param.add(p2_val, "p2", "none");
-  param.add(p3_val, "p3", "none");
+  param.add(p1_val, "p1");
+  param.add(p2_val, "p2");
+  param.add(p3_val, "p3");
   param.put(root);
 
   REQUIRE(p1_val == 1);

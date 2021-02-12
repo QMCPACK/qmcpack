@@ -296,7 +296,8 @@ void QMCCostFunctionBatched::checkConfigurations()
                           std::vector<int>& samples_per_crowd, int crowd_size,
                           std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
-                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars) {
+                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
+                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
@@ -324,6 +325,19 @@ void QMCCostFunctionBatched::checkConfigurations()
       for (int ib = 0; ib < curr_crowd_size; ib++)
       {
         samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
+
+        // Set the RNG used in QMCHamiltonian.  This is used to offset the grid
+        // during spherical integration in the non-local pseudopotential.
+        // The RNG state gets reset to the same starting point in correlatedSampling
+        // to use the same grid offsets in the correlated sampling values.
+        // Currently this code sets the RNG to the same state for every configuration
+        // on this node.  Every configuration of electrons is different, and so in
+        // theory using the same spherical integration grid should not be a problem.
+        // If this needs to be changed, one possibility is to advance the RNG state
+        // differently for each configuration.  Make sure the same initialization is
+        // performed in correlatedSampling.
+        *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
+        h_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
       }
 
       // Compute distance tables.
@@ -335,45 +349,75 @@ void QMCCostFunctionBatched::checkConfigurations()
       TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
                                                     opt_data.get_log_psi_opt(), ref_dLogPsi, ref_d2LogPsi);
 
-      // Compute parameter derivatives of the wavefunction
-      int nparam = optVars.size();
-      RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
-      RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
-      TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
-
-      for (int ib = 0; ib < curr_crowd_size; ib++)
+      if (needGrads)
       {
-        int is = base_sample_index + ib;
-        for (int j = 0; j < nparam; j++)
+        // Compute parameter derivatives of the wavefunction
+        int nparam = optVars.size();
+        RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
+        RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
+        TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array,
+                                                             dhpsioverpsi_array);
+
+
+        auto energy_list = QMCHamiltonian::flex_evaluateValueAndDerivatives(h_list, p_list, optVars, dlogpsi_array,
+                                                                            dhpsioverpsi_array, compute_nlpp);
+
+        for (int ib = 0; ib < curr_crowd_size; ib++)
         {
-          DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
-          HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+          int is = base_sample_index + ib;
+          for (int j = 0; j < nparam; j++)
+          {
+            DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
+            HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+          }
+          RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
+          RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
         }
-        RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
-        RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
+
+        for (int ib = 0; ib < curr_crowd_size; ib++)
+        {
+          int is    = base_sample_index + ib;
+          auto etmp = energy_list[ib];
+          opt_data.get_e0() += etmp;
+          opt_data.get_e2() += etmp * etmp;
+
+          RecordsOnNode[is][ENERGY_NEW]   = etmp;
+          RecordsOnNode[is][ENERGY_TOT]   = etmp;
+          RecordsOnNode[is][REWEIGHT]     = 1.0;
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+
+          if (includeNonlocalH != "no")
+          {
+            OperatorBase* nlpp = h_list[ib].get().getHamiltonian(includeNonlocalH);
+            RecordsOnNode[is][ENERGY_FIXED] -= nlpp->Value;
+          }
+        }
       }
-
-      // Energy
-      auto energy_list = QMCHamiltonian::flex_evaluate(h_list, p_list);
-
-      for (int ib = 0; ib < curr_crowd_size; ib++)
+      else
       {
-        int is    = base_sample_index + ib;
-        auto etmp = energy_list[ib];
-        opt_data.get_e0() += etmp;
-        opt_data.get_e2() += etmp * etmp;
+        // Energy
+        auto energy_list = QMCHamiltonian::flex_evaluate(h_list, p_list);
 
-        RecordsOnNode[is][ENERGY_NEW]   = etmp;
-        RecordsOnNode[is][ENERGY_TOT]   = etmp;
-        RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
-        RecordsOnNode[is][REWEIGHT]     = 1.0;
+        for (int ib = 0; ib < curr_crowd_size; ib++)
+        {
+          int is    = base_sample_index + ib;
+          auto etmp = energy_list[ib];
+          opt_data.get_e0() += etmp;
+          opt_data.get_e2() += etmp * etmp;
+
+          RecordsOnNode[is][ENERGY_NEW]   = etmp;
+          RecordsOnNode[is][ENERGY_TOT]   = etmp;
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+          RecordsOnNode[is][REWEIGHT]     = 1.0;
+        }
       }
     }
   };
 
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds_, evalOptConfig, opt_eval_, samples_per_crowd, opt_batch_size_, dLogPsi, d2LogPsi,
-              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi);
+              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads, compute_nlpp,
+              includeNonlocalH);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
@@ -464,8 +508,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
   bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
   bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
-  if (compute_all_from_scratch)
-    APP_ABORT("Batched optimizer does not have support for NLPP yet");
 
   // Divide samples among crowds
   std::vector<int> samples_per_crowd(opt_num_crowds_ + 1);
@@ -477,7 +519,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
          int crowd_size, std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords,
          const SampleStack& samples, const opt_variables_type& optVars, bool compute_all_from_scratch,
-         Return_rt vmc_or_dmc, bool needGrad) {
+         Return_rt vmc_or_dmc, bool needGrad, bool compute_nlpp) {
         CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
 
@@ -507,17 +549,30 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
             samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
             // Copy the saved RNG state
             *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
+            h0_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
           }
 
           // Update distance tables, etc for the loaded sample positions
           ParticleSet::flex_update(p_list, true);
 
           // Evaluate difference in log psi
+
+          std::vector<std::unique_ptr<ParticleSet::ParticleGradient_t>> dummyG_ptr_list;
+          std::vector<std::unique_ptr<ParticleSet::ParticleLaplacian_t>> dummyL_ptr_list;
           RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
           RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
           if (compute_all_from_scratch)
           {
-            // need to have dummyG_list and dummyL_list set up
+            int nptcl = gradPsi[0]->size();
+            dummyG_ptr_list.reserve(curr_crowd_size);
+            dummyL_ptr_list.reserve(curr_crowd_size);
+            for (int i = 0; i < curr_crowd_size; i++)
+            {
+              dummyG_ptr_list.emplace_back(std::make_unique<ParticleGradient_t>(nptcl));
+              dummyL_ptr_list.emplace_back(std::make_unique<ParticleLaplacian_t>(nptcl));
+            }
+            dummyG_list = convertUPtrToRefVector(dummyG_ptr_list);
+            dummyL_list = convertUPtrToRefVector(dummyL_ptr_list);
           }
           opt_data.zero_log_psi();
 
@@ -551,9 +606,16 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
             TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array,
                                                                  dhpsioverpsi_array);
 
+
+            // Energy
+            auto energy_list = QMCHamiltonian::flex_evaluateValueAndDerivatives(h0_list, p_list, optVars, dlogpsi_array,
+                                                                                dhpsioverpsi_array, compute_nlpp);
+
             for (int ib = 0; ib < curr_crowd_size; ib++)
             {
-              int is = base_sample_index + ib;
+              int is                        = base_sample_index + ib;
+              auto etmp                     = energy_list[ib];
+              RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
               for (int j = 0; j < nparam; j++)
               {
                 if (optVars.recompute(j))
@@ -562,15 +624,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
                   HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
                 }
               }
-            }
-
-            // Energy
-            auto energy_list = QMCHamiltonian::flex_evaluate(h0_list, p_list);
-            for (int ib = 0; ib < curr_crowd_size; ib++)
-            {
-              int is                        = base_sample_index + ib;
-              auto etmp                     = energy_list[ib];
-              RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
             }
           }
           else
@@ -590,7 +643,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds_, evalOptCorrelated, opt_eval_, samples_per_crowd, opt_batch_size_, dLogPsi, d2LogPsi,
               RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, compute_all_from_scratch,
-              vmc_or_dmc, needGrad);
+              vmc_or_dmc, needGrad, compute_nlpp);
   // Sum weights over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {

@@ -19,7 +19,7 @@ PROJECT(qmcpack)
 
 SET(QMCPACK_VERSION_MAJOR 3)
 SET(QMCPACK_VERSION_MINOR 10)
-SET(QMCPACK_VERSION_PATCH 0)
+SET(QMCPACK_VERSION_PATCH 9)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
 ######################################################
@@ -28,6 +28,8 @@ SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK
 SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
+
+INCLUDE(CMake/macros.cmake)
 
 ######################################################################
 # Verify Python3 available
@@ -59,7 +61,6 @@ ENDIF()
 ######################################################################
 # CTest
 ######################################################################
-INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
 SET( DROP_METHOD "http" )
 SET( DROP_SITE "cdash.qmcpack.org" )
 SET( DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
@@ -110,20 +111,14 @@ MESSAGE( STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 SET (LIBRARY_OUTPUT_PATH ${qmcpack_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")
 SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables.")
 
-######################################################################
-# build include and library paths required for the projects
-# For XYZ library, set an environment as
-# export XYZ_HOME='root-of-the-library'
-# XYZ_HOME/include
-# XYZ_HOME/lib
-# IF XYZ library is found, XYZ_FOUND is set to true
-#
-# find_package is used with cmake 2.8 and higher
-######################################################################
-#if(APPLE)
-#  set(QMC_INCLUDE_PATHS ${QMC_INCLUDE_PATHS} /sw/include)
-#  set(QMC_LIBRARY_PATHS ${QMC_LIBRARY_PATHS} /sw/lib)
-#endif(APPLE)
+##################################
+# Set C++ standard used by QMCPACK
+##################################
+SET(QMC_CXX_STANDARD 14 CACHE STRING "QMCPACK C++ language standard")
+IF(NOT QMC_CXX_STANDARD EQUAL 14)
+  MESSAGE(WARNING "C++14 is the only language standard officially supported by this QMCPACK version. "
+                  "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
+ENDIF()
 
 ######################################################################
 # Set the compiler-time parameters
@@ -267,6 +262,9 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 OPTION(QMC_BUILD_STATIC "Link to static libraries" OFF)
 OPTION(ENABLE_TIMERS "Enable internal timers" ON)
 OPTION(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
+OPTION(USE_VTUNE_API "Enable use of VTune ittnotify APIs" OFF)
+CMAKE_DEPENDENT_OPTION(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF "ENABLE_TIMERS AND USE_VTUNE_API" OFF)
+CMAKE_DEPENDENT_OPTION(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND (QMC_CUDA OR ENABLE_CUDA)" OFF)
 
 ######################################################################
 # Install options
@@ -318,12 +316,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(ENABLE_OPENMP 0)
   SET(HAVE_ACML 0)
 
-  ######################################################
-  # Try to identify CPU identity
-  ######################################################
-  SET(CPU_IDENTITY "generic")
-  #INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
-
   #------------------------
   # On Cray's machine
   #------------------------
@@ -354,13 +346,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
       MESSAGE(FATAL_ERROR "Cray compiler wrapper detected. Empty the build folder and rerun cmake with -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment added.")
     ENDIF()
   ENDIF()
-
-  #--------------------------------
-  #  C++ 14 is the minimum standard
-  #--------------------------------
-  set(CMAKE_CXX_STANDARD 14)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(CMAKE_CXX_EXTENSIONS OFF)
 
   #------------------------------------
   # Identify the compiler -- This serves only to deal with case where only C or CXX is set, refactor? 
@@ -405,18 +390,28 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
-
-  #--------------------------------------------------------------------------
-  # Check that a C++ compiler is compatiable with the underlying libstdc++
-  #--------------------------------------------------------------------------
-  include(CMake/Testlibstdc++.cmake)
-
-  #---------------------------------------------------
-  # Check that a C++ 14 standard library is configured
-  #---------------------------------------------------
-  include(CMake/TestCxx14Library.cmake)
-
 ENDIF(CMAKE_TOOLCHAIN_FILE)
+
+###############################################
+# Set C++ minimum standard and run basic checks
+###############################################
+set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+#-----------------------------------------------------------------------
+# Check that a C++ compiler is compatiable with the underlying libstdc++
+#-----------------------------------------------------------------------
+include(CMake/Testlibstdc++.cmake)
+
+#---------------------------------------------------------
+# Check that a C++ standard library is configured properly
+#---------------------------------------------------------
+IF(QMC_CXX_STANDARD GREATER_EQUAL 17)
+  include(CMake/TestCxx17Library.cmake)
+ELSE()
+  include(CMake/TestCxx14Library.cmake)
+ENDIF()
 
 IF (ENABLE_GCOV)
   IF (NOT GCOV_SUPPORTED)
@@ -718,22 +713,22 @@ IF(QMC_CUDA OR ENABLE_CUDA)
   SET(HAVE_CUDA 1)
   MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
 ELSE(QMC_CUDA OR ENABLE_CUDA)
-  MESSAGE(STATUS "Disabling CUDA")
+  MESSAGE(STATUS "CUDA disabled")
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
-OPTION(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF)
 IF(USE_NVTX_API)
-  IF(HAVE_CUDA)
-    FIND_LIBRARY(NVTX_API_LIB
-      NAME nvToolsExt
-      HINTS ${CUDA_TOOLKIT_ROOT_DIR}
-      PATH_SUFFIXES lib lib64)
-    IF(NOT NVTX_API_LIB)
-      MESSAGE(FATAL_ERROR "USE_NVTX_API set but NVTX_API_LIB not found")
-    ENDIF(NOT NVTX_API_LIB)
-    MESSAGE("CUDA nvToolsExt library: ${NVTX_API_LIB}")
-    LINK_LIBRARIES(${NVTX_API_LIB})
-  ENDIF(HAVE_CUDA)
+  MESSAGE(STATUS "Enabling use of CUDA NVTX APIs")
+  FIND_LIBRARY(NVTX_API_LIB
+    NAME nvToolsExt
+    HINTS ${CUDA_TOOLKIT_ROOT_DIR}
+    PATH_SUFFIXES lib lib64)
+  IF(NOT NVTX_API_LIB)
+    MESSAGE(FATAL_ERROR "USE_NVTX_API set but NVTX_API_LIB not found")
+  ENDIF(NOT NVTX_API_LIB)
+  MESSAGE("CUDA nvToolsExt library: ${NVTX_API_LIB}")
+  LINK_LIBRARIES(${NVTX_API_LIB})
+ELSE()
+  MESSAGE(STATUS "CUDA NVTX APIs disabled")
 ENDIF(USE_NVTX_API)
 
 #-------------------------------------------------------------------
@@ -771,25 +766,20 @@ ENDIF(ENABLE_HIP)
 #include qmcpack/src build/src
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 
-IF (USE_VTUNE_TASKS)
-  IF (NOT ENABLE_TIMERS)
-    MESSAGE(FATAL_ERROR "USE_VTUNE_TASKS is set, but timers are not enabled.  Set ENABLE_TIMERS=ON.")
-  ENDIF()
-  SET(USE_VTUNE_API 1)
-ENDIF()
-
 IF (USE_VTUNE_API)
-  include(CheckIncludeFileCXX)
-  CHECK_INCLUDE_FILE_CXX(ittnotify.h HAVE_ITTNOTIFY_H)
-  IF (NOT HAVE_ITTNOTIFY_H)
-    MESSAGE(FATAL_ERROR "USE_VTUNE_API is defined, but the ittnotify.h include file is not found.  Check that the correct include directory is present in CMAKE_CXX_FLAGS.")
-  ENDIF()
+  MESSAGE(STATUS "Enabling use of VTune ittnotify APIs")
+  FIND_PATH(VTUNE_ITTNOTIFY_INCLUDE_DIR ittnotify.h HINTS ${VTUNE_ROOT} $ENV{VTUNE_ROOT} PATH_SUFFIXES include REQUIRED)
+  MESSAGE(STATUS "Found VTUNE_ITTNOTIFY_INCLUDE_DIR ${VTUNE_ITTNOTIFY_INCLUDE_DIR}")
+  FIND_LIBRARY(VTUNE_ITTNOTIFY_LIBRARY ittnotify HINTS ${VTUNE_ROOT} $ENV{VTUNE_ROOT} PATH_SUFFIXES lib64 lib REQUIRED)
+  MESSAGE(STATUS "Found VTUNE_ITTNOTIFY_LIBRARY ${VTUNE_ITTNOTIFY_LIBRARY}")
 
-  FIND_LIBRARY(VTUNE_ITTNOTIFY_LIBRARY ittnotify)
-  IF (NOT VTUNE_ITTNOTIFY_LIBRARY)
-    MESSAGE(FATAL_ERROR "USE_VTUNE_API is defined, but the ittnotify library is not found.  Check that correct library path is present in CMAKE_LIBRARY_PATH.")
+  INCLUDE_DIRECTORIES(${VTUNE_ITTNOTIFY_INCLUDE_DIR})
+  LINK_LIBRARIES(${VTUNE_ITTNOTIFY_LIBRARY})
+  IF (USE_VTUNE_TASKS)
+    MESSAGE(STATUS "VTune ittnotify tasks enabled")
   ENDIF()
-  LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
+ELSE()
+  MESSAGE(STATUS "VTune ittnotify APIs disabled")
 ENDIF()
 
 OPTION(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)

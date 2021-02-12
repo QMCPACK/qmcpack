@@ -35,7 +35,7 @@ class SlaterDet : public WaveFunctionComponent
 public:
   typedef DiracDeterminantBase Determinant_t;
   ///container for the DiracDeterminants
-  std::vector<Determinant_t*> Dets;
+  std::vector<std::unique_ptr<Determinant_t>> Dets;
   ///the last particle of each group
   std::vector<int> Last;
 
@@ -71,6 +71,17 @@ public:
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) override;
 
+  virtual LogValueType evaluateGL(ParticleSet& P,
+                                  ParticleSet::ParticleGradient_t& G,
+                                  ParticleSet::ParticleLaplacian_t& L,
+                                  bool fromscratch) override;
+
+  virtual void mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                             const RefVector<ParticleSet>& P_list,
+                             const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                             const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                             bool fromscratch) override;
+
   virtual void recompute(ParticleSet& P) override;
 
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
@@ -83,6 +94,12 @@ public:
   virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
+
+  void createResource(ResourceCollection& collection) override;
+
+  void acquireResource(ResourceCollection& collection) override;
+
+  void releaseResource(ResourceCollection& collection) override;
 
   virtual inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {

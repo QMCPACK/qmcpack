@@ -50,7 +50,8 @@ WaveFunctionFactory::WaveFunctionFactory(const std::string& psiName,
       targetPsi(std::make_unique<TrialWaveFunction>(psiName, tasking)),
       targetPtcl(qp),
       ptclPool(pset),
-      myNode(NULL)
+      myNode(NULL),
+      sposet_builder_factory_(c, qp, pset)
 {
   ClassName = "WaveFunctionFactory";
   myName    = psiName;
@@ -62,7 +63,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   app_summary() << std::endl;
   app_summary() << " Many-body wavefunction" << std::endl;
   app_summary() << " -------------------" << std::endl;
-  app_summary() << "  Name: " << myName << "   tasking: " << (targetPsi->use_tasking() ? "yes" : "no") << std::endl;
+  app_summary() << "  Name: " << myName << "   Tasking: " << (targetPsi->use_tasking() ? "yes" : "no") << std::endl;
   app_summary() << std::endl;
 
   ReportEngine PRE(ClassName, "build");
@@ -86,10 +87,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   {
     std::string cname((const char*)(cur->name));
     if (cname == "sposet_builder" || cname == "sposet_collection")
-    {
-      SPOSetBuilderFactory factory(myComm, targetPtcl, ptclPool);
-      factory.build_sposet_collection(cur);
-    }
+      sposet_builder_factory_.buildSPOSetCollection(cur);
     else if (cname == WaveFunctionComponentBuilder::detset_tag)
     {
       success = addFermionTerm(cur);
@@ -200,7 +198,7 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
     detbuilder = new PWOrbitalBuilder(myComm, targetPtcl, ptclPool);
   }
   else
-    detbuilder = new SlaterDetBuilder(myComm, targetPtcl, *targetPsi, ptclPool);
+    detbuilder = new SlaterDetBuilder(myComm, sposet_builder_factory_, targetPtcl, *targetPsi, ptclPool);
   targetPsi->addComponent(detbuilder->buildComponent(cur));
   addNode(detbuilder, cur);
   return true;

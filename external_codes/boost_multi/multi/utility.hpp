@@ -1,14 +1,12 @@
-#ifdef COMPILATION_INSTRUCTIONS
-$CXX -std=c++17 -xc++ $0 -o $0x&&$0x&&rm $0x;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-//  (C) Copyright Alfredo A. Correa 2018-2019
+// © Alfredo A. Correa 2018-2020
 
 #ifndef MULTI_UTILITY_HPP
 #define MULTI_UTILITY_HPP
 
 #include "detail/layout.hpp"
-
-//#include "utility/const_iterator.hpp"
 
 namespace boost{
 namespace multi{
@@ -20,25 +18,23 @@ template<>
 struct array_traits<std::array<double, 3>, void, void>{
 	using reference = double&;
 	using element = double;//std::remove_all_extents_t<T[N]>;
+	using decay_type = std::array<double, 3>;
 };
 
 template<class Array, typename Reference, typename Element>
 struct array_traits{
 	using reference = typename Array::reference;
 	using element   = typename Array::element;
+	using element_ptr = typename Array::element_ptr;
+	using decay_type = typename Array::decay_type;
+	using default_allocator_type = typename Array::default_allocator_type;
 };
 
-template<class Element>
+/*template<class Element>
 struct array_traits<Element, void, void>{
 	using reference = Element&;
 	using element   = Element;
-};
-
-template<class T, size_t N>
-struct array_traits<T[N], void, void>{
-	using reference = T&;
-	using element = std::remove_all_extents_t<T[N]>;
-};
+};*/
 
 template<class T, size_t N>
 struct array_traits<std::array<T, N>, void, void>{
@@ -47,8 +43,8 @@ struct array_traits<std::array<T, N>, void, void>{
 };
 
 template<class T, typename = typename T::rank>
-std::true_type has_rank_aux(T const&){return {};}
-inline std::false_type has_rank_aux(...){return {};}
+       std::true_type  has_rank_aux(T const&){return {};}
+inline std::false_type has_rank_aux(...     ){return {};}
 
 template<class T> struct has_rank : decltype(has_rank_aux(std::declval<T>())){};
 
@@ -78,6 +74,14 @@ constexpr auto size(Container const& con)
 //->decltype(t.size()){
 //	return t.size();}
 
+template<class Pointer, std::enable_if_t<std::is_pointer<Pointer>{}, int> =0> constexpr std::ptrdiff_t stride(Pointer){return 1;}
+template<class Pointer, std::enable_if_t<std::is_pointer<Pointer>{}, int> =0> constexpr Pointer base(Pointer d){return d;}
+
+template<class T, class U>
+auto reinterpret_pointer_cast(U* other)
+->decltype(reinterpret_cast<T*>(other)){
+	return reinterpret_cast<T*>(other);}
+
 template <class T, std::size_t N>
 constexpr auto size(const T(&)[N]) noexcept{return multi::size_type{N};}
 
@@ -106,6 +110,11 @@ constexpr
 auto to_address(T* const& t)
 ->decltype(t){
 	return t;}
+
+template<class Archive> struct archive_traits{ // TODO implemente a poors man nvp that works with boost serialization, is it possible?
+	template<class T>
+	static constexpr T& make_nvp(char const* /*name*/, T& v){return v;}
+};
 
 //template<class It>
 //constexpr auto get_allocator(It const& it)
@@ -152,8 +161,6 @@ template<class T>
 auto has_size_aux(T const& t)->decltype(t.size(), std::true_type {});
 inline auto has_size_aux(...       )->decltype(                  std::false_type{});
 template<class T> struct has_size : decltype(has_size_aux(std::declval<T>())){};
-	
-
 
 template<class T>
 auto has_data_elements_aux(T&& t)->decltype(t.data_elements(), std::true_type {});
@@ -161,12 +168,12 @@ auto has_data_elements_aux(...  )->decltype(                   std::false_type{}
 template<class T> struct has_data_elements : decltype(has_data_elements_aux(std::declval<T>())){};
 
 template<class T>
-auto has_data_aux(T&& t)->decltype(t.data(), std::true_type {});
-auto has_data_aux(...  )->decltype(          std::false_type{});
+auto has_data_aux(T&& t)->decltype(t.data_elements(), std::true_type {});
+auto has_data_aux(...  )->decltype(                   std::false_type{});
 template<class T> struct has_data : decltype(has_data_aux(std::declval<T>())){};
 
-template<class T, typename = std::enable_if_t<not has_num_elements<T>{} and not (has_size<T>{} and has_data<T>{})>> 
-constexpr size_type num_elements(T const&){return 1;}
+//template<class T, typename = std::enable_if_t<not has_num_elements<T>{} and not (has_size<T>{} and has_data<T>{})>> 
+//constexpr size_type num_elements(T const&){return 1;}
 
 template<class A, typename = std::enable_if_t<not has_num_elements<A>{} and has_size<A>{} and has_data<A>{}> >
 constexpr auto num_elements(A const& arr)
@@ -178,10 +185,10 @@ constexpr auto data_elements(A const& arr)
 ->decltype(arr.data_elements()){
 	return arr.data_elements();}
 
-template<class A, typename = std::enable_if_t<(not has_data_elements<A>{}) and (has_data<A>{} and has_size<A>{})>>
-constexpr auto data_elements(A&& arr)
+//template<class A, typename = std::enable_if_t<(not has_data_elements<A>{}) and (has_data<A>{} and has_size<A>{})>>
+//constexpr auto data_elements(A&& arr)
 //->decltype(arr.data()){
-{	return arr.data();}
+//{	return arr.data();}
 
 template<class T, typename = std::enable_if_t<not std::is_array<T>{}> >
 [[deprecated("use constexpr data_elements() or base() to extract pointer")]] 
@@ -190,14 +197,33 @@ auto data(T& t){return &t;}
 template<class T, typename = std::enable_if_t<not std::is_array<T>{} and not has_data_elements<T>{} and not has_data<T>{}>>
 constexpr auto data_elements(T& t){return &t;}
 
+//template<class T>
+//constexpr size_type num_elements(T&&) noexcept{return 1;} // this should be before the rest of `num_elements` functions?
+
+template<class A> struct num_elements_t: std::integral_constant<size_type, 1>{};
+
+template<class T, std::size_t N> struct num_elements_t<T[N]>: std::integral_constant<size_type, (N*num_elements_t<T>{})>{};
+
+template<class T, std::size_t N> struct num_elements_t<T(&)[N]>: num_elements_t<T[N]>{};
+
 template<class T, std::size_t N>
-constexpr auto num_elements(const T(&t)[N]) noexcept{return N*num_elements(t[0]);}
+constexpr auto num_elements(const T(&/*t*/)[N]) noexcept{return num_elements_t<T[N]>{};}
 
 template<class T, size_t N>
-constexpr ptrdiff_t num_elements(std::array<T, N> arr){return N*num_elements(arr[0]);}
+constexpr size_type num_elements(std::array<T, N>){return N*num_elements_t<T>{};}
+
+template<class Vector>
+constexpr auto num_elements(Vector const& v, std::enable_if_t<std::is_same<typename Vector::pointer, decltype(std::declval<Vector>().data())>{}, int> =0)
+->std::make_signed_t<decltype(v.size())>{
+	return v.size();}
+
+template<class Vector, typename = std::enable_if_t<std::is_same<typename Vector::pointer, decltype(std::declval<Vector>().data())>{}> >
+auto data_elements(Vector const& v)
+->decltype(v.data()){
+	return v.data();}
 
 template <class T, std::size_t N>
-constexpr ptrdiff_t stride(const T(&t)[N]) noexcept{return num_elements(t[0]);}
+constexpr std::ptrdiff_t stride(const T(&/*t*/)[N]) noexcept{return num_elements_t<T>{};}
 
 template <class T, std::size_t N>
 constexpr bool is_compact(const T(&)[N]) noexcept{return true;}
@@ -217,11 +243,6 @@ constexpr auto data_elements(T(&t)[N]) noexcept{return data_elements(t[0]);}
 
 //template<class T, std::size_t N>
 //constexpr auto data(const T(&t)[N]) noexcept{return data(t[0]);}
-
-template<class Container>
-auto extension(Container const& c) // TODO consider "extent"
-->decltype(multi::extension_t<std::make_signed_t<decltype(size(c))>>(0, size(c))){
-	return multi::extension_t<std::make_signed_t<decltype(size(c))>>(0, size(c));}
 
 template<class T>
 auto has_dimensionality_aux(T const& t)->decltype(t.dimensionality(), std::true_type {});
@@ -299,14 +320,14 @@ constexpr auto base(T const* t) noexcept{return t;}
 template<class T, typename = std::enable_if_t<not std::is_array<T>{}> >
 constexpr auto base(T* t) noexcept{return t;}
 
-template<class T, typename = std::enable_if_t<not std::is_array<T>{}> > 
-constexpr std::ptrdiff_t stride(T*&/*t*/) noexcept{
-	return 1;
-}
-template<class T, typename = std::enable_if_t<not std::is_array<T>{}> > 
-constexpr std::ptrdiff_t stride(T const*&/*t*/) noexcept{
-	return 1;
-}
+//template<class T, typename = std::enable_if_t<not std::is_array<T>{}> > 
+//constexpr std::ptrdiff_t stride(T*&/*t*/) noexcept{
+//	return 1;
+//}
+//template<class T, typename = std::enable_if_t<not std::is_array<T>{}> > 
+//constexpr std::ptrdiff_t stride(T const*&/*t*/) noexcept{
+//	return 1;
+//}
 
 //inline auto base(double& d){return &d;}
 //inline auto base(float& f){return &f;}
@@ -316,19 +337,32 @@ constexpr std::ptrdiff_t stride(T const*&/*t*/) noexcept{
 template<class T, std::enable_if_t<std::is_pod<std::decay_t<T>>{}, int> = 0>
 auto base(T& t){return &t;}
 
+//template<class T, std::enable_if_t<std::is_pod<std::decay_t<T>>{}, int> = 0>
+//auto stride(T& t) = delete;
+
 //template<class T> constexpr std::ptrdiff_t stride(T const*/*t*/) noexcept{return 1;}
 
-template<typename T, std::size_t N>
-constexpr std::ptrdiff_t stride(T(*&/*t*/)[N]) noexcept{return N;}
+//template<typename T, std::size_t N>
+//constexpr std::ptrdiff_t stride(T(*&/*t*/)[N]) noexcept{return N;}
 
 template<class T>
 constexpr auto corigin(const T& t){return &t;}
 template<class T, std::size_t N>
 constexpr auto corigin(const T(&t)[N]) noexcept{return corigin(t[0]);}
 
+template<class T, typename = decltype(std::declval<T>().extension())>
+       std::true_type  has_extension_aux(T const&);
+inline std::false_type has_extension_aux(...     );
+template<class T> struct has_extension : decltype(has_extension_aux(std::declval<T>())){};
+
+template<class Container, class=std::enable_if_t<not has_extension<Container>{}>>
+auto extension(Container const& c) // TODO consider "extent"
+->decltype(multi::extension_t<std::make_signed_t<decltype(size(c))>>(0, size(c))){
+	return multi::extension_t<std::make_signed_t<decltype(size(c))>>(0, size(c));}
+
 template<class T, typename = decltype(std::declval<T>().extensions())>
-std::true_type has_extensions_aux(T const&);
-inline std::false_type has_extensions_aux(...);
+       std::true_type  has_extensions_aux(T const&);
+inline std::false_type has_extensions_aux(...     );
 
 template<class T> struct has_extensions : decltype(has_extensions_aux(std::declval<T>())){};
 
@@ -376,7 +410,7 @@ auto extensions(T const& t){
 
 template<class T1> struct extensions_t_aux;
 
-template<class T1, class T2> auto extensions_t(T2 const& t2){
+template<class T1, class T2> auto extensions_(T2 const& t2){
 	return extensions_t_aux<T1>::call(t2);
 }
 /*template<class T1, class T2> auto extensions(T2 const& t2){
@@ -389,7 +423,7 @@ template<class T1, class T2> auto extensions_t(T2 const& t2){
 template<class T1> struct extension_t_aux{
 	static auto call(T1 const&){return std::make_tuple();}
 	template<class T2>
-	static auto call(T2 const& t2){return std::tuple_cat(std::make_tuple(t2.extension()), extensions_t<T1>(*begin(t2)));}
+	static auto call(T2 const& t2){return std::tuple_cat(std::make_tuple(t2.extension()), extensions_<T1>(*begin(t2)));}
 };
 
 template<class T, typename = decltype(std::declval<T const&>().layout())>
@@ -414,9 +448,7 @@ constexpr auto layout(T(&t)[N]){
 }
 
 template<class T, std::size_t N>
-constexpr auto strides(T(&t)[N]){
-	return layout(t).strides();
-}
+constexpr auto strides(T(&t)[N]){return layout(t).strides();}
 
 }}
 
@@ -429,6 +461,11 @@ namespace serialization{
 }}
 
 #if not __INCLUDE_LEVEL__ // TEST BELOW
+
+#define BOOST_TEST_DYN_LINK 
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi zero dimensionality"
+#include<boost/test/unit_test.hpp>
+
 #include<cassert>
 #include<iostream>
 #include<vector>
@@ -444,10 +481,12 @@ void f(T&& t){
 }
 
 template<class T> void f();
-int main(){
+
+BOOST_AUTO_TEST_CASE(multi_utility_test){
+
 	static_assert( std::is_same<std::iterator_traits<double const*>::value_type, double>{}, "!");
 
-	std::vector<double>::iterator it; (void)it;
+	MAYBE_UNUSED std::vector<double>::iterator it;
 	using multi::get_allocator;
 //	std::allocator<double> all = get_allocator(it);
 
@@ -474,7 +513,7 @@ int main(){
 	using std::addressof;
 //	using multi::data;
 	using multi::data_elements;
-	static_assert( std::is_same<decltype(data_elements(A)), double*>{} );
+	static_assert( std::is_same<decltype(data_elements(A)), double*>{} , "!");
 //	assert( data(A) == addressof(A[0]) );
 	assert( data_elements(A) == addressof(A[0]) );
 }{
@@ -492,7 +531,9 @@ int main(){
 	assert( corigin(A) == &A[0][0] );
 	assert( size(A) == 2 );
 	assert( std::get<0>(sizes(A)) == size(A) );
-	assert( num_elements(A) == 6. );
+	BOOST_REQUIRE( num_elements(A) == 6 );
+	static_assert( num_elements(A) == 6 , "!" );
+
 }{
 	double const A[2][3] = {{1.,2.,3.},{4.,5.,6.}};
 	assert( origin(A) == &A[0][0] );

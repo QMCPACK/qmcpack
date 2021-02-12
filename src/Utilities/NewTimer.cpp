@@ -45,6 +45,10 @@ void TimerType<CLOCK>::start()
     __itt_task_begin(manager->task_domain, __itt_null, parent_task, task_name);
 #endif
 
+#ifdef USE_NVTX_API
+    nvtxRangePushA(name.c_str());
+#endif
+
     bool is_true_master(true);
     for (int level = omp_get_level(); level > 0; level--)
       if (omp_get_ancestor_thread_num(level) != 0)
@@ -53,9 +57,6 @@ void TimerType<CLOCK>::start()
     {
       if (manager)
       {
-        if (this == manager->current_timer())
-          std::cerr << "Timer loop: " << name << std::endl;
-
         // compute current_stack_key
         TimerType* parent = manager->current_timer();
         if (parent)
@@ -90,31 +91,31 @@ void TimerType<CLOCK>::stop()
     __itt_task_end(manager->task_domain);
 #endif
 
+#ifdef USE_NVTX_API
+    nvtxRangePop();
+#endif
+
     bool is_true_master(true);
     for (int level = omp_get_level(); level > 0; level--)
       if (omp_get_ancestor_thread_num(level) != 0)
         is_true_master = false;
     if (is_true_master)
-#endif
     {
       double elapsed = CLOCK()() - start_time;
       total_time += elapsed;
       num_calls++;
 
-#ifdef USE_STACK_TIMERS
       per_stack_total_time[current_stack_key] += elapsed;
       per_stack_num_calls[current_stack_key] += 1;
 
       if (manager)
-      {
-        if (this != manager->current_timer())
-          std::cerr << "Timer stack pop not matching push! "
-                    << "Expect \"" << name << "\" but \"" << manager->current_timer()->name << "\" on the top."
-                    << std::endl;
-        manager->pop_timer();
-      }
-#endif
+        manager->pop_timer(this);
     }
+#else
+    double elapsed = CLOCK()() - start_time;
+    total_time += elapsed;
+    num_calls++;
+#endif
   }
 }
 #endif

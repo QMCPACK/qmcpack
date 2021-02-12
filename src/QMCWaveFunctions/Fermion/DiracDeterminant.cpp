@@ -29,8 +29,8 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>::DiracDeterminant(SPOSetPtr const spos, int first)
-    : DiracDeterminantBase("DiracDeterminant", spos, first), ndelay(1), invRow_id(-1)
+DiracDeterminant<DU_TYPE>::DiracDeterminant(std::shared_ptr<SPOSet>&& spos, int first)
+    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first), ndelay(1), invRow_id(-1)
 {}
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
@@ -47,6 +47,14 @@ void DiracDeterminant<DU_TYPE>::set(int first, int nel, int delay)
 
   if (Optimizable)
     Phi->buildOptVariables(nel);
+
+  if (Phi->getOrbitalSetSize() < nel)
+  {
+    std::ostringstream err_msg;
+    err_msg << "The SPOSet " << Phi->getName() << " only has " << Phi->getOrbitalSetSize() << " orbitals "
+            << "but this determinant needs at least " << nel << std::endl;
+    throw std::runtime_error(err_msg.str());
+  }
 }
 
 template<typename DU_TYPE>
@@ -95,14 +103,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
   updateEng.getInvRow(psiM, WorkingIndex, invRow);
   GradType g = simd::dot(invRow.data(), dpsiM[WorkingIndex], invRow.size());
   RatioTimer.stop();
-#ifndef NDEBUG
-  ValueType g_norm = simd::dot(g.data(), g.data(), g.Size);
-  if (std::abs(g_norm) < std::abs(std::numeric_limits<QMCTraits::ValueType>::epsilon()))
-  {
-    std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
-    throw std::runtime_error("gradient of zero");
-  }
-#endif
+  assert(checkG(g));
   return g;
 }
 
@@ -329,18 +330,25 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 template<typename DU_TYPE>
+typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateGL(
+    ParticleSet& P,
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L,
+    bool fromscratch)
+{
+  if (fromscratch)
+    evaluateLog(P, G, L);
+  else
+    updateAfterSweep(P, G, L);
+  return LogValue;
+}
+
+template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::updateBuffer(ParticleSet& P,
                                                                                          WFBufferType& buf,
                                                                                          bool fromscratch)
 {
-  if (fromscratch)
-  {
-    LogValue = evaluateLog(P, P.G, P.L);
-  }
-  else
-  {
-    updateAfterSweep(P, P.G, P.L);
-  }
+  evaluateGL(P, P.G, P.L, fromscratch);
   BufferTimer.start();
   buf.forward(Bytes_in_WFBuffer);
   buf.put(LogValue);
@@ -681,9 +689,9 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename DU_TYPE>
-DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(SPOSetPtr spo) const
+DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(spo);
+  DiracDeterminant<DU_TYPE>* dclone = new DiracDeterminant<DU_TYPE>(std::move(spo));
   dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
   return dclone;
 }

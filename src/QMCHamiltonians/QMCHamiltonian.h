@@ -184,6 +184,7 @@ public:
   inline FullPrecRealType getLocalEnergy() { return LocalEnergy; }
   ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
   inline FullPrecRealType getLocalPotential() { return LocalEnergy - KineticEnergy; }
+  inline FullPrecRealType getKineticEnergy() { return KineticEnergy; }
   void auxHevaluate(ParticleSet& P);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_properties, bool do_collectables);
@@ -230,6 +231,12 @@ public:
    */
   FullPrecRealType evaluate(ParticleSet& P);
 
+  /** evaluate Local Energy deterministically.  Defaults to evaluate(P) for operators 
+   * without a stochastic component. For the nonlocal PP, the quadrature grid is not rerandomized.  
+   * @param P ParticleSet
+   * @return Local energy. 
+   */
+  FullPrecRealType evaluateDeterministic(ParticleSet& P);
   /** batched version of evaluate for LocalEnergy 
    *
    *  Encapsulation is ignored for H_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
@@ -248,8 +255,8 @@ public:
 
   /** batched version of evaluate Local energy with Toperators updated.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(RefVector<QMCHamiltonian>& H_list,
-                                                                                  RefVector<ParticleSet>& P_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(const RefVector<QMCHamiltonian>& H_list,
+                                                                                  const RefVector<ParticleSet>& P_list);
 
 
   /** evaluate energy and derivatives wrt to the variables
@@ -264,6 +271,34 @@ public:
                                                std::vector<ValueType>& dlogpsi,
                                                std::vector<ValueType>& dhpsioverpsi,
                                                bool compute_deriv);
+
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateValueAndDerivatives(
+      RefVector<QMCHamiltonian>& H_list,
+      RefVector<ParticleSet>& P_list,
+      const opt_variables_type& optvars,
+      RecordArray<ValueType>& dlogpsi,
+      RecordArray<ValueType>& dhpsioverpsi,
+      bool compute_deriv);
+
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateValueAndDerivativesInner(
+      RefVector<QMCHamiltonian>& H_list,
+      RefVector<ParticleSet>& P_list,
+      const opt_variables_type& optvars,
+      RecordArray<ValueType>& dlogpsi,
+      RecordArray<ValueType>& dhpsioverpsi);
+
+
+  /** Evaluate the electron gradient of the local energy.
+  * @param psi Trial Wave Function
+  * @param P electron particle set
+  * @param EGrad an Nelec x 3 real array which corresponds to d/d[r_i]_j E_L
+  * @param A finite difference step size if applicable.  Default is to use finite diff with delta=1e-5.
+  * @return EGrad.  Function itself returns nothing.
+  */
+  void evaluateElecGrad(ParticleSet& P,
+                        TrialWaveFunction& psi,
+                        ParticleSet::ParticlePos_t& EGrad,
+                        RealType delta = 1e-5);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
@@ -298,10 +333,7 @@ public:
 
   /** determine if L2 potential is present
    */
-  bool has_L2()
-  {
-    return l2_ptr!=nullptr;
-  }
+  bool has_L2() { return l2_ptr != nullptr; }
 
   /** compute D matrix and K vector for L2 potential propagator
     * @param r single particle coordinate
@@ -310,8 +342,8 @@ public:
     */
   void computeL2DK(ParticleSet& P, int iel, TensorType& D, PosType& K)
   {
-    if(l2_ptr != nullptr)
-      l2_ptr->evaluateDK(P,iel,D,K);
+    if (l2_ptr != nullptr)
+      l2_ptr->evaluateDK(P, iel, D, K);
   }
 
   /** compute D matrix for L2 potential propagator
@@ -320,11 +352,11 @@ public:
     */
   void computeL2D(ParticleSet& P, int iel, TensorType& D)
   {
-    if(l2_ptr != nullptr)
-      l2_ptr->evaluateD(P,iel,D);    
+    if (l2_ptr != nullptr)
+      l2_ptr->evaluateD(P, iel, D);
   }
 
-  static std::vector<int> flex_makeNonLocalMoves(RefVector<QMCHamiltonian>& h_list, RefVector<ParticleSet>& p_list);
+  static std::vector<int> flex_makeNonLocalMoves(const RefVector<QMCHamiltonian>& h_list, const RefVector<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable

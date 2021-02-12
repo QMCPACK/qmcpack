@@ -116,18 +116,24 @@ void LCAOHDFParser::parse(const std::string& fname)
   Matrix<double> myvec(1, numMO);
 
   hin.push("Super_Twist");
-  hin.read(myvec, "eigenval_0");
-  for (int i = 0; i < numMO; i++)
-    EigVal_alpha[i] = myvec[0][i];
-
-  //Reading Eigenvals for Spin unRestricted calculation. This section is needed to set the occupation numbers
-  if (!SpinRestricted)
+  if (hin.readEntry(myvec, "eigenval_0"))
   {
-    hin.read(myvec, "eigenval_1");
+    // eigenval_0 exists on file
     for (int i = 0; i < numMO; i++)
-      EigVal_beta[i] = myvec[0][i];
-  }
+      EigVal_alpha[i] = myvec[0][i];
 
+    //Reading Eigenvals for Spin unRestricted calculation. This section is needed to set the occupation numbers
+    if (!SpinRestricted)
+    {
+      hin.read(myvec, "eigenval_1");
+      for (int i = 0; i < numMO; i++)
+        EigVal_beta[i] = myvec[0][i];
+    }
+  }
+  else
+  {
+    app_warning() << "eigenval_0 doesn't exist in h5 file. Treat all values zero." << std::endl;
+  }
   hin.close();
 
 
@@ -164,6 +170,7 @@ void LCAOHDFParser::parse(const std::string& fname)
     {
       hin.read(ci_size, "NbDet");
       hin.read(ci_nstates, "nstate");
+      hin.read(nbexcitedstates, "nexcitedstate");
       CIcoeff.clear();
       CIalpha.clear();
       CIbeta.clear();

@@ -1,5 +1,5 @@
 #ifdef COMPILATION_INSTRUCTIONS//-*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
-$CXX -D_TEST_MULTI_MEMORY_ADAPTORS_CUDA_DETAIL_ERROR -xc++ $0 -o$0x -lcudart&&$0x&&rm $0x;exit
+$CXXX $CXXFLAGS $0 -o $0x `pkg-config --cflags --libs cudart-11.1`&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -67,7 +67,7 @@ inline std::error_code make_error_code(error err) noexcept{
 
 namespace std{template<> struct is_error_code_enum<Cuda::error> : true_type{};}
 
-#ifdef _TEST_MULTI_MEMORY_ADAPTORS_CUDA_DETAIL_ERROR
+#if not __INCLUDE_LEVEL__
 
 #include<iostream>
 
@@ -80,7 +80,7 @@ int main(){
 	}
 	try{
 		auto e = Cuda::error::memory_allocation; // return from a cudaFunction
-		throw std::system_error{e, "because I cannot do something"};
+		throw std::system_error{e, "I cannot do allocation"};
 	}catch(std::system_error const& e){
 		cout
 			<<"catched...\n"

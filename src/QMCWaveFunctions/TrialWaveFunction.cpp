@@ -19,6 +19,7 @@
 #include <stdexcept>
 
 #include "TrialWaveFunction.h"
+#include "ResourceCollection.h"
 #include "Utilities/IteratorUtility.h"
 #include "Concurrency/Info.hpp"
 
@@ -38,7 +39,7 @@ typedef enum
 
 static const std::vector<std::string> suffixes{"V", "VGL", "accept", "NLratio", "recompute", "buffer", "derivs"};
 
-TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking)
+TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, bool create_local_resource)
     : myName(aname),
       BufferCursor(0),
       BufferCursor_scalar(0),
@@ -48,6 +49,9 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking)
       OneOverM(1.0),
       use_tasking_(tasking)
 {
+  if (create_local_resource)
+    twf_resource_ = std::make_unique<ResourceCollection>("TrialWaveFunction");
+
   for (auto& suffix : suffixes)
   {
     std::string timer_name = "WaveFunction:" + myName + "::" + suffix;
@@ -81,6 +85,8 @@ void TrialWaveFunction::stopOptimization()
  */
 void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm)
 {
+  if (twf_resource_)
+    aterm->createResource(*twf_resource_);
   Z.push_back(aterm);
 
   std::string aname = aterm->ClassName;
@@ -117,6 +123,10 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
     logpsi += Z[i]->evaluateLog(P, P.G, P.L);
 #endif
   }
+
+  G = P.G;
+  L = P.L;
+
   LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   return LogValue;
@@ -170,13 +180,7 @@ void TrialWaveFunction::flex_evaluateLog(const RefVector<TrialWaveFunction>& wf_
       copyToP(p_list[iw], wf_list[iw]);
   }
   else if (wf_list.size() == 1)
-  {
     wf_list[0].get().evaluateLog(p_list[0]);
-    // Ye: temporal workaround to have WF.G/L always defined.
-    // remove when KineticEnergy use WF.G/L instead of P.G/L
-    wf_list[0].get().G = p_list[0].get().G;
-    wf_list[0].get().L = p_list[0].get().L;
-  }
 }
 
 void TrialWaveFunction::recompute(ParticleSet& P)
@@ -368,11 +372,13 @@ void TrialWaveFunction::flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>
   for (int iw = 0; iw < wf_list.size(); iw++)
     copyToP(p_list[iw], wf_list[iw]);
 
-  // In cases where recompute is needed, ignore the logPsi contribution
-  // and ignore G and L.
+  // Recompute is usually used to prepare the wavefunction for NLPP derivatives.
+  // (e.g compute the matrix inverse for determinants)
+  // Call mw_evaluateLog for the wavefunction components that were skipped previously.
+  // Ignore logPsi, G and L.
   if (recompute)
     for (int i = 0, ii = RECOMPUTE_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
-      if (wavefunction_components[i]->Optimizable)
+      if (!wavefunction_components[i]->Optimizable)
       {
         ScopedTimer z_timer(wf_list[0].get().WFC_timers_[ii]);
         const auto wfc_list(extractWFCRefList(wf_list, i));
@@ -777,6 +783,80 @@ void TrialWaveFunction::flex_completeUpdates(const RefVector<TrialWaveFunction>&
     wf_list[0].get().completeUpdates();
 }
 
+TrialWaveFunction::LogValueType TrialWaveFunction::evaluateGL(ParticleSet& P, bool fromscratch)
+{
+  ScopedTimer local_timer(TWF_timers_[BUFFER_TIMER]);
+  P.G = 0.0;
+  P.L = 0.0;
+  LogValueType logpsi(0.0);
+  for (int i = 0, ii = BUFFER_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+  {
+    ScopedTimer z_timer(WFC_timers_[ii]);
+    logpsi += Z[i]->evaluateGL(P, P.G, P.L, fromscratch);
+  }
+
+  LogValue   = std::real(logpsi);
+  PhaseValue = std::imag(logpsi);
+  return logpsi;
+}
+
+void TrialWaveFunction::flex_evaluateGL(const RefVector<TrialWaveFunction>& wf_list,
+                                        const RefVector<ParticleSet>& p_list,
+                                        bool fromscratch)
+{
+  if (wf_list.size() > 1)
+  {
+    ScopedTimer local_timer(wf_list[0].get().TWF_timers_[BUFFER_TIMER]);
+
+    constexpr RealType czero(0);
+    const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
+    const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
+
+    const int num_particles = p_list[0].get().getTotalNum();
+    for (TrialWaveFunction& wfs : wf_list)
+    {
+      wfs.G.resize(num_particles);
+      wfs.L.resize(num_particles);
+      wfs.G          = czero;
+      wfs.L          = czero;
+      wfs.LogValue   = czero;
+      wfs.PhaseValue = czero;
+    }
+
+    auto& wavefunction_components = wf_list[0].get().Z;
+    const int num_wfc             = wavefunction_components.size();
+
+    for (int i = 0, ii = BUFFER_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
+    {
+      ScopedTimer z_timer(wf_list[0].get().WFC_timers_[ii]);
+      const auto wfc_list(extractWFCRefList(wf_list, i));
+      wavefunction_components[i]->mw_evaluateGL(wfc_list, p_list, g_list, l_list, fromscratch);
+      for (int iw = 0; iw < wf_list.size(); iw++)
+      {
+        wf_list[iw].get().LogValue   += std::real(wfc_list[iw].get().LogValue);
+        wf_list[iw].get().PhaseValue += std::imag(wfc_list[iw].get().LogValue);
+      }
+    }
+    auto copyToP = [](ParticleSet& pset, TrialWaveFunction& twf) {
+      pset.G = twf.G;
+      pset.L = twf.L;
+    };
+    // Ye: temporal workaround to have P.G/L always defined.
+    // remove when KineticEnergy use WF.G/L instead of P.G/L
+    for (int iw = 0; iw < wf_list.size(); iw++)
+      copyToP(p_list[iw], wf_list[iw]);
+  }
+  else if (wf_list.size() == 1)
+  {
+    wf_list[0].get().evaluateGL(p_list[0], fromscratch);
+    // Ye: temporal workaround to have WF.G/L always defined.
+    // remove when KineticEnergy use WF.G/L instead of P.G/L
+    wf_list[0].get().G = p_list[0].get().G;
+    wf_list[0].get().L = p_list[0].get().L;
+  }
+}
+
+
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
 {
   for (int i = 0; i < Z.size(); i++)
@@ -1076,7 +1156,7 @@ void TrialWaveFunction::reset() {}
 
 TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
-  TrialWaveFunction* myclone   = new TrialWaveFunction(myName, use_tasking_);
+  TrialWaveFunction* myclone   = new TrialWaveFunction(myName, use_tasking_, false);
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
@@ -1198,6 +1278,18 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
     for (int j = 0; j < t.size(); ++j)
       ratios[j] *= t[j];
   }
+}
+
+void TrialWaveFunction::acquireResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Z.size(); ++i)
+    Z[i]->acquireResource(collection);
+}
+
+void TrialWaveFunction::releaseResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Z.size(); ++i)
+    Z[i]->releaseResource(collection);
 }
 
 RefVector<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(const RefVector<TrialWaveFunction>& wf_list,

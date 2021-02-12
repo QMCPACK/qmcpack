@@ -134,7 +134,7 @@ void ECPComponentBuilder::buildL2(xmlNodePtr cur)
   vL2->spline();
 
   // save the splined L2 potential
-  pp_L2       = new L2RadialPotential();
+  pp_L2       = std::make_unique<L2RadialPotential>();
   pp_L2->vL2  = vL2;
   pp_L2->rcut = rcut;
 

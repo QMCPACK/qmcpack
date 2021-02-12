@@ -71,11 +71,11 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
   std::string alt      = "";
 
   ParameterSet m_param;
-  m_param.add(cutoff1bar, "cutoff_1bar", "double");
-  m_param.add(fileName, "filename", "std::string");
-  m_param.add(number_of_TGs, "nblocks", "int");
-  m_param.add(n_reading_cores, "num_io_cores", "int");
-  m_param.add(alt, "alternate", "std::string");
+  m_param.add(cutoff1bar, "cutoff_1bar");
+  m_param.add(fileName, "filename");
+  m_param.add(number_of_TGs, "nblocks");
+  m_param.add(n_reading_cores, "num_io_cores");
+  m_param.add(alt, "alternate");
   m_param.put(cur);
 
   // make or get TG
@@ -174,13 +174,13 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     nkpts = Idata[2];
 #endif
 
-  // MAM: this is wrong in NONCOLLINEAR, but how do I know what 
+  // MAM: this is wrong in NONCOLLINEAR, but how do I know what
   // walker type it is right here???
   // Might need to read dimensions ahead of time from hdf5 file and check consistensy
   // later
   // Also, OneBodyHamiltonian doesn't make much sense now that you have KP classes.
   // Consider refactoring this part of the code...
-  // It is not really used now, you can just read H1 in Sparse class too...  
+  // It is not really used now, you can just read H1 in Sparse class too...
 
   // 1 body hamiltonian: Why isn't this in shared memory!!!
   boost::multi::array<ValueType, 2> H1({NMO, NMO});

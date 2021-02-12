@@ -106,9 +106,12 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     AFQMCTimers[G_for_vbias_timer]->stop();
 
     StaticSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix X({long(nCV), long(nwalk * nsteps)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix vbias({long(nCV), long(nwalk)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix RNG({long(nCV), long(nwalk * nsteps)}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(nCV), long(nwalk * nsteps)},
+                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(nCV), long(nwalk)},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix RNG({long(nCV), long(nwalk * nsteps)},
+                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
     StaticSPMatrix vHSwork(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // partition G and v for communications: all cores communicate a piece of the matrix

@@ -31,6 +31,7 @@ SET(SRCS test_bare_kinetic.cpp
          test_force.cpp
          test_force_ewald.cpp
          test_stress.cpp
+         test_spacewarp.cpp
          test_ecp.cpp
          test_hamiltonian_pool.cpp
          test_hamiltonian_factory.cpp
@@ -44,6 +45,12 @@ IF(QMC_CUDA)
       test_coulomb_CUDA.cpp 
 )
 ENDIF()
+
+SET(FILES_TO_COPY Na2.structure.xml)
+
+FOREACH(fname ${FILES_TO_COPY})
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
+ENDFOREACH()
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.txt" ${UTEST_DIR})

@@ -32,10 +32,10 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   int nmax = 0;
   std::string reconfigopt("no");
   ParameterSet m_param;
-  m_param.add(nwtot, "targetWalkers", "int");
-  m_param.add(nwtot, "targetwalkers", "int");
-  m_param.add(nmax, "max_walkers", "int");
-  m_param.add(reconfigopt, "reconfiguration", "string");
+  m_param.add(nwtot, "targetWalkers");
+  m_param.add(nwtot, "targetwalkers");
+  m_param.add(nmax, "max_walkers");
+  m_param.add(reconfigopt, "reconfiguration");
   m_param.put(cur);
   //if(nmax<0) nmax=2*nideal;
   //if(nmin<0) nmin=nideal/2;

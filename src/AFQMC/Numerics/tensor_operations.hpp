@@ -42,7 +42,7 @@ void KaKjw_to_KKwaj(int nwalk,
 {
   // OpenMP: Combine Ka,Kj loops into single loop and call parallel for
   int napj = nocc_max * npol * nmo_max;
-  int na0 = 0;
+  int na0  = 0;
   for (int Ka = 0; Ka < nkpts; Ka++)
   {
     int na  = nelpk[Ka];
@@ -58,7 +58,7 @@ void KaKjw_to_KKwaj(int nwalk,
         int apj = a * npol * nmo_max;
         for (int p = 0; p < npol; p++)
         {
-          auto Gc_(A + ((na0 + a) * npol + p ) * nmo_tot * nwalk + nj0 * nwalk);
+          auto Gc_(A + ((na0 + a) * npol + p) * nmo_tot * nwalk + nj0 * nwalk);
           for (int j = 0; j < nj; j++, apj++)
           {
             for (int w = 0, wapj = 0; w < nwalk; w++, ++Gc_, wapj += napj)
@@ -294,8 +294,8 @@ void KaKjw_to_KKwaj(int nwalk,
                     device_pointer<Q> A,
                     device_pointer<T> B)
 {
-  kernels::KaKjw_to_KKwaj(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, to_address(nmo), to_address(nmo0), to_address(nocc),
-                          to_address(nocc0), to_address(A), to_address(B));
+  kernels::KaKjw_to_KKwaj(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, to_address(nmo), to_address(nmo0),
+                          to_address(nocc), to_address(nocc0), to_address(A), to_address(B));
 }
 
 template<typename T, typename Q>
@@ -313,8 +313,8 @@ void KaKjw_to_QKajw(int nwalk,
                     device_pointer<Q> A,
                     device_pointer<T> B)
 {
-  kernels::KaKjw_to_QKajw(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, to_address(nmo), to_address(nmo0), to_address(nocc),
-                          to_address(nocc0), to_address(QKtok2), to_address(A), to_address(B));
+  kernels::KaKjw_to_QKajw(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, to_address(nmo), to_address(nmo0),
+                          to_address(nocc), to_address(nocc0), to_address(QKtok2), to_address(A), to_address(B));
 }
 
 template<typename T, typename Q>

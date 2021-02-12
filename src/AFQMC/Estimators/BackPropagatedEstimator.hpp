@@ -55,7 +55,7 @@ class BackPropagatedEstimator : public EstimatorBase
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_,
@@ -89,13 +89,13 @@ public:
       ParameterSet m_param;
       std::string restore_paths;
       std::string restore_paths2;
-      m_param.add(nStabilize, "ortho", "int");
-      m_param.add(max_nback_prop, "nsteps", "int");
-      m_param.add(nave, "naverages", "int");
-      m_param.add(restore_paths, "path_restoration", "std::string");
-      m_param.add(restore_paths2, "extra_path_restoration", "std::string");
-      m_param.add(block_size, "block_size", "int");
-      m_param.add(nblocks_skip, "nskip", "int");
+      m_param.add(nStabilize, "ortho");
+      m_param.add(max_nback_prop, "nsteps");
+      m_param.add(nave, "naverages");
+      m_param.add(restore_paths, "path_restoration");
+      m_param.add(restore_paths2, "extra_path_restoration");
+      m_param.add(block_size, "block_size");
+      m_param.add(nblocks_skip, "nskip");
       m_param.put(cur);
       if (restore_paths == "true" || restore_paths == "yes")
         path_restoration = true;

@@ -484,7 +484,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
 
   // map from [0:2*NMO) to [0:NMO) in collinear case
-  int k0_alpha, k0_beta, kN_alpha = 0, kN_beta = 0;
+  int k0_alpha = 0, k0_beta = 0, kN_alpha = 0, kN_beta = 0;
   if (k0 >= 0)
   {
     k0_alpha = std::min(k0, NMO);
@@ -494,10 +494,6 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
       k0_beta = std::max(k0, NMO) - NMO;
       kN_beta = std::max(kN, NMO) - NMO;
     }
-  }
-  else
-  {
-    k0_alpha = k0_beta = kN_alpha = kN_beta = 0;
   }
 
   int ak0, ak1;
@@ -621,10 +617,14 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
  *       - In this case, to preserve matrix dimenions, [s][k] --> [sk] is kept as a single index.
  */
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
-void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lank, MultiArray2D&& buff, bool noncollinear=false)
+void getLank(MultiArray2DA&& Aai,
+             MultiArray3DB&& Likn,
+             MultiArray3DC&& Lank,
+             MultiArray2D&& buff,
+             bool noncollinear = false)
 {
   int npol = noncollinear ? 2 : 1;
-  int na = Aai.size(0);
+  int na   = Aai.size(0);
   if (na == 0)
     return;
   int ni    = Aai.size(1) / npol;
@@ -633,14 +633,14 @@ void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lank, Mu
   assert(Likn.size(0) == ni);
   assert(Lank.size(0) == na);
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nk*npol);
+  assert(Lank.size(2) == nk * npol);
   assert(buff.size(0) >= npol * nk);
   assert(buff.size(1) >= nchol);
-  if(noncollinear)
+  if (noncollinear)
     assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
 
   using elementA = typename std::decay<MultiArray2DA>::type::element;
-  using element = typename std::decay<MultiArray3DC>::type::element;
+  using element  = typename std::decay<MultiArray3DC>::type::element;
   boost::multi::array_ref<elementA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
   boost::multi::array_ref<element, 2> Li_kn(to_address(Likn.origin()), {ni, nk * nchol});
   boost::multi::array_ref<element, 2> Las_kn(to_address(Lank.origin()), {na * npol, nk * nchol});
@@ -664,10 +664,14 @@ void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lank, Mu
  *       - In this case, to preserve matrix dimenions, [s][k] --> [sk] is kept as a single index.
  */
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
-void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin, MultiArray3DC&& Lank, MultiArray2D&& buff, bool noncollinear=false)
+void getLank_from_Lkin(MultiArray2DA&& Aai,
+                       MultiArray3DB&& Lkin,
+                       MultiArray3DC&& Lank,
+                       MultiArray2D&& buff,
+                       bool noncollinear = false)
 {
   int npol = noncollinear ? 2 : 1;
-  int na = Aai.size(0);
+  int na   = Aai.size(0);
   if (na == 0)
     return;
   int ni    = Aai.size(1) / npol;
@@ -678,10 +682,10 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin, MultiArray3DC&
   assert(Lank.size(1) == nchol);
   assert(Lank.size(2) == nk * npol);
   assert(buff.num_elements() >= na * npol * nchol);
-  if(noncollinear)
+  if (noncollinear)
     assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
 
-  using Type = typename std::decay<MultiArray3DC>::type::element;
+  using Type     = typename std::decay<MultiArray3DC>::type::element;
   using elementA = typename std::decay<MultiArray2DA>::type::element;
   boost::multi::array_ref<elementA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
   boost::multi::array_ref<Type, 2> bnas(to_address(buff.origin()), {nchol, na * npol});
@@ -693,7 +697,7 @@ void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin, MultiArray3DC&
     for (int a = 0; a < na; a++)
       for (int n = 0; n < nchol; n++)
         for (int p = 0; p < npol; p++)
-          Lank[a][n][p*nk+k] = bnas[n][a*npol+p];
+          Lank[a][n][p * nk + k] = bnas[n][a * npol + p];
   }
 }
 
@@ -703,10 +707,14 @@ namespace ma_rotate_padded
 {
 // designed for padded arrays
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC>
-void getLakn_Lank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lakn, MultiArray3DC&& Lank, bool noncollinear=false)
+void getLakn_Lank(MultiArray2DA&& Aai,
+                  MultiArray3DB&& Likn,
+                  MultiArray3DC&& Lakn,
+                  MultiArray3DC&& Lank,
+                  bool noncollinear = false)
 {
   int npol = noncollinear ? 2 : 1;
-  int na = Aai.size(0);
+  int na   = Aai.size(0);
   if (na == 0)
     return;
   int ni = Aai.size(1) / npol;
@@ -715,15 +723,15 @@ void getLakn_Lank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lak
   int nchol = Likn.size(2);
   assert(Likn.size(1) == nmo);
 
-  assert(Lakn.size(1) == npol*nmo);
+  assert(Lakn.size(1) == npol * nmo);
   assert(Lakn.size(2) == nchol);
 
-  assert(Lakn.size(0) >= na );
+  assert(Lakn.size(0) >= na);
   assert(Lakn.size(0) == Lank.size(0));
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == npol*nmo);
+  assert(Lank.size(2) == npol * nmo);
 
-  if(noncollinear)
+  if (noncollinear)
     assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
 
   using elmA = typename std::decay<MultiArray2DA>::type::element;
@@ -745,10 +753,10 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
                             MultiArray3DC&& Lakn,
                             MultiArray3DC&& Lank,
                             MultiArray2D&& buff,
-                            bool noncollinear=false)
+                            bool noncollinear = false)
 {
   int npol = noncollinear ? 2 : 1;
-  int na = Aai.size(0);
+  int na   = Aai.size(0);
   if (na == 0)
     return;
   int ni = Aai.size(1) / npol;
@@ -757,15 +765,15 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
   int nchol = Lkin.size(2);
   assert(Lkin.size(1) == nmo);
 
-  assert(Lakn.size(1) == npol*nmo);
+  assert(Lakn.size(1) == npol * nmo);
   assert(Lakn.size(2) == nchol);
 
-  assert(Lakn.size(0) >= na );
+  assert(Lakn.size(0) >= na);
   assert(Lakn.size(0) == Lank.size(0));
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == npol*nmo);
+  assert(Lank.size(2) == npol * nmo);
 
-  if(noncollinear)
+  if (noncollinear)
     assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
 
   assert(buff.num_elements() >= na * npol * nchol);
@@ -782,7 +790,7 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
     ma::product(ma::H(Lkin[k].sliced(0, ni)), ma::T(Aas_i), bnas);
     for (int a = 0; a < na; a++)
       for (int p = 0; p < npol; p++)
-        Lakn[a][p*nmo+k] = bnas({0, nchol}, a*npol+p);
+        Lakn[a][p * nmo + k] = bnas({0, nchol}, a * npol + p);
   }
   for (int a = 0; a < na; a++)
     ma::transpose(Lakn[a], Lank[a]);

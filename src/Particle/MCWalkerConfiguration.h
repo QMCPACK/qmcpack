@@ -23,10 +23,10 @@
 #ifndef QMCPLUSPLUS_MCWALKERCONFIGURATION_H
 #define QMCPLUSPLUS_MCWALKERCONFIGURATION_H
 #include "Particle/ParticleSet.h"
+#include "Particle/WalkerConfigurations.h"
 #include "Particle/Walker.h"
 #include "Particle/SampleStack.h"
 #include "Utilities/IteratorUtility.h"
-//#include "Particle/Reptile.h"
 
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
@@ -57,7 +57,7 @@ class Reptile;
 
  *</ul>
  */
-class MCWalkerConfiguration : public ParticleSet
+class MCWalkerConfiguration : public ParticleSet, public WalkerConfigurations
 {
 public:
   /**enumeration for update*/
@@ -68,6 +68,7 @@ public:
     Update_Particle ///move a particle by particle
   };
 
+  using Walker_t = WalkerConfigurations::Walker_t;
   ///container type of the Properties of a Walker
   typedef Walker_t::PropertyContainer_t PropertyContainer_t;
   ///container type of Walkers
@@ -78,16 +79,6 @@ public:
   typedef WalkerList_t::const_iterator const_iterator;
 
   typedef std::vector<Reptile*> ReptileList_t;
-  /** starting index of the walkers in a processor group
-   *
-   * WalkerOffsets[0]=0 and WalkerOffsets[WalkerOffsets.size()-1]=total number of walkers in a group
-   * WalkerOffsets[processorid+1]-WalkerOffsets[processorid] is equal to the number of walkers on a processor,
-   * i.e., W.getActiveWalkers().
-   * WalkerOffsets is added to handle parallel I/O with hdf5
-   */
-  std::vector<int> WalkerOffsets;
-
-  MCDataType<FullPrecRealType> EnsembleProperty;
 
   // Data for GPU-acceleration via CUDA
   // These hold a list of pointers to the positions, gradients, and
@@ -132,133 +123,27 @@ public:
   ///default constructor: copy only ParticleSet
   MCWalkerConfiguration(const MCWalkerConfiguration& mcw);
 
-  ///default destructor
-  ~MCWalkerConfiguration();
-
   /** create numWalkers Walkers
    *
    * Append Walkers to WalkerList.
    */
   void createWalkers(int numWalkers);
-  /** create walkers
-   * @param first walker iterator
-   * @param last walker iterator
-   */
-  void createWalkers(iterator first, iterator last);
-  /** copy walkers
-   * @param first input walker iterator
-   * @param last input walker iterator
-   * @param start first target iterator
-   *
-   * No memory allocation is allowed.
-   */
-  void copyWalkers(iterator first, iterator last, iterator start);
-
-  /** destroy Walkers from itstart to itend
-   *@param first starting iterator of the walkers
-   *@param last ending iterator of the walkers
-   */
-  iterator destroyWalkers(iterator first, iterator last);
-
-  /** destroy Walkers
-   *@param nw number of walkers to be destroyed
-   */
-  void destroyWalkers(int nw);
-
-  /** copy the pointers to the Walkers to WalkerList
-   * @param head pointer to the head walker
-   * @param tail pointer to the tail walker
-   *
-   * \todo I believe this can/should be deleted
-   * Special function introduced to work with Reptation method.
-   * Clear the current WalkerList and add two walkers, head and tail.
-   * OwnWalkers are set to false.
-   */
-  void copyWalkerRefs(Walker_t* head, Walker_t* tail);
-
-  /** make fake walker list for testing
-   */
-  void fakeWalkerList(Walker_t* first, Walker_t* second);
-
   ///clean up the walker list and make a new list
   void resize(int numWalkers, int numPtcls);
+
+  ///clean up the walker list
+  using WalkerConfigurations::clear;
+  ///resize Walker::PropertyHistory and Walker::PHindex:
+  void resizeWalkerHistories();
 
   ///make random moves for all the walkers
   //void sample(iterator first, iterator last, value_type tauinv);
   ///make a random move for a walker
   void sample(iterator it, RealType tauinv);
 
-  ///return the number of active walkers
-  inline size_t getActiveWalkers() const { return WalkerList.size(); }
-  ///return the total number of active walkers among a MPI group
-  inline size_t getGlobalNumWalkers() const { return GlobalNumWalkers; }
-  ///return the total number of active walkers among a MPI group
-  inline void setGlobalNumWalkers(size_t nw)
-  {
-    GlobalNumWalkers            = nw;
-    EnsembleProperty.NumSamples = nw;
-    EnsembleProperty.Weight     = nw;
-  }
-
-  inline void setWalkerOffsets(const std::vector<int>& o) { WalkerOffsets = o; }
-
   ///return the number of particles per walker
   inline int getParticleNum() const { return R.size(); }
-
-  /// return the first iterator
-  inline iterator begin() { return WalkerList.begin(); }
-  /// return the last iterator, [begin(), end())
-  inline iterator end() { return WalkerList.end(); }
-
-  /// return the first const_iterator
-  inline const_iterator begin() const { return WalkerList.begin(); }
-
-  /// return the last const_iterator  [begin(), end())
-  inline const_iterator end() const { return WalkerList.end(); }
   /**@}*/
-
-  /** clear the WalkerList without destroying them
-   *
-   * Provide std::vector::clear interface
-   */
-  inline void clear() { WalkerList.clear(); }
-
-  /** insert elements
-   * @param it locator where the inserting begins
-   * @param first starting iterator
-   * @param last ending iterator
-   *
-   * Provide std::vector::insert interface
-   */
-  template<class INPUT_ITER>
-  inline void insert(iterator it, INPUT_ITER first, INPUT_ITER last)
-  {
-    WalkerList.insert(it, first, last);
-  }
-
-  /** add Walker_t* at the end
-   * @param awalker pointer to a walker
-   *
-   * Provide std::vector::push_back interface
-   */
-  inline void push_back(Walker_t* awalker) { WalkerList.push_back(awalker); }
-
-  ///resize Walker::PropertyHistory and Walker::PHindex:
-  void resizeWalkerHistories();
-
-  /** delete the last Walker_t*
-   *
-   * Provide std::vector::pop_back interface
-   */
-  inline void pop_back()
-  {
-    delete WalkerList.back();
-    WalkerList.pop_back();
-  }
-
-  inline Walker_t* operator[](int i) { return WalkerList[i]; }
-
-  inline const Walker_t* operator[](int i) const { return WalkerList[i]; }
 
   /** set LocalEnergy
    * @param e current average Local Energy
@@ -273,9 +158,15 @@ public:
 
   inline void setPolymer(MultiChain* chain) { Polymer = chain; }
 
-  /** reset the Walkers
-   */
-  void reset();
+  template<typename ForwardIter>
+  inline void putConfigurations(ForwardIter target)
+  {
+    int ds = OHMMS_DIM * TotalNum;
+    for (iterator it = WalkerList.begin(); it != WalkerList.end(); ++it, target += ds)
+    {
+      copy(get_first_address((*it)->R), get_last_address((*it)->R), target);
+    }
+  }
 
   void resetWalkerProperty(int ncopy = 1);
 
@@ -315,24 +206,6 @@ public:
   /// Transitional forwarding methods
   int getMaxSamples() const;
   //@}
-
-  template<typename ForwardIter>
-  inline void putConfigurations(ForwardIter target)
-  {
-    int ds = OHMMS_DIM * TotalNum;
-    for (iterator it = WalkerList.begin(); it != WalkerList.end(); ++it, target += ds)
-    {
-      copy(get_first_address((*it)->R), get_last_address((*it)->R), target);
-    }
-  }
-
-  inline void resetWalkerParents()
-  {
-    for (iterator it = WalkerList.begin(); it != WalkerList.end(); ++it)
-    {
-      (*it)->ParentID = (*it)->ID;
-    }
-  }
 
 #ifdef QMC_CUDA
   inline void setklinear() { klinear = true; }
@@ -413,14 +286,8 @@ public:
 #endif
 
 protected:
-  ///boolean for cleanup
-  bool OwnWalkers;
   ///true if the buffer is ready for particle-by-particle updates
   bool ReadyForPbyP;
-  ///number of walkers on a node
-  int LocalNumWalkers;
-  ///number of walkers shared by a MPI group
-  size_t GlobalNumWalkers;
   ///update-mode index
   int UpdateMode;
 #ifdef QMC_CUDA
@@ -443,8 +310,6 @@ protected:
   RealType LocalEnergy;
 
 public:
-  ///a collection of walkers
-  WalkerList_t WalkerList;
   ///a collection of reptiles contained in MCWalkerConfiguration.
   ReptileList_t ReptileList;
   Reptile* reptile;

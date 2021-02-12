@@ -32,7 +32,7 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) : W
   for (int i = 0; i < Last.size(); ++i)
     Last[i] = targetPtcl.last(i) - 1;
 
-  Dets.resize(targetPtcl.groups(), nullptr);
+  Dets.resize(targetPtcl.groups());
 }
 
 ///destructor
@@ -49,7 +49,7 @@ void SlaterDet::add(Determinant_t* det, int ispin)
     APP_ABORT("SlaterDet::add(Determinant_t* det, int ispin) is alreaded instantiated.");
   }
   else
-    Dets[ispin] = det;
+    Dets[ispin].reset(det);
   Optimizable = Optimizable || det->Optimizable;
 }
 
@@ -155,6 +155,37 @@ void SlaterDet::mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
   }
 }
 
+SlaterDet::LogValueType SlaterDet::evaluateGL(ParticleSet& P,
+                                              ParticleSet::ParticleGradient_t& G,
+                                              ParticleSet::ParticleLaplacian_t& L,
+                                              bool from_scratch)
+{
+  LogValue = 0.0;
+  for (int i = 0; i < Dets.size(); ++i)
+    LogValue += Dets[i]->evaluateGL(P, G, L, from_scratch);
+  return LogValue;
+}
+
+void SlaterDet::mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                              const RefVector<ParticleSet>& P_list,
+                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                              bool fromscratch)
+{
+  constexpr LogValueType czero(0);
+
+  for (WaveFunctionComponent& wfc : WFC_list)
+    wfc.LogValue = czero;
+
+  for (int i = 0; i < Dets.size(); ++i)
+  {
+    const auto Det_list(extract_DetRef_list(WFC_list, i));
+    Dets[i]->mw_evaluateGL(Det_list, P_list, G_list, L_list, fromscratch);
+    for (int iw = 0; iw < WFC_list.size(); iw++)
+      WFC_list[iw].get().LogValue += Det_list[iw].get().LogValue;
+  }
+}
+
 void SlaterDet::recompute(ParticleSet& P)
 {
   for (int i = 0; i < Dets.size(); ++i)
@@ -175,6 +206,24 @@ void SlaterDet::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
     //  app_log()<<"tmp = "<<tmp<< std::endl<< std::endl;
     grad_grad_psi += tmp;
   }
+}
+
+void SlaterDet::createResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Dets.size(); ++i)
+    Dets[i]->createResource(collection);
+}
+
+void SlaterDet::acquireResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Dets.size(); ++i)
+    Dets[i]->acquireResource(collection);
+}
+
+void SlaterDet::releaseResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < Dets.size(); ++i)
+    Dets[i]->releaseResource(collection);
 }
 
 void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
@@ -209,7 +258,7 @@ WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
   myclone->Optimizable = Optimizable;
   for (int i = 0; i < Dets.size(); ++i)
   {
-    Determinant_t* newD = Dets[i]->makeCopy(Dets[i]->getPhi()->makeClone());
+    Determinant_t* newD = Dets[i]->makeCopy(std::unique_ptr<SPOSet>(Dets[i]->getPhi()->makeClone()));
     myclone->add(newD, i);
   }
   return myclone;

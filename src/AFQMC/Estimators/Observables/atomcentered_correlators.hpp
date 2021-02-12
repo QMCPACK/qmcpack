@@ -72,8 +72,8 @@ class atomcentered_correlators : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix          = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
-  using Static3Tensor         = boost::multi::static_array<ComplexType, 3, shm_stack_alloc_type>;
+  using StaticMatrix         = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
+  using Static3Tensor        = boost::multi::static_array<ComplexType, 3, shm_stack_alloc_type>;
 
   // MAM: Note -
   // This class uses lots of memory, but can be safely moved to single precision.
@@ -117,7 +117,7 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(orb_file, "filename", "std::string");
+      m_param.add(orb_file, "filename");
       m_param.put(cur);
     }
 
@@ -312,14 +312,11 @@ public:
     {
       int nwlk = std::min(nwbatch, nw - iw0);
 
-      Static3Tensor QwI({nwlk, NAO, NMO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-      Static3Tensor MwIJ({nwlk, NAO, NAO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-      Static3Tensor devNwIJ({nwlk, nsites, nsites}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-      StaticMatrix devNwI({nwlk, nsites}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Static3Tensor QwI({nwlk, NAO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Static3Tensor MwIJ({nwlk, NAO, NAO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      Static3Tensor devNwIJ({nwlk, nsites, nsites},
+                            buffer_manager.get_generator().template get_allocator<ComplexType>());
+      StaticMatrix devNwI({nwlk, nsites}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
       for (int is = 0; is < nsp; ++is)
       {

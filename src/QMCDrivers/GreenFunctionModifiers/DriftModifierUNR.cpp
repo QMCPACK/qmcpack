@@ -92,7 +92,7 @@ void DriftModifierUNR::getDrifts(RealType tau, const std::vector<GradType>& qf, 
 bool DriftModifierUNR::parseXML(xmlNodePtr cur)
 {
   ParameterSet m_param;
-  m_param.add(a_, "drift_UNR_a", "double");
+  m_param.add(a_, "drift_UNR_a");
   m_param.put(cur);
   app_log() << "  Set drift_modifier UNR parameter a = " << a_ << std::endl;
   return true;

@@ -18,6 +18,9 @@
 
 namespace qmcplusplus
 {
+
+class ResourceCollection;
+
 namespace testing
 {
 /** mock class to avoid testing dependency between Crowd and MCPopulation
@@ -31,6 +34,8 @@ public:
   std::vector<std::reference_wrapper<ParticleSet>> walker_elecs_;
   std::vector<std::reference_wrapper<TrialWaveFunction>> walker_twfs_;
   std::vector<std::reference_wrapper<QMCHamiltonian>> walker_hamiltonians_;
+
+  void initializeResources(const ResourceCollection& twf_resource) {}
 
   void addWalker(Walker<QMCTraits, PtclOnLatticeTraits>& walker,
                  ParticleSet& elecs,
