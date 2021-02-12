@@ -143,6 +143,11 @@ public:
   // returns a pointer of i-th row
   inline const_pointer data() const { return X.data(); }
 
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  inline pointer device_data() { return X.device_data(); }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  inline const_pointer device_data() const { return X.device_data(); }
+
   // returns a const pointer of i-th row
   inline const Type_t* data(size_type i) const { return X.data() + i * D2; }
 

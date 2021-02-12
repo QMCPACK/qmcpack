@@ -17,9 +17,21 @@
 #include <memory>
 #include <type_traits>
 #include "config.h"
+#include "allocator_traits.hpp"
 
 namespace qmcplusplus
 {
+template<typename T>
+T* getOffloadDevicePtr(T* host_ptr)
+{
+  T* device_ptr;
+  PRAGMA_OFFLOAD("omp target data use_device_ptr(host_ptr)")
+  {
+    device_ptr = host_ptr;
+  }
+  return device_ptr;
+}
+
 template<typename T, class HostAllocator = std::allocator<T>>
 struct OMPallocator : public HostAllocator
 {
@@ -29,8 +41,10 @@ struct OMPallocator : public HostAllocator
   using const_pointer = typename HostAllocator::const_pointer;
 
   OMPallocator() = default;
+  OMPallocator(const OMPallocator&) : device_ptr(nullptr) {}
+  OMPallocator& operator=(const OMPallocator&) { device_ptr = nullptr; }
   template<class U, class V>
-  OMPallocator(const OMPallocator<U, V>&)
+  OMPallocator(const OMPallocator<U, V>&) : device_ptr(nullptr)
   {}
   template<class U, class V>
   struct rebind
@@ -43,6 +57,7 @@ struct OMPallocator : public HostAllocator
     static_assert(std::is_same<T, value_type>::value, "OMPallocator and HostAllocator data types must agree!");
     value_type* pt = HostAllocator::allocate(n);
     PRAGMA_OFFLOAD("omp target enter data map(alloc:pt[0:n])")
+    device_ptr = getOffloadDevicePtr(pt);
     return pt;
   }
 
@@ -51,18 +66,27 @@ struct OMPallocator : public HostAllocator
     PRAGMA_OFFLOAD("omp target exit data map(delete:pt[0:n])")
     HostAllocator::deallocate(pt, n);
   }
+
+  T* getDevicePtr() { return device_ptr; }
+  const T* getDevicePtr() const { return device_ptr; }
+
+private:
+  // pointee is on device.
+  T* device_ptr = nullptr;
 };
 
-template<typename T>
-T* getOffloadDevicePtr(T* host_ptr)
+template<typename T, class HostAllocator>
+struct allocator_traits<OMPallocator<T, HostAllocator>>
 {
-  T* device_ptr;
-  PRAGMA_OFFLOAD("omp target data use_device_ptr(host_ptr)")
+  static const bool is_host_accessible = true;
+  static const bool is_dual_space = true;
+
+  static void fill_n(T* ptr, size_t n, const T& value)
   {
-    device_ptr = host_ptr;
+    allocator_traits<HostAllocator>::fill_n(ptr, n, value);
+    //PRAGMA_OFFLOAD("omp target update to(ptr[:n])")
   }
-  return device_ptr;
-}
+};
 
 } // namespace qmcplusplus
 
