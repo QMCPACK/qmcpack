@@ -135,7 +135,7 @@ public:
     // the new Binv is [[X Y] [Z sigma]]
     BLAS::gemv('T', norb, delay_count + 1, -cone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
     // sigma
-    const T sigma                  = T(1) / ratio_new;
+    const T sigma                  = static_cast<T>(RATIOT(1) / ratio_new);
     Binv[delay_count][delay_count] = sigma;
     // Y
     BLAS::gemv('T', delay_count, delay_count, sigma, Binv.data(), lda_Binv, p.data(), 1, czero,
