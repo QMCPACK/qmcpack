@@ -155,7 +155,7 @@ void LinFitSVD (Array<double,1> &y, Array<double,1> &sigma,  // inputs
 
 // This is a version of the above that allows certain basis functions
 // to be pinned and not adjusted
-double
+void
 LinFitSVD (Array<double,1> &y, Array<double,1> &sigma,  // inputs
 	   Array<double,2> &F, Array<bool,  1> &adjust,  // inputs
 	   Array<double,1> &t, Array<double,1> &errors, // outputs
