@@ -90,10 +90,7 @@ public:
    * @param norb number of electrons/orbitals
    * @param delay, maximum delay 0<delay<=norb
    */
-  inline void resize(int norb, int delay)
-  {
-    psiMinv.resize(norb, getAlignedSize<T>(norb));
-  }
+  inline void resize(int norb, int delay) { psiMinv.resize(norb, getAlignedSize<T>(norb)); }
 
   void createResource(ResourceCollection& collection) {}
   void acquireResource(ResourceCollection& collection) {}
