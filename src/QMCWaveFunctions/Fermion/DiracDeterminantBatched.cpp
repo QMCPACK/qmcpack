@@ -101,7 +101,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   if (norb <= 0)
     norb = nel; // for morb == -1 (default)
   psiM_vgl.resize(nel * norb);
-  psiM_vgl_dev_ptr = getOffloadDevicePtr(psiM_vgl.data());
   // attach pointers VGL
   psiM_temp.attachReference(psiM_vgl.data(0), nel, norb);
   dpsiM.attachReference(reinterpret_cast<GradType*>(psiM_vgl.data(1)), nel, norb);
@@ -150,7 +149,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVector<WaveF
   for (int iw = 0; iw < nw; iw++)
   {
     auto& det          = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-    dpsiM_row_list[iw] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
+    dpsiM_row_list[iw] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
     engine_list.push_back(det.det_engine_);
   }
 
@@ -210,7 +209,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
 
     auto psiMinv_row_dev_ptr_list = det_engine_.mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
-    resizeMultiWalkerScratch(NumOrbitals, WFC_list.size());
+    phi_vgl_v.resize(NumOrbitals * WFC_list.size());
     ratios_local.resize(WFC_list.size());
     grad_new_local.resize(WFC_list.size());
 
@@ -277,8 +276,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
     engine_list.push_back(det.det_engine_);
     if (isAccepted[iw])
     {
-      psiM_g_dev_ptr_list[count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
-      psiM_l_dev_ptr_list[count] = det.psiM_vgl_dev_ptr + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
+      psiM_g_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
+      psiM_l_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
       det.LogValue += convertValueToLog(det.curRatio);
       count++;
     }
@@ -293,7 +292,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(const RefVec
   }
 
   det_engine_.mw_accept_rejectRow(engine_list, WorkingIndex, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, isAccepted,
-                                  phi_vgl_v_dev_ptr, phi_vgl_v.capacity(), ratios_local);
+                                  phi_vgl_v.device_data(), phi_vgl_v.capacity(), ratios_local);
 
   if (!safe_to_delay)
     det_engine_.mw_updateInvMat(engine_list);
@@ -535,7 +534,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
 
     auto psiMinv_row_dev_ptr_list = det_engine_.mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
-    resizeMultiWalkerScratch(NumOrbitals, WFC_list.size());
+    phi_vgl_v.resize(NumOrbitals * WFC_list.size());
     ratios_local.resize(WFC_list.size());
     grad_new_local.resize(WFC_list.size());
 
@@ -629,17 +628,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resizeScratchObjectsForIonDerivs(
   grad_phi_Minv.resize(NumPtcls, NumOrbitals);
   lapl_phi_Minv.resize(NumPtcls, NumOrbitals);
   grad_phi_alpha_Minv.resize(NumPtcls, NumOrbitals);
-}
-
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::resizeMultiWalkerScratch(int norb, int nw)
-{
-  const size_t total_size = norb * nw;
-  if (phi_vgl_v.size() < total_size)
-  {
-    phi_vgl_v.resize(total_size);
-    phi_vgl_v_dev_ptr = getOffloadDevicePtr(phi_vgl_v.data());
-  }
 }
 
 template<typename DET_ENGINE_TYPE>
