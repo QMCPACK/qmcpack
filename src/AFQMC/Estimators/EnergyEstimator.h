@@ -36,7 +36,7 @@ public:
     {
       ParameterSet m_param;
       std::string print_components;
-      m_param.add(print_components, "print_components", "str::string");
+      m_param.add(print_components, "print_components");
       m_param.put(cur);
       if (print_components == "true" || print_components == "yes")
       {

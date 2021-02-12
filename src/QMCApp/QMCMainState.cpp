@@ -59,8 +59,8 @@ void QMCMainState::putCommunicator(xmlNodePtr cur)
     return;
   ParameterSet params;
   int nparts = 1;
-  params.add(nparts, "groups", "int");
-  params.add(nparts, "twistAngles", "int");
+  params.add(nparts, "groups");
+  params.add(nparts, "twistAngles");
   params.put(cur);
   if (nparts > 1)
   {

@@ -53,9 +53,9 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
   std::string sub("yes");
   std::string printP1eV("no");
   ParameterSet m_param;
-  m_param.add(sub, "substractMF", "std::string");
-  m_param.add(printP1eV, "printP1eigval", "std::string");
-  m_param.add(vbias_bound, "vbias_bound", "double");
+  m_param.add(sub, "substractMF");
+  m_param.add(printP1eV, "printP1eigval");
+  m_param.add(vbias_bound, "vbias_bound");
   m_param.put(cur);
 
   bool substractMF = true;

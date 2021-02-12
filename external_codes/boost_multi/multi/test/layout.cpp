@@ -15,6 +15,17 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 
 namespace multi = boost::multi;
 
+BOOST_AUTO_TEST_CASE(linearize){
+	multi::array<double, 3> A({10, 20, 30});
+	BOOST_REQUIRE(  25 % extensions(A) == std::make_tuple(0, 0, 25) );
+	BOOST_REQUIRE(  55 % extensions(A) == std::make_tuple(0, 1, 25) );
+	BOOST_REQUIRE( 655 % extensions(A) == std::make_tuple(1, 1, 25) );
+	BOOST_REQUIRE(1255 % extensions(A) == std::make_tuple(2, 1, 25) );
+	
+	std::tuple<multi::index, multi::index, multi::index> p = A.extensions().from_linear(655);
+	BOOST_REQUIRE( p == std::make_tuple(1, 1, 25) );
+}
+
 BOOST_AUTO_TEST_CASE(layout){
 {	
 	multi::array<double, 3> A3(

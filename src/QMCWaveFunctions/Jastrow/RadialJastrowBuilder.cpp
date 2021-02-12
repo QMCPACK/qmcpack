@@ -444,8 +444,8 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur
   ParameterSet params;
   RealType Rs(-1.0);
   RealType Kc(-1.0);
-  params.add(Rs, "rs", "double");
-  params.add(Kc, "kc", "double");
+  params.add(Rs, "rs");
+  params.add(Kc, "kc");
   params.put(cur);
   bool Opt(true);
 

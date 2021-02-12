@@ -65,7 +65,7 @@ struct ref : basic{
 			};
 
 	#if __has_cpp_attribute(no_unique_address) >=201803 and not defined(__NVCC__)
-		BOOST_TEST( sizeof(d2D)==sizeof(double*)+6*sizeof(std::size_t) );
+		BOOST_REQUIRE( sizeof(d2D)==sizeof(double*)+6*sizeof(std::size_t) );
 	#endif
 		BOOST_REQUIRE( d2D.is_compact() );
 		BOOST_REQUIRE( rotated(d2D).is_compact() );

@@ -93,8 +93,8 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(nave, "naverages", "int");
-      m_param.add(block_size, "block_size", "int");
+      m_param.add(nave, "naverages");
+      m_param.add(block_size, "block_size");
       m_param.put(cur);
     }
 
@@ -128,7 +128,7 @@ public:
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
         std::string str("false");
         ParameterSet m_param;
-        m_param.add(str, "use_host_memory", "std::string");
+        m_param.add(str, "use_host_memory");
         m_param.put(cur);
         std::transform(str.begin(), str.end(), str.begin(), (int (*)(int))tolower);
         if (str == "false" || str == "no")

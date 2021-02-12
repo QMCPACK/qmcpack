@@ -1,5 +1,5 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
+$CXX $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #endif
 //  © Alfredo A. Correa 2018-2019
 
@@ -23,8 +23,8 @@ BOOST_AUTO_TEST_CASE(comparisons){
 		BOOST_REQUIRE( B == A );
 	}
 	{
-		multi::array<double, 2> A = {{1., 2., 3.}, {4.,5.,6.}};
-		multi::array<complex, 2> B = {{1., 2., 3.}, {4.,5.,6.}};
+		multi::array<double, 2> const A = {{1., 2., 3.}, {4.,5.,6.}};
+		multi::array<complex, 2> const B = {{1., 2., 3.}, {4.,5.,6.}};
 		BOOST_REQUIRE( A[1][1] == B[1][1] );
 		BOOST_REQUIRE( A == B );
 		BOOST_REQUIRE( B == A );

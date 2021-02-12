@@ -150,6 +150,7 @@ struct astring
 {
   std::string s;
 };
+
 inline std::istream& operator>>(std::istream& is, astring& rhs)
 {
   char buf[256];
@@ -157,12 +158,17 @@ inline std::istream& operator>>(std::istream& is, astring& rhs)
   rhs.s.assign(buf);
   return is;
 }
+
 inline std::ostream& operator<<(std::ostream& os, const astring& rhs)
 {
   os << rhs.s << std::endl;
   return os;
 }
 
+inline bool operator==(const astring& lhs, const astring& rhs)
+{
+  return lhs.s == rhs.s;
+}
 } // namespace qmcplusplus
 
 #endif

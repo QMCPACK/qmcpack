@@ -91,29 +91,29 @@ SimpleFixedNodeBranch::~SimpleFixedNodeBranch() = default;
 
 void SimpleFixedNodeBranch::registerParameters()
 {
-  m_param.add(iParam[B_WARMUPSTEPS], "warmupSteps", "int");
-  m_param.add(iParam[B_WARMUPSTEPS], "warmupsteps", "int");
-  m_param.add(iParam[B_ENERGYUPDATEINTERVAL], "energyUpdateInterval", "int");
-  m_param.add(iParam[B_BRANCHINTERVAL], "branchInterval", "int");
-  m_param.add(iParam[B_TARGETWALKERS], "targetWalkers", "int");
-  m_param.add(iParam[B_TARGETWALKERS], "targetwalkers", "int");
-  m_param.add(iParam[B_TARGETWALKERS], "target_walkers", "int");
+  m_param.add(iParam[B_WARMUPSTEPS], "warmupSteps");
+  m_param.add(iParam[B_WARMUPSTEPS], "warmupsteps");
+  m_param.add(iParam[B_ENERGYUPDATEINTERVAL], "energyUpdateInterval");
+  m_param.add(iParam[B_BRANCHINTERVAL], "branchInterval");
+  m_param.add(iParam[B_TARGETWALKERS], "targetWalkers");
+  m_param.add(iParam[B_TARGETWALKERS], "targetwalkers");
+  m_param.add(iParam[B_TARGETWALKERS], "target_walkers");
   //trial energy
-  m_param.add(vParam[SBVP::EREF], "refEnergy", "AU");
-  m_param.add(vParam[SBVP::EREF], "ref_energy", "AU");
-  m_param.add(vParam[SBVP::EREF], "en_ref", "AU");
-  m_param.add(vParam[SBVP::TAU], "tau", "AU");
-  m_param.add(vParam[SBVP::TAU], "timestep", "AU");
-  m_param.add(vParam[SBVP::TAU], "timeStep", "AU");
-  m_param.add(vParam[SBVP::TAU], "TimeStep", "AU");
+  m_param.add(vParam[SBVP::EREF], "refEnergy");
+  m_param.add(vParam[SBVP::EREF], "ref_energy");
+  m_param.add(vParam[SBVP::EREF], "en_ref");
+  m_param.add(vParam[SBVP::TAU], "tau");
+  m_param.add(vParam[SBVP::TAU], "timestep");
+  m_param.add(vParam[SBVP::TAU], "timeStep");
+  m_param.add(vParam[SBVP::TAU], "TimeStep");
   //filterscale:  sets the filtercutoff to sigma*filterscale
-  m_param.add(vParam[SBVP::FILTERSCALE], "filterscale", "double");
+  m_param.add(vParam[SBVP::FILTERSCALE], "filterscale");
   //feed back parameter for population control
-  m_param.add(vParam[SBVP::FEEDBACK], "feedback", "double");
+  m_param.add(vParam[SBVP::FEEDBACK], "feedback");
   //turn on/off effective tau onl for time-step error comparisons
-  m_param.add(sParam[USETAUOPT], "useBareTau", "option");
-  m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration", "opt");
-  m_param.add(branching_cutoff_scheme, "branching_cutoff_scheme", "option");
+  m_param.add(sParam[USETAUOPT], "useBareTau");
+  m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration");
+  m_param.add(branching_cutoff_scheme, "branching_cutoff_scheme");
 }
 
 void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
@@ -543,8 +543,8 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 
   int target_min = -1;
   ParameterSet p;
-  p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
-  p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
+  p.add(target_min, "minimumtargetwalkers"); //p.add(target_min,"minimumTargetWalkers");
+  p.add(target_min, "minimumsamples");       //p.add(target_min,"minimumSamples");
   p.put(cur);
 
   if (iParam[B_TARGETWALKERS] < target_min)
@@ -561,7 +561,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
       reconfig = "runwhileincorrect"; // forces SR during warmup?
     std::string reconfig_prev(reconfig);
     ParameterSet p;
-    p.add(reconfig, "reconfiguration", "string");
+    p.add(reconfig, "reconfiguration");
     p.put(cur);
     if (reconfig != "no" && reconfig != "runwhileincorrect")
     {

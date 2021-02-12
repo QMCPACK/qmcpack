@@ -61,7 +61,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
   //     //set the optimization flag
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
-  m_param.add(param_tol, "alloweddifference", "double");
+  m_param.add(param_tol, "alloweddifference");
   //Set parameters for line minimization:
 }
 
