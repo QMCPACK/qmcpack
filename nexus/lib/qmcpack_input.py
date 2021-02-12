@@ -2549,8 +2549,8 @@ class dmc_batch(QIxml):
     tag = 'qmc'
     attributes = ['method','move','profiling','kdelay']
     elements   = ['estimator']
-    parameters = ['total_walkers','walkers_per_rank','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','crowds','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve']
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno)
+    parameters = ['total_walkers','walkers_per_rank','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','crowds','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound']
+    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno)
 #end class dmc_batch
 
 class linear_batch(QIxml):
@@ -2760,6 +2760,7 @@ Names.set_expanded_names(
     dla              = 'DLA',
     l2_diffusion     = 'L2_diffusion',
     maxage           = 'MaxAge',
+    sigmabound       = 'sigmaBound',
     )
 # afqmc names
 Names.set_afqmc_expanded_names(
@@ -6164,30 +6165,36 @@ vmc_noJ_batched_defaults = obj(
     ).set_optional(**vmc_batched_defaults)
 
 dmc_batched_defaults = obj(
+    total_walkers           = None,
+    walkers_per_rank        = None,
     warmupsteps             = 20,
     blocks                  = 200,
     steps                   = 10,
+    substeps                = None,
     timestep                = 0.01,
-    checkpoint              = -1,
-    vmc_samples             = 2048,
-    vmc_samplesperthread    = None, 
-    vmc_walkers             = 1,
+    checkpoint              = None,
     vmc_warmupsteps         = 30,
     vmc_blocks              = 40,
     vmc_steps               = 10,
     vmc_substeps            = 3,
     vmc_timestep            = 0.3,
-    vmc_checkpoint          = -1,
+    vmc_usedrift            = False,
+    vmc_checkpoint          = None,
     eq_dmc                  = False,
     eq_warmupsteps          = 20,
     eq_blocks               = 20,
     eq_steps                = 5,
     eq_timestep             = 0.02,
-    eq_checkpoint           = -1,
+    eq_checkpoint           = None,
     ntimesteps              = 1,
     timestep_factor         = 0.5,    
     nonlocalmoves           = None,
     branching_cutoff_scheme = None,
+    crowds                  = None,
+    reconfiguration         = None,
+    maxage                  = None,
+    feedback                = None,
+    sigmabound              = None,
     )
 dmc_test_batched_defaults = obj(
     vmc_warmupsteps = 10,
@@ -6620,19 +6627,20 @@ def generate_batched_vmc_calculations(
 
 
 def generate_batched_dmc_calculations(
+    total_walkers          ,
+    walkers_per_rank       ,
     warmupsteps            ,
     blocks                 ,
     steps                  ,
+    substeps               ,
     timestep               ,
     checkpoint             ,
-    vmc_samples            ,
-    vmc_samplesperthread   , 
-    vmc_walkers            ,
     vmc_warmupsteps        ,
     vmc_blocks             ,
     vmc_steps              ,
     vmc_substeps           ,
     vmc_timestep           ,
+    vmc_usedrift           ,
     vmc_checkpoint         ,
     eq_dmc                 ,
     eq_warmupsteps         ,
@@ -6644,37 +6652,51 @@ def generate_batched_dmc_calculations(
     timestep_factor        ,    
     nonlocalmoves          ,
     branching_cutoff_scheme,
+    crowds                 ,
+    reconfiguration        ,
+    maxage                 ,
+    feedback               ,
+    sigmabound             ,
     loc                 = 'generate_dmc_calculations',
     ):
 
-    if vmc_samples is None and vmc_samplesperthread is None:
-        error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread',loc)
+    if total_walkers is None and walkers_per_rank is None:
+        error('DMC walker count not specified via "total_walkers" or "walkers_per_rank".\nPlease provide at least one of these.\n\nWarning: use care in the selection of these parameters.\nPerformance critically depends on the walker count and the batched QMCPACK \ndrivers make no effort to prevent substantial under-utilization.',loc)
+    elif total_walkers is not None and walkers_per_rank is not None:
+        error('Only one of "total_walkers" and "walkers_per_rank" may be provided.',loc)
     #end if
 
-    vmc_calc = vmc(
-        walkers     = vmc_walkers,
+    vmc_inputs = obj(
         warmupsteps = vmc_warmupsteps,
         blocks      = vmc_blocks,
         steps       = vmc_steps,
         substeps    = vmc_substeps,
         timestep    = vmc_timestep,
-        checkpoint  = vmc_checkpoint,
+        usedrift    = vmc_usedrift,
         )
-    if vmc_samplesperthread is not None:
-        vmc_calc.samplesperthread = vmc_samplesperthread
-    elif vmc_samples is not None:
-        vmc_calc.samples = vmc_samples
-    #end if
+    optional_vmc_inputs = obj(
+        total_walkers    = total_walkers,
+        walkers_per_rank = walkers_per_rank,
+        crowds           = crowds,
+        #checkpoint       = vmc_checkpoint, # not supported yet
+        )
+    for name,value in optional_vmc_inputs.items():
+        if value is not None:
+            vmc_inputs[name] = value
+        #end if
+    #end for
+
+    vmc_calc = vmc_batch(**vmc_inputs)
 
     dmc_calcs = [vmc_calc]
     if eq_dmc:
         dmc_calcs.append(
-            dmc(
+            dmc_batch(
                 warmupsteps   = eq_warmupsteps,
                 blocks        = eq_blocks,
                 steps         = eq_steps,
                 timestep      = eq_timestep,
-                checkpoint    = eq_checkpoint,
+                #checkpoint    = eq_checkpoint, # not supported yet
                 )
             )
     #end if
@@ -6682,25 +6704,36 @@ def generate_batched_dmc_calculations(
     for n in range(ntimesteps):
         sfac = 1.0/tfac
         dmc_calcs.append(
-            dmc(
+            dmc_batch(
                 warmupsteps   = int(sfac*warmupsteps),
                 blocks        = blocks,
                 steps         = int(sfac*steps),
                 timestep      = tfac*timestep,
-                checkpoint    = checkpoint,
+                #checkpoint    = checkpoint,  # not supported yet
                 )
             )
         tfac *= timestep_factor
     #end for
 
+    optional_dmc_inputs = obj(
+        total_walkers           = total_walkers,
+        walkers_per_rank        = walkers_per_rank,
+        substeps                = substeps,
+        nonlocalmoves           = nonlocalmoves,
+        branching_cutoff_scheme = branching_cutoff_scheme,
+        crowds                  = crowds,
+        reconfiguration         = reconfiguration,
+        maxage                  = maxage,
+        feedback                = feedback,
+        sigmabound              = sigmabound,
+        )
     for calc in dmc_calcs:
-        if isinstance(calc,dmc):
-            if nonlocalmoves is not None:
-                calc.nonlocalmoves = nonlocalmoves
-            #end if
-            if branching_cutoff_scheme is not None:
-                calc.branching_cutoff_scheme = branching_cutoff_scheme
-            #end if
+        if isinstance(calc,dmc_batch):
+            for name,value in optional_dmc_inputs.items():
+                if value is not None:
+                    calc[name] = value
+                #end if
+            #end for
         #end if
     #end for
     
