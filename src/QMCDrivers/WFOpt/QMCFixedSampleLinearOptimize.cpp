@@ -99,26 +99,26 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  m_param.add(Max_iterations, "max_its", "int");
-  m_param.add(nstabilizers, "nstabilizers", "int");
-  m_param.add(stabilizerScale, "stabilizerscale", "double");
-  m_param.add(bigChange, "bigchange", "double");
-  m_param.add(MinMethod, "MinMethod", "string");
-  m_param.add(exp0, "exp0", "double");
-  m_param.add(targetExcitedStr, "targetExcited", "string");
-  m_param.add(block_lmStr, "block_lm", "string");
-  m_param.add(nblocks, "nblocks", "int");
-  m_param.add(nolds, "nolds", "int");
-  m_param.add(nkept, "nkept", "int");
-  m_param.add(nsamp_comp, "nsamp_comp", "int");
-  m_param.add(omega_shift, "omega", "double");
-  m_param.add(max_relative_cost_change, "max_relative_cost_change", "double");
-  m_param.add(max_param_change, "max_param_change", "double");
-  m_param.add(shift_i_input, "shift_i", "double");
-  m_param.add(shift_s_input, "shift_s", "double");
-  m_param.add(num_shifts, "num_shifts", "int");
-  m_param.add(cost_increase_tol, "cost_increase_tol", "double");
-  m_param.add(target_shift_i, "target_shift_i", "double");
+  m_param.add(Max_iterations, "max_its");
+  m_param.add(nstabilizers, "nstabilizers");
+  m_param.add(stabilizerScale, "stabilizerscale");
+  m_param.add(bigChange, "bigchange");
+  m_param.add(MinMethod, "MinMethod");
+  m_param.add(exp0, "exp0");
+  m_param.add(targetExcitedStr, "targetExcited");
+  m_param.add(block_lmStr, "block_lm");
+  m_param.add(nblocks, "nblocks");
+  m_param.add(nolds, "nolds");
+  m_param.add(nkept, "nkept");
+  m_param.add(nsamp_comp, "nsamp_comp");
+  m_param.add(omega_shift, "omega");
+  m_param.add(max_relative_cost_change, "max_relative_cost_change");
+  m_param.add(max_param_change, "max_param_change");
+  m_param.add(shift_i_input, "shift_i");
+  m_param.add(shift_s_input, "shift_s");
+  m_param.add(num_shifts, "num_shifts");
+  m_param.add(cost_increase_tol, "cost_increase_tol");
+  m_param.add(target_shift_i, "target_shift_i");
 
 
 #ifdef HAVE_LMY_ENGINE
@@ -162,17 +162,17 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
 
 
   //   stale parameters
-  //   m_param.add(eigCG,"eigcg","int");
-  //   m_param.add(TotalCGSteps,"cgsteps","int");
-  //   m_param.add(w_beta,"beta","double");
+  //   m_param.add(eigCG,"eigcg");
+  //   m_param.add(TotalCGSteps,"cgsteps");
+  //   m_param.add(w_beta,"beta");
   //   quadstep=-1.0;
-  //   m_param.add(quadstep,"quadstep","double");
-  //   m_param.add(stepsize,"stepsize","double");
-  //   m_param.add(exp1,"exp1","double");
-  //   m_param.add(GEVtype,"GEVMethod","string");
-  //   m_param.add(GEVSplit,"GEVSplit","string");
-  //   m_param.add(StabilizerMethod,"StabilizerMethod","string");
-  //   m_param.add(LambdaMax,"LambdaMax","double");
+  //   m_param.add(quadstep,"quadstep");
+  //   m_param.add(stepsize,"stepsize");
+  //   m_param.add(exp1,"exp1");
+  //   m_param.add(GEVtype,"GEVMethod");
+  //   m_param.add(GEVSplit,"GEVSplit");
+  //   m_param.add(StabilizerMethod,"StabilizerMethod");
+  //   m_param.add(LambdaMax,"LambdaMax");
   //Set parameters for line minimization:
 }
 
@@ -473,8 +473,8 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
-  m_param.add(OutputMatrices, "output_matrices", "string");
-  m_param.add(FreezeParameters, "freeze_parameters", "string");
+  m_param.add(OutputMatrices, "output_matrices");
+  m_param.add(FreezeParameters, "freeze_parameters");
 
   oAttrib.put(q);
   m_param.put(q);

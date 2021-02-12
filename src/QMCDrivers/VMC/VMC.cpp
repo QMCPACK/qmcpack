@@ -42,9 +42,9 @@ VMC::VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Co
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(UseDrift, "use_drift", "string");
+  m_param.add(UseDrift, "useDrift");
+  m_param.add(UseDrift, "usedrift");
+  m_param.add(UseDrift, "use_drift");
 
   prevSteps               = nSteps;
   prevStepsBetweenSamples = nStepsBetweenSamples;
@@ -326,8 +326,8 @@ bool VMC::put(xmlNodePtr q)
   //grep minimumTargetWalker
   int target_min = -1;
   ParameterSet p;
-  p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
-  p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
+  p.add(target_min, "minimumtargetwalkers"); //p.add(target_min,"minimumTargetWalkers");
+  p.add(target_min, "minimumsamples");       //p.add(target_min,"minimumSamples");
   p.put(q);
 
   app_log() << "\n<vmc function=\"put\">"

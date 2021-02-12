@@ -25,6 +25,7 @@
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
+#include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
@@ -149,11 +150,18 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
   int pid          = OHMMS::Controller->rank();
 
   int crowd_size     = 1;
-  int num_opt_crowds = 1;
+  int opt_num_crowds = 0;
   ParameterSet param_set;
-  param_set.add(crowd_size, "opt_crowd_size", "int");
-  param_set.add(num_opt_crowds, "opt_num_crowds", "int");
+  param_set.add(crowd_size, "opt_crowd_size");
+  param_set.add(opt_num_crowds, "opt_num_crowds");
   param_set.put(q);
+
+  // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
+  checkNumCrowdsLTNumThreads(opt_num_crowds);
+  if (opt_num_crowds == 0)
+    opt_num_crowds = Concurrency::maxCapacity<>();
+
+  app_log() << " Number of crowds for optimizer: " << opt_num_crowds << std::endl;
 
   while (cur != NULL)
   {
@@ -216,7 +224,7 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
     optSolver->put(optNode);
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, num_opt_crowds, crowd_size, myComm);
+  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, opt_num_crowds, crowd_size, myComm);
   optTarget->setStream(&app_log());
   success = optTarget->put(q);
 

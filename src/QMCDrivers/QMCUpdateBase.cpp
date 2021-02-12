@@ -76,7 +76,7 @@ void QMCUpdateBase::setDefaults()
   nSubSteps  = 1;
   MaxAge     = 10;
   m_r2max    = -1;
-  myParams.add(m_r2max, "maxDisplSq", "double"); //maximum displacement
+  myParams.add(m_r2max, "maxDisplSq"); //maximum displacement
   //store 1/mass per species
   SpeciesSet tspecies(W.getSpeciesSet());
   assert(tspecies.getTotalNum() == W.groups());

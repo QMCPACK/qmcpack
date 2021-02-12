@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_struct_to_dimension){
 
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_complex_to_real_extra_dimension){
 	using complex = std::complex<double>;
-	multi::array<complex, 1> A(100, {1, 2});
+	multi::array<complex, 1> A(100, complex{1, 2});
 	BOOST_REQUIRE(  size(A) == 100 );
 	BOOST_REQUIRE(( A[0] == complex{1, 2} ));
 	
@@ -44,11 +44,48 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_complex_to_real_extra_dimensio
 	BOOST_REQUIRE( dimensionality(B) == dimensionality(A) );
 	BOOST_REQUIRE( B[0] == 1 and B[1] == 1 );
 
-	multi::array<double, 2> C = A.reinterpret_array_cast<double>(2);	
+	multi::array<double, 2> C = A.reinterpret_array_cast<double>(2);
 
 	BOOST_REQUIRE(( sizes(C)==decltype(sizes(C)){100, 2} ));
 	BOOST_REQUIRE( C[5][0] == real(A[5]) );
 	BOOST_REQUIRE( C[5][1] == imag(A[5]) );
+}
+
+BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_tuple_as_extra_dimension){
+	using vector3 = std::array<double, 3>;
+//	using vector3 = std::tuple<double, double, double>; // for tuples reinterpret_array_cast is implementation dependent!!
+
+	vector3 v;
+	BOOST_REQUIRE( &reinterpret_cast<double(&)[3]>(v)[1] == &std::get<1>(v) );
+	{
+		multi::array<vector3, 1> A(10);
+		BOOST_REQUIRE( &A.reinterpret_array_cast<double>(3)[2][1] == &std::get<1>(A[2]) );
+	}
+	{
+		multi::array<vector3, 2> A({10, 20});
+		BOOST_REQUIRE( &A.reinterpret_array_cast<double>(3)[5][7][2] == &std::get<2>(A[5][7]) );
+	}
+
+	{
+		multi::array<vector3, 2> const A({4, 5}, vector3{1., 2., 3.});
+
+		BOOST_REQUIRE( dimensionality(A.reinterpret_array_cast<double>(3)) == 3 );
+		BOOST_REQUIRE( A.reinterpret_array_cast<double>(3).num_elements() == A.num_elements()*3 );
+		BOOST_REQUIRE( A.reinterpret_array_cast<double>(3).size() == 4 );
+		BOOST_REQUIRE( A.reinterpret_array_cast<double>(3)[0].size() == 5 );
+		BOOST_REQUIRE( A.reinterpret_array_cast<double>(3)[0][0].size() == 3 );
+		BOOST_REQUIRE( &A.reinterpret_array_cast<double>(3)[2][3][0] == &std::get<0>(A[2][3]) );
+		BOOST_REQUIRE( &A.reinterpret_array_cast<double>(3)[2][3][1] == &std::get<1>(A[2][3]) );
+		BOOST_REQUIRE( &A.reinterpret_array_cast<double>(3)[2][3][2] == &std::get<2>(A[2][3]) );
+
+		multi::array<double, 3> const B = A.reinterpret_array_cast<double>(3);
+		BOOST_REQUIRE( B[2][3][0] == std::get<0>(A[2][3]) );
+		BOOST_REQUIRE( B[2][3][1] == std::get<1>(A[2][3]) );
+		BOOST_REQUIRE( B[2][3][2] == std::get<2>(A[2][3]) );
+
+		auto C = +A.reinterpret_array_cast<double>(3);
+		BOOST_REQUIRE( C == B );
+	}
 }
 
 template<class T> struct Complex_{T real; T imag; T const& re() const{return real;}};
@@ -64,7 +101,7 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast){
 	multi::array<std::complex<double>, 1> A(10); 
 	std::iota( begin(A), end(A), 1.);
 	BOOST_REQUIRE( A[8] == 9. );
-	auto&& A2 = A.template reinterpret_array_cast<Complex_<double>>();
+	auto&& A2 = A.reinterpret_array_cast<Complex_<double>>();
 	A2[8].real = 1000.;
 	BOOST_REQUIRE( A[8] == 1000. );
 }
@@ -81,6 +118,23 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast){
 //	multi::array<double, 2> C = A.template reinterpret_array_cast<double, 2>();
 //	multi::array<double, 2> C = reinterpret_array_cast<double>(A, 2);
 
+}
+
+BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_realcomplex){
+	using complex = std::complex<double>;
+{
+	complex c{1, 2};
+	auto pC = reinterpret_cast<double(*)[2]>(&c);
+	(*pC)[0] = 11;
+	BOOST_REQUIRE(real(c)==11);
+}
+{
+	multi::array<complex, 1> A(10); 
+	auto&& A2 = A.reinterpret_array_cast<double>(2);
+	A2[8][0] = 1000.;
+	A2[8][1] = 2000.;
+	BOOST_REQUIRE( A[8] == std::complex<double>(1000., 2000.) );
+}
 }
 
 #if 0
