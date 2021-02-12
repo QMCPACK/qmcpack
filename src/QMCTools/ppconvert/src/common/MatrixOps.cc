@@ -333,7 +333,7 @@ double GJInverse (Array<double,2> &A)
 
   int colIndex[maxSize], rowIndex[maxSize], ipiv[maxSize];
   double big, dum, pivInv, temp;
-  int icol, irow;
+  int icol = 0, irow = 0;
   
   for (int j=0; j<n; j++)
     ipiv[j] = -1;
@@ -583,7 +583,7 @@ void PolarOrthogonalize (Array<complex<double>,2> &A)
 void LUdecomp (Array<double,2> &A, Array<int,1> &perm, 
 	       double &sign)
 {
-  int i, imax, j, k;
+  int i, imax = 0, j, k;
   int n = A.rows();
   double big, dum, sum, temp;
   Array<double,1> vv(n);
