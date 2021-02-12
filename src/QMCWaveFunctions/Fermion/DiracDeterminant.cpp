@@ -144,9 +144,10 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
   UpdateMode             = ORB_PBYP_PARTIAL;
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0);
-  // This is an optimization.
+  // This is an satefy mechanism.
   // check invRow_id against WorkingIndex to see if getInvRow() has been called already
-  // Some code paths call evalGrad before calling ratioGrad.
+  // when evalGrad has not been called already or the particle id is not consistent,
+  // invRow is recomputed.
   if (invRow_id != WorkingIndex)
   {
     invRow_id = WorkingIndex;
