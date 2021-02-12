@@ -90,6 +90,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
       RealType oneover2tau = 0.5 / (tauovermass);
       RealType sqrttau     = std::sqrt(tauovermass);
+
+      TrialWaveFunction::flex_prepareGroup(crowd.get_walker_twfs(), crowd.get_walker_elecs(),ig);
+
       int start_index      = step_context.getPtclGroupStart(ig);
       int end_index        = step_context.getPtclGroupEnd(ig);
       for (int iat = start_index; iat < end_index; ++iat)
