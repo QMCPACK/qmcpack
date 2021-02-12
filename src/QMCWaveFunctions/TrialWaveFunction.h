@@ -327,6 +327,21 @@ public:
                                  std::vector<PsiValueType>& ratios,
                                  std::vector<GradType>& grad_new);
 
+  /** Prepare internal data for updating WFC correspond to a particle group
+   *  Particle groups usually correspond to determinants of different spins.
+   *  This call can be used to handle precomputation for PbyP moves.
+   * @param P quantum particle set
+   * @param ig particle group index
+   */
+  void prepareGroup(ParticleSet& P, int ig);
+  /** batched version of prepareGroup
+   *
+   *  all vector sizes must match
+   */
+  static void flex_prepareGroup(const RefVector<TrialWaveFunction>& WF_list,
+                                const RefVector<ParticleSet>& P_list,
+                                int ig);
+
   GradType evalGrad(ParticleSet& P, int iat);
 
   /** compute d/ds ln(psi) spin gradient at current particle position for iat electron

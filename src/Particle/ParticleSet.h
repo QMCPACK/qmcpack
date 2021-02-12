@@ -29,6 +29,7 @@
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+
 namespace qmcplusplus
 {
 ///forward declaration of DistanceTableData
@@ -558,6 +559,14 @@ public:
   ///return the last index of a group i
   inline int last(int igroup) const { return SubPtcl[igroup + 1]; }
 
+  ///return the group id of a given particle in the particle set.
+  inline int getGroupID(int iat) const
+  {
+    assert(iat >= 0 && iat < TotalNum);
+    return GroupID[iat];
+  }
+
+  ///return the size of a group
   inline int groupsize(int igroup) const { return SubPtcl[igroup + 1] - SubPtcl[igroup]; }
 
   ///add attributes to list for IO

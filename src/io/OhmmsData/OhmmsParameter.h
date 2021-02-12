@@ -46,10 +46,11 @@
 
 enum class TagStatus
 {
-  OPTIONAL, // there is a default value
-  REQUIRED, // no default value, input required.
+  OPTIONAL,   // there is a default value
+  REQUIRED,   // no default value, input required.
   DEPRECATED, // deprecated input tag. Input becomes optional
-  DELETED // deleted input tag. Hard stop if detected.
+  DELETED,    // deleted input tag. Hard stop if detected.
+  UNSUPPORTED // not supported input tags due to incompatible changes. Hard stop if detected.
 };
 
 inline void checkTagStatus(const std::string& tagname, TagStatus status)
@@ -60,9 +61,15 @@ inline void checkTagStatus(const std::string& tagname, TagStatus status)
     msg << "Input tag \"" << tagname << "\" has been deleted. Please remove it from the input file!" << std::endl;
     throw std::runtime_error(msg.str());
   }
-  else
-    if (status == TagStatus::DEPRECATED)
-      qmcplusplus::app_warning() << "Input tag \"" << tagname << "\" has been deprecated and will be deleted in the next release!" << std::endl;
+  else if (status == TagStatus::UNSUPPORTED)
+  {
+    std::ostringstream msg;
+    msg << "Input tag \"" << tagname << "\" is not supported. Please remove it from the input file!" << std::endl;
+    throw std::runtime_error(msg.str());
+  }
+  else if (status == TagStatus::DEPRECATED)
+    qmcplusplus::app_warning() << "Input tag \"" << tagname
+                               << "\" has been deprecated and will be deleted in the next release!" << std::endl;
 }
 
 
@@ -82,7 +89,8 @@ class OhmmsParameter : public OhmmsElementBase
 
   void checkValues()
   {
-    if (!candidate_values_.empty() && std::find(candidate_values_.begin(), candidate_values_.end(), ref_) == candidate_values_.end())
+    if (!candidate_values_.empty() &&
+        std::find(candidate_values_.begin(), candidate_values_.end(), ref_) == candidate_values_.end())
     {
       std::ostringstream msg;
       msg << "Input tag \"" << myName << "\" value \"" << ref_ << "\" is not valid. Candidate values are : ";
@@ -100,11 +108,18 @@ public:
    *\param candidate_values candidate values to be checked against, the first element is the default value. It can be left empty for backward compatibility or unbounded input.
    *\param status Tag status, See TagStatus enum.
    */
-  OhmmsParameter(T& a, const std::string& aname, std::vector<T>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
-      : OhmmsElementBase(aname.c_str()), ref_(a), candidate_values_(std::move(candidate_values)), node_(NULL), tag_staus_(status)
+  OhmmsParameter(T& a,
+                 const std::string& aname,
+                 std::vector<T>&& candidate_values = {},
+                 TagStatus status                  = TagStatus::OPTIONAL)
+      : OhmmsElementBase(aname.c_str()),
+        ref_(a),
+        candidate_values_(std::move(candidate_values)),
+        node_(NULL),
+        tag_staus_(status)
   {
     // set default value
-    if (status!=TagStatus::REQUIRED && !candidate_values_.empty())
+    if (status != TagStatus::REQUIRED && !candidate_values_.empty())
       ref_ = candidate_values_[0];
   }
 
@@ -183,8 +198,15 @@ public:
    *\param aname the name of this object
    *\param candidate_values valid input values
    */
-  OhmmsParameter(bool& a, const std::string& aname, std::vector<bool>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
-      : OhmmsElementBase(aname.c_str()), ref_(a), candidate_values_(std::move(candidate_values)), node_(NULL), tag_staus_(status)
+  OhmmsParameter(bool& a,
+                 const std::string& aname,
+                 std::vector<bool>&& candidate_values = {},
+                 TagStatus status                     = TagStatus::OPTIONAL)
+      : OhmmsElementBase(aname.c_str()),
+        ref_(a),
+        candidate_values_(std::move(candidate_values)),
+        node_(NULL),
+        tag_staus_(status)
   {
     // set default value.
     if (!candidate_values_.empty())
@@ -207,7 +229,7 @@ public:
   inline bool put(xmlNodePtr cur)
   {
     checkTagStatus(myName, tag_staus_);
-    node_          = cur;
+    node_ = cur;
     const XMLNodeString ac(cur);
     if (!ac.empty())
     {

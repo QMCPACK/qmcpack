@@ -152,45 +152,53 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
   if (ComputeForces)
   {
     forces = 0;
-    for (int jel = 0; jel < P.getTotalNum(); jel++)
+    for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
-      const auto& dist               = myTable.getDistRow(jel);
-      const auto& displ              = myTable.getDisplRow(jel);
-      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-      for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        {
-          RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
-          if (Tmove)
-            PP[iat]->contributeTxy(jel, Txy);
-          Value += pairpot;
-          NeighborIons.push_back(iat);
-          IonNeighborElecs.getNeighborList(iat).push_back(jel);
-        }
+      Psi.prepareGroup(P, ig);
+      for (int jel = P.first(ig); jel < P.last(ig); ++jel)
+      {
+        const auto& dist               = myTable.getDistRow(jel);
+        const auto& displ              = myTable.getDisplRow(jel);
+        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+        for (int iat = 0; iat < NumIons; iat++)
+          if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+          {
+            RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
+            if (Tmove)
+              PP[iat]->contributeTxy(jel, Txy);
+            Value += pairpot;
+            NeighborIons.push_back(iat);
+            IonNeighborElecs.getNeighborList(iat).push_back(jel);
+          }
+      }
     }
   }
   else
   {
-    for (int jel = 0; jel < P.getTotalNum(); jel++)
+    for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
-      const auto& dist               = myTable.getDistRow(jel);
-      const auto& displ              = myTable.getDisplRow(jel);
-      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-      for (int iat = 0; iat < NumIons; iat++)
-        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        {
-          RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
-          if (Tmove)
-            PP[iat]->contributeTxy(jel, Txy);
-          Value += pairpot;
-          NeighborIons.push_back(iat);
-          IonNeighborElecs.getNeighborList(iat).push_back(jel);
-          if (streaming_particles)
+      Psi.prepareGroup(P, ig);
+      for (int jel = P.first(ig); jel < P.last(ig); ++jel)
+      {
+        const auto& dist               = myTable.getDistRow(jel);
+        const auto& displ              = myTable.getDisplRow(jel);
+        std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+        for (int iat = 0; iat < NumIons; iat++)
+          if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            Ve_samp(jel) += 0.5 * pairpot;
-            Vi_samp(iat) += 0.5 * pairpot;
+            RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
+            if (Tmove)
+              PP[iat]->contributeTxy(jel, Txy);
+            Value += pairpot;
+            NeighborIons.push_back(iat);
+            IonNeighborElecs.getNeighborList(iat).push_back(jel);
+            if (streaming_particles)
+            {
+              Ve_samp(jel) += 0.5 * pairpot;
+              Vi_samp(iat) += 0.5 * pairpot;
+            }
           }
-        }
+      }
     }
   }
 
@@ -291,6 +299,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
   batch_list.reserve(nw);
 
   for (int ig = 0; ig < ngroups; ++ig) //loop over species
+  {
+    {
+      psi_list.clear();
+      for (size_t iw = 0; iw < nw; iw++)
+        psi_list.push_back(static_cast<NonLocalECPotential&>(O_list[iw].get()).Psi);
+      TrialWaveFunction::flex_prepareGroup(psi_list, P_list, ig);
+    }
+
     for (size_t jobid = 0; jobid < max_num_jobs[ig]; jobid++)
     {
       ecp_potential_list.clear();
@@ -333,6 +349,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
                                                     ecp_potential_list[j].get().nonLocalOps.Txy);
       }
     }
+  }
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
@@ -363,20 +380,25 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
   for (int jel = 0; jel < P.getTotalNum(); jel++)
     ElecNeighborIons.getNeighborList(jel).clear();
 
-  for (int jel = 0; jel < P.getTotalNum(); jel++)
+  for (int ig = 0; ig < P.groups(); ++ig) //loop over species
   {
-    const auto& dist               = myTable.getDistRow(jel);
-    const auto& displ              = myTable.getDisplRow(jel);
-    std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-    for (int iat = 0; iat < NumIons; iat++)
-      if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-      {
-        Value += PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
-        if (Tmove)
-          PP[iat]->contributeTxy(jel, Txy);
-        NeighborIons.push_back(iat);
-        IonNeighborElecs.getNeighborList(iat).push_back(jel);
-      }
+    Psi.prepareGroup(P, ig);
+    for (int jel = P.first(ig); jel < P.last(ig); ++jel)
+    {
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < NumIons; iat++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        {
+          Value +=
+              PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
+          if (Tmove)
+            PP[iat]->contributeTxy(jel, Txy);
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        }
+    }
   }
 
   hf_terms -= forces;
@@ -412,6 +434,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     if (oneTMove)
     {
       int iat = oneTMove->PID;
+      Psi.prepareGroup(P, P.getGroupID(iat));
       if (P.makeMoveAndCheck(iat, oneTMove->Delta))
       {
         GradType grad_iat;
@@ -427,6 +450,8 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     GradType grad_iat;
     //make a non-local move per particle
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+    {
+      Psi.prepareGroup(P, ig);
       for (int iat = P.first(ig); iat < P.last(ig); ++iat)
       {
         computeOneElectronTxy(P, iat);
@@ -442,6 +467,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           }
         }
       }
+    }
   }
   else if (UseTMove == TMOVE_V3)
   {
@@ -450,6 +476,8 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
     GradType grad_iat;
     //make a non-local move per particle
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+    {
+      Psi.prepareGroup(P, ig);
       for (int iat = P.first(ig); iat < P.last(ig); ++iat)
       {
         const NonLocalData* oneTMove;
@@ -474,6 +502,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
           }
         }
       }
+    }
   }
 
   if (NonLocalMoveAccepted > 0)

@@ -116,7 +116,10 @@ struct ParameterSet : public OhmmsElementBase
    *@param status Tag status, See OhmmsParameter.h for more details
    */
   template<class PDT>
-  inline void add(PDT& aparam, const std::string& aname_in, std::vector<PDT>&& candidate_values = {}, TagStatus status = TagStatus::OPTIONAL)
+  inline void add(PDT& aparam,
+                  const std::string& aname_in,
+                  std::vector<PDT>&& candidate_values = {},
+                  TagStatus status                    = TagStatus::OPTIONAL)
   {
     std::string aname(aname_in);
     tolower(aname);

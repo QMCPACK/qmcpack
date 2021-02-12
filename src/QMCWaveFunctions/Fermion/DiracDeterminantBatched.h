@@ -194,8 +194,6 @@ public:
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
   OffloadVGLVector_t psiM_vgl;
-  /// device pointer of psiM_vgl data;
-  ValueType* psiM_vgl_dev_ptr;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   ValueMatrix_t psiM_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
@@ -219,8 +217,6 @@ public:
 
   /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
   OffloadVGLVector_t phi_vgl_v;
-  /// device pointer of phi_vgl_v data;
-  ValueType* phi_vgl_v_dev_ptr;
 
   /// delayed update engine
   DET_ENGINE_TYPE det_engine_;
@@ -244,9 +240,6 @@ private:
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
-
-  /// Resize multi walker scratch spaces
-  void resizeMultiWalkerScratch(int norb, int nw);
 
   /// maximal number of delayed updates
   int ndelay;
