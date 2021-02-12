@@ -50,7 +50,7 @@ enum class TagStatus
   REQUIRED,   // no default value, input required.
   DEPRECATED, // deprecated input tag. Input becomes optional
   DELETED,    // deleted input tag. Hard stop if detected.
-  NOSUPPORT   // not supported input tags due to incompatible changes. Hard stop if detected.
+  UNSUPPORTED // not supported input tags due to incompatible changes. Hard stop if detected.
 };
 
 inline void checkTagStatus(const std::string& tagname, TagStatus status)
@@ -61,7 +61,7 @@ inline void checkTagStatus(const std::string& tagname, TagStatus status)
     msg << "Input tag \"" << tagname << "\" has been deleted. Please remove it from the input file!" << std::endl;
     throw std::runtime_error(msg.str());
   }
-  else if (status == TagStatus::NOSUPPORT)
+  else if (status == TagStatus::UNSUPPORTED)
   {
     std::ostringstream msg;
     msg << "Input tag \"" << tagname << "\" is not supported. Please remove it from the input file!" << std::endl;
