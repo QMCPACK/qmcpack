@@ -580,31 +580,26 @@ std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Co
 bool WalkerControl::put(xmlNodePtr cur)
 {
   int nw_target = 0, nw_max = 0;
-  std::string nonblocking = "yes";
-  std::string debug_disable_branching = "no";
+  std::string nonblocking;
+  std::string debug_disable_branching;
   ParameterSet params;
   params.add(max_copy_, "maxCopy");
   params.add(nw_target, "targetwalkers");
   params.add(nw_max, "max_walkers");
-  params.add(nonblocking, "use_nonblocking");
-  params.add(debug_disable_branching, "debug_disable_branching");
+  params.add(nonblocking, "use_nonblocking", {"yes", "no"});
+  params.add(debug_disable_branching, "debug_disable_branching", {"no", "yes"});
 
-  bool success = params.put(cur);
+  try
+  {
+    bool success = params.put(cur);
+  }
+  catch (const std::runtime_error& re)
+  {
+    myComm->barrier_and_abort("WalkerControl::put parsing error. " + std::string(re.what()));
+  }
 
-  // validating input
-  if (nonblocking == "yes")
-    use_nonblocking_ = true;
-  else if (nonblocking == "no")
-    use_nonblocking_ = false;
-  else
-    myComm->barrier_and_abort("WalkerControl::put unknown use_nonblocking option " + nonblocking);
-
-  if (debug_disable_branching == "yes")
-    debug_disable_branching_ = true;
-  else if (debug_disable_branching == "no")
-    debug_disable_branching_ = false;
-  else
-    myComm->barrier_and_abort("WalkerControl::put unknown debug_disable_branching option " + debug_disable_branching);
+  use_nonblocking_ = nonblocking == "yes";
+  debug_disable_branching_ = debug_disable_branching == "yes";
 
   setMinMax(nw_target, nw_max);
 
