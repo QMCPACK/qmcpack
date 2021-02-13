@@ -85,19 +85,17 @@ public:
   {
     const auto nw = coords_list.size();
 
-    nw_new_old_pos.resize(nw);
-    nw_active_pos_view.attachReference(nw_new_old_pos.size(), nw_new_old_pos.capacity(), nw_new_old_pos.data(0));
-    nw_old_pos_view.attachReference(nw_new_old_pos.size(), nw_new_old_pos.capacity(), nw_new_old_pos.data(QMCTraits::DIM));
+    mw_new_old_pos.resize(nw * 2);
 
     for (int iw = 0; iw < nw; iw++)
     {
       auto& coords = dynamic_cast<const RealSpacePositionsOMPTarget&>(coords_list[iw].get());
-      nw_active_pos_view(iw) = new_positions[iw];
-      nw_old_pos_view(iw) = coords.RSoA_hostview[iat];
+      mw_new_old_pos(iw) = new_positions[iw];
+      mw_new_old_pos(iw + nw) = coords.RSoA_hostview[iat];
     }
 
-    auto* mw_pos_ptr = nw_new_old_pos.data();
-    PRAGMA_OFFLOAD("omp target update to(mw_pos_ptr[:QMCTraits::DIM * 2 * nw_new_old_pos.capacity()])")
+    auto* mw_pos_ptr = mw_new_old_pos.data();
+    PRAGMA_OFFLOAD("omp target update to(mw_pos_ptr[:QMCTraits::DIM * mw_new_old_pos.capacity()])")
   }
 
   void mw_acceptParticlePos(const RefVector<DynamicCoordinates>& coords_list,
@@ -118,15 +116,15 @@ public:
         RSoA_ptr_array[num_accepted] = coords.RSoA.device_data();
         id_array[num_accepted] = iw;
         // save new coordinates on host copy
-        coords.RSoA_hostview(iat) = nw_active_pos_view[iw];
+        coords.RSoA_hostview(iat) = mw_new_old_pos[iw];
         num_accepted++;
       }
 
     //offload to GPU
     auto* restrict w_accept_buffer_ptr = nw_accept_index_ptrs.data();
-    auto* restrict mw_pos_ptr = nw_new_old_pos.data();
+    auto* restrict mw_pos_ptr = mw_new_old_pos.data();
     const size_t rsoa_stride = RSoA.capacity();
-    const size_t mw_pos_stride = nw_new_old_pos.capacity();
+    const size_t mw_pos_stride = mw_new_old_pos.capacity();
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     map(always, to : w_accept_buffer_ptr[:nw_accept_index_ptrs.size()])")
@@ -153,18 +151,14 @@ public:
 
   const RealType* getDevicePtr() const { return RSoA.device_data(); }
 
+  const auto& getFusedNewOldPosBuffer() const { return mw_new_old_pos; }
+
 private:
   ///particle positions in SoA layout
   VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> RSoA;
 
   ///one particle new/old positions in SoA layout
-  VectorSoaContainer<RealType, QMCTraits::DIM * 2, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_pos;
-
-  ///nw_new_pos view of nw_new_old_pos
-  VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_active_pos_view;
-
-  ///nw_old_pos view of nw_new_old_pos
-  VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_old_pos_view;
+  VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_old_pos;
 
   /// accept list
   Vector<char, OMPallocator<char, PinnedAlignedAllocator<char>>> nw_accept_index_ptrs;
