@@ -75,11 +75,11 @@ public:
 
   /** print basic SPOSet information
    */
-  void basic_report(const std::string& pad = "");
+  void basic_report(const std::string& pad = "") const;
 
   /** print SPOSet information
    */
-  virtual void report(const std::string& pad = "") { basic_report(pad); }
+  virtual void report(const std::string& pad = "") const { basic_report(pad); }
 
 
   /** return the size of the orbitals
@@ -185,11 +185,6 @@ public:
    * It doesn't make sense allowing to set the value at any place in the code.
    */
   virtual void setOrbitalSetSize(int norbs) = 0;
-
-  /** Evaluate the SPO value at an explicit position.
-   * Ye: This is used only for debugging the CUDA code and should be removed.
-   */
-  virtual void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
 
   /** evaluate the values of this single-particle orbital set
    * @param P current ParticleSet
@@ -430,6 +425,11 @@ public:
   const std::string& getName() const { return myName; }
 
 #ifdef QMC_CUDA
+  /** Evaluate the SPO value at an explicit position.
+   * Ye: This is used only for debugging the CUDA code and should be removed.
+   */
+  virtual void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
+
   using CTS = CUDAGlobalTypes;
 
   //////////////////////////////////////////
