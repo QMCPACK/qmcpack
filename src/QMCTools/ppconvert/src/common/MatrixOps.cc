@@ -51,8 +51,8 @@ F77_DGESVD (char *JOBU, char* JOBVT, int *M, int *N,
 
 extern "C" void 
 F77_ZGESVD (char *JOBU, char* JOBVT, int *M, int *N,
-	    complex<double> *A, int *LDA, double *S, complex<double> *U,
-	    int *LDU, complex<double> *VT, int *LDVT, complex<double> *work,
+	    std::complex<double> *A, int *LDA, double *S, std::complex<double> *U,
+	    int *LDU, std::complex<double> *VT, int *LDVT, std::complex<double> *work,
 	    int *LWORK, double *work2, int *INFO);
 
 
@@ -64,7 +64,7 @@ F77_DPOTRF(char *UPLO, int *n, double A[], int *lda, int *info);
 
 
 extern "C" void 
-F77_ZGETRF(int *m, int *n, complex<double> A[], 
+F77_ZGETRF(int *m, int *n, std::complex<double> A[], 
 	   int *lda, int ipiv[], int *info);
 
 extern "C" void 
@@ -72,8 +72,8 @@ F77_DGETRI (int *N, double A[], int *lda, int ipiv[], double work[],
 	    int *lwork, int *info);
 
 extern "C" void 
-F77_ZGETRI (int *N, complex<double> A[], int *lda, int ipiv[], 
-	    complex<double> work[], int *lwork, int *info);
+F77_ZGETRI (int *N, std::complex<double> A[], int *lda, int ipiv[], 
+	    std::complex<double> work[], int *lwork, int *info);
 
 extern "C" void 
 F77_DGEMM (char *transA, char *transB, int *m, int *n, int *k,
@@ -82,8 +82,8 @@ F77_DGEMM (char *transA, char *transB, int *m, int *n, int *k,
 
 extern "C" void 
 F77_ZGEMM (char *transA, char *transB, int *m, int *n, int *k,
-	   complex<double> *alpha, const complex<double> *A, int *lda, const complex<double> *B, 
-	   int *ldb, complex<double> *beta,  complex<double> *C, int *ldc);
+	   std::complex<double> *alpha, const std::complex<double> *A, int *lda, const std::complex<double> *B, 
+	   int *ldb, std::complex<double> *beta,  std::complex<double> *C, int *ldc);
 
 extern "C" void 
 F77_DSYEVR (char *JobType, char *Range, char *UpperLower, 
@@ -99,14 +99,14 @@ F77_DSYEVR (char *JobType, char *Range, char *UpperLower,
 
 extern "C" void 
 F77_ZHEEVR (char *JobType, char *Range, char *UpperLower, 
-	    int *N, complex<double> *Amat, int *LDA,
+	    int *N, std::complex<double> *Amat, int *LDA,
 	    double *VL, double *VU,
 	    int *IL, int *IU, 
 	    double *AbsTolerance, int *M,
 	    double *EigVals, 
-	    complex<double> *EigVecs, int *LDEigVecs, 
+	    std::complex<double> *EigVecs, int *LDEigVecs, 
 	    int *ISuppZ,
-	    complex<double> *Work, int *Lwork, 
+	    std::complex<double> *Work, int *Lwork, 
 	    double *Rwork, int *LRwork,
 	    int *IWorkSpace, int *LIwork,
 	    int *Info);
@@ -125,16 +125,16 @@ const Array<double,2> operator*(const Array<double,2> &A,
   char transB = 'T';
   double alpha = 1.0;
   double beta = 0.0;
-  GeneralArrayStorage<2> colMajor;
-  colMajor.ordering() = firstDim, secondDim;
+  blitz::GeneralArrayStorage<2> colMajor;
+  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
   Array<double,2> C(m,n,colMajor);
   F77_DGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data(), &k, 
 	     B.data(), &n, &beta, C.data(), &m);
   return C;
 }
 
-const Array<complex<double>,2> operator*(const Array<complex<double>,2> &A,
-					 const Array<complex<double>,2> &B)
+const Array<std::complex<double>,2> operator*(const Array<std::complex<double>,2> &A,
+					 const Array<std::complex<double>,2> &B)
 {
   int m = A.rows();
   int n = B.cols();
@@ -144,11 +144,11 @@ const Array<complex<double>,2> operator*(const Array<complex<double>,2> &A,
   // thinks is transposed.
   char transA = 'T';
   char transB = 'T';
-  complex<double> alpha(1.0, 0.0);
-  complex<double> beta(0.0, 0.0);
-  GeneralArrayStorage<2> colMajor;
-  colMajor.ordering() = firstDim, secondDim;
-  Array<complex<double>,2> C(m,n,colMajor);
+  std::complex<double> alpha(1.0, 0.0);
+  std::complex<double> beta(0.0, 0.0);
+  blitz::GeneralArrayStorage<2> colMajor;
+  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
+  Array<std::complex<double>,2> C(m,n,colMajor);
   F77_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data(), &k, 
 	     B.data(), &n, &beta, C.data(), &m);
   return C;
@@ -168,8 +168,8 @@ void MatMult (const Array<double,2> &A, const Array<double,2> &B,
   char transB = 'T';
   double alpha = 1.0;
   double beta = 0.0;
-  GeneralArrayStorage<2> colMajor;
-  colMajor.ordering() = firstDim, secondDim;
+  blitz::GeneralArrayStorage<2> colMajor;
+  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
   F77_DGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data(), &k, 
 	     B.data(), &n, &beta, C.data(), &m);
 }
@@ -226,8 +226,8 @@ LinearLeastSquares(Array<double,2> &A, Array<double,1> &x,
 	    &ldwork,&info);
 
 }
-void MatMult (const Array<complex<double>,2> &A, const Array<complex<double>,2> &B,
-	      Array<complex<double>,2> &C)
+void MatMult (const Array<std::complex<double>,2> &A, const Array<std::complex<double>,2> &B,
+	      Array<std::complex<double>,2> &C)
 {
   int m = A.rows();
   int n = B.cols();
@@ -237,10 +237,10 @@ void MatMult (const Array<complex<double>,2> &A, const Array<complex<double>,2> 
   // thinks is transposed.
   char transA = 'T';
   char transB = 'T';
-  complex<double> alpha = 1.0;
-  complex<double> beta = 0.0;
-  GeneralArrayStorage<2> colMajor;
-  colMajor.ordering() = firstDim, secondDim;
+  std::complex<double> alpha = 1.0;
+  std::complex<double> beta = 0.0;
+  blitz::GeneralArrayStorage<2> colMajor;
+  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
   F77_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data(), &k, 
 	     B.data(), &n, &beta, C.data(), &m);
   Transpose(C);
@@ -277,8 +277,8 @@ double Determinant (const Array<double,2> &A)
   }
 }
 
-complex<double> 
-Determinant (const Array<complex<double>,2> &A)
+std::complex<double> 
+Determinant (const Array<std::complex<double>,2> &A)
 {
   int m = A.rows();
   int n = A.cols();
@@ -289,13 +289,13 @@ Determinant (const Array<complex<double>,2> &A)
   if (A.rows() == 2) 
     return (A(0,0)*A(1,1)-A(0,1)*A(1,0));
   else {
-    Array<complex<double>,2> LU(m,m);
+    Array<std::complex<double>,2> LU(m,m);
     Array<int,1> ipiv(m);
     int info;
     LU = A;
     // Do LU factorization
     F77_ZGETRF (&m, &n, LU.data(), &m, ipiv.data(), &info);
-    complex<double> det = 1.0;
+    std::complex<double> det = 1.0;
     int numPerm = 0;
     for (int i=0; i<m; i++) {
       det *= LU(i,i);
@@ -351,8 +351,8 @@ double GJInverse (Array<double,2> &A)
 	    }
 	  }
 	  else if (ipiv[k] > 0) {
-	    cerr << "GJInverse: Singular matrix!\n";
-	    cerr << "A = " << A << endl;
+	    std::cerr << "GJInverse: Singular matrix!\n";
+	    std::cerr << "A = " << A << std::endl;
 	    abort();
 	  }
 	}
@@ -360,13 +360,13 @@ double GJInverse (Array<double,2> &A)
     
     if (irow != icol) 
       for (int l=0; l<n; l++) 
-	swap (A(irow,l), A(icol,l));
+	std::swap (A(irow,l), A(icol,l));
     
     rowIndex[i] = irow;
     colIndex[i] = icol;
     if (A(icol,icol) == 0.0) { 
-      cerr << "GJInverse: Singular matrix!\n";
-      cerr << "A = " << A << endl;
+      std::cerr << "GJInverse: Singular matrix!\n";
+      std::cerr << "A = " << A << std::endl;
       abort();
     }
     det *= A(icol,icol);
@@ -386,7 +386,7 @@ double GJInverse (Array<double,2> &A)
   for (int l=n-1; l>=0; l--) {
     if (rowIndex[l] != colIndex[l]) {
       for (int k=0; k<n ; k++)
-	swap (A(k,rowIndex[l]),A(k, colIndex[l]));
+	std::swap (A(k,rowIndex[l]),A(k, colIndex[l]));
       det *= -1.0;
     }
   }
@@ -497,10 +497,10 @@ void SVdecomp (Array<double,2> &A,
   int N = A.cols();
   Array<double,2> Atrans(M,N);
   // U will be Utrans after lapack call
-  U.resize(min(M,N),M);
-  V.resize(N,min(M,N));
+  U.resize(std::min(M,N),M);
+  V.resize(N,std::min(M,N));
   
-  S.resize(min(N,M));
+  S.resize(std::min(N,M));
   Atrans = A;
 
   // Transpose U for FORTRAN ordering
@@ -509,8 +509,8 @@ void SVdecomp (Array<double,2> &A,
   char JOBVT = 'S'; // return min (M,N) columns of V
   int LDA = M;
   int LDU = M;
-  int LDVT = min(M,N);
-  int LWORK = 10 * max(3*min(M,N)+max(M,N),5*min(M,N));
+  int LDVT = std::min(M,N);
+  int LWORK = 10 * std::max(3*std::min(M,N)+std::max(M,N),5*std::min(M,N));
   Array<double,1> WORK(LWORK);
   int INFO;
 
@@ -524,17 +524,17 @@ void SVdecomp (Array<double,2> &A,
 }
 
 
-void SVdecomp (Array<complex<double>,2> &A, Array<complex<double>,2> &U, 
-	       Array<double,1> &S, Array<complex<double>,2> &V)
+void SVdecomp (Array<std::complex<double>,2> &A, Array<std::complex<double>,2> &U, 
+	       Array<double,1> &S, Array<std::complex<double>,2> &V)
 {
   int M = A.rows();
   int N = A.cols();
-  Array<complex<double>,2> Atrans(M,N);
+  Array<std::complex<double>,2> Atrans(M,N);
   // U will be Utrans after lapack call
-  U.resize(min(M,N),M);
-  V.resize(N,min(M,N));
+  U.resize(std::min(M,N),M);
+  V.resize(N,std::min(M,N));
   
-  S.resize(min(N,M));
+  S.resize(std::min(N,M));
   Atrans = A;
 
   // Transpose U for FORTRAN ordering
@@ -543,10 +543,10 @@ void SVdecomp (Array<complex<double>,2> &A, Array<complex<double>,2> &U,
   char JOBVT = 'S'; // return min (M,N) columns of V
   int LDA = M;
   int LDU = M;
-  int LDVT = min(M,N);
-  int LWORK = 10 * max(3*min(M,N)+max(M,N),5*min(M,N));
-  Array<complex<double>,1> WORK(LWORK);
-  Array<double,1> WORK2(5*min(M,N));
+  int LDVT = std::min(M,N);
+  int LWORK = 10 * std::max(3*std::min(M,N)+std::max(M,N),5*std::min(M,N));
+  Array<std::complex<double>,1> WORK(LWORK);
+  Array<double,1> WORK2(5*std::min(M,N));
   int INFO;
 
   F77_ZGESVD (&JOBU, &JOBVT, &M, &N, Atrans.data(), &LDA,
@@ -559,15 +559,15 @@ void SVdecomp (Array<complex<double>,2> &A, Array<complex<double>,2> &U,
 }
 
 
-void PolarOrthogonalize (Array<complex<double>,2> &A)
+void PolarOrthogonalize (Array<std::complex<double>,2> &A)
 {
   int M = A.rows();
   int N = A.cols();
   if (M != N) {
-    cerr << "Error:  nonsquare matrix in PolarOrthogonalize. Aborting.\n";
+    std::cerr << "Error:  nonsquare matrix in PolarOrthogonalize. Aborting.\n";
     abort();
   }
-  Array<complex<double>,2> U, V;
+  Array<std::complex<double>,2> U, V;
   Array<double,1> S;
 
   SVdecomp (A, U, S, V);
@@ -596,7 +596,7 @@ void LUdecomp (Array<double,2> &A, Array<int,1> &perm,
     for (int j=0; j<n; j++)
       if (fabs(A(i,j)) > big) big = fabs(A(i,j));
     if (big == 0.0) {
-      cerr << "Singularity in LUdecomp.\n";
+      std::cerr << "Singularity in LUdecomp.\n";
       abort();
     }
     vv(i) = 1.0/big;
@@ -740,7 +740,7 @@ void SymmEigenPairs (const Array<scalar,2> &A, int NumPairs,
 	       &Info);
 
    if (Info !=0) 
-     cerr << "Lapack error in DSYEVR: " << Info << endl;
+     std::cerr << "Lapack error in DSYEVR: " << Info << std::endl;
 
    // Now copy over output of Vectors and Vals
    Vals.resize(NumPairs);
@@ -765,16 +765,16 @@ void SymmEigenPairs (const Array<scalar,2> &A, int NumPairs,
 
 
 
-void SymmEigenPairs (const Array<complex<double>,2> &A, int NumPairs,
+void SymmEigenPairs (const Array<std::complex<double>,2> &A, int NumPairs,
 		     Array<scalar,1> &Vals,
-		     Array<complex<double>,2> &Vectors)
+		     Array<std::complex<double>,2> &Vectors)
 {
   char JobType = 'V';    // Find eigenvectors and eignevalues
   char Range   = 'I';    // Find eigenpairs in a range of indices
   char UpperLower = 'U'; // Use upper triagle of A
 
   int N   = A.rows();
-  complex<double> *Amat = new complex<double>[N*N];
+  std::complex<double> *Amat = new std::complex<double>[N*N];
   int LDA = N;
   double VL = 0.0;
   double VU = 0.0;
@@ -783,7 +783,7 @@ void SymmEigenPairs (const Array<complex<double>,2> &A, int NumPairs,
   double AbsTolerance = 0.0;
   int NumComputed;
   double *EigVals = new double[N];
-  complex<double> *EigVecs = new complex<double>[N*NumPairs];
+  std::complex<double> *EigVecs = new std::complex<double>[N*NumPairs];
   int LDEigVecs = N;
   int *ISuppZ = new int[2*NumPairs];
   int Info;
@@ -792,7 +792,7 @@ void SymmEigenPairs (const Array<complex<double>,2> &A, int NumPairs,
   int Lwork = -1;
   int LIwork = -1;
   int LRwork = -1;
-  complex<double> WorkSize;
+  std::complex<double> WorkSize;
   double RWorkSize;
   int IWorkSize;
   
@@ -809,7 +809,7 @@ void SymmEigenPairs (const Array<complex<double>,2> &A, int NumPairs,
    Lwork = (int) floor(WorkSize.real()+0.5);
    LIwork = IWorkSize;
    LRwork = (int) floor (RWorkSize+0.5);
-   complex<double> *WorkSpace = new complex<double>[Lwork];
+   std::complex<double> *WorkSpace = new std::complex<double>[Lwork];
    double * RWorkSpace = new double[LRwork];
    int *IWorkSpace = new int[LIwork];
    
@@ -910,9 +910,9 @@ DetCofactorsWorksize(int N)
 
 /// This function returns the determinant of A and replaces A with its
 /// cofactors.
-complex<double>
-ComplexDetCofactors (Array<complex<double>,2> &A, 
-		     Array<complex<double>,1> &work)
+std::complex<double>
+ComplexDetCofactors (Array<std::complex<double>,2> &A, 
+		     Array<std::complex<double>,1> &work)
 {
   const int maxN = 2000;
   int ipiv[maxN];
@@ -932,7 +932,7 @@ ComplexDetCofactors (Array<complex<double>,2> &A,
   int info;
   // Do LU factorization
   F77_ZGETRF (&N, &M, A.data(), &N, ipiv, &info);
-  complex<double> det = 1.0;
+  std::complex<double> det = 1.0;
   int numPerm = 0;
   for (int i=0; i<N; i++) {
     det *= A(i,i);
@@ -954,8 +954,8 @@ ComplexDetCofactors (Array<complex<double>,2> &A,
 int 
 ComplexDetCofactorsWorksize(int N)
 {
-  complex<double> work;
-  complex<double> dummy;
+  std::complex<double> work;
+  std::complex<double> dummy;
   int info;
   int ipiv;
   int lwork = -1;

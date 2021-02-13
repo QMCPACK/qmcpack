@@ -23,15 +23,15 @@ namespace IO
 
   void SetVerbose (bool verb) {
     if (verb)
-      verr.rdbuf(cerr.rdbuf());
+      verr.rdbuf(std::cerr.rdbuf());
   }
 
   /// In the file name format name.extn, returns the extension.
   /// Actually returns everything after the trailing.
-  string Extension (string fileName)
+  std::string Extension (std::string fileName)
   {
-    string extn;
-    stack<char> bwExtn;
+    std::string extn;
+    std::stack<char> bwExtn;
     int pos = fileName.length()-1;
     while ((pos >= 0) && fileName[pos]!='.') {
       bwExtn.push(fileName[pos]);
@@ -55,10 +55,10 @@ namespace IO
   /// .h5:            HDF5
   /// .xml:           XML
   /// .anything_else  ASCII
-  IOTreeClass *ReadTree (string fileName, string myName, IOTreeClass *parent)
+  IOTreeClass *ReadTree (std::string fileName, std::string myName, IOTreeClass *parent)
   {
     IOTreeClass *newTree;
-    string extn = Extension (fileName);
+    std::string extn = Extension (fileName);
     newTree = new IOTreeASCIIClass;
     
     newTree->FileName = fileName;
@@ -71,10 +71,10 @@ namespace IO
     }
   }
   
-  IOTreeClass *NewTree (string fileName, string myName, IOTreeClass *parent)
+  IOTreeClass *NewTree (std::string fileName, std::string myName, IOTreeClass *parent)
   {
     IOTreeClass *newTree;
-    string extn = Extension (fileName);
+    std::string extn = Extension (fileName);
     newTree = new IOTreeASCIIClass;
     
     bool success = newTree->NewFile (fileName, myName, parent);
@@ -87,7 +87,7 @@ namespace IO
   }
 
   bool 
-  IOSectionClass::OpenFile (string fileName)
+  IOSectionClass::OpenFile (std::string fileName)
   {
     CurrentSection = ReadTree (fileName, "Root", NULL);
     if (CurrentSection == NULL)
@@ -97,7 +97,7 @@ namespace IO
   }
 
   bool 
-  IOSectionClass::NewFile (string fileName)
+  IOSectionClass::NewFile (std::string fileName)
   {
     CurrentSection = NewTree (fileName, "Root", NULL);
     if (CurrentSection == NULL)
@@ -128,7 +128,7 @@ namespace IO
   }
 
 
-  bool IOSectionClass::OpenSection (string name, int num)
+  bool IOSectionClass::OpenSection (std::string name, int num)
   {
     IOTreeClass *newSection;
     bool success;
@@ -143,7 +143,7 @@ namespace IO
   IOSectionClass::OpenSection (int num)
   {
     IOTreeClass *newSection;
-    list<IOTreeClass*>::iterator Iter=CurrentSection->SectionList.begin();
+    std::list<IOTreeClass*>::iterator Iter=CurrentSection->SectionList.begin();
     int i = 0;
     while ((i<num) && 
 	   (Iter != CurrentSection->SectionList.end())){
@@ -160,7 +160,7 @@ namespace IO
 
 
   bool 
-  IOSectionClass::IncludeSection (string name, string fileName)
+  IOSectionClass::IncludeSection (std::string name, std::string fileName)
   {
     IOTreeClass *newSection;
     newSection = ReadTree (fileName, name, CurrentSection);
@@ -174,7 +174,7 @@ namespace IO
 
   ///Don't think this pushes to back of list like it should nor does newfile
   bool 
-  IOSectionClass::NewSection (string name, string fileName)
+  IOSectionClass::NewSection (std::string name, std::string fileName)
   {
     IOTreeClass *newSection;
     newSection = NewTree (fileName, name, CurrentSection);
@@ -196,7 +196,7 @@ namespace IO
   }
 
 
-  string
+  std::string
   IOSectionClass::GetFileName()
   {
     IOTreeClass *tree = CurrentSection;

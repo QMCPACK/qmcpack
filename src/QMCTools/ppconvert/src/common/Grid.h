@@ -18,8 +18,10 @@
 #define GRID_H
 
 #include "IO.h"
-using namespace IO;
+
 #include "Blitz.h"
+
+using IO::IOSectionClass;
 
 //Ken's Grid Class
 
@@ -162,7 +164,7 @@ public:
           lo = i;
         done = (hi - lo) < 2;
       }
-      return min(lo, NumPoints - 2);
+      return std::min(lo, NumPoints - 2);
     }
   }
 
