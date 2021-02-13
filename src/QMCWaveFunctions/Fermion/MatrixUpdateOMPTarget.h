@@ -47,16 +47,10 @@ class MatrixUpdateOMPTarget
   DiracMatrix<T_FP> detEng;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
-  /// device pointer of psiMinv data
-  T* psiMinv_dev_ptr;
   /// scratch space for rank-1 update
   OffloadValueVector_t temp;
-  /// device pointer of temp
-  T* temp_dev_ptr;
   // scratch space for keeping one row of Ainv
   OffloadValueVector_t rcopy;
-  /// device pointer of rcopy
-  T* rcopy_dev_ptr;
   // constant array value T(1)
   OffloadValueVector_t cone_vec;
   // constant array value T(0)
@@ -88,8 +82,6 @@ class MatrixUpdateOMPTarget
     {
       temp.resize(total_size);
       rcopy.resize(total_size);
-      temp_dev_ptr  = getOffloadDevicePtr(temp.data());
-      rcopy_dev_ptr = getOffloadDevicePtr(rcopy.data());
     }
   }
 
@@ -98,11 +90,7 @@ public:
    * @param norb number of electrons/orbitals
    * @param delay, maximum delay 0<delay<=norb
    */
-  inline void resize(int norb, int delay)
-  {
-    psiMinv.resize(norb, getAlignedSize<T>(norb));
-    psiMinv_dev_ptr = getOffloadDevicePtr(psiMinv.data());
-  }
+  inline void resize(int norb, int delay) { psiMinv.resize(norb, getAlignedSize<T>(norb)); }
 
   void createResource(ResourceCollection& collection) {}
   void acquireResource(ResourceCollection& collection) {}
@@ -110,7 +98,7 @@ public:
 
   OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
 
-  inline T* getRow_psiMinv_offload(int row_id) { return psiMinv_dev_ptr + row_id * psiMinv.cols(); }
+  inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
    * @param logdetT orbital value matrix
@@ -154,7 +142,7 @@ public:
     Matrix<const T*> ptr_buffer(reinterpret_cast<const T**>(buffer_H2D.data()), 2, nw);
     for (int iw = 0; iw < nw; iw++)
     {
-      ptr_buffer[0][iw] = engines[iw].get().psiMinv_dev_ptr + rowchanged * psiMinv.cols();
+      ptr_buffer[0][iw] = engines[iw].get().psiMinv.device_data() + rowchanged * psiMinv.cols();
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
     }
 
@@ -245,10 +233,10 @@ public:
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
-        ptr_buffer[0][count] = engines[iw].get().psiMinv_dev_ptr;
+        ptr_buffer[0][count] = engines[iw].get().psiMinv.device_data();
         ptr_buffer[1][count] = const_cast<T*>(phi_vgl_v_dev_ptr + norb * iw);
-        ptr_buffer[2][count] = temp_dev_ptr + norb * count;
-        ptr_buffer[3][count] = rcopy_dev_ptr + norb * count;
+        ptr_buffer[2][count] = temp.device_data() + norb * count;
+        ptr_buffer[3][count] = rcopy.device_data() + norb * count;
         ptr_buffer[4][count] = psiM_g_list[count];
         ptr_buffer[5][count] = psiM_l_list[count];
         ptr_buffer[6][count] = const_cast<T*>(phi_vgl_v_dev_ptr + phi_vgl_stride + norb * 3 * iw);
@@ -349,7 +337,7 @@ public:
     else
     {
       for (This_t& engine : engines)
-        row_ptr_list.push_back(engine.psiMinv_dev_ptr + row_id * psiMinv.cols());
+        row_ptr_list.push_back(engine.psiMinv.device_data() + row_id * psiMinv.cols());
     }
     return row_ptr_list;
   }

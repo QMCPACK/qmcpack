@@ -196,6 +196,11 @@ public:
   inline pointer data() { return X; }
   inline const_pointer data() const { return X; }
 
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  inline pointer device_data() { return mAllocator.getDevicePtr(); }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  inline const_pointer device_data() const { return mAllocator.getDevicePtr(); }
+
   inline pointer first_address() { return X; }
   inline const_pointer first_address() const { return X; }
 

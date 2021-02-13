@@ -249,6 +249,20 @@ struct VectorSoaContainer
   ///return the end
   __forceinline const T* end() const { return myData + D * nGhosts; }
 
+
+  ///return the base, device
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  __forceinline T* device_data() { return myAlloc.getDevicePtr(); }
+  ///return the base, device
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  __forceinline const T* device_data() const { return myAlloc.getDevicePtr(); }
+  ///return the pointer of the i-th components, device
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  __forceinline T* restrict device_data(size_t i) { return myAlloc.getDevicePtr() + i * nGhosts; }
+  ///return the const pointer of the i-th components, device
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  __forceinline const T* restrict device_data(size_t i) const { return myAlloc.getDevicePtr() + i * nGhosts; }
+
 private:
   /// number of elements
   size_t nLocal;
