@@ -40,8 +40,6 @@ private:
   OffloadPinnedVector<RealType> r_dr_memorypool_;
   ///target particle id
   std::vector<int> particle_id;
-  ///device pointer of r_dr_memorypool_
-  RealType* r_dr_device_ptr_;
   /// timer for offload portion
   NewTimer& offload_timer_;
   /// timer for copy portion
@@ -53,7 +51,6 @@ public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice),
         DistanceTableData(source, target),
-        r_dr_device_ptr_(nullptr),
         offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") +
                                                       target.getName() + "_" + source.getName(),
                                                   timer_level_fine)),
@@ -82,7 +79,6 @@ public:
     const int N_sources_padded = getAlignedSize<T>(N_sources);
     const int stride_size      = N_sources_padded * (D + 1);
     r_dr_memorypool_.resize(stride_size * N_targets);
-    r_dr_device_ptr_ = getOffloadDevicePtr(r_dr_memorypool_.data());
 
     distances_.resize(N_targets);
     displacements_.resize(N_targets);
@@ -212,7 +208,7 @@ public:
           target_positions[count_targets * D + idim] = pset.R[iat][idim];
 
         walker_id_ptr[count_targets] = iw;
-        output_ptrs[count_targets]   = dt.r_dr_device_ptr_ + iat * N_sources_padded * (D + 1);
+        output_ptrs[count_targets]   = dt.r_dr_memorypool_.device_data() + iat * N_sources_padded * (D + 1);
       }
     }
 

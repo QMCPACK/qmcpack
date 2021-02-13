@@ -39,7 +39,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   /// old displacements
   DisplRow old_dr_;
 
-  SoaDistanceTableAAOMPTarget(ParticleSet& target) : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
+  SoaDistanceTableAAOMPTarget(ParticleSet& target)
+      : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
     if (!coordinates_soa)
@@ -48,14 +49,11 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     PRAGMA_OFFLOAD("omp target enter data map(to : this[:1])")
   }
 
-  SoaDistanceTableAAOMPTarget()                          = delete;
+  SoaDistanceTableAAOMPTarget()                                   = delete;
   SoaDistanceTableAAOMPTarget(const SoaDistanceTableAAOMPTarget&) = delete;
-  ~SoaDistanceTableAAOMPTarget()
-  {
-    PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])")
-  }
+  ~SoaDistanceTableAAOMPTarget(){PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])")}
 
-  size_t compute_size(int N)
+  size_t compute_size(int N) const
   {
     const size_t N_padded  = getAlignedSize<T>(N);
     const size_t Alignment = getAlignment<T>();
