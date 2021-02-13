@@ -83,11 +83,11 @@ public:
                                    size_t iat,
                                    const std::vector<PosType>& new_positions) override
   {
-    auto nw = coords_list.size();
+    const auto nw = coords_list.size();
 
     nw_new_old_pos.resize(nw);
     nw_active_pos_view.attachReference(nw_new_old_pos.size(), nw_new_old_pos.capacity(), nw_new_old_pos.data(0));
-    nw_old_pos_view.attachReference(nw_new_old_pos.size(), nw_new_old_pos.capacity(), nw_new_old_pos.data(3));
+    nw_old_pos_view.attachReference(nw_new_old_pos.size(), nw_new_old_pos.capacity(), nw_new_old_pos.data(QMCTraits::DIM));
 
     for (int iw = 0; iw < nw; iw++)
     {
@@ -104,23 +104,37 @@ public:
                             size_t iat,
                             const std::vector<bool>& isAccepted) override
   {
-    nw_accept_list.resize(coords_list.size());
+    const size_t nw = coords_list.size();
+    nw_accept_index_ptrs.resize((sizeof(int) + sizeof(RealType*)) * nw);
+    auto* RSoA_ptr_array = reinterpret_cast<RealType**>(nw_accept_index_ptrs.data());
+    auto* id_array = reinterpret_cast<int*>(nw_accept_index_ptrs.data() + sizeof(RealType*) * coords_list.size());
+
     size_t num_accepted = 0;
-    for (int iw = 0; iw < coords_list.size(); iw++)
+    for (int iw = 0; iw < nw; iw++)
       if (isAccepted[iw])
       {
         auto& coords = dynamic_cast<RealSpacePositionsOMPTarget&>(coords_list[iw].get());
-        nw_accept_list[num_accepted] = iw;
+        RSoA_ptr_array[num_accepted] = coords.RSoA.device_data();
+        id_array[num_accepted] = iw;
+        // save new coordinates on host copy
         coords.RSoA_hostview(iat) = nw_active_pos_view[iw];
         num_accepted++;
       }
 
-    //offload GPU
+    //offload to GPU
+    auto* restrict w_accept_buffer_ptr = nw_accept_index_ptrs.data();
+    auto* restrict mw_pos_ptr = nw_new_old_pos.data();
+    const size_t rsoa_stride = RSoA.capacity();
+    const size_t mw_pos_stride = nw_new_old_pos.capacity();
+
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for \
+                    map(always, to : w_accept_buffer_ptr[:nw_accept_index_ptrs.size()])")
     for (int i = 0; i < num_accepted; i++)
     {
-      const int iw = nw_accept_list[i];
-      auto& coords = dynamic_cast<RealSpacePositionsOMPTarget&>(coords_list[iw].get());
-      coords.RSoA_hostview(iat) = nw_active_pos_view[iw];
+      const int iw = reinterpret_cast<int*>(w_accept_buffer_ptr + sizeof(RealType*) * nw)[i];
+      RealType* RSoA_dev_ptr = reinterpret_cast<RealType**>(w_accept_buffer_ptr)[i];
+      for (int id = 0; id < QMCTraits::DIM; id++)
+        RSoA_dev_ptr[iat + rsoa_stride * id] = mw_pos_ptr[iw + mw_pos_stride * id];
     }
   }
 
@@ -130,7 +144,10 @@ public:
   void donePbyP() override
   {
     if (is_host_position_changed_)
+    {
       updateH2D();
+      is_host_position_changed_ = false;
+    }
   }
 
   const RealType* getDevicePtr() const { return RSoA.device_data(); }
@@ -149,7 +166,7 @@ private:
   VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_old_pos_view;
 
   /// accept list
-  Vector<int, OMPallocator<int, PinnedAlignedAllocator<int>>> nw_accept_list;
+  Vector<char, OMPallocator<char, PinnedAlignedAllocator<char>>> nw_accept_index_ptrs;
 
   ///host view of RSoA
   PosVectorSoa RSoA_hostview;
