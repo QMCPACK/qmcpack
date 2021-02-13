@@ -62,7 +62,8 @@ public:
 
   virtual void mw_acceptParticlePos(const RefVector<DynamicCoordinates>& coords_list,
                                     size_t iat,
-                                    const std::vector<bool>& isAccepted) {}
+                                    const std::vector<PosType>& new_positions,
+                                    const std::vector<bool>& isAccepted) = 0;
 
   virtual const PosVectorSoa& getAllParticlePos() const = 0;
   virtual PosType getOneParticlePos(size_t iat) const   = 0;

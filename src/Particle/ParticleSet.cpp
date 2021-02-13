@@ -715,13 +715,22 @@ void ParticleSet::flex_accept_rejectMove(const RefVector<ParticleSet>& p_list,
   {
     ParticleSet& leader = p_list[0];
     ScopedTimer update_scope(leader.myTimers[PS_accept]);
+
     const auto coords_list(extractCoordsRefList(p_list));
-    leader.coordinates_->mw_acceptParticlePos(coords_list, iat, isAccepted);
+    std::vector<SingleParticlePos_t> new_positions;
+    new_positions.reserve(p_list.size());
+    for (const ParticleSet& pset : p_list)
+      new_positions.push_back(pset.activePos);
+    leader.coordinates_->mw_acceptParticlePos(coords_list, iat, new_positions, isAccepted);
+
 #pragma omp parallel for
     for (int iw = 0; iw < p_list.size(); iw++)
     {
       if (isAccepted[iw])
+{
+//  p_list[iw].get().coordinates_->setOneParticlePos(p_list[iw].get().activePos, iat);
         p_list[iw].get().acceptMove_impl(iat, partial_table_update);
+}
       else
         p_list[iw].get().rejectMove(iat);
     }
