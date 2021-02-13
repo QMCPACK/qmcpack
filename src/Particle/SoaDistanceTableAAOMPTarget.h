@@ -165,8 +165,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const int ChunkSizePerTeam = 256;
     const int num_teams        = (N_targets + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
-    auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(p_list[0].get().getCoordinates());
+    ParticleSet& pset_leader = p_list[0];
+    auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
 
+    const auto activePtcl_local = pset_leader.activePtcl;
     const auto N_sources_local  = N_targets;
     const auto N_sources_padded = Ntargets_padded;
     auto* rsoa_dev_list_ptr     = rsoa_dev_list_.data();
@@ -196,7 +198,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
             PRAGMA_OFFLOAD("omp parallel for simd")
             for (int iel = first; iel < last; iel++)
               DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
-                                                            iel);
+                                                            iel, activePtcl_local);
           }
 
           { // old
@@ -210,7 +212,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
             PRAGMA_OFFLOAD("omp parallel for simd")
             for (int iel = first; iel < last; iel++)
               DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
-                                                            iel);
+                                                            iel, iat);
           }
         }
     }

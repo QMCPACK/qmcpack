@@ -59,6 +59,7 @@ public:
     resize(R.size());
     RSoA_hostview.copyIn(R);
     updateH2D();
+    is_nw_new_pos_prepared = false;
   }
 
   void setOneParticlePos(const PosType& pos, size_t iat) override
@@ -97,6 +98,8 @@ public:
 
     auto* mw_pos_ptr = mw_new_pos.data();
     PRAGMA_OFFLOAD("omp target update to(mw_pos_ptr[:QMCTraits::DIM * mw_new_pos.capacity()])")
+
+    is_nw_new_pos_prepared = true;
   }
 
   void mw_acceptParticlePos(const RefVector<DynamicCoordinates>& coords_list,
@@ -105,6 +108,15 @@ public:
                             const std::vector<bool>& isAccepted) override
   {
     const size_t nw = coords_list.size();
+
+    if (!is_nw_new_pos_prepared)
+    {
+      mw_copyActiveOldParticlePos(coords_list, iat, new_positions);
+      app_warning() << "This message only appear in unit tests. Report a bug if seen in production code." << std::endl;
+    }
+
+    is_nw_new_pos_prepared = false;
+
     nw_accept_index_ptrs.resize((sizeof(int) + sizeof(RealType*)) * nw);
     auto* RSoA_ptr_array = reinterpret_cast<RealType**>(nw_accept_index_ptrs.data());
     auto* id_array       = reinterpret_cast<int*>(nw_accept_index_ptrs.data() + sizeof(RealType*) * coords_list.size());
@@ -143,6 +155,7 @@ public:
 
   void donePbyP() override
   {
+    is_nw_new_pos_prepared = false;
     if (is_host_position_changed_)
     {
       updateH2D();
@@ -169,6 +182,9 @@ private:
 
   ///if true, host position has been changed while device copy not updated.
   bool is_host_position_changed_;
+
+  ///if true, mw_new_pos has been updated with active positions.
+  bool is_nw_new_pos_prepared;
 
   void updateH2D()
   {
