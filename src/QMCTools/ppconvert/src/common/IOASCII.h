@@ -62,7 +62,7 @@ class IOTreeASCIIClass : public IOTreeClass
                    bool wantEndBrace);
 
 public:
-  void WriteSection(ofstream& outFile, int indent);
+  void WriteSection(std::ofstream& outFile, int indent);
   IOFileType GetFileType();
   /// Print an indented tree of section variable names.
   void PrintTree(int level);

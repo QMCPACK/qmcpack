@@ -57,7 +57,7 @@ void MatMult(const Array<std::complex<double>, 2>& A,
              Array<std::complex<double>, 2>& C);
 
 double Determinant(const Array<double, 2>& A);
-complex<double> Determinant(const Array<std::complex<double>, 2>& A);
+std::complex<double> Determinant(const Array<std::complex<double>, 2>& A);
 
 /// This function returns the determinant of A and replaces A with its
 /// cofactors.
@@ -68,7 +68,7 @@ int DetCofactorsWorksize(int N);
 
 
 /// Complex versions of the functions above
-complex<double> ComplexDetCofactors(Array<std::complex<double>, 2>& A, Array<std::complex<double>, 1>& work);
+std::complex<double> ComplexDetCofactors(Array<std::complex<double>, 2>& A, Array<std::complex<double>, 1>& work);
 int ComplexDetCofactorsWorksize(int N);
 
 double GJInverse(Array<double, 2>& A);
@@ -110,7 +110,7 @@ inline void Transpose(Array<double, 2>& A)
   {
     for (int i = 0; i < m; i++)
       for (int j = i + 1; j < m; j++)
-        swap(A(i, j), A(j, i));
+        std::swap(A(i, j), A(j, i));
   }
 }
 
@@ -124,7 +124,7 @@ inline void Transpose(Array<std::complex<double>, 2>& A)
   {
     for (int i = 0; i < m; i++)
       for (int j = i + 1; j < m; j++)
-        swap(A(i, j), A(j, i));
+        std::swap(A(i, j), A(j, i));
   }
 }
 

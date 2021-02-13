@@ -22,7 +22,6 @@
 
 namespace IO
 {
-using namespace blitz;
 template<typename T, int RANK>
 class IOVarASCII;
 
@@ -96,7 +95,7 @@ public:
   IODataType GetType();
   IOFileType GetFileType();
 
-  void Print(ofstream& out);
+  void Print(std::ofstream& out);
 
   int GetExtent(int dim);
   void Resize(int n);
@@ -113,7 +112,7 @@ public:
            typename T8,
            typename T9,
            typename T10>
-  bool VarRead(typename SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
+  bool VarRead(typename blitz::SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
                T0 s0,
                T1 s1,
                T2 s2,
@@ -138,7 +137,7 @@ public:
            typename T8,
            typename T9,
            typename T10>
-  bool VarWrite(const typename SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
+  bool VarWrite(const typename blitz::SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
                 T0 s0,
                 T1 s1,
                 T2 s2,
@@ -366,7 +365,7 @@ template<typename T0,
          typename T9,
          typename T10>
 inline bool IOVarASCII<T, RANK>::VarRead(
-    typename SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
+    typename blitz::SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
     T0 s0,
     T1 s1,
     T2 s2,
@@ -410,7 +409,7 @@ template<typename T0,
          typename T9,
          typename T10>
 inline bool IOVarASCII<T, RANK>::VarWrite(
-    const typename SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
+    const typename blitz::SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
     T0 s0,
     T1 s1,
     T2 s2,
@@ -450,7 +449,7 @@ typename ASCIISliceMaker<T, RANK, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::
 }
 
 template<class T, int RANK>
-void IOVarASCII<T, RANK>::Print(ofstream& out)
+void IOVarASCII<T, RANK>::Print(std::ofstream& out)
 {
   T a;
   if (GetRank() == 0)
