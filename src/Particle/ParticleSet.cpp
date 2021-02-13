@@ -46,16 +46,19 @@ enum PSetTimers
   PS_newpos,
   PS_donePbyP,
   PS_accept,
-  PS_update
+  PS_update,
+  PS_dt_move,
+  PS_mw_copy
 };
 
-static const TimerNameList_t<PSetTimers>
-generatePSetTimerNames(std::string& obj_name)
+static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj_name)
 {
   return {{PS_newpos, "ParticleSet:" + obj_name + "::computeNewPosDT"},
           {PS_donePbyP, "ParticleSet:" + obj_name + "::donePbyP"},
           {PS_accept, "ParticleSet:" + obj_name + "::acceptMove"},
-          {PS_update, "ParticleSet:" + obj_name + "::update"}};
+          {PS_update, "ParticleSet:" + obj_name + "::update"},
+          {PS_dt_move, "ParticleSet:" + obj_name + "::dt_move"},
+          {PS_mw_copy, "ParticleSet:" + obj_name + "::mw_copy"}};
 }
 
 ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
@@ -104,7 +107,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     addTable(p.DistTables[i]->origin(), p.DistTables[i]->getFullTableNeeds());
   if (p.SK)
   {
-    LRBox = p.LRBox;               //copy LRBox
+    LRBox = p.LRBox;                             //copy LRBox
     SK    = std::make_unique<StructFact>(*p.SK); //safe to use the copy constructor
     //R.InUnit=p.R.InUnit;
     //createSK();
@@ -505,16 +508,21 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& 
   ParticleSet& leader = p_list[0];
   ScopedTimer compute_newpos_scope(leader.myTimers[PS_newpos]);
 
-  const auto coords_list(extractCoordsRefList(p_list));
-  leader.coordinates_->mw_copyActiveOldParticlePos(coords_list, iat, new_positions);
-
-  const int dist_tables_size = leader.DistTables.size();
-  for (int i = 0; i < dist_tables_size; ++i)
   {
-    const auto dt_list(extractDTRefList(p_list, i));
-    leader.DistTables[i]->mw_move(dt_list, p_list, new_positions, iat, maybe_accept);
+    ScopedTimer copy_scope(leader.myTimers[PS_mw_copy]);
+    const auto coords_list(extractCoordsRefList(p_list));
+    leader.coordinates_->mw_copyActiveOldParticlePos(coords_list, iat, new_positions);
   }
 
+  {
+    ScopedTimer dt_scope(leader.myTimers[PS_dt_move]);
+    const int dist_tables_size = leader.DistTables.size();
+    for (int i = 0; i < dist_tables_size; ++i)
+    {
+      const auto dt_list(extractDTRefList(p_list, i));
+      leader.DistTables[i]->mw_move(dt_list, p_list, new_positions, iat, maybe_accept);
+    }
+  }
   auto& SK = leader.SK;
   if (SK && SK->DoUpdate)
   {
@@ -678,7 +686,7 @@ void ParticleSet::acceptMove_impl(Index_t iat, bool partial_table_update)
     if (SK && SK->DoUpdate)
       SK->acceptMove(iat, GroupID[iat], R[iat]);
 
-    R[iat] = activePos;
+    R[iat]     = activePos;
     spins[iat] = activeSpinVal;
     activePtcl = -1;
   }
@@ -727,10 +735,7 @@ void ParticleSet::flex_accept_rejectMove(const RefVector<ParticleSet>& p_list,
     for (int iw = 0; iw < p_list.size(); iw++)
     {
       if (isAccepted[iw])
-{
-//  p_list[iw].get().coordinates_->setOneParticlePos(p_list[iw].get().activePos, iat);
         p_list[iw].get().acceptMove_impl(iat, partial_table_update);
-}
       else
         p_list[iw].get().rejectMove(iat);
     }

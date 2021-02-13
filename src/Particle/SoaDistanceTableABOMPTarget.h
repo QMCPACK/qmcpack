@@ -40,12 +40,6 @@ private:
   OffloadPinnedVector<RealType> r_dr_memorypool_;
   ///target particle id
   std::vector<int> particle_id;
-  /// timer for offload portion
-  NewTimer& offload_timer_;
-  /// timer for copy portion
-  NewTimer& copy_timer_;
-  /// timer for offload portion
-  NewTimer& eval_timer_;
 
 public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
@@ -57,9 +51,16 @@ public:
         copy_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::copy_") + target.getName() +
                                                    "_" + source.getName(),
                                                timer_level_fine)),
-        eval_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") +
-                                                   target.getName() + "_" + source.getName(),
-                                               timer_level_fine))
+        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") +
+                                                       target.getName() + "_" + source.getName(),
+                                                   timer_level_fine)),
+        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::move_") + target.getName() +
+                                                   "_" + source.getName(),
+                                               timer_level_fine)),
+        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::update_") +
+                                                     target.getName() + "_" + source.getName(),
+                                                 timer_level_fine))
+
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());
     if (!coordinates_soa)
@@ -103,7 +104,7 @@ public:
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P)
   {
-    ScopedTimer eval(&eval_timer_);
+    ScopedTimer local_timer(&evaluate_timer_);
     // be aware of the sign of Displacement
     const int N_targets_local  = N_targets;
     const int N_sources_local  = N_sources;
@@ -142,7 +143,7 @@ public:
           auto* r_iat_ptr          = r_dr_ptr + iat * stride_size;
           auto* dr_iat_ptr         = r_iat_ptr + N_sources_padded;
 
-          PRAGMA_OFFLOAD("omp parallel for simd")
+          PRAGMA_OFFLOAD("omp parallel for")
           for (int iel = first; iel < last; iel++)
             DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                           iel);
@@ -155,7 +156,7 @@ public:
    */
   inline void mw_evaluate(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
   {
-    ScopedTimer eval(&eval_timer_);
+    ScopedTimer local_timer(&evaluate_timer_);
     mw_evaluate_fuse_transfer(dt_list, p_list);
   }
 
@@ -239,7 +240,7 @@ public:
           for (int idim = 0; idim < D; idim++)
             pos[idim] = target_pos_ptr[iat * D + idim];
 
-          PRAGMA_OFFLOAD("omp parallel for simd")
+          PRAGMA_OFFLOAD("omp parallel for")
           for (int iel = first; iel < last; iel++)
             DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                           iel);
@@ -338,7 +339,7 @@ public:
           for (int idim = 0; idim < D; idim++)
             pos[idim] = target_pos_ptr[iat * D + idim];
 
-          PRAGMA_OFFLOAD("omp parallel for simd")
+          PRAGMA_OFFLOAD("omp parallel for")
           for (int iel = first; iel < last; iel++)
             DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_padded,
                                                           iel);
@@ -363,6 +364,7 @@ public:
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
+    ScopedTimer local_timer(&move_timer_);
     DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
                                            0, N_sources);
     // If the full table is not ready all the time, overwrite the current value.
@@ -375,6 +377,7 @@ public:
   ///update the stripe for jat-th particle
   inline void update(IndexType iat, bool partial_update)
   {
+    ScopedTimer local_timer(&update_timer_);
     std::copy_n(temp_r_.data(), N_sources, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(temp_dr_.data(idim), N_sources, displacements_[iat].data(idim));
@@ -451,6 +454,18 @@ public:
     }
     return nn;
   }
+
+private:
+  /// timer for offload portion
+  NewTimer& offload_timer_;
+  /// timer for copy portion
+  NewTimer& copy_timer_;
+  /// timer for evaluate()
+  NewTimer& evaluate_timer_;
+  /// timer for move()
+  NewTimer& move_timer_;
+  /// timer for update()
+  NewTimer& update_timer_;
 };
 } // namespace qmcplusplus
 #endif

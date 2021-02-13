@@ -50,7 +50,24 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   Vector<const RealType*, OMPallocator<const RealType*, PinnedAlignedAllocator<const RealType*>>> rsoa_dev_list_;
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
-      : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
+      : DTD_BConds<T, D, SC>(target.Lattice),
+        DistanceTableData(target, target),
+        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") +
+                                                      target.getName() + "_" + target.getName(),
+                                                  timer_level_fine)),
+        copy_old_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::copy_old_") +
+                                                       target.getName() + "_" + target.getName(),
+                                                   timer_level_fine)),
+        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") +
+                                                       target.getName() + "_" + target.getName(),
+                                                   timer_level_fine)),
+        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::move_") + target.getName() +
+                                                   "_" + target.getName(),
+                                               timer_level_fine)),
+        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::update_") +
+                                                     target.getName() + "_" + target.getName(),
+                                                 timer_level_fine))
+
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
     if (!coordinates_soa)
@@ -99,6 +116,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   inline void evaluate(ParticleSet& P) override
   {
+    ScopedTimer local_timer(&evaluate_timer_);
+
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 0; iat < N_targets; ++iat)
     {
@@ -111,6 +130,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
+    ScopedTimer local_timer(&move_timer_);
+
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
     temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
 
@@ -144,6 +165,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
                const IndexType iat = 0,
                bool prepare_old    = true) override
   {
+    ScopedTimer local_timer(&move_timer_);
     const size_t nw          = dt_list.size();
     const size_t stride_size = Ntargets_padded * (D + 1);
     nw_new_old_dist_displ_.resize(nw * 2 * stride_size);
@@ -177,6 +199,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const size_t new_pos_stride = coordinates_leader.getFusedNewPosBuffer().capacity();
 
     {
+      ScopedTimer offload(&offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
                         map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list_.size()]) \
                         map(always, from: r_dr_ptr[:nw_new_old_dist_displ_.size()])")
@@ -195,7 +218,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
             for (int idim = 0; idim < D; idim++)
               pos[idim] = new_pos_ptr[idim * new_pos_stride + iw];
 
-            PRAGMA_OFFLOAD("omp parallel for simd")
+            PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
               DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
                                                             iel, activePtcl_local);
@@ -209,7 +232,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
             for (int idim = 0; idim < D; idim++)
               pos[idim] = source_pos_ptr[idim * N_sources_local + iat];
 
-            PRAGMA_OFFLOAD("omp parallel for simd")
+            PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
               DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
                                                             iel, iat);
@@ -218,6 +241,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
 
     if (prepare_old)
+    {
+      ScopedTimer local(&copy_old_timer_);
       for (int iw = 0; iw < dt_list.size(); iw++)
       {
         auto& dt       = static_cast<SoaDistanceTableAAOMPTarget&>(dt_list[iw].get());
@@ -233,6 +258,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
             std::copy_n(dt.old_dr_.data(idim), iat, dt.displacements_[iat].data(idim));
         }
       }
+    }
   }
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
@@ -272,6 +298,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
    */
   inline void update(IndexType iat, bool partial_update) override
   {
+    ScopedTimer local_timer(&update_timer_);
+
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);
     //copy row
@@ -289,6 +317,18 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       }
     }
   }
+
+private:
+  /// timer for offload portion
+  NewTimer& offload_timer_;
+  /// timer for copy portion
+  NewTimer& copy_old_timer_;
+  /// timer for evaluate()
+  NewTimer& evaluate_timer_;
+  /// timer for move()
+  NewTimer& move_timer_;
+  /// timer for update()
+  NewTimer& update_timer_;
 };
 } // namespace qmcplusplus
 #endif
