@@ -224,6 +224,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
                                                             iel, activePtcl_local);
           }
 
+          if (prepare_old)
           { // old
             auto* r_iw_ptr  = r_dr_ptr + (iw + nw) * stride_size;
             auto* dr_iw_ptr = r_dr_ptr + (iw + nw) * stride_size + N_sources_padded;
@@ -236,6 +237,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
             for (int iel = first; iel < last; iel++)
               DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
                                                             iel, iat);
+            r_iw_ptr[iat] = std::numeric_limits<T>::max(); //assign a big number
           }
         }
     }
@@ -246,7 +248,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       for (int iw = 0; iw < dt_list.size(); iw++)
       {
         auto& dt       = static_cast<SoaDistanceTableAAOMPTarget&>(dt_list[iw].get());
-        dt.old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
 
         // If the full table is not ready all the time, overwrite the current value.
         // If this step is missing, DT values can be undefined in case a move is rejected.
