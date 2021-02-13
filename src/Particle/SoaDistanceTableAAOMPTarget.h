@@ -34,10 +34,15 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   aligned_vector<RealType> memory_pool_displs_;
 
   /// old distances
+  DistRow old_r_mem_;
   DistRow old_r_;
 
   /// old displacements
+  DisplRow old_dr_mem_;
   DisplRow old_dr_;
+
+  DistRow temp_r_mem_;
+  DisplRow temp_dr_mem_;
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
@@ -76,12 +81,12 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       displacements_[i].attachReference(i, total_size, memory_pool_displs_.data() + compute_size(i));
     }
 
-    old_r_.resize(N_targets);
-    old_dr_.resize(N_targets);
+    old_r_mem_.resize(N_targets);
+    old_dr_mem_.resize(N_targets);
     // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
     // temp_r_ is padded explicitly while temp_dr_ is padded internally
-    temp_r_.resize(Ntargets_padded);
-    temp_dr_.resize(N_targets);
+    temp_r_mem_.resize(Ntargets_padded);
+    temp_dr_mem_.resize(N_targets);
   }
 
   const DistRow& getOldDists() const { return old_r_; }
@@ -101,11 +106,16 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
+    temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
+    temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
+
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
                                            N_targets, P.activePtcl);
     // set up old_r_ and old_dr_ for moves may get accepted.
     if (prepare_old)
     {
+      old_r_.attachReference(old_r_mem_.data(), old_r_mem_.size());
+      old_dr_.attachReference(old_dr_mem_.size(), old_dr_mem_.capacity(), old_dr_mem_.data());
       //recompute from scratch
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), old_r_.data(), old_dr_,
                                              0, N_targets, iat);
