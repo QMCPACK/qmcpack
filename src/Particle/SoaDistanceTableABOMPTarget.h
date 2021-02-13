@@ -98,10 +98,7 @@ public:
   SoaDistanceTableABOMPTarget()                                   = delete;
   SoaDistanceTableABOMPTarget(const SoaDistanceTableABOMPTarget&) = delete;
 
-  ~SoaDistanceTableABOMPTarget()
-  {
-    PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])")
-  }
+  ~SoaDistanceTableABOMPTarget() { PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])") }
 
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P)
@@ -255,7 +252,8 @@ public:
       {
         auto& dt       = static_cast<SoaDistanceTableABOMPTarget&>(dt_list[iw].get());
         auto* pool_ptr = dt.r_dr_memorypool_.data();
-        PRAGMA_OFFLOAD("omp target update from(pool_ptr[:dt.r_dr_memorypool_.size()]) nowait depend(inout : total_targets)")
+        PRAGMA_OFFLOAD(
+            "omp target update from(pool_ptr[:dt.r_dr_memorypool_.size()]) nowait depend(inout : total_targets)")
       }
       PRAGMA_OFFLOAD("omp taskwait")
     }

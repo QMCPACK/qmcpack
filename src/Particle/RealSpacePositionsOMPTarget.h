@@ -28,7 +28,9 @@ namespace qmcplusplus
 class RealSpacePositionsOMPTarget : public DynamicCoordinates
 {
 public:
-  RealSpacePositionsOMPTarget() : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), is_host_position_changed_(false) {}
+  RealSpacePositionsOMPTarget()
+      : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), is_host_position_changed_(false)
+  {}
   RealSpacePositionsOMPTarget(const RealSpacePositionsOMPTarget& in)
       : DynamicCoordinates(DynamicCoordinateKind::DC_POS_OFFLOAD), RSoA(in.RSoA)
   {
@@ -61,7 +63,7 @@ public:
 
   void setOneParticlePos(const PosType& pos, size_t iat) override
   {
-    RSoA_hostview(iat) = pos;
+    RSoA_hostview(iat)        = pos;
     is_host_position_changed_ = true;
     /* This was too slow due to overhead.
     RealType x     = pos[0];
@@ -85,17 +87,16 @@ public:
   {
     const auto nw = coords_list.size();
 
-    mw_new_old_pos.resize(nw * 2);
+    mw_new_pos.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& coords = dynamic_cast<const RealSpacePositionsOMPTarget&>(coords_list[iw].get());
-      mw_new_old_pos(iw) = new_positions[iw];
-      mw_new_old_pos(iw + nw) = coords.RSoA_hostview[iat];
+      auto& coords   = dynamic_cast<const RealSpacePositionsOMPTarget&>(coords_list[iw].get());
+      mw_new_pos(iw) = new_positions[iw];
     }
 
-    auto* mw_pos_ptr = mw_new_old_pos.data();
-    PRAGMA_OFFLOAD("omp target update to(mw_pos_ptr[:QMCTraits::DIM * mw_new_old_pos.capacity()])")
+    auto* mw_pos_ptr = mw_new_pos.data();
+    PRAGMA_OFFLOAD("omp target update to(mw_pos_ptr[:QMCTraits::DIM * mw_new_pos.capacity()])")
   }
 
   void mw_acceptParticlePos(const RefVector<DynamicCoordinates>& coords_list,
@@ -106,31 +107,31 @@ public:
     const size_t nw = coords_list.size();
     nw_accept_index_ptrs.resize((sizeof(int) + sizeof(RealType*)) * nw);
     auto* RSoA_ptr_array = reinterpret_cast<RealType**>(nw_accept_index_ptrs.data());
-    auto* id_array = reinterpret_cast<int*>(nw_accept_index_ptrs.data() + sizeof(RealType*) * coords_list.size());
+    auto* id_array       = reinterpret_cast<int*>(nw_accept_index_ptrs.data() + sizeof(RealType*) * coords_list.size());
 
     size_t num_accepted = 0;
     for (int iw = 0; iw < nw; iw++)
       if (isAccepted[iw])
       {
-        auto& coords = dynamic_cast<RealSpacePositionsOMPTarget&>(coords_list[iw].get());
+        auto& coords                 = dynamic_cast<RealSpacePositionsOMPTarget&>(coords_list[iw].get());
         RSoA_ptr_array[num_accepted] = coords.RSoA.device_data();
-        id_array[num_accepted] = iw;
+        id_array[num_accepted]       = iw;
         // save new coordinates on host copy
-        coords.RSoA_hostview(iat) = mw_new_old_pos[iw];
+        coords.RSoA_hostview(iat) = mw_new_pos[iw];
         num_accepted++;
       }
 
     //offload to GPU
     auto* restrict w_accept_buffer_ptr = nw_accept_index_ptrs.data();
-    auto* restrict mw_pos_ptr = mw_new_old_pos.data();
-    const size_t rsoa_stride = RSoA.capacity();
-    const size_t mw_pos_stride = mw_new_old_pos.capacity();
+    auto* restrict mw_pos_ptr          = mw_new_pos.data();
+    const size_t rsoa_stride           = RSoA.capacity();
+    const size_t mw_pos_stride         = mw_new_pos.capacity();
 
     PRAGMA_OFFLOAD("omp target teams distribute parallel for \
                     map(always, to : w_accept_buffer_ptr[:nw_accept_index_ptrs.size()])")
     for (int i = 0; i < num_accepted; i++)
     {
-      const int iw = reinterpret_cast<int*>(w_accept_buffer_ptr + sizeof(RealType*) * nw)[i];
+      const int iw           = reinterpret_cast<int*>(w_accept_buffer_ptr + sizeof(RealType*) * nw)[i];
       RealType* RSoA_dev_ptr = reinterpret_cast<RealType**>(w_accept_buffer_ptr)[i];
       for (int id = 0; id < QMCTraits::DIM; id++)
         RSoA_dev_ptr[iat + rsoa_stride * id] = mw_pos_ptr[iw + mw_pos_stride * id];
@@ -151,14 +152,14 @@ public:
 
   const RealType* getDevicePtr() const { return RSoA.device_data(); }
 
-  const auto& getFusedNewOldPosBuffer() const { return mw_new_old_pos; }
+  const auto& getFusedNewPosBuffer() const { return mw_new_pos; }
 
 private:
   ///particle positions in SoA layout
   VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> RSoA;
 
   ///one particle new/old positions in SoA layout
-  VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_old_pos;
+  VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_pos;
 
   /// accept list
   Vector<char, OMPallocator<char, PinnedAlignedAllocator<char>>> nw_accept_index_ptrs;

@@ -167,35 +167,51 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(p_list[0].get().getCoordinates());
 
-    const auto N_sources_local      = N_targets;
-    const auto N_sources_padded     = Ntargets_padded;
-    auto* rsoa_dev_list_ptr         = rsoa_dev_list_.data();
-    auto* r_dr_ptr                  = nw_new_old_dist_displ_.data();
-    auto* old_new_pos_ptr           = coordinates_leader.getFusedNewOldPosBuffer().data();
-    const size_t old_new_pos_stride = coordinates_leader.getFusedNewOldPosBuffer().capacity();
+    const auto N_sources_local  = N_targets;
+    const auto N_sources_padded = Ntargets_padded;
+    auto* rsoa_dev_list_ptr     = rsoa_dev_list_.data();
+    auto* r_dr_ptr              = nw_new_old_dist_displ_.data();
+    auto* new_pos_ptr           = coordinates_leader.getFusedNewPosBuffer().data();
+    const size_t new_pos_stride = coordinates_leader.getFusedNewPosBuffer().capacity();
 
     {
-      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * 2 * num_teams) \
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
                         map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list_.size()]) \
                         map(always, from: r_dr_ptr[:nw_new_old_dist_displ_.size()])")
-      for (int iat = 0; iat < nw * 2; ++iat)
+      for (int iw = 0; iw < nw; ++iw)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
-          auto* source_pos_ptr = rsoa_dev_list_ptr[iat % nw];
-          auto* r_iat_ptr      = r_dr_ptr + iat * stride_size;
-          auto* dr_iat_ptr     = r_dr_ptr + iat * stride_size + N_sources_padded;
+          auto* source_pos_ptr = rsoa_dev_list_ptr[iw];
+          const int first      = ChunkSizePerTeam * team_id;
+          const int last = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
 
-          const int first = ChunkSizePerTeam * team_id;
-          const int last  = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
+          { // temp
+            auto* r_iw_ptr  = r_dr_ptr + iw * stride_size;
+            auto* dr_iw_ptr = r_dr_ptr + iw * stride_size + N_sources_padded;
 
-          T pos[D];
-          for (int idim = 0; idim < D; idim++)
-            pos[idim] = old_new_pos_ptr[idim * old_new_pos_stride + iat];
+            T pos[D];
+            for (int idim = 0; idim < D; idim++)
+              pos[idim] = new_pos_ptr[idim * new_pos_stride + iw];
 
-          PRAGMA_OFFLOAD("omp parallel for simd")
-          for (int iel = first; iel < last; iel++)
-            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_local,
-                                                          iel);
+            PRAGMA_OFFLOAD("omp parallel for simd")
+            for (int iel = first; iel < last; iel++)
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
+                                                            iel);
+          }
+
+          { // old
+            auto* r_iw_ptr  = r_dr_ptr + (iw + nw) * stride_size;
+            auto* dr_iw_ptr = r_dr_ptr + (iw + nw) * stride_size + N_sources_padded;
+
+            T pos[D];
+            for (int idim = 0; idim < D; idim++)
+              pos[idim] = source_pos_ptr[idim * N_sources_local + iat];
+
+            PRAGMA_OFFLOAD("omp parallel for simd")
+            for (int iel = first; iel < last; iel++)
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
+                                                            iel);
+          }
         }
     }
 
