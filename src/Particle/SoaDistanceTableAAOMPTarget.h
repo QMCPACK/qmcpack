@@ -44,6 +44,11 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   DistRow temp_r_mem_;
   DisplRow temp_dr_mem_;
 
+  ///dist displ
+  Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ_;
+
+  Vector<const RealType*, OMPallocator<const RealType*, PinnedAlignedAllocator<const RealType*>>> rsoa_dev_list_;
+
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice), DistanceTableData(target, target)
   {
@@ -89,10 +94,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     temp_dr_mem_.resize(N_targets);
   }
 
-  const DistRow& getOldDists() const { return old_r_; }
-  const DisplRow& getOldDispls() const { return old_dr_; }
+  const DistRow& getOldDists() const override { return old_r_; }
+  const DisplRow& getOldDispls() const override { return old_dr_; }
 
-  inline void evaluate(ParticleSet& P)
+  inline void evaluate(ParticleSet& P) override
   {
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 0; iat < N_targets; ++iat)
@@ -104,7 +109,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   }
 
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
     temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
@@ -133,7 +138,86 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
-  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
+  void mw_move(const RefVector<DistanceTableData>& dt_list,
+               const RefVector<ParticleSet>& p_list,
+               const std::vector<PosType>& rnew_list,
+               const IndexType iat = 0,
+               bool prepare_old    = true) override
+  {
+    const size_t nw          = dt_list.size();
+    const size_t stride_size = Ntargets_padded * (D + 1);
+    nw_new_old_dist_displ_.resize(nw * 2 * stride_size);
+    rsoa_dev_list_.resize(nw);
+
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& dt = static_cast<SoaDistanceTableAAOMPTarget&>(dt_list[iw].get());
+      dt.temp_r_.attachReference(nw_new_old_dist_displ_.data() + stride_size * iw, Ntargets_padded);
+      dt.temp_dr_.attachReference(N_targets, Ntargets_padded,
+                                  nw_new_old_dist_displ_.data() + stride_size * iw + Ntargets_padded);
+      dt.old_r_.attachReference(nw_new_old_dist_displ_.data() + stride_size * (iw + nw), Ntargets_padded);
+      dt.old_dr_.attachReference(N_targets, Ntargets_padded,
+                                 nw_new_old_dist_displ_.data() + stride_size * (iw + nw) + Ntargets_padded);
+      auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].get().getCoordinates());
+      rsoa_dev_list_[iw]    = coordinates_soa.getDevicePtr();
+    }
+
+    const int ChunkSizePerTeam = 256;
+    const int num_teams        = (N_targets + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+
+    auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(p_list[0].get().getCoordinates());
+
+    const auto N_sources_local      = N_targets;
+    const auto N_sources_padded     = Ntargets_padded;
+    auto* rsoa_dev_list_ptr         = rsoa_dev_list_.data();
+    auto* r_dr_ptr                  = nw_new_old_dist_displ_.data();
+    auto* old_new_pos_ptr           = coordinates_leader.getFusedNewOldPosBuffer().data();
+    const size_t old_new_pos_stride = coordinates_leader.getFusedNewOldPosBuffer().capacity();
+
+    {
+      PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * 2 * num_teams) \
+                        map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list_.size()]) \
+                        map(always, from: r_dr_ptr[:nw_new_old_dist_displ_.size()])")
+      for (int iat = 0; iat < nw * 2; ++iat)
+        for (int team_id = 0; team_id < num_teams; team_id++)
+        {
+          auto* source_pos_ptr = rsoa_dev_list_ptr[iat % nw];
+          auto* r_iat_ptr      = r_dr_ptr + iat * stride_size;
+          auto* dr_iat_ptr     = r_dr_ptr + iat * stride_size + N_sources_padded;
+
+          const int first = ChunkSizePerTeam * team_id;
+          const int last  = (first + ChunkSizePerTeam) > N_sources_local ? N_sources_local : first + ChunkSizePerTeam;
+
+          T pos[D];
+          for (int idim = 0; idim < D; idim++)
+            pos[idim] = old_new_pos_ptr[idim * old_new_pos_stride + iat];
+
+          PRAGMA_OFFLOAD("omp parallel for simd")
+          for (int iel = first; iel < last; iel++)
+            DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iat_ptr, dr_iat_ptr, N_sources_local,
+                                                          iel);
+        }
+    }
+
+    if (prepare_old)
+      for (int iw = 0; iw < dt_list.size(); iw++)
+      {
+        auto& dt       = static_cast<SoaDistanceTableAAOMPTarget&>(dt_list[iw].get());
+        dt.old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
+
+        // If the full table is not ready all the time, overwrite the current value.
+        // If this step is missing, DT values can be undefined in case a move is rejected.
+        if (!need_full_table_)
+        {
+          //copy row
+          std::copy_n(dt.old_r_.data(), iat, dt.distances_[iat].data());
+          for (int idim = 0; idim < D; ++idim)
+            std::copy_n(dt.old_dr_.data(idim), iat, dt.displacements_[iat].data(idim));
+        }
+      }
+  }
+
+  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
     RealType min_dist = std::numeric_limits<RealType>::max();
     int index         = -1;
@@ -168,7 +252,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
    * only the [0,iat-1) columns need to save the new values.
    * The memory copy goes up to the padded size only for better performance.
    */
-  inline void update(IndexType iat, bool partial_update)
+  inline void update(IndexType iat, bool partial_update) override
   {
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);
