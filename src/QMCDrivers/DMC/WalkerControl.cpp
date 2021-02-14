@@ -252,7 +252,7 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 
     ResourceCollectionLock<TrialWaveFunction> resource_lock(*twfs_shared_resource_, wf_list[0]);
     // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
-    ParticleSet::flex_update(p_list);
+    p_list[0].get().flex_update(p_list);
     TrialWaveFunction::flex_evaluateLog(wf_list, p_list);
   }
 

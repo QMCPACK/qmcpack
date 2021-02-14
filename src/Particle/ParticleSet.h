@@ -243,7 +243,7 @@ public:
   void update(bool skipSK = false);
 
   /// batched version of update
-  static void flex_update(const RefVector<ParticleSet>& p_list, bool skipSK = false);
+  void flex_update(const RefVector<ParticleSet>& p_list, bool skipSK = false);
 
   /** create Structure Factor with PBCs
    */

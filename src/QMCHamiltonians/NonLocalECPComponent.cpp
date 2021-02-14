@@ -182,7 +182,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
   return pairpot;
 }
 
-void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
+void NonLocalECPComponent::flex_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
                                             const RefVector<ParticleSet>& p_list,
                                             const RefVector<TrialWaveFunction>& psi_list,
                                             const RefVector<const NLPPJob<RealType>>& joblist,
@@ -192,7 +192,8 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
 {
   if (ecp_component_list.size() > 1)
   {
-    if (ecp_component_list[0].get().VP)
+    auto& ecp_component_leader = ecp_component_list.getLeader();
+    if (ecp_component_leader.VP)
     {
       // Compute ratios with VP
       RefVector<VirtualParticleSet> vp_list;
@@ -217,7 +218,8 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
         psiratios_list.push_back(component.psiratio);
       }
 
-      VirtualParticleSet::flex_makeMoves(vp_list, deltaV_list, joblist, true);
+      ecp_component_leader.VP->flex_makeMoves(vp_list, deltaV_list, joblist, true);
+
       if (use_DLA)
         psi_leader.flex_evaluateRatios(psi_list, const_vp_list, psiratios_list,
                                                TrialWaveFunction::ComputeType::FERMIONIC);

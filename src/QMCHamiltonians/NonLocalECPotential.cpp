@@ -231,7 +231,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
                                           const RefVector<ParticleSet>& P_list,
                                           bool Tmove)
 {
-  const size_t ngroups = P_list[0].get().groups();
+  ParticleSet& pset_leader = P_list[0];
+  const size_t ngroups = pset_leader.groups();
   const size_t nw      = O_list.size();
   /// maximal number of jobs per spin
   std::vector<size_t> max_num_jobs(ngroups, 0);
@@ -285,8 +286,11 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
     O.Value = 0.0;
   }
 
+  auto pp_component = std::find_if(PPset.begin(), PPset.end(), [](auto& ptr){ return bool(ptr);} );
+  assert(pp_component != std::end(PPset));
+
   RefVector<NonLocalECPotential> ecp_potential_list;
-  RefVector<NonLocalECPComponent> ecp_component_list;
+  RefVectorWithLeader<NonLocalECPComponent> ecp_component_list(**pp_component);
   RefVector<ParticleSet> p_list;
   RefVector<TrialWaveFunction> psi_list;
   RefVector<const NLPPJob<RealType>> batch_list;

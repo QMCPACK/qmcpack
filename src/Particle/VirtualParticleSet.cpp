@@ -81,7 +81,7 @@ void VirtualParticleSet::flex_makeMoves(const RefVector<VirtualParticleSet>& vp_
       p_list.push_back(vp);
     }
 
-    ParticleSet::flex_update(p_list);
+    flex_update(p_list);
   }
   else if (vp_list.size() == 1)
     vp_list[0].get().makeMoves(joblist[0].get().electron_id, joblist[0].get().electron_id, deltaV_list[0].get(), sphere,

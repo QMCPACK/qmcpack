@@ -528,7 +528,8 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     Ls.push_back(crowd.get_walker_twfs()[iw].get().L);
   }
 
-  ParticleSet::flex_update(crowd.get_walker_elecs());
+  if (!crowd.get_walker_elecs().empty())
+    crowd.get_walker_elecs()[0].get().flex_update(crowd.get_walker_elecs());
   TrialWaveFunction::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
 
   const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
