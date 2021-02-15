@@ -44,11 +44,19 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
   angMon["d"] = 2;
   angMon["f"] = 3;
   angMon["g"] = 4;
+  angMon["h"] = 5;
+  angMon["i"] = 6;
+  angMon["j"] = 7;
+  angMon["k"] = 8;
   angMon["0"] = 0;
   angMon["1"] = 1;
   angMon["2"] = 2;
   angMon["3"] = 3;
   angMon["4"] = 4;
+  angMon["5"] = 5;
+  angMon["6"] = 6;
+  angMon["7"] = 7;
+  angMon["8"] = 8;
 }
 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
