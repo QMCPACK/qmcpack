@@ -212,18 +212,13 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
       //Sperical quadrature rules set by exact integration up to lmax of
       //nonlocal channels.
       //From J. Chem. Phys. 95 (3467) (1991)
+      //Keeping Nrule = 4 as default for lmax <= 5. 
       switch (pp_nonloc->lmax)
       {
       case 0:
-        Nrule = 1;
-        break;
       case 1:
       case 2:
-        Nrule = 2;
-        break;
       case 3:
-        Nrule = 3;
-        break;
       case 4:
       case 5:
         Nrule = 4;
