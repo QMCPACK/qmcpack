@@ -432,7 +432,11 @@ class DatAnalyzer(QBase):
                 #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
 
                 # efficiency based on total work and error bar
-                stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                if (e**2*wt > 0.0):
+                    stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                else:
+                    stats.Efficiency = obj(mean=0.0,var=0.0,error=0.0,kappa=1.0)
+                #end if
                 data.Efficiency  = 0*example
             #end if
         #end if
