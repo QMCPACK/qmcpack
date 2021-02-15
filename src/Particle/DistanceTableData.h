@@ -179,6 +179,12 @@ public:
    * Drivers/Hamiltonians know whether moves will be accepted or not and manage this flag when calling ParticleSet::makeMoveXXX functions.
    */
   virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat = 0, bool prepare_old = true) = 0;
+  virtual void mw_move(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list, const std::vector<PosType>& rnew_list, const IndexType iat = 0, bool prepare_old = true)
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].get().move(p_list[iw], rnew_list[iw], iat, prepare_old);
+  }
 
   /** update the distance table by the pair relations if a move is accepted
    * @param iat the particle with an accepted move
