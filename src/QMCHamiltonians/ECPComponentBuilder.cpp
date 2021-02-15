@@ -209,7 +209,6 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   {
     if (Nrule == -1)
     {
-      app_log() << "Quadrature rule not determined from pseudopotential xml file. Setting sensible default" << std::endl;
       //Sperical quadrature rules set by exact integration up to lmax of
       //nonlocal channels.
       //From J. Chem. Phys. 95 (3467) (1991)
@@ -243,6 +242,7 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
         myComm->barrier_and_abort("Default value for pseudopotential nrule not determined");
         break;
       }
+      app_log() << "  Quadrature rule not determined from pseudopotential xml file. Setting sensible default to Nrule: " << Nrule << std::endl;
     }
     SetQuadratureRule(Nrule);
     app_log() << "    Non-local pseudopotential parameters" << std::endl;
