@@ -45,7 +45,7 @@ void LinFitLU (Array<double,1> &y, Array<double,1> &sigma,    // inputs
   int M = F.cols();
 
   if (y.rows() != F.rows()) {
-    cerr << "Differernt number of rows in basis functions that in data "
+    std::cerr << "Differernt number of rows in basis functions that in data "
 	 << "points in LinFit.  Exitting.\n";
     abort();
   }
@@ -101,7 +101,7 @@ void LinFitSVD (Array<double,1> &y, Array<double,1> &sigma,  // inputs
   int M = F.cols();
 
   if (y.rows() != F.rows()) {
-    cerr << "Differernt number of rows in basis functions that in data "
+    std::cerr << "Differernt number of rows in basis functions that in data "
 	 << "points in LinFit.  Exitting.\n";
     abort();
   }
@@ -130,7 +130,7 @@ void LinFitSVD (Array<double,1> &y, Array<double,1> &sigma,  // inputs
   // Zero out near-singular values
   double Smax=S(0);
   for (int i=1; i<S.size(); i++)
-    Smax = max (S(i),Smax);
+    Smax = std::max (S(i),Smax);
   Array<double,1> Sinv(S.size());
   for (int i=0; i<S.size(); i++)
     Sinv(i) = (S(i) < (tolerance*Smax)) ? 0.0 : (1.0/S(i));
@@ -165,7 +165,7 @@ LinFitSVD (Array<double,1> &y, Array<double,1> &sigma,  // inputs
   int M = F.cols(); // Number of basis functions
 
   if (y.rows() != F.rows()) {
-    cerr << "Different number of rows in basis functions that in data "
+    std::cerr << "Different number of rows in basis functions that in data "
 	 << "points in LinFit.  Exitting.\n";
     abort();
   }
@@ -221,7 +221,7 @@ LinFitSVD (Array<double,1> &y, Array<double,1> &sigma,  // inputs
   // Zero out near-singular values
   double Smax=S(0);
   for (int i=1; i<S.size(); i++)
-    Smax = max (S(i),Smax);
+    Smax = std::max (S(i),Smax);
   for (int i=0; i<S.size(); i++)
     Sinv(i) = (S(i) < (tolerance*Smax)) ? 0.0 : (1.0/S(i));
   

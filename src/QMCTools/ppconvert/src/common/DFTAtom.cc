@@ -172,7 +172,7 @@ DFTAtom::SolveIter()
   double maxDiff = 0.0;
   for (int i=0; i<RadialWFs.size(); i++) {
     RadialWFs(i).Solve();
-    maxDiff = max(fabs(OldEnergies(i)-RadialWFs(i).Energy), maxDiff);
+    maxDiff = std::max(fabs(OldEnergies(i)-RadialWFs(i).Energy), maxDiff);
     OldEnergies(i) = RadialWFs(i).Energy;
     // fprintf (stderr, "Energy(%d) = %1.16f\n", i, RadialWFs(i).Energy);
   }

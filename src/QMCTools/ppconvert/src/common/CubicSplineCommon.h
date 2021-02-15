@@ -67,9 +67,9 @@ public:
     EndDeriv   = endderiv;
     if (NewGrid->NumPoints != NewYs.rows())
     {
-      cerr << "Size mismatch in CubicSplineCommon.\n";
-      cerr << "Grid Points = " << NewGrid->NumPoints << std::endl;
-      cerr << "Y points    = " << NewYs.rows() << std::endl;
+      std::cerr << "Size mismatch in CubicSplineCommon.\n";
+      std::cerr << "Grid Points = " << NewGrid->NumPoints << std::endl;
+      std::cerr << "Y points    = " << NewYs.rows() << std::endl;
       exit(1);
     }
     grid      = NewGrid;
@@ -320,9 +320,9 @@ public:
 
     if (NewGrid->NumPoints != NewYs.rows())
     {
-      cerr << "Size mismatch in CubicSplineCommon.\n";
-      cerr << "Grid Points = " << NewGrid->NumPoints << std::endl;
-      cerr << "Y points    = " << NewYs.rows() << std::endl;
+      std::cerr << "Size mismatch in CubicSplineCommon.\n";
+      std::cerr << "Grid Points = " << NewGrid->NumPoints << std::endl;
+      std::cerr << "Y points    = " << NewYs.rows() << std::endl;
       exit(1);
     }
 
@@ -348,7 +348,7 @@ public:
 
     if (NewGrid->NumPoints != NewYs.rows())
     {
-      cerr << "Size mismatch in CubicSplineCommon.\n";
+      std::cerr << "Size mismatch in CubicSplineCommon.\n";
       exit(1);
     }
 

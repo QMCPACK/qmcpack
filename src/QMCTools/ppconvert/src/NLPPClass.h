@@ -86,7 +86,7 @@ private:
   std::map<std::string, XCType> XCRevMap;
   std::map<int, std::string> ChannelMap;
   std::map<std::string, int> ChannelRevMap;
-  std::map<int, string> ZToSymbolMap;
+  std::map<int, std::string> ZToSymbolMap;
   std::map<int, double> ZToMassMap;
   std::map<std::string, int> SymbolToZMap;
   void SetupMaps();
