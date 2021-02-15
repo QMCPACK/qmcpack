@@ -31,7 +31,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
-      Nrule(4),
+      Nrule(-1),
       Srule(8),
       AtomicNumber(0),
       Zeff(0),
@@ -207,6 +207,43 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   }
   if (pp_nonloc)
   {
+    if (Nrule == -1)
+    {
+      app_log() << "Quadrature rule not determined from pseudopotential xml file. Setting sensible default" << std::endl;
+      //Sperical quadrature rules set by exact integration up to lmax of
+      //nonlocal channels.
+      //From J. Chem. Phys. 95 (3467) (1991)
+      switch (pp_nonloc->lmax)
+      {
+      case 0:
+        Nrule = 1;
+        break;
+      case 1:
+      case 2:
+        Nrule = 2;
+        break;
+      case 3:
+        Nrule = 3;
+        break;
+      case 4:
+      case 5:
+        Nrule = 4;
+        break;
+      case 6:
+      case 7:
+        Nrule = 6;
+        break;
+      case 8:
+      case 9:
+      case 10:
+      case 11:
+        Nrule = 7;
+        break;
+      default:
+        myComm->barrier_and_abort("Default value for pseudopotential nrule not determined");
+        break;
+      }
+    }
     SetQuadratureRule(Nrule);
     app_log() << "    Non-local pseudopotential parameters" << std::endl;
     pp_nonloc->print(app_log());
