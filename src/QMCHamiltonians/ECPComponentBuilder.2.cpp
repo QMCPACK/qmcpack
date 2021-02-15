@@ -50,17 +50,26 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   int nso   = 0;
   Llocal    = -1;
   OhmmsAttributeSet aAttrib;
+  int quadRule = -1;
   aAttrib.add(eunits, "units");
   aAttrib.add(format, "format");
   aAttrib.add(ndown, "npots-down");
   aAttrib.add(nup, "npots-up");
   aAttrib.add(Llocal, "l-local");
-  aAttrib.add(Nrule, "nrule");
+  aAttrib.add(quadRule, "nrule");
   aAttrib.add(Srule, "srule");
   aAttrib.add(nso, "npots-so");
 
   xmlNodePtr cur_semilocal = semiPtr[0];
   aAttrib.put(cur_semilocal);
+
+  if (quadRule > -1)
+  {
+    app_warning() << " Nrule should be set in the qmcpack input <pseudo elementType=\"\" href=\"\" nrule=\"\"/>".
+                  << " Using nrule setting in pseudopotential file\n";
+    Nrule = quadRule;
+  }
+
   RealType Vprefactor = 1.0;
   if (eunits.find("ydberg") < eunits.size())
   {

@@ -27,11 +27,11 @@
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
-      Nrule(-1),
+      Nrule(nrule),
       Srule(8),
       AtomicNumber(0),
       Zeff(0),
@@ -237,7 +237,7 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
         myComm->barrier_and_abort("Default value for pseudopotential nrule not determined");
         break;
       }
-      app_log() << "  Quadrature rule not determined from pseudopotential xml file. Setting sensible default to Nrule: " << Nrule << std::endl;
+      app_log() << "  Quadrature rule was not determined from input. Setting sensible default\n";
     }
     SetQuadratureRule(Nrule);
     app_log() << "    Non-local pseudopotential parameters" << std::endl;
@@ -289,6 +289,7 @@ void ECPComponentBuilder::printECPTable()
 
 void ECPComponentBuilder::SetQuadratureRule(int rule)
 {
+  app_log() << "  Quadrature rule: " << rule << std::endl;
   Quadrature3D<RealType> myRule(rule);
   pp_nonloc->sgridxyz_m    = myRule.xyz_m;
   pp_nonloc->sgridweight_m = myRule.weight_m;
