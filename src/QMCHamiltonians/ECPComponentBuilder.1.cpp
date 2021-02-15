@@ -154,7 +154,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
   {
     if (grid_global == 0)
     {
-      APP_ABORT("ECPComponentBuilder::buildLocal Missing grid information. ");
+      myComm->barrier_and_abort("ECPComponentBuilder::buildLocal Missing grid information. ");
     }
     grid_local = new LinearGrid<RealType>;
     grid_local->set(grid_global->rmin(), grid_global->rmax(), grid_global->size());
@@ -166,7 +166,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
   }
   if (grid_local->GridTag == CUSTOM_1DGRID)
   {
-    APP_ABORT("ECPComponentBuilder::buildLocal Custom grid is used. Need to recast to the linear grid");
+    myComm->barrier_and_abort("ECPComponentBuilder::buildLocal Custom grid is used. Need to recast to the linear grid");
   }
   else
   {

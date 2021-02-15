@@ -32,13 +32,13 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   if (grid_global == 0)
   {
     app_error() << "    Global grid needs to be defined." << std::endl;
-    APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
+    myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
   }
   // There should only be one semilocal tag
   if (semiPtr.size() > 1)
   {
     app_error() << "    We have more than one semilocal sections in the PP xml file." << std::endl;
-    APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
+    myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
   }
   RealType rmax = -1;
   //attributes: initailize by defaults
@@ -79,7 +79,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   else
   {
     app_error() << "Unrecognized format \"" << format << "\" in PP file." << std::endl;
-    APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
+    myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
   }
   // We cannot construct the potentials as we construct them since
   // we may not know which one is local yet.
@@ -104,14 +104,12 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       aAttrib.add(rc, "cutoff");
       aAttrib.put(cur_vps);
       rmax = std::max(rmax, rc);
-      int l;
       if (angMon.find(lstr) == angMon.end())
       {
         app_error() << "requested angular momentum " << lstr << " not available.\n";
-        APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
+        myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
       }
-      else
-        l = angMon[lstr];
+      int l = angMon[lstr];
       angList.push_back(l);
       vpsPtr.push_back(cur_vps);
       Lmax = std::max(Lmax, l); //count the maximum L
@@ -125,14 +123,12 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       aAttrib.add(rc, "cutoff");
       aAttrib.put(cur_vps);
       rmax = std::max(rmax, rc);
-      int l;
       if (angMon.find(lstr) == angMon.end())
       {
         app_error() << "requested angular momentum " << lstr << " not available.\n";
-        APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
+        myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
       }
-      else
-        l = angMon[lstr];
+      int l = angMon[lstr];
       angListSO.push_back(l);
       vpsoPtr.push_back(cur_vps);
       LmaxSO = std::max(LmaxSO, l); //count the maximum L
@@ -154,7 +150,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     std::string outstring("");
     outstring = ssout.str();
 
-    APP_ABORT(outstring.c_str());
+    myComm->barrier_and_abort(outstring.c_str());
   }
   int npts = grid_global->size();
   Matrix<mRealType> vnn(angList.size(), npts);
@@ -313,7 +309,7 @@ bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   if (!fin)
   {
     app_error() << "Could not open file " << fname << std::endl;
-    APP_ABORT("ECPComponentBuilder::parseCasino");
+    myComm->barrier_and_abort("ECPComponentBuilder::parseCasino");
   }
   if (!pp_nonloc)
     pp_nonloc = std::make_unique<NonLocalECPComponent>();
@@ -433,7 +429,7 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
   {
     app_error() << "The local channel is not specified in the pseudopotential file.\n"
                 << "Please add \'l-local=\"n\"\' attribute the semilocal section of the fsatom XML file.\n";
-    APP_ABORT("ECPComponentBuilder::doBreakUp");
+    myComm->barrier_and_abort("ECPComponentBuilder::doBreakUp");
     // Llocal = Lmax;
   }
   //find the index of local

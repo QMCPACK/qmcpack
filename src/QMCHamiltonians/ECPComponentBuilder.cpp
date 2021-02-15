@@ -138,13 +138,13 @@ bool ECPComponentBuilder::read_pp_file(const std::string& fname)
   bool okay = buf.open_file(fname);
   if (!okay)
   {
-    APP_ABORT("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
   }
 
   okay = buf.read_contents();
   if (!okay)
   {
-    APP_ABORT("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
   }
 
   xmlDocPtr m_doc = xmlReadMemory(buf.contents(), buf.length, NULL, NULL, 0);
@@ -152,14 +152,14 @@ bool ECPComponentBuilder::read_pp_file(const std::string& fname)
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
   }
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("Empty document");
+    myComm->barrier_and_abort("Empty document");
   }
   bool success = put(cur);
   xmlFreeDoc(m_doc);
