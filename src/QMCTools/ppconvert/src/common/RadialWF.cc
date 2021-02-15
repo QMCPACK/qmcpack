@@ -325,13 +325,13 @@ RadialWF::Solve(double tolerance)
   Normalize();
   NumNodes = CountNodes();
   if (NumNodes != TotalNodes) {
-    cerr << "Node number error!  We have " << NumNodes 
+    std::cerr << "Node number error!  We have " << NumNodes 
 	 << " nodes and want " << TotalNodes << ".\n";
 //     IOSectionClass out;
 //     out.NewFile ("BadWF.h5");
 //     out.WriteVar ("u", u.Data());
 //     out.CloseFile();
-    cerr << "Energy = " << Energy << endl;
+    std::cerr << "Energy = " << Energy << std::endl;
   }
   //out.CloseFile();
 }
@@ -436,7 +436,7 @@ RadialWF::Read (IOSectionClass &in)
 {
   bool succ;
   if (u.grid == NULL) {
-    cerr << "Grid not set prior to calling RadialWF::Read.\n";
+    std::cerr << "Grid not set prior to calling RadialWF::Read.\n";
     exit(1);
   }
   in.ReadVar ("u", u.Data());
