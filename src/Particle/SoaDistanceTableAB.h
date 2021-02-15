@@ -25,7 +25,17 @@ template<typename T, unsigned D, int SC>
 struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableData
 {
   SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
-      : DTD_BConds<T, D, SC>(source.Lattice), DistanceTableData(source, target)
+      : DTD_BConds<T, D, SC>(source.Lattice),
+        DistanceTableData(source, target),
+        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::evaluate_") + target.getName() +
+                                                       "_" + source.getName(),
+                                                   timer_level_fine)),
+        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::move_") + target.getName() + "_" +
+                                                   source.getName(),
+                                               timer_level_fine)),
+        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::update_") + target.getName() + "_" +
+                                                     source.getName(),
+                                                 timer_level_fine))
   {
     resize(source.getTotalNum(), target.getTotalNum());
   }
@@ -59,6 +69,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P)
   {
+    ScopedTimer local_timer(&evaluate_timer_);
 #pragma omp parallel
     {
       int first, last;
@@ -74,6 +85,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
+    ScopedTimer local_timer(&move_timer_);
     DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
                                            0, N_sources);
     // If the full table is not ready all the time, overwrite the current value.
@@ -86,6 +98,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
   ///update the stripe for jat-th particle
   inline void update(IndexType iat, bool partial_update)
   {
+    ScopedTimer local_timer(&update_timer_);
     std::copy_n(temp_r_.data(), N_sources, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(temp_dr_.data(idim), N_sources, displacements_[iat].data(idim));
@@ -162,6 +175,14 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
     }
     return nn;
   }
+
+private:
+  /// timer for evaluate()
+  NewTimer& evaluate_timer_;
+  /// timer for move()
+  NewTimer& move_timer_;
+  /// timer for update()
+  NewTimer& update_timer_;
 };
 } // namespace qmcplusplus
 #endif

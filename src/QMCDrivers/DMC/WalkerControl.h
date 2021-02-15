@@ -172,6 +172,8 @@ private:
   std::vector<FullPrecRealType> curData;
   ///Use non-blocking isend/irecv
   bool use_nonblocking_;
+  ///disable branching for debugging
+  bool debug_disable_branching_;
   ///ensemble properties
   MCDataType<FullPrecRealType> ensemble_property_;
   ///timers
