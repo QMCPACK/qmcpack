@@ -103,8 +103,15 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       aAttrib.add(lstr, "l");
       aAttrib.add(rc, "cutoff");
       aAttrib.put(cur_vps);
-      rmax  = std::max(rmax, rc);
-      int l = angMon[lstr];
+      rmax = std::max(rmax, rc);
+      int l;
+      if (angMon.find(lstr) == angMon.end())
+      {
+        app_error() << "requested angular momentum " << lstr << " not available.\n";
+        APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
+      }
+      else
+        l = angMon[lstr];
       angList.push_back(l);
       vpsPtr.push_back(cur_vps);
       Lmax = std::max(Lmax, l); //count the maximum L
@@ -117,8 +124,15 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       aAttrib.add(lstr, "l");
       aAttrib.add(rc, "cutoff");
       aAttrib.put(cur_vps);
-      rmax  = std::max(rmax, rc);
-      int l = angMon[lstr];
+      rmax = std::max(rmax, rc);
+      int l;
+      if (angMon.find(lstr) == angMon.end())
+      {
+        app_error() << "requested angular momentum " << lstr << " not available.\n";
+        APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
+      }
+      else
+        l = angMon[lstr];
       angListSO.push_back(l);
       vpsoPtr.push_back(cur_vps);
       LmaxSO = std::max(LmaxSO, l); //count the maximum L
