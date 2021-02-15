@@ -30,15 +30,14 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
 {
   app_log() << "    ECPComponentBuilder::buildSemiLocalAndLocal " << std::endl;
   if (grid_global == 0)
-  {
-    app_error() << "    Global grid needs to be defined." << std::endl;
-    myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
-  }
+    myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal. Global grid needs to be defined.\n");
   // There should only be one semilocal tag
   if (semiPtr.size() > 1)
   {
-    app_error() << "    We have more than one semilocal sections in the PP xml file." << std::endl;
-    myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
+    std::stringstream err_msg;
+    err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal. "
+            << "We have more than one semilocal sections in the PP xml file";
+    myComm->barrier_and_abort(err_msg.str());
   }
   RealType rmax = -1;
   //attributes: initailize by defaults
@@ -78,8 +77,10 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     is_r_times_V = false;
   else
   {
-    app_error() << "Unrecognized format \"" << format << "\" in PP file." << std::endl;
-    myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
+    std::stringstream err_msg;
+    err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal."
+            << "Unrecognized format \"" << format << "\" in PP file.\n";
+    myComm->barrier_and_abort(err_msg.str());
   }
   // We cannot construct the potentials as we construct them since
   // we may not know which one is local yet.
@@ -106,8 +107,10 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       rmax = std::max(rmax, rc);
       if (angMon.find(lstr) == angMon.end())
       {
-        app_error() << "requested angular momentum " << lstr << " not available.\n";
-        myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
+        std::stringstream err_msg;
+        err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal. "
+                << "Requested angular momentum " << lstr << " not available.\n";
+        myComm->barrier_and_abort(err_msg.str());
       }
       int l = angMon[lstr];
       angList.push_back(l);
@@ -125,8 +128,10 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       rmax = std::max(rmax, rc);
       if (angMon.find(lstr) == angMon.end())
       {
-        app_error() << "requested angular momentum " << lstr << " not available.\n";
-        myComm->barrier_and_abort("ECPComponentBuilder::buildSemiLocalAndLocal");
+        std::stringstream err_msg;
+        err_msg << "ECPComponentBuilder::buildSemiLocalAndLocal. "
+                << "Requested angular momentum " << lstr << " not available for SO.\n";
+        myComm->barrier_and_abort(err_msg.str());
       }
       int l = angMon[lstr];
       angListSO.push_back(l);

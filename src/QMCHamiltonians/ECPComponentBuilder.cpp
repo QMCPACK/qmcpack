@@ -137,15 +137,11 @@ bool ECPComponentBuilder::read_pp_file(const std::string& fname)
   ReadFileBuffer buf(myComm);
   bool okay = buf.open_file(fname);
   if (!okay)
-  {
     myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
-  }
 
   okay = buf.read_contents();
   if (!okay)
-  {
     myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
-  }
 
   xmlDocPtr m_doc = xmlReadMemory(buf.contents(), buf.length, NULL, NULL, 0);
 
