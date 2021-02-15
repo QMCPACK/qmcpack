@@ -20,7 +20,7 @@ FUNCTION( ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY )
                           ENVIRONMENT OMP_NUM_THREADS=${THREADS}
                           PROCESSOR_AFFINITY TRUE )
 
-    if (ENABLE_OFFLOAD)
+    if (QMC_CUDA OR ENABLE_CUDA OR ENABLE_OFFLOAD)
         set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
     endif()
 
