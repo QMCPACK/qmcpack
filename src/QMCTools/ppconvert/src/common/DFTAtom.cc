@@ -293,9 +293,3 @@ void DFTAtom::Read(IOSectionClass &in)
   assert (in.ReadVar("NewMix", NewMix));
 }
 
-
-void DFTAtom::CalcEnergies(double &kinetic, double &potential,
-			   double &hartree, double &XC)
-{
-
-}
