@@ -327,7 +327,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   auto& walker_twfs         = crowd.get_walker_twfs();
   auto& walker_elecs        = crowd.get_walker_elecs();
   auto& walkers             = crowd.get_walkers();
-  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+
+  const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0], crowd.get_walker_hamiltonians());
 
   crowd.loadWalkers();
   for (ParticleSet& pset : walker_elecs)

@@ -262,9 +262,9 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVectorWithLeader<NonLocalEC
     }
   }
   else if (ecp_component_list.size() == 1)
-    pairpots[0] = ecp_component_list[0].get().evaluateOne(p_list[0], joblist[0].get().ion_id, psi_list[0],
-                                                          joblist[0].get().electron_id, joblist[0].get().ion_elec_dist,
-                                                          joblist[0].get().ion_elec_displ, use_DLA);
+    pairpots[0] = ecp_component_list[0].evaluateOne(p_list[0], joblist[0].get().ion_id, psi_list[0],
+                                                    joblist[0].get().electron_id, joblist[0].get().ion_elec_dist,
+                                                    joblist[0].get().ion_elec_displ, use_DLA);
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,

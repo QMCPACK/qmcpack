@@ -44,11 +44,11 @@ public:
 
   Return_t evaluate(ParticleSet& P) override;
   Return_t evaluateDeterministic(ParticleSet& P) override;
-  void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) const override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
 
-  void mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
+  void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) const override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
@@ -159,7 +159,7 @@ private:
    * @param P_list the list of ParticleSet in a walker batch
    * @param Tmove whether Txy for Tmove is updated
    */
-  void mw_evaluateImpl(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list, bool Tmove);
+  static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list, bool Tmove);
 
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated

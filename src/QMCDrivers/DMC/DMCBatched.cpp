@@ -76,7 +76,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     auto& walkers             = crowd.get_walkers();
     auto& walker_elecs        = crowd.get_walker_elecs();
     auto& walker_twfs         = crowd.get_walker_twfs();
-    auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0], crowd.get_walker_hamiltonians());
     const int num_walkers     = crowd.size();
 
     //This generates an entire steps worth of deltas.
@@ -266,11 +266,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
       // evaluate non-physical hamiltonian elements
       for (int iw = 0; iw < walkers.size(); ++iw)
-        walker_hamiltonians[iw].get().auxHevaluate(walker_elecs[iw], walkers[iw]);
+        walker_hamiltonians[iw].auxHevaluate(walker_elecs[iw], walkers[iw]);
 
       // save properties into walker
       for (int iw = 0; iw < walkers.size(); ++iw)
-        walker_hamiltonians[iw].get().saveProperty(walkers[iw].get().getPropertyBase());
+        walker_hamiltonians[iw].saveProperty(walkers[iw].get().getPropertyBase());
     }
   }
 
@@ -278,9 +278,9 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer tmove_timer(&dmc_timers.tmove_timer);
 
     auto& walkers             = crowd.get_walkers();
-    auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
     auto& walker_elecs        = crowd.get_walker_elecs();
     auto& walker_twfs         = crowd.get_walker_twfs();
+    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0], crowd.get_walker_hamiltonians());
     const auto num_walkers    = walkers.size();
 
     std::vector<int> walker_non_local_moves_accepted(num_walkers, 0);
@@ -294,7 +294,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
       CrowdResourceLock pbyp_lock(crowd, iw);
-      walker_non_local_moves_accepted[iw] = walker_hamiltonians[iw].get().makeNonLocalMoves(walker_elecs[iw]);
+      walker_non_local_moves_accepted[iw] = walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw]);
 
       if (walker_non_local_moves_accepted[iw] > 0)
       {

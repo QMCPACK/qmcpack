@@ -316,7 +316,8 @@ void QMCCostFunctionBatched::checkConfigurations()
 
       auto wf_list = opt_data.get_wf_list(curr_crowd_size);
       auto p_list  = opt_data.get_p_list(curr_crowd_size);
-      auto h_list  = opt_data.get_h_list(curr_crowd_size);
+      auto h_list_no_leader  = opt_data.get_h_list(curr_crowd_size);
+      const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
 
       auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
       auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, curr_crowd_size);
@@ -337,7 +338,7 @@ void QMCCostFunctionBatched::checkConfigurations()
         // differently for each configuration.  Make sure the same initialization is
         // performed in correlatedSampling.
         *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
-        h_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
+        h_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
       }
 
       // Compute distance tables.
@@ -385,11 +386,11 @@ void QMCCostFunctionBatched::checkConfigurations()
           RecordsOnNode[is][ENERGY_NEW]   = etmp;
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
           RecordsOnNode[is][REWEIGHT]     = 1.0;
-          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
 
           if (includeNonlocalH != "no")
           {
-            OperatorBase* nlpp = h_list[ib].get().getHamiltonian(includeNonlocalH);
+            OperatorBase* nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
             RecordsOnNode[is][ENERGY_FIXED] -= nlpp->Value;
           }
         }
@@ -408,7 +409,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
           RecordsOnNode[is][ENERGY_NEW]   = etmp;
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
-          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
           RecordsOnNode[is][REWEIGHT]     = 1.0;
         }
       }
@@ -542,7 +543,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
           auto wf_list = opt_data.get_wf_list(curr_crowd_size);
           auto p_list  = opt_data.get_p_list(curr_crowd_size);
-          auto h0_list = opt_data.get_h0_list(curr_crowd_size);
+          auto h0_list_no_leader = opt_data.get_h0_list(curr_crowd_size);
+          const RefVectorWithLeader<QMCHamiltonian> h0_list(h0_list_no_leader[0], h0_list_no_leader);
 
           // Load this batch of samples into the crowd data
           for (int ib = 0; ib < curr_crowd_size; ib++)
@@ -550,7 +552,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
             samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
             // Copy the saved RNG state
             *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
-            h0_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
+            h0_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
           }
 
           // Update distance tables, etc for the loaded sample positions

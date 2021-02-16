@@ -25,7 +25,15 @@ class RefVectorWithLeader: public std::vector<std::reference_wrapper<T>>
 public:
   RefVectorWithLeader(T& leader) : leader_(leader) {}
 
+  RefVectorWithLeader(T& leader, const std::vector<std::reference_wrapper<T>>& vec) : leader_(leader)
+  {
+    for (T& element: vec)
+      this->push_back(element);
+  }
+
   T& getLeader() const { return leader_; }
+
+  T& operator[](size_t i) const { return std::vector<std::reference_wrapper<T>>::operator [](i).get();}
 
   template<typename CASTTYPE>
   CASTTYPE& getCastedLeader() const
@@ -42,9 +50,9 @@ public:
   {
     static_assert(std::is_const<T>::value == std::is_const<CASTTYPE>::value, "Unmatched const type qualifier!");
 #ifndef NDEBUG
-    assert(dynamic_cast<CASTTYPE*>(&(*this)[i].get()) != nullptr);
+    assert(dynamic_cast<CASTTYPE*>(&(*this)[i]) != nullptr);
 #endif
-    return static_cast<CASTTYPE&>((*this)[i].get());
+    return static_cast<CASTTYPE&>((*this)[i]);
   }
 
 private:

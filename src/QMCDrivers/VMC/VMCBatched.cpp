@@ -176,7 +176,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   timers.buffer_timer.stop();
 
   timers.hamiltonian_timer.start();
-  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+  const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0], crowd.get_walker_hamiltonians());
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
       QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
   timers.hamiltonian_timer.stop();

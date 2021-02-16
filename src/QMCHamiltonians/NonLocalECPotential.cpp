@@ -99,7 +99,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(Particl
   return Value;
 }
 
-void NonLocalECPotential::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
+void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) const
 {
   mw_evaluateImpl(O_list, P_list, false);
 }
@@ -113,8 +113,8 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(Particl
   return Value;
 }
 
-void NonLocalECPotential::mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list,
-                                                   const RefVector<ParticleSet>& P_list)
+void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+                                                   const RefVector<ParticleSet>& P_list) const
 {
   if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
     mw_evaluateImpl(O_list, P_list, true);
@@ -227,10 +227,11 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
 #endif
 }
 
-void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
+void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& O_list,
                                           const RefVector<ParticleSet>& P_list,
                                           bool Tmove)
 {
+  auto& O_leader = O_list.getCastedLeader<NonLocalECPotential>();
   ParticleSet& pset_leader = P_list[0];
   const size_t ngroups = pset_leader.groups();
   const size_t nw      = O_list.size();
@@ -240,7 +241,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
 #pragma omp parallel for
   for (size_t iw = 0; iw < nw; iw++)
   {
-    NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
+    auto& O = O_list.getCastedElement<NonLocalECPotential>(iw);
     ParticleSet& P(P_list[iw]);
 
     if (Tmove)
@@ -251,14 +252,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
         O.PPset[ipp]->randomize_grid(*O.myRNG);
 
     //loop over all the ions
-    const auto& myTable = P.getDistTable(myTableIndex);
+    const auto& myTable = P.getDistTable(O.myTableIndex);
     // clear all the electron and ion neighbor lists
-    for (int iat = 0; iat < NumIons; iat++)
+    for (int iat = 0; iat < O.NumIons; iat++)
       O.IonNeighborElecs.getNeighborList(iat).clear();
     for (int jel = 0; jel < P.getTotalNum(); jel++)
       O.ElecNeighborIons.getNeighborList(jel).clear();
 
-    if (ComputeForces)
+    if (O.ComputeForces)
       APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
 
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
@@ -286,8 +287,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
     O.Value = 0.0;
   }
 
-  auto pp_component = std::find_if(PPset.begin(), PPset.end(), [](auto& ptr){ return bool(ptr);} );
-  assert(pp_component != std::end(PPset));
+  auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr){ return bool(ptr);} );
+  assert(pp_component != std::end(O_leader.PPset));
 
   RefVector<NonLocalECPotential> ecp_potential_list;
   RefVectorWithLeader<NonLocalECPComponent> ecp_component_list(**pp_component);
@@ -307,7 +308,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
     {
       psi_list.clear();
       for (size_t iw = 0; iw < nw; iw++)
-        psi_list.push_back(static_cast<NonLocalECPotential&>(O_list[iw].get()).Psi);
+        psi_list.push_back(O_list.getCastedElement<NonLocalECPotential>(iw).Psi);
       TrialWaveFunction::flex_prepareGroup(psi_list, P_list, ig);
     }
 
@@ -320,7 +321,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
       batch_list.clear();
       for (size_t iw = 0; iw < nw; iw++)
       {
-        NonLocalECPotential& O(static_cast<NonLocalECPotential&>(O_list[iw].get()));
+        auto& O = O_list.getCastedElement<NonLocalECPotential>(iw);
         ParticleSet& P(P_list[iw]);
         if (jobid < O.nlpp_jobs[ig].size())
         {
@@ -333,24 +334,24 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVector<OperatorBase>& O_list,
         }
       }
 
-      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, psi_list, batch_list, Psi, pairpots, use_DLA);
+      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, psi_list, batch_list, O_leader.Psi, pairpots, O_leader.use_DLA);
 
       for (size_t j = 0; j < ecp_potential_list.size(); j++)
       {
         if (false)
         { // code usefully for debugging
-          RealType check_value = ecp_component_list[j].get().evaluateOne(p_list[j], batch_list[j].get().ion_id,
-                                                                         psi_list[j], batch_list[j].get().electron_id,
-                                                                         batch_list[j].get().ion_elec_dist,
-                                                                         batch_list[j].get().ion_elec_displ, use_DLA);
+          RealType check_value = ecp_component_list[j].evaluateOne(p_list[j], batch_list[j].get().ion_id,
+                                                                   psi_list[j], batch_list[j].get().electron_id,
+                                                                   batch_list[j].get().ion_elec_dist,
+                                                                   batch_list[j].get().ion_elec_displ, O_leader.use_DLA);
           if (std::abs(check_value - pairpots[j]) > 1e-5)
             std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
                       << std::abs(check_value - pairpots[j]) << std::endl;
         }
         ecp_potential_list[j].get().Value += pairpots[j];
         if (Tmove)
-          ecp_component_list[j].get().contributeTxy(batch_list[j].get().electron_id,
-                                                    ecp_potential_list[j].get().nonLocalOps.Txy);
+          ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id,
+                                              ecp_potential_list[j].get().nonLocalOps.Txy);
       }
     }
   }
