@@ -135,7 +135,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                           const RefVector<ParticleSet>& p_list,
+                                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                                            int iat,
                                                            std::vector<GradType>& grad_now) const
 {
@@ -190,7 +190,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVector<ParticleSet>& p_list,
+                                                            const RefVectorWithLeader<ParticleSet>& p_list,
                                                             int iat,
                                                             std::vector<PsiValueType>& ratios,
                                                             std::vector<GradType>& grad_new) const
@@ -258,7 +258,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::acceptMove(ParticleSet& P, int ia
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-    const RefVector<ParticleSet>& p_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
     int iat,
     const std::vector<bool>& isAccepted,
     bool safe_to_delay) const
@@ -413,7 +413,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                             const RefVector<ParticleSet>& p_list,
+                                                             const RefVectorWithLeader<ParticleSet>& p_list,
                                                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                                                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                                                              bool fromscratch) const
@@ -528,7 +528,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVector<ParticleSet>& p_list,
+                                                            const RefVectorWithLeader<ParticleSet>& p_list,
                                                             int iat,
                                                             std::vector<PsiValueType>& ratios) const
 {
@@ -821,7 +821,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateLog(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-    const RefVector<ParticleSet>& p_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
 {
@@ -851,7 +851,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVector<ParticleSet>& p_list)
+                                                            const RefVectorWithLeader<ParticleSet>& p_list)
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
   const auto nw    = wfc_list.size();

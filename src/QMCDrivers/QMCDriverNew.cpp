@@ -320,21 +320,20 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<ContextForSteps>& context_for_steps)
 {
   Crowd& crowd = *(crowds[crowd_id]);
-  CrowdResourceLock crowd_res_lock(crowd);
+  if (crowd.size() == 0)
+    return;
 
+  CrowdResourceLock crowd_res_lock(crowd);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
-  auto& walker_elecs = crowd.get_walker_elecs();
-  auto& walkers      = crowd.get_walkers();
-
+  auto& walkers = crowd.get_walkers();
+  const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
   crowd.loadWalkers();
-  for (ParticleSet& pset : walker_elecs)
-    pset.update();
-
+  ParticleSet::flex_update(walker_elecs);
   TrialWaveFunction::flex_evaluateLog(walker_twfs, walker_elecs);
 
   // For consistency this should be in ParticleSet as a flex call, but I think its a problem
@@ -517,6 +516,7 @@ void QMCDriverNew::endBlock()
 bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
 {
   bool success = true;
+  const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   std::vector<TrialWaveFunction::LogValueType> log_values(walker_twfs.size());
   std::vector<ParticleSet::ParticleGradient_t> Gs;
@@ -531,10 +531,8 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     Ls.push_back(walker_twfs[iw].L);
   }
 
-  if (!crowd.get_walker_elecs().empty())
-    crowd.get_walker_elecs()[0].get().flex_update(crowd.get_walker_elecs());
-
-  TrialWaveFunction::flex_evaluateLog(walker_twfs, crowd.get_walker_elecs());
+  ParticleSet::flex_update(walker_elecs);
+  TrialWaveFunction::flex_evaluateLog(walker_twfs, walker_elecs);
 
   const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
   for (int iw = 0; iw < log_values.size(); iw++)

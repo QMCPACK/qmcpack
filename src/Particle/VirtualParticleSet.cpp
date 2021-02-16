@@ -56,14 +56,14 @@ void VirtualParticleSet::makeMoves(int jel,
   update();
 }
 
-void VirtualParticleSet::flex_makeMoves(const RefVector<VirtualParticleSet>& vp_list,
+void VirtualParticleSet::flex_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                                         const RefVector<const std::vector<PosType>>& deltaV_list,
                                         const RefVector<const NLPPJob<RealType>>& joblist,
                                         bool sphere)
 {
   if (vp_list.size() > 1)
   {
-    RefVector<ParticleSet> p_list;
+    RefVectorWithLeader<ParticleSet> p_list(vp_list.getLeader());
     p_list.reserve(vp_list.size());
 
     for (int iw = 0; iw < vp_list.size(); iw++)
@@ -84,8 +84,8 @@ void VirtualParticleSet::flex_makeMoves(const RefVector<VirtualParticleSet>& vp_
     flex_update(p_list);
   }
   else if (vp_list.size() == 1)
-    vp_list[0].get().makeMoves(joblist[0].get().electron_id, joblist[0].get().electron_id, deltaV_list[0].get(), sphere,
-                               joblist[0].get().ion_id);
+    vp_list[0].makeMoves(joblist[0].get().electron_id, joblist[0].get().electron_id, deltaV_list[0].get(), sphere,
+                         joblist[0].get().ion_id);
 }
 
 } // namespace qmcplusplus

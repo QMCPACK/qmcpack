@@ -315,8 +315,9 @@ void QMCCostFunctionBatched::checkConfigurations()
       int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
 
       auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
-      auto p_list            = opt_data.get_p_list(curr_crowd_size);
+      auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
       auto h_list_no_leader  = opt_data.get_h_list(curr_crowd_size);
+      const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
       const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
       const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
 
@@ -326,7 +327,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       // Load samples into the crowd data
       for (int ib = 0; ib < curr_crowd_size; ib++)
       {
-        samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
+        samples.loadSample(p_list[ib].R, base_sample_index + ib);
 
         // Set the RNG used in QMCHamiltonian.  This is used to offset the grid
         // during spherical integration in the non-local pseudopotential.
@@ -343,8 +344,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       }
 
       // Compute distance tables.
-      if (!p_list.empty())
-        p_list[0].get().flex_update(p_list, true);
+      ParticleSet::flex_update(p_list, true);
 
       // Log psi and prepare for difference the log psi
       opt_data.zero_log_psi();
@@ -542,24 +542,24 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
           int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
 
-          auto p_list            = opt_data.get_p_list(curr_crowd_size);
+          auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
           auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
           auto h0_list_no_leader = opt_data.get_h0_list(curr_crowd_size);
+          const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
           const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
           const RefVectorWithLeader<QMCHamiltonian> h0_list(h0_list_no_leader[0], h0_list_no_leader);
 
           // Load this batch of samples into the crowd data
           for (int ib = 0; ib < curr_crowd_size; ib++)
           {
-            samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
+            samples.loadSample(p_list[ib].R, base_sample_index + ib);
             // Copy the saved RNG state
             *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
             h0_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
           }
 
           // Update distance tables, etc for the loaded sample positions
-          if (!p_list.empty())
-            p_list[0].get().flex_update(p_list, true);
+          ParticleSet::flex_update(p_list, true);
 
           // Evaluate difference in log psi
 
@@ -593,8 +593,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
             wf_list[ib].G += *gradPsi[is];
             wf_list[ib].L += *lapPsi[is];
             // This is needed to get the KE correct in QMCHamiltonian::flex_evaluate below
-            p_list[ib].get().G += *gradPsi[is];
-            p_list[ib].get().L += *lapPsi[is];
+            p_list[ib].G += *gradPsi[is];
+            p_list[ib].L += *lapPsi[is];
             Return_rt weight = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
             RecordsOnNode[is][REWEIGHT] = weight;
             // move to opt_data

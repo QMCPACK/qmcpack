@@ -100,9 +100,9 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(Particl
 }
 
 void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
-                                      const RefVector<ParticleSet>& P_list) const
+                                      const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  mw_evaluateImpl(O_list, P_list, false);
+  mw_evaluateImpl(O_list, p_list, false);
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
@@ -115,12 +115,12 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(Particl
 }
 
 void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
-                                                   const RefVector<ParticleSet>& P_list) const
+                                                   const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
-    mw_evaluateImpl(O_list, P_list, true);
+    mw_evaluateImpl(O_list, p_list, true);
   else
-    mw_evaluateImpl(O_list, P_list, false);
+    mw_evaluateImpl(O_list, p_list, false);
 }
 
 void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid)
@@ -229,11 +229,11 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
 }
 
 void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& O_list,
-                                          const RefVector<ParticleSet>& P_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                           bool Tmove)
 {
   auto& O_leader           = O_list.getCastedLeader<NonLocalECPotential>();
-  ParticleSet& pset_leader = P_list[0];
+  ParticleSet& pset_leader = p_list[0];
   const size_t ngroups     = pset_leader.groups();
   const size_t nw          = O_list.size();
   /// maximal number of jobs per spin
@@ -243,7 +243,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& O = O_list.getCastedElement<NonLocalECPotential>(iw);
-    ParticleSet& P(P_list[iw]);
+    ParticleSet& P(p_list[iw]);
 
     if (Tmove)
       O.nonLocalOps.reset();
@@ -293,14 +293,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 
   RefVector<NonLocalECPotential> ecp_potential_list;
   RefVectorWithLeader<NonLocalECPComponent> ecp_component_list(**pp_component);
-  RefVector<ParticleSet> p_list;
+  RefVectorWithLeader<ParticleSet> pset_list(pset_leader);
   RefVectorWithLeader<TrialWaveFunction> psi_list(O_leader.Psi);
   RefVector<const NLPPJob<RealType>> batch_list;
   std::vector<RealType> pairpots(nw);
 
   ecp_potential_list.reserve(nw);
   ecp_component_list.reserve(nw);
-  p_list.reserve(nw);
+  pset_list.reserve(nw);
   psi_list.reserve(nw);
   batch_list.reserve(nw);
 
@@ -310,32 +310,32 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       psi_list.clear();
       for (size_t iw = 0; iw < nw; iw++)
         psi_list.push_back(O_list.getCastedElement<NonLocalECPotential>(iw).Psi);
-      TrialWaveFunction::flex_prepareGroup(psi_list, P_list, ig);
+      TrialWaveFunction::flex_prepareGroup(psi_list, p_list, ig);
     }
 
     for (size_t jobid = 0; jobid < max_num_jobs[ig]; jobid++)
     {
       ecp_potential_list.clear();
       ecp_component_list.clear();
-      p_list.clear();
+      pset_list.clear();
       psi_list.clear();
       batch_list.clear();
       for (size_t iw = 0; iw < nw; iw++)
       {
         auto& O = O_list.getCastedElement<NonLocalECPotential>(iw);
-        ParticleSet& P(P_list[iw]);
+        ParticleSet& P(p_list[iw]);
         if (jobid < O.nlpp_jobs[ig].size())
         {
           const auto& job = O.nlpp_jobs[ig][jobid];
           ecp_potential_list.push_back(O);
           ecp_component_list.push_back(*O.PP[job.ion_id]);
-          p_list.push_back(P);
+          pset_list.push_back(P);
           psi_list.push_back(O.Psi);
           batch_list.push_back(job);
         }
       }
 
-      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, p_list, psi_list, batch_list, pairpots,
+      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
                                              O_leader.use_DLA);
 
       for (size_t j = 0; j < ecp_potential_list.size(); j++)
@@ -343,7 +343,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         if (false)
         { // code usefully for debugging
           RealType check_value =
-              ecp_component_list[j].evaluateOne(p_list[j], batch_list[j].get().ion_id, psi_list[j],
+              ecp_component_list[j].evaluateOne(pset_list[j], batch_list[j].get().ion_id, psi_list[j],
                                                 batch_list[j].get().electron_id, batch_list[j].get().ion_elec_dist,
                                                 batch_list[j].get().ion_elec_displ, O_leader.use_DLA);
           if (std::abs(check_value - pairpots[j]) > 1e-5)

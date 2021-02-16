@@ -240,14 +240,14 @@ public:
                            ValueVector_t& d2psi) override;
 
   virtual void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
-                              const RefVector<ParticleSet>& P_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
                               const RefVector<ValueVector_t>& d2psi_v_list) const override;
 
   virtual void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
-                                              const RefVector<ParticleSet>& P_list,
+                                              const RefVectorWithLeader<ParticleSet>& P_list,
                                               int iat,
                                               const std::vector<const ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,

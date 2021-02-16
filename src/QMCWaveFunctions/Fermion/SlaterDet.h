@@ -65,7 +65,7 @@ public:
                                    ParticleSet::ParticleLaplacian_t& L) override;
 
   virtual void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                              const RefVector<ParticleSet>& p_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
@@ -75,7 +75,7 @@ public:
                                   bool fromscratch) override;
 
   virtual void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                             const RefVector<ParticleSet>& p_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list,
                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                              bool fromscratch) const override;
@@ -122,13 +122,13 @@ public:
                                          ComplexType& spingrad_iat) override;
 
   virtual void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVector<ParticleSet>& p_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
                             std::vector<GradType>& grad_now) const override;
 
   void mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                         const RefVector<ParticleSet>& p_list,
+                         const RefVectorWithLeader<ParticleSet>& p_list,
                          int iat,
                          std::vector<PsiValueType>& ratios,
                          std::vector<GradType>& grad_now) const override;
@@ -141,7 +141,7 @@ public:
   }
 
   virtual void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                           const RefVector<ParticleSet>& p_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
                            int iat,
                            std::vector<GradType>& grad_now) const override
   {
@@ -181,7 +181,7 @@ public:
   }
 
   virtual void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                    const RefVector<ParticleSet>& p_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                     int iat,
                                     const std::vector<bool>& isAccepted,
                                     bool safe_to_delay = false) const override
@@ -220,7 +220,7 @@ public:
   virtual inline PsiValueType ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
 
   virtual void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVector<ParticleSet>& p_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             std::vector<PsiValueType>& ratios) const override
   {

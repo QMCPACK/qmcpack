@@ -239,7 +239,7 @@ public:
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
    */
   virtual void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
-                              const RefVector<ParticleSet>& P_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
@@ -254,7 +254,7 @@ public:
    * @param psi_ratio_grads_v determinant ratio and grads of all the walkers
    */
   virtual void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
-                                              const RefVector<ParticleSet>& P_list,
+                                              const RefVectorWithLeader<ParticleSet>& P_list,
                                               int iat,
                                               const std::vector<const ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,
@@ -321,7 +321,7 @@ public:
                                     ValueMatrix_t& d2logdet) = 0;
 
   virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
-                                       const RefVector<ParticleSet>& P_list,
+                                       const RefVectorWithLeader<ParticleSet>& P_list,
                                        int first,
                                        int last,
                                        const RefVector<ValueMatrix_t>& logdet_list,

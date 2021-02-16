@@ -58,7 +58,8 @@ protected:
 
 public:
   BsplineSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false)
-      : SPOSet(use_OMP_offload, ion_deriv, optimizable), is_complex(false), MyIndex(0), first_spo(0), last_spo(0) {}
+      : SPOSet(use_OMP_offload, ion_deriv, optimizable), is_complex(false), MyIndex(0), first_spo(0), last_spo(0)
+  {}
 
   auto& getHalfG() const { return HalfG; }
 
@@ -100,12 +101,12 @@ public:
 
   // propagate SPOSet virtual functions
   using SPOSet::evaluateDetRatios;
-  using SPOSet::mw_evaluateDetRatios;
   using SPOSet::evaluateValue;
   using SPOSet::evaluateVGH;
   using SPOSet::evaluateVGHGH;
   using SPOSet::evaluateVGL;
   using SPOSet::finalizeConstruction;
+  using SPOSet::mw_evaluateDetRatios;
   using SPOSet::mw_evaluateVGL;
   using SPOSet::mw_evaluateVGLandDetRatioGrads;
 
@@ -134,7 +135,7 @@ public:
   }
 
   virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
-                                       const RefVector<ParticleSet>& P_list,
+                                       const RefVectorWithLeader<ParticleSet>& P_list,
                                        int first,
                                        int last,
                                        const RefVector<ValueMatrix_t>& logdet_list,

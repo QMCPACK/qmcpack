@@ -183,7 +183,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
 }
 
 void NonLocalECPComponent::flex_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
-                                            const RefVector<ParticleSet>& p_list,
+                                            const RefVectorWithLeader<ParticleSet>& p_list,
                                             const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                             const RefVector<const NLPPJob<RealType>>& joblist,
                                             std::vector<RealType>& pairpots,
@@ -195,7 +195,7 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVectorWithLeader<NonLocalEC
     if (ecp_component_leader.VP)
     {
       // Compute ratios with VP
-      RefVector<VirtualParticleSet> vp_list;
+      RefVectorWithLeader<VirtualParticleSet> vp_list(*ecp_component_leader.VP);
       RefVector<const VirtualParticleSet> const_vp_list;
       RefVector<const std::vector<PosType>> deltaV_list;
       RefVector<std::vector<ValueType>> psiratios_list;

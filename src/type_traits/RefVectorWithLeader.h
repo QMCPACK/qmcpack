@@ -18,22 +18,21 @@
 
 namespace qmcplusplus
 {
-
 template<typename T>
-class RefVectorWithLeader: public std::vector<std::reference_wrapper<T>>
+class RefVectorWithLeader : public std::vector<std::reference_wrapper<T>>
 {
 public:
   RefVectorWithLeader(T& leader) : leader_(leader) {}
 
   RefVectorWithLeader(T& leader, const std::vector<std::reference_wrapper<T>>& vec) : leader_(leader)
   {
-    for (T& element: vec)
+    for (T& element : vec)
       this->push_back(element);
   }
 
   T& getLeader() const { return leader_; }
 
-  T& operator[](size_t i) const { return std::vector<std::reference_wrapper<T>>::operator [](i).get();}
+  T& operator[](size_t i) const { return std::vector<std::reference_wrapper<T>>::operator[](i).get(); }
 
   template<typename CASTTYPE>
   CASTTYPE& getCastedLeader() const
@@ -58,6 +57,6 @@ public:
 private:
   std::reference_wrapper<T> leader_;
 };
-}
+} // namespace qmcplusplus
 
 #endif

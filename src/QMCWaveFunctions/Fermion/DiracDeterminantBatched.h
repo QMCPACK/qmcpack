@@ -85,7 +85,7 @@ public:
   PsiValueType ratio(ParticleSet& P, int iat) override;
 
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                    const RefVector<ParticleSet>& p_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
                     std::vector<PsiValueType>& ratios) const override;
 
@@ -100,7 +100,7 @@ public:
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                    const RefVector<ParticleSet>& p_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
                     std::vector<PsiValueType>& ratios,
                     std::vector<GradType>& grad_new) const override;
@@ -108,7 +108,7 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override;
 
   void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                   const RefVector<ParticleSet>& p_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list,
                    int iat,
                    std::vector<GradType>& grad_now) const override;
 
@@ -125,7 +125,7 @@ public:
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVector<ParticleSet>& p_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             const std::vector<bool>& isAccepted,
                             bool safe_to_delay = false) const override;
@@ -150,7 +150,7 @@ public:
                            ParticleSet::ParticleLaplacian_t& L) override;
 
   void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                      const RefVector<ParticleSet>& p_list,
+                      const RefVectorWithLeader<ParticleSet>& p_list,
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
@@ -162,7 +162,7 @@ public:
                           bool fromscratch) override;
 
   void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                     const RefVector<ParticleSet>& p_list,
+                     const RefVectorWithLeader<ParticleSet>& p_list,
                      const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                      const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                      bool fromscratch) const override;
@@ -237,7 +237,7 @@ private:
                             const RefVector<const ValueMatrix_t>& logdetT_list);
 
   static void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                           const RefVector<ParticleSet>& p_list);
+                           const RefVectorWithLeader<ParticleSet>& p_list);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();

@@ -105,7 +105,7 @@ public:
   PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override final;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                    const RefVector<ParticleSet>& p_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
                     std::vector<PsiValueType>& ratios,
                     std::vector<GradType>& grad_new) const override;
@@ -127,7 +127,7 @@ public:
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVector<ParticleSet>& p_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             const std::vector<bool>& isAccepted,
                             bool safe_to_delay = false) const override

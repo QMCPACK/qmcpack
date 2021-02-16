@@ -159,42 +159,44 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
-  void mw_move(const RefVector<DistanceTableData>& dt_list,
-               const RefVector<ParticleSet>& p_list,
+  void mw_move(const RefVectorWithLeader<DistanceTableData>& dt_list,
+               const RefVectorWithLeader<ParticleSet>& p_list,
                const std::vector<PosType>& rnew_list,
                const IndexType iat = 0,
-               bool prepare_old    = true) override
+               bool prepare_old    = true) const override
   {
+    assert(this == &dt_list.getLeader());
+    auto& dt_leader   = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    auto& pset_leader = p_list.getLeader();
     ScopedTimer local_timer(&move_timer_);
     const size_t nw          = dt_list.size();
     const size_t stride_size = Ntargets_padded * (D + 1);
-    nw_new_old_dist_displ_.resize(nw * 2 * stride_size);
-    rsoa_dev_list_.resize(nw);
+    dt_leader.nw_new_old_dist_displ_.resize(nw * 2 * stride_size);
+    dt_leader.rsoa_dev_list_.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& dt = static_cast<SoaDistanceTableAAOMPTarget&>(dt_list[iw].get());
-      dt.temp_r_.attachReference(nw_new_old_dist_displ_.data() + stride_size * iw, Ntargets_padded);
+      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      dt.temp_r_.attachReference(dt_leader.nw_new_old_dist_displ_.data() + stride_size * iw, Ntargets_padded);
       dt.temp_dr_.attachReference(N_targets, Ntargets_padded,
-                                  nw_new_old_dist_displ_.data() + stride_size * iw + Ntargets_padded);
-      dt.old_r_.attachReference(nw_new_old_dist_displ_.data() + stride_size * (iw + nw), Ntargets_padded);
+                                  dt_leader.nw_new_old_dist_displ_.data() + stride_size * iw + Ntargets_padded);
+      dt.old_r_.attachReference(dt_leader.nw_new_old_dist_displ_.data() + stride_size * (iw + nw), Ntargets_padded);
       dt.old_dr_.attachReference(N_targets, Ntargets_padded,
-                                 nw_new_old_dist_displ_.data() + stride_size * (iw + nw) + Ntargets_padded);
-      auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].get().getCoordinates());
-      rsoa_dev_list_[iw]    = coordinates_soa.getDevicePtr();
+                                 dt_leader.nw_new_old_dist_displ_.data() + stride_size * (iw + nw) + Ntargets_padded);
+      auto& coordinates_soa        = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
+      dt_leader.rsoa_dev_list_[iw] = coordinates_soa.getDevicePtr();
     }
 
     const int ChunkSizePerTeam = 256;
     const int num_teams        = (N_targets + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
-    ParticleSet& pset_leader = p_list[0];
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
 
     const auto activePtcl_local = pset_leader.activePtcl;
     const auto N_sources_local  = N_targets;
     const auto N_sources_padded = Ntargets_padded;
-    auto* rsoa_dev_list_ptr     = rsoa_dev_list_.data();
-    auto* r_dr_ptr              = nw_new_old_dist_displ_.data();
+    auto* rsoa_dev_list_ptr     = dt_leader.rsoa_dev_list_.data();
+    auto* r_dr_ptr              = dt_leader.nw_new_old_dist_displ_.data();
     auto* new_pos_ptr           = coordinates_leader.getFusedNewPosBuffer().data();
     const size_t new_pos_stride = coordinates_leader.getFusedNewPosBuffer().capacity();
 
@@ -247,7 +249,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       ScopedTimer local(&copy_old_timer_);
       for (int iw = 0; iw < dt_list.size(); iw++)
       {
-        auto& dt       = static_cast<SoaDistanceTableAAOMPTarget&>(dt_list[iw].get());
+        auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
 
         // If the full table is not ready all the time, overwrite the current value.
         // If this step is missing, DT values can be undefined in case a move is rejected.

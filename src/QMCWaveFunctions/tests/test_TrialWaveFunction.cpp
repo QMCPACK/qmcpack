@@ -212,7 +212,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
-  RefVector<ParticleSet> p_ref_list{elec_, elec_clone};
+  RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
   RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});
 
   elec_.flex_update(p_ref_list);
@@ -256,12 +256,12 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   PosType delta_sign_changed(0.1, 0.1, -0.2);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_sign_changed);
-  p_ref_list[1].get().makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[0].makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[1].makeMove(moved_elec_id, delta_sign_changed);
 
-  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0].get(), moved_elec_id);
+  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
   GradType grad_temp;
-  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1].get(), moved_elec_id, grad_temp);
+  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
 #if defined(QMC_COMPLEX)
   REQUIRE(r_0 == ComplexApprox(ValueType(-0.045474407700114, -0.59956233350555)));
   REQUIRE(r_1 == ComplexApprox(ValueType(-0.44602867091608, -1.8105588403509)));
@@ -277,8 +277,8 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   PosType delta_zero(0, 0, 0);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_zero);
-  p_ref_list[1].get().makeMove(moved_elec_id, delta);
+  p_ref_list[0].makeMove(moved_elec_id, delta_zero);
+  p_ref_list[1].makeMove(moved_elec_id, delta);
 
   std::vector<PsiValueType> ratios(2);
   psi.flex_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);

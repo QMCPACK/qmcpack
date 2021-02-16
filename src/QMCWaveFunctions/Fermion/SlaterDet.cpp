@@ -101,7 +101,7 @@ PsiValueType SlaterDet::ratioGradWithSpin(ParticleSet& P, int iat, GradType& gra
 }
 
 void SlaterDet::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                             const RefVector<ParticleSet>& p_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list,
                              int iat,
                              std::vector<PsiValueType>& ratios,
                              std::vector<GradType>& grad_now) const
@@ -111,7 +111,7 @@ void SlaterDet::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& w
 }
 
 void SlaterDet::mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                  const RefVector<ParticleSet>& p_list,
+                                  const RefVectorWithLeader<ParticleSet>& p_list,
                                   int iat,
                                   std::vector<PsiValueType>& ratios,
                                   std::vector<GradType>& grad_now) const
@@ -137,7 +137,7 @@ SlaterDet::LogValueType SlaterDet::evaluateLog(ParticleSet& P,
 }
 
 void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                               const RefVector<ParticleSet>& p_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list,
                                const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                                const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
 {
@@ -167,7 +167,7 @@ SlaterDet::LogValueType SlaterDet::evaluateGL(ParticleSet& P,
 }
 
 void SlaterDet::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                              const RefVector<ParticleSet>& p_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                               bool fromscratch) const

@@ -235,7 +235,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
-  RefVector<ParticleSet> p_ref_list{elec_, elec_clone};
+  RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
   RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});
 
   elec_.flex_update(p_ref_list);
@@ -284,12 +284,12 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
   PosType delta_sign_changed(0.1, 0.1, -0.2);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_sign_changed);
-  p_ref_list[1].get().makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[0].makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[1].makeMove(moved_elec_id, delta_sign_changed);
 
-  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0].get(), moved_elec_id);
+  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
   GradType grad_temp;
-  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1].get(), moved_elec_id, grad_temp);
+  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
   std::cout << "calcRatio calcRatioGrad " << std::setprecision(14) << r_0 << " " << r_1 << " " << grad_temp[0] << " "
             << grad_temp[1] << " " << grad_temp[2] << std::endl;
 #if defined(QMC_COMPLEX)
@@ -307,8 +307,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
   PosType delta_zero(0, 0, 0);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_zero);
-  p_ref_list[1].get().makeMove(moved_elec_id, delta);
+  p_ref_list[0].makeMove(moved_elec_id, delta_zero);
+  p_ref_list[1].makeMove(moved_elec_id, delta);
 
   std::vector<PsiValueType> ratios(2);
   psi.flex_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);

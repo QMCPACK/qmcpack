@@ -65,10 +65,10 @@ public:
                  bool sphere = false,
                  int iat     = -1);
 
-  void flex_makeMoves(const RefVector<VirtualParticleSet>& vp_list,
-                      const RefVector<const std::vector<PosType>>& deltaV_list,
-                      const RefVector<const NLPPJob<RealType>>& joblist,
-                      bool sphere);
+  static void flex_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
+                             const RefVector<const std::vector<PosType>>& deltaV_list,
+                             const RefVector<const NLPPJob<RealType>>& joblist,
+                             bool sphere);
 };
 } // namespace qmcplusplus
 #endif

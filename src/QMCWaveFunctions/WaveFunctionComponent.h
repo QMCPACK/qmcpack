@@ -192,7 +192,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param values the log WF values of walkers in a batch
    */
   virtual void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                              const RefVector<ParticleSet>& p_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const;
 
@@ -222,7 +222,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void prepareGroup(ParticleSet& P, int ig) {}
 
   virtual void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                               const RefVector<ParticleSet>& p_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list,
                                int ig) const;
 
   /** return the current gradient for the iat-th particle
@@ -251,7 +251,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param grad_now the list of gradients in a walker batch, \f$\nabla\ln\Psi\f$
    */
   virtual void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                           const RefVector<ParticleSet>& p_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
                            int iat,
                            std::vector<GradType>& grad_now) const;
 
@@ -317,13 +317,13 @@ struct WaveFunctionComponent : public QMCTraits
    * @param grad_now the list of new gradients in a walker batch, \f$\nabla\ln\Psi\f$
    */
   virtual void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVector<ParticleSet>& p_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
                             std::vector<GradType>& grad_new) const;
 
   virtual void mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                 const RefVector<ParticleSet>& p_list,
+                                 const RefVectorWithLeader<ParticleSet>& p_list,
                                  int iat,
                                  std::vector<PsiValueType>& ratios,
                                  std::vector<GradType>& grad_new) const;
@@ -343,7 +343,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param safe_to_delay if true, delayed accept is safe.
    */
   virtual void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                    const RefVector<ParticleSet>& p_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                     int iat,
                                     const std::vector<bool>& isAccepted,
                                     bool safe_to_delay = false) const;
@@ -380,7 +380,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param ratios the list of WF ratios of a walker batch, \f$ \Psi( \{ {\bf R}^{'} \} )/ \Psi( \{ {\bf R}\})\f$
    */
   virtual void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVector<ParticleSet>& p_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             std::vector<PsiValueType>& ratios) const;
 
@@ -404,7 +404,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param fromscratch if true, all the internal data are recomputed from scratch
    */
   virtual void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                             const RefVector<ParticleSet>& p_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list,
                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                              bool fromscratch) const;

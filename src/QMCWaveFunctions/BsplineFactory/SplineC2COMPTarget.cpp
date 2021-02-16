@@ -656,7 +656,7 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
 
 template<typename ST>
 void SplineC2COMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
-                                            const RefVector<ParticleSet>& P_list,
+                                            const RefVectorWithLeader<ParticleSet>& P_list,
                                             int iat,
                                             const RefVector<ValueVector_t>& psi_v_list,
                                             const RefVector<GradVector_t>& dpsi_v_list,
@@ -670,7 +670,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
   // pack particle positions
   for (int iw = 0; iw < nwalkers; ++iw)
   {
-    const PointType& r = P_list[iw].get().activeR(iat);
+    const PointType& r = P_list[iw].activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     phi_leader.multi_pos_copy[iw * 6]     = r[0];
     phi_leader.multi_pos_copy[iw * 6 + 1] = r[1];
@@ -685,7 +685,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
 
 template<typename ST>
 void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
-                                                            const RefVector<ParticleSet>& P_list,
+                                                            const RefVectorWithLeader<ParticleSet>& P_list,
                                                             int iat,
                                                             const std::vector<const ValueType*>& invRow_ptr_list,
                                                             VGLVector_t& phi_vgl_v,
@@ -700,7 +700,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   // pack particle positions and invRow pointers.
   for (int iw = 0; iw < nwalkers; ++iw)
   {
-    const PointType& r = P_list[iw].get().activeR(iat);
+    const PointType& r = P_list[iw].activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     Vector<ST> pos_copy(reinterpret_cast<ST*>(phi_leader.buffer_H2D[iw]), 6);
 

@@ -197,7 +197,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                             const RefVector<ParticleSet>& p_list,
+                                             const RefVectorWithLeader<ParticleSet>& p_list,
                                              int iat,
                                              std::vector<PsiValueType>& ratios,
                                              std::vector<GradType>& grad_new) const

@@ -44,7 +44,8 @@ OperatorBase::Return_t OperatorBase::evaluateDeterministic(ParticleSet& P) { ret
  * really should reduce vector of local_energies. matching the ordering and size of o list
  * the this can be call for 1 or more QMCHamiltonians
  */
-void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) const
+void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list) const
 {
   assert(this == &O_list.getLeader());
 /**  Temporary raw omp pragma for simple thread parallelism
@@ -77,7 +78,7 @@ void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list, 
 }
 
 void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
-                                                       const RefVector<ParticleSet>& P_list,
+                                                       const RefVectorWithLeader<ParticleSet>& P_list,
                                                        const opt_variables_type& optvars,
                                                        RecordArray<ValueType>& dlogpsi,
                                                        RecordArray<ValueType>& dhpsioverpsi) const

@@ -174,7 +174,7 @@ public:
    * electrons in iel_list must be of the same group (spin)
    */
   static void flex_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
-                               const RefVector<ParticleSet>& p_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list,
                                const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                const RefVector<const NLPPJob<RealType>>& joblist,
                                std::vector<RealType>& pairpots,

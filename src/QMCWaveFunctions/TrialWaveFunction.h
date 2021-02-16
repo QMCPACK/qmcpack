@@ -53,7 +53,7 @@ namespace qmcplusplus
  * flex_ prefix is a function name signature indicating it is for handling
  * a batch of TrialWaveFunction objects in a lock-step fashion. These functions
  * are defined statically because they should not have access to a
- * concrete TWF object except through the passed RefVector<TWF>&.
+ * concrete TWF object except through the passed RefVectorWithLeader<TWF>&.
  *
  * It dispatches to mw_ functions of WaveFunctionComponent or single walker functions
  * based on the number of objects WFC in the input. This accomidates openmp's implicit detection
@@ -151,7 +151,7 @@ public:
 
   /** batched version of evaluateLog. gold reference */
   static void flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                               const RefVector<ParticleSet>& P_list);
+                               const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
@@ -215,7 +215,7 @@ public:
    * and the external object adds the varying G and L and the fixed terms.
    */
   static void flex_evaluateDeltaLogSetup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                         const RefVector<ParticleSet>& p_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
                                          std::vector<RealType>& logpsi_fixed_list,
                                          std::vector<RealType>& logpsi_opt_list,
                                          RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
@@ -245,7 +245,7 @@ public:
 
 
   static void flex_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                    const RefVector<ParticleSet>& p_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                     std::vector<RealType>& logpsi_list,
                                     RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
                                     RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
@@ -263,7 +263,7 @@ public:
 
   /** batched version of calcRatio */
   static void flex_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                             const RefVector<ParticleSet>& P_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list,
                              int iat,
                              std::vector<PsiValueType>& ratios,
                              ComputeType ct = ComputeType::ALL);
@@ -275,7 +275,7 @@ public:
    * Note: unlike other flex_ static functions, *this is the batch leader instead of wf_list[0].
    */
   static void flex_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                  const RefVector<const VirtualParticleSet>& VP_list,
+                                  const RefVector<const VirtualParticleSet>& Vp_list,
                                   const RefVector<std::vector<ValueType>>& ratios_list,
                                   ComputeType ct = ComputeType::ALL);
 
@@ -323,7 +323,7 @@ public:
    *  all vector sizes must match
    */
   static void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                 const RefVector<ParticleSet>& P_list,
+                                 const RefVectorWithLeader<ParticleSet>& p_list,
                                  int iat,
                                  std::vector<PsiValueType>& ratios,
                                  std::vector<GradType>& grad_new);
@@ -340,7 +340,7 @@ public:
    *  all vector sizes must match
    */
   static void flex_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                const RefVector<ParticleSet>& P_list,
+                                const RefVectorWithLeader<ParticleSet>& p_list,
                                 int ig);
 
   GradType evalGrad(ParticleSet& P, int iat);
@@ -361,7 +361,7 @@ public:
     * to any TWF.
     */
   static void flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                            const RefVector<ParticleSet>& P_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             std::vector<GradType>& grad_now);
 
@@ -370,7 +370,7 @@ public:
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
   /* flexible batched version of acceptMove */
   static void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                     const RefVector<ParticleSet>& p_list,
+                                     const RefVectorWithLeader<ParticleSet>& p_list,
                                      int iat,
                                      const std::vector<bool>& isAccepted,
                                      bool safe_to_delay = false);
@@ -384,7 +384,7 @@ public:
   /* flexible batched version of evaluateGL.
    */
   static void flex_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                              const RefVector<ParticleSet>& P_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
                               bool fromscratch);
 
   /** register all the wavefunction components in buffer.
@@ -417,7 +417,7 @@ public:
                            bool project = false);
 
   static void flex_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                const RefVector<ParticleSet>& p_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
                                                 const opt_variables_type& optvars,
                                                 RecordArray<ValueType>& dlogpsi,
                                                 RecordArray<ValueType>& dhpsioverpsi);

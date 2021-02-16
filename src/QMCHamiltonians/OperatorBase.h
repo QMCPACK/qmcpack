@@ -252,10 +252,11 @@ struct OperatorBase : public QMCTraits
    */
   virtual Return_t evaluateDeterministic(ParticleSet& P);
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) const;
+  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+                           const RefVectorWithLeader<ParticleSet>& P_list) const;
 
   virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
-                                                   const RefVector<ParticleSet>& P_list,
+                                                   const RefVectorWithLeader<ParticleSet>& P_list,
                                                    const opt_variables_type& optvars,
                                                    RecordArray<ValueType>& dlogpsi,
                                                    RecordArray<ValueType>& dhpsioverpsi) const;
@@ -269,7 +270,8 @@ struct OperatorBase : public QMCTraits
   virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
 
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) const
+  virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+                                        const RefVectorWithLeader<ParticleSet>& P_list) const
   {
     mw_evaluate(O_list, P_list);
   }

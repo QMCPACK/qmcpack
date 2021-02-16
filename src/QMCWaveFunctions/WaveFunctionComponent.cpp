@@ -39,7 +39,7 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
 }
 
 void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                           const RefVector<ParticleSet>& p_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                            const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                                            const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
 {
@@ -50,7 +50,7 @@ void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctio
 }
 
 void WaveFunctionComponent::mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                            const RefVector<ParticleSet>& p_list,
+                                            const RefVectorWithLeader<ParticleSet>& p_list,
                                             int ig) const
 {
   assert(this == &wfc_list.getLeader());
@@ -60,18 +60,18 @@ void WaveFunctionComponent::mw_prepareGroup(const RefVectorWithLeader<WaveFuncti
 }
 
 void WaveFunctionComponent::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                        const RefVector<ParticleSet>& p_list,
+                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                         int iat,
                                         std::vector<GradType>& grad_now) const
 {
   assert(this == &wfc_list.getLeader());
 #pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    grad_now[iw] = wfc_list[iw].evalGrad(p_list[iw].get(), iat);
+    grad_now[iw] = wfc_list[iw].evalGrad(p_list[iw], iat);
 }
 
 void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                         const RefVector<ParticleSet>& p_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
                                          int iat,
                                          std::vector<PsiValueType>& ratios) const
 {
@@ -95,7 +95,7 @@ void WaveFunctionComponent::ratioGradAsync(ParticleSet& P, int iat, PsiValueType
 }
 
 void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                         const RefVector<ParticleSet>& p_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
                                          int iat,
                                          std::vector<PsiValueType>& ratios,
                                          std::vector<GradType>& grad_new) const
@@ -107,7 +107,7 @@ void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionC
 }
 
 void WaveFunctionComponent::mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                              const RefVector<ParticleSet>& p_list,
+                                              const RefVectorWithLeader<ParticleSet>& p_list,
                                               int iat,
                                               std::vector<PsiValueType>& ratios,
                                               std::vector<GradType>& grad_new) const
@@ -118,7 +118,7 @@ void WaveFunctionComponent::mw_ratioGradAsync(const RefVectorWithLeader<WaveFunc
 }
 
 void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                 const RefVector<ParticleSet>& p_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list,
                                                  int iat,
                                                  const std::vector<bool>& isAccepted,
                                                  bool safe_to_delay) const
@@ -149,7 +149,7 @@ WaveFunctionComponent::LogValueType WaveFunctionComponent::evaluateGL(ParticleSe
 }
 
 void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                          const RefVector<ParticleSet>& p_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                           const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                                           const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                                           bool fromscratch) const

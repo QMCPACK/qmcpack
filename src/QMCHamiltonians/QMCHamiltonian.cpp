@@ -541,8 +541,9 @@ void QMCHamiltonian::updateKinetic(OperatorBase& op, QMCHamiltonian& ham, Partic
   pset.PropertyList[WP::LOCALPOTENTIAL] = ham.LocalEnergy - ham.KineticEnergy;
 }
 
-std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluate(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                                                            const RefVector<ParticleSet>& P_list)
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluate(
+    const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+    const RefVectorWithLeader<ParticleSet>& P_list)
 {
   std::vector<FullPrecRealType> local_energies(ham_list.size(), 0.0);
   if (ham_list.size() > 1)
@@ -615,7 +616,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(Par
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateValueAndDerivativesInner(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-    const RefVector<ParticleSet>& P_list,
+    const RefVectorWithLeader<ParticleSet>& P_list,
     const opt_variables_type& optvars,
     RecordArray<ValueType>& dlogpsi,
     RecordArray<ValueType>& dhpsioverpsi)
@@ -626,7 +627,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateValue
 
   if (ham_list.size() > 0)
   {
-    auto& ham_leader = ham_list.getLeader();
+    auto& ham_leader            = ham_list.getLeader();
     const int num_ham_operators = ham_leader.H.size();
     for (int i_ham_op = 0; i_ham_op < num_ham_operators; ++i_ham_op)
     {
@@ -654,7 +655,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateValue
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateValueAndDerivatives(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-    const RefVector<ParticleSet>& P_list,
+    const RefVectorWithLeader<ParticleSet>& P_list,
     const opt_variables_type& optvars,
     RecordArray<ValueType>& dlogpsi,
     RecordArray<ValueType>& dhpsioverpsi,
@@ -779,7 +780,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateWithToperator(ParticleS
 
 std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateWithToperator(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-    const RefVector<ParticleSet>& p_list)
+    const RefVectorWithLeader<ParticleSet>& p_list)
 {
   std::vector<FullPrecRealType> local_energies(ham_list.size(), 0.0);
   if (ham_list.size() > 1)
@@ -787,7 +788,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::flex_evaluateWithT
     for (int iw = 0; iw < ham_list.size(); iw++)
       ham_list[iw].LocalEnergy = 0.0;
 
-    auto& ham_leader = ham_list.getLeader();
+    auto& ham_leader            = ham_list.getLeader();
     const int num_ham_operators = ham_leader.H.size();
     for (int i_ham_op = 0; i_ham_op < num_ham_operators; ++i_ham_op)
     {
@@ -940,7 +941,7 @@ int QMCHamiltonian::makeNonLocalMoves(ParticleSet& P)
 
 
 std::vector<int> QMCHamiltonian::flex_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                                        const RefVector<ParticleSet>& p_list)
+                                                        const RefVectorWithLeader<ParticleSet>& p_list)
 {
   auto& ham_leader = ham_list.getLeader();
 
@@ -1060,7 +1061,8 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
 }
 #endif
 
-RefVectorWithLeader<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVectorWithLeader<QMCHamiltonian>& ham_list, int id)
+RefVectorWithLeader<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                                                  int id)
 {
   RefVectorWithLeader<OperatorBase> HC_list(*ham_list.getLeader().H[id]);
   HC_list.reserve(ham_list.size());

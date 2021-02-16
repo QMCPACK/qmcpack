@@ -18,7 +18,6 @@
 
 namespace qmcplusplus
 {
-
 class ResourceCollection;
 
 namespace testing
@@ -56,7 +55,6 @@ public:
     walker_twfs_.clear();
     walker_hamiltonians_.clear();
   }
-
 };
 
 } // namespace testing
