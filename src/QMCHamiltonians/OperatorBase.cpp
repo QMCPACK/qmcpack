@@ -46,6 +46,7 @@ OperatorBase::Return_t OperatorBase::evaluateDeterministic(ParticleSet& P) { ret
  */
 void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) const
 {
+  assert(this == &O_list.getLeader());
 /**  Temporary raw omp pragma for simple thread parallelism
    *   ignoring the driver level concurrency
    *   

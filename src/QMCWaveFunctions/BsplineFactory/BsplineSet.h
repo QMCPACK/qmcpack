@@ -141,6 +141,7 @@ public:
                                        const RefVector<GradMatrix_t>& dlogdet_list,
                                        const RefVector<ValueMatrix_t>& d2logdet_list) const override
   {
+    assert(this == &spo_list.getLeader());
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
 

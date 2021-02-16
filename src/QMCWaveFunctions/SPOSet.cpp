@@ -55,6 +55,7 @@ void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                   const std::vector<const ValueType*>& invRow_ptr_list,
                                   std::vector<std::vector<ValueType>>& ratios_list) const
 {
+  assert(this == &spo_list.getLeader());
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
   {
@@ -70,6 +71,7 @@ void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                             const RefVector<GradVector_t>& dpsi_v_list,
                             const RefVector<ValueVector_t>& d2psi_v_list) const
 {
+  assert(this == &spo_list.getLeader());
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
@@ -83,6 +85,7 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
                                             std::vector<ValueType>& ratios,
                                             std::vector<GradType>& grads) const
 {
+  assert(this == &spo_list.getLeader());
   const size_t nw             = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size() / nw;
 #pragma omp parallel for
@@ -111,6 +114,7 @@ void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list
                                      const RefVector<GradMatrix_t>& dlogdet_list,
                                      const RefVector<ValueMatrix_t>& d2logdet_list) const
 {
+  assert(this == &spo_list.getLeader());
 #pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluate_notranspose(P_list[iw], first, last, logdet_list[iw], dlogdet_list[iw], d2logdet_list[iw]);

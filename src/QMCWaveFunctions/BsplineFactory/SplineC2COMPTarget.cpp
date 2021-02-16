@@ -308,6 +308,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
                                                   const std::vector<const ValueType*>& invRow_ptr_list,
                                                   std::vector<std::vector<ValueType>>& ratios_list) const
 {
+  assert(this == &spo_list.getLeader());
   auto& phi_leader      = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
   const size_t nw       = spo_list.size();
   const size_t orb_size = phi_leader.size();
@@ -372,7 +373,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   {
     ScopedTimer offload(&offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
-                map(always, to: buffer_H2D_ptr[0:phi_leader.det_ratios_buffer_H2D.size()]) \
+                map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
@@ -419,7 +420,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
     {
       ratios[iat] = ComplexT(0);
       for (int tid = 0; tid < NumTeams; ++tid)
-        ratios[iat] += phi_leader.ratios_private[iVP][tid];
+        ratios[iat] += ratios_private[iVP][tid];
     }
   }
 }
@@ -661,6 +662,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
                                             const RefVector<GradVector_t>& dpsi_v_list,
                                             const RefVector<ValueVector_t>& d2psi_v_list) const
 {
+  assert(this == &sa_list.getLeader());
   auto& phi_leader   = sa_list.getCastedLeader<SplineC2COMPTarget<ST>>();
   const int nwalkers = sa_list.size();
   phi_leader.multi_pos_copy.resize(nwalkers * 6);
@@ -690,6 +692,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                                                             std::vector<ValueType>& ratios,
                                                             std::vector<GradType>& grads) const
 {
+  assert(this == &spo_list.getLeader());
   auto& phi_leader   = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
   const int nwalkers = spo_list.size();
   phi_leader.buffer_H2D.resize(nwalkers, sizeof(ST) * 6 + sizeof(ValueType*));
@@ -739,14 +742,14 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   auto* myKcart_ptr              = myKcart->data();
   auto* phi_vgl_ptr              = phi_vgl_v.data();
   auto* rg_private_ptr           = phi_leader.rg_private.data();
-  const size_t buffer_H2D_stride = phi_leader.buffer_H2D.cols();
+  const size_t buffer_H2D_stride = buffer_H2D.cols();
   const size_t first_spo_local   = first_spo;
   const size_t phi_vgl_stride    = phi_vgl_v.capacity();
 
   {
     ScopedTimer offload(&offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
-                    map(always, to: buffer_H2D_ptr[:phi_leader.buffer_H2D.size()]) \
+                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
                     map(always, from: rg_private_ptr[0:rg_private.size()])")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
@@ -821,7 +824,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   {
     ValueType ratio(0);
     for (int team_id = 0; team_id < NumTeams; team_id++)
-      ratio += phi_leader.rg_private[iw][team_id * 4];
+      ratio += rg_private[iw][team_id * 4];
     ratios[iw] = ratio;
 
     ValueType grad_x(0), grad_y(0), grad_z(0);
