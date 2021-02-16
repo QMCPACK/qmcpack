@@ -146,6 +146,7 @@ public:
   {
     // Nothing for now
   }
+  virtual ~IOTreeClass(){}
 };
 
 void IOTreeClass::MarkModified()
