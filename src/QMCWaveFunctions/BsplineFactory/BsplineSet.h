@@ -133,13 +133,13 @@ public:
     }
   }
 
-  virtual void mw_evaluate_notranspose(const RefVector<SPOSet>& spo_list,
+  virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
                                        const RefVector<ParticleSet>& P_list,
                                        int first,
                                        int last,
                                        const RefVector<ValueMatrix_t>& logdet_list,
                                        const RefVector<GradMatrix_t>& dlogdet_list,
-                                       const RefVector<ValueMatrix_t>& d2logdet_list) override
+                                       const RefVector<ValueMatrix_t>& d2logdet_list) const override
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;

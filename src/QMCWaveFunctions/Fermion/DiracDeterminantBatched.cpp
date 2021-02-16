@@ -194,7 +194,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVector<Wave
 {
   {
     ScopedTimer local_timer(&SPOVGLTimer);
-    RefVector<SPOSet> phi_list;
+      RefVectorWithLeader<SPOSet> phi_list(*Phi);
     phi_list.reserve(WFC_list.size());
     RefVector<DET_ENGINE_TYPE> engine_list;
     engine_list.reserve(WFC_list.size());
@@ -417,7 +417,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVector<Wav
     { //need to compute dpsiM and d2psiM. psiMinv is not touched!
       ScopedTimer spo_timer(&SPOVGLTimer);
 
-      RefVector<SPOSet> phi_list;
+        RefVectorWithLeader<SPOSet> phi_list(*Phi);
       RefVector<ValueMatrix_t> psiM_temp_list;
       RefVector<GradMatrix_t> dpsiM_list;
       RefVector<ValueMatrix_t> d2psiM_list;
@@ -519,7 +519,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVector<Wave
 {
   {
     ScopedTimer local_timer(&SPOVTimer);
-    RefVector<SPOSet> phi_list;
+      RefVectorWithLeader<SPOSet> phi_list(*Phi);
     phi_list.reserve(WFC_list.size());
     RefVector<DET_ENGINE_TYPE> engine_list;
     engine_list.reserve(WFC_list.size());
@@ -576,7 +576,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateRatios(const RefVector
 {
   const size_t nw = wfc_list.size();
 
-  RefVector<SPOSet> phi_list;
+    RefVectorWithLeader<SPOSet> phi_list(*Phi);
   RefVector<ValueVector_t> psiV_list;
   std::vector<const ValueType*> invRow_ptr_list;
   phi_list.reserve(nw);
@@ -833,7 +833,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVector<Wave
   {
     ScopedTimer spo_timer(&SPOVGLTimer);
 
-    RefVector<SPOSet> phi_list;
+      RefVectorWithLeader<SPOSet> phi_list(*Phi);
     RefVector<ValueMatrix_t> psiM_temp_list;
     RefVector<GradMatrix_t> dpsiM_list;
     RefVector<ValueMatrix_t> d2psiM_list;

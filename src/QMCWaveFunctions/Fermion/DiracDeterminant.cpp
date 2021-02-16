@@ -204,7 +204,7 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVector<WaveFunctionCompone
 {
   {
     ScopedTimer local_timer(&SPOVGLTimer);
-    RefVector<SPOSet> phi_list;
+      RefVectorWithLeader<SPOSet> phi_list(*Phi);
     phi_list.reserve(WFC_list.size());
     RefVector<ValueVector_t> psi_v_list;
     psi_v_list.reserve(WFC_list.size());
@@ -420,7 +420,7 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
 {
   const size_t nw = wfc_list.size();
 
-  RefVector<SPOSet> phi_list;
+    RefVectorWithLeader<SPOSet> phi_list(*Phi);
   RefVector<ValueVector_t> psiV_list;
   std::vector<const ValueType*> invRow_ptr_list;
   phi_list.reserve(nw);
@@ -453,7 +453,7 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
       for (int iw = 0; iw < phi_list.size(); iw++)
       {
         Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psiV_list[iw].get().size());
-        phi_list[iw].get().evaluateDetRatios(vp_list[iw], psiV_list[iw], invRow, ratios[iw]);
+        phi_list[iw].evaluateDetRatios(vp_list[iw], psiV_list[iw], invRow, ratios[iw]);
       }
     else
       Phi->mw_evaluateDetRatios(phi_list, vp_list, psiV_list, invRow_ptr_list, ratios);

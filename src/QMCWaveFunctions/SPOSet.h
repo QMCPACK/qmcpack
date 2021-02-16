@@ -211,11 +211,11 @@ public:
    * @param invRow_ptr_list a list of pointers to the rows of inverse slater matrix corresponding to the particles moved virtually
    * @param ratios_list a list of returning determinant ratios
    */
-  virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+  virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVector<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
-                                    std::vector<std::vector<ValueType>>& ratios_list);
+                                    std::vector<std::vector<ValueType>>& ratios_list) const;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
@@ -238,12 +238,12 @@ public:
    * @param dpsi_v_list the list of gradient vector pointers in a walker batch
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
    */
-  virtual void mw_evaluateVGL(const RefVector<SPOSet>& spo_list,
+  virtual void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                               const RefVector<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
-                              const RefVector<ValueVector_t>& d2psi_v_list);
+                              const RefVector<ValueVector_t>& d2psi_v_list) const;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets
    *  and determinant ratio and grads of multiple walkers
@@ -253,13 +253,13 @@ public:
    * @param phi_vgl_v orbital values, gradients and laplacians of all the walkers
    * @param psi_ratio_grads_v determinant ratio and grads of all the walkers
    */
-  virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+  virtual void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
                                               const RefVector<ParticleSet>& P_list,
                                               int iat,
                                               const std::vector<const ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,
                                               std::vector<ValueType>& ratios,
-                                              std::vector<GradType>& grads);
+                                              std::vector<GradType>& grads) const;
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
    * @param P current ParticleSet
@@ -320,13 +320,13 @@ public:
                                     GradMatrix_t& dlogdet,
                                     ValueMatrix_t& d2logdet) = 0;
 
-  virtual void mw_evaluate_notranspose(const RefVector<SPOSet>& spo_list,
+  virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
                                        const RefVector<ParticleSet>& P_list,
                                        int first,
                                        int last,
                                        const RefVector<ValueMatrix_t>& logdet_list,
                                        const RefVector<GradMatrix_t>& dlogdet_list,
-                                       const RefVector<ValueMatrix_t>& d2logdet_list);
+                                       const RefVector<ValueMatrix_t>& d2logdet_list) const;
 
   /** evaluate the values, gradients and hessians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet

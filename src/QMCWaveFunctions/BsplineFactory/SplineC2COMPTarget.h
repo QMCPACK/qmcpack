@@ -223,11 +223,11 @@ public:
                                  const ValueVector_t& psiinv,
                                  std::vector<ValueType>& ratios) override;
 
-  virtual void mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+  virtual void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVector<const VirtualParticleSet>& vp_list,
                                     const RefVector<ValueVector_t>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
-                                    std::vector<std::vector<ValueType>>& ratios_list) override;
+                                    std::vector<std::vector<ValueType>>& ratios_list) const override;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
@@ -239,20 +239,20 @@ public:
                            GradVector_t& dpsi,
                            ValueVector_t& d2psi) override;
 
-  virtual void mw_evaluateVGL(const RefVector<SPOSet>& sa_list,
+  virtual void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
                               const RefVector<ParticleSet>& P_list,
                               int iat,
                               const RefVector<ValueVector_t>& psi_v_list,
                               const RefVector<GradVector_t>& dpsi_v_list,
-                              const RefVector<ValueVector_t>& d2psi_v_list) override;
+                              const RefVector<ValueVector_t>& d2psi_v_list) const override;
 
-  virtual void mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
+  virtual void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
                                               const RefVector<ParticleSet>& P_list,
                                               int iat,
                                               const std::vector<const ValueType*>& invRow_ptr_list,
                                               VGLVector_t& phi_vgl_v,
                                               std::vector<ValueType>& ratios,
-                                              std::vector<GradType>& grads) override;
+                                              std::vector<GradType>& grads) const override;
 
   void assign_vgh(const PointType& r,
                   ValueVector_t& psi,

@@ -341,7 +341,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   P_list.push_back(elec_2);
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
-  RefVector<SPOSet> spo_list;
+  RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
