@@ -454,10 +454,7 @@ bool DMCBatched::run()
         walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
       }
 
-      for (UPtr<Crowd>& crowd_ptr : crowds_)
-        crowd_ptr->clearWalkers();
-
-      population_.distributeWalkers(crowds_);
+      population_.redistributeWalkers(crowds_);
     }
     endBlock();
   }

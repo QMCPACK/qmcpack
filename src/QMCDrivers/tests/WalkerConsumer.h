@@ -25,7 +25,7 @@ namespace testing
 {
 /** mock class to avoid testing dependency between Crowd and MCPopulation
  *
- *  Also example of minimum client of MCPopulation::distributeWalkers
+ *  Also example of minimum client of MCPopulation::redistributeWalkers
  */
 class WalkerConsumer
 {
@@ -47,6 +47,16 @@ public:
     walker_twfs_.push_back(twf);
     walker_hamiltonians_.push_back(hamiltonian);
   }
+
+  void clearWalkers()
+  {
+    // We're clearing the refs to the objects not the referred to objects.
+    walkers.clear();
+    walker_elecs_.clear();
+    walker_twfs_.clear();
+    walker_hamiltonians_.clear();
+  }
+
 };
 
 } // namespace testing

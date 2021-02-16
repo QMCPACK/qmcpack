@@ -166,7 +166,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   }
 
   //now give walkers references to their walkers
-  population_.distributeWalkers(crowds_);
+  population_.redistributeWalkers(crowds_);
 
   // Once they are created move contexts can be created.
   createRngsStepContexts(crowds_.size());

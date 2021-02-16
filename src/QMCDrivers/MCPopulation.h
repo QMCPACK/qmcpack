@@ -142,7 +142,7 @@ public:
    *  void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
    */
   template<typename WTTV>
-  void distributeWalkers(WTTV& walker_consumers)
+  void redistributeWalkers(WTTV& walker_consumers)
   {
     // The type returned here is dependent on the integral type that the walker_consumers
     // use to return there size.
@@ -152,6 +152,7 @@ public:
     for (int i = 0; i < walker_consumers.size(); ++i)
     {
       walker_consumers[i]->initializeResources(trial_wf_->getResource());
+      walker_consumers[i]->clearWalkers();
       for (int j = 0; j < walkers_per_crowd[i]; ++j)
       {
         walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index],
