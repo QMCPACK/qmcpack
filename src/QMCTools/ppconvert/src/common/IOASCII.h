@@ -49,7 +49,7 @@ class IOTreeASCIIClass : public IOTreeClass
 {
   /// Reads a text file into a buffer eliminating c++ and c-style
   /// comments.
-  bool ReadWithoutComments(std::string fileName, blitz::Array<char, 1>& buffer);
+  bool ReadWithoutComments(std::string fileName, Array<char, 1>& buffer);
   /// Reads a section from a list of TokenClass objects.  iter should
   /// refer to the current place in the list that we should start
   /// reading at.  iter should point to a place just after the '{'.
