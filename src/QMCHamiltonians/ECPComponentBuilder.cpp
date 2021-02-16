@@ -211,38 +211,6 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   }
   if (pp_nonloc)
   {
-    if (Nrule == -1)
-    {
-      //Sperical quadrature rules set by exact integration up to lmax of
-      //nonlocal channels.
-      //From J. Chem. Phys. 95 (3467) (1991)
-      //Keeping Nrule = 4 as default for lmax <= 5. 
-      switch (pp_nonloc->lmax)
-      {
-      case 0:
-      case 1:
-      case 2:
-      case 3:
-      case 4:
-      case 5:
-        Nrule = 4;
-        break;
-      case 6:
-      case 7:
-        Nrule = 6;
-        break;
-      case 8:
-      case 9:
-      case 10:
-      case 11:
-        Nrule = 7;
-        break;
-      default:
-        myComm->barrier_and_abort("Default value for pseudopotential nrule not determined");
-        break;
-      }
-      app_log() << "  Quadrature rule was not determined from input. Setting sensible default\n";
-    }
     SetQuadratureRule(Nrule);
     app_log() << "    Non-local pseudopotential parameters" << std::endl;
     pp_nonloc->print(app_log());

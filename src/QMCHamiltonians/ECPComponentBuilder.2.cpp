@@ -62,12 +62,52 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   xmlNodePtr cur_semilocal = semiPtr[0];
   aAttrib.put(cur_semilocal);
 
-  if (quadRule > -1)
+  if (quadRule > -1 && Nrule > -1)
   {
-    app_warning() << " Nrule should be set in the qmcpack input <pseudo elementType=\"\" href=\"\" nrule=\"\"/>".
-                  << " Using nrule setting in pseudopotential file\n";
+    app_warning() << " Nrule setting found in both qmcpack input and pseudopotential file."
+                  << " Using nrule setting in qmcpack input file\n";
+  }
+  else if (quadRule > -1 && Nrule == -1)
+  {
+    app_log() << " Nrule setting found in pseudopotential file.\n";
     Nrule = quadRule;
   }
+  else if (quadRule == -1 && Nrule > -1)
+    app_log() << " Nrule setting found in qmcpack input file.\n";
+  
+  if (Nrule == -1)
+  {
+    //Sperical quadrature rules set by exact integration up to lmax of
+    //nonlocal channels.
+    //From J. Chem. Phys. 95 (3467) (1991)
+    //Keeping Nrule = 4 as default for lmax <= 5. 
+    switch (pp_nonloc->lmax)
+    {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+      Nrule = 4;
+      break;
+    case 6:
+    case 7:
+      Nrule = 6;
+      break;
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+      Nrule = 7;
+      break;
+    default:
+      myComm->barrier_and_abort("Default value for pseudopotential nrule not determined");
+      break;
+    }
+    app_warning() << "  Quadrature rule was not determined from qmcpack input or pseudopotential file. Setting sensible default\n";
+  }
+
 
   RealType Vprefactor = 1.0;
   if (eunits.find("ydberg") < eunits.size())
