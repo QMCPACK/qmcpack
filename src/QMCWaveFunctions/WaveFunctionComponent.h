@@ -416,25 +416,6 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual void registerData(ParticleSet& P, WFBufferType& buf) = 0;
 
-  /** For particle-by-particle move. Requests space in the buffer
-   *  based on the data type sizes of the objects in this class.
-   * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
-   * @param P_list the list of ParticleSet pointers in a walker batch
-   * @param buf_list Anonymous storage
-   */
-  virtual void mw_registerData(const std::vector<WaveFunctionComponent*>& WFC_list,
-                               const std::vector<ParticleSet*>& P_list,
-                               const RefVector<WFBufferType>& buf_list)
-  {
-    // We can't make this static but we can use a lambda with no capture to
-    // restrict access to *this scope
-    auto registerComponentData = [](WaveFunctionComponent& wfc, ParticleSet& pset, WFBufferType& wfb) {
-      wfc.registerData(pset, wfb);
-    };
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      registerComponentData(*(WFC_list[iw]), *(P_list[iw]), buf_list[iw]);
-  }
-
   /** For particle-by-particle move. Put the objects of this class
    *  in the walker buffer or forward the memory cursor.
    * @param P particle set
@@ -445,25 +426,6 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) = 0;
 
-  /** For particle-by-particle move. Put the objects of this class
-   *  in the walker buffer or forward the memory cursor.
-   * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
-   * @param P_list the list of ParticleSet pointers in a walker batch
-   * @param buf_list Anonymous storage
-   * @@param values the log WF values of walkers in a batch
-   * @param fromscratch request recomputing the precision critical
-   *        pieces of wavefunction from scratch
-   */
-  virtual void mw_updateBuffer(const RefVector<WaveFunctionComponent>& WFC_list,
-                               const RefVector<ParticleSet>& P_list,
-                               const RefVector<WFBufferType>& buf_list,
-                               bool fromscratch = false)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw].get().updateBuffer(P_list[iw], buf_list[iw], fromscratch);
-  }
-
   /** For particle-by-particle move. Copy data or attach memory
    *  from a walker buffer to the objects of this class.
    *  The log value, P.G and P.L contribution from the objects
@@ -472,20 +434,6 @@ struct WaveFunctionComponent : public QMCTraits
    * @param buf Anonymous storage
    */
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) = 0;
-
-  /** For particle-by-particle move. Copy data or attach memory
-   *  from a walker buffer to the objects of this class.
-   * @param P particle set
-   * @param buf Anonymous storage
-   */
-  virtual void mw_copyFromBuffer(const RefVector<WaveFunctionComponent>& wfc_list,
-                                 const RefVector<ParticleSet>& p_list,
-                                 const RefVector<WFBufferType>& buf_list)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < wfc_list.size(); iw++)
-      wfc_list[iw].get().copyFromBuffer(p_list[iw], buf_list[iw]);
-  }
 
   /** initialize a shared resource and hand it to collection
    */

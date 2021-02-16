@@ -390,37 +390,13 @@ public:
    *  See WaveFunctionComponent::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  /* flexible batched version of registerData.
-   *
-   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
-   * The strange mix of argument types reflect this being called from MCPopulation instead
-   * of Crowd like most of the flex functions.
-   */
-  static void flex_registerData(const UPtrVector<TrialWaveFunction>& WF_list,
-                                const UPtrVector<ParticleSet>& P_list,
-                                const RefVector<WFBufferType>& buf_list);
-
   /** update all the wavefunction components in buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
-  /* flexible batched version of updateBuffer.
-   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
-   */
-  static void flex_updateBuffer(const RefVector<TrialWaveFunction>& WF_list,
-                                const RefVector<ParticleSet>& P_list,
-                                const RefVector<WFBufferType>& buf_list,
-                                bool fromscratch = false);
-
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
-  /* flexible batched version of copyFromBuffer.
-   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
-   */
-  void flex_copyFromBuffer(const RefVector<TrialWaveFunction>& WF_list,
-                           const RefVector<ParticleSet>& P_list,
-                           const RefVector<WFBufferType>& buf_list) const;
 
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
