@@ -25,4 +25,4 @@ IF(USE_OBJECT_TARGET)
   TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators qmcdriver qmcham qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget)
 ENDIF()
 
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

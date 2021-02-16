@@ -46,16 +46,19 @@ enum PSetTimers
   PS_newpos,
   PS_donePbyP,
   PS_accept,
-  PS_update
+  PS_update,
+  PS_dt_move,
+  PS_mw_copy
 };
 
-static const TimerNameList_t<PSetTimers>
-generatePSetTimerNames(std::string& obj_name)
+static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj_name)
 {
   return {{PS_newpos, "ParticleSet:" + obj_name + "::computeNewPosDT"},
           {PS_donePbyP, "ParticleSet:" + obj_name + "::donePbyP"},
           {PS_accept, "ParticleSet:" + obj_name + "::acceptMove"},
-          {PS_update, "ParticleSet:" + obj_name + "::update"}};
+          {PS_update, "ParticleSet:" + obj_name + "::update"},
+          {PS_dt_move, "ParticleSet:" + obj_name + "::dt_move"},
+          {PS_mw_copy, "ParticleSet:" + obj_name + "::mw_copy"}};
 }
 
 ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
@@ -104,7 +107,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     addTable(p.DistTables[i]->origin(), p.DistTables[i]->getFullTableNeeds());
   if (p.SK)
   {
-    LRBox = p.LRBox;               //copy LRBox
+    LRBox = p.LRBox;                             //copy LRBox
     SK    = std::make_unique<StructFact>(*p.SK); //safe to use the copy constructor
     //R.InUnit=p.R.InUnit;
     //createSK();
@@ -435,26 +438,26 @@ void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ
   activeSpinVal += sdispl;
 }
 
-void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& P_list,
+void ParticleSet::flex_makeMove(const RefVector<ParticleSet>& p_list,
                                 Index_t iat,
                                 const std::vector<SingleParticlePos_t>& displs)
 {
-  if (P_list.size() > 1)
+  if (p_list.size() > 1)
   {
     std::vector<SingleParticlePos_t> new_positions;
     new_positions.reserve(displs.size());
 
-    for (int iw = 0; iw < P_list.size(); iw++)
+    for (int iw = 0; iw < p_list.size(); iw++)
     {
-      P_list[iw].get().activePtcl = iat;
-      P_list[iw].get().activePos  = P_list[iw].get().R[iat] + displs[iw];
-      new_positions.push_back(P_list[iw].get().activePos);
+      p_list[iw].get().activePtcl = iat;
+      p_list[iw].get().activePos  = p_list[iw].get().R[iat] + displs[iw];
+      new_positions.push_back(p_list[iw].get().activePos);
     }
 
-    mw_computeNewPosDistTablesAndSK(P_list, iat, new_positions);
+    mw_computeNewPosDistTablesAndSK(p_list, iat, new_positions);
   }
-  else if (P_list.size() == 1)
-    P_list[0].get().makeMove(iat, displs[0]);
+  else if (p_list.size() == 1)
+    p_list[0].get().makeMove(iat, displs[0]);
 }
 
 bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
@@ -497,29 +500,35 @@ void ParticleSet::computeNewPosDistTablesAndSK(Index_t iat, const SingleParticle
     SK->makeMove(iat, newpos);
 }
 
-void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
+void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& p_list,
                                                   Index_t iat,
                                                   const std::vector<SingleParticlePos_t>& new_positions,
                                                   bool maybe_accept)
 {
-  ScopedTimer compute_newpos_scope(P_list[0].get().myTimers[PS_newpos]);
-  const int dist_tables_size = P_list[0].get().DistTables.size();
-#pragma omp parallel
+  ParticleSet& leader = p_list[0];
+  ScopedTimer compute_newpos_scope(leader.myTimers[PS_newpos]);
+
   {
+    ScopedTimer copy_scope(leader.myTimers[PS_mw_copy]);
+    const auto coords_list(extractCoordsRefList(p_list));
+    leader.coordinates_->mw_copyActiveOldParticlePos(coords_list, iat, new_positions);
+  }
+
+  {
+    ScopedTimer dt_scope(leader.myTimers[PS_dt_move]);
+    const int dist_tables_size = leader.DistTables.size();
     for (int i = 0; i < dist_tables_size; ++i)
     {
-#pragma omp for
-      for (int iw = 0; iw < P_list.size(); iw++)
-        P_list[iw].get().DistTables[i]->move(P_list[iw], new_positions[iw], iat, maybe_accept);
+      const auto dt_list(extractDTRefList(p_list, i));
+      leader.DistTables[i]->mw_move(dt_list, p_list, new_positions, iat, maybe_accept);
     }
-
-    auto& SK = P_list[0].get().SK;
-    if (SK && SK->DoUpdate)
-    {
-#pragma omp for
-      for (int iw = 0; iw < P_list.size(); iw++)
-        P_list[iw].get().SK->makeMove(iat, new_positions[iw]);
-    }
+  }
+  auto& SK = leader.SK;
+  if (SK && SK->DoUpdate)
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < p_list.size(); iw++)
+      p_list[iw].get().SK->makeMove(iat, new_positions[iw]);
   }
 }
 
@@ -665,9 +674,8 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
  * When the activePtcl is equal to iat, overwrite the position and update the
  * content of the distance tables.
  */
-void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
+void ParticleSet::acceptMove_impl(Index_t iat, bool partial_table_update)
 {
-  ScopedTimer update_scope(myTimers[PS_accept]);
   if (iat == activePtcl)
   {
     //Update position + distance-table
@@ -678,8 +686,7 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
     if (SK && SK->DoUpdate)
       SK->acceptMove(iat, GroupID[iat], R[iat]);
 
-    R[iat] = activePos;
-    coordinates_->setOneParticlePos(activePos, iat);
+    R[iat]     = activePos;
     spins[iat] = activeSpinVal;
     activePtcl = -1;
   }
@@ -691,10 +698,11 @@ void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
   }
 }
 
-void  ParticleSet::flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update)
+void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
 {
-  for (int iw = 0; iw < P_list.size(); iw++)
-    P_list[iw].get().acceptMove(iat, partial_table_update);
+  ScopedTimer update_scope(myTimers[PS_accept]);
+  coordinates_->setOneParticlePos(activePos, iat);
+  acceptMove_impl(iat, partial_table_update);
 }
 
 void ParticleSet::rejectMove(Index_t iat)
@@ -706,17 +714,52 @@ void ParticleSet::rejectMove(Index_t iat)
   activePtcl = -1;
 }
 
-void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& P_list)
+void ParticleSet::flex_accept_rejectMove(const RefVector<ParticleSet>& p_list,
+                                         Index_t iat,
+                                         const std::vector<bool>& isAccepted,
+                                         bool partial_table_update)
 {
-  if (P_list.size() > 1)
+  if (p_list.size() > 1)
+  {
+    ParticleSet& leader = p_list[0];
+    ScopedTimer update_scope(leader.myTimers[PS_accept]);
+
+    const auto coords_list(extractCoordsRefList(p_list));
+    std::vector<SingleParticlePos_t> new_positions;
+    new_positions.reserve(p_list.size());
+    for (const ParticleSet& pset : p_list)
+      new_positions.push_back(pset.activePos);
+    leader.coordinates_->mw_acceptParticlePos(coords_list, iat, new_positions, isAccepted);
+
+#pragma omp parallel for
+    for (int iw = 0; iw < p_list.size(); iw++)
+    {
+      if (isAccepted[iw])
+        p_list[iw].get().acceptMove_impl(iat, partial_table_update);
+      else
+        p_list[iw].get().rejectMove(iat);
+    }
+  }
+  else if (p_list.size() == 1)
+  {
+    if (isAccepted[0])
+      p_list[0].get().acceptMove(iat, partial_table_update);
+    else
+      p_list[0].get().rejectMove(iat);
+  }
+}
+
+void ParticleSet::flex_donePbyP(const RefVector<ParticleSet>& p_list)
+{
+  if (p_list.size() > 1)
   {
 // Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
 #pragma omp parallel for
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().donePbyP();
+    for (int iw = 0; iw < p_list.size(); iw++)
+      p_list[iw].get().donePbyP();
   }
-  else if (P_list.size() == 1)
-    P_list[0].get().donePbyP();
+  else if (p_list.size() == 1)
+    p_list[0].get().donePbyP();
 }
 
 void ParticleSet::donePbyP()
@@ -871,6 +914,15 @@ RefVector<DistanceTableData> ParticleSet::extractDTRefList(const RefVector<Parti
   for (ParticleSet& p : p_list)
     dt_list.push_back(*p.DistTables[id]);
   return dt_list;
+}
+
+RefVector<DynamicCoordinates> ParticleSet::extractCoordsRefList(const RefVector<ParticleSet>& p_list)
+{
+  RefVector<DynamicCoordinates> coords_list;
+  coords_list.reserve(p_list.size());
+  for (ParticleSet& p : p_list)
+    coords_list.push_back(*p.coordinates_);
+  return coords_list;
 }
 
 } // namespace qmcplusplus
