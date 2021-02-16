@@ -140,7 +140,19 @@ ENDIF()
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
-# Exicted state
+# Reference DMC run as qmc-ref -21.858821 +/- 0.001207 with 2500 blocks
+  LIST(APPEND DIAMOND2_DMC_DLA_SCALARS "totenergy" "-21.858821 0.012")
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc-dla_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_vmc_dmc_dla
+                    qmc_short_vmc_dmc_dla.in.xml
+                    1 16
+                    TRUE
+                    1 DIAMOND2_DMC_DLA_SCALARS # DMC
+                    )
+
+
+# Excited state
 
   LIST(APPEND DIAMOND2_EXCITED_SCALARS "totenergy" "-21.117471 0.007937")
   LIST(APPEND DIAMOND2_EXCITED_SCALARS "kinetic"    "20.070595 0.043211")
@@ -206,6 +218,17 @@ ENDIF()
                     1 16
                     TRUE
                     1 LONG_DIAMOND2_DMC_SCALARS # DMC
+                    )
+
+# Reference DMC run as qmc-ref -21.858821 +/- 0.001207 with 2500 blocks
+  LIST(APPEND LONG_DIAMOND2_DMC_DLA_SCALARS "totenergy" "-21.858821 0.0038")
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc-dla_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long_vmc_dmc_dla
+                    qmc_long_vmc_dmc_dla.in.xml
+                    1 16
+                    TRUE
+                    1 LONG_DIAMOND2_DMC_DLA_SCALARS # DMC
                     )
 
 # Excited state
