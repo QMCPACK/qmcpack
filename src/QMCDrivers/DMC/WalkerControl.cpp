@@ -153,7 +153,8 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
 
 int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
-  if (debug_disable_branching_) do_not_branch = true;
+  if (debug_disable_branching_)
+    do_not_branch = true;
   /* dynamic population
     1. compute multiplicity. If iter 0, multiplicity = 1
     2. compute curData, collect multiplicity on every rank
@@ -246,13 +247,16 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 
     const size_t num_walkers = walkers.size();
     // recomputed received and duplicated walkers, the first untouched_walkers walkers doesn't need to be updated.
-    auto p_list =
+    const auto p_list =
         convertUPtrToRefVectorSubset(pop.get_elec_particle_sets(), untouched_walkers, num_walkers - untouched_walkers);
-    auto wf_list = convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
+    const auto wf_list_no_leader =
+        convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
 
-    ResourceCollectionLock<TrialWaveFunction> resource_lock(*twfs_shared_resource_, wf_list[0]);
+    ResourceCollectionLock<TrialWaveFunction> resource_lock(*twfs_shared_resource_, pop.get_golden_twf());
     // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
     p_list[0].get().flex_update(p_list);
+
+    const RefVectorWithLeader<TrialWaveFunction> wf_list(pop.get_golden_twf(), wf_list_no_leader);
     TrialWaveFunction::flex_evaluateLog(wf_list, p_list);
   }
 
@@ -598,7 +602,7 @@ bool WalkerControl::put(xmlNodePtr cur)
     myComm->barrier_and_abort("WalkerControl::put parsing error. " + std::string(re.what()));
   }
 
-  use_nonblocking_ = nonblocking == "yes";
+  use_nonblocking_         = nonblocking == "yes";
   debug_disable_branching_ = debug_disable_branching == "yes";
 
   setMinMax(nw_target, nw_max);

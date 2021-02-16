@@ -30,23 +30,22 @@
 // forward declaration
 namespace optimize
 {
-  struct VariableSet;
+struct VariableSet;
 }
 
 namespace qmcplusplus
 {
-
 // forward declaration
 class QMCHamiltonian;
 class MCPopulation
 {
 public:
-  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using WFBuffer         = MCPWalker::WFBuffer_t;
-  using RealType         = QMCTraits::RealType;
-  using Properties       = MCPWalker::PropertyContainer_t;
-  using IndexType        = QMCTraits::IndexType;
-  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using MCPWalker          = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using WFBuffer           = MCPWalker::WFBuffer_t;
+  using RealType           = QMCTraits::RealType;
+  using Properties         = MCPWalker::PropertyContainer_t;
+  using IndexType          = QMCTraits::IndexType;
+  using FullPrecRealType   = QMCTraits::FullPrecRealType;
   using opt_variables_type = optimize::VariableSet;
 
 private:
@@ -192,6 +191,7 @@ public:
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
   ParticleSet* get_golden_electrons() { return elec_particle_set_; }
   const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }
+  TrialWaveFunction& get_golden_twf() { return *trial_wf_; }
 
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }

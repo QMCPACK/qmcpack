@@ -123,7 +123,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         for (int pm = 0; pm < NumOptimizables; pm++)
         {
           EDtotals_w[pm] += weight * (HDsaved[pm] + 2.0 * Dsaved[pm] * delta_l);
-          URV[pm]        += 2.0 * (eloc_new * HDsaved[pm] - curAvg * HD_avg[pm]);
+          URV[pm] += 2.0 * (eloc_new * HDsaved[pm] - curAvg * HD_avg[pm]);
           if (ltz)
             EDtotals[pm] += weight * (2.0 * Dsaved[pm] * (delE - delE_bar) + ddelE * HDsaved[pm]);
           else
@@ -314,9 +314,10 @@ void QMCCostFunctionBatched::checkConfigurations()
 
       int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
 
-      auto wf_list = opt_data.get_wf_list(curr_crowd_size);
-      auto p_list  = opt_data.get_p_list(curr_crowd_size);
+      auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
+      auto p_list            = opt_data.get_p_list(curr_crowd_size);
       auto h_list_no_leader  = opt_data.get_h_list(curr_crowd_size);
+      const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
       const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
 
       auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
@@ -541,9 +542,10 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
           int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
 
-          auto wf_list = opt_data.get_wf_list(curr_crowd_size);
-          auto p_list  = opt_data.get_p_list(curr_crowd_size);
+          auto p_list            = opt_data.get_p_list(curr_crowd_size);
+          auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
           auto h0_list_no_leader = opt_data.get_h0_list(curr_crowd_size);
+          const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
           const RefVectorWithLeader<QMCHamiltonian> h0_list(h0_list_no_leader[0], h0_list_no_leader);
 
           // Load this batch of samples into the crowd data
@@ -588,15 +590,15 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
           for (int ib = 0; ib < curr_crowd_size; ib++)
           {
             int is = base_sample_index + ib;
-            wf_list[ib].get().G += *gradPsi[is];
-            wf_list[ib].get().L += *lapPsi[is];
+            wf_list[ib].G += *gradPsi[is];
+            wf_list[ib].L += *lapPsi[is];
             // This is needed to get the KE correct in QMCHamiltonian::flex_evaluate below
             p_list[ib].get().G += *gradPsi[is];
             p_list[ib].get().L += *lapPsi[is];
             Return_rt weight = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
             RecordsOnNode[is][REWEIGHT] = weight;
             // move to opt_data
-            opt_data.get_wgt()  += inv_n_samples * weight;
+            opt_data.get_wgt() += inv_n_samples * weight;
             opt_data.get_wgt2() += inv_n_samples * weight * weight;
           }
 
@@ -651,7 +653,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   // Sum weights over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
-    wgt_tot  += opt_eval_[i]->get_wgt();
+    wgt_tot += opt_eval_[i]->get_wgt();
     wgt_tot2 += opt_eval_[i]->get_wgt2();
   }
 
@@ -695,14 +697,14 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       //      Return_t weight=saved[REWEIGHT]*wgt_tot;
       Return_rt eloc_new = saved[ENERGY_NEW];
       Return_rt delE     = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
-      SumValue[SUM_E_BARE]    += eloc_new;
-      SumValue[SUM_ESQ_BARE]  += eloc_new * eloc_new;
+      SumValue[SUM_E_BARE] += eloc_new;
+      SumValue[SUM_ESQ_BARE] += eloc_new * eloc_new;
       SumValue[SUM_ABSE_BARE] += delE;
-      SumValue[SUM_E_WGT]     += eloc_new * saved[REWEIGHT];
-      SumValue[SUM_ESQ_WGT]   += eloc_new * eloc_new * saved[REWEIGHT];
-      SumValue[SUM_ABSE_WGT]  += delE * saved[REWEIGHT];
-      SumValue[SUM_WGT]       += saved[REWEIGHT];
-      SumValue[SUM_WGTSQ]     += saved[REWEIGHT] * saved[REWEIGHT];
+      SumValue[SUM_E_WGT] += eloc_new * saved[REWEIGHT];
+      SumValue[SUM_ESQ_WGT] += eloc_new * eloc_new * saved[REWEIGHT];
+      SumValue[SUM_ABSE_WGT] += delE * saved[REWEIGHT];
+      SumValue[SUM_WGT] += saved[REWEIGHT];
+      SumValue[SUM_WGTSQ] += saved[REWEIGHT] * saved[REWEIGHT];
     }
   }
   //collect everything

@@ -87,8 +87,8 @@ public:
   PsiValueType ratio(ParticleSet& P, int iat) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
-  //void mw_calcRatio(const std::vector<WaveFunctionComponent*>& WFC_list,
-  //                  const std::vector<ParticleSet*>& P_list,
+  //void mw_calcRatio(const std::vector<WaveFunctionComponent*>& wfc_list,
+  //                  const std::vector<ParticleSet*>& p_list,
   //                  int iat,
   //                  std::vector<PsiValueType>& ratios) override;
 
@@ -96,19 +96,19 @@ public:
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
-  void mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
+  void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                          const RefVector<const VirtualParticleSet>& vp_list,
-                         std::vector<std::vector<ValueType>>& ratios) override;
+                         std::vector<std::vector<ValueType>>& ratios) const override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
   PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override final;
 
-  void mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
-                    const RefVector<ParticleSet>& P_list,
+  void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVector<ParticleSet>& p_list,
                     int iat,
                     std::vector<PsiValueType>& ratios,
-                    std::vector<GradType>& grad_new) override;
+                    std::vector<GradType>& grad_new) const override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
@@ -126,25 +126,25 @@ public:
    */
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
-  void mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& WFC_list,
-                            const RefVector<ParticleSet>& P_list,
+  void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVector<ParticleSet>& p_list,
                             int iat,
                             const std::vector<bool>& isAccepted,
-                            bool safe_to_delay = false) override
+                            bool safe_to_delay = false) const override
   {
-    for (int iw = 0; iw < WFC_list.size(); iw++)
+    for (int iw = 0; iw < wfc_list.size(); iw++)
       if (isAccepted[iw])
-        WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
+        wfc_list[iw].acceptMove(p_list[iw], iat, safe_to_delay);
       else
-        WFC_list[iw].get().restore(iat);
+        wfc_list[iw].restore(iat);
   }
 
   void completeUpdates() override;
 
-  void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list) override
+  void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override
   {
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw].get().completeUpdates();
+    for (int iw = 0; iw < wfc_list.size(); iw++)
+      wfc_list[iw].completeUpdates();
   }
 
   /** move was rejected. copy the real container to the temporary to move on
@@ -157,8 +157,8 @@ public:
                            ParticleSet::ParticleLaplacian_t& L) override;
 
   //Ye: TODO, good performance needs batched SPO evaluation.
-  //void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& WFC_list,
-  //                    const std::vector<ParticleSet*>& P_list,
+  //void mw_evaluateLog(const std::vector<WaveFunctionComponent*>& wfc_list,
+  //                    const std::vector<ParticleSet*>& p_list,
   //                    const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
   //                    const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list) override;
 

@@ -196,24 +196,24 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
-                                             const RefVector<ParticleSet>& P_list,
+void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                             const RefVector<ParticleSet>& p_list,
                                              int iat,
                                              std::vector<PsiValueType>& ratios,
-                                             std::vector<GradType>& grad_new)
+                                             std::vector<GradType>& grad_new) const
 {
   {
     ScopedTimer local_timer(&SPOVGLTimer);
-      RefVectorWithLeader<SPOSet> phi_list(*Phi);
-    phi_list.reserve(WFC_list.size());
+    RefVectorWithLeader<SPOSet> phi_list(*Phi);
+    phi_list.reserve(wfc_list.size());
     RefVector<ValueVector_t> psi_v_list;
-    psi_v_list.reserve(WFC_list.size());
+    psi_v_list.reserve(wfc_list.size());
     RefVector<GradVector_t> dpsi_v_list;
-    dpsi_v_list.reserve(WFC_list.size());
+    dpsi_v_list.reserve(wfc_list.size());
     RefVector<ValueVector_t> d2psi_v_list;
-    d2psi_v_list.reserve(WFC_list.size());
+    d2psi_v_list.reserve(wfc_list.size());
 
-    for (WaveFunctionComponent& wfc : WFC_list)
+    for (WaveFunctionComponent& wfc : wfc_list)
     {
       auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc);
       phi_list.push_back(*det.Phi);
@@ -222,11 +222,11 @@ void DiracDeterminant<DU_TYPE>::mw_ratioGrad(const RefVector<WaveFunctionCompone
       d2psi_v_list.push_back(det.d2psiV);
     }
 
-    Phi->mw_evaluateVGL(phi_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+    Phi->mw_evaluateVGL(phi_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
   }
 
-  for (int iw = 0; iw < WFC_list.size(); iw++)
-    ratios[iw] = static_cast<DiracDeterminant<DU_TYPE>&>(WFC_list[iw].get()).ratioGrad_compute(iat, grad_new[iw]);
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+    ratios[iw] = wfc_list.getCastedElement<DiracDeterminant<DU_TYPE>>(iw).ratioGrad_compute(iat, grad_new[iw]);
 }
 
 
@@ -414,13 +414,13 @@ void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
+void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                   const RefVector<const VirtualParticleSet>& vp_list,
-                                                  std::vector<std::vector<ValueType>>& ratios)
+                                                  std::vector<std::vector<ValueType>>& ratios) const
 {
   const size_t nw = wfc_list.size();
 
-    RefVectorWithLeader<SPOSet> phi_list(*Phi);
+  RefVectorWithLeader<SPOSet> phi_list(*Phi);
   RefVector<ValueVector_t> psiV_list;
   std::vector<const ValueType*> invRow_ptr_list;
   phi_list.reserve(nw);
@@ -431,7 +431,7 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVector<WaveFunctionCo
     ScopedTimer local_timer(&RatioTimer);
     for (size_t iw = 0; iw < nw; iw++)
     {
-      auto& det = static_cast<DiracDeterminant<DU_TYPE>&>(wfc_list[iw].get());
+      auto& det = wfc_list.getCastedElement<DiracDeterminant<DU_TYPE>>(iw);
       const VirtualParticleSet& vp(vp_list[iw]);
       const int WorkingIndex = vp.refPtcl - FirstIndex;
       assert(WorkingIndex >= 0);

@@ -100,24 +100,24 @@ PsiValueType SlaterDet::ratioGradWithSpin(ParticleSet& P, int iat, GradType& gra
   return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
 }
 
-void SlaterDet::mw_ratioGrad(const RefVector<WaveFunctionComponent>& wfc_list,
-                             const RefVector<ParticleSet>& P_list,
+void SlaterDet::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                             const RefVector<ParticleSet>& p_list,
                              int iat,
                              std::vector<PsiValueType>& ratios,
-                             std::vector<GradType>& grad_now)
+                             std::vector<GradType>& grad_now) const
 {
   const int det_id = getDetID(iat);
-  Dets[det_id]->mw_ratioGrad(extract_DetRef_list(wfc_list, det_id), P_list, iat, ratios, grad_now);
+  Dets[det_id]->mw_ratioGrad(extract_DetRef_list(wfc_list, det_id), p_list, iat, ratios, grad_now);
 }
 
-void SlaterDet::mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& wfc_list,
-                                  const RefVector<ParticleSet>& P_list,
+void SlaterDet::mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                  const RefVector<ParticleSet>& p_list,
                                   int iat,
                                   std::vector<PsiValueType>& ratios,
-                                  std::vector<GradType>& grad_now)
+                                  std::vector<GradType>& grad_now) const
 {
   const int det_id = getDetID(iat);
-  Dets[det_id]->mw_ratioGradAsync(extract_DetRef_list(wfc_list, det_id), P_list, iat, ratios, grad_now);
+  Dets[det_id]->mw_ratioGradAsync(extract_DetRef_list(wfc_list, det_id), p_list, iat, ratios, grad_now);
 }
 
 void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
@@ -136,22 +136,22 @@ SlaterDet::LogValueType SlaterDet::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
-void SlaterDet::mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
-                               const RefVector<ParticleSet>& P_list,
+void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                               const RefVector<ParticleSet>& p_list,
                                const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list)
+                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
 {
   constexpr LogValueType czero(0);
 
-  for (WaveFunctionComponent& wfc : WFC_list)
+  for (WaveFunctionComponent& wfc : wfc_list)
     wfc.LogValue = czero;
 
   for (int i = 0; i < Dets.size(); ++i)
   {
-    const auto Det_list(extract_DetRef_list(WFC_list, i));
-    Dets[i]->mw_evaluateLog(Det_list, P_list, G_list, L_list);
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw].get().LogValue += Det_list[iw].get().LogValue;
+    const auto Det_list(extract_DetRef_list(wfc_list, i));
+    Dets[i]->mw_evaluateLog(Det_list, p_list, G_list, L_list);
+    for (int iw = 0; iw < wfc_list.size(); iw++)
+      wfc_list[iw].LogValue += Det_list[iw].LogValue;
   }
 }
 
@@ -166,23 +166,23 @@ SlaterDet::LogValueType SlaterDet::evaluateGL(ParticleSet& P,
   return LogValue;
 }
 
-void SlaterDet::mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
-                              const RefVector<ParticleSet>& P_list,
+void SlaterDet::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                              const RefVector<ParticleSet>& p_list,
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
-                              bool fromscratch)
+                              bool fromscratch) const
 {
   constexpr LogValueType czero(0);
 
-  for (WaveFunctionComponent& wfc : WFC_list)
+  for (WaveFunctionComponent& wfc : wfc_list)
     wfc.LogValue = czero;
 
   for (int i = 0; i < Dets.size(); ++i)
   {
-    const auto Det_list(extract_DetRef_list(WFC_list, i));
-    Dets[i]->mw_evaluateGL(Det_list, P_list, G_list, L_list, fromscratch);
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw].get().LogValue += Det_list[iw].get().LogValue;
+    const auto Det_list(extract_DetRef_list(wfc_list, i));
+    Dets[i]->mw_evaluateGL(Det_list, p_list, G_list, L_list, fromscratch);
+    for (int iw = 0; iw < wfc_list.size(); iw++)
+      wfc_list[iw].LogValue += Det_list[iw].LogValue;
   }
 }
 

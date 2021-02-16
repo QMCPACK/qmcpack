@@ -73,11 +73,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     assert(QMCDriverNew::checkLogAndGL(crowd));
 
     int nnode_crossing(0);
-    auto& walkers             = crowd.get_walkers();
-    auto& walker_elecs        = crowd.get_walker_elecs();
-    auto& walker_twfs         = crowd.get_walker_twfs();
-    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0], crowd.get_walker_hamiltonians());
-    const int num_walkers     = crowd.size();
+    auto& walkers      = crowd.get_walkers();
+    auto& walker_elecs = crowd.get_walker_elecs();
+    const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
+    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
+                                                                  crowd.get_walker_hamiltonians());
+    const int num_walkers = crowd.size();
 
     //This generates an entire steps worth of deltas.
     step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());
@@ -111,10 +112,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         RealType oneover2tau = 0.5 / (tauovermass);
         RealType sqrttau     = std::sqrt(tauovermass);
 
-        TrialWaveFunction::flex_prepareGroup(crowd.get_walker_twfs(), crowd.get_walker_elecs(), ig);
+        TrialWaveFunction::flex_prepareGroup(walker_twfs, crowd.get_walker_elecs(), ig);
 
-        int start_index      = step_context.getPtclGroupStart(ig);
-        int end_index        = step_context.getPtclGroupEnd(ig);
+        int start_index = step_context.getPtclGroupStart(ig);
+        int end_index   = step_context.getPtclGroupEnd(ig);
         for (int iat = start_index; iat < end_index; ++iat)
         {
           auto delta_r_start = it_delta_r + iat * num_walkers;
@@ -131,7 +132,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           }
 #endif
           //get the displacement
-          TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, grads_now);
+          TrialWaveFunction::flex_evalGrad(walker_twfs, crowd.get_walker_elecs(), iat, grads_now);
           sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
 
           std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
@@ -157,8 +158,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           auto elecs = crowd.get_walker_elecs();
           ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
 
-          TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios,
-                                                grads_new);
+          TrialWaveFunction::flex_calcRatioGrad(walker_twfs, crowd.get_walker_elecs(), iat, ratios, grads_new);
 
           // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
           auto checkPhaseChanged = [&sft, &iat, &crowd, &nnode_crossing](TrialWaveFunction& twf, ParticleSet& elec,
@@ -220,14 +220,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
             }
           }
 
-          TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted,
-                                                    true);
+          TrialWaveFunction::flex_accept_rejectMove(walker_twfs, crowd.get_walker_elecs(), iat, isAccepted, true);
 
           ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted, true);
         }
       }
 
-      TrialWaveFunction::flex_completeUpdates(crowd.get_walker_twfs());
+      TrialWaveFunction::flex_completeUpdates(walker_twfs);
       ParticleSet::flex_donePbyP(crowd.get_walker_elecs());
     }
 
@@ -277,16 +276,17 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   { // T-moves
     ScopedTimer tmove_timer(&dmc_timers.tmove_timer);
 
-    auto& walkers             = crowd.get_walkers();
-    auto& walker_elecs        = crowd.get_walker_elecs();
-    auto& walker_twfs         = crowd.get_walker_twfs();
-    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0], crowd.get_walker_hamiltonians());
-    const auto num_walkers    = walkers.size();
+    auto& walkers      = crowd.get_walkers();
+    auto& walker_elecs = crowd.get_walker_elecs();
+    const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
+    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
+                                                                  crowd.get_walker_hamiltonians());
+    const auto num_walkers = walkers.size();
 
     std::vector<int> walker_non_local_moves_accepted(num_walkers, 0);
     RefVector<MCPWalker> moved_nonlocal_walkers;
     RefVector<ParticleSet> moved_nonlocal_walker_elecs;
-    RefVector<TrialWaveFunction> moved_nonlocal_walker_twfs;
+    RefVectorWithLeader<TrialWaveFunction> moved_nonlocal_walker_twfs(crowd.get_walker_twfs()[0]);
     moved_nonlocal_walkers.reserve(num_walkers);
     moved_nonlocal_walker_elecs.reserve(num_walkers);
     moved_nonlocal_walker_twfs.reserve(num_walkers);
@@ -307,8 +307,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     if (moved_nonlocal_walkers.size())
     {
-      ResourceCollectionLock<TrialWaveFunction> resource_lock(crowd.getTWFSharedResource(),
-                                                              moved_nonlocal_walker_twfs[0]);
+      ResourceCollectionLock<TrialWaveFunction> resource_lock(crowd.getTWFSharedResource(), crowd.get_walker_twfs()[0]);
 
       TrialWaveFunction::flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
       assert(QMCDriverNew::checkLogAndGL(crowd));

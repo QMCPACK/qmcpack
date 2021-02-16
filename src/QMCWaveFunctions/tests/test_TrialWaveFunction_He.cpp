@@ -143,7 +143,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   psi.evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
 
-  RefVector<TrialWaveFunction> wf_list;
+  RefVectorWithLeader<TrialWaveFunction> wf_list(psi, {psi});
   RefVector<ParticleSet> p_list;
 
   // Test list with one wavefunction
@@ -152,7 +152,6 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   RecordArray<ValueType> dlogpsi_list(nparam, nentry);
   RecordArray<ValueType> dhpsi_over_psi_list(nparam, nentry);
 
-  wf_list.push_back(psi);
   p_list.push_back(elec);
   psi.flex_evaluateParameterDerivatives(wf_list, p_list, var_param, dlogpsi_list, dhpsi_over_psi_list);
 
@@ -246,9 +245,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   int nentry = 1;
   int nelec  = 2;
 
-  RefVector<TrialWaveFunction> wf_list;
+  RefVectorWithLeader<TrialWaveFunction> wf_list(psi, {psi});
   RefVector<ParticleSet> p_list;
-  wf_list.push_back(psi);
   p_list.push_back(elec1b);
 
   // Evaluate new flex_evaluateDeltaLogSetup

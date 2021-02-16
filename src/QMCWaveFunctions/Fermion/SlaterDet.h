@@ -64,21 +64,21 @@ public:
                                    ParticleSet::ParticleGradient_t& G,
                                    ParticleSet::ParticleLaplacian_t& L) override;
 
-  virtual void mw_evaluateLog(const RefVector<WaveFunctionComponent>& wfc_list,
-                              const RefVector<ParticleSet>& P_list,
+  virtual void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                              const RefVector<ParticleSet>& p_list,
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) override;
+                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
   virtual LogValueType evaluateGL(ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L,
                                   bool fromscratch) override;
 
-  virtual void mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
-                             const RefVector<ParticleSet>& P_list,
+  virtual void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                             const RefVector<ParticleSet>& p_list,
                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
-                             bool fromscratch) override;
+                             bool fromscratch) const override;
 
   virtual void recompute(ParticleSet& P) override;
 
@@ -104,9 +104,9 @@ public:
     return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
   }
 
-  virtual inline void mw_evaluateRatios(const RefVector<WaveFunctionComponent>& wfc_list,
+  virtual inline void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                         const RefVector<const VirtualParticleSet>& vp_list,
-                                        std::vector<std::vector<ValueType>>& ratios) override
+                                        std::vector<std::vector<ValueType>>& ratios) const override
   {
     // assuming all the VP.refPtcl are identical
     const int det_id = getDetID(vp_list[0].get().refPtcl);
@@ -121,17 +121,17 @@ public:
                                          GradType& grad_iat,
                                          ComplexType& spingrad_iat) override;
 
-  virtual void mw_ratioGrad(const RefVector<WaveFunctionComponent>& wfc_list,
-                            const RefVector<ParticleSet>& P_list,
+  virtual void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVector<ParticleSet>& p_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
-                            std::vector<GradType>& grad_now) override;
+                            std::vector<GradType>& grad_now) const override;
 
-  void mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& wfc_list,
-                         const RefVector<ParticleSet>& P_list,
+  void mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                         const RefVector<ParticleSet>& p_list,
                          int iat,
                          std::vector<PsiValueType>& ratios,
-                         std::vector<GradType>& grad_now) override;
+                         std::vector<GradType>& grad_now) const override;
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
@@ -140,13 +140,13 @@ public:
     return Dets[getDetID(iat)]->evalGradWithSpin(P, iat, spingrad);
   }
 
-  virtual void mw_evalGrad(const RefVector<WaveFunctionComponent>& wfc_list,
-                           const RefVector<ParticleSet>& P_list,
+  virtual void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVector<ParticleSet>& p_list,
                            int iat,
-                           std::vector<GradType>& grad_now) override
+                           std::vector<GradType>& grad_now) const override
   {
     const int det_id = getDetID(iat);
-    Dets[det_id]->mw_evalGrad(extract_DetRef_list(wfc_list, det_id), P_list, iat, grad_now);
+    Dets[det_id]->mw_evalGrad(extract_DetRef_list(wfc_list, det_id), p_list, iat, grad_now);
   }
 
   virtual GradType evalGradSource(ParticleSet& P, ParticleSet& src, int iat) override
@@ -180,28 +180,28 @@ public:
       LogValue += Dets[i]->LogValue;
   }
 
-  virtual void mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& wfc_list,
-                                    const RefVector<ParticleSet>& P_list,
+  virtual void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                    const RefVector<ParticleSet>& p_list,
                                     int iat,
                                     const std::vector<bool>& isAccepted,
-                                    bool safe_to_delay = false) override
+                                    bool safe_to_delay = false) const override
   {
     constexpr LogValueType czero(0);
 
     for (int iw = 0; iw < wfc_list.size(); iw++)
       if (isAccepted[iw])
-        wfc_list[iw].get().LogValue = czero;
+        wfc_list[iw].LogValue = czero;
 
     for (int i = 0; i < Dets.size(); ++i)
     {
       const auto Det_list(extract_DetRef_list(wfc_list, i));
 
       if (i == getDetID(iat))
-        Dets[i]->mw_accept_rejectMove(Det_list, P_list, iat, isAccepted, safe_to_delay);
+        Dets[i]->mw_accept_rejectMove(Det_list, p_list, iat, isAccepted, safe_to_delay);
 
       for (int iw = 0; iw < wfc_list.size(); iw++)
         if (isAccepted[iw])
-          wfc_list[iw].get().LogValue += Det_list[iw].get().LogValue;
+          wfc_list[iw].LogValue += Det_list[iw].LogValue;
     }
   }
 
@@ -211,7 +211,7 @@ public:
       Dets[i]->completeUpdates();
   }
 
-  virtual void mw_completeUpdates(const RefVector<WaveFunctionComponent>& wfc_list) override
+  virtual void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override
   {
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->mw_completeUpdates(extract_DetRef_list(wfc_list, i));
@@ -219,13 +219,13 @@ public:
 
   virtual inline PsiValueType ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
 
-  virtual void mw_calcRatio(const RefVector<WaveFunctionComponent>& wfc_list,
-                            const RefVector<ParticleSet>& P_list,
+  virtual void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVector<ParticleSet>& p_list,
                             int iat,
-                            std::vector<PsiValueType>& ratios) override
+                            std::vector<PsiValueType>& ratios) const override
   {
     const int det_id = getDetID(iat);
-    Dets[det_id]->mw_calcRatio(extract_DetRef_list(wfc_list, det_id), P_list, iat, ratios);
+    Dets[det_id]->mw_calcRatio(extract_DetRef_list(wfc_list, det_id), p_list, iat, ratios);
   }
 
   virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override;
@@ -372,10 +372,11 @@ private:
   }
 
   // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
-  RefVector<WaveFunctionComponent> extract_DetRef_list(const RefVector<WaveFunctionComponent>& wfc_list,
-                                                       int det_id) const
+  RefVectorWithLeader<WaveFunctionComponent> extract_DetRef_list(
+      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+      int det_id) const
   {
-    RefVector<WaveFunctionComponent> Det_list;
+    RefVectorWithLeader<WaveFunctionComponent> Det_list(*wfc_list.getCastedLeader<SlaterDet>().Dets[det_id]);
     Det_list.reserve(wfc_list.size());
     for (WaveFunctionComponent& wfc : wfc_list)
       Det_list.push_back(*static_cast<SlaterDet&>(wfc).Dets[det_id]);
