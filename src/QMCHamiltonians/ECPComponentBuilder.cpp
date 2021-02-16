@@ -44,11 +44,19 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
   angMon["d"] = 2;
   angMon["f"] = 3;
   angMon["g"] = 4;
+  angMon["h"] = 5;
+  angMon["i"] = 6;
+  angMon["j"] = 7;
+  angMon["k"] = 8;
   angMon["0"] = 0;
   angMon["1"] = 1;
   angMon["2"] = 2;
   angMon["3"] = 3;
   angMon["4"] = 4;
+  angMon["5"] = 5;
+  angMon["6"] = 6;
+  angMon["7"] = 7;
+  angMon["8"] = 8;
 }
 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
@@ -129,29 +137,25 @@ bool ECPComponentBuilder::read_pp_file(const std::string& fname)
   ReadFileBuffer buf(myComm);
   bool okay = buf.open_file(fname);
   if (!okay)
-  {
-    APP_ABORT("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
-  }
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file  Missing PP file " + fname + "\n");
 
   okay = buf.read_contents();
   if (!okay)
-  {
-    APP_ABORT("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
-  }
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname + "\n");
 
   xmlDocPtr m_doc = xmlReadMemory(buf.contents(), buf.length, NULL, NULL, 0);
 
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
+    myComm->barrier_and_abort("ECPComponentBuilder::read_pp_file xml file " + fname + " is invalid");
   }
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("Empty document");
+    myComm->barrier_and_abort("Empty document");
   }
   bool success = put(cur);
   xmlFreeDoc(m_doc);
