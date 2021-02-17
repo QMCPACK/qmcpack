@@ -390,14 +390,25 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end try
 
+        # 1/21/21 Juha Tiihonen added celldm1 and related clauses below, to correctly read ibrav-forced axes
+        # that are entered as multiples of celldm(1) instead of absolute units.
+        # Currently transforms axes to celldm units (Bohr) but leaves positions intact.
+
         try:
             # read structures
             structures = obj()
             i=0
-            found = False
-            cont  = False
+            found   = False
+            cont    = False
+            celldm1 = 0
+            # all possibilities listed; only tested with ibrav=4
+            ibravs  = (1,2,3,-3,4,5,-5,6,7,8,9,-9,91,10,11,12,-12,13,14)
             while i<len(lines):
                 l = lines[i]
+                if l.strip().startswith('ibrav') and int(l.strip().split()[2]) in ibravs:
+                    i+=1
+                    celldm1 = float(lines[i].strip().split()[2])
+                #end if
                 if l.find('CELL_PARAMETERS')!=-1 and l.strip().startswith('CELL'):
                     conf = obj()
                     axes = []
@@ -407,6 +418,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         axes.append(array(lines[i].split(),dtype=float))
                     #end for
                     conf.axes = array(axes)
+                    if celldm1>0:
+                        conf.axes *= celldm1
+                    #end if
                 #end if
                 if l.find('ATOMIC_POSITIONS')!=-1:
                     found = True
@@ -426,7 +440,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     #end while
                     conf.atoms = atoms
                     conf.positions = array(positions)
-                    if 'crystal' in l.lower() and 'axes' in conf:
+                    if 'crystal' in l.lower() and 'axes' in conf and celldm1==0:
                         conf.positions = dot(conf.positions,conf.axes)
                     #end if
                     nconf = len(structures)
