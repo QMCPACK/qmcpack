@@ -1,0 +1,80 @@
+image: debian:testing
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  CXXFLAGS: "-O3"
+  OMPI_ALLOW_RUN_AS_ROOT: 1
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+
+openmpi:
+    stage: build
+    script:
+        - apt update  -qq
+        - apt install -qq -y --no-install-recommends libopenmpi-dev openmpi-bin cmake make g++ libboost-serialization-dev
+        - cd ..
+        - ln -s boost-mpi3 mpi3
+        - cd mpi3/test
+        - mkdir build
+        - cd build
+        - export MPI_OVERSUBSCRIBE="--oversubscribe"
+        - cmake ..
+        - pwd
+        - mpirun --version
+        - make -j 4
+        - ctest --output-on-failure
+        
+#openmpi-valgrind:
+#    stage: build
+#    script:
+#        - apt update  -qq
+#        - apt install -qq -y --no-install-recommends libopenmpi-dev openmpi-bin cmake make g++ libboost-serialization-dev valgrind
+#        - cd ..
+#        - ln -s boost-mpi3 mpi3
+#        - cd mpi3/test
+#        - mkdir build
+#        - cd build
+#        - export MPI_OVERSUBSCRIBE=--oversubscribe
+#        - export VALGRIND_EXE="valgrind --suppressions=communicator_main.cpp.openmpi.supp"
+#        - cmake ..
+#        - pwd
+#        - mpirun --version
+#        - make -j 4
+#        - ctest -VV --output-on-failure
+
+mpich:
+    stage: build
+    script:
+        - apt update  -qq
+        - apt install -qq -y --no-install-recommends libmpich-dev mpich cmake make g++ libboost-serialization-dev
+        - cd ..
+        - ln -s boost-mpi3 mpi3
+        - cd mpi3/test
+        - mkdir build
+        - cd build
+        - export MPI_OVERSUBSCRIBE=""
+        - cmake ..
+        - pwd
+        - mpirun --version
+        - make -j 4
+        - ctest --output-on-failure
+
+mpich-valgrind:
+    stage: build
+    script:
+        - apt update  -qq
+        - apt install -qq -y --no-install-recommends libmpich-dev mpich cmake make g++ libboost-serialization-dev valgrind
+        - cd ..
+        - ln -s boost-mpi3 mpi3
+        - cd mpi3/test
+        - mkdir build
+        - cd build
+        - export MPI_OVERSUBSCRIBE=""
+        - export VALGRIND_EXE="valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --error-exitcode=1"
+        - cmake ..
+        - pwd
+        - mpirun --version
+        - make -j 4
+        - ctest --output-on-failure
+
+# -*- indent-tabs-mode: nil; c-basic-offset: 4; tab-width: 4;-*-
+

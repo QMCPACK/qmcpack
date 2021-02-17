@@ -1,4 +1,4 @@
-#if COMPILATION_INSTRUCTIONSs
+#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
 (echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wfatal-errors -D_TEST_BOOST_MPI3_DYNAMIC_WINDOW $0x.cpp -o $0x.x && time mpirun -np 4 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
 #endif
 #ifndef BOOST_MPI3_DYNAMIC_WINDOW_HPP
@@ -16,7 +16,7 @@ struct dynamic_window : window<T>{
 	dynamic_window() : window<T>{}{}
 	public:
 	dynamic_window(communicator& comm){
-		int s = MPI_Win_create_dynamic(MPI_INFO_NULL, comm.impl_, &(this->impl_));
+		int s = MPI_Win_create_dynamic(MPI_INFO_NULL, comm.get(), &(this->impl_));
 		if(s != MPI_SUCCESS) throw std::runtime_error("cannot create dynamic window");
 	}
 	template<class TT = char>

@@ -1,5 +1,5 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -std=c++14 -O3 -Wall -Wextra -Wfatal-errors -D_TEST_MPI3_PACKAGE_ARCHIVE $0x.cpp -o $0x.x -lboost_serialization && time mpirun -n 2 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
+(echo '#include"'$0'"'>$0.cpp)&&mpic++ -std=c++14 -O3 -Wall -Wextra -Wfatal-errors -D_TEST_MPI3_PACKAGE_ARCHIVE $0.cpp -o$0x -lboost_serialization&&mpirun -n 2 $0x && rm $0x $0.cpp; exit
 #endif
 
 #ifndef MPI3_PACKAGE_ARCHIVE_HPP
@@ -24,7 +24,6 @@ namespace detail{
 
 class basic_package_iprimitive{
 protected:
-//	communicator& comm_;
 	package& p_;
 public:
 	// we provide an optimized save for all basic (and fundamental) types
@@ -53,9 +52,7 @@ public:
 
 class basic_package_oprimitive{
 protected:
-//	communicator& comm_;
 	package& p_;
-//	package_iterator
 public:
 	struct use_array_optimization {
 		template <class T>
@@ -159,16 +156,10 @@ class package_iarchive_impl :
 		assert(0);
 	}
 	void load(std::string &s){
-	//	const std::size_t size = s.size();
-	//	*this->This() << size;
 		std::size_t size; //  *this->This() >> size;
 		p_.unpack_n(&size, 1);
-	//	std::cout << " size = " << size << '\n';
 		s.resize(size);
-	//	++tokens_; // this->This()->newtoken();
-	//	os_ += s.size()*sizeof(char);//	os << s;
 		p_.unpack_n(const_cast<char*>(s.c_str()), size);
-	//	std::cout << "unpacked string is " << s << '\n';
 	}
 	void load(std::wstring &ws){
     	const std::size_t size = ws.size();
@@ -229,12 +220,7 @@ public:
 	//	++tokens_; // this->This()->newtoken();
 	//	os_ += l*sizeof(wchar_t);//	os.write((const char *)ws, l * sizeof(wchar_t)/sizeof(char));
 	}
-/*	void save(std::string const& s){
-		std::size_t const size = s.size();
-		p_.pack_n(&size, 1);
-		
-	}*/
-	void save(const std::string &s){
+	void save(std::string const& s){
     	const std::size_t size = s.size();
 	//	*this->This() << size;
 		p_.pack_n(&size, 1);
@@ -250,9 +236,7 @@ public:
 	//	os_ += ws.size()*sizeof(wchar_t);//	os << s;
 		assert(0);
 	}
-
 //	using package_oarchive_impl<package_oarchive>::save_override;
-
 #if 1
 	// Save all supported datatypes directly
 	template<class T>
@@ -265,7 +249,6 @@ public:
 		save_override(t, boost::mpl::bool_<true>{});//std::true_type{});
 	}
 #endif
-
 	public:
     package_oarchive_impl(mpi3::detail::package& p, unsigned int flags) : // size_t& os, size_t& tokens, unsigned int flags) :
 		basic_package_oprimitive(p),
@@ -300,49 +283,6 @@ struct package_oarchive : public detail::package_oarchive_impl<package_oarchive>
 // maybe needed for optimization to take effect?
 // BOOST_SERIALIZATION_USE_ARRAY_OPTIMIZATION(boost::archive::package_oarchive)
 
-
-namespace boost{
-namespace mpi3{
-
-/*
-template<class CommunicationMode, class BlockingMode, class InputIterator>
-auto communicator::send_category(CommunicationMode cm, BlockingMode bm, std::input_iterator_tag, 
-	InputIterator first, InputIterator last, int dest, int tag
-){
-	package p(*this);
-	detail::package_oarchive poa(p);
-	for( ; first != last; ++first){
-		poa << *first;
-	}
-	p.send(dest, tag);
-}*/
-
-#if 0
-template<class ContiguousIt, typename Size>
-void communicator::broadcast_n_contiguous_builtinQ(std::false_type, ContiguousIt first, Size count, int root){
-	package p(*this);
-	if(rank() == root){
-		detail::package_oarchive poa(p);
-		while(count){
-			poa << *first;
-			++first;
-			--count;
-		}
-	}
-	p.broadcast(root);
-	if(rank() != root){
-		detail::package_iarchive pia(p);
-		while(count){
-			pia >> *first;
-			++first;
-			--count;
-		}
-	}
-}
-#endif
-
-}}
-
 #ifdef _TEST_MPI3_PACKAGE_ARCHIVE
 
 #include "../mpi3/main.hpp"
@@ -355,9 +295,7 @@ namespace mpi3 = boost::mpi3;
 using std::cout; 
 
 int mpi3::main(int, char*[], mpi3::communicator world){
-
 	assert(world.size() > 1);
-
 	switch(world.rank()){
 		case 0: {
 			mpi3::detail::package p(world);
@@ -407,7 +345,6 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 			assert( m[3] == 4 );
 		}
 	}
-
 	return 0;
 }
 #endif
