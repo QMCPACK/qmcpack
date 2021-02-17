@@ -226,52 +226,58 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           msd_algorithm = "all_determinants";
       }
 
+      //old format
       SPOSetPtr spo_alpha;
       SPOSetPtr spo_beta;
-      std::vector<SPOSetPtr> SPOSetPtrs;
-      spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
-      spo_beta  = sposet_builder_factory_.getSPOSet(spo_beta_name);
       std::unique_ptr<SPOSet> spo_alpha_clone, spo_beta_clone;
-      if (spo_alpha == nullptr)
-      {
-        app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha_name
-                    << "\" is not found. Expected for MultiSlaterDeterminant.\n";
-        abort();
-      }
-      else
-        spo_alpha_clone.reset(spo_alpha->makeClone());
-
-      if (spo_beta == nullptr)
-      {
-        app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_beta_name
-                    << "\" is not found. Expected for MultiSlaterDeterminant.\n";
-        abort();
-      }
-      else
-        spo_beta_clone.reset(spo_beta->makeClone());
-
-      OhmmsAttributeSet grpAttrib;
+      //new format
       std::vector<std::string> spoNames(nGroups);
-      for (int grp = 0; grp < nGroups; grp++)
-        grpAttrib.add(spoNames[grp], "spo_" + std::to_string(grp));
-      grpAttrib.put(cur);
-      app_log() << "GROUPS" << std::endl;
-      for (int grp = 0; grp < nGroups; grp++)
-        app_log() << spoNames[grp] << std::endl;
       std::vector<SPOSetPtr> spos(nGroups, nullptr);
       std::vector<std::unique_ptr<SPOSet>> spo_clones(nGroups);
-      for (int grp = 0; grp < nGroups; grp++)
+      if (nGroups == -1)
       {
-        spos[grp] = sposet_builder_factory_.getSPOSet(spoNames[grp]);
-        if (spos[grp] == nullptr)
+        spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
+        spo_beta  = sposet_builder_factory_.getSPOSet(spo_beta_name);
+        if (spo_alpha == nullptr)
         {
-          app_error() << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp]
+          app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha_name
                       << "\" is not found. Expected for MultiSlaterDeterminant.\n";
           abort();
         }
-        spo_clones[grp].reset(spos[grp]->makeClone());
-      }
+        else
+          spo_alpha_clone.reset(spo_alpha->makeClone());
 
+        if (spo_beta == nullptr)
+        {
+          app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_beta_name
+                      << "\" is not found. Expected for MultiSlaterDeterminant.\n";
+          abort();
+        }
+        else
+          spo_beta_clone.reset(spo_beta->makeClone());
+      }
+      else
+      {
+        app_warning() << "Using new group method" << std::endl;
+        OhmmsAttributeSet grpAttrib;
+        for (int grp = 0; grp < nGroups; grp++)
+          grpAttrib.add(spoNames[grp], "spo_" + std::to_string(grp));
+        grpAttrib.put(cur);
+        app_log() << "GROUPS" << std::endl;
+        for (int grp = 0; grp < nGroups; grp++)
+          app_log() << spoNames[grp] << std::endl;
+        for (int grp = 0; grp < nGroups; grp++)
+        {
+          spos[grp] = sposet_builder_factory_.getSPOSet(spoNames[grp]);
+          if (spos[grp] == nullptr)
+          {
+            app_error() << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp]
+                        << "\" is not found. Expected for MultiSlaterDeterminant.\n";
+            abort();
+          }
+          spo_clones[grp].reset(spos[grp]->makeClone());
+        }
+      }
 
       if (msd_algorithm == "precomputed_table_method" || msd_algorithm == "table_method")
       {
@@ -281,11 +287,21 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           APP_ABORT("Backflow is not implemented with the table method.");
         }
 
-        std::vector<std::unique_ptr<MultiDiracDeterminant>> dets(nGroups);
-        for (int grp = 0; grp < nGroups; grp++)
+        std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
+        if (nGroups == -1)
         {
-          app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
-          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), grp));
+          app_log() << "      Creating base determinant (up) for MSD expansion. \n";
+          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_alpha_clone), 0));
+          app_log() << "      Creating base determinant (down) for MSD expansion. \n";
+          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_beta_clone), 1));
+        }
+        else
+        {
+          for (int grp = 0; grp < nGroups; grp++)
+          {
+            app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
+            dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), grp));
+          }
         }
 
         if (msd_algorithm == "precomputed_table_method")
