@@ -27,11 +27,11 @@
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
-      Nrule(4),
+      Nrule(nrule),
       Srule(8),
       AtomicNumber(0),
       Zeff(0),
@@ -261,6 +261,7 @@ void ECPComponentBuilder::printECPTable()
 
 void ECPComponentBuilder::SetQuadratureRule(int rule)
 {
+  app_log() << "  Quadrature Nrule: " << rule << std::endl;
   Quadrature3D<RealType> myRule(rule);
   pp_nonloc->sgridxyz_m    = myRule.xyz_m;
   pp_nonloc->sgridweight_m = myRule.weight_m;
