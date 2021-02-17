@@ -88,7 +88,6 @@ if [ -e ${source_dir}/CMakeLists.txt ]; then
       -DQMC_OPTIONS='-DMPIEXEC_EXECUTABLE=/bin/sh;-DMPIEXEC_NUMPROC_FLAG=${source_dir}/tests/scripts/jsrunhelper.sh'"
 
     [[ ${variant} == *"Complex"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D QMC_COMPLEX=1"
-    [[ ${variant} == *"-SoA"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D ENABLE_SOA=1"
     [[ ${variant} == *"-Mixed"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D QMC_MIXED_PRECISION=1"
     [[ ${variant} == *"-CUDA"* ]] && CTEST_FLAGS="${CTEST_FLAGS} -D QMC_CUDA=1"
 
