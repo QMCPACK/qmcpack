@@ -16,6 +16,7 @@ settings(
     machine    = 'ws8',
     )
 
+
 # lattice constant for diamond
 a = 3.57 # A
 a = convert(a,'A','B')
@@ -25,10 +26,10 @@ a = convert(a,'A','B')
 # RMG inputs shared for both manual and generated cell specification
 shared_inputs = obj(
     # nexus inputs
-    identifier = 'scf',
-    job        = job(cores=8,app='rmg-cpu'),
-    pseudos    = ['C.BFD.xml'],
-    input_type = 'generic',
+    identifier             = 'scf',
+    job                    = job(cores=8,app='rmg-cpu'),
+    pseudos                = ['C.BFD.xml'],
+    input_type             = 'generic',
     # control options
     calculation_mode       = 'Quench Electrons',
     compressed_infile      = False,
@@ -58,7 +59,7 @@ shared_inputs = obj(
     # diagonalization options
     subdiag_driver         = 'lapack',
     ## testing options
-    #test_energy            = -11.32982439,
+    #test_energy            = -11.39547539 # reference energy for validation
     # miscellaneous options
     kpoint_distribution    = 8,
     )
