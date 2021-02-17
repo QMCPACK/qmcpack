@@ -37,24 +37,24 @@ CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc \
              -DCMAKE_C_FLAGS=-xCOMMON-AVX512 \
              -DCMAKE_CXX_FLAGS=-xCOMMON-AVX512"
 
-# Configure and build cpu real SoA. Build targets skylake nodes.
+# Configure and build cpu real. Build targets skylake nodes.
 echo ""
 echo ""
-echo "building QMCPACK for cpu SoA real for CADES SHPC Condo -- Using AVX512 for Skylake nodes"
+echo "building QMCPACK for cpu real for CADES SHPC Condo -- Using AVX512 for Skylake nodes"
 mkdir -p build_cades_cpu_real_skylake
 cd build_cades_cpu_real_skylake
-cmake -DENABLE_SOA=1 $CMAKE_FLAGS ..
+cmake $CMAKE_FLAGS ..
 make -j 16
 cd ..
 ln -sf ./build_cades_cpu_real_skylake/bin/qmcpack ./qmcpack_cades_cpu_real_skylake
 
-# Configure and build cpu complex SoA. Build targets skylake nodes.
+# Configure and build cpu complex. Build targets skylake nodes.
 echo ""
 echo ""
-echo "building QMCPACK for cpu SoA complex for CADES SHPC Condo -- Using AVX512 for Skylake nodes"
+echo "building QMCPACK for cpu complex for CADES SHPC Condo -- Using AVX512 for Skylake nodes"
 mkdir -p build_cades_cpu_comp_skylake
 cd build_cades_cpu_comp_skylake
-cmake -DENABLE_SOA=1 -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
+cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 16
 cd ..
 ln -sf ./build_cades_cpu_comp_skylake/bin/qmcpack ./qmcpack_cades_cpu_comp_skylake
@@ -62,25 +62,24 @@ ln -sf ./build_cades_cpu_comp_skylake/bin/qmcpack ./qmcpack_cades_cpu_comp_skyla
 CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc \
              -DCMAKE_CXX_COMPILER=mpicxx"
 
-# Configure and build cpu real SoA 
+# Configure and build cpu real 
 echo ""
 echo ""
-echo "building QMCPACK for cpu SoA real for CADES SHPC Condo"
+echo "building QMCPACK for cpu real for CADES SHPC Condo"
 mkdir -p build_cades_cpu_real
 cd build_cades_cpu_real
-cmake -DENABLE_SOA=1 $CMAKE_FLAGS ..
+cmake $CMAKE_FLAGS ..
 make -j 16
 cd ..
 ln -sf ./build_cades_cpu_real/bin/qmcpack ./qmcpack_cades_cpu_real
 
-# Configure and build cpu complex SoA
+# Configure and build cpu complex
 echo ""
 echo ""
-echo "building QMCPACK for cpu SoA complex for CADES SHPC Condo"
+echo "building QMCPACK for cpu complex for CADES SHPC Condo"
 mkdir -p build_cades_cpu_comp
 cd build_cades_cpu_comp
-cmake -DQMC_COMPLEX=1 -DENABLE_SOA=1 $CMAKE_FLAGS ..
+cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 16
 cd ..
 ln -sf ./build_cades_cpu_comp/bin/qmcpack ./qmcpack_cades_cpu_comp
-
