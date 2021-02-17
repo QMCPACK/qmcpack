@@ -219,7 +219,7 @@ public:
            typename T8,
            typename T9,
            typename T10>
-  bool Write(const blitz::Array<T, RANK>& val,
+  bool Write(const Array<T, RANK>& val,
              T0 s0,
              T1 s1,
              T2 s2,
