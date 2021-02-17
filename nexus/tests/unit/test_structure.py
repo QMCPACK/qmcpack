@@ -1563,10 +1563,10 @@ if versions.spglib_available and versions.seekpath_available:
                 bv         = 'cubic_F',
                 tmatrix    = None,
                 rmg_inputs = obj(
-                    a_length             = 3.4011836175072934,
-                    b_length             = 3.4011836175072934,
+                    a_length             = 4.81,
+                    b_length             = 4.81,
                     bravais_lattice_type = 'Cubic Face Centered',
-                    c_length             = 3.4011836175072934,
+                    c_length             = 4.81,
                     length_units         = 'Angstrom',
                     ),
                 ),

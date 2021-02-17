@@ -3477,8 +3477,10 @@ def generate_any_rmg_input(**kwargs):
         #end if
 
         # set lattice vectors
-        ri.lattice_units  = rmg_length_units
-        ri.lattice_vector = s.axes.copy()
+        if 'a_length' not in ri:
+            ri.lattice_units  = rmg_length_units
+            ri.lattice_vector = s.axes.copy()
+        #end if
 
         # set kpoints
         if len(s.kpoints)>0 and 'kpoint_mesh' not in ri:

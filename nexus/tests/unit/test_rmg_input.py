@@ -758,6 +758,7 @@ def test_write():
 def test_generate():
     import numpy as np
     from generic import obj
+    from unit_converter import convert
     from physical_system import generate_physical_system
     from rmg_input import generate_rmg_input
 
@@ -1030,5 +1031,239 @@ def test_generate():
         **shared_inputs
         )
     check_vs_serial_reference(ri,infile)
+
+
+
+    # test diamond generation
+
+    a = 3.57 # A
+    a = convert(a,'A','B')
+
+    shared_inputs = obj(
+        # nexus inputs
+        input_type = 'generic',
+        # control options
+        calculation_mode       = 'Quench Electrons',
+        compressed_infile      = False,
+        compressed_outfile     = False,
+        description            = 'diamond',
+        energy_convergence_criterion = 1.0e-09,
+        max_scf_steps          = 100,
+        #start_mode             = 'Restart From File',
+        write_data_period      = 10,
+        # cell parameter options
+        atomic_coordinate_type = 'Cell Relative',
+        potential_grid_refinement = 2,
+        # pseudopotential related options
+        localize_localpp       = False,
+        localize_projectors    = False,
+        # kohn sham solver options
+        kohn_sham_mucycles     = 3,
+        kohn_sham_solver       = 'davidson',
+        # orbital occupation options
+        occupations_type       = 'Fixed',
+        # charge density mixing options
+        charge_density_mixing  = 0.5,
+        charge_mixing_type     = 'Broyden',
+        potential_acceleration_constant_step = 1.0,
+        # diagonalization options
+        subdiag_driver         = 'lapack',
+        ## testing options
+        #test_energy            = -11.32982439,
+        # miscellaneous options
+        kpoint_distribution    = 8,
+        )
+
+
+    # manual specification of rmg system (no physical system object)
+    mi = generate_rmg_input(
+        bravais_lattice_type   = 'Cubic Face Centered',
+        a_length               = a,
+        b_length               = a,
+        c_length               = a,
+        alpha                  = 0.0,
+        beta                   = 0.0,
+        gamma                  = 0.0,
+        atoms                  = '''
+          C      0.250   0.250   0.250 1 1 1  0.0000   0.00   0.00
+          C      0.000   0.000   0.000 1 1 1  0.0000   0.00   0.00
+          ''',
+        kpoint_mesh            = (4,4,4),
+        kpoint_is_shift        = (0,0,0),
+        states_count_and_occupation = '4 2.0 4 0.0',
+        wavefunction_grid           = (32,32,32),
+        **shared_inputs
+        )
+
+    # generated from system
+    system = generate_physical_system(
+        structure = 'diamond',
+        cell      = 'prim',
+        C         = 4,
+        units     = 'A',
+        kgrid     = (4,4,4),
+        kshift    = (0,0,0),
+        )
+
+    gi = generate_rmg_input(
+        system          = system,
+        virtual_frac    = 1.0,
+        wf_grid_spacing = 0.15,
+        **shared_inputs
+        )
+
+    # generated from system w/ kgrid override
+    ki = generate_rmg_input(
+        system          = system,
+        virtual_frac    = 1.0,
+        wf_grid_spacing = 0.15,
+        kpoint_mesh     = (4,4,4),
+        kpoint_is_shift = (0,0,0),
+        **shared_inputs
+        )
+
+
+    # check shared keys match
+    mkeys = set(mi.keys())
+    gkeys = set(gi.keys())
+    kkeys = set(ki.keys())
+
+    skeys = mkeys & gkeys & kkeys
+
+    skeys_ref = set([
+        'atomic_coordinate_type', 'atoms', 'calculation_mode', 
+        'charge_density_mixing', 'charge_mixing_type', 'compressed_infile', 
+        'compressed_outfile', 'description', 'energy_convergence_criterion', 
+        'kohn_sham_mucycles', 'kohn_sham_solver', 'kpoint_distribution', 
+        'localize_localpp', 'localize_projectors', 'max_scf_steps', 
+        'occupations_type', 'potential_acceleration_constant_step', 
+        'potential_grid_refinement', 'states_count_and_occupation', 
+        'subdiag_driver', 'wavefunction_grid', 'write_data_period'])
+
+    assert(skeys==skeys_ref)
+
+    mr = obj()
+    gr = obj()
+    kr = obj()
+    for ri,rk,rr in [(mi,mkeys,mr),(gi,gkeys,gr),(ki,kkeys,kr)]:
+        for k in rk-skeys:
+            rr[k] = ri[k]
+            del ri[k]
+        #end for
+    #end for
+
+    assert(check_object_eq(gi,ki))
+    del mi.atoms
+    del gi.atoms
+    assert(check_object_eq(mi,gi))
+
+
+    # check that residual (differing) keys match reference
+    mr_ref = obj(
+        a_length        = 6.746322294401746,
+        alpha           = 0.0,
+        b_length        = 6.746322294401746,
+        beta            = 0.0,
+        bravais_lattice_type = 'Cubic Face Centered',
+        c_length        = 6.746322294401746,
+        gamma           = 0.0,
+        kpoint_is_shift = np.array([0, 0, 0],dtype=int),
+        kpoint_mesh     = np.array([4, 4, 4],dtype=int),
+        )
+    assert(check_object_eq(mr,mr_ref))
+
+    kr_ref = obj(
+        kpoint_is_shift = np.array([0, 0, 0],dtype=int),
+        kpoint_mesh     = np.array([4, 4, 4],dtype=int),
+        lattice_units   = 'Bohr',
+        lattice_vector  = np.array([[3.37316115, 3.37316115, 0.        ],
+                                    [0.        , 3.37316115, 3.37316115],
+                                    [3.37316115, 0.        , 3.37316115]],
+                                   dtype=float),
+        )
+    assert(check_object_eq(kr,kr_ref))
+
+    gr_ref = obj(
+        lattice_units   = 'Bohr',
+        lattice_vector  = np.array([[3.37316115, 3.37316115, 0.        ],
+                                    [0.        , 3.37316115, 3.37316115],
+                                    [3.37316115, 0.        , 3.37316115]],
+                                   dtype=float),
+        kpoints = obj(
+            kpoints         = np.array(
+                [[ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+                 [ 2.50000000e-01,  3.09994390e-17,  3.24386335e-18],
+                 [ 5.00000000e-01, -2.33137274e-17, -2.33137274e-17],
+                 [ 7.50000000e-01,  5.63983306e-18,  5.63983306e-18],
+                 [ 4.14583178e-17,  2.50000000e-01,  1.16568637e-17],
+                 [ 2.50000000e-01,  2.50000000e-01,  0.00000000e+00],
+                 [ 5.00000000e-01,  2.50000000e-01,  3.24386335e-18],
+                 [ 7.50000000e-01,  2.50000000e-01,  3.62891808e-17],
+                 [ 2.33137274e-17,  5.00000000e-01,  2.33137274e-17],
+                 [ 2.50000000e-01,  5.00000000e-01,  1.16568637e-17],
+                 [ 5.00000000e-01,  5.00000000e-01,  0.00000000e+00],
+                 [ 7.50000000e-01,  5.00000000e-01,  3.24386335e-18],
+                 [-5.63983306e-18,  7.50000000e-01, -5.63983306e-18],
+                 [ 2.50000000e-01,  7.50000000e-01,  2.12678489e-17],
+                 [ 5.00000000e-01,  7.50000000e-01, -3.24386335e-18],
+                 [ 7.50000000e-01,  7.50000000e-01,  0.00000000e+00],
+                 [ 3.24386335e-18,  1.16568637e-17,  2.50000000e-01],
+                 [ 2.50000000e-01,  3.15405006e-17,  2.50000000e-01],
+                 [ 5.00000000e-01,  3.24386335e-18,  2.50000000e-01],
+                 [ 7.50000000e-01,  3.62891808e-17,  2.50000000e-01],
+                 [ 3.15405006e-17,  2.50000000e-01,  2.50000000e-01],
+                 [ 2.50000000e-01,  2.50000000e-01,  2.50000000e-01],
+                 [ 5.00000000e-01,  2.50000000e-01,  2.50000000e-01],
+                 [ 7.50000000e-01,  2.50000000e-01,  2.50000000e-01],
+                 [ 1.16568637e-17,  5.00000000e-01,  2.50000000e-01],
+                 [ 2.50000000e-01,  5.00000000e-01,  2.50000000e-01],
+                 [ 5.00000000e-01,  5.00000000e-01,  2.50000000e-01],
+                 [ 7.50000000e-01,  5.00000000e-01,  2.50000000e-01],
+                 [ 2.12678489e-17,  7.50000000e-01,  2.50000000e-01],
+                 [ 2.50000000e-01,  7.50000000e-01,  2.50000000e-01],
+                 [ 5.00000000e-01,  7.50000000e-01,  2.50000000e-01],
+                 [ 7.50000000e-01,  7.50000000e-01,  2.50000000e-01],
+                 [-2.33137274e-17,  2.33137274e-17,  5.00000000e-01],
+                 [ 2.50000000e-01,  1.16568637e-17,  5.00000000e-01],
+                 [ 5.00000000e-01,  0.00000000e+00,  5.00000000e-01],
+                 [ 7.50000000e-01,  3.24386335e-18,  5.00000000e-01],
+                 [ 3.24386335e-18,  2.50000000e-01,  5.00000000e-01],
+                 [ 2.50000000e-01,  2.50000000e-01,  5.00000000e-01],
+                 [ 5.00000000e-01,  2.50000000e-01,  5.00000000e-01],
+                 [ 7.50000000e-01,  2.50000000e-01,  5.00000000e-01],
+                 [ 0.00000000e+00,  5.00000000e-01,  5.00000000e-01],
+                 [ 2.50000000e-01,  5.00000000e-01,  5.00000000e-01],
+                 [ 5.00000000e-01,  5.00000000e-01,  5.00000000e-01],
+                 [ 7.50000000e-01,  5.00000000e-01,  5.00000000e-01],
+                 [-3.24386335e-18,  7.50000000e-01,  5.00000000e-01],
+                 [ 2.50000000e-01,  7.50000000e-01,  5.00000000e-01],
+                 [ 5.00000000e-01,  7.50000000e-01,  5.00000000e-01],
+                 [ 7.50000000e-01,  7.50000000e-01,  5.00000000e-01],
+                 [ 5.63983306e-18, -5.63983306e-18,  7.50000000e-01],
+                 [ 2.50000000e-01,  2.12678489e-17,  7.50000000e-01],
+                 [ 5.00000000e-01, -3.24386335e-18,  7.50000000e-01],
+                 [ 7.50000000e-01, -3.15405006e-17,  7.50000000e-01],
+                 [ 3.62891808e-17,  2.50000000e-01,  7.50000000e-01],
+                 [ 2.50000000e-01,  2.50000000e-01,  7.50000000e-01],
+                 [ 5.00000000e-01,  2.50000000e-01,  7.50000000e-01],
+                 [ 7.50000000e-01,  2.50000000e-01,  7.50000000e-01],
+                 [ 3.24386335e-18,  5.00000000e-01,  7.50000000e-01],
+                 [ 2.50000000e-01,  5.00000000e-01,  7.50000000e-01],
+                 [ 5.00000000e-01,  5.00000000e-01,  7.50000000e-01],
+                 [ 7.50000000e-01,  5.00000000e-01,  7.50000000e-01],
+                 [-3.15405006e-17,  7.50000000e-01,  7.50000000e-01],
+                 [ 2.50000000e-01,  7.50000000e-01,  7.50000000e-01],
+                 [ 5.00000000e-01,  7.50000000e-01,  7.50000000e-01],
+                 [ 7.50000000e-01,  7.50000000e-01,  7.50000000e-01]],
+                dtype=float),
+            weights         = np.array([1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,
+                                        1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,
+                                        1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,
+                                        1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,
+                                        1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.],
+                                       dtype=float),
+            ),
+        )
+    assert(check_object_eq(gr,gr_ref))
 
 #end def test_generate
