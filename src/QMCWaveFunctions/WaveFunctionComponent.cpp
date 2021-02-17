@@ -113,7 +113,9 @@ void WaveFunctionComponent::mw_ratioGradAsync(const RefVectorWithLeader<WaveFunc
                                               std::vector<GradType>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
+#if !defined(__INTEL_COMPILER)
 #pragma omp task default(none) firstprivate(wfc_list, p_list, iat) shared(ratios, grad_new)
+#endif
   mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new);
 }
 
