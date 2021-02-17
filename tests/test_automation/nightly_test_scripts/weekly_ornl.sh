@@ -5,8 +5,8 @@ echo --- Script START `date`
 localonly=no
 #localonly=yes
 
-jobtype=nightly
-#jobtype=weekly
+#jobtype=nightly
+jobtype=weekly
 case "$jobtype" in
     nightly )
 	echo --- Nightly job

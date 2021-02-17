@@ -73,11 +73,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   // local list to handle accept/reject
   std::vector<bool> isAccepted;
-  std::vector<std::reference_wrapper<ParticleSet>> elec_accept_list, elec_reject_list;
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
-  elec_accept_list.reserve(num_walkers);
-  elec_reject_list.reserve(num_walkers);
 
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
@@ -146,8 +143,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         std::transform(ratios.begin(), ratios.end(), prob.begin(), [](auto ratio) { return std::norm(ratio); });
 
         isAccepted.clear();
-        elec_accept_list.clear();
-        elec_reject_list.clear();
 
         for (int i_accept = 0; i_accept < num_walkers; ++i_accept)
           if (prob[i_accept] >= std::numeric_limits<RealType>::epsilon() &&
@@ -155,20 +150,17 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           {
             crowd.incAccept();
             isAccepted.push_back(true);
-            elec_accept_list.push_back(crowd.get_walker_elecs()[i_accept]);
           }
           else
           {
             crowd.incReject();
             isAccepted.push_back(false);
-            elec_reject_list.push_back(crowd.get_walker_elecs()[i_accept]);
           }
 
         TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted,
                                                   true);
 
-        ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
-        ParticleSet::flex_rejectMove(elec_reject_list, iat);
+        ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted, true);
       }
     }
     TrialWaveFunction::flex_completeUpdates(crowd.get_walker_twfs());

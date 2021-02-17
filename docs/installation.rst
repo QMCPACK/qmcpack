@@ -1282,10 +1282,6 @@ options and different versions of the application. A full list can be displayed 
                                                     converter.
     qe [on]                 True, False             Install with patched Quantum
                                                     Espresso 6.4.0
-    soa [on]                True, False             Build with Structure-of-Array
-                                                    instead of Array-of-Structure
-                                                    code. Only for CPU codeand
-                                                    only in mixed precision
     timers [off]            True, False             Build with support for timers
 
   Installation Phases:
