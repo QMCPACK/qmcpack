@@ -3481,12 +3481,15 @@ def generate_any_rmg_input(**kwargs):
         ri.lattice_vector = s.axes.copy()
 
         # set kpoints
-        if len(s.kpoints)>0:
+        if len(s.kpoints)>0 and 'kpoint_mesh' not in ri:
             kpu = s.kpoints_unit()
             ri.kpoints = obj(
                 kpoints = kpu.copy(),
                 weights = s.kweights.copy(),
                 )
+            if 'kpoint_is_shift' in ri:
+                del ri.kpoint_is_shift
+            #end if
         #end if
 
         # set wavefunction grid
