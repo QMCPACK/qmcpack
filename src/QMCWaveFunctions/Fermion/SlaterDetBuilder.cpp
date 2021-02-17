@@ -77,7 +77,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   ///save the current node
   xmlNodePtr curRoot = cur;
   xmlNodePtr BFnode  = nullptr;
-  bool success = true;
+  bool success       = true;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
@@ -207,25 +207,30 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       std::string spo_alpha_name;
       std::string spo_beta_name;
       std::string fastAlg;
+      int nGroups = -1;
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add(spo_alpha_name, "spo_up");
       spoAttrib.add(spo_beta_name, "spo_dn");
       spoAttrib.add(fastAlg, "Fast", {"", "yes", "no"}, TagStatus::DEPRECATED);
       spoAttrib.add(msd_algorithm, "algorithm", {"", "precomputed_table_method", "table_method", "all_determinants"});
+      spoAttrib.add(nGroups, "ngroups");
       spoAttrib.put(cur);
 
       if (msd_algorithm.empty())
       {
-        if(fastAlg.empty())
+        if (fastAlg.empty())
           msd_algorithm = "precomputed_table_method";
-        else if(fastAlg == "yes")
+        else if (fastAlg == "yes")
           msd_algorithm = "table_method";
         else
           msd_algorithm = "all_determinants";
       }
 
-      SPOSetPtr spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
-      SPOSetPtr spo_beta  = sposet_builder_factory_.getSPOSet(spo_beta_name);
+      SPOSetPtr spo_alpha;
+      SPOSetPtr spo_beta;
+      std::vector<SPOSetPtr> SPOSetPtrs;
+      spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
+      spo_beta  = sposet_builder_factory_.getSPOSet(spo_beta_name);
       std::unique_ptr<SPOSet> spo_alpha_clone, spo_beta_clone;
       if (spo_alpha == nullptr)
       {
@@ -245,6 +250,29 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       else
         spo_beta_clone.reset(spo_beta->makeClone());
 
+      OhmmsAttributeSet grpAttrib;
+      std::vector<std::string> spoNames(nGroups);
+      for (int grp = 0; grp < nGroups; grp++)
+        grpAttrib.add(spoNames[grp], "spo_" + std::to_string(grp));
+      grpAttrib.put(cur);
+      app_log() << "GROUPS" << std::endl;
+      for (int grp = 0; grp < nGroups; grp++)
+        app_log() << spoNames[grp] << std::endl;
+      std::vector<SPOSetPtr> spos(nGroups, nullptr);
+      std::vector<std::unique_ptr<SPOSet>> spo_clones(nGroups);
+      for (int grp = 0; grp < nGroups; grp++)
+      {
+        spos[grp] = sposet_builder_factory_.getSPOSet(spoNames[grp]);
+        if (spos[grp] == nullptr)
+        {
+          app_error() << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp]
+                      << "\" is not found. Expected for MultiSlaterDeterminant.\n";
+          abort();
+        }
+        spo_clones[grp].reset(spos[grp]->makeClone());
+      }
+
+
       if (msd_algorithm == "precomputed_table_method" || msd_algorithm == "table_method")
       {
         app_summary() << "    Using Bryan's table method." << std::endl;
@@ -253,11 +281,12 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           APP_ABORT("Backflow is not implemented with the table method.");
         }
 
-        std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
-        app_log() << "      Creating base determinant (up) for MSD expansion. \n";
-        dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_alpha_clone), 0));
-        app_log() << "      Creating base determinant (down) for MSD expansion. \n";
-        dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_beta_clone), 1));
+        std::vector<std::unique_ptr<MultiDiracDeterminant>> dets(nGroups);
+        for (int grp = 0; grp < nGroups; grp++)
+        {
+          app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
+          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), grp));
+        }
 
         if (msd_algorithm == "precomputed_table_method")
         {
