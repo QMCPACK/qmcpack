@@ -19,12 +19,12 @@ source $MODULESHOME/init/bash
 module purge
 module load python
 module load PE-intel/3.0
-module load gcc/6.3.0
-module load intel/19.0.3
-module load hdf5_parallel/1.10.3
+module swap intel intel/19.0.3
+module load gcc/7.2.0
+module load hdf5-parallel/1.8.21
 module load fftw/3.3.5
 module load cmake/3.12.0
-module load boost/1.67.0
+module load boost/1.70.0
 module load libxml2/2.9.9
 module list
 
