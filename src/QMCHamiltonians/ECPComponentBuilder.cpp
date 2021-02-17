@@ -261,7 +261,7 @@ void ECPComponentBuilder::printECPTable()
 
 void ECPComponentBuilder::SetQuadratureRule(int rule)
 {
-  app_log() << "  Quadrature rule: " << rule << std::endl;
+  app_log() << "  Quadrature Nrule: " << rule << std::endl;
   Quadrature3D<RealType> myRule(rule);
   pp_nonloc->sgridxyz_m    = myRule.xyz_m;
   pp_nonloc->sgridweight_m = myRule.weight_m;

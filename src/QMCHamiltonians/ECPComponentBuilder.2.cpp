@@ -64,23 +64,23 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
 
   if (quadRule > -1 && Nrule > -1)
   {
-    app_warning() << " Nrule setting found in both qmcpack input and pseudopotential file."
-                  << " Using nrule setting in qmcpack input file\n";
+    app_warning() << " Nrule setting found in both qmcpack input (Nrule = " << Nrule
+                  << ") and pseudopotential file (Nrule = " << quadRule << ")."
+                  << " Using nrule setting in qmcpack input file." << std::endl;
   }
   else if (quadRule > -1 && Nrule == -1)
   {
-    app_log() << " Nrule setting found in pseudopotential file.\n";
+    app_log() << " Nrule setting found in pseudopotential file and used." << std::endl;
     Nrule = quadRule;
   }
   else if (quadRule == -1 && Nrule > -1)
-    app_log() << " Nrule setting found in qmcpack input file.\n";
-  
-  if (Nrule == -1)
+    app_log() << " Nrule setting found in qmcpack input file and used." << std::endl;
+  else
   {
     //Sperical quadrature rules set by exact integration up to lmax of
     //nonlocal channels.
     //From J. Chem. Phys. 95 (3467) (1991)
-    //Keeping Nrule = 4 as default for lmax <= 5. 
+    //Keeping Nrule = 4 as default for lmax <= 5.
     switch (pp_nonloc->lmax)
     {
     case 0:
@@ -102,10 +102,11 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
       Nrule = 7;
       break;
     default:
-      myComm->barrier_and_abort("Default value for pseudopotential nrule not determined");
+      myComm->barrier_and_abort("Default value for pseudopotential nrule not determined.");
       break;
     }
-    app_warning() << "  Quadrature rule was not determined from qmcpack input or pseudopotential file. Setting sensible default\n";
+    app_warning() << "Nrule was not determined from qmcpack input or pseudopotential file. Setting sensible default."
+                  << std::endl;
   }
 
 
