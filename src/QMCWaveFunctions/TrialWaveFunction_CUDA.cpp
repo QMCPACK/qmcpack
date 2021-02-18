@@ -41,9 +41,9 @@ void TrialWaveFunction::recompute(MCWalkerConfiguration& W, bool firstTime)
 {
   for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->recompute(W, firstTime);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -100,9 +100,9 @@ void TrialWaveFunction::ratio(MCWalkerConfiguration& W,
   }
   for (int i = 0, ii = 0; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->ratio(W, iat, psi_ratios, newG);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -121,9 +121,9 @@ void TrialWaveFunction::ratio(MCWalkerConfiguration& W,
   }
   for (int i = 0, ii = 1; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->ratio(W, iat, psi_ratios, newG, newL);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -142,9 +142,9 @@ void TrialWaveFunction::calcRatio(MCWalkerConfiguration& W,
   }
   for (int i = 0, ii = 1; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->calcRatio(W, iat, psi_ratios, newG, newL);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -158,14 +158,14 @@ void TrialWaveFunction::addRatio(MCWalkerConfiguration& W,
 {
   for (int i = 0, ii = 1; i < Z.size() - 1; i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->addRatio(W, iat, k, psi_ratios, newG, newL);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
   gpu::synchronize();
-  myTimers[1 + TIMER_SKIP * (Z.size() - 1)]->start();
+  WFC_timers_[1 + TIMER_SKIP * (Z.size() - 1)]->start();
   Z[Z.size() - 1]->addRatio(W, iat, k, psi_ratios, newG, newL);
-  myTimers[1 + TIMER_SKIP * (Z.size() - 1)]->stop();
+  WFC_timers_[1 + TIMER_SKIP * (Z.size() - 1)]->stop();
 }
 
 void TrialWaveFunction::det_lookahead(MCWalkerConfiguration& W,
@@ -179,9 +179,9 @@ void TrialWaveFunction::det_lookahead(MCWalkerConfiguration& W,
 {
   for (int i = 0, ii = 1; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->det_lookahead(W, psi_ratios, grad, lapl, iat, k, kd, nw);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -220,9 +220,9 @@ void TrialWaveFunction::ratio(std::vector<Walker_t*>& walkers,
   }
   for (int i = 0, ii = 1; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->ratio(walkers, iatList, rNew, psi_ratios, newG, newL);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -232,9 +232,9 @@ void TrialWaveFunction::ratio(MCWalkerConfiguration& W, int iat, std::vector<Val
     psi_ratios[iw] = 1.0;
   for (int i = 0, ii = V_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->ratio(W, iat, psi_ratios);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -246,9 +246,9 @@ void TrialWaveFunction::update(MCWalkerConfiguration* W,
 {
   for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->update(W, walkers, iat, acc, k);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -256,9 +256,9 @@ void TrialWaveFunction::update(const std::vector<Walker_t*>& walkers, const std:
 {
   for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->update(walkers, iatList);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -273,9 +273,9 @@ void TrialWaveFunction::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, 
     }
   for (int i = 0, ii = VGL_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     Z[i]->gradLapl(W, grads, lapl);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
   for (int iw = 0; iw < W.WalkerList.size(); iw++)
     for (int ptcl = 0; ptcl < grads.cols(); ptcl++)
@@ -288,15 +288,20 @@ void TrialWaveFunction::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, 
 void TrialWaveFunction::NLratios(MCWalkerConfiguration& W,
                                  std::vector<NLjob>& jobList,
                                  std::vector<PosType>& quadPoints,
-                                 std::vector<ValueType>& psi_ratios)
+                                 std::vector<ValueType>& psi_ratios,
+                                 ComputeType ct)
 {
   for (int i = 0; i < psi_ratios.size(); i++)
     psi_ratios[i] = 1.0;
   for (int i = 0, ii = NL_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
-    Z[i]->NLratios(W, jobList, quadPoints, psi_ratios);
-    myTimers[ii]->stop();
+      if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
+          (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+      {
+        WFC_timers_[ii]->start();
+        Z[i]->NLratios(W, jobList, quadPoints, psi_ratios);
+        WFC_timers_[ii]->stop();
+      }
   }
 }
 
@@ -306,13 +311,18 @@ void TrialWaveFunction::NLratios(MCWalkerConfiguration& W,
                                  gpu::device_vector<int>& NumCoreElecs,
                                  gpu::device_vector<CUDA_PRECISION*>& QuadPosList,
                                  gpu::device_vector<CUDA_PRECISION*>& RatioList,
-                                 int numQuadPoints)
+                                 int numQuadPoints,
+                                 ComputeType ct)
 {
   for (int i = 0, ii = NL_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
-    Z[i]->NLratios(W, Rlist, ElecList, NumCoreElecs, QuadPosList, RatioList, numQuadPoints);
-    myTimers[ii]->stop();
+      if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
+          (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+      {
+        WFC_timers_[ii]->start();
+        Z[i]->NLratios(W, Rlist, ElecList, NumCoreElecs, QuadPosList, RatioList, numQuadPoints);
+        WFC_timers_[ii]->stop();
+      }
   }
 }
 
@@ -322,10 +332,10 @@ void TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration& W, std::vector<R
     logpsi_opt[iw] = RealType();
   for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     if (Z[i]->Optimizable)
       Z[i]->addLog(W, logpsi_opt);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -346,7 +356,7 @@ void TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration& W,
   // First, sum optimizable part, using fixedG and fixedL as temporaries
   for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     if (Z[i]->Optimizable)
     {
       Z[i]->addLog(W, logpsi_opt);
@@ -369,7 +379,7 @@ void TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration& W,
       Z[i]->addLog(W, logpsi_fixed);
       Z[i]->gradLapl(W, fixedG, fixedL);
     }
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
   // Add on the fixed part to the total laplacian and gradient
   for (int iw = 0; iw < W.WalkerList.size(); iw++)
@@ -392,13 +402,13 @@ void TrialWaveFunction::evaluateOptimizableLog(MCWalkerConfiguration& W,
   // Sum optimizable part of log Psi
   for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     if (Z[i]->Optimizable)
     {
       Z[i]->addLog(W, logpsi_opt);
       Z[i]->gradLapl(W, optG, optL);
     }
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 
@@ -410,10 +420,10 @@ void TrialWaveFunction::evaluateDerivatives(MCWalkerConfiguration& W,
 {
   for (int i = 0, ii = DERIVS_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    myTimers[ii]->start();
+    WFC_timers_[ii]->start();
     if (Z[i]->Optimizable)
       Z[i]->evaluateDerivatives(W, optvars, dlogpsi, dhpsioverpsi);
-    myTimers[ii]->stop();
+    WFC_timers_[ii]->stop();
   }
 }
 } // namespace qmcplusplus

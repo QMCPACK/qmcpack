@@ -15,8 +15,9 @@
 #include <hip/hip_runtime.h>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/copy_n_cast.hip.h"
 
 namespace kernels
 {
@@ -28,8 +29,6 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
   thrust::complex<Q> Bi;
   if (sizeof(T) >= sizeof(Q))
   {
-    // this is wrong if the compiler eliminates the intermediate Bi through optimization
-    // will it???
     for (Size i = 0; i < n; i += nb, ni += nb)
     {
       if (ni < n)
@@ -37,13 +36,10 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
       __syncthreads();
       if (ni < n)
         *(B + ni) = Bi;
-      //      __syncthreads();
     }
   }
   else if (sizeof(T) < sizeof(Q))
   {
-    // hipcc complains
-    //assert( sizeof(T)*2 <= sizeof(Q));
     ni = n - 1 - ni;
     for (Size i = 0; i < n; i += nb, ni -= nb)
     {
@@ -52,41 +48,54 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
       __syncthreads();
       if (ni >= 0)
         *(B + ni) = Bi;
-      //      __syncthreads();
     }
   }
 }
 
 void inplace_cast(unsigned long n, std::complex<float>* A, std::complex<double>* B)
 {
-  hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(MAX_THREADS_PER_DIM), 0, 0, n,
-                     reinterpret_cast<thrust::complex<float>*>(A), reinterpret_cast<thrust::complex<double>*>(B));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  while (n > 4ul * 32ul)
+  {
+    unsigned long ni = n / 2uL; // number of elements to be copied in this iteration, ni <= n/2
+    // copy_n_cast last ni elements
+    copy_n_cast(A + (n - ni), int(ni), B + (n - ni));
+    n -= ni;
+  }
+  hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(32), 0, 0, n, reinterpret_cast<thrust::complex<float>*>(A),
+                     reinterpret_cast<thrust::complex<double>*>(B));
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void inplace_cast(unsigned long n, std::complex<double>* A, std::complex<float>* B)
 {
   hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(MAX_THREADS_PER_DIM), 0, 0, n,
                      reinterpret_cast<thrust::complex<double>*>(A), reinterpret_cast<thrust::complex<float>*>(B));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void inplace_cast(long n, std::complex<float>* A, std::complex<double>* B)
 {
-  hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(MAX_THREADS_PER_DIM), 0, 0, n,
-                     reinterpret_cast<thrust::complex<float>*>(A), reinterpret_cast<thrust::complex<double>*>(B));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  while (n > long(4 * 32))
+  {
+    long ni = n / 2uL; // number of elements to be copied in this iteration, ni <= n/2
+    // copy_n_cast last ni elements
+    copy_n_cast(A + (n - ni), int(ni), B + (n - ni));
+    n -= ni;
+  }
+  hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(32), 0, 0, n, reinterpret_cast<thrust::complex<float>*>(A),
+                     reinterpret_cast<thrust::complex<double>*>(B));
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void inplace_cast(long n, std::complex<double>* A, std::complex<float>* B)
 {
   hipLaunchKernelGGL(kernel_inplace_cast, dim3(1), dim3(MAX_THREADS_PER_DIM), 0, 0, n,
                      reinterpret_cast<thrust::complex<double>*>(A), reinterpret_cast<thrust::complex<float>*>(B));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 } // namespace kernels

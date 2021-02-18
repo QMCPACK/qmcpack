@@ -28,8 +28,6 @@
 #include "multi/memory/fallback.hpp"
 
 #include "Utilities/TimerManager.h"
-#include "AFQMC/Utilities/myTimer.h"
-extern myTimer Timer;
 
 namespace qmcplusplus
 {
@@ -424,15 +422,15 @@ public:
 
     std::string sR("yes");
     ParameterSet m_param;
-    m_param.add(NMO_FULL, "NMO_FULL", "int");
-    m_param.add(NMO_FULL, "NMO", "int");
-    m_param.add(NAEA, "NAEA", "int");
-    m_param.add(NAEB, "NAEB", "int");
-    m_param.add(NCA, "NCA", "int");
-    m_param.add(NCB, "NCB", "int");
-    m_param.add(NETOT, "NETOT", "int");
-    m_param.add(MS2, "MS2", "int");
-    m_param.add(sR, "spinRestricted", "string");
+    m_param.add(NMO_FULL, "NMO_FULL");
+    m_param.add(NMO_FULL, "NMO");
+    m_param.add(NAEA, "NAEA");
+    m_param.add(NAEB, "NAEB");
+    m_param.add(NCA, "NCA");
+    m_param.add(NCB, "NCB");
+    m_param.add(NETOT, "NETOT");
+    m_param.add(MS2, "MS2");
+    m_param.add(sR, "spinRestricted");
     m_param.put(cur);
 
     spinRestricted = false;

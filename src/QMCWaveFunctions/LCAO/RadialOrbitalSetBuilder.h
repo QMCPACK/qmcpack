@@ -18,7 +18,7 @@
 
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include <HDFVersion.h>
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/HDFStringAttrib.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/HDFNumericAttrib.h"
@@ -27,7 +27,7 @@
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
-#include "QMCFactory/OneDimGridFactory.h"
+#include "Numerics/OneDimGridFactory.h"
 #include "Message/MPIObjectBase.h"
 
 
@@ -240,8 +240,9 @@ bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
     ri = tt;
     hin.read(tt, "grid_rf");
     rf = tt;
-    hin.read(tt, "rmax_safe");
-    rmax_safe = tt;
+    // Ye TODO: grid handling will all moved to XML.
+    //hin.read(tt, "rmax_safe");
+    //rmax_safe = tt;
     hin.read(npts, "grid_npts");
   }
   myComm->bcast(ri);

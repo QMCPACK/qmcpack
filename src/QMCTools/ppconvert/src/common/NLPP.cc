@@ -70,7 +70,7 @@ NLPPClass::Read(IOSectionClass &in)
     int l;
     assert (in.ReadVar("l", l));
     if (l > numChannels) {
-      cerr << "Skipped channels in NLPPClass read.\n";
+      std::cerr << "Skipped channels in NLPPClass read.\n";
       abort();
     }
     Vl[l].Read(in, PotentialGrid);
@@ -222,8 +222,8 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
   ProjectorNorm = 1.0/sqrt(norm);
   Job = EKB;
   E_KB = norm/integrator.Integrate(0.0, grid.End, 1.0e-12);
-  cerr << "l = " << l << "  Norm is " << norm 
-       << "  E_KB is " << E_KB << "  R0 = " << R0 << endl;
+  std::cerr << "l = " << l << "  Norm is " << norm 
+       << "  E_KB is " << E_KB << "  R0 = " << R0 << std::endl;
   
   // Compute zeta(r)
   Array<double,1> zeta(grid.NumPoints);
@@ -320,8 +320,8 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
   double norm2 = integrator.Integrate(0.0, grid.End, 1.0e-8);
   double error = integrator.Integrate( R0, grid.End, 1.0e-8);
   if (error > 1.0e-16)
-    cerr << "Fractional error in real-space projection = "
-	 << (error / norm2) << endl;
+    std::cerr << "Fractional error in real-space projection = "
+	 << (error / norm2) << std::endl;
 }
 
 

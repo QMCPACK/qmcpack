@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMCLinearOpt.h"
+#include "VMCLinearOpt.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -37,10 +37,8 @@ using WP = WalkerProperties::Indexes;
 VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
                            TrialWaveFunction& psi,
                            QMCHamiltonian& h,
-                           HamiltonianPool& hpool,
-                           WaveFunctionPool& ppool,
                            Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "VMCLinearOpt"),
+    : QMCDriver(w, psi, h, comm, "VMCLinearOpt"),
       UseDrift("yes"),
       NumOptimizables(0),
       w_beta(0.0),
@@ -55,22 +53,22 @@ VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
   DumpConfig = false;
   //default is 10
   nWarmupSteps = 10;
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(UseDrift, "use_drift", "string");
-  m_param.add(nTargetSamples, "targetWalkers", "int");
-  m_param.add(nTargetSamples, "targetwalkers", "int");
-  m_param.add(nTargetSamples, "target_walkers", "int");
-  //     m_param.add(beta_errorbars,"beta_error","double");
-  //     m_param.add(alpha_errorbars,"alpha_error","double");
-  m_param.add(w_beta, "beta", "double");
-  m_param.add(w_alpha, "alpha", "double");
-  //     m_param.add(logepsilon,"logepsilon","double");
-  //     m_param.add(logoffset,"logoffset","double");
-  m_param.add(printderivs, "printderivs", "string");
-  m_param.add(GEVtype, "GEVMethod", "string");
-  //     m_param.add(myRNWarmupSteps,"rnwarmupsteps","int");
-  //     m_param.add(myRNWarmupSteps,"cswarmupsteps","int");
+  m_param.add(UseDrift, "useDrift");
+  m_param.add(UseDrift, "usedrift");
+  m_param.add(UseDrift, "use_drift");
+  m_param.add(nTargetSamples, "targetWalkers");
+  m_param.add(nTargetSamples, "targetwalkers");
+  m_param.add(nTargetSamples, "target_walkers");
+  //     m_param.add(beta_errorbars,"beta_error");
+  //     m_param.add(alpha_errorbars,"alpha_error");
+  m_param.add(w_beta, "beta");
+  m_param.add(w_alpha, "alpha");
+  //     m_param.add(logepsilon,"logepsilon");
+  //     m_param.add(logoffset,"logoffset");
+  m_param.add(printderivs, "printderivs");
+  m_param.add(GEVtype, "GEVMethod");
+  //     m_param.add(myRNWarmupSteps,"rnwarmupsteps");
+  //     m_param.add(myRNWarmupSteps,"cswarmupsteps");
 }
 
 bool VMCLinearOpt::run()
@@ -490,7 +488,6 @@ void VMCLinearOpt::resetRun()
   for (int ip = 0; ip < NumThreads; ++ip)
     app_log() << "    Sample size for thread " << ip << " = " << samples_th[ip] << std::endl;
   app_log() << "  Warmup Steps " << nWarmupSteps << std::endl;
-  //     if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
   //    app_log() << "  Warmup Steps " << nWarmupSteps << std::endl;
   if (Movers.empty())
   {
@@ -538,7 +535,7 @@ void VMCLinearOpt::resetRun()
         //             CSMovers[ip]=
         Movers[ip] = new VMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         //           }
-        //Movers[ip]->resetRun(branchEngine,estimatorClones[ip]);
+        //Movers[ip]->resetRun(branchEngine.get(),estimatorClones[ip]);
       }
       else
       {
@@ -560,7 +557,7 @@ void VMCLinearOpt::resetRun()
         //             CSMovers[ip]=
         Movers[ip] = new VMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         //           }
-        //Movers[ip]->resetRun(branchEngine,estimatorClones[ip]);
+        //Movers[ip]->resetRun(branchEngine.get(),estimatorClones[ip]);
       }
       if (ip == 0)
         app_log() << os.str() << std::endl;
@@ -581,8 +578,8 @@ void VMCLinearOpt::resetRun()
     int ip = omp_get_thread_num();
     Movers[ip]->put(qmcNode);
     //       CSMovers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
-    //       CSMovers[ip]->resetRun(branchEngine,estimatorClones[ip]);
+    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
+    //       CSMovers[ip]->resetRun(branchEngine.get(),estimatorClones[ip]);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     else

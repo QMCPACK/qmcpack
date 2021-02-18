@@ -75,11 +75,11 @@ public:
 
   /** print basic SPOSet information
    */
-  void basic_report(const std::string& pad = "");
+  void basic_report(const std::string& pad = "") const;
 
   /** print SPOSet information
    */
-  virtual void report(const std::string& pad = "") { basic_report(pad); }
+  virtual void report(const std::string& pad = "") const { basic_report(pad); }
 
 
   /** return the size of the orbitals
@@ -179,14 +179,6 @@ public:
                                      const std::vector<std::vector<int>>& lookup_tbl)
   {}
 
-
-  /** reset the target particleset
-   *  this is used to reset the pointer to ion-electron distance table needed by LCAO basis set.
-   *  Ye: Only AoS needs it, SoA LCAO doesn't need this. Reseting pointers is a state machine very hard to maintain.
-   *  This interface should be removed with AOS.
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
-
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals
    * Ye: I prefer to remove this interface in the future. SPOSet builders need to handle the size correctly.
@@ -194,28 +186,12 @@ public:
    */
   virtual void setOrbitalSetSize(int norbs) = 0;
 
-  /** Evaluate the SPO value at an explicit position.
-   * Ye: This is used only for debugging the CUDA code and should be removed.
-   */
-  virtual void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
-
   /** evaluate the values of this single-particle orbital set
    * @param P current ParticleSet
    * @param iat active particle
    * @param psi values of the SPO
    */
   virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) = 0;
-
-  /** evaluate the values of this single-particle orbital sets of multiple walkers
-   * @param spo_list the list of SPOSet pointers in a walker batch
-   * @param P_list the list of ParticleSet pointers in a walker batch
-   * @param iat active particle
-   * @param psi_v_list the list of value vector pointers in a walker batch
-   */
-  virtual void mw_evaluateValue(const RefVector<SPOSet>& spo_list,
-                                const RefVector<ParticleSet>& P_list,
-                                int iat,
-                                const RefVector<ValueVector_t>& psi_v_list);
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
@@ -344,6 +320,14 @@ public:
                                     GradMatrix_t& dlogdet,
                                     ValueMatrix_t& d2logdet) = 0;
 
+  virtual void mw_evaluate_notranspose(const RefVector<SPOSet>& spo_list,
+                                       const RefVector<ParticleSet>& P_list,
+                                       int first,
+                                       int last,
+                                       const RefVector<ValueMatrix_t>& logdet_list,
+                                       const RefVector<GradMatrix_t>& dlogdet_list,
+                                       const RefVector<ValueMatrix_t>& d2logdet_list);
+
   /** evaluate the values, gradients and hessians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
    * @param first starting index of the particles
@@ -441,6 +425,11 @@ public:
   const std::string& getName() const { return myName; }
 
 #ifdef QMC_CUDA
+  /** Evaluate the SPO value at an explicit position.
+   * Ye: This is used only for debugging the CUDA code and should be removed.
+   */
+  virtual void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
+
   using CTS = CUDAGlobalTypes;
 
   //////////////////////////////////////////

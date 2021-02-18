@@ -102,7 +102,6 @@ void test_C_diamond()
     REQUIRE(bb != NULL);
 
     OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
-    bb->loadBasisSetFromXML(MO_base[0]);
     SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
     SPOSet::ValueVector_t values;
@@ -881,8 +880,6 @@ void test_C_diamond()
     REQUIRE(std::imag(values[25]) == Approx(-0.10326287192308459));
 
     // END generated C++ input from Carbon1x1x1-tw1_gen_mos.py (pyscf version 1.6.2) on 2019-11-19 15:08:42.847403
-
-    SPOSetBuilderFactory::clear();
   }
 }
 

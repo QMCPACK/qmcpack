@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/LCAOHDFParser.h"
+#include "LCAOHDFParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -116,18 +116,24 @@ void LCAOHDFParser::parse(const std::string& fname)
   Matrix<double> myvec(1, numMO);
 
   hin.push("Super_Twist");
-  hin.read(myvec, "eigenval_0");
-  for (int i = 0; i < numMO; i++)
-    EigVal_alpha[i] = myvec[0][i];
-
-  //Reading Eigenvals for Spin unRestricted calculation. This section is needed to set the occupation numbers
-  if (!SpinRestricted)
+  if (hin.readEntry(myvec, "eigenval_0"))
   {
-    hin.read(myvec, "eigenval_1");
+    // eigenval_0 exists on file
     for (int i = 0; i < numMO; i++)
-      EigVal_beta[i] = myvec[0][i];
-  }
+      EigVal_alpha[i] = myvec[0][i];
 
+    //Reading Eigenvals for Spin unRestricted calculation. This section is needed to set the occupation numbers
+    if (!SpinRestricted)
+    {
+      hin.read(myvec, "eigenval_1");
+      for (int i = 0; i < numMO; i++)
+        EigVal_beta[i] = myvec[0][i];
+    }
+  }
+  else
+  {
+    app_warning() << "eigenval_0 doesn't exist in h5 file. Treat all values zero." << std::endl;
+  }
   hin.close();
 
 
@@ -163,61 +169,14 @@ void LCAOHDFParser::parse(const std::string& fname)
     else
     {
       hin.read(ci_size, "NbDet");
+      hin.read(ci_nstates, "nstate");
+      hin.read(nbexcitedstates, "nexcitedstate");
       CIcoeff.clear();
       CIalpha.clear();
       CIbeta.clear();
       CIcoeff.resize(ci_size);
       CIalpha.resize(ci_size);
       CIbeta.resize(ci_size);
-
-      hin.read(ci_nstates, "nstate");
-      int N_int;
-      const int bit_kind = 64;
-      hin.read(N_int, "Nbits");
-
-      Matrix<long int> tempAlpha(ci_size, N_int);
-      hin.read(tempAlpha, "CI_Alpha");
-
-      Matrix<long int> tempBeta(ci_size, N_int);
-      hin.read(tempBeta, "CI_Beta");
-
-      std::string MyCItempAlpha, MyCItempBeta;
-      MyCItempAlpha.resize(ci_nstates + 1);
-      MyCItempBeta.resize(ci_nstates + 1);
-
-      for (int ni = 0; ni < ci_size; ni++)
-      {
-        int j = 0;
-        for (int i = 0; i < ci_nstates; i++)
-        {
-          MyCItempAlpha[i] = '9';
-          MyCItempBeta[i]  = '9';
-        }
-        for (int k = 0; k < N_int; k++)
-        {
-          long int a               = tempAlpha[ni][k];
-          std::bitset<bit_kind> a2 = a;
-
-          auto b  = tempBeta[ni][k];
-          auto b2 = std::bitset<bit_kind>(b);
-
-
-          // ci_nstates == n_orbital
-          for (int i = 0; i < bit_kind; i++)
-          {
-            if (j < ci_nstates)
-            {
-              MyCItempAlpha[j] = a2[i] ? '1' : '0';
-              MyCItempBeta[j]  = b2[i] ? '1' : '0';
-              j++;
-            }
-          }
-        }
-
-        CIalpha[ni] = MyCItempAlpha;
-        CIbeta[ni]  = MyCItempBeta;
-      }
-      hin.read(CIcoeff, "Coeff");
 
       int ds  = SpinMultiplicity - 1;
       int neb = (NumberOfEls - ds) / 2;

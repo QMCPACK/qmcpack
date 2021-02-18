@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/RMC/RMC.h"
+#include "RMC.h"
 #include "QMCDrivers/RMC/RMCUpdatePbyP.h"
 #include "QMCDrivers/RMC/RMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -38,9 +38,8 @@ namespace qmcplusplus
 RMC::RMC(MCWalkerConfiguration& w,
          TrialWaveFunction& psi,
          QMCHamiltonian& h,
-         WaveFunctionPool& ppool,
          Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "RMC"),
+    : QMCDriver(w, psi, h, comm, "RMC"),
       prestepsVMC(-1),
       rescaleDrift("no"),
       beta(-1),
@@ -50,11 +49,11 @@ RMC::RMC(MCWalkerConfiguration& w,
   RootName = "rmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(rescaleDrift, "drift", "string");
-  m_param.add(beta, "beta", "double");
-  m_param.add(beads, "beads", "int");
-  m_param.add(resizeReptile, "resize", "int");
-  m_param.add(prestepsVMC, "vmcpresteps", "int");
+  m_param.add(rescaleDrift, "drift");
+  m_param.add(beta, "beta");
+  m_param.add(beads, "beads");
+  m_param.add(resizeReptile, "resize");
+  m_param.add(prestepsVMC, "vmcpresteps");
 
   Action.resize(3);
   Action[0] = w.addProperty("ActionBackward");
@@ -253,7 +252,7 @@ void RMC::resetRun()
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
     // wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     wClones[ip]->reptile = W.ReptileList[ip];
     //app_log()<<"Thread # "<<ip<< std::endl;

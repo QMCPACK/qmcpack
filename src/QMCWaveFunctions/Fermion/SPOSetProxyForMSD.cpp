@@ -14,10 +14,10 @@
 /** @file SPOSetProxy.cpp
  * @brief implements the member functions of SPOSetProxy
  */
-#include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
+#include "SPOSetProxyForMSD.h"
 namespace qmcplusplus
 {
-SPOSetProxyForMSD::SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last) : refPhi(spos)
+SPOSetProxyForMSD::SPOSetProxyForMSD(std::unique_ptr<SPOSet>&& spos, int first, int last) : refPhi(std::move(spos))
 {
   className      = "SPOSetProxy";
   OrbitalSetSize = last - first;
@@ -28,8 +28,6 @@ void SPOSetProxyForMSD::resetParameters(const opt_variables_type& optVariables)
 {
   refPhi->resetParameters(optVariables);
 }
-
-void SPOSetProxyForMSD::resetTargetParticleSet(ParticleSet& P) { refPhi->resetTargetParticleSet(P); }
 
 void SPOSetProxyForMSD::setOrbitalSetSize(int norbs)
 {

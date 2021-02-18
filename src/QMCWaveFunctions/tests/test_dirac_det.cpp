@@ -60,9 +60,10 @@ void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
 
 TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 {
-  FakeSPO* spo = new FakeSPO();
-  spo->setOrbitalSetSize(3);
-  DetType ddb(spo);
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(3);
+  DetType ddb(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
   int norb = 3;
   ddb.set(0, norb);
@@ -117,9 +118,10 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 
 TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 {
-  FakeSPO* spo = new FakeSPO();
-  spo->setOrbitalSetSize(4);
-  DetType ddb(spo);
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(4);
+  DetType ddb(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
   int norb = 4;
   ddb.set(0, norb);
@@ -243,9 +245,10 @@ TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 
 TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 {
-  FakeSPO* spo = new FakeSPO();
-  spo->setOrbitalSetSize(4);
-  DetType ddc(spo);
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(4);
+  DetType ddc(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
 
   int norb = 4;
   // maximum delay 2
@@ -325,11 +328,12 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 0, true);
   // force update Ainv in ddc using SM-1 code path
+  // also force population of dpsiM or you will have invalid grad below
   ddc.completeUpdates();
-
   check_matrix(a_update1, ddc.psiM);
 
-  grad                    = ddc.evalGrad(elec, 1);
+  grad = ddc.evalGrad(elec, 1);
+
   PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
@@ -348,7 +352,8 @@ TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1, true);
 
-  grad                    = ddc.evalGrad(elec, 2);
+  grad = ddc.evalGrad(elec, 2);
+
   PsiValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
@@ -479,10 +484,10 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   auto spo_up = std::make_unique<EGOSet>(kup, k2up);
   auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
 
-  SpinorSet* spinor_set = new SpinorSet();
+  auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
-  DetType dd(spinor_set);
+  DetType dd(std::move(spinor_set));
   dd.resize(nelec, norb);
   app_log() << " nelec=" << nelec << " norb=" << norb << std::endl;
 

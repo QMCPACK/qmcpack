@@ -1,0 +1,2866 @@
+Rank =    0  Free Memory =   514 MB
+Rank =    1  Free Memory =   513 MB
+Rank =    2  Free Memory =   513 MB
+Rank =    3  Free Memory =   513 MB
+Rank =    4  Free Memory =   513 MB
+Rank =    5  Free Memory =   513 MB
+Rank =    6  Free Memory =   513 MB
+Rank =    7  Free Memory =   513 MB
+Rank =    8  Free Memory =   513 MB
+Rank =    9  Free Memory =   513 MB
+Rank =   10  Free Memory =   513 MB
+Rank =   11  Free Memory =   513 MB
+Rank =   12  Free Memory =   513 MB
+Rank =   13  Free Memory =   513 MB
+Rank =   14  Free Memory =   513 MB
+Rank =   15  Free Memory =   513 MB
+  Input file(s): optm-target-hybrid.xml 
+
+=====================================================
+                    QMCPACK 3.9.9
+
+       (c) Copyright 2003-  QMCPACK developers
+
+                    Please cite:
+ J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
+      https://doi.org/10.1088/1361-648X/aab9c3
+
+  Git branch: excited_hybrid_opt
+  Last git commit: b730b0fa737713a2226482d2690a0213e3e320a0-dirty
+  Last git commit date: Wed Oct 14 10:30:26 2020 -0500
+  Last git commit subject: Format code to help review.
+=====================================================
+  Global options 
+
+  Total number of MPI ranks = 16
+  Number of MPI groups      = 1
+  MPI group ID              = 0
+  Number of ranks in group  = 16
+  MPI ranks per node        = 16
+  OMP 1st level threads     = 1
+  OMP nested threading disabled or only 1 thread on the 2nd level
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  CPU only build
+
+  Input XML = optm-target-hybrid.xml
+
+  Project = target_hybrid_ref
+  date    = 2020-10-16 16:23:20 PDT
+  host    = n0001.scs00
+
+
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 872
+
+  Range of prime numbers to use as seeds over processors and threads = 6791-6917
+
+
+ Particle Set
+ ------------
+  Name: e
+
+  All the species have the same mass 1
+  Particle set size: 4
+
+
+ Particle Set
+ ------------
+  Name: ion0
+
+  All the species have the same mass 1
+  Particle set size: 4
+
+
+ Many-body wavefunction
+ -------------------
+  Name: psi0   tasking: no
+
+  Created SPOSet builder named 'LCAOBSet' of type molecularorbital
+  LCAO: SoaAtomicBasisSet<MultiQuintic,0>
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+Adding 1 cartesian gaussian orbitals for l= 0
+  Setting cutoff radius 8.62979
+
+   Maximum Angular Momentum  = 0
+   Number of Radial functors = 1
+   Basis size                = 1
+
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+spo_name = spo-up
+
+     Single particle orbitals (SPO)
+     ------------------------------
+      Name: spo-up   Type: LCAO   Builder class name: LCAOrbitalBuilder
+
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+spo_name = spo-dn
+
+     Single particle orbitals (SPO)
+     ------------------------------
+      Name: spo-dn   Type: LCAO   Builder class name: LCAOrbitalBuilder
+
+
+   Multi Slater determinants
+   -------------------------
+
+    Using Bryan's table method.
+      Creating base determinant (up) for MSD expansion. 
+      Creating base determinant (down) for MSD expansion. 
+Found determinant list. 
+Reading CSFs.
+Found 2 terms in the MSD expansion.
+Norm of ci vector (sum of ci^2): 0.638005
+Norm of qchem ci vector (sum of qchem_ci^2): 0.990143
+Found 2 unique up determinants.
+Found 2 unique down determinants.
+Number of terms in pairs array: 1
+Number of terms in pairs array: 1
+CI coefficients are optimizable. 
+  Added a fermionic WaveFunctionComponent MultiSlaterDeterminantFast
+
+   Jastrow
+   -------
+    Name: J2   Type: Two-Body   Function: Bspline
+
+    Radial function for species: u - u
+     Number of parameters: 10
+     Cusp: -0.25
+     Cutoff radius: 10
+
+     Name                        Value Type Recompute Use Index
+     ---- ---------------------------- ---- --------- --- -----
+     uu_0                 5.680176e-01    1         1  ON     0
+     uu_1                 3.699138e-01    1         1  ON     1
+     uu_2                 2.108829e-01    1         1  ON     2
+     uu_3                 9.267632e-02    1         1  ON     3
+     uu_4                 5.276940e-03    1         1  ON     4
+     uu_5                -3.330962e-02    1         1  ON     5
+     uu_6                -2.484192e-02    1         1  ON     6
+     uu_7                 8.603361e-03    1         1  ON     7
+     uu_8                 3.763565e-02    1         1  ON     8
+     uu_9                 2.979626e-02    1         1  ON     9
+
+    Radial function for species: u - d
+     Number of parameters: 10
+     Cusp: -0.5
+     Cutoff radius: 10
+
+     Name                        Value Type Recompute Use Index
+     ---- ---------------------------- ---- --------- --- -----
+     ud_0                 9.168016e-01    1         1  ON     0
+     ud_1                 5.756625e-01    1         1  ON     1
+     ud_2                 3.465443e-01    1         1  ON     2
+     ud_3                 1.896617e-01    1         1  ON     3
+     ud_4                 8.747532e-02    1         1  ON     4
+     ud_5                 3.482162e-02    1         1  ON     5
+     ud_6                 3.708930e-02    1         1  ON     6
+     ud_7                 6.355172e-02    1         1  ON     7
+     ud_8                 7.720516e-02    1         1  ON     8
+     ud_9                 5.828843e-02    1         1  ON     9
+
+
+   Jastrow
+   -------
+    Name: J1   Type: One-Body   Function: Bspline
+
+    Radial function for element: H
+     Number of parameters: 10
+     Cusp: 1
+     Cutoff radius: 5
+
+     Name                        Value Type Recompute Use Index
+     ---- ---------------------------- ---- --------- --- -----
+     eH_0                 1.539994e-02    1         1  ON     0
+     eH_1                 2.935596e-02    1         1  ON     1
+     eH_2                -1.133046e-01    1         1  ON     2
+     eH_3                -9.452275e-02    1         1  ON     3
+     eH_4                -1.063167e-01    1         1  ON     4
+     eH_5                -7.820047e-02    1         1  ON     5
+     eH_6                -3.640043e-02    1         1  ON     6
+     eH_7                -6.827574e-03    1         1  ON     7
+     eH_8                 8.345458e-03    1         1  ON     8
+     eH_9                 4.849582e-03    1         1  ON     9
+
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+
+ Hamiltonian and observables
+ ---------------------------
+  Name: h0
+
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+  QMCHamiltonian::addOperator IonElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonElec
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+
+  QMCHamiltonian::add2WalkerProperty added
+    4 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+ParticleSetPool::randomize 0 ParticleSets.
+  Initialization Execution time = 0.01121 secs
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet 'e' contains 4 particles :  u(2) d(2)
+
+    u  1.0958951042e+00  5.1427708436e-01 -1.4428370103e+00
+    u  6.0611124208e-01 -1.7216487456e-01 -7.7962973208e-01
+    d -6.4575975825e-01  9.9108864642e-01  1.8564835946e-01
+    d -7.5318592612e-02  2.7134132518e-01 -1.1765509155e+00
+
+  Distance table for dissimilar particles (A-B):
+    source: ion0  target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+  Distance table for similar particles (A-A):
+    source/target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  ParticleSet 'ion0' contains 4 particles :  H(4)
+
+    H  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H  1.8897259877e+00  0.0000000000e+00  0.0000000000e+00
+    H  0.0000000000e+00  0.0000000000e+00  2.8345889816e+00
+    H  0.0000000000e+00  0.0000000000e+00  5.6691779632e+00
+
+  Distance table for similar particles (A-A):
+    source/target: ion0
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAB source=e
+
+  IonElec         CoulombAA source/target ion0
+
+  IonIon          CoulombAA source/target ion0
+
+
+Loop execution max-interations = 9
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root target_hybrid_ref.s000 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 13
+HybridEngine saved MinMethod descent num_updates = 6
+HybridEngine saved MinMethod adaptive num_updates = 3
+Omega from input file: 0.0000000000e+00
+Current collection step: -1
+  Adding 1 walkers to 0 existing sets
+  Total number of walkers: 1.6000000000e+01
+  Total weight: 1.6000000000e+01
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s000 append = no 
+=========================================================
+Resetting walkers
+  Using the current 1 walkers.
+  Total number of walkers: 1.6000000000e+01
+  Total weight: 1.6000000000e+01
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 5.0000000000e-02
+  blocks         = 2000
+  steps          = 1
+  substeps       = 1
+  current        = 0
+  target samples = 3.0000000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+  SpinMoves      = no
+<parameter name="blocks" condition="int">2000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.8750000000e+03</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">3.0000000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.8750000000e+03</parameter>
+<parameter name="spinmass" condition="double">1.0000000000e+00</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">5.0000000000e-02</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-02</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-02</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  Set drift_modifier UNR parameter a = 1.0000000000e+00
+ Using QMCCostFunction::QMCCostFunction
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+  Set drift_modifier UNR parameter a = 1.0000000000e+00
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =30000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 489 MB
+Memory footprint by rank 0 on node 0       : 51 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+Warning! ***HDF5 library version mismatched error***
+The HDF5 header files used to compile this application do not match
+the version used by the HDF5 library to which this application is linked.
+Data corruption or segmentation faults may occur if the application continues.
+This can happen when an application was compiled by one version of HDF5 but
+linked with a different version of static or shared HDF5 library.
+You should recompile the application or check your shared library related
+settings such as 'LD_LIBRARY_PATH'.
+'HDF5_DISABLE_VERSION_CHECK' environment variable is set to 1, application will
+continue at your own risk.
+Headers are 1.10.1, library is 1.10.5
+	    SUMMARY OF THE HDF5 CONFIGURATION
+	    =================================
+
+General Information:
+-------------------
+                   HDF5 Version: 1.10.5
+                  Configured on: Wed May  1 14:18:02 PDT 2019
+                  Configured by: dongliang@n0009.scs00
+                    Host system: x86_64-unknown-linux-gnu
+              Uname information: Linux n0009.scs00 3.10.0-693.11.6.el7.x86_64 #1 SMP Wed Jan 3 18:09:42 CST 2018 x86_64 x86_64 x86_64 GNU/Linux
+                       Byte sex: little-endian
+             Installation point: /global/software/sl-7.x86_64/modules/gcc/7.4.0/hdf5/1.10.5-gcc-s
+
+Compiling Options:
+------------------
+                     Build Mode: production
+              Debugging Symbols: no
+                        Asserts: no
+                      Profiling: no
+             Optimization Level: high
+
+Linking Options:
+----------------
+                      Libraries: static, shared
+  Statically Linked Executables: 
+                        LDFLAGS: 
+                     H5_LDFLAGS: 
+                     AM_LDFLAGS: 
+                Extra libraries: -lz -ldl -lm 
+                       Archiver: ar
+                       AR_FLAGS: cr
+                         Ranlib: ranlib
+
+Languages:
+----------
+                              C: yes
+                     C Compiler: /global/software/sl-7.x86_64/modules/langs/gcc/7.4.0/bin/gcc ( gcc (GCC) 7.4.0)
+                       CPPFLAGS: 
+                    H5_CPPFLAGS: -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L   -DNDEBUG -UH5_DEBUG_API
+                    AM_CPPFLAGS: 
+                        C Flags: 
+                     H5 C Flags:  -std=c99  -pedantic -Wall -Wextra -Wbad-function-cast -Wc++-compat -Wcast-align -Wcast-qual -Wconversion -Wdeclaration-after-statement -Wdisabled-optimization -Wfloat-equal -Wformat=2 -Winit-self -Winvalid-pch -Wmissing-declarations -Wmissing-include-dirs -Wmissing-prototypes -Wnested-externs -Wold-style-definition -Wpacked -Wpointer-arith -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wundef -Wunused-macros -Wunsafe-loop-optimizations -Wwrite-strings -finline-functions -s -Wno-inline -Wno-aggregate-return -Wno-missing-format-attribute -Wno-missing-noreturn -O
+                     AM C Flags: 
+               Shared C Library: yes
+               Static C Library: yes
+
+
+                        Fortran: yes
+               Fortran Compiler: /global/software/sl-7.x86_64/modules/langs/gcc/7.4.0/bin/gfortran ( GNU Fortran (GCC) 7.4.0)
+                  Fortran Flags: 
+               H5 Fortran Flags:  -pedantic -Wall -Wextra -Wunderflow -Wimplicit-interface -Wsurprising -Wno-c-binding-type  -s -O2
+               AM Fortran Flags: 
+         Shared Fortran Library: yes
+         Static Fortran Library: yes
+
+                            C++: yes
+                   C++ Compiler: /global/software/sl-7.x86_64/modules/langs/gcc/7.4.0/bin/g++ ( g++ (GCC) 7.4.0)
+                      C++ Flags: 
+                   H5 C++ Flags:   -pedantic -Wall -W -Wundef -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wconversion -Wredundant-decls -Winline -Wsign-promo -Woverloaded-virtual -Wold-style-cast -Weffc++ -Wreorder -Wnon-virtual-dtor -Wctor-dtor-privacy -Wabi -finline-functions -s -O
+                   AM C++ Flags: 
+             Shared C++ Library: yes
+             Static C++ Library: yes
+
+                           Java: no
+
+
+Features:
+---------
+                   Parallel HDF5: no
+Parallel Filtered Dataset Writes: no
+              Large Parallel I/O: no
+              High-level library: yes
+                    Threadsafety: no
+             Default API mapping: v110
+  With deprecated public symbols: yes
+          I/O filters (external): deflate(zlib)
+                             MPE: no
+                      Direct VFD: no
+                         dmalloc: no
+  Packages w/ extra debug output: none
+                     API tracing: no
+            Using memory checker: no
+ Memory allocation sanity checks: no
+          Function stack tracing: no
+       Strict file format checks: no
+    Optimization instrumentation: no
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.05
+    reference energy   = -1.8123
+    reference variance = 0.454937
+====================================================
+  Execution time = 3.2035e-01
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s000
+  QMCCostFunction is created with 1 threads.
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 1875 
+  VMC Eavg = -1.8086e+00
+  VMC Evar = 4.5527e-01
+  Total weights = 3.0000e+04
+Energy Average: -1.808595284e+00
+Energy Variance: 4.552873778e-01
+Weight Total: 3.000000000e+04
+Energy Standard Deviation: 6.747498631e-01
+Energy Standard Error: 3.895670151e-03
+Target Function Average: -7.406650506e-01
+Target Function Variance: 2.606117250e+00
+Target Function Error: 9.320438563e-03
+Norm of gradient vector is: 7.628201195e-01
+  Execution time = 9.2074e-02
+  </log>
+</opt>
+<opt stage="main" walkers="30000">
+  <log>
+This is num_params_: 31
+Number of Parameters: 31
+Descent Number: 0
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-03 TJF_1Body_eta=1.0000e-03 F_eta=1.0000e-03 CI_eta=1.0000e-03 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 6.9460e-05
+  </log>
+  <optVariables href="target_hybrid_ref.s000.opt.xml">
+CSFcoeff_1 -5.200495e-01                3 1 ON  0
+uu_0       5.680251e-01                 1 1 ON  1
+uu_1       3.699131e-01                 1 1 ON  2
+uu_2       2.109306e-01                 1 1 ON  3
+uu_3       9.264303e-02                 1 1 ON  4
+uu_4       5.350374e-03                 1 1 ON  5
+uu_5       -3.326380e-02                1 1 ON  6
+uu_6       -2.486234e-02                1 1 ON  7
+uu_7       8.546348e-03                 1 1 ON  8
+uu_8       3.758348e-02                 1 1 ON  9
+uu_9       2.979256e-02                 1 1 ON  10
+ud_0       9.168306e-01                 1 1 ON  11
+ud_1       5.757096e-01                 1 1 ON  12
+ud_2       3.466113e-01                 1 1 ON  13
+ud_3       1.897274e-01                 1 1 ON  14
+ud_4       8.742682e-02                 1 1 ON  15
+ud_5       3.487326e-02                 1 1 ON  16
+ud_6       3.709544e-02                 1 1 ON  17
+ud_7       6.341745e-02                 1 1 ON  18
+ud_8       7.712704e-02                 1 1 ON  19
+ud_9       5.828364e-02                 1 1 ON  20
+eH_0       1.545148e-02                 1 1 ON  21
+eH_1       2.962867e-02                 1 1 ON  22
+eH_2       -1.134666e-01                1 1 ON  23
+eH_3       -9.458323e-02                1 1 ON  24
+eH_4       -1.060602e-01                1 1 ON  25
+eH_5       -7.815333e-02                1 1 ON  26
+eH_6       -3.653336e-02                1 1 ON  27
+eH_7       -6.999515e-03                1 1 ON  28
+eH_8       8.432544e-03                 1 1 ON  29
+eH_9       5.012437e-03                 1 1 ON  30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 0.415 secs
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root target_hybrid_ref.s001 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 13
+Omega from input file: -2.5
+Current collection step: -1
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s001 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=1  my_counter=0
+  time step      = 0.05
+  blocks         = 2000
+  steps          = 1
+  substeps       = 1
+  current        = 0
+  target samples = 3e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+  SpinMoves      = no
+<parameter name="blocks" condition="int">2000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1875</parameter>
+<parameter name="maxcpusecs" condition="real">3.6e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">3e+04</parameter>
+<parameter name="samplesperthread" condition="real">1875</parameter>
+<parameter name="spinmass" condition="double">1</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">0.05</parameter>
+<parameter name="time_step" condition="au">0.05</parameter>
+<parameter name="timestep" condition="au">0.05</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+    Restarting, cummulative properties:
+      energy     = -1.812
+      variance   = 0
+      r2accepted = 1e-10
+      r2proposed = 1e-10
+  Set drift_modifier UNR parameter a = 1
+ Using QMCCostFunction::QMCCostFunction
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+  Set drift_modifier UNR parameter a = 1.0000e+00
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =30000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 380 MB
+Memory footprint by rank 0 on node 0       : 55 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 1
+    time step          = 0.05
+    reference energy   = -2.02185
+    reference variance = 0.218552
+====================================================
+  Execution time = 2.8857e-01
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s001
+  QMCCostFunction is created with 1 threads.
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 1875 
+  VMC Eavg = -2.0205e+00
+  VMC Evar = 2.2331e-01
+  Total weights = 3.0000e+04
+Energy Average: -2.020476360e+00
+Energy Variance: 2.233177026e-01
+Weight Total: 3.000000000e+04
+Energy Standard Deviation: 4.725650247e-01
+Energy Standard Error: 2.728355442e-03
+Target Function Average: -1.057455130e+00
+Target Function Variance: 1.459642172e+01
+Target Function Error: 2.205781926e-02
+Norm of gradient vector is: 1.091842620e+00
+  Execution time = 8.7360e-02
+  </log>
+</opt>
+<opt stage="main" walkers="30000">
+  <log>
+Number of Parameters: 31
+Descent Number: 1
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-03 TJF_1Body_eta=1.0000e-03 F_eta=1.0000e-03 CI_eta=1.0000e-03 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 3.5100e-05
+  </log>
+  <optVariables href="target_hybrid_ref.s001.opt.xml">
+CSFcoeff_1 -5.187575e-01                3 1 ON  0
+uu_0       5.679760e-01                 1 1 ON  1
+uu_1       3.697808e-01                 1 1 ON  2
+uu_2       2.111830e-01                 1 1 ON  3
+uu_3       9.494694e-02                 1 1 ON  4
+uu_4       7.472375e-03                 1 1 ON  5
+uu_5       -3.157103e-02                1 1 ON  6
+uu_6       -2.769391e-02                1 1 ON  7
+uu_7       6.796709e-03                 1 1 ON  8
+uu_8       3.563378e-02                 1 1 ON  9
+uu_9       2.618089e-02                 1 1 ON  10
+ud_0       9.164138e-01                 1 1 ON  11
+ud_1       5.760649e-01                 1 1 ON  12
+ud_2       3.473296e-01                 1 1 ON  13
+ud_3       1.923492e-01                 1 1 ON  14
+ud_4       8.722059e-02                 1 1 ON  15
+ud_5       3.596474e-02                 1 1 ON  16
+ud_6       4.052669e-02                 1 1 ON  17
+ud_7       6.210097e-02                 1 1 ON  18
+ud_8       7.519676e-02                 1 1 ON  19
+ud_9       5.518784e-02                 1 1 ON  20
+eH_0       1.819352e-02                 1 1 ON  21
+eH_1       3.057818e-02                 1 1 ON  22
+eH_2       -1.150502e-01                1 1 ON  23
+eH_3       -9.762366e-02                1 1 ON  24
+eH_4       -1.042527e-01                1 1 ON  25
+eH_5       -7.604128e-02                1 1 ON  26
+eH_6       -3.444649e-02                1 1 ON  27
+eH_7       -8.747166e-03                1 1 ON  28
+eH_8       7.653634e-03                 1 1 ON  29
+eH_9       5.395384e-03                 1 1 ON  30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 0.3782 secs
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root target_hybrid_ref.s002 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 13
+Omega from input file: -2.5
+Current collection step: -1
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s002 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=2  my_counter=0
+  time step      = 0.05
+  blocks         = 2000
+  steps          = 1
+  substeps       = 1
+  current        = 0
+  target samples = 3e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+  SpinMoves      = no
+<parameter name="blocks" condition="int">2000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1875</parameter>
+<parameter name="maxcpusecs" condition="real">3.6e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">3e+04</parameter>
+<parameter name="samplesperthread" condition="real">1875</parameter>
+<parameter name="spinmass" condition="double">1</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">0.05</parameter>
+<parameter name="time_step" condition="au">0.05</parameter>
+<parameter name="timestep" condition="au">0.05</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+    Restarting, cummulative properties:
+      energy     = -1.917
+      variance   = 0
+      r2accepted = 1e-10
+      r2proposed = 1e-10
+  Set drift_modifier UNR parameter a = 1
+ Using QMCCostFunction::QMCCostFunction
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+  Set drift_modifier UNR parameter a = 1.0000e+00
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =30000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 339 MB
+Memory footprint by rank 0 on node 0       : 55 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 2
+    time step          = 0.05
+    reference energy   = -2.0654
+    reference variance = 0.166616
+====================================================
+  Execution time = 2.7178e-01
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s002
+  QMCCostFunction is created with 1 threads.
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 1875 
+  VMC Eavg = -2.0637e+00
+  VMC Evar = 1.6901e-01
+  Total weights = 3.0000e+04
+Energy Average: -2.063711265e+00
+Energy Variance: 1.690204832e-01
+Weight Total: 3.000000000e+04
+Energy Standard Deviation: 4.111210080e-01
+Energy Standard Error: 2.373608247e-03
+Target Function Average: -1.214014842e+00
+Target Function Variance: 1.742370580e+00
+Target Function Error: 7.620959214e-03
+Norm of gradient vector is: 1.217997362e+00
+  Execution time = 8.4948e-02
+  </log>
+</opt>
+<opt stage="main" walkers="30000">
+  <log>
+Number of Parameters: 31
+Descent Number: 2
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-03 TJF_1Body_eta=1.0000e-03 F_eta=1.0000e-03 CI_eta=1.0000e-03 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 3.4271e-05
+  </log>
+  <optVariables href="target_hybrid_ref.s002.opt.xml">
+CSFcoeff_1 -5.188524e-01                3 1 ON  0
+uu_0       5.684251e-01                 1 1 ON  1
+uu_1       3.735614e-01                 1 1 ON  2
+uu_2       2.121029e-01                 1 1 ON  3
+uu_3       9.398609e-02                 1 1 ON  4
+uu_4       7.624409e-03                 1 1 ON  5
+uu_5       -2.977789e-02                1 1 ON  6
+uu_6       -2.925694e-02                1 1 ON  7
+uu_7       5.178406e-03                 1 1 ON  8
+uu_8       3.598564e-02                 1 1 ON  9
+uu_9       2.895864e-02                 1 1 ON  10
+ud_0       9.147363e-01                 1 1 ON  11
+ud_1       5.732888e-01                 1 1 ON  12
+ud_2       3.450643e-01                 1 1 ON  13
+ud_3       1.934082e-01                 1 1 ON  14
+ud_4       9.077070e-02                 1 1 ON  15
+ud_5       3.521412e-02                 1 1 ON  16
+ud_6       3.586526e-02                 1 1 ON  17
+ud_7       6.187968e-02                 1 1 ON  18
+ud_8       7.651641e-02                 1 1 ON  19
+ud_9       5.319244e-02                 1 1 ON  20
+eH_0       1.717499e-02                 1 1 ON  21
+eH_1       3.063777e-02                 1 1 ON  22
+eH_2       -1.156922e-01                1 1 ON  23
+eH_3       -9.689677e-02                1 1 ON  24
+eH_4       -1.055856e-01                1 1 ON  25
+eH_5       -7.305485e-02                1 1 ON  26
+eH_6       -3.809792e-02                1 1 ON  27
+eH_7       -7.441989e-03                1 1 ON  28
+eH_8       8.521825e-03                 1 1 ON  29
+eH_9       5.324976e-03                 1 1 ON  30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 0.359 secs
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root target_hybrid_ref.s003 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 13
+Omega from input file: -2.5
+Current collection step: -1
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s003 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=3  my_counter=0
+  time step      = 0.05
+  blocks         = 2000
+  steps          = 1
+  substeps       = 1
+  current        = 0
+  target samples = 3e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+  SpinMoves      = no
+<parameter name="blocks" condition="int">2000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1875</parameter>
+<parameter name="maxcpusecs" condition="real">3.6e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">3e+04</parameter>
+<parameter name="samplesperthread" condition="real">1875</parameter>
+<parameter name="spinmass" condition="double">1</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">0.05</parameter>
+<parameter name="time_step" condition="au">0.05</parameter>
+<parameter name="timestep" condition="au">0.05</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+    Restarting, cummulative properties:
+      energy     = -1.967
+      variance   = 0
+      r2accepted = 1e-10
+      r2proposed = 1e-10
+  Set drift_modifier UNR parameter a = 1
+ Using QMCCostFunction::QMCCostFunction
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+  Set drift_modifier UNR parameter a = 1.0000e+00
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =30000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 303 MB
+Memory footprint by rank 0 on node 0       : 55 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 3
+    time step          = 0.05
+    reference energy   = -2.07907
+    reference variance = 0.161099
+====================================================
+  Execution time = 2.6737e-01
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s003
+  QMCCostFunction is created with 1 threads.
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 1875 
+  VMC Eavg = -2.0791e+00
+  VMC Evar = 1.6364e-01
+  Total weights = 3.0000e+04
+Energy Average: -2.079089373e+00
+Energy Variance: 1.636460812e-01
+Weight Total: 3.000000000e+04
+Energy Standard Deviation: 4.045319285e-01
+Energy Standard Error: 2.335566178e-03
+Target Function Average: -1.235014641e+00
+Target Function Variance: 1.243083757e+00
+Target Function Error: 6.437089811e-03
+Norm of gradient vector is: 2.191373932e+00
+  Execution time = 8.4479e-02
+  </log>
+</opt>
+<opt stage="main" walkers="30000">
+  <log>
+Number of Parameters: 31
+Descent Number: 3
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-03 TJF_1Body_eta=1.0000e-03 F_eta=1.0000e-03 CI_eta=1.0000e-03 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 5.2507e-05
+  </log>
+  <optVariables href="target_hybrid_ref.s003.opt.xml">
+CSFcoeff_1 -5.184691e-01                3 1 ON  0
+uu_0       5.674477e-01                 1 1 ON  1
+uu_1       3.713904e-01                 1 1 ON  2
+uu_2       2.130351e-01                 1 1 ON  3
+uu_3       9.237890e-02                 1 1 ON  4
+uu_4       8.195757e-03                 1 1 ON  5
+uu_5       -2.982441e-02                1 1 ON  6
+uu_6       -2.665404e-02                1 1 ON  7
+uu_7       5.447957e-03                 1 1 ON  8
+uu_8       3.547415e-02                 1 1 ON  9
+uu_9       2.712942e-02                 1 1 ON  10
+ud_0       9.126662e-01                 1 1 ON  11
+ud_1       5.711745e-01                 1 1 ON  12
+ud_2       3.480422e-01                 1 1 ON  13
+ud_3       1.953124e-01                 1 1 ON  14
+ud_4       8.856437e-02                 1 1 ON  15
+ud_5       3.827337e-02                 1 1 ON  16
+ud_6       3.871087e-02                 1 1 ON  17
+ud_7       6.081855e-02                 1 1 ON  18
+ud_8       7.484409e-02                 1 1 ON  19
+ud_9       5.603051e-02                 1 1 ON  20
+eH_0       1.866876e-02                 1 1 ON  21
+eH_1       2.984897e-02                 1 1 ON  22
+eH_2       -1.175658e-01                1 1 ON  23
+eH_3       -9.390776e-02                1 1 ON  24
+eH_4       -1.024503e-01                1 1 ON  25
+eH_5       -7.757382e-02                1 1 ON  26
+eH_6       -3.413256e-02                1 1 ON  27
+eH_7       -8.389726e-03                1 1 ON  28
+eH_8       5.706416e-03                 1 1 ON  29
+eH_9       7.007163e-03                 1 1 ON  30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 0.3541 secs
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root target_hybrid_ref.s004 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 13
+Omega from input file: -2.5
+Current collection step: -1
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s004 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=4  my_counter=0
+  time step      = 0.05
+  blocks         = 2000
+  steps          = 1
+  substeps       = 1
+  current        = 0
+  target samples = 3e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+  SpinMoves      = no
+<parameter name="blocks" condition="int">2000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1875</parameter>
+<parameter name="maxcpusecs" condition="real">3.6e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">3e+04</parameter>
+<parameter name="samplesperthread" condition="real">1875</parameter>
+<parameter name="spinmass" condition="double">1</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">0.05</parameter>
+<parameter name="time_step" condition="au">0.05</parameter>
+<parameter name="timestep" condition="au">0.05</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+    Restarting, cummulative properties:
+      energy     = -1.995
+      variance   = 0
+      r2accepted = 1e-10
+      r2proposed = 1e-10
+  Set drift_modifier UNR parameter a = 1
+ Using QMCCostFunction::QMCCostFunction
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+  Set drift_modifier UNR parameter a = 1.0000e+00
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =30000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 267 MB
+Memory footprint by rank 0 on node 0       : 55 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 4
+    time step          = 0.05
+    reference energy   = -2.05624
+    reference variance = 0.167668
+====================================================
+  Execution time = 2.9644e-01
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s004
+  QMCCostFunction is created with 1 threads.
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 1875 
+  VMC Eavg = -2.0534e+00
+  VMC Evar = 1.6968e-01
+  Total weights = 3.0000e+04
+Energy Average: -2.053398607e+00
+Energy Variance: 1.696817886e-01
+Weight Total: 3.000000000e+04
+Energy Standard Deviation: 4.119244938e-01
+Energy Standard Error: 2.378247174e-03
+Target Function Average: -1.209771517e+00
+Target Function Variance: 4.234963199e+00
+Target Function Error: 1.188130632e-02
+Norm of gradient vector is: 1.130948372e+00
+  Execution time = 8.8831e-02
+  </log>
+</opt>
+<opt stage="main" walkers="30000">
+  <log>
+Number of Parameters: 31
+Descent Number: 4
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-03 TJF_1Body_eta=1.0000e-03 F_eta=1.0000e-03 CI_eta=1.0000e-03 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 5.2301e-05
+  </log>
+  <optVariables href="target_hybrid_ref.s004.opt.xml">
+CSFcoeff_1 -5.181508e-01                3 1 ON  0
+uu_0       5.687383e-01                 1 1 ON  1
+uu_1       3.736425e-01                 1 1 ON  2
+uu_2       2.139632e-01                 1 1 ON  3
+uu_3       9.124450e-02                 1 1 ON  4
+uu_4       9.555858e-03                 1 1 ON  5
+uu_5       -2.994836e-02                1 1 ON  6
+uu_6       -2.906301e-02                1 1 ON  7
+uu_7       5.421390e-03                 1 1 ON  8
+uu_8       3.506744e-02                 1 1 ON  9
+uu_9       2.588710e-02                 1 1 ON  10
+ud_0       9.118791e-01                 1 1 ON  11
+ud_1       5.711885e-01                 1 1 ON  12
+ud_2       3.481694e-01                 1 1 ON  13
+ud_3       1.947647e-01                 1 1 ON  14
+ud_4       9.019110e-02                 1 1 ON  15
+ud_5       3.643994e-02                 1 1 ON  16
+ud_6       3.858656e-02                 1 1 ON  17
+ud_7       6.172874e-02                 1 1 ON  18
+ud_8       7.501387e-02                 1 1 ON  19
+ud_9       5.208084e-02                 1 1 ON  20
+eH_0       1.770984e-02                 1 1 ON  21
+eH_1       2.933450e-02                 1 1 ON  22
+eH_2       -1.153477e-01                1 1 ON  23
+eH_3       -9.565106e-02                1 1 ON  24
+eH_4       -1.036716e-01                1 1 ON  25
+eH_5       -7.507777e-02                1 1 ON  26
+eH_6       -3.702673e-02                1 1 ON  27
+eH_7       -7.570588e-03                1 1 ON  28
+eH_8       9.549671e-03                 1 1 ON  29
+eH_9       4.818201e-03                 1 1 ON  30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 0.3877 secs
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root target_hybrid_ref.s005 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 13
+Omega from input file: -2.5
+Current collection step: -1
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s005 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=5  my_counter=0
+  time step      = 0.05
+  blocks         = 2000
+  steps          = 1
+  substeps       = 1
+  current        = 0
+  target samples = 3e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+  SpinMoves      = no
+<parameter name="blocks" condition="int">2000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1875</parameter>
+<parameter name="maxcpusecs" condition="real">3.6e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">3e+04</parameter>
+<parameter name="samplesperthread" condition="real">1875</parameter>
+<parameter name="spinmass" condition="double">1</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">1</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">0.05</parameter>
+<parameter name="time_step" condition="au">0.05</parameter>
+<parameter name="timestep" condition="au">0.05</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+    Restarting, cummulative properties:
+      energy     = -2.007
+      variance   = 0
+      r2accepted = 1e-10
+      r2proposed = 1e-10
+  Set drift_modifier UNR parameter a = 1
+ Using QMCCostFunction::QMCCostFunction
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+  Set drift_modifier UNR parameter a = 1.0000e+00
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =30000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 253 MB
+Memory footprint by rank 0 on node 0       : 55 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 5
+    time step          = 0.05
+    reference energy   = -2.05422
+    reference variance = 0.172229
+====================================================
+  Execution time = 2.9202e-01
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s005
+  QMCCostFunction is created with 1 threads.
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 1875 
+  VMC Eavg = -2.0520e+00
+  VMC Evar = 1.7429e-01
+  Total weights = 3.0000e+04
+Energy Average: -2.052008477e+00
+Energy Variance: 1.743003288e-01
+Weight Total: 3.000000000e+04
+Energy Standard Deviation: 4.174929086e-01
+Energy Standard Error: 2.410396432e-03
+Target Function Average: -1.194624496e+00
+Target Function Variance: 1.925555666e+00
+Target Function Error: 8.011565944e-03
+Norm of gradient vector is: 1.011302962e+00
+  Execution time = 8.5959e-02
+  </log>
+</opt>
+<opt stage="main" walkers="30000">
+  <log>
+Number of Parameters: 31
+Descent Number: 5
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-03 TJF_1Body_eta=1.0000e-03 F_eta=1.0000e-03 CI_eta=1.0000e-03 Orb_eta=1.0000e-03
+Using RMSprop
+Stored Vector: 0.002776,0.000477,0.000703,0.001751,0.001492,0.004759,0.002302,-0.002713,-0.004137,-0.003425,-0.003595,-0.005834,-0.004240,0.000529,0.006554,0.001866,0.003020,0.001763,-0.002610,-0.003241,-0.003500,-0.000350,0.000851,-0.003293,0.001745,0.003565,0.002209,-0.000133,-0.000691,-0.001748,0.002870,
+  Execution time = 1.0300e-04
+  </log>
+  <optVariables href="target_hybrid_ref.s005.opt.xml">
+CSFcoeff_1 -5.177902e-01                3 1 ON  0
+uu_0       5.684947e-01                 1 1 ON  1
+uu_1       3.706166e-01                 1 1 ON  2
+uu_2       2.126339e-01                 1 1 ON  3
+uu_3       9.416790e-02                 1 1 ON  4
+uu_4       1.003575e-02                 1 1 ON  5
+uu_5       -3.100808e-02                1 1 ON  6
+uu_6       -2.755459e-02                1 1 ON  7
+uu_7       4.466071e-03                 1 1 ON  8
+uu_8       3.421092e-02                 1 1 ON  9
+uu_9       2.620081e-02                 1 1 ON  10
+ud_0       9.109673e-01                 1 1 ON  11
+ud_1       5.714222e-01                 1 1 ON  12
+ud_2       3.470736e-01                 1 1 ON  13
+ud_3       1.962154e-01                 1 1 ON  14
+ud_4       8.934088e-02                 1 1 ON  15
+ud_5       3.784118e-02                 1 1 ON  16
+ud_6       3.885198e-02                 1 1 ON  17
+ud_7       6.094163e-02                 1 1 ON  18
+ud_8       7.396390e-02                 1 1 ON  19
+ud_9       5.478836e-02                 1 1 ON  20
+eH_0       1.504975e-02                 1 1 ON  21
+eH_1       3.020731e-02                 1 1 ON  22
+eH_2       -1.165980e-01                1 1 ON  23
+eH_3       -9.277784e-02                1 1 ON  24
+eH_4       -1.027513e-01                1 1 ON  25
+eH_5       -7.599190e-02                1 1 ON  26
+eH_6       -3.653348e-02                1 1 ON  27
+eH_7       -7.518504e-03                1 1 ON  28
+eH_8       6.597660e-03                 1 1 ON  29
+eH_9       7.720051e-03                 1 1 ON  30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 0.3801 secs
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root target_hybrid_ref.s006 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 13
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s006 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=6  my_counter=0
+  time step      = 0.05
+  blocks         = 2000
+  steps          = 2
+  substeps       = 1
+  current        = 0
+  target samples = 6e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+  SpinMoves      = no
+<parameter name="blocks" condition="int">2000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">3750</parameter>
+<parameter name="maxcpusecs" condition="real">3.6e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">6e+04</parameter>
+<parameter name="samplesperthread" condition="real">3750</parameter>
+<parameter name="spinmass" condition="double">1</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">0.05</parameter>
+<parameter name="time_step" condition="au">0.05</parameter>
+<parameter name="timestep" condition="au">0.05</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+    Restarting, cummulative properties:
+      energy     = -2.015
+      variance   = 0
+      r2accepted = 1e-10
+      r2proposed = 1e-10
+  Set drift_modifier UNR parameter a = 1
+ Using QMCCostFunction::QMCCostFunction
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+  Set drift_modifier UNR parameter a = 1.0000e+00
+Doing hybrid run
+This is methodName: adaptive
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =60000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 265 MB
+Memory footprint by rank 0 on node 0       : 55 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 6
+    time step          = 0.05
+    reference energy   = -2.04931
+    reference variance = 0.179249
+====================================================
+  Execution time = 4.3281e-01
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s006
+  QMCCostFunction is created with 1 threads.
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 3750 
+  VMC Eavg = -2.0508e+00
+  VMC Evar = 1.7933e-01
+  Total weights = 6.0000e+04
+  Execution time = 2.6566e-01
+  </log>
+</opt>
+<opt stage="main" walkers="60000">
+  <log>
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.176042835206
+                                         uncertainty =       0.003787070104
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001728843821
+  error estimate for blocks of size 2^( 2) =       0.002241914457
+  error estimate for blocks of size 2^( 3) =       0.002917889954
+  error estimate for blocks of size 2^( 4) =       0.003767929857
+  error estimate for blocks of size 2^( 5) =       0.004773230108
+
+      target function =      -1.178640756378
+              le_mean =      -2.050849813102
+             les_mean =       4.385316024531
+             stat err =       0.003425241094
+             autocorr =       3.925346558194
+   target nu stat err =       0.003425241094
+   target dn stat err =       0.004243209470
+      target stat err =       0.015907132672
+              std dev =       0.423474991742
+             variance =       0.179331068630
+
+
+*************************************************************************************************
+Solving the linear method equations on the initial sample with initial energy-2.050849813102e+00 
+*************************************************************************************************
+
+shift_s 2.50e-01   vec 0   target =      -1.270257922610 +             0.00 i    delta =   -0.091593185966
+shift_s 1.00e+00   vec 0   target =      -1.217284010410 +             0.00 i    delta =   -0.038619273766
+shift_s 4.00e+00   vec 0   target =      -1.189917186168 +             0.00 i    delta =   -0.011252449525
+shift_s 2.50e-01   vec 0   target =      -1.187564061302 +             0.00 i    delta =   -0.008899324658
+shift_s 1.00e+00   vec 0   target =      -1.183501366991 +             0.00 i    delta =   -0.004836630348
+shift_s 4.00e+00   vec 0   target =      -1.180384065894 +             0.00 i    delta =   -0.001719329251
+  Execution time = 6.1409e-02
+  </log>
+  <optVariables href="target_hybrid_ref.s006.opt.xml">
+CSFcoeff_1 -5.177902e-01                3 1 ON  0
+uu_0       5.684947e-01                 1 1 ON  1
+uu_1       3.706166e-01                 1 1 ON  2
+uu_2       2.126339e-01                 1 1 ON  3
+uu_3       9.416790e-02                 1 1 ON  4
+uu_4       1.003575e-02                 1 1 ON  5
+uu_5       -3.100808e-02                1 1 ON  6
+uu_6       -2.755459e-02                1 1 ON  7
+uu_7       4.466071e-03                 1 1 ON  8
+uu_8       3.421092e-02                 1 1 ON  9
+uu_9       2.620081e-02                 1 1 ON  10
+ud_0       9.109673e-01                 1 1 ON  11
+ud_1       5.714222e-01                 1 1 ON  12
+ud_2       3.470736e-01                 1 1 ON  13
+ud_3       1.962154e-01                 1 1 ON  14
+ud_4       8.934088e-02                 1 1 ON  15
+ud_5       3.784118e-02                 1 1 ON  16
+ud_6       3.885198e-02                 1 1 ON  17
+ud_7       6.094163e-02                 1 1 ON  18
+ud_8       7.396390e-02                 1 1 ON  19
+ud_9       5.478836e-02                 1 1 ON  20
+eH_0       1.504975e-02                 1 1 ON  21
+eH_1       3.020731e-02                 1 1 ON  22
+eH_2       -1.165980e-01                1 1 ON  23
+eH_3       -9.277784e-02                1 1 ON  24
+eH_4       -1.027513e-01                1 1 ON  25
+eH_5       -7.599190e-02                1 1 ON  26
+eH_6       -3.653348e-02                1 1 ON  27
+eH_7       -7.518504e-03                1 1 ON  28
+eH_8       6.597660e-03                 1 1 ON  29
+eH_9       7.720051e-03                 1 1 ON  30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =60000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 265 MB
+Memory footprint by rank 0 on node 0       : 59 MB
+==================================================
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 6
+    time step          = 0.05
+    reference energy   = -2.04227
+    reference variance = 0.187251
+====================================================
+  Execution time = 0.4009
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s006
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 3750 
+  VMC Eavg = -2.043
+  VMC Evar = 0.1893
+  Total weights = 6e+04
+calling setComputed function
+  Execution time = 0.3901
+  </log>
+</opt>
+<opt stage="main" walkers="60000">
+  <log>
+
+*********************************************************
+Solving the linear method equations on the initial sample
+*********************************************************
+
+shift_s 2.50e-01   vec 0   target =      -1.247850057410 +             0.00 i    delta =   -0.069209301032
+shift_s 1.00e+00   vec 0   target =      -1.186456580278 +             0.00 i    delta =   -0.007815823900
+shift_s 4.00e+00   vec 0   target =      -1.158757659706 +             0.00 i    delta =    0.019883096672
+
+
+************************************************************
+Updating the guiding function with the middle shift's update
+************************************************************
+
+  Execution time = 0.00237
+  </log>
+  <optVariables href="target_hybrid_ref.s006.opt.xml">
+CSFcoeff_1 -3.545419e-01                3 1 ON  0
+uu_0       5.850235e-01                 1 1 ON  1
+uu_1       4.329772e-01                 1 1 ON  2
+uu_2       2.741707e-01                 1 1 ON  3
+uu_3       1.524806e-01                 1 1 ON  4
+uu_4       6.226083e-02                 1 1 ON  5
+uu_5       1.316383e-02                 1 1 ON  6
+uu_6       5.410808e-03                 1 1 ON  7
+uu_7       2.302480e-02                 1 1 ON  8
+uu_8       4.476938e-02                 1 1 ON  9
+uu_9       2.528824e-02                 1 1 ON  10
+ud_0       8.838354e-01                 1 1 ON  11
+ud_1       5.436653e-01                 1 1 ON  12
+ud_2       3.281480e-01                 1 1 ON  13
+ud_3       1.876413e-01                 1 1 ON  14
+ud_4       8.884545e-02                 1 1 ON  15
+ud_5       3.339519e-02                 1 1 ON  16
+ud_6       2.475283e-02                 1 1 ON  17
+ud_7       4.391109e-02                 1 1 ON  18
+ud_8       5.702067e-02                 1 1 ON  19
+ud_9       4.469893e-02                 1 1 ON  20
+eH_0       1.732528e-02                 1 1 ON  21
+eH_1       3.215631e-02                 1 1 ON  22
+eH_2       -1.138491e-01                1 1 ON  23
+eH_3       -9.029004e-02                1 1 ON  24
+eH_4       -9.903106e-02                1 1 ON  25
+eH_5       -7.332302e-02                1 1 ON  26
+eH_6       -3.280375e-02                1 1 ON  27
+eH_7       -3.320508e-03                1 1 ON  28
+eH_8       1.130516e-02                 1 1 ON  29
+eH_9       1.065563e-02                 1 1 ON  30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+
+*************************************************************
+Generating a new sample based on the updated guiding function
+*************************************************************
+
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =60000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 271 MB
+Memory footprint by rank 0 on node 0       : 59 MB
+==================================================
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 6
+    time step          = 0.05
+    reference energy   = -2.10134
+    reference variance = 0.162235
+====================================================
+  Execution time = 0.3887
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot target_hybrid_ref.s006
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 3750 
+  VMC Eavg = -2.106
+  VMC Evar = 0.1606
+  Total weights = 6e+04
+  Execution time = 0.1392
+  </log>
+</opt>
+<opt stage="main" walkers="60000">
+  <log>
+
+******************************************************************
+Comparing different shifts' cost function values on updated sample
+******************************************************************
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.180824941613
+                                         uncertainty =       0.007639105954
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001754798398
+  error estimate for blocks of size 2^( 2) =       0.002273386564
+  error estimate for blocks of size 2^( 3) =       0.002946693977
+  error estimate for blocks of size 2^( 4) =       0.003779484210
+  error estimate for blocks of size 2^( 5) =       0.004724933245
+
+      target function =      -1.162432301544
+              le_mean =      -2.059333979220
+             les_mean =       4.425612403688
+             stat err =       0.003431124499
+             autocorr =       3.823188695922
+   target nu stat err =       0.003431124499
+   target dn stat err =       0.006752360075
+      target stat err =       0.022604466823
+              std dev =       0.429832485649
+             variance =       0.184755965719
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.144576611992
+                                         uncertainty =       0.003593697980
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001570269907
+  error estimate for blocks of size 2^( 2) =       0.002026678852
+  error estimate for blocks of size 2^( 3) =       0.002616531787
+  error estimate for blocks of size 2^( 4) =       0.003337052681
+  error estimate for blocks of size 2^( 5) =       0.004167151783
+
+      target function =      -1.298425243128
+              le_mean =      -2.132996119687
+             les_mean =       4.697614835658
+             stat err =       0.003036853776
+             autocorr =       3.740299550492
+   target nu stat err =       0.003036853776
+   target dn stat err =       0.003723170061
+      target stat err =       0.020198824130
+              std dev =       0.384632797691
+             variance =       0.147942389059
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.157438815035
+                                         uncertainty =       0.004727134058
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001635881414
+  error estimate for blocks of size 2^( 2) =       0.002106957004
+  error estimate for blocks of size 2^( 3) =       0.002714719964
+  error estimate for blocks of size 2^( 4) =       0.003461237125
+  error estimate for blocks of size 2^( 5) =       0.004315075457
+
+      target function =      -1.247492353325
+              le_mean =      -2.105566457370
+             les_mean =       4.593973910341
+             stat err =       0.003149497387
+             autocorr =       3.706688637350
+   target nu stat err =       0.003149497387
+   target dn stat err =       0.004833493353
+      target stat err =       0.021517414636
+              std dev =       0.400704135164
+             variance =       0.160563803938
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.172442669201
+                                         uncertainty =       0.006594934781
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001712853726
+  error estimate for blocks of size 2^( 2) =       0.002214024943
+  error estimate for blocks of size 2^( 3) =       0.002857183755
+  error estimate for blocks of size 2^( 4) =       0.003642608290
+  error estimate for blocks of size 2^( 5) =       0.004541106782
+
+      target function =      -1.190497788518
+              le_mean =      -2.075765415713
+             les_mean =       4.484831200321
+             stat err =       0.003313730943
+             autocorr =       3.742839216243
+   target nu stat err =       0.003313730943
+   target dn stat err =       0.007500738973
+      target stat err =       0.026751155200
+              std dev =       0.419558266812
+             variance =       0.176029139250
+
+
+        shift_i        shift_s       max param change    cost function value
+   ------------   ------------   --------------------   --------------------
+            N/A            N/A                    N/A        -1.162432301544        initial
+     2.5000e-03     2.5000e-01             2.9605e-01        -1.298425243128  <--
+     1.0000e-02     1.0000e+00             1.6325e-01        -1.247492353325
+     4.0000e-02     4.0000e+00             5.5117e-02        -1.190497788518
+
+*****************************************************************************
+Applying the update for shift_i =   2.5000e-03     and shift_s =   2.5000e-01
+*****************************************************************************
+
+  Execution time = 4.7111e-01
+  </log>
+  <optVariables href="target_hybrid_ref.s006.opt.xml">
+CSFcoeff_1                -2.217391e-01 3 1  ON 0
+      uu_0                 6.555623e-01 1 1  ON 1
+      uu_1                 5.047233e-01 1 1  ON 2
+      uu_2                 3.429740e-01 1 1  ON 3
+      uu_3                 2.174409e-01 1 1  ON 4
+      uu_4                 1.219856e-01 1 1  ON 5
+      uu_5                 6.709705e-02 1 1  ON 6
+      uu_6                 5.172680e-02 1 1  ON 7
+      uu_7                 6.156003e-02 1 1  ON 8
+      uu_8                 7.433987e-02 1 1  ON 9
+      uu_9                 4.590441e-02 1 1  ON 10
+      ud_0                 8.670585e-01 1 1  ON 11
+      ud_1                 5.280502e-01 1 1  ON 12
+      ud_2                 3.144116e-01 1 1  ON 13
+      ud_3                 1.760569e-01 1 1  ON 14
+      ud_4                 8.213092e-02 1 1  ON 15
+      ud_5                 2.816558e-02 1 1  ON 16
+      ud_6                 2.126004e-02 1 1  ON 17
+      ud_7                 4.232283e-02 1 1  ON 18
+      ud_8                 5.866464e-02 1 1  ON 19
+      ud_9                 4.936280e-02 1 1  ON 20
+      eH_0                 1.781234e-02 1 1  ON 21
+      eH_1                 3.254228e-02 1 1  ON 22
+      eH_2                -1.132436e-01 1 1  ON 23
+      eH_3                -8.998252e-02 1 1  ON 24
+      eH_4                -9.843537e-02 1 1  ON 25
+      eH_5                -7.299025e-02 1 1  ON 26
+      eH_6                -3.207288e-02 1 1  ON 27
+      eH_7                -2.458502e-03 1 1  ON 28
+      eH_8                 1.237129e-02 1 1  ON 29
+      eH_9                 1.143506e-02 1 1  ON 30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+Update descent engine parameter values after Blocked LM step
+Finished a hybrid step
+  QMC Execution time = 2.57 secs
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root target_hybrid_ref.s007 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 13
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s007 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=7  my_counter=0
+  time step      = 0.05
+  blocks         = 2000
+  steps          = 2
+  substeps       = 1
+  current        = 0
+  target samples = 6e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+  SpinMoves      = no
+<parameter name="blocks" condition="int">2000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">3750</parameter>
+<parameter name="maxcpusecs" condition="real">3.6e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">6e+04</parameter>
+<parameter name="samplesperthread" condition="real">3750</parameter>
+<parameter name="spinmass" condition="double">1</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">0.05</parameter>
+<parameter name="time_step" condition="au">0.05</parameter>
+<parameter name="timestep" condition="au">0.05</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+    Restarting, cummulative properties:
+      energy     = -2.031
+      variance   = 0
+      r2accepted = 1e-10
+      r2proposed = 1e-10
+  Set drift_modifier UNR parameter a = 1
+ Using QMCCostFunction::QMCCostFunction
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+  Set drift_modifier UNR parameter a = 1.0000e+00
+Doing hybrid run
+This is methodName: adaptive
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =60000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 468 MB
+Memory footprint by rank 0 on node 0       : 59 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 7
+    time step          = 0.05
+    reference energy   = -2.13242
+    reference variance = 0.139821
+====================================================
+  Execution time = 4.5610e-01
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s007
+  QMCCostFunction is created with 1 threads.
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 3750 
+  VMC Eavg = -2.1315e+00
+  VMC Evar = 1.4037e-01
+  Total weights = 6.0000e+04
+  Execution time = 2.8137e-01
+  </log>
+</opt>
+<opt stage="main" walkers="60000">
+  <log>
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.137642742535
+                                         uncertainty =       0.002731582449
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001529564114
+  error estimate for blocks of size 2^( 2) =       0.001962748816
+  error estimate for blocks of size 2^( 3) =       0.002530785155
+  error estimate for blocks of size 2^( 4) =       0.003237767464
+  error estimate for blocks of size 2^( 5) =       0.004031553672
+
+      target function =      -1.334333364661
+              le_mean =      -2.131480695509
+             les_mean =       4.683581598402
+             stat err =       0.002940713777
+             autocorr =       3.696386531999
+   target nu stat err =       0.002940713777
+   target dn stat err =       0.002719460124
+      target stat err =       0.016911646126
+              std dev =       0.374662038474
+             variance =       0.140371643073
+
+
+*************************************************************************************************
+Solving the linear method equations on the initial sample with initial energy -2.131480695509e+00
+*************************************************************************************************
+
+shift_s 6.25e-02   vec 0   target =      -1.346542385548 +             0.00 i    delta =   -0.012188659956
+shift_s 2.50e-01   vec 0   target =      -1.343372650284 +             0.00 i    delta =   -0.009018924691
+shift_s 1.00e+00   vec 0   target =      -1.338723121947 +             0.00 i    delta =   -0.004369396354
+shift_s 6.25e-02   vec 0   target =      -1.353075408522 +             0.00 i    delta =   -0.018721682929
+shift_s 2.50e-01   vec 0   target =      -1.348949118257 +             0.00 i    delta =   -0.014595392665
+shift_s 1.00e+00   vec 0   target =      -1.342195772391 +             0.00 i    delta =   -0.007842046798
+  Execution time = 2.8892e-01
+  </log>
+  <optVariables href="target_hybrid_ref.s007.opt.xml">
+CSFcoeff_1                -2.217391e-01 3 1  ON 0
+      uu_0                 6.555623e-01 1 1  ON 1
+      uu_1                 5.047233e-01 1 1  ON 2
+      uu_2                 3.429740e-01 1 1  ON 3
+      uu_3                 2.174409e-01 1 1  ON 4
+      uu_4                 1.219856e-01 1 1  ON 5
+      uu_5                 6.709705e-02 1 1  ON 6
+      uu_6                 5.172680e-02 1 1  ON 7
+      uu_7                 6.156003e-02 1 1  ON 8
+      uu_8                 7.433987e-02 1 1  ON 9
+      uu_9                 4.590441e-02 1 1  ON 10
+      ud_0                 8.670585e-01 1 1  ON 11
+      ud_1                 5.280502e-01 1 1  ON 12
+      ud_2                 3.144116e-01 1 1  ON 13
+      ud_3                 1.760569e-01 1 1  ON 14
+      ud_4                 8.213092e-02 1 1  ON 15
+      ud_5                 2.816558e-02 1 1  ON 16
+      ud_6                 2.126004e-02 1 1  ON 17
+      ud_7                 4.232283e-02 1 1  ON 18
+      ud_8                 5.866464e-02 1 1  ON 19
+      ud_9                 4.936280e-02 1 1  ON 20
+      eH_0                 1.781234e-02 1 1  ON 21
+      eH_1                 3.254228e-02 1 1  ON 22
+      eH_2                -1.132436e-01 1 1  ON 23
+      eH_3                -8.998252e-02 1 1  ON 24
+      eH_4                -9.843537e-02 1 1  ON 25
+      eH_5                -7.299025e-02 1 1  ON 26
+      eH_6                -3.207288e-02 1 1  ON 27
+      eH_7                -2.458502e-03 1 1  ON 28
+      eH_8                 1.237129e-02 1 1  ON 29
+      eH_9                 1.143506e-02 1 1  ON 30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =60000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 992 MB
+Memory footprint by rank 0 on node 0       : 59 MB
+==================================================
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 7
+    time step          = 0.05
+    reference energy   = -2.13613
+    reference variance = 0.147612
+====================================================
+  Execution time = 0.3755
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s007
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 3750 
+  VMC Eavg = -2.137
+  VMC Evar = 0.1465
+  Total weights = 6e+04
+calling setComputed function
+  Execution time = 0.3949
+  </log>
+</opt>
+<opt stage="main" walkers="60000">
+  <log>
+
+*********************************************************
+Solving the linear method equations on the initial sample
+*********************************************************
+
+shift_s 6.25e-02   vec 0   target =      -1.348916405072 +             0.00 i    delta =   -0.014583040411
+shift_s 2.50e-01   vec 0   target =      -1.339775863144 +             0.00 i    delta =   -0.005442498483
+shift_s 1.00e+00   vec 0   target =      -1.323668486417 +             0.00 i    delta =    0.010664878243
+
+
+************************************************************
+Updating the guiding function with the middle shift's update
+************************************************************
+
+  Execution time = 0.002345
+  </log>
+  <optVariables href="target_hybrid_ref.s007.opt.xml">
+CSFcoeff_1                -1.671272e-01 3 1  ON 0
+      uu_0                 7.062321e-01 1 1  ON 1
+      uu_1                 4.982454e-01 1 1  ON 2
+      uu_2                 3.277063e-01 1 1  ON 3
+      uu_3                 2.024331e-01 1 1  ON 4
+      uu_4                 1.144963e-01 1 1  ON 5
+      uu_5                 6.437053e-02 1 1  ON 6
+      uu_6                 5.033023e-02 1 1  ON 7
+      uu_7                 5.713425e-02 1 1  ON 8
+      uu_8                 6.100851e-02 1 1  ON 9
+      uu_9                 3.637520e-02 1 1  ON 10
+      ud_0                 8.595540e-01 1 1  ON 11
+      ud_1                 5.235122e-01 1 1  ON 12
+      ud_2                 3.100227e-01 1 1  ON 13
+      ud_3                 1.714604e-01 1 1  ON 14
+      ud_4                 7.983626e-02 1 1  ON 15
+      ud_5                 3.856981e-02 1 1  ON 16
+      ud_6                 3.107997e-02 1 1  ON 17
+      ud_7                 4.636889e-02 1 1  ON 18
+      ud_8                 5.455258e-02 1 1  ON 19
+      ud_9                 3.572831e-02 1 1  ON 20
+      eH_0                 2.035398e-02 1 1  ON 21
+      eH_1                 3.565538e-02 1 1  ON 22
+      eH_2                -1.044872e-01 1 1  ON 23
+      eH_3                -8.296472e-02 1 1  ON 24
+      eH_4                -9.123136e-02 1 1  ON 25
+      eH_5                -6.703132e-02 1 1  ON 26
+      eH_6                -2.846993e-02 1 1  ON 27
+      eH_7                -1.112596e-03 1 1  ON 28
+      eH_8                 1.307069e-02 1 1  ON 29
+      eH_9                 9.402372e-03 1 1  ON 30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+
+*************************************************************
+Generating a new sample based on the updated guiding function
+*************************************************************
+
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =60000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 964 MB
+Memory footprint by rank 0 on node 0       : 59 MB
+==================================================
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 7
+    time step          = 0.05
+    reference energy   = -2.14116
+    reference variance = 0.142606
+====================================================
+  Execution time = 0.3675
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot target_hybrid_ref.s007
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 3750 
+  VMC Eavg = -2.142
+  VMC Evar = 0.1437
+  Total weights = 6e+04
+  Execution time = 0.1225
+  </log>
+</opt>
+<opt stage="main" walkers="60000">
+  <log>
+
+******************************************************************
+Comparing different shifts' cost function values on updated sample
+******************************************************************
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.148345019539
+                                         uncertainty =       0.005044640070
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001593395018
+  error estimate for blocks of size 2^( 2) =       0.002057361399
+  error estimate for blocks of size 2^( 3) =       0.002671959630
+  error estimate for blocks of size 2^( 4) =       0.003450874008
+  error estimate for blocks of size 2^( 5) =       0.004377353652
+
+      target function =      -1.277979505853
+              le_mean =      -2.132756309886
+             les_mean =       4.700981399510
+             stat err =       0.003139387172
+             autocorr =       3.881951337514
+   target nu stat err =       0.003139387172
+   target dn stat err =       0.004010159251
+      target stat err =       0.020923035760
+              std dev =       0.390297222835
+             variance =       0.152331922152
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.140319448051
+                                         uncertainty =       0.003597026546
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001540202158
+  error estimate for blocks of size 2^( 2) =       0.001985789356
+  error estimate for blocks of size 2^( 3) =       0.002572870795
+  error estimate for blocks of size 2^( 4) =       0.003314462811
+  error estimate for blocks of size 2^( 5) =       0.004188737772
+
+      target function =      -1.323061889472
+              le_mean =      -2.143849125994
+             les_mean =       4.738420064077
+             stat err =       0.003015465184
+             autocorr =       3.833190649901
+   target nu stat err =       0.003015465184
+   target dn stat err =       0.003691992965
+      target stat err =       0.021326154049
+              std dev =       0.377267794877
+             variance =       0.142330989051
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.141469384870
+                                         uncertainty =       0.003894674927
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001547389788
+  error estimate for blocks of size 2^( 2) =       0.001995547621
+  error estimate for blocks of size 2^( 3) =       0.002586440708
+  error estimate for blocks of size 2^( 4) =       0.003333703794
+  error estimate for blocks of size 2^( 5) =       0.004215211465
+
+      target function =      -1.316864781335
+              le_mean =      -2.142425365439
+             les_mean =       4.733648961427
+             stat err =       0.003032725897
+             autocorr =       3.841263548093
+   target nu stat err =       0.003032725897
+   target dn stat err =       0.003719272892
+      target stat err =       0.021216045448
+              std dev =       0.379028382778
+             variance =       0.143662514951
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.144074584326
+                                         uncertainty =       0.004454567787
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001564454581
+  error estimate for blocks of size 2^( 2) =       0.002018646829
+  error estimate for blocks of size 2^( 3) =       0.002618875624
+  error estimate for blocks of size 2^( 4) =       0.003378903018
+  error estimate for blocks of size 2^( 5) =       0.004278417013
+
+      target function =      -1.302419406097
+              le_mean =      -2.138850216632
+             les_mean =       4.721528889873
+             stat err =       0.003073710621
+             autocorr =       3.860177502049
+   target nu stat err =       0.003073710621
+   target dn stat err =       0.003820944331
+      target stat err =       0.021094749774
+              std dev =       0.383208351537
+             variance =       0.146848640688
+
+
+        shift_i        shift_s       max param change    cost function value
+   ------------   ------------   --------------------   --------------------
+            N/A            N/A                    N/A        -1.277979505853        initial
+     6.2500e-04     6.2500e-02             6.6922e-02        -1.323061889472  <--
+     2.5000e-03     2.5000e-01             5.4612e-02        -1.316864781335
+     1.0000e-02     1.0000e+00             3.1503e-02        -1.302419406097
+
+*****************************************************************************
+Applying the update for shift_i =   6.2500e-04     and shift_s =   6.2500e-02
+*****************************************************************************
+
+  Execution time = 4.8987e-01
+  </log>
+  <optVariables href="target_hybrid_ref.s007.opt.xml">
+CSFcoeff_1                -1.548176e-01 3 1  ON 0
+      uu_0                 7.156189e-01 1 1  ON 1
+      uu_1                 4.988966e-01 1 1  ON 2
+      uu_2                 3.271087e-01 1 1  ON 3
+      uu_3                 2.019837e-01 1 1  ON 4
+      uu_4                 1.151822e-01 1 1  ON 5
+      uu_5                 6.559983e-02 1 1  ON 6
+      uu_6                 5.147909e-02 1 1  ON 7
+      uu_7                 5.745341e-02 1 1  ON 8
+      uu_8                 5.958785e-02 1 1  ON 9
+      uu_9                 3.523572e-02 1 1  ON 10
+      ud_0                 8.577093e-01 1 1  ON 11
+      ud_1                 5.221692e-01 1 1  ON 12
+      ud_2                 3.088600e-01 1 1  ON 13
+      ud_3                 1.704346e-01 1 1  ON 14
+      ud_4                 7.936386e-02 1 1  ON 15
+      ud_5                 4.025672e-02 1 1  ON 16
+      ud_6                 3.341762e-02 1 1  ON 17
+      ud_7                 4.846019e-02 1 1  ON 18
+      ud_8                 5.591067e-02 1 1  ON 19
+      ud_9                 3.558085e-02 1 1  ON 20
+      eH_0                 2.173479e-02 1 1  ON 21
+      eH_1                 3.708838e-02 1 1  ON 22
+      eH_2                -1.024114e-01 1 1  ON 23
+      eH_3                -8.108331e-02 1 1  ON 24
+      eH_4                -8.937701e-02 1 1  ON 25
+      eH_5                -6.547872e-02 1 1  ON 26
+      eH_6                -2.737228e-02 1 1  ON 27
+      eH_7                -4.559007e-04 1 1  ON 28
+      eH_8                 1.350554e-02 1 1  ON 29
+      eH_9                 9.355201e-03 1 1  ON 30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+Update descent engine parameter values after Blocked LM step
+Finished a hybrid step
+  QMC Execution time = 2.799 secs
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root target_hybrid_ref.s008 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 13
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s008 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=8  my_counter=0
+  time step      = 0.05
+  blocks         = 2000
+  steps          = 2
+  substeps       = 1
+  current        = 0
+  target samples = 6e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+  SpinMoves      = no
+<parameter name="blocks" condition="int">2000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">3750</parameter>
+<parameter name="maxcpusecs" condition="real">3.6e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">6e+04</parameter>
+<parameter name="samplesperthread" condition="real">3750</parameter>
+<parameter name="spinmass" condition="double">1</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">0.05</parameter>
+<parameter name="time_step" condition="au">0.05</parameter>
+<parameter name="timestep" condition="au">0.05</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+    Restarting, cummulative properties:
+      energy     = -2.058
+      variance   = 0
+      r2accepted = 1e-10
+      r2proposed = 1e-10
+  Set drift_modifier UNR parameter a = 1
+ Using QMCCostFunction::QMCCostFunction
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+  Set drift_modifier UNR parameter a = 1.0000e+00
+Doing hybrid run
+This is methodName: adaptive
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =60000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 882 MB
+Memory footprint by rank 0 on node 0       : 59 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 8
+    time step          = 0.05
+    reference energy   = -2.13948
+    reference variance = 0.141315
+====================================================
+  Execution time = 4.5963e-01
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s008
+  QMCCostFunction is created with 1 threads.
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 3750 
+  VMC Eavg = -2.1363e+00
+  VMC Evar = 1.4154e-01
+  Total weights = 6.0000e+04
+  Execution time = 2.3207e-01
+  </log>
+</opt>
+<opt stage="main" walkers="60000">
+  <log>
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.136309554318
+                                         uncertainty =       0.002762257414
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001535932491
+  error estimate for blocks of size 2^( 2) =       0.001982549858
+  error estimate for blocks of size 2^( 3) =       0.002565638374
+  error estimate for blocks of size 2^( 4) =       0.003293774937
+  error estimate for blocks of size 2^( 5) =       0.004121140152
+
+      target function =      -1.328205292585
+              le_mean =      -2.136283511854
+             les_mean =       4.705250200940
+             stat err =       0.002990775830
+             autocorr =       3.791671531325
+   target nu stat err =       0.002990775830
+   target dn stat err =       0.003494435485
+      target stat err =       0.020163505665
+              std dev =       0.376221953002
+             variance =       0.141542957921
+
+
+*************************************************************************************************
+Solving the linear method equations on the initial sample with initial energy -2.136283511854e+00
+*************************************************************************************************
+
+shift_s 1.56e-02   vec 0   target =      -1.327697847279 +             0.00 i    delta =    0.000545878261
+shift_s 6.25e-02   vec 0   target =      -1.327820636649 +             0.00 i    delta =    0.000423088891
+shift_s 2.50e-01   vec 0   target =      -1.328088643133 +             0.00 i    delta =    0.000155082407
+shift_s 1.56e-02   vec 0   target =      -1.326466402646 +             0.00 i    delta =    0.001777322894
+shift_s 6.25e-02   vec 0   target =      -1.326607873570 +             0.00 i    delta =    0.001635851970
+shift_s 2.50e-01   vec 0   target =      -1.326997189160 +             0.00 i    delta =    0.001246536380
+  Execution time = 7.7090e-03
+  </log>
+  <optVariables href="target_hybrid_ref.s008.opt.xml">
+CSFcoeff_1                -1.548176e-01 3 1  ON 0
+      uu_0                 7.156189e-01 1 1  ON 1
+      uu_1                 4.988966e-01 1 1  ON 2
+      uu_2                 3.271087e-01 1 1  ON 3
+      uu_3                 2.019837e-01 1 1  ON 4
+      uu_4                 1.151822e-01 1 1  ON 5
+      uu_5                 6.559983e-02 1 1  ON 6
+      uu_6                 5.147909e-02 1 1  ON 7
+      uu_7                 5.745341e-02 1 1  ON 8
+      uu_8                 5.958785e-02 1 1  ON 9
+      uu_9                 3.523572e-02 1 1  ON 10
+      ud_0                 8.577093e-01 1 1  ON 11
+      ud_1                 5.221692e-01 1 1  ON 12
+      ud_2                 3.088600e-01 1 1  ON 13
+      ud_3                 1.704346e-01 1 1  ON 14
+      ud_4                 7.936386e-02 1 1  ON 15
+      ud_5                 4.025672e-02 1 1  ON 16
+      ud_6                 3.341762e-02 1 1  ON 17
+      ud_7                 4.846019e-02 1 1  ON 18
+      ud_8                 5.591067e-02 1 1  ON 19
+      ud_9                 3.558085e-02 1 1  ON 20
+      eH_0                 2.173479e-02 1 1  ON 21
+      eH_1                 3.708838e-02 1 1  ON 22
+      eH_2                -1.024114e-01 1 1  ON 23
+      eH_3                -8.108331e-02 1 1  ON 24
+      eH_4                -8.937701e-02 1 1  ON 25
+      eH_5                -6.547872e-02 1 1  ON 26
+      eH_6                -2.737228e-02 1 1  ON 27
+      eH_7                -4.559007e-04 1 1  ON 28
+      eH_8                 1.350554e-02 1 1  ON 29
+      eH_9                 9.355201e-03 1 1  ON 30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+entering engine_start function
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =60000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 831 MB
+Memory footprint by rank 0 on node 0       : 59 MB
+==================================================
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 8
+    time step          = 0.05
+    reference energy   = -2.14072
+    reference variance = 0.137739
+====================================================
+  Execution time = 0.3697
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot target_hybrid_ref.s008
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 3750 
+  VMC Eavg = -2.146
+  VMC Evar = 0.1376
+  Total weights = 6e+04
+calling setComputed function
+  Execution time = 0.395
+  </log>
+</opt>
+<opt stage="main" walkers="60000">
+  <log>
+
+*********************************************************
+Solving the linear method equations on the initial sample
+*********************************************************
+
+shift_s 1.56e-02   vec 0   target =      -1.343597561295 +             0.00 i    delta =   -0.015392268710
+shift_s 6.25e-02   vec 0   target =      -1.343908587844 +             0.00 i    delta =   -0.015703295259
+shift_s 2.50e-01   vec 0   target =      -1.344696904334 +             0.00 i    delta =   -0.016491611749
+
+
+************************************************************
+Updating the guiding function with the middle shift's update
+************************************************************
+
+  Execution time = 0.002173
+  </log>
+  <optVariables href="target_hybrid_ref.s008.opt.xml">
+CSFcoeff_1                -1.032554e-01 3 1  ON 0
+      uu_0                 4.851482e-01 1 1  ON 1
+      uu_1                 4.221161e-01 1 1  ON 2
+      uu_2                 2.392356e-01 1 1  ON 3
+      uu_3                 1.123513e-01 1 1  ON 4
+      uu_4                 2.535082e-02 1 1  ON 5
+      uu_5                -1.594743e-02 1 1  ON 6
+      uu_6                -1.808073e-02 1 1  ON 7
+      uu_7                 2.393703e-03 1 1  ON 8
+      uu_8                 1.703944e-02 1 1  ON 9
+      uu_9                 1.191571e-02 1 1  ON 10
+      ud_0                 8.565593e-01 1 1  ON 11
+      ud_1                 5.236523e-01 1 1  ON 12
+      ud_2                 3.086974e-01 1 1  ON 13
+      ud_3                 1.694812e-01 1 1  ON 14
+      ud_4                 8.122419e-02 1 1  ON 15
+      ud_5                 2.851534e-02 1 1  ON 16
+      ud_6                 1.770235e-02 1 1  ON 17
+      ud_7                 2.941342e-02 1 1  ON 18
+      ud_8                 3.944067e-02 1 1  ON 19
+      ud_9                 2.683760e-02 1 1  ON 20
+      eH_0                 2.280743e-02 1 1  ON 21
+      eH_1                 3.878474e-02 1 1  ON 22
+      eH_2                -9.861209e-02 1 1  ON 23
+      eH_3                -7.754606e-02 1 1  ON 24
+      eH_4                -8.593911e-02 1 1  ON 25
+      eH_5                -6.226082e-02 1 1  ON 26
+      eH_6                -2.510545e-02 1 1  ON 27
+      eH_7                 5.698581e-04 1 1  ON 28
+      eH_8                 1.405310e-02 1 1  ON 29
+      eH_9                 8.693443e-03 1 1  ON 30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+
+*************************************************************
+Generating a new sample based on the updated guiding function
+*************************************************************
+
+<optimization-report>
+<vmc stage="main" blocks="2000">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =60000
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 778 MB
+Memory footprint by rank 0 on node 0       : 59 MB
+==================================================
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 8
+    time step          = 0.05
+    reference energy   = -2.13807
+    reference variance = 0.137648
+====================================================
+  Execution time = 0.4126
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot target_hybrid_ref.s008
+  Using Nonlocal PP in Opt: no
+   Number of samples loaded to each thread : 3750 
+  VMC Eavg = -2.138
+  VMC Evar = 0.1376
+  Total weights = 6e+04
+  Execution time = 0.1099
+  </log>
+</opt>
+<opt stage="main" walkers="60000">
+  <log>
+
+******************************************************************
+Comparing different shifts' cost function values on updated sample
+******************************************************************
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.134413583671
+                                         uncertainty =       0.002201659939
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001508590660
+  error estimate for blocks of size 2^( 2) =       0.001941330589
+  error estimate for blocks of size 2^( 3) =       0.002511430712
+  error estimate for blocks of size 2^( 4) =       0.003219052971
+  error estimate for blocks of size 2^( 5) =       0.004063746235
+
+      target function =      -1.352726139737
+              le_mean =      -2.138668796128
+             les_mean =       4.710452690530
+             stat err =       0.002933890127
+             autocorr =       3.782266273323
+   target nu stat err =       0.002933890127
+   target dn stat err =       0.002673500483
+      target stat err =       0.017434421624
+              std dev =       0.369524655466
+             variance =       0.136548470997
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.135674563070
+                                         uncertainty =       0.002250848333
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001516128366
+  error estimate for blocks of size 2^( 2) =       0.001955162562
+  error estimate for blocks of size 2^( 3) =       0.002534822712
+  error estimate for blocks of size 2^( 4) =       0.003257674030
+  error estimate for blocks of size 2^( 5) =       0.004120136476
+
+      target function =      -1.345962667417
+              le_mean =      -2.137396034907
+             les_mean =       4.706378224799
+             stat err =       0.002966948945
+             autocorr =       3.829617841334
+   target nu stat err =       0.002966948945
+   target dn stat err =       0.002736427163
+      target stat err =       0.017555746454
+              std dev =       0.371370993433
+             variance =       0.137916414764
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.135357294763
+                                         uncertainty =       0.002236038483
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001514293785
+  error estimate for blocks of size 2^( 2) =       0.001952282237
+  error estimate for blocks of size 2^( 3) =       0.002530540913
+  error estimate for blocks of size 2^( 4) =       0.003251410667
+  error estimate for blocks of size 2^( 5) =       0.004111348959
+
+      target function =      -1.347608942508
+              le_mean =      -2.137657134093
+             les_mean =       4.707160869856
+             stat err =       0.002961395694
+             autocorr =       3.824545566948
+   target nu stat err =       0.002961395694
+   target dn stat err =       0.002724219349
+      target stat err =       0.017542331530
+              std dev =       0.370921618293
+             variance =       0.137582846917
+
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.134782236890
+                                         uncertainty =       0.002211757202
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.001510929244
+  error estimate for blocks of size 2^( 2) =       0.001946777869
+  error estimate for blocks of size 2^( 3) =       0.002521972392
+  error estimate for blocks of size 2^( 4) =       0.003238251259
+  error estimate for blocks of size 2^( 5) =       0.004092592031
+
+      target function =      -1.350632673516
+              le_mean =      -2.138195187177
+             les_mean =       4.708850806434
+             stat err =       0.002949898388
+             autocorr =       3.811826255258
+   target nu stat err =       0.002949898388
+   target dn stat err =       0.002699727621
+      target stat err =       0.017508729128
+              std dev =       0.370097484408
+             variance =       0.136972147965
+
+
+        shift_i        shift_s       max param change    cost function value
+   ------------   ------------   --------------------   --------------------
+            N/A            N/A                    N/A        -1.352726139737        initial  <--
+     1.5625e-04     1.5625e-02             2.8128e-01        -1.345962667417
+     6.2500e-04     6.2500e-02             2.3047e-01        -1.347608942508
+     2.5000e-03     2.5000e-01             1.3689e-01        -1.350632673516
+
+***********************************************************
+Reverting to old parameters and increasing shift magnitudes
+***********************************************************
+
+  Execution time = 0.4496
+  </log>
+  <optVariables href="target_hybrid_ref.s008.opt.xml">
+CSFcoeff_1                -1.548176e-01 3 1  ON 0
+      uu_0                 7.156189e-01 1 1  ON 1
+      uu_1                 4.988966e-01 1 1  ON 2
+      uu_2                 3.271087e-01 1 1  ON 3
+      uu_3                 2.019837e-01 1 1  ON 4
+      uu_4                 1.151822e-01 1 1  ON 5
+      uu_5                 6.559983e-02 1 1  ON 6
+      uu_6                 5.147909e-02 1 1  ON 7
+      uu_7                 5.745341e-02 1 1  ON 8
+      uu_8                 5.958785e-02 1 1  ON 9
+      uu_9                 3.523572e-02 1 1  ON 10
+      ud_0                 8.577093e-01 1 1  ON 11
+      ud_1                 5.221692e-01 1 1  ON 12
+      ud_2                 3.088600e-01 1 1  ON 13
+      ud_3                 1.704346e-01 1 1  ON 14
+      ud_4                 7.936386e-02 1 1  ON 15
+      ud_5                 4.025672e-02 1 1  ON 16
+      ud_6                 3.341762e-02 1 1  ON 17
+      ud_7                 4.846019e-02 1 1  ON 18
+      ud_8                 5.591067e-02 1 1  ON 19
+      ud_9                 3.558085e-02 1 1  ON 20
+      eH_0                 2.173479e-02 1 1  ON 21
+      eH_1                 3.708838e-02 1 1  ON 22
+      eH_2                -1.024114e-01 1 1  ON 23
+      eH_3                -8.108331e-02 1 1  ON 24
+      eH_4                -8.937701e-02 1 1  ON 25
+      eH_5                -6.547872e-02 1 1  ON 26
+      eH_6                -2.737228e-02 1 1  ON 27
+      eH_7                -4.559007e-04 1 1  ON 28
+      eH_8                 1.350554e-02 1 1  ON 29
+      eH_9                 9.355201e-03 1 1  ON 30
+  </optVariables>
+   Restore the number of walkers to 1, removing 0 walkers.
+</opt>
+</optimization-report>
+Update descent engine parameter values after Blocked LM step
+Finished a hybrid step
+  QMC Execution time = 2.445 secs
+BRANCH resetRun
+ SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
+ BranchMode : 0000001100 0000001100
+ iParam (old):                200                 1                 8                 0                 0                 0                 1                 0
+ iParam (new):                100                 1                 8                 0                 0                 0                 1                 0
+ vParam (old):                0.1               0.1                 1                 1                 1                 1                 1                 1                 1                 0                 0                 1                10                 1                 1                 1                 1
+ vParam (new):               0.05               0.1                 1                 1                 1                 1                 1                 1                 1                 0                 0                 1                10                 1                 1                 1                 1
+
+=========================================================
+  Start VMC
+  File Root target_hybrid_ref.s009 append = no 
+=========================================================
+Resetting walkers
+  Using the current 1 walkers.
+  Total number of walkers: 16
+  Total weight: 16
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 0.05
+  blocks         = 200
+  steps          = 5000
+  substeps       = 1
+  current        = 0
+  target samples = 0
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1005000
+  SpinMoves      = no
+<parameter name="blocks" condition="int">200</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">0</parameter>
+<parameter name="maxcpusecs" condition="real">360000</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1005000</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1005000</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">0</parameter>
+<parameter name="samplesperthread" condition="real">0</parameter>
+<parameter name="spinmass" condition="double">1</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">5000</parameter>
+<parameter name="stepsbetweensamples" condition="int">1005000</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">0.05</parameter>
+<parameter name="time_step" condition="au">0.05</parameter>
+<parameter name="timestep" condition="au">0.05</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">100</parameter>
+<parameter name="warmupsteps" condition="int">100</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1005000 steps.
+</vmc>
+  Set drift_modifier UNR parameter a = 1
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =0
+  Walker distribution on root = 0 1 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 702 MB
+Memory footprint by rank 0 on node 0       : 59 MB
+==================================================
+  Anonymous Buffer size per walker : 17992 Bytes.
+MEMORY increase 0 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 9
+    time step          = 0.05
+    reference energy   = -2.13528
+    reference variance = 0.140244
+====================================================
+  QMC Execution time = 60.1 secs
+  Total Execution time = 70.23 secs
+
+=========================================================
+  A new xml input file : target_hybrid_ref.s009.cont.xml

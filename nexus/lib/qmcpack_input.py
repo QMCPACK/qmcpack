@@ -2223,6 +2223,14 @@ class spindensity(QIxml):
     identifier  = 'name'
 #end class spindensity
 
+class spindensity_new(QIxml): # temporary
+    tag = 'estimator'
+    attributes  = ['type','name','report','save_memory']
+    parameters  = ['dr','grid','cell','center','corner','voronoi','test_moves']
+    write_types = obj(report=yesno,save_memory=yesno)
+    identifier  = 'name'
+#end class spindensity_new
+
 class structurefactor(QIxml):
     tag = 'estimator'
     attributes  = ['type','name','report']
@@ -2323,6 +2331,7 @@ estimator = QIxmlFactory(
                  nearestneighbors    = nearestneighbors,
                  dm1b                = dm1b,
                  spindensity         = spindensity,
+                 spindensity_new     = spindensity_new, # temporary
                  structurefactor     = structurefactor,
                  force               = force,
                  forwardwalking      = forwardwalking,
@@ -2507,8 +2516,8 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace','target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme']
-    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno)
+    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme','l2_diffusion']
+    write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno,l2_diffusion=yesno)
 #end class dmc
 
 class rmc(QIxml):
@@ -2519,6 +2528,15 @@ class rmc(QIxml):
     elements = ['qmcsystem']
     write_types = obj(collect=yesno)
 #end class rmc
+
+class vmc_batch(QIxml):
+    collection_id = 'qmc'
+    tag = 'qmc'
+    attributes = ['method','move']
+    elements   = ['estimator']
+    parameters = ['walkers','warmupsteps','blocks','steps','substeps','timestep','usedrift']
+    write_types = obj(usedrift=yesno)
+#end class vmc_batch
 
 class wftest(QIxml):
     collection_id = 'qmc'
@@ -2539,7 +2557,7 @@ class setparams(QIxml):
 
 qmc = QIxmlFactory(
     name = 'qmc',
-    types   = dict(linear=linear,cslinear=cslinear,vmc=vmc,dmc=dmc,loop=loop,optimize=optimize_qmc,wftest=wftest,rmc=rmc,setparams=setparams),
+    types   = dict(linear=linear,cslinear=cslinear,vmc=vmc,dmc=dmc,loop=loop,optimize=optimize_qmc,wftest=wftest,rmc=rmc,setparams=setparams,vmc_batch=vmc_batch),
     typekey = 'method',
     default = 'loop'
     )
@@ -2596,10 +2614,11 @@ classes = [   #standard classes
     localenergy,energydensity,spacegrid,origin,axis,wavefunction,
     determinantset,slaterdeterminant,basisset,grid,determinant,occupation,
     jastrow1,jastrow2,jastrow3,
-    correlation,coefficients,loop,linear,cslinear,vmc,dmc,
+    correlation,coefficients,loop,linear,cslinear,vmc,dmc,vmc_batch,
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor,
+    spindensity_new, # temporary
     sposet,bspline_builder,composite_builder,heg_builder,include,
     multideterminant,detlist,ci,mcwalkerset,csf,det,
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
@@ -2699,6 +2718,7 @@ Names.set_expanded_names(
     l_local          = 'l-local',
     pbcimages        = 'PBCimages',
     dla              = 'DLA',
+    l2_diffusion     = 'L2_diffusion',
     )
 # afqmc names
 Names.set_afqmc_expanded_names(
@@ -2815,6 +2835,9 @@ pressure.defaults.set(
 momentum.defaults.set(
     type='momentum'
     )
+spindensity_new.defaults.set( # temporary
+    type='spindensity_new',name='SpinDensityNew'
+    )
 
 
 linear.defaults.set(
@@ -2910,6 +2933,9 @@ dmc.defaults.set(
     #timestep      = .01,
     #nonlocalmoves = True,
     #estimators = classcollection(localenergy)
+    )
+vmc_batch.defaults.set(
+    method='vmc_batch',move='pbyp',
     )
 
 

@@ -38,8 +38,10 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(2);
@@ -82,8 +84,8 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
 
   ParticleSetPool ptcl{c};
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   // make a ParticleSet Clone
   ParticleSet elec_clone(elec_);
@@ -105,17 +107,17 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   SPOSet* spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
-  auto* det_up = new DiracDet(spo);
+  auto* det_up = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_up->set(0, 2);
-  auto* det_dn = new DiracDet(spo);
+  auto* det_dn = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_dn->set(2, 2);
 
   auto* slater_det = new SlaterDet(elec_);
   slater_det->add(det_up, 0);
   slater_det->add(det_dn, 1);
 
-  TrialWaveFunction psi{c};
-  psi.addComponent(slater_det, "SingleDet");
+  TrialWaveFunction psi;
+  psi.addComponent(slater_det);
 
   const char* jas_input = "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
@@ -133,7 +135,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   xmlNodePtr jas1     = xmlFirstElementChild(jas_root);
 
   RadialJastrowBuilder jb(c, elec_);
-  psi.addComponent(jb.buildComponent(jas1), "RadialJastrow");
+  psi.addComponent(jb.buildComponent(jas1));
 
 #if !defined(QMC_CUDA)
   // initialize distance tables.

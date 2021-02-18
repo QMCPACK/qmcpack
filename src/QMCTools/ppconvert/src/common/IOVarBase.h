@@ -20,10 +20,10 @@
 #include "blitz/array.h"
 #include <iostream>
 
+#include "Blitz.h"
 
 namespace IO
 {
-using namespace blitz;
 typedef enum
 {
   DOUBLE_TYPE,
@@ -60,7 +60,7 @@ public:
 class IOVarBase
 {
 private:
-  nilArraySection n0;
+  blitz::nilArraySection n0;
 
 protected:
   std::string Name;

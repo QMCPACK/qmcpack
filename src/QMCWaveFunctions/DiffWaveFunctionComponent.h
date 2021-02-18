@@ -69,9 +69,6 @@ struct DiffWaveFunctionComponent
    */
   virtual void initialize() {}
 
-  ///prepare internal data for a new particle sets
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
-
   /** evaluate derivatives at \f$\{R\}\f$
    * @param P current configuration
    * @param optvars optimizable variables
@@ -81,17 +78,15 @@ struct DiffWaveFunctionComponent
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi)=0;
+                                   std::vector<ValueType>& dhpsioverpsi) = 0;
 
   /** evaluate derivatives at \f$\{R\}\f$
    * @param P current configuration
    * @param optvars optimizable variables
    * @param dlogpsi derivative of the log of the wavefunction
    */
-  virtual void evaluateDerivativesWF(ParticleSet& P,
-                                     const opt_variables_type& optvars,
-                                     std::vector<ValueType>& dlogpsi) 
-  { 
+  virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi)
+  {
     app_error() << "Need specialization of DiffOrbitalBase::evaluateDerivativesWF.\n";
     abort();
   }
@@ -101,7 +96,7 @@ struct DiffWaveFunctionComponent
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
     for (int i = 0; i < refOrbital.size(); ++i)
-      for(int j=0; j<refOrbital[i]->myVars.size(); j++)
+      for (int j = 0; j < refOrbital[i]->myVars.size(); j++)
       {
         int loc = refOrbital[j]->myVars.where(j);
         dlogpsi[loc] *= refOrbital[i]->getValue();
@@ -130,7 +125,6 @@ struct NumericalDiffOrbital : public DiffWaveFunctionComponent
 {
   NumericalDiffOrbital(WaveFunctionComponent* orb = 0) : DiffWaveFunctionComponent(orb) {}
 
-  void resetTargetParticleSet(ParticleSet& P);
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<RealType>& dlogpsi,
@@ -150,7 +144,6 @@ struct AnalyticDiffOrbital : public DiffWaveFunctionComponent
 {
   AnalyticDiffOrbital(WaveFunctionComponent* orb = 0) : DiffWaveFunctionComponent(orb) {}
 
-  void resetTargetParticleSet(ParticleSet& P);
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<RealType>& dlogpsi,

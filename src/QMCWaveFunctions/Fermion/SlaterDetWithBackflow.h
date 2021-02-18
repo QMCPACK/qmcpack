@@ -44,7 +44,6 @@ public:
       Dets[i]->setBF(BFTrans);
   }
 
-  void resetTargetParticleSet(ParticleSet& P);
   void checkInVariables(opt_variables_type& active)
   {
     //if(Optimizable) {

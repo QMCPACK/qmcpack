@@ -28,7 +28,7 @@ namespace qmcplusplus
 struct SPOSetProxyForMSD : public SPOSet
 {
   ///pointer to the SPOSet which evaluate the single-particle states
-  SPOSetPtr refPhi;
+  std::unique_ptr<SPOSet> refPhi;
   ///container for the values
   ValueMatrix_t psiM;
   ///container for the gradients
@@ -59,9 +59,8 @@ struct SPOSetProxyForMSD : public SPOSet
    * @param first the first particle index
    * @param last the last particle index
    */
-  SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last);
+  SPOSetProxyForMSD(std::unique_ptr<SPOSet>&& spos, int first, int last);
   void resetParameters(const opt_variables_type& optVariables) override;
-  void resetTargetParticleSet(ParticleSet& P) override;
   void setOrbitalSetSize(int norbs) override;
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;

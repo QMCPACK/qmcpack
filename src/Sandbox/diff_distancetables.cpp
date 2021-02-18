@@ -14,15 +14,15 @@
  * Test code for the accuracy of AoS to SoA transformation of distance tables.
  */
 #include <Configuration.h>
-#include <Particle/ParticleSet.h>
-#include <Particle/DistanceTableData.h>
-#include <OhmmsSoA/VectorSoaContainer.h>
+#include "Particle/ParticleSet.h"
+#include "Particle/DistanceTableData.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "random.hpp"
-#include <mpi/collectives.h>
-#include <Sandbox/input.hpp>
-#include <Sandbox/pseudo.hpp>
-#include <Utilities/Timer.h>
-#include <Sandbox/common.hpp>
+#include "mpi/collectives.h"
+#include "Sandbox/input.hpp"
+#include "Sandbox/pseudo.hpp"
+#include "Utilities/Timer.h"
+#include "Sandbox/common.hpp"
 #include <getopt.h>
 
 using namespace std;

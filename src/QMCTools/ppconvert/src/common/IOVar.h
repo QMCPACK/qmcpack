@@ -19,6 +19,8 @@
 
 #include "IOVarASCII.h"
 
+#include "Blitz.h"
+
 namespace IO
 {
 template<typename T>
@@ -29,7 +31,7 @@ bool IOVarBase::Read(T& val)
     IOVarASCII<T, 0>* newVar = dynamic_cast<IOVarASCII<T, 0>*>(this);
     if (newVar == NULL)
     {
-      cerr << "Error in dynamic cast to IOVarASCII.\n";
+      std::cerr << "Error in dynamic cast to IOVarASCII.\n";
       abort();
     }
     return newVar->VarRead(val);
@@ -49,7 +51,7 @@ bool IOVarBase::Read(TinyVector<T, LEN>& val)
     IOVarASCII<T, 1>* newVar = dynamic_cast<IOVarASCII<T, 1>*>(this);
     if (newVar == NULL)
     {
-      cerr << "Error in dynamic cast to IOVarASCII.\n";
+      std::cerr << "Error in dynamic cast to IOVarASCII.\n";
       abort();
     }
     Array<T, 1> aVal;
@@ -78,7 +80,7 @@ bool IOVarBase::Read(blitz::Array<T, RANK>& val)
     IOVarASCII<T, RANK>* newVar = dynamic_cast<IOVarASCII<T, RANK>*>(this);
     if (newVar == NULL)
     {
-      cerr << "Error in dynamic cast to IOVarASCII.\n";
+      std::cerr << "Error in dynamic cast to IOVarASCII.\n";
       abort();
     }
     return newVar->VarRead(val);
@@ -130,7 +132,7 @@ bool IOVarBase::Read(blitz::Array<T, RANK>& val,
     IOVarASCII<T, varRank>* newVar = dynamic_cast<IOVarASCII<T, varRank>*>(this);
     if (newVar == NULL)
     {
-      cerr << "Error in dynamic cast to IOVarHDF5.\n";
+      std::cerr << "Error in dynamic cast to IOVarHDF5.\n";
       abort();
     }
     return newVar->Slice(s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10).VarRead(val);
@@ -177,7 +179,7 @@ bool IOVarBase::Write(const blitz::Array<T, RANK>& val,
     IOVarASCII<T, varRank>* newVar = dynamic_cast<IOVarASCII<T, varRank>*>(this);
     if (newVar == NULL)
     {
-      cerr << "Error in dynamic cast to IOVarASCII.\n";
+      std::cerr << "Error in dynamic cast to IOVarASCII.\n";
       abort();
     }
     return newVar->Slice(s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10).VarWrite(val);

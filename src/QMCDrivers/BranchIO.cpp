@@ -13,10 +13,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/BranchIO.h"
-#include "HDFVersion.h"
+#include "BranchIO.h"
+#include "hdf/HDFVersion.h"
 #include "Message/CommOperators.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #if defined(HAVE_LIBBOOST)
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -258,5 +258,4 @@ void BranchIO<SFNB>::bcast_state()
 }
 
 template class BranchIO<SimpleFixedNodeBranch>;
-template class BranchIO<SFNBranch>;
 } // namespace qmcplusplus

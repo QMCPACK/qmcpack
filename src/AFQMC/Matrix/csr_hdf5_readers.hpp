@@ -25,8 +25,8 @@
 #endif
 
 #include "Configuration.h"
-#include <Utilities/FairDivide.h>
-#include "io/hdf_archive.h"
+#include "Utilities/FairDivide.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.0.h"
 #include "AFQMC/Utilities/afqmc_TTI.hpp"

@@ -3,159 +3,84 @@
 Features of QMCPACK
 ===================
 
-Production-level features
--------------------------
+Note that besides direct use, most features are also available via Nexus, an advanced workflow tool to automate all aspects of QMC
+calculation from initial DFT calculations through to final analysis. Use of Nexus is highly recommended for research calculations
+due to the greater ease of use and increased reproducibility.
 
-The following list contains the main production-level features of
-QMCPACK. If you do not see a specific feature that you are interested
-in, see the remainder of this manual and ask whether that specific
-feature is available or can be quickly brought to the full production
-level.
+Real-space Monte Carlo
+----------------------
 
--  Variational Monte Carlo (VMC)
+The following list contains the main production-level features of QMCPACK for real-space Monte Carlo. If you do not see a specific
+feature that you are interested in, check the remainder of this manual or ask if that specific feature can be made available.
 
--  Diffusion Monte Carlo (DMC)
+-  Variational Monte Carlo (VMC).
 
--  Reptation Monte Carlo
+-  Diffusion Monte Carlo (DMC).
 
--  Single and multideterminant Slater Jastrow wavefunctions
+-  Reptation Monte Carlo.
+
+-  Single and multideterminant Slater Jastrow wavefunctions.
 
 -  Wavefunction updates using optimized multideterminant algorithm of
    Clark et al.
 
--  Backflow wavefunctions
+-  Backflow wavefunctions.
 
--  One, two, and three-body Jastrow factors
+-  One, two, and three-body Jastrow factors.
 
 -  Excited state calculations via flexible occupancy assignment of
-   Slater determinants
+   Slater determinants.
 
--  All electron and nonlocal pseudopotential calculations
+-  All electron and nonlocal pseudopotential calculations.
 
 -  Casula T-moves for variational evaluation of nonlocal
-   pseudopotentials (non-size-consistent and size-consistent variants)
+   pseudopotentials (non-size-consistent and size-consistent variants).
+
+-  Spin-orbit coupling from relativistic pseudopotentials following the 
+   approach of Melton, Bennett, and Mitas.
+
+-  Support for twist boundary conditions and calculations on metals.
 
 -  Wavefunction optimization using the “linear method” of Umrigar and
-   coworkers, with arbitrary mix of variance and energy in the objective
-   function
+   coworkers, with an arbitrary mix of variance and energy in the objective
+   function.
 
--  Blocked, low memory adaptive shift optimizer of Zhao and Neuscamman
+-  Blocked, low memory adaptive shift optimizer of Zhao and Neuscamman.
 
 -  Gaussian, Slater, plane-wave, and real-space spline basis sets for
-   orbitals
+   orbitals.
 
 -  Interface and conversion utilities for plane-wave wavefunctions from
-   Quantum Espresso (Plane-Wave Self-Consistent Field package [PWSCF])
+   Quantum Espresso (Plane-Wave Self-Consistent Field package [PWSCF]).
 
 -  Interface and conversion utilities for Gaussian-basis wavefunctions
-   from GAMESS
+   from GAMESS, PySCF, and QP2. Many more are supported via the molden format and molden2qmc.
 
 -  Easy extension and interfacing to other electronic structure codes
-   via standardized XML and HDF5 inputs
+   via standardized XML and HDF5 inputs.
 
--  MPI parallelism
+-  MPI parallelism, with scaling to millions of cores.
 
--  Fully threaded using OpenMP
+-  Fully threaded using OpenMP.
 
--  GPU (NVIDIA CUDA) implementation (limited functionality)
+-  Highly efficient vectorized CPU code tailored for modern architectures. :cite:`IPCC_SC17`
 
--  HDF5 input/output for large data
-
--  Nexus: advanced workflow tool to automate all aspects of QMC
-   calculation from initial DFT calculations through to final analysis
+-  GPU (NVIDIA CUDA) implementation (limited functionality - see :ref:`legacygpufeatures`).
 
 -  Analysis tools for minimal environments (Perl only) through to
-   Python-based environments with graphs produced via matplotlib
-   (included with Nexus)
-
-SoA optimizations and improved algorithms
------------------------------------------
-
-The Structure-of-Arrays (SoA) optimizations
-:cite:`IPCC_SC17` are a set of improved data layouts
-facilitating vectorization on modern CPUs with wide SIMD units. **For
-many calculations and architectures, the SoA implementation more than
-doubles the speed of the code.** This so-called SoA implementation
-replaces the older, less efficient Array-of-Structures (AoS) code and
-can be enabled or disabled at compile time. The memory footprint is also
-reduced in the SoA implementation by better algorithms, enabling more
-systems to be run.
-
-The SoA build was made the default for QMCPACK v3.7.0. As described in :ref:`cmakeoptions`, the SoA
-implementation can be disabled by configuring with ``-DENABLE_SOA=0``.
-
-The SoA code path currently does *not* support:
-
--  Backflow wavefunctions
-
--  Many observables
-
-The code should abort with a message referring to AoS vs SoA features if
-any unsupported feature is invoked. In this case the AoS build should be
-used by configuring with ``-DENABLE_SOA=0``. In addition, please inform the developers via
-GitHub or Google Groups so that porting these features can be
-prioritized.
-
-Core features are heavily tested in both SoA and AoS versions. If using
-untested and noncore features in the SoA code, please compare the AoS
-and SoA results carefully.
-
-Supported GPU features
-----------------------
-
-The GPU implementation supports multiple GPUs per node, with MPI tasks
-assigned in a round-robin order to the GPUs. Currently, for large runs,
-1 MPI task should be used per GPU per node. For smaller calculations,
-use of multiple MPI tasks per GPU might yield improved performance.
-Supported GPU features:
-
--  VMC, wavefunction optimization, DMC.
-
--  Periodic and open boundary conditions. Mixed boundary conditions are
-   not yet supported.
-
--  Wavefunctions:
-
-   #. Single Slater determinants with 3D B-spline orbitals.
-      Twist-averaged boundary conditions and complex wavefunctions are
-      fully supported. Gaussian type orbitals are not yet supported.
-
-   #. Hybrid mixed basis representation in which orbitals are
-      represented as 1D splines times spherical harmonics in spherical
-      regions (muffin tins) around atoms and 3D B-splines in the
-      interstitial region.
-
-   #. One-body and two-body Jastrows represented as 1D B-splines.
-      Three-body Jastrow functions are not yet supported.
-
--  Semilocal (nonlocal and local) pseudopotentials, Coulomb interaction
-   (electron-electron, electron-ion), and model periodic Coulomb (MPC)
-   interaction.
-
-Beta test features
-------------------
-
-This section describes developmental features in QMCPACK that might be
-ready for production but that require additional testing, features, or
-documentation to be ready for general use. We describe them here because
-they offer significant benefits and are well tested in specific cases.
+   Python-based environments with graphs produced via matplotlib (included with Nexus).
 
 Auxiliary-Field Quantum Monte Carlo
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 
-The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is
-now available in QMCPACK. The main input for the code is the matrix
-elements of the Hamiltonian in a given single particle basis set, which
-must be produced from mean-field calculations such as Hartree-Fock or
-density functional theory. The code and many features are in
-development. Check the latest version of QMCPACK for an up-to-date
-description of available features. A partial list of the current
-capabilities of the code follows. For a detailed description of the
-available features, see  :ref:`afqmc`.
+The orbital-space Auxiliary-Field Quantum Monte Carlo (AFQMC) method is now also available in QMCPACK. The main input data are the
+matrix elements of the Hamiltonian in a given single particle basis set, which must be produced from mean-field calculations such
+as Hartree-Fock or density functional theory. A partial list of the current capabilities of the code follows. For a detailed
+description of the available features, see  :ref:`afqmc`.
 
--  Phaseless AFQMC algorithm of Zhang et al. (S. Zhang and H. Krakauer.
-   2003. “Quantum Monte Carlo Method using Phase-Free Random Walks with
-   Slater Determinants." *PRL* 90: 136401).
+-  Phaseless AFQMC algorithm of Zhang et al. :cite:`PhysRevLett.90.136401`.
+
+-  Very efficient GPU implementation for most features. 
 
 -  “Hybrid" and “local energy" propagation schemes.
 
@@ -182,13 +107,46 @@ available features, see  :ref:`afqmc`.
 -  Mixed and back-propagated estimators.
 
 -  Specialized implementation for solids with k-point symmetry (e.g.
-   primitive unit cells with kpoints).
+   primitive unit cells with k-points).
 
--  Efficient GPU implementation (currently limited to solids with
-   k-point symmetry).
+.. _legacygpufeatures:
+
+Supported GPU features for real space QMC
+-----------------------------------------
+
+The "legacy" GPU implementation for real space QMC uses NVIDIA CUDA and achieves very good speedup on NVIDIA GPUs. However, only a
+very limited subset of features is available. As detailed in :ref:`roadmap`, a new full-featured GPU implementation is currently
+being made that is both high performing and portable to other GPU architectures. The existing implementation supports multiple
+GPUs per node, with MPI tasks assigned in a round-robin order to the GPUs. Currently, for large runs, 1 MPI task should be used
+per GPU per node. For smaller calculations, use of multiple MPI tasks per GPU might yield improved performance.
+
+Supported GPU features:
+
+-  VMC, wavefunction optimization, DMC.
+
+-  Periodic and open boundary conditions. Mixed boundary conditions are
+   not supported.
+
+-  Wavefunctions:
+
+   #. Single Slater determinants with 3D B-spline orbitals.
+      Twist-averaged boundary conditions and complex wavefunctions are
+      fully supported. Gaussian type orbitals are not supported.
+
+   #. Hybrid mixed basis representation in which orbitals are
+      represented as 1D splines times spherical harmonics in spherical
+      regions (muffin tins) around atoms and 3D B-splines in the
+      interstitial region.
+
+   #. One-body and two-body Jastrow functions represented as 1D B-splines.
+      Three-body Jastrow functions are not supported.
+
+-  Semilocal (nonlocal and local) pseudopotentials, Coulomb interaction
+   (electron-electron, electron-ion), and model periodic Coulomb (MPC)
+   interaction.
 
 Sharing of spline data across multiple GPUs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------
 
 Sharing of GPU spline data enables distribution of the data across
 multiple GPUs on a given computational node. For example, on a

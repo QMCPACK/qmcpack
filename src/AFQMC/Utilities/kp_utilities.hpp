@@ -23,18 +23,20 @@
  * If it is block diagonal form, it also returns the number of states in each k-point block. 
  */
 template<class Vector, class CSR, class Array>
-bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per_kp)
+bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per_kp, bool noncolin = false)
 {
   int nkpts = nmo_per_kp.size();
   int N     = PsiT.size(0);
   int M     = PsiT.size(1);
+  int npol  = noncolin ? 2 : 1;
+  assert(M % npol == 0);
   assert(nocc_per_kp.size() == nkpts);
 
   std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
-  std::vector<int> bounds(nkpts + 1);
+  std::vector<int> bounds(npol * nkpts + 1);
   bounds[0] = 0;
-  for (int k = 0; k < nkpts; k++)
-    bounds[k + 1] = bounds[k] + nmo_per_kp[k];
+  for (int k = 0; k < npol * nkpts; k++)
+    bounds[k + 1] = bounds[k] + nmo_per_kp[k % nkpts];
   int Q = 0;
   for (int i = 0; i < N; i++)
   {
@@ -48,8 +50,10 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
     // check the kp index of the first non-zero column. Mut be either >= Q
     auto it = std::lower_bound(bounds.begin(), bounds.end(), *col + 1) - 1;
     assert(it != bounds.end());
-    int Q_ = std::distance(bounds.begin(), it);
+    int Q_   = std::distance(bounds.begin(), it) % nkpts;
+    int pol_ = std::distance(bounds.begin(), it) / nkpts;
     assert(Q_ >= 0 && Q_ < nkpts);
+    assert(pol_ == 0 || pol_ == 1);
     if (Q_ < Q)
     {
       std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
@@ -58,7 +62,8 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
     Q = Q_;
     for (int ni = 0; ni < nt; ++ni, ++col)
     {
-      if (*col < bounds[Q] || *col >= bounds[Q + 1])
+      if ((*col < bounds[Q] || *col >= bounds[Q + 1]) &&
+          (*col < bounds[(npol - 1) * nkpts + Q] || *col >= bounds[(npol - 1) * nkpts + Q + 1]))
       {
         std::fill_n(to_address(nocc_per_kp.origin()), nkpts, 0);
         return false;
@@ -70,17 +75,19 @@ bool get_nocc_per_kp(Vector const& nmo_per_kp, CSR const& PsiT, Array&& nocc_per
 }
 
 template<class Array, class Vector, class CSR>
-Array get_PsiK(Vector const& nmo_per_kp, CSR const& PsiT, int K)
+Array get_PsiK(Vector const& nmo_per_kp, CSR const& PsiT, int K, bool noncolin = false)
 {
   int nkpts = nmo_per_kp.size();
   int N     = PsiT.size(0);
   int M     = PsiT.size(1);
+  int npol  = noncolin ? 2 : 1;
+  assert(M % npol == 0);
 
   int nel = 0;
-  std::vector<int> bounds(nkpts + 1);
+  std::vector<int> bounds(npol * nkpts + 1);
   bounds[0] = 0;
-  for (int k = 0; k < nkpts; k++)
-    bounds[k + 1] = bounds[k] + nmo_per_kp[k];
+  for (int k = 0; k < npol * nkpts; k++)
+    bounds[k + 1] = bounds[k] + nmo_per_kp[k % nkpts];
   int Q = 0;
   for (int i = 0; i < N; i++)
   {
@@ -91,19 +98,22 @@ Array get_PsiK(Vector const& nmo_per_kp, CSR const& PsiT, int K)
     // check the kp index of the first non-zero column. Mut be either >= Q
     auto it = std::lower_bound(bounds.begin(), bounds.end(), *col + 1) - 1;
     assert(it != bounds.end());
-    int Q_ = std::distance(bounds.begin(), it);
+    int Q_   = std::distance(bounds.begin(), it) % nkpts;
+    int pol_ = std::distance(bounds.begin(), it) / nkpts;
     assert(Q_ >= 0 && Q_ < nkpts);
+    assert(pol_ == 0 || pol_ == 1);
     if (Q_ < Q)
       APP_ABORT("Error: PsiT not in block-diagonal form in get_PsiK.\n");
     Q = Q_;
     for (int ni = 0; ni < nt; ++ni, ++col)
-      if (*col < bounds[Q] || *col >= bounds[Q + 1])
+      if ((*col < bounds[Q] || *col >= bounds[Q + 1]) &&
+          (*col < bounds[(npol - 1) * nkpts + Q] || *col >= bounds[(npol - 1) * nkpts + Q + 1]))
         APP_ABORT("Error: PsiT not in block-diagonal form in get_PsiK.\n");
     if (Q == K)
       nel++;
   }
   using element = typename std::decay<Array>::type::element;
-  Array A({nel, nmo_per_kp[K]});
+  Array A({nel, npol * nmo_per_kp[K]});
   using std::fill_n;
   fill_n(A.origin(), A.num_elements(), element(0));
   nel = 0;
@@ -114,11 +124,16 @@ Array get_PsiK(Vector const& nmo_per_kp, CSR const& PsiT, int K)
     auto val = PsiT.non_zero_values_data(i);
     // check the kp index of the first non-zero column. Mut be either >= Q
     auto it = std::lower_bound(bounds.begin(), bounds.end(), *col + 1) - 1;
-    int Q   = std::distance(bounds.begin(), it);
+    int Q   = std::distance(bounds.begin(), it) % nkpts;
     if (Q == K)
     {
       for (int ni = 0; ni < nt; ++ni, ++col, ++val)
-        A[nel][*col - bounds[K]] = static_cast<element>(*val);
+      {
+        if (*col < bounds[K + 1]) // alpha
+          A[nel][*col - bounds[K]] = static_cast<element>(*val);
+        else // beta
+          A[nel][*col - bounds[nkpts + K] + nmo_per_kp[K]] = static_cast<element>(*val);
+      }
       nel++;
     }
     if (Q > K)

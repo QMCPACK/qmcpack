@@ -35,9 +35,6 @@ are given in the referenced sections.
 #. Run the tests to verify QMCPACK
    (:ref:`testing`).
 
-#. Build the ppconvert utility in QMCPACK
-   (:ref:`buildppconvert`).
-
 Hints for high performance are in
 :ref:`buildperformance`.
 Troubleshooting suggestions are in
@@ -109,10 +106,9 @@ supercomputers this software is usually installed by default and is
 often accessed via a modules environment—check your system
 documentation.
 
-**Use of the latest versions of all compilers and libraries is strongly
-encouraged** but not absolutely essential. Generally, newer versions are
-faster; see :ref:`buildperformance`
-for performance suggestions.
+**Use of the latest versions of all compilers and libraries is strongly encouraged** but not absolutely essential. Generally,
+newer versions are faster; see :ref:`buildperformance` for performance suggestions. Versions of compilers over two years old are
+unsupported and untested by the developers although they may still work.
 
 -  C/C++ compilers such as GNU, Clang, Intel, and IBM XL. C++ compilers
    are required to support the C++ 14 standard. Use of recent (“current
@@ -143,14 +139,9 @@ NVIDIA CUDA development tools is required. Ensure that this is
 compatible with the C and C++ compiler versions you plan to use.
 Supported versions are included in the NVIDIA release notes.
 
-Many of the utilities provided with QMCPACK use Python (v2). The numpy
+Many of the utilities provided with QMCPACK require Python (v3). The numpy
 and matplotlib libraries are required for full functionality.
 
-Note that the standalone einspline library used by previous versions of
-QMCPACK is no longer required. A more optimized version is included
-inside. The standalone version should *not* be on any standard search
-paths because conflicts between the old and new include files can
-result.
 
 C++ 14 standard library
 -----------------------
@@ -171,14 +162,13 @@ or greater. To avoid these errors occurring at compile time, QMCPACK
 tests for a C++ 14 standard library during configuration and will halt
 with an error if one is not found.
 
-At sites that use modules, running is often sufficient to load a newer
-GCC and resolve the issue.
+At sites that use modules, it is often sufficient to simply load a newer
+GCC.
 
 Intel compiler
 ~~~~~~~~~~~~~~
 
-The Intel compiler version must be 18 or newer. The version 17 compiler
-cannot compile some of the C++ 14 constructs in the code.
+The Intel compiler version must be 19 or newer due to use of C++14 and bugs and limitations in earlier versions.
 
 If a newer GCC is needed, the ``-cxxlib`` option can be used to point to a different
 GCC installation. (Alternately, the ``-gcc-name`` or ``-gxx-name`` options can be used.) Be sure to
@@ -348,15 +338,13 @@ the path to the source directory.
     QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
                               including details of which tests are enabled.
 
-- Intel MKL related
+- BLAS/LAPACK related
 
   ::
 
-    ENABLE_MKL          Enable Intel MKL libraries (1:yes (default for intel compiler),
-                                                  0:no (default otherwise)).
-    MKL_ROOT            Path to MKL libraries (only necessary for non intel compilers
-                        or intel without standard environment variables.)
-                        One of the above environment variables can be used.
+    BLA_VENDOR          If set, checks only the specified vendor, if not set checks all the possibilities.
+                        See full list at https://cmake.org/cmake/help/latest/module/FindLAPACK.html
+    MKL_ROOT            Path to MKL libraries. Only necessary when auto-detection fails or overriding is desired.
 
 - libxml2 related
 
@@ -370,8 +358,8 @@ the path to the source directory.
 
   ::
 
-    HDF5_PREFER_PARALLEL 1(default for MPI build)/0, enables/disable parallel HDF5 library searching.
-    ENABLE_PHDF5         1(default for parallel HDF5 library)/0, enables/disable parallel collective I/O.
+    HDF5_PREFER_PARALLEL TRUE(default for MPI build)/FALSE, enables/disable parallel HDF5 library searching.
+    ENABLE_PHDF5         ON(default for parallel HDF5 library)/OFF, enables/disable parallel collective I/O.
 
 - FFTW related
 
@@ -453,7 +441,7 @@ For example, using Clang 11 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
 
 
 Installation from CMake
@@ -611,10 +599,11 @@ To use Intel MKL with, e.g. an MPICH wrapped gcc:
 
   cmake \
     -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
-    -DENABLE_MKL=1 -DMKL_ROOT=$MKLROOT/lib \
+    -DMKL_ROOT=YOUR_INTEL_MKL_ROOT_DIRECTORY \
     ..
 
-MKLROOT is the directory containing the MKL binary, examples, and lib
+MKL\_ROOT is only necessary when MKL is not auto-detected successfully or a particular MKL installation is desired.
+YOUR\_INTEL\_MKL\_ROOT\_DIRECTORY is the directory containing the MKL bin, examples, and lib
 directories (etc.) and is often /opt/intel/mkl.
 
 .. _threadedlibrary:
@@ -748,11 +737,7 @@ Installing on Mac OS X using Macports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These instructions assume a fresh installation of macports
-and use the gcc 6.1 compiler. Older versions are fine, but it is vital to ensure that
-matching compilers and libraries are used for all
-packages and to force use of what is installed in /opt/local.  Performance should be very reasonable.
-Note that we use the Apple-provided Accelerate framework for
-optimized BLAS.
+and use the gcc 10.2 compiler. 
 
 Follow the Macports install instructions at https://www.macports.org/.
 
@@ -762,24 +747,40 @@ Follow the Macports install instructions at https://www.macports.org/.
 
 - Install MacPorts for your version of OS X.
 
-Install the required tools:
+We recommend to make sure macports is updated:
 
 ::
 
-  sudo port install gcc6
-  sudo port select gcc mp-gcc6
-  sudo port install openmpi-devel-gcc6
-  sudo port select --set mpi openmpi-devel-gcc61-fortran
+  sudo port -v selfupdate # Required for macports first run, recommended in general
+  sudo port upgrade outdated # Recommended
 
-  sudo port install fftw-3 +gcc6
+
+Install the required tools. For thoroughness we include the current full set of python
+dependencies. Some of the tests will be skipped if not all are available.
+
+::
+
+  sudo port install gcc10
+  sudo port select gcc mp-gcc10
+  sudo port install openmpi-devel-gcc10
+  sudo port select --set mpi openmpi-devel-gcc10-fortran
+
+  sudo port install fftw-3 +gcc10
   sudo port install libxml2
   sudo port install cmake
-  sudo post install boost +gcc6
-  sudo port install hdf5 +gcc6
+  sudo port install boost +gcc10
+  sudo port install hdf5 +gcc10
 
-  sudo port select --set python python27
-  sudo port install py27-numpy +gcc6
-  sudo port install py27-matplotlib  #For graphical plots with qmca
+  sudo port install python38
+  sudo port select --set python python38
+  sudo port select --set python3 python38
+  sudo port install py38-numpy +gcc10
+  sudo port select --set cython cython38
+  sudo port install py38-scipy +gcc10
+  sudo port install py38-h5py +gcc10
+  sudo port install py38-pandas
+  sudo port install py38-lxml
+  sudo port install py38-matplotlib  #For graphical plots with qmca
 
 QMCPACK build:
 
@@ -790,13 +791,14 @@ QMCPACK build:
   make -j 6 # Adjust for available core count
   ls -l bin/qmcpack
 
-Cmake should pickup the versions of HDF5 and libxml (etc.) installed in
-/opt/local by macports. If you have other copies of these libraries
-installed and wish to force use of a specific version, use the
-environment variables detailed in :ref:`envvar`.
+Run the deterministic tests:
 
-This recipe was verified on July 1, 2016, on a Mac running OS X 10.11.5
-"El Capitain."
+::
+
+  ctest -R deterministic
+
+This recipe was verified on October 26, 2020, on a Mac running OS X 10.15.7
+"Catalina" with macports 2.6.3.
 
 Installing on Mac OS X using Homebrew (brew)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -804,8 +806,7 @@ Installing on Mac OS X using Homebrew (brew)
 Homebrew is a package manager for OS X that provides a convenient
 route to install all the QMCPACK dependencies. The
 following recipe will install the latest available versions of each
-package. This was successfully tested under OS X 10.12 "Sierra" in December 2017. Note that it is necessary to build the MPI software from
-source to use the brew-provided gcc instead of Apple CLANG.
+package. This was successfully tested under OS X 10.15.7 "Catalina" on October 26, 2020.
 
 1.  Install Homebrew from http://brew.sh/:
 
@@ -819,17 +820,14 @@ source to use the brew-provided gcc instead of Apple CLANG.
 
   ::
 
-    brew install gcc # installs gcc 7.2.0 on 2017-12-19
-    export HOMEBREW_CXX=g++-7
-    export HOMEBREW_CC=gcc-7
-    brew install mpich2 --build-from-source
-    # Build from source required to use homebrew compiled compilers as
-    # opposed to Apple CLANG. Check "mpicc -v" indicates Homebrew gcc
+    brew install gcc # 10.2.0 when tested
+    brew install openmpi
     brew install cmake
     brew install fftw
     brew install boost
-    brew install homebrew/science/hdf5
-    #Note: Libxml2 is not required via brew since OS X already includes it.
+    brew install hdf5
+    export OMPI_CC=gcc-10
+    export OMPI_CXX=g++-10
 
 3.  Configure and build QMCPACK:
 
@@ -837,13 +835,14 @@ source to use the brew-provided gcc instead of Apple CLANG.
 
     cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
           -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
-    make -j 12
+    make -j 6 # Adjust for available core count
+    ls -l bin/qmcpack
 
-4.  Run the short tests. When MPICH is used for the first time, OSX will request approval of the network connection for each executable.
+4.  Run the deterministic tests
 
   ::
 
-    ctest -R short -LE unstable
+    ctest -R deterministic
 
 Installing on ALCF Theta, Cray XC40
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1283,10 +1282,6 @@ options and different versions of the application. A full list can be displayed 
                                                     converter.
     qe [on]                 True, False             Install with patched Quantum
                                                     Espresso 6.4.0
-    soa [on]                True, False             Build with Structure-of-Array
-                                                    instead of Array-of-Structure
-                                                    code. Only for CPU codeand
-                                                    only in mixed precision
     timers [off]            True, False             Build with support for timers
 
   Installation Phases:
@@ -1693,7 +1688,7 @@ The NiO tests are for bulk supercells of varying size. The QMC runs consist of s
 without drift (2) VMC with drift term included, and (3) DMC with
 constant population. The tests use spline wavefunctions that must be
 downloaded as described in the README file because of their large size. You
-will need to set ``-DQMC_DATA=YOUR_DATA_FOLDER -DENABLE_TIMERS=1``
+will need to set ``-DQMC_DATA=YOUR_DATA_FOLDER``
 when running CMake as
 described in the README file.
 
@@ -1754,13 +1749,11 @@ with various library versions and different MPI implementations. NVIDIA GPUs are
 Building ppconvert, a pseudopotential format converter
 ------------------------------------------------------
 
-QMCPACK includes a utility---ppconvert---to convert between different
-pseudopotential formats. Examples include effective core potential
-formats (in Gaussians), the UPF format used by QE, and
-the XML format used by QMCPACK itself. The utility also enables the
-atomic orbitals to be recomputed via a numerical density functional
-calculation if they need to be reconstructed for use in an
-electronic structure calculation.
+QMCPACK includes a utility---ppconvert---to convert between different pseudopotential formats. Examples include effective core
+potential formats (in Gaussians), the UPF format used by QE, and the XML format used by QMCPACK itself. The utility also enables
+the atomic orbitals to be recomputed via a numerical density functional calculation if they need to be reconstructed for use in an
+electronic structure calculation. Use of ppconvert is an expert feature and discouraged for casual use: a poor choice of orbitals
+for the creation of projectors in UPF can introduce severe errors and inaccuracies.
 
 .. _fig2:
 .. figure:: /figs/QMCPACK_CDash_CTest_Results_20160129.png

@@ -21,13 +21,13 @@
 #define OHMMS_NUMERIC_DETERMINANT_H
 
 #include <algorithm>
-#include <OhmmsPETE/TinyVector.h>
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <CPU/BLAS.hpp>
-#include <config/stdlib/math.hpp>
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "CPU/BLAS.hpp"
+#include "config/stdlib/math.hpp"
 #include "CPU/SIMD/inner_product.hpp"
-#include <Numerics/determinant_operators.h>
+#include "Numerics/determinant_operators.h"
 
 namespace qmcplusplus
 {

@@ -35,12 +35,6 @@ namespace afqmc
 template<class WlkSet>
 void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealType dt)
 {
-  if (buffer_allocator == nullptr)
-  {
-    app_error() << " Error: localTG_buffer_generator == nullptr. \n" << std::endl;
-    APP_ABORT("");
-  }
-
   using std::copy_n;
   using std::fill_n;
   AFQMCTimers[setup_timer]->start();
@@ -67,14 +61,14 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     G_ext = iextensions<2u>{nwalk, Gsize};
 
   if (MFfactor.size(1) != nsteps || MFfactor.size(2) != nwalk)
-    MFfactor = std::move(C3Tensor({2, nsteps, nwalk}));
+    MFfactor = C3Tensor({2, nsteps, nwalk});
   if (hybrid_weight.size(1) != nsteps || hybrid_weight.size(2) != nwalk)
-    hybrid_weight = std::move(C3Tensor({2, nsteps, nwalk}));
+    hybrid_weight = C3Tensor({2, nsteps, nwalk});
 
   if (new_overlaps.size(0) != nwalk)
-    new_overlaps = std::move(CVector(iextensions<1u>{nwalk}));
+    new_overlaps = CVector(iextensions<1u>{nwalk});
   if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
-    new_energies = std::move(CMatrix({nwalk, 3}));
+    new_energies = CMatrix({nwalk, 3});
 
   //  Summary of temporary memory usage:
   //  G_for_vbias:     [ Gsize * nwalk ] (2 copies)
@@ -89,10 +83,10 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   TG.local_barrier();
   AFQMCTimers[setup_timer]->stop();
 
-  StaticMatrix vHS_buff(vhs_ext, buffer_allocator->template get_allocator<ComplexType>());
+  StaticMatrix vHS_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
   SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vHS_buff.origin())), vhs_ext);
   {
-    StaticSPMatrix G(G_ext, buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix G(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // 1. Calculate Green function for all (local) walkers
     AFQMCTimers[G_for_vbias_timer]->start();
@@ -100,7 +94,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     { // control scope of Gc
       int Gak0, GakN;
       std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(G.num_elements()), TG.getNCoresPerTG());
-      StaticMatrix Gc(G_ext, buffer_allocator->template get_allocator<ComplexType>());
+      StaticMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
       wfn.MixedDensityMatrix_for_vbias(wset, Gc);
       TG.local_barrier();
       copy_n_cast(make_device_ptr(Gc.origin()) + Gak0, GakN - Gak0, make_device_ptr(G.origin()) + Gak0);
@@ -111,11 +105,14 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
 #endif
     AFQMCTimers[G_for_vbias_timer]->stop();
 
-    StaticSPMatrix Gwork(G_ext, buffer_allocator->template get_allocator<SPComplexType>());
-    StaticSPMatrix X({long(nCV), long(nwalk * nsteps)}, buffer_allocator->template get_allocator<SPComplexType>());
-    StaticSPMatrix vbias({long(nCV), long(nwalk)}, buffer_allocator->template get_allocator<SPComplexType>());
-    StaticSPMatrix RNG({long(nCV), long(nwalk * nsteps)}, buffer_allocator->template get_allocator<SPComplexType>());
-    StaticSPMatrix vHSwork(vhs_ext, buffer_allocator->template get_allocator<SPComplexType>());
+    StaticSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix X({long(nCV), long(nwalk * nsteps)},
+                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix vbias({long(nCV), long(nwalk)},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix RNG({long(nCV), long(nwalk * nsteps)},
+                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    StaticSPMatrix vHSwork(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // partition G and v for communications: all cores communicate a piece of the matrix
     long vak0, vakN;

@@ -33,14 +33,18 @@ namespace qmcplusplus
 class ParticleSetPool : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PoolType;
+  using PoolType = std::map<std::string, ParticleSet*>;
 
   /** constructor
    * @param aname xml tag
    */
   ParticleSetPool(Communicate* c, const char* aname = "particleset");
+  ~ParticleSetPool();
 
+  ParticleSetPool(const ParticleSetPool&) = delete;
+  ParticleSetPool& operator=(const ParticleSetPool&) = delete;
   ParticleSetPool(ParticleSetPool&& pset);
+  ParticleSetPool& operator=(ParticleSetPool&&) = default;
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
@@ -52,13 +56,18 @@ public:
   bool putTileMatrix(xmlNodePtr cur);
 
   /** initialize the supercell shared by all the particle sets
+   *
+   *  return value is never checked anywhere
+   *  side effect SimulationCell UPtr<ParticleLayout_t> is set
+   *  to particle layout created on heap.
+   *  This is later directly assigned to pset member variable Lattice.
    */
   bool putLattice(xmlNodePtr cur);
   ///return true, if the pool is empty
   inline bool empty() const { return myPool.empty(); }
 
-  ///add a ParticleSet* to the pool
-  void addParticleSet(ParticleSet* p);
+  ///add a ParticleSet* to the pool with ownership transferred
+  void addParticleSet(std::unique_ptr<ParticleSet>&& p);
   /** get a named ParticleSet
    * @param pname name of the ParticleSet
    * @return a MCWalkerConfiguration object with pname
@@ -102,15 +111,15 @@ private:
    * - <simulationcell> element
    * - the first particleset created with ES-HDF
    */
-  ParticleSet::ParticleLayout_t* SimulationCell;
+  std::unique_ptr<ParticleSet::ParticleLayout_t> SimulationCell;
   /** tiling matrix
    */
   Tensor<int, OHMMS_DIM> TileMatrix;
-  /** List of ParticleSet
+  /** List of ParticleSet owned
    *
-   * Each ParticleSet has to have a unique name which is used as a key for the map
+   * Each ParticleSet has to have a unique name which is used as a key for the map.
    */
-  std::map<std::string, ParticleSet*> myPool;
+  PoolType myPool;
   /** xml node for random initialization.
    *
    * randomize() process initializations just before starting qmc sections

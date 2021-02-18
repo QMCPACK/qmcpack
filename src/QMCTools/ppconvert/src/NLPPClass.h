@@ -60,7 +60,7 @@ public:
   double FindCutoff();
   void WriteChannelLog(XMLWriterClass& writer, bool writeVl);
   void WriteChannelLinear(XMLWriterClass& writer, double dr, double rmax, bool writeVl);
-  ChannelPotentialClass() : n_principal(0)
+  ChannelPotentialClass() : l(0), n_principal(0), Cutoff(0.)
   {
     HasProjector = false;
     Occupation   = 0.0;
@@ -86,7 +86,7 @@ private:
   std::map<std::string, XCType> XCRevMap;
   std::map<int, std::string> ChannelMap;
   std::map<std::string, int> ChannelRevMap;
-  std::map<int, string> ZToSymbolMap;
+  std::map<int, std::string> ZToSymbolMap;
   std::map<int, double> ZToMassMap;
   std::map<std::string, int> SymbolToZMap;
   void SetupMaps();
@@ -96,16 +96,16 @@ private:
   int AtomicNumber;
   double PseudoCharge, TotalEnergy;
   std::string EnergyUnit, LengthUnit;
-  int LocalChannel;
-  double DensityMix;
   // The grid is stored in bohr
   SimpleGrid PotentialGrid;
-  bool Relativistic;
   XCType XC;
+  bool Relativistic;
+  int LocalChannel;
   void Write4Block(FILE* fout, std::vector<double>& data, int indent = 2);
   bool GetNextState(std::string& state, int& n, int& l, double& occ);
   //
   const double grid_delta;
+  double DensityMix;
 
 public:
   bool WriteLogGrid;
@@ -141,7 +141,7 @@ public:
   void SetLocalChannel(int local) { LocalChannel = local; }
 
   PseudoClass()
-      : XC(XC_NONE), Relativistic(false), LocalChannel(-1), grid_delta(0.001), WriteLogGrid(false), DensityMix(0.75)
+      : XC(XC_NONE), Relativistic(false), LocalChannel(-1), grid_delta(0.001), DensityMix(0.75), WriteLogGrid(false)
   {
     SetupMaps();
   }

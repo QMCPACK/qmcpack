@@ -42,7 +42,7 @@ using PsiValueType = QMCTraits::QTFull::ValueType;
 #if defined(ENABLE_CUDA)
 typedef DiracDeterminantBatched<MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #else
-typedef DiracDeterminantBatched<MatrixUpdateOMP<ValueType, QMCTraits::QTFull::ValueType>> DetType;
+typedef DiracDeterminantBatched<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>> DetType;
 #endif
 #else
 typedef DiracDeterminantBatched<> DetType;
@@ -62,9 +62,10 @@ void check_matrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b)
 
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 {
-  FakeSPO* spo = new FakeSPO();
-  spo->setOrbitalSetSize(3);
-  DetType ddb(spo);
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(3);
+  DetType ddb(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
   int norb = 3;
   ddb.set(0, norb);
@@ -119,9 +120,10 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 
 TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 {
-  FakeSPO* spo = new FakeSPO();
-  spo->setOrbitalSetSize(4);
-  DetType ddb(spo);
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(4);
+  DetType ddb(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
   int norb = 4;
   ddb.set(0, norb);
@@ -245,9 +247,10 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 {
-  FakeSPO* spo = new FakeSPO();
-  spo->setOrbitalSetSize(4);
-  DetType ddc(spo);
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(4);
+  DetType ddc(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddc.getPhi());
 
   int norb = 4;
   // maximum delay 2
@@ -331,7 +334,8 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 
   check_matrix(ddc.psiMinv, a_update1);
 
-  grad                    = ddc.evalGrad(elec, 1);
+  grad = ddc.evalGrad(elec, 1);
+
   PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
@@ -350,7 +354,8 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1, true);
 
-  grad                    = ddc.evalGrad(elec, 2);
+  grad = ddc.evalGrad(elec, 2);
+
   PsiValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());

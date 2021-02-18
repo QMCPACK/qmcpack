@@ -14,8 +14,8 @@
 #ifndef QMCPLUSPLUS_SPOSET_INFO_H
 #define QMCPLUSPLUS_SPOSET_INFO_H
 
-#include <QMCWaveFunctions/SPOInfo.h>
-#include <Utilities/IteratorUtility.h>
+#include "QMCWaveFunctions/SPOInfo.h"
+#include "Utilities/IteratorUtility.h"
 
 
 namespace qmcplusplus

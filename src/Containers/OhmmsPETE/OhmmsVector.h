@@ -48,8 +48,7 @@ public:
     if (n)
     {
       resize_impl(n);
-      if (allocator_traits<Alloc>::is_host_accessible)
-        std::fill_n(X, n, val);
+      allocator_traits<Alloc>::fill_n(X, n, val);
     }
   }
 
@@ -64,6 +63,8 @@ public:
       resize_impl(rhs.nLocal);
       if (allocator_traits<Alloc>::is_host_accessible)
         std::copy_n(rhs.data(), nLocal, X);
+      else
+        allocator_traits<Alloc>::fill_n(X, nLocal, T());
     }
   }
 
@@ -76,6 +77,8 @@ public:
       resize(rhs.nLocal);
     if (allocator_traits<Alloc>::is_host_accessible)
       std::copy_n(rhs.data(), nLocal, X);
+    else
+      allocator_traits<Alloc>::fill_n(X, nLocal, T());
     return *this;
   }
 
@@ -101,17 +104,15 @@ public:
   }
 
   //! Destructor
-  virtual ~Vector()
-  {
-    free();
-  }
+  virtual ~Vector() { free(); }
 
   // Attach to pre-allocated memory
   inline void attachReference(T* ref, size_t n)
   {
-    if (nAllocated) {
+    if (nAllocated)
+    {
       free();
-      std::cerr << "Allocated OhmmsVector attachReference called.\n" << std::endl;
+      // std::cerr << "Allocated OhmmsVector attachReference called.\n" << std::endl;
       // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
       //throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     }
@@ -126,34 +127,30 @@ public:
   ///resize
   inline void resize(size_t n, Type_t val = Type_t())
   {
-    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Vector and Alloc data types must agree!");
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value,
+                  "Vector and Alloc data types must agree!");
     if (nLocal > nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
-    if(allocator_traits<Alloc>::is_host_accessible)
+
+    if (n > nAllocated)
     {
-      if (n > nAllocated)
-      {
-        resize_impl(n);
-        std::fill_n(X, n, val);
-      }
-      else
-      {
-        if (n > nLocal) std::fill_n(X + nLocal, n - nLocal, val);
-        nLocal = n;
-      }
+      resize_impl(n);
+      allocator_traits<Alloc>::fill_n(X, n, val);
     }
     else
     {
-      if (n > nAllocated)
-        resize_impl(n);
-      else
-        nLocal = n;
+      if (n > nLocal)
+        allocator_traits<Alloc>::fill_n(X + nLocal, n - nLocal, val);
+      nLocal = n;
     }
     return;
   }
 
   ///clear
   inline void clear() { nLocal = 0; }
+
+  ///zero
+  inline void zero() { allocator_traits<Alloc>::fill_n(X, nAllocated, T()); }
 
   ///free
   inline void free()
@@ -198,6 +195,11 @@ public:
 
   inline pointer data() { return X; }
   inline const_pointer data() const { return X; }
+
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  inline pointer device_data() { return mAllocator.getDevicePtr(); }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  inline const_pointer device_data() const { return mAllocator.getDevicePtr(); }
 
   inline pointer first_address() { return X; }
   inline const_pointer first_address() const { return X; }
@@ -318,18 +320,43 @@ inline void evaluate(Vector<T, C>& lhs, const Op& op, const Expression<RHS>& rhs
     throw std::runtime_error("Error in evaluate: LHS and RHS don't conform in OhmmsVector.");
   }
 }
-// I/O
-template<class T, class C>
-std::ostream& operator<<(std::ostream& out, const Vector<T, C>& rhs)
+
+template<class T, class Alloc>
+bool operator==(const Vector<T, Alloc>& lhs, const Vector<T, Alloc>& rhs)
 {
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  if (lhs.size() == rhs.size())
+  {
+    for (int i = 0; i < rhs.size(); i++)
+      if (lhs[i] != rhs[i])
+        return false;
+    return true;
+  }
+  else
+    return false;
+}
+
+template<class T, class Alloc>
+bool operator!=(const Vector<T, Alloc>& lhs, const Vector<T, Alloc>& rhs)
+{
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  return !(lhs == rhs);
+}
+
+// I/O
+template<class T, class Alloc>
+std::ostream& operator<<(std::ostream& out, const Vector<T, Alloc>& rhs)
+{
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator<< requires host accessible Vector.");
   for (int i = 0; i < rhs.size(); i++)
     out << rhs[i] << std::endl;
   return out;
 }
 
-template<class T, class C>
-std::istream& operator>>(std::istream& is, Vector<T, C>& rhs)
+template<class T, class Alloc>
+std::istream& operator>>(std::istream& is, Vector<T, Alloc>& rhs)
 {
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator>> requires host accessible Vector.");
   //printTinyVector<TinyVector<T,D> >::print(out,rhs);
   for (int i = 0; i < rhs.size(); i++)
     is >> rhs[i];

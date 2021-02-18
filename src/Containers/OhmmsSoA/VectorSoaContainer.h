@@ -166,8 +166,9 @@ struct VectorSoaContainer
     if (nAllocated)
     {
       free();
-      std::cerr << "OhmmsVectorSoa attachReference called on previously allocated vector.\n" << std::endl;
-      // Nice idea but "default" constructed WFC elements in the batched driver make this a mess.
+      // This is too noisy right now.
+      // std::cerr << "OhmmsVectorSoa attachReference called on previously allocated vector.\n" << std::endl;
+      /// \todo return this when buffer system is simplified.
     }
     nLocal  = n;
     nGhosts = n_padded;
@@ -247,6 +248,20 @@ struct VectorSoaContainer
   __forceinline T* end() { return myData + D * nGhosts; }
   ///return the end
   __forceinline const T* end() const { return myData + D * nGhosts; }
+
+
+  ///return the base, device
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  __forceinline T* device_data() { return myAlloc.getDevicePtr(); }
+  ///return the base, device
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  __forceinline const T* device_data() const { return myAlloc.getDevicePtr(); }
+  ///return the pointer of the i-th components, device
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  __forceinline T* restrict device_data(size_t i) { return myAlloc.getDevicePtr() + i * nGhosts; }
+  ///return the const pointer of the i-th components, device
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  __forceinline const T* restrict device_data(size_t i) const { return myAlloc.getDevicePtr() + i * nGhosts; }
 
 private:
   /// number of elements

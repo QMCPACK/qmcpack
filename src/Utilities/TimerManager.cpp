@@ -20,11 +20,12 @@
 #include <cstdio>
 #include <algorithm>
 #include <array>
+#include <stdexcept>
 #include <libxml/xmlwriter.h>
 #include "Configuration.h"
-#include <Message/OpenMP.h>
-#include <Message/Communicate.h>
-#include <Message/CommOperators.h>
+#include "Message/OpenMP.h"
+#include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
@@ -65,8 +66,8 @@ template<class TIMER>
 TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels mytimer)
 {
   TIMER* t = nullptr;
-#pragma omp critical
   {
+    const std::lock_guard<std::mutex> lock(timer_list_lock_);
     TimerList.push_back(std::make_unique<TIMER>(myname, this, mytimer));
     t = TimerList.back().get();
     initializeTimer(*t);
@@ -74,6 +75,41 @@ TIMER* TimerManager<TIMER>::createTimer(const std::string& myname, timer_levels 
   return t;
 }
 
+template<class TIMER>
+void TimerManager<TIMER>::push_timer(TIMER* t)
+{
+  // current_timer() can be nullptr when the stack was empty.
+  if (t == current_timer())
+  {
+    std::cerr << "Timer " << t->get_name()
+              << " instance is already at the top of the stack. "
+                 "start() is being called again. This often happens when stop() is not paired properly with start(). "
+              << "ScopedTimer uses RAII and manages timer start/stop more safely." << std::endl;
+    throw std::runtime_error("TimerManager push_timer error!");
+  }
+  else
+    CurrentTimerStack.push_back(t);
+}
+
+template<class TIMER>
+void TimerManager<TIMER>::pop_timer(TIMER* t)
+{
+  TIMER* stack_top = current_timer();
+  if (stack_top == nullptr)
+  {
+    std::cerr << "Timer stack pop failed on an empty stack! Requested \"" << t->get_name() << "\"." << std::endl;
+    throw std::runtime_error("TimerManager pop_timer error!");
+  }
+  else if (t != stack_top)
+  {
+    std::cerr << "Timer stack pop not matching push! "
+              << "Expecting \"" << t->get_name() << "\" but \"" << stack_top->get_name() << "\" is on the top."
+              << std::endl;
+    throw std::runtime_error("TimerManager pop_timer error!");
+  }
+  else
+    CurrentTimerStack.pop_back();
+}
 
 template<class TIMER>
 void TimerManager<TIMER>::reset()

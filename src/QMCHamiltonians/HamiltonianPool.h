@@ -40,9 +40,17 @@ class WaveFunctionPool;
 class HamiltonianPool : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, HamiltonianFactory*> PoolType;
+  using PoolType = std::map<std::string, HamiltonianFactory*>;
 
-  HamiltonianPool(Communicate* c, const char* aname = "hamiltonian");
+  HamiltonianPool(ParticleSetPool& pset_pool,
+                  WaveFunctionPool& psi_pool,
+                  Communicate* c,
+                  const char* aname = "hamiltonian");
+  HamiltonianPool(const HamiltonianPool&) = delete;
+  HamiltonianPool& operator=(const HamiltonianPool&) = delete;
+  HamiltonianPool(HamiltonianPool&&)                 = default;
+  HamiltonianPool& operator=(HamiltonianPool&&) = delete;
+  ~HamiltonianPool();
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
@@ -66,23 +74,15 @@ public:
     if (hit == myPool.end())
     {
       if (myPool.empty())
-        return 0;
+        return nullptr;
       else
-        return (*(myPool.begin())).second->targetH;
+        return (*(myPool.begin())).second->getH();
     }
     else
-      return (*hit).second->targetH;
+      return (*hit).second->getH();
   }
 
   void setDocument(Libxml2Document* doc) { curDoc = doc; }
-
-  /** assign a pointer to a ParticleSetPool
-   */
-  inline void setParticleSetPool(ParticleSetPool* pset) { ptclPool = pset; }
-
-  /** assign a pointer to a WaveFunctionPool
-   */
-  inline void setWaveFunctionPool(WaveFunctionPool* pset) { psiPool = pset; }
 
 private:
   /** pointer to the primary QMCHamiltonian
@@ -100,14 +100,14 @@ private:
    * Any number of ParticleSet can be used to describe
    * a QMCHamiltonian.
    */
-  ParticleSetPool* ptclPool;
+  ParticleSetPool& ptcl_pool_;
 
   /** pointer to WaveFunctionPool
    *
    * For those OperatorBase that depends on TrialWaveFunction,
    * e.g., NonLocalPPotential.
    */
-  WaveFunctionPool* psiPool;
+  WaveFunctionPool& psi_pool_;
 
 
   /** point to the working document */

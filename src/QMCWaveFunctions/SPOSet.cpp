@@ -15,13 +15,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/SPOSet.h"
+#include "SPOSet.h"
 #include "Message/Communicate.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/SIMD/simd.hpp"
 #include "Utilities/ProgressReportEngine.h"
-#include <io/hdf_archive.h>
+#include "hdf/hdf_archive.h"
 #include <limits>
 
 namespace qmcplusplus
@@ -34,21 +34,6 @@ SPOSet::SPOSet(bool use_OMP_offload, bool ion_deriv, bool optimizable)
       OrbitalSetSize(0)
 {
   className = "invalid";
-}
-
-void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
-{
-  APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
-}
-
-void SPOSet::mw_evaluateValue(const RefVector<SPOSet>& spo_list,
-                              const RefVector<ParticleSet>& P_list,
-                              int iat,
-                              const RefVector<ValueVector_t>& psi_v_list)
-{
-#pragma omp parallel for
-  for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw].get().evaluateValue(P_list[iw], iat, psi_v_list[iw]);
 }
 
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
@@ -118,6 +103,19 @@ void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMa
   APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
 }
 
+void SPOSet::mw_evaluate_notranspose(const RefVector<SPOSet>& spo_list,
+                                     const RefVector<ParticleSet>& P_list,
+                                     int first,
+                                     int last,
+                                     const RefVector<ValueMatrix_t>& logdet_list,
+                                     const RefVector<GradMatrix_t>& dlogdet_list,
+                                     const RefVector<ValueMatrix_t>& d2logdet_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw].get().evaluate_notranspose(P_list[iw], first, last, logdet_list[iw], dlogdet_list[iw], d2logdet_list[iw]);
+}
+
 void SPOSet::evaluate_notranspose(const ParticleSet& P,
                                   int first,
                                   int last,
@@ -146,7 +144,7 @@ SPOSet* SPOSet::makeClone() const
   return 0;
 }
 
-void SPOSet::basic_report(const std::string& pad)
+void SPOSet::basic_report(const std::string& pad) const
 {
   app_log() << pad << "size = " << size() << std::endl;
   app_log() << pad << "state info:" << std::endl;
@@ -201,6 +199,11 @@ void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, Va
 }
 
 #ifdef QMC_CUDA
+
+void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
+{
+  APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
+}
 
 void SPOSet::evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi)
 {

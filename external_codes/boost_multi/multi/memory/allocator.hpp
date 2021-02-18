@@ -1,5 +1,5 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $0 -o $0x&&$0x&&rm $0x;exit
+$CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -7,10 +7,11 @@ $CXX $0 -o $0x&&$0x&&rm $0x;exit
 #define BOOST_MULTI_MEMORY_ALLOCATOR_HPP
 
 #include "../detail/memory.hpp"
+#include "../config/NODISCARD.hpp"
 
 #include<cassert>
 
-#if(__cpp_lib_memory_resource>=201603L)
+#if defined(__cpp_lib_memory_resource) and __cpp_lib_memory_resource>=201603L
 #include<memory_resource>
 #endif
 
@@ -48,8 +49,10 @@ public:
 	bool operator==(allocator const& o) const{return mp_ == o.mp_;}
 	bool operator!=(allocator const& o) const{return mp_ != o.mp_;}
 	using void_pointer = typename std::pointer_traits<decltype(std::declval<memory_type*>()->allocate(0, 0))>::template rebind<void>;
+	NODISCARD("because otherwise it will generate a memory leak")
 	pointer allocate(size_type n){
-		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type), alignof(T))));
+		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type), 16)));
+		//return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type)/*, alignof(T)*/)));
 	}
 	void deallocate(pointer p, size_type n){
 		mp_->deallocate(p, n*sizeof(value_type));
@@ -66,43 +69,28 @@ public:
 }}}
 
 #if not __INCLUDE_LEVEL__ // _TEST_BOOST_MULTI_MEMORY_ALLOCATOR
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi memory allocator"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
 #include "../memory/monotonic.hpp"
 #include<boost/align/is_aligned.hpp>
 
-#include<vector>
-#include<iostream>
-
 namespace multi = boost::multi;
-using std::cout;
 
-int main(){
-	{
-		alignas(double) char buffer[256*sizeof(double)];
-		multi::memory::monotonic<char*> m(buffer);
-		multi::memory::allocator<double, multi::memory::monotonic<char*> > A(&m);
-		double* p = A.allocate(1);
-		A.construct(p, 8.);
-		assert( *p == 8. );
-		assert( boost::alignment::is_aligned(p, alignof(double)) );
-		double* arr = A.allocate(255);
-		A.construct(arr, 81.);
-		assert( *arr == 81. );
-	}
-#if 0
-	multi::allocator<double, std::pmr::memory_resource> ga(std::pmr::get_default_resource());
-	double* p = ga.allocate(1);
-	std::allocator_traits<multi::generic_allocator<double, std::pmr::memory_resource>>::construct(ga, p, 8.);
-//	ga.construct(p, 8.);
-	assert( *p == 8. );
+BOOST_AUTO_TEST_CASE(multi_memory_allocator){
 
-	std::vector<double, multi::generic_allocator<double, std::pmr::memory_resource>> v(100, std::pmr::get_default_resource());
-//	std::vector v(100, 1.2, multi::allocator<double>{}); // needs C++17 CTAD
-	multi::array<double, 2, multi::generic_allocator<double, std::pmr::memory_resource>> m({2,4}, 0., std::pmr::get_default_resource());
-//	multi::array m({2,4}, 0., pmr::get_default_resource()); // needs C++17 CTAD
-	m[1][3] = 99.;
-	assert( m[1][3] == 99. );
-#endif
+	alignas(double) char buffer[280*sizeof(double)];
+	multi::memory::monotonic<char*> m(buffer);
+	multi::memory::allocator<double, multi::memory::monotonic<char*> > A(&m);
+	double* p = A.allocate(1);
+	A.construct(p, 8.);
+	BOOST_REQUIRE( *p == 8. );
+	BOOST_REQUIRE( boost::alignment::is_aligned(p, alignof(double)) );
+
+	double* arr = A.allocate(255);
+	A.construct(arr, 81.);
+	BOOST_REQUIRE( *arr == 81. );
 }
 #endif
 #endif

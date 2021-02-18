@@ -17,12 +17,10 @@
 #include "hipblas.h"
 #include "rocsolver.h"
 #include "AFQMC/Memory/HIP/hip_utilities.h"
-#include "AFQMC/Numerics/detail/HIP/hipblas_utils.h"
 
 namespace hipblas
 {
 using qmc_hip::hipblasOperation;
-using qmc_hip::rocblasOperation;
 
 // Level-1
 inline hipblasStatus_t hipblas_copy(hipblasHandle_t handle, int n, float* x, int incx, float* y, int incy)
@@ -821,13 +819,11 @@ inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle,
                                     std::complex<float>* C,
                                     int ldc)
 {
-  hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
-      rocblas_cgeam((rocblas_handle)handle, rocblasOperation(Atrans), rocblasOperation(Btrans), M, N,
-                    reinterpret_cast<rocblas_float_complex const*>(&alpha),
-                    reinterpret_cast<rocblas_float_complex const*>(A), lda,
-                    reinterpret_cast<rocblas_float_complex const*>(&beta),
-                    reinterpret_cast<rocblas_float_complex const*>(B), ldb, reinterpret_cast<rocblas_float_complex*>(C),
-                    ldc));
+  hipblasStatus_t success =
+      hipblasCgeam(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N,
+                   reinterpret_cast<hipblasComplex const*>(&alpha), reinterpret_cast<hipblasComplex const*>(A), lda,
+                   reinterpret_cast<hipblasComplex const*>(&beta), reinterpret_cast<hipblasComplex const*>(B), ldb,
+                   reinterpret_cast<hipblasComplex*>(C), ldc);
   hipDeviceSynchronize();
   return success;
 }
@@ -846,13 +842,12 @@ inline hipblasStatus_t hipblas_geam(hipblasHandle_t handle,
                                     std::complex<double>* C,
                                     int ldc)
 {
-  hipblasStatus_t success = rocBLASStatusToHIPStatusAFQMC(
-      rocblas_zgeam((rocblas_handle)handle, rocblasOperation(Atrans), rocblasOperation(Btrans), M, N,
-                    reinterpret_cast<rocblas_double_complex const*>(&alpha),
-                    reinterpret_cast<rocblas_double_complex const*>(A), lda,
-                    reinterpret_cast<rocblas_double_complex const*>(&beta),
-                    reinterpret_cast<rocblas_double_complex const*>(B), ldb,
-                    reinterpret_cast<rocblas_double_complex*>(C), ldc));
+  hipblasStatus_t success = hipblasZgeam(handle, hipblasOperation(Atrans), hipblasOperation(Btrans), M, N,
+                                         reinterpret_cast<hipblasDoubleComplex const*>(&alpha),
+                                         reinterpret_cast<hipblasDoubleComplex const*>(A), lda,
+                                         reinterpret_cast<hipblasDoubleComplex const*>(&beta),
+                                         reinterpret_cast<hipblasDoubleComplex const*>(B), ldb,
+                                         reinterpret_cast<hipblasDoubleComplex*>(C), ldc);
   hipDeviceSynchronize();
   return success;
 }

@@ -18,11 +18,11 @@
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "Particle/NeighborLists.h"
 
 namespace qmcplusplus
 {
-class NonLocalECPComponent;
 template<typename T>
 struct NLPPJob;
 
@@ -34,8 +34,6 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
 public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
 
-  ~NonLocalECPotential();
-
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -45,7 +43,7 @@ public:
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
-
+  Return_t evaluateDeterministic(ParticleSet& P) override;
   void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
@@ -92,7 +90,7 @@ public:
 
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
-  void addComponent(int groupID, NonLocalECPComponent* pp);
+  void addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& pp);
 
   /** set the internal RNG pointer as the given pointer
    * @param rng input RNG pointer
@@ -113,12 +111,15 @@ protected:
   ///the set of local-potentials (one for each ion)
   std::vector<NonLocalECPComponent*> PP;
   ///unique NonLocalECPComponent to remove
-  std::vector<NonLocalECPComponent*> PPset;
+  std::vector<std::unique_ptr<NonLocalECPComponent>> PPset;
   ///reference to the center ion
   ParticleSet& IonConfig;
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
-
+  ///true if we should compute forces
+  bool ComputeForces;
+  ///true, determinant localization approximation(DLA) is enabled
+  bool use_DLA;
 private:
   ///number of ions
   int NumIons;
@@ -136,10 +137,6 @@ private:
   std::vector<bool> elecTMAffected;
   ///non local operator
   NonLocalTOperator nonLocalOps;
-  ///true if we should compute forces
-  bool ComputeForces;
-  ///true, determinant localization approximation(DLA) is enabled
-  bool use_DLA;
   ///Pulay force vector
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -153,8 +150,9 @@ private:
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
    * @param Tmove whether Txy for Tmove is updated
+   * @param keepGrid.  If true, does not randomize the quadrature grid before evaluation.  
    */
-  void evaluateImpl(ParticleSet& P, bool Tmove);
+  void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
 
   /** the actual implementation for batched walkers, used by mw_evaluate and mw_evaluateWithToperator
    * @param O_list the list of NonLocalECPotential in a walker batch
@@ -173,7 +171,7 @@ private:
   /** mark all the electrons affected by Tmoves and update ElecNeighborIons and IonNeighborElecs
    * @param myTable electron ion distance table
    * @param iel reference electron
-   * Note this funtion should be called before acceptMove for a Tmove
+   * Note this function should be called before acceptMove for a Tmove
    */
   void markAffectedElecs(const DistanceTableData& myTable, int iel);
 };

@@ -22,7 +22,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "ParticleIO/ParticleLayoutIO.h"
-#include "ParticleIO/XMLParticleIO.h"
+#include "XMLParticleIO.h"
 #include "ParticleIO/ParticleIOUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -267,7 +267,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur)
       LatticeParser lat(ref_.Lattice);
       lat.put(cur);
       //ParameterSet params;
-      //params.add(uc_grid,"uc_grid","int");
+      //params.add(uc_grid,"uc_grid");
       //params.put(cur);
     }
     else if (cname == attrib_tag)

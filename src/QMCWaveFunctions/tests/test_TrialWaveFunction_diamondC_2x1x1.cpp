@@ -34,8 +34,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(4);
@@ -88,8 +90,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   elec_.createSK(); // needed by AoS J2 for ChiesaKEcorrection
 
   ParticleSetPool ptcl{c};
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   // make a ParticleSet Clone
   ParticleSet elec_clone(elec_);
@@ -111,17 +113,17 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   SPOSet* spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
-  auto* det_up = new DiracDet(spo);
+  auto* det_up = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_up->set(0, 2, ndelay);
-  auto* det_dn = new DiracDet(spo);
+  auto* det_dn = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_dn->set(2, 2, ndelay);
 
   auto* slater_det = new SlaterDet(elec_);
   slater_det->add(det_up, 0);
   slater_det->add(det_dn, 1);
 
-  TrialWaveFunction psi{c};
-  psi.addComponent(slater_det, "SingleDet");
+  TrialWaveFunction psi;
+  psi.addComponent(slater_det);
 
   const char* jas_input = "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
@@ -139,7 +141,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   xmlNodePtr jas1     = xmlFirstElementChild(jas_root);
 
   RadialJastrowBuilder jb(c, elec_);
-  psi.addComponent(jb.buildComponent(jas1), "RadialJastrow");
+  psi.addComponent(jb.buildComponent(jas1));
 
 #if !defined(QMC_CUDA)
   // initialize distance tables.
@@ -154,8 +156,22 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(logpsi == Approx(-5.932711221043984));
 #endif
 
+  auto logpsi_cplx = psi.evaluateGL(elec_, false);
+#if defined(QMC_COMPLEX)
+  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+#else
+  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+#endif
+
+  logpsi_cplx = psi.evaluateGL(elec_, true);
+#if defined(QMC_COMPLEX)
+  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+#else
+  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+#endif
+
   // make a TrialWaveFunction Clone
-  TrialWaveFunction* psi_clone = psi.makeClone(elec_clone);
+  std::unique_ptr<TrialWaveFunction> psi_clone(psi.makeClone(elec_clone));
 
   elec_clone.update();
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
@@ -215,7 +231,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   std::vector<TrialWaveFunction*> WF_list(2, nullptr);
   WF_list[0] = &psi;
-  WF_list[1] = psi_clone;
+  WF_list[1] = psi_clone.get();
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
@@ -365,10 +381,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
           LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
-  RefVector<ParticleSet> elec_accept_list;
-  for (int iw = 0; iw < isAccepted.size(); iw++)
-    elec_accept_list.push_back(p_ref_list[iw]);
-  ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id);
+  ParticleSet::flex_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted);
 
   const int moved_elec_id_next = 1;
   psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
@@ -435,11 +448,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   isAccepted[1] = false;
   TrialWaveFunction::flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
 
-  elec_accept_list.clear();
-  for (int iw = 0; iw < isAccepted.size(); iw++)
-    elec_accept_list.push_back(p_ref_list[iw]);
-  ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id_next);
+  ParticleSet::flex_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted);
   TrialWaveFunction::flex_completeUpdates(wf_ref_list);
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, false);
 
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
             << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
@@ -455,9 +466,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(det_up->getPsiMinv()[1][0] == Approx(-54.376457060136).epsilon(1e-4));
   REQUIRE(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
 #endif
+  std::vector<LogValueType> log_values(wf_ref_list.size());
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, false);
+  for (int iw = 0; iw < log_values.size(); iw++)
+    log_values[iw] = {wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()};
+  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, true);
+  for (int iw = 0; iw < log_values.size(); iw++)
+    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()});
 
-  //FIXME more thinking and fix about ownership and schope are needed for exiting clean
-  delete psi_clone;
 #endif
 }
 
@@ -469,8 +485,8 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(1);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(2);
 #endif
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMP<VT, FPVT>>>(1);
-  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMP<VT, FPVT>>>(2);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(2);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(1);
   testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(2);
 }

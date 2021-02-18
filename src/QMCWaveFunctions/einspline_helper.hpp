@@ -16,12 +16,12 @@
 #ifndef QMCPLUSPLUS_EINSPLINEBUILDER_HELPER_H
 #define QMCPLUSPLUS_EINSPLINEBUILDER_HELPER_H
 #include <complex>
-#include <OhmmsPETE/TinyVector.h>
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsArray.h>
-#include <mpi/collectives.h>
-#include <CPU/SIMD/simd.hpp>
-#include <config/stdlib/math.hpp>
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "mpi/collectives.h"
+#include "CPU/SIMD/simd.hpp"
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {

@@ -16,13 +16,13 @@
 
 #ifndef QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
 #define QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
-#include <Particle/MCWalkerConfiguration.h>
-#include <OhmmsData/RecordProperty.h>
-#include <OhmmsData/HDFAttribIO.h>
-#include <Estimators/accumulators.h>
+#include "Particle/MCWalkerConfiguration.h"
+#include "OhmmsData/RecordProperty.h"
+#include "OhmmsData/HDFAttribIO.h"
+#include "Estimators/accumulators.h"
 #include "Particle/Walker.h"
 #if !defined(REMOVE_TRACEMANAGER)
-#include <Estimators/TraceManager.h>
+#include "Estimators/TraceManager.h"
 #endif
 
 namespace qmcplusplus
@@ -104,6 +104,12 @@ struct ScalarEstimatorBase
     {
       *first++         = scalars[i].mean();
       *first_sq++      = scalars[i].mean2();
+      // For mixed precision I believe this is where Collectables data goes from Actual QMCT::RealType
+      // to the local RealType which is hard coded to QMCTFullPrecRealType.
+      // I think it is a bad idea to have RealType to have a changing meaning,
+      // I also feel like having the floating point expension needed to write always to
+      // double in hdf5 is poor form especially since I had to figure this out in many
+      // years later.
       scalars_saved[i] = scalars[i]; //save current block
       scalars[i].clear();
     }
@@ -123,6 +129,12 @@ struct ScalarEstimatorBase
     {
       *first++         = scalars[i].result();
       *first_sq++      = scalars[i].result2();
+      // For mixed precision I believe this is where Collectables data goes from Actual QMCT::RealType
+      // to the local RealType which is hard coded to QMCTFullPrecRealType.
+      // I think it is a bad idea to have RealType to have a changing meaning,
+      // I also feel like having the floating point expension needed to write always to
+      // double in hdf5 is poor form especially since I had to figure this out in many
+      // years later.
       scalars_saved[i] = scalars[i]; //save current block
       scalars[i].clear();
     }

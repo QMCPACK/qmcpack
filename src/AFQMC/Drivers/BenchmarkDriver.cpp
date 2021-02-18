@@ -5,16 +5,16 @@
 
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include <Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 #include "Message/OpenMP.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Configuration.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Drivers/BenchmarkDriver.h"
+#include "BenchmarkDriver.h"
 
 namespace qmcplusplus
 {
@@ -40,14 +40,14 @@ bool BenchmarkDriver::parse(xmlNodePtr cur)
 
   ncores_per_TG = 1;
   ParameterSet m_param;
-  m_param.add(benchmark_list, "list", "string");
-  m_param.add(maxnW, "maxnw", "int");
-  m_param.add(delnW, "delnw", "int");
-  m_param.add(nrepeat, "repeat", "int");
-  m_param.add(ncores_per_TG, "ncores_per_TG", "int");
-  m_param.add(ncores_per_TG, "ncores", "int");
-  m_param.add(ncores_per_TG, "cores", "int");
-  m_param.add(dt, "timestep", "double");
+  m_param.add(benchmark_list, "list");
+  m_param.add(maxnW, "maxnw");
+  m_param.add(delnW, "delnw");
+  m_param.add(nrepeat, "repeat");
+  m_param.add(ncores_per_TG, "ncores_per_TG");
+  m_param.add(ncores_per_TG, "ncores");
+  m_param.add(ncores_per_TG, "cores");
+  m_param.add(dt, "timestep");
   m_param.put(cur);
 
   return true;

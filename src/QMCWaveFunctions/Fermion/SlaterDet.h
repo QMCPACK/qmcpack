@@ -35,21 +35,15 @@ class SlaterDet : public WaveFunctionComponent
 public:
   typedef DiracDeterminantBase Determinant_t;
   ///container for the DiracDeterminants
-  std::vector<Determinant_t*> Dets;
-  ///the last particle of each group
-  std::vector<int> Last;
-  std::map<std::string, SPOSetPtr> mySPOSet;
+  std::vector<std::unique_ptr<Determinant_t>> Dets;
 
   /**  constructor
    * @param targetPtcl target Particleset
    */
-  SlaterDet(ParticleSet& targetPtcl);
+  SlaterDet(ParticleSet& targetPtcl, const std::string& class_name = "SlaterDet");
 
   ///destructor
   ~SlaterDet();
-
-  ///add a SPOSet
-  void add(SPOSetPtr sposet, const std::string& aname);
 
   ///add a new DiracDeterminant to the list of determinants
   virtual void add(Determinant_t* det, int ispin);
@@ -66,8 +60,6 @@ public:
 
   void reportStatus(std::ostream& os) override;
 
-  virtual void resetTargetParticleSet(ParticleSet& P) override;
-
   virtual LogValueType evaluateLog(ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
                                    ParticleSet::ParticleLaplacian_t& L) override;
@@ -76,6 +68,17 @@ public:
                               const RefVector<ParticleSet>& P_list,
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) override;
+
+  virtual LogValueType evaluateGL(ParticleSet& P,
+                                  ParticleSet::ParticleGradient_t& G,
+                                  ParticleSet::ParticleLaplacian_t& L,
+                                  bool fromscratch) override;
+
+  virtual void mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                             const RefVector<ParticleSet>& P_list,
+                             const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                             const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                             bool fromscratch) override;
 
   virtual void recompute(ParticleSet& P) override;
 
@@ -89,6 +92,12 @@ public:
   virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
+
+  void createResource(ResourceCollection& collection) override;
+
+  void acquireResource(ResourceCollection& collection) override;
+
+  void releaseResource(ResourceCollection& collection) override;
 
   virtual inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
@@ -104,28 +113,25 @@ public:
     return Dets[det_id]->mw_evaluateRatios(extract_DetRef_list(wfc_list, det_id), vp_list, ratios);
   }
 
-  virtual inline PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
-  {
-    return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
-  }
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat) override;
 
-  virtual inline PsiValueType ratioGradWithSpin(ParticleSet& P,
-                                                int iat,
-                                                GradType& grad_iat,
-                                                ComplexType& spingrad_iat) override
-  {
-    return Dets[getDetID(iat)]->ratioGradWithSpin(P, iat, grad_iat, spingrad_iat);
-  }
+  virtual PsiValueType ratioGradWithSpin(ParticleSet& P,
+                                         int iat,
+                                         GradType& grad_iat,
+                                         ComplexType& spingrad_iat) override;
 
   virtual void mw_ratioGrad(const RefVector<WaveFunctionComponent>& wfc_list,
                             const RefVector<ParticleSet>& P_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
-                            std::vector<GradType>& grad_now) override
-  {
-    const int det_id = getDetID(iat);
-    Dets[det_id]->mw_ratioGrad(extract_DetRef_list(wfc_list, det_id), P_list, iat, ratios, grad_now);
-  }
+                            std::vector<GradType>& grad_now) override;
+
+  void mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& wfc_list,
+                         const RefVector<ParticleSet>& P_list,
+                         int iat,
+                         std::vector<PsiValueType>& ratios,
+                         std::vector<GradType>& grad_now) override;
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
@@ -356,10 +362,8 @@ public:
 #endif
 
 private:
-  SlaterDet() {}
-
   //get Det ID
-  inline int getDetID(const int iat)
+  inline int getDetID(const int iat) const
   {
     int id = 0;
     while (iat > Last[id])
@@ -377,6 +381,9 @@ private:
       Det_list.push_back(*static_cast<SlaterDet&>(wfc).Dets[det_id]);
     return Det_list;
   }
+
+  ///the last particle of each group
+  std::vector<int> Last;
 };
 } // namespace qmcplusplus
 #endif

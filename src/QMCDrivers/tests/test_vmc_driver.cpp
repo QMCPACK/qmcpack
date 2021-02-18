@@ -76,9 +76,9 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   ConstantOrbital* orb = new ConstantOrbital;
-  psi.addComponent(orb, "Constant");
+  psi.addComponent(orb);
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -90,14 +90,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  HamiltonianPool hpool(c);
-
-  WaveFunctionPool wpool(c);
-
-  //EstimatorManagerBase emb(c);
-
-
-  VMC vmc_omp(elec, psi, h, wpool, c);
+  VMC vmc_omp(elec, psi, h, c, false);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
    <parameter name=\"substeps\">1</parameter> \
@@ -170,9 +163,9 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   ConstantOrbital* orb = new ConstantOrbital;
-  psi.addComponent(orb, "Constant");
+  psi.addComponent(orb);
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -184,14 +177,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  HamiltonianPool hpool(c);
-
-  WaveFunctionPool wpool(c);
-
-  //EstimatorManagerBase emb(c);
-
-
-  VMC vmc_omp(elec, psi, h, wpool, c);
+  VMC vmc_omp(elec, psi, h, c, false);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
    <parameter name=\"substeps\">1</parameter> \

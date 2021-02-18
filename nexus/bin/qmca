@@ -432,7 +432,11 @@ class DatAnalyzer(QBase):
                 #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
 
                 # efficiency based on total work and error bar
-                stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                if (e > 0.0):
+                    stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                else:
+                    stats.Efficiency = obj(mean=0.0,var=0.0,error=0.0,kappa=1.0)
+                #end if
                 data.Efficiency  = 0*example
             #end if
         #end if
@@ -1218,12 +1222,12 @@ QMCA examples:
                 adata = obj()
                 ns=0
                 for series in serieslist:
-                    np = 0
+                    npf = 0
                     for prefix in sorted(data.keys()):
                         pdata = data[prefix]
-                        w = weights[np]
+                        w = weights[npf]
                         d = pdata[series]
-                        if np==0:
+                        if npf==0:
                             avg = d.copy()
                             di = d.info
                             avg.info.set(
@@ -1235,7 +1239,7 @@ QMCA examples:
                             avg.zero()
                         #end if
                         avg.accumulate(d,w)
-                        np+=1
+                        npf+=1
                     #end for
                     avg.normalize()
                     file_list.append(avg.info.filepath)
@@ -1277,12 +1281,12 @@ QMCA examples:
                         #end if
                     #end if
                     for series in serieslist:
-                        np = 0
+                        npf = 0
                         for prefix in sorted(prefixes):
                             pdata = data[prefix]
-                            w = weights[np]
+                            w = weights[npf]
                             d = pdata[series]
-                            if np==0:
+                            if npf==0:
                                 avg = d.copy()
                                 di = d.info
                                 avg.info.set(
@@ -1294,7 +1298,7 @@ QMCA examples:
                                 avg.zero()
                             #end if
                             avg.accumulate(d,w)
-                            np+=1
+                            npf+=1
                         #end for
                         avg.normalize()
                         file_list.append(avg.info.filepath)
@@ -1433,11 +1437,11 @@ QMCA examples:
             for quantity in quantities:
                 for mode in range(len(modes)):
                     if modes[mode]:
-                        np = 0
+                        npf = 0
                         for prefix in prefix_list:
-                            first_prefix = np==0
-                            last_prefix  = np==len(self.data)-1
-                            np+=1
+                            first_prefix = npf==0
+                            last_prefix  = npf==len(self.data)-1
+                            npf+=1
                             if first_prefix or not opt.overlay:
                                 fig = plt.figure()
                                 ax = fig.add_subplot(111)

@@ -15,33 +15,141 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "WaveFunctionComponent.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 
 namespace qmcplusplus
 {
-WaveFunctionComponent::WaveFunctionComponent()
+// for return types
+using PsiValueType = WaveFunctionComponent::PsiValueType;
+
+WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, const std::string& obj_name)
     : IsOptimizing(false),
       Optimizable(true),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
       LogValue(0.0),
       dPsi(nullptr),
-      ClassName("WaveFunctionComponent"),
+      ClassName(class_name),
+      myName(obj_name),
       Bytes_in_WFBuffer(0)
-{}
+{
+  if (ClassName.empty())
+    throw std::runtime_error("WaveFunctionComponent ClassName cannot be empty!");
+}
 
-// WaveFunctionComponent::WaveFunctionComponent(const WaveFunctionComponent& old):
-//   Optimizable(old.Optimizable), UseBuffer(old.UseBuffer),
-//   dPsi(old.dPsi),dLogPsi(old.dLogPsi),d2LogPsi(old.d2LogPsi),
-//   ClassName(old.ClassName),myVars(old.myVars)
-// {
-//   //
-//   //if(dLogPsi.size()) dLogPsi.resize(dLogPsi.size());
-//   //if(d2LogPsi.size()) dLogPsi.resize(d2LogPsi.size());
-//   //if(dPsi) dPsi=old.dPsi->makeClone();
-// }
+void WaveFunctionComponent::mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
+                                           const RefVector<ParticleSet>& P_list,
+                                           const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                                           const RefVector<ParticleSet::ParticleLaplacian_t>& L_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    WFC_list[iw].get().evaluateLog(P_list[iw], G_list[iw], L_list[iw]);
+}
 
+void WaveFunctionComponent::mw_prepareGroup(const RefVector<WaveFunctionComponent>& WFC_list,
+                                            const RefVector<ParticleSet>& P_list,
+                                            int ig)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    WFC_list[iw].get().prepareGroup(P_list[iw], ig);
+}
+
+void WaveFunctionComponent::mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                                        const RefVector<ParticleSet>& P_list,
+                                        int iat,
+                                        std::vector<GradType>& grad_now)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    grad_now[iw] = WFC_list[iw].get().evalGrad(P_list[iw].get(), iat);
+}
+
+void WaveFunctionComponent::mw_calcRatio(const RefVector<WaveFunctionComponent>& WFC_list,
+                                         const RefVector<ParticleSet>& P_list,
+                                         int iat,
+                                         std::vector<PsiValueType>& ratios)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    ratios[iw] = WFC_list[iw].get().ratio(P_list[iw], iat);
+}
+
+
+PsiValueType WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+{
+  APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
+  return ValueType();
+}
+
+void WaveFunctionComponent::ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat)
+{
+#pragma omp task default(none) firstprivate(iat) shared(P, ratio, grad_iat)
+  ratio = ratioGrad(P, iat, grad_iat);
+}
+
+void WaveFunctionComponent::mw_ratioGrad(const RefVector<WaveFunctionComponent>& WFC_list,
+                                         const RefVector<ParticleSet>& P_list,
+                                         int iat,
+                                         std::vector<PsiValueType>& ratios,
+                                         std::vector<GradType>& grad_new)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    ratios[iw] = WFC_list[iw].get().ratioGrad(P_list[iw], iat, grad_new[iw]);
+}
+
+void WaveFunctionComponent::mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& WFC_list,
+                                              const RefVector<ParticleSet>& P_list,
+                                              int iat,
+                                              std::vector<PsiValueType>& ratios,
+                                              std::vector<GradType>& grad_new)
+{
+#pragma omp task default(none) firstprivate(WFC_list, P_list, iat) shared(ratios, grad_new)
+  mw_ratioGrad(WFC_list, P_list, iat, ratios, grad_new);
+}
+
+void WaveFunctionComponent::mw_accept_rejectMove(const RefVector<WaveFunctionComponent>& WFC_list,
+                                                 const RefVector<ParticleSet>& P_list,
+                                                 int iat,
+                                                 const std::vector<bool>& isAccepted,
+                                                 bool safe_to_delay)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    if (isAccepted[iw])
+      WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
+    else
+      WFC_list[iw].get().restore(iat);
+}
+
+void WaveFunctionComponent::mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    WFC_list[iw].get().completeUpdates();
+}
+
+WaveFunctionComponent::LogValueType WaveFunctionComponent::evaluateGL(ParticleSet& P,
+                                                                      ParticleSet::ParticleGradient_t& G,
+                                                                      ParticleSet::ParticleLaplacian_t& L,
+                                                                      bool fromscratch)
+{
+  return evaluateLog(P, G, L);
+}
+
+void WaveFunctionComponent::mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                                          const RefVector<ParticleSet>& P_list,
+                                          const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                                          const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                                          bool fromscratch)
+{
+#pragma omp parallel for
+  for (int iw = 0; iw < WFC_list.size(); iw++)
+    WFC_list[iw].get().evaluateGL(P_list[iw], G_list[iw], L_list[iw], fromscratch);
+}
 
 void WaveFunctionComponent::setDiffOrbital(DiffWaveFunctionComponentPtr d) { dPsi = d; }
 

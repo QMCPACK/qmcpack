@@ -8,8 +8,8 @@
 #include <iostream>
 #include <fstream>
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/Timer.h"
 
@@ -19,14 +19,12 @@
 #include "AFQMC/Propagators/Propagator.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
 /*
  * Top class for back propagated estimators. 
  * An instance of this class will manage a set of back propagated observables.
@@ -56,8 +54,8 @@ class BackPropagatedEstimator : public EstimatorBase
   using mpi3CMatrix    = boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>>;
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
 
-  using buffer_alloc_type = device_buffer_type<ComplexType>;
-  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, buffer_alloc_type>;
+  using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
+  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_,
@@ -71,7 +69,6 @@ public:
                           bool impsamp_ = true)
       : EstimatorBase(info),
         TG(tg_),
-        buffer_allocator(device_buffer_generator.get()),
         walker_type(wlk),
         writer(false),
         Refs({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
@@ -92,13 +89,13 @@ public:
       ParameterSet m_param;
       std::string restore_paths;
       std::string restore_paths2;
-      m_param.add(nStabilize, "ortho", "int");
-      m_param.add(max_nback_prop, "nsteps", "int");
-      m_param.add(nave, "naverages", "int");
-      m_param.add(restore_paths, "path_restoration", "std::string");
-      m_param.add(restore_paths2, "extra_path_restoration", "std::string");
-      m_param.add(block_size, "block_size", "int");
-      m_param.add(nblocks_skip, "nskip", "int");
+      m_param.add(nStabilize, "ortho");
+      m_param.add(max_nback_prop, "nsteps");
+      m_param.add(nave, "naverages");
+      m_param.add(restore_paths, "path_restoration");
+      m_param.add(restore_paths2, "extra_path_restoration");
+      m_param.add(block_size, "block_size");
+      m_param.add(nblocks_skip, "nskip");
       m_param.put(cur);
       if (restore_paths == "true" || restore_paths == "yes")
         path_restoration = true;
@@ -191,8 +188,9 @@ public:
 
     // 1. check structures
     if (Refs.size(0) != wset.size() || Refs.size(1) != nrefs || Refs.size(2) != nrow * ncol)
-      Refs = std::move(mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator()));
-    StaticMatrix detR({wset.size(), nrefs * nx}, buffer_allocator->template get_allocator<ComplexType>());
+      Refs = mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator());
+    DeviceBufferManager buffer_manager;
+    StaticMatrix detR({wset.size(), nrefs * nx}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     int n0, n1;
     std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(Refs.size(2)), TG.getNCoresPerTG());
@@ -301,8 +299,6 @@ public:
 
 private:
   TaskGroup_& TG;
-
-  device_allocator_generator_type* buffer_allocator;
 
   WALKER_TYPES walker_type;
 

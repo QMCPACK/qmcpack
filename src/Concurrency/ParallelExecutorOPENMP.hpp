@@ -54,7 +54,7 @@ void ParallelExecutor<Executor::OPENMP>::operator()(int num_tasks, F&& f, Args&&
         ++nested_throw_count;
       else
       {
-        app_warning() << re.what();
+        app_error() << re.what() << std::flush;
         ++throw_count;
       }
     }

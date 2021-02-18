@@ -45,10 +45,10 @@ struct NLjob
 };
 #endif
 
-///forward declaration of WaveFunctionComponent
+///forward declaration
 struct WaveFunctionComponent;
-///forward declaration of DiffWaveFunctionComponent
 struct DiffWaveFunctionComponent;
+class ResourceCollection;
 
 typedef WaveFunctionComponent* WaveFunctionComponentPtr;
 typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
@@ -126,15 +126,19 @@ struct WaveFunctionComponent : public QMCTraits
   ValueVectorType d2LogPsi;
   /** Name of the class derived from WaveFunctionComponent
    */
-  std::string ClassName;
+  const std::string ClassName;
+  /** Name of the object
+   * It is required to be different for objects of the same derived type like multiple J1.
+   * It can be left empty for object which is unique per many-body WF.
+   */
+  const std::string myName;
   ///list of variables this WaveFunctionComponent handles
   opt_variables_type myVars;
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
   /// default constructor
-  WaveFunctionComponent();
-  //WaveFunctionComponent(const WaveFunctionComponent& old);
+  WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
 
   ///default destructor
   virtual ~WaveFunctionComponent() {}
@@ -167,11 +171,6 @@ struct WaveFunctionComponent : public QMCTraits
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;
 
-  /** reset properties, e.g., distance tables, for a new target ParticleSet
-   * @param P ParticleSet
-   */
-  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
-
   /** evaluate the value of the WaveFunctionComponent from scratch
    * @param P  active ParticleSet
    * @param G Gradients, \f$\nabla\ln\Psi\f$
@@ -190,17 +189,12 @@ struct WaveFunctionComponent : public QMCTraits
    * @param P_list the list of ParticleSet pointers in a walker batch
    * @param G_list the list of Gradients pointers in a walker batch, \f$\nabla\ln\Psi\f$
    * @param L_list the list of Laplacians pointers in a walker batch, \f$\nabla^2\ln\Psi\f$
-   * @@param values the log WF values of walkers in a batch
+   * @param values the log WF values of walkers in a batch
    */
   virtual void mw_evaluateLog(const RefVector<WaveFunctionComponent>& WFC_list,
                               const RefVector<ParticleSet>& P_list,
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw].get().evaluateLog(P_list[iw], G_list[iw], L_list[iw]);
-  }
+                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list);
 
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.
    * needed for Slater Determinants but not needed for most types of WaveFunctionComponents
@@ -216,6 +210,20 @@ struct WaveFunctionComponent : public QMCTraits
   {
     APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + ClassName + " class.");
   }
+
+  /** Prepare internal data for updating WFC correspond to a particle group
+   * It should be called before moving particles of a given group.
+   * This call can be used to handle the precomputation of data used for moving this group of particle.
+   * Such data should be static with respect to the moves of particles within this group.
+   * Particle groups usually correspond to determinants of different spins.
+   * @param P quantum particle set
+   * @param ig particle group index
+   */
+  virtual void prepareGroup(ParticleSet& P, int ig) {}
+
+  virtual void mw_prepareGroup(const RefVector<WaveFunctionComponent>& WFC_list,
+                               const RefVector<ParticleSet>& P_list,
+                               int ig);
 
   /** return the current gradient for the iat-th particle
    * @param P quantum particle set
@@ -245,12 +253,7 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_evalGrad(const RefVector<WaveFunctionComponent>& WFC_list,
                            const RefVector<ParticleSet>& P_list,
                            int iat,
-                           std::vector<GradType>& grad_now)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      grad_now[iw] = WFC_list[iw].get().evalGrad(P_list[iw].get(), iat);
-  }
+                           std::vector<GradType>& grad_now);
 
   /** return the logarithmic gradient for the iat-th particle
    * of the source particleset
@@ -290,11 +293,9 @@ struct WaveFunctionComponent : public QMCTraits
    * @param iat the index of a particle
    * @param grad_iat Gradient for the active particle
    */
-  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
-    return ValueType();
-  }
+  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+
+  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat);
 
   /** evaluate the ratio of the new to old WaveFunctionComponent value and the new spin gradient
    * Default implementation assumes that WaveFunctionComponent does not explicitly depend on Spin.
@@ -319,12 +320,13 @@ struct WaveFunctionComponent : public QMCTraits
                             const RefVector<ParticleSet>& P_list,
                             int iat,
                             std::vector<PsiValueType>& ratios,
-                            std::vector<GradType>& grad_new)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      ratios[iw] = WFC_list[iw].get().ratioGrad(P_list[iw], iat, grad_new[iw]);
-  }
+                            std::vector<GradType>& grad_new);
+
+  virtual void mw_ratioGradAsync(const RefVector<WaveFunctionComponent>& WFC_list,
+                                 const RefVector<ParticleSet>& P_list,
+                                 int iat,
+                                 std::vector<PsiValueType>& ratios,
+                                 std::vector<GradType>& grad_new);
 
   /** a move for iat-th particle is accepted. Update the current content.
    * @param P target ParticleSet
@@ -344,15 +346,7 @@ struct WaveFunctionComponent : public QMCTraits
                                     const RefVector<ParticleSet>& P_list,
                                     int iat,
                                     const std::vector<bool>& isAccepted,
-                                    bool safe_to_delay = false)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      if (isAccepted[iw])
-        WFC_list[iw].get().acceptMove(P_list[iw], iat, safe_to_delay);
-      else
-        WFC_list[iw].get().restore(iat);
-  }
+                                    bool safe_to_delay = false);
 
   /** complete all the delayed updates, must be called after each substep or step during pbyp move
    */
@@ -361,12 +355,7 @@ struct WaveFunctionComponent : public QMCTraits
   /** complete all the delayed updates for all the walkers in a batch
    * must be called after each substep or step during pbyp move
    */
-  virtual void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      WFC_list[iw].get().completeUpdates();
-  }
+  virtual void mw_completeUpdates(const RefVector<WaveFunctionComponent>& WFC_list);
 
   /** If a move for iat-th particle is rejected, restore to the content.
    * @param iat index of the particle whose new position was proposed
@@ -393,12 +382,32 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void mw_calcRatio(const RefVector<WaveFunctionComponent>& WFC_list,
                             const RefVector<ParticleSet>& P_list,
                             int iat,
-                            std::vector<PsiValueType>& ratios)
-  {
-#pragma omp parallel for
-    for (int iw = 0; iw < WFC_list.size(); iw++)
-      ratios[iw] = WFC_list[iw].get().ratio(P_list[iw], iat);
-  }
+                            std::vector<PsiValueType>& ratios);
+
+  /** compute gradients and laplacian of the TWF with respect to each particle.
+   * @param P particle set
+   * @param G Gradients, \f$\nabla\ln\Psi\f$
+   * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
+   * @param fromscratch if true, all the internal data are recomputed from scratch
+   * @return log(psi)
+   */
+  virtual LogValueType evaluateGL(ParticleSet& P,
+                                  ParticleSet::ParticleGradient_t& G,
+                                  ParticleSet::ParticleLaplacian_t& L,
+                                  bool fromscratch);
+
+  /** evaluate gradients and laplacian of the same type WaveFunctionComponent of multiple walkers
+   * @param WFC_list the list of WaveFunctionComponent pointers of the same component in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param G_list the list of Gradients pointers in a walker batch, \f$\nabla\ln\Psi\f$
+   * @param L_list the list of Laplacians pointers in a walker batch, \f$\nabla^2\ln\Psi\f$
+   * @param fromscratch if true, all the internal data are recomputed from scratch
+   */
+  virtual void mw_evaluateGL(const RefVector<WaveFunctionComponent>& WFC_list,
+                             const RefVector<ParticleSet>& P_list,
+                             const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                             const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                             bool fromscratch);
 
   /** For particle-by-particle move. Requests space in the buffer
    *  based on the data type sizes of the objects in this class.
@@ -478,6 +487,18 @@ struct WaveFunctionComponent : public QMCTraits
       wfc_list[iw].get().copyFromBuffer(p_list[iw], buf_list[iw]);
   }
 
+  /** initialize a shared resource and hand it to collection
+   */
+  virtual void createResource(ResourceCollection& collection) {}
+
+  /** acquire a shared resource from collection
+   */
+  virtual void acquireResource(ResourceCollection& collection) {}
+
+  /** return a shared resource to collection
+   */
+  virtual void releaseResource(ResourceCollection& collection) {}
+
   /** make clone
    * @param tqp target Quantum ParticleSet
    * @param deepcopy if true, make a decopy
@@ -485,12 +506,6 @@ struct WaveFunctionComponent : public QMCTraits
    * If not true, return a proxy class
    */
   virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
-
-  /** Intended as a handle to break 
-   *
-   *  
-   */
-  //virtual WaveFunctionComponentPtr makeThrScope(std::vector<std::pair<int,int>>& ptcl_group_indexes) const = 0;
 
   /** Return the Chiesa kinetic energy correction
    */

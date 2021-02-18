@@ -30,29 +30,15 @@ VTune API
 ~~~~~~~~~
 
 If the variable ``USE_VTUNE_API`` is set, QMCPACK will check that the
-include file (``ittnotify.h``) and the library (``libittnotify.a``) can
-be found.
-To provide CMake with the VTune paths, add the include path to ``CMAKE_CXX_FLAGS`` and the library path to ``CMAKE_LIBRARY_PATH``.
+include file (``ittnotify.h``) and the library (``libittnotify.a``) can be found.
+To provide CMake with the VTune search paths, add ``VTUNE_ROOT`` which contains ``include`` and ``lib64`` sub-directories.
 
 An example of options to be passed to CMake:
 
 ::
 
-  -DCMAKE_CXX_FLAGS=-I/opt/intel/vtune_amplifier_xe/include \
-  -DCMAKE_LIBRARY_PATH=/opt/intel/vtune_amplifier_xe/lib64
-
-NVIDIA Tools Extensions
------------------------
-
-NVIDIA's Tools Extensions (NVTX) API enables programmers to annotate their source code when used with the NVIDIA profilers.
-
-NVTX API
-~~~~~~~~
-
-If the variable ``USE_NVTX_API`` is set, QMCPACK will add the library (``libnvToolsExt.so``) to the QMCPACK target. To add NVTX annotations
-to a function, it is necessary to include the ``nvToolsExt.h`` header file and then make the appropriate calls into the NVTX API. For more information
-about the NVTX API, see https://docs.nvidia.com/cuda/profiler-users-guide/index.html#nvtx. Any additional calls to the NVTX API should be guarded by
-the ``USE_NVTX_API`` compiler define.
+  -DUSE_VTUNE_API=ON \
+  -DVTUNE_ROOT=/opt/intel/vtune_amplifier_xe
 
 Timers as Tasks
 ~~~~~~~~~~~~~~~
@@ -70,6 +56,19 @@ For the command line, set the ``enable-user-tasks`` knob to ``true``. For exampl
 
 Collection with the timers set at "fine" can generate too much task data in the profile.
 Collection with the timers at "medium" collects a more reasonable amount of task data.
+
+NVIDIA Tools Extensions
+-----------------------
+
+NVIDIA's Tools Extensions (NVTX) API enables programmers to annotate their source code when used with the NVIDIA profilers.
+
+NVTX API
+~~~~~~~~
+
+If the variable ``USE_NVTX_API`` is set, QMCPACK will add the library (``libnvToolsExt.so``) to the QMCPACK target. To add NVTX annotations
+to a function, it is necessary to include the ``nvToolsExt.h`` header file and then make the appropriate calls into the NVTX API. For more information
+about the NVTX API, see https://docs.nvidia.com/cuda/profiler-users-guide/index.html#nvtx. Any additional calls to the NVTX API should be guarded by
+the ``USE_NVTX_API`` compiler define.
 
 Scitools Understand
 -------------------

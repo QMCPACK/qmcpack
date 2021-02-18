@@ -125,7 +125,7 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
   # create libqmcutil
   ####################################
   SET(UTILITIES
-    qmc_common.cpp
+    Utilities/qmc_common.cpp
     Utilities/RandomGenerator.cpp
     Utilities/OhmmsObject.cpp
     Utilities/SpeciesSet.cpp
@@ -136,16 +136,13 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
     Utilities/unit_conversion.cpp
-    OhmmsData/Libxml2Doc.cpp
+    Utilities/ResourceCollection.cpp
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OptimizableFunctorBase.cpp
     Numerics/SmoothFunctions.cpp
-    QMCFactory/OneDimGridFactory.cpp
-    Message/Communicate.cpp
-    Message/MPIObjectBase.cpp
+    Numerics/OneDimGridFactory.cpp
     Optimize/VariableSet.cpp
-    io/hdf_archive.cpp
     )
 IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
@@ -156,8 +153,9 @@ IF(USE_OBJECT_TARGET)
 ELSE(USE_OBJECT_TARGET)
   ADD_LIBRARY(qmcutil ${UTILITIES})
 ENDIF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message containers)
-  TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 IO::HDF5 Boost::boost ${QMC_UTIL_LIBS})
+  TARGET_INCLUDE_DIRECTORIES(qmcutil PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Utilities")
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC message containers qmcio)
+  TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
 
   # For unit tests, enable use for the fake RNG
   FUNCTION( USE_FAKE_RNG TARGET )
@@ -171,6 +169,7 @@ ENDIF(USE_OBJECT_TARGET)
   )
   ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
+  SUBDIRS(io)
   SUBDIRS(einspline)
   SUBDIRS(Containers)
   SUBDIRS(Message)
@@ -215,8 +214,6 @@ else() #{{{
     SUBDIRS(einspline/tests)
     SUBDIRS(spline2/tests)
     SUBDIRS(Concurrency/tests)
-    SUBDIRS(OhmmsData/tests)
-    SUBDIRS(io/tests)
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
     SUBDIRS(type_traits/tests)

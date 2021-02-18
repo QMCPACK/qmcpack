@@ -17,7 +17,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
 #include "Platforms/Host/OutputManager.h"
@@ -46,6 +46,7 @@
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Utilities/readWfn.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 
 using std::cerr;
@@ -67,21 +68,13 @@ void test_read_phmsd(boost::mpi3::communicator& world)
 {
   using pointer = device_ptr<ComplexType>;
 
-  if (not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping read_phmsd. Wavefunction file not found. \n";
-    app_log() << " Run unit test with --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("test_read_phmsd", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     GlobalTaskGroup gTG(world);
     auto TG    = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     auto TGwfn = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
-
-    // initialize TG buffer
-    make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
 
     int NMO;
     int NAEA;
@@ -148,8 +141,6 @@ void test_read_phmsd(boost::mpi3::communicator& world)
     // Check sign of permutation.
     REQUIRE(abij.number_of_configurations() == ndets_to_read);
   }
-
-  destroy_shm_buffer_generators();
 }
 
 void getBasicWavefunction(std::vector<int>& occs, std::vector<ComplexType>& coeffs, int NEL)
@@ -195,21 +186,13 @@ void test_phmsd(boost::mpi3::communicator& world)
 {
   using pointer = device_ptr<ComplexType>;
 
-  if (not file_exists(UTEST_WFN) || not file_exists(UTEST_HAMIL))
-  {
-    app_log() << " Skipping read_phmsd. Wavefunction and/or Hamiltonian file not found. \n";
-    app_log() << " Run unit test with --wfn /path/to/wfn.h5 and --hamil /path/to/hamil.h5.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("read_phmsd", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     GlobalTaskGroup gTG(world);
     auto TG    = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     auto TGwfn = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
-
-    // initialize TG buffer
-    make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
 
     int NMO;
     int NAEA;
@@ -329,7 +312,6 @@ void test_phmsd(boost::mpi3::communicator& world)
     //std::cout << vMF[i] << std::endl;
     //}
   }
-  destroy_shm_buffer_generators();
 }
 
 TEST_CASE("test_read_phmsd", "[test_read_phmsd]")
@@ -337,16 +319,19 @@ TEST_CASE("test_read_phmsd", "[test_read_phmsd]")
   auto world = boost::mpi3::environment::get_world_instance();
   if (not world.root())
     infoLog.pause();
+  auto node = world.split_shared(world.rank());
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  auto node = world.split_shared(world.rank());
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   test_read_phmsd<Alloc>(world);
+
+  release_memory_managers();
 }
 
 TEST_CASE("test_phmsd", "[read_phmsd]")
@@ -354,17 +339,20 @@ TEST_CASE("test_phmsd", "[read_phmsd]")
   auto world = boost::mpi3::environment::get_world_instance();
   if (not world.root())
     infoLog.pause();
+  auto node = world.split_shared(world.rank());
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  auto node = world.split_shared(world.rank());
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   //test_phmsd<Alloc,SlaterDetOperations_serial<Alloc>>(world);
   test_phmsd<Alloc>(world);
+
+  release_memory_managers();
 }
 
 } // namespace qmcplusplus

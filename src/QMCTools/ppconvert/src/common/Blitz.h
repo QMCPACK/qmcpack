@@ -20,12 +20,18 @@
 #include "blitz/array.h"
 #include "blitz/tinyvec-et.h"
 
-using namespace blitz;
 typedef double scalar;
 
 // #define NDIM 3
 
-using namespace blitz;
+template<class T, std::size_t N> using TinyVector = typename blitz::TinyVector<T, N>;
+
+template<class T, std::size_t N1, std::size_t N2> using TinyMatrix = typename blitz::TinyMatrix<T, N1, N2>;
+
+template<class T, std::size_t D> using Array = typename blitz::Array<T, D>;
+
+using Range = blitz::Range;
+
 typedef TinyVector<scalar, 1> Vec1;
 typedef TinyVector<scalar, 2> Vec2;
 typedef TinyVector<scalar, 3> Vec3;

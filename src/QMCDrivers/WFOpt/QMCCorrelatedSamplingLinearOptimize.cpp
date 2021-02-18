@@ -17,7 +17,7 @@
 #include <cassert>
 #include <iostream>
 #include <fstream>
-#include "QMCDrivers/WFOpt/QMCCorrelatedSamplingLinearOptimize.h"
+#include "QMCCorrelatedSamplingLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -47,10 +47,8 @@ using MatrixOperators::product;
 QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w,
                                                                          TrialWaveFunction& psi,
                                                                          QMCHamiltonian& h,
-                                                                         HamiltonianPool& hpool,
-                                                                         WaveFunctionPool& ppool,
                                                                          Communicate* comm)
-    : QMCLinearOptimize(w, psi, h, hpool, ppool, comm),
+    : QMCLinearOptimize(w, psi, h, comm),
       nstabilizers(3),
       stabilizerScale(2.0),
       bigChange(3),
@@ -64,18 +62,18 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
   RootName = "pot";
-  m_param.add(stabilizerScale, "stabilizerscale", "double");
-  m_param.add(bigChange, "bigchange", "double");
-  m_param.add(w_beta, "beta", "double");
-  m_param.add(GEVtype, "GEVMethod", "string");
+  m_param.add(stabilizerScale, "stabilizerscale");
+  m_param.add(bigChange, "bigchange");
+  m_param.add(w_beta, "beta");
+  m_param.add(GEVtype, "GEVMethod");
   quadstep = -1.0;
   stepsize = 0.3;
-  m_param.add(quadstep, "quadstep", "double");
-  m_param.add(stepsize, "stepsize", "double");
-  m_param.add(exp0, "exp0", "double");
-  m_param.add(MinMethod, "MinMethod", "string");
-  m_param.add(LambdaMax, "LambdaMax", "double");
-  m_param.add(nstabilizers, "nstabilizers", "int");
+  m_param.add(quadstep, "quadstep");
+  m_param.add(stepsize, "stepsize");
+  m_param.add(exp0, "exp0");
+  m_param.add(MinMethod, "MinMethod");
+  m_param.add(LambdaMax, "LambdaMax");
+  m_param.add(nstabilizers, "nstabilizers");
   //Set parameters for line minimization:
 }
 
@@ -328,11 +326,11 @@ bool QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
   if (vmcEngine == 0)
   {
 #if defined(QMC_CUDA)
-    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
+    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, myComm, false);
     vmcCSEngine = dynamic_cast<VMCcuda*>(vmcEngine.get());
     vmcCSEngine->setOpt(true);
 #else
-    vmcEngine = std::make_unique<VMCLinearOpt>(W, Psi, H, hamPool, psiPool, myComm);
+    vmcEngine = std::make_unique<VMCLinearOpt>(W, Psi, H, myComm);
     vmcCSEngine = dynamic_cast<VMCLinearOpt*>(vmcEngine.get());
 #endif
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');

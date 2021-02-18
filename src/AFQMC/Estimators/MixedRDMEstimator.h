@@ -1,7 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_MIXEDRDMESTIMATOR_H
 #define QMCPLUSPLUS_AFQMC_MIXEDRDMESTIMATOR_H
 
-#include <Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 #include "AFQMC/config.h"
 #include <vector>
 #include <queue>
@@ -9,8 +9,8 @@
 #include <iostream>
 #include <fstream>
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
@@ -41,7 +41,7 @@ public:
     {
       ParameterSet m_param;
       std::string restore_paths;
-      m_param.add(block_size, "block_size", "int");
+      m_param.add(block_size, "block_size");
       m_param.put(cur);
     }
 

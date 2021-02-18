@@ -13,7 +13,7 @@
 #include <complex>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 
 namespace kernels
@@ -38,8 +38,8 @@ void inplace_product(int nbatch, int n, int m, double const* B, int ldb, std::co
   dim3 block_dim(1, MAX_THREADS_PER_DIM, 1);
   hipLaunchKernelGGL(kernel_inplace_product, dim3(grid_dim), dim3(block_dim), 0, 0, nbatch, n, m, B, ldb,
                      reinterpret_cast<thrust::complex<double>*>(A), lda);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void inplace_product(int nbatch, int n, int m, std::complex<double> const* B, int ldb, std::complex<double>* A, int lda)
@@ -50,8 +50,8 @@ void inplace_product(int nbatch, int n, int m, std::complex<double> const* B, in
   hipLaunchKernelGGL(kernel_inplace_product, dim3(grid_dim), dim3(block_dim), 0, 0, nbatch, n, m,
                      reinterpret_cast<thrust::complex<double> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<double>*>(A), lda);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void inplace_product(int nbatch, int n, int m, float const* B, int ldb, std::complex<float>* A, int lda)
@@ -61,8 +61,8 @@ void inplace_product(int nbatch, int n, int m, float const* B, int ldb, std::com
   dim3 block_dim(1, MAX_THREADS_PER_DIM, 1);
   hipLaunchKernelGGL(kernel_inplace_product, dim3(grid_dim), dim3(block_dim), 0, 0, nbatch, n, m, B, ldb,
                      reinterpret_cast<thrust::complex<float>*>(A), lda);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void inplace_product(int nbatch, int n, int m, std::complex<float> const* B, int ldb, std::complex<float>* A, int lda)
@@ -73,8 +73,8 @@ void inplace_product(int nbatch, int n, int m, std::complex<float> const* B, int
   hipLaunchKernelGGL(kernel_inplace_product, dim3(grid_dim), dim3(block_dim), 0, 0, nbatch, n, m,
                      reinterpret_cast<thrust::complex<float> const*>(B), ldb,
                      reinterpret_cast<thrust::complex<float>*>(A), lda);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 } // namespace kernels

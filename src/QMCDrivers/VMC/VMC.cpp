@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMC.h"
+#include "VMC.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"
@@ -24,7 +24,7 @@
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RunTimeManager.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 //#define ENABLE_VMC_OMP_MASTER
 #include "Utilities/FairDivide.h"
 #if !defined(REMOVE_TRACEMANAGER)
@@ -36,19 +36,15 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 /// Constructor.
-VMC::VMC(MCWalkerConfiguration& w,
-         TrialWaveFunction& psi,
-         QMCHamiltonian& h,
-         WaveFunctionPool& ppool,
-         Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "VMC"), UseDrift("yes")
+VMC::VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling)
+    : QMCDriver(w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes")
 {
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(UseDrift, "use_drift", "string");
+  m_param.add(UseDrift, "useDrift");
+  m_param.add(UseDrift, "usedrift");
+  m_param.add(UseDrift, "use_drift");
 
   prevSteps               = nSteps;
   prevStepsBetweenSamples = nStepsBetweenSamples;
@@ -257,7 +253,7 @@ void VMC::resetRun()
   {
     //int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchEngine, estimatorClones[ip], traceClones[ip], DriftModifier);
+    Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
     else
@@ -330,8 +326,8 @@ bool VMC::put(xmlNodePtr q)
   //grep minimumTargetWalker
   int target_min = -1;
   ParameterSet p;
-  p.add(target_min, "minimumtargetwalkers", "int"); //p.add(target_min,"minimumTargetWalkers","int");
-  p.add(target_min, "minimumsamples", "int");       //p.add(target_min,"minimumSamples","int");
+  p.add(target_min, "minimumtargetwalkers"); //p.add(target_min,"minimumTargetWalkers");
+  p.add(target_min, "minimumsamples");       //p.add(target_min,"minimumSamples");
   p.put(q);
 
   app_log() << "\n<vmc function=\"put\">"

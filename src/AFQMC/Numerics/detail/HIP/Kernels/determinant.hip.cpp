@@ -19,7 +19,7 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
 #include "uninitialized_array.hpp"
-#include "AFQMC/Memory/HIP/hip_utilities.h"
+#include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
@@ -390,8 +390,8 @@ __global__ void kernel_scale_columns(int n, int m, T* A, int lda, T* scl)
 void determinant_from_getrf_gpu(int N, double* m, int lda, int* piv, double LogOverlapFactor, double* res)
 {
   hipLaunchKernelGGL(kernel_determinant_from_getrf, dim3(1), dim3(256), 0, 0, N, m, lda, piv, LogOverlapFactor, res);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void determinant_from_getrf_gpu(int N,
@@ -405,8 +405,8 @@ void determinant_from_getrf_gpu(int N,
                      reinterpret_cast<thrust::complex<double>*>(m), lda, piv,
                      static_cast<thrust::complex<double>>(LogOverlapFactor),
                      reinterpret_cast<thrust::complex<double>*>(res));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void strided_determinant_from_getrf_gpu(int N,
@@ -421,8 +421,8 @@ void strided_determinant_from_getrf_gpu(int N,
 {
   hipLaunchKernelGGL(kernel_strided_determinant_from_getrf, dim3(nbatch), dim3(64), 0, 0, N, m, lda, mstride, piv,
                      pstride, LogOverlapFactor, res, nbatch);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void strided_determinant_from_getrf_gpu(int N,
@@ -439,8 +439,8 @@ void strided_determinant_from_getrf_gpu(int N,
                      reinterpret_cast<thrust::complex<double>*>(m), lda, mstride, piv, pstride,
                      static_cast<thrust::complex<double>>(LogOverlapFactor),
                      reinterpret_cast<thrust::complex<double>*>(res), nbatch);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void batched_determinant_from_getrf_gpu(int N,
@@ -454,8 +454,8 @@ void batched_determinant_from_getrf_gpu(int N,
 {
   hipLaunchKernelGGL(kernel_batched_determinant_from_getrf, dim3(nbatch), dim3(64), 0, 0, N, m, lda, piv, pstride,
                      LogOverlapFactor, res, nbatch);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void batched_determinant_from_getrf_gpu(int N,
@@ -471,8 +471,8 @@ void batched_determinant_from_getrf_gpu(int N,
                      reinterpret_cast<thrust::complex<double>**>(m), lda, piv, pstride,
                      static_cast<thrust::complex<double>>(LogOverlapFactor),
                      reinterpret_cast<thrust::complex<double>*>(res), nbatch);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 std::complex<double> determinant_from_geqrf_gpu(int N, double* m, int lda, double* buff, double LogOverlapFactor)
@@ -480,11 +480,11 @@ std::complex<double> determinant_from_geqrf_gpu(int N, double* m, int lda, doubl
   thrust::device_ptr<thrust::complex<double>> d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
   hipLaunchKernelGGL(kernel_determinant_from_geqrf, dim3(1), dim3(256), 0, 0, N, m, lda, buff, LogOverlapFactor,
                      thrust::raw_pointer_cast(d_ptr));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
   std::complex<double> res;
-  qmc_hip::hip_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr), sizeof(std::complex<double>),
-                               hipMemcpyDeviceToHost));
+  qmc_hip::hip_kernel_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr),
+                                      sizeof(std::complex<double>), hipMemcpyDeviceToHost));
   thrust::device_free(d_ptr);
   return res;
 }
@@ -500,11 +500,11 @@ std::complex<double> determinant_from_geqrf_gpu(int N,
                      reinterpret_cast<thrust::complex<double>*>(m), lda,
                      reinterpret_cast<thrust::complex<double>*>(buff),
                      static_cast<thrust::complex<double>>(LogOverlapFactor), thrust::raw_pointer_cast(d_ptr));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
   std::complex<double> res;
-  qmc_hip::hip_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr), sizeof(std::complex<double>),
-                               hipMemcpyDeviceToHost));
+  qmc_hip::hip_kernel_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr),
+                                      sizeof(std::complex<double>), hipMemcpyDeviceToHost));
   thrust::device_free(d_ptr);
   return res;
 }
@@ -512,8 +512,8 @@ std::complex<double> determinant_from_geqrf_gpu(int N,
 void determinant_from_geqrf_gpu(int N, double* m, int lda, double* buff)
 {
   hipLaunchKernelGGL(kernel_determinant_from_geqrf, dim3(1), dim3(256), 0, 0, N, m, lda, buff);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void determinant_from_geqrf_gpu(int N, std::complex<double>* m, int lda, std::complex<double>* buff)
@@ -521,8 +521,8 @@ void determinant_from_geqrf_gpu(int N, std::complex<double>* m, int lda, std::co
   hipLaunchKernelGGL(kernel_determinant_from_geqrf, dim3(1), dim3(256), 0, 0, N,
                      reinterpret_cast<thrust::complex<double>*>(m), lda,
                      reinterpret_cast<thrust::complex<double>*>(buff));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 
@@ -531,8 +531,8 @@ double determinant_from_getrf_gpu(int N, double* m, int lda, int* piv, double Lo
   thrust::device_ptr<double> d_ptr = thrust::device_malloc<double>(1);
   hipLaunchKernelGGL(kernel_determinant_from_getrf, dim3(1), dim3(256), 0, 0, N, m, lda, piv, LogOverlapFactor,
                      thrust::raw_pointer_cast(d_ptr));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
   double res = *d_ptr;
   thrust::device_free(d_ptr);
   return res;
@@ -548,11 +548,11 @@ std::complex<double> determinant_from_getrf_gpu(int N,
   hipLaunchKernelGGL(kernel_determinant_from_getrf, dim3(1), dim3(256), 0, 0, N,
                      reinterpret_cast<thrust::complex<double>*>(m), lda, piv,
                      static_cast<thrust::complex<double>>(LogOverlapFactor), thrust::raw_pointer_cast(d_ptr));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
   std::complex<double> res;
-  qmc_hip::hip_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr), sizeof(std::complex<double>),
-                               hipMemcpyDeviceToHost));
+  qmc_hip::hip_kernel_check(hipMemcpy(std::addressof(res), thrust::raw_pointer_cast(d_ptr),
+                                      sizeof(std::complex<double>), hipMemcpyDeviceToHost));
   thrust::device_free(d_ptr);
   return res;
 }
@@ -562,8 +562,8 @@ void scale_columns(int n, int m, double* A, int lda, double* scl)
   int xblock_dim = 32;
   dim3 block_dim(xblock_dim, xblock_dim, 1);
   hipLaunchKernelGGL(kernel_scale_columns, dim3(1), dim3(block_dim), 0, 0, n, m, A, lda, scl);
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void scale_columns(int n, int m, std::complex<double>* A, int lda, std::complex<double>* scl)
 {
@@ -572,8 +572,8 @@ void scale_columns(int n, int m, std::complex<double>* A, int lda, std::complex<
   hipLaunchKernelGGL(kernel_scale_columns, dim3(1), dim3(block_dim), 0, 0, n, m,
                      reinterpret_cast<thrust::complex<double>*>(A), lda,
                      reinterpret_cast<thrust::complex<double>*>(scl));
-  qmc_hip::hip_check(hipGetLastError());
-  qmc_hip::hip_check(hipDeviceSynchronize());
+  qmc_hip::hip_kernel_check(hipGetLastError());
+  qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 } // namespace kernels

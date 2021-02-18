@@ -22,14 +22,14 @@
 #include <iostream>
 #include <tuple>
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/RandomGenerator.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shm/mutex.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
@@ -74,7 +74,7 @@ public:
 
     std::string str("no");
     ParameterSet m_param;
-    m_param.add(str, "low_memory", "std::string");
+    m_param.add(str, "low_memory");
     m_param.put(cur);
 
     std::transform(str.begin(), str.end(), str.begin(), (int (*)(int))tolower);
@@ -124,7 +124,7 @@ public:
       for (int i = 0; i < nblk; i++)
       {
         step_collective(fix_bias, wset, E1, dt);
-        update_buffer_generators();
+        update_memory_managers();
       }
       if (nextra > 0)
         step_collective(nextra, wset, E1, dt);
@@ -134,7 +134,7 @@ public:
       for (int i = 0; i < nblk; i++)
       {
         step(fix_bias, wset, E1, dt);
-        update_buffer_generators();
+        update_memory_managers();
       }
       if (nextra > 0)
         step(nextra, wset, E1, dt);

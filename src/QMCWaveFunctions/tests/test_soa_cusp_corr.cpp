@@ -117,22 +117,17 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   REQUIRE(bb != nullptr);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  bb->loadBasisSetFromXML(MO_base[0]);
   SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
   LCAOrbitalSet* lcob = dynamic_cast<LCAOrbitalSet*>(sposet);
   REQUIRE(lcob != nullptr);
 
 
-  LCAOrbitalSet phi = LCAOrbitalSet(lcob->myBasisSet, lcob->isOptimizable());
+  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcob->myBasisSet->makeClone()), lcob->isOptimizable());
   phi.setOrbitalSetSize(lcob->getOrbitalSetSize());
-  phi.BasisSetSize = lcob->getBasisSetSize();
-  phi.setIdentity(false);
 
-  LCAOrbitalSet eta = LCAOrbitalSet(lcob->myBasisSet, lcob->isOptimizable());
+  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcob->myBasisSet->makeClone()), lcob->isOptimizable());
   eta.setOrbitalSetSize(lcob->getOrbitalSetSize());
-  eta.BasisSetSize = lcob->getBasisSetSize();
-  eta.setIdentity(false);
 
   *(eta.C) = *(lcob->C);
   *(phi.C) = *(lcob->C);
@@ -158,8 +153,8 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   okay = readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info);
 
   REQUIRE(okay);
-  Vector<double> xgrid;
-  Vector<double> rad_orb;
+  Vector<RealType> xgrid;
+  Vector<RealType> rad_orb;
   int ngrid = 10;
   xgrid.resize(ngrid);
   for (int i = 0; i < ngrid; i++)
@@ -238,8 +233,6 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   CHECK((*lcob->C)(0, 1) == Approx(0.0));
   CHECK((*lcob->C)(0, 2) == Approx(0.0));
   CHECK((*lcob->C)(0, 3) != 0.0);
-
-  SPOSetBuilderFactory::clear();
 }
 
 TEST_CASE("HCN MO with cusp", "[wavefunction]")
@@ -299,7 +292,6 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(bb != nullptr);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  bb->loadBasisSetFromXML(MO_base[0]);
   SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
   SPOSet::ValueVector_t values;
@@ -416,8 +408,6 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(all_grad[0][1][1] == Approx(0.0000000000));
   REQUIRE(all_grad[0][1][2] == Approx(0.0000000000));
   REQUIRE(all_lap[0][1] == Approx(19.8720529007));
-
-  SPOSetBuilderFactory::clear();
 }
 
 // Test case with multiple atoms of the same type
@@ -478,7 +468,6 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(bb != nullptr);
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
-  bb->loadBasisSetFromXML(MO_base[0]);
   SPOSet* sposet = bb->createSPOSet(slater_base[0]);
 
 
@@ -562,8 +551,6 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(all_grad[0][11][1] == Approx(0.9883840215));
   REQUIRE(all_grad[0][11][2] == Approx(1.7863218842));
   REQUIRE(all_lap[0][11] == Approx(-33.5202249813));
-
-  SPOSetBuilderFactory::clear();
 }
 
 

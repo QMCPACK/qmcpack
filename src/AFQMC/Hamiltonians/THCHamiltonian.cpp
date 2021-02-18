@@ -10,12 +10,12 @@
 
 #include "Configuration.h"
 #include "type_traits/container_traits_multi.h"
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
-#include "AFQMC/Hamiltonians/THCHamiltonian.h"
+#include "THCHamiltonian.h"
 #include "AFQMC/Hamiltonians/rotateHamiltonian.hpp"
 #include "AFQMC/HamiltonianOperations/THCOpsIO.hpp"
 

@@ -74,6 +74,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     RealType tauovermass = Tau * MassInvS[ig];
     RealType oneover2tau = 0.5 / (tauovermass);
     RealType sqrttau     = std::sqrt(tauovermass);
+    Psi.prepareGroup(W, ig);
     for (int iat = W.first(ig); iat < W.last(ig); ++iat)
     {
       //get the displacement
@@ -82,7 +83,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       DriftModifier->getDrift(tauovermass, grad_iat, dr);
       dr += sqrttau * deltaR[iat];
       bool is_valid = W.makeMoveAndCheck(iat, dr);
-      RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
+      RealType rr   = tauovermass * dot(deltaR[iat], deltaR[iat]);
       rr_proposed += rr;
       if (!is_valid || rr > m_r2max)
       {

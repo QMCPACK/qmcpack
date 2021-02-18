@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/LatticeGaussianProduct.h"
+#include "LatticeGaussianProduct.h"
 
 namespace qmcplusplus
 {
@@ -21,10 +21,10 @@ typedef LatticeGaussianProduct::ValueType ValueType;
 typedef LatticeGaussianProduct::GradType GradType;
 typedef LatticeGaussianProduct::PsiValueType PsiValueType;
 
-LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(centers)
+LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls)
+    : WaveFunctionComponent("LatticeGaussianProduct"), CenterRef(centers)
 {
   Optimizable    = false;
-  ClassName      = "LatticeGaussianProduct";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
   myTableID      = ptcls.addTable(CenterRef);
@@ -38,7 +38,6 @@ LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet
 LatticeGaussianProduct::~LatticeGaussianProduct() {}
 
 //evaluate the distance table with P
-void LatticeGaussianProduct::resetTargetParticleSet(ParticleSet& P) {}
 void LatticeGaussianProduct::checkInVariables(opt_variables_type& active) {}
 void LatticeGaussianProduct::checkOutVariables(const opt_variables_type& active) {}
 void LatticeGaussianProduct::resetParameters(const opt_variables_type& active) {}

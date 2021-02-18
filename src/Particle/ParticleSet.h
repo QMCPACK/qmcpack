@@ -23,42 +23,19 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
-#include <Utilities/SpeciesSet.h>
-#include <Utilities/PooledData.h>
-#include <OhmmsPETE/OhmmsArray.h>
-#include <Utilities/TimerManager.h>
-#include <OhmmsSoA/VectorSoaContainer.h>
+#include "Utilities/SpeciesSet.h"
+#include "Utilities/PooledData.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "Utilities/TimerManager.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+
 namespace qmcplusplus
 {
 ///forward declaration of DistanceTableData
 class DistanceTableData;
 
 class StructFact;
-
-/** Monte Carlo Data of an ensemble
- *
- * The quantities are shared by all the nodes in a group
- * - NumSamples number of samples
- * - Weight     total weight of a sample
- * - Energy     average energy of a sample
- * - Variance   variance
- * - LivingFraction fraction of walkers alive each step.
- */
-template<typename T>
-struct MCDataType
-{
-  T NumSamples;
-  T RNSamples;
-  T Weight;
-  T Energy;
-  T AlternateEnergy;
-  T Variance;
-  T R2Accepted;
-  T R2Proposed;
-  T LivingFraction;
-};
-
 
 /** Specialized paritlce class for atomistic simulations
  *
@@ -88,9 +65,6 @@ public:
   quantum_domains quantum_domain;
 
   //@{ public data members
-  ///property of an ensemble represented by this ParticleSet
-  //MCDataType<FullPrecRealType> EnsembleProperty;
-
   ///ParticleLayout
   ParticleLayout_t Lattice, PrimitiveLattice;
   ///Long-range box
@@ -157,7 +131,7 @@ public:
   SpeciesSet mySpecies;
 
   ///Structure factor
-  StructFact* SK;
+  std::unique_ptr<StructFact> SK;
 
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
@@ -269,7 +243,7 @@ public:
   void update(bool skipSK = false);
 
   /// batched version of update
-  static void flex_update(const RefVector<ParticleSet>& P_list, bool skipSK = false);
+  static void flex_update(const RefVector<ParticleSet>& p_list, bool skipSK = false);
 
   /** create Structure Factor with PBCs
    */
@@ -322,7 +296,7 @@ public:
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
 
   /// batched version of makeMove
-  static void flex_makeMove(const RefVector<ParticleSet>& P_list,
+  static void flex_makeMove(const RefVector<ParticleSet>& p_list,
                             int iat,
                             const std::vector<SingleParticlePos_t>& displs);
 
@@ -390,22 +364,15 @@ public:
    * This can be used on moves proposed on randomly selected electrons.
    */
   void acceptMove(Index_t iat, bool partial_table_update = false);
-  /// batched version of acceptMove
-  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update = false)
-  {
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().acceptMove(iat, partial_table_update);
-  }
-
   /** reject the move
+   * @param iat the electron whose proposed move gets rejected.
    */
-  void rejectMove(Index_t iat) { activePtcl = -1; }
-  /// batched version of rejectMove
-  static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
-  {
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().rejectMove(iat);
-  }
+  void rejectMove(Index_t iat);
+  /// batched version of acceptMove and rejectMove fused
+  static void flex_accept_rejectMove(const RefVector<ParticleSet>& p_list,
+                                     Index_t iat,
+                                     const std::vector<bool>& isAccepted,
+                                     bool partial_table_update = false);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -449,7 +416,7 @@ public:
    *
    *  just the R, G, and L
    */
-  static void flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers);
+  static void flex_saveWalker(const RefVector<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
    *
@@ -460,7 +427,7 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  static void flex_donePbyP(const RefVector<ParticleSet>& P_list);
+  static void flex_donePbyP(const RefVector<ParticleSet>& p_list);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
@@ -592,6 +559,14 @@ public:
   ///return the last index of a group i
   inline int last(int igroup) const { return SubPtcl[igroup + 1]; }
 
+  ///return the group id of a given particle in the particle set.
+  inline int getGroupID(int iat) const
+  {
+    assert(iat >= 0 && iat < TotalNum);
+    return GroupID[iat];
+  }
+
+  ///return the size of a group
   inline int groupsize(int igroup) const { return SubPtcl[igroup + 1] - SubPtcl[igroup]; }
 
   ///add attributes to list for IO
@@ -648,6 +623,7 @@ public:
   inline int getNumDistTables() const { return DistTables.size(); }
 
   static RefVector<DistanceTableData> extractDTRefList(const RefVector<ParticleSet>& p_list, int id);
+  static RefVector<DynamicCoordinates> extractCoordsRefList(const RefVector<ParticleSet>& p_list);
 
 protected:
   /** map to handle distance tables
@@ -662,16 +638,6 @@ protected:
 
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;
-
-  enum PSTimers
-  {
-    PS_newpos,
-    PS_donePbyP,
-    PS_accept,
-    PS_update
-  };
-
-  static const TimerNameList_t<PSTimers> PSTimerNames;
 
   TimerList_t myTimers;
 
@@ -698,15 +664,17 @@ protected:
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
    *
-   * @param P_list the list of wrapped ParticleSet references in a walker batch
+   * @param p_list the list of wrapped ParticleSet references in a walker batch
    * @param iat the particle that is moved on a sphere
    * @param new_positions new particle positions
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
+  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& p_list,
                                               Index_t iat,
                                               const std::vector<SingleParticlePos_t>& new_positions,
                                               bool maybe_accept = true);
+  /// actual implemenation of acceptMove
+  void acceptMove_impl(Index_t iat, bool partial_table_update);
 };
 
 } // namespace qmcplusplus

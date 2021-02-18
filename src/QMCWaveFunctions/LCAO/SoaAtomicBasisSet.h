@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 #define QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
 {
@@ -126,12 +126,6 @@ struct SoaAtomicBasisSet
   {
     Rmax = (rmax > 0) ? rmax : MultiRnl->rmax();
   }
-
-  /** reset the target ParticleSet
-       *
-       * Do nothing. Leave it to a composite object which owns this
-       */
-  void resetTargetParticleSet(ParticleSet& P) {}
 
   ///set the current offset
   inline void setCenter(int c, int offset) {}

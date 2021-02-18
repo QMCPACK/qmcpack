@@ -9,7 +9,7 @@
 // File created by:  Raymond Clay III, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCWaveFunctions/SpinorSet.h"
+#include "SpinorSet.h"
 
 namespace qmcplusplus
 {
@@ -40,8 +40,6 @@ void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&&
 }
 
 void SpinorSet::resetParameters(const opt_variables_type& optVariables){};
-
-void SpinorSet::resetTargetParticleSet(ParticleSet& P){};
 
 void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };
 

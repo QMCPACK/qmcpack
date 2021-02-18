@@ -60,6 +60,7 @@ try:
     qmcpack_input = import_nexus_module('qmcpack_input')
     QmcpackInput    = qmcpack_input.QmcpackInput
     spindensity_xml = qmcpack_input.spindensity
+    spindensity_new_xml = qmcpack_input.spindensity_new  # temporary
     del qmcpack_input
 except:
     from generic import obj
@@ -71,6 +72,7 @@ except:
     from numerics import simplestats,simstats
     from qmcpack_input import QmcpackInput
     from qmcpack_input import spindensity as spindensity_xml
+    from qmcpack_input import spindensity_new as spindensity_new_xml # temporary
 #end try
 
 
@@ -872,7 +874,7 @@ class QMCDensityProcessor(QDBase):
             if opt.weights is not None:
                 weight_failed = False
                 try:
-                    w = comma_list(ws)
+                    w = comma_list(opt.weights)
                     w = np.array(eval(w),dtype=float)
                     opt.weights = w
                     weight_failed = len(w.shape)!=1
@@ -901,29 +903,55 @@ class QMCDensityProcessor(QDBase):
             structure = s
             cell = s.axes.copy()
             qi.pluralize()
-            est = qi.get('estimators')
-            if est is not None and len(est)==1 and 'LocalEnergy' in est:
-                ham = qi.get('hamiltonian')
+            # collect every bunch of estimators strewn throughout the input file
+            est_sources = []
+            ham = qi.get('hamiltonian')
+            if ham is not None:
                 if 'estimators' in ham:
-                    est = ham.estimators
-                elif len(ham)==1:
-                    est = ham.first().get('estimators')
+                    est_sources.append(ham.estimators)
+                elif len(ham)>0:
+                    ham = ham.first() # hamiltonian collection
+                    if 'estimators' in ham:
+                        est_sources.append(ham.estimators)
+                    #end if
                 #end if
             #end if
-            if est is not None:
-                opt.grids = obj()
+            calcs = qi.get('calculations')
+            if calcs is not None:
+                for series in sorted(calcs.keys()):
+                    qmc = calcs[series]
+                    if 'estimators' in qmc:
+                        est_sources.append(qmc.estimators)
+                    #end if
+                #end for
+            #end if
+            # collect input information from the first spin density instance with a particular name
+            #   assume all other instances that share this name have identical inputs
+            grids = obj()
+            for est in est_sources:
                 for name,xml in est.items():
-                    if isinstance(xml,spindensity_xml):
+                    # the if statement below is a nasty hack to temporarily support 
+                    # the name mismatch between the input file and stat.h5 currently 
+                    # enforced by the (new) batched spin denisity class in qmcpack
+                    if isinstance(xml,spindensity_new_xml):
+                        name = 'SpinDensity' # override all user input, just like qmcpack
+                    #end if
+                    if name not in grids and isinstance(xml,(spindensity_xml,spindensity_new_xml)):
                         sd = xml
                         if 'grid' in sd:
-                            opt.grids[name] = sd.grid
+                            grids[name] = sd.grid
                         elif 'dr' in sd:
-                            opt.grids[name] = get_grid(s,sd.dr)
+                            grids[name] = get_grid(s,sd.dr)
                         else:
                             self.error('could not identify grid data for spin density named "{0}"\bin QMCPACK input file: {1}'.format(name,opt.input))
                         #end if
                     #end if
                 #end for
+            #end for
+            if len(grids)>0:
+                opt.grids = grids
+            else:
+                self.error('Could not find any spin density estimators in the input file provided.\nInput file provided: {}'.format(opt.input))
             #end if
         #end if
 

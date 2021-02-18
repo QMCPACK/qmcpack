@@ -1,21 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
 //  einspline:  a library for creating and evaluating B-splines            //
 //  Copyright (C) 2007 Kenneth P. Esler, Jr.                               //
-//                                                                         //
-//  This program is free software; you can redistribute it and/or modify   //
-//  it under the terms of the GNU General Public License as published by   //
-//  the Free Software Foundation; either version 2 of the License, or      //
-//  (at your option) any later version.                                    //
-//                                                                         //
-//  This program is distributed in the hope that it will be useful,        //
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of         //
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          //
-//  GNU General Public License for more details.                           //
-//                                                                         //
-//  You should have received a copy of the GNU General Public License      //
-//  along with this program; if not, write to the Free Software            //
-//  Foundation, Inc., 51 Franklin Street, Fifth Floor,                     //
-//  Boston, MA  02110-1301  USA                                            //
+//  Released under the BSD-3-clause license                                //
 /////////////////////////////////////////////////////////////////////////////
 
 #include <cmath>
@@ -48,7 +34,7 @@ eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
   // The protection is correct for PERIODIC/ANTIPERIODIC BC splines
   // but not sufficient for NATURAL BC splines (need grid.num-2).
   // With this protection ix is pulled to the boundary, tx is not modified.
-  // This is not correct but no more relavent to QMCPACK since
+  // This is not correct but no more relevant to QMCPACK since
   // we moved to C++ versions of this function already.
   int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   

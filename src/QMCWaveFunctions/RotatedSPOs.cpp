@@ -10,8 +10,8 @@
 ////
 //// File created by: Sergio D. Pineda Flores, sergio_pinedaflores@berkeley.edu, University of California, Berkeley
 ////////////////////////////////////////////////////////////////////////////////////////
-#include "QMCWaveFunctions/RotatedSPOs.h"
-#include <Numerics/MatrixOperators.h>
+#include "RotatedSPOs.h"
+#include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 
@@ -22,7 +22,6 @@ RotatedSPOs::RotatedSPOs(SPOSet* spos)
     : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true),
       Phi(spos),
       params_supplied(false),
-      IsCloned(false),
       nel_major_(0)
 {
   className      = "RotatedSPOs";
@@ -83,10 +82,10 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
     p = m_act_rot_inds[i].first;
     q = m_act_rot_inds[i].second;
     std::stringstream sstr;
-    sstr << Phi->getName() << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
+    sstr << myName << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
          << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
-    // If the user input parameteres, use those. Otherwise, initialize the parameters to zero
+    // If the user input parameters, use those. Otherwise, initialize the parameters to zero
     if (params_supplied)
     {
       myVars.insert(sstr.str(), params[i]);
@@ -625,7 +624,7 @@ $
   const size_t nc               = Coeff.size();
   const size_t* restrict upC(C2node_up.data());
   const size_t* restrict dnC(C2node_dn.data());
-  //B_grad holds the gardient operator
+  //B_grad holds the gradient operator
   //B_lapl holds the laplacian operator
   //B_bar will hold our special O operator
 
@@ -643,7 +642,7 @@ $
   const RealType* restrict B(Bbar.data());
   const RealType* restrict A(M_up.data());
   const RealType* restrict Ainv(Minv_up.data());
-  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
+  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINS ONE ELECTRON. NEED A FIX FOR THIS CASE
   // The T matrix should be calculated and stored for use
   // T = A^{-1} \widetilde A
   //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
@@ -913,7 +912,7 @@ void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
 
   const RealType* restrict A(M_up.data());
   const RealType* restrict Ainv(Minv_up.data());
-  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
+  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINS ONE ELECTRON. NEED A FIX FOR THIS CASE
   // The T matrix should be calculated and stored for use
   // T = A^{-1} \widetilde A
   //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
@@ -1041,11 +1040,11 @@ SPOSet* RotatedSPOs::makeClone() const
 {
   RotatedSPOs* myclone = new RotatedSPOs(Phi->makeClone());
 
-  myclone->IsCloned        = true;
   myclone->params          = this->params;
   myclone->params_supplied = this->params_supplied;
   myclone->m_act_rot_inds  = this->m_act_rot_inds;
   myclone->myVars          = this->myVars;
+  myclone->myName          = this->myName;
   return myclone;
 }
 

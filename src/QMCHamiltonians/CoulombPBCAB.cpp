@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/CoulombPBCAB.h"
+#include "CoulombPBCAB.h"
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -501,7 +501,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
  * @param groupID species index
  * @param ppot radial functor for \f$rV_{loc}\f$ on a grid
  */
-void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
+void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 {
   if (myGrid == nullptr)
   {

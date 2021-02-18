@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/QMCOptimize.h"
+#include "QMCOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -32,16 +32,10 @@
 
 namespace qmcplusplus
 {
-QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
-                         TrialWaveFunction& psi,
-                         QMCHamiltonian& h,
-                         HamiltonianPool& hpool,
-                         WaveFunctionPool& ppool,
-                         Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "QMCOptimize"),
+QMCOptimize::QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
+    : QMCDriver(w, psi, h, comm, "QMCOptimize"),
       PartID(0),
       NumParts(1),
-      hamPool(hpool),
       optSolver(0),
       vmcEngine(0),
       wfNode(NULL),
@@ -188,10 +182,10 @@ bool QMCOptimize::put(xmlNodePtr q)
   {
 #if defined(QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W, Psi, H, psiPool, myComm);
+      vmcEngine = new VMCcuda(W, Psi, H, myComm, false);
     else
 #endif
-      vmcEngine = new VMC(W, Psi, H, psiPool, myComm);
+      vmcEngine = new VMC(W, Psi, H, myComm, false);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
   vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);

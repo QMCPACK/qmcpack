@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 
 
 namespace qmcplusplus
@@ -37,7 +37,6 @@ struct EGOSet : public SPOSet
   SPOSet* makeClone() const override { return new EGOSet(*this); }
 
   void resetParameters(const opt_variables_type& optVariables) override {}
-  inline void resetTargetParticleSet(ParticleSet& P) override {}
   void setOrbitalSetSize(int norbs) override {}
 
   inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override

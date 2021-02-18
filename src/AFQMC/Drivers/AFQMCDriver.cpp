@@ -7,12 +7,12 @@
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Configuration.h"
-#include <qmc_common.h>
+#include "Utilities/qmc_common.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Drivers/AFQMCDriver.h"
+#include "AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
@@ -87,7 +87,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
     estim0.print(iBlock + 1, total_time, Eshift, wset);
 
     // resize stack pointers to match maximum buffer use
-    update_buffer_generators();
+    update_memory_managers();
   }
 
   if (nCheckpoint > 0)
@@ -113,18 +113,18 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   fix_bias     = 1;
 
   ParameterSet m_param;
-  m_param.add(nBlock, "blocks", "int");
-  m_param.add(nStep, "steps", "int");
-  m_param.add(nSubstep, "substeps", "int");
-  m_param.add(fix_bias, "fix_bias", "int");
-  m_param.add(nStabilize, "ortho", "int");
-  m_param.add(nCheckpoint, "checkpoint", "int");
-  m_param.add(samplePeriod, "samplePeriod", "int");
-  m_param.add(weight_reset_period, "weight_reset", "double");
-  m_param.add(dt, "dt", "double");
-  m_param.add(dt, "timestep", "double");
-  m_param.add(dShift, "dshift", "double");
-  m_param.add(hdf_write_restart, "hdf_write_file", "std::string");
+  m_param.add(nBlock, "blocks");
+  m_param.add(nStep, "steps");
+  m_param.add(nSubstep, "substeps");
+  m_param.add(fix_bias, "fix_bias");
+  m_param.add(nStabilize, "ortho");
+  m_param.add(nCheckpoint, "checkpoint");
+  m_param.add(samplePeriod, "samplePeriod");
+  m_param.add(weight_reset_period, "weight_reset");
+  m_param.add(dt, "dt");
+  m_param.add(dt, "timestep");
+  m_param.add(dShift, "dshift");
+  m_param.add(hdf_write_restart, "hdf_write_file");
   m_param.put(cur);
 
   // write all the choices here ...
@@ -172,7 +172,7 @@ bool AFQMCDriver::checkpoint(WalkerSet& wset, int block, int step)
 
   if (!dumpToHDF5(wset, dump))
   {
-    app_error() << " Problems writting checkpoint file in Driver/AFQMCDriver::checkpoint(). \n";
+    app_error() << " Problems writing checkpoint file in Driver/AFQMCDriver::checkpoint(). \n";
     return false;
   }
 

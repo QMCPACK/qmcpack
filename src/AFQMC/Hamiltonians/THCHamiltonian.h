@@ -21,7 +21,7 @@
 #include <map>
 #include <fstream>
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
@@ -47,8 +47,8 @@ public:
   {
     std::string str("yes");
     ParameterSet m_param;
-    m_param.add(cutoff_cholesky, "cutoff_cholesky", "double");
-    m_param.add(fileName, "filename", "std::string");
+    m_param.add(cutoff_cholesky, "cutoff_cholesky");
+    m_param.add(fileName, "filename");
     m_param.put(cur);
   }
 

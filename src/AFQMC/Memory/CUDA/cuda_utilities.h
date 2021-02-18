@@ -59,6 +59,36 @@ void cusolver_check(cusolverStatus_t sucess, std::string message = "");
 cublasOperation_t cublasOperation(char A);
 cusparseOperation_t cusparseOperation(char A);
 
+// since when do these exist? Not sure, so keep guard for now.
+#if CUSPARSE_VER_MAJOR > 10
+template<typename T>
+cudaDataType_t cusparse_data_type()
+{
+  return cudaDataType_t{};
+}
+template<>
+inline cudaDataType_t cusparse_data_type<float>()
+{
+  return CUDA_R_32F;
+}
+template<>
+inline cudaDataType_t cusparse_data_type<double>()
+{
+  return CUDA_R_64F;
+}
+template<>
+inline cudaDataType_t cusparse_data_type<std::complex<float>>()
+{
+  return CUDA_C_32F;
+}
+template<>
+inline cudaDataType_t cusparse_data_type<std::complex<double>>()
+{
+  return CUDA_C_64F;
+}
+#endif
+
+
 } // namespace qmc_cuda
 
 #endif

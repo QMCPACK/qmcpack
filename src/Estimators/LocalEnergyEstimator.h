@@ -17,7 +17,7 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include <QMCHamiltonians/observable_helper.h>
+#include "QMCHamiltonians/observable_helper.h"
 
 namespace qmcplusplus
 {

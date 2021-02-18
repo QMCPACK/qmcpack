@@ -10,7 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#include "AFQMC/Memory/CUDA/cuda_init.h"
+#include "cuda_init.h"
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "Platforms/Host/OutputManager.h"
@@ -58,6 +58,7 @@ void CUDA_INIT(boost::mpi3::shared_communicator& node, unsigned long long int is
   cudaDeviceProp dev;
   cuda_check(cudaGetDeviceProperties(&dev, 0), "cudaGetDeviceProperties");
   qmcplusplus::app_log() << " CUDA compute capability: " << dev.major << "." << dev.minor << std::endl;
+  qmcplusplus::app_log() << " Device Name: " << dev.name << std::endl;
   if (dev.major <= 6)
   {
     qmcplusplus::app_log() << " Warning CUDA major compute capability < 6.0" << std::endl;

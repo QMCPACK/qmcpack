@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/QPParser.h"
+#include "QPParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>

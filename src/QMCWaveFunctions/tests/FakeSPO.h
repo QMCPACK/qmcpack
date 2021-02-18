@@ -26,12 +26,13 @@ public:
   Vector<ValueType> v;
   Matrix<ValueType> v2;
 
+  SPOSet::GradVector_t gv;
+  
   FakeSPO();
   virtual ~FakeSPO() {}
 
   virtual void report() {}
   virtual void resetParameters(const opt_variables_type& optVariables) {}
-  virtual void resetTargetParticleSet(ParticleSet& P) {}
   virtual void setOrbitalSetSize(int norbs);
 
   virtual void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);

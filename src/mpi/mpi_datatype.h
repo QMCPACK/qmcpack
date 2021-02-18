@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_MPI_DATATYPEDEFINE_H
 
 
-#include <type_traits/scalar_traits.h>
+#include "type_traits/scalar_traits.h"
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #else
