@@ -321,18 +321,11 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         bool ab_format = (nGroups == -1) ? true : false;
 
         multislaterdetfast_0->initialize();
-        if (nGroups == -1)
-          success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
-                                  *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
-                                  *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
-                                  *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
-                                  multislaterdetfast_0->CI_Optimizable, cur, ab_format);
-        else
-          success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
-                                  *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
-                                  *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
-                                  *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
-                                  multislaterdetfast_0->CI_Optimizable, cur, ab_format);
+        success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
+                                *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
+                                *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
+                                *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
+                                multislaterdetfast_0->CI_Optimizable, cur, ab_format);
 
         // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
         // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
