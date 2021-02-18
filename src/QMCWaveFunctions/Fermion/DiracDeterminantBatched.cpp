@@ -50,14 +50,7 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::invertPsiM(const ValueMatrix_t& logdetT)
 {
   ScopedTimer inverse_timer(&InverseTimer);
-  if (NumPtcls == 1)
-  {
-    ValueType det = logdetT(0, 0);
-    psiMinv(0, 0) = RealType(1) / det;
-    LogValue      = convertValueToLog(det);
-  }
-  else
-    det_engine_.invert_transpose(logdetT, LogValue);
+  det_engine_.invert_transpose(logdetT, LogValue);
 }
 
 template<typename DET_ENGINE_TYPE>
@@ -66,17 +59,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_invertPsiM(const RefVector<Wav
 {
   ScopedTimer inverse_timer(&InverseTimer);
   const auto nw = WFC_list.size();
-  if (NumPtcls == 1)
-  {
-    for (int iw = 0; iw < nw; iw++)
-    {
-      auto& diracdet         = static_cast<DiracDeterminantBatched<DET_ENGINE_TYPE>&>(WFC_list[iw].get());
-      ValueType det          = logdetT_list[iw].get()(0, 0);
-      diracdet.psiMinv(0, 0) = RealType(1) / det;
-      diracdet.LogValue      = convertValueToLog(det);
-    }
-  }
-  else
   {
     RefVector<DET_ENGINE_TYPE> engine_list;
     RefVector<LogValueType> log_value_list;
@@ -357,22 +339,12 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::computeGL(ParticleSet::ParticleGradient_t& G,
                                                          ParticleSet::ParticleLaplacian_t& L) const
 {
-  if (NumPtcls == 1)
+  for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
   {
-    ValueType y = psiMinv(0, 0);
-    GradType rv = y * dpsiM(0, 0);
-    G[FirstIndex] += rv;
-    L[FirstIndex] += y * d2psiM(0, 0) - dot(rv, rv);
-  }
-  else
-  {
-    for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
-    {
-      mGradType rv   = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
-      mValueType lap = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
-      G[iat] += rv;
-      L[iat] += lap - dot(rv, rv);
-    }
+    mGradType rv   = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
+    mValueType lap = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
+    G[iat] += rv;
+    L[iat] += lap - dot(rv, rv);
   }
 }
 
