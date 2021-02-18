@@ -53,7 +53,7 @@ namespace qmcplusplus
  * flex_ prefix is a function name signature indicating it is for handling
  * a batch of TrialWaveFunction objects in a lock-step fashion. These functions
  * are defined statically because they should not have access to a
- * concrete TWF object except through the passed RefVector<TWF>&.
+ * concrete TWF object except through the passed RefVectorWithLeader<TWF>&.
  *
  * It dispatches to mw_ functions of WaveFunctionComponent or single walker functions
  * based on the number of objects WFC in the input. This accomidates openmp's implicit detection
@@ -150,7 +150,8 @@ public:
   RealType evaluateLog(ParticleSet& P);
 
   /** batched version of evaluateLog. gold reference */
-  static void flex_evaluateLog(const RefVector<TrialWaveFunction>& WF_list, const RefVector<ParticleSet>& P_list);
+  static void flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
@@ -213,8 +214,8 @@ public:
    * It is expected that flex_evaluateDeltaLog(P,false) is called later
    * and the external object adds the varying G and L and the fixed terms.
    */
-  static void flex_evaluateDeltaLogSetup(const RefVector<TrialWaveFunction>& wf_list,
-                                         const RefVector<ParticleSet>& p_list,
+  static void flex_evaluateDeltaLogSetup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
                                          std::vector<RealType>& logpsi_fixed_list,
                                          std::vector<RealType>& logpsi_opt_list,
                                          RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
@@ -243,8 +244,8 @@ public:
    */
 
 
-  static void flex_evaluateDeltaLog(const RefVector<TrialWaveFunction>& wf_list,
-                                    const RefVector<ParticleSet>& p_list,
+  static void flex_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                     std::vector<RealType>& logpsi_list,
                                     RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
                                     RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
@@ -261,8 +262,8 @@ public:
   ValueType calcRatio(ParticleSet& P, int iat, ComputeType ct = ComputeType::ALL);
 
   /** batched version of calcRatio */
-  static void flex_calcRatio(const RefVector<TrialWaveFunction>& WF_list,
-                             const RefVector<ParticleSet>& P_list,
+  static void flex_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list,
                              int iat,
                              std::vector<PsiValueType>& ratios,
                              ComputeType ct = ComputeType::ALL);
@@ -271,12 +272,12 @@ public:
    */
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios, ComputeType ct = ComputeType::ALL);
   /** batched version of evaluateRatios
-   * Note: unlike other flex_ static functions, *this is the batch leader instead of WF_list[0].
+   * Note: unlike other flex_ static functions, *this is the batch leader instead of wf_list[0].
    */
-  void flex_evaluateRatios(const RefVector<TrialWaveFunction>& WF_list,
-                           const RefVector<const VirtualParticleSet>& VP_list,
-                           const RefVector<std::vector<ValueType>>& ratios_list,
-                           ComputeType ct = ComputeType::ALL);
+  static void flex_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                  const RefVector<const VirtualParticleSet>& Vp_list,
+                                  const RefVector<std::vector<ValueType>>& ratios_list,
+                                  ComputeType ct = ComputeType::ALL);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P,
@@ -321,8 +322,8 @@ public:
    *
    *  all vector sizes must match
    */
-  static void flex_calcRatioGrad(const RefVector<TrialWaveFunction>& WF_list,
-                                 const RefVector<ParticleSet>& P_list,
+  static void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                 const RefVectorWithLeader<ParticleSet>& p_list,
                                  int iat,
                                  std::vector<PsiValueType>& ratios,
                                  std::vector<GradType>& grad_new);
@@ -338,8 +339,8 @@ public:
    *
    *  all vector sizes must match
    */
-  static void flex_prepareGroup(const RefVector<TrialWaveFunction>& WF_list,
-                                const RefVector<ParticleSet>& P_list,
+  static void flex_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                const RefVectorWithLeader<ParticleSet>& p_list,
                                 int ig);
 
   GradType evalGrad(ParticleSet& P, int iat);
@@ -359,8 +360,8 @@ public:
     * This is static because it should have no direct access
     * to any TWF.
     */
-  static void flex_evalGrad(const RefVector<TrialWaveFunction>& WF_list,
-                            const RefVector<ParticleSet>& P_list,
+  static void flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             std::vector<GradType>& grad_now);
 
@@ -368,59 +369,35 @@ public:
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
   /* flexible batched version of acceptMove */
-  static void flex_accept_rejectMove(const RefVector<TrialWaveFunction>& wf_list,
-                                     const RefVector<ParticleSet>& p_list,
+  static void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                     const RefVectorWithLeader<ParticleSet>& p_list,
                                      int iat,
                                      const std::vector<bool>& isAccepted,
                                      bool safe_to_delay = false);
   void completeUpdates();
   /* flexible batched version of completeUpdates.  */
-  static void flex_completeUpdates(const RefVector<TrialWaveFunction>& WF_list);
+  static void flex_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   /** compute gradients and laplacian of the TWF with respect to each particle.
    *  See WaveFunctionComponent::evaluateGL for more detail */
   LogValueType evaluateGL(ParticleSet& P, bool fromscratch);
   /* flexible batched version of evaluateGL.
    */
-  static void flex_evaluateGL(const RefVector<TrialWaveFunction>& WF_list,
-                              const RefVector<ParticleSet>& P_list,
+  static void flex_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
                               bool fromscratch);
 
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
 
-  /* flexible batched version of registerData.
-   *
-   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
-   * The strange mix of argument types reflect this being called from MCPopulation instead
-   * of Crowd like most of the flex functions.
-   */
-  static void flex_registerData(const UPtrVector<TrialWaveFunction>& WF_list,
-                                const UPtrVector<ParticleSet>& P_list,
-                                const RefVector<WFBufferType>& buf_list);
-
   /** update all the wavefunction components in buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
-  /* flexible batched version of updateBuffer.
-   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
-   */
-  static void flex_updateBuffer(const RefVector<TrialWaveFunction>& WF_list,
-                                const RefVector<ParticleSet>& P_list,
-                                const RefVector<WFBufferType>& buf_list,
-                                bool fromscratch = false);
-
   /** copy all the wavefunction components from buffer.
    *  See WaveFunctionComponent::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
-  /* flexible batched version of copyFromBuffer.
-   * Ye: perhaps it doesn't need to be flexible but just operates on all the walkers
-   */
-  void flex_copyFromBuffer(const RefVector<TrialWaveFunction>& WF_list,
-                           const RefVector<ParticleSet>& P_list,
-                           const RefVector<WFBufferType>& buf_list) const;
 
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
@@ -439,8 +416,8 @@ public:
                            std::vector<ValueType>& dhpsioverpsi,
                            bool project = false);
 
-  static void flex_evaluateParameterDerivatives(const RefVector<TrialWaveFunction>& wf_list,
-                                                const RefVector<ParticleSet>& p_list,
+  static void flex_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
                                                 const opt_variables_type& optvars,
                                                 RecordArray<ValueType>& dlogpsi,
                                                 RecordArray<ValueType>& dhpsioverpsi);
@@ -524,16 +501,20 @@ private:
   /** @{
    *  @brief helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
    */
-  static std::vector<WaveFunctionComponent*> extractWFCPtrList(const UPtrVector<TrialWaveFunction>& WF_list, int id);
+  static std::vector<WaveFunctionComponent*> extractWFCPtrList(const UPtrVector<TrialWaveFunction>& wf_list, int id);
 
-  static RefVector<WaveFunctionComponent> extractWFCRefList(const RefVector<TrialWaveFunction>& WF_list, int id);
+  static RefVectorWithLeader<WaveFunctionComponent> extractWFCRefList(
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      int id);
   /** }@ */
 
   // helper function for extrating a list of gradients from a list of TrialWaveFunction
-  static RefVector<ParticleSet::ParticleGradient_t> extractGRefList(const RefVector<TrialWaveFunction>& wf_list);
+  static RefVector<ParticleSet::ParticleGradient_t> extractGRefList(
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
-  static RefVector<ParticleSet::ParticleLaplacian_t> extractLRefList(const RefVector<TrialWaveFunction>& wf_list);
+  static RefVector<ParticleSet::ParticleLaplacian_t> extractLRefList(
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   ///////////////////////////////////////////
   // Vectorized version for GPU evaluation //

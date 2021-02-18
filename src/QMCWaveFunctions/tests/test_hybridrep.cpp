@@ -55,8 +55,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   int lmaxIdx             = ion_species.addAttribute("lmax");
 
   ion_species(C_chargeIdx, C_Idx) = 4;
-  ion_species(cutoffIdx, C_Idx) = 0.9;
-  ion_species(lmaxIdx, C_Idx)   = 3;
+  ion_species(cutoffIdx, C_Idx)   = 0.9;
+  ion_species(lmaxIdx, C_Idx)     = 3;
 
   elec_.setName("elec");
   elec_.create(2);
@@ -132,7 +132,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
   // lapl
   REQUIRE(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
-#if defined(MIXED_PRECISION) 
+#if defined(MIXED_PRECISION)
   REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257).epsilon(3e-5));
 #else
   REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257));
@@ -187,8 +187,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   int lmaxIdx             = ion_species.addAttribute("lmax");
 
   ion_species(C_chargeIdx, C_Idx) = 4;
-  ion_species(cutoffIdx, C_Idx) = 0.9;
-  ion_species(lmaxIdx, C_Idx)   = 3;
+  ion_species(cutoffIdx, C_Idx)   = 0.9;
+  ion_species(lmaxIdx, C_Idx)     = 3;
 
   elec_.setName("elec");
   elec_.create(2);
@@ -336,12 +336,12 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
   elec_2.update();
-  RefVector<ParticleSet> P_list;
+  RefVectorWithLeader<ParticleSet> P_list(elec_);
   P_list.push_back(elec_);
   P_list.push_back(elec_2);
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
-  RefVector<SPOSet> spo_list;
+  RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
