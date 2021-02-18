@@ -54,7 +54,7 @@ def structure_diff(s1,s2):
 
 def structure_same(s1,s2):
     import numpy as np
-    keys = ('units','elem','axes','kpoints','kweights','kaxes')
+    keys = ('units','elem','axes','kpoints','kweights','kaxes','frozen','mag')
     o1 = s1.obj(keys)
     o2 = s2.obj(keys)
     osame = object_eq(o1,o2)
@@ -1501,4 +1501,147 @@ if versions.spglib_available:
         #end for
 
     #end def test_point_group_operations
+#end if
+
+
+
+if versions.spglib_available and versions.seekpath_available:
+    def test_rmg_transform():
+        from numpy import array
+        from generic import obj
+        from structure import generate_structure
+
+        ref = obj({
+            ('Ca2CuO3', 'conv') : obj(
+                R          = array([[ 8.62068966e-01,  0.00000000e+00,  0.00000000e+00],
+                                    [-5.27865000e-17,  1.16000000e+00,  0.00000000e+00],
+                                    [-5.27865000e-17, -7.10295144e-17,  1.00000000e+00]]),
+                bv         = 'orthorhombic_P',
+                tmatrix    = None,
+                rmg_inputs = obj(
+                    a_length             = 3.2500000000000004,
+                    b_length             = 3.7700000000000005,
+                    bravais_lattice_type = 'Orthorhombic Primitive',
+                    c_length             = 12.23,
+                    length_units         = 'Angstrom',
+                    ),
+                ),
+            ('Ca2CuO3', 'prim') : obj(
+                R          = array([[ 1.38777878e-17,  1.00000000e+00, -7.13693767e-18],
+                                    [ 2.77555756e-17,  3.61249492e-17,  3.76307692e+00],
+                                    [ 2.65739984e-01, -5.79633098e-18, -2.39520632e-17]]),
+                bv         = 'orthorhombic_P',
+                tmatrix    = array([[0, 1, 1],
+                                    [1, 0, 1],
+                                    [1, 1, 0]]),
+                rmg_inputs = obj(
+                    a_length             = 3.2500000000000004,
+                    b_length             = 3.77,
+                    bravais_lattice_type = 'Orthorhombic Primitive',
+                    c_length             = 12.23,
+                    length_units         = 'Angstrom',
+                    ),
+                ),
+            ('CaO', 'conv') : obj(
+                R          = array([[ 1.000000e+00,  0.000000e+00,  0.000000e+00],
+                                    [-6.123234e-17,  1.000000e+00,  0.000000e+00],
+                                    [-6.123234e-17, -6.123234e-17,  1.000000e+00]]),
+                bv         = 'cubic_P',
+                tmatrix    = None,
+                rmg_inputs = obj(
+                    a_length             = 4.81,
+                    b_length             = 4.81,
+                    bravais_lattice_type = 'Cubic Primitive',
+                    c_length             = 4.81,
+                    length_units         = 'Angstrom',
+                    ),
+                ),
+            ('CaO', 'prim') : obj(
+                R          = array([[-1.28679696e-17,  1.00000000e+00,  1.28679696e-17],
+                                    [ 1.28679696e-17,  1.28679696e-17,  1.00000000e+00],
+                                    [ 1.00000000e+00, -1.28679696e-17, -1.28679696e-17]]),
+                bv         = 'cubic_F',
+                tmatrix    = None,
+                rmg_inputs = obj(
+                    a_length             = 4.81,
+                    b_length             = 4.81,
+                    bravais_lattice_type = 'Cubic Face Centered',
+                    c_length             = 4.81,
+                    length_units         = 'Angstrom',
+                    ),
+                ),
+            ('Cl2Ca2CuO2', 'afm') : obj(
+                R          = array([[ 0.70710678,  0.70710678,  0.        ],
+                                    [-0.70710678,  0.70710678,  0.        ],
+                                    [ 0.        ,  0.        ,  1.        ]]),
+                bv         = 'tetragonal_P',
+                tmatrix    = None,
+                rmg_inputs = obj(
+                    a_length             = 5.471592272821505,
+                    b_length             = 5.471592272821505,
+                    bravais_lattice_type = 'Tetragonal Primitive',
+                    c_length             = 15.049999999999999,
+                    length_units         = 'Angstrom',
+                    ),
+                ),
+            ('Cl2Ca2CuO2', 'prim') : obj(
+                R          = array([[-1.99922127e-16,  1.00000000e+00,  1.13566145e-16],
+                                    [ 1.84864975e-17, -1.84864975e-17,  3.88989403e+00],
+                                    [ 2.57076412e-01,  1.87078112e-18, -1.25038407e-17]]),
+                bv         = 'tetragonal_P',
+                tmatrix    = array([[0, 1, 1],
+                                    [1, 0, 1],
+                                    [1, 1, 0]]),
+                rmg_inputs = obj(
+                    a_length             = 3.8689999999999998,
+                    b_length             = 3.869,
+                    bravais_lattice_type = 'Tetragonal Primitive',
+                    c_length             = 15.05,
+                    length_units         = 'Angstrom',
+                    ),
+                ),
+            ('CuO', 'conv') : obj(
+                R          = None,
+                bv         = 'monoclinic_P',
+                tmatrix    = None,
+                rmg_inputs = obj(
+                    ),
+                ),
+            ('ZnO', 'conv') : obj(
+                R          = array([[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+                                    [-2.51021563e-16,  1.00000000e+00,  0.00000000e+00],
+                                    [-6.12323400e-17, -1.06057524e-16,  1.00000000e+00]]),
+                bv         = 'hexagonal_P',
+                tmatrix    = None,
+                rmg_inputs = obj(
+                    a_length             = 3.349999999999999,
+                    b_length             = 3.349999999999999,
+                    bravais_lattice_type = 'Hexagonal Primitive',
+                    c_length             = 5.22,
+                    length_units         = 'Angstrom',
+                    ),
+                ),
+            })
+
+        res = obj()
+        for struct,cell in ref.keys():
+             s = generate_structure(
+                 structure = struct,
+                 cell      = cell,
+                 )
+             st,rmg_inputs,R,tmatrix,bv = s.rmg_transform(
+                 allow_tile    = True,
+                 allow_general = True,
+                 all_results   = True,
+                 )
+             res[struct,cell] = obj(
+                 rmg_inputs = rmg_inputs,
+                 R          = R,
+                 tmatrix    = tmatrix,
+                 bv         = bv,
+                 )
+        #end for
+
+        assert(testing.check_object_eq(res,ref))
+    #end def test_rmg_transform
 #end if
