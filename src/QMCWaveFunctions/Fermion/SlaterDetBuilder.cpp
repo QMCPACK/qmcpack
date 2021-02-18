@@ -231,9 +231,9 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       SPOSetPtr spo_beta;
       std::unique_ptr<SPOSet> spo_alpha_clone, spo_beta_clone;
       //new format
-      std::vector<std::string> spoNames(nGroups);
-      std::vector<SPOSetPtr> spos(nGroups, nullptr);
-      std::vector<std::unique_ptr<SPOSet>> spo_clones(nGroups);
+      std::vector<std::string> spoNames;
+      std::vector<SPOSetPtr> spos;
+      std::vector<std::unique_ptr<SPOSet>> spo_clones;
       if (nGroups == -1)
       {
         spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
@@ -259,6 +259,9 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       else
       {
         app_warning() << "Using new group method" << std::endl;
+        spoNames.resize(nGroups);
+        spos.resize(nGroups);
+        spo_clones.resize(nGroups);
         OhmmsAttributeSet grpAttrib;
         for (int grp = 0; grp < nGroups; grp++)
           grpAttrib.add(spoNames[grp], "spo_" + std::to_string(grp));
@@ -315,12 +318,21 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), false);
         }
 
+        bool ab_format = (nGroups == -1) ? true : false;
+
         multislaterdetfast_0->initialize();
-        success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
-                                *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
-                                *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
-                                *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
-                                multislaterdetfast_0->CI_Optimizable, cur);
+        if (nGroups == -1)
+          success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
+                                  *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
+                                  *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
+                                  *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
+                                  multislaterdetfast_0->CI_Optimizable, cur, ab_format);
+        else
+          success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
+                                  *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
+                                  *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
+                                  *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
+                                  multislaterdetfast_0->CI_Optimizable, cur, ab_format);
 
         // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
         // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
@@ -595,7 +607,8 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
                                      opt_variables_type& myVars,
                                      bool& Optimizable,
                                      bool& CI_Optimizable,
-                                     xmlNodePtr cur)
+                                     xmlNodePtr cur,
+                                     bool& ab_format)
 {
   bool success = true;
 
@@ -629,11 +642,21 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
+    if (ab_format)
+      success = readDetListH5(cur, uniqueConfgs[0], uniqueConfgs[1], C2nodes[0], C2nodes[1], CItags, C, optimizeCI,
+                              nptcls[0], nptcls[1]);
+    else
+      success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
   }
   else
-    success = readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, CSFcoeff, DetsPerCSF, CSFexpansion,
-                          usingCSF);
+  {
+    if (ab_format)
+      success = readDetList(cur, uniqueConfgs[0], uniqueConfgs[1], C2nodes[0], C2nodes[1], CItags, C, optimizeCI,
+                            nptcls[0], nptcls[1], CSFcoeff, DetsPerCSF, CSFexpansion, usingCSF);
+    else
+      success = readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, CSFcoeff, DetsPerCSF,
+                            CSFexpansion, usingCSF);
+  }
   if (!success)
     return false;
 

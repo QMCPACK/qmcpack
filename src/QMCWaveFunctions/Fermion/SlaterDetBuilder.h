@@ -88,7 +88,8 @@ private:
                      opt_variables_type& myVars,
                      bool& Optimizable,
                      bool& CI_Optimizable,
-                     xmlNodePtr cur);
+                     xmlNodePtr cur,
+                     bool& ab_format);
 
   bool readDetList(xmlNodePtr cur,
                    std::vector<ci_configuration>& uniqueConfg_up,
