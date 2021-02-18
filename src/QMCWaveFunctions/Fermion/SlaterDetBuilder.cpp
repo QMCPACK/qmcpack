@@ -1352,7 +1352,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
 
   std::vector<size_t> NCs(nGroups);
   std::vector<size_t> NEs(nGroups);
-  std::vector<size_t> nstates(nGroups);
+  size_t nstates        = 0;
   size_t ndets          = 0;
   size_t count          = 0;
   size_t cnt0           = 0;
@@ -1363,9 +1363,9 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   {
     spoAttrib.add(NCs[grp], "nc" + std::to_string(grp));
     spoAttrib.add(NEs[grp], "ne" + std::to_string(grp));
-    spoAttrib.add(nstates[grp], "nstates" + std::to_string(grp));
   }
   spoAttrib.add(ndets, "size");
+  spoAttrib.add(nstates, "nstates");
   spoAttrib.add(Dettype, "type");
   spoAttrib.add(cutoff, "cutoff");
   spoAttrib.add(zero_cutoff, "zero_cutoff");
@@ -1402,7 +1402,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   std::vector<ci_configuration> dummyCs(nGroups);
   for (int grp = 0; grp < nGroups; grp++)
   {
-    dummyCs[grp].occup.resize(NCs[grp] + nstates[grp], false);
+    dummyCs[grp].occup.resize(NCs[grp] + nstates, false);
     for (size_t i = 0; i < NCs[grp] + NEs[grp]; i++)
       dummyCs[grp].occup[i] = true;
   }
@@ -1480,12 +1480,12 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
             for (int grp = 0; grp < nGroups; grp++)
             {
               size_t nq = 0;
-              if (occs[grp].size() < nstates[grp])
+              if (occs[grp].size() < nstates)
               {
                 std::cerr << "occ" << grp << ": " << occs[grp] << std::endl;
                 APP_ABORT("Found incorrect group" + std::to_string(grp) + " determinant label. size < nc+nstates");
               }
-              for (size_t i = 0; i < nstates[grp]; i++)
+              for (size_t i = 0; i < nstates; i++)
               {
                 if (occs[grp][i] != '0' && occs[grp][i] != '1')
                 {
@@ -1509,7 +1509,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
               confgLists[grp].push_back(dummyCs[grp]);
               for (size_t i = 0; i < NCs[grp]; i++)
                 confgLists[grp].back().occup[i] = true;
-              for (size_t i = NCs[grp]; i < NCs[grp] + nstates[grp]; i++)
+              for (size_t i = NCs[grp]; i < NCs[grp] + nstates; i++)
                 confgLists[grp].back().occup[i] = (occs[grp][i - NCs[grp]] == '1');
             }
           } // if(name=="det")
@@ -1606,7 +1606,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
 
         for (int grp = 0; grp < nGroups; grp++)
         {
-          for (size_t i = 0; i < nstates[grp]; i++)
+          for (size_t i = 0; i < nstates; i++)
           {
             if (occs[grp][i] != '0' && occs[grp][i] != '1')
             {
@@ -1614,7 +1614,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
               APP_ABORT("Found incorrect determinant label for group " + std::to_string(grp));
             }
           }
-          if (occs[grp].size() < nstates[grp])
+          if (occs[grp].size() < nstates)
           {
             std::cerr << "occ" << grp << ": " << occs[grp] << std::endl;
             APP_ABORT("Found incorrect group" + std::to_string(grp) + " determinant label. size < nc+nstates");
@@ -1921,19 +1921,18 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
                                      bool& optimizeCI,
                                      std::vector<int>& nptcls)
 {
-  APP_ABORT("readDetListH5 not implemetned for arbitrary numbers of particle groups.");
-  /*
   bool success = true;
   int extlevel(0);
-  uniqueConfg_up.clear();
-  uniqueConfg_dn.clear();
-  C2node_up.clear();
-  C2node_dn.clear();
+  int nGroups = uniqueConfgs.size();
+  for (int grp = 0; grp < nGroups; grp++)
+  {
+    uniqueConfgs[grp].clear();
+    C2nodes[grp].clear();
+  }
   CItags.clear();
   coeff.clear();
   std::string CICoeffH5path("");
-  std::vector<ci_configuration> confgList_up;
-  std::vector<ci_configuration> confgList_dn;
+  std::vector<std::vector<ci_configuration>> confgLists(nGroups);
   std::vector<ValueType> CIcoeff;
   std::vector<std::string> ConfigTag;
   std::string optCI = "no";
@@ -1956,8 +1955,10 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     cur = cur->next;
   }
 
-  app_log() << "  H5 code path implicitly assumes NCA = NCB = 0, "
-            << "NEA = " << nels_up << " and NEB = " << nels_dn << std::endl;
+  app_log() << "  H5 code path implicitly assumes NC0 = NC1 = ...  = 0" << std::endl;
+  for (int grp = 0; grp < nGroups; grp++)
+    app_log() << "NE" << grp << " = " << nptcls[grp] << ", ";
+  app_log() << std::endl;
   size_t nstates = 0;
   size_t ndets   = 0;
   size_t H5_ndets, H5_nstates;
@@ -2058,35 +2059,29 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
               << " Optimized coefficients were substituted to the original set of coefficients." << std::endl;
   }
 
-  Matrix<int64_t> tempAlpha(ndets, N_int);
-  hin.read(tempAlpha, "CI_Alpha");
+  std::vector<Matrix<int64_t>> temps;
+  for (int grp = 0; grp < nGroups; grp++)
+  {
+    Matrix<int64_t> tmp(ndets, N_int);
+    temps.push_back(tmp);
+    hin.read(temps[grp], "CI_" + std::to_string(grp));
+  }
 
-  Matrix<int64_t> tempBeta(ndets, N_int);
-  hin.read(tempBeta, "CI_Beta");
-
-  std::string MyCIAlpha, MyCIBeta;
-  MyCIAlpha.resize(nstates);
-  MyCIBeta.resize(nstates);
-
-  ci_configuration dummyC_alpha;
-  ci_configuration dummyC_beta;
-
-  dummyC_alpha.occup.resize(nstates, false);
-  dummyC_beta.occup.resize(nstates, false);
-
-  for (size_t i = 0; i < nstates; i++)
-    dummyC_alpha.occup[i] = true;
-
-  for (size_t i = 0; i < nstates; i++)
-    dummyC_beta.occup[i] = true;
+  std::vector<std::string> MyCIs(nGroups);
+  std::vector<ci_configuration> dummyCs(nGroups);
+  for (int grp = 0; grp < nGroups; grp++)
+  {
+    MyCIs[grp].resize(nstates);
+    dummyCs[grp].occup.resize(nstates, false);
+    for (size_t i = 0; i < nstates; i++)
+      dummyCs[grp].occup[i] = true;
+  }
 
   hin.close();
   app_log() << " Done reading " << ndets << " CIs from H5!" << std::endl;
 
-  int cntup = 0;
-  int cntdn = 0;
-  std::unordered_map<std::string, int> MyMapUp;
-  std::unordered_map<std::string, int> MyMapDn;
+  std::vector<int> cnts(nGroups, 0);
+  std::vector<std::unordered_map<std::string, int>> MyMaps(nGroups);
 
   app_log() << " Sorting unique CIs" << std::endl;
   ///This loop will find all unique Determinants in and store them "unsorted" in a new container uniqueConfg_up
@@ -2099,18 +2094,19 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     int j = 0;
     for (int k = 0; k < N_int; k++)
     {
-      int64_t a                = tempAlpha[ni][k];
-      std::bitset<bit_kind> a2 = a;
-
-      auto b  = tempBeta[ni][k];
-      auto b2 = std::bitset<bit_kind>(b);
+      std::vector<std::bitset<bit_kind>> a2s(nGroups);
+      for (int grp = 0; grp < nGroups; grp++)
+      {
+        int64_t a = temps[grp][ni][k];
+        a2s[grp]  = a;
+      }
 
       for (int i = 0; i < bit_kind; i++)
       {
         if (j < nstates)
         {
-          MyCIAlpha[j] = a2[i] ? '1' : '0';
-          MyCIBeta[j]  = b2[i] ? '1' : '0';
+          for (int grp = 0; grp < nGroups; grp++)
+            MyCIs[grp][j] = a2s[grp][i] ? '1' : '0';
           j++;
         }
       }
@@ -2120,36 +2116,23 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     h5tag << "CIcoeff_" << ni;
     CItags.push_back(h5tag.str());
 
-    std::unordered_map<std::string, int>::const_iterator gotup = MyMapUp.find(MyCIAlpha);
-
-    if (gotup == MyMapUp.end())
+    for (int grp = 0; grp < nGroups; grp++)
     {
-      uniqueConfg_up.push_back(dummyC_alpha);
-      uniqueConfg_up.back().add_occupation(MyCIAlpha);
-      C2node_up.push_back(cntup);
-      MyMapUp.insert(std::pair<std::string, int>(MyCIAlpha, cntup));
-      cntup++;
-    }
-    else
-    {
-      C2node_up.push_back(gotup->second);
-    }
+      std::unordered_map<std::string, int>::const_iterator got = MyMaps[grp].find(MyCIs[grp]);
 
-    std::unordered_map<std::string, int>::const_iterator gotdn = MyMapDn.find(MyCIBeta);
-
-    if (gotdn == MyMapDn.end())
-    {
-      uniqueConfg_dn.push_back(dummyC_beta);
-      uniqueConfg_dn.back().add_occupation(MyCIBeta);
-      C2node_dn.push_back(cntdn);
-      MyMapDn.insert(std::pair<std::string, int>(MyCIBeta, cntdn));
-      cntdn++;
+      if (got == MyMaps[grp].end())
+      {
+        uniqueConfgs[grp].push_back(dummyCs[grp]);
+        uniqueConfgs[grp].back().add_occupation(MyCIs[grp]);
+        C2nodes[grp].push_back(cnts[grp]);
+        MyMaps[grp].insert(std::pair<std::string, int>(MyCIs[grp], cnts[grp]));
+        cnts[grp]++;
+      }
+      else
+      {
+        C2nodes[grp].push_back(got->second);
+      }
     }
-    else
-    {
-      C2node_dn.push_back(gotdn->second);
-    }
-
     sumsq += CIcoeff[ni] * CIcoeff[ni];
   }
 
@@ -2157,11 +2140,9 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   app_log() << "Found " << coeff.size() << " terms in the MSD expansion.\n";
   app_log() << "Norm of ci vector (sum of ci^2): " << sumsq << std::endl;
 
-  app_log() << "Found " << uniqueConfg_up.size() << " unique up determinants.\n";
-  app_log() << "Found " << uniqueConfg_dn.size() << " unique down determinants.\n";
-
+  for (int grp = 0; grp < nGroups; grp++)
+    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group" << grp << " determinants.\n";
 
   return success;
-  */
 }
 } // namespace qmcplusplus
