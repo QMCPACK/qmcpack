@@ -30,23 +30,22 @@
 // forward declaration
 namespace optimize
 {
-  struct VariableSet;
+struct VariableSet;
 }
 
 namespace qmcplusplus
 {
-
 // forward declaration
 class QMCHamiltonian;
 class MCPopulation
 {
 public:
-  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using WFBuffer         = MCPWalker::WFBuffer_t;
-  using RealType         = QMCTraits::RealType;
-  using Properties       = MCPWalker::PropertyContainer_t;
-  using IndexType        = QMCTraits::IndexType;
-  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using MCPWalker          = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using WFBuffer           = MCPWalker::WFBuffer_t;
+  using RealType           = QMCTraits::RealType;
+  using Properties         = MCPWalker::PropertyContainer_t;
+  using IndexType          = QMCTraits::IndexType;
+  using FullPrecRealType   = QMCTraits::FullPrecRealType;
   using opt_variables_type = optimize::VariableSet;
 
 private:
@@ -142,7 +141,7 @@ public:
    *  void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
    */
   template<typename WTTV>
-  void distributeWalkers(WTTV& walker_consumers)
+  void redistributeWalkers(WTTV& walker_consumers)
   {
     // The type returned here is dependent on the integral type that the walker_consumers
     // use to return there size.
@@ -152,6 +151,7 @@ public:
     for (int i = 0; i < walker_consumers.size(); ++i)
     {
       walker_consumers[i]->initializeResources(trial_wf_->getResource());
+      walker_consumers[i]->clearWalkers();
       for (int j = 0; j < walkers_per_crowd[i]; ++j)
       {
         walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index],
@@ -191,6 +191,7 @@ public:
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
   ParticleSet* get_golden_electrons() { return elec_particle_set_; }
   const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }
+  TrialWaveFunction& get_golden_twf() { return *trial_wf_; }
 
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }

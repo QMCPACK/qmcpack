@@ -56,14 +56,17 @@ public:
 
   virtual void setAllParticlePos(const ParticlePos_t& R)         = 0;
   virtual void setOneParticlePos(const PosType& pos, size_t iat) = 0;
-  virtual void mw_copyActiveOldParticlePos(const RefVector<DynamicCoordinates>& coords_list,
+  virtual void mw_copyActiveOldParticlePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
                                            size_t iat,
-                                           const std::vector<PosType>& new_positions) {}
+                                           const std::vector<PosType>& new_positions) const
+  {
+    assert(this == &coords_list.getLeader());
+  }
 
-  virtual void mw_acceptParticlePos(const RefVector<DynamicCoordinates>& coords_list,
+  virtual void mw_acceptParticlePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
                                     size_t iat,
                                     const std::vector<PosType>& new_positions,
-                                    const std::vector<bool>& isAccepted) = 0;
+                                    const std::vector<bool>& isAccepted) const = 0;
 
   virtual const PosVectorSoa& getAllParticlePos() const = 0;
   virtual PosType getOneParticlePos(size_t iat) const   = 0;

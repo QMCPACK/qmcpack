@@ -1,0 +1,106 @@
+# Description of run.
+description="atom_Pt_pp"
+
+#spin_polarization="true"
+
+localize_localpp = "false"
+localize_projectors = "false"
+
+compressed_infile = "false"
+compressed_outfile = "false"
+
+# Wavefunction grid
+wavefunction_grid="32 32 32"
+potential_grid_refinement = "2"
+
+
+
+#write_pseudopotential_plots = "true"
+
+# number of unoccupied states
+#occupations_type = "Fixed"
+occupations_type = "Fermi Dirac"
+
+#sqrt_interpolation = "true"
+#fast_density = "false"
+
+occupation_electron_temperature_eV = "0.2"
+
+#states_count_and_occupation = "12 0.833333333333 10 0.0"
+states_count_and_occupation = "10 1.0 10 0.0"
+#states_count_and_occupation_spin_down = "1 1.0  3 0.3333333333"
+#states_count_and_occupation_spin_up = "4 1.0"
+
+#preconditioner_threshold = "1.0001"
+
+# Units for bravais_lattice_type and atoms
+#crds_units=
+#"Bohr"
+#"Angstrom"
+
+#bravais_lattice_type="Cubic Primitive"
+
+kpoint_mesh = "-4 4 4 "
+kpoint_is_shift = "1 1 1 "
+kpoint_distribution = "1"
+kpoints_bandstructure=
+"
+0.0   0.0   0.0   1   G
+0.5   0.5   0.0   10  X
+"
+
+bravais_lattice_type="Cubic Face Centered"
+# Lattice constants 
+a_length="7.42"
+b_length="7.42"
+c_length="7.42"
+alpha="0.0"
+beta="0.0"
+gamma="0.0"
+
+start_mode="LCAO Start"
+#start_mode="Random Start"
+#start_mode="Restart From File"
+
+write_qmcpack_restart = "false"
+
+
+calculation_mode="Band Structure Only"
+#calculation_mode="Relax Structure"
+
+#atomic_orbital_type = "localized"
+
+#verbose="true"
+#kohn_sham_solver="multigrid"
+kohn_sham_solver="davidson"
+subdiag_driver="lapack"
+charge_mixing_type = "Broyden"
+#charge_mixing_type = "Pulay"
+#charge_mixing_type = "Linear"
+charge_density_mixing = "0.5"
+kohn_sham_mucycles = "3"
+max_scf_steps="10"
+potential_acceleration_constant_step="1.0"
+write_data_period="10"
+
+# Criterion used to judge SCF convergency 
+energy_convergence_criterion="1.0e-9"
+#rms_convergence_criterion = "1.0e-10"
+
+atomic_coordinate_type="Absolute"
+
+noncollinear="true"
+spinorbit="true"
+# List  atomic symbol, coordinates, and movable flag (1 == movable) 
+# symbol and coordinates are required, moveable is optional, default is 1
+atoms = "
+Pt   0.0   0.0   0.0   1 1  1  0.0  90.0 00.0    
+"
+#exchange_correlation_type="LDA"
+pseudo_dir = "./"
+pseudopotential=
+"
+Pt    Pt.rel-pbe-n-rrkjus.UPF
+"
+
+
