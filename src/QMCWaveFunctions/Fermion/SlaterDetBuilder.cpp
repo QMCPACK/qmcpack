@@ -599,8 +599,6 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
 {
   bool success = true;
 
-  std::vector<std::vector<ci_configuration>> uniqueConfgs;
-  std::vector<std::string> CItags;
 
   bool optimizeCI;
 
@@ -609,6 +607,9 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   std::vector<int> nptcls(nGroups);
   for (int grp = 0; grp < nGroups; grp++)
     nptcls[grp] = targetPtcl.groupsize(grp);
+
+  std::vector<std::vector<ci_configuration>> uniqueConfgs(nGroups);
+  std::vector<std::string> CItags;
 
   //Check id multideterminants are in HDF5
 
@@ -1313,20 +1314,20 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
                                    std::vector<RealType>& CSFexpansion,
                                    bool& usingCSF)
 {
-  APP_ABORT("readDetList for arbitrary ptcls groups not yet implemented.\n");
-  /*
   bool success = true;
-  uniqueConfg_up.clear();
-  uniqueConfg_dn.clear();
-  C2node_up.clear();
-  C2node_dn.clear();
+
+  int nGroups = uniqueConfgs.size();
+  for (int grp = 0; grp < nGroups; grp++)
+  {
+    uniqueConfgs[grp].clear();
+    C2nodes[grp].clear();
+  }
   CItags.clear();
   coeff.clear();
   CSFcoeff.clear();
   DetsPerCSF.clear();
   CSFexpansion.clear();
-  std::vector<ci_configuration> confgList_up;
-  std::vector<ci_configuration> confgList_dn;
+  std::vector<std::vector<ci_configuration>> confgLists;
   std::string optCI    = "no";
   RealType cutoff      = 0.0;
   RealType zero_cutoff = 0.0;
@@ -1348,22 +1349,24 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     }
     cur = cur->next;
   }
-  size_t NCA = 0, NCB = 0;
-  size_t NEA = 0, NEB = 0;
-  size_t nstates        = 0;
+
+  std::vector<size_t> NCs(nGroups);
+  std::vector<size_t> NEs(nGroups);
+  std::vector<size_t> nstates(nGroups);
   size_t ndets          = 0;
   size_t count          = 0;
   size_t cnt0           = 0;
   std::string Dettype   = "DETS";
   std::string CSFChoice = "qchem_coeff";
   OhmmsAttributeSet spoAttrib;
-  spoAttrib.add(NCA, "nca");
-  spoAttrib.add(NCB, "ncb");
-  spoAttrib.add(NEA, "nea");
-  spoAttrib.add(NEB, "neb");
+  for (int grp = 0; grp < nGroups; grp++)
+  {
+    spoAttrib.add(NCs[grp], "nc" + std::to_string(grp));
+    spoAttrib.add(NEs[grp], "ne" + std::to_string(grp));
+    spoAttrib.add(nstates[grp], "nstates" + std::to_string(grp));
+  }
   spoAttrib.add(ndets, "size");
   spoAttrib.add(Dettype, "type");
-  spoAttrib.add(nstates, "nstates");
   spoAttrib.add(cutoff, "cutoff");
   spoAttrib.add(zero_cutoff, "zero_cutoff");
   spoAttrib.add(zero_cutoff, "zerocutoff");
@@ -1387,29 +1390,24 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   if (zero_cutoff > 0)
     app_log() << "  Initializing CI coeffs less than " << zero_cutoff << " to zero." << std::endl;
 
-  if (NEA == 0)
-    NEA = nels_up - NCA;
-  else if (NEA != nels_up - NCA)
-    throw std::runtime_error("nea is not equal to nels_up - nca");
-  if (NEB == 0)
-    NEB = nels_dn - NCB;
-  else if (NEB != nels_dn - NCB)
-    throw std::runtime_error("neb is not equal to nels_dn - ncb");
+  for (int grp = 0; grp < nGroups; grp++)
+  {
+    if (NEs[grp] == 0)
+      NEs[grp] = nptcls[grp] - NCs[grp];
+    else if (NEs[grp] != nptcls[grp] - NCs[grp])
+      throw std::runtime_error("ne is not equal to n - nc for group " + std::to_string(grp));
+  }
 
-  // mmorales: a little messy for now, clean up later
   cur = DetListNode->children;
-  ci_configuration dummyC_alpha;
-  ci_configuration dummyC_beta;
-  dummyC_alpha.occup.resize(NCA + nstates, false);
-  for (size_t i = 0; i < NCA + NEA; i++)
-    dummyC_alpha.occup[i] = true;
-  dummyC_beta.occup.resize(NCB + nstates, false);
-  for (size_t i = 0; i < NCB + NEB; i++)
-    dummyC_beta.occup[i] = true;
+  std::vector<ci_configuration> dummyCs(nGroups);
+  for (int grp = 0; grp < nGroups; grp++)
+  {
+    dummyCs[grp].occup.resize(NCs[grp] + nstates[grp], false);
+    for (size_t i = 0; i < NCs[grp] + NEs[grp]; i++)
+      dummyCs[grp].occup[i] = true;
+  }
   RealType sumsq_qc = 0.0;
   RealType sumsq    = 0.0;
-  //app_log() <<"alpha reference: \n" <<dummyC_alpha;
-  //app_log() <<"beta reference: \n" <<dummyC_beta;
   if (usingCSF)
   {
     app_log() << "Reading CSFs." << std::endl;
@@ -1470,70 +1468,50 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
           getNodeName(cname0, csf);
           if (cname0 == "det")
           {
-            std::string alpha, beta, tag0;
+            std::vector<std::string> occs(nGroups);
+            std::string tag0;
             RealType coef = 0.0;
             OhmmsAttributeSet detAttrib;
             detAttrib.add(tag0, "id");
             detAttrib.add(coef, "coeff");
-            detAttrib.add(beta, "beta");
-            detAttrib.add(alpha, "alpha");
+            for (int grp = 0; grp < nGroups; grp++)
+              detAttrib.add(occs[grp], "occ" + std::to_string(grp));
             detAttrib.put(csf);
-            size_t nq = 0;
-            if (alpha.size() < nstates)
+            for (int grp = 0; grp < nGroups; grp++)
             {
-              std::cerr << "alpha: " << alpha << std::endl;
-              APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
-            }
-            for (size_t i = 0; i < nstates; i++)
-            {
-              if (alpha[i] != '0' && alpha[i] != '1')
+              size_t nq = 0;
+              if (occs[grp].size() < nstates[grp])
               {
-                std::cerr << alpha << std::endl;
-                APP_ABORT("Found incorrect determinant label.");
+                std::cerr << "occ" << grp << ": " << occs[grp] << std::endl;
+                APP_ABORT("Found incorrect group" + std::to_string(grp) + " determinant label. size < nc+nstates");
               }
-              if (alpha[i] == '1')
-                nq++;
-            }
-            if (nq != NEA)
-            {
-              std::cerr << "alpha: " << alpha << std::endl;
-              APP_ABORT("Found incorrect alpha determinant label. noccup != nca+nea");
-            }
-            nq = 0;
-            if (beta.size() < nstates)
-            {
-              std::cerr << "beta: " << beta << std::endl;
-              APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
-            }
-            for (size_t i = 0; i < nstates; i++)
-            {
-              if (beta[i] != '0' && beta[i] != '1')
+              for (size_t i = 0; i < nstates[grp]; i++)
               {
-                std::cerr << beta << std::endl;
-                APP_ABORT("Found incorrect determinant label.");
+                if (occs[grp][i] != '0' && occs[grp][i] != '1')
+                {
+                  std::cerr << occs[grp] << std::endl;
+                  APP_ABORT("Found incorrect determinant label.");
+                }
+                if (occs[grp][i] == '1')
+                  nq++;
               }
-              if (beta[i] == '1')
-                nq++;
+              if (nq != NEs[grp])
+              {
+                std::cerr << "occ" << grp << ": " << occs[grp] << std::endl;
+                APP_ABORT("Found incorrect group" + std::to_string(grp) + " determinant label. nocc != nc+ne");
+              }
             }
-            if (nq != NEB)
-            {
-              std::cerr << "beta: " << beta << std::endl;
-              APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
-            }
-            //app_log() <<" <ci id=\"coeff_" <<ntot++ <<"\" coeff=\"" <<ci*coef <<"\" alpha=\"" <<alpha <<"\" beta=\"" <<beta <<"\" />" << std::endl;
             DetsPerCSF.back()++;
             CSFexpansion.push_back(coef);
             coeff.push_back(coef * ci);
-            confgList_up.push_back(dummyC_alpha);
-            for (size_t i = 0; i < NCA; i++)
-              confgList_up.back().occup[i] = true;
-            for (size_t i = NCA; i < NCA + nstates; i++)
-              confgList_up.back().occup[i] = (alpha[i - NCA] == '1');
-            confgList_dn.push_back(dummyC_beta);
-            for (size_t i = 0; i < NCB; i++)
-              confgList_dn.back().occup[i] = true;
-            for (size_t i = NCB; i < NCB + nstates; i++)
-              confgList_dn.back().occup[i] = (beta[i - NCB] == '1');
+            for (int grp = 0; grp < nGroups; grp++)
+            {
+              confgLists[grp].push_back(dummyCs[grp]);
+              for (size_t i = 0; i < NCs[grp]; i++)
+                confgLists[grp].back().occup[i] = true;
+              for (size_t i = NCs[grp]; i < NCs[grp] + nstates[grp]; i++)
+                confgLists[grp].back().occup[i] = (occs[grp][i - NCs[grp]] == '1');
+            }
           } // if(name=="det")
           csf = csf->next;
         } // csf loop
@@ -1550,62 +1528,39 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
       APP_ABORT("Problems reading determinant ci_configurations. Found a number of determinants inconsistent with xml "
                 "file size parameter.\n");
     }
-    //if(!usingCSF)
-    //  if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
-    //    APP_ABORT("Problems reading determinant ci_configurations.");
-    //  }
-    C2node_up.resize(coeff.size());
-    C2node_dn.resize(coeff.size());
+
+    for (int grp = 0; grp < nGroups; grp++)
+      C2nodes[grp].resize(coeff.size());
     app_log() << "Found " << coeff.size() << " terms in the MSD expansion.\n";
     RealType sumsq = 0.0;
     for (size_t i = 0; i < coeff.size(); i++)
       sumsq += std::abs(coeff[i] * coeff[i]);
     app_log() << "Norm of ci vector (sum of ci^2): " << sumsq << std::endl;
     app_log() << "Norm of qchem ci vector (sum of qchem_ci^2): " << sumsq_qc << std::endl;
-    for (size_t i = 0; i < confgList_up.size(); i++)
+    for (int grp = 0; grp < nGroups; grp++)
     {
-      bool found = false;
-      size_t k   = -1;
-      for (size_t j = 0; j < uniqueConfg_up.size(); j++)
+      for (size_t i = 0; i < confgLists[grp].size(); i++)
       {
-        if (confgList_up[i] == uniqueConfg_up[j])
+        bool found = false;
+        size_t k   = -1;
+        for (size_t j = 0; j < uniqueConfgs[grp].size(); j++)
         {
-          found = true;
-          k     = j;
-          break;
+          if (confgLists[grp][i] == uniqueConfgs[grp][j])
+          {
+            found = true;
+            k     = j;
+            break;
+          }
         }
-      }
-      if (found)
-      {
-        C2node_up[i] = k;
-      }
-      else
-      {
-        uniqueConfg_up.push_back(confgList_up[i]);
-        C2node_up[i] = uniqueConfg_up.size() - 1;
-      }
-    }
-    for (size_t i = 0; i < confgList_dn.size(); i++)
-    {
-      bool found = false;
-      size_t k   = -1;
-      for (size_t j = 0; j < uniqueConfg_dn.size(); j++)
-      {
-        if (confgList_dn[i] == uniqueConfg_dn[j])
+        if (found)
         {
-          found = true;
-          k     = j;
-          break;
+          C2nodes[grp][i] = k;
         }
-      }
-      if (found)
-      {
-        C2node_dn[i] = k;
-      }
-      else
-      {
-        uniqueConfg_dn.push_back(confgList_dn[i]);
-        C2node_dn[i] = uniqueConfg_dn.size() - 1;
+        else
+        {
+          uniqueConfgs[grp].push_back(confgLists[grp][i]);
+          C2nodes[grp][i] = uniqueConfgs[grp].size() - 1;
+        }
       }
     }
   }
@@ -1613,17 +1568,16 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   {
     app_log() << "Reading CI expansion." << std::endl;
 
-    int cntup = 0;
-    int cntdn = 0;
-    std::unordered_map<std::string, int> MyMapUp;
-    std::unordered_map<std::string, int> MyMapDn;
+    std::vector<int> cnts(nGroups, 0);
+    std::vector<std::unordered_map<std::string, int>> MyMaps(nGroups);
     while (cur != NULL) //check the basis set
     {
       getNodeName(cname, cur);
       if (cname == "configuration" || cname == "ci")
       {
         RealType qc_ci = 0.0;
-        std::string alpha, beta, tag;
+        std::vector<std::string> occs(nGroups);
+        std::string tag;
         OhmmsAttributeSet confAttrib;
 #ifdef QMC_COMPLEX
         RealType ci_real = 0.0, ci_imag = 0.0;
@@ -1634,8 +1588,8 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         confAttrib.add(ci, "coeff");
 #endif
         confAttrib.add(qc_ci, "qchem_coeff");
-        confAttrib.add(alpha, "alpha");
-        confAttrib.add(beta, "beta");
+        for (int grp = 0; grp < nGroups; grp++)
+          confAttrib.add(occs[grp], "occ" + std::to_string(grp));
         confAttrib.add(tag, "id");
         confAttrib.put(cur);
 
@@ -1650,67 +1604,42 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
           continue;
         }
 
-        for (size_t i = 0; i < nstates; i++)
+        for (int grp = 0; grp < nGroups; grp++)
         {
-          if (alpha[i] != '0' && alpha[i] != '1')
+          for (size_t i = 0; i < nstates[grp]; i++)
           {
-            std::cerr << alpha << std::endl;
-            APP_ABORT("Found incorrect determinant label.");
+            if (occs[grp][i] != '0' && occs[grp][i] != '1')
+            {
+              std::cerr << occs[grp] << std::endl;
+              APP_ABORT("Found incorrect determinant label for group " + std::to_string(grp));
+            }
           }
-          if (beta[i] != '0' && beta[i] != '1')
+          if (occs[grp].size() < nstates[grp])
           {
-            std::cerr << beta << std::endl;
-            APP_ABORT("Found incorrect determinant label.");
+            std::cerr << "occ" << grp << ": " << occs[grp] << std::endl;
+            APP_ABORT("Found incorrect group" + std::to_string(grp) + " determinant label. size < nc+nstates");
           }
-        }
-
-        if (alpha.size() < nstates)
-        {
-          std::cerr << "alpha: " << alpha << std::endl;
-          APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
-        }
-        if (beta.size() < nstates)
-        {
-          std::cerr << "beta: " << beta << std::endl;
-          APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
         }
 
         coeff.push_back(ci);
         CItags.push_back(tag);
 
-        std::unordered_map<std::string, int>::const_iterator gotup = MyMapUp.find(alpha);
-
-
-        if (gotup == MyMapUp.end())
+        for (int grp = 0; grp < nGroups; grp++)
         {
-          uniqueConfg_up.push_back(dummyC_alpha);
-          uniqueConfg_up.back().add_occupation(alpha);
-          C2node_up.push_back(cntup);
-          MyMapUp.insert(std::pair<std::string, int>(alpha, cntup));
-          cntup++;
+          std::unordered_map<std::string, int>::const_iterator got = MyMaps[grp].find(occs[grp]);
+          if (got == MyMaps[grp].end())
+          {
+            uniqueConfgs[grp].push_back(dummyCs[grp]);
+            uniqueConfgs[grp].back().add_occupation(occs[grp]);
+            C2nodes[grp].push_back(cnts[grp]);
+            MyMaps[grp].insert(std::pair<std::string, int>(occs[grp], cnts[grp]));
+            cnts[grp]++;
+          }
+          else
+          {
+            C2nodes[grp].push_back(got->second);
+          }
         }
-        else
-        {
-          C2node_up.push_back(gotup->second);
-        }
-
-        std::unordered_map<std::string, int>::const_iterator gotdn = MyMapDn.find(beta);
-
-        if (gotdn == MyMapDn.end())
-        {
-          uniqueConfg_dn.push_back(dummyC_beta);
-          uniqueConfg_dn.back().add_occupation(beta);
-          C2node_dn.push_back(cntdn);
-          MyMapDn.insert(std::pair<std::string, int>(beta, cntdn));
-          cntdn++;
-        }
-        else
-        {
-          C2node_dn.push_back(gotdn->second);
-        }
-
-        //if (qc_ci == 0.0)
-        //  qc_ci = ci;
 
         cnt0++;
         sumsq_qc += qc_ci * qc_ci;
@@ -1725,11 +1654,10 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
 
   } //usingCSF
 
-  app_log() << "Found " << uniqueConfg_up.size() << " unique up determinants.\n";
-  app_log() << "Found " << uniqueConfg_dn.size() << " unique down determinants.\n";
+  for (int grp = 0; grp < nGroups; grp++)
+    app_log() << "Found " << uniqueConfgs[grp].size() << " unique group" << grp << " determinants.\n";
 
   return success;
-  */
 }
 
 
