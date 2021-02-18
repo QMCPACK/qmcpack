@@ -155,7 +155,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           for (int i = 0; i < rr.size(); ++i)
             assert(std::isfinite(rr[i]));
 #endif
-          auto elecs = walker_elecs;
           ParticleSet::flex_makeMove(walker_elecs, iat, drifts);
 
           TrialWaveFunction::flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);

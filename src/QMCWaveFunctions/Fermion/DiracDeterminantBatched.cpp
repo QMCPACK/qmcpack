@@ -50,14 +50,7 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::invertPsiM(const ValueMatrix_t& logdetT)
 {
   ScopedTimer inverse_timer(&InverseTimer);
-  if (NumPtcls == 1)
-  {
-    ValueType det = logdetT(0, 0);
-    psiMinv(0, 0) = RealType(1) / det;
-    LogValue      = convertValueToLog(det);
-  }
-  else
-    det_engine_.invert_transpose(logdetT, LogValue);
+  det_engine_.invert_transpose(logdetT, LogValue);
 }
 
 template<typename DET_ENGINE_TYPE>
@@ -67,31 +60,19 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_invertPsiM(const RefVectorWith
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
   ScopedTimer inverse_timer(&wfc_leader.InverseTimer);
   const auto nw = wfc_list.size();
-  if (wfc_leader.NumPtcls == 1)
-  {
-    for (int iw = 0; iw < nw; iw++)
-    {
-      auto& diracdet         = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
-      ValueType det          = logdetT_list[iw].get()(0, 0);
-      diracdet.psiMinv(0, 0) = RealType(1) / det;
-      diracdet.LogValue      = convertValueToLog(det);
-    }
-  }
-  else
-  {
-    RefVector<DET_ENGINE_TYPE> engine_list;
-    RefVector<LogValueType> log_value_list;
-    engine_list.reserve(nw);
 
-    for (int iw = 0; iw < nw; iw++)
-    {
-      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
-      engine_list.push_back(det.det_engine_);
-      log_value_list.push_back(det.LogValue);
-    }
+  RefVector<DET_ENGINE_TYPE> engine_list;
+  RefVector<LogValueType> log_value_list;
+  engine_list.reserve(nw);
 
-    wfc_leader.det_engine_.mw_invert_transpose(engine_list, logdetT_list, log_value_list);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+    engine_list.push_back(det.det_engine_);
+    log_value_list.push_back(det.LogValue);
   }
+
+  wfc_leader.det_engine_.mw_invert_transpose(engine_list, logdetT_list, log_value_list);
 }
 
 ///reset the size: with the number of particles and number of orbtials
@@ -370,22 +351,12 @@ template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::computeGL(ParticleSet::ParticleGradient_t& G,
                                                          ParticleSet::ParticleLaplacian_t& L) const
 {
-  if (NumPtcls == 1)
+  for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
   {
-    ValueType y = psiMinv(0, 0);
-    GradType rv = y * dpsiM(0, 0);
-    G[FirstIndex] += rv;
-    L[FirstIndex] += y * d2psiM(0, 0) - dot(rv, rv);
-  }
-  else
-  {
-    for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
-    {
-      mGradType rv   = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
-      mValueType lap = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
-      G[iat] += rv;
-      L[iat] += lap - dot(rv, rv);
-    }
+    mGradType rv   = simd::dot(psiMinv[i], dpsiM[i], NumOrbitals);
+    mValueType lap = simd::dot(psiMinv[i], d2psiM[i], NumOrbitals);
+    G[iat] += rv;
+    L[iat] += lap - dot(rv, rv);
   }
 }
 
