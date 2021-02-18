@@ -204,16 +204,20 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       if (multislaterdet_0 || multislaterdetfast_0)
         APP_ABORT("multideterminant is already instantiated.");
 
-      std::string spo_alpha_name;
-      std::string spo_beta_name;
+      int nGroups = targetPtcl.groups();
+      std::vector<std::string> spoNames(nGroups);
+
       std::string fastAlg;
-      int nGroups = -1;
       OhmmsAttributeSet spoAttrib;
-      spoAttrib.add(spo_alpha_name, "spo_up");
-      spoAttrib.add(spo_beta_name, "spo_dn");
+      for (int grp = 0; grp < nGroups; grp++)
+        spoAttrib.add(spoNames[grp], "spo_" + std::to_string(grp));
+      if (nGroups == 2)
+      { //for legacy
+        spoAttrib.add(spoNames[0], "spo_up");
+        spoAttrib.add(spoNames[1], "spo_dn");
+      }
       spoAttrib.add(fastAlg, "Fast", {"", "yes", "no"}, TagStatus::DEPRECATED);
       spoAttrib.add(msd_algorithm, "algorithm", {"", "precomputed_table_method", "table_method", "all_determinants"});
-      spoAttrib.add(nGroups, "ngroups");
       spoAttrib.put(cur);
 
       if (msd_algorithm.empty())
@@ -226,61 +230,22 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           msd_algorithm = "all_determinants";
       }
 
-      //old format
-      SPOSetPtr spo_alpha;
-      SPOSetPtr spo_beta;
-      std::unique_ptr<SPOSet> spo_alpha_clone, spo_beta_clone;
       //new format
-      std::vector<std::string> spoNames;
-      std::vector<SPOSetPtr> spos;
-      std::vector<std::unique_ptr<SPOSet>> spo_clones;
-      if (nGroups == -1)
-      {
-        spo_alpha = sposet_builder_factory_.getSPOSet(spo_alpha_name);
-        spo_beta  = sposet_builder_factory_.getSPOSet(spo_beta_name);
-        if (spo_alpha == nullptr)
-        {
-          app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_alpha_name
-                      << "\" is not found. Expected for MultiSlaterDeterminant.\n";
-          abort();
-        }
-        else
-          spo_alpha_clone.reset(spo_alpha->makeClone());
+      std::vector<SPOSetPtr> spos(nGroups);
+      std::vector<std::unique_ptr<SPOSet>> spo_clones(nGroups);
 
-        if (spo_beta == nullptr)
+      for (int grp = 0; grp < nGroups; grp++)
+      {
+        spos[grp] = sposet_builder_factory_.getSPOSet(spoNames[grp]);
+        if (spos[grp] == nullptr)
         {
-          app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_beta_name
+          app_error() << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp]
                       << "\" is not found. Expected for MultiSlaterDeterminant.\n";
           abort();
         }
-        else
-          spo_beta_clone.reset(spo_beta->makeClone());
+        spo_clones[grp].reset(spos[grp]->makeClone());
       }
-      else
-      {
-        app_warning() << "Using new group method" << std::endl;
-        spoNames.resize(nGroups);
-        spos.resize(nGroups);
-        spo_clones.resize(nGroups);
-        OhmmsAttributeSet grpAttrib;
-        for (int grp = 0; grp < nGroups; grp++)
-          grpAttrib.add(spoNames[grp], "spo_" + std::to_string(grp));
-        grpAttrib.put(cur);
-        app_log() << "GROUPS" << std::endl;
-        for (int grp = 0; grp < nGroups; grp++)
-          app_log() << spoNames[grp] << std::endl;
-        for (int grp = 0; grp < nGroups; grp++)
-        {
-          spos[grp] = sposet_builder_factory_.getSPOSet(spoNames[grp]);
-          if (spos[grp] == nullptr)
-          {
-            app_error() << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp]
-                        << "\" is not found. Expected for MultiSlaterDeterminant.\n";
-            abort();
-          }
-          spo_clones[grp].reset(spos[grp]->makeClone());
-        }
-      }
+
 
       if (msd_algorithm == "precomputed_table_method" || msd_algorithm == "table_method")
       {
@@ -291,20 +256,10 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         }
 
         std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
-        if (nGroups == -1)
+        for (int grp = 0; grp < nGroups; grp++)
         {
-          app_log() << "      Creating base determinant (up) for MSD expansion. \n";
-          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_alpha_clone), 0));
-          app_log() << "      Creating base determinant (down) for MSD expansion. \n";
-          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_beta_clone), 1));
-        }
-        else
-        {
-          for (int grp = 0; grp < nGroups; grp++)
-          {
-            app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
-            dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), grp));
-          }
+          app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
+          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), grp));
         }
 
         if (msd_algorithm == "precomputed_table_method")
@@ -318,14 +273,12 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), false);
         }
 
-        bool ab_format = (nGroups == -1) ? true : false;
-
         multislaterdetfast_0->initialize();
         success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
                                 *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
                                 *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
                                 *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
-                                multislaterdetfast_0->CI_Optimizable, cur, ab_format);
+                                multislaterdetfast_0->CI_Optimizable, cur);
 
         // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
         // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
@@ -334,11 +287,16 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       }
       else
       {
+        if (nGroups != 2)
+        {
+          PRE.error("MSD using all_determinants algorithm requires two particle species.");
+          return nullptr;
+        }
         app_summary() << "    Using a list of determinants for multi-deterimant expansion." << std::endl;
         auto spo_up =
-            std::make_unique<SPOSetProxyForMSD>(std::move(spo_alpha_clone), targetPtcl.first(0), targetPtcl.last(0));
+            std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[0]), targetPtcl.first(0), targetPtcl.last(0));
         auto spo_dn =
-            std::make_unique<SPOSetProxyForMSD>(std::move(spo_beta_clone), targetPtcl.first(1), targetPtcl.last(1));
+            std::make_unique<SPOSetProxyForMSD>(std::move(spo_clones[1]), targetPtcl.first(1), targetPtcl.last(1));
         if (UseBackflow)
         {
           app_summary() << "    Using backflow transformation." << std::endl;
@@ -600,8 +558,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
                                      opt_variables_type& myVars,
                                      bool& Optimizable,
                                      bool& CI_Optimizable,
-                                     xmlNodePtr cur,
-                                     bool& ab_format)
+                                     xmlNodePtr cur)
 {
   bool success = true;
 
@@ -635,20 +592,12 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    if (ab_format)
-      success = readDetListH5(cur, uniqueConfgs[0], uniqueConfgs[1], C2nodes[0], C2nodes[1], CItags, C, optimizeCI,
-                              nptcls[0], nptcls[1]);
-    else
-      success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
+    success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
   }
   else
   {
-    if (ab_format)
-      success = readDetList(cur, uniqueConfgs[0], uniqueConfgs[1], C2nodes[0], C2nodes[1], CItags, C, optimizeCI,
-                            nptcls[0], nptcls[1], CSFcoeff, DetsPerCSF, CSFexpansion, usingCSF);
-    else
-      success = readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, CSFcoeff, DetsPerCSF,
-                            CSFexpansion, usingCSF);
+    success = readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, CSFcoeff, DetsPerCSF, CSFexpansion,
+                          usingCSF);
   }
   if (!success)
     return false;
@@ -1380,6 +1329,13 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     spoAttrib.add(NCs[grp], "nc" + std::to_string(grp));
     spoAttrib.add(NEs[grp], "ne" + std::to_string(grp));
   }
+  if (nGroups == 2)
+  { //for legacy
+    spoAttrib.add(NCs[0], "nca");
+    spoAttrib.add(NCs[1], "ncb");
+    spoAttrib.add(NEs[0], "nea");
+    spoAttrib.add(NEs[1], "neb");
+  }
   spoAttrib.add(ndets, "size");
   spoAttrib.add(nstates, "nstates");
   spoAttrib.add(Dettype, "type");
@@ -1492,6 +1448,11 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
             detAttrib.add(coef, "coeff");
             for (int grp = 0; grp < nGroups; grp++)
               detAttrib.add(occs[grp], "occ" + std::to_string(grp));
+            if (nGroups == 2)
+            { //for legacy
+              detAttrib.add(occs[0], "alpha");
+              detAttrib.add(occs[1], "beta");
+            }
             detAttrib.put(csf);
             for (int grp = 0; grp < nGroups; grp++)
             {
@@ -1606,6 +1567,11 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         confAttrib.add(qc_ci, "qchem_coeff");
         for (int grp = 0; grp < nGroups; grp++)
           confAttrib.add(occs[grp], "occ" + std::to_string(grp));
+        if (nGroups == 2)
+        { //legacy
+          confAttrib.add(occs[0], "alpha");
+          confAttrib.add(occs[1], "beta");
+        }
         confAttrib.add(tag, "id");
         confAttrib.put(cur);
 
@@ -2080,7 +2046,18 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   {
     Matrix<int64_t> tmp(ndets, N_int);
     temps.push_back(tmp);
-    hin.read(temps[grp], "CI_" + std::to_string(grp));
+    std::string ci_str;
+
+    if (!hin.readEntry(temps[grp], "CI_" + std::to_string(grp)))
+    {
+      //for backwards compatibility
+      if (grp == 0)
+        hin.read(temps[grp], "CI_Alpha");
+      else if (grp == 1)
+        hin.read(temps[grp], "CI_Beta");
+      else
+        APP_ABORT("Unknown HDF5 CI format");
+    }
   }
 
   std::vector<std::string> MyCIs(nGroups);
