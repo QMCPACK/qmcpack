@@ -34,7 +34,7 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0           = pos[0];
     const T y0           = pos[1];
@@ -61,7 +61,7 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -107,7 +107,7 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0           = pos[0];
     const T y0           = pos[1];
@@ -137,7 +137,7 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -198,7 +198,7 @@ struct DTD_BConds<T, 3, PPPS + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -243,7 +243,7 @@ struct DTD_BConds<T, 3, PPPS + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -351,7 +351,7 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -413,7 +413,7 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -511,7 +511,7 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -569,7 +569,7 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -637,7 +637,7 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0           = pos[0];
     const T y0           = pos[1];
@@ -667,7 +667,7 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -715,7 +715,7 @@ struct DTD_BConds<T, 3, PPNS + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -757,7 +757,7 @@ struct DTD_BConds<T, 3, PPNS + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -806,7 +806,7 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -837,7 +837,7 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -917,7 +917,7 @@ struct DTD_BConds<T, 3, PPPX + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     APP_ABORT("DTD_BConds<T,3,PPPX> not implemented");
   }
@@ -928,7 +928,7 @@ struct DTD_BConds<T, 3, PPPX + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     //APP_ABORT("DTD_BConds<T, 3, PPPX + SOA_OFFSET>::computeDistancesOffload not implemented");
   }
@@ -979,7 +979,7 @@ struct DTD_BConds<T, 3, PPNX + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     APP_ABORT("DTD_BConds<T,3,PPNX> not implemented");
   }
@@ -990,7 +990,7 @@ struct DTD_BConds<T, 3, PPNX + SOA_OFFSET>
                                T* restrict temp_dr,
                                int padded_size,
                                int iat,
-                               int flip_ind = 0)
+                               int flip_ind = 0) const
   {
     //APP_ABORT("DTD_BConds<T, 3, PPNX + SOA_OFFSET>::computeDistancesOffload not implemented");
   }

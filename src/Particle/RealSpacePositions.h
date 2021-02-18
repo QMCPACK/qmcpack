@@ -43,14 +43,15 @@ public:
   }
   void setOneParticlePos(const PosType& pos, size_t iat) override { RSoA(iat) = pos; }
 
-  void mw_acceptParticlePos(const RefVector<DynamicCoordinates>& coords_list,
+  void mw_acceptParticlePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
                             size_t iat,
                             const std::vector<PosType>& new_positions,
-                            const std::vector<bool>& isAccepted) override
+                            const std::vector<bool>& isAccepted) const override
   {
+    assert(this == &coords_list.getLeader());
     for (size_t iw = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
-        coords_list[iw].get().setOneParticlePos(new_positions[iw], iat);
+        coords_list[iw].setOneParticlePos(new_positions[iw], iat);
   }
 
   const PosVectorSoa& getAllParticlePos() const override { return RSoA; }

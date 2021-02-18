@@ -302,33 +302,35 @@ void SplineC2COMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 }
 
 template<typename ST>
-void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_list,
+void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                                   const RefVector<const VirtualParticleSet>& vp_list,
                                                   const RefVector<ValueVector_t>& psi_list,
                                                   const std::vector<const ValueType*>& invRow_ptr_list,
-                                                  std::vector<std::vector<ValueType>>& ratios_list)
+                                                  std::vector<std::vector<ValueType>>& ratios_list) const
 {
+  assert(this == &spo_list.getLeader());
+  auto& phi_leader      = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
   const size_t nw       = spo_list.size();
-  const size_t orb_size = psi_list[0].get().size();
+  const size_t orb_size = phi_leader.size();
 
   size_t mw_nVP = 0;
   for (const VirtualParticleSet& VP : vp_list)
     mw_nVP += VP.getTotalNum();
 
   const size_t packed_size = nw * sizeof(ValueType*) + mw_nVP * (6 * sizeof(ST) + sizeof(int));
-  if (det_ratios_buffer_H2D.size() < packed_size)
-    det_ratios_buffer_H2D.resize(packed_size);
+  if (phi_leader.det_ratios_buffer_H2D.size() < packed_size)
+    phi_leader.det_ratios_buffer_H2D.resize(packed_size);
 
   // pack invRow_ptr_list to det_ratios_buffer_H2D
-  Vector<const ValueType*> ptr_buffer(reinterpret_cast<const ValueType**>(det_ratios_buffer_H2D.data()), nw);
+  Vector<const ValueType*> ptr_buffer(reinterpret_cast<const ValueType**>(phi_leader.det_ratios_buffer_H2D.data()), nw);
   for (size_t iw = 0; iw < nw; iw++)
     ptr_buffer[iw] = invRow_ptr_list[iw];
 
   // pack particle positions
-  auto* pos_ptr = reinterpret_cast<ST*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*));
-  auto* ref_id_ptr =
-      reinterpret_cast<int*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(ST));
-  size_t iVP = 0;
+  auto* pos_ptr    = reinterpret_cast<ST*>(phi_leader.det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*));
+  auto* ref_id_ptr = reinterpret_cast<int*>(phi_leader.det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) +
+                                            mw_nVP * 6 * sizeof(ST));
+  size_t iVP       = 0;
   for (size_t iw = 0; iw < nw; iw++)
   {
     const VirtualParticleSet& VP = vp_list[iw];
@@ -350,22 +352,22 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVector<SPOSet>& spo_l
 
   const int ChunkSizePerTeam = 128;
   const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-  if (ratios_private.size() < NumTeams * mw_nVP)
-    ratios_private.resize(mw_nVP, NumTeams);
+  if (phi_leader.ratios_private.size() < NumTeams * mw_nVP)
+    phi_leader.ratios_private.resize(mw_nVP, NumTeams);
   const auto padded_size = myV.size();
-  if (offload_scratch.size() < padded_size * mw_nVP)
-    offload_scratch.resize(padded_size * mw_nVP);
-  if (results_scratch.size() < orb_size * mw_nVP)
-    results_scratch.resize(orb_size * mw_nVP);
+  if (phi_leader.offload_scratch.size() < padded_size * mw_nVP)
+    phi_leader.offload_scratch.resize(padded_size * mw_nVP);
+  if (phi_leader.results_scratch.size() < orb_size * mw_nVP)
+    phi_leader.results_scratch.resize(orb_size * mw_nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
   const auto* spline_ptr         = SplineInst->getSplinePtr();
-  auto* offload_scratch_ptr      = offload_scratch.data();
-  auto* results_scratch_ptr      = results_scratch.data();
+  auto* offload_scratch_ptr      = phi_leader.offload_scratch.data();
+  auto* results_scratch_ptr      = phi_leader.results_scratch.data();
   const auto myKcart_padded_size = myKcart->capacity();
   auto* myKcart_ptr              = myKcart->data();
-  auto* buffer_H2D_ptr           = det_ratios_buffer_H2D.data();
-  auto* ratios_private_ptr       = ratios_private.data();
+  auto* buffer_H2D_ptr           = phi_leader.det_ratios_buffer_H2D.data();
+  auto* ratios_private_ptr       = phi_leader.ratios_private.data();
   const size_t first_spo_local   = first_spo;
 
   {
@@ -653,50 +655,54 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
 }
 
 template<typename ST>
-void SplineC2COMPTarget<ST>::mw_evaluateVGL(const RefVector<SPOSet>& sa_list,
-                                            const RefVector<ParticleSet>& P_list,
+void SplineC2COMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
+                                            const RefVectorWithLeader<ParticleSet>& P_list,
                                             int iat,
                                             const RefVector<ValueVector_t>& psi_v_list,
                                             const RefVector<GradVector_t>& dpsi_v_list,
-                                            const RefVector<ValueVector_t>& d2psi_v_list)
+                                            const RefVector<ValueVector_t>& d2psi_v_list) const
 {
+  assert(this == &sa_list.getLeader());
+  auto& phi_leader   = sa_list.getCastedLeader<SplineC2COMPTarget<ST>>();
   const int nwalkers = sa_list.size();
-  multi_pos_copy.resize(nwalkers * 6);
+  phi_leader.multi_pos_copy.resize(nwalkers * 6);
 
   // pack particle positions
   for (int iw = 0; iw < nwalkers; ++iw)
   {
-    const PointType& r = P_list[iw].get().activeR(iat);
+    const PointType& r = P_list[iw].activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    multi_pos_copy[iw * 6]     = r[0];
-    multi_pos_copy[iw * 6 + 1] = r[1];
-    multi_pos_copy[iw * 6 + 2] = r[2];
-    multi_pos_copy[iw * 6 + 3] = ru[0];
-    multi_pos_copy[iw * 6 + 4] = ru[1];
-    multi_pos_copy[iw * 6 + 5] = ru[2];
+    phi_leader.multi_pos_copy[iw * 6]     = r[0];
+    phi_leader.multi_pos_copy[iw * 6 + 1] = r[1];
+    phi_leader.multi_pos_copy[iw * 6 + 2] = r[2];
+    phi_leader.multi_pos_copy[iw * 6 + 3] = ru[0];
+    phi_leader.multi_pos_copy[iw * 6 + 4] = ru[1];
+    phi_leader.multi_pos_copy[iw * 6 + 5] = ru[2];
   }
 
-  evaluateVGLMultiPos(multi_pos_copy, psi_v_list, dpsi_v_list, d2psi_v_list);
+  phi_leader.evaluateVGLMultiPos(multi_pos_copy, psi_v_list, dpsi_v_list, d2psi_v_list);
 }
 
 template<typename ST>
-void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOSet>& spo_list,
-                                                            const RefVector<ParticleSet>& P_list,
+void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                            const RefVectorWithLeader<ParticleSet>& P_list,
                                                             int iat,
                                                             const std::vector<const ValueType*>& invRow_ptr_list,
                                                             VGLVector_t& phi_vgl_v,
                                                             std::vector<ValueType>& ratios,
-                                                            std::vector<GradType>& grads)
+                                                            std::vector<GradType>& grads) const
 {
+  assert(this == &spo_list.getLeader());
+  auto& phi_leader   = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
   const int nwalkers = spo_list.size();
-  buffer_H2D.resize(nwalkers, sizeof(ST) * 6 + sizeof(ValueType*));
+  phi_leader.buffer_H2D.resize(nwalkers, sizeof(ST) * 6 + sizeof(ValueType*));
 
   // pack particle positions and invRow pointers.
   for (int iw = 0; iw < nwalkers; ++iw)
   {
-    const PointType& r = P_list[iw].get().activeR(iat);
+    const PointType& r = P_list[iw].activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    Vector<ST> pos_copy(reinterpret_cast<ST*>(buffer_H2D[iw]), 6);
+    Vector<ST> pos_copy(reinterpret_cast<ST*>(phi_leader.buffer_H2D[iw]), 6);
 
     pos_copy[0] = r[0];
     pos_copy[1] = r[1];
@@ -705,7 +711,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOS
     pos_copy[4] = ru[1];
     pos_copy[5] = ru[2];
 
-    auto& invRow_ptr = *reinterpret_cast<const ValueType**>(buffer_H2D[iw] + sizeof(ST) * 6);
+    auto& invRow_ptr = *reinterpret_cast<const ValueType**>(phi_leader.buffer_H2D[iw] + sizeof(ST) * 6);
     invRow_ptr       = invRow_ptr_list[iw];
   }
 
@@ -714,28 +720,28 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVector<SPOS
   const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto padded_size     = myV.size();
   // for V(1)G(3)H(6) intermediate result
-  if (offload_scratch.size() < padded_size * num_pos * 10)
-    offload_scratch.resize(padded_size * num_pos * 10);
+  if (phi_leader.offload_scratch.size() < padded_size * num_pos * 10)
+    phi_leader.offload_scratch.resize(padded_size * num_pos * 10);
   const auto orb_size = phi_vgl_v.size() / num_pos;
   // for V(1)G(3)L(1) final result
-  if (results_scratch.size() < orb_size * num_pos * 5)
-    results_scratch.resize(orb_size * num_pos * 5);
+  if (phi_leader.results_scratch.size() < orb_size * num_pos * 5)
+    phi_leader.results_scratch.resize(orb_size * num_pos * 5);
   // per team ratio and grads
-  if (rg_private.size() < num_pos * NumTeams * 4)
-    rg_private.resize(num_pos, NumTeams * 4);
+  if (phi_leader.rg_private.size() < num_pos * NumTeams * 4)
+    phi_leader.rg_private.resize(num_pos, NumTeams * 4);
 
   // Ye: need to extract sizes and pointers before entering target region
   const auto* spline_ptr         = SplineInst->getSplinePtr();
-  auto* buffer_H2D_ptr           = buffer_H2D.data();
-  auto* offload_scratch_ptr      = offload_scratch.data();
-  auto* results_scratch_ptr      = results_scratch.data();
+  auto* buffer_H2D_ptr           = phi_leader.buffer_H2D.data();
+  auto* offload_scratch_ptr      = phi_leader.offload_scratch.data();
+  auto* results_scratch_ptr      = phi_leader.results_scratch.data();
   const auto myKcart_padded_size = myKcart->capacity();
   auto* mKK_ptr                  = mKK->data();
   auto* GGt_ptr                  = GGt_offload->data();
   auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
   auto* myKcart_ptr              = myKcart->data();
   auto* phi_vgl_ptr              = phi_vgl_v.data();
-  auto* rg_private_ptr           = rg_private.data();
+  auto* rg_private_ptr           = phi_leader.rg_private.data();
   const size_t buffer_H2D_stride = buffer_H2D.cols();
   const size_t first_spo_local   = first_spo;
   const size_t phi_vgl_stride    = phi_vgl_v.capacity();
