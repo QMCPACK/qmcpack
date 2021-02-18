@@ -89,7 +89,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
     // resize stack pointers to match maximum buffer use
     update_memory_managers();
   }
-  AFQMCTimers[block_timer].stop();
+  AFQMCTimers[block_timer]->stop();
 
   if (nCheckpoint > 0)
     checkpoint(wset, iBlock, step_tot);
