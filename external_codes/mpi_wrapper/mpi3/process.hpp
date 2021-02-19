@@ -1,11 +1,15 @@
-#ifdef COMPILATION_INSTRUCTIONS
+#ifdef COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
 (echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wall -D_TEST_BOOST_MPI3_PROCESS $0x.cpp -o $0x.x -lboost_serialization && time mpirun -n 2 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
 #endif
 #ifndef BOOST_MPI3_PROCESS_HPP
 #define BOOST_MPI3_PROCESS_HPP
 
 #include "../mpi3/communicator.hpp"
-#include<experimental/optional>
+
+#include <boost/optional.hpp>
+using boost::optional;
+
+#include "config/NODISCARD.hpp"
 
 namespace boost{
 namespace mpi3{
@@ -21,13 +25,13 @@ struct process{
 		if(rank_ != comm_.rank()) return {};
 		return optional<T>(val);
 	}
-	template<class T>
-	std::vector<T> operator|=(T const& t) &&{
-		std::vector<T> ret(comm_.size());
-		comm_.gather_n(&t, 1, ret.begin(), rank_);
+//	template<class T>
+//	std::vector<T> operator|=(T const& t) &&{
+//		std::vector<T> ret(comm_.size());
+//		comm_.gather_n(&t, 1, ret.begin(), rank_);
 	//	comm_.gather_value(t, ret.begin(), rank_);
-		return ret;
-	}
+//		return ret;
+//	}
 //	template<class T>
 //	process&& operator<<(T const& t) &&{
 //		comm_.send_value(t, rank_);
@@ -56,7 +60,7 @@ auto operator>>(process&& p, T&& value) -> decltype(std::declval<process&>() >> 
 	return p >> value;
 }
 
-template<class T>
+template<class T> 
 process& operator<<(process& self, T const& t){
 	self.comm_.send_value(t, self.rank_);
 	return self;
@@ -64,6 +68,27 @@ process& operator<<(process& self, T const& t){
 
 inline process communicator::operator[](int rank){
 	return {*this, rank};
+}
+
+template<class T>
+auto operator&(communicator& comm, T&& t)
+->decltype(comm.all_to_all(begin(std::forward<T>(t))), std::forward<T>(t)){
+	assert(t.size() == comm.size());
+//	using std::begin;
+	auto e = comm.all_to_all(begin(std::forward<T>(t)));
+	using std::end;
+	assert( e == end(t) );
+	return std::forward<T>(t);
+}
+
+template<class T> 
+NODISCARD("do not ignore result when second argument is const")
+auto operator&(communicator& comm, T const& t)
+->decltype(comm.all_to_all(t.begin(), std::declval<T>().begin()), T(comm.size())){
+	assert(t.size() == comm.size());
+	T ret(comm.size()); 
+	comm.all_to_all(t.begin(), ret.begin());
+	return ret;
 }
 
 template<class T>
@@ -75,6 +100,11 @@ communicator& operator>>(communicator& comm, T& t){
 template<class T>
 std::vector<T> operator|=(communicator& comm, T const& t){
 	return comm.all_gather_value(t);
+}
+
+template<class T>
+std::vector<T> operator|=(process&& self, T const& t){
+	return self.comm_.gather_value(t, self.rank_);
 }
 
 }}
@@ -115,7 +145,7 @@ bool load_xml(std::string file, T&& ma) try{
 	throw std::runtime_error("cannot load from file `\n" + file + ": line 0:\n', because " + e.what() + ". Are the save and load type compatible?");
 }
 
-int mpi3::main(int argc, char* argv[], mpi3::communicator& world){
+int mpi3::main(int argc, char* argv[], mpi3::communicator world){
 	assert(world.size() == 2);
 	if(world.rank() == 0){
 		int a = 7;
@@ -137,7 +167,12 @@ int mpi3::main(int argc, char* argv[], mpi3::communicator& world){
 		} break;
 	}
 	if(world.rank() == 0){
-		std::vector<double> v = {1,2,3,  4, 5, 6,  7,8,9, 10,11,12};
+		std::vector<double> v = {
+			1, 2, 3,
+			4, 5, 6,
+			7, 8, 9,
+			10, 11, 12
+		};
 		world[1] << v;
 	}else if(world.rank() == 1){
 		std::vector<double> v;
@@ -154,6 +189,7 @@ int mpi3::main(int argc, char* argv[], mpi3::communicator& world){
 			assert(( v == std::vector<bool>{false, true, false} ));
 		}
 	}
+#if 0
 	if(world.rank() == 0){
 		std::vector<double> v = {1,2,3,  4, 5, 6,  7,8,9,  10,11,12};
 		boost::multi_array<double, 2> ma(boost::extents[4][2]);
@@ -167,6 +203,7 @@ int mpi3::main(int argc, char* argv[], mpi3::communicator& world){
 		cout << ma.shape()[0] << " " << ma.shape()[1] << '\n';
 	//	assert( ma[2][2] == 8. );
 	}
+#endif
 	return 0;
 }
 #endif

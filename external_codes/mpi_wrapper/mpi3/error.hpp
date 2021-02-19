@@ -1,6 +1,8 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wall -Wextra -Wfatal-errors -D_TEST_BOOST_MPI3_ERROR $0x.cpp -o $0x.x && time mpirun -n 4 $0x.x $@ && rm -f $0x.cpp; exit
+#if COMPILATION// -*- indent-tabs-mode: t -*-
+OMPI_CXX=$CXX mpic++ $0 -o $0x&&mpirun -n 4 $0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2017-2020
+
 #ifndef BOOST_MPI3_ERROR_HPP
 #define BOOST_MPI3_ERROR_HPP
 
@@ -12,30 +14,32 @@
 namespace boost{
 namespace mpi3{
 
-enum class error : int {//decltype(MPI_SUCCESS) {
-	success = MPI_SUCCESS,
+static_assert(sizeof(MPI_SUCCESS) <= sizeof(int), "!");
+
+enum class error : int {//decltype(MPI_SUCCESS){
+	success                = MPI_SUCCESS,
 	invalid_buffer_pointer = MPI_ERR_BUFFER,
-	invalid_count = MPI_ERR_COUNT,
-	invalid_datatype = MPI_ERR_TYPE,
-	invalid_tag = MPI_ERR_TAG,
-	invalid_communicator = MPI_ERR_COMM,
-	invalid_rank = MPI_ERR_RANK,
-	invalid_root = MPI_ERR_ROOT,
-	invalid_group = MPI_ERR_GROUP,
-	invalid_operation = MPI_ERR_OP,
-	invalid_topology = MPI_ERR_TOPOLOGY,
-	illegal_dimension = MPI_ERR_DIMS,
-	invalid_dimension = MPI_ERR_DIMS,
-	invalid_argument = MPI_ERR_ARG,
-	invalid_domain = MPI_ERR_ARG,
-	unknown = MPI_ERR_UNKNOWN,
-	truncated_message = MPI_ERR_TRUNCATE,
-	other = MPI_ERR_OTHER,
-	internal = MPI_ERR_INTERN,
-	in_status = MPI_ERR_IN_STATUS,
-	pending = MPI_ERR_PENDING,
-	illegal_request = MPI_ERR_REQUEST,
-	last_code = MPI_ERR_LASTCODE
+	invalid_count          = MPI_ERR_COUNT,
+	invalid_datatype       = MPI_ERR_TYPE,
+	invalid_tag            = MPI_ERR_TAG,
+	invalid_communicator   = MPI_ERR_COMM,
+	invalid_rank           = MPI_ERR_RANK,
+	invalid_root           = MPI_ERR_ROOT,
+	invalid_group          = MPI_ERR_GROUP,
+	invalid_operation      = MPI_ERR_OP,
+	invalid_topology       = MPI_ERR_TOPOLOGY,
+	illegal_dimension      = MPI_ERR_DIMS,
+	invalid_dimension      = MPI_ERR_DIMS,
+	invalid_argument       = MPI_ERR_ARG,
+	invalid_domain         = MPI_ERR_ARG,
+	unknown                = MPI_ERR_UNKNOWN,
+	truncated_message      = MPI_ERR_TRUNCATE,
+	other                  = MPI_ERR_OTHER,
+	internal               = MPI_ERR_INTERN,
+	in_status              = MPI_ERR_IN_STATUS,
+	pending                = MPI_ERR_PENDING,
+	illegal_request        = MPI_ERR_REQUEST,
+	last_code              = MPI_ERR_LASTCODE
 };
 
 auto inline string(enum error err){
@@ -64,7 +68,7 @@ namespace std{
 	template<> struct is_error_code_enum<::boost::mpi3::error> : true_type{};
 }
 
-#ifdef _TEST_BOOST_MPI3_ERROR
+#if not __INCLUDE_LEVEL__ // def _TEST_BOOST_MPI3_ERROR
 
 #include "../mpi3/main.hpp"
 
