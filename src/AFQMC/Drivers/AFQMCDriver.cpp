@@ -33,6 +33,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
   int step_tot      = step0, iBlock;
   for (iBlock = block0; iBlock < nBlock; ++iBlock)
   {
+    AFQMCTimers[block_timer]->start();
     for (int iStep = 0; iStep < nStep; ++iStep, ++step_tot)
     {
       // propagate nSubstep
@@ -84,6 +85,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
     // quantities that are measured once per block
     estim0.accumulate_block(wset);
 
+    AFQMCTimers[block_timer]->stop();
     estim0.print(iBlock + 1, total_time, Eshift, wset);
 
     // resize stack pointers to match maximum buffer use

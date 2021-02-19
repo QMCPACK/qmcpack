@@ -86,9 +86,6 @@ public:
     ncalls_substep = 0;
     nwalk_min      = 1000000;
     nwalk_max      = 0;
-
-    // first block will always be off, move to Driver if problematic
-    AFQMCTimers[block_timer]->start();
   }
 
   ~BasicEstimator() {}
@@ -190,8 +187,6 @@ public:
 
   void print_timers(std::ofstream& out)
   {
-    AFQMCTimers[block_timer]->stop();
-
     if (writer)
     {
       if (timers)
@@ -220,7 +215,6 @@ public:
       AFQMCTimers[setup_timer]->reset();
       AFQMCTimers[extra_timer]->reset();
     }
-    AFQMCTimers[block_timer]->start();
   }
 
   double getEloc() { return data[0] / data[1]; }
