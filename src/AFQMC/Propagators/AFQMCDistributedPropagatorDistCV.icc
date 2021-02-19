@@ -134,13 +134,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(Gwork.num_elements()), TG.getNCoresPerTG());
     std::tie(vak0, vakN) = FairDivideBoundary(TG.getLocalTGRank(), int(vHS.num_elements()), TG.getNCoresPerTG());
     MPI_Send_init(to_address(Gwork.origin()) + Gak0, (GakN - Gak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
-                  3456, &TG.TG(), &req_Gsend);
+                  3456, TG.TG().get(), &req_Gsend);
     MPI_Recv_init(to_address(Grecv.origin()) + Gak0, (GakN - Gak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
-                  3456, &TG.TG(), &req_Grecv);
+                  3456, TG.TG().get(), &req_Grecv);
     MPI_Send_init(to_address(vsend.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
-                  5678, &TG.TG(), &req_vsend);
+                  5678, TG.TG().get(), &req_vsend);
     MPI_Recv_init(to_address(vrecv.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
-                  5678, &TG.TG(), &req_vrecv);
+                  5678, TG.TG().get(), &req_vrecv);
 
     fill_n(make_device_ptr(vsend.origin()) + vak0, (vakN - vak0), zero);
 
@@ -171,9 +171,9 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     if (bp_step >= 0 && bp_step < bp_max)
     {
-      MPI_Send_init(Xsend.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 3456, &TG.TG(),
+      MPI_Send_init(Xsend.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 3456, TG.TG().get(),
                     &req_X2send);
-      MPI_Recv_init(Xrecv.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 3456, &TG.TG(),
+      MPI_Recv_init(Xrecv.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 3456, TG.TG().get(),
                     &req_X2recv);
     }
 
@@ -825,13 +825,13 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   std::tie(X0, XN)     = FairDivideBoundary(TG.getLocalTGRank(), int(Xsend.num_elements()), TG.getNCoresPerTG());
   std::tie(vak0, vakN) = FairDivideBoundary(TG.getLocalTGRank(), int(vHS.num_elements()), TG.getNCoresPerTG());
   MPI_Send_init(to_address(Xsend.origin()) + X0, (XN - X0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 2345,
-                &TG.TG(), &req_Xsend);
+                TG.TG().get(), &req_Xsend);
   MPI_Recv_init(to_address(Xrecv.origin()) + X0, (XN - X0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 2345,
-                &TG.TG(), &req_Xrecv);
+                TG.TG().get(), &req_Xrecv);
   MPI_Send_init(to_address(vsend.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
-                6789, &TG.TG(), &req_bpvsend);
+                6789, TG.TG().get(), &req_bpvsend);
   MPI_Recv_init(to_address(vrecv.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
-                6789, &TG.TG(), &req_bpvrecv);
+                6789, TG.TG().get(), &req_bpvrecv);
   TG.local_barrier();
 
   auto&& Fields(*wset.getFields());

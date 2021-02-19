@@ -374,13 +374,13 @@ void WalkerSetBase<Alloc, Ptr>::benchmark(std::string& blist, int maxnW, int del
           if (TG.TG_heads().rank() == 0)
           {
             //            Timer.start("M1");
-            MPI_Isend(Cbuff.data(), 2 * Cbuff.size(), MPI_DOUBLE, 1, 999, &(TG.TG_heads()), &req);
+            MPI_Isend(Cbuff.data(), 2 * Cbuff.size(), MPI_DOUBLE, 1, 999, TG.TG_heads().get(), &req);
             MPI_Wait(&req, &st);
             //            Timer.stop("M1");
           }
           else
           {
-            MPI_Irecv(Cbuff.data(), 2 * Cbuff.size(), MPI_DOUBLE, 0, 999, &(TG.TG_heads()), &req);
+            MPI_Irecv(Cbuff.data(), 2 * Cbuff.size(), MPI_DOUBLE, 0, 999, TG.TG_heads().get(), &req);
             MPI_Wait(&req, &st);
           }
         }
