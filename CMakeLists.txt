@@ -114,8 +114,8 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 ##################################
 # Set C++ standard used by QMCPACK
 ##################################
-SET(QMC_CXX_STANDARD 14 CACHE STRING "QMCPACK C++ language standard")
-IF(NOT QMC_CXX_STANDARD EQUAL 14)
+SET(QMC_CXX_STANDARD 17 CACHE STRING "QMCPACK C++ language standard")
+IF(NOT QMC_CXX_STANDARD EQUAL 17)
   MESSAGE(WARNING "C++14 is the only language standard officially supported by this QMCPACK version. "
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
 ENDIF()
