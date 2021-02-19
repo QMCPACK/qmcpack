@@ -59,7 +59,7 @@ struct is_root
 {
   mpi3::shared_communicator& comm_;
   template<class Allocator>
-  is_root(Allocator& a) : comm_(a.comm_)
+  is_root(Allocator& a) : comm_(*a.commP_)
   {}
   bool root() { return comm_.root(); }
   int size() { return comm_.size(); }
