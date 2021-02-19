@@ -68,13 +68,14 @@ class basic_oarchive_impl {
                 return false;
             return class_id < rhs.class_id;
         }
-        aobject & operator=(const aobject & rhs)
-        {
-            address = rhs.address;
-            class_id = rhs.class_id;
-            object_id = rhs.object_id;
-            return *this;
-        }
+//fatal error: definition of implicit copy constructor for 'aobject' is deprecated because it has a user-declared copy assignment operator [-Wdeprecated-copy]
+//        aobject & operator=(const aobject & rhs)
+//        {
+//            address = rhs.address;
+//            class_id = rhs.class_id;
+//            object_id = rhs.object_id;
+//            return *this;
+//        }
         aobject(
             const void *a,
             class_id_type class_id_,

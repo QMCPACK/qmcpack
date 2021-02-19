@@ -82,7 +82,7 @@ auto operator&(communicator& comm, T&& t)
 }
 
 template<class T> 
-NODISCARD("do not ignore result when second argument is const")
+//NODISCARD("do not ignore result when second argument is const")
 auto operator&(communicator& comm, T const& t)
 ->decltype(comm.all_to_all(t.begin(), std::declval<T>().begin()), T(comm.size())){
 	assert(t.size() == comm.size());
