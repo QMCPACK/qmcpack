@@ -37,7 +37,7 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       myName(aname),
       nlpp_ptr(nullptr),
       l2_ptr(nullptr),
-      ham_timer_(timer_manager.createTimer("Hamiltonian:" + aname, timer_level_medium))
+      ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname, timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -97,7 +97,7 @@ void QMCHamiltonian::addOperator(OperatorBase* h, const std::string& aname, bool
     h->myName = aname;
     H.push_back(h);
     std::string tname = "Hamiltonian:" + aname;
-    my_timers_.push_back(timer_manager.createTimer(tname, timer_level_fine));
+    my_timers_.push_back(*timer_manager.createTimer(tname, timer_level_fine));
   }
   else
   {

@@ -280,7 +280,7 @@ bool VMCBatched::run()
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
 
   { // walker initialization
-    ScopedTimer local_timer(&(timers_.init_walkers_timer));
+    ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
@@ -296,7 +296,7 @@ bool VMCBatched::run()
 
   for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
   {
-    ScopedTimer local_timer(&(timers_.run_steps_timer));
+    ScopedTimer local_timer(timers_.run_steps_timer);
     crowd_task(crowds_.size(), runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_),
                std::ref(crowds_));
   }
@@ -318,7 +318,7 @@ bool VMCBatched::run()
       crowd->startBlock(qmcdriver_input_.get_max_steps());
     for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
     {
-      ScopedTimer local_timer(&(timers_.run_steps_timer));
+      ScopedTimer local_timer(timers_.run_steps_timer);
       vmc_state.step = step;
       crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 

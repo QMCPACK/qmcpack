@@ -253,7 +253,7 @@ void SplineC2COMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   const size_t first_spo_local   = first_spo;
 
   {
-    ScopedTimer offload(&offload_timer_);
+    ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) \
                 map(always, to: psiinv_ptr[0:psiinv_pos_copy.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*nVP])")
@@ -371,7 +371,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   const size_t first_spo_local   = first_spo;
 
   {
-    ScopedTimer offload(&offload_timer_);
+    ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
                 map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
@@ -526,7 +526,7 @@ void SplineC2COMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   const size_t first_spo_local   = first_spo;
 
   {
-    ScopedTimer offload(&offload_timer_);
+    ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) \
                 map(always, from: results_scratch_ptr[0:orb_size*5])")
     for (int team_id = 0; team_id < NumTeams; team_id++)
@@ -598,7 +598,7 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   const size_t first_spo_local   = first_spo;
 
   {
-    ScopedTimer offload(&offload_timer_);
+    ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
                     map(always, to: pos_copy_ptr[0:num_pos*6]) \
                     map(always, from: results_scratch_ptr[0:orb_size*num_pos*5])")
@@ -747,7 +747,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   const size_t phi_vgl_stride    = phi_vgl_v.capacity();
 
   {
-    ScopedTimer offload(&offload_timer_);
+    ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
                     map(always, from: rg_private_ptr[0:rg_private.size()])")

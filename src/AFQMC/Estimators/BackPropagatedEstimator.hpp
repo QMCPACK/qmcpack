@@ -181,7 +181,7 @@ public:
       return;
     }
 
-    AFQMCTimers[back_propagate_timer]->start();
+    AFQMCTimers[back_propagate_timer].get().start();
     int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
     int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
     int nx((walker_type == COLLINEAR) ? 2 : 1);
@@ -246,7 +246,7 @@ public:
       iblock++;
       accumulated_in_last_block = true;
     }
-    AFQMCTimers[back_propagate_timer]->stop();
+    AFQMCTimers[back_propagate_timer].get().stop();
   }
 
   void tags(std::ofstream& out)
@@ -260,8 +260,8 @@ public:
     // I doubt we will ever collect a billion blocks of data.
     if (writer)
     {
-      out << std::setprecision(5) << AFQMCTimers[back_propagate_timer]->get_total() << " ";
-      AFQMCTimers[back_propagate_timer]->reset();
+      out << std::setprecision(5) << AFQMCTimers[back_propagate_timer].get().get_total() << " ";
+      AFQMCTimers[back_propagate_timer].get().reset();
     }
     if (accumulated_in_last_block)
     {

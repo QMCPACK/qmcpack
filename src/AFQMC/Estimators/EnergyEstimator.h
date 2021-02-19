@@ -56,7 +56,7 @@ public:
 
   void accumulate_block(WalkerSet& wset)
   {
-    AFQMCTimers[energy_timer]->start();
+    AFQMCTimers[energy_timer].get().start();
     size_t nwalk = wset.size();
     if (eloc.size(0) != nwalk || eloc.size(1) != 3)
       eloc.reextent({nwalk, 3});
@@ -99,7 +99,7 @@ public:
       }
       TG.TG_heads().all_reduce_in_place_n(data.begin(), data.size(), std::plus<>());
     }
-    AFQMCTimers[energy_timer]->stop();
+    AFQMCTimers[energy_timer].get().stop();
   }
 
   void tags(std::ofstream& out)
@@ -124,12 +124,12 @@ public:
     {
       int n = wset.get_global_target_population();
       out << data[0].real() / n << " " << data[0].imag() / n << " " << data[1].real() / n << " " << data[1].imag() / n
-          << " " << AFQMCTimers[energy_timer]->get_total() << " ";
+          << " " << AFQMCTimers[energy_timer].get().get_total() << " ";
       if (energy_components)
       {
         out << data[2].real() / n << " " << data[3].real() / n << " " << data[4].real() / n << " ";
       }
-      AFQMCTimers[energy_timer]->reset();
+      AFQMCTimers[energy_timer].get().reset();
     }
   }
 

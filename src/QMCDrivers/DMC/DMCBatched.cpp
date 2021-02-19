@@ -105,7 +105,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     std::vector<RealType> rr_accepted(num_walkers, 0.0);
 
     {
-      ScopedTimer pbyp_local_timer(&(timers.movepbyp_timer));
+      ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
       for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
       {
         RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
@@ -230,13 +230,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     }
 
     { // collect GL for KE.
-      ScopedTimer buffer_local(&timers.buffer_timer);
+      ScopedTimer buffer_local(timers.buffer_timer);
       TrialWaveFunction::flex_evaluateGL(walker_twfs, walker_elecs, recompute);
       ParticleSet::flex_saveWalker(walker_elecs, walkers);
     }
 
     { // hamiltonian
-      ScopedTimer ham_local(&timers.hamiltonian_timer);
+      ScopedTimer ham_local(timers.hamiltonian_timer);
 
       std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
           QMCHamiltonian::flex_evaluateWithToperator(walker_hamiltonians, walker_elecs));
@@ -260,7 +260,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     }
 
     { // estimator collectables
-      ScopedTimer collectable_local(&timers.collectables_timer);
+      ScopedTimer collectable_local(timers.collectables_timer);
 
       // evaluate non-physical hamiltonian elements
       for (int iw = 0; iw < walkers.size(); ++iw)
@@ -273,7 +273,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   { // T-moves
-    ScopedTimer tmove_timer(&dmc_timers.tmove_timer);
+    ScopedTimer tmove_timer(dmc_timers.tmove_timer);
 
     auto& walkers = crowd.get_walkers();
     const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
@@ -396,7 +396,7 @@ bool DMCBatched::run()
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
 
   { // walker initialization
-    ScopedTimer local_timer(&(timers_.init_walkers_timer));
+    ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
@@ -428,7 +428,7 @@ bool DMCBatched::run()
 
     for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
     {
-      ScopedTimer local_timer(&(timers_.run_steps_timer));
+      ScopedTimer local_timer(timers_.run_steps_timer);
       dmc_state.step = step;
       crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                  std::ref(crowds_));

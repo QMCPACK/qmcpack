@@ -116,7 +116,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   inline void evaluate(ParticleSet& P) override
   {
-    ScopedTimer local_timer(&evaluate_timer_);
+    ScopedTimer local_timer(evaluate_timer_);
 
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 0; iat < N_targets; ++iat)
@@ -130,7 +130,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
-    ScopedTimer local_timer(&move_timer_);
+    ScopedTimer local_timer(move_timer_);
 
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
     temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
@@ -168,7 +168,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     assert(this == &dt_list.getLeader());
     auto& dt_leader   = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
     auto& pset_leader = p_list.getLeader();
-    ScopedTimer local_timer(&move_timer_);
+    ScopedTimer local_timer(move_timer_);
     const size_t nw          = dt_list.size();
     const size_t stride_size = Ntargets_padded * (D + 1);
     dt_leader.nw_new_old_dist_displ_.resize(nw * 2 * stride_size);
@@ -201,7 +201,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const size_t new_pos_stride = coordinates_leader.getFusedNewPosBuffer().capacity();
 
     {
-      ScopedTimer offload(&offload_timer_);
+      ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
                         map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list_.size()]) \
                         map(always, from: r_dr_ptr[:nw_new_old_dist_displ_.size()])")
@@ -246,7 +246,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     if (prepare_old)
     {
-      ScopedTimer local(&copy_old_timer_);
+      ScopedTimer local(copy_old_timer_);
       for (int iw = 0; iw < dt_list.size(); iw++)
       {
         auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
@@ -301,7 +301,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
    */
   inline void update(IndexType iat, bool partial_update) override
   {
-    ScopedTimer local_timer(&update_timer_);
+    ScopedTimer local_timer(update_timer_);
 
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);

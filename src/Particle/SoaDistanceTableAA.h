@@ -90,7 +90,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
 
   inline void evaluate(ParticleSet& P)
   {
-    ScopedTimer local_timer(&evaluate_timer_);
+    ScopedTimer local_timer(evaluate_timer_);
     constexpr T BigR = std::numeric_limits<T>::max();
     for (int iat = 0; iat < N_targets; ++iat)
     {
@@ -103,7 +103,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
-    ScopedTimer local_timer(&move_timer_);
+    ScopedTimer local_timer(move_timer_);
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
                                            N_targets, P.activePtcl);
     // set up old_r_ and old_dr_ for moves may get accepted.
@@ -163,7 +163,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
    */
   inline void update(IndexType iat, bool partial_update)
   {
-    ScopedTimer local_timer(&update_timer_);
+    ScopedTimer local_timer(update_timer_);
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);
     //copy row

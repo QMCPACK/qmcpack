@@ -215,7 +215,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate(Particl
                                                                          ParticleSet::ParticleGradient_t& G,
                                                                          ParticleSet::ParticleLaplacian_t& L)
 {
-  ScopedTimer local_timer(&EvaluateTimer);
+  ScopedTimer local_timer(EvaluateTimer);
   Dets[0]->evaluateForWalkerMove(P);
   Dets[1]->evaluateForWalkerMove(P);
 
@@ -303,7 +303,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
     APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n");
   }
 
-  ScopedTimer local_timer(&EvalGradTimer);
+  ScopedTimer local_timer(EvalGradTimer);
 
   GradType grad_iat;
   PsiValueType psi;
@@ -323,7 +323,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
     APP_ABORT("Fast MSD+BF: ratioGrad not implemented. \n");
   }
 
-  ScopedTimer local_timer(&RatioGradTimer);
+  ScopedTimer local_timer(RatioGradTimer);
   UpdateMode = ORB_PBYP_PARTIAL;
 
   GradType dummy;
@@ -386,7 +386,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
     APP_ABORT("Fast MSD+BF: ratio not implemented. \n");
   }
 
-  ScopedTimer local_timer(&RatioTimer);
+  ScopedTimer local_timer(RatioTimer);
   UpdateMode = ORB_PBYP_RATIO;
 
   PsiValueType psiNew;
@@ -408,7 +408,7 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_t
     APP_ABORT("Fast MSD+BF: acceptMove not implemented. \n");
   }
 
-  ScopedTimer local_timer(&AccRejTimer);
+  ScopedTimer local_timer(AccRejTimer);
   // update psiCurrent,myG_temp,myL_temp
   psiCurrent *= curRatio;
   curRatio = 1.0;
@@ -423,7 +423,7 @@ void MultiSlaterDeterminantFast::restore(int iat)
     APP_ABORT("Fast MSD+BF: restore not implemented. \n");
   }
 
-  ScopedTimer local_timer(&AccRejTimer);
+  ScopedTimer local_timer(AccRejTimer);
   Dets[getDetID(iat)]->restore(iat);
   curRatio = 1.0;
 }
@@ -446,7 +446,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(Par
                                                                              WFBufferType& buf,
                                                                              bool fromscratch)
 {
-  ScopedTimer local_timer(&UpdateTimer);
+  ScopedTimer local_timer(UpdateTimer);
 
   Dets[0]->updateBuffer(P, buf, fromscratch);
   Dets[1]->updateBuffer(P, buf, fromscratch);
@@ -883,7 +883,7 @@ void MultiSlaterDeterminantFast::prepareGroup(ParticleSet& P, int ig)
   // C_otherDs(1, :) stores C x D_up x D_pos
   // C_otherDs(2, :) stores C x D_up x D_dn
 
-  ScopedTimer local_timer(&PrepareGroupTimer);
+  ScopedTimer local_timer(PrepareGroupTimer);
   C_otherDs[ig].resize(Dets[ig]->NumDets);
   std::fill(C_otherDs[ig].begin(), C_otherDs[ig].end(), ValueType(0));
   for (size_t i = 0; i < C->size(); i++)

@@ -41,18 +41,18 @@ bool AFQMCDriver::run(WalkerSet& wset)
 
       if ((step_tot + 1) % nStabilize == 0)
       {
-        AFQMCTimers[ortho_timer]->start();
+        AFQMCTimers[ortho_timer].get().start();
         wfn0.Orthogonalize(wset, !prop0.free_propagation());
-        AFQMCTimers[ortho_timer]->stop();
+        AFQMCTimers[ortho_timer].get().stop();
       }
 
       if (total_time < weight_reset_period && !prop0.free_propagation())
         wset.resetWeights();
 
       {
-        AFQMCTimers[popcont_timer]->start();
+        AFQMCTimers[popcont_timer].get().start();
         wset.popControl(curData);
-        AFQMCTimers[popcont_timer]->stop();
+        AFQMCTimers[popcont_timer].get().stop();
         estim0.accumulate_step(wset, curData);
       }
 
