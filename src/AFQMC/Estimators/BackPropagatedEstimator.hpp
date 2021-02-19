@@ -181,72 +181,74 @@ public:
       return;
     }
 
-    AFQMCTimers[back_propagate_timer].get().start();
-    int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
-    int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
-    int nx((walker_type == COLLINEAR) ? 2 : 1);
-
-    // 1. check structures
-    if (Refs.size(0) != wset.size() || Refs.size(1) != nrefs || Refs.size(2) != nrow * ncol)
-      Refs = mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator());
-    DeviceBufferManager buffer_manager;
-    StaticMatrix detR({wset.size(), nrefs * nx}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-
-    int n0, n1;
-    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(Refs.size(2)), TG.getNCoresPerTG());
-    boost::multi::array_ref<ComplexType, 3> Refs_(to_address(Refs.origin()), Refs.extensions());
-
-    // 2. setup back propagated references
-    wfn0.getReferencesForBackPropagation(Refs_[0]);
-    for (int iw = 1; iw < wset.size(); ++iw)
-      for (int ref = 0; ref < nrefs; ++ref)
-        copy_n(Refs_[0][ref].origin() + n0, n1 - n0, Refs_[iw][ref].origin() + n0);
-    TG.TG_local().barrier();
-
-    //3. propagate backwards the references
-    prop0.BackPropagate(bp_step, nStabilize, wset, Refs_, detR);
-
-    //4. calculate properties
-    // adjust weights here is path restoration
-    stdCVector wgt(iextensions<1u>{wset.size()});
-    wset.getProperty(WEIGHT, wgt);
-    if (path_restoration)
     {
-      auto&& factors(*wset.getWeightFactors());
-      int hpos(wset.getHistoryPos()); // position where next step goes... go bach in history...
-      int maxpos(wset.HistoryBufferLength());
-      int nbp(bp_step);
-      if (extra_path_restoration)
-        nbp *= 2;
-      for (int k = 0; k < nbp; k++)
+      ScopedTimer local_timer(AFQMCTimers[back_propagate_timer]);
+      int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
+      int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
+      int nx((walker_type == COLLINEAR) ? 2 : 1);
+
+      // 1. check structures
+      if (Refs.size(0) != wset.size() || Refs.size(1) != nrefs || Refs.size(2) != nrow * ncol)
+        Refs = mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator());
+      DeviceBufferManager buffer_manager;
+      StaticMatrix detR({wset.size(), nrefs * nx},
+                        buffer_manager.get_generator().template get_allocator<ComplexType>());
+
+      int n0, n1;
+      std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(Refs.size(2)), TG.getNCoresPerTG());
+      boost::multi::array_ref<ComplexType, 3> Refs_(to_address(Refs.origin()), Refs.extensions());
+
+      // 2. setup back propagated references
+      wfn0.getReferencesForBackPropagation(Refs_[0]);
+      for (int iw = 1; iw < wset.size(); ++iw)
+        for (int ref = 0; ref < nrefs; ++ref)
+          copy_n(Refs_[0][ref].origin() + n0, n1 - n0, Refs_[iw][ref].origin() + n0);
+      TG.TG_local().barrier();
+
+      //3. propagate backwards the references
+      prop0.BackPropagate(bp_step, nStabilize, wset, Refs_, detR);
+
+      //4. calculate properties
+      // adjust weights here is path restoration
+      stdCVector wgt(iextensions<1u>{wset.size()});
+      wset.getProperty(WEIGHT, wgt);
+      if (path_restoration)
       {
-        hpos =
-            ((hpos == 0) ? maxpos - 1 : hpos - 1); // start going back since position is advanced for next step already
+        auto&& factors(*wset.getWeightFactors());
+        int hpos(wset.getHistoryPos()); // position where next step goes... go bach in history...
+        int maxpos(wset.HistoryBufferLength());
+        int nbp(bp_step);
+        if (extra_path_restoration)
+          nbp *= 2;
+        for (int k = 0; k < nbp; k++)
+        {
+          hpos = ((hpos == 0) ? maxpos - 1
+                              : hpos - 1); // start going back since position is advanced for next step already
+          for (int i = 0; i < wgt.size(); i++)
+            wgt[i] *= factors[hpos][i];
+        }
+      }
+      else if (!importanceSampling)
+      {
+        stdCVector phase(iextensions<1u>{wset.size()});
+        wset.getProperty(PHASE, phase);
         for (int i = 0; i < wgt.size(); i++)
-          wgt[i] *= factors[hpos][i];
+          wgt[i] *= phase[i];
+      }
+      observ0.accumulate(iav, wset, Refs_, wgt, detR, importanceSampling);
+
+      if (bp_step == max_nback_prop)
+      {
+        // 5. setup for next block
+        for (auto it = wset.begin(); it < wset.end(); ++it)
+          it->setSlaterMatrixN();
+        wset.setBPPos(0);
+
+        // 6. increase block counter
+        iblock++;
+        accumulated_in_last_block = true;
       }
     }
-    else if (!importanceSampling)
-    {
-      stdCVector phase(iextensions<1u>{wset.size()});
-      wset.getProperty(PHASE, phase);
-      for (int i = 0; i < wgt.size(); i++)
-        wgt[i] *= phase[i];
-    }
-    observ0.accumulate(iav, wset, Refs_, wgt, detR, importanceSampling);
-
-    if (bp_step == max_nback_prop)
-    {
-      // 5. setup for next block
-      for (auto it = wset.begin(); it < wset.end(); ++it)
-        it->setSlaterMatrixN();
-      wset.setBPPos(0);
-
-      // 6. increase block counter
-      iblock++;
-      accumulated_in_last_block = true;
-    }
-    AFQMCTimers[back_propagate_timer].get().stop();
   }
 
   void tags(std::ofstream& out)

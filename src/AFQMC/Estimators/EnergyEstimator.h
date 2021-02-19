@@ -56,7 +56,7 @@ public:
 
   void accumulate_block(WalkerSet& wset)
   {
-    AFQMCTimers[energy_timer].get().start();
+    ScopedTimer local_timer(AFQMCTimers[energy_timer]);
     size_t nwalk = wset.size();
     if (eloc.size(0) != nwalk || eloc.size(1) != 3)
       eloc.reextent({nwalk, 3});
@@ -99,7 +99,6 @@ public:
       }
       TG.TG_heads().all_reduce_in_place_n(data.begin(), data.size(), std::plus<>());
     }
-    AFQMCTimers[energy_timer].get().stop();
   }
 
   void tags(std::ofstream& out)
