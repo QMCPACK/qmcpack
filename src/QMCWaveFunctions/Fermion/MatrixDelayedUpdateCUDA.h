@@ -75,6 +75,10 @@ class MatrixDelayedUpdateCUDA
   DiracMatrix<T_FP> detEng;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
+
+  /// Work Matrix to determine inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
+  OffloadPinnedValueMatrix_t work_psiMinv;
+
   /// scratch space for rank-1 update
   OffloadValueVector_t temp;
   // row of up-to-date Ainv
@@ -327,6 +331,7 @@ public:
     delay_list_gpu.resize(delay);
     invRow.resize(norb);
     psiMinv.resize(norb, getAlignedSize<T>(norb));
+    work_psiMinv.resize(norb, getAlignedSize<T>(norb));
   }
 
   void createResource(ResourceCollection& collection)
@@ -346,7 +351,8 @@ public:
   void releaseResource(ResourceCollection& collection) { collection.takebackResource(std::move(cuda_handles_)); }
 
   inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
-
+  inline OffloadPinnedValueMatrix_t& get_work_psiMinv() { return work_psiMinv; }
+  
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
@@ -385,6 +391,17 @@ public:
 
     guard_no_delay();
 
+    RefVector<OffloadPinnedValueMatrix_t> A_invs;
+    RefVector<OffloadPinnedValueMatrix_t> work_A_invs;
+    A_invs.reserve(engines.size());
+    work_A_invs.reserve(engines.size());
+
+    for(auto& eng : engines)
+      {
+	A_invs.push_back(eng.get().get_psiMinv());
+	work_A_invs.push_back(eng.get().get_work_psiMinv());
+      }
+    
     // FIXME use cublas batched inverse.
     for (int iw = 0; iw < engines.size(); iw++)
     {
