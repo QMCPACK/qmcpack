@@ -2040,13 +2040,13 @@ int main(int argc, char **argv)
 
 #include "common/IO.h"
 
-Array<double,1> vector2Array(std::vector<double> &vec)
-{
-  blitz::Array<double,1> array(vec.size());
-  for (int i=0; i<vec.size(); i++)
-    array(i) = vec[i];
-  return array;
-}
+//Array<double,1> vector2Array(std::vector<double> &vec)
+//{
+//  Array<double,1> array(vec.size());
+//  for (int i=0; i<vec.size(); i++)
+//    array(i) = vec[i];
+//  return array;
+//}
 
 
 

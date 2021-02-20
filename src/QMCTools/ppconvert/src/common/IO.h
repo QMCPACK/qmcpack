@@ -60,7 +60,7 @@ bool IOTreeClass::WriteVar(std::string name, const TinyVector<T, LEN>& val)
 
 
 template<typename T, int RANK>
-bool IOTreeClass::WriteVar(std::string name, const blitz::Array<T, RANK>& val)
+bool IOTreeClass::WriteVar(std::string name, const Array<T, RANK>& val)
 {
   if (GetFileType() == ASCII_TYPE)
   {
@@ -75,7 +75,7 @@ bool IOTreeClass::WriteVar(std::string name, const blitz::Array<T, RANK>& val)
 }
 
 template<typename T, int RANK, int LEN>
-bool IOTreeClass::WriteVar(std::string name, const blitz::Array<TinyVector<T, LEN>, RANK>& val)
+bool IOTreeClass::WriteVar(std::string name, const Array<TinyVector<T, LEN>, RANK>& val)
 {
   TinyVector<int, RANK + 1> shape;
   for (int dim = 0; dim < RANK; dim++)
@@ -186,7 +186,7 @@ public:
   }
 
   template<typename T, int RANK>
-  bool WriteVar(std::string name, const blitz::Array<T, RANK>& val)
+  bool WriteVar(std::string name, const Array<T, RANK>& val)
   {
     return CurrentSection->WriteVar(name, val);
   }
@@ -198,7 +198,7 @@ public:
   }
 
   template<typename T, int RANK>
-  bool AppendVar(std::string name, const blitz::Array<T, RANK>& val)
+  bool AppendVar(std::string name, const Array<T, RANK>& val)
   {
     return CurrentSection->AppendVar(name, val);
   }
