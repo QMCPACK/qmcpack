@@ -254,6 +254,8 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
     hdf_archive dump(TGwfn.Global());
     if (restart_file != "")
     {
+      app_error() << " no restart fromASCII; use getHamOps not getHamiltonianOperations\n";
+      APP_ABORT("");
       if (TGwfn.Global().root())
       {
         if (!dump.create(restart_file, H5F_ACC_EXCL))
