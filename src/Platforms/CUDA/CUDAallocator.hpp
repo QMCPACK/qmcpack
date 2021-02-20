@@ -120,6 +120,7 @@ template<typename T>
 struct allocator_traits<CUDAAllocator<T>>
 {
   static const bool is_host_accessible = false;
+  static const bool is_dual_space = false;
   static void fill_n(T* ptr, size_t n, const T& value) { CUDAfill_n(ptr, n, value); }
 };
 

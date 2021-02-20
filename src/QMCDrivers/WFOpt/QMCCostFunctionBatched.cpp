@@ -123,7 +123,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         for (int pm = 0; pm < NumOptimizables; pm++)
         {
           EDtotals_w[pm] += weight * (HDsaved[pm] + 2.0 * Dsaved[pm] * delta_l);
-          URV[pm]        += 2.0 * (eloc_new * HDsaved[pm] - curAvg * HD_avg[pm]);
+          URV[pm] += 2.0 * (eloc_new * HDsaved[pm] - curAvg * HD_avg[pm]);
           if (ltz)
             EDtotals[pm] += weight * (2.0 * Dsaved[pm] * (delE - delE_bar) + ddelE * HDsaved[pm]);
           else
@@ -314,9 +314,12 @@ void QMCCostFunctionBatched::checkConfigurations()
 
       int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
 
-      auto wf_list = opt_data.get_wf_list(curr_crowd_size);
-      auto p_list  = opt_data.get_p_list(curr_crowd_size);
-      auto h_list  = opt_data.get_h_list(curr_crowd_size);
+      auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
+      auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
+      auto h_list_no_leader  = opt_data.get_h_list(curr_crowd_size);
+      const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
+      const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
+      const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
 
       auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
       auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, curr_crowd_size);
@@ -324,7 +327,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       // Load samples into the crowd data
       for (int ib = 0; ib < curr_crowd_size; ib++)
       {
-        samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
+        samples.loadSample(p_list[ib].R, base_sample_index + ib);
 
         // Set the RNG used in QMCHamiltonian.  This is used to offset the grid
         // during spherical integration in the non-local pseudopotential.
@@ -337,11 +340,11 @@ void QMCCostFunctionBatched::checkConfigurations()
         // differently for each configuration.  Make sure the same initialization is
         // performed in correlatedSampling.
         *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
-        h_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
+        h_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
       }
 
       // Compute distance tables.
-      ParticleSet::flex_update(p_list);
+      ParticleSet::flex_update(p_list, true);
 
       // Log psi and prepare for difference the log psi
       opt_data.zero_log_psi();
@@ -384,11 +387,11 @@ void QMCCostFunctionBatched::checkConfigurations()
           RecordsOnNode[is][ENERGY_NEW]   = etmp;
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
           RecordsOnNode[is][REWEIGHT]     = 1.0;
-          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
 
           if (includeNonlocalH != "no")
           {
-            OperatorBase* nlpp = h_list[ib].get().getHamiltonian(includeNonlocalH);
+            OperatorBase* nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
             RecordsOnNode[is][ENERGY_FIXED] -= nlpp->Value;
           }
         }
@@ -407,7 +410,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
           RecordsOnNode[is][ENERGY_NEW]   = etmp;
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
-          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
           RecordsOnNode[is][REWEIGHT]     = 1.0;
         }
       }
@@ -539,17 +542,20 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
           int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
 
-          auto wf_list = opt_data.get_wf_list(curr_crowd_size);
-          auto p_list  = opt_data.get_p_list(curr_crowd_size);
-          auto h0_list = opt_data.get_h0_list(curr_crowd_size);
+          auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
+          auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
+          auto h0_list_no_leader = opt_data.get_h0_list(curr_crowd_size);
+          const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
+          const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
+          const RefVectorWithLeader<QMCHamiltonian> h0_list(h0_list_no_leader[0], h0_list_no_leader);
 
           // Load this batch of samples into the crowd data
           for (int ib = 0; ib < curr_crowd_size; ib++)
           {
-            samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
+            samples.loadSample(p_list[ib].R, base_sample_index + ib);
             // Copy the saved RNG state
             *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
-            h0_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
+            h0_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
           }
 
           // Update distance tables, etc for the loaded sample positions
@@ -584,15 +590,15 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
           for (int ib = 0; ib < curr_crowd_size; ib++)
           {
             int is = base_sample_index + ib;
-            wf_list[ib].get().G += *gradPsi[is];
-            wf_list[ib].get().L += *lapPsi[is];
+            wf_list[ib].G += *gradPsi[is];
+            wf_list[ib].L += *lapPsi[is];
             // This is needed to get the KE correct in QMCHamiltonian::flex_evaluate below
-            p_list[ib].get().G += *gradPsi[is];
-            p_list[ib].get().L += *lapPsi[is];
+            p_list[ib].G += *gradPsi[is];
+            p_list[ib].L += *lapPsi[is];
             Return_rt weight = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
             RecordsOnNode[is][REWEIGHT] = weight;
             // move to opt_data
-            opt_data.get_wgt()  += inv_n_samples * weight;
+            opt_data.get_wgt() += inv_n_samples * weight;
             opt_data.get_wgt2() += inv_n_samples * weight * weight;
           }
 
@@ -647,7 +653,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   // Sum weights over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
-    wgt_tot  += opt_eval_[i]->get_wgt();
+    wgt_tot += opt_eval_[i]->get_wgt();
     wgt_tot2 += opt_eval_[i]->get_wgt2();
   }
 
@@ -691,14 +697,14 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       //      Return_t weight=saved[REWEIGHT]*wgt_tot;
       Return_rt eloc_new = saved[ENERGY_NEW];
       Return_rt delE     = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
-      SumValue[SUM_E_BARE]    += eloc_new;
-      SumValue[SUM_ESQ_BARE]  += eloc_new * eloc_new;
+      SumValue[SUM_E_BARE] += eloc_new;
+      SumValue[SUM_ESQ_BARE] += eloc_new * eloc_new;
       SumValue[SUM_ABSE_BARE] += delE;
-      SumValue[SUM_E_WGT]     += eloc_new * saved[REWEIGHT];
-      SumValue[SUM_ESQ_WGT]   += eloc_new * eloc_new * saved[REWEIGHT];
-      SumValue[SUM_ABSE_WGT]  += delE * saved[REWEIGHT];
-      SumValue[SUM_WGT]       += saved[REWEIGHT];
-      SumValue[SUM_WGTSQ]     += saved[REWEIGHT] * saved[REWEIGHT];
+      SumValue[SUM_E_WGT] += eloc_new * saved[REWEIGHT];
+      SumValue[SUM_ESQ_WGT] += eloc_new * eloc_new * saved[REWEIGHT];
+      SumValue[SUM_ABSE_WGT] += delE * saved[REWEIGHT];
+      SumValue[SUM_WGT] += saved[REWEIGHT];
+      SumValue[SUM_WGTSQ] += saved[REWEIGHT] * saved[REWEIGHT];
     }
   }
   //collect everything

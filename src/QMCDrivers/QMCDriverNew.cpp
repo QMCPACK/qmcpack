@@ -166,7 +166,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   }
 
   //now give walkers references to their walkers
-  population_.distributeWalkers(crowds_);
+  population_.redistributeWalkers(crowds_);
 
   // Once they are created move contexts can be created.
   createRngsStepContexts(crowds_.size());
@@ -320,19 +320,20 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                         UPtrVector<ContextForSteps>& context_for_steps)
 {
   Crowd& crowd = *(crowds[crowd_id]);
-  CrowdResourceLock crowd_res_lock(crowd);
+  if (crowd.size() == 0)
+    return;
 
+  CrowdResourceLock crowd_res_lock(crowd);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
-  auto& walker_twfs         = crowd.get_walker_twfs();
-  auto& walker_elecs        = crowd.get_walker_elecs();
-  auto& walkers             = crowd.get_walkers();
-  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+  auto& walkers = crowd.get_walkers();
+  const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
+  const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
+  const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
+                                                                crowd.get_walker_hamiltonians());
 
   crowd.loadWalkers();
-  for (ParticleSet& pset : walker_elecs)
-    pset.update();
-
+  ParticleSet::flex_update(walker_elecs);
   TrialWaveFunction::flex_evaluateLog(walker_twfs, walker_elecs);
 
   // For consistency this should be in ParticleSet as a flex call, but I think its a problem
@@ -515,7 +516,9 @@ void QMCDriverNew::endBlock()
 bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
 {
   bool success = true;
-  std::vector<TrialWaveFunction::LogValueType> log_values(crowd.get_walker_twfs().size());
+  const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
+  const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
+  std::vector<TrialWaveFunction::LogValueType> log_values(walker_twfs.size());
   std::vector<ParticleSet::ParticleGradient_t> Gs;
   std::vector<ParticleSet::ParticleLaplacian_t> Ls;
   Gs.reserve(log_values.size());
@@ -523,21 +526,20 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
 
   for (int iw = 0; iw < log_values.size(); iw++)
   {
-    log_values[iw] = {crowd.get_walker_twfs()[iw].get().getLogPsi(), crowd.get_walker_twfs()[iw].get().getPhase()};
-    Gs.push_back(crowd.get_walker_twfs()[iw].get().G);
-    Ls.push_back(crowd.get_walker_twfs()[iw].get().L);
+    log_values[iw] = {walker_twfs[iw].getLogPsi(), walker_twfs[iw].getPhase()};
+    Gs.push_back(walker_twfs[iw].G);
+    Ls.push_back(walker_twfs[iw].L);
   }
 
-  ParticleSet::flex_update(crowd.get_walker_elecs());
-  TrialWaveFunction::flex_evaluateLog(crowd.get_walker_twfs(), crowd.get_walker_elecs());
+  ParticleSet::flex_update(walker_elecs);
+  TrialWaveFunction::flex_evaluateLog(walker_twfs, walker_elecs);
 
   const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
   for (int iw = 0; iw < log_values.size(); iw++)
   {
-    auto& ref_G = crowd.get_walker_twfs()[iw].get().G;
-    auto& ref_L = crowd.get_walker_twfs()[iw].get().L;
-    TrialWaveFunction::LogValueType ref_log{crowd.get_walker_twfs()[iw].get().getLogPsi(),
-                                            crowd.get_walker_twfs()[iw].get().getPhase()};
+    auto& ref_G = walker_twfs[iw].G;
+    auto& ref_L = walker_twfs[iw].L;
+    TrialWaveFunction::LogValueType ref_log{walker_twfs[iw].getLogPsi(), walker_twfs[iw].getPhase()};
     if (std::abs(std::exp(log_values[iw]) - std::exp(ref_log)) > std::abs(std::exp(ref_log)) * threshold)
     {
       success = false;
@@ -546,18 +548,19 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     for (int iel = 0; iel < ref_G.size(); iel++)
     {
       auto grad_diff = ref_G[iel] - Gs[iw][iel];
-      if (std::sqrt(std::abs(dot(grad_diff, grad_diff))) >
-          std::sqrt(std::abs(dot(ref_G[iel], ref_G[iel]))) * threshold)
+      if (std::sqrt(std::abs(dot(grad_diff, grad_diff))) > std::sqrt(std::abs(dot(ref_G[iel], ref_G[iel]))) * threshold)
       {
         success = false;
-        std::cout << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel] << " Delta " << grad_diff << std::endl;
+        std::cout << "walker[" << iw << "] Grad[" << iel << "] ref = " << ref_G[iel] << " wrong = " << Gs[iw][iel]
+                  << " Delta " << grad_diff << std::endl;
       }
       auto lap_diff = ref_L[iel] - Ls[iw][iel];
       if (std::abs(lap_diff) > std::abs(ref_L[iel]) * threshold)
       {
         // very hard to check mixed precision case, only print, no error out
         success = !std::is_same<RealType, FullPrecRealType>::value;
-        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel] << " Delta " << lap_diff << std::endl;
+        std::cout << "walker[" << iw << "] lap[" << iel << "] ref = " << ref_L[iel] << " wrong = " << Ls[iw][iel]
+                  << " Delta " << lap_diff << std::endl;
       }
     }
   }

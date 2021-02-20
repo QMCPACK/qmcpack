@@ -239,13 +239,14 @@ public:
   FullPrecRealType evaluateDeterministic(ParticleSet& P);
   /** batched version of evaluate for LocalEnergy 
    *
-   *  Encapsulation is ignored for H_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
+   *  Encapsulation is ignored for ham_list hamiltonians method uses its status as QMCHamiltonian to break encapsulation.
    *  ParticleSet is also updated.
    *  Bugs could easily be created by accessing this scope.
    *  This should be set to static and fixed.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluate(const RefVector<QMCHamiltonian>& H_list,
-                                                                     const RefVector<ParticleSet>& P_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluate(
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<ParticleSet>& P_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -255,8 +256,9 @@ public:
 
   /** batched version of evaluate Local energy with Toperators updated.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(const RefVector<QMCHamiltonian>& H_list,
-                                                                                  const RefVector<ParticleSet>& P_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<ParticleSet>& P_list);
 
 
   /** evaluate energy and derivatives wrt to the variables
@@ -273,16 +275,16 @@ public:
                                                bool compute_deriv);
 
   static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateValueAndDerivatives(
-      RefVector<QMCHamiltonian>& H_list,
-      RefVector<ParticleSet>& P_list,
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<ParticleSet>& P_list,
       const opt_variables_type& optvars,
       RecordArray<ValueType>& dlogpsi,
       RecordArray<ValueType>& dhpsioverpsi,
       bool compute_deriv);
 
   static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateValueAndDerivativesInner(
-      RefVector<QMCHamiltonian>& H_list,
-      RefVector<ParticleSet>& P_list,
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<ParticleSet>& P_list,
       const opt_variables_type& optvars,
       RecordArray<ValueType>& dlogpsi,
       RecordArray<ValueType>& dhpsioverpsi);
@@ -356,7 +358,8 @@ public:
       l2_ptr->evaluateD(P, iel, D);
   }
 
-  static std::vector<int> flex_makeNonLocalMoves(const RefVector<QMCHamiltonian>& h_list, const RefVector<ParticleSet>& p_list);
+  static std::vector<int> flex_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
@@ -438,7 +441,7 @@ private:
   void resetObservables(int start, int ncollects);
 
   // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
-  static RefVector<OperatorBase> extract_HC_list(const RefVector<QMCHamiltonian>& H_list, int id);
+  static RefVectorWithLeader<OperatorBase> extract_HC_list(const RefVectorWithLeader<QMCHamiltonian>& ham_list, int id);
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///traces variables

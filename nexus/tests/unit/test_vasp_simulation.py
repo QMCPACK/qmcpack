@@ -2,7 +2,7 @@
 import testing
 from testing import divert_nexus,restore_nexus,clear_all_sims
 from testing import failed,FailedTest
-from testing import value_eq,object_eq,text_eq
+from testing import value_eq,object_eq,text_eq,check_object_eq
 
 from test_vasp_input import c_potcar_text,get_files
 
@@ -158,7 +158,7 @@ def test_get_result():
                                  dtype=float),
               kpoints         = array([],dtype=float),
               kweights        = array([],dtype=float),
-              mag             = array([]),
+              mag             = None,
               pos             = array(
                                 [[0.    , 0.    , 0.    ],
                                  [0.8925, 0.8925, 0.8925],
@@ -182,7 +182,7 @@ def test_get_result():
               ),
         )
 
-    assert(object_eq(result,result_ref))
+    assert(check_object_eq(result,result_ref))
 
     clear_all_sims()
     restore_nexus()

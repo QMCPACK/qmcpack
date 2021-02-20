@@ -26,7 +26,6 @@
 
 namespace qmcplusplus
 {
-
 /** Contains a set of radial grid potentials around a center.
 */
 class NonLocalECPComponent : public QMCTraits
@@ -168,18 +167,16 @@ public:
    * @param p_list a list of electron particle set.
    * @param psi_list a list of trial wave function object
    * @param joblist a list of ion-electron pairs
-   * @param psi_leader the batch leader of psi_list
    * @param pairpots a list of contribution to $\frac{V\Psi_T}{\Psi_T}$ from ion iat and electron iel.
    * @param use_DLA if ture, use determinant localization approximation (DLA).
    *
    * Note: ecp_component_list allows including different NLPP component for different walkers.
    * electrons in iel_list must be of the same group (spin)
    */
-  static void flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
-                               const RefVector<ParticleSet>& p_list,
-                               const RefVector<TrialWaveFunction>& psi_list,
+  static void flex_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
+                               const RefVectorWithLeader<ParticleSet>& p_list,
+                               const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                const RefVector<const NLPPJob<RealType>>& joblist,
-                               TrialWaveFunction& psi_leader,
                                std::vector<RealType>& pairpots,
                                bool use_DLA);
 

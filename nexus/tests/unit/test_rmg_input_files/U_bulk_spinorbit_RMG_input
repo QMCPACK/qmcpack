@@ -1,0 +1,99 @@
+# Description of run.
+description="Alpha Uranium 4-atom orthorhombic cell"
+
+#frac_symmetry = "false"
+#spin_polarization="true"
+kohn_sham_mg_levels = "1"
+davidson_max_steps="15"
+
+localize_localpp = "false"
+localize_projectors = "false"
+
+# Wavefunction grid
+wavefunction_grid="18 36 30"
+potential_grid_refinement = "2"
+
+#write_pseudopotential_plots = "true"
+
+# number of unoccupied states
+#occupations_type = "Fixed"
+#occupations_type = "Fermi Dirac"
+occupations_type = "MethfesselPaxton"
+occupation_electron_temperature_eV = "0.0272"
+
+states_count_and_occupation = "56 1.0 18 0.0"
+
+
+# Units for bravais_lattice_type and atoms
+crds_units=
+#"Bohr"
+"Angstrom"
+
+#bravais_lattice_type="Cubic Primitive"
+
+kpoint_mesh = "4 4 4"
+kpoint_distribution = "4"
+
+
+bravais_lattice_type="Orthorhombic Primitive"
+lattice_units="Angstrom"
+
+# Lattice constants 
+a_length="2.854"
+b_length="5.869"
+c_length="4.955"
+alpha="0.0"
+beta="0.0"
+gamma="0.0"
+
+start_mode="LCAO Start"
+#start_mode="Random Start"
+#start_mode="Restart From File"
+
+write_qmcpack_restart = "false"
+
+#stress = "true"
+
+calculation_mode="Quench Electrons"
+#calculation_mode="Relax Structure"
+
+#atomic_orbital_type = "localized"
+
+#verbose="true"
+#kohn_sham_solver="multigrid"
+kohn_sham_solver="davidson"
+subdiag_driver="lapack"
+charge_mixing_type = "Broyden"
+#charge_mixing_type = "Pulay"
+#charge_mixing_type = "Linear"
+#charge_broyden_scale = "0.10000000"
+#charge_pulay_scale = "0.10000000"
+charge_density_mixing = "0.5"
+max_scf_steps="100"
+potential_acceleration_constant_step="1.0"
+write_data_period="10"
+
+# Criterion used to judge SCF convergency 
+energy_convergence_criterion="1.0e-10"
+#rms_convergence_criterion = "1.0e-8"
+
+atomic_coordinate_type="Absolute"
+
+noncollinear="true"
+spinorbit="true"
+# List  atomic symbol, coordinates, and movable flag (1 == movable) 
+# symbol and coordinates are required, moveable is optional, default is 1
+atoms = "
+U          0.00000        0.60157        1.23875   1 1  1  0.0  0.0 00.0
+U          0.00000        5.26743        3.71625   1 1  1  0.0  0.0 00.0
+U          1.42700        3.53607        1.23875   1 1  1  0.0  0.0 00.0
+U          1.42700        2.33293        3.71625   1 1  1  0.0  0.0 00.0
+"
+#exchange_correlation_type="LDA"
+pseudo_dir = "../"
+pseudopotential=
+"
+U     U.rel-pbe-spfn-rrkjus_psl.1.0.0.UPF
+"
+
+

@@ -23,7 +23,7 @@ IF(USE_OBJECT_TARGET)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_omptarget)
 ENDIF()
 
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 
 IF(HAVE_MPI)
   SET(UTEST_EXE test_${SRC_DIR}_mpi)
@@ -36,5 +36,5 @@ IF(HAVE_MPI)
   ENDIF()
   TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcestimators_unit)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-  ADD_MPI_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}" 3)
+  ADD_UNIT_TEST(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ENDIF()

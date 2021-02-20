@@ -50,11 +50,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 {
   assert(QMCDriverNew::checkLogAndGL(crowd));
 
-  // Consider favoring lambda followed by for over walkers
-  // more compact, descriptive and less error prone.
-  auto& walker_twfs  = crowd.get_walker_twfs();
-  auto& walkers      = crowd.get_walkers();
-  auto& walker_elecs = crowd.get_walker_elecs();
+  auto& walkers = crowd.get_walkers();
+  const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
+  const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
 
   timers.movepbyp_timer.start();
   const int num_walkers = crowd.size();
@@ -73,11 +71,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   // local list to handle accept/reject
   std::vector<bool> isAccepted;
-  std::vector<std::reference_wrapper<ParticleSet>> elec_accept_list, elec_reject_list;
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
-  elec_accept_list.reserve(num_walkers);
-  elec_reject_list.reserve(num_walkers);
 
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
@@ -91,10 +86,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       RealType oneover2tau = 0.5 / (tauovermass);
       RealType sqrttau     = std::sqrt(tauovermass);
 
-      TrialWaveFunction::flex_prepareGroup(crowd.get_walker_twfs(), crowd.get_walker_elecs(),ig);
+      TrialWaveFunction::flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
-      int start_index      = step_context.getPtclGroupStart(ig);
-      int end_index        = step_context.getPtclGroupEnd(ig);
+      int start_index = step_context.getPtclGroupStart(ig);
+      int end_index   = step_context.getPtclGroupEnd(ig);
       for (int iat = start_index; iat < end_index; ++iat)
       {
         // step_context.deltaRsBegin returns an iterator to a flat series of PosTypes
@@ -104,7 +99,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
         if (use_drift)
         {
-          TrialWaveFunction::flex_evalGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, grads_now);
+          TrialWaveFunction::flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
           sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
 
           std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
@@ -118,13 +113,12 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                          [sqrttau](const PosType& delta_r) { return sqrttau * delta_r; });
         }
 
-        ParticleSet::flex_makeMove(crowd.get_walker_elecs(), iat, drifts);
+        ParticleSet::flex_makeMove(walker_elecs, iat, drifts);
 
         // This is inelegant
         if (use_drift)
         {
-          TrialWaveFunction::flex_calcRatioGrad(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios,
-                                                grads_new);
+          TrialWaveFunction::flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
           std::transform(delta_r_start, delta_r_end, log_gf.begin(),
                          [](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
@@ -140,14 +134,12 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         }
         else
         {
-          TrialWaveFunction::flex_calcRatio(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, ratios);
+          TrialWaveFunction::flex_calcRatio(walker_twfs, walker_elecs, iat, ratios);
         }
 
         std::transform(ratios.begin(), ratios.end(), prob.begin(), [](auto ratio) { return std::norm(ratio); });
 
         isAccepted.clear();
-        elec_accept_list.clear();
-        elec_reject_list.clear();
 
         for (int i_accept = 0; i_accept < num_walkers; ++i_accept)
           if (prob[i_accept] >= std::numeric_limits<RealType>::epsilon() &&
@@ -155,36 +147,33 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
           {
             crowd.incAccept();
             isAccepted.push_back(true);
-            elec_accept_list.push_back(crowd.get_walker_elecs()[i_accept]);
           }
           else
           {
             crowd.incReject();
             isAccepted.push_back(false);
-            elec_reject_list.push_back(crowd.get_walker_elecs()[i_accept]);
           }
 
-        TrialWaveFunction::flex_accept_rejectMove(crowd.get_walker_twfs(), crowd.get_walker_elecs(), iat, isAccepted,
-                                                  true);
+        TrialWaveFunction::flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-        ParticleSet::flex_acceptMove(elec_accept_list, iat, true);
-        ParticleSet::flex_rejectMove(elec_reject_list, iat);
+        ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted, true);
       }
     }
-    TrialWaveFunction::flex_completeUpdates(crowd.get_walker_twfs());
+    TrialWaveFunction::flex_completeUpdates(walker_twfs);
   }
 
-  ParticleSet::flex_donePbyP(crowd.get_walker_elecs());
+  ParticleSet::flex_donePbyP(walker_elecs);
   timers.movepbyp_timer.stop();
 
   timers.buffer_timer.start();
-  TrialWaveFunction::flex_evaluateGL(crowd.get_walker_twfs(), crowd.get_walker_elecs(), recompute);
+  TrialWaveFunction::flex_evaluateGL(walker_twfs, walker_elecs, recompute);
 
   assert(QMCDriverNew::checkLogAndGL(crowd));
   timers.buffer_timer.stop();
 
   timers.hamiltonian_timer.start();
-  auto& walker_hamiltonians = crowd.get_walker_hamiltonians();
+  const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
+                                                                crowd.get_walker_hamiltonians());
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
       QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
   timers.hamiltonian_timer.stop();

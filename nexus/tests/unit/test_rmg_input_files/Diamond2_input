@@ -1,0 +1,97 @@
+# Description of run.
+description="diamond"
+
+#spin_polarization="true"
+
+localize_localpp = "false"
+localize_projectors = "false"
+
+compressed_infile = "false"
+compressed_outfile = "false"
+
+test_energy = "-11.32982439"
+
+# Wavefunction grid
+wavefunction_grid="16 16 16"
+potential_grid_refinement = "2"
+
+#write_pseudopotential_plots = "true"
+
+# number of unoccupied states
+occupations_type = "Fixed"
+#occupations_type = "Fermi Dirac"
+#occupations_type = "MethfesselPaxton"
+
+#occupation_electron_temperature_eV = "0.2"
+
+states_count_and_occupation = "4 2.0 4 0.0"
+
+
+# Units for bravais_lattice_type and atoms
+#crds_units=
+#"Bohr"
+#"Angstrom"
+
+#bravais_lattice_type="Cubic Primitive"
+
+kpoint_mesh = "4 4 4 "
+kpoint_is_shift = "0 0 0 "
+kpoint_distribution = "8"
+
+#use_symmetry="false"
+
+bravais_lattice_type="Cubic Face Centered"
+# Lattice constants 
+a_length="6.1"
+b_length="6.1"
+c_length="6.1"
+alpha="0.0"
+beta="0.0"
+gamma="0.0"
+
+start_mode="LCAO Start"
+start_mode="Restart From File"
+#start_mode="Random Start"
+
+#write_qmcpack_restart = "false"
+#stress = "true"
+
+calculation_mode="Quench Electrons"
+#calculation_mode="Relax Structure"
+
+#atomic_orbital_type = "localized"
+
+#verbose="true"
+#kohn_sham_solver="multigrid"
+kohn_sham_solver="davidson"
+subdiag_driver="lapack"
+charge_mixing_type = "Broyden"
+#charge_mixing_type = "Pulay"
+#charge_mixing_type = "Linear"
+#charge_broyden_scale = "0.10000000"
+#charge_pulay_scale = "0.10000000"
+charge_density_mixing = "0.5"
+kohn_sham_mucycles = "3"
+max_scf_steps="100"
+potential_acceleration_constant_step="1.0"
+write_data_period="10"
+
+# Criterion used to judge SCF convergency 
+energy_convergence_criterion="1.0e-9"
+#rms_convergence_criterion = "1.0e-10"
+
+atomic_coordinate_type="Cell Relative"
+
+# List  atomic symbol, coordinates, and movable flag (1 == movable) 
+# symbol and coordinates are required, moveable is optional, default is 1
+atoms = "
+C   0.25   0.25   0.25   1 1  1  0.0  0.0 00.0    
+C   0.0   0.0   0.0   1 1  1  0.0  0.0 00.0    
+"
+#exchange_correlation_type="LDA"
+pseudopotential=
+"
+C   C_ONCV_PBE_sr.upf
+"
+
+

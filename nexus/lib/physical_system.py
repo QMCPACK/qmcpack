@@ -533,7 +533,7 @@ class PhysicalSystem(Matter):
             ncells = int(round(supercell.volume()/self.structure.volume()))
             net_charge = ncells*self.net_charge
             if net_spin is None:
-                net_spin   = ncells*self.net_spin
+                net_spin = ncells*self.net_spin
             #end if
         else:
             net_charge = self.net_charge
@@ -577,6 +577,16 @@ class PhysicalSystem(Matter):
             return self
         #end if
     #end def get_smallest
+
+    
+    def is_magnetic(self):
+        return self.net_spin!=0 or self.structure.is_magnetic()
+    #end def is_magnetic
+
+    
+    def spin_polarized_orbitals(self):
+        return self.is_magnetic()
+    #end def spin_polarized_orbitals
 
 
     # test needed

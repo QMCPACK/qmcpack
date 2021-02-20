@@ -99,8 +99,8 @@ public:
   using WaveFunctionComponent::registerData;
   using WaveFunctionComponent::updateBuffer;
 
-  using WaveFunctionComponent::createResource;
   using WaveFunctionComponent::acquireResource;
+  using WaveFunctionComponent::createResource;
   using WaveFunctionComponent::releaseResource;
 
   using WaveFunctionComponent::acceptMove;
@@ -197,7 +197,7 @@ protected:
   ValueMatrix_t dummy_vmt;
 #endif
 
-  bool checkG(const GradType& g)
+  static bool checkG(const GradType& g)
   {
     auto g_mag = std::abs(dot(g, g));
     if (std::isnan(g_mag))
