@@ -734,15 +734,14 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
   hdf_archive restart(TGwfn.Global());
   if (restart_file != "")
   {
-    if (type == "phmsd")
-    {
-      app_log() << " Restarting from PHMSD trial wavefunction not implemented. \n";
-    }
-    else
-    {
+    app_log() << " Open " << restart_file << " for HamOps\n";
+    // first, try open existing restart file
+    if (!restart.open(restart_file, H5F_ACC_RDONLY))
+    { // make new restart file if cannot open existing
+      app_log() << " No restart_file create anew.\n";
       if (!restart.create(restart_file, H5F_ACC_EXCL))
       {
-        app_error() << " Error opening restart file in WavefunctionFactory. \n";
+        app_error() << " Error in WavefunctionFactory: Failed to create restart_file" << restart_file << "\n";
         APP_ABORT("");
       }
     }
@@ -761,20 +760,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
     // Read common trial wavefunction input options.
     WALKER_TYPES input_wtype;
     getCommonInput(dump, NMO, NAEA, NAEB, ndets_to_read, ci, input_wtype, TGwfn.Global().root());
-    if (restart_file == "")
-    {
-      NCE = h.getNuclearCoulombEnergy();
-    }
-    else
-    {
-      std::vector<ValueType> tmp;
-      if (!dump.readEntry(tmp, "NCE"))
-      {
-        app_error() << " Error in WavefunctionFactory::fromHDF5(): Problems reading NCE.\n";
-        APP_ABORT("");
-      }
-      NCE = tmp[0];
-    }
+    NCE = h.getNuclearCoulombEnergy();
 
     TGwfn.Global().broadcast_n(ci.data(), ci.size());
     TGwfn.Global().broadcast_value(NCE);
@@ -815,9 +801,8 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
     getInitialGuess(dump, name, NMO, NAEA, NAEB, walker_type);
 
     // Restore Hamiltonian Operations Object from file if it exists.
-    bool read_ham_op = restart.is_group("HamiltonianOperations");
-    auto HOps(getHamOps(read_ham_op, restart, walker_type, NMO, NAEA, NAEB, PsiT, TGprop, TGwfn, cutvn, cutv2,
-                        ndets_to_read, h));
+    auto HOps(getHamOps(restart, walker_type, NMO, NAEA, NAEB, PsiT,
+      TGprop, TGwfn, cutvn, cutv2, ndets_to_read, h));
 
     // if not set, get default based on HamTYpe
     // use sparse trial only on KP runs
@@ -1052,7 +1037,10 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
     //        HOps through the index corresponding 0/1.
     // never add coulomb to half rotated v2 tensor in PHMSD
     getInitialGuess(dump, name, NMO, NAEA, NAEB, walker_type);
-    auto HOps(h.getHamiltonianOperations(false, false, CLOSED, PsiT, cutvn, cutv2, TGprop, TGwfn, dump));
+
+    auto HOps(getHamOps(restart, CLOSED, NMO, NAEA, NAEB, PsiT,
+      TGprop, TGwfn, cutvn, cutv2, false, h));
+
     TGwfn.node_barrier();
     // setup configuration couplings
     using index_aos = ma::sparse::array_of_sequences<int, int, shared_allocator<int>, ma::sparse::is_root>;
@@ -1275,8 +1263,8 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG,
 /*
  * Helper function to get HamOps object from file or from scratch.
 */
-HamiltonianOperations WavefunctionFactory::getHamOps(bool read,
-                                                     hdf_archive& dump,
+HamiltonianOperations WavefunctionFactory::getHamOps(
+                                                     hdf_archive& restart,
                                                      WALKER_TYPES type,
                                                      int NMO,
                                                      int NAEA,
@@ -1289,13 +1277,16 @@ HamiltonianOperations WavefunctionFactory::getHamOps(bool read,
                                                      int ndets_to_read,
                                                      Hamiltonian& h)
 {
+  bool read = restart.is_group("HamiltonianOperations");
   if (read)
   {
-    return loadHamOps(dump, type, NMO, NAEA, NAEB, PsiT, TGprop, TGwfn, cutvn, cutv2);
+    app_log() << " getHamOps using restart file\n";
+    return loadHamOps(restart, type, NMO, NAEA, NAEB, PsiT, TGprop, TGwfn, cutvn, cutv2);
   }
   else
   {
-    return h.getHamiltonianOperations(false, ndets_to_read > 1, type, PsiT, cutvn, cutv2, TGprop, TGwfn, dump);
+    app_log() << " getHamOps from scratch\n";
+    return h.getHamiltonianOperations(false, ndets_to_read > 1, type, PsiT, cutvn, cutv2, TGprop, TGwfn, restart);
   }
 }
 /**
