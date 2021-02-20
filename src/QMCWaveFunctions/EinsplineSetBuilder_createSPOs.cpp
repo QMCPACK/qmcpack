@@ -129,7 +129,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string useGPU = "no";
 #endif
   std::string GPUsharing = "no";
-  ScopedTimer spo_timer_scope(timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
+  ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;
