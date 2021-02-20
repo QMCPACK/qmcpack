@@ -125,7 +125,7 @@ namespace IO {
   /// Valid tokens are special characters: "(){}[]<>,", quoted strings,
   /// words, or numbers.  White space is not significant, except in
   /// separating tokens.
-  void Tokenize(blitz::Array<char,1> buffer, std::list<TokenClass>& tokenList)
+  void Tokenize(Array<char,1> buffer, std::list<TokenClass>& tokenList)
   {
     int pos=0;
     int lineNum=1;
@@ -189,7 +189,7 @@ namespace IO {
 	  
 
   /// Just a shortcut to look at two characters at a time.
-  bool checkPair(blitz::Array<char,1> &buffer,int counter,char const* toSee)
+  bool checkPair(Array<char,1> &buffer,int counter,char const* toSee)
   {
     if (counter+1>=buffer.size()){
       return false;
@@ -204,14 +204,14 @@ namespace IO {
   /// Reads a file into a character array, removing C and C++ style
   /// comments. 
   bool IOTreeASCIIClass::ReadWithoutComments(std::string fileName,
-					     blitz::Array<char,1> 
+					     Array<char,1> 
 					     &buffer)
   {
     std::ifstream infile;
     infile.open(fileName.c_str());
     if (!infile.is_open()) 
       return false;
-    blitz::Array<char,1> tmpBuffer;
+    Array<char,1> tmpBuffer;
     int counter=0;
     bool inQuote=false;
     char dummyChar;
@@ -386,7 +386,7 @@ namespace IO {
   template <class T>
   void ReadArrayData(std::list<TokenClass>::iterator &iter,
 		     std::list<TokenClass> &tokenList,
-		     blitz::Array<T,1> valArray)
+		     Array<T,1> valArray)
   {
     ReadAbort(iter->Str != "[", iter->LineNumber, "Expected [ not found\n");
     iter++;
@@ -414,7 +414,7 @@ namespace IO {
   template <class T>
   void ReadArrayData(std::list<TokenClass>::iterator &iter,
 		     std::list<TokenClass> &tokenList,
-		     blitz::Array<T,2> valArray)
+		     Array<T,2> valArray)
   {
     ReadAbort(iter->Str != "[", iter->LineNumber, "Expected [ not found\n");
     iter++;
@@ -445,7 +445,7 @@ namespace IO {
   template <class T>
   void ReadArrayData(std::list<TokenClass>::iterator &iter,
 		     std::list<TokenClass> &tokenList,
-		     blitz::Array<T,3> valArray)
+		     Array<T,3> valArray)
   {
     ReadAbort(iter->Str != "[", iter->LineNumber, "Expected [ not found\n");
     iter++;
@@ -478,7 +478,7 @@ namespace IO {
   template <class T>
   void ReadArrayData(std::list<TokenClass>::iterator &iter,
 		     std::list<TokenClass> &tokenList,
-		     blitz::Array<T,4> valArray)
+		     Array<T,4> valArray)
   {
     ReadAbort(iter->Str != "[", iter->LineNumber, "Expected [ not found\n");
     iter++;
@@ -506,7 +506,7 @@ namespace IO {
 
 
   IOVarBase *NewASCIIVar (std::string name, IODataType newType, int ndim,
-			  blitz::Array<int,1> dims)
+			  Array<int,1> dims)
   {
     if (ndim == 0) {
       if (newType == DOUBLE_TYPE)
@@ -655,7 +655,7 @@ namespace IO {
     ReadAbort(iter->Str != ">", iter->LineNumber, "Expected , not found\n");
     iter++;
   
-    blitz::Array<int,1> dimSize(numDim);
+    Array<int,1> dimSize(numDim);
   
     std::string myName=iter->Str;
 
@@ -758,7 +758,7 @@ namespace IO {
       iter++;
       ReadAbort(iter->Str!=";",iter->LineNumber,"Expected semicolon\n");
       iter++;
-      blitz::Array<int,1> dims(1);
+      Array<int,1> dims(1);
       newVar = NewASCIIVar (myName, myType, 0, dims);
       if (myType == DOUBLE_TYPE)
 	ReadAtomicVar (valToken, ((IOVarASCII<double,0> *)newVar)->Value);
@@ -879,7 +879,7 @@ namespace IO {
   bool IOTreeASCIIClass::OpenFile(std::string fileName, std::string myName, 
 				  IOTreeClass *parent)
   {
-    blitz::Array<char,1> buffer;
+    Array<char,1> buffer;
     bool success = ReadWithoutComments(fileName,buffer);
     if (!success)
       return false;
