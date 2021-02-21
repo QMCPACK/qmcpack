@@ -44,8 +44,10 @@ OperatorBase::Return_t OperatorBase::evaluateDeterministic(ParticleSet& P) { ret
  * really should reduce vector of local_energies. matching the ordering and size of o list
  * the this can be call for 1 or more QMCHamiltonians
  */
-void OperatorBase::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
+void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list) const
 {
+  assert(this == &O_list.getLeader());
 /**  Temporary raw omp pragma for simple thread parallelism
    *   ignoring the driver level concurrency
    *   
@@ -72,16 +74,16 @@ void OperatorBase::mw_evaluate(const RefVector<OperatorBase>& O_list, const RefV
    */
 #pragma omp parallel for
   for (int iw = 0; iw < O_list.size(); iw++)
-    O_list[iw].get().evaluate(P_list[iw]);
+    O_list[iw].evaluate(P_list[iw]);
 }
 
-void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVector<OperatorBase>& O_list,
-                                                       const RefVector<ParticleSet>& P_list,
+void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
+                                                       const RefVectorWithLeader<ParticleSet>& P_list,
                                                        const opt_variables_type& optvars,
                                                        RecordArray<ValueType>& dlogpsi,
-                                                       RecordArray<ValueType>& dhpsioverpsi)
+                                                       RecordArray<ValueType>& dhpsioverpsi) const
 {
-  int nparam = dlogpsi.nparam();
+  const int nparam = dlogpsi.nparam();
   std::vector<ValueType> tmp_dlogpsi(nparam);
   std::vector<ValueType> tmp_dhpsioverpsi(nparam);
   for (int iw = 0; iw < O_list.size(); iw++)
@@ -91,7 +93,7 @@ void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVector<OperatorB
       tmp_dlogpsi[j] = dlogpsi.getValue(j, iw);
     }
 
-    O_list[iw].get().evaluateValueAndDerivatives(P_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+    O_list[iw].evaluateValueAndDerivatives(P_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
 
     for (int j = 0; j < nparam; j++)
     {

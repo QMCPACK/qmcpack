@@ -212,62 +212,62 @@ double Ec(double nup, double ndown)
 }
 
 
-void CheckCorrelationPotential (double  nup, double ndown)
-{
-  double eps = 1.0e-4;
-  
-  double n = nup + ndown;
-  double zeta = (nup - ndown) / n;
+//void CheckCorrelationPotential (double  nup, double ndown)
+//{
+//  double eps = 1.0e-4;
+//  
+//  double n = nup + ndown;
+//  double zeta = (nup - ndown) / n;
 
-  double np = n+eps;
-  double nm = n-eps;
-  double zetap = zeta + eps;
-  double zetam = zeta - eps;
+//  double np = n+eps;
+//  double nm = n-eps;
+//  double zetap = zeta + eps;
+//  double zetam = zeta - eps;
 
-  double nupp   = 0.5*(np + np * zeta);
-  double ndownp = 0.5*(np - np*zeta);
-  double nupm   = 0.5*(nm + nm*zeta);
-  double ndownm = 0.5*(nm - nm*zeta); 
+//  double nupp   = 0.5*(np + np * zeta);
+//  double ndownp = 0.5*(np - np*zeta);
+//  double nupm   = 0.5*(nm + nm*zeta);
+//  double ndownm = 0.5*(nm - nm*zeta); 
 
-  double Ecplus =  Ec(nupp, ndownp);
-  double Ecminus = Ec(nupm, ndownm);
+//  double Ecplus =  Ec(nupp, ndownp);
+//  double Ecminus = Ec(nupm, ndownm);
 
-  double dEc_dn = (Ecplus - Ecminus)/(2.0*eps);
+//  double dEc_dn = (Ecplus - Ecminus)/(2.0*eps);
 
-  double dEcP_dn = dF_dn(n, 0.0310907, -0.10498, 3.72744, 12.9352); 
-  double ddeltaEc_dn = dEc_dn - dEcP_dn;
-  
-  //fprintf (stderr, "FD: ddeltaEc_dn = %1.12f\n", ddeltaEc_dn);
-
-
+//  double dEcP_dn = dF_dn(n, 0.0310907, -0.10498, 3.72744, 12.9352); 
+//  double ddeltaEc_dn = dEc_dn - dEcP_dn;
+//  
+//  //fprintf (stderr, "FD: ddeltaEc_dn = %1.12f\n", ddeltaEc_dn);
 
 
-  double EcPp =    F(np, 0.0310907, -0.10498, 3.72744, 12.9352);
-  double EcFp =    F(np, 0.01554535, -0.325, 7.06042, 18.0578);
-  double alphacp = F(np, -1.0/(6.0*M_PI*M_PI), -0.00475840,
-		     1.13107, 13.0045);
 
-  double EcPm =    F(nm, 0.0310907, -0.10498, 3.72744, 12.9352);
-  double EcFm =    F(nm, 0.01554535, -0.325, 7.06042, 18.0578);
-  double alphacm = F(nm, -1.0/(6.0*M_PI*M_PI), -0.00475840,
-		     1.13107, 13.0045);
 
-  double f_doubleprime = 4.0/(9*(pow(2.0,1.0/3.0)-1.0));
+//  double EcPp =    F(np, 0.0310907, -0.10498, 3.72744, 12.9352);
+//  double EcFp =    F(np, 0.01554535, -0.325, 7.06042, 18.0578);
+//  double alphacp = F(np, -1.0/(6.0*M_PI*M_PI), -0.00475840,
+//		     1.13107, 13.0045);
 
-  double betap = f_doubleprime*(EcFp-EcPp)/alphacp -1.0;
-  double betam = f_doubleprime*(EcFm-EcPm)/alphacm -1.0;
+//  double EcPm =    F(nm, 0.0310907, -0.10498, 3.72744, 12.9352);
+//  double EcFm =    F(nm, 0.01554535, -0.325, 7.06042, 18.0578);
+//  double alphacm = F(nm, -1.0/(6.0*M_PI*M_PI), -0.00475840,
+//		     1.13107, 13.0045);
 
-  double zeta2 = zeta*zeta;
-  double zeta4 = zeta2*zeta2;
-  double deltaEcp = alphacp*f(zeta)/f_doubleprime * (1.0+betap*zeta4);
-  double deltaEcm = alphacm*f(zeta)/f_doubleprime * (1.0+betam*zeta4);
+//  double f_doubleprime = 4.0/(9*(pow(2.0,1.0/3.0)-1.0));
 
-  fprintf (stderr, "FD2: ddeltaEc_dn = %1.12f\n",
-	   (deltaEcp-deltaEcm)/(2.0*eps)); 
+//  double betap = f_doubleprime*(EcFp-EcPp)/alphacp -1.0;
+//  double betam = f_doubleprime*(EcFm-EcPm)/alphacm -1.0;
 
-  fprintf (stderr, "FD: dbeta_dn = %1.12f\n", (betap-betam)/(2.0*eps));
+//  double zeta2 = zeta*zeta;
+//  double zeta4 = zeta2*zeta2;
+//  double deltaEcp = alphacp*f(zeta)/f_doubleprime * (1.0+betap*zeta4);
+//  double deltaEcm = alphacm*f(zeta)/f_doubleprime * (1.0+betam*zeta4);
 
-}
+//  fprintf (stderr, "FD2: ddeltaEc_dn = %1.12f\n",
+//	   (deltaEcp-deltaEcm)/(2.0*eps)); 
+
+//  fprintf (stderr, "FD: dbeta_dn = %1.12f\n", (betap-betam)/(2.0*eps));
+
+//}
 
 
 

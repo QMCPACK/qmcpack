@@ -69,7 +69,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P)
   {
-    ScopedTimer local_timer(&evaluate_timer_);
+    ScopedTimer local_timer(evaluate_timer_);
 #pragma omp parallel
     {
       int first, last;
@@ -85,7 +85,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
   {
-    ScopedTimer local_timer(&move_timer_);
+    ScopedTimer local_timer(move_timer_);
     DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
                                            0, N_sources);
     // If the full table is not ready all the time, overwrite the current value.
@@ -98,7 +98,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
   ///update the stripe for jat-th particle
   inline void update(IndexType iat, bool partial_update)
   {
-    ScopedTimer local_timer(&update_timer_);
+    ScopedTimer local_timer(update_timer_);
     std::copy_n(temp_r_.data(), N_sources, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(temp_dr_.data(idim), N_sources, displacements_[iat].data(idim));

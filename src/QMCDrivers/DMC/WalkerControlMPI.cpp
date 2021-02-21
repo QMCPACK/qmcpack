@@ -83,34 +83,38 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c) : WalkerControlBase(c)
  */
 int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
 {
-  myTimers[DMC_MPI_branch]->start();
-  myTimers[DMC_MPI_prebalance]->start();
-  std::fill(curData.begin(), curData.end(), 0);
-  sortWalkers(W);
-  //use NumWalkersSent from the previous exchange
-  curData[SENTWALKERS_INDEX] = NumWalkersSent;
-  //update the number of walkers for this node
-  //Causes implicit conversion to FullPrecRealType
-  curData[LE_MAX + MyContext] = NumWalkers;
-  //myTimers[DMC_MPI_imbalance]->start();
-  //myTimers[DMC_MPI_imbalance]->stop();
-  myTimers[DMC_MPI_allreduce]->start();
-  myComm->allreduce(curData);
-  myTimers[DMC_MPI_allreduce]->stop();
-  measureProperties(iter);
-  W.EnsembleProperty = ensemble_property_;
-  for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
-    NumPerNode[i] = static_cast<int>(curData[j]);
-  int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  ScopedTimer local_timer(myTimers[DMC_MPI_branch]);
+  {
+    ScopedTimer local_timer(myTimers[DMC_MPI_prebalance]);
+    std::fill(curData.begin(), curData.end(), 0);
+    sortWalkers(W);
+    //use NumWalkersSent from the previous exchange
+    curData[SENTWALKERS_INDEX] = NumWalkersSent;
+    //update the number of walkers for this node
+    //Causes implicit conversion to FullPrecRealType
+    curData[LE_MAX + MyContext] = NumWalkers;
+    //{ ScopedTimer local_timer(myTimers[DMC_MPI_imbalance]);
+    //}
+    {
+      ScopedTimer local_timer(myTimers[DMC_MPI_allreduce]);
+      myComm->allreduce(curData);
+    }
+    measureProperties(iter);
+    W.EnsembleProperty = ensemble_property_;
+    for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
+      NumPerNode[i] = static_cast<int>(curData[j]);
+    int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
 
-  Cur_pop = applyNmaxNmin(current_population);
-  myTimers[DMC_MPI_prebalance]->stop();
-  myTimers[DMC_MPI_loadbalance]->start();
-  swapWalkersSimple(W);
-  myTimers[DMC_MPI_loadbalance]->stop();
-  myTimers[DMC_MPI_copyWalkers]->start();
-  copyWalkers(W);
-  myTimers[DMC_MPI_copyWalkers]->stop();
+    Cur_pop = applyNmaxNmin(current_population);
+  }
+  {
+    ScopedTimer local_timer(myTimers[DMC_MPI_loadbalance]);
+    swapWalkersSimple(W);
+  }
+  {
+    ScopedTimer local_timer(myTimers[DMC_MPI_copyWalkers]);
+    copyWalkers(W);
+  }
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   while (it != it_end)
@@ -123,7 +127,6 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
   W.setGlobalNumWalkers(Cur_pop);
   W.setWalkerOffsets(FairOffSet);
 
-  myTimers[DMC_MPI_branch]->stop();
   return Cur_pop;
 }
 
@@ -145,36 +148,39 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
  */
 QMCTraits::FullPrecRealType WalkerControlMPI::branch(int iter, MCPopulation& pop)
 {
-  myTimers[DMC_MPI_branch]->start();
-  myTimers[DMC_MPI_prebalance]->start();
-
+  ScopedTimer local_timer(myTimers[DMC_MPI_branch]);
   // This has the same ridiculous side effect as SortWalkers
   // i.e. it updates most of curData
   PopulationAdjustment adjust(calcPopulationAdjustment(pop));
 
-  //use NumWalkersSent from the previous exchange
-  //You need another copy because curData is zeroed out defensively.
-  curData[SENTWALKERS_INDEX] = NumWalkersSent;
+  {
+    ScopedTimer local_timer(myTimers[DMC_MPI_prebalance]);
 
-  //This should not be used by the new driver code
-  //curData[LE_MAX + MyContext] = -1000;
-  myTimers[DMC_MPI_allreduce]->start();
-  // You might think we are just reducing LE and sent walkers but
-  // see calcPopulationAdjustments massive side effects.
-  myComm->allreduce(curData);
-  myTimers[DMC_MPI_allreduce]->stop();
-  measureProperties(iter);
+    //use NumWalkersSent from the previous exchange
+    //You need another copy because curData is zeroed out defensively.
+    curData[SENTWALKERS_INDEX] = NumWalkersSent;
 
-  pop.set_ensemble_property(ensemble_property_);
+    //This should not be used by the new driver code
+    //curData[LE_MAX + MyContext] = -1000;
+    {
+      ScopedTimer local_timer(myTimers[DMC_MPI_allreduce]);
+      // You might think we are just reducing LE and sent walkers but
+      // see calcPopulationAdjustments massive side effects.
+      myComm->allreduce(curData);
+    }
+    measureProperties(iter);
 
-  limitPopulation(adjust);
+    pop.set_ensemble_property(ensemble_property_);
+
+    limitPopulation(adjust);
+  }
 
   auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(myComm, adjust.num_walkers);
 
-  myTimers[DMC_MPI_prebalance]->stop();
-  myTimers[DMC_MPI_loadbalance]->start();
-  NumWalkersSent = swapWalkersSimple(pop, adjust, num_per_node);
-  myTimers[DMC_MPI_loadbalance]->stop();
+  {
+    ScopedTimer local_timer(myTimers[DMC_MPI_loadbalance]);
+    NumWalkersSent = swapWalkersSimple(pop, adjust, num_per_node);
+  }
 
   WalkerControlBase::onRankKill(pop, adjust);
   WalkerControlBase::onRankSpawn(pop, adjust);
@@ -196,8 +202,6 @@ QMCTraits::FullPrecRealType WalkerControlMPI::branch(int iter, MCPopulation& pop
     walker->Weight       = 1.0;
     walker->Multiplicity = 1.0;
   }
-
-  myTimers[DMC_MPI_branch]->stop();
 
   return pop.get_num_global_walkers();
 }
@@ -395,9 +399,8 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
         requests.push_back(myComm->comm.isend_n(awalker->DataSet.data(), byteSize, jobit->target));
       else
       {
-        myTimers[DMC_MPI_send]->start();
+        ScopedTimer local_timer(myTimers[DMC_MPI_send]);
         myComm->comm.send_n(awalker->DataSet.data(), byteSize, jobit->target);
-        myTimers[DMC_MPI_send]->stop();
       }
     }
     if (use_nonblocking)
@@ -405,9 +408,8 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
       // wait all the isend
       for (int im = 0; im < requests.size(); im++)
       {
-        myTimers[DMC_MPI_send]->start();
+        ScopedTimer local_timer(myTimers[DMC_MPI_send]);
         requests[im].wait();
-        myTimers[DMC_MPI_send]->stop();
       }
       requests.clear();
     }
@@ -426,10 +428,9 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
         requests.push_back(myComm->comm.ireceive_n(awalker->DataSet.data(), byteSize, jobit->target));
       else
       {
-        myTimers[DMC_MPI_recv]->start();
+        ScopedTimer local_timer(myTimers[DMC_MPI_recv]);
         myComm->comm.receive_n(awalker->DataSet.data(), byteSize, jobit->target);
         awalker->copyFromBuffer();
-        myTimers[DMC_MPI_recv]->stop();
       }
     }
     if (use_nonblocking)
@@ -560,7 +561,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
   {
     std::for_each(send_message_list.begin(), send_message_list.end(), [&send_requests, this](WalkerMessage& message) {
       MCPWalker& this_walker = message.walker_elements.walker;
-      ParticleSet& this_pset      = message.walker_elements.pset;
+      ParticleSet& this_pset = message.walker_elements.pset;
       // Most of these calls are unecessary,
       // evaluateLog definitely is but is invaluable for checking for the state of the walker before and after transfer
       // \todo narrow these down to a minimum and manage to reason out the state of a valid fat walker.
@@ -586,7 +587,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
 
   if (recv_message_list.size() > 0)
   {
-    myTimers[DMC_MPI_recv]->start();
+    ScopedTimer local_timer(myTimers[DMC_MPI_recv]);
     std::vector<int> recv_completed(recv_message_list.size(), 0);
     std::vector<int> recv_waited(recv_message_list.size(), 0);
 
@@ -609,7 +610,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
 #ifndef NDEBUG
           this_walker.set_has_been_on_wire(true);
 #endif
-          ParticleSet& this_pset      = recv_message_list[im].walker_elements.pset;
+          ParticleSet& this_pset = recv_message_list[im].walker_elements.pset;
           this_pset.loadWalker(this_walker, true);
           // If this update isn't called then the Jastrow's will not match those in the sent walker.
           // The update call is required to update the internal state of pset used by TWF to do the
@@ -621,12 +622,11 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
         }
       }
     }
-    myTimers[DMC_MPI_recv]->stop();
   }
 
   if (send_message_list.size() > 0)
   {
-    myTimers[DMC_MPI_send]->start();
+    ScopedTimer local_timer(myTimers[DMC_MPI_send]);
     std::vector<int> send_completed(send_message_list.size(), 0);
     std::vector<int> send_waited(send_message_list.size(), 0);
 
@@ -646,7 +646,6 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
           send_completed[im] = 1;
       }
     }
-    myTimers[DMC_MPI_send]->stop();
   }
 
 

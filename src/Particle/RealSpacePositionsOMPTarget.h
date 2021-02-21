@@ -82,32 +82,33 @@ public:
     */
   }
 
-  void mw_copyActiveOldParticlePos(const RefVector<DynamicCoordinates>& coords_list,
+  void mw_copyActiveOldParticlePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
                                    size_t iat,
-                                   const std::vector<PosType>& new_positions) override
+                                   const std::vector<PosType>& new_positions) const override
   {
-    const auto nw = coords_list.size();
+    assert(this == &coords_list.getLeader());
+    auto& coords_leader = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
+    const auto nw       = coords_list.size();
 
-    mw_new_pos.resize(nw);
+    coords_leader.mw_new_pos.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
-    {
-      auto& coords   = dynamic_cast<const RealSpacePositionsOMPTarget&>(coords_list[iw].get());
-      mw_new_pos(iw) = new_positions[iw];
-    }
+      coords_leader.mw_new_pos(iw) = new_positions[iw];
 
-    auto* mw_pos_ptr = mw_new_pos.data();
+    auto* mw_pos_ptr = coords_leader.mw_new_pos.data();
     PRAGMA_OFFLOAD("omp target update to(mw_pos_ptr[:QMCTraits::DIM * mw_new_pos.capacity()])")
 
-    is_nw_new_pos_prepared = true;
+    coords_leader.is_nw_new_pos_prepared = true;
   }
 
-  void mw_acceptParticlePos(const RefVector<DynamicCoordinates>& coords_list,
+  void mw_acceptParticlePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
                             size_t iat,
                             const std::vector<PosType>& new_positions,
-                            const std::vector<bool>& isAccepted) override
+                            const std::vector<bool>& isAccepted) const override
   {
-    const size_t nw = coords_list.size();
+    assert(this == &coords_list.getLeader());
+    auto& coords_leader = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
+    const size_t nw     = coords_list.size();
 
     if (!is_nw_new_pos_prepared)
     {
@@ -115,17 +116,18 @@ public:
       app_warning() << "This message only appear in unit tests. Report a bug if seen in production code." << std::endl;
     }
 
-    is_nw_new_pos_prepared = false;
+    coords_leader.is_nw_new_pos_prepared = false;
 
-    nw_accept_index_ptrs.resize((sizeof(int) + sizeof(RealType*)) * nw);
-    auto* RSoA_ptr_array = reinterpret_cast<RealType**>(nw_accept_index_ptrs.data());
-    auto* id_array       = reinterpret_cast<int*>(nw_accept_index_ptrs.data() + sizeof(RealType*) * coords_list.size());
+    coords_leader.nw_accept_index_ptrs.resize((sizeof(int) + sizeof(RealType*)) * nw);
+    auto* RSoA_ptr_array = reinterpret_cast<RealType**>(coords_leader.nw_accept_index_ptrs.data());
+    auto* id_array =
+        reinterpret_cast<int*>(coords_leader.nw_accept_index_ptrs.data() + sizeof(RealType*) * coords_list.size());
 
     size_t num_accepted = 0;
     for (int iw = 0; iw < nw; iw++)
       if (isAccepted[iw])
       {
-        auto& coords                 = dynamic_cast<RealSpacePositionsOMPTarget&>(coords_list[iw].get());
+        auto& coords                 = coords_list.getCastedElement<RealSpacePositionsOMPTarget>(iw);
         RSoA_ptr_array[num_accepted] = coords.RSoA.device_data();
         id_array[num_accepted]       = iw;
         // save new coordinates on host copy
@@ -134,7 +136,7 @@ public:
       }
 
     //offload to GPU
-    auto* restrict w_accept_buffer_ptr = nw_accept_index_ptrs.data();
+    auto* restrict w_accept_buffer_ptr = coords_leader.nw_accept_index_ptrs.data();
     auto* restrict mw_pos_ptr          = mw_new_pos.data();
     const size_t rsoa_stride           = RSoA.capacity();
     const size_t mw_pos_stride         = mw_new_pos.capacity();

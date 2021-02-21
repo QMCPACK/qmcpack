@@ -110,7 +110,7 @@ public:
   /// Returns the value of the function at the ith grid point.
   inline double Params(int i) const { return (y(i)); }
   /// Returns a reference to the value at the ith grid point.
-  inline double& Params(int i) { return ((*this)(i)); }
+  inline double& Params(int i) { return (y(i)); }
   void Write(IOSectionClass& outSection)
   {
     outSection.WriteVar("StartDeriv", StartDeriv);

@@ -191,8 +191,10 @@ ChannelPotential::A(double q, double qp)
 	 (3.0*qp*(q*q - qp*qp)*R0*cos(qp*R0) + 
 	  (3.0*qp*qp + q*q*(-3.0 + qp*qp * R0*R0))*sin(qp*R0)));
   }
-  else
-    return sqrt(-1.0);
+  else{
+    assert(0);
+    return std::numeric_limits<double>::quiet_NaN(); // sqrt(-1.0);
+  }
 }
 
 // double

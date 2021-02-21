@@ -169,7 +169,7 @@ bool QMCMain::execute()
   if (simulationType == "afqmc")
   {
     NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
-    ScopedTimer t2_scope(t2);
+    ScopedTimer t2_scope(*t2);
     app_log() << std::endl
               << "/*************************************************\n"
               << " ********  This is an AFQMC calculation   ********\n"
