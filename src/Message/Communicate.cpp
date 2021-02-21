@@ -52,9 +52,10 @@ Communicate::~Communicate()
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
 
-Communicate::Communicate(mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
+Communicate::Communicate(const mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1), GroupLeaderComm(nullptr)
 {
-  comm        = mpi3::communicator(in_comm);
+  // const_cast is used to enable non-const call to duplicate()
+  comm        = const_cast<mpi3::communicator&>(in_comm).duplicate();
   myMPI       = comm.get();
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
@@ -65,7 +66,8 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
   std::vector<int> nplist(nparts + 1);
   int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
-  comm  = in_comm.comm.split(p, in_comm.rank());
+  // const_cast is used to enable non-const call to split()
+  comm  = const_cast<mpi3::communicator&>(in_comm.comm).split(p, in_comm.rank());
   myMPI = comm.get();
   // TODO: mpi3 needs to define comm
   d_mycontext = comm.rank();
@@ -110,7 +112,8 @@ void Communicate::initialize(int argc, char** argv) {}
 
 void Communicate::initializeAsNodeComm(const Communicate& parent)
 {
-  comm        = parent.comm.split_shared();
+  // const_cast is used to enable non-const call to split_shared()
+  comm        = const_cast<mpi3::communicator&>(parent.comm).split_shared();
   myMPI       = comm.get();
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();

@@ -74,7 +74,7 @@ public:
   Communicate(const mpi3::environment& env);
 
   ///constructor with communicator
-  Communicate(mpi3::communicator& in_comm);
+  Communicate(const mpi3::communicator& in_comm);
 #endif
 
   /** constructor that splits in_comm
@@ -247,7 +247,7 @@ public:
 
 #ifdef HAVE_MPI
   /// mpi3 communicator wrapper
-  mutable mpi3::communicator comm;
+  mpi3::communicator comm;
 #endif
 };
 
