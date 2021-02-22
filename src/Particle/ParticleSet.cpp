@@ -512,7 +512,7 @@ void ParticleSet::mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<Part
   {
     ScopedTimer copy_scope(p_leader.myTimers[PS_mw_copy]);
     const auto coords_list(extractCoordsRefList(p_list));
-    p_leader.coordinates_->mw_copyActiveOldParticlePos(coords_list, iat, new_positions);
+    p_leader.coordinates_->mw_copyActivePos(coords_list, iat, new_positions);
   }
 
   {

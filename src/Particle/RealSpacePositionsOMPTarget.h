@@ -52,7 +52,7 @@ public:
     }
   }
 
-  size_t size() override { return RSoA_hostview.size(); }
+  size_t size() const override { return RSoA_hostview.size(); }
 
   void setAllParticlePos(const ParticlePos_t& R) override
   {
@@ -82,7 +82,7 @@ public:
     */
   }
 
-  void mw_copyActiveOldParticlePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
+  void mw_copyActivePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
                                    size_t iat,
                                    const std::vector<PosType>& new_positions) const override
   {
@@ -112,7 +112,7 @@ public:
 
     if (!is_nw_new_pos_prepared)
     {
-      mw_copyActiveOldParticlePos(coords_list, iat, new_positions);
+      mw_copyActivePos(coords_list, iat, new_positions);
       app_warning() << "This message only appear in unit tests. Report a bug if seen in production code." << std::endl;
     }
 
@@ -182,7 +182,7 @@ private:
   ///host view of RSoA
   PosVectorSoa RSoA_hostview;
 
-  ///if true, host position has been changed while device copy not updated.
+  ///if true, host position has been changed while the device copy has not been updated.
   bool is_host_position_changed_;
 
   ///if true, mw_new_pos has been updated with active positions.
