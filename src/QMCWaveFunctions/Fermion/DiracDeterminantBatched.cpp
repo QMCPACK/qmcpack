@@ -333,17 +333,21 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(
   { // transfer dpsiM, d2psiM, psiMinv to host
     ScopedTimer d2h(D2HTimer);
 
-    for (int iw = 0; iw < nw; iw++)
-    {
-      auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
-      auto& my_psiM_vgl  = det.psiM_vgl;
-      auto* psiM_vgl_ptr = my_psiM_vgl.data();
-      // transfer device to host, total size 4, g(3) + l(1)
-      PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
-    }
-
+    // this call also completes all the device copying of dpsiM, d2psiM before the target update
     wfc_leader.det_engine_.mw_transferAinv_D2H(engine_list);
-    PRAGMA_OFFLOAD("omp taskwait")
+
+    if (UpdateMode == ORB_PBYP_PARTIAL)
+    {
+      for (int iw = 0; iw < nw; iw++)
+      {
+        auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+        auto& my_psiM_vgl  = det.psiM_vgl;
+        auto* psiM_vgl_ptr = my_psiM_vgl.data();
+        // transfer device to host, total size 4, g(3) + l(1)
+        PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
+      }
+      PRAGMA_OFFLOAD("omp taskwait")
+    }
   }
 }
 
@@ -423,12 +427,27 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVectorWith
       }
 
       Phi->mw_evaluate_notranspose(phi_list, p_list, FirstIndex, LastIndex, psiM_temp_list, dpsiM_list, d2psiM_list);
-      wfc_leader.det_engine_.mw_transferAinv_D2H(engine_list);
     }
 
     for (int iw = 0; iw < nw; iw++)
     {
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+
+#ifndef NDEBUG
+      GradMatrix_t dpsiM_from_device = det.dpsiM;
+      ValueMatrix_t d2psiM_from_device = det.d2psiM;
+
+      auto& my_psiM_vgl  = det.psiM_vgl;
+      auto* psiM_vgl_ptr = my_psiM_vgl.data();
+      // transfer device to host, total size 4, g(3) + l(1)
+      PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4])")
+
+      det.Phi->evaluate_notranspose(p_list[iw], FirstIndex, LastIndex, det.psiM_temp, det.dpsiM, det.d2psiM);
+
+      assert(dpsiM_from_device == det.dpsiM);
+      assert(d2psiM_from_device == det.d2psiM);
+#endif
+
       det.computeGL(G_list[iw], L_list[iw]);
     }
   }
