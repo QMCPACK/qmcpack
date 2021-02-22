@@ -110,6 +110,10 @@ public:
   using SPOSet::mw_evaluateVGL;
   using SPOSet::mw_evaluateVGLandDetRatioGrads;
 
+  using SPOSet::createResource;
+  using SPOSet::acquireResource;
+  using SPOSet::releaseResource;
+
   virtual SPOSet* makeClone() const override = 0;
 
   void resetParameters(const opt_variables_type& active) override {}
