@@ -160,14 +160,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           TrialWaveFunction::flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
           // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
-          auto checkPhaseChanged = [&sft, &iat, &crowd, &nnode_crossing](TrialWaveFunction& twf, ParticleSet& elec,
-                                                                         int& is_reject) {
+          auto checkPhaseChanged = [&sft, &nnode_crossing](const TrialWaveFunction& twf, int& is_reject) {
             if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
             {
-              crowd.incReject();
               ++nnode_crossing;
-              elec.rejectMove(iat);
-              twf.rejectMove(iat);
               is_reject = 1;
             }
             else
@@ -178,7 +174,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
           for (int iw = 0; iw < num_walkers; ++iw)
           {
-            checkPhaseChanged(walker_twfs[iw], walker_elecs[iw], rejects[iw]);
+            checkPhaseChanged(walker_twfs[iw], rejects[iw]);
             //This is just convenient to do here
             rr_proposed[iw] += rr[iw];
           }
@@ -297,7 +293,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
       if (walker_non_local_moves_accepted[iw] > 0)
       {
-        crowd.incNonlocalAccept();
+        crowd.incNonlocalAccept(walker_non_local_moves_accepted[iw]);
         moved_nonlocal_walkers.push_back(walkers[iw]);
         moved_nonlocal_walker_elecs.push_back(walker_elecs[iw]);
         moved_nonlocal_walker_twfs.push_back(walker_twfs[iw]);
