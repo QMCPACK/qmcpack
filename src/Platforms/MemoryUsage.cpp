@@ -13,6 +13,7 @@
 #include "MemoryUsage.h"
 #include <cstring>
 #include <string>
+#include <iomanip>
 #include "Host/sysutil.h"
 #include "OMPTarget/OMPallocator.hpp"
 #ifdef ENABLE_CUDA
@@ -22,32 +23,28 @@
 
 namespace qmcplusplus
 {
-
-void print_mem(const char* title, std::ostream& log)
+void print_mem(const std::string& title, std::ostream& log)
 {
-  char msg[256];
   std::string line_separator;
-  for (int i = 0; i < strlen(title) + 30; i++)
-    line_separator += "#";
+  for (int i = 0; i < title.size() + 30; i++)
+    line_separator += "=";
   log << line_separator << std::endl;
-  sprintf(msg, "### Memory usage report : %s ###\n", title);
-  log << msg;
+  log << "--- Memory usage report : " << title << " ---" << std::endl;
   log << line_separator << std::endl;
-  sprintf(msg, "Available memory on node 0, free + buffers : %7zu MiB\n", freemem() >> 20);
-  log << msg;
-  sprintf(msg, "Memory footprint by rank 0 on node 0       : %7zu MiB\n", memusage() >> 10);
-  log << msg;
+  log << std::right;
+  log << "Available memory on node 0, free + buffers : " << std::setw(7) << (freemem() >> 20) << " MiB" << std::endl;
+  log << "Memory footprint by rank 0 on node 0       : " << std::setw(7) << (memusage() >> 10) << " MiB" << std::endl;
 #ifdef ENABLE_CUDA
-  sprintf(msg, "Device memory allocated via CUDA allocator : %7zu MiB\n", getCUDAdeviceMemAllocated() >> 20);
-  log << msg;
-  sprintf(msg, "Free memory available on default device    : %7zu MiB\n", getCUDAdeviceFreeMem() >> 20);
-  log << msg;
+  log << "Device memory allocated via CUDA allocator : " << std::setw(7) << (getCUDAdeviceMemAllocated() >> 20)
+      << " MiB" << std::endl;
+  log << "Free memory available on default device    : " << std::setw(7) << (getCUDAdeviceFreeMem() >> 20) << " MiB"
+      << std::endl;
 #endif
 #ifdef ENABLE_OFFLOAD
-  sprintf(msg, "Device memory allocated via OpenMP offload : %7zu MiB\n", getOMPdeviceMemAllocated() >> 20);
-  log << msg;
+  log << "Device memory allocated via OpenMP offload : " << std::setw(7) << (getOMPdeviceMemAllocated() >> 20) << " MiB"
+      << std::endl;
 #endif
   log << line_separator << std::endl;
 }
 
-}
+} // namespace qmcplusplus

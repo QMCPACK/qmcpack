@@ -14,11 +14,12 @@
 #define QMCPLUSPLUS_MEMORYUSAGE_H
 
 #include <iostream>
+#include <string>
 
 namespace qmcplusplus
 {
 
-void print_mem(const char* title, std::ostream& log);
+void print_mem(const std::string& title, std::ostream& log);
 
 }
 #endif
