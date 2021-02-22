@@ -351,21 +351,32 @@ public:
                                      const ParticlePos_t& deltaR,
                                      const std::vector<RealType>& dt);
 
-  /** accept the move and update the particle attribute by the proposed move
+  /** accept or reject a proposed move
+   *  Two operation modes:
+   *  The using and updating distance tables via `ParticleSet` operate in two modes, regular and forward modes.
+   *
+   *  Regular mode
+   *  The regular mode can only be used when the distance tables for particle pairs are fully up-to-date.
+   *  This is the case after calling `ParticleSet::update()` in a unit test or after p-by-p moves in a QMC driver.
+   *  In this mode, the distance tables remain up-to-date after calling `ParticleSet::acceptMove`
+   *  and calling `ParticleSet::rejectMove` is not mandatory.
+   *
+   *  Forward mode
+   *  The forward mode assumes that distance table is not fully up-to-date until every particle is accepted
+   *  or rejected to move once in order. This is the mode used in the p-by-p part of drivers.
+   *  In this mode, calling `ParticleSet::accept_rejectMove` is required to handle accept/reject rather than
+   *  calling individual `ParticleSet::acceptMove` and `ParticleSet::reject`.
+   *  `ParticleSet::accept_rejectMove(iel)` ensures the distance tables (jel < iel) part is fully up-to-date
+   *  regardless a move is accepted or rejected. For this reason, the rejecting operation inside
+   *  `ParticleSet::accept_rejectMove` involves writing the distances with respect to the old particle position.
+   */
+  void accept_rejectMove(Index_t iat, bool accepted, bool forward_mode = true);
+
+  /** accept the move and update the particle attribute by the proposed move in regular mode
    *@param iat the index of the particle whose position and other attributes to be updated
-   *@param forward if true, moves of particles are proposed and accepted in order.
-   *
-   * forward_mode = true case is an optimization by skipping the DT update to >iat rows.
-   * It works only if the move of each particle is proposed once and in order.
-   * Once the particle sweep is done, all the distance tables are up-to-date.
-   * This can be used during p-by-p moves.
-   *
-   * forward_mode = false case is the safe route. Uppon accept a move, all the distance tables are up-to-date.
-   * This can be used on moves proposed on randomly selected electrons.
    */
   void acceptMove(Index_t iat);
 
-  void accept_rejectMove(Index_t iat, bool accepted, bool forward_mode = true);
   /** reject a proposed move in regular mode
    * @param iat the electron whose proposed move gets rejected.
    */
@@ -676,7 +687,12 @@ protected:
                                               Index_t iat,
                                               const std::vector<SingleParticlePos_t>& new_positions,
                                               bool maybe_accept = true);
-  /// actual implemenation of acceptMove
+
+  /** actual implemenation for accepting a proposed move, support both regular and forward modes
+   *
+   * @param iat the index of the particle whose position and other attributes to be updated
+   * @param forward_mode if ture, in forward mode.
+   */
   void acceptMove_impl(Index_t iat, bool forward_mode);
 
   /** reject a proposed move in forward mode
