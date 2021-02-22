@@ -17,7 +17,7 @@ SET(HOST_SRCS
 )
 
 SET(DEVICE_SRCS
-    dummy_function_for_cmake.cpp
+    MemoryUsage.cpp
 )
 
 ADD_LIBRARY(platform_host ${HOST_SRCS})

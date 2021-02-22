@@ -13,6 +13,8 @@
 SET(CUDA_SRCS
   cuBLAS_missing_functions.cu
   CUDAfill.cpp
+  CUDAallocator.cpp
+  CUDAruntime.cpp
 )
 
 CUDA_ADD_LIBRARY(platform_cuda ${CUDA_SRCS})
