@@ -204,7 +204,7 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       if (multislaterdet_0 || multislaterdetfast_0)
         APP_ABORT("multideterminant is already instantiated.");
 
-      int nGroups = targetPtcl.groups();
+      const int nGroups = targetPtcl.groups();
       std::vector<std::string> spoNames(nGroups);
 
       std::string fastAlg;
@@ -565,7 +565,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
 
   bool optimizeCI;
 
-  int nGroups = targetPtcl.groups();
+  const int nGroups = targetPtcl.groups();
   assert(nGroups == Dets.size());
   std::vector<int> nptcls(nGroups);
   for (int grp = 0; grp < nGroups; grp++)
@@ -852,7 +852,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
 {
   bool success = true;
 
-  int nGroups = uniqueConfgs.size();
+  const int nGroups = uniqueConfgs.size();
   for (int grp = 0; grp < nGroups; grp++)
   {
     uniqueConfgs[grp].clear();
@@ -1223,7 +1223,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
 {
   bool success = true;
   int extlevel(0);
-  int nGroups = uniqueConfgs.size();
+  const int nGroups = uniqueConfgs.size();
   for (int grp = 0; grp < nGroups; grp++)
   {
     uniqueConfgs[grp].clear();
