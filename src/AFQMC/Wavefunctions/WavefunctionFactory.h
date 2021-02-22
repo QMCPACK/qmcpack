@@ -161,8 +161,7 @@ protected:
                         Hamiltonian& h,
                         RealType cutvn,
                         int targetNW);
-  HamiltonianOperations getHamOps(bool read,
-                                  hdf_archive& dump,
+  HamiltonianOperations getHamOps(const std::string& restart_file,
                                   WALKER_TYPES type,
                                   int NMO,
                                   int NAEA,
