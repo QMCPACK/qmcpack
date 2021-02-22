@@ -675,13 +675,13 @@ bool ParticleSet::makeMoveAllParticlesWithDrift(const Walker_t& awalker,
  * When the activePtcl is equal to iat, overwrite the position and update the
  * content of the distance tables.
  */
-void ParticleSet::acceptMove_impl(Index_t iat, bool partial_table_update)
+void ParticleSet::acceptMove_impl(Index_t iat, bool forward_mode)
 {
   if (iat == activePtcl)
   {
     //Update position + distance-table
     for (int i = 0, n = DistTables.size(); i < n; i++)
-      DistTables[i]->update(iat, partial_table_update);
+      DistTables[i]->update(iat, forward_mode);
 
     //Do not change SK: 2007-05-18
     if (SK && SK->DoUpdate)
@@ -699,11 +699,25 @@ void ParticleSet::acceptMove_impl(Index_t iat, bool partial_table_update)
   }
 }
 
-void ParticleSet::acceptMove(Index_t iat, bool partial_table_update)
+void ParticleSet::acceptMove(Index_t iat)
 {
   ScopedTimer update_scope(myTimers[PS_accept]);
   coordinates_->setOneParticlePos(activePos, iat);
-  acceptMove_impl(iat, partial_table_update);
+  acceptMove_impl(iat, false);
+}
+
+void ParticleSet::accept_rejectMove(Index_t iat, bool accepted, bool forward_mode)
+{
+  if (accepted)
+  {
+    ScopedTimer update_scope(myTimers[PS_accept]);
+    coordinates_->setOneParticlePos(activePos, iat);
+    acceptMove_impl(iat, false);
+  }
+  else if (forward_mode)
+    rejectMoveForwardMode(iat);
+  else
+    rejectMove(iat);
 }
 
 void ParticleSet::rejectMove(Index_t iat)
@@ -727,7 +741,7 @@ void ParticleSet::rejectMoveForwardMode(Index_t iat)
 void ParticleSet::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                          Index_t iat,
                                          const std::vector<bool>& isAccepted,
-                                         bool partial_table_update)
+                                         bool forward_mode)
 {
   if (p_list.size() > 1)
   {
@@ -745,8 +759,8 @@ void ParticleSet::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>&
     for (int iw = 0; iw < p_list.size(); iw++)
     {
       if (isAccepted[iw])
-        p_list[iw].acceptMove_impl(iat, partial_table_update);
-      else if (partial_table_update)
+        p_list[iw].acceptMove_impl(iat, forward_mode);
+      else if (forward_mode)
         p_list[iw].rejectMoveForwardMode(iat);
       else
         p_list[iw].rejectMove(iat);
@@ -754,14 +768,7 @@ void ParticleSet::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>&
     }
   }
   else if (p_list.size() == 1)
-  {
-    if (isAccepted[0])
-      p_list[0].acceptMove(iat, partial_table_update);
-    else if (partial_table_update)
-      p_list[0].rejectMoveForwardMode(iat);
-    else
-      p_list[0].rejectMove(iat);
-  }
+    p_list[0].accept_rejectMove(iat, isAccepted[0], forward_mode);
 }
 
 void ParticleSet::donePbyP()

@@ -102,10 +102,14 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           if (rr > m_r2max)
           {
             ++nRejectTemp;
+            W.accept_rejectMove(iat, false, true);
             continue;
           }
           if (!W.makeMoveAndCheck(iat, dr))
+          {
+            W.accept_rejectMove(iat, false, true);
             continue;
+          }
         }
         else // projector including L2 potential
         {
@@ -114,25 +118,32 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           // will need to remove this later, but requires reimplementation of computeL2DK
           dr = 0.0;
           if (!W.makeMoveAndCheck(iat, dr))
+          {
+            W.accept_rejectMove(iat, false, true);
             continue;
+          }
 
           H.computeL2DK(W, iat, Dtmp, Ktmp);
           D = Dtmp; // upcast for mixed precision
           K = Ktmp;
           getScaledDriftL2(tauovermass, grad_iat, D, K, dr);
 
-          W.rejectMove(iat);
+          W.accept_rejectMove(iat, false, true);
           rr = tauovermass * dot(dr_diff, dr_diff);
           rr_proposed += rr;
           if (rr > m_r2max)
           {
             ++nRejectTemp;
+            W.accept_rejectMove(iat, false, true);
             continue;
           }
 
           // move with just drift to update distance tables
           if (!W.makeMoveAndCheck(iat, dr))
+          {
+            W.accept_rejectMove(iat, false, true);
             continue;
+          }
 
           // compute diffusion step
           H.computeL2D(W, iat, Dtmp);
@@ -142,10 +153,13 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           dr += sqrttau * dr_diff;
 
           // reverse the intermediate drift move
-          W.rejectMove(iat);
+          W.accept_rejectMove(iat, false, true);
           // move with drift and diffusion together
           if (!W.makeMoveAndCheck(iat, dr))
+          {
+            W.accept_rejectMove(iat, false, true);
             continue;
+          }
         }
         ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
         //node is crossed reject the move
@@ -153,7 +167,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
         {
           ++nRejectTemp;
           ++nNodeCrossing;
-          W.rejectMove(iat);
+          W.accept_rejectMove(iat, false, true);
           Psi.rejectMove(iat);
         }
         else
@@ -165,20 +179,23 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           dr                     = W.R[iat] - W.activePos - dr;
           FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
           RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
+          bool is_accepted       = false;
+
           if (RandomGen() < prob)
           {
+            is_accepted = true;
+
             ++nAcceptTemp;
             Psi.acceptMove(W, iat, true);
-            W.acceptMove(iat, true);
             rr_accepted += rr;
             gf_acc *= prob; //accumulate the ratio
           }
           else
           {
             ++nRejectTemp;
-            W.rejectMove(iat);
             Psi.rejectMove(iat);
           }
+          W.accept_rejectMove(iat, is_accepted, true);
         }
       }
     }

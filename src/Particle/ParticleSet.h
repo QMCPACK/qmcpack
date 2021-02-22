@@ -355,15 +355,17 @@ public:
    *@param iat the index of the particle whose position and other attributes to be updated
    *@param forward if true, moves of particles are proposed and accepted in order.
    *
-   * partial_table_update = true case is an optimization by skipping the DT update to >iat rows.
+   * forward_mode = true case is an optimization by skipping the DT update to >iat rows.
    * It works only if the move of each particle is proposed once and in order.
    * Once the particle sweep is done, all the distance tables are up-to-date.
    * This can be used during p-by-p moves.
    *
-   * partial_table_update = false case is the safe route. Uppon accept a move, all the distance tables are up-to-date.
+   * forward_mode = false case is the safe route. Uppon accept a move, all the distance tables are up-to-date.
    * This can be used on moves proposed on randomly selected electrons.
    */
-  void acceptMove(Index_t iat, bool partial_table_update = false);
+  void acceptMove(Index_t iat);
+
+  void accept_rejectMove(Index_t iat, bool accepted, bool forward_mode = false);
   /** reject a proposed move in regular mode
    * @param iat the electron whose proposed move gets rejected.
    */
@@ -372,7 +374,7 @@ public:
   static void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                      Index_t iat,
                                      const std::vector<bool>& isAccepted,
-                                     bool partial_table_update = false);
+                                     bool forward_mode = false);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -675,7 +677,7 @@ protected:
                                               const std::vector<SingleParticlePos_t>& new_positions,
                                               bool maybe_accept = true);
   /// actual implemenation of acceptMove
-  void acceptMove_impl(Index_t iat, bool partial_table_update);
+  void acceptMove_impl(Index_t iat, bool forward_mode);
 
   /** reject a proposed move in forward mode
    * @param iat the electron whose proposed move gets rejected.
