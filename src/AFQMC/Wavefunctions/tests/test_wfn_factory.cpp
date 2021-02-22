@@ -129,6 +129,8 @@ void wfn_fac(boost::mpi3::communicator& world)
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
+    app_log() << " wfn_fac destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
     std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">" +
@@ -466,6 +468,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     REQUIRE(okay);
 
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
+    app_log() << " wfn_fac_distributed destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
     std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">" +
