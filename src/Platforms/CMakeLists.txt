@@ -11,7 +11,7 @@
 
 
 SET(HOST_SRCS
-    sysutil.cpp
+    Host/sysutil.cpp
     Host/InfoStream.cpp
     Host/OutputManager.cpp
 )

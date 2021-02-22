@@ -13,7 +13,7 @@
 #include "MemoryUsage.h"
 #include <cstring>
 #include <string>
-#include "sysutil.h"
+#include "Host/sysutil.h"
 #include "OMPTarget/OMPallocator.hpp"
 #ifdef ENABLE_CUDA
 #include "CUDA/CUDAallocator.hpp"
