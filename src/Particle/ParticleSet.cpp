@@ -715,6 +715,15 @@ void ParticleSet::rejectMove(Index_t iat)
   activePtcl = -1;
 }
 
+void ParticleSet::rejectMoveForwardMode(Index_t iat)
+{
+  assert(iat == activePtcl);
+  //Update distance-table
+  for (int i = 0, n = DistTables.size(); i < n; i++)
+    DistTables[i]->updateForOldPos(iat);
+  activePtcl = -1;
+}
+
 void ParticleSet::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                          Index_t iat,
                                          const std::vector<bool>& isAccepted,
@@ -737,6 +746,8 @@ void ParticleSet::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>&
     {
       if (isAccepted[iw])
         p_list[iw].acceptMove_impl(iat, partial_table_update);
+      else if (partial_table_update)
+        p_list[iw].rejectMoveForwardMode(iat);
       else
         p_list[iw].rejectMove(iat);
       assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
@@ -746,6 +757,8 @@ void ParticleSet::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>&
   {
     if (isAccepted[0])
       p_list[0].acceptMove(iat, partial_table_update);
+    else if (partial_table_update)
+      p_list[0].rejectMoveForwardMode(iat);
     else
       p_list[0].rejectMove(iat);
   }

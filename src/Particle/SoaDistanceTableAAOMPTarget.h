@@ -130,6 +130,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
+    old_prepared_elec_id = prepare_old ? old_prepared_elec_id : -1;
     ScopedTimer local_timer(move_timer_);
 
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
@@ -177,12 +178,16 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     for (int iw = 0; iw < nw; iw++)
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      dt.old_prepared_elec_id = prepare_old ? old_prepared_elec_id : -1;
       dt.temp_r_.attachReference(dt_leader.nw_new_old_dist_displ_.data() + stride_size * iw, Ntargets_padded);
       dt.temp_dr_.attachReference(N_targets, Ntargets_padded,
                                   dt_leader.nw_new_old_dist_displ_.data() + stride_size * iw + Ntargets_padded);
-      dt.old_r_.attachReference(dt_leader.nw_new_old_dist_displ_.data() + stride_size * (iw + nw), Ntargets_padded);
-      dt.old_dr_.attachReference(N_targets, Ntargets_padded,
-                                 dt_leader.nw_new_old_dist_displ_.data() + stride_size * (iw + nw) + Ntargets_padded);
+      if (prepare_old)
+      {
+        dt.old_r_.attachReference(dt_leader.nw_new_old_dist_displ_.data() + stride_size * (iw + nw), Ntargets_padded);
+        dt.old_dr_.attachReference(N_targets, Ntargets_padded,
+                                   dt_leader.nw_new_old_dist_displ_.data() + stride_size * (iw + nw) + Ntargets_padded);
+      }
       auto& coordinates_soa        = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
       dt_leader.rsoa_dev_list_[iw] = coordinates_soa.getDevicePtr();
     }
@@ -243,25 +248,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
           }
         }
     }
-
-    if (prepare_old)
-    {
-      ScopedTimer local(copy_old_timer_);
-      for (int iw = 0; iw < dt_list.size(); iw++)
-      {
-        auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
-
-        // If the full table is not ready all the time, overwrite the current value.
-        // If this step is missing, DT values can be undefined in case a move is rejected.
-        if (!need_full_table_)
-        {
-          //copy row
-          std::copy_n(dt.old_r_.data(), iat, dt.distances_[iat].data());
-          for (int idim = 0; idim < D; ++idim)
-            std::copy_n(dt.old_dr_.data(idim), iat, dt.displacements_[iat].data(idim));
-        }
-      }
-    }
   }
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
@@ -319,6 +305,19 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
         displacements_[i](iat) = -temp_dr_[i];
       }
     }
+  }
+
+  void updateForOldPos(IndexType jat) override
+  {
+    ScopedTimer local_timer(update_timer_);
+
+    assert(old_prepared_elec_id == jat);
+    //update by a cache line
+    const int nupdate = getAlignedSize<T>(jat);
+    //copy row
+    std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
+    for (int idim = 0; idim < D; ++idim)
+      std::copy_n(old_dr_.data(idim), nupdate, displacements_[jat].data(idim));
   }
 
 private:

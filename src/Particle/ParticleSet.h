@@ -364,7 +364,7 @@ public:
    * This can be used on moves proposed on randomly selected electrons.
    */
   void acceptMove(Index_t iat, bool partial_table_update = false);
-  /** reject the move
+  /** reject a proposed move in regular mode
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMove(Index_t iat);
@@ -676,6 +676,11 @@ protected:
                                               bool maybe_accept = true);
   /// actual implemenation of acceptMove
   void acceptMove_impl(Index_t iat, bool partial_table_update);
+
+  /** reject a proposed move in forward mode
+   * @param iat the electron whose proposed move gets rejected.
+   */
+  void rejectMoveForwardMode(Index_t iat);
 };
 
 } // namespace qmcplusplus

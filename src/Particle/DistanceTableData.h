@@ -82,13 +82,18 @@ protected:
    */
   bool need_full_table_;
 
+  /** set to particle id after move() with prepare_old = true. -1 means not prepared.
+   * It is intended only for safety checks, not for codepath selection.
+   */
+  int old_prepared_elec_id;
+
   ///name of the table
   std::string Name;
 
 public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), need_full_table_(false)
+      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), need_full_table_(false), old_prepared_elec_id(-1)
   {}
 
   ///virutal destructor
@@ -191,11 +196,17 @@ public:
       dt_list[iw].move(p_list[iw], rnew_list[iw], iat, prepare_old);
   }
 
-  /** update the distance table by the pair relations if a move is accepted
+  /** update the distance table by the pair relations from the temporal position. Used when a move is accepted
+   * @param iat the particle with an accepted move
+   * @param partial_update If true (forward mode), rows after iat will not be updated. If false (regular mode), upon accept a move, the full table should be up-to-date
+   */
+  virtual void update(IndexType jat, bool partial_update = false) = 0;
+
+  /** fill the distance table by the pair relations for the old particle position. Used in forward mode when a move is reject
    * @param iat the particle with an accepted move
    * @param partial_update If true, rows after iat will not be updated. If false, upon accept a move, the full table should be up-to-date
    */
-  virtual void update(IndexType jat, bool partial_update = false) = 0;
+  virtual void updateForOldPos(IndexType jat) {};
 
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id
