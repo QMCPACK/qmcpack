@@ -91,7 +91,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
         if (!is_valid || rr > m_r2max)
         {
           ++nRejectTemp;
-          W.accept_rejectMove(iat, false, true);
+          W.accept_rejectMove(iat, false);
           continue;
         }
         ValueType ratio = Psi.calcRatioGradWithSpin(W, iat, grad_iat, spingrad_iat);
@@ -100,7 +100,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
         {
           ++nRejectTemp;
           ++nNodeCrossing;
-          W.accept_rejectMove(iat, false, true);
+          W.accept_rejectMove(iat, false);
           Psi.rejectMove(iat);
         }
         else
@@ -131,7 +131,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
             ++nRejectTemp;
             Psi.rejectMove(iat);
           }
-          W.accept_rejectMove(iat, is_accepted, true);
+          W.accept_rejectMove(iat, is_accepted);
         }
       }
     }

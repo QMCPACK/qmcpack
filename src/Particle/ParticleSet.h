@@ -365,7 +365,7 @@ public:
    */
   void acceptMove(Index_t iat);
 
-  void accept_rejectMove(Index_t iat, bool accepted, bool forward_mode = false);
+  void accept_rejectMove(Index_t iat, bool accepted, bool forward_mode = true);
   /** reject a proposed move in regular mode
    * @param iat the electron whose proposed move gets rejected.
    */
@@ -374,7 +374,7 @@ public:
   static void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                      Index_t iat,
                                      const std::vector<bool>& isAccepted,
-                                     bool forward_mode = false);
+                                     bool forward_mode = true);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }

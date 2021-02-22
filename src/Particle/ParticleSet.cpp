@@ -712,7 +712,7 @@ void ParticleSet::accept_rejectMove(Index_t iat, bool accepted, bool forward_mod
   {
     ScopedTimer update_scope(myTimers[PS_accept]);
     coordinates_->setOneParticlePos(activePos, iat);
-    acceptMove_impl(iat, false);
+    acceptMove_impl(iat, forward_mode);
   }
   else if (forward_mode)
     rejectMoveForwardMode(iat);

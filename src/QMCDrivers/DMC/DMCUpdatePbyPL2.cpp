@@ -102,12 +102,12 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           if (rr > m_r2max)
           {
             ++nRejectTemp;
-            W.accept_rejectMove(iat, false, true);
+            W.accept_rejectMove(iat, false);
             continue;
           }
           if (!W.makeMoveAndCheck(iat, dr))
           {
-            W.accept_rejectMove(iat, false, true);
+            W.accept_rejectMove(iat, false);
             continue;
           }
         }
@@ -119,7 +119,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           dr = 0.0;
           if (!W.makeMoveAndCheck(iat, dr))
           {
-            W.accept_rejectMove(iat, false, true);
+            W.accept_rejectMove(iat, false);
             continue;
           }
 
@@ -128,20 +128,20 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           K = Ktmp;
           getScaledDriftL2(tauovermass, grad_iat, D, K, dr);
 
-          W.accept_rejectMove(iat, false, true);
+          W.accept_rejectMove(iat, false);
           rr = tauovermass * dot(dr_diff, dr_diff);
           rr_proposed += rr;
           if (rr > m_r2max)
           {
             ++nRejectTemp;
-            W.accept_rejectMove(iat, false, true);
+            W.accept_rejectMove(iat, false);
             continue;
           }
 
           // move with just drift to update distance tables
           if (!W.makeMoveAndCheck(iat, dr))
           {
-            W.accept_rejectMove(iat, false, true);
+            W.accept_rejectMove(iat, false);
             continue;
           }
 
@@ -153,11 +153,11 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           dr += sqrttau * dr_diff;
 
           // reverse the intermediate drift move
-          W.accept_rejectMove(iat, false, true);
+          W.accept_rejectMove(iat, false);
           // move with drift and diffusion together
           if (!W.makeMoveAndCheck(iat, dr))
           {
-            W.accept_rejectMove(iat, false, true);
+            W.accept_rejectMove(iat, false);
             continue;
           }
         }
@@ -167,7 +167,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
         {
           ++nRejectTemp;
           ++nNodeCrossing;
-          W.accept_rejectMove(iat, false, true);
+          W.accept_rejectMove(iat, false);
           Psi.rejectMove(iat);
         }
         else
@@ -195,7 +195,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
             ++nRejectTemp;
             Psi.rejectMove(iat);
           }
-          W.accept_rejectMove(iat, is_accepted, true);
+          W.accept_rejectMove(iat, is_accepted);
         }
       }
     }

@@ -381,7 +381,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
           LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
-  ParticleSet::flex_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted);
+  ParticleSet::flex_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, false);
 
   const int moved_elec_id_next = 1;
   psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
@@ -448,7 +448,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   isAccepted[1] = false;
   TrialWaveFunction::flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
 
-  ParticleSet::flex_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted);
+  ParticleSet::flex_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted, false);
   TrialWaveFunction::flex_completeUpdates(wf_ref_list);
   TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, false);
 

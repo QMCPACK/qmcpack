@@ -90,7 +90,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
               Psi1[ipsi]->rejectMove(iat);
           }
 
-          W.accept_rejectMove(iat, is_accepted, true);
+          W.accept_rejectMove(iat, is_accepted);
         }
         else //reject illegal moves
           ++nReject;

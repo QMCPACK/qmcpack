@@ -159,7 +159,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
-        W.accept_rejectMove(iat, false, true);
+        W.accept_rejectMove(iat, false);
         continue;
       }
       ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
@@ -168,7 +168,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       {
         ++nRejectTemp;
         ++nNodeCrossing;
-        W.accept_rejectMove(iat, false, true);
+        W.accept_rejectMove(iat, false);
         Psi.rejectMove(iat);
       }
       else
@@ -193,7 +193,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
           ++nRejectTemp;
           Psi.rejectMove(iat);
         }
-        W.accept_rejectMove(iat, is_accepted, true);
+        W.accept_rejectMove(iat, is_accepted);
       }
     }
   }
@@ -290,7 +290,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       if (!is_valid || rr > m_r2max)
       {
         ++nRejectTemp;
-        W.accept_rejectMove(iat, false, true);
+        W.accept_rejectMove(iat, false);
         continue;
       }
       ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
@@ -299,7 +299,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       {
         ++nRejectTemp;
         ++nNodeCrossing;
-        W.accept_rejectMove(iat, false, true);
+        W.accept_rejectMove(iat, false);
         Psi.rejectMove(iat);
       }
       else
@@ -324,7 +324,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
           ++nRejectTemp;
           Psi.rejectMove(iat);
         }
-        W.accept_rejectMove(iat, is_accepted, true);
+        W.accept_rejectMove(iat, is_accepted);
       }
     }
   }

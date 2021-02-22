@@ -90,7 +90,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         if (!is_valid || rr > m_r2max)
         {
           ++nRejectTemp;
-          W.accept_rejectMove(iat, false, true);
+          W.accept_rejectMove(iat, false);
           continue;
         }
         ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
@@ -99,7 +99,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         {
           ++nRejectTemp;
           ++nNodeCrossing;
-          W.accept_rejectMove(iat, false, true);
+          W.accept_rejectMove(iat, false);
           Psi.rejectMove(iat);
         }
         else
@@ -124,7 +124,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
             ++nRejectTemp;
             Psi.rejectMove(iat);
           }
-          W.accept_rejectMove(iat, is_accepted, true);
+          W.accept_rejectMove(iat, is_accepted);
         }
       }
     }

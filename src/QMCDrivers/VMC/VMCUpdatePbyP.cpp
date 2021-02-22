@@ -75,7 +75,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         if (!W.makeMoveAndCheck(iat, dr))
         {
           ++nReject;
-          W.accept_rejectMove(iat, false, true);
+          W.accept_rejectMove(iat, false);
           continue;
         }
 
@@ -106,7 +106,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           ++nReject;
           Psi.rejectMove(iat);
         }
-        W.accept_rejectMove(iat, is_accepted, true);
+        W.accept_rejectMove(iat, is_accepted);
       }
     }
     Psi.completeUpdates();
