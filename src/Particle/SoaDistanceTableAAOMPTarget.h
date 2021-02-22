@@ -55,9 +55,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
         offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") +
                                                       target.getName() + "_" + target.getName(),
                                                   timer_level_fine)),
-        copy_old_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::copy_old_") +
-                                                       target.getName() + "_" + target.getName(),
-                                                   timer_level_fine)),
         evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") +
                                                        target.getName() + "_" + target.getName(),
                                                    timer_level_fine)),
@@ -316,8 +313,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 private:
   /// timer for offload portion
   NewTimer& offload_timer_;
-  /// timer for copy portion
-  NewTimer& copy_old_timer_;
   /// timer for evaluate()
   NewTimer& evaluate_timer_;
   /// timer for move()
