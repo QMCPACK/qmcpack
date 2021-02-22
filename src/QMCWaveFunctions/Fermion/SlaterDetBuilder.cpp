@@ -239,9 +239,9 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         spos[grp] = sposet_builder_factory_.getSPOSet(spoNames[grp]);
         if (spos[grp] == nullptr)
         {
-          app_error() << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp]
-                      << "\" is not found. Expected for MultiSlaterDeterminant.\n";
-          abort();
+          std::stringstream err_msg;
+          err_msg << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp] << "\" is not found. Expected for MultiSlaterDeterminant." << std::endl;
+          myComm->barrier_and_abort(err_msg.str());
         }
         spo_clones[grp].reset(spos[grp]->makeClone());
       }
