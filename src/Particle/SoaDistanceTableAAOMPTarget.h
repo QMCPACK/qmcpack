@@ -130,9 +130,9 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   ///evaluate the temporary pair relations
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
-    old_prepared_elec_id = prepare_old ? old_prepared_elec_id : -1;
     ScopedTimer local_timer(move_timer_);
 
+    old_prepared_elec_id = prepare_old ? iat : -1;
     temp_r_.attachReference(temp_r_mem_.data(), temp_r_mem_.size());
     temp_dr_.attachReference(temp_dr_mem_.size(), temp_dr_mem_.capacity(), temp_dr_mem_.data());
 
@@ -147,16 +147,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), old_r_.data(), old_dr_,
                                              0, N_targets, iat);
       old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
-
-      // If the full table is not ready all the time, overwrite the current value.
-      // If this step is missing, DT values can be undefined in case a move is rejected.
-      if (!need_full_table_)
-      {
-        //copy row
-        std::copy_n(old_r_.data(), iat, distances_[iat].data());
-        for (int idim = 0; idim < D; ++idim)
-          std::copy_n(old_dr_.data(idim), iat, displacements_[iat].data(idim));
-      }
     }
   }
 
@@ -177,8 +167,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& dt = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
-      dt.old_prepared_elec_id = prepare_old ? old_prepared_elec_id : -1;
+      auto& dt                = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
+      dt.old_prepared_elec_id = prepare_old ? iat : -1;
       dt.temp_r_.attachReference(dt_leader.nw_new_old_dist_displ_.data() + stride_size * iw, Ntargets_padded);
       dt.temp_dr_.attachReference(N_targets, Ntargets_padded,
                                   dt_leader.nw_new_old_dist_displ_.data() + stride_size * iw + Ntargets_padded);
@@ -307,11 +297,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     }
   }
 
-  void updateForOldPos(IndexType jat) override
+  void updateForOldPosPartial(IndexType jat) override
   {
+    assert(old_prepared_elec_id == jat);
+    if (old_r_.data() == distances_[jat].data())
+      return;
+
     ScopedTimer local_timer(update_timer_);
 
-    assert(old_prepared_elec_id == jat);
     //update by a cache line
     const int nupdate = getAlignedSize<T>(jat);
     //copy row

@@ -734,7 +734,7 @@ void ParticleSet::rejectMoveForwardMode(Index_t iat)
   assert(iat == activePtcl);
   //Update distance-table
   for (int i = 0, n = DistTables.size(); i < n; i++)
-    DistTables[i]->updateForOldPos(iat);
+    DistTables[i]->updateForOldPosPartial(iat);
   activePtcl = -1;
 }
 

@@ -204,9 +204,8 @@ public:
 
   /** fill the distance table by the pair relations for the old particle position. Used in forward mode when a move is reject
    * @param iat the particle with an accepted move
-   * @param partial_update If true, rows after iat will not be updated. If false, upon accept a move, the full table should be up-to-date
    */
-  virtual void updateForOldPos(IndexType jat) {};
+  virtual void updateForOldPosPartial(IndexType jat){};
 
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id
