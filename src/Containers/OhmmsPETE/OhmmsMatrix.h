@@ -325,6 +325,29 @@ protected:
   Container_t X;
 };
 
+template<class T, class Alloc>
+bool operator==(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
+{
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  if (lhs.size() == rhs.size())
+  {
+    for (int i = 0; i < rhs.size(); i++)
+      if (lhs(i) != rhs(i))
+        return false;
+    return true;
+  }
+  else
+    return false;
+}
+
+template<class T, class Alloc>
+bool operator!=(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
+{
+  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  return !(lhs == rhs);
+}
+
+
 // I/O
 template<class T, typename Alloc>
 std::ostream& operator<<(std::ostream& out, const Matrix<T, Alloc>& rhs)
