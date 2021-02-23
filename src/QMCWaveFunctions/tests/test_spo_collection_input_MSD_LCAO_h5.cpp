@@ -270,6 +270,7 @@ TEST_CASE("SPO input spline from xml LiH_msd arbitrary species", "[wavefunction]
   app_log() << "-------------------------------------------------------------" << std::endl;
   app_log() << "LiH_msd with positron xml input style" << std::endl;
   app_log() << "-------------------------------------------------------------" << std::endl;
+#ifdef QMC_COMPLEX
   const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
     <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" transform=\"yes\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
       <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"5\"> \
@@ -295,6 +296,33 @@ TEST_CASE("SPO input spline from xml LiH_msd arbitrary species", "[wavefunction]
     </determinantset> \
 </wavefunction> \
 ";
+#else
+  const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
+    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" transform=\"yes\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"5\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"5\" spindataset=\"0\"/> \
+      </sposet> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"5\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"5\" spindataset=\"0\"/> \
+      </sposet> \
+      <sposet basisset=\"LCAOBSet\" name=\"spo-ps\" size=\"5\"> \
+        <occupation mode=\"ground\"/> \
+        <coefficient size=\"5\" spindataset=\"0\"/> \
+      </sposet> \
+    </sposet_collection> \
+    <determinantset> \
+      <multideterminant optimize=\"yes\" spo_0=\"spo-up\" spo_1=\"spo-dn\" spo_2=\"spo-ps\"> \
+        <detlist size=\"2\" type=\"DETS\" nc0=\"0\" nc1=\"0\" nc2=\"0\" ne0=\"2\" ne1=\"2\" ne2=\"1\" nstates=\"5\" cutoff=\"1e-20\"> \
+          <ci id=\"CIcoeff_0\" coeff=\"0.7071\" qchem_coeff=\"0.7071\" occ0=\"11000\" occ1=\"11000\" occ2=\"10000\"/> \
+          <ci id=\"CIcoeff_1\" coeff=\"-0.7071\" qchem_coeff=\"-0.7071\" occ0=\"10100\" occ1=\"11000\" occ2=\"00100\" /> \
+        </detlist> \
+      </multideterminant> \
+    </determinantset> \
+</wavefunction> \
+";
+#endif
   test_LiH_msd_xml_input_with_positron(spo_xml_string1, "spo-ps", 5, 105);
 }
 } // namespace qmcplusplus
