@@ -443,9 +443,9 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
   {
     APP_ABORT("Fast MSD+BF: restore not implemented. \n");
   }
-
-  Dets[0]->registerData(P, buf);
-  Dets[1]->registerData(P, buf);
+    
+  for (size_t id = 0; id < Dets.size(); id++)
+    Dets[id]->registerData(P, buf);
 
   buf.add(psiCurrent);
 }
