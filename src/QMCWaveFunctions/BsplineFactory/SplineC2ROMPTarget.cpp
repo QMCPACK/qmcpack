@@ -405,10 +405,10 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
     ptr_buffer[iw] = invRow_ptr_list[iw];
 
   // pack particle positions
-  auto* pos_ptr    = reinterpret_cast<TT*>(mw_mem.det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*));
-  auto* ref_id_ptr = reinterpret_cast<int*>(mw_mem.det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) +
-                                            mw_nVP * 6 * sizeof(TT));
-  size_t iVP       = 0;
+  auto* pos_ptr = reinterpret_cast<TT*>(mw_mem.det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*));
+  auto* ref_id_ptr =
+      reinterpret_cast<int*>(mw_mem.det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
+  size_t iVP = 0;
   for (size_t iw = 0; iw < nw; iw++)
   {
     const VirtualParticleSet& VP = vp_list[iw];
@@ -702,8 +702,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
 
 template<typename ST>
 void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
-                           Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
-                           Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
+                                                 Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
+                                                 Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
                                                  const RefVector<ValueVector_t>& psi_v_list,
                                                  const RefVector<GradVector_t>& dpsi_v_list,
                                                  const RefVector<ValueVector_t>& d2psi_v_list) const
@@ -797,11 +797,13 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
                                             const RefVector<ValueVector_t>& d2psi_v_list) const
 {
   assert(this == &sa_list.getLeader());
-  auto& phi_leader   = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  auto& phi_leader = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
   // make this class unit tests friendly without the need of setup resources.
   if (!phi_leader.mw_mem)
   {
-    app_warning() << "SplineC2ROMPTarget : This message should not be seen in production (bug) runs but only unit tests (expected)." << std::endl;
+    app_warning() << "SplineC2ROMPTarget : This message should not be seen in production (bug) runs but only unit "
+                     "tests (expected)."
+                  << std::endl;
     phi_leader.mw_mem = std::make_unique<OffloadSharedMem<ST, TT>>();
   }
   auto& mw_mem       = *phi_leader.mw_mem;
@@ -821,7 +823,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
     mw_mem.mw_pos_copy[iw * 6 + 5] = ru[2];
   }
 
-  phi_leader.evaluateVGLMultiPos(mw_mem.mw_pos_copy, mw_mem.mw_offload_scratch, mw_mem.mw_results_scratch, psi_v_list, dpsi_v_list, d2psi_v_list);
+  phi_leader.evaluateVGLMultiPos(mw_mem.mw_pos_copy, mw_mem.mw_offload_scratch, mw_mem.mw_results_scratch, psi_v_list,
+                                 dpsi_v_list, d2psi_v_list);
 }
 
 template<typename ST>

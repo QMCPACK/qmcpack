@@ -147,7 +147,8 @@ public:
   void createResource(ResourceCollection& collection) override
   {
     auto resource_index = collection.addResource(std::make_unique<OffloadSharedMem<ST, TT>>());
-    app_log() << "    Multi walker shared memory resource created in SplineC2ROMPTarget. Index " << resource_index << std::endl;
+    app_log() << "    Multi walker shared memory resource created in SplineC2ROMPTarget. Index " << resource_index
+              << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection) override
@@ -158,8 +159,7 @@ public:
     mw_mem.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) override
-  { collection.takebackResource(std::move(mw_mem)); }
+  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem)); }
 
   virtual SPOSet* makeClone() const override { return new SplineC2ROMPTarget(*this); }
 
