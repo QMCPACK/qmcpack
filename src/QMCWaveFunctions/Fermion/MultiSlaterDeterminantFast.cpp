@@ -506,12 +506,14 @@ void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& act
 {
   if (CI_Optimizable)
     myVars->getIndex(active);
+  
+  bool all_Optimizable = true;
+  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
+    all_Optimizable = Dets[id]->Optimizable;
 
-  if (Dets[0]->Optimizable && Dets[1]->Optimizable)
-  {
-    Dets[0]->checkOutVariables(active);
-    Dets[1]->checkOutVariables(active);
-  }
+  if(all_Optimizable)
+    for (size_t id = 0; id < Dets.size();  id++)
+      Dets[id]->checkOutVariables(active);
 }
 
 /** resetParameters with optVariables
