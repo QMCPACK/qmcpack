@@ -477,8 +477,8 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
   {
     APP_ABORT("Fast MSD+BF: copyFromBuffer not implemented. \n");
   }
-  Dets[0]->copyFromBuffer(P, buf);
-  Dets[1]->copyFromBuffer(P, buf);
+  for (size_t id = 0; id < Dets.size() ; id++)
+    Dets[id]->copyFromBuffer(P, buf);
 
   buf.get(psiCurrent);
 }
