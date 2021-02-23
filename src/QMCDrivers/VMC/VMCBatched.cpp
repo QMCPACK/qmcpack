@@ -16,6 +16,7 @@
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
+#include "MemoryUsage.h"
 
 namespace qmcplusplus
 {
@@ -228,6 +229,7 @@ void VMCBatched::runVMCStep(int crowd_id,
 
 void VMCBatched::process(xmlNodePtr node)
 {
+  print_mem("VMCBatched before initialization", app_log());
   // \todo get total walkers should be coming from VMCDriverInpu
   try
   {
@@ -285,6 +287,8 @@ bool VMCBatched::run()
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
+  print_mem("VMCBatched after initialLogEvaluation", app_summary());
+
   ParallelExecutor<> crowd_task;
 
   auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
@@ -302,6 +306,7 @@ bool VMCBatched::run()
   }
 
   app_log() << "Warm-up is completed!" << std::endl;
+  print_mem("VMCBatched after Warmup", app_log());
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -331,6 +336,7 @@ bool VMCBatched::run()
         }
       }
     }
+    print_mem("VMCBatched after a block", app_debug_stream());
     endBlock();
   }
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
@@ -358,6 +364,7 @@ bool VMCBatched::run()
     o << "\n====================================================";
     app_log() << o.str() << std::endl;
   }
+  print_mem("VMCBatched ends", app_log());
   return finalize(num_blocks, true);
 }
 

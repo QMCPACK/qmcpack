@@ -1,6 +1,8 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wall -Wextra -Wfatal-errors -D_TEST_MPI3_SHARED_COMMUNICATOR $0x.cpp -o $0x.x && time mpirun -n 3 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+#if COMPILATION_INSTRUCTIONS// -*- indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*-
+mpic++ -D_TEST_MPI3_SHARED_COMMUNICATOR -xc++ $0 -o $0x&&mpirun -n 3 $0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2018-2020
+
 #ifndef MPI3_SHARED_COMMUNICATOR_HPP
 #define MPI3_SHARED_COMMUNICATOR_HPP
 
@@ -8,10 +10,10 @@
 #include "../mpi3/environment.hpp" // processor_name
 
 //#include "/usr/src/kernels/4.18.16-300.fc29.x86_64/include/linux/getcpu.h"
-#include<sched.h>
+//#include<sched.h>
 //#include<numa.h> // sudo dnf install numactl-devel
 
-#include <boost/uuid/uuid.hpp>
+#include<boost/uuid/uuid.hpp>
 #include<boost/uuid/uuid_generators.hpp>
 
 namespace boost{
@@ -25,20 +27,22 @@ struct shared_communicator : communicator{
 	shared_communicator() = default;
 	shared_communicator(shared_communicator&&) = default;
 	shared_communicator(shared_communicator const&) = default;
+	shared_communicator(mpi3::group const& g) : communicator(g){}
+	shared_communicator(mpi3::group const& g, int tag) : communicator(g, tag){}
 private:
 	template<class T> static auto data_(T&& t){
 		using detail::data;
 		return data(std::forward<T>(t));
 	}
+	template<class T> friend struct shared_window;
 	explicit shared_communicator(communicator&& c) : communicator(std::move(c)){}
 	explicit shared_communicator(communicator const& comm, int key = 0){
 		auto e = static_cast<enum error>(MPI_Comm_split_type(comm.get(), MPI_COMM_TYPE_SHARED, key, MPI_INFO_NULL, &impl_));
 		if(e != mpi3::error::success) throw std::system_error{e, "cannot split"};
-		name(mpi3::processor_name());
+		name(comm.name()+":"+mpi3::processor_name());
 	}
 	shared_communicator(communicator const& comm, mpi3::communicator_type t, int key = 0){
-		auto e = static_cast<enum error>(MPI_Comm_split_type(comm.get(), static_cast<int>(t), key, MPI_INFO_NULL, &impl_));
-		if(e != mpi3::error::success) throw std::system_error{e, "cannot send"};
+		MPI3_CALL(MPI_Comm_split_type)(comm.get(), static_cast<int>(t), key, MPI_INFO_NULL, &impl_);
 		boost::uuids::uuid tag = boost::uuids::random_generator{}(); static_assert(sizeof(unsigned int)<=sizeof(boost::uuids::uuid), "!");
 		auto utag = reinterpret_cast<unsigned int const&>(tag);
 		this->broadcast_n(&utag, 1, 0);
@@ -47,7 +51,14 @@ private:
 		// !!! switch-case don't work here because in some MPI impls there are repeats !!!
 		if(communicator_type::shared==t){
 			#if __linux__
-			set_name(base+":core/pu" + std::to_string(::sched_getcpu())); //same as ::getcpu()
+			set_name(base+":shared/pu" + std::to_string(::sched_getcpu())); //same as ::getcpu() // TODO
+			#else
+			set_name(base+":shared/pu" + Tag);
+			#endif
+		}
+		else if(communicator_type::core     ==t){
+			#if __linux__
+			set_name(base+":core/pu" + std::to_string(::sched_getcpu())); //same as ::getcpu() // TODO
 			#else
 			set_name(base+":core/pu" + Tag);
 			#endif
@@ -63,23 +74,6 @@ private:
 		else if(communicator_type::cu       ==t) set_name(base+":cu"       +Tag);
 		else if(communicator_type::cluster  ==t) set_name(base+":cluster"  +Tag);
 	}
-/*
-enum class communicator_type : int{
-	node = OMPI_COMM_TYPE_NODE,
-	hw_thread = OMPI_COMM_TYPE_HWTHREAD,
-	core = OMPI_COMM_TYPE_CORE,
-	l1_cache = OMPI_COMM_TYPE_L1CACHE,
-	l2_cache = OMPI_COMM_TYPE_L2CACHE,
-	l3_cache = OMPI_COMM_TYPE_L3CACHE,
-	socket = OMPI_COMM_TYPE_SOCKET,
-	numa = OMPI_COMM_TYPE_NUMA,
-	board = OMPI_COMM_TYPE_BOARD,
-	host = OMPI_COMM_TYPE_HOST,
-	cu = OMPI_COMM_TYPE_CU,
-	cpu = OMPI_COMM_TYPE_CU,
-	cluster = OMPI_COMM_TYPE_CLUSTER 
-};
-*/
 	friend class communicator;
 public:
 	shared_communicator& operator=(shared_communicator const& other) = default;
@@ -102,7 +96,6 @@ inline shared_communicator communicator::split_shared(int key /*= 0*/) const{
 inline shared_communicator communicator::split_shared(communicator_type t, int key /*= 0*/) const{
 	return shared_communicator(*this, t, key);
 }
-
 
 }}
 

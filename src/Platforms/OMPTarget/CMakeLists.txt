@@ -12,6 +12,7 @@
 
 SET(OMP_SRCS
   ompBLAS.cpp
+  OMPallocator.cpp
 )
 
 IF(USE_OBJECT_TARGET)

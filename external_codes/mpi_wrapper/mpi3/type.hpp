@@ -1,47 +1,114 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wfatal-errors -D_TEST_BOOST_MPI3_TYPE $0x.cpp -o $0x.x -lboost_serialization && time mpirun -n 2 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+#if COMPILATION // -*- indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+mpicxx -x c++ $0 -o $0x -lboost_serialization&&mpirun -n 2 $0x&&rm $0x;exit
 #endif
-//  (C) Copyright Alfredo A. Correa 2018.
+// © Alfredo A. Correa 2018-2020
 
 #ifndef BOOST_MPI3_TYPE_HPP
 #define BOOST_MPI3_TYPE_HPP
 
 #define OMPI_SKIP_MPICXX 1  // https://github.com/open-mpi/ompi/issues/5157
 #include<mpi.h>
-//#include "../mpi3/communicator.hpp"
-//#include "../mpi3/detail/datatype.hpp"
-#include<typeindex>
-#include<map>
+
+#include "./core.hpp"
 #include "detail/datatype.hpp"
-#include<cassert>
-#include<iostream>
-#include<vector>
+
+#include <map>
+#include <typeindex>
 
 namespace boost{
 namespace mpi3{
 
-struct type{
+template<
+	class MultiIt, class Size = typename MultiIt::difference_type, class Stride = typename MultiIt::stride_type, std::enable_if_t<(MultiIt::dimensionality>=1), int> = 0,
+	typename Element = typename MultiIt::element, typename DataType = detail::basic_datatype<Element>,
+	std::enable_if_t<detail::is_basic<Element>{}, int> =0
+>
+typename MultiIt::element_ptr base(MultiIt first){return first.base();}
+
+template<class T> T* base(T* p){return p;}
+
+struct committed_type{
 private:
+	MPI_Datatype impl_;
+	committed_type(MPI_Datatype dt) : impl_{dt}{}
+	friend struct type;
 public:
-	type(MPI_Datatype dt) : impl_(dt){}
+	operator MPI_Datatype() const{return impl_;}
+};
+
+struct type{
+	explicit type(MPI_Datatype const& dt) : impl_{dt}{
+		if(mpi3::initialized()) MPI_Type_dup(dt, &impl_);
+	}
+	template<class T>
+	type(detail::basic_datatype<T> bd) : impl_(bd){}
+	
+	template<class T, typename = decltype(detail::basic_datatype<T>::value_f())>
+	type(T const*){MPI_Type_dup(detail::basic_datatype<T>::value_f(), &impl_);}
+	
+	template<
+		class T, 
+		std::enable_if_t<not std::is_same<T*, MPI_Datatype>{}, int> =0, 
+		std::enable_if_t<std::is_trivially_copy_assignable<T>{} and (not detail::is_basic<T>{}), int> =0
+	>
+	type(T const*) : type{type{MPI_BYTE}.contiguous(sizeof(T))}{}
+
+	template<
+		class MultiIt, class Size = typename MultiIt::difference_type, class Stride = typename MultiIt::stride_type, std::enable_if_t<MultiIt::dimensionality==1, int> =0,
+		typename E = typename MultiIt::element, typename = decltype(detail::basic_datatype<E>::value_f()),
+		std::enable_if_t<detail::is_basic<E>{}, int> =0
+	>
+	type(MultiIt first) : type{type{first.base()}.vector(1, 1, first.stride()*sizeof(E)).resize(0, first.stride()*sizeof(E))}{}
+
+private:
+	template <class F, class Tuple, std::size_t... I>
+	static decltype(auto) apply_impl(F&& f, Tuple const& t, std::index_sequence<I...>){
+		return std::forward<F>(f)(std::get<I>(t)...);
+	}
+	template <class F, class Tuple> 
+	static decltype(auto) apply(F&& f, Tuple const& t){
+		return apply_impl(
+			std::forward<F>(f), std::forward<Tuple>(t),
+			std::make_index_sequence<std::tuple_size<Tuple>{}>{}
+		);
+	}
+
+public:
+	template<
+		class MultiIt, class Stride = typename MultiIt::stride_type, 
+		std::size_t D = MultiIt::dimensionality, std::enable_if_t<(D>=2), int> =0,
+		typename E = typename MultiIt::element, typename = decltype(detail::basic_datatype<E>::value_f()),
+		std::enable_if_t<detail::is_basic<E>{}, int> =0
+	> type(MultiIt first) : type{first.base()}{
+		auto const strides = apply([](auto... e){return std::array<Stride, D-1>{e...};}, first->strides());
+		auto const sizes   = apply([](auto... e){return std::array<Stride, D-1>{e...};}, first->sizes()  );
+		for(Stride i = 1; i != Stride{strides.size()}+1; ++i)
+			(*this) = this->vector(sizes[sizes.size()-i], 1, strides[strides.size()-i]).resize(0, strides[strides.size()-i]*sizeof(E));
+
+		(*this) = this->vector(1, 1, first.stride()*sizeof(E)).resize(0, first.stride()*sizeof(E));
+	}
+
 	type() = default;// delete; //: impl_(MPI_DATATYPE_NULL){}
 	MPI_Datatype impl_ = MPI_DATATYPE_NULL;
 	type(type const& other){MPI_Type_dup(other.impl_, &impl_);}
-	type& operator=(type const& other){
+	type(type&& other) : impl_{std::exchange(other.impl_, MPI_DATATYPE_NULL)}{}
+	type& operator=(type other){
 		type tmp(other);
 		swap(tmp);
 		return *this;
 	}
 	void swap(type& other){std::swap(impl_, other.impl_);}
-	void commit() const{MPI_Type_commit(const_cast<MPI_Datatype*>(&impl_));}
-	template<class T> void commit_as() const{
-		commit();
-		registered.emplace(typeid(T), *this);
+	operator MPI_Datatype() const&{
+		MPI_Type_commit(const_cast<MPI_Datatype*>(&impl_));
+		return impl_;
+	}
+	committed_type commit()&&{
+		MPI_Type_commit(const_cast<MPI_Datatype*>(&impl_));
+		return committed_type{std::exchange(impl_, MPI_DATATYPE_NULL)};
 	}
 	template<class T> void commit_as(T const&){return commit_as<T>();}
-	~type(){
-	//	if(impl_!=MPI_DATATYPE_NULL) MPI_Type_free(&impl_);
-	}
+	~type() noexcept{if(not mpi3::finalized()) if(impl_ != MPI_DATATYPE_NULL) MPI_Type_free(&impl_);}
+
 	type contiguous(int count) const{
 		type ret;
 		int s = MPI_Type_contiguous(count, impl_, &ret.impl_);
@@ -49,13 +116,17 @@ public:
 		ret.set_name("(" + name() + ")[" + std::to_string(count) + "]");
 		return ret;
 	}
-	type vector(int count, int block_length, int stride) const{
+	type vector(int count, int block_length, MPI_Aint stride) const{ // element units, hvector for bytes
 		type ret;
 		MPI_Type_vector(count, block_length, stride, impl_, &ret.impl_);
 		using std::to_string;
 		ret.set_name("("+ name() +")["+to_string(count)+","+to_string(block_length)+":"+to_string(stride)+"]");
 		return ret;
 	}
+	type resize(MPI_Aint lower_bound, MPI_Aint extent) const{
+		type ret; MPI_Type_create_resized(impl_, lower_bound, extent, &ret.impl_); return ret;
+	}
+	type stride(int stride) const{return resize(0, stride*size());}
 	// MPI_Type_struct is deprecated
 	static type struct_(std::initializer_list<type> il){
 		type ret;
@@ -83,19 +154,13 @@ public:
 		ret.name(new_name);
 		return ret;
 	}
-//  this is giving a problem with intel compiler, commenting for the moment
-//	template<class T, class... Ts>
-//	static auto struct_(T&& t, Ts&&... ts) -> decltype(struct_({std::forward<T>(t), std::forward<Ts>(ts)...})){
-//		return struct_({std::forward<T>(t), std::forward<Ts>(ts)...});
-//	}
 
 	type operator[](int count) const{return contiguous(count);}
-	type operator()(int stride) const{return vector(1, 1, stride);}
-	MPI_Aint size() const{
-		int ret;
-		MPI_Type_size(impl_, &ret);
-		return ret;
+	type operator()(int stride) const{
+	//	assert( stride == 2 );
+		return vector(1, 1, stride);
 	}
+	int size() const{int ret; MPI_Type_size(impl_, &ret); return ret;}
 	std::string name() const{
 		char name[MPI_MAX_OBJECT_NAME];
 		int namelen;
@@ -171,26 +236,24 @@ public:
 #endif
 };
 
-static type const char_{MPI_CHAR};
-static type const unsigned_char{MPI_UNSIGNED_CHAR}; static type const& unsigned_char_ = unsigned_char;
-static type const short_{MPI_SHORT};
-static type const unsigned_short{MPI_UNSIGNED_SHORT}; static type const& unsigned_short_ = unsigned_short;
-static type const int_{MPI_INT};
-static type const unsigned_int_{MPI_UNSIGNED}; static type const& unsigned_int = unsigned_int_; static type const& unsigned_ = unsigned_int_;
-static type const long_{MPI_LONG};
-static type const unsigned_long_{MPI_UNSIGNED_LONG}; static type const& unsigned_long = unsigned_long_;
-static type const float_{MPI_FLOAT};
-static type const double_{MPI_DOUBLE};
-static type const long_double_{MPI_LONG_DOUBLE}; static type const& long_double = long_double_;
-static type const long_long_int{MPI_LONG_DOUBLE_INT};
-static type const float_int{MPI_FLOAT_INT};
-static type const long_int{MPI_LONG_INT};
-static type const double_int{MPI_DOUBLE_INT};
-static type const short_int{MPI_SHORT_INT};
-static type const int_int{MPI_2INT}; static type const& _2int = int_int;
+static type const          char_ {MPI_CHAR           };
+static type const unsigned_char  {MPI_UNSIGNED_CHAR  }; static type const& unsigned_char_ = unsigned_char;
+static type const          short_{MPI_SHORT          };
+static type const unsigned_short {MPI_UNSIGNED_SHORT }; static type const& unsigned_short_ = unsigned_short;
+static type const          int_  {MPI_INT            };
+static type const unsigned_int_  {MPI_UNSIGNED       }; static type const& unsigned_int = unsigned_int_; static type const& unsigned_ = unsigned_int_;
+static type const          long_ {MPI_LONG           };
+static type const unsigned_long  {MPI_UNSIGNED_LONG  }; static type const& unsigned_long_ = unsigned_long;
+static type const float_         {MPI_FLOAT          };
+static type const      double_   {MPI_DOUBLE         };
+static type const long_double_   {MPI_LONG_DOUBLE    }; static type const& long_double = long_double_;
+static type const long_long_int  {MPI_LONG_DOUBLE_INT};
+static type const float_int      {MPI_FLOAT_INT      };
+static type const long_int       {MPI_LONG_INT       };
+static type const double_int     {MPI_DOUBLE_INT     };
+static type const short_int      {MPI_SHORT_INT      };
+static type const int_int        {MPI_2INT           }; static type const& _2int = int_int;
 static type const long_double_int{MPI_LONG_DOUBLE_INT};
-
-//static std::map<std::type_index, type const&> type::registered;
 
 template<class T>
 type make_type();
@@ -200,7 +263,7 @@ template<> inline type make_type<int>(){return mpi3::int_;}
 
 }}
 
-#ifdef _TEST_BOOST_MPI3_TYPE
+#if not __INCLUDE_LEVEL__
 
 #include "../mpi3/main.hpp"
 #include "../mpi3/communicator.hpp"

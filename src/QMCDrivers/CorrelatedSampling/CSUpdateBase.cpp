@@ -13,8 +13,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Platforms/sysutil.h"
 #include "CSUpdateBase.h"
+#include "MemoryUsage.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Estimators/CSEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"

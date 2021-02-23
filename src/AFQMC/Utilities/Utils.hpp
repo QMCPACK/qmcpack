@@ -20,7 +20,7 @@
 #include <complex>
 #include <list>
 
-#include "Platforms/sysutil.h"
+#include "Host/sysutil.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
