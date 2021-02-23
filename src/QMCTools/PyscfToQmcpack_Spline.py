@@ -25,7 +25,7 @@ try:
   import pandas as pd
 except:
   import sys
-  sys.exit("Error: Panda python module is needed for the save_eigensystem and eigensystem functions by PyscfToQmcpack_Spline.py. Install as other packages, either directly or with a package manager.")
+  sys.exit("Error: Pandas python module is needed for the save_eigensystem and eigensystem functions by PyscfToQmcpack_Spline.py. Install as other packages, either directly or with a package manager.")
 
 
 def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]):
