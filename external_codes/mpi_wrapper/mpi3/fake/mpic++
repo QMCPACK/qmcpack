@@ -1,2 +1,0 @@
-c++ -I/home/correaa/prj/alf/boost/mpi3/fake $@
-
