@@ -231,20 +231,18 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       }
 
       //new format
-      std::vector<SPOSetPtr> spos(nGroups);
       std::vector<std::unique_ptr<SPOSet>> spo_clones;
 
       for (int grp = 0; grp < nGroups; grp++)
       {
-        spos[grp] = sposet_builder_factory_.getSPOSet(spoNames[grp]);
-        if (spos[grp] == nullptr)
+        SPOSetPtr spo_tmp = sposet_builder_factory_.getSPOSet(spoNames[grp]);
+        if (spo_tmp == nullptr)
         {
           std::stringstream err_msg;
           err_msg << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp] << "\" is not found. Expected for MultiSlaterDeterminant." << std::endl;
           myComm->barrier_and_abort(err_msg.str());
         }
-        std::unique_ptr<SPOSet> tmp(spos[grp]->makeClone());
-        spo_clones.emplace_back(std::move(tmp));
+        spo_clones.emplace_back(spo_tmp->makeClone());
       }
 
 
