@@ -242,9 +242,6 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
   {
     ScopedTimer recomputing_timer(my_timers_[WC_recomputing]);
 
-    if (!twfs_shared_resource_)
-      twfs_shared_resource_ = std::make_unique<ResourceCollection>(pop.get_golden_twf().getResource());
-
     const size_t num_walkers = walkers.size();
     // recomputed received and duplicated walkers, the first untouched_walkers walkers doesn't need to be updated.
     const auto p_list_no_leader =
@@ -252,7 +249,7 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     const auto wf_list_no_leader =
         convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
 
-    ResourceCollectionLock<TrialWaveFunction> resource_lock(*twfs_shared_resource_, pop.get_golden_twf());
+    ResourceCollectionLock<TrialWaveFunction> resource_lock(pop.get_golden_twf().getResource(), pop.get_golden_twf());
     // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
 
     const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);

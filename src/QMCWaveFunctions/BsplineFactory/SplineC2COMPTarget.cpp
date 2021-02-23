@@ -658,7 +658,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
   // make this class unit tests friendly without the need of setup resources.
   if (!phi_leader.mw_mem)
   {
-    app_warning() << "This message should not be seen in production (bug) runs but only unit tests (expected)." << std::endl;
+    app_warning() << "SplineC2COMPTarget : This message should not be seen in production (bug) runs but only unit tests (expected)." << std::endl;
     phi_leader.mw_mem = std::make_unique<OffloadSharedMem<ST, ComplexT>>();
   }
   auto& mw_mem       = *phi_leader.mw_mem;
