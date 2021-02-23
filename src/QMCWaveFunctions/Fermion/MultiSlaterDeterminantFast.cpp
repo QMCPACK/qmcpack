@@ -457,8 +457,8 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(Par
 {
   ScopedTimer local_timer(UpdateTimer);
 
-  Dets[0]->updateBuffer(P, buf, fromscratch);
-  Dets[1]->updateBuffer(P, buf, fromscratch);
+  for (size_t id = 0; id < Dets.size(); id++)
+    Dets[id]->updateBuffer(P, buf, fromscratch);
 
   psiCurrent = evaluate_vgl_impl(P, myG, myL);
 
