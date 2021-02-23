@@ -65,7 +65,7 @@ public:
   LocalTGBufferManager(mpi3::shared_communicator& local, size_t size)
   {
     require(false);
-    generator = std::make_unique<generator_t>(::shm::memory_resource_shm_ptr_with_raw_ptr_dispatch{local}, size,
+    generator = std::make_unique<generator_t>(::shm::memory_resource_shm_ptr_with_raw_ptr_dispatch{&local}, size,
                                               shm_constructor<char>{local});
   }
 
