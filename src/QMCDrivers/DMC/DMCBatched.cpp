@@ -217,7 +217,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
           TrialWaveFunction::flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-          ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted, true);
+          ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted);
         }
       }
 
