@@ -171,6 +171,10 @@ public:
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
+  void createResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection) override;
+  void releaseResource(ResourceCollection& collection) override;
+
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set

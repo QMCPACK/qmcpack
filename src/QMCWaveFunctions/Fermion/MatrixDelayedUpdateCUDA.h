@@ -358,7 +358,10 @@ public:
   {
     // make this class unit tests friendly without the need of setup resources.
     if (!cuda_handles_)
+    {
+      app_warning() << "This message should not be seen in production (bug) runs but only unit tests (expected)." << std::endl;
       cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
+    }
 
     guard_no_delay();
 
@@ -376,7 +379,10 @@ public:
   {
     // make this class unit tests friendly without the need of setup resources.
     if (!cuda_handles_)
+    {
+      app_warning() << "This message should not be seen in production (bug) runs but only unit tests (expected)." << std::endl;
       cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
+    }
 
     guard_no_delay();
 

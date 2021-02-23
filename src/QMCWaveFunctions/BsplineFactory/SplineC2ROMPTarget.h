@@ -26,6 +26,7 @@
 #include "Platforms/PinnedAllocator.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
+#include "OffloadSharedMem.h"
 
 namespace qmcplusplus
 {
@@ -83,29 +84,25 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
+  std::unique_ptr<OffloadSharedMem<ST, TT>> mw_mem;
+
   ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
-  ///team private ratios and grads for reduction, numVP x numTeams
-  Matrix<TT, OffloadPinnedAllocator<TT>> rg_private;
   ///offload scratch space, dynamically resized to the maximal need
   Vector<ST, OffloadPinnedAllocator<ST>> offload_scratch;
   ///result scratch space, dynamically resized to the maximal need
   Vector<TT, OffloadPinnedAllocator<TT>> results_scratch;
   ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
-  ///psiinv and position scratch space of multiple walkers, used to avoid allocation on the fly and faster transfer
-  Vector<TT, OffloadPinnedAllocator<TT>> mw_psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
-  ///multi purpose H2D buffer for mw_evaluateVGLandDetRatioGrads
-  Matrix<char, OffloadPinnedAllocator<char>> buffer_H2D;
-  ///multi purpose H2D buffer for mw_evaluateDetRatios
-  Vector<char, OffloadPinnedAllocator<char>> det_ratios_buffer_H2D;
 
   void evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
+                           Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
+                           Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
                            const RefVector<ValueVector_t>& psi_v_list,
                            const RefVector<GradVector_t>& dpsi_v_list,
-                           const RefVector<ValueVector_t>& d2psi_v_list);
+                           const RefVector<ValueVector_t>& d2psi_v_list) const;
 
 protected:
   /// intermediate result vectors
@@ -127,6 +124,42 @@ public:
     className  = "SplineC2ROMPTarget";
     KeyWord    = "SplineC2R";
   }
+
+  SplineC2ROMPTarget(const SplineC2ROMPTarget& in)
+      : BsplineSet(in),
+        offload_timer_(in.offload_timer_),
+        PrimLattice(in.PrimLattice),
+        GGt(in.GGt),
+        nComplexBands(in.nComplexBands),
+        SplineInst(in.SplineInst),
+        mKK(in.mKK),
+        myKcart(in.myKcart),
+        GGt_offload(in.GGt_offload),
+        PrimLattice_G_offload(in.PrimLattice_G_offload),
+        myV(in.myV),
+        myL(in.myL),
+        myG(in.myG),
+        myH(in.myH),
+        mygH(in.mygH)
+  {}
+
+
+  void createResource(ResourceCollection& collection) override
+  {
+    auto resource_index = collection.addResource(std::make_unique<OffloadSharedMem<ST, TT>>());
+    app_log() << "    Multi walker shared memory resource created in SplineC2ROMPTarget. Index " << resource_index << std::endl;
+  }
+
+  void acquireResource(ResourceCollection& collection) override
+  {
+    auto res_ptr = dynamic_cast<OffloadSharedMem<ST, TT>*>(collection.lendResource().release());
+    if (!res_ptr)
+      throw std::runtime_error("SplineC2ROMPTarget::acquireResource dynamic_cast failed");
+    mw_mem.reset(res_ptr);
+  }
+
+  void releaseResource(ResourceCollection& collection) override
+  { collection.takebackResource(std::move(mw_mem)); }
 
   virtual SPOSet* makeClone() const override { return new SplineC2ROMPTarget(*this); }
 
