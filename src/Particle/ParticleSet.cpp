@@ -739,6 +739,7 @@ void ParticleSet::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>&
         p_list[iw].acceptMove_impl(iat, partial_table_update);
       else
         p_list[iw].rejectMove(iat);
+      assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
     }
   }
   else if (p_list.size() == 1)

@@ -201,8 +201,6 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   int nnodes_propg = std::max(1, get_parameter<int>(PropFac, prop_name, "nnodes", 1));
   int nnodes_wfn   = std::max(1, get_parameter<int>(WfnFac, wfn_name, "nnodes", 1));
   RealType cutvn   = get_parameter<RealType>(PropFac, prop_name, "cutoff", 1e-6);
-  // Wavefunction and Hamiltonian Operations already stored in restart file.
-  std::string wfn_restart = get_parameter<std::string>(WfnFac, wfn_name, "restart_file", "");
 
   // setup task groups
   auto& TGprop = TGHandler.getTG(nnodes_propg);
@@ -218,7 +216,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   WalkerSet& wset          = WSetFac.getWalkerSet(TGHandler.getTG(1), wset_name, rng);
   WALKER_TYPES walker_type = wset.getWalkerType();
 
-  if (not WfnFac.is_constructed(wfn_name) && wfn_restart == "")
+  if (not WfnFac.is_constructed(wfn_name))
   {
     // hamiltonian
     Hamiltonian& ham0 = HamFac.getHamiltonian(gTG, ham_name);
