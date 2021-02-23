@@ -562,11 +562,13 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
       //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
     }
   }
-  if (Dets[0]->Optimizable && Dets[1]->Optimizable)
-  {
-    Dets[0]->resetParameters(active);
-    Dets[1]->resetParameters(active);
-  }
+  bool all_Optimizable = true;
+  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
+    all_Optimizable = Dets[id]->Optimizable;
+
+  if(all_Optimizable)
+    for (size_t id = 0; id < Dets.size();  id++)
+      Dets[id]->resetParameters(active);
 }
 void MultiSlaterDeterminantFast::reportStatus(std::ostream& os) {}
 
