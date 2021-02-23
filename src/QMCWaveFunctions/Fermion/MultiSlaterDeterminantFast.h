@@ -89,8 +89,8 @@ public:
   {
     usingBF = true;
     BFTrans = bf;
-    Dets[0]->setBF(bf);
-    Dets[1]->setBF(bf);
+    for (size_t id = 0; id < Dets.size(); id++)
+      Dets[id]->setBF(bf);
   }
 
   PsiValueType evaluate_vgl_impl(ParticleSet& P,
