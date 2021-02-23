@@ -493,11 +493,13 @@ void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
     else
       Optimizable = false;
   }
-  if (Dets[0]->Optimizable && Dets[1]->Optimizable)
-  {
-    Dets[0]->checkInVariables(active);
-    Dets[1]->checkInVariables(active);
-  }
+  bool all_Optimizable = true;
+  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
+    all_Optimizable = Dets[id]->Optimizable;
+
+  if(all_Optimizable)
+    for (size_t id = 0; id < Dets.size(); id++)
+      Dets[id]->checkInVariables(active);
 }
 
 void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& active)
