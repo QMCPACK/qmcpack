@@ -147,12 +147,12 @@ device_ptr<T> make_device_ptr(T* p)
   print_stacktrace;
   throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
 }
-template<class T>
-device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p)
-{
-  print_stacktrace;
-  throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
-}
+//template<class T>
+//device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p)
+//{
+//  print_stacktrace;
+//  throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
+//}
 template<class T>
 device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p)
 {
