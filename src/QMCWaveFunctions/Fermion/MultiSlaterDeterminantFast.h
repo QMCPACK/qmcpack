@@ -181,9 +181,8 @@ public:
 
   // temporary storage for evaluateDerivatives
   ParticleSet::ParticleGradient_t gmPG;
-  Matrix<RealType> dpsia_up, dLa_up;
-  Matrix<RealType> dpsia_dn, dLa_dn;
-  Array<GradType, OHMMS_DIM> dGa_up, dGa_dn;
+  std::vector<Matrix<RealType>> dpsia, dLa;
+  std::vector<Array<GradType, OHMMS_DIM>> dGa;
 
 private:
   //get Det ID. It should be consistent with particle group id within the particle set.
