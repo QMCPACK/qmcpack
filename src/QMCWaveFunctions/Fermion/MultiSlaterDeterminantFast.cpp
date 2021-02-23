@@ -819,9 +819,6 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
     {
       if (usingCSF)
       {
-        // assume that evaluateLog has been called in opt routine before
-        ValueVector_t& detValues_up = Dets[0]->detValues;
-        ValueVector_t& detValues_dn = Dets[1]->detValues;
 
         ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
 
@@ -842,9 +839,14 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
           const RealType* restrict CSFexpansion_p = CSFexpansion->data();
           for (int k = 0; k < (*DetsPerCSF)[ip]; k++)
           {
-            size_t upC = (*C2node)[0][cnt];
-            size_t dnC = (*C2node)[1][cnt];
-            cdet += CSFexpansion_p[cnt] * detValues_up[upC] * detValues_dn[dnC] * psiinv;
+            ValueType t = CSFexpansion_p[cnt] * psiinv;
+            for (size_t id = 0; id < Dets.size(); id++){
+              size_t spinC = (*C2node)[id][cnt];
+              // assume that evaluateLog has been called in opt routine before
+              ValueVector_t& detValues_spin = Dets[id]->detValues;
+              t *= detValues_spin[spinC];
+            }
+            cdet += t;
             cnt++;
           }
           dlogpsi[kk] = cdet;
@@ -853,26 +855,30 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
       else
       //usingDETS
       {
-        ValueVector_t& detValues_up = Dets[0]->detValues;
-        ValueVector_t& detValues_dn = Dets[1]->detValues;
         ValueType psiinv            = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
         for (size_t i = 1; i < C->size(); i++)
         {
           int kk = myVars->where(i - 1);
           if (kk < 0)
             continue;
-          const size_t upC = (*C2node)[0][i];
-          const size_t dnC = (*C2node)[1][i];
-          ValueType cdet   = detValues_up[upC] * detValues_dn[dnC] * psiinv;
+          ValueType cdet = psiinv;
+          for (size_t id = 0; id < Dets.size(); id++){
+            size_t spinC = (*C2node)[id][i];
+            // assume that evaluateLog has been called in opt routine before
+            ValueVector_t& detValues_spin = Dets[id]->detValues;
+            cdet *= detValues_spin[spinC];
+          }
           dlogpsi[kk]      = cdet;
         }
       }
     }
   }
 
-  // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for otbital rotation matrix
+  // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for orbital rotation matrix
   Dets[0]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[1], psiCurrent, *C, (*C2node)[0], (*C2node)[1]);
   Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psiCurrent, *C, (*C2node)[1], (*C2node)[0]);
+  // for (size_t id = 0; id < Dets.size(); id++)
+  //   Dets[id]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets, psiCurrent, *C, *C2node, id);
 }
 
 void MultiSlaterDeterminantFast::buildOptVariables()
