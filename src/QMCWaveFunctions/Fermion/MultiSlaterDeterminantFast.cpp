@@ -866,8 +866,8 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
 
 void MultiSlaterDeterminantFast::buildOptVariables()
 {
-  Dets[0]->buildOptVariables((*C2node)[0]);
-  Dets[1]->buildOptVariables((*C2node)[1]);
+  for (size_t id = 0; id < Dets.size(); id++)
+    Dets[id]->buildOptVariables((*C2node)[id]);
 }
 
 void MultiSlaterDeterminantFast::registerTimers()
