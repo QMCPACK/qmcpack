@@ -30,6 +30,9 @@
 
 namespace qmcplusplus
 {
+
+class ResourceCollection;
+
 /** base class for Single-particle orbital sets
  *
  * SPOSet stands for S(ingle)P(article)O(rbital)Set which contains
@@ -400,6 +403,18 @@ public:
 
   /** access the k point related to the given orbital */
   virtual PosType get_k(int orb) { return PosType(); }
+
+  /** initialize a shared resource and hand it to collection
+   */
+  virtual void createResource(ResourceCollection& collection) {}
+
+  /** acquire a shared resource from collection
+   */
+  virtual void acquireResource(ResourceCollection& collection) {}
+
+  /** return a shared resource to collection
+   */
+  virtual void releaseResource(ResourceCollection& collection) {}
 
   /** make a clone of itself
    * every derived class must implement this to have threading working correctly.

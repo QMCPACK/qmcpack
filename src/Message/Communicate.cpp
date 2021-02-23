@@ -23,7 +23,7 @@
 #include <cstdio>
 #include <fstream>
 #include "config.h"
-#include "Platforms/sysutil.h"
+#include "Platforms/Host/sysutil.h"
 #include "Utilities/FairDivide.h"
 
 #ifdef HAVE_MPI

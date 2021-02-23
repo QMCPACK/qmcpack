@@ -11,13 +11,13 @@
 
 
 SET(HOST_SRCS
-    sysutil.cpp
+    Host/sysutil.cpp
     Host/InfoStream.cpp
     Host/OutputManager.cpp
 )
 
 SET(DEVICE_SRCS
-    dummy_function_for_cmake.cpp
+    MemoryUsage.cpp
 )
 
 ADD_LIBRARY(platform_host ${HOST_SRCS})

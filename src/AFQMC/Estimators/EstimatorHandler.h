@@ -1,7 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_ESTIMATORHANDLER_H
 #define QMCPLUSPLUS_AFQMC_ESTIMATORHANDLER_H
 
-#include "Platforms/sysutil.h"
+#include "Host/sysutil.h"
 #include "AFQMC/config.h"
 
 #include "AFQMC/Utilities/taskgroup.h"
