@@ -1,12 +1,15 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -Wall -Wextra -O3 -std=c++14 -Wfatal-errors -D_TEST_BOOST_MPI3_WALL_CLOCK $0x.cpp -o $0x.x && time mpirun -n 4 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+#if COMPILATION /* -*- indent-tabs-mode: t -*- */
+mpic++ -x c++ $0 -o $0x&&mpirun -n 4 $0x&&rm $0x;exit
 #endif
-//  (C) Copyright Alfredo A. Correa 2018.
+// © Copyright Alfredo A. Correa 2018-2019s
+
 #ifndef BOOST_MPI3_WALL_CLOCK_HPP
 #define BOOST_MPI3_WALL_CLOCK_HPP
 
 #define OMPI_SKIP_MPICXX 1 // workaround for https://github.com/open-mpi/ompi/issues/5157
 #include<mpi.h>
+
+#include "communicator.hpp"
 
 #include<chrono>
 
@@ -31,30 +34,55 @@ void wall_sleep_for(Duration d){
 	while(wall_clock::now() - then < d){}
 }
 
+struct wall_timer{
+	mpi3::communicator comm_;
+	wall_clock::time_point start_;
+	std::string title_;
+	wall_timer(wall_timer const&) = delete;
+	wall_timer(mpi3::communicator comm, std::string title = "") : comm_{std::move(comm)}, start_{wall_clock::now()}, title_{title}{}
+	~wall_timer(){
+		auto diff = wall_clock::now() - start_;
+		auto min = comm_.min(diff.count());
+		auto max = comm_.max(diff.count());
+		auto avg = (comm_ += diff.count())/comm_.size();
+		if(comm_.root()) std::cerr<<"# "<< title_ <<" timing "<< min <<"["<< avg <<"]"<< max <<" sec"<<std::endl;
+	}
+};
+
 }}
 
-#ifdef _TEST_BOOST_MPI3_WALL_CLOCK
+#if not __INCLUDE_LEVEL__
 
 #include "../mpi3/environment.hpp"
 
 #include<iostream>
 #include<thread> // this_tread::sleep_for
 
-namespace mpi3 = boost::mpi3;
+namespace bmpi3 = boost::mpi3;
 using std::cout;
 using namespace std::chrono_literals; // 2s
 
+void f(bmpi3::communicator c){
+	bmpi3::wall_timer f_watch{c, "OptionalTitle"};
+	std::this_thread::sleep_for(std::chrono::seconds(c.rank()+1));
+// prints "# OptionalTitle timing 1.00007[2.50007]4.00006 sec"
+}
+
 int main(int argc, char* argv[]){
-	mpi3::environment::initialize(argc, argv); // same as MPI_Init(...);
-	assert(mpi3::environment::is_initialized());
+	bmpi3::environment::initialize(argc, argv); // same as MPI_Init(...);
+	assert(bmpi3::environment::is_initialized());
 
-	auto then = mpi3::wall_time();
+	auto then = bmpi3::wall_time();
 	std::this_thread::sleep_for(2s);
-	cout << (mpi3::wall_time() - then).count() <<'\n'; 
+	cout<< (bmpi3::wall_time() - then).count() <<'\n'; 
 
-	mpi3::environment::finalize(); // same as MPI_Finalize()
-	assert(mpi3::environment::is_finalized());
-	return 0;
+	{
+		auto world = bmpi3::environment::get_world_instance();
+		f(world);
+	}
+
+	bmpi3::environment::finalize(); // same as MPI_Finalize()
+	assert(bmpi3::environment::is_finalized());
 }
 #endif
 #endif

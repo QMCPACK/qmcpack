@@ -15,8 +15,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Platforms/sysutil.h"
 #include "CloneManager.h"
+#include "MemoryUsage.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"

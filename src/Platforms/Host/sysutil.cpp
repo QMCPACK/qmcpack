@@ -67,33 +67,20 @@ size_t freemem()
   struct sysinfo si;
   sysinfo(&si);
   si.freeram += si.bufferram;
-  return si.freeram >> 20;
+  return si.freeram;
 #else
   return 0;
 #endif
 }
 
-/* returns heap memory usage in MB */
+/* returns heap memory usage in KiB */
 size_t memusage()
 {
 #ifdef __linux__
   struct rusage RU; /* heap memory usage */
   getrusage(RUSAGE_SELF, &RU);
-  return RU.ru_maxrss >> 10;
+  return RU.ru_maxrss;
 #else
   return 0;
 #endif
-}
-
-void print_mem(const char* title, std::ostream& log)
-{
-  char msg[256];
-  sprintf(msg, "===== %s =====\n", title);
-  log << msg;
-  sprintf(msg, "Available memory on node 0, free + buffers : %zu MB\n", freemem());
-  log << msg;
-  sprintf(msg, "Memory footprint by rank 0 on node 0       : %zu MB\n", memusage());
-  log << msg;
-  sprintf(msg, "==================================================\n");
-  log << msg;
 }
