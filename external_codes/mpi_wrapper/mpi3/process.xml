@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="14">
+<process.xml class_id="0" tracking_level="0" version="0">
+	<shape class_id="1" tracking_level="0" version="0">
+		<elems>
+			<count>2</count>
+			<item>4</item>
+			<item>2</item>
+		</elems>
+	</shape>
+	<index_bases class_id="2" tracking_level="0" version="0">
+		<elems>
+			<count>2</count>
+			<item>0</item>
+			<item>0</item>
+		</elems>
+	</index_bases>
+	<ordering>
+		<elems>
+			<count>2</count>
+			<item>1</item>
+			<item>0</item>
+		</elems>
+	</ordering>
+	<ascending class_id="3" tracking_level="0" version="0">
+		<elems>
+			<count>2</count>
+			<item>1</item>
+			<item>1</item>
+		</elems>
+	</ascending>
+	<data>
+		<item>1.00000000000000000e+00</item>
+		<item>2.00000000000000000e+00</item>
+		<item>3.00000000000000000e+00</item>
+		<item>4.00000000000000000e+00</item>
+		<item>5.00000000000000000e+00</item>
+		<item>6.00000000000000000e+00</item>
+		<item>7.00000000000000000e+00</item>
+		<item>8.00000000000000000e+00</item>
+	</data>
+</process.xml>
+</boost_serialization>
+
