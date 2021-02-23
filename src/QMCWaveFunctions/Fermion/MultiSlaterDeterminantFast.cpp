@@ -216,8 +216,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate(Particl
                                                                          ParticleSet::ParticleLaplacian_t& L)
 {
   ScopedTimer local_timer(EvaluateTimer);
-  Dets[0]->evaluateForWalkerMove(P);
-  Dets[1]->evaluateForWalkerMove(P);
+  for (size_t id = 0; id < Dets.size(); id++)
+    Dets[id]->evaluateForWalkerMove(P);
 
   psiCurrent = evaluate_vgl_impl(P, myG, myL);
 
