@@ -812,11 +812,17 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       }
     }
   }
-
-  Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], static_cast<ValueType>(psiCurrent), *C,
-                               (*C2node)[0], (*C2node)[1]);
-  Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], static_cast<ValueType>(psiCurrent), *C,
-                               (*C2node)[1], (*C2node)[0]);
+  if (Dets.size() != 2)
+  {
+    APP_ABORT("MultiSlaterDeterminantFast::evaluateDerivatives only compatible with two quantum particle types.");
+  }
+  else
+  {
+    Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], static_cast<ValueType>(psiCurrent), *C,
+                                 (*C2node)[0], (*C2node)[1]);
+    Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], static_cast<ValueType>(psiCurrent), *C,
+                                 (*C2node)[1], (*C2node)[0]);
+  }
   //for (size_t id = 0; id < Dets.size(); id++)
   //  Dets[id]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets, static_cast<ValueType>(psiCurrent), *C, *C2node, id);
 }
@@ -897,11 +903,18 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
     }
   }
 
-  // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for orbital rotation matrix
-  Dets[0]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[1], psiCurrent, *C, (*C2node)[0], (*C2node)[1]);
-  Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psiCurrent, *C, (*C2node)[1], (*C2node)[0]);
-  // for (size_t id = 0; id < Dets.size(); id++)
-  //   Dets[id]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets, psiCurrent, *C, *C2node, id);
+  if (Dets.size() != 2)
+  {
+    APP_ABORT("MultiSlaterDeterminantFast::evaluateDerivativesWF only compatible with two quantum particle types.");
+  }
+  else
+  {
+    // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for orbital rotation matrix
+    Dets[0]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[1], psiCurrent, *C, (*C2node)[0], (*C2node)[1]);
+    Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psiCurrent, *C, (*C2node)[1], (*C2node)[0]);
+    // for (size_t id = 0; id < Dets.size(); id++)
+    //   Dets[id]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets, psiCurrent, *C, *C2node, id);
+  }
 }
 
 void MultiSlaterDeterminantFast::buildOptVariables()
