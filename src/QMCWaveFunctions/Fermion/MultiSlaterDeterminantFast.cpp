@@ -151,7 +151,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
               << std::endl;
   }
   std::cout << std::endl << std::endl;
-  APP_ABORT("After MultiSlaterDeterminantFast::testMSD()");
+  throw std::runtime_error("After MultiSlaterDeterminantFast::testMSD()");
 }
 
 /** Compute VGL of this MultiSlaterDeterminantFast
@@ -306,7 +306,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
 {
   if (usingBF)
   {
-    APP_ABORT("Fast MSD+BF: evalGrad not implemented. \n");
+    throw std::runtime_error("Fast MSD+BF: evalGrad not implemented. \n");
   }
 
   ScopedTimer local_timer(EvalGradTimer);
@@ -326,7 +326,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
 {
   if (usingBF)
   {
-    APP_ABORT("Fast MSD+BF: ratioGrad not implemented. \n");
+    throw std::runtime_error("Fast MSD+BF: ratioGrad not implemented. \n");
   }
 
   ScopedTimer local_timer(RatioGradTimer);
@@ -398,7 +398,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
 {
   if (usingBF)
   {
-    APP_ABORT("Fast MSD+BF: ratio not implemented. \n");
+    throw std::runtime_error("Fast MSD+BF: ratio not implemented. \n");
   }
 
   ScopedTimer local_timer(RatioTimer);
@@ -420,7 +420,7 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_t
   // for now is incorrect fot ratio(P,iat,dG,dL) updates
   if (usingBF)
   {
-    APP_ABORT("Fast MSD+BF: acceptMove not implemented. \n");
+    throw std::runtime_error("Fast MSD+BF: acceptMove not implemented. \n");
   }
 
   ScopedTimer local_timer(AccRejTimer);
@@ -435,7 +435,7 @@ void MultiSlaterDeterminantFast::restore(int iat)
 {
   if (usingBF)
   {
-    APP_ABORT("Fast MSD+BF: restore not implemented. \n");
+    throw std::runtime_error("Fast MSD+BF: restore not implemented. \n");
   }
 
   ScopedTimer local_timer(AccRejTimer);
@@ -447,7 +447,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if (usingBF)
   {
-    APP_ABORT("Fast MSD+BF: restore not implemented. \n");
+    throw std::runtime_error("Fast MSD+BF: restore not implemented. \n");
   }
 
   for (size_t id = 0; id < Dets.size(); id++)
@@ -481,7 +481,7 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
 {
   if (usingBF)
   {
-    APP_ABORT("Fast MSD+BF: copyFromBuffer not implemented. \n");
+    throw std::runtime_error("Fast MSD+BF: copyFromBuffer not implemented. \n");
   }
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->copyFromBuffer(P, buf);
@@ -814,7 +814,8 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
   }
   if (Dets.size() != 2)
   {
-    APP_ABORT("MultiSlaterDeterminantFast::evaluateDerivatives only compatible with two quantum particle types.");
+    throw std::runtime_error(
+        "MultiSlaterDeterminantFast::evaluateDerivatives only compatible with two quantum particle types.");
   }
   else
   {
@@ -905,7 +906,8 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
 
   if (Dets.size() != 2)
   {
-    APP_ABORT("MultiSlaterDeterminantFast::evaluateDerivativesWF only compatible with two quantum particle types.");
+    throw std::runtime_error(
+        "MultiSlaterDeterminantFast::evaluateDerivativesWF only compatible with two quantum particle types.");
   }
   else
   {

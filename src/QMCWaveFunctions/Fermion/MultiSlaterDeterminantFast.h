@@ -118,7 +118,7 @@ public:
   {
     // the base class routine may probably work, just never tested.
     // it can also be highly optimized with a specialized implementation.
-    APP_ABORT(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
+    throw std::runtime_error(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
   }
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
