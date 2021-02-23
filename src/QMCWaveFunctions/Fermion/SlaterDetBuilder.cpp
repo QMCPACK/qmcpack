@@ -239,7 +239,8 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         if (spo_tmp == nullptr)
         {
           std::stringstream err_msg;
-          err_msg << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp] << "\" is not found. Expected for MultiSlaterDeterminant." << std::endl;
+          err_msg << "In SlaterDetBuilder: SPOSet \"" << spoNames[grp]
+                  << "\" is not found. Expected for MultiSlaterDeterminant." << std::endl;
           myComm->barrier_and_abort(err_msg.str());
         }
         spo_clones.emplace_back(spo_tmp->makeClone());
@@ -961,28 +962,27 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         RealType exctLvl, qc_ci = 0.0;
         OhmmsAttributeSet confAttrib;
         std::string tag, OccString;
-#ifdef QMC_COMPLEX
         RealType ci_real = 0.0, ci_imag = 0.0;
+        confAttrib.add(ci_real, "coeff");
         confAttrib.add(ci_real, "coeff_real");
         confAttrib.add(ci_imag, "coeff_imag");
-#else
-        RealType ci = 0.0;
-        confAttrib.add(ci, "coeff");
-#endif
         confAttrib.add(qc_ci, "qchem_coeff");
         confAttrib.add(tag, "id");
         confAttrib.add(OccString, "occ");
         confAttrib.add(exctLvl, "exctLvl");
         confAttrib.put(cur);
-        if (qc_ci == 0.0)
-#ifdef QMC_COMPLEX
-          qc_ci = ci_real;
-#else
-          qc_ci = ci;
-#endif
 
+        if (qc_ci == 0.0)
+          qc_ci = ci_real;
+
+        ValueType ci;
 #ifdef QMC_COMPLEX
-        ValueType ci(ci_real, ci_imag);
+        ci = ValueType(ci_real, ci_imag);
+#else
+        if (ci_imag != RealType(0))
+          myComm->barrier_and_abort(
+              "SlaterDetBuilder::readDetList. Build with QMC_COMPLEX if using complex CI expansion coefficients.");
+        ci = ci_real;
 #endif
         //Can discriminate based on any of 3 criterion
         if (((std::abs(qc_ci) < cutoff) && (CSFChoice == "qchem_coeff")) ||
@@ -994,11 +994,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         }
         cnt0++;
         if (std::abs(qc_ci) < zero_cutoff)
-#ifdef QMC_COMPLEX
-          ci_real = 0.0;
-#else
-          ci    = 0.0;
-#endif
+          ci = 0.0;
         CSFcoeff.push_back(ci);
         sumsq_qc += qc_ci * qc_ci;
         DetsPerCSF.push_back(0);
@@ -1126,14 +1122,10 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         std::vector<std::string> occs(nGroups);
         std::string tag;
         OhmmsAttributeSet confAttrib;
-#ifdef QMC_COMPLEX
         RealType ci_real = 0.0, ci_imag = 0.0;
+        confAttrib.add(ci_real, "coeff");
         confAttrib.add(ci_real, "coeff_real");
         confAttrib.add(ci_imag, "coeff_imag");
-#else
-        RealType ci = 0.0;
-        confAttrib.add(ci, "coeff");
-#endif
         confAttrib.add(qc_ci, "qchem_coeff");
         for (int grp = 0; grp < nGroups; grp++)
           confAttrib.add(occs[grp], "occ" + std::to_string(grp));
@@ -1145,8 +1137,14 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         confAttrib.add(tag, "id");
         confAttrib.put(cur);
 
+        ValueType ci;
 #ifdef QMC_COMPLEX
-        ValueType ci(ci_real, ci_imag);
+        ci = ValueType(ci_real, ci_imag);
+#else
+        if (ci_imag != RealType(0))
+          myComm->barrier_and_abort(
+              "SlaterDetBuilder::readDetList. Build with QMC_COMPLEX if using complex CI expansion coefficients.");
+        ci = ci_real;
 #endif
 
         //Will always loop through the whole determinant set as no assumption on the order of the determinant is made
