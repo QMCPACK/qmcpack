@@ -2083,7 +2083,7 @@ Distance tables
 
 Distance tables store distances between particles. There are symmetric
 (AA) tables for distance between like particles (electron-electron or
-ion-ion) and asymmetric (BA) tables for distance between unlike
+ion-ion) and asymmetric (AB) tables for distance between unlike
 particles (electron-ion)
 
 The ``Distances`` and ``Displacements`` members contain the data. The

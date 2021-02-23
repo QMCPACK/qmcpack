@@ -90,6 +90,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         if (!is_valid || rr > m_r2max)
         {
           ++nRejectTemp;
+          W.accept_rejectMove(iat, false);
           continue;
         }
         ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
@@ -98,7 +99,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         {
           ++nRejectTemp;
           ++nNodeCrossing;
-          W.rejectMove(iat);
+          W.accept_rejectMove(iat, false);
           Psi.rejectMove(iat);
         }
         else
@@ -109,20 +110,21 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
           dr                     = W.R[iat] - W.activePos - dr;
           FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
           RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
+          bool is_accepted       = false;
           if (RandomGen() < prob)
           {
+            is_accepted = true;
             ++nAcceptTemp;
             Psi.acceptMove(W, iat, true);
-            W.acceptMove(iat, true);
             rr_accepted += rr;
             gf_acc *= prob; //accumulate the ratio
           }
           else
           {
             ++nRejectTemp;
-            W.rejectMove(iat);
             Psi.rejectMove(iat);
           }
+          W.accept_rejectMove(iat, is_accepted);
         }
       }
     }

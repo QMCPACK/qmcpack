@@ -102,7 +102,7 @@ public:
   ~SoaDistanceTableABOMPTarget() { PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])") }
 
   /** evaluate the full table */
-  inline void evaluate(ParticleSet& P)
+  inline void evaluate(ParticleSet& P) override
   {
     ScopedTimer local_timer(evaluate_timer_);
     // be aware of the sign of Displacement
@@ -155,7 +155,7 @@ public:
    * Eventually, there will be only one version wihtout any transfer and solve the dilemma.
    */
   inline void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
-                          const RefVectorWithLeader<ParticleSet>& p_list) const
+                          const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
     assert(this == &dt_list.getLeader());
     ScopedTimer local_timer(evaluate_timer_);
@@ -371,20 +371,20 @@ public:
   }
 
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
     ScopedTimer local_timer(move_timer_);
     DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
                                            0, N_sources);
     // If the full table is not ready all the time, overwrite the current value.
     // If this step is missing, DT values can be undefined in case a move is rejected.
-    if (!need_full_table_)
+    if (!need_full_table_ && prepare_old)
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->getCoordinates().getAllParticlePos(),
                                              distances_[iat].data(), displacements_[iat], 0, N_sources);
   }
 
   ///update the stripe for jat-th particle
-  inline void update(IndexType iat, bool partial_update)
+  inline void update(IndexType iat, bool partial_update) override
   {
     ScopedTimer local_timer(update_timer_);
     std::copy_n(temp_r_.data(), N_sources, distances_[iat].data());
@@ -396,7 +396,7 @@ public:
                        RealType rcut,
                        int* restrict jid,
                        RealType* restrict dist,
-                       PosType* restrict displ) const
+                       PosType* restrict displ) const override
   {
     constexpr T cminus(-1);
     size_t nn = 0;
@@ -414,7 +414,7 @@ public:
     return nn;
   }
 
-  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
+  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
     RealType min_dist = std::numeric_limits<RealType>::max();
     int index         = -1;
