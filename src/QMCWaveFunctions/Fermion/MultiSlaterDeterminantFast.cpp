@@ -595,66 +595,56 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     {
       if (usingCSF)
       {
-        if (laplSum_up.size() == 0)
-          laplSum_up.resize(Dets[0]->detValues.size());
-        if (laplSum_dn.size() == 0)
-          laplSum_dn.resize(Dets[1]->detValues.size());
-        // assume that evaluateLog has been called in opt routine before
-        //   Dets[0]->evaluateForWalkerMove(P);
-        //   Dets[1]->evaluateForWalkerMove(P);
-        ValueVector_t& detValues_up = Dets[0]->detValues;
-        ValueVector_t& detValues_dn = Dets[1]->detValues;
-        GradMatrix_t& grads_up      = Dets[0]->grads;
-        GradMatrix_t& grads_dn      = Dets[1]->grads;
-        ValueMatrix_t& lapls_up     = Dets[0]->lapls;
-        ValueMatrix_t& lapls_dn     = Dets[1]->lapls;
-        const size_t N1             = Dets[0]->FirstIndex;
-        const size_t N2             = Dets[1]->FirstIndex;
-        const size_t NP1            = Dets[0]->NumPtcls;
-        const size_t NP2            = Dets[1]->NumPtcls;
-        // myG,myL should already be calculated
-        const size_t n = P.getTotalNum();
-
         ValueType psiinv   = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
         ValueType lapl_sum = 0.0;
-        ValueType gg = 0.0, ggP = 0.0;
-        myG_temp = 0.0;
-        int num  = laplSum_up.size();
-        ValueVector_t::iterator it(laplSum_up.begin());
-        ValueVector_t::iterator last(laplSum_up.end());
-        ValueType* ptr0 = lapls_up[0];
-        int nels_up     = P.last(0) - P.first(0);
-        while (it != last)
-        {
-          (*it) = 0.0;
-          for (int k = 0; k < nels_up; k++, ptr0++)
-            (*it) += *ptr0;
-          it++;
-        }
-        it          = laplSum_dn.begin();
-        last        = laplSum_dn.end();
-        ptr0        = lapls_dn[0];
-        int nels_dn = P.last(1) - P.first(1);
-        while (it != last)
-        {
-          (*it) = 0.0;
-          for (int k = 0; k < nels_dn; k++, ptr0++)
-            (*it) += *ptr0;
-          it++;
+        const size_t n = P.getTotalNum();
+        for (size_t id = 0; id < Dets.size(); id++){
+          if (laplSum[id].size() == 0)
+            laplSum[id].resize(Dets[id]->detValues.size());
+          // assume that evaluateLog has been called in opt routine before
+          //   Dets[id]->evaluateForWalkerMove(P);
+          ValueVector_t& detValues_spin = Dets[id]->detValues;
+          ValueMatrix_t& lapls_spin     = Dets[id]->lapls;
+          // myG,myL should already be calculated
+
+          ValueVector_t::iterator it(laplSum[id].begin());
+          ValueVector_t::iterator last(laplSum[id].end());
+          ValueType* ptr0 = lapls_spin[0];
+          int npart_spin     = P.last(id) - P.first(id);
+          while (it != last)
+          {
+            (*it) = 0.0;
+            for (int k = 0; k < npart_spin; k++, ptr0++)
+              (*it) += *ptr0;
+            it++;
+          }
         }
 
         const ValueType* restrict C_p = C->data();
+        ValueType gg = 0.0, ggP = 0.0;
+        myG_temp = 0.0;
         for (size_t i = 0; i < C->size(); i++)
         {
-          size_t upC     = (*C2node)[0][i];
-          size_t dnC     = (*C2node)[1][i];
-          ValueType tmp1 = C_p[i] * detValues_dn[dnC] * psiinv;
-          ValueType tmp2 = C_p[i] * detValues_up[upC] * psiinv;
-          lapl_sum += tmp1 * laplSum_up[upC] + tmp2 * laplSum_dn[dnC];
-          for (size_t k = 0, j = N1; k < NP1; k++, j++)
-            myG_temp[j] += tmp1 * grads_up(upC, k);
-          for (size_t k = 0, j = N2; k < NP2; k++, j++)
-            myG_temp[j] += tmp2 * grads_dn(dnC, k);
+          std::vector<ValueType> tmp;
+          tmp.resize(Dets.size());
+          for (size_t id = 0; id < Dets.size(); id++){
+            size_t spinC     = (*C2node)[id][i];
+            const size_t N             = Dets[id]->FirstIndex;
+            const size_t NP            = Dets[id]->NumPtcls;
+            ValueVector_t& detValues_spin = Dets[id]->detValues;
+            GradMatrix_t& grads_spin      = Dets[id]->grads;
+            tmp[id] = C_p[i] * psiinv;
+            for (size_t other_id = 0; other_id < Dets.size(); other_id++){
+              if(id == other_id)
+                  continue;
+              ValueVector_t& detValues_otherspin = Dets[other_id]->detValues;
+              size_t otherspinC     = (*C2node)[other_id][i];
+              tmp[id] *= detValues_otherspin[otherspinC];
+            }
+            lapl_sum += tmp[id] * laplSum[id][spinC];
+            for (size_t k = 0, j = N; k < NP; k++, j++)
+              myG_temp[j] += tmp[id] * grads_spin(spinC, k);
+          }
         }
         gg = ggP = 0.0;
         for (size_t i = 0; i < n; i++)
@@ -662,7 +652,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           gg += dot(myG_temp[i], myG_temp[i]) - dot(P.G[i], myG_temp[i]);
         }
         //       for(int i=0; i<C.size(); i++)
-        num     = CSFcoeff->size() - 1;
+        int num     = CSFcoeff->size() - 1;
         int cnt = 0;
         //        this one is not optable
         cnt += (*DetsPerCSF)[0];
@@ -675,117 +665,138 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             cnt += (*DetsPerCSF)[ip];
             continue;
           }
-          ValueType q0 = 0.0, v1 = 0.0, v2 = 0.0;
+          ValueType q0 = 0.0;
+          std::vector<ValueType> v;
           const RealType* restrict CSFexpansion_p = CSFexpansion->data();
           for (int k = 0; k < (*DetsPerCSF)[ip]; k++)
           {
-            size_t upC     = (*C2node)[0][cnt];
-            size_t dnC     = (*C2node)[1][cnt];
-            ValueType tmp1 = CSFexpansion_p[cnt] * detValues_dn[dnC] * psiinv;
-            ValueType tmp2 = CSFexpansion_p[cnt] * detValues_up[upC] * psiinv;
-            q0 += (tmp1 * laplSum_up[upC] + tmp2 * laplSum_dn[dnC]);
-            for (size_t l = 0, j = N1; l < NP1; l++, j++)
-              v1 += tmp1 * static_cast<ValueType>(dot(P.G[j], grads_up(upC, l)) - dot(myG_temp[j], grads_up(upC, l)));
-            for (size_t l = 0, j = N2; l < NP2; l++, j++)
-              v2 += tmp2 * static_cast<ValueType>(dot(P.G[j], grads_dn(dnC, l)) - dot(myG_temp[j], grads_dn(dnC, l)));
-            cnt++;
+            std::vector<ValueType> tmp;
+            tmp.resize(Dets.size());
+            for (size_t id = 0; id < Dets.size(); id++){
+              ValueVector_t& detValues_spin = Dets[id]->detValues;
+              GradMatrix_t& grads_spin      = Dets[id]->grads;
+              size_t spinC     = (*C2node)[id][cnt];
+              tmp[id] = CSFexpansion_p[cnt] * psiinv;
+              for (size_t other_id = 0; other_id < Dets.size(); other_id++){
+                if(id == other_id)
+                  continue;
+                ValueVector_t& detValues_otherspin = Dets[other_id]->detValues;
+                size_t otherspinC     = (*C2node)[other_id][cnt];
+                tmp[id] *= detValues_otherspin[otherspinC];
+              }
+              q0 += tmp[id] * laplSum[id][spinC];
+              const size_t N             = Dets[id]->FirstIndex;
+              const size_t NP            = Dets[id]->NumPtcls;
+              for (size_t l = 0, j = N; l < NP; l++, j++)
+                v[id] += tmp[id] * static_cast<ValueType>(dot(P.G[j], grads_spin(spinC, l)) - dot(myG_temp[j], grads_spin(spinC, l)));
+              }
+              cnt++;
           }
-          ValueType dhpsi  = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) - dlogpsi[kk] * gg - v1 - v2;
+          ValueType dhpsi  = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) - dlogpsi[kk] * gg;
+          for (size_t id = 0; id < Dets.size(); id++){
+              dhpsi -= v[id];
+          }
           dhpsioverpsi[kk] = dhpsi;
         }
       }
       else
       //usingDETS
       {
-        if (laplSum_up.size() == 0)
-          laplSum_up.resize(Dets[0]->detValues.size());
-        if (laplSum_dn.size() == 0)
-          laplSum_dn.resize(Dets[1]->detValues.size());
-        // assume that evaluateLog has been called in opt routine before
-        //   Dets[0]->evaluateForWalkerMove(P);
-        //   Dets[1]->evaluateForWalkerMove(P);
-        ValueVector_t& detValues_up = Dets[0]->detValues;
-        ValueVector_t& detValues_dn = Dets[1]->detValues;
-        GradMatrix_t& grads_up      = Dets[0]->grads;
-        GradMatrix_t& grads_dn      = Dets[1]->grads;
-        ValueMatrix_t& lapls_up     = Dets[0]->lapls;
-        ValueMatrix_t& lapls_dn     = Dets[1]->lapls;
-        int N1                      = Dets[0]->FirstIndex;
-        int N2                      = Dets[1]->FirstIndex;
-        int NP1                     = Dets[0]->NumPtcls;
-        int NP2                     = Dets[1]->NumPtcls;
-        int n                       = P.getTotalNum();
         ValueType psiinv            = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
-        ValueType lapl_sum          = 0.0;
-        ValueType gg = 0.0, ggP = 0.0;
-        myG_temp = 0.0;
-        ValueVector_t::iterator it(laplSum_up.begin());
-        ValueVector_t::iterator last(laplSum_up.end());
-        ValueType* ptr0 = lapls_up[0];
-        int nels_up     = P.last(0) - P.first(0);
-        while (it != last)
-        {
-          (*it) = 0.0;
-          for (int k = 0; k < nels_up; k++, ptr0++)
-            (*it) += *ptr0;
-          it++;
-        }
-        it          = laplSum_dn.begin();
-        last        = laplSum_dn.end();
-        ptr0        = lapls_dn[0];
-        int nels_dn = P.last(1) - P.first(1);
-        while (it != last)
-        {
-          (*it) = 0.0;
-          for (size_t k = 0; k < nels_dn; k++, ptr0++)
-            (*it) += *ptr0;
-          it++;
+        ValueType lapl_sum = 0.0;
+        const size_t n = P.getTotalNum();
+        for (size_t id = 0; id < Dets.size(); id++){
+          if (laplSum[id].size() == 0)
+            laplSum[id].resize(Dets[id]->detValues.size());
+          // assume that evaluateLog has been called in opt routine before
+          //   Dets[id]->evaluateForWalkerMove(P);
+          ValueVector_t& detValues_spin = Dets[id]->detValues;
+          ValueMatrix_t& lapls_spin     = Dets[id]->lapls;
+          const size_t n = P.getTotalNum();
+          ValueVector_t::iterator it(laplSum[id].begin());
+          ValueVector_t::iterator last(laplSum[id].end());
+          ValueType* ptr0 = lapls_spin[0];
+          int npart_spin     = P.last(id) - P.first(id);
+          while (it != last)
+          {
+            (*it) = 0.0;
+            for (int k = 0; k < npart_spin; k++, ptr0++)
+              (*it) += *ptr0;
+            it++;
+          }
         }
         const ValueType* restrict C_p = C->data();
+        ValueType gg = 0.0, ggP = 0.0;
+        myG_temp = 0.0;
         for (size_t i = 0; i < C->size(); i++)
         {
-          size_t upC     = (*C2node)[0][i];
-          size_t dnC     = (*C2node)[1][i];
-          ValueType tmp1 = C_p[i] * detValues_dn[dnC] * psiinv;
-          ValueType tmp2 = C_p[i] * detValues_up[upC] * psiinv;
-          lapl_sum += tmp1 * laplSum_up[upC] + tmp2 * laplSum_dn[dnC];
-          for (size_t k = 0, j = N1; k < NP1; k++, j++)
-            myG_temp[j] += tmp1 * grads_up(upC, k);
-          for (size_t k = 0, j = N2; k < NP2; k++, j++)
-            myG_temp[j] += tmp2 * grads_dn(dnC, k);
+          std::vector<ValueType> tmp;
+          tmp.resize(Dets.size());
+          for (size_t id = 0; id < Dets.size(); id++){
+            size_t spinC     = (*C2node)[id][i];
+            const size_t N             = Dets[id]->FirstIndex;
+            const size_t NP            = Dets[id]->NumPtcls;
+            ValueVector_t& detValues_spin = Dets[id]->detValues;
+            GradMatrix_t& grads_spin      = Dets[id]->grads;
+            tmp[id] = C_p[i] * psiinv;
+            for (size_t other_id = 0; other_id < Dets.size(); other_id++){
+              if(id == other_id)
+                  continue;
+              ValueVector_t& detValues_otherspin = Dets[other_id]->detValues;
+              size_t otherspinC     = (*C2node)[other_id][i];
+              tmp[id] *= detValues_otherspin[otherspinC];
+            }
+            lapl_sum += tmp[id] * laplSum[id][spinC];
+            for (size_t k = 0, j = N; k < NP; k++, j++)
+              myG_temp[j] += tmp[id] * grads_spin(spinC, k);
+          }
         }
         gg = ggP = 0.0;
         for (size_t i = 0; i < n; i++)
         {
           gg += dot(myG_temp[i], myG_temp[i]) - dot(P.G[i], myG_temp[i]);
         }
+        ValueType q0 = 0.0;
+        std::vector<ValueType> v;
         for (size_t i = 1; i < C->size(); i++)
         {
           int kk = myVars->where(i - 1);
           if (kk < 0)
             continue;
-          const size_t upC = (*C2node)[0][i];
-          const size_t dnC = (*C2node)[1][i];
-          ValueType tmp1   = detValues_dn[dnC] * psiinv;
-          ValueType tmp2   = detValues_up[upC] * psiinv;
-          ValueType v1 = 0.0, v2 = 0.0;
-          for (size_t k = 0, j = N1; k < NP1; k++, j++)
-            v1 += (dot(P.G[j], grads_up(upC, k)) - dot(myG_temp[j], grads_up(upC, k)));
-          for (size_t k = 0, j = N2; k < NP2; k++, j++)
-            v2 += (dot(P.G[j], grads_dn(dnC, k)) - dot(myG_temp[j], grads_dn(dnC, k)));
-          ValueType dhpsi =
-              (RealType)-0.5 * (tmp1 * laplSum_up[upC] + tmp2 * laplSum_dn[dnC] - dlogpsi[kk] * lapl_sum) -
-              dlogpsi[kk] * gg - (tmp1 * v1 + tmp2 * v2);
+         std::vector<ValueType> tmp;
+         tmp.resize(Dets.size());
+         for (size_t id = 0; id < Dets.size(); id++){
+            ValueVector_t& detValues_spin = Dets[id]->detValues;
+            GradMatrix_t& grads_spin      = Dets[id]->grads;
+            size_t spinC     = (*C2node)[id][i];
+            tmp[id] = psiinv;
+            for (size_t other_id = 0; other_id < Dets.size(); other_id++){
+              if(id == other_id)
+                continue;
+              ValueVector_t& detValues_otherspin = Dets[other_id]->detValues;
+              size_t otherspinC     = (*C2node)[other_id][i];
+              tmp[id] *= detValues_otherspin[otherspinC];
+            }
+            q0 += tmp[id] * laplSum[id][spinC];
+            const size_t N             = Dets[id]->FirstIndex;
+            const size_t NP            = Dets[id]->NumPtcls;
+            for (size_t l = 0, j = N; l < NP; l++, j++)
+              v[id] += tmp[id] * static_cast<ValueType>(dot(P.G[j], grads_spin(spinC, l)) - dot(myG_temp[j], grads_spin(spinC, l)));
+            }
+          ValueType dhpsi = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) -   dlogpsi[kk] * gg;
+          for (size_t id = 0; id < Dets.size(); id++){
+              dhpsi -= v[id];
+          }
           dhpsioverpsi[kk] = dhpsi;
         }
       }
     }
   }
 
-  Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], static_cast<ValueType>(psiCurrent), *C,
-                               (*C2node)[0], (*C2node)[1]);
-  Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], static_cast<ValueType>(psiCurrent), *C,
-                               (*C2node)[1], (*C2node)[0]);
+  Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], static_cast<ValueType>(psiCurrent), *C, (*C2node)[0], (*C2node)[1]);
+  Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], static_cast<ValueType>(psiCurrent), *C, (*C2node)[1], (*C2node)[0]);
+  //for (size_t id = 0; id < Dets.size(); id++)
+  //  Dets[id]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets, static_cast<ValueType>(psiCurrent), *C, *C2node, id);
 }
 
 void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,

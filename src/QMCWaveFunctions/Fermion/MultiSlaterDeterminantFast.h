@@ -164,8 +164,7 @@ public:
 
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
-  ValueVector_t laplSum_up;
-  ValueVector_t laplSum_dn;
+  std::vector<ValueVector_t> laplSum;
 
   //optimizable variable is shared with the clones
   std::shared_ptr<opt_variables_type> myVars;
