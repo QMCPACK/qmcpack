@@ -249,14 +249,23 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     const auto wf_list_no_leader =
         convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
 
-    ResourceCollectionLock<TrialWaveFunction> resource_lock(pop.get_golden_twf().getResource(), pop.get_golden_twf());
-    // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
+    if (p_list_no_leader.size() > 1)
+    {
+      ResourceCollectionLock<TrialWaveFunction> resource_lock(pop.get_golden_twf().getResource(), pop.get_golden_twf());
+      // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
 
-    const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);
-    ParticleSet::flex_update(p_list);
+      const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);
+      ParticleSet::flex_update(p_list, true);
 
-    const RefVectorWithLeader<TrialWaveFunction> wf_list(pop.get_golden_twf(), wf_list_no_leader);
-    TrialWaveFunction::flex_evaluateLog(wf_list, p_list);
+      const RefVectorWithLeader<TrialWaveFunction> wf_list(pop.get_golden_twf(), wf_list_no_leader);
+      TrialWaveFunction::flex_evaluateLog(wf_list, p_list);
+    }
+    else
+    {
+      ResourceCollectionLock<TrialWaveFunction> resource_lock(pop.get_golden_twf().getResource(), wf_list_no_leader[0]);
+      p_list_no_leader[0].get().update(true);
+      wf_list_no_leader[0].get().evaluateLog(p_list_no_leader[0]);
+    }
   }
 
   const int current_num_global_walkers = std::accumulate(num_per_node_.begin(), num_per_node_.end(), 0);
