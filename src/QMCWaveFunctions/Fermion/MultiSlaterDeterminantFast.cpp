@@ -362,22 +362,28 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl(Parti
 
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_precompute(ParticleSet& P, int iat)
 {
-  const bool upspin = getDetID(iat) == 0;
-  const int spin0   = (upspin) ? 0 : 1;
-  const int spin1   = (upspin) ? 1 : 0;
+  const int det_id = getDetID(iat);
+  Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  Dets[spin0]->evaluateDetsForPtclMove(P, iat);
 
-  const ValueType* restrict detValues0 = Dets[spin0]->new_detValues.data(); //always new
-  const ValueType* restrict detValues1 = Dets[spin1]->detValues.data();
-  const size_t* restrict det0          = (*C2node)[spin0].data();
-  const size_t* restrict det1          = (*C2node)[spin1].data();
+  const ValueType* restrict detValues0 = Dets[det_id]->new_detValues.data(); //always new
+  const size_t* restrict det0          = (*C2node)[det_id].data();
   const ValueType* restrict cptr       = C->data();
   const size_t nc                      = C->size();
 
   PsiValueType psi = 0;
-  for (size_t i = 0; i < nc; ++i)
-    psi += cptr[i] * detValues0[det0[i]] * detValues1[det1[i]];
+  for (size_t i = 0; i < nc; ++i){
+    ValueType t = cptr[i];
+    for (size_t id = 0; id < Dets.size(); id++){
+      if (id != det_id){
+        const ValueType* restrict detValues1 = Dets[id]->detValues.data();
+        const size_t* restrict det1          = (*C2node)[id].data();
+        t *= detValues1[det1[i]];
+      }
+    }
+    t *= detValues0[det0[i]];
+    psi += t;
+  }
   return psi;
 }
 
