@@ -167,10 +167,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
     ParticleSet::ParticleLaplacian_t& l_tmp)
 {
   const ValueType czero(0);
-  PsiValueType psi = czero;
+  PsiValueType psi      = czero;
   PsiValueType spin_psi = czero;
-  g_tmp            = czero;
-  l_tmp            = czero;
+  g_tmp                 = czero;
+  l_tmp                 = czero;
 
   const ValueType* restrict cptr = C->data();
   const size_t nc                = C->size();
@@ -178,29 +178,31 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
   for (size_t i = 0; i < nc; ++i)
   {
     const ValueType c = cptr[i];
-    spin_psi = c;
-    for (size_t id = 0; id < Dets.size(); id++){
-        const GradMatrix_t& grads_spin      = Dets[id]->grads;
-        const ValueVector_t& detValues_spin = Dets[id]->detValues;
-        const ValueMatrix_t& lapls_spin     = Dets[id]->lapls;
-        const auto& spinC  = (*C2node)[id];
-        const size_t spin = spinC[i];
-        const size_t N                   = Dets[id]->FirstIndex;
-        const size_t NP                  = Dets[id]->NumPtcls;
-        spin_psi *= detValues_spin[spin];
-        ValueType temp = c;
-        for (size_t other_id = 0; other_id < Dets.size(); other_id++){
-            if (other_id==id)
-                continue;
-            temp *= Dets[other_id]->detValues[(*C2node)[other_id][i]];
-        }
+    spin_psi          = c;
+    for (size_t id = 0; id < Dets.size(); id++)
+    {
+      const GradMatrix_t& grads_spin      = Dets[id]->grads;
+      const ValueVector_t& detValues_spin = Dets[id]->detValues;
+      const ValueMatrix_t& lapls_spin     = Dets[id]->lapls;
+      const auto& spinC                   = (*C2node)[id];
+      const size_t spin                   = spinC[i];
+      const size_t N                      = Dets[id]->FirstIndex;
+      const size_t NP                     = Dets[id]->NumPtcls;
+      spin_psi *= detValues_spin[spin];
+      ValueType temp = c;
+      for (size_t other_id = 0; other_id < Dets.size(); other_id++)
+      {
+        if (other_id == id)
+          continue;
+        temp *= Dets[other_id]->detValues[(*C2node)[other_id][i]];
+      }
 
 
-        for (int k = 0, n = N; k < NP; k++, n++)
-        {
-          g_tmp[n] += temp * grads_spin(spin, k); //myG[n] += c*grads_spin(spin,k)*(detValues_otherspin[otherspin]...);
-          l_tmp[n] += temp * lapls_spin(spin, k); //myL[n] += c*lapls_spin(spin,k)*(detValues_otherspin[otherspin]...);
-        }
+      for (int k = 0, n = N; k < NP; k++, n++)
+      {
+        g_tmp[n] += temp * grads_spin(spin, k); //myG[n] += c*grads_spin(spin,k)*(detValues_otherspin[otherspin]...);
+        l_tmp[n] += temp * lapls_spin(spin, k); //myL[n] += c*lapls_spin(spin,k)*(detValues_otherspin[otherspin]...);
+      }
     }
     psi += spin_psi;
   }
@@ -285,8 +287,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no
     //psi +=  cptr[i]*detValues0[d0]        * detValues1[d1];
     //g_at += cptr[i]*grads(d0,iat-noffset) * detValues1[d1];
     ValueType t = cptr[i];
-    for (size_t id = 0; id < Dets.size(); id++){
-      if (id != det_id){
+    for (size_t id = 0; id < Dets.size(); id++)
+    {
+      if (id != det_id)
+      {
         const ValueType* restrict detValues1 = Dets[id]->detValues.data();
         const size_t* restrict det1          = (*C2node)[id].data();
         t *= detValues1[det1[i]];
@@ -371,10 +375,13 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_pr
   const size_t nc                      = C->size();
 
   PsiValueType psi = 0;
-  for (size_t i = 0; i < nc; ++i){
+  for (size_t i = 0; i < nc; ++i)
+  {
     ValueType t = cptr[i];
-    for (size_t id = 0; id < Dets.size(); id++){
-      if (id != det_id){
+    for (size_t id = 0; id < Dets.size(); id++)
+    {
+      if (id != det_id)
+      {
         const ValueType* restrict detValues1 = Dets[id]->detValues.data();
         const size_t* restrict det1          = (*C2node)[id].data();
         t *= detValues1[det1[i]];
@@ -442,7 +449,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
   {
     APP_ABORT("Fast MSD+BF: restore not implemented. \n");
   }
-    
+
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->registerData(P, buf);
 
@@ -476,7 +483,7 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
   {
     APP_ABORT("Fast MSD+BF: copyFromBuffer not implemented. \n");
   }
-  for (size_t id = 0; id < Dets.size() ; id++)
+  for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->copyFromBuffer(P, buf);
 
   buf.get(psiCurrent);
@@ -496,7 +503,7 @@ void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
     all_Optimizable = Dets[id]->Optimizable;
 
-  if(all_Optimizable)
+  if (all_Optimizable)
     for (size_t id = 0; id < Dets.size(); id++)
       Dets[id]->checkInVariables(active);
 }
@@ -505,13 +512,13 @@ void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& act
 {
   if (CI_Optimizable)
     myVars->getIndex(active);
-  
+
   bool all_Optimizable = true;
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
     all_Optimizable = Dets[id]->Optimizable;
 
-  if(all_Optimizable)
-    for (size_t id = 0; id < Dets.size();  id++)
+  if (all_Optimizable)
+    for (size_t id = 0; id < Dets.size(); id++)
       Dets[id]->checkOutVariables(active);
 }
 
@@ -565,8 +572,8 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
     all_Optimizable = Dets[id]->Optimizable;
 
-  if(all_Optimizable)
-    for (size_t id = 0; id < Dets.size();  id++)
+  if (all_Optimizable)
+    for (size_t id = 0; id < Dets.size(); id++)
       Dets[id]->resetParameters(active);
 }
 void MultiSlaterDeterminantFast::reportStatus(std::ostream& os) {}
@@ -596,8 +603,9 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       {
         ValueType psiinv   = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
         ValueType lapl_sum = 0.0;
-        const size_t n = P.getTotalNum();
-        for (size_t id = 0; id < Dets.size(); id++){
+        const size_t n     = P.getTotalNum();
+        for (size_t id = 0; id < Dets.size(); id++)
+        {
           if (laplSum[id].size() == 0)
             laplSum[id].resize(Dets[id]->detValues.size());
           // assume that evaluateLog has been called in opt routine before
@@ -609,7 +617,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           ValueVector_t::iterator it(laplSum[id].begin());
           ValueVector_t::iterator last(laplSum[id].end());
           ValueType* ptr0 = lapls_spin[0];
-          int npart_spin     = P.last(id) - P.first(id);
+          int npart_spin  = P.last(id) - P.first(id);
           while (it != last)
           {
             (*it) = 0.0;
@@ -626,18 +634,20 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         {
           std::vector<ValueType> tmp;
           tmp.resize(Dets.size());
-          for (size_t id = 0; id < Dets.size(); id++){
-            size_t spinC     = (*C2node)[id][i];
-            const size_t N             = Dets[id]->FirstIndex;
-            const size_t NP            = Dets[id]->NumPtcls;
+          for (size_t id = 0; id < Dets.size(); id++)
+          {
+            size_t spinC                  = (*C2node)[id][i];
+            const size_t N                = Dets[id]->FirstIndex;
+            const size_t NP               = Dets[id]->NumPtcls;
             ValueVector_t& detValues_spin = Dets[id]->detValues;
             GradMatrix_t& grads_spin      = Dets[id]->grads;
-            tmp[id] = C_p[i] * psiinv;
-            for (size_t other_id = 0; other_id < Dets.size(); other_id++){
-              if(id == other_id)
-                  continue;
+            tmp[id]                       = C_p[i] * psiinv;
+            for (size_t other_id = 0; other_id < Dets.size(); other_id++)
+            {
+              if (id == other_id)
+                continue;
               ValueVector_t& detValues_otherspin = Dets[other_id]->detValues;
-              size_t otherspinC     = (*C2node)[other_id][i];
+              size_t otherspinC                  = (*C2node)[other_id][i];
               tmp[id] *= detValues_otherspin[otherspinC];
             }
             lapl_sum += tmp[id] * laplSum[id][spinC];
@@ -651,7 +661,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           gg += dot(myG_temp[i], myG_temp[i]) - dot(P.G[i], myG_temp[i]);
         }
         //       for(int i=0; i<C.size(); i++)
-        int num     = CSFcoeff->size() - 1;
+        int num = CSFcoeff->size() - 1;
         int cnt = 0;
         //        this one is not optable
         cnt += (*DetsPerCSF)[0];
@@ -671,29 +681,33 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           {
             std::vector<ValueType> tmp;
             tmp.resize(Dets.size());
-            for (size_t id = 0; id < Dets.size(); id++){
+            for (size_t id = 0; id < Dets.size(); id++)
+            {
               ValueVector_t& detValues_spin = Dets[id]->detValues;
               GradMatrix_t& grads_spin      = Dets[id]->grads;
-              size_t spinC     = (*C2node)[id][cnt];
-              tmp[id] = CSFexpansion_p[cnt] * psiinv;
-              for (size_t other_id = 0; other_id < Dets.size(); other_id++){
-                if(id == other_id)
+              size_t spinC                  = (*C2node)[id][cnt];
+              tmp[id]                       = CSFexpansion_p[cnt] * psiinv;
+              for (size_t other_id = 0; other_id < Dets.size(); other_id++)
+              {
+                if (id == other_id)
                   continue;
                 ValueVector_t& detValues_otherspin = Dets[other_id]->detValues;
-                size_t otherspinC     = (*C2node)[other_id][cnt];
+                size_t otherspinC                  = (*C2node)[other_id][cnt];
                 tmp[id] *= detValues_otherspin[otherspinC];
               }
               q0 += tmp[id] * laplSum[id][spinC];
-              const size_t N             = Dets[id]->FirstIndex;
-              const size_t NP            = Dets[id]->NumPtcls;
+              const size_t N  = Dets[id]->FirstIndex;
+              const size_t NP = Dets[id]->NumPtcls;
               for (size_t l = 0, j = N; l < NP; l++, j++)
-                v[id] += tmp[id] * static_cast<ValueType>(dot(P.G[j], grads_spin(spinC, l)) - dot(myG_temp[j], grads_spin(spinC, l)));
-              }
-              cnt++;
+                v[id] += tmp[id] *
+                    static_cast<ValueType>(dot(P.G[j], grads_spin(spinC, l)) - dot(myG_temp[j], grads_spin(spinC, l)));
+            }
+            cnt++;
           }
-          ValueType dhpsi  = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) - dlogpsi[kk] * gg;
-          for (size_t id = 0; id < Dets.size(); id++){
-              dhpsi -= v[id];
+          ValueType dhpsi = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) - dlogpsi[kk] * gg;
+          for (size_t id = 0; id < Dets.size(); id++)
+          {
+            dhpsi -= v[id];
           }
           dhpsioverpsi[kk] = dhpsi;
         }
@@ -701,21 +715,22 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       else
       //usingDETS
       {
-        ValueType psiinv            = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
+        ValueType psiinv   = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
         ValueType lapl_sum = 0.0;
-        const size_t n = P.getTotalNum();
-        for (size_t id = 0; id < Dets.size(); id++){
+        const size_t n     = P.getTotalNum();
+        for (size_t id = 0; id < Dets.size(); id++)
+        {
           if (laplSum[id].size() == 0)
             laplSum[id].resize(Dets[id]->detValues.size());
           // assume that evaluateLog has been called in opt routine before
           //   Dets[id]->evaluateForWalkerMove(P);
           ValueVector_t& detValues_spin = Dets[id]->detValues;
           ValueMatrix_t& lapls_spin     = Dets[id]->lapls;
-          const size_t n = P.getTotalNum();
+          const size_t n                = P.getTotalNum();
           ValueVector_t::iterator it(laplSum[id].begin());
           ValueVector_t::iterator last(laplSum[id].end());
           ValueType* ptr0 = lapls_spin[0];
-          int npart_spin     = P.last(id) - P.first(id);
+          int npart_spin  = P.last(id) - P.first(id);
           while (it != last)
           {
             (*it) = 0.0;
@@ -731,18 +746,20 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         {
           std::vector<ValueType> tmp;
           tmp.resize(Dets.size());
-          for (size_t id = 0; id < Dets.size(); id++){
-            size_t spinC     = (*C2node)[id][i];
-            const size_t N             = Dets[id]->FirstIndex;
-            const size_t NP            = Dets[id]->NumPtcls;
+          for (size_t id = 0; id < Dets.size(); id++)
+          {
+            size_t spinC                  = (*C2node)[id][i];
+            const size_t N                = Dets[id]->FirstIndex;
+            const size_t NP               = Dets[id]->NumPtcls;
             ValueVector_t& detValues_spin = Dets[id]->detValues;
             GradMatrix_t& grads_spin      = Dets[id]->grads;
-            tmp[id] = C_p[i] * psiinv;
-            for (size_t other_id = 0; other_id < Dets.size(); other_id++){
-              if(id == other_id)
-                  continue;
+            tmp[id]                       = C_p[i] * psiinv;
+            for (size_t other_id = 0; other_id < Dets.size(); other_id++)
+            {
+              if (id == other_id)
+                continue;
               ValueVector_t& detValues_otherspin = Dets[other_id]->detValues;
-              size_t otherspinC     = (*C2node)[other_id][i];
+              size_t otherspinC                  = (*C2node)[other_id][i];
               tmp[id] *= detValues_otherspin[otherspinC];
             }
             lapl_sum += tmp[id] * laplSum[id][spinC];
@@ -762,29 +779,33 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           int kk = myVars->where(i - 1);
           if (kk < 0)
             continue;
-         std::vector<ValueType> tmp;
-         tmp.resize(Dets.size());
-         for (size_t id = 0; id < Dets.size(); id++){
+          std::vector<ValueType> tmp;
+          tmp.resize(Dets.size());
+          for (size_t id = 0; id < Dets.size(); id++)
+          {
             ValueVector_t& detValues_spin = Dets[id]->detValues;
             GradMatrix_t& grads_spin      = Dets[id]->grads;
-            size_t spinC     = (*C2node)[id][i];
-            tmp[id] = psiinv;
-            for (size_t other_id = 0; other_id < Dets.size(); other_id++){
-              if(id == other_id)
+            size_t spinC                  = (*C2node)[id][i];
+            tmp[id]                       = psiinv;
+            for (size_t other_id = 0; other_id < Dets.size(); other_id++)
+            {
+              if (id == other_id)
                 continue;
               ValueVector_t& detValues_otherspin = Dets[other_id]->detValues;
-              size_t otherspinC     = (*C2node)[other_id][i];
+              size_t otherspinC                  = (*C2node)[other_id][i];
               tmp[id] *= detValues_otherspin[otherspinC];
             }
             q0 += tmp[id] * laplSum[id][spinC];
-            const size_t N             = Dets[id]->FirstIndex;
-            const size_t NP            = Dets[id]->NumPtcls;
+            const size_t N  = Dets[id]->FirstIndex;
+            const size_t NP = Dets[id]->NumPtcls;
             for (size_t l = 0, j = N; l < NP; l++, j++)
-              v[id] += tmp[id] * static_cast<ValueType>(dot(P.G[j], grads_spin(spinC, l)) - dot(myG_temp[j], grads_spin(spinC, l)));
-            }
-          ValueType dhpsi = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) -   dlogpsi[kk] * gg;
-          for (size_t id = 0; id < Dets.size(); id++){
-              dhpsi -= v[id];
+              v[id] += tmp[id] *
+                  static_cast<ValueType>(dot(P.G[j], grads_spin(spinC, l)) - dot(myG_temp[j], grads_spin(spinC, l)));
+          }
+          ValueType dhpsi = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) - dlogpsi[kk] * gg;
+          for (size_t id = 0; id < Dets.size(); id++)
+          {
+            dhpsi -= v[id];
           }
           dhpsioverpsi[kk] = dhpsi;
         }
@@ -792,8 +813,10 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     }
   }
 
-  Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], static_cast<ValueType>(psiCurrent), *C, (*C2node)[0], (*C2node)[1]);
-  Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], static_cast<ValueType>(psiCurrent), *C, (*C2node)[1], (*C2node)[0]);
+  Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], static_cast<ValueType>(psiCurrent), *C,
+                               (*C2node)[0], (*C2node)[1]);
+  Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], static_cast<ValueType>(psiCurrent), *C,
+                               (*C2node)[1], (*C2node)[0]);
   //for (size_t id = 0; id < Dets.size(); id++)
   //  Dets[id]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets, static_cast<ValueType>(psiCurrent), *C, *C2node, id);
 }
@@ -818,7 +841,6 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
     {
       if (usingCSF)
       {
-
         ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
 
         int num = CSFcoeff->size() - 1;
@@ -839,7 +861,8 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
           for (int k = 0; k < (*DetsPerCSF)[ip]; k++)
           {
             ValueType t = CSFexpansion_p[cnt] * psiinv;
-            for (size_t id = 0; id < Dets.size(); id++){
+            for (size_t id = 0; id < Dets.size(); id++)
+            {
               size_t spinC = (*C2node)[id][cnt];
               // assume that evaluateLog has been called in opt routine before
               ValueVector_t& detValues_spin = Dets[id]->detValues;
@@ -854,20 +877,21 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
       else
       //usingDETS
       {
-        ValueType psiinv            = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
+        ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
         for (size_t i = 1; i < C->size(); i++)
         {
           int kk = myVars->where(i - 1);
           if (kk < 0)
             continue;
           ValueType cdet = psiinv;
-          for (size_t id = 0; id < Dets.size(); id++){
+          for (size_t id = 0; id < Dets.size(); id++)
+          {
             size_t spinC = (*C2node)[id][i];
             // assume that evaluateLog has been called in opt routine before
             ValueVector_t& detValues_spin = Dets[id]->detValues;
             cdet *= detValues_spin[spinC];
           }
-          dlogpsi[kk]      = cdet;
+          dlogpsi[kk] = cdet;
         }
       }
     }
