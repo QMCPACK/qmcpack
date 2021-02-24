@@ -15,7 +15,7 @@
 
 namespace qmcplusplus
 {
-/** Wrappers on dispatching to QMCHamiltonian single walker APIs or mw_ APIs.
+/** Wrappers for dispatching to QMCHamiltonian single walker APIs or mw_ APIs.
  * This should be only used by QMC drivers.
  * member function names must match mw_ APIs in QMCHamiltonian
  */

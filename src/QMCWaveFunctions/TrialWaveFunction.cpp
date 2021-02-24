@@ -147,7 +147,10 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
   const auto l_list(TrialWaveFunction::extractLRefList(wf_list));
 
-  int num_particles = p_leader.getTotalNum();
+  // due to historic design issue, ParticleSet holds G and L instead of TrialWaveFunction.
+  // TrialWaveFunction now also holds G and L to move forward but they need to be copied to P.G and P.L
+  // to be compatiable with legacy use pattern.
+  const int num_particles = p_leader.getTotalNum();
   auto initGandL    = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
                                           ParticleSet::ParticleLaplacian_t& lapl) {
     grad.resize(num_particles);
@@ -178,7 +181,7 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
     pset.G = twf.G;
     pset.L = twf.L;
   };
-  // Ye: temporal workaround to have P.G/L always defined.
+  // Copy TWF::G/L to ParticleSet::G/L
   // remove when KineticEnergy use WF.G/L instead of P.G/L
   for (int iw = 0; iw < wf_list.size(); iw++)
     copyToP(p_list[iw], wf_list[iw]);
