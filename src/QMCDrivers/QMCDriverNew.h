@@ -366,7 +366,7 @@ protected:
   MCPopulation population_;
 
   /// TWF dispatcher
-  TWFdispatcher twf_dispatcher_;
+  const TWFdispatcher twf_dispatcher_;
 
   ///trial function
   TrialWaveFunction& Psi;
