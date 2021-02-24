@@ -25,6 +25,7 @@
 #include "ResourceCollection.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
+#include "MemoryUsage.h"
 
 namespace qmcplusplus
 {
@@ -105,7 +106,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     std::vector<RealType> rr_accepted(num_walkers, 0.0);
 
     {
-      ScopedTimer pbyp_local_timer(&(timers.movepbyp_timer));
+      ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
       for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
       {
         RealType tauovermass = sft.qmcdrv_input.get_tau() * sft.population.get_ptclgrp_inv_mass()[ig];
@@ -155,20 +156,15 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           for (int i = 0; i < rr.size(); ++i)
             assert(std::isfinite(rr[i]));
 #endif
-          auto elecs = walker_elecs;
           ParticleSet::flex_makeMove(walker_elecs, iat, drifts);
 
           TrialWaveFunction::flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
           // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
-          auto checkPhaseChanged = [&sft, &iat, &crowd, &nnode_crossing](TrialWaveFunction& twf, ParticleSet& elec,
-                                                                         int& is_reject) {
+          auto checkPhaseChanged = [&sft, &nnode_crossing](const TrialWaveFunction& twf, int& is_reject) {
             if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
             {
-              crowd.incReject();
               ++nnode_crossing;
-              elec.rejectMove(iat);
-              twf.rejectMove(iat);
               is_reject = 1;
             }
             else
@@ -179,7 +175,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           std::vector<int> rejects(num_walkers); // instead of std::vector<bool>
           for (int iw = 0; iw < num_walkers; ++iw)
           {
-            checkPhaseChanged(walker_twfs[iw], walker_elecs[iw], rejects[iw]);
+            checkPhaseChanged(walker_twfs[iw], rejects[iw]);
             //This is just convenient to do here
             rr_proposed[iw] += rr[iw];
           }
@@ -222,7 +218,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
           TrialWaveFunction::flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-          ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted, true);
+          ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted);
         }
       }
 
@@ -231,13 +227,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     }
 
     { // collect GL for KE.
-      ScopedTimer buffer_local(&timers.buffer_timer);
+      ScopedTimer buffer_local(timers.buffer_timer);
       TrialWaveFunction::flex_evaluateGL(walker_twfs, walker_elecs, recompute);
       ParticleSet::flex_saveWalker(walker_elecs, walkers);
     }
 
     { // hamiltonian
-      ScopedTimer ham_local(&timers.hamiltonian_timer);
+      ScopedTimer ham_local(timers.hamiltonian_timer);
 
       std::vector<QMCHamiltonian::FullPrecRealType> new_energies(
           QMCHamiltonian::flex_evaluateWithToperator(walker_hamiltonians, walker_elecs));
@@ -261,7 +257,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     }
 
     { // estimator collectables
-      ScopedTimer collectable_local(&timers.collectables_timer);
+      ScopedTimer collectable_local(timers.collectables_timer);
 
       // evaluate non-physical hamiltonian elements
       for (int iw = 0; iw < walkers.size(); ++iw)
@@ -274,7 +270,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   { // T-moves
-    ScopedTimer tmove_timer(&dmc_timers.tmove_timer);
+    ScopedTimer tmove_timer(dmc_timers.tmove_timer);
 
     auto& walkers = crowd.get_walkers();
     const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
@@ -298,7 +294,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
       if (walker_non_local_moves_accepted[iw] > 0)
       {
-        crowd.incNonlocalAccept();
+        crowd.incNonlocalAccept(walker_non_local_moves_accepted[iw]);
         moved_nonlocal_walkers.push_back(walkers[iw]);
         moved_nonlocal_walker_elecs.push_back(walker_elecs[iw]);
         moved_nonlocal_walker_twfs.push_back(walker_twfs[iw]);
@@ -339,6 +335,7 @@ void DMCBatched::runDMCStep(int crowd_id,
 
 void DMCBatched::process(xmlNodePtr node)
 {
+  print_mem("DMCBatched before initialization", app_log());
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
@@ -397,10 +394,12 @@ bool DMCBatched::run()
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
 
   { // walker initialization
-    ScopedTimer local_timer(&(timers_.init_walkers_timer));
+    ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
+
+  print_mem("DMCBatched after initialLogEvaluation", app_summary());
 
   {
     FullPrecRealType energy, variance;
@@ -429,7 +428,7 @@ bool DMCBatched::run()
 
     for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
     {
-      ScopedTimer local_timer(&(timers_.run_steps_timer));
+      ScopedTimer local_timer(timers_.run_steps_timer);
       dmc_state.step = step;
       crowd_task(crowds_.size(), runDMCStep, dmc_state, timers_, dmc_timers_, std::ref(step_contexts_),
                  std::ref(crowds_));
@@ -455,10 +454,12 @@ bool DMCBatched::run()
 
       population_.redistributeWalkers(crowds_);
     }
+    print_mem("DMCBatched after a block", app_debug_stream());
     endBlock();
   }
 
   branch_engine_->printStatus();
+  print_mem("DMCBatched ends", app_log());
   return finalize(num_blocks, true);
 }
 

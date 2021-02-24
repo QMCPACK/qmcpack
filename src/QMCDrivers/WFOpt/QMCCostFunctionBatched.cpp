@@ -244,7 +244,7 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
 /** evaluate everything before optimization */
 void QMCCostFunctionBatched::checkConfigurations()
 {
-  ScopedTimer tmp_timer(&check_config_timer_);
+  ScopedTimer tmp_timer(check_config_timer_);
 
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
@@ -494,7 +494,7 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
 
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
-  ScopedTimer tmp_timer(&corr_sampling_timer_);
+  ScopedTimer tmp_timer(corr_sampling_timer_);
 
   {
     //    synchronize the random number generator with the node
@@ -722,7 +722,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
                                                                                          Matrix<Return_rt>& Right)
 {
-  ScopedTimer tmp_timer(&fill_timer_);
+  ScopedTimer tmp_timer(fill_timer_);
 
   RealType b1, b2;
   if (GEVType == "H2")

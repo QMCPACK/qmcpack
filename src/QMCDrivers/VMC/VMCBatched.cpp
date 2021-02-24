@@ -16,6 +16,7 @@
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
+#include "MemoryUsage.h"
 
 namespace qmcplusplus
 {
@@ -156,7 +157,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
         TrialWaveFunction::flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-        ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted, true);
+        ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted);
       }
     }
     TrialWaveFunction::flex_completeUpdates(walker_twfs);
@@ -228,6 +229,7 @@ void VMCBatched::runVMCStep(int crowd_id,
 
 void VMCBatched::process(xmlNodePtr node)
 {
+  print_mem("VMCBatched before initialization", app_log());
   // \todo get total walkers should be coming from VMCDriverInpu
   try
   {
@@ -280,10 +282,12 @@ bool VMCBatched::run()
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
 
   { // walker initialization
-    ScopedTimer local_timer(&(timers_.init_walkers_timer));
+    ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
+
+  print_mem("VMCBatched after initialLogEvaluation", app_summary());
 
   ParallelExecutor<> crowd_task;
 
@@ -296,12 +300,13 @@ bool VMCBatched::run()
 
   for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
   {
-    ScopedTimer local_timer(&(timers_.run_steps_timer));
+    ScopedTimer local_timer(timers_.run_steps_timer);
     crowd_task(crowds_.size(), runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_),
                std::ref(crowds_));
   }
 
   app_log() << "Warm-up is completed!" << std::endl;
+  print_mem("VMCBatched after Warmup", app_log());
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -318,7 +323,7 @@ bool VMCBatched::run()
       crowd->startBlock(qmcdriver_input_.get_max_steps());
     for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
     {
-      ScopedTimer local_timer(&(timers_.run_steps_timer));
+      ScopedTimer local_timer(timers_.run_steps_timer);
       vmc_state.step = step;
       crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
@@ -331,6 +336,7 @@ bool VMCBatched::run()
         }
       }
     }
+    print_mem("VMCBatched after a block", app_debug_stream());
     endBlock();
   }
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
@@ -358,6 +364,7 @@ bool VMCBatched::run()
     o << "\n====================================================";
     app_log() << o.str() << std::endl;
   }
+  print_mem("VMCBatched ends", app_log());
   return finalize(num_blocks, true);
 }
 

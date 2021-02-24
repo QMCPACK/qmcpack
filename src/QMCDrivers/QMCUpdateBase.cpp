@@ -14,8 +14,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Platforms/sysutil.h"
 #include "QMCUpdateBase.h"
+#include "MemoryUsage.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"

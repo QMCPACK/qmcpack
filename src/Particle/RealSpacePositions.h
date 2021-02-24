@@ -34,7 +34,7 @@ public:
   std::unique_ptr<DynamicCoordinates> makeClone() override { return std::make_unique<RealSpacePositions>(*this); }
 
   void resize(size_t n) override { RSoA.resize(n); }
-  size_t size() override { return RSoA.size(); }
+  size_t size() const override { return RSoA.size(); }
 
   void setAllParticlePos(const ParticlePos_t& R) override
   {

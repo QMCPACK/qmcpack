@@ -21,6 +21,7 @@
 
 #include <cstdlib>
 #include <stdexcept>
+#include <atomic>
 #include <cuda_runtime_api.h>
 #include "config.h"
 #include "cudaError.h"
@@ -30,6 +31,11 @@
 
 namespace qmcplusplus
 {
+
+extern std::atomic<size_t> CUDAallocator_device_mem_allocated;
+
+inline size_t getCUDAdeviceMemAllocated() { return CUDAallocator_device_mem_allocated; }
+
 /** allocator for CUDA unified memory
  * @tparm T data type
  */
@@ -100,9 +106,14 @@ struct CUDAAllocator
   {
     void* pt;
     cudaErrorCheck(cudaMalloc(&pt, n * sizeof(T)), "Allocation failed in CUDAAllocator!");
+    CUDAallocator_device_mem_allocated += n * sizeof(T);
     return static_cast<T*>(pt);
   }
-  void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFree(p), "Deallocation failed in CUDAAllocator!"); }
+  void deallocate(T* p, std::size_t n)
+  {
+    cudaErrorCheck(cudaFree(p), "Deallocation failed in CUDAAllocator!");
+    CUDAallocator_device_mem_allocated -= n * sizeof(T);
+  }
 };
 
 template<class T1, class T2>

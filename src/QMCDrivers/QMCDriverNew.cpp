@@ -58,7 +58,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),
-      driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
       setNonLocalMoveHandler_(snlm_handler)
@@ -249,7 +249,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
                                     RealType reserve,
                                     const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
 {
-  ScopedTimer local_timer(&(timers_.create_walkers_timer));
+  ScopedTimer local_timer(timers_.create_walkers_timer);
   // ensure nwalkers local walkers in population_
   if (population_.get_walkers().size() == 0)
   {

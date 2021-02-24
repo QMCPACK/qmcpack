@@ -102,9 +102,9 @@ public:
   ~SoaDistanceTableABOMPTarget() { PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])") }
 
   /** evaluate the full table */
-  inline void evaluate(ParticleSet& P)
+  inline void evaluate(ParticleSet& P) override
   {
-    ScopedTimer local_timer(&evaluate_timer_);
+    ScopedTimer local_timer(evaluate_timer_);
     // be aware of the sign of Displacement
     const int N_targets_local  = N_targets;
     const int N_sources_local  = N_sources;
@@ -124,7 +124,7 @@ public:
     const int num_teams        = (N_sources + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     {
-      ScopedTimer offload(&offload_timer_);
+      ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(N_targets*num_teams) \
                         map(to: source_pos_ptr[:N_sources_padded*D]) \
                         map(always, to: target_pos_ptr[:N_targets*D]) \
@@ -155,10 +155,10 @@ public:
    * Eventually, there will be only one version wihtout any transfer and solve the dilemma.
    */
   inline void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
-                          const RefVectorWithLeader<ParticleSet>& p_list) const
+                          const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
     assert(this == &dt_list.getLeader());
-    ScopedTimer local_timer(&evaluate_timer_);
+    ScopedTimer local_timer(evaluate_timer_);
     mw_evaluate_fuse_transfer(dt_list, p_list);
   }
 
@@ -223,7 +223,7 @@ public:
     const int N_sources_local = N_sources;
 
     {
-      ScopedTimer offload(&dt_leader.offload_timer_);
+      ScopedTimer offload(dt_leader.offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
                         map(always, to: input_ptr[:offload_input.size()]) \
                         nowait depend(out: total_targets)")
@@ -253,7 +253,7 @@ public:
     }
 
     {
-      ScopedTimer copy(&dt_leader.copy_timer_);
+      ScopedTimer copy(dt_leader.copy_timer_);
       for (size_t iw = 0; iw < nw; iw++)
       {
         auto& dt       = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
@@ -327,7 +327,7 @@ public:
     const int N_sources_local = N_sources;
 
     {
-      ScopedTimer offload(&dt_leader.offload_timer_);
+      ScopedTimer offload(dt_leader.offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(total_targets*num_teams) \
                         map(always, to: input_ptr[:offload_input.size()]) \
                         map(always, from: r_dr_ptr[:offload_output.size()])")
@@ -356,7 +356,7 @@ public:
     }
 
     {
-      ScopedTimer copy(&dt_leader.copy_timer_);
+      ScopedTimer copy(dt_leader.copy_timer_);
       for (size_t iat = 0; iat < total_targets; iat++)
       {
         const int wid = walker_id_ptr[iat];
@@ -371,22 +371,22 @@ public:
   }
 
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
-    ScopedTimer local_timer(&move_timer_);
+    ScopedTimer local_timer(move_timer_);
     DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
                                            0, N_sources);
     // If the full table is not ready all the time, overwrite the current value.
     // If this step is missing, DT values can be undefined in case a move is rejected.
-    if (!need_full_table_)
+    if (!need_full_table_ && prepare_old)
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->getCoordinates().getAllParticlePos(),
                                              distances_[iat].data(), displacements_[iat], 0, N_sources);
   }
 
   ///update the stripe for jat-th particle
-  inline void update(IndexType iat, bool partial_update)
+  inline void update(IndexType iat, bool partial_update) override
   {
-    ScopedTimer local_timer(&update_timer_);
+    ScopedTimer local_timer(update_timer_);
     std::copy_n(temp_r_.data(), N_sources, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(temp_dr_.data(idim), N_sources, displacements_[iat].data(idim));
@@ -396,7 +396,7 @@ public:
                        RealType rcut,
                        int* restrict jid,
                        RealType* restrict dist,
-                       PosType* restrict displ) const
+                       PosType* restrict displ) const override
   {
     constexpr T cminus(-1);
     size_t nn = 0;
@@ -414,7 +414,7 @@ public:
     return nn;
   }
 
-  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
+  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
     RealType min_dist = std::numeric_limits<RealType>::max();
     int index         = -1;
