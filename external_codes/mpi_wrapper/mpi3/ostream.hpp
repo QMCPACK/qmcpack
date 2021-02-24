@@ -1,4 +1,4 @@
-#if COMPILATION_INSTRUCTIONS
+#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
 (echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wall -Wextra -Wfatal-errors -D_TEST_MPI3_OSTREAM $0x.cpp -o $0x.x && time mpirun -n 8 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
 #endif
 #ifndef MPI3_OSTREAM_HPP
@@ -38,10 +38,10 @@ struct ostream : public std::ostream{ // http://stackoverflow.com/a/2212940/2251
 				for(auto& m : messages){
 					output << comm_.name();
 					if((int)size(m.first) < (int)comm_.size()){
-						if(size(m.first) == 1) output << "[" << lower(m.first) << "]";
-						else output << "[" << m.first << "]";
+						if(size(m.first) == 1) output<<"["<< lower(m.first) <<"]";
+						else output<<"["<< m.first <<"]";
 					}
-					output << ": " << m.second;
+					output<<"\t: "<< m.second;
 				}
 			}else comm_.send_n(str().begin(), str().size(), 0);
 			str("");

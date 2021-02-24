@@ -15,7 +15,7 @@
 
 #include "ProjectData.h"
 #include "Message/Communicate.h"
-#include "Platforms/sysutil.h"
+#include "Host/sysutil.h"
 #include "Utilities/qmc_common.h"
 
 namespace qmcplusplus

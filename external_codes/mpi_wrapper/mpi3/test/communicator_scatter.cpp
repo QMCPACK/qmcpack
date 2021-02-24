@@ -1,6 +1,7 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0x.x && time mpirun -n 3 $0x.x $@ && rm -f $0x.x; exit
+#if COMPILATION_INSTRUCTIONS// -*- indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*-
+mpic++ $0 -o $0x&&mpirun -n 6 $0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2018-2020
 
 #include "../../mpi3/environment.hpp"
 #include "../../mpi3/communicator.hpp"
@@ -15,7 +16,6 @@ int main(){
 
 	mpi3::environment env;
 	mpi3::communicator world = env.world();
-
 
 	{
 		std::vector<double> v(world.size());
@@ -60,6 +60,7 @@ int main(){
 		double w = l / world;
 		assert( w == world.rank() );
 	}
+#if 0
 	{
 		std::vector<double> v = {1, 2, 2, 3, 3, 3}; if(!world.root()) v.clear();
 		std::vector<double> w(world.rank() + 1);
@@ -98,7 +99,7 @@ int main(){
 		//	}
 		}
 	}
-
+#endif
 	return 0;
 }
 

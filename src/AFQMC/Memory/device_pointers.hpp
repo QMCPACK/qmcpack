@@ -912,14 +912,14 @@ device_pointer<T> alloc_uninitialized_copy(Alloc& a,
 template<class Alloc, typename T, typename Q>
 device_pointer<Q> uninitialized_copy(T* Abeg, T* Aend, device_pointer<Q> B)
 {
-  static_assert( std::is_trivially_assignable<Q&, T>{} );
+  static_assert( std::is_trivially_assignable<Q&, T>{} ,"!");
   return copy_n(Abeg, std::distance(Abeg, Aend), B);
 }
 
 template<class Alloc, typename T, typename Q>
 device_pointer<Q> alloc_uninitialized_copy(Alloc& a, T* Abeg, T* Aend, device_pointer<Q> B)
 {
-  static_assert( std::is_trivially_assignable<Q&, T>{} );
+  static_assert( std::is_trivially_assignable<Q&, T>{} ,"!");
   return uninitialized_copy(Abeg, Aend, B);
 }
 
@@ -1166,7 +1166,7 @@ multi::array_iterator<T, 1, device::device_pointer<T>> uninitialized_copy(
     multi::array_iterator<Q, 1, device::device_pointer<QQ>> last,
     multi::array_iterator<T, 1, device::device_pointer<TT>> dest)
 {
-  static_assert( std::is_trivially_assignable<TT&, QQ&>{} );
+  static_assert( std::is_trivially_assignable<TT&, QQ&>{} , "!");
   assert(stride(first) == stride(last));
   if (std::distance(first, last) == 0)
     return dest;
@@ -1199,7 +1199,7 @@ multi::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitialized_copy(
     multi::array_iterator<Q, 1, device::device_pointer<QQ>> last,
     multi::array_iterator<T, 1, device::device_pointer<TT>> dest)
 {
-  static_assert( std::is_trivially_assignable<TT&, QQ&>{} );
+  static_assert( std::is_trivially_assignable<TT&, QQ&>{} , "!");
   assert(stride(first) == stride(last));
   if (std::distance(first, last) == 0)
     return dest;

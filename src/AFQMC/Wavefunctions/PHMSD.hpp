@@ -242,11 +242,6 @@ public:
   template<class Vec>
   void vMF(Vec&& v);
 
-  CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF)
-  {
-    return HamOp.getOneBodyPropagatorMatrix(TG, vMF);
-  }
-
   SlaterDetOperations* getSlaterDetOperations() { return std::addressof(SDetOp); }
   HamiltonianOperations* getHamiltonianOperations() { return std::addressof(HamOp); }
 

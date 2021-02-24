@@ -906,18 +906,21 @@ DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYP
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::createResource(ResourceCollection& collection)
 {
+  Phi->createResource(collection);
   det_engine_.createResource(collection);
 }
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::acquireResource(ResourceCollection& collection)
 {
+  Phi->acquireResource(collection);
   det_engine_.acquireResource(collection);
 }
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::releaseResource(ResourceCollection& collection)
 {
+  Phi->releaseResource(collection);
   det_engine_.releaseResource(collection);
 }
 

@@ -1,13 +1,15 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -Wall -Wextra -O3 -std=c++14 -Wfatal-errors -D_TEST_BOOST_MPI3_ENVIRONMENT $0x.cpp -o $0x.x && time mpirun -n 4 $0x.x ddd $@ && rm -f $0x.x $0x.cpp; exit
+#if COMPILATION//-*- indent-tabs-mode:t;c-basic-offset:4;tab-width:4; -*-
+$CXXX `mpicxx -showme:compile|sed 's/-pthread/ /g'` -std=c++14 $0 -o $0x `mpicxx -showme:link|sed 's/-pthread/ /g'`&&mpirun -n 4 $0x&&rm $0x;exit
 #endif
-//  (C) Copyright Alfredo A. Correa 2018.
+// © Alfredo A. Correa 2018-2019
+
 #ifndef BOOST_MPI3_ENVIRONMENT_HPP
 #define BOOST_MPI3_ENVIRONMENT_HPP
 
-#include "../mpi3/communicator.hpp"
-#include "../mpi3/wall_clock.hpp"
-#include "../mpi3/detail/call.hpp"
+#include "./core.hpp"
+#include "./communicator.hpp"
+#include "./wall_clock.hpp"
+#include "./detail/call.hpp"
 
 #include<mpi.h>
 
@@ -16,18 +18,12 @@
 namespace boost{
 namespace mpi3{
 
-struct thread_level{
-//	decltype(MPI_THREAD_SINGLE)
-	int impl_;
-	bool operator==(thread_level const& other) const{
-		return impl_ == other.impl_;
-	}
+enum thread_level : int{
+	single     = MPI_THREAD_SINGLE,
+	funneled   = MPI_THREAD_FUNNELED,
+	serialized = MPI_THREAD_SERIALIZED, 
+	multiple   = MPI_THREAD_MULTIPLE
 };
-
-/*[[maybe_unused]]*/ static thread_level single{MPI_THREAD_SINGLE};
-/*[[maybe_unused]]*/ static thread_level funneled{MPI_THREAD_FUNNELED};
-/*[[maybe_unused]]*/ static thread_level serialized{MPI_THREAD_SERIALIZED};
-/*[[maybe_unused]]*/ static thread_level multiple{MPI_THREAD_MULTIPLE};
 
 inline void finalize(){
 	std::set_terminate(&std::abort);
@@ -40,26 +36,32 @@ inline void myterminate(){
 	std::abort();
 //	exit(1);  // forces abnormal termination
 }
-inline void initialize(){
-	int s = MPI_Init(nullptr, nullptr);
-	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot initialize"};
-	std::set_terminate(&finalize);
-}
+
 inline void initialize(int& argc, char**& argv){
 	int s = MPI_Init(&argc, &argv);
 	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot initialize"};
-	std::set_terminate(&finalize);
+//	std::set_terminate(&finalize);
 //	std::set_terminate(myterminate);
 }
+
+inline thread_level initialize(int& argc, char**& argv, thread_level required){
+	int provided;
+	int s = MPI_Init_thread(&argc, &argv, static_cast<int>(required), &provided);
+	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot thread-initialize"};
+	return static_cast<thread_level>(provided);
+}
+
 inline thread_level initialize_thread(thread_level required){
 	int provided;
-	int s = MPI_Init_thread(nullptr, nullptr, required.impl_, &provided);
+	int s = MPI_Init_thread(nullptr, nullptr, static_cast<int>(required), &provided);
 	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot thread-initialize"};
-	return {provided};
+	return static_cast<thread_level>(provided);
 }
-inline thread_level initialize(thread_level required){
+
+inline thread_level initialize(thread_level required = thread_level::single){
 	return initialize_thread(required);
 }
+
 inline void throw_error_fn(MPI_Comm* comm, int* errorcode, ...){
 	char name[MPI_MAX_OBJECT_NAME];
 	int rlen;
@@ -68,70 +70,56 @@ inline void throw_error_fn(MPI_Comm* comm, int* errorcode, ...){
 	std::string sname(name, rlen);
 	throw std::runtime_error{"error code "+ std::to_string(*errorcode) +" from comm "+ sname};
 }
+
 inline thread_level initialize_thread(
 	int& argc, char**& argv, thread_level required
 ){
-	(void)single;
-	(void)funneled;
-	(void)serialized;
-	(void)multiple;
-	thread_level ret;
-	int status = MPI_Init_thread(&argc, &argv, required.impl_, reinterpret_cast<int*>(&ret));
+	int ret;
+	int status = MPI_Init_thread(&argc, &argv, static_cast<int>(required), &ret);
 	if(status != MPI_SUCCESS) throw std::runtime_error("cannot thread-initialize");
-	return ret;
+	return static_cast<thread_level>(ret);
 }
-inline thread_level initialize(int& argc, char**& argv, thread_level required){
-	return initialize_thread(argc, argv, required);
+
+inline thread_level thread_support(){
+	int r; MPI_(Query_thread)(&r); return static_cast<thread_level>(r);
 }
-inline bool initialized(){
-	int flag = -1; 
-	int s = MPI_Initialized(&flag); 
-	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot probe initialization"};
-	return flag;
-}
-inline bool finalized(){
-	int flag = -1; 
-	int s = MPI_Finalized(&flag);
-	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot probe finalization"};
-	return flag;
-}
+
 inline bool is_thread_main(){
 	int flag = -1;
 	int s = MPI_Is_thread_main(&flag);
 	if(s != MPI_SUCCESS) throw std::runtime_error{"cannot determine is thread main"};
 	return flag;
 }
-inline thread_level query_thread(){
-	int ret;
-	int status = MPI_Query_thread(&ret);
-	if(status != MPI_SUCCESS) throw std::runtime_error("cannot query thread level");
-	return {ret};
-}
 
 inline std::string processor_name(){return detail::call<&MPI_Get_processor_name>();}
+
 inline std::string get_processor_name(){return detail::call<&MPI_Get_processor_name>();}
 
 class environment{
 	public:
 	environment(){
-		initialize();
-	//	color_key_p = new communicator::keyval<int>;
+		initialize_thread(thread_level::multiple);
 		named_attributes_key_f() = new communicator::keyval<std::map<std::string, mpi3::any>>;
 	}
-	environment(thread_level required){initialize_thread(required);}
-	environment(int argc, char** argv){
-		initialize(argc, argv);
-	//	color_key_p = new communicator::keyval<int>;
+	environment(thread_level required){
+		initialize_thread(required);
 		named_attributes_key_f() = new communicator::keyval<std::map<std::string, mpi3::any>>;
 	}
-	environment(int argc, char** argv, thread_level required){initialize_thread(argc, argv, required);}
+	environment(int& argc, char**& argv){
+		initialize(argc, argv); // initialize(argc, argv); // TODO have an environment_mt/st version?
+		named_attributes_key_f() = new communicator::keyval<std::map<std::string, mpi3::any>>;
+	}
+	environment(int& argc, char**& argv, thread_level required){
+		initialize(argc, argv, required);
+		named_attributes_key_f() = new communicator::keyval<std::map<std::string, mpi3::any>>;		
+	}
 	environment(environment const&) = delete;
 	environment& operator=(environment const&) = delete;
 	~environment(){
 		delete named_attributes_key_f();
-	//	delete color_key_p;
 		finalize();
 	}
+	inline static thread_level thread_support(){return mpi3::thread_support();}
 //	static /*inline*/ communicator::keyval<int> const* color_key_p;
 //	static communicator::keyval<int> const& color_key(){return *color_key_p;}
 //	static /*inline*/ communicator::keyval<std::map<std::string, mpi3::any>> const* named_attributes_key_p;
@@ -157,16 +145,25 @@ class environment{
 	using wall_clock = mpi3::wall_clock;
 	operator bool() const{return initialized();}
 	bool is_thread_main() const{return mpi3::is_thread_main();}
-	thread_level query_thread() const{return mpi3::query_thread();}
 
-//	communicator& null() const{return mpi3::communicator::null;}
+	static inline communicator& get_self_instance(){
+		assert(initialized());
+		static communicator instance = []{
+		//	MPI_Comm_create_errhandler(&throw_error_fn, &throw_error_);
+		//	MPI_Comm_set_errhandler(MPI_COMM_WORLD, throw_error_);
+			MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
+		//	MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
+			return communicator{MPI_COMM_SELF};
+		}();
+		return instance;
+	}
+
 	static communicator self(){ // returns a copy!
 		MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
 		return communicator{MPI_COMM_SELF};
 	}
 	static inline communicator& get_world_instance(){
 		assert(initialized());
-	//	static communicator instance{MPI_COMM_WORLD};
 		static communicator instance = []{
 		//	MPI_Comm_create_errhandler(&throw_error_fn, &throw_error_);
 		//	MPI_Comm_set_errhandler(MPI_COMM_WORLD, throw_error_);
@@ -174,11 +171,9 @@ class environment{
 		//	MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 			return communicator{MPI_COMM_WORLD};
 		}();
-		//	MPI_Comm_create_errhandler(&throw_error_fn, &throw_error_);
-		//	MPI_Comm_set_errhandler(MPI_COMM_NULL, MPI_ERRORS_RETURN);
 		return instance;
 	}
-	communicator world() const{ // returns a copy!
+	communicator world(){// const{ // returns a copy!
 		communicator ret{get_world_instance()}; ret.name("world");
 		return ret;
 	}
@@ -197,30 +192,30 @@ inline mpi3::any& communicator::attribute(std::string const& s){
 
 }}
 
-#ifdef _TEST_BOOST_MPI3_ENVIRONMENT
-#include<iostream>
-#include <thread> // this_tread::sleep_for
+#if not __INCLUDE_LEVEL__ // _TEST_BOOST_MPI3_ENVIRONMENT
+
+#include<thread> // this_tread::sleep_for
 #include<chrono>
 
 namespace mpi3 = boost::mpi3;
 using std::cout;
 using namespace std::chrono_literals; // 2s
 
-int main(int argc, char* argv[]){
-	mpi3::environment::initialize(argc, argv); // same as MPI_Init(...);
+int main(){//int argc, char* argv[]){
+	mpi3::environment::initialize(mpi3::thread_level::multiple);//argc, argv); // same as MPI_Init(...);
+	assert( mpi3::environment::thread_support() == mpi3::thread_level::multiple );
 	assert(mpi3::environment::is_initialized());
 	{
 		mpi3::communicator world = mpi3::environment::get_world_instance(); // a copy
 		auto then = mpi3::environment::wall_time();
 		std::this_thread::sleep_for(2s);
-		cout<< (mpi3::environment::wall_time() - then).count() <<" seconds\n"; 
+	//	cout<< (mpi3::environment::wall_time() - then).count() <<" seconds\n"; 
 	}
 	mpi3::environment::finalize(); // same as MPI_Finalize()
 	assert(mpi3::environment::is_finalized());
 // or better:
 //	mpi3::environment env(argc, argv);
 //	auto world = env.world();
-	return 0;
 }
 #endif
 #endif
