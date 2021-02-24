@@ -136,11 +136,9 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateLog(ParticleSet& P)
   return LogValue;
 }
 
-void TrialWaveFunction::flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                          const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  if (wf_list.size() > 1)
-  {
     auto& wf_leader = wf_list.getLeader();
     auto& p_leader  = p_list.getLeader();
     ScopedTimer local_timer(wf_leader.TWF_timers_[RECOMPUTE_TIMER]);
@@ -184,9 +182,6 @@ void TrialWaveFunction::flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunc
     // remove when KineticEnergy use WF.G/L instead of P.G/L
     for (int iw = 0; iw < wf_list.size(); iw++)
       copyToP(p_list[iw], wf_list[iw]);
-  }
-  else if (wf_list.size() == 1)
-    wf_list[0].evaluateLog(p_list[0]);
 }
 
 void TrialWaveFunction::recompute(ParticleSet& P)
@@ -272,7 +267,7 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
 }
 
 
-void TrialWaveFunction::flex_evaluateDeltaLogSetup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_evaluateDeltaLogSetup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                                    std::vector<RealType>& logpsi_fixed_list,
                                                    std::vector<RealType>& logpsi_opt_list,
@@ -330,7 +325,7 @@ void TrialWaveFunction::flex_evaluateDeltaLogSetup(const RefVectorWithLeader<Tri
 }
 
 
-void TrialWaveFunction::flex_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                               const RefVectorWithLeader<ParticleSet>& p_list,
                                               std::vector<RealType>& logpsi_list,
                                               RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
@@ -445,7 +440,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int ia
   return static_cast<ValueType>(r);
 }
 
-void TrialWaveFunction::flex_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                        int iat,
                                        std::vector<PsiValueType>& ratios,
@@ -455,8 +450,6 @@ void TrialWaveFunction::flex_calcRatio(const RefVectorWithLeader<TrialWaveFuncti
   ratios.resize(num_wf);
   std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
 
-  if (num_wf > 1)
-  {
     auto& wf_leader = wf_list.getLeader();
     ScopedTimer local_timer(wf_leader.TWF_timers_[V_TIMER]);
     const int num_wfc             = wf_leader.Z.size();
@@ -477,9 +470,6 @@ void TrialWaveFunction::flex_calcRatio(const RefVectorWithLeader<TrialWaveFuncti
     }
     for (int iw = 0; iw < wf_list.size(); iw++)
       wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
-  }
-  else if (wf_list.size() == 1)
-    ratios[0] = wf_list[0].calcRatio(p_list[0], iat);
 }
 
 void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
@@ -488,12 +478,10 @@ void TrialWaveFunction::prepareGroup(ParticleSet& P, int ig)
     Z[i]->prepareGroup(P, ig);
 }
 
-void TrialWaveFunction::flex_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                           int ig)
 {
-  if (wf_list.size() > 1)
-  {
     auto& wf_leader = wf_list.getLeader();
     ScopedTimer local_timer(wf_leader.TWF_timers_[PREPAREGROUP_TIMER]);
     const int num_wfc             = wf_leader.Z.size();
@@ -505,9 +493,6 @@ void TrialWaveFunction::flex_prepareGroup(const RefVectorWithLeader<TrialWaveFun
       const auto wfc_list(extractWFCRefList(wf_list, i));
       wavefunction_components[i]->mw_prepareGroup(wfc_list, p_list, ig);
     }
-  }
-  else if (wf_list.size() == 1)
-    wf_list[0].prepareGroup(p_list[0], ig);
 }
 
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P, int iat)
@@ -535,7 +520,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradWithSpin(ParticleSet& P, 
   return grad_iat;
 }
 
-void TrialWaveFunction::flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                       const RefVectorWithLeader<ParticleSet>& p_list,
                                       int iat,
                                       std::vector<GradType>& grad_now)
@@ -544,8 +529,6 @@ void TrialWaveFunction::flex_evalGrad(const RefVectorWithLeader<TrialWaveFunctio
   grad_now.resize(num_wf);
   std::fill(grad_now.begin(), grad_now.end(), GradType(0));
 
-  if (num_wf > 1)
-  {
     auto& wf_leader = wf_list.getLeader();
     ScopedTimer local_timer(wf_leader.TWF_timers_[VGL_TIMER]);
     // Right now mw_evalGrad can only be called through an concrete instance of a wavefunctioncomponent
@@ -561,9 +544,6 @@ void TrialWaveFunction::flex_evalGrad(const RefVectorWithLeader<TrialWaveFunctio
       for (int iw = 0; iw < wf_list.size(); iw++)
         grad_now[iw] += grad_now_z[iw];
     }
-  }
-  else if (wf_list.size() == 1)
-    grad_now[0] = wf_list[0].evalGrad(p_list[0], iat);
 }
 
 
@@ -649,7 +629,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
   return static_cast<ValueType>(r);
 }
 
-void TrialWaveFunction::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                            const RefVectorWithLeader<ParticleSet>& p_list,
                                            int iat,
                                            std::vector<PsiValueType>& ratios,
@@ -661,8 +641,6 @@ void TrialWaveFunction::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFu
   ratios.resize(num_wf);
   std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
 
-  if (wf_list.size() > 1)
-  {
     auto& wf_leader = wf_list.getLeader();
     ScopedTimer local_timer(wf_leader.TWF_timers_[VGL_TIMER]);
     const int num_wfc             = wf_leader.Z.size();
@@ -701,9 +679,6 @@ void TrialWaveFunction::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFu
     }
     for (int iw = 0; iw < wf_list.size(); iw++)
       wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
-  }
-  else if (wf_list.size() == 1)
-    ratios[0] = wf_list[0].calcRatioGrad(p_list[0], iat, grad_new[0]);
 }
 
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G,
@@ -754,14 +729,12 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
     LogValue += std::real(Z[i]->LogValue);
 }
 
-void TrialWaveFunction::flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                const RefVectorWithLeader<ParticleSet>& p_list,
                                                int iat,
                                                const std::vector<bool>& isAccepted,
                                                bool safe_to_delay)
 {
-  if (wf_list.size() > 1)
-  {
     auto& wf_leader = wf_list.getLeader();
     ScopedTimer local_timer(wf_leader.TWF_timers_[ACCEPT_TIMER]);
     const int num_wfc             = wf_leader.Z.size();
@@ -786,14 +759,6 @@ void TrialWaveFunction::flex_accept_rejectMove(const RefVectorWithLeader<TrialWa
           wf_list[iw].PhaseValue += std::imag(wfc_list[iw].LogValue);
         }
     }
-  }
-  else if (wf_list.size() == 1)
-  {
-    if (isAccepted[0])
-      wf_list[0].acceptMove(p_list[0], iat, safe_to_delay);
-    else
-      wf_list[0].rejectMove(iat);
-  }
 }
 
 void TrialWaveFunction::completeUpdates()
@@ -806,10 +771,8 @@ void TrialWaveFunction::completeUpdates()
   }
 }
 
-void TrialWaveFunction::flex_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list)
+void TrialWaveFunction::mw_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  if (wf_list.size() > 1)
-  {
     auto& wf_leader = wf_list.getLeader();
     ScopedTimer local_timer(wf_leader.TWF_timers_[ACCEPT_TIMER]);
     const int num_wfc             = wf_leader.Z.size();
@@ -821,9 +784,6 @@ void TrialWaveFunction::flex_completeUpdates(const RefVectorWithLeader<TrialWave
       const auto wfc_list(extractWFCRefList(wf_list, i));
       wavefunction_components[i]->mw_completeUpdates(wfc_list);
     }
-  }
-  else if (wf_list.size() == 1)
-    wf_list[0].completeUpdates();
 }
 
 TrialWaveFunction::LogValueType TrialWaveFunction::evaluateGL(ParticleSet& P, bool fromscratch)
@@ -843,12 +803,10 @@ TrialWaveFunction::LogValueType TrialWaveFunction::evaluateGL(ParticleSet& P, bo
   return logpsi;
 }
 
-void TrialWaveFunction::flex_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                         const RefVectorWithLeader<ParticleSet>& p_list,
                                         bool fromscratch)
 {
-  if (wf_list.size() > 1)
-  {
     auto& p_leader  = p_list.getLeader();
     auto& wf_leader = wf_list.getLeader();
     ScopedTimer local_timer(wf_leader.TWF_timers_[BUFFER_TIMER]);
@@ -890,15 +848,6 @@ void TrialWaveFunction::flex_evaluateGL(const RefVectorWithLeader<TrialWaveFunct
     // remove when KineticEnergy use WF.G/L instead of P.G/L
     for (int iw = 0; iw < wf_list.size(); iw++)
       copyToP(p_list[iw], wf_list[iw]);
-  }
-  else if (wf_list.size() == 1)
-  {
-    wf_list[0].evaluateGL(p_list[0], fromscratch);
-    // Ye: temporal workaround to have WF.G/L always defined.
-    // remove when KineticEnergy use WF.G/L instead of P.G/L
-    wf_list[0].G = p_list[0].G;
-    wf_list[0].L = p_list[0].L;
-  }
 }
 
 
@@ -1029,13 +978,11 @@ void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector
     }
 }
 
-void TrialWaveFunction::flex_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                             const RefVector<const VirtualParticleSet>& vp_list,
                                             const RefVector<std::vector<ValueType>>& ratios_list,
                                             ComputeType ct)
 {
-  if (wf_list.size() > 1)
-  {
     auto& wf_leader = wf_list.getLeader();
     ScopedTimer local_timer(wf_leader.TWF_timers_[NL_TIMER]);
     auto& wavefunction_components = wf_leader.Z;
@@ -1062,9 +1009,6 @@ void TrialWaveFunction::flex_evaluateRatios(const RefVectorWithLeader<TrialWaveF
             ratios[j] *= t[iw][j];
         }
       }
-  }
-  else if (wf_list.size() == 1)
-    wf_list[0].evaluateRatios(vp_list[0], ratios_list[0], ct);
 }
 
 void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP,
@@ -1141,13 +1085,13 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-void TrialWaveFunction::flex_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                                           const opt_variables_type& optvars,
                                                           RecordArray<ValueType>& dlogpsi,
                                                           RecordArray<ValueType>& dhpsioverpsi)
 {
-  int nparam = dlogpsi.nparam();
+  const int nparam = dlogpsi.nparam();
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
     std::vector<ValueType> tmp_dlogpsi(nparam);

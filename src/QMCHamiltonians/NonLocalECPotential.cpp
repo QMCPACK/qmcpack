@@ -310,7 +310,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       psi_list.clear();
       for (size_t iw = 0; iw < nw; iw++)
         psi_list.push_back(O_list.getCastedElement<NonLocalECPotential>(iw).Psi);
-      TrialWaveFunction::flex_prepareGroup(psi_list, p_list, ig);
+      TrialWaveFunction::mw_prepareGroup(psi_list, p_list, ig);
     }
 
     for (size_t jobid = 0; jobid < max_num_jobs[ig]; jobid++)
@@ -335,7 +335,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         }
       }
 
-      NonLocalECPComponent::flex_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
+      NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
                                              O_leader.use_DLA);
 
       for (size_t j = 0; j < ecp_potential_list.size(); j++)

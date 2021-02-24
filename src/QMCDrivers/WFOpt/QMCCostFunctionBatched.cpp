@@ -349,7 +349,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       // Log psi and prepare for difference the log psi
       opt_data.zero_log_psi();
 
-      TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
+      TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
                                                     opt_data.get_log_psi_opt(), ref_dLogPsi, ref_d2LogPsi);
 
       if (needGrads)
@@ -358,7 +358,7 @@ void QMCCostFunctionBatched::checkConfigurations()
         int nparam = optVars.size();
         RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
         RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
-        TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array,
+        TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array,
                                                              dhpsioverpsi_array);
 
 
@@ -582,7 +582,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
           }
           opt_data.zero_log_psi();
 
-          TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, opt_data.get_log_psi_opt(), dummyG_list,
+          TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, opt_data.get_log_psi_opt(), dummyG_list,
                                                    dummyL_list, compute_all_from_scratch);
 
           Return_rt inv_n_samples = 1.0 / samples.getNumSamples();
@@ -609,7 +609,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
             RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
             RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
 
-            TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array,
+            TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array,
                                                                  dhpsioverpsi_array);
 
 

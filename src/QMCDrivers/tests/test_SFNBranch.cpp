@@ -19,7 +19,6 @@
 #include "Estimators/tests/FakeEstimator.h"
 #include "QMCDrivers/SFNBranch.h"
 #include "QMCDrivers/MCPopulation.h"
-#include "QMCDrivers/Crowd.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "QMCDrivers/tests/SetupPools.h"
 
@@ -65,10 +64,6 @@ public:
     createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
 
     sfnb.initParam(*pop_, 0, 0, false, false);
-
-    UPtrVector<Crowd> crowds;
-    crowds.emplace_back(std::make_unique<Crowd>(*emb_));
-    crowds.emplace_back(std::make_unique<Crowd>(*emb_));
 
     return sfnb;
   }

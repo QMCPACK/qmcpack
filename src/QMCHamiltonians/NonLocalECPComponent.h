@@ -173,7 +173,7 @@ public:
    * Note: ecp_component_list allows including different NLPP component for different walkers.
    * electrons in iel_list must be of the same group (spin)
    */
-  static void flex_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
+  static void mw_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
                                const RefVectorWithLeader<ParticleSet>& p_list,
                                const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                const RefVector<const NLPPJob<RealType>>& joblist,

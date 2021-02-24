@@ -32,6 +32,7 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
+#include "QMCWaveFunctions/TWFdispatcher.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
@@ -363,6 +364,9 @@ protected:
 
   ///the entire (or on node) walker population
   MCPopulation population_;
+
+  /// TWF dispatcher
+  TWFdispatcher twf_dispatcher_;
 
   ///trial function
   TrialWaveFunction& Psi;
