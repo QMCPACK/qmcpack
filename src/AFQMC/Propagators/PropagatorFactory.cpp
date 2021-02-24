@@ -96,7 +96,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
               << std::endl;
 
   // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n)
-  auto H1(wfn.getOneBodyPropagatorMatrix(TG, vMF_));
+  auto H1(wfn.getHamiltonianOperations()->getOneBodyPropagatorMatrix(TG, vMF_));
   // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n)
 
   if (TG.getNGroupsPerTG() == 1)
