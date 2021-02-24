@@ -90,32 +90,26 @@ private:
                      bool& CI_Optimizable,
                      xmlNodePtr cur);
 
+
   bool readDetList(xmlNodePtr cur,
-                   std::vector<ci_configuration>& uniqueConfg_up,
-                   std::vector<ci_configuration>& uniqueConfg_dn,
-                   std::vector<size_t>& C2node_up,
-                   std::vector<size_t>& C2node_dn,
+                   std::vector<std::vector<ci_configuration>>& uniqueConfgs,
+                   std::vector<std::vector<size_t>>& C2nodes,
                    std::vector<std::string>& CItags,
                    std::vector<ValueType>& coeff,
                    bool& optimizeCI,
-                   int nels_up,
-                   int nels_dn,
+                   std::vector<int>& nptcls,
                    std::vector<ValueType>& CSFcoeff,
                    std::vector<size_t>& DetsPerCSF,
                    std::vector<RealType>& CSFexpansion,
                    bool& usingCSF);
 
-
   bool readDetListH5(xmlNodePtr cur,
-                     std::vector<ci_configuration>& uniqueConfg_up,
-                     std::vector<ci_configuration>& uniqueConfg_dn,
-                     std::vector<size_t>& C2node_up,
-                     std::vector<size_t>& C2node_dn,
+                     std::vector<std::vector<ci_configuration>>& uniqueConfgs,
+                     std::vector<std::vector<size_t>>& C2nodes,
                      std::vector<std::string>& CItags,
                      std::vector<ValueType>& coeff,
                      bool& optimizeCI,
-                     int nels_up,
-                     int nels_dn);
+                     std::vector<int>& nptcls);
 
   // clang-format off
   template<typename VT,

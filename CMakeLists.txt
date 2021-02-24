@@ -263,7 +263,8 @@ OPTION(ENABLE_TIMERS "Enable internal timers" ON)
 OPTION(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
 OPTION(USE_VTUNE_API "Enable use of VTune ittnotify APIs" OFF)
 CMAKE_DEPENDENT_OPTION(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF "ENABLE_TIMERS AND USE_VTUNE_API" OFF)
-CMAKE_DEPENDENT_OPTION(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND (QMC_CUDA OR ENABLE_CUDA)" OFF)
+# CMake note - complex conditionals in cmake_dependent_option must have spaces around parentheses
+CMAKE_DEPENDENT_OPTION(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND ( QMC_CUDA OR ENABLE_CUDA )" OFF)
 
 ######################################################################
 # Install options
