@@ -41,10 +41,8 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
                        DMCDriverInput&& input,
                        MCPopulation&& pop,
-                       TrialWaveFunction& psi,
-                       QMCHamiltonian& h,
                        Communicate* comm)
-    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop), psi, h,
+    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop),
                    "DMCBatched::", comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
@@ -361,7 +359,8 @@ void DMCBatched::process(xmlNodePtr node)
     branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
     branch_engine_->put(node);
 
-    walker_controller_ = std::make_unique<WalkerControl>(myComm, twf_dispatcher_, Random, dmcdriver_input_.get_reconfiguration());
+    walker_controller_ =
+        std::make_unique<WalkerControl>(myComm, twf_dispatcher_, Random, dmcdriver_input_.get_reconfiguration());
     walker_controller_->setMinMax(population_.get_num_global_walkers(), 0);
     walker_controller_->start();
     walker_controller_->put(node);

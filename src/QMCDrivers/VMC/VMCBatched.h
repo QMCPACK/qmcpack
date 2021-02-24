@@ -51,10 +51,13 @@ public:
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     IndexType recalculate_properties_period;
-    IndexType step = -1;
+    IndexType step            = -1;
     bool is_recomputing_block = false;
 
-    StateForThread(const QMCDriverInput& qmci, const VMCDriverInput& vmci, DriftModifierBase& drift_mod, MCPopulation& pop)
+    StateForThread(const QMCDriverInput& qmci,
+                   const VMCDriverInput& vmci,
+                   DriftModifierBase& drift_mod,
+                   MCPopulation& pop)
         : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
     {}
   };
@@ -65,8 +68,6 @@ public:
              QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
              MCPopulation&& pop,
-             TrialWaveFunction& psi,
-             QMCHamiltonian& h,
              SampleStack& samples_,
              Communicate* comm);
 

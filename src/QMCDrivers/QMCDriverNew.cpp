@@ -43,8 +43,6 @@ namespace qmcplusplus
 QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            QMCDriverInput&& input,
                            MCPopulation&& population,
-                           TrialWaveFunction& psi,
-                           QMCHamiltonian& h,
                            const std::string timer_prefix,
                            Communicate* comm,
                            const std::string& QMC_driver_type,
@@ -54,8 +52,6 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       QMCType(QMC_driver_type),
       population_(std::move(population)),
       twf_dispatcher_(true),
-      Psi(psi),
-      H(h),
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),
@@ -110,12 +106,6 @@ QMCDriverNew::~QMCDriverNew()
       RandomNumberControl::Children[i] = Rng[i].release();
 }
 
-void QMCDriverNew::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
-{
-  H1.push_back(h);
-  Psi1.push_back(psi);
-}
-
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
 {
   int num_threads(Concurrency::maxCapacity<>());
@@ -156,7 +146,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
                    ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
 
-  estimator_manager_->put(H, *population_.get_golden_electrons(), cur);
+  estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(), cur);
 
   crowds_.resize(awc.walkers_per_crowd.size());
 
@@ -517,7 +507,7 @@ void QMCDriverNew::endBlock()
 
 bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
 {
-  bool success = true;
+  bool success         = true;
   auto& twf_dispatcher = crowd.twf_dispatcher_;
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());

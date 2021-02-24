@@ -26,18 +26,9 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
                        VMCDriverInput&& input,
                        MCPopulation&& pop,
-                       TrialWaveFunction& psi,
-                       QMCHamiltonian& h,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(project_data,
-                   std::move(qmcdriver_input),
-                   std::move(pop),
-                   psi,
-                   h,
-                   "VMCBatched::",
-                   comm,
-                   "VMCBatched"),
+    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop), "VMCBatched::", comm, "VMCBatched"),
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)
@@ -52,7 +43,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   assert(QMCDriverNew::checkLogAndGL(crowd));
 
   auto& twf_dispatcher = crowd.twf_dispatcher_;
-  auto& walkers = crowd.get_walkers();
+  auto& walkers        = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
 
