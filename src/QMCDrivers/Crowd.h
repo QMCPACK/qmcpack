@@ -20,6 +20,7 @@ namespace qmcplusplus
 {
 // forward declaration
 class ResourceCollection;
+class TWFdispatcher;
 
 /** Driver synchronized step context
  * 
@@ -40,7 +41,7 @@ public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** This is the data structure for walkers within a crowd
    */
-  Crowd(EstimatorManagerNew& emb);
+  Crowd(EstimatorManagerNew& emb, const TWFdispatcher& twf_dispatcher);
 
   ~Crowd();
   /** Because so many vectors allocate them upfront.
@@ -111,6 +112,8 @@ public:
   unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
   unsigned long get_accept() { return n_accept_; }
   unsigned long get_reject() { return n_reject_; }
+
+  const TWFdispatcher& twf_dispatcher_;
 
 private:
   /** @name Walker Vectors

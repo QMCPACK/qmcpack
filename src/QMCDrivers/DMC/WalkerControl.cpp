@@ -20,6 +20,7 @@
 #include <sstream>
 
 #include "WalkerControl.h"
+#include "QMCWaveFunctions/TWFdispatcher.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
@@ -54,7 +55,10 @@ TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControl
                                                       {WC_send, "WalkerControl::send"},
                                                       {WC_recv, "WalkerControl::recv"}};
 
-WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop)
+WalkerControl::WalkerControl(Communicate* c,
+                             const TWFdispatcher& twf_dispatcher,
+                             RandomGenerator_t& rng,
+                             bool use_fixed_pop)
     : MPIObjectBase(c),
       rng_(rng),
       use_fixed_pop_(use_fixed_pop),
@@ -67,7 +71,8 @@ WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fi
       SwapMode(0),
       use_nonblocking_(true),
       debug_disable_branching_(false),
-      saved_num_walkers_sent_(0)
+      saved_num_walkers_sent_(0),
+      twf_dispatcher_(twf_dispatcher)
 {
   num_per_node_.resize(num_ranks_);
   fair_offset_.resize(num_ranks_ + 1);
@@ -259,7 +264,7 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     ParticleSet::flex_update(p_list);
 
     const RefVectorWithLeader<TrialWaveFunction> wf_list(pop.get_golden_twf(), wf_list_no_leader);
-    TrialWaveFunction::flex_evaluateLog(wf_list, p_list);
+    twf_dispatcher_.flex_evaluateLog(wf_list, p_list);
   }
 
   const int current_num_global_walkers = std::accumulate(num_per_node_.begin(), num_per_node_.end(), 0);

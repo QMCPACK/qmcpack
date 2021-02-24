@@ -197,6 +197,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/MultiSlaterDeterminantWithBackflow.cpp
   SPOSetBuilderFactory.cpp
   TrialWaveFunction.cpp
+  TWFdispatcher.cpp
   WaveFunctionFactory.cpp
   )
 

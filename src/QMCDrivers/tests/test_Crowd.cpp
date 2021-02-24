@@ -15,6 +15,7 @@
 #include "Message/Communicate.h"
 #include "QMCDrivers/Crowd.h"
 #include "type_traits/template_types.hpp"
+#include "QMCWaveFunctions/TWFdispatcher.h"
 #include "Estimators/tests/FakeEstimator.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
@@ -40,14 +41,15 @@ public:
   UPtrVector<TrialWaveFunction> twfs;
   UPtrVector<QMCHamiltonian> hams;
   std::vector<TinyVector<double, 3>> tpos;
+  const TWFdispatcher twf_dispatcher_;
 
 public:
-  CrowdWithWalkers(SetupPools& pools) : em(pools.comm)
+  CrowdWithWalkers(SetupPools& pools) : em(pools.comm), twf_dispatcher_(true)
   {
     FakeEstimator* fake_est = new FakeEstimator;
     em.add(fake_est, "fake");
 
-    crowd_ptr    = std::make_unique<Crowd>(em);
+    crowd_ptr    = std::make_unique<Crowd>(em, twf_dispatcher_);
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
@@ -93,7 +95,8 @@ TEST_CASE("Crowd integration", "[drivers]")
   REQUIRE(fake_est2 == fake_est);
   // The above was required behavior for crowd at one point.
   // TODO: determine whether it still is, I don't think so.
-  Crowd crowd(em);
+  const TWFdispatcher twf_dispatcher(true);
+  Crowd crowd(em, twf_dispatcher);
 }
 
 TEST_CASE("Crowd::loadWalkers", "[particle]")

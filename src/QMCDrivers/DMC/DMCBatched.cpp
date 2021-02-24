@@ -69,6 +69,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
+  auto& twf_dispatcher = crowd.twf_dispatcher_;
   {
     CrowdResourceLock pbyp_lock(crowd);
     assert(QMCDriverNew::checkLogAndGL(crowd));
@@ -113,7 +114,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         RealType oneover2tau = 0.5 / (tauovermass);
         RealType sqrttau     = std::sqrt(tauovermass);
 
-        TrialWaveFunction::flex_prepareGroup(walker_twfs, walker_elecs, ig);
+        twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
         int start_index = step_context.getPtclGroupStart(ig);
         int end_index   = step_context.getPtclGroupEnd(ig);
@@ -133,7 +134,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           }
 #endif
           //get the displacement
-          TrialWaveFunction::flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
+          twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
           sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
 
           std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
@@ -158,7 +159,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 #endif
           ParticleSet::flex_makeMove(walker_elecs, iat, drifts);
 
-          TrialWaveFunction::flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
+          twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
           // This lambda is not nested thread safe due to the nreject, nnode_crossing updates
           auto checkPhaseChanged = [&sft, &nnode_crossing](const TrialWaveFunction& twf, int& is_reject) {
@@ -216,19 +217,19 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
             }
           }
 
-          TrialWaveFunction::flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
+          twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
           ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted);
         }
       }
 
-      TrialWaveFunction::flex_completeUpdates(walker_twfs);
+      twf_dispatcher.flex_completeUpdates(walker_twfs);
       ParticleSet::flex_donePbyP(walker_elecs);
     }
 
     { // collect GL for KE.
       ScopedTimer buffer_local(timers.buffer_timer);
-      TrialWaveFunction::flex_evaluateGL(walker_twfs, walker_elecs, recompute);
+      twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
       ParticleSet::flex_saveWalker(walker_elecs, walkers);
     }
 
@@ -305,7 +306,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     {
       ResourceCollectionLock<TrialWaveFunction> resource_lock(crowd.getTWFSharedResource(), crowd.get_walker_twfs()[0]);
 
-      TrialWaveFunction::flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
+      twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
       assert(QMCDriverNew::checkLogAndGL(crowd));
       ParticleSet::flex_saveWalker(moved_nonlocal_walker_elecs, moved_nonlocal_walkers);
     }
@@ -360,7 +361,7 @@ void DMCBatched::process(xmlNodePtr node)
     branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
     branch_engine_->put(node);
 
-    walker_controller_ = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
+    walker_controller_ = std::make_unique<WalkerControl>(myComm, twf_dispatcher_, Random, dmcdriver_input_.get_reconfiguration());
     walker_controller_->setMinMax(population_.get_num_global_walkers(), 0);
     walker_controller_->start();
     walker_controller_->put(node);
