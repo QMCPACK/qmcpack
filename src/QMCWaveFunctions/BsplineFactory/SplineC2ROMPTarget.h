@@ -26,7 +26,7 @@
 #include "Platforms/PinnedAllocator.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
-#include "OffloadSharedMem.h"
+#include "OffloadMultiWalkerMem.h"
 
 namespace qmcplusplus
 {
@@ -84,7 +84,7 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  std::unique_ptr<OffloadSharedMem<ST, TT>> mw_mem_;
+  std::unique_ptr<OffloadMultiWalkerMem<ST, TT>> mw_mem_;
 
   ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
@@ -146,14 +146,14 @@ public:
 
   void createResource(ResourceCollection& collection) override
   {
-    auto resource_index = collection.addResource(std::make_unique<OffloadSharedMem<ST, TT>>());
+    auto resource_index = collection.addResource(std::make_unique<OffloadMultiWalkerMem<ST, TT>>());
     app_log() << "    Multi walker shared memory resource created in SplineC2ROMPTarget. Index " << resource_index
               << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection) override
   {
-    auto res_ptr = dynamic_cast<OffloadSharedMem<ST, TT>*>(collection.lendResource().release());
+    auto res_ptr = dynamic_cast<OffloadMultiWalkerMem<ST, TT>*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SplineC2ROMPTarget::acquireResource dynamic_cast failed");
     mw_mem_.reset(res_ptr);
