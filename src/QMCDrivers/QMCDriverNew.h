@@ -359,7 +359,6 @@ protected:
   /// multi walker dispatchers
   const MultiWalkerDispatchers dispatchers_;
 
-  ///trial function
   /** Observables manager
    *  Has very problematic owner ship and life cycle.
    *  Can be transferred via branch manager one driver to the next indefinitely
