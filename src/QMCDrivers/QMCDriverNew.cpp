@@ -53,7 +53,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
       population_(std::move(population)),
-      twf_dispatcher_(true),
+      dispatchers_(true),
       Psi(psi),
       H(h),
       estimator_manager_(nullptr),
@@ -163,7 +163,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i].reset(new Crowd(*estimator_manager_, twf_dispatcher_));
+    crowds_[i].reset(new Crowd(*estimator_manager_, dispatchers_));
   }
 
   //now give walkers references to their walkers
@@ -326,7 +326,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 
   CrowdResourceLock crowd_res_lock(crowd);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
-  auto& twf_dispatcher = crowd.twf_dispatcher_;
+  auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
+  auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
 
   auto& walkers = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
@@ -345,7 +346,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
     saveElecPosAndGLToWalkers(walker_elecs[iw], walkers[iw]);
 
   std::vector<QMCHamiltonian::FullPrecRealType> local_energies(
-      QMCHamiltonian::flex_evaluate(walker_hamiltonians, walker_elecs));
+      ham_dispatcher.flex_evaluate(walker_hamiltonians, walker_elecs));
 
   // \todo rename these are sets not resets.
   auto resetSigNLocalEnergy = [](MCPWalker& walker, TrialWaveFunction& twf, auto local_energy) {
@@ -517,8 +518,8 @@ void QMCDriverNew::endBlock()
 
 bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
 {
-  bool success = true;
-  auto& twf_dispatcher = crowd.twf_dispatcher_;
+  bool success         = true;
+  auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
