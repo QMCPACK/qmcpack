@@ -51,6 +51,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 {
   assert(QMCDriverNew::checkLogAndGL(crowd));
 
+  auto& twf_dispatcher = crowd.twf_dispatcher_;
   auto& walkers = crowd.get_walkers();
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
@@ -87,7 +88,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       RealType oneover2tau = 0.5 / (tauovermass);
       RealType sqrttau     = std::sqrt(tauovermass);
 
-      TrialWaveFunction::flex_prepareGroup(walker_twfs, walker_elecs, ig);
+      twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
       int start_index = step_context.getPtclGroupStart(ig);
       int end_index   = step_context.getPtclGroupEnd(ig);
@@ -100,7 +101,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
         if (use_drift)
         {
-          TrialWaveFunction::flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
+          twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
           sft.drift_modifier.getDrifts(tauovermass, grads_now, drifts);
 
           std::transform(drifts.begin(), drifts.end(), delta_r_start, drifts.begin(),
@@ -119,7 +120,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         // This is inelegant
         if (use_drift)
         {
-          TrialWaveFunction::flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
+          twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
           std::transform(delta_r_start, delta_r_end, log_gf.begin(),
                          [](const PosType& delta_r) { return mhalf * dot(delta_r, delta_r); });
 
@@ -135,7 +136,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         }
         else
         {
-          TrialWaveFunction::flex_calcRatio(walker_twfs, walker_elecs, iat, ratios);
+          twf_dispatcher.flex_calcRatio(walker_twfs, walker_elecs, iat, ratios);
         }
 
         std::transform(ratios.begin(), ratios.end(), prob.begin(), [](auto ratio) { return std::norm(ratio); });
@@ -155,19 +156,19 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
             isAccepted.push_back(false);
           }
 
-        TrialWaveFunction::flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
+        twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
         ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted);
       }
     }
-    TrialWaveFunction::flex_completeUpdates(walker_twfs);
+    twf_dispatcher.flex_completeUpdates(walker_twfs);
   }
 
   ParticleSet::flex_donePbyP(walker_elecs);
   timers.movepbyp_timer.stop();
 
   timers.buffer_timer.start();
-  TrialWaveFunction::flex_evaluateGL(walker_twfs, walker_elecs, recompute);
+  twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
 
   assert(QMCDriverNew::checkLogAndGL(crowd));
   timers.buffer_timer.stop();

@@ -13,26 +13,16 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 
 	mpi3::ostream wout(world);
 	
-	mpi3::communicator third = world/3;
-
+	mpi3::communicator third = world/3; // or other division
+	mpi3::communicator leaders = world.keep(third.root()); // same as world.split(third.root()?0:mpi3::undefined);
+ 
 	wout << "I am 'world' rank "<<world.rank(); 
-	if(third) wout << " and 'third' rank "<<third.rank();
+	if(third) wout << " and 'third':" << third.name() <<"'s rank "<<third.rank() << " with color attribute " << mpi3::any_cast<int>(third.attribute("color"));
 	else wout << " and not in 'third'";
+	if(leaders) wout << " and 'leader:'" << leaders.name() <<"'s rank "<<leaders.rank() << " with color attribute " << mpi3::any_cast<int>(third.attribute("color"));
+	else wout << " and not in 'leader'";
 	wout << std::endl;
-/*
-	assert( world.size() >= 2 );
 
-	auto comm = (world < 2);
-	cout <<"First, I am rank "<< world.rank() <<"\n";
-	if(comm){
-		assert(comm.size() == 2);
-		cout <<"Second, I am rank "<< world.rank() <<" in world and "<< comm.rank() <<" in comm\n";
-	}else{
-		assert(comm.size() == 0);
-		assert(comm.empty());
-		cout <<"Second, I am rank "<< world.rank() <<" but I am not in comm\n";
-	}
-*/
 	return 0;
 }
 

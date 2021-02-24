@@ -1,10 +1,13 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wfatal-errors -D_TEST_BOOST_MPI3_ADDRESS -lboost_serialization $0x.cpp -o $0x.x && time mpirun -n 4 $0x.x $@ && rm -f $0x.cpp; exit
+#if COMPILATION/* -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*- */
+mpic++ -D_TEST_BOOST_MPI3_ADDRESS -x c++ $0 -o $0x -lboost_serialization&&mpirun --oversubscribe -n 4 $0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2018-2020
+
 #ifndef BOOST_MPI3_ADDRESS_HPP
 #define BOOST_MPI3_ADDRESS_HPP
 
 #include "../mpi3/detail/call.hpp"
+#include "../mpi3/types.hpp"
 
 #define OMPI_SKIP_MPICXX 1 // https://github.com/open-mpi/ompi/issues/5157
 #include<mpi.h>
@@ -14,14 +17,10 @@
 namespace boost{
 namespace mpi3{
 
-using address = MPI_Aint;
-using size_t = MPI_Aint;
-
 inline address get_address(void const* location){
 	address ret; 
 	// this function requires an initialized environment, TODO should be a (static?) member of environment?
-	int status = MPI_Get_address(location, &ret); // MPI_Address is deprecated
-	if(status != MPI_SUCCESS) throw std::runtime_error{"error taking address"};
+	MPI_(Get_address)(location, &ret); // MPI_Address is deprecated
 	return ret;
 }
 
@@ -38,6 +37,8 @@ using std::cout;
 namespace mpi3 = boost::mpi3;
 
 int mpi3::main(int, char*[], mpi3::communicator world){
+
+	std::cout << "dsadsad" << std::endl;
 
 	std::vector<int> v(10);
 	mpi3::address a1 = mpi3::addressof(v[0]);
