@@ -183,11 +183,11 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
 }
 
 void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
-                                            const RefVectorWithLeader<ParticleSet>& p_list,
-                                            const RefVectorWithLeader<TrialWaveFunction>& psi_list,
-                                            const RefVector<const NLPPJob<RealType>>& joblist,
-                                            std::vector<RealType>& pairpots,
-                                            bool use_DLA)
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const RefVectorWithLeader<TrialWaveFunction>& psi_list,
+                                          const RefVector<const NLPPJob<RealType>>& joblist,
+                                          std::vector<RealType>& pairpots,
+                                          bool use_DLA)
 {
   if (ecp_component_list.size() > 1)
   {
@@ -221,7 +221,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
 
       if (use_DLA)
         TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,
-                                                 TrialWaveFunction::ComputeType::FERMIONIC);
+                                             TrialWaveFunction::ComputeType::FERMIONIC);
       else
         TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
     }

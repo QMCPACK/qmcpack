@@ -32,7 +32,6 @@
 
 namespace qmcplusplus
 {
-
 class TWFdispatcher;
 
 /** Class for controlling the walkers for DMC simulations.
@@ -54,7 +53,10 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControl(Communicate* c, const TWFdispatcher& twf_dispatcher, RandomGenerator_t& rng, bool use_fixed_pop = false);
+  WalkerControl(Communicate* c,
+                const TWFdispatcher& twf_dispatcher,
+                RandomGenerator_t& rng,
+                bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
   ~WalkerControl();

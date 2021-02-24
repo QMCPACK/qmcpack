@@ -151,7 +151,7 @@ public:
 
   /** batched version of evaluateLog. gold reference */
   static void mw_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                               const RefVectorWithLeader<ParticleSet>& p_list);
+                             const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
@@ -215,11 +215,11 @@ public:
    * and the external object adds the varying G and L and the fixed terms.
    */
   static void mw_evaluateDeltaLogSetup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                         const RefVectorWithLeader<ParticleSet>& p_list,
-                                         std::vector<RealType>& logpsi_fixed_list,
-                                         std::vector<RealType>& logpsi_opt_list,
-                                         RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
-                                         RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list);
+                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                       std::vector<RealType>& logpsi_fixed_list,
+                                       std::vector<RealType>& logpsi_opt_list,
+                                       RefVector<ParticleSet::ParticleGradient_t>& fixedG_list,
+                                       RefVector<ParticleSet::ParticleLaplacian_t>& fixedL_list);
 
   /** evaluate the log value for optimizable parts of a many-body wave function
    * @param wf_list vector of wavefunctions
@@ -245,11 +245,11 @@ public:
 
 
   static void mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                    const RefVectorWithLeader<ParticleSet>& p_list,
-                                    std::vector<RealType>& logpsi_list,
-                                    RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
-                                    RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
-                                    bool recompute = false);
+                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                  std::vector<RealType>& logpsi_list,
+                                  RefVector<ParticleSet::ParticleGradient_t>& dummyG_list,
+                                  RefVector<ParticleSet::ParticleLaplacian_t>& dummyL_list,
+                                  bool recompute = false);
 
 
   /** compute psi(R_new) / psi(R_current) ratio
@@ -263,10 +263,10 @@ public:
 
   /** batched version of calcRatio */
   static void mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                             const RefVectorWithLeader<ParticleSet>& p_list,
-                             int iat,
-                             std::vector<PsiValueType>& ratios,
-                             ComputeType ct = ComputeType::ALL);
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<PsiValueType>& ratios,
+                           ComputeType ct = ComputeType::ALL);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
@@ -275,9 +275,9 @@ public:
    * Note: unlike other mw_ static functions, *this is the batch leader instead of wf_list[0].
    */
   static void mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                  const RefVector<const VirtualParticleSet>& Vp_list,
-                                  const RefVector<std::vector<ValueType>>& ratios_list,
-                                  ComputeType ct = ComputeType::ALL);
+                                const RefVector<const VirtualParticleSet>& Vp_list,
+                                const RefVector<std::vector<ValueType>>& ratios_list,
+                                ComputeType ct = ComputeType::ALL);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P,
@@ -323,10 +323,10 @@ public:
    *  all vector sizes must match
    */
   static void mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                 const RefVectorWithLeader<ParticleSet>& p_list,
-                                 int iat,
-                                 std::vector<PsiValueType>& ratios,
-                                 std::vector<GradType>& grad_new);
+                               const RefVectorWithLeader<ParticleSet>& p_list,
+                               int iat,
+                               std::vector<PsiValueType>& ratios,
+                               std::vector<GradType>& grad_new);
 
   /** Prepare internal data for updating WFC correspond to a particle group
    *  Particle groups usually correspond to determinants of different spins.
@@ -340,8 +340,8 @@ public:
    *  all vector sizes must match
    */
   static void mw_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                const RefVectorWithLeader<ParticleSet>& p_list,
-                                int ig);
+                              const RefVectorWithLeader<ParticleSet>& p_list,
+                              int ig);
 
   GradType evalGrad(ParticleSet& P, int iat);
 
@@ -361,19 +361,19 @@ public:
     * to any TWF.
     */
   static void mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                            const RefVectorWithLeader<ParticleSet>& p_list,
-                            int iat,
-                            std::vector<GradType>& grad_now);
+                          const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          std::vector<GradType>& grad_now);
 
   void rejectMove(int iat);
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
   /* flexible batched version of acceptMove */
   static void mw_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                     const RefVectorWithLeader<ParticleSet>& p_list,
-                                     int iat,
-                                     const std::vector<bool>& isAccepted,
-                                     bool safe_to_delay = false);
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool safe_to_delay = false);
   void completeUpdates();
   /* flexible batched version of completeUpdates.  */
   static void mw_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list);
@@ -384,8 +384,8 @@ public:
   /* flexible batched version of evaluateGL.
    */
   static void mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                              const RefVectorWithLeader<ParticleSet>& p_list,
-                              bool fromscratch);
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            bool fromscratch);
 
   /** register all the wavefunction components in buffer.
    *  See WaveFunctionComponent::registerData for more detail */
@@ -417,10 +417,10 @@ public:
                            bool project = false);
 
   static void mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                const RefVectorWithLeader<ParticleSet>& p_list,
-                                                const opt_variables_type& optvars,
-                                                RecordArray<ValueType>& dlogpsi,
-                                                RecordArray<ValueType>& dhpsioverpsi);
+                                              const RefVectorWithLeader<ParticleSet>& p_list,
+                                              const opt_variables_type& optvars,
+                                              RecordArray<ValueType>& dlogpsi,
+                                              RecordArray<ValueType>& dhpsioverpsi);
 
   void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
 

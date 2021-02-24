@@ -15,61 +15,59 @@
 
 namespace qmcplusplus
 {
-
 class TWFdispatcher
 {
 public:
+  using PsiValueType = TrialWaveFunction::PsiValueType;
+  using ComputeType  = TrialWaveFunction::ComputeType;
+  using ValueType    = TrialWaveFunction::ValueType;
+  using GradType     = TrialWaveFunction::GradType;
 
-using PsiValueType = TrialWaveFunction::PsiValueType;
-using ComputeType = TrialWaveFunction::ComputeType;
-using ValueType = TrialWaveFunction::ValueType;
-using GradType = TrialWaveFunction::GradType;
+  TWFdispatcher(bool use_batch);
 
-TWFdispatcher(bool use_batch);
+  void flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                        const RefVectorWithLeader<ParticleSet>& p_list) const;
 
-void flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                         const RefVectorWithLeader<ParticleSet>& p_list) const;
+  void flex_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                      const RefVectorWithLeader<ParticleSet>& p_list,
+                      int iat,
+                      std::vector<PsiValueType>& ratios,
+                      ComputeType ct = ComputeType::ALL) const;
 
-void flex_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                       const RefVectorWithLeader<ParticleSet>& p_list,
-                                       int iat,
-                                       std::vector<PsiValueType>& ratios,
-                                       ComputeType ct = ComputeType::ALL) const;
+  void flex_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                         const RefVectorWithLeader<ParticleSet>& p_list,
+                         int ig) const;
 
-void flex_prepareGroup(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                          const RefVectorWithLeader<ParticleSet>& p_list,
-                                          int ig) const;
+  void flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                     const RefVectorWithLeader<ParticleSet>& p_list,
+                     int iat,
+                     std::vector<GradType>& grad_now) const;
 
-void flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                      const RefVectorWithLeader<ParticleSet>& p_list,
-                                      int iat,
-                                      std::vector<GradType>& grad_now) const;
+  void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          std::vector<PsiValueType>& ratios,
+                          std::vector<GradType>& grad_new) const;
 
-void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                           int iat,
-                                           std::vector<PsiValueType>& ratios,
-                                           std::vector<GradType>& grad_new) const;
+  void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
+                              int iat,
+                              const std::vector<bool>& isAccepted,
+                              bool safe_to_delay) const;
 
-void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                               const RefVectorWithLeader<ParticleSet>& p_list,
-                                               int iat,
-                                               const std::vector<bool>& isAccepted,
-                                               bool safe_to_delay) const;
+  void flex_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list) const;
 
-void flex_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list) const;
+  void flex_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                       const RefVectorWithLeader<ParticleSet>& p_list,
+                       bool fromscratch) const;
 
-void flex_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                        const RefVectorWithLeader<ParticleSet>& p_list,
-                                        bool fromscratch) const;
-
-void flex_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                            const RefVector<const VirtualParticleSet>& vp_list,
-                                            const RefVector<std::vector<ValueType>>& ratios_list,
-                                            ComputeType ct) const;
+  void flex_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                           const RefVector<const VirtualParticleSet>& vp_list,
+                           const RefVector<std::vector<ValueType>>& ratios_list,
+                           ComputeType ct) const;
 
 private:
-bool use_batch_;
+  bool use_batch_;
 };
 } // namespace qmcplusplus
 

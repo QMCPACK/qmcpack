@@ -257,7 +257,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   auto fixedG_list     = convertUPtrToRefVector(fixedG_list_ptr);
   auto fixedL_list     = convertUPtrToRefVector(fixedL_list_ptr);
 
-  TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list, fixedL_list);
+  TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list,
+                                              fixedL_list);
 
 
   // Evaluate old (single item) evaluateDeltaLog
@@ -321,7 +322,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   auto fixedG_list2     = convertUPtrToRefVector(fixedG_list2_ptr);
   auto fixedL_list2     = convertUPtrToRefVector(fixedL_list2_ptr);
 
-  TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list2, logpsi_opt_list2, fixedG_list2, fixedL_list2);
+  TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list2, logpsi_opt_list2, fixedG_list2,
+                                              fixedL_list2);
 
   // Evaluate old (single item) evaluateDeltaLog corresponding to the second wavefunction/particleset
 
