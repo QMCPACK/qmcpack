@@ -84,7 +84,7 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  std::unique_ptr<OffloadSharedMem<ST, TT>> mw_mem;
+  std::unique_ptr<OffloadSharedMem<ST, TT>> mw_mem_;
 
   ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
@@ -156,10 +156,10 @@ public:
     auto res_ptr = dynamic_cast<OffloadSharedMem<ST, TT>*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SplineC2ROMPTarget::acquireResource dynamic_cast failed");
-    mw_mem.reset(res_ptr);
+    mw_mem_.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem)); }
+  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem_)); }
 
   virtual SPOSet* makeClone() const override { return new SplineC2ROMPTarget(*this); }
 

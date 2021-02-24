@@ -387,27 +387,31 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
                                                   std::vector<std::vector<ValueType>>& ratios_list) const
 {
   assert(this == &spo_list.getLeader());
-  auto& phi_leader      = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-  auto& mw_mem          = *phi_leader.mw_mem;
-  const size_t nw       = spo_list.size();
-  const size_t orb_size = phi_leader.size();
+  auto& phi_leader            = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  auto& mw_mem                = *phi_leader.mw_mem_;
+  auto& det_ratios_buffer_H2D = mw_mem.det_ratios_buffer_H2D;
+  auto& mw_ratios_private     = mw_mem.mw_ratios_private;
+  auto& mw_offload_scratch    = mw_mem.mw_offload_scratch;
+  auto& mw_results_scratch    = mw_mem.mw_results_scratch;
+  const size_t nw             = spo_list.size();
+  const size_t orb_size       = phi_leader.size();
 
   size_t mw_nVP = 0;
   for (const VirtualParticleSet& VP : vp_list)
     mw_nVP += VP.getTotalNum();
 
   const size_t packed_size = nw * sizeof(ValueType*) + mw_nVP * (6 * sizeof(TT) + sizeof(int));
-  mw_mem.det_ratios_buffer_H2D.resize(packed_size);
+  det_ratios_buffer_H2D.resize(packed_size);
 
   // pack invRow_ptr_list to det_ratios_buffer_H2D
-  Vector<const ValueType*> ptr_buffer(reinterpret_cast<const ValueType**>(mw_mem.det_ratios_buffer_H2D.data()), nw);
+  Vector<const ValueType*> ptr_buffer(reinterpret_cast<const ValueType**>(det_ratios_buffer_H2D.data()), nw);
   for (size_t iw = 0; iw < nw; iw++)
     ptr_buffer[iw] = invRow_ptr_list[iw];
 
   // pack particle positions
-  auto* pos_ptr = reinterpret_cast<TT*>(mw_mem.det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*));
+  auto* pos_ptr = reinterpret_cast<TT*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*));
   auto* ref_id_ptr =
-      reinterpret_cast<int*>(mw_mem.det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
+      reinterpret_cast<int*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*) + mw_nVP * 6 * sizeof(TT));
   size_t iVP = 0;
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -430,26 +434,26 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
 
   const int ChunkSizePerTeam = 128;
   const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-  mw_mem.mw_ratios_private.resize(mw_nVP, NumTeams);
+  mw_ratios_private.resize(mw_nVP, NumTeams);
   const auto padded_size = myV.size();
-  mw_mem.mw_offload_scratch.resize(padded_size * mw_nVP);
-  mw_mem.mw_results_scratch.resize(orb_size * mw_nVP);
+  mw_offload_scratch.resize(padded_size * mw_nVP);
+  mw_results_scratch.resize(orb_size * mw_nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
   const auto* spline_ptr         = SplineInst->getSplinePtr();
-  auto* offload_scratch_ptr      = mw_mem.mw_offload_scratch.data();
-  auto* results_scratch_ptr      = mw_mem.mw_results_scratch.data();
+  auto* offload_scratch_ptr      = mw_offload_scratch.data();
+  auto* results_scratch_ptr      = mw_results_scratch.data();
   const auto myKcart_padded_size = myKcart->capacity();
   auto* myKcart_ptr              = myKcart->data();
-  auto* buffer_H2D_ptr           = mw_mem.det_ratios_buffer_H2D.data();
-  auto* ratios_private_ptr       = mw_mem.mw_ratios_private.data();
+  auto* buffer_H2D_ptr           = det_ratios_buffer_H2D.data();
+  auto* ratios_private_ptr       = mw_ratios_private.data();
   const size_t first_spo_local   = first_spo;
   const int nComplexBands_local  = nComplexBands;
 
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
-                map(always, to: buffer_H2D_ptr[0:mw_mem.det_ratios_buffer_H2D.size()]) \
+                map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
     for (int iat = 0; iat < mw_nVP; iat++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
@@ -499,7 +503,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
     {
       ratios[iat] = TT(0);
       for (int tid = 0; tid < NumTeams; ++tid)
-        ratios[iat] += mw_mem.mw_ratios_private[iVP][tid];
+        ratios[iat] += mw_ratios_private[iVP][tid];
     }
   }
 }
@@ -799,32 +803,35 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
   assert(this == &sa_list.getLeader());
   auto& phi_leader = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
   // make this class unit tests friendly without the need of setup resources.
-  if (!phi_leader.mw_mem)
+  if (!phi_leader.mw_mem_)
   {
     app_warning() << "SplineC2ROMPTarget : This message should not be seen in production (performance bug) runs but "
                      "only unit tests (expected)."
                   << std::endl;
-    phi_leader.mw_mem = std::make_unique<OffloadSharedMem<ST, TT>>();
+    phi_leader.mw_mem_ = std::make_unique<OffloadSharedMem<ST, TT>>();
   }
-  auto& mw_mem       = *phi_leader.mw_mem;
-  const int nwalkers = sa_list.size();
-  mw_mem.mw_pos_copy.resize(nwalkers * 6);
+  auto& mw_mem             = *phi_leader.mw_mem_;
+  auto& mw_pos_copy        = mw_mem.mw_pos_copy;
+  auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
+  auto& mw_results_scratch = mw_mem.mw_results_scratch;
+  const int nwalkers       = sa_list.size();
+  mw_pos_copy.resize(nwalkers * 6);
 
   // pack particle positions
   for (int iw = 0; iw < nwalkers; ++iw)
   {
     const PointType& r = P_list[iw].activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    mw_mem.mw_pos_copy[iw * 6]     = r[0];
-    mw_mem.mw_pos_copy[iw * 6 + 1] = r[1];
-    mw_mem.mw_pos_copy[iw * 6 + 2] = r[2];
-    mw_mem.mw_pos_copy[iw * 6 + 3] = ru[0];
-    mw_mem.mw_pos_copy[iw * 6 + 4] = ru[1];
-    mw_mem.mw_pos_copy[iw * 6 + 5] = ru[2];
+    mw_pos_copy[iw * 6]     = r[0];
+    mw_pos_copy[iw * 6 + 1] = r[1];
+    mw_pos_copy[iw * 6 + 2] = r[2];
+    mw_pos_copy[iw * 6 + 3] = ru[0];
+    mw_pos_copy[iw * 6 + 4] = ru[1];
+    mw_pos_copy[iw * 6 + 5] = ru[2];
   }
 
-  phi_leader.evaluateVGLMultiPos(mw_mem.mw_pos_copy, mw_mem.mw_offload_scratch, mw_mem.mw_results_scratch, psi_v_list,
-                                 dpsi_v_list, d2psi_v_list);
+  phi_leader.evaluateVGLMultiPos(mw_pos_copy, mw_offload_scratch, mw_results_scratch, psi_v_list, dpsi_v_list,
+                                 d2psi_v_list);
 }
 
 template<typename ST>
@@ -837,17 +844,21 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                                                             std::vector<GradType>& grads) const
 {
   assert(this == &spo_list.getLeader());
-  auto& phi_leader   = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-  auto& mw_mem       = *phi_leader.mw_mem;
-  const int nwalkers = spo_list.size();
-  mw_mem.buffer_H2D.resize(nwalkers, sizeof(ST) * 6 + sizeof(ValueType*));
+  auto& phi_leader         = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  auto& mw_mem             = *phi_leader.mw_mem_;
+  auto& buffer_H2D         = mw_mem.buffer_H2D;
+  auto& rg_private         = mw_mem.rg_private;
+  auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
+  auto& mw_results_scratch = mw_mem.mw_results_scratch;
+  const int nwalkers       = spo_list.size();
+  buffer_H2D.resize(nwalkers, sizeof(ST) * 6 + sizeof(ValueType*));
 
   // pack particle positions and invRow pointers.
   for (int iw = 0; iw < nwalkers; ++iw)
   {
     const PointType& r = P_list[iw].activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    Vector<ST> pos_copy(reinterpret_cast<ST*>(mw_mem.buffer_H2D[iw]), 6);
+    Vector<ST> pos_copy(reinterpret_cast<ST*>(buffer_H2D[iw]), 6);
 
     pos_copy[0] = r[0];
     pos_copy[1] = r[1];
@@ -856,7 +867,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
     pos_copy[4] = ru[1];
     pos_copy[5] = ru[2];
 
-    auto& invRow_ptr = *reinterpret_cast<const ValueType**>(mw_mem.buffer_H2D[iw] + sizeof(ST) * 6);
+    auto& invRow_ptr = *reinterpret_cast<const ValueType**>(buffer_H2D[iw] + sizeof(ST) * 6);
     invRow_ptr       = invRow_ptr_list[iw];
   }
 
@@ -865,26 +876,26 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   const int NumTeams         = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto padded_size     = myV.size();
   // for V(1)G(3)H(6) intermediate result
-  mw_mem.mw_offload_scratch.resize(padded_size * num_pos * 10);
+  mw_offload_scratch.resize(padded_size * num_pos * 10);
   const auto orb_size = phi_vgl_v.size() / num_pos;
   // for V(1)G(3)L(1) final result
-  mw_mem.mw_results_scratch.resize(orb_size * num_pos * 5);
+  mw_results_scratch.resize(orb_size * num_pos * 5);
   // per team ratio and grads
-  mw_mem.rg_private.resize(num_pos, NumTeams * 4);
+  rg_private.resize(num_pos, NumTeams * 4);
 
   // Ye: need to extract sizes and pointers before entering target region
   const auto* spline_ptr         = SplineInst->getSplinePtr();
-  auto* buffer_H2D_ptr           = mw_mem.buffer_H2D.data();
-  auto* offload_scratch_ptr      = mw_mem.mw_offload_scratch.data();
-  auto* results_scratch_ptr      = mw_mem.mw_results_scratch.data();
+  auto* buffer_H2D_ptr           = buffer_H2D.data();
+  auto* offload_scratch_ptr      = mw_offload_scratch.data();
+  auto* results_scratch_ptr      = mw_results_scratch.data();
   const auto myKcart_padded_size = myKcart->capacity();
   auto* mKK_ptr                  = mKK->data();
   auto* GGt_ptr                  = GGt_offload->data();
   auto* PrimLattice_G_ptr        = PrimLattice_G_offload->data();
   auto* myKcart_ptr              = myKcart->data();
   auto* phi_vgl_ptr              = phi_vgl_v.data();
-  auto* rg_private_ptr           = mw_mem.rg_private.data();
-  const size_t buffer_H2D_stride = mw_mem.buffer_H2D.cols();
+  auto* rg_private_ptr           = rg_private.data();
+  const size_t buffer_H2D_stride = buffer_H2D.cols();
   const size_t first_spo_local   = first_spo;
   const size_t phi_vgl_stride    = phi_vgl_v.capacity();
   const int nComplexBands_local  = nComplexBands;
@@ -892,8 +903,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
-                    map(always, to: buffer_H2D_ptr[:mw_mem.buffer_H2D.size()]) \
-                    map(always, from: rg_private_ptr[0:mw_mem.rg_private.size()])")
+                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
+                    map(always, from: rg_private_ptr[0:rg_private.size()])")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -981,15 +992,15 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   {
     ValueType ratio(0);
     for (int team_id = 0; team_id < NumTeams; team_id++)
-      ratio += mw_mem.rg_private[iw][team_id * 4];
+      ratio += rg_private[iw][team_id * 4];
     ratios[iw] = ratio;
 
     ValueType grad_x(0), grad_y(0), grad_z(0);
     for (int team_id = 0; team_id < NumTeams; team_id++)
     {
-      grad_x += mw_mem.rg_private[iw][team_id * 4 + 1];
-      grad_y += mw_mem.rg_private[iw][team_id * 4 + 2];
-      grad_z += mw_mem.rg_private[iw][team_id * 4 + 3];
+      grad_x += rg_private[iw][team_id * 4 + 1];
+      grad_y += rg_private[iw][team_id * 4 + 2];
+      grad_z += rg_private[iw][team_id * 4 + 3];
     }
     grads[iw] = GradType{grad_x / ratio, grad_y / ratio, grad_z / ratio};
   }
