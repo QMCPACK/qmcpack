@@ -15,6 +15,11 @@
 
 namespace qmcplusplus
 {
+
+/** Wrappers on dispatching to TrialWaveFunction single walker APIs or mw_ APIs.
+ * This should be only used by QMC drivers.
+ * member function names must match mw_ APIs in TrialWaveFunction
+ */
 class TWFdispatcher
 {
 public:

@@ -54,10 +54,7 @@ namespace qmcplusplus
  * a batch of TrialWaveFunction objects in a lock-step fashion. These functions
  * are defined statically because they should not have access to a
  * concrete TWF object except through the passed RefVectorWithLeader<TWF>&.
- *
- * It dispatches to mw_ functions of WaveFunctionComponent or single walker functions
- * based on the number of objects WFC in the input. This accomidates openmp's implicit detection
- * of nested parallelism.
+ * It dispatches to mw_ functions of WaveFunctionComponent
  */
 class TrialWaveFunction
 {
@@ -368,20 +365,20 @@ public:
   void rejectMove(int iat);
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
-  /* flexible batched version of acceptMove */
+  /* batched version of acceptMove */
   static void mw_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                    int iat,
                                    const std::vector<bool>& isAccepted,
                                    bool safe_to_delay = false);
   void completeUpdates();
-  /* flexible batched version of completeUpdates.  */
+  /* batched version of completeUpdates.  */
   static void mw_completeUpdates(const RefVectorWithLeader<TrialWaveFunction>& wf_list);
 
   /** compute gradients and laplacian of the TWF with respect to each particle.
    *  See WaveFunctionComponent::evaluateGL for more detail */
   LogValueType evaluateGL(ParticleSet& P, bool fromscratch);
-  /* flexible batched version of evaluateGL.
+  /* batched version of evaluateGL.
    */
   static void mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                             const RefVectorWithLeader<ParticleSet>& p_list,
