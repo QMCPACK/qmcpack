@@ -252,11 +252,25 @@ private:
 
   /// invert logdetT(psiM), result is in the engine.
   void invertPsiM(const ValueMatrix_t& logdetT);
+
   static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                             const RefVector<const ValueMatrix_t>& logdetT_list);
 
   static void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                            const RefVectorWithLeader<ParticleSet>& p_list);
+
+  // make this class unit tests friendly without the need of setup resources.
+  void guardMultiWalkerRes()
+  {
+    if (!mw_res_)
+    {
+      std::cerr
+          << "WARNING DiracDeterminantBatched : This message should not be seen in production (performance bug) runs "
+             "but only unit tests (expected)."
+          << std::endl;
+      mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource>();
+    }
+  }
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();

@@ -177,7 +177,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
                                                             std::vector<GradType>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader     = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
@@ -251,6 +252,11 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  wfc_leader.guardMultiWalkerRes();
+  auto& mw_res       = *wfc_leader.mw_res_;
+  auto& phi_vgl_v    = mw_res.phi_vgl_v;
+  auto& ratios_local = mw_res.ratios_local;
+
   ScopedTimer update(UpdateTimer);
 
   const int nw = wfc_list.size();
@@ -279,10 +285,6 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
     }
     det.curRatio = 1.0;
   }
-
-  auto& mw_res       = *wfc_leader.mw_res_;
-  auto& phi_vgl_v    = mw_res.phi_vgl_v;
-  auto& ratios_local = mw_res.ratios_local;
 
   if (!Phi->isOMPoffload() && n_accepted > 0)
   {
@@ -532,7 +534,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithL
                                                             std::vector<PsiValueType>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader     = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
   auto& ratios_local   = mw_res.ratios_local;
