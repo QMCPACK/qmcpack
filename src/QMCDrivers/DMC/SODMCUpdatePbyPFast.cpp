@@ -91,6 +91,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
         if (!is_valid || rr > m_r2max)
         {
           ++nRejectTemp;
+          W.accept_rejectMove(iat, false);
           continue;
         }
         ValueType ratio = Psi.calcRatioGradWithSpin(W, iat, grad_iat, spingrad_iat);
@@ -99,7 +100,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
         {
           ++nRejectTemp;
           ++nNodeCrossing;
-          W.rejectMove(iat);
+          W.accept_rejectMove(iat, false);
           Psi.rejectMove(iat);
         }
         else
@@ -113,21 +114,24 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
           ds                     = W.spins[iat] - W.activeSpinVal - ds;
           FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
           logGb += -spinMass * oneover2tau * ds * ds;
-          RealType prob = std::norm(ratio) * std::exp(logGb - logGf);
+          RealType prob    = std::norm(ratio) * std::exp(logGb - logGf);
+          bool is_accepted = false;
+
           if (RandomGen() < prob)
           {
+            is_accepted = true;
+
             ++nAcceptTemp;
             Psi.acceptMove(W, iat, true);
-            W.acceptMove(iat, true);
             rr_accepted += rr;
             gf_acc *= prob; //accumulate the ratio
           }
           else
           {
             ++nRejectTemp;
-            W.rejectMove(iat);
             Psi.rejectMove(iat);
           }
+          W.accept_rejectMove(iat, is_accepted);
         }
       }
     }

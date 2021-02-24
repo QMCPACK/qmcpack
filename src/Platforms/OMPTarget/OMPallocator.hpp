@@ -16,11 +16,17 @@
 
 #include <memory>
 #include <type_traits>
+#include <atomic>
 #include "config.h"
 #include "allocator_traits.hpp"
 
 namespace qmcplusplus
 {
+
+extern std::atomic<size_t> OMPallocator_device_mem_allocated;
+
+inline size_t getOMPdeviceMemAllocated() { return OMPallocator_device_mem_allocated; }
+
 template<typename T>
 T* getOffloadDevicePtr(T* host_ptr)
 {
@@ -57,6 +63,7 @@ struct OMPallocator : public HostAllocator
     static_assert(std::is_same<T, value_type>::value, "OMPallocator and HostAllocator data types must agree!");
     value_type* pt = HostAllocator::allocate(n);
     PRAGMA_OFFLOAD("omp target enter data map(alloc:pt[0:n])")
+    OMPallocator_device_mem_allocated += n * sizeof(T);
     device_ptr = getOffloadDevicePtr(pt);
     return pt;
   }
@@ -64,6 +71,7 @@ struct OMPallocator : public HostAllocator
   void deallocate(value_type* pt, std::size_t n)
   {
     PRAGMA_OFFLOAD("omp target exit data map(delete:pt[0:n])")
+    OMPallocator_device_mem_allocated -= n * sizeof(T);
     HostAllocator::deallocate(pt, n);
   }
 

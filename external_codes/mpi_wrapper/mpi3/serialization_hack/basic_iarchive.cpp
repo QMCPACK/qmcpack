@@ -424,10 +424,17 @@ basic_iarchive_impl::load_pointer(
     class_id_type cid;
     load(ar, cid);
 
+#if BOOST_VERSION < 107400
     if(NULL_POINTER_TAG == cid){
         t = NULL;
         return bpis_ptr;
     }
+#else // this case is taken from https://github.com/boostorg/serialization/blob/develop/src/basic_iarchive.cpp#L430-L433
+    if(BOOST_SERIALIZATION_NULL_POINTER_TAG == cid){
+        t = NULL;
+        return bpis_ptr;
+    }
+#endif
 
     // if its a new class type - i.e. never been registered
     if(class_id_type(cobject_info_set.size()) <= cid){

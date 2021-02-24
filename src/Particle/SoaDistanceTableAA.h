@@ -85,10 +85,10 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     temp_dr_.resize(N_targets);
   }
 
-  const DistRow& getOldDists() const { return old_r_; }
-  const DisplRow& getOldDispls() const { return old_dr_; }
+  const DistRow& getOldDists() const override { return old_r_; }
+  const DisplRow& getOldDispls() const override { return old_dr_; }
 
-  inline void evaluate(ParticleSet& P)
+  inline void evaluate(ParticleSet& P) override
   {
     ScopedTimer local_timer(evaluate_timer_);
     constexpr T BigR = std::numeric_limits<T>::max();
@@ -101,9 +101,11 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
   }
 
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old)
+  inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
     ScopedTimer local_timer(move_timer_);
+
+    old_prepared_elec_id = prepare_old ? iat : -1;
     DTD_BConds<T, D, SC>::computeDistances(rnew, P.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_, 0,
                                            N_targets, P.activePtcl);
     // set up old_r_ and old_dr_ for moves may get accepted.
@@ -113,20 +115,10 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], P.getCoordinates().getAllParticlePos(), old_r_.data(), old_dr_,
                                              0, N_targets, iat);
       old_r_[iat] = std::numeric_limits<T>::max(); //assign a big number
-
-      // If the full table is not ready all the time, overwrite the current value.
-      // If this step is missing, DT values can be undefined in case a move is rejected.
-      if (!need_full_table_)
-      {
-        //copy row
-        std::copy_n(old_r_.data(), iat, distances_[iat].data());
-        for (int idim = 0; idim < D; ++idim)
-          std::copy_n(old_dr_.data(idim), iat, displacements_[iat].data(idim));
-      }
     }
   }
 
-  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
+  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
     RealType min_dist = std::numeric_limits<RealType>::max();
     int index         = -1;
@@ -161,7 +153,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
    * only the [0,iat-1) columns need to save the new values.
    * The memory copy goes up to the padded size only for better performance.
    */
-  inline void update(IndexType iat, bool partial_update)
+  inline void update(IndexType iat, bool partial_update) override
   {
     ScopedTimer local_timer(update_timer_);
     //update by a cache line
@@ -180,6 +172,22 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
         displacements_[i](iat) = -temp_dr_[i];
       }
     }
+  }
+
+  void updateForOldPosPartial(IndexType jat) override
+  {
+    assert(old_prepared_elec_id == jat);
+    if (old_r_.data() == distances_[jat].data())
+      return;
+
+    ScopedTimer local_timer(update_timer_);
+
+    //update by a cache line
+    const int nupdate = getAlignedSize<T>(jat);
+    //copy row
+    std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
+    for (int idim = 0; idim < D; ++idim)
+      std::copy_n(old_dr_.data(idim), nupdate, displacements_[jat].data(idim));
   }
 
 private:

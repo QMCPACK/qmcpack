@@ -25,6 +25,7 @@
 #include "ResourceCollection.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
+#include "MemoryUsage.h"
 
 namespace qmcplusplus
 {
@@ -217,7 +218,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
           TrialWaveFunction::flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-          ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted, true);
+          ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted);
         }
       }
 
@@ -334,6 +335,7 @@ void DMCBatched::runDMCStep(int crowd_id,
 
 void DMCBatched::process(xmlNodePtr node)
 {
+  print_mem("DMCBatched before initialization", app_log());
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
@@ -397,6 +399,8 @@ bool DMCBatched::run()
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
   }
 
+  print_mem("DMCBatched after initialLogEvaluation", app_summary());
+
   {
     FullPrecRealType energy, variance;
     population_.measureGlobalEnergyVariance(*myComm, energy, variance);
@@ -450,10 +454,12 @@ bool DMCBatched::run()
 
       population_.redistributeWalkers(crowds_);
     }
+    print_mem("DMCBatched after a block", app_debug_stream());
     endBlock();
   }
 
   branch_engine_->printStatus();
+  print_mem("DMCBatched ends", app_log());
   return finalize(num_blocks, true);
 }
 

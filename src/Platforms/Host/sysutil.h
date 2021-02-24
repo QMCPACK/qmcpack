@@ -32,6 +32,6 @@ std::string getDateAndTime(const char* format);
 
 size_t freemem();
 
-void print_mem(const char* title, std::ostream& log);
+size_t memusage();
 
 #endif

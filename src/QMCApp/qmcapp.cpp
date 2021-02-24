@@ -24,7 +24,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "Platforms/Host/OutputManager.h"
 #include "OhmmsData/FileUtility.h"
-#include "Platforms/sysutil.h"
+#include "Host/sysutil.h"
 #include "Platforms/devices.h"
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
