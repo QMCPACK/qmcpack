@@ -282,6 +282,7 @@ int main(int argc, char* argv[])
   arch::INIT(node);
 #endif
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+/*
   {
     std::ofstream out;
     out.open("time_batched_zqr.dat");
@@ -302,6 +303,7 @@ int main(int argc, char* argv[])
       }
     }
   }
+*/
 #endif
   {
     std::ofstream out;
@@ -354,7 +356,7 @@ int main(int argc, char* argv[])
   {
     std::ofstream out;
     out.open("time_exchange_kernel.dat");
-    std::cout << " - exchange kernel (E[w] = sum_{abn} Twabn Twanb)" << std::endl;
+    std::cout << " - exchange kernel (E[w] = sum_{abn} Twabn Twabn)" << std::endl;
     out << "   nbatch nwalk  nocc nchol tExchangeKernel\n";
     Alloc<std::complex<double>> alloc{};
     int nwalk                = 5;

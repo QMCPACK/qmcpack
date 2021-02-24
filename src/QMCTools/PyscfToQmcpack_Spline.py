@@ -19,13 +19,13 @@ try:
   from lxml import etree
 except:
   import sys
-  sys.exit("Error: lxml module is needed for the generation of the XML file. Please install it using your favorite package manager")
+  sys.exit("Error: lxml python module is needed for the generation of the XML file by PyscfToQmcpack_Spline.py. Install as other packages, either directly or with a package manager.")
 
 try:
   import pandas as pd
 except:
   import sys
-  sys.exit("Error: Panda module is needed for the save_eigensystem and eigensystem functions. Please install it using your package manager")
+  sys.exit("Error: Pandas python module is needed for the save_eigensystem and eigensystem functions by PyscfToQmcpack_Spline.py. Install as other packages, either directly or with a package manager.")
 
 
 def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]):
