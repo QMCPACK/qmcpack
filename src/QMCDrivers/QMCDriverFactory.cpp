@@ -258,9 +258,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
     new_driver.reset(fac.create(project_data_,
-                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH)
-
-                                    ,
+                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                                 comm));
   }
   else if (das.new_run_type == QMCRunType::RMC)
