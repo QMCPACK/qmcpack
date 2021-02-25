@@ -31,8 +31,6 @@ namespace qmcplusplus
 {
 QMCOptimizeBatched::QMCOptimizeBatched(const ProjectData& project_data,
                                        MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi,
-                                       QMCHamiltonian& h,
                                        QMCDriverInput&& qmcdriver_input,
                                        VMCDriverInput&& vmcdriver_input,
                                        MCPopulation&& population,
@@ -41,8 +39,6 @@ QMCOptimizeBatched::QMCOptimizeBatched(const ProjectData& project_data,
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(population),
-                   psi,
-                   h,
                    "QMCOptimizeBatched::",
                    comm,
                    "QMCOptimizeBatched"),
@@ -190,8 +186,9 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
     VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
     vmcEngine = new VMCBatched(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
-                                            population_.get_golden_electrons(), &Psi, &H),
-                               Psi, H, samples_, myComm);
+                                            population_.get_golden_electrons(), &population_.get_golden_twf(),
+                                            &population_.get_golden_hamiltonian()),
+                               samples_, myComm);
 
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     bool AppendRun = false;
@@ -224,7 +221,9 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
     optSolver->put(optNode);
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, opt_num_crowds, crowd_size, myComm);
+  optTarget =
+      std::make_unique<QMCCostFunctionBatched>(W, population_.get_golden_twf(), population_.get_golden_hamiltonian(),
+                                               samples_, opt_num_crowds, crowd_size, myComm);
   optTarget->setStream(&app_log());
   success = optTarget->put(q);
 

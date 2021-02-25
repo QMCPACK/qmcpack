@@ -244,9 +244,8 @@ public:
    *  Bugs could easily be created by accessing this scope.
    *  This should be set to static and fixed.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluate(
-      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-      const RefVectorWithLeader<ParticleSet>& P_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluate(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                                                   const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -256,9 +255,9 @@ public:
 
   /** batched version of evaluate Local energy with Toperators updated.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateWithToperator(
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateWithToperator(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-      const RefVectorWithLeader<ParticleSet>& P_list);
+      const RefVectorWithLeader<ParticleSet>& p_list);
 
 
   /** evaluate energy and derivatives wrt to the variables
@@ -274,17 +273,17 @@ public:
                                                std::vector<ValueType>& dhpsioverpsi,
                                                bool compute_deriv);
 
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateValueAndDerivatives(
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivatives(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-      const RefVectorWithLeader<ParticleSet>& P_list,
+      const RefVectorWithLeader<ParticleSet>& p_list,
       const opt_variables_type& optvars,
       RecordArray<ValueType>& dlogpsi,
       RecordArray<ValueType>& dhpsioverpsi,
       bool compute_deriv);
 
-  static std::vector<QMCHamiltonian::FullPrecRealType> flex_evaluateValueAndDerivativesInner(
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivativesInner(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-      const RefVectorWithLeader<ParticleSet>& P_list,
+      const RefVectorWithLeader<ParticleSet>& p_list,
       const opt_variables_type& optvars,
       RecordArray<ValueType>& dlogpsi,
       RecordArray<ValueType>& dhpsioverpsi);
@@ -358,8 +357,8 @@ public:
       l2_ptr->evaluateD(P, iel, D);
   }
 
-  static std::vector<int> flex_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                                 const RefVectorWithLeader<ParticleSet>& p_list);
+  static std::vector<int> mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                               const RefVectorWithLeader<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable

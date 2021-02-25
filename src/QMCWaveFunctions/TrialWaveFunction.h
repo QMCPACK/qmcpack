@@ -452,6 +452,7 @@ public:
 
   bool use_tasking() const { return use_tasking_; }
 
+  ResourceCollection& getResource() { return *twf_resource_; }
   const ResourceCollection& getResource() const { return *twf_resource_; }
 
 private:
