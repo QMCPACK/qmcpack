@@ -178,6 +178,12 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  wfc_leader.guardMultiWalkerRes();
+  auto& mw_res         = *wfc_leader.mw_res_;
+  auto& phi_vgl_v      = mw_res.phi_vgl_v;
+  auto& ratios_local   = mw_res.ratios_local;
+  auto& grad_new_local = mw_res.grad_new_local;
+
   {
     ScopedTimer local_timer(SPOVGLTimer);
     RefVectorWithLeader<SPOSet> phi_list(*Phi);
@@ -196,14 +202,14 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
     auto psiMinv_row_dev_ptr_list =
         wfc_leader.det_engine_.mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
-    wfc_leader.phi_vgl_v.resize(NumOrbitals * wfc_list.size());
-    wfc_leader.ratios_local.resize(wfc_list.size());
-    wfc_leader.grad_new_local.resize(wfc_list.size());
+    phi_vgl_v.resize(NumOrbitals * wfc_list.size());
+    ratios_local.resize(wfc_list.size());
+    grad_new_local.resize(wfc_list.size());
 
-    VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(wfc_leader.phi_vgl_v.data(), NumOrbitals * wfc_list.size(),
-                                                          wfc_leader.phi_vgl_v.capacity());
+    VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), NumOrbitals * wfc_list.size(),
+                                                          phi_vgl_v.capacity());
     wfc_leader.Phi->mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view,
-                                                   wfc_leader.ratios_local, wfc_leader.grad_new_local);
+                                                   ratios_local, grad_new_local);
   }
 
   wfc_leader.UpdateMode = ORB_PBYP_PARTIAL;
@@ -246,6 +252,11 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  wfc_leader.guardMultiWalkerRes();
+  auto& mw_res       = *wfc_leader.mw_res_;
+  auto& phi_vgl_v    = mw_res.phi_vgl_v;
+  auto& ratios_local = mw_res.ratios_local;
+
   ScopedTimer update(UpdateTimer);
 
   const int nw = wfc_list.size();
@@ -434,7 +445,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVectorWith
       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
 
 #ifndef NDEBUG
-      GradMatrix_t dpsiM_from_device = det.dpsiM;
+      GradMatrix_t dpsiM_from_device   = det.dpsiM;
       ValueMatrix_t d2psiM_from_device = det.d2psiM;
 
       auto& my_psiM_vgl  = det.psiM_vgl;
@@ -524,6 +535,12 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithL
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  wfc_leader.guardMultiWalkerRes();
+  auto& mw_res         = *wfc_leader.mw_res_;
+  auto& phi_vgl_v      = mw_res.phi_vgl_v;
+  auto& ratios_local   = mw_res.ratios_local;
+  auto& grad_new_local = mw_res.grad_new_local;
+
   {
     ScopedTimer local_timer(SPOVTimer);
     RefVectorWithLeader<SPOSet> phi_list(*Phi);
@@ -542,16 +559,16 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithL
     auto psiMinv_row_dev_ptr_list =
         wfc_leader.det_engine_.mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
-    wfc_leader.phi_vgl_v.resize(NumOrbitals * wfc_list.size());
-    wfc_leader.ratios_local.resize(wfc_list.size());
-    wfc_leader.grad_new_local.resize(wfc_list.size());
+    phi_vgl_v.resize(NumOrbitals * wfc_list.size());
+    ratios_local.resize(wfc_list.size());
+    grad_new_local.resize(wfc_list.size());
 
-    VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(wfc_leader.phi_vgl_v.data(), NumOrbitals * wfc_list.size(),
-                                                          wfc_leader.phi_vgl_v.capacity());
+    VectorSoaContainer<ValueType, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), NumOrbitals * wfc_list.size(),
+                                                          phi_vgl_v.capacity());
     // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
     // We may implement mw_evaluateVandDetRatio in the future.
     wfc_leader.Phi->mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view,
-                                                   wfc_leader.ratios_local, wfc_leader.grad_new_local);
+                                                   ratios_local, grad_new_local);
   }
 
   wfc_leader.UpdateMode = ORB_PBYP_RATIO;
@@ -906,6 +923,8 @@ DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYP
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::createResource(ResourceCollection& collection)
 {
+  auto resource_index = collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
+  app_log() << "    Shared resource created in DiracDeterminantBatched. Index " << resource_index << std::endl;
   Phi->createResource(collection);
   det_engine_.createResource(collection);
 }
@@ -913,6 +932,10 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::createResource(ResourceCollection
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::acquireResource(ResourceCollection& collection)
 {
+  auto res_ptr = dynamic_cast<DiracDeterminantBatchedMultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("DiracDeterminantBatched::acquireResource dynamic_cast failed");
+  mw_res_.reset(res_ptr);
   Phi->acquireResource(collection);
   det_engine_.acquireResource(collection);
 }
@@ -920,6 +943,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::acquireResource(ResourceCollectio
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::releaseResource(ResourceCollection& collection)
 {
+  collection.takebackResource(std::move(mw_res_));
   Phi->releaseResource(collection);
   det_engine_.releaseResource(collection);
 }

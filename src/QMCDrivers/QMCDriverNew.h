@@ -32,13 +32,13 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
-#include "QMCWaveFunctions/TWFdispatcher.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "OhmmsApp/ProjectData.h"
+#include "MultiWalkerDispatchers.h"
 
 class Communicate;
 
@@ -365,8 +365,8 @@ protected:
   ///the entire (or on node) walker population
   MCPopulation population_;
 
-  /// TWF dispatcher
-  const TWFdispatcher twf_dispatcher_;
+  /// multi walker dispatchers
+  const MultiWalkerDispatchers dispatchers_;
 
   ///trial function
   TrialWaveFunction& Psi;
