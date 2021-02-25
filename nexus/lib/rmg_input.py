@@ -3512,7 +3512,6 @@ def generate_any_rmg_input(**kwargs):
             #end if
         #end if
 
-
         # set occupations
         has_states = False
         has_states |= 'states_count_and_occupation' in ri
