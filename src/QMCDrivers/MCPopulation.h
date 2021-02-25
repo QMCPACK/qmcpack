@@ -188,10 +188,14 @@ public:
   //const Properties& get_properties() const { return properties_; }
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
+
+  // accessor to the gold copy
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
   ParticleSet* get_golden_electrons() { return elec_particle_set_; }
   const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }
   TrialWaveFunction& get_golden_twf() { return *trial_wf_; }
+  // TODO: the fact this is needed is sad remove need for its existence.
+  QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
 
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
@@ -238,8 +242,6 @@ public:
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
 
-  // TODO: the fact this is needed is sad remove need for its existence.
-  QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
   /** }@ */
 
 
