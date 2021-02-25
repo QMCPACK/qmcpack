@@ -48,8 +48,6 @@ public:
   ///Constructor.
   QMCOptimizeBatched(const ProjectData& project_data,
                      MCWalkerConfiguration& w,
-                     TrialWaveFunction& psi,
-                     QMCHamiltonian& h,
                      QMCDriverInput&& qmcdriver_input,
                      VMCDriverInput&& vmcdriver_input,
                      MCPopulation&& population,
