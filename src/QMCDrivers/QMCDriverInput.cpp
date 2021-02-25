@@ -33,6 +33,9 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 {
   // ParameterSet has an dependency on the lifetime of the backing xmlNodePtr
   // so its better it not live long
+
+  std::string serialize_walkers;
+
   ParameterSet parameter_set;
   parameter_set.add(RollBackBlocks_, "rewind");
   parameter_set.add(store_config_period_, "storeconfigs");
@@ -50,6 +53,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(warmup_steps_, "warmupsteps");
   parameter_set.add(warmup_steps_, "warmup_steps");
   parameter_set.add(num_crowds_, "crowds");
+  parameter_set.add(serialize_walkers, "crowd_serialize_walkers", {"no", "yes"});
   parameter_set.add(walkers_per_rank_, "walkers_per_rank");
   parameter_set.add(total_walkers_, "total_walkers");
   parameter_set.add(steps_between_samples_, "stepsbetweensamples");
@@ -113,6 +117,8 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       tcur = tcur->next;
     }
   }
+
+  crowd_serialize_walkers_ = serialize_walkers == "yes";
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;

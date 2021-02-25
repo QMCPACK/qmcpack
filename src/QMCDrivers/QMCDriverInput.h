@@ -39,7 +39,6 @@ public:
 protected:
 
   bool scoped_profiling_ = false;
-
   /** @ingroup Input Parameters for QMCDriver base class
    *  @{
    *  All input determined variables should be here
@@ -47,6 +46,9 @@ protected:
    *  Do not write out blocks of gets for variables like this
    *  there will be code generation snippets soon in utils
    */
+
+  /// if true, batched operations are serialized over walkers
+  bool crowd_serialize_walkers_ = false;
 
   /// number of blocks to be rolled back
   int RollBackBlocks_ = 0;
@@ -126,6 +128,7 @@ public:
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }
   bool get_scoped_profiling() const { return scoped_profiling_; }
+  bool are_walkers_serialized() const { return crowd_serialize_walkers_; }
 
   const std::string get_drift_modifier() const { return drift_modifier_; }
   RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }
