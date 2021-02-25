@@ -316,6 +316,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 
   CrowdResourceLock crowd_res_lock(crowd);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
 
@@ -326,7 +327,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                                                 crowd.get_walker_hamiltonians());
 
   crowd.loadWalkers();
-  ParticleSet::flex_update(walker_elecs);
+  ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
   // For consistency this should be in ParticleSet as a flex call, but I think its a problem
@@ -509,6 +510,7 @@ void QMCDriverNew::endBlock()
 bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
 {
   bool success         = true;
+  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
@@ -526,7 +528,7 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     Ls.push_back(walker_twfs[iw].L);
   }
 
-  ParticleSet::flex_update(walker_elecs);
+  ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
   const RealType threshold = 100 * std::numeric_limits<float>::epsilon();

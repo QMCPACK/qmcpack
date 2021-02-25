@@ -243,7 +243,7 @@ public:
   void update(bool skipSK = false);
 
   /// batched version of update
-  static void flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false);
+  static void mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false);
 
   /** create Structure Factor with PBCs
    */
@@ -296,7 +296,7 @@ public:
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
 
   /// batched version of makeMove
-  static void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                             int iat,
                             const std::vector<SingleParticlePos_t>& displs);
 
@@ -382,7 +382,7 @@ public:
    */
   void rejectMove(Index_t iat);
   /// batched version of acceptMove and rejectMove fused
-  static void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+  static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                      Index_t iat,
                                      const std::vector<bool>& isAccepted,
                                      bool forward_mode = true);
@@ -429,7 +429,7 @@ public:
    *
    *  just the R, G, and L
    */
-  static void flex_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
+  static void mw_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
    *
@@ -440,7 +440,7 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  static void flex_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list);
+  static void mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }

@@ -67,6 +67,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
+  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
   {
@@ -156,7 +157,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
           for (int i = 0; i < rr.size(); ++i)
             assert(std::isfinite(rr[i]));
 #endif
-          ParticleSet::flex_makeMove(walker_elecs, iat, drifts);
+          ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
 
           twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
@@ -218,18 +219,18 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
           twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-          ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted);
+          ps_dispatcher.flex_accept_rejectMove(walker_elecs, iat, isAccepted);
         }
       }
 
       twf_dispatcher.flex_completeUpdates(walker_twfs);
-      ParticleSet::flex_donePbyP(walker_elecs);
+      ps_dispatcher.flex_donePbyP(walker_elecs);
     }
 
     { // collect GL for KE.
       ScopedTimer buffer_local(timers.buffer_timer);
       twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
-      ParticleSet::flex_saveWalker(walker_elecs, walkers);
+      ps_dispatcher.flex_saveWalker(walker_elecs, walkers);
     }
 
     { // hamiltonian
@@ -307,7 +308,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
       assert(QMCDriverNew::checkLogAndGL(crowd));
-      ParticleSet::flex_saveWalker(moved_nonlocal_walker_elecs, moved_nonlocal_walkers);
+      ps_dispatcher.flex_saveWalker(moved_nonlocal_walker_elecs, moved_nonlocal_walkers);
     }
   }
 }

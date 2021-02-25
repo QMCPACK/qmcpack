@@ -42,6 +42,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 {
   assert(QMCDriverNew::checkLogAndGL(crowd));
 
+  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
   auto& walkers        = crowd.get_walkers();
@@ -107,7 +108,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                          [sqrttau](const PosType& delta_r) { return sqrttau * delta_r; });
         }
 
-        ParticleSet::flex_makeMove(walker_elecs, iat, drifts);
+        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
 
         // This is inelegant
         if (use_drift)
@@ -150,13 +151,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
         twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-        ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted);
+        ps_dispatcher.flex_accept_rejectMove(walker_elecs, iat, isAccepted);
       }
     }
     twf_dispatcher.flex_completeUpdates(walker_twfs);
   }
 
-  ParticleSet::flex_donePbyP(walker_elecs);
+  ps_dispatcher.flex_donePbyP(walker_elecs);
   timers.movepbyp_timer.stop();
 
   timers.buffer_timer.start();

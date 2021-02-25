@@ -257,7 +257,7 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
 
     const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);
-    ParticleSet::flex_update(p_list, true);
+    dispatchers_.ps_dispatcher_.flex_update(p_list, true);
 
     const RefVectorWithLeader<TrialWaveFunction> wf_list(pop.get_golden_twf(), wf_list_no_leader);
     dispatchers_.twf_dispatcher_.flex_evaluateLog(wf_list, p_list);

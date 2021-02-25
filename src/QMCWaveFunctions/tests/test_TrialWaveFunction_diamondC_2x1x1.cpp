@@ -238,7 +238,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
   RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});
 
-  elec_.flex_update(p_ref_list);
+  ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
   std::cout << "before YYY [0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi() << " "
             << WF_list[0]->getPhase() << std::endl;
@@ -381,7 +381,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
           LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
-  ParticleSet::flex_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, false);
+  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, false);
 
   const int moved_elec_id_next = 1;
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
@@ -424,7 +424,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::vector<PosType> displ(2);
   displ[0] = displ[1] = {0.1, 0.2, 0.3};
 
-  ParticleSet::flex_makeMove(p_ref_list, moved_elec_id_next, displ);
+  ParticleSet::mw_makeMove(p_ref_list, moved_elec_id_next, displ);
   TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id_next, ratios, grad_new);
   std::cout << "ratioGrad next electron " << std::setprecision(14) << grad_new[0][0] << " " << grad_new[0][1] << " "
             << grad_new[0][2] << " " << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
@@ -448,7 +448,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   isAccepted[1] = false;
   TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
 
-  ParticleSet::flex_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted, false);
+  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted, false);
   TrialWaveFunction::mw_completeUpdates(wf_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
 

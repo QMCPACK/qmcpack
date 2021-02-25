@@ -397,10 +397,8 @@ void ParticleSet::update(bool skipSK)
   activePtcl = -1;
 }
 
-void ParticleSet::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK)
+void ParticleSet::mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK)
 {
-  if (p_list.size() > 1)
-  {
     auto& p_leader = p_list.getLeader();
     ScopedTimer update_scope(p_leader.myTimers[PS_update]);
 
@@ -420,9 +418,6 @@ void ParticleSet::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bo
       for (int iw = 0; iw < p_list.size(); iw++)
         p_list[iw].SK->UpdateAllPart(p_list[iw]);
     }
-  }
-  else if (p_list.size() == 1)
-    p_list[0].update(skipSK);
 }
 
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ, bool maybe_accept)
@@ -439,12 +434,10 @@ void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ
   activeSpinVal += sdispl;
 }
 
-void ParticleSet::flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                 Index_t iat,
                                 const std::vector<SingleParticlePos_t>& displs)
 {
-  if (p_list.size() > 1)
-  {
     std::vector<SingleParticlePos_t> new_positions;
     new_positions.reserve(displs.size());
 
@@ -456,9 +449,6 @@ void ParticleSet::flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
     }
 
     mw_computeNewPosDistTablesAndSK(p_list, iat, new_positions);
-  }
-  else if (p_list.size() == 1)
-    p_list[0].makeMove(iat, displs[0]);
 }
 
 bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
@@ -738,13 +728,11 @@ void ParticleSet::rejectMoveForwardMode(Index_t iat)
   activePtcl = -1;
 }
 
-void ParticleSet::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                          Index_t iat,
                                          const std::vector<bool>& isAccepted,
                                          bool forward_mode)
 {
-  if (p_list.size() > 1)
-  {
     ParticleSet& leader = p_list.getLeader();
     ScopedTimer update_scope(leader.myTimers[PS_accept]);
 
@@ -766,9 +754,6 @@ void ParticleSet::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>&
         p_list[iw].rejectMove(iat);
       assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
     }
-  }
-  else if (p_list.size() == 1)
-    p_list[0].accept_rejectMove(iat, isAccepted[0], forward_mode);
 }
 
 void ParticleSet::donePbyP()
@@ -780,17 +765,12 @@ void ParticleSet::donePbyP()
   activePtcl = -1;
 }
 
-void ParticleSet::flex_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
+void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  if (p_list.size() > 1)
-  {
 // Leaving bare omp pragma here. It can potentially be improved with cleaner abstraction.
 #pragma omp parallel for
     for (int iw = 0; iw < p_list.size(); iw++)
       p_list[iw].donePbyP();
-  }
-  else if (p_list.size() == 1)
-    p_list[0].donePbyP();
 }
 
 void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
@@ -834,24 +814,12 @@ void ParticleSet::saveWalker(Walker_t& awalker)
   awalker.G = G;
   awalker.L = L;
 #endif
-  //PAOps<RealType,OHMMS_DIM>::copy(G,awalker.Drift);
-  //if (SK)
-  //  SK->UpdateAllPart(*this);
-  //awalker.DataSet.rewind();
 }
 
-void ParticleSet::flex_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers)
+void ParticleSet::mw_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers)
 {
-  int num_sets    = psets.size();
-  auto saveWalker = [](ParticleSet& pset, Walker_t& walker) {
-    walker.R = pset.R;
-#if !defined(SOA_MEMORY_OPTIMIZED)
-    walker.G = pset.G;
-    walker.L = pset.L;
-#endif
-  };
-  for (int iw = 0; iw < num_sets; ++iw)
-    saveWalker(psets[iw], walkers[iw]);
+  for (int iw = 0; iw < psets.size(); ++iw)
+    psets[iw].saveWalker(walkers[iw]);
 }
 
 
