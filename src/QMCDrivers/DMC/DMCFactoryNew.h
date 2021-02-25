@@ -32,11 +32,7 @@ private:
 public:
   DMCFactoryNew(xmlNodePtr cur, const int dmc_mode) : dmc_mode_(dmc_mode), input_node_(cur) {}
 
-  QMCDriverInterface* create(const ProjectData& project_data,
-                             MCPopulation&& pop,
-                             TrialWaveFunction& psi,
-                             QMCHamiltonian& h,
-                             Communicate* comm);
+  QMCDriverInterface* create(const ProjectData& project_data, MCPopulation&& pop, Communicate* comm);
 };
 } // namespace qmcplusplus
 

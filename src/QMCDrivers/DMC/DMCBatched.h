@@ -51,7 +51,7 @@ public:
     const MCPopulation& population;
     SFNBranch& branch_engine;
     IndexType recalculate_properties_period;
-    IndexType step = -1;
+    IndexType step            = -1;
     bool is_recomputing_block = false;
     StateForThread(const QMCDriverInput& qmci,
                    const DMCDriverInput& dmci,
@@ -75,8 +75,6 @@ public:
              QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
              MCPopulation&& pop,
-             TrialWaveFunction& psi,
-             QMCHamiltonian& h,
              Communicate* comm);
 
   /// Copy Constructor (disabled)
