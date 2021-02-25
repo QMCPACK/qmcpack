@@ -3504,9 +3504,14 @@ def generate_any_rmg_input(**kwargs):
             ri.assign(wavefunction_grid=wf_grid)
         #end if
 
-        if spin_polarized is None:
+        if spin_polarized is None and 'noncollinear' not in ri:
             spin_polarized = system.spin_polarized_orbitals()
+        elif spin_polarized is None and 'noncollinear' in ri:
+            if not ri.noncollinear:
+                spin_polarized = system.spin_polarized_orbitals()
+            #end if
         #end if
+
 
         # set occupations
         has_states = False
