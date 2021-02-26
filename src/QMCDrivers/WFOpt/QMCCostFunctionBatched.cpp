@@ -344,7 +344,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       }
 
       // Compute distance tables.
-      ParticleSet::flex_update(p_list, true);
+      ParticleSet::flex_update(p_list);
 
       // Log psi and prepare for difference the log psi
       opt_data.zero_log_psi();
