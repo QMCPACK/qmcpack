@@ -212,7 +212,7 @@ public:
   /// return  for testing
   auto& getPsiMinv() const { return psiMinv; }
 
-  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_engine_
+  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_inverter_
   ValueMatrix_t psiMinv;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
@@ -239,7 +239,7 @@ public:
   ValueVector_t d2psiV;
 
   /// delayed update engine
-  DET_ENGINE_TYPE det_engine_;
+  DET_ENGINE_TYPE det_inverter_;
 
   // psi(r')/psi(r) during a PbyP move
   PsiValueType curRatio;

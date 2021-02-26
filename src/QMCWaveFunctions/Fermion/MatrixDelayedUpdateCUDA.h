@@ -17,41 +17,17 @@
 #include "OMPTarget/OMPallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
+#include "QMCWaveFunctions/Fermion/DiracMatrixBatch.h"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
 #include <cuda_runtime_api.h>
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
 #include "QMCWaveFunctions/detail/CUDA/matrix_update_helper.hpp"
 #include "CUDA/CUDAallocator.hpp"
-#include "ResourceCollection.h"
-
+#include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 
 namespace qmcplusplus
 {
-struct CUDALinearAlgebraHandles : public Resource
-{
-  // CUDA specific variables
-  cudaStream_t hstream;
-  cublasHandle_t h_cublas;
-
-  CUDALinearAlgebraHandles() : Resource("MatrixDelayedUpdateCUDA")
-  {
-    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
-    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
-  }
-
-  CUDALinearAlgebraHandles(const CUDALinearAlgebraHandles&) : CUDALinearAlgebraHandles() {}
-
-  ~CUDALinearAlgebraHandles()
-  {
-    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
-  }
-
-  Resource* makeClone() const override { return new CUDALinearAlgebraHandles(*this); }
-};
 
 /** implements dirac matrix delayed update using OpenMP offload and CUDA.
  * It is used as DET_ENGINE_TYPE in DiracDeterminantBatched.
@@ -71,8 +47,8 @@ class MatrixDelayedUpdateCUDA
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
-  /// matrix inversion engine
-  DiracMatrix<T_FP> detEng;
+  /// matrix inversion engine this crowd scope resouce and only the leader engine gets it 
+  UPtr<DiracMatrixBatch<T_FP>> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
 
@@ -109,7 +85,11 @@ class MatrixDelayedUpdateCUDA
   Vector<char, OffloadPinnedAllocator<char>> updateInv_buffer_H2D;
   // mw_evalGrad pointer buffer
   Vector<char, OffloadPinnedAllocator<char>> evalGrad_buffer_H2D;
-
+  // mw_invert_transpose pointer buffer
+  Vector<char, OffloadPinnedAllocator<char>> invert_transpose_buffer_H2D;
+  // mw_invert transpose result pointer buffer
+  Vector<char, OffloadPinnedAllocator<char>> invert_transpose_result_buffer_H2D;
+    
   using DeviceValueMatrix_t = Matrix<T, CUDAAllocator<T>>;
   using DeviceValueVector_t = Vector<T, CUDAAllocator<T>>;
   /// orbital values of delayed electrons
@@ -337,7 +317,9 @@ public:
   void createResource(ResourceCollection& collection)
   {
     auto resource_index = collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
-    app_log() << "    Shared resource created in MatrixDelayedUpdateCUDA. Index " << resource_index << std::endl;
+    app_log() << "    CUDALinearAlgebraHandles resource created in MatrixDelayedUpdateCUDA. Index " << resource_index << std::endl;
+    auto resource_index_det_eng = collection.addResource(std::make_unique<DiracMatrixBatch<T_FP>>());
+    app_log() << "    DiracMatrixBatched det_inverter_ created in MatrixDelayedUpdateCUDA. Index " << resource_index_det_eng << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection)
@@ -346,13 +328,21 @@ public:
     if (!res_ptr)
       throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast failed");
     cuda_handles_.reset(res_ptr);
+    auto det_eng_ptr = dynamic_cast<DiracMatrixBatch<T_FP>*>(collection.lendResource().release());
+    if (!det_eng_ptr)
+      throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixBatched<T_FP>* failed");
+    det_inverter_.reset(det_eng_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) { collection.takebackResource(std::move(cuda_handles_)); }
+  void releaseResource(ResourceCollection& collection)
+  {
+    collection.takebackResource(std::move(cuda_handles_));
+    collection.takebackResource(std::move(det_inverter_));
+  }
 
   inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
   inline OffloadPinnedValueMatrix_t& get_work_psiMinv() { return work_psiMinv; }
-  
+
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
@@ -370,15 +360,14 @@ public:
 
     auto& Ainv = psiMinv;
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
+    det_inverter_->invert_transpose(logdetT, Ainv_host_view, LogValue);
     T* Ainv_ptr = Ainv.data();
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
 
   template<typename TREAL>
-  inline void mw_invert_transpose(const RefVector<This_t>& engines,
-                                  const RefVector<const Matrix<T>>& logdetT_list,
-                                  const RefVector<std::complex<TREAL>>& LogValues)
+  inline void mw_invertTranspose(const RefVector<const Matrix<T>>& logdetT_list,
+                                 const RefVector<std::complex<TREAL>>& LogValues)
   {
     // make this class unit tests friendly without the need of setup resources.
     if (!cuda_handles_)
@@ -387,31 +376,21 @@ public:
                        "but only unit tests (expected)."
                     << std::endl;
       cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
+<<<<<<< HEAD
     }
 
+=======
+    if (!det_inverter_)
+      det_inverter_ = std::make_unique<DiracMatrixBatch<TREAL>>();
+    
+>>>>>>> 3edfb44a1... mostly compiles
     guard_no_delay();
 
-    RefVector<OffloadPinnedValueMatrix_t> A_invs;
-    RefVector<OffloadPinnedValueMatrix_t> work_A_invs;
-    A_invs.reserve(engines.size());
-    work_A_invs.reserve(engines.size());
-
-    for(auto& eng : engines)
-      {
-	A_invs.push_back(eng.get().get_psiMinv());
-	work_A_invs.push_back(eng.get().get_work_psiMinv());
-      }
-    
-    // FIXME use cublas batched inverse.
-    for (int iw = 0; iw < engines.size(); iw++)
-    {
-      auto& Ainv = engines[iw].get().psiMinv;
-      Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-      detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
-      T* Ainv_ptr = Ainv.data();
-      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
-    }
-    PRAGMA_OFFLOAD("omp taskwait")
+    auto& Ainv = psiMinv;
+    Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
+    det_inverter_->mw_invert_transpose(cuda_handles_, logdetT_list, Ainv_host_view, LogValues);
+    T* Ainv_ptr = Ainv.data();
+    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
 
   // prepare invRow and compute the old gradients.

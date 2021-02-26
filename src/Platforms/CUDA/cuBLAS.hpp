@@ -230,51 +230,97 @@ inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
 }
 
 inline cublasStatus_t matinv_batched(cublasHandle_t& handle,
-				       int n,
-				       const double *A[],
-				       int lda,
-				       double *Ainv[],
-				       int lda_inv,
-				       int *info,
-				       int batchSize)
+                                     int n,
+                                     const double* A[],
+                                     int lda,
+                                     double* Ainv[],
+                                     int lda_inv,
+                                     int* info,
+                                     int batchSize)
 {
   return cublasDmatinvBatched(handle, n, A, lda, Ainv, lda_inv, info, batchSize);
 }
 
 inline cublasStatus_t matinv_batched(cublasHandle_t& handle,
-				       int n,
-				       const float *A[],
-				       int lda,
-				       float *Ainv[],
-				       int lda_inv,
-				       int *info,
-				       int batchSize)
+                                     int n,
+                                     const float* A[],
+                                     int lda,
+                                     float* Ainv[],
+                                     int lda_inv,
+                                     int* info,
+                                     int batchSize)
 {
   return cublasSmatinvBatched(handle, n, A, lda, Ainv, lda_inv, info, batchSize);
 }
 
 inline cublasStatus_t matinv_batched(cublasHandle_t& handle,
-				       int n,
-				     const std::complex<float> *A[],
-				       int lda,
-				     std::complex<float> *Ainv[],
-				       int lda_inv,
-				       int *info,
-				       int batchSize)
+                                     int n,
+                                     const std::complex<float>* A[],
+                                     int lda,
+                                     std::complex<float>* Ainv[],
+                                     int lda_inv,
+                                     int* info,
+                                     int batchSize)
 {
-  return cublasCmatinvBatched(handle, n, reinterpret_cast<const cuFloatComplex**>(A), lda, reinterpret_cast<cuFloatComplex**>(Ainv), lda_inv, info, batchSize);
+  return cublasCmatinvBatched(handle, n, reinterpret_cast<const cuFloatComplex**>(A), lda,
+                              reinterpret_cast<cuFloatComplex**>(Ainv), lda_inv, info, batchSize);
 }
 
 inline cublasStatus_t matinv_batched(cublasHandle_t& handle,
-				       int n,
-				     const std::complex<double> *A[],
-				       int lda,
-				     std::complex<double> *Ainv[],
-				       int lda_inv,
-				       int *info,
-				       int batchSize)
+                                     int n,
+                                     const std::complex<double>* A[],
+                                     int lda,
+                                     std::complex<double>* Ainv[],
+                                     int lda_inv,
+                                     int* info,
+                                     int batchSize)
 {
-  return cublasZmatinvBatched(handle, n, reinterpret_cast<const cuDoubleComplex**>(A), lda, reinterpret_cast<cuDoubleComplex**>(Ainv), lda_inv, info, batchSize);
+  return cublasZmatinvBatched(handle, n, reinterpret_cast<const cuDoubleComplex**>(A), lda,
+                              reinterpret_cast<cuDoubleComplex**>(Ainv), lda_inv, info, batchSize);
+}
+
+inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
+                                    int n,
+                                    float* A[],
+                                    int lda,
+                                    int* PivotArray,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasSgetrfBatched(handle, n, A, lda, PivotArray, infoArray, batchSize);
+}
+
+inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
+                                    int n,
+                                    double* A[],
+                                    int lda,
+                                    int* PivotArray,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasDgetrfBatched(handle, n, A, lda, PivotArray, infoArray, batchSize);
+}
+
+inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
+                                    int n,
+                                    std::complex<float>* A[],
+                                    int lda,
+                                    int* PivotArray,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasCgetrfBatched(handle, n, reinterpret_cast<cuComplex* const *>(A), lda, PivotArray, infoArray, batchSize);
+}
+
+inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
+                                    int n,
+                                    std::complex<double>* A[],
+                                    int lda,
+                                    int* PivotArray,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasZgetrfBatched(handle, n, reinterpret_cast<cuDoubleComplex* const *>(A), lda, PivotArray, infoArray, batchSize);
 }
 
 }; // namespace cuBLAS

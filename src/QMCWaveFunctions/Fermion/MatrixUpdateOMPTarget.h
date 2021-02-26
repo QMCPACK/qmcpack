@@ -17,7 +17,7 @@
 #include "OMPTarget/OMPallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
+#include "QMCWaveFunctions/Fermion/DiracMatrixBatch.h"
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReduction.hpp"
 #include "ResourceCollection.h"
@@ -43,8 +43,8 @@ class MatrixUpdateOMPTarget
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
-  /// matrix inversion engine
-  DiracMatrix<T_FP> detEng;
+  /// matrix inversion engine this crowd scope resouce and only the leader engine gets it 
+  UPtr<DiracMatrixBatch<T_FP>> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
   /// scratch space for rank-1 update
@@ -109,21 +109,23 @@ public:
   {
     auto& Ainv = psiMinv;
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    detEng.invert_transpose(logdetT, Ainv_host_view, LogValue);
+    det_inverter_.invert_transpose(logdetT, Ainv_host_view, LogValue);
     T* Ainv_ptr = Ainv.data();
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
 
   template<typename TREAL>
-  inline void mw_invert_transpose(const RefVector<This_t>& engines,
-                                  const RefVector<const Matrix<T>>& logdetT_list,
-                                  const RefVector<std::complex<TREAL>>& LogValues)
+  inline void mw_invertTranspose(const RefVector<const Matrix<T>>& logdetT_list,
+                                 const RefVector<std::complex<TREAL>>& LogValues)
   {
+    if (!det_engine_)
+      det_engine_ = std::make_unique<DiracMatrixBatch<TREAL>>();
+
     for (int iw = 0; iw < engines.size(); iw++)
     {
       auto& Ainv = engines[iw].get().psiMinv;
       Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-      detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
+      det_inverter_.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
       T* Ainv_ptr = Ainv.data();
       PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
     }

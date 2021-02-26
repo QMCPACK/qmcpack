@@ -12,6 +12,7 @@
 
 SET(CUDA_SRCS
   cuBLAS_missing_functions.cu
+  cuBLAS_LU.cu
   CUDAfill.cpp
   CUDAallocator.cpp
   CUDAruntime.cpp

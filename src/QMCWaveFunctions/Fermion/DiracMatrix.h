@@ -188,6 +188,20 @@ public:
     invMat = psiM_fp;
   }
 
+  template<typename TMAT, typename TREAL>
+  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value>
+  mw_invert_transpose(const RefVector<Matrix<TMAT>>& amat,
+		      RefVector<Matrix<TMAT>>& invMat,
+		      std::vector<std::complex<TREAL>>& LogDet)
+  {
+    const int n   = invMat.rows();
+    const int lda = invMat.cols();
+    psiM_fp.resize(n,lda);
+    simd::transpose(amat.data(), n, amat.cols(), psiM_fp.data(), n, lda);
+    computeInvertAndLog(psiM_fp.data(), n, lda, LogDet);
+    invMat = psiM_fp;
+  }
+  
 };
 } // namespace qmcplusplus
 

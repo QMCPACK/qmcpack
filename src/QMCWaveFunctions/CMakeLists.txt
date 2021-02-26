@@ -143,6 +143,11 @@ IF(OHMMS_DIM MATCHES 3)
       )
       IF(ENABLE_OFFLOAD)
         SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
+	IF(ENABLE_CUDA)
+	  SET(WFSSRCS_CUDA ${FERMION_SRCS}
+	    Fermion/DiracDeterminantBatchedCUDA.cpp
+	    )
+	ENDIF()
       ENDIF(ENABLE_OFFLOAD)
     ELSE(QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
