@@ -5,6 +5,8 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -115,8 +117,8 @@ void TWFdispatcher::flex_completeUpdates(const RefVectorWithLeader<TrialWaveFunc
   if (use_batch_)
     TrialWaveFunction::mw_completeUpdates(wf_list);
   else
-    for (size_t iw = 0; iw < wf_list.size(); iw++)
-      wf_list[iw].completeUpdates();
+    for (TrialWaveFunction& wf : wf_list)
+      wf.completeUpdates();
 }
 
 void TWFdispatcher::flex_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

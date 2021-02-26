@@ -17,9 +17,9 @@ namespace qmcplusplus
 class ScopedProfiler
 {
 public:
-  ScopedProfiler(bool active) : isActive(active)
+  ScopedProfiler(bool active) : active_(active)
   {
-    if (isActive)
+    if (active_)
     {
 #ifdef ENABLE_CUDA
       cudaErrorCheck(cudaProfilerStart(), "cudaProfilerStart failed!");
@@ -32,7 +32,7 @@ public:
 
   ~ScopedProfiler()
   {
-    if (isActive)
+    if (active_)
     {
 #ifdef ENABLE_CUDA
       cudaErrorCheck(cudaProfilerStop(), "cudaProfilerStop failed!");
@@ -42,8 +42,10 @@ public:
 #endif
     }
   }
+
+  bool isActive() const { return active_; }
 private:
-  const bool isActive;
+  const bool active_;
 };
 }
 #endif

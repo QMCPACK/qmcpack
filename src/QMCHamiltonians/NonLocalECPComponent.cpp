@@ -217,7 +217,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
         psiratios_list.push_back(component.psiratio);
       }
 
-      ecp_component_leader.VP->flex_makeMoves(vp_list, deltaV_list, joblist, true);
+      VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
 
       if (use_DLA)
         TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,

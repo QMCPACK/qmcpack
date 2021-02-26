@@ -51,7 +51,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
       population_(std::move(population)),
-      dispatchers_(true),
+      dispatchers_(!qmcdriver_input_.are_walkers_serialized()),
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),
@@ -134,6 +134,11 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
  */
 void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc)
 {
+  if (driver_scope_profiler_.isActive())
+    app_log() << "  Profiler data collection is enabled in this driver scope." << std::endl;
+  if (!dispatchers_.are_walkers_batched())
+    app_log() << "  Batched operations are serialized over walkers." << std::endl;
+
   app_log() << this->QMCType << " Driver running with target_walkers = " << awc.global_walkers << std::endl
             << "                               walkers_per_rank = " << awc.walkers_per_rank << std::endl
             << "                               num_crowds = " << awc.walkers_per_crowd.size() << std::endl
@@ -316,6 +321,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 
   CrowdResourceLock crowd_res_lock(crowd);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
 
@@ -326,7 +332,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                                                 crowd.get_walker_hamiltonians());
 
   crowd.loadWalkers();
-  ParticleSet::flex_update(walker_elecs);
+  ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
   // For consistency this should be in ParticleSet as a flex call, but I think its a problem
@@ -509,6 +515,7 @@ void QMCDriverNew::endBlock()
 bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
 {
   bool success         = true;
+  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
@@ -526,7 +533,7 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     Ls.push_back(walker_twfs[iw].L);
   }
 
-  ParticleSet::flex_update(walker_elecs);
+  ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
   const RealType threshold = 100 * std::numeric_limits<float>::epsilon();
