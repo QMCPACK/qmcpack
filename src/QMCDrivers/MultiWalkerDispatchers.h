@@ -29,7 +29,7 @@ public:
 
   MultiWalkerDispatchers(bool use_batch) : ps_dispatcher_(use_batch), twf_dispatcher_(use_batch), ham_dispatcher_(use_batch), use_batch_(use_batch) {}
 
-  const bool are_walkers_batched() const { return use_batch_; }
+  bool are_walkers_batched() const { return use_batch_; }
 
   const PSdispatcher ps_dispatcher_;
   const TWFdispatcher twf_dispatcher_;

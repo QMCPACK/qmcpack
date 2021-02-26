@@ -236,7 +236,6 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       {
         auto walker_elements   = pop.spawnWalker();
         walker_elements.walker = *walkers[iw];
-        walker_elements.pset.loadWalker(walker_elements.walker, true);
         num_copies--;
       }
     }
@@ -248,6 +247,8 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 
     const size_t num_walkers = walkers.size();
     // recomputed received and duplicated walkers, the first untouched_walkers walkers doesn't need to be updated.
+    const auto w_list_no_leader =
+        convertUPtrToRefVectorSubset(pop.get_walkers(), untouched_walkers, num_walkers - untouched_walkers);
     const auto p_list_no_leader =
         convertUPtrToRefVectorSubset(pop.get_elec_particle_sets(), untouched_walkers, num_walkers - untouched_walkers);
     const auto wf_list_no_leader =
@@ -257,6 +258,7 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
 
     const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);
+    dispatchers_.ps_dispatcher_.flex_loadWalker(p_list, w_list_no_leader, true);
     dispatchers_.ps_dispatcher_.flex_update(p_list, true);
 
     const RefVectorWithLeader<TrialWaveFunction> wf_list(pop.get_golden_twf(), wf_list_no_leader);
@@ -511,7 +513,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         ScopedTimer local_timer(my_timers_[WC_recv]);
         myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
         awalker.copyFromBuffer();
-        walker_elements.pset.loadWalker(awalker, true);
       }
     }
     if (use_nonblocking_)
@@ -528,7 +529,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
             {
               auto& walker_elements = newW[job_list[im].walkerID];
               walker_elements.walker.copyFromBuffer();
-              walker_elements.pset.loadWalker(walker_elements.walker, true);
               not_completed[im] = false;
             }
             else

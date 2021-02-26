@@ -16,6 +16,17 @@ namespace qmcplusplus
 {
 PSdispatcher::PSdispatcher(bool use_batch) : use_batch_(use_batch) {}
 
+void PSdispatcher::flex_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
+                                   const RefVector<Walker_t>& walkers,
+                                   bool pbyp) const
+{
+  if (use_batch_)
+    ParticleSet::mw_loadWalker(p_list, walkers, pbyp);
+  else
+    for (size_t iw = 0; iw < p_list.size(); iw++)
+      p_list[iw].loadWalker(walkers[iw], pbyp);
+}
+
 void PSdispatcher::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK) const
 {
   if (use_batch_)
@@ -26,8 +37,8 @@ void PSdispatcher::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, b
 }
 
 void PSdispatcher::flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
-                                int iat,
-                                const std::vector<SingleParticlePos_t>& displs) const
+                                 int iat,
+                                 const std::vector<SingleParticlePos_t>& displs) const
 {
   if (use_batch_)
     ParticleSet::mw_makeMove(p_list, iat, displs);
@@ -37,9 +48,9 @@ void PSdispatcher::flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
 }
 
 void PSdispatcher::flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
-                                         int iat,
-                                         const std::vector<bool>& isAccepted,
-                                         bool forward_mode) const
+                                          int iat,
+                                          const std::vector<bool>& isAccepted,
+                                          bool forward_mode) const
 {
   if (use_batch_)
     ParticleSet::mw_accept_rejectMove(p_list, iat, isAccepted, forward_mode);
@@ -57,7 +68,8 @@ void PSdispatcher::flex_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list)
       pset.donePbyP();
 }
 
-void PSdispatcher::flex_saveWalker(const RefVectorWithLeader<ParticleSet>& p_list, const RefVector<Walker_t>& walkers) const
+void PSdispatcher::flex_saveWalker(const RefVectorWithLeader<ParticleSet>& p_list,
+                                   const RefVector<Walker_t>& walkers) const
 {
   if (use_batch_)
     ParticleSet::mw_saveWalker(p_list, walkers);

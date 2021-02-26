@@ -43,7 +43,7 @@ public:
     }
   }
 
-  const bool isActive() const { return active_; }
+  bool isActive() const { return active_; }
 private:
   const bool active_;
 };

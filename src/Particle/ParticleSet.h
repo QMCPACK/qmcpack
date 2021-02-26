@@ -297,8 +297,8 @@ public:
 
   /// batched version of makeMove
   static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
-                            int iat,
-                            const std::vector<SingleParticlePos_t>& displs);
+                          int iat,
+                          const std::vector<SingleParticlePos_t>& displs);
 
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
@@ -383,9 +383,9 @@ public:
   void rejectMove(Index_t iat);
   /// batched version of acceptMove and rejectMove fused
   static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
-                                     Index_t iat,
-                                     const std::vector<bool>& isAccepted,
-                                     bool forward_mode = true);
+                                   Index_t iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool forward_mode = true);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -417,6 +417,10 @@ public:
    * PbyP requires the distance tables and Sk with awalker.R
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
+  /** batched version of loadWalker */
+  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& psets,
+                            const RefVector<Walker_t>& walkers,
+                            bool pbyp);
 
   /** save this to awalker
    *

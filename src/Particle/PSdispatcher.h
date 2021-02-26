@@ -17,7 +17,6 @@
 
 namespace qmcplusplus
 {
-
 /** Wrappers for dispatching to ParticleSet single walker APIs or mw_ APIs.
  * This should be only used by QMC drivers.
  * member function names must match mw_ APIs in TrialWaveFunction
@@ -25,21 +24,25 @@ namespace qmcplusplus
 class PSdispatcher
 {
 public:
-  using Walker_t = ParticleSet::Walker_t;
+  using Walker_t            = ParticleSet::Walker_t;
   using SingleParticlePos_t = ParticleSet::SingleParticlePos_t;
 
   PSdispatcher(bool use_batch);
 
+  void flex_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
+                       const RefVector<Walker_t>& walkers,
+                       bool pbyp) const;
+
   void flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false) const;
 
   void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
-                            int iat,
-                            const std::vector<SingleParticlePos_t>& displs) const;
+                     int iat,
+                     const std::vector<SingleParticlePos_t>& displs) const;
 
   void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
-                                     int iat,
-                                     const std::vector<bool>& isAccepted,
-                                     bool forward_mode = true) const;
+                              int iat,
+                              const std::vector<bool>& isAccepted,
+                              bool forward_mode = true) const;
 
   void flex_saveWalker(const RefVectorWithLeader<ParticleSet>& p_list, const RefVector<Walker_t>& walkers) const;
 
