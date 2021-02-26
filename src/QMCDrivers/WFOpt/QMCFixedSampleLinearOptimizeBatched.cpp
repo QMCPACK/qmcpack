@@ -46,8 +46,6 @@ using MatrixOperators::product;
 
 QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                                                          MCWalkerConfiguration& w,
-                                                                         TrialWaveFunction& psi,
-                                                                         QMCHamiltonian& h,
                                                                          QMCDriverInput&& qmcdriver_input,
                                                                          VMCDriverInput&& vmcdriver_input,
                                                                          MCPopulation&& population,
@@ -55,8 +53,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
                                                                          Communicate* comm)
     : QMCLinearOptimizeBatched(project_data,
                                w,
-                               psi,
-                               h,
                                std::move(qmcdriver_input),
                                std::move(vmcdriver_input),
                                std::move(population),
@@ -602,8 +598,9 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine =
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                    MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
-                                                population_.get_golden_electrons(), &Psi, &H),
-                                   Psi, H, samples_, myComm);
+                                                population_.get_golden_electrons(), &population_.get_golden_twf(),
+                                                &population_.get_golden_hamiltonian()),
+                                   samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 
@@ -623,7 +620,9 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, opt_num_crowds_, crowd_size_, myComm);
+  optTarget =
+      std::make_unique<QMCCostFunctionBatched>(W, population_.get_golden_twf(), population_.get_golden_hamiltonian(),
+                                               samples_, opt_num_crowds_, crowd_size_, myComm);
   optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;

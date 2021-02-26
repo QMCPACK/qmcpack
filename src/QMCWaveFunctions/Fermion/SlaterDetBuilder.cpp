@@ -863,7 +863,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   CSFcoeff.clear();
   DetsPerCSF.clear();
   CSFexpansion.clear();
-  std::vector<std::vector<ci_configuration>> confgLists;
+  std::vector<std::vector<ci_configuration>> confgLists(nGroups);
   std::string optCI    = "no";
   RealType cutoff      = 0.0;
   RealType zero_cutoff = 0.0;

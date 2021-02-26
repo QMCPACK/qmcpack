@@ -33,8 +33,6 @@ class ProjectData;
 QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
                                        const ProjectData& project_data,
                                        MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi,
-                                       QMCHamiltonian& h,
                                        MCPopulation&& pop,
                                        SampleStack& samples,
                                        Communicate* comm);
@@ -42,8 +40,6 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
 QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
                                                               const ProjectData& project_data,
                                                               MCWalkerConfiguration& w,
-                                                              TrialWaveFunction& psi,
-                                                              QMCHamiltonian& h,
                                                               MCPopulation&& pop,
                                                               SampleStack& samples,
                                                               Communicate* comm);

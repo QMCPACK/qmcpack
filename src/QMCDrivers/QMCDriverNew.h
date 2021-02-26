@@ -32,13 +32,13 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
-#include "QMCWaveFunctions/TWFdispatcher.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "OhmmsApp/ProjectData.h"
+#include "MultiWalkerDispatchers.h"
 
 class Communicate;
 
@@ -116,8 +116,6 @@ public:
   QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
                MCPopulation&& population,
-               TrialWaveFunction& psi,
-               QMCHamiltonian& h,
                const std::string timer_prefix,
                Communicate* comm,
                const std::string& QMC_driver_type,
@@ -175,14 +173,7 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  /** add QMCHamiltonian/TrialWaveFunction pair for multiple
-   * @param h QMCHamiltonian
-   * @param psi TrialWaveFunction
-   *
-   * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
-   * for energy difference evaluations.
-   */
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override;
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
   void createRngsStepContexts(int num_crowds);
 
@@ -365,14 +356,8 @@ protected:
   ///the entire (or on node) walker population
   MCPopulation population_;
 
-  /// TWF dispatcher
-  const TWFdispatcher twf_dispatcher_;
-
-  ///trial function
-  TrialWaveFunction& Psi;
-
-  ///Hamiltonian
-  QMCHamiltonian& H;
+  /// multi walker dispatchers
+  const MultiWalkerDispatchers dispatchers_;
 
   /** Observables manager
    *  Has very problematic owner ship and life cycle.
@@ -387,12 +372,6 @@ protected:
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
   std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
-
-  ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
-
-  ///a list of QMCHamiltonians for multiple method
-  std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
   std::vector<std::unique_ptr<RandomGenerator_t>> Rng;

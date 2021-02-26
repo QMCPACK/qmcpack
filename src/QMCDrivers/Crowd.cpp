@@ -13,7 +13,9 @@
 
 namespace qmcplusplus
 {
-Crowd::Crowd(EstimatorManagerNew& emb, const TWFdispatcher& twf_dispatcher) : twf_dispatcher_(twf_dispatcher), estimator_manager_crowd_(emb) {}
+Crowd::Crowd(EstimatorManagerNew& emb, const MultiWalkerDispatchers& dispatchers)
+    : dispatchers_(dispatchers), estimator_manager_crowd_(emb)
+{}
 
 Crowd::~Crowd() = default;
 

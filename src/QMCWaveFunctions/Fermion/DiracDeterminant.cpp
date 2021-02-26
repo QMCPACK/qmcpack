@@ -701,6 +701,24 @@ DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(std::shared_ptr<S
   return dclone;
 }
 
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::createResource(ResourceCollection& collection)
+{
+  Phi->createResource(collection);
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::acquireResource(ResourceCollection& collection)
+{
+  Phi->acquireResource(collection);
+}
+
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection)
+{
+  Phi->releaseResource(collection);
+}
+
 template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
 template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;

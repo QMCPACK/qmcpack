@@ -25,15 +25,10 @@
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RandomGenerator.h"
-
-// #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
-
-//#include <boost/archive/binary_oarchive.hpp>
+#include "MultiWalkerDispatchers.h"
 
 namespace qmcplusplus
 {
-class TWFdispatcher;
-
 /** Class for controlling the walkers for DMC simulations.
  * w and w/o MPI. Fixed and dynamic population in one place.
  */
@@ -54,7 +49,7 @@ public:
    * Set the SwapMode to zero so that instantiation can be done
    */
   WalkerControl(Communicate* c,
-                const TWFdispatcher& twf_dispatcher,
+                const MultiWalkerDispatchers& dispatchers,
                 RandomGenerator_t& rng,
                 bool use_fixed_pop = false);
 
@@ -147,8 +142,6 @@ private:
 
   ///random number generator
   RandomGenerator_t& rng_;
-  /// TWF resource collection
-  std::unique_ptr<ResourceCollection> twfs_shared_resource_;
   ///if true, use fixed population
   bool use_fixed_pop_;
   ///minimum number of walkers
@@ -186,7 +179,7 @@ private:
   ///Number of walkers sent during the exchange
   IndexType saved_num_walkers_sent_;
 
-  const TWFdispatcher& twf_dispatcher_;
+  const MultiWalkerDispatchers& dispatchers_;
 };
 
 } // namespace qmcplusplus

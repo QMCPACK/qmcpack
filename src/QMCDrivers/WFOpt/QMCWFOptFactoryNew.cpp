@@ -11,8 +11,6 @@ namespace qmcplusplus
 QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
                                        const ProjectData& project_data,
                                        MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi,
-                                       QMCHamiltonian& h,
                                        MCPopulation&& pop,
                                        SampleStack& samples,
                                        Communicate* comm)
@@ -22,7 +20,7 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
   VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(cur);
 
-  QMCOptimizeBatched* opt = new QMCOptimizeBatched(project_data, w, psi, h, std::move(qmcdriver_input),
+  QMCOptimizeBatched* opt = new QMCOptimizeBatched(project_data, w, std::move(qmcdriver_input),
                                                    std::move(vmcdriver_input), std::move(pop), samples, comm);
   return opt;
 }
@@ -30,8 +28,6 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
 QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
                                                               const ProjectData& project_data,
                                                               MCWalkerConfiguration& w,
-                                                              TrialWaveFunction& psi,
-                                                              QMCHamiltonian& h,
                                                               MCPopulation&& pop,
                                                               SampleStack& samples,
                                                               Communicate* comm)
@@ -42,8 +38,8 @@ QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
   vmcdriver_input.readXML(cur);
 
   QMCFixedSampleLinearOptimizeBatched* opt =
-      new QMCFixedSampleLinearOptimizeBatched(project_data, w, psi, h, std::move(qmcdriver_input),
-                                              std::move(vmcdriver_input), std::move(pop), samples, comm);
+      new QMCFixedSampleLinearOptimizeBatched(project_data, w, std::move(qmcdriver_input), std::move(vmcdriver_input),
+                                              std::move(pop), samples, comm);
   return opt;
 }
 
