@@ -115,21 +115,22 @@ public:
   }
 
   template<typename TREAL>
-  inline void mw_invertTranspose(const RefVector<const Matrix<T>>& logdetT_list,
-                                 const RefVector<std::complex<TREAL>>& LogValues)
+  inline void mw_invertTranspose(const RefVectorWithLeader<MatrixUpdateOMPTarget<T, T_FP>>& engines,
+				 const RefVector<const OffloadPinnedValueMatrix_t<T>>& logdetT_list,
+                                 const RefVector<OffloadPinnedValueVector_t<std::complex<TREAL>>>& LogValues)
   {
-    if (!det_engine_)
-      det_engine_ = std::make_unique<DiracMatrixBatch<TREAL>>();
+    if (!det_inverter_)
+      det_inverter_ = std::make_unique<DiracMatrixBatch<TREAL>>();
 
     for (int iw = 0; iw < engines.size(); iw++)
     {
       auto& Ainv = engines[iw].get().psiMinv;
       Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-      det_inverter_.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
       T* Ainv_ptr = Ainv.data();
       PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
     }
     PRAGMA_OFFLOAD("omp taskwait")
+    det_inverter_->mw_invert_transpose(logdetT_list, Ainv_host_views, LogValues);
   }
 
   template<typename GT>

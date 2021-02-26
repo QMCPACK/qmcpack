@@ -28,7 +28,6 @@
 
 namespace qmcplusplus
 {
-
 /** implements dirac matrix delayed update using OpenMP offload and CUDA.
  * It is used as DET_ENGINE_TYPE in DiracDeterminantBatched.
  * @tparam T base precision for most computation
@@ -47,14 +46,10 @@ class MatrixDelayedUpdateCUDA
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
-  /// matrix inversion engine this crowd scope resouce and only the leader engine gets it 
+  /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
   UPtr<DiracMatrixBatch<T_FP>> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
-
-  /// Work Matrix to determine inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  OffloadPinnedValueMatrix_t work_psiMinv;
-
   /// scratch space for rank-1 update
   OffloadValueVector_t temp;
   // row of up-to-date Ainv
@@ -89,7 +84,7 @@ class MatrixDelayedUpdateCUDA
   Vector<char, OffloadPinnedAllocator<char>> invert_transpose_buffer_H2D;
   // mw_invert transpose result pointer buffer
   Vector<char, OffloadPinnedAllocator<char>> invert_transpose_result_buffer_H2D;
-    
+
   using DeviceValueMatrix_t = Matrix<T, CUDAAllocator<T>>;
   using DeviceValueVector_t = Vector<T, CUDAAllocator<T>>;
   /// orbital values of delayed electrons
@@ -317,9 +312,11 @@ public:
   void createResource(ResourceCollection& collection)
   {
     auto resource_index = collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
-    app_log() << "    CUDALinearAlgebraHandles resource created in MatrixDelayedUpdateCUDA. Index " << resource_index << std::endl;
+    app_log() << "    CUDALinearAlgebraHandles resource created in MatrixDelayedUpdateCUDA. Index " << resource_index
+              << std::endl;
     auto resource_index_det_eng = collection.addResource(std::make_unique<DiracMatrixBatch<T_FP>>());
-    app_log() << "    DiracMatrixBatched det_inverter_ created in MatrixDelayedUpdateCUDA. Index " << resource_index_det_eng << std::endl;
+    app_log() << "    DiracMatrixBatched det_inverter_ created in MatrixDelayedUpdateCUDA. Index "
+              << resource_index_det_eng << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection)
@@ -330,7 +327,8 @@ public:
     cuda_handles_.reset(res_ptr);
     auto det_eng_ptr = dynamic_cast<DiracMatrixBatch<T_FP>*>(collection.lendResource().release());
     if (!det_eng_ptr)
-      throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixBatched<T_FP>* failed");
+      throw std::runtime_error(
+          "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixBatched<T_FP>* failed");
     det_inverter_.reset(det_eng_ptr);
   }
 
@@ -345,52 +343,72 @@ public:
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
+  /** make this class unit tests friendly without the need of setup resources.
+   *  belongs in a friend class in test
+   */
+  inline void checkResourcesForTest()
+  {    
+    if (!cuda_handles_)
+    {
+      app_warning() << "MatrixDelayedUpdateCUDA local cuda_handles_ made : This message should not be seen in "
+                       "production (performance bug) runs "
+                       "but only unit tests (expected)."
+                    << std::endl;
+      cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
+    }
+
+    if (!det_inverter_)
+    {
+      app_warning() << "MatrixDelayedUpdateCUDA local det_inverter_ made : This message should not be seen in "
+                       "production (performance bug) runs "
+                       "but only unit tests (expected)."
+                    << std::endl;
+
+      det_inverter_ = std::make_unique<DiracMatrixBatch<TREAL>>();
+    }
+  }
+    
+  
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
+   *
+   *  This does not get called constantly so get real benchmark data that redirection to mw
+   *  is a big deal before optimizing.
    * @param logdetT orbital value matrix
    * @param LogValue log(det(logdetT))
    */
   template<typename TREAL>
-  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)
+  inline void invert_transpose(const Matrix<T>& log_det, std::complex<TREAL>& log_value)
   {
-    // make this class unit tests friendly without the need of setup resources.
-    if (!cuda_handles_)
-      cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
-
+    checkResourcesForTest();
     guard_no_delay();
-
-    auto& Ainv = psiMinv;
-    Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    det_inverter_->invert_transpose(logdetT, Ainv_host_view, LogValue);
-    T* Ainv_ptr = Ainv.data();
-    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+    RefVector<MatrixUpdateOMPTarget<T, T_FP>> engines;
+    RefVector<const Matrix<T>> log_dets;
+    RefVector<std::complex<TREAL>> log_values;
+    engines.push_back(*this);
+    log_dets.push_back(log_det);
+    log_values.push_back(log_value);
+    mw_invertTranspose(engines, log_dets, log_values);
   }
 
   template<typename TREAL>
-  inline void mw_invertTranspose(const RefVector<const Matrix<T>>& logdetT_list,
-                                 const RefVector<std::complex<TREAL>>& LogValues)
+  inline void mw_invertTranspose(const RefVectorWithLeader<MatrixDelayedUpdateTarget<T, T_FP>>& engines,
+                                 const RefVector<const OffloadPinnedValueMatrix_t<T>>& logdetT_list,
+                                 const RefVector<OffloadPinnedValueVector_t<std::complex<TREAL>>>& LogValues)
   {
-    // make this class unit tests friendly without the need of setup resources.
-    if (!cuda_handles_)
-    {
-      app_warning() << "MatrixDelayedUpdateCUDA : This message should not be seen in production (performance bug) runs "
-                       "but only unit tests (expected)."
-                    << std::endl;
-      cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
-<<<<<<< HEAD
-    }
-
-=======
-    if (!det_inverter_)
-      det_inverter_ = std::make_unique<DiracMatrixBatch<TREAL>>();
-    
->>>>>>> 3edfb44a1... mostly compiles
+    checkResourcesForTest();
     guard_no_delay();
-
-    auto& Ainv = psiMinv;
-    Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    det_inverter_->mw_invert_transpose(cuda_handles_, logdetT_list, Ainv_host_view, LogValues);
-    T* Ainv_ptr = Ainv.data();
-    PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+    std::vector<Matrix<T>> Ainv_host_views;
+    Ainv_host_views.reserve(engines.size());
+    for (int iw = 0; iw < engines.size(); iw++)
+    {
+      auto& Ainv = engines[iw].get().psiMinv;
+      Ainv_host_views.emplace_back(Ainv.data(), Ainv.rows(), Ainv.cols());
+      T* Ainv_ptr = Ainv.data();
+      // This seems likely to be inefficient
+      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+    }
+    PRAGMA_OFFLOAD("omp taskwait")
+    det_inverter_->mw_invert_transpose(cuda_handles_, logdetT_list, Ainv_host_views, LogValues);
   }
 
   // prepare invRow and compute the old gradients.
