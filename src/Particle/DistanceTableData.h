@@ -26,6 +26,8 @@
 
 namespace qmcplusplus
 {
+class ResourceCollection;
+
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
  *
@@ -262,6 +264,15 @@ public:
    * change in the indices N.
    */
   void resize(int npairs, int nw) { N_walkers = nw; }
+
+  /// initialize a shared resource and hand it to a collection
+  virtual void createResource(ResourceCollection& collection) {}
+
+  /// acquire a shared resource from a collection
+  virtual void acquireResource(ResourceCollection& collection) {}
+
+  /// return a shared resource to a collection
+  virtual void releaseResource(ResourceCollection& collection) {}
 };
 } // namespace qmcplusplus
 #endif

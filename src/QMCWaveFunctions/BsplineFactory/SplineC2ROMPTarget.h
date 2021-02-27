@@ -143,7 +143,6 @@ public:
         mygH(in.mygH)
   {}
 
-
   void createResource(ResourceCollection& collection) override
   {
     auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>());
