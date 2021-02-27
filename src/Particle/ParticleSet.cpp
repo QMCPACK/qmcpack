@@ -906,6 +906,13 @@ int ParticleSet::addPropertyHistory(int leng)
 //       }
 //     }
 
+
+void ParticleSet::createResource(ResourceCollection& collection) {}
+
+void ParticleSet::acquireResource(ResourceCollection& collection) {}
+
+void ParticleSet::releaseResource(ResourceCollection& collection) {}
+
 RefVectorWithLeader<DistanceTableData> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                      int id)
 {
