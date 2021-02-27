@@ -158,6 +158,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
     app_log() << "Creating multi walker shared resources" << std::endl;
     population_.get_golden_electrons()->createResource(golden_resource_.pset_res);
     population_.get_golden_twf().createResource(golden_resource_.twf_res);
+    population_.get_golden_hamiltonian().createResource(golden_resource_.ham_res);
     app_log() << "Multi walker shared resources creation completed" << std::endl;
   }
 
@@ -334,7 +335,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 
   auto& walkers = crowd.get_walkers();
   FatWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
-                                            crowd.get_walker_twfs()[0]);
+                                            crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
