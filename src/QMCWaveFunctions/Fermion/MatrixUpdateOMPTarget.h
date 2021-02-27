@@ -92,7 +92,7 @@ public:
    */
   inline void resize(int norb, int delay) { psiMinv.resize(norb, getAlignedSize<T>(norb)); }
 
-  void createResource(ResourceCollection& collection) {}
+  void createResource(ResourceCollection& collection) const {}
   void acquireResource(ResourceCollection& collection) {}
   void releaseResource(ResourceCollection& collection) {}
 

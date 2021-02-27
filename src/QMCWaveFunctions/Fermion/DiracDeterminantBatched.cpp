@@ -921,7 +921,7 @@ DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYP
 }
 
 template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::createResource(ResourceCollection& collection)
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::createResource(ResourceCollection& collection) const
 {
   auto resource_index = collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
   app_log() << "    Shared resource created in DiracDeterminantBatched. Index " << resource_index << std::endl;

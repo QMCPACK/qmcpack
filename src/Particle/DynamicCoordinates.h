@@ -96,7 +96,7 @@ public:
   virtual void donePbyP() {}
 
   /// initialize a shared resource and hand it to a collection
-  virtual void createResource(ResourceCollection& collection) {}
+  virtual void createResource(ResourceCollection& collection) const {}
 
   /// acquire a shared resource from a collection
   virtual void acquireResource(ResourceCollection& collection) {}

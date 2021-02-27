@@ -171,7 +171,7 @@ public:
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
-  void createResource(ResourceCollection& collection) override;
+  void createResource(ResourceCollection& collection) const override;
   void acquireResource(ResourceCollection& collection) override;
   void releaseResource(ResourceCollection& collection) override;
 

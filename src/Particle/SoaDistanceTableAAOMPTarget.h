@@ -120,7 +120,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   const DistRow& getOldDists() const override { return old_r_; }
   const DisplRow& getOldDispls() const override { return old_dr_; }
 
-  void createResource(ResourceCollection& collection) override
+  void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<DTAAMultiWalkerMem>());
     app_log() << "    Multi walker shared memory resource created in SoaDistanceTableAAOMPTarget " << name_

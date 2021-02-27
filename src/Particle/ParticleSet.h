@@ -640,7 +640,7 @@ public:
   inline int getNumDistTables() const { return DistTables.size(); }
 
   /// initialize a shared resource and hand it to a collection
-  void createResource(ResourceCollection& collection);
+  void createResource(ResourceCollection& collection) const;
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */

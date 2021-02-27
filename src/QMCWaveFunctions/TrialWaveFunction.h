@@ -397,7 +397,7 @@ public:
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /// initialize a shared resource and hand it to a collection
-  void createResource(ResourceCollection& collection);
+  void createResource(ResourceCollection& collection) const;
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */

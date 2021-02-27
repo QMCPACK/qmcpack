@@ -208,7 +208,7 @@ void SlaterDet::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   }
 }
 
-void SlaterDet::createResource(ResourceCollection& collection)
+void SlaterDet::createResource(ResourceCollection& collection) const
 {
   for (int i = 0; i < Dets.size(); ++i)
     Dets[i]->createResource(collection);

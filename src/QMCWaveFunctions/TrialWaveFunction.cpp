@@ -1163,7 +1163,7 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
   }
 }
 
-void TrialWaveFunction::createResource(ResourceCollection& collection)
+void TrialWaveFunction::createResource(ResourceCollection& collection) const
 {
   for (int i = 0; i < Z.size(); ++i)
     Z[i]->createResource(collection);

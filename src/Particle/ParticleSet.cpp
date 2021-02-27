@@ -907,7 +907,7 @@ int ParticleSet::addPropertyHistory(int leng)
 //     }
 
 
-void ParticleSet::createResource(ResourceCollection& collection)
+void ParticleSet::createResource(ResourceCollection& collection) const
 {
   coordinates_->createResource(collection);
   for (int i = 0; i < DistTables.size(); i++)

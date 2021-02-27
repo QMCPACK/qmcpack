@@ -110,7 +110,7 @@ public:
 
   ~SoaDistanceTableABOMPTarget() { PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])") }
 
-  void createResource(ResourceCollection& collection) override
+  void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<DTABMultiWalkerMem>());
     app_log() << "    Multi walker shared memory resource created in SoaDistanceTableABOMPTarget " << name_
