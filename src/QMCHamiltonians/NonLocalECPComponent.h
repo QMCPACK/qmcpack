@@ -115,6 +115,18 @@ public:
   ///destructor
   ~NonLocalECPComponent();
 
+  /** initialize a shared resource and hand it to a collection
+   */
+  void createResource(ResourceCollection& collection) const;
+
+  /** acquire a shared resource from a collection
+   */
+  void acquireResource(ResourceCollection& collection);
+
+  /** return a shared resource to a collection
+   */
+  void releaseResource(ResourceCollection& collection);
+
   NonLocalECPComponent* makeClone(const ParticleSet& qp);
 
   ///add a new Non Local component

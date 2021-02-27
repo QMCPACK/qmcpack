@@ -569,6 +569,27 @@ void NonLocalECPotential::addComponent(int groupID, std::unique_ptr<NonLocalECPC
   PPset[groupID] = std::move(ppot);
 }
 
+void NonLocalECPotential::createResource(ResourceCollection& collection) const
+{
+  for (int ig = 0; ig < PPset.size(); ++ig)
+    if (PPset[ig])
+      PPset[ig]->createResource(collection);
+}
+
+void NonLocalECPotential::acquireResource(ResourceCollection& collection)
+{
+  for (int ig = 0; ig < PPset.size(); ++ig)
+    if (PPset[ig])
+      PPset[ig]->acquireResource(collection);
+}
+
+void NonLocalECPotential::releaseResource(ResourceCollection& collection)
+{
+  for (int ig = 0; ig < PPset.size(); ++ig)
+    if (PPset[ig])
+      PPset[ig]->releaseResource(collection);
+}
+
 OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces, use_DLA);
