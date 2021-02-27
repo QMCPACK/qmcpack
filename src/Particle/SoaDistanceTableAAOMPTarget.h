@@ -65,18 +65,14 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
         DistanceTableData(target, target),
-        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") +
-                                                      target.getName() + "_" + target.getName(),
-                                                  timer_level_fine)),
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") +
-                                                       target.getName() + "_" + target.getName(),
+        offload_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") + name_, timer_level_fine)),
+        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") + name_,
                                                    timer_level_fine)),
-        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::move_") + target.getName() +
-                                                   "_" + target.getName(),
-                                               timer_level_fine)),
-        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::update_") +
-                                                     target.getName() + "_" + target.getName(),
-                                                 timer_level_fine))
+        move_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::move_") + name_, timer_level_fine)),
+        update_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::update_") + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
@@ -127,8 +123,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   void createResource(ResourceCollection& collection) override
   {
     auto resource_index = collection.addResource(std::make_unique<DTAAMultiWalkerMem>());
-    app_log() << "    Multi walker shared memory resource created in SoaDistanceTableAAOMPTarget. Index "
-              << resource_index << std::endl;
+    app_log() << "    Multi walker shared memory resource created in SoaDistanceTableAAOMPTarget " << name_
+              << ". Index " << resource_index << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection) override

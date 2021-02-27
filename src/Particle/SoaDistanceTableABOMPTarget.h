@@ -59,21 +59,16 @@ public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice),
         DistanceTableData(source, target),
-        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") +
-                                                      target.getName() + "_" + source.getName(),
-                                                  timer_level_fine)),
-        copy_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::copy_") + target.getName() +
-                                                   "_" + source.getName(),
-                                               timer_level_fine)),
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") +
-                                                       target.getName() + "_" + source.getName(),
+        offload_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") + name_, timer_level_fine)),
+        copy_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::copy_") + name_, timer_level_fine)),
+        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") + name_,
                                                    timer_level_fine)),
-        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::move_") + target.getName() +
-                                                   "_" + source.getName(),
-                                               timer_level_fine)),
-        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::update_") +
-                                                     target.getName() + "_" + source.getName(),
-                                                 timer_level_fine))
+        move_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::move_") + name_, timer_level_fine)),
+        update_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::update_") + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());
@@ -118,8 +113,8 @@ public:
   void createResource(ResourceCollection& collection) override
   {
     auto resource_index = collection.addResource(std::make_unique<DTABMultiWalkerMem>());
-    app_log() << "    Multi walker shared memory resource created in SoaDistanceTableABOMPTarget. Index "
-              << resource_index << std::endl;
+    app_log() << "    Multi walker shared memory resource created in SoaDistanceTableABOMPTarget " << name_
+              << ". Index " << resource_index << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection) override

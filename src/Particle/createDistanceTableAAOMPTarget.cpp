@@ -92,14 +92,7 @@ DistanceTableData* createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& 
     dt = new SoaDistanceTableAAOMPTarget<RealType, DIM, SUPERCELL_OPEN + SOA_OFFSET>(s);
   }
 
-
-  //set dt properties
-  std::ostringstream p;
-  p << s.getName() << "_" << s.getName();
-  dt->setName(p.str()); //assign the table name
-
   description << o.str() << std::endl;
-
   return dt;
 }
 

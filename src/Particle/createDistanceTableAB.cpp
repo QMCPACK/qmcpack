@@ -94,13 +94,7 @@ DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, s
     dt = new SoaDistanceTableAB<RealType, DIM, SUPERCELL_OPEN + SOA_OFFSET>(s, t);
   }
 
-  //set dt properties
-  std::ostringstream p;
-  p << s.getName() << "_" << t.getName();
-  dt->setName(p.str()); //assign the table name
-
   description << o.str() << std::endl;
-
   return dt;
 }
 
