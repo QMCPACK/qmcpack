@@ -670,8 +670,11 @@ void ParticleSet::acceptMove_impl(Index_t iat, bool forward_mode)
   if (iat == activePtcl)
   {
     //Update position + distance-table
-    for (int i = 0, n = DistTables.size(); i < n; i++)
-      DistTables[i]->update(iat, forward_mode);
+    for (int i = 0; i < DistTables.size(); i++)
+      if (forward_mode)
+        DistTables[i]->updatePartial(iat, true);
+      else
+        DistTables[i]->update(iat);
 
     //Do not change SK: 2007-05-18
     if (SK && SK->DoUpdate)
@@ -723,8 +726,8 @@ void ParticleSet::rejectMoveForwardMode(Index_t iat)
 {
   assert(iat == activePtcl);
   //Update distance-table
-  for (int i = 0, n = DistTables.size(); i < n; i++)
-    DistTables[i]->updateForOldPosPartial(iat);
+  for (int i = 0; i < DistTables.size(); i++)
+    DistTables[i]->updatePartial(iat, false);
   activePtcl = -1;
 }
 

@@ -196,16 +196,22 @@ public:
       dt_list[iw].move(p_list[iw], rnew_list[iw], iat, prepare_old);
   }
 
-  /** update the distance table by the pair relations from the temporal position. Used when a move is accepted
+  /** update the distance table by the pair relations from the temporal position.
+   *  Used when a move is accepted in regular mode
    * @param iat the particle with an accepted move
-   * @param partial_update If true (forward mode), rows after iat will not be updated. If false (regular mode), upon accept a move, the full table should be up-to-date
    */
-  virtual void update(IndexType jat, bool partial_update = false) = 0;
+  virtual void update(IndexType jat) = 0;
 
-  /** fill the distance table by the pair relations for the old particle position. Used in forward mode when a move is reject
+  /** fill partially the distance table by the pair relations from the temporary or old particle position.
+   *  Used in forward mode when a move is reject
    * @param iat the particle with an accepted move
+   * @param from_temp if true, copy from temp. if false, copy from old
    */
-  virtual void updateForOldPosPartial(IndexType jat){};
+  virtual void updatePartial(IndexType jat, bool from_temp)
+  {
+    if (from_temp)
+      update(jat);
+  }
 
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id
