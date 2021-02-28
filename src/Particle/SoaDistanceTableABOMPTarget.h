@@ -74,14 +74,12 @@ public:
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());
     if (!coordinates_soa)
       throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
-    resize(source.getTotalNum(), target.getTotalNum());
+    resize();
     PRAGMA_OFFLOAD("omp target enter data map(to : this[:1])")
   }
 
-  void resize(int ns, int nt)
+  void resize()
   {
-    N_sources = ns;
-    N_targets = nt;
     if (N_sources * N_targets == 0)
       return;
 

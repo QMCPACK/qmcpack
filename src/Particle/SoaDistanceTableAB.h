@@ -37,13 +37,11 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
                                                      source.getName(),
                                                  timer_level_fine))
   {
-    resize(source.getTotalNum(), target.getTotalNum());
+    resize();
   }
 
-  void resize(int ns, int nt)
+  void resize()
   {
-    N_sources = ns;
-    N_targets = nt;
     if (N_sources * N_targets == 0)
       return;
 

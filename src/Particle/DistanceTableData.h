@@ -48,9 +48,8 @@ public:
 protected:
   const ParticleSet* Origin;
 
-  int N_sources;
-  int N_targets;
-  int N_walkers;
+  const int N_sources;
+  const int N_targets;
 
   /**defgroup SoA data */
   /*@{*/
@@ -96,9 +95,8 @@ public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
       : Origin(&source),
-        N_sources(0),
-        N_targets(0),
-        N_walkers(0),
+        N_sources(source.getTotalNum()),
+        N_targets(target.getTotalNum()),
         need_full_table_(false),
         old_prepared_elec_id(-1),
         name_(source.getName() + "_" + target.getName())
@@ -257,22 +255,6 @@ public:
     //  os << r_m[i] << " ";
     //os << std::endl;
   }
-
-  /**resize the storage
-   *@param npairs number of pairs which is evaluated by a derived class
-   *@param nw number of copies
-   *
-   * The data for the pair distances, displacements
-   *and the distance inverses are stored in a linear storage.
-   * The logical view of these storages is (ipair,iwalker),
-   * where 0 <= ipair < M[N[SourceIndex]] and 0 <= iwalker < N[WalkerIndex]
-   * This scheme can handle both dense and sparse distance tables,
-   * and full or half of the pairs.
-   * Note that this function is protected and the derived classes are
-   * responsible to call this function for memory allocation and any
-   * change in the indices N.
-   */
-  void resize(int npairs, int nw) { N_walkers = nw; }
 
   /// initialize a shared resource and hand it to a collection
   virtual void createResource(ResourceCollection& collection) const {}
