@@ -140,6 +140,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       ScopedTimer local_timer(myTimers[DMC_buffer]);
       thisWalker.Age = 0;
       logpsi         = Psi.updateBuffer(W, w_buffer, recompute);
+      assert(checkLogAndGL(W, Psi));
       W.saveWalker(thisWalker);
     }
     {
