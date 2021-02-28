@@ -939,6 +939,9 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P, WFBu
     logpsi += Z[i]->updateBuffer(P, buf, fromscratch);
   }
 
+  G = P.G;
+  L = P.L;
+
   LogValue   = std::real(logpsi);
   PhaseValue = std::imag(logpsi);
   //printGL(P.G,P.L);
