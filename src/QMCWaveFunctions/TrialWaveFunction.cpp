@@ -584,13 +584,13 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   {
     std::vector<GradType> grad_components(Z.size(), GradType(0.0));
     std::vector<PsiValueType> ratio_components(Z.size(), 0.0);
-    for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+    #pragma omp taskloop default(shared)
+    for (int i = 0; i < Z.size(); ++i)
     {
-      ScopedTimer z_timer(WFC_timers_[ii]);
-      Z[i]->ratioGradAsync(P, iat, ratio_components[i], grad_components[i]);
+      ScopedTimer z_timer(WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
+      ratio_components[i] = Z[i]->ratioGrad(P, iat, grad_components[i]);
     }
 
-#pragma omp taskwait
     for (int i = 0; i < Z.size(); ++i)
     {
       grad_iat += grad_components[i];
@@ -598,9 +598,9 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
     }
   }
   else
-    for (int i = 0, ii = VGL_TIMER; i < Z.size(); ++i, ii += TIMER_SKIP)
+    for (int i = 0; i < Z.size(); ++i)
     {
-      ScopedTimer z_timer(WFC_timers_[ii]);
+      ScopedTimer z_timer(WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
       r *= Z[i]->ratioGrad(P, iat, grad_iat);
     }
   LogValueType logratio = convertValueToLog(r);
@@ -649,14 +649,14 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
   {
     std::vector<std::vector<PsiValueType>> ratios_components(num_wfc, std::vector<PsiValueType>(wf_list.size()));
     std::vector<std::vector<GradType>> grads_components(num_wfc, std::vector<GradType>(wf_list.size()));
-    for (int i = 0, ii = VGL_TIMER; i < num_wfc; ++i, ii += TIMER_SKIP)
+    #pragma omp taskloop default(shared)
+    for (int i = 0; i < num_wfc; ++i)
     {
-      ScopedTimer z_timer(wf_leader.WFC_timers_[ii]);
+      ScopedTimer z_timer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
-      wavefunction_components[i]->mw_ratioGradAsync(wfc_list, p_list, iat, ratios_components[i], grads_components[i]);
+      wavefunction_components[i]->mw_ratioGrad(wfc_list, p_list, iat, ratios_components[i], grads_components[i]);
     }
 
-#pragma omp taskwait
     for (int i = 0; i < num_wfc; ++i)
       for (int iw = 0; iw < wf_list.size(); iw++)
       {
@@ -716,9 +716,10 @@ void TrialWaveFunction::rejectMove(int iat)
 void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   ScopedTimer local_timer(TWF_timers_[ACCEPT_TIMER]);
-  for (int i = 0, ii = ACCEPT_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
+  #pragma omp taskloop default(shared) if(use_tasking_)
+  for (int i = 0; i < Z.size(); i++)
   {
-    ScopedTimer z_timer(WFC_timers_[ii]);
+    ScopedTimer z_timer(WFC_timers_[ACCEPT_TIMER + TIMER_SKIP * i]);
     Z[i]->acceptMove(P, iat, safe_to_delay);
   }
   PhaseValue += PhaseDiff;
@@ -746,9 +747,10 @@ void TrialWaveFunction::mw_accept_rejectMove(const RefVectorWithLeader<TrialWave
       wf_list[iw].PhaseValue = 0;
     }
 
-  for (int i = 0, ii = ACCEPT_TIMER; i < num_wfc; i++, ii += TIMER_SKIP)
+  #pragma omp taskloop default(shared) if(wf_leader.use_tasking_)
+  for (int i = 0; i < num_wfc; i++)
   {
-    ScopedTimer z_timer(wf_leader.WFC_timers_[ii]);
+    ScopedTimer z_timer(wf_leader.WFC_timers_[ACCEPT_TIMER + TIMER_SKIP * i]);
     const auto wfc_list(extractWFCRefList(wf_list, i));
     wavefunction_components[i]->mw_accept_rejectMove(wfc_list, p_list, iat, isAccepted, safe_to_delay);
     for (int iw = 0; iw < wf_list.size(); iw++)
@@ -1001,11 +1003,11 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
     t[iw].resize(ratios.size());
   }
 
-  for (int i = 0, ii = NL_TIMER; i < wavefunction_components.size(); i++, ii += TIMER_SKIP)
+  for (int i = 0; i < wavefunction_components.size(); i++)
     if (ct == ComputeType::ALL || (wavefunction_components[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
         (!wavefunction_components[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
     {
-      ScopedTimer z_timer(wf_leader.WFC_timers_[ii]);
+      ScopedTimer z_timer(wf_leader.WFC_timers_[NL_TIMER + TIMER_SKIP * i]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
       wavefunction_components[i]->mw_evaluateRatios(wfc_list, vp_list, t);
       for (int iw = 0; iw < wf_list.size(); iw++)
