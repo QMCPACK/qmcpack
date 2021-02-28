@@ -1,0 +1,453 @@
+# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:4;-*-
+# © Alfredo A. Correa 2020
+
+image: debian:testing
+
+g++-latest:
+  stage: test
+  script:
+    - export CXX="g++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+g++-cppcheck:
+  stage: test
+  script:
+    - export CXX="g++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev cppcheck
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake -DCMAKE_CXX_CPPCHECK:FILEPATH=cppcheck ..
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+g++-latest-std20:
+  stage: test
+  script:
+    - export CXX="g++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_CXX_STANDARD=20
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+g++-current-debug:
+  stage: test
+  script:
+    - export CXX="g++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+    
+g++-current-release:
+  stage: test
+  script:
+    - export CXX="g++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_BUILD_TYPE=Release
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+g++-7-std17:
+  stage: test
+  image: debian:stable-backports
+  script:
+    - export CXX="g++-7"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_CXX_STANDARD=17
+    - cmake --build .
+    - ctest --output-on-failure
+
+g++-8:
+  stage: test
+  image: debian:stable-backports
+  script:
+    - export CXX="g++-8"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build .
+    - ctest --output-on-failure
+
+g++-9:
+  stage: test
+  script:
+    - export CXX="g++-9"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+g++-9-std17:
+  stage: test
+  script:
+    - export CXX="g++-9"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_CXX_STANDARD=17
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+g++-9-openblas:
+  stage: test
+  script:
+    - export CXX="g++-9"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libopenblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+memcheck:
+  stage: test
+  script:
+    - export CXX="g++-9"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX valgrind cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose
+    - ctest -T memcheck --output-on-failure
+
+clang++-9:
+  stage: test
+  script:
+    - export CXX="clang++-9"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+clang++-9-std17:
+  stage: test
+  script:
+    - export CXX="clang++-9"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_CXX_STANDARD=17
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+clang++-9-asan:
+  stage: test
+  script:
+    - export CXX="clang++-9"
+    - export CXXFLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev llvm
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose
+    - export ASAN_OPTIONS="halt_on_error=1 detect_leaks=1"
+    - ctest --output-on-failure
+
+# clang 10 and clang 11 have a bug when compiling in c++17 mode
+clang++:
+  stage: test
+  script:
+    - export CXX="clang++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang cmake make libboost-test-dev libblas-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose -- --quiet --no-print-directory
+    - ctest --output-on-failure
+
+clang++-std17:
+  stage: test
+  script:
+    - export CXX="clang++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang cmake make libboost-test-dev libblas-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_CXX_STANDARD=17
+    - cmake --build . --verbose -- --quiet --no-print-directory
+    - ctest --output-on-failure
+
+clang++-11:
+  stage: test
+  script:
+    - export CXX="clang++-11"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 cmake make libboost-test-dev libblas-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose -- --quiet --no-print-directory
+    - ctest --output-on-failure
+
+clang++-11-gcc9:
+  stage: test
+  image: vistart/cuda:10.2-ubuntu20.04
+  script:
+    - export CXX="clang++-11"
+    - apt-get update 
+    - DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y --quiet gcc-9 clang-11 cmake make libboost-test-dev libblas-dev
+    - ln --symbolic --force . ../multi
+    - $CXX -v
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose -- --quiet --no-print-directory
+    - ctest --output-on-failure
+
+clang++-11-std17:
+  stage: test
+  script:
+    - export CXX="clang++-11"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 cmake make libboost-test-dev libblas-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_CXX_STANDARD=17
+    - cmake --build . --verbose -- --quiet --no-print-directory
+    - ctest --output-on-failure
+
+cuda-10.0:
+    image: vistart/cuda:10.2-ubuntu20.04
+    stage: test
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get update && apt-get install --no-install-recommends -y --quiet gcc-8 g++-8 cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - ln --symbolic --force . ../multi
+      - nvcc --version
+      - g++-8 --version
+      - cd test
+      - mkdir build && cd build
+      - cmake -DENABLE_CUDA=1 -DCMAKE_CUDA_FLAGS="-ccbin=g++-8" ..
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+cuda-11.0:
+    image: nvidia/cuda:11.0-devel
+    stage: test
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - ln --symbolic --force . ../multi
+      - nvcc --version
+      - mkdir build && cd build
+      - cmake .. -DENABLE_CUDA=1
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+cuda-11.1:
+    image: nvidia/cuda:11.1-devel
+    stage: test
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - ln --symbolic --force . ../multi
+      - nvcc --version
+      - mkdir build && cd build
+      - cmake .. -DENABLE_CUDA=1
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+cuda-11.0-std17:
+    image: nvidia/cuda:11.0-devel
+    stage: test
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - ln --symbolic --force . ../multi
+      - nvcc --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+cuda-11.1-std17:
+    image: nvidia/cuda:11.1-devel
+    stage: test
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - ln --symbolic --force . ../multi
+      - nvcc --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+cuda-11.2-std17:
+    image: nvidia/cuda:11.2.0-devel
+    stage: test
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+      - ln --symbolic --force . ../multi
+      - nvcc --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+g++-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - export CXX="g++"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake --version
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - ctest --output-on-failure
+
+icpc-nomkl-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - export CXX="/opt/intel/system_studio_2020/bin/icpc"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - export MKL_VERBOSE=1
+      - ctest --output-on-failure
+
+icpc-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
+      - export CXX="icpc"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - export MKL_VERBOSE=1
+      - ctest --output-on-failure
+
+icpc-memcheck-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
+      - export CXX="icpc"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - ctest -T memcheck --output-on-failure || (cat Testing/Temporary/MemoryChecker.*.log && exit 0)
+
+icpc-std17-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
+      - export CXX="icpc"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - export MKL_VERBOSE=1
+      - ctest --output-on-failure
+
+#blas&fft:
+#    stage: test
+#    script:
+#      - perl -pi -e 's/main/main\ contrib\ non-free/g' /etc/apt/sources.list
+#      - apt update --quiet
+#      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -f-assume-yes --quiet libboost-test-dev libboost-timer-dev libtbb-dev libboost-serialization-dev libboost-iostreams-dev librange-v3-dev valgrind
+#      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet clang pkg-config libblas-dev libblas64-dev libfftw3-dev nvidia-cuda-toolkit
+#      - ln --symbolic --force . ../multi
+#      - export CXXX="clang++ -x c++"
+#      - export CXXFLAGS="-Wall -Wextra -Wpedantic -O3 -lcudart -lfftw3 -lcublas -lcufft -lboost_timer -lboost_unit_test_framework `pkg-config --libs blas`"
+#      - export CXX="${CXXX} ${CXXFLAGS}"
+#      - $CXX --version
+#      - cd adaptors/blas
+#      - for a in ./*.hpp; do echo $a; $CXX $a || exit; done;
+#      - cd tests
+#      - for a in ./*.cpp; do echo $a; $CXX $a || exit; done;
+#      - cd ..
+#      - cd ../..
+#      - cd adaptors
+#      - sh ./fftw.hpp
+#      - $CXX fft.hpp
+
+#blas&fftGPU-11:
+#    stage: build
+#    tags:
+#      - cuda_gpu
+#    stage: test
+#    script:
+#      - export PATH=/usr/local/cuda-11.0/bin:$PATH #export PATH=/usr/local/cuda/bin:$PATH
+#      - export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:$LD_LIBRARY_PATH
+#      - export CXXX="clang++ -x c++"
+#      - export CXXFLAGS="`#-Wall -Wextra -Wpedantic` -Ofast -Wl,-rpath=/usr/local/cuda/lib64 -L/usr/local/cuda-11.0/lib64 -I/usr/local/cuda-11.0/include -lcudart -lfftw3 -lcublas -lcufft -lboost_timer -lboost_unit_test_framework `pkg-config --libs blas` "
+#      - export CXX="${CXXX} ${CXXFLAGS}"
+#      - $CXX --version
+#      - cd adaptors/blas
+#      - for a in ./*.hpp; do echo $a; sh $a || exit; echo "\n"; done;
+#      - cd tests
+#      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
+#      - cd ..
+#      - cd ../..
+#      - cd adaptors
+#      - sh ./fftw.hpp
+#      - sh ./fft.hpp
+
+#blas&fftGPU:
+#    stage: build
+#    tags:
+#      - cuda_gpu
+#    stage: test
+#    script:
+#      - export PATH=/usr/local/cuda/bin:$PATH #export PATH=/usr/local/cuda/bin:$PATH
+#      - export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+#      - export CXXX="clang++ -x c++"
+#      - export CXXFLAGS="`#-Wall -Wextra -Wpedantic` -Ofast -Wl,-rpath=/usr/local/cuda/lib64 -L/usr/local/cuda/lib64 -I/usr/local/cuda/include -lcudart -lfftw3 -lcublas -lcufft -lboost_timer -lboost_unit_test_framework `pkg-config --libs blas` "
+#      - export CXX="${CXXX} ${CXXFLAGS}"
+#      - $CXX --version
+#      - cd adaptors/blas
+#      - for a in ./*.hpp; do echo $a; sh $a || exit; echo "\n"; done;
+#      - cd tests
+#      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
+#      - cd ..
+#      - cd ../..
+#      - cd adaptors
+#      - sh ./fftw.hpp
+#      - sh ./fft.hpp
+
