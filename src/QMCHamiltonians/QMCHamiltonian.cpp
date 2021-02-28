@@ -548,8 +548,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
   auto& ham_leader = ham_list.getLeader();
   ScopedTimer local_timer(ham_leader.ham_timer_);
   for (QMCHamiltonian& ham : ham_list)
-    for (int iw = 0; iw < ham_list.size(); iw++)
-      ham.LocalEnergy = 0.0;
+    ham.LocalEnergy = 0.0;
 
   const int num_ham_operators = ham_leader.H.size();
   for (int i_ham_op = 0; i_ham_op < num_ham_operators; ++i_ham_op)
