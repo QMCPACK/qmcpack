@@ -83,7 +83,10 @@ public:
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
-
+  void BackFlowStopper(const std::string& func_name)
+  {
+      throw std::runtime_error(func_name + " not implemented!\n");
+  }
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
   {

@@ -298,7 +298,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
 {
   if (usingBF)
   {
-    throw std::runtime_error("Fast MSD+BF: evalGrad not implemented. \n");
+  BackFlowStopper("Fast MSD+BF: evalGrad\n");
   }
 
   ScopedTimer local_timer(EvalGradTimer);
@@ -318,7 +318,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
 {
   if (usingBF)
   {
-    throw std::runtime_error("Fast MSD+BF: ratioGrad not implemented. \n");
+  BackFlowStopper("Fast MSD+BF: ratioGrad\n");
   }
 
   ScopedTimer local_timer(RatioGradTimer);
@@ -390,7 +390,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
 {
   if (usingBF)
   {
-    throw std::runtime_error("Fast MSD+BF: ratio not implemented. \n");
+  BackFlowStopper("Fast MSD+BF: ratio\n");
   }
 
   ScopedTimer local_timer(RatioTimer);
@@ -412,7 +412,7 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_t
   // for now is incorrect fot ratio(P,iat,dG,dL) updates
   if (usingBF)
   {
-    throw std::runtime_error("Fast MSD+BF: acceptMove not implemented. \n");
+  BackFlowStopper("Fast MSD+BF: acceptMove\n");
   }
 
   ScopedTimer local_timer(AccRejTimer);
@@ -427,7 +427,7 @@ void MultiSlaterDeterminantFast::restore(int iat)
 {
   if (usingBF)
   {
-    throw std::runtime_error("Fast MSD+BF: restore not implemented. \n");
+  BackFlowStopper("Fast MSD+BF: restore\n");
   }
 
   ScopedTimer local_timer(AccRejTimer);
@@ -439,7 +439,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if (usingBF)
   {
-    throw std::runtime_error("Fast MSD+BF: restore not implemented. \n");
+  BackFlowStopper("Fast MSD+BF: restore\n");
   }
 
   for (size_t id = 0; id < Dets.size(); id++)
@@ -473,7 +473,7 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
 {
   if (usingBF)
   {
-    throw std::runtime_error("Fast MSD+BF: copyFromBuffer not implemented. \n");
+  BackFlowStopper("Fast MSD+BF: copyFromBuffer\n");
   }
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->copyFromBuffer(P, buf);
