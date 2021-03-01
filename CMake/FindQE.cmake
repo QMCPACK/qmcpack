@@ -2,13 +2,9 @@
 # Require both to be present to consider QE_FOUND
 # Take QE_BIN as hint for location
 
-IF(QE_BIN)
-  FIND_PATH(QE_PW2Q_DIR pw2qmcpack.x ${QE_BIN})
-  FIND_PATH(QE_PW_DIR pw.x ${QE_BIN})
-ELSE(QE_BIN)
-  FIND_PATH(QE_PW2Q_DIR pw2qmcpack.x)
-  FIND_PATH(QE_PW_DIR pw.x)
-ENDIF(QE_BIN)
+FIND_PATH(QE_PW_DIR pw.x HINTS ${QE_BIN})
+FIND_PATH(QE_PW2Q_DIR pw2qmcpack.x HINTS ${QE_BIN})
+
 SET(QE_FOUND FALSE)
 IF(QE_PW2Q_DIR AND QE_PW_DIR)
   IF ( NOT (QE_PW2Q_DIR STREQUAL QE_PW_DIR) )
