@@ -181,12 +181,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
     spin_psi          = c;
     for (size_t id = 0; id < Dets.size(); id++)
     {
-      const GradMatrix_t& grads_spin      = Dets[id]->grads;
-      const ValueVector_t& detValues_spin = Dets[id]->detValues;
-      const ValueMatrix_t& lapls_spin     = Dets[id]->lapls;
-      const auto& spinC                   = (*C2node)[id];
-      const size_t spin                   = spinC[i];
-      spin_psi *= detValues_spin[spin];
+      const auto& spinC = (*C2node)[id][i];
+      spin_psi *= Dets[id]->detValues[spinC];
       ValueType temp = c;
       for (size_t other_id = 0; other_id < Dets.size(); other_id++)
       {
@@ -198,8 +194,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
 
       for (int k = 0, n = Dets[id]->FirstIndex; k < Dets[id]->NumPtcls; k++, n++)
       {
-        g_tmp[n] += temp * grads_spin(spin, k); //myG[n] += c*grads_spin(spin,k)*(detValues_otherspin[otherspin]...);
-        l_tmp[n] += temp * lapls_spin(spin, k); //myL[n] += c*lapls_spin(spin,k)*(detValues_otherspin[otherspin]...);
+        g_tmp[n] +=
+            temp * Dets[id]->grads(spinC, k); //myG[n] += c*grads_spin(spin,k)*(detValues_otherspin[otherspin]...);
+        l_tmp[n] +=
+            temp * Dets[id]->lapls(spinC, k); //myL[n] += c*lapls_spin(spin,k)*(detValues_otherspin[otherspin]...);
       }
     }
     psi += spin_psi;
@@ -575,20 +573,12 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             laplSum[id].resize(Dets[id]->detValues.size());
           // assume that evaluateLog has been called in opt routine before
           //   Dets[id]->evaluateForWalkerMove(P);
-          ValueVector_t& detValues_spin = Dets[id]->detValues;
-          ValueMatrix_t& lapls_spin     = Dets[id]->lapls;
           // myG,myL should already be calculated
-
-          ValueVector_t::iterator it(laplSum[id].begin());
-          ValueVector_t::iterator last(laplSum[id].end());
-          ValueType* ptr0 = lapls_spin[0];
-          int npart_spin  = P.last(id) - P.first(id);
-          while (it != last)
+          for (size_t i = 0; i < laplSum[id].size(); i++)
           {
-            (*it) = 0.0;
-            for (int k = 0; k < npart_spin; k++, ptr0++)
-              (*it) += *ptr0;
-            it++;
+            laplSum[id][i] = 0.0;
+            for (size_t k = 0; k < Dets[id]->NumPtcls; k++)
+              laplSum[id][i] += *Dets[id]->lapls[k];
           }
         }
 
@@ -601,10 +591,8 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           tmp.resize(Dets.size());
           for (size_t id = 0; id < Dets.size(); id++)
           {
-            size_t spinC                  = (*C2node)[id][i];
-            ValueVector_t& detValues_spin = Dets[id]->detValues;
-            GradMatrix_t& grads_spin      = Dets[id]->grads;
-            tmp[id]                       = C_p[i] * psiinv;
+            size_t spinC = (*C2node)[id][i];
+            tmp[id]      = C_p[i] * psiinv;
             for (size_t other_id = 0; other_id < Dets.size(); other_id++)
             {
               if (id == other_id)
@@ -615,7 +603,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             }
             lapl_sum += tmp[id] * laplSum[id][spinC];
             for (size_t k = 0, j = Dets[id]->FirstIndex; k < Dets[id]->NumPtcls; k++, j++)
-              myG_temp[j] += tmp[id] * grads_spin(spinC, k);
+              myG_temp[j] += tmp[id] * Dets[id]->grads(spinC, k);
           }
         }
         gg = ggP = 0.0;
@@ -646,10 +634,9 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             tmp.resize(Dets.size());
             for (size_t id = 0; id < Dets.size(); id++)
             {
-              ValueVector_t& detValues_spin = Dets[id]->detValues;
-              GradMatrix_t& grads_spin      = Dets[id]->grads;
-              size_t spinC                  = (*C2node)[id][cnt];
-              tmp[id]                       = CSFexpansion_p[cnt] * psiinv;
+              GradMatrix_t& grads_spin = Dets[id]->grads;
+              size_t spinC             = (*C2node)[id][cnt];
+              tmp[id]                  = CSFexpansion_p[cnt] * psiinv;
               for (size_t other_id = 0; other_id < Dets.size(); other_id++)
               {
                 if (id == other_id)
@@ -683,13 +670,11 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             laplSum[id].resize(Dets[id]->detValues.size());
           // assume that evaluateLog has been called in opt routine before
           //   Dets[id]->evaluateForWalkerMove(P);
-          ValueVector_t& detValues_spin = Dets[id]->detValues;
-          ValueMatrix_t& lapls_spin     = Dets[id]->lapls;
           for (size_t i = 0; i < laplSum[id].size(); i++)
           {
             laplSum[id][i] = 0.0;
             for (size_t k = 0; k < Dets[id]->NumPtcls; k++)
-              laplSum[id][i] += *lapls_spin[k];
+              laplSum[id][i] += *Dets[id]->lapls[k];
           }
         }
         const ValueType* restrict C_p = C->data();
@@ -701,10 +686,8 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           tmp.resize(Dets.size());
           for (size_t id = 0; id < Dets.size(); id++)
           {
-            size_t spinC                  = (*C2node)[id][i];
-            ValueVector_t& detValues_spin = Dets[id]->detValues;
-            GradMatrix_t& grads_spin      = Dets[id]->grads;
-            tmp[id]                       = C_p[i] * psiinv;
+            size_t spinC = (*C2node)[id][i];
+            tmp[id]      = C_p[i] * psiinv;
             for (size_t other_id = 0; other_id < Dets.size(); other_id++)
             {
               if (id == other_id)
@@ -715,7 +698,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             }
             lapl_sum += tmp[id] * laplSum[id][spinC];
             for (size_t k = 0, j = Dets[id]->FirstIndex; k < Dets[id]->NumPtcls; k++, j++)
-              myG_temp[j] += tmp[id] * grads_spin(spinC, k);
+              myG_temp[j] += tmp[id] * Dets[id]->grads(spinC, k);
           }
         }
         gg = ggP = 0.0;
@@ -734,10 +717,9 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           tmp.resize(Dets.size());
           for (size_t id = 0; id < Dets.size(); id++)
           {
-            ValueVector_t& detValues_spin = Dets[id]->detValues;
-            GradMatrix_t& grads_spin      = Dets[id]->grads;
-            size_t spinC                  = (*C2node)[id][i];
-            tmp[id]                       = psiinv;
+            GradMatrix_t& grads_spin = Dets[id]->grads;
+            size_t spinC             = (*C2node)[id][i];
+            tmp[id]                  = psiinv;
             for (size_t other_id = 0; other_id < Dets.size(); other_id++)
             {
               if (id == other_id)
