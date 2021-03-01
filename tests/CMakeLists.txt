@@ -1,4 +1,4 @@
-MESSAGE(STATUS "Creating integration tests for QMCPACK")
+MESSAGE(STATUS "Adding integration tests for QMCPACK")
 IF ( NOT QMC_VERBOSE_CONFIGURATION )
   MESSAGE("Set QMC_VERBOSE_CONFIGURATION=1 for details of which tests will be enabled.")
 ENDIF()
@@ -9,11 +9,8 @@ SUBDIRS(models)
 SUBDIRS(io)
 SUBDIRS(performance)
 
-IF(QE_BIN)
-  MESSAGE(STATUS "QE binary path ${QE_BIN}")
+IF(QE_FOUND)
   SUBDIRS(pw2qmcpack)
-ELSE()
-  MESSAGE("QE_BIN is not set. Tests of pw2qmcpack and QE/PWSCF will not be performed.")
 ENDIF()
 
 message("Adding system tests for QMCPACK")

@@ -51,12 +51,14 @@ ELSE()
 ENDIF()
   
 ######################################################################
-# Verify QE executables present if QE_BIN specified
+# Check if QE executables available at QE_BIN or on the PATH
 ######################################################################
-IF ( DEFINED QE_BIN )
-  INCLUDE(CMake/run_qe.cmake)
-  VERIFY_QE_PRESENT( ${QE_BIN} )
-ENDIF()
+INCLUDE("CMake/FindQE.cmake")
+IF (QE_FOUND)
+  MESSAGE( STATUS "Found and using patched Quantum Espresso (QE) with pw2qmcpack.x at ${QE_PW_DIR}" )
+ELSE(QE_FOUND)
+  MESSAGE( STATUS "Did not find a patched Quantum Espresso (QE) distribution with pw2qmcpack.x. QE tests will not be run." )
+ENDIF(QE_FOUND)
 
 ######################################################################
 # CTest
