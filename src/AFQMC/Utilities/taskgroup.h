@@ -436,10 +436,6 @@ public:
     auto t = TGMap.find(nn);
     if (t == TGMap.end())
     {
-#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-      if (gTG_.getTotalNodes() % nn != 0)
-        APP_ABORT("Error: nnodes must divide the total number of processors. \n\n\n");
-#endif
       auto p = TGMap.insert(
           std::make_pair(nn, afqmc::TaskGroup_(gTG_, std::string("TaskGroup_") + std::to_string(nn), nn, ncores)));
       if (!p.second)
