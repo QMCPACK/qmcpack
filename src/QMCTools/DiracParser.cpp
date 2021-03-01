@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCTools/DiracParser.h"
-#include "io/hdf_archive.h"
+#include "io/hdf/hdf_archive.h"
 
 typedef std::pair<double, double> primExpCoeff;
 typedef std::vector<primExpCoeff> basisFunc;
