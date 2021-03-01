@@ -411,7 +411,7 @@ private:
       ncclUniqueId id;
       if (tgrp_.rank() == 0)
         ncclGetUniqueId(&id);
-      MPI_Bcast((void*)&id, sizeof(id), MPI_BYTE, 0, &tgrp_);
+      MPI_Bcast((void*)&id, sizeof(id), MPI_BYTE, 0, tgrp_.get());
       NCCLCHECK(ncclCommInitRank(&nccl_TGcomm_, tgrp_.size(), id, tgrp_.rank()));
     }
 #endif
