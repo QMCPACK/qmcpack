@@ -156,7 +156,7 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
 int WalkerControl::branch(int iter,
                           MCPopulation& pop,
                           const MultiWalkerDispatchers& dispatchers,
-                          DriverWalkerResourceCollection& fatwalker_res,
+                          DriverWalkerResourceCollection& driverwalker_res,
                           bool do_not_branch)
 {
   if (debug_disable_branching_)
@@ -256,7 +256,7 @@ int WalkerControl::branch(int iter,
     const auto wf_list_no_leader =
         convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
 
-    DriverWalkerResourceCollection_PsetTWF_Lock pbyp_lock(fatwalker_res, *pop.get_golden_electrons(), pop.get_golden_twf());
+    DriverWalkerResourceCollection_PsetTWF_Lock pbyp_lock(driverwalker_res, *pop.get_golden_electrons(), pop.get_golden_twf());
     // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
 
     const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);

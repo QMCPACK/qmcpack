@@ -73,7 +73,7 @@ public:
   int branch(int iter,
              MCPopulation& pop,
              const MultiWalkerDispatchers& dispatchers,
-             DriverWalkerResourceCollection& fatwalker_res,
+             DriverWalkerResourceCollection& driverwalker_res,
              bool do_not_branch);
 
   bool put(xmlNodePtr cur);

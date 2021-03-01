@@ -13,9 +13,9 @@
 namespace qmcplusplus
 {
 Crowd::Crowd(EstimatorManagerNew& emb,
-             const DriverWalkerResourceCollection& fatwalker_res,
+             const DriverWalkerResourceCollection& driverwalker_res,
              const MultiWalkerDispatchers& dispatchers)
-    : dispatchers_(dispatchers), fatwalker_resource_collection_(fatwalker_res), estimator_manager_crowd_(emb)
+    : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
 {}
 
 Crowd::~Crowd() = default;
