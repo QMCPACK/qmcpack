@@ -40,7 +40,7 @@ public:
   UPtrVector<TrialWaveFunction> twfs;
   UPtrVector<QMCHamiltonian> hams;
   std::vector<TinyVector<double, 3>> tpos;
-  FatWalkerResourceCollection fatwalker_resource_collection_;
+  DriverWalkerResourceCollection fatwalker_resource_collection_;
   const MultiWalkerDispatchers dispatchers_;
 
 public:
@@ -96,7 +96,7 @@ TEST_CASE("Crowd integration", "[drivers]")
   // The above was required behavior for crowd at one point.
   // TODO: determine whether it still is, I don't think so.
   const MultiWalkerDispatchers dispatchers(true);
-  FatWalkerResourceCollection fatwalker_resource_collection_;
+  DriverWalkerResourceCollection fatwalker_resource_collection_;
   Crowd crowd(em, fatwalker_resource_collection_, dispatchers);
 }
 

@@ -16,7 +16,7 @@
 #include "Estimators/EstimatorManagerCrowd.h"
 #include "RandomGenerator.h"
 #include "MultiWalkerDispatchers.h"
-#include "FatWalkerTypes.h"
+#include "DriverWalkerTypes.h"
 
 namespace qmcplusplus
 {
@@ -43,7 +43,7 @@ public:
   /** This is the data structure for walkers within a crowd
    */
   Crowd(EstimatorManagerNew& emb,
-        const FatWalkerResourceCollection& fatwalker_res,
+        const DriverWalkerResourceCollection& fatwalker_res,
         const MultiWalkerDispatchers& dispatchers);
 
   ~Crowd();
@@ -93,7 +93,7 @@ public:
 
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
 
-  FatWalkerResourceCollection& getSharedResource() { return fatwalker_resource_collection_; }
+  DriverWalkerResourceCollection& getSharedResource() { return fatwalker_resource_collection_; }
 
   int size() const { return mcp_walkers_.size(); }
 
@@ -119,7 +119,7 @@ private:
   RefVector<QMCHamiltonian> walker_hamiltonians_;
   /** }@ */
 
-  FatWalkerResourceCollection fatwalker_resource_collection_;
+  DriverWalkerResourceCollection fatwalker_resource_collection_;
 
   EstimatorManagerCrowd estimator_manager_crowd_;
 

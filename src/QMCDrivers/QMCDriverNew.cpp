@@ -334,7 +334,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
 
   auto& walkers = crowd.get_walkers();
-  FatWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
+  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
                                             crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());

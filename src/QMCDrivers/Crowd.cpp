@@ -13,7 +13,7 @@
 namespace qmcplusplus
 {
 Crowd::Crowd(EstimatorManagerNew& emb,
-             const FatWalkerResourceCollection& fatwalker_res,
+             const DriverWalkerResourceCollection& fatwalker_res,
              const MultiWalkerDispatchers& dispatchers)
     : dispatchers_(dispatchers), fatwalker_resource_collection_(fatwalker_res), estimator_manager_crowd_(emb)
 {}

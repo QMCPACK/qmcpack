@@ -30,7 +30,7 @@
 namespace qmcplusplus
 {
 class MultiWalkerDispatchers;
-struct FatWalkerResourceCollection;
+struct DriverWalkerResourceCollection;
 
 /** Class for controlling the walkers for DMC simulations.
  * w and w/o MPI. Fixed and dynamic population in one place.
@@ -73,7 +73,7 @@ public:
   int branch(int iter,
              MCPopulation& pop,
              const MultiWalkerDispatchers& dispatchers,
-             FatWalkerResourceCollection& fatwalker_res,
+             DriverWalkerResourceCollection& fatwalker_res,
              bool do_not_branch);
 
   bool put(xmlNodePtr cur);

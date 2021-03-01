@@ -39,7 +39,7 @@
 #include "QMCDrivers/ContextForSteps.h"
 #include "OhmmsApp/ProjectData.h"
 #include "MultiWalkerDispatchers.h"
-#include "FatWalkerTypes.h"
+#include "DriverWalkerTypes.h"
 
 class Communicate;
 
@@ -363,7 +363,7 @@ protected:
    * per crowd resources are copied from this gold instance
    * it should be activated when dispatchers don't serialize walkers
    */
-  struct FatWalkerResourceCollection golden_resource_;
+  struct DriverWalkerResourceCollection golden_resource_;
 
   /// multi walker dispatchers
   const MultiWalkerDispatchers dispatchers_;

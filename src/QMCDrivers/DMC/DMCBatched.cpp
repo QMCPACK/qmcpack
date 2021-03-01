@@ -74,7 +74,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     int nnode_crossing(0);
     auto& walkers = crowd.get_walkers();
-    FatWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
+    DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
                                               crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
     const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
     const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
@@ -290,7 +290,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
-      FatWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[iw],
+      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[iw],
                                                  crowd.get_walker_twfs()[iw], crowd.get_walker_hamiltonians()[iw]);
       walker_non_local_moves_accepted[iw] = walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw]);
 
@@ -305,7 +305,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     if (moved_nonlocal_walkers.size())
     {
-      FatWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
+      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
                                                  crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
 
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);

@@ -27,7 +27,7 @@
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "MultiWalkerDispatchers.h"
-#include "FatWalkerTypes.h"
+#include "DriverWalkerTypes.h"
 
 namespace qmcplusplus
 {
@@ -156,7 +156,7 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
 int WalkerControl::branch(int iter,
                           MCPopulation& pop,
                           const MultiWalkerDispatchers& dispatchers,
-                          FatWalkerResourceCollection& fatwalker_res,
+                          DriverWalkerResourceCollection& fatwalker_res,
                           bool do_not_branch)
 {
   if (debug_disable_branching_)
@@ -256,7 +256,7 @@ int WalkerControl::branch(int iter,
     const auto wf_list_no_leader =
         convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
 
-    FatWalkerResourceCollection_PsetTWF_Lock pbyp_lock(fatwalker_res, *pop.get_golden_electrons(), pop.get_golden_twf());
+    DriverWalkerResourceCollection_PsetTWF_Lock pbyp_lock(fatwalker_res, *pop.get_golden_electrons(), pop.get_golden_twf());
     // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
 
     const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);
