@@ -298,7 +298,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
 {
   if (usingBF)
   {
-  BackFlowStopper("Fast MSD+BF: evalGrad\n");
+    BackFlowStopper("Fast MSD+BF: evalGrad\n");
   }
 
   ScopedTimer local_timer(EvalGradTimer);
@@ -318,7 +318,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
 {
   if (usingBF)
   {
-  BackFlowStopper("Fast MSD+BF: ratioGrad\n");
+    BackFlowStopper("Fast MSD+BF: ratioGrad\n");
   }
 
   ScopedTimer local_timer(RatioGradTimer);
@@ -390,7 +390,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
 {
   if (usingBF)
   {
-  BackFlowStopper("Fast MSD+BF: ratio\n");
+    BackFlowStopper("Fast MSD+BF: ratio\n");
   }
 
   ScopedTimer local_timer(RatioTimer);
@@ -412,7 +412,7 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_t
   // for now is incorrect fot ratio(P,iat,dG,dL) updates
   if (usingBF)
   {
-  BackFlowStopper("Fast MSD+BF: acceptMove\n");
+    BackFlowStopper("Fast MSD+BF: acceptMove\n");
   }
 
   ScopedTimer local_timer(AccRejTimer);
@@ -427,7 +427,7 @@ void MultiSlaterDeterminantFast::restore(int iat)
 {
   if (usingBF)
   {
-  BackFlowStopper("Fast MSD+BF: restore\n");
+    BackFlowStopper("Fast MSD+BF: restore\n");
   }
 
   ScopedTimer local_timer(AccRejTimer);
@@ -439,7 +439,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if (usingBF)
   {
-  BackFlowStopper("Fast MSD+BF: restore\n");
+    BackFlowStopper("Fast MSD+BF: restore\n");
   }
 
   for (size_t id = 0; id < Dets.size(); id++)
@@ -473,7 +473,7 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
 {
   if (usingBF)
   {
-  BackFlowStopper("Fast MSD+BF: copyFromBuffer\n");
+    BackFlowStopper("Fast MSD+BF: copyFromBuffer\n");
   }
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->copyFromBuffer(P, buf);
@@ -593,9 +593,9 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     {
       if (usingCSF)
       {
-        ValueType psiinv   = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
-        ValueType lapl_sum = 0.0;
-        const size_t total_num_part     = P.getTotalNum();
+        ValueType psiinv            = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
+        ValueType lapl_sum          = 0.0;
+        const size_t total_num_part = P.getTotalNum();
         for (size_t id = 0; id < Dets.size(); id++)
         {
           if (laplSum[id].size() == 0)
@@ -701,9 +701,9 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       else
       //usingDETS
       {
-        ValueType psiinv   = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
-        ValueType lapl_sum = 0.0;
-        const size_t total_num_part     = P.getTotalNum();
+        ValueType psiinv            = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
+        ValueType lapl_sum          = 0.0;
+        const size_t total_num_part = P.getTotalNum();
         for (size_t id = 0; id < Dets.size(); id++)
         {
           if (laplSum[id].size() == 0)
@@ -712,16 +712,11 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           //   Dets[id]->evaluateForWalkerMove(P);
           ValueVector_t& detValues_spin = Dets[id]->detValues;
           ValueMatrix_t& lapls_spin     = Dets[id]->lapls;
-          ValueVector_t::iterator it(laplSum[id].begin());
-          ValueVector_t::iterator last(laplSum[id].end());
-          ValueType* ptr0 = lapls_spin[0];
-          int npart_spin  = P.last(id) - P.first(id);
-          while (it != last)
+          for (size_t i = 0; i < laplSum[id].size(); i++)
           {
-            (*it) = 0.0;
-            for (int k = 0; k < npart_spin; k++, ptr0++)
-              (*it) += *ptr0;
-            it++;
+            laplSum[id][i] = 0.0;
+            for (size_t k = 0; k < Dets[id]->NumPtcls; k++)
+              laplSum[id][i] += *lapls_spin[k];
           }
         }
         const ValueType* restrict C_p = C->data();
