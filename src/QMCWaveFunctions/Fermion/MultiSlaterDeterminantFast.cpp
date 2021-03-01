@@ -286,14 +286,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no
     //g_at += cptr[i]*grads(d0,iat-noffset) * detValues1[d1];
     ValueType t = cptr[i];
     for (size_t id = 0; id < Dets.size(); id++)
-    {
       if (id != det_id)
-      {
-        const ValueType* restrict detValues1 = Dets[id]->detValues.data();
-        const size_t* restrict det1          = (*C2node)[id].data();
-        t *= detValues1[det1[i]];
-      }
-    }
+        t *= Dets[id]->detValues.data()[(*C2node)[id].data()[i]];
     psi += t * detValues0[d0];
     g_at += t * grads(d0, iat - noffset);
   }
@@ -700,9 +694,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           }
           ValueType dhpsi = (RealType)-0.5 * (q0 - dlogpsi[kk] * lapl_sum) - dlogpsi[kk] * gg;
           for (size_t id = 0; id < Dets.size(); id++)
-          {
             dhpsi -= v[id];
-          }
           dhpsioverpsi[kk] = dhpsi;
         }
       }
@@ -884,8 +876,7 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
           {
             size_t spinC = (*C2node)[id][i];
             // assume that evaluateLog has been called in opt routine before
-            ValueVector_t& detValues_spin = Dets[id]->detValues;
-            cdet *= detValues_spin[spinC];
+            cdet *= Dets[id]->detValues[(*C2node)[id][i]];
           }
           dlogpsi[kk] = cdet;
         }
