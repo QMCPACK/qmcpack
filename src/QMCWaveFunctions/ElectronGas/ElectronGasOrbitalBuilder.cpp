@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
+#include "ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
@@ -100,8 +100,8 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
   //create a E(lectron)G(as)O(rbital)Set
   int nkpts = (nup - 1) / 2;
   egGrid.createGrid(nc, nkpts);
-  RealEGOSet* psiu = new RealEGOSet(egGrid.kpt, egGrid.mk2);
-  RealEGOSet* psid = nullptr;
+  auto psiu = std::make_unique<RealEGOSet>(egGrid.kpt, egGrid.mk2);
+  std::unique_ptr<RealEGOSet> psid;
   if (ndn > 0)
   {
     if (nup != ndn)
@@ -110,7 +110,7 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
       HEGGrid<RealType, OHMMS_DIM> egGrid2(targetPtcl.Lattice);
       egGrid2.createGrid(nc2, nkpts2);
     }
-    psid = new RealEGOSet(egGrid.kpt, egGrid.mk2);
+    psid = std::make_unique<RealEGOSet>(egGrid.kpt, egGrid.mk2);
   }
 
   //create a Slater determinant
@@ -119,51 +119,47 @@ WaveFunctionComponent* ElectronGasOrbitalBuilder::buildComponent(xmlNodePtr cur)
     sdet = new SlaterDetWithBackflow(targetPtcl, BFTrans);
   else
     sdet = new SlaterDeterminant_t(targetPtcl);
-  //add SPOSets
-  sdet->add(psiu, "u");
-  if (ndn > 0)
-    sdet->add(psid, "d");
+
+  if (UseBackflow)
   {
-    if (UseBackflow)
+    DiracDeterminantWithBackflow *updet, *downdet;
+    app_log() << "Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
+    //create up determinant
+    updet = new DiracDeterminantWithBackflow(targetPtcl, std::move(psiu), BFTrans, 0);
+    updet->set(0, nup);
+    if (ndn > 0)
     {
-      DiracDeterminantWithBackflow *updet, *downdet;
-      app_log() << "Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
-      //create up determinant
-      updet = new DiracDeterminantWithBackflow(targetPtcl, psiu, BFTrans, 0);
-      updet->set(0, nup);
-      if (ndn > 0)
-      {
-        //create down determinant
-        downdet = new DiracDeterminantWithBackflow(targetPtcl, psid, BFTrans, nup);
-        downdet->set(nup, ndn);
-      }
-      PtclPoolType dummy;
-      BackflowBuilder bfbuilder(targetPtcl, dummy);
-      BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
-      sdet->add(updet, 0);
-      if (ndn > 0)
-        sdet->add(downdet, 1);
-      sdet->setBF(BFTrans);
-      if (BFTrans->isOptimizable())
-        sdet->Optimizable = true;
+      //create down determinant
+      downdet = new DiracDeterminantWithBackflow(targetPtcl, std::move(psid), BFTrans, nup);
+      downdet->set(nup, ndn);
     }
-    else
-    {
-      DiracDeterminant<>*updet, *downdet;
-      //create up determinant
-      updet = new DiracDeterminant<>(psiu);
-      updet->set(0, nup);
-      if (ndn > 0)
-      {
-        //create down determinant
-        downdet = new DiracDeterminant<>(psid);
-        downdet->set(nup, ndn);
-      }
-      sdet->add(updet, 0);
-      if (ndn > 0)
-        sdet->add(downdet, 1);
-    }
+    PtclPoolType dummy;
+    BackflowBuilder bfbuilder(targetPtcl, dummy);
+    BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
+    sdet->add(updet, 0);
+    if (ndn > 0)
+      sdet->add(downdet, 1);
+    sdet->setBF(BFTrans);
+    if (BFTrans->isOptimizable())
+      sdet->Optimizable = true;
   }
+  else
+  {
+    DiracDeterminant<>*updet, *downdet;
+    //create up determinant
+    updet = new DiracDeterminant<>(std::move(psiu));
+    updet->set(0, nup);
+    if (ndn > 0)
+    {
+      //create down determinant
+      downdet = new DiracDeterminant<>(std::move(psid));
+      downdet->set(nup, ndn);
+    }
+    sdet->add(updet, 0);
+    if (ndn > 0)
+      sdet->add(downdet, 1);
+  }
+
   return sdet;
 }
 

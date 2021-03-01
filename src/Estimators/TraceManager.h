@@ -24,14 +24,14 @@
 
 
 #include <Configuration.h>
-#include <OhmmsData/OhmmsElementBase.h>
-#include <OhmmsData/AttributeSet.h>
-#include <OhmmsPETE/OhmmsArray.h>
-#include <Particle/ParticleSet.h>
-#include <Utilities/IteratorUtility.h>
-#include <Message/Communicate.h>
-#include <io/hdf_archive.h>
-#include <Message/OpenMP.h>
+#include "OhmmsData/OhmmsElementBase.h"
+#include "OhmmsData/AttributeSet.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "Particle/ParticleSet.h"
+#include "Utilities/IteratorUtility.h"
+#include "Message/Communicate.h"
+#include "hdf/hdf_archive.h"
+#include "Message/OpenMP.h"
 #include <map>
 #include <set>
 #include <algorithm>
@@ -2120,7 +2120,7 @@ public:
 // make a vacuous class for TraceManager for lighter compilation
 //   disabling TraceManager should not affect other runtime behavior
 
-#include <Particle/ParticleSet.h>
+#include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {

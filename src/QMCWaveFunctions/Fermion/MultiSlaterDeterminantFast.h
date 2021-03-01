@@ -16,10 +16,8 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/WaveFunctionComponent.h>
-#include <QMCWaveFunctions/Fermion/MultiDiracDeterminant.h>
-#include <QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h>
-#include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 
@@ -53,15 +51,15 @@ class MultiSlaterDeterminantFast : public WaveFunctionComponent
 {
 public:
   void registerTimers();
-  NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
-  NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer;
+  NewTimer &RatioTimer, &EvalGradTimer, &RatioGradTimer, &PrepareGroupTimer, &UpdateTimer;
+  NewTimer &AccRejTimer, &EvaluateTimer;
 
   typedef SPOSet* SPOSetPtr;
-  typedef SPOSetProxyForMSD* SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
   typedef OrbitalSetTraits<ValueType>::HessMatrix_t HessMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::HessType HessType;
   typedef Array<HessType, 3> HessArray_t;
   typedef TinyVector<HessType, OHMMS_DIM> GGGType;
@@ -71,7 +69,9 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminant* up, MultiDiracDeterminant* dn);
+  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
+                             std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
+                             bool use_pre_computing);
 
   ///destructor
   ~MultiSlaterDeterminantFast();
@@ -103,12 +103,17 @@ public:
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
+  void prepareGroup(ParticleSet& P, int ig) override;
+
   GradType evalGrad(ParticleSet& P, int iat) override;
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   PsiValueType ratio_impl(ParticleSet& P, int iat);
+  PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
+
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     // the base class routine may probably work, just never tested.
@@ -140,24 +145,23 @@ public:
 
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
-  size_t NP;
-  size_t nels_up, nels_dn;
-  size_t FirstIndex_up;
-  size_t FirstIndex_dn;
   size_t ActiveSpin;
   bool usingCSF;
-  bool IsCloned;
   PsiValueType curRatio;
   PsiValueType psiCurrent;
 
   // assume Dets[0]: up, Dets[1]:down
-  std::vector<MultiDiracDeterminant*> Dets;
+  std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
   std::map<std::string, size_t> SPOSetID;
 
-  // map determinant in linear combination to unique det list
-  std::vector<size_t>* C2node_up;
-  std::vector<size_t>* C2node_dn;
-  std::vector<ValueType>* C;
+  /** map determinant in linear combination to unique det list
+   * map global det id to unique det id. [spin, global det id] = unique det id
+   */
+  std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
+  /// CI coefficients
+  std::shared_ptr<std::vector<ValueType>> C;
+  /// C_n x D^1_n x D^2_n ... D^3 with one D removed. Sumed by group. [spin, unique det id]
+  std::vector<std::vector<ValueType>> C_otherDs;
 
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
@@ -165,13 +169,13 @@ public:
   ValueVector_t laplSum_dn;
 
   //optimizable variable is shared with the clones
-  opt_variables_type* myVars;
+  std::shared_ptr<opt_variables_type> myVars;
   // coefficients of csfs, these are only used during optm
-  std::vector<ValueType>* CSFcoeff;
+  std::shared_ptr<std::vector<ValueType>> CSFcoeff;
   // number of dets per csf
-  std::vector<size_t>* DetsPerCSF;
+  std::shared_ptr<std::vector<size_t>> DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
-  std::vector<RealType>* CSFexpansion;
+  std::shared_ptr<std::vector<RealType>> CSFexpansion;
 
   // transformation
   BackflowTransformation* BFTrans;
@@ -183,8 +187,20 @@ public:
   Matrix<RealType> dpsia_dn, dLa_dn;
   Array<GradType, OHMMS_DIM> dGa_up, dGa_dn;
 
-  // debug, erase later
-  //      MultiSlaterDeterminant *msd;
+private:
+  //get Det ID. It should be consistent with particle group id within the particle set.
+  inline int getDetID(const int iat) const
+  {
+    int id = 0;
+    while (iat > Last[id])
+      id++;
+    return id;
+  }
+
+  ///the last particle of each group
+  std::vector<int> Last;
+  ///use pre-compute (fast) algorithm
+  const bool use_pre_computing_;
 };
 
 } // namespace qmcplusplus

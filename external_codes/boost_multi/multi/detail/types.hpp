@@ -1,7 +1,7 @@
 #ifdef COMPILATION_INSTRUCTIONS
-$CXX $0.cpp -o $0x&&$0x&&rm $0x $0.cpp;exit
+$CXXX $CXXFLAGS $0 -o $0$X&&$0$X&&rm $0$X;exit
 #endif
-//  © Alfredo A. Correa 2018-2019
+//  © Alfredo A. Correa 2018-2020
 
 #ifndef MULTI_DETAIL_TYPES_HPP
 #define MULTI_DETAIL_TYPES_HPP
@@ -54,11 +54,11 @@ struct repeat<T, 0, TT>{
 };
 
 template<class T, std::size_t N>
-auto array_size_impl(const std::array<T, N>&) 
+constexpr auto array_size_impl(const std::array<T, N>&) 
     -> std::integral_constant<std::size_t, N>;
 
 template<class... T>
-auto array_size_impl(const std::tuple<T...>&) 
+constexpr auto array_size_impl(const std::tuple<T...>&) 
     -> std::integral_constant<std::size_t, std::tuple_size<std::tuple<T...>>{}>;
 
 template<class Array>
@@ -66,11 +66,11 @@ using array_size = decltype(array_size_impl(std::declval<const Array&>()));
 
 template<class Array>
 constexpr auto static_size() -> decltype(array_size<Array>::value){
-    return array_size<Array>::value;
+	return array_size<Array>::value;
 }
 template<class Array>
 constexpr auto static_size(Array const&) -> decltype(static_size<Array>()){
-    return static_size<Array>();
+	return static_size<Array>();
 }
 
 //TODO consolidate with tuple_tail defined somewhere else
@@ -78,19 +78,20 @@ template<class Tuple>
 constexpr auto head(Tuple&& t)
 ->decltype(std::get<0>(std::forward<Tuple>(t))){
 	return std::get<0>(std::forward<Tuple>(t));}
+
 template<typename Tuple, std::size_t... Ns>
 constexpr auto tail_impl(std::index_sequence<Ns...> , Tuple&& t){
 	return std::make_tuple(std::get<Ns+1u>(std::forward<Tuple>(t))...);
 }
 template<class Tuple>
 constexpr auto tail(Tuple const& t)
-->decltype(tail_impl(std::make_index_sequence<(static_size<Tuple>())-1>(), t)){
-	return tail_impl(std::make_index_sequence<(static_size<Tuple>())-1>(), t);}
+//->decltype(tail_impl(std::make_index_sequence<(static_size<Tuple>())-1>(), t)){
+{	return tail_impl(std::make_index_sequence<(static_size<Tuple>())-1>(), t);}
 //->decltype(tail_impl(std::make_index_sequence<(std::tuple_size<Tuple>{})-1>(), t)){
 //	return tail_impl(std::make_index_sequence<(std::tuple_size<Tuple>{})-1>(), t);}
 
 template<typename T, std::size_t N>
-std::array<T, N-1> tail(std::array<T, N> const& a){
+constexpr std::array<T, N-1> tail(std::array<T, N> const& a){
 	std::array<T, N-1> ret;
 	std::copy(a.begin() + 1, a.end(), ret.begin());
 	return ret;
@@ -120,13 +121,19 @@ struct iextensions : detail::repeat<index_extension, D>::type{
 //	iextensions(Args... args) : detail::repeat<index_extension, D>::type{args...}{}
 	iextensions() = default;
 	template<class T>
-	iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
-	iextensions(std::array<iextension, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
-	base_ const& base() const{return *this;}
-	friend decltype(auto) base(iextensions const& s){return s.base();}
+	constexpr iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
+	constexpr iextensions(std::array<iextension, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
+	constexpr base_ const& base() const{return *this;}
+	friend constexpr decltype(auto) base(iextensions const& s){return s.base();}
+private:
+//	template<std::size_t... Ns> bool bool_aux(std::index_sequence<Ns...>) const{return (not std::get<0>(*this).empty() and tail(*this));}
+public:
+//	explicit operator bool() const{return bool_aux(std::make_index_sequence<D>());}
+//	bool is_empty() const{return bool_aux(std::make_index_sequence<D>());}
+//	bool empty() const{return is_empty();}
 private:
 	template <class T, size_t... Is> 
-	iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr, std::index_sequence<Is...>) : iextensions{arr[Is]...}{}
+	constexpr iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr, std::index_sequence<Is...>) : iextensions{arr[Is]...}{}
 };
 
 #if defined(__cpp_deduction_guides) and __cpp_deduction_guides >= 201703
@@ -134,7 +141,7 @@ template<class... Args> iextensions(Args...) -> iextensions<sizeof...(Args)>;
 #endif
 
 template<dimensionality_type D, class Tuple>
-auto contains(index_extensions<D> const& ie, Tuple const& tp){
+constexpr auto contains(index_extensions<D> const& ie, Tuple const& tp){
 //	using detail::head;
 //	using detail::tail;
 	return contains(head(ie), head(tp)) and contains(tail(ie), tail(tp));
@@ -142,11 +149,17 @@ auto contains(index_extensions<D> const& ie, Tuple const& tp){
 
 }}
 
+#if defined(__cpp_structured_bindings) and __cpp_structured_bindings>=201606
+namespace std{ // this is for structured binding
+	template<boost::multi::dimensionality_type D> struct tuple_size<boost::multi::iextensions<D>> : std::integral_constant<size_t, D> { };
+	template<size_t N, boost::multi::dimensionality_type D> struct tuple_element<N, boost::multi::iextensions<D>> : tuple_element<N, typename boost::multi::iextensions<D>::base_>{};
+}
+#endif
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_DETAIL_TYPES
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
-#include<range/v3/begin_end.hpp>
-#include<range/v3/utility/concepts.hpp>
+//#include<range/v3/begin_end.hpp>
+//#include<range/v3/utility/concepts.hpp>
 
 #include<cassert>
 #include<iostream>
@@ -174,14 +187,23 @@ int main(){
 	assert( b[0] == x[0] );
 	assert( b[1] == x[1] );
 
-	static_assert( ranges::forward_iterator< std::decay_t<decltype(b)> > , "!");
+//	static_assert( ranges::forward_iterator< std::decay_t<decltype(b)> > , "!");
 
 	assert( std::accumulate( begin(x), end(x), 0) == 0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 );
 
 	std::iterator_traits<std::decay_t<decltype(begin(x))>>::difference_type d; (void)d;
 //	for(auto i : x) std::cout << i << std::endl;
 
+	{
+		multi::iextensions<3> ies({{0, 3}, {0, 4}, {0, 5}});
+		assert( std::get<1>(ies).size() == 4 );
+		auto [is, js, ks] = ies;
+		assert( is.size() == 3 );
+	}
+
 }
+
+
 #endif
 #endif
 

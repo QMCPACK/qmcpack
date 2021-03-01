@@ -13,10 +13,10 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include <QMCHamiltonians/SkAllEstimator.h>
-#include <LongRange/StructFact.h>
-#include <Utilities/IteratorUtility.h>
-#include <OhmmsData/AttributeSet.h>
+#include "SkAllEstimator.h"
+#include "LongRange/StructFact.h"
+#include "Utilities/IteratorUtility.h"
+#include "OhmmsData/AttributeSet.h"
 #include "Configuration.h"
 #include <fstream>
 #include <sstream>

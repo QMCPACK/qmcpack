@@ -41,14 +41,14 @@ TEST_CASE("SampleStack", "[particle]")
   REQUIRE(samples.getNumSamples() == 0);
 
   using Walker_t     = ParticleSet::Walker_t;
-  using WalkerList_t = std::vector<Walker_t*>;
+  using WalkerList_t = std::vector<std::unique_ptr<Walker_t>>;
 
   WalkerList_t walker_list;
 
   // Add size one list
-  walker_list.push_back(new Walker_t(total_num));
+  walker_list.push_back(std::make_unique<Walker_t>(total_num));
   walker_list[0]->R[0][0] = 1.1;
-  for (auto wi : walker_list)
+  for (auto& wi : walker_list)
   {
     samples.appendSample(MCSample(*wi));
   }

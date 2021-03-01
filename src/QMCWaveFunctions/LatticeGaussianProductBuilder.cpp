@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
+#include "LatticeGaussianProductBuilder.h"
 #include "QMCWaveFunctions/LatticeGaussianProduct.h"
 #include "OhmmsData/AttributeSet.h"
 

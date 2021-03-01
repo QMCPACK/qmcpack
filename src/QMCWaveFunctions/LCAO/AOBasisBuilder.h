@@ -22,7 +22,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -171,8 +171,6 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     hin.read(Normalized, "normalized");
     hin.read(Morder, "expandYlm");
     hin.read(basisName, "name");
-    hin.read(basisType, "type");
-    hin.read(addsignforM, "expM");
   }
 
   myComm->bcast(sph);

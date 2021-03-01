@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/BParser.h"
+#include "BParser.h"
 #include "QMCTools/BMakeFunc.h"
 #include <fstream>
 #include <iterator>

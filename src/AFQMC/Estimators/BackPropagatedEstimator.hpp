@@ -8,8 +8,8 @@
 #include <iostream>
 #include <fstream>
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/Timer.h"
 
@@ -19,14 +19,12 @@
 #include "AFQMC/Propagators/Propagator.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-
 /*
  * Top class for back propagated estimators. 
  * An instance of this class will manage a set of back propagated observables.
@@ -56,8 +54,8 @@ class BackPropagatedEstimator : public EstimatorBase
   using mpi3CMatrix    = boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>>;
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
 
-  using buffer_alloc_type = device_buffer_type<ComplexType>;
-  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, buffer_alloc_type>;
+  using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
+  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_,
@@ -71,7 +69,6 @@ public:
                           bool impsamp_ = true)
       : EstimatorBase(info),
         TG(tg_),
-        buffer_allocator(device_buffer_generator.get()),
         walker_type(wlk),
         writer(false),
         Refs({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
@@ -92,13 +89,13 @@ public:
       ParameterSet m_param;
       std::string restore_paths;
       std::string restore_paths2;
-      m_param.add(nStabilize, "ortho", "int");
-      m_param.add(max_nback_prop, "nsteps", "int");
-      m_param.add(nave, "naverages", "int");
-      m_param.add(restore_paths, "path_restoration", "std::string");
-      m_param.add(restore_paths2, "extra_path_restoration", "std::string");
-      m_param.add(block_size, "block_size", "int");
-      m_param.add(nblocks_skip, "nskip", "int");
+      m_param.add(nStabilize, "ortho");
+      m_param.add(max_nback_prop, "nsteps");
+      m_param.add(nave, "naverages");
+      m_param.add(restore_paths, "path_restoration");
+      m_param.add(restore_paths2, "extra_path_restoration");
+      m_param.add(block_size, "block_size");
+      m_param.add(nblocks_skip, "nskip");
       m_param.put(cur);
       if (restore_paths == "true" || restore_paths == "yes")
         path_restoration = true;
@@ -184,71 +181,74 @@ public:
       return;
     }
 
-    AFQMCTimers[back_propagate_timer]->start();
-    int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
-    int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
-    int nx((walker_type == COLLINEAR) ? 2 : 1);
-
-    // 1. check structures
-    if (Refs.size(0) != wset.size() || Refs.size(1) != nrefs || Refs.size(2) != nrow * ncol)
-      Refs = std::move(mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator()));
-    StaticMatrix detR({wset.size(), nrefs * nx}, buffer_allocator->template get_allocator<ComplexType>());
-
-    int n0, n1;
-    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(Refs.size(2)), TG.getNCoresPerTG());
-    boost::multi::array_ref<ComplexType, 3> Refs_(to_address(Refs.origin()), Refs.extensions());
-
-    // 2. setup back propagated references
-    wfn0.getReferencesForBackPropagation(Refs_[0]);
-    for (int iw = 1; iw < wset.size(); ++iw)
-      for (int ref = 0; ref < nrefs; ++ref)
-        copy_n(Refs_[0][ref].origin() + n0, n1 - n0, Refs_[iw][ref].origin() + n0);
-    TG.TG_local().barrier();
-
-    //3. propagate backwards the references
-    prop0.BackPropagate(bp_step, nStabilize, wset, Refs_, detR);
-
-    //4. calculate properties
-    // adjust weights here is path restoration
-    stdCVector wgt(iextensions<1u>{wset.size()});
-    wset.getProperty(WEIGHT, wgt);
-    if (path_restoration)
     {
-      auto&& factors(*wset.getWeightFactors());
-      int hpos(wset.getHistoryPos()); // position where next step goes... go bach in history...
-      int maxpos(wset.HistoryBufferLength());
-      int nbp(bp_step);
-      if (extra_path_restoration)
-        nbp *= 2;
-      for (int k = 0; k < nbp; k++)
+      ScopedTimer local_timer(AFQMCTimers[back_propagate_timer]);
+      int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
+      int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
+      int nx((walker_type == COLLINEAR) ? 2 : 1);
+
+      // 1. check structures
+      if (Refs.size(0) != wset.size() || Refs.size(1) != nrefs || Refs.size(2) != nrow * ncol)
+        Refs = mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator());
+      DeviceBufferManager buffer_manager;
+      StaticMatrix detR({wset.size(), nrefs * nx},
+                        buffer_manager.get_generator().template get_allocator<ComplexType>());
+
+      int n0, n1;
+      std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(Refs.size(2)), TG.getNCoresPerTG());
+      boost::multi::array_ref<ComplexType, 3> Refs_(to_address(Refs.origin()), Refs.extensions());
+
+      // 2. setup back propagated references
+      wfn0.getReferencesForBackPropagation(Refs_[0]);
+      for (int iw = 1; iw < wset.size(); ++iw)
+        for (int ref = 0; ref < nrefs; ++ref)
+          copy_n(Refs_[0][ref].origin() + n0, n1 - n0, Refs_[iw][ref].origin() + n0);
+      TG.TG_local().barrier();
+
+      //3. propagate backwards the references
+      prop0.BackPropagate(bp_step, nStabilize, wset, Refs_, detR);
+
+      //4. calculate properties
+      // adjust weights here is path restoration
+      stdCVector wgt(iextensions<1u>{wset.size()});
+      wset.getProperty(WEIGHT, wgt);
+      if (path_restoration)
       {
-        hpos =
-            ((hpos == 0) ? maxpos - 1 : hpos - 1); // start going back since position is advanced for next step already
+        auto&& factors(*wset.getWeightFactors());
+        int hpos(wset.getHistoryPos()); // position where next step goes... go bach in history...
+        int maxpos(wset.HistoryBufferLength());
+        int nbp(bp_step);
+        if (extra_path_restoration)
+          nbp *= 2;
+        for (int k = 0; k < nbp; k++)
+        {
+          hpos = ((hpos == 0) ? maxpos - 1
+                              : hpos - 1); // start going back since position is advanced for next step already
+          for (int i = 0; i < wgt.size(); i++)
+            wgt[i] *= factors[hpos][i];
+        }
+      }
+      else if (!importanceSampling)
+      {
+        stdCVector phase(iextensions<1u>{wset.size()});
+        wset.getProperty(PHASE, phase);
         for (int i = 0; i < wgt.size(); i++)
-          wgt[i] *= factors[hpos][i];
+          wgt[i] *= phase[i];
+      }
+      observ0.accumulate(iav, wset, Refs_, wgt, detR, importanceSampling);
+
+      if (bp_step == max_nback_prop)
+      {
+        // 5. setup for next block
+        for (auto it = wset.begin(); it < wset.end(); ++it)
+          it->setSlaterMatrixN();
+        wset.setBPPos(0);
+
+        // 6. increase block counter
+        iblock++;
+        accumulated_in_last_block = true;
       }
     }
-    else if (!importanceSampling)
-    {
-      stdCVector phase(iextensions<1u>{wset.size()});
-      wset.getProperty(PHASE, phase);
-      for (int i = 0; i < wgt.size(); i++)
-        wgt[i] *= phase[i];
-    }
-    observ0.accumulate(iav, wset, Refs_, wgt, detR, importanceSampling);
-
-    if (bp_step == max_nback_prop)
-    {
-      // 5. setup for next block
-      for (auto it = wset.begin(); it < wset.end(); ++it)
-        it->setSlaterMatrixN();
-      wset.setBPPos(0);
-
-      // 6. increase block counter
-      iblock++;
-      accumulated_in_last_block = true;
-    }
-    AFQMCTimers[back_propagate_timer]->stop();
   }
 
   void tags(std::ofstream& out)
@@ -262,8 +262,8 @@ public:
     // I doubt we will ever collect a billion blocks of data.
     if (writer)
     {
-      out << std::setprecision(5) << AFQMCTimers[back_propagate_timer]->get_total() << " ";
-      AFQMCTimers[back_propagate_timer]->reset();
+      out << std::setprecision(5) << AFQMCTimers[back_propagate_timer].get().get_total() << " ";
+      AFQMCTimers[back_propagate_timer].get().reset();
     }
     if (accumulated_in_last_block)
     {
@@ -301,8 +301,6 @@ public:
 
 private:
   TaskGroup_& TG;
-
-  device_allocator_generator_type* buffer_allocator;
 
   WALKER_TYPES walker_type;
 

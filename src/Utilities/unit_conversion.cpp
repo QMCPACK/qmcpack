@@ -11,8 +11,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Utilities/unit_conversion.h>
-#include <Message/Communicate.h>
+#include "unit_conversion.h"
+#include "Message/Communicate.h"
 
 
 namespace qmcplusplus

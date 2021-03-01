@@ -2,7 +2,7 @@
 #define QMCPLUSPLUS_AFQMC_HAMILTONIANFACTORY_HELPER_H
 
 #include "Configuration.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"

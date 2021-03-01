@@ -152,9 +152,6 @@
 /* Fully remove trace manager and associated features */
 #cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
 
-/* Use SOA version of AA distance table */
-#cmakedefine ENABLE_SOA @ENABLE_SOA@
-
 /* Fixed Size Walker Properties */
 #cmakedefine WALKER_MAX_PROPERTIES @WALKER_MAX_PROPERTIES@
 

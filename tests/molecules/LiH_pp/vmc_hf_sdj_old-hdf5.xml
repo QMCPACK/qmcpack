@@ -3,7 +3,7 @@
   <project id="vmc_hf_sdj_old-hdf5" series="0"/>
 
   <include href="LiH_pp-ptcl.xml"/>
-  <include href="LiH_pp-wfs-old-hdf5.xml"/>
+  <include href="LiH_pp-old-hdf5.wfs.xml"/>
 
   <hamiltonian name="h0" type="generic" target="e">
     <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>

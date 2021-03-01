@@ -42,13 +42,13 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   std::string Species;
   mGridType* grid_global;
   std::map<std::string, mGridType*> grid_inp;
-  RadialPotentialType* pp_loc;
-  NonLocalECPComponent* pp_nonloc;
-  SOECPComponent* pp_so; //Spin-orbit potential component.
-  L2RadialPotential* pp_L2;
+  std::unique_ptr<RadialPotentialType> pp_loc;
+  std::unique_ptr<NonLocalECPComponent> pp_nonloc;
+  std::unique_ptr<SOECPComponent> pp_so; //Spin-orbit potential component.
+  std::unique_ptr<L2RadialPotential> pp_L2;
   std::map<std::string, int> angMon;
 
-  ECPComponentBuilder(const std::string& aname, Communicate* c);
+  ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule = -1);
 
   bool parse(const std::string& fname, xmlNodePtr cur);
   bool put(xmlNodePtr cur);

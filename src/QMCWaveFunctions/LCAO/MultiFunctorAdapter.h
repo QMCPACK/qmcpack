@@ -28,7 +28,7 @@ namespace qmcplusplus
 template<typename FN>
 struct MultiFunctorAdapter
 {
-  using RealType = typename FN::value_type; //Trust this is a real type
+  using RealType = typename FN::real_type;
   using GridType = LogGridLight<RealType>;
   typedef FN single_type;
   aligned_vector<single_type*> Rnl;

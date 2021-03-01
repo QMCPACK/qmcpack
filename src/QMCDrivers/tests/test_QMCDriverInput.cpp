@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("QMCDriverInput Instantiation", "[drivers]") { QMCDriverInput driver_input(0); }
+TEST_CASE("QMCDriverInput Instantiation", "[drivers]") { QMCDriverInput driver_input; }
 
 TEST_CASE("QMCDriverInput readXML", "[drivers]")
 {
@@ -27,9 +27,8 @@ TEST_CASE("QMCDriverInput readXML", "[drivers]")
     bool okay = doc.parseFromString(driver_xml);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
-    QMCDriverInput qmcdriver_input(3);
+    QMCDriverInput qmcdriver_input;
     qmcdriver_input.readXML(node);
-    REQUIRE(qmcdriver_input.get_qmc_section_count() == 3);
     REQUIRE(qmcdriver_input.get_qmc_method().size() > 0);
   };
 

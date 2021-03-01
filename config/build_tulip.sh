@@ -1,5 +1,5 @@
-module load PrgEnv-cray
-module load gcc
+module load PrgEnv-cray/1.0.6
+module swap gcc gcc/8.1.0
 module load hdf5/1.10.1
 module load openblas
 
@@ -17,13 +17,13 @@ cd $folder
 cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
       -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON \
       -DENABLE_CUDA=ON -DCUDA_ARCH=sm_70 -DCUDA_HOST_COMPILER=`which gcc` \
-       -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DCUDA_TOOLKIT_ROOT_DIR=$CUDA_HOME \
+      -DCUDA_TOOLKIT_ROOT_DIR=$CUDA_HOME -DBLA_VENDOR=OpenBLAS \
       -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
       .. && make -j32
 cd ..
 module unload craype-accel-nvidia70
 
-module load rocm-alt
+module load rocm
 module load craype-accel-amd-gfx906
 echo
 echo "###################################"
@@ -34,7 +34,7 @@ mkdir $folder
 cd $folder
 cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
       -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON \
-      -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
+      -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment -DBLA_VENDOR=OpenBLAS \
       .. && make -j32
 cd ..
 
@@ -47,7 +47,7 @@ mkdir $folder
 cd $folder
 cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC \
       -DQMC_MIXED_PRECISION=1 -DENABLE_OFFLOAD=ON -DQMC_COMPLEX=1 \
-      -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
+      -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment -DBLA_VENDOR=OpenBLAS \
       .. && make -j32
 cd ..
 module unload craype-accel-amd-gfx906

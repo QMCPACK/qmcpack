@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "WaveFunctionComponentBuilder.h"
 
 /**@file WaveFunctionComponentBuilder.cpp
   *@brief Initialization of static data members for wavefunction-related tags.
@@ -45,14 +45,10 @@ std::string WaveFunctionComponentBuilder::spo_tag = "psi";
 
 std::string WaveFunctionComponentBuilder::sposet_tag = "sposet";
 
-std::string WaveFunctionComponentBuilder::basisset_tag = "basisset";
-
 std::string WaveFunctionComponentBuilder::ionorb_tag = "ionwf";
 
 std::string WaveFunctionComponentBuilder::backflow_tag = "backflow";
 
 std::string WaveFunctionComponentBuilder::multisd_tag = "multideterminant";
-
-std::string WaveFunctionComponentBuilder::sposcanner_tag = "spo_scanner";
 
 } // namespace qmcplusplus

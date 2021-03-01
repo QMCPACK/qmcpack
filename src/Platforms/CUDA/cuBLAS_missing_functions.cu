@@ -72,8 +72,14 @@ __global__ void gemvT_batched_kernel(const int m, // number of columns in row ma
   __syncthreads();
   T* __restrict__ y_iw = y[blockIdx.x];
   if (tid < row_max)
-    y_iw[(row_begin + tid) * incy] =
-        alpha[blockIdx.x] * sum[tid * COLBS] + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+  {
+    if (beta[blockIdx.x] == T(0))
+      y_iw[(row_begin + tid) * incy] =
+          alpha[blockIdx.x] * sum[tid * COLBS]; // protecting NaN from y_iw
+    else
+      y_iw[(row_begin + tid) * incy] =
+          alpha[blockIdx.x] * sum[tid * COLBS] + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+  }
 }
 
 template<typename T, int ROWBS>
@@ -100,7 +106,10 @@ __global__ void gemvN_batched_kernel(const int m, // number of columns in row ma
     T sum(0);
     for (int col_id = 0; col_id < n; col_id++)
       sum += A_iw[col_id * lda + row_begin + tid] * x_iw[col_id * incx];
-    y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
+    if (beta[blockIdx.x] == T(0))
+      y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum; // protecting NaN from y_iw
+    else
+      y_iw[(row_begin + tid) * incy] = alpha[blockIdx.x] * sum + beta[blockIdx.x] * y_iw[(row_begin + tid) * incy];
   }
 }
 

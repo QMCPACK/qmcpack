@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_STATIC_STRUCTURE_FACTOR_H
 #define QMCPLUSPLUS_STATIC_STRUCTURE_FACTOR_H
 
-#include <QMCHamiltonians/OperatorBase.h>
+#include "QMCHamiltonians/OperatorBase.h"
 
 namespace qmcplusplus
 {

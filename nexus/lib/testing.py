@@ -172,6 +172,8 @@ def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by
         #end if
         return diff,diff1,diff2
     else:
+        diff1 = dict()
+        diff2 = dict()
         lines1 = t1.splitlines()
         lines2 = t2.splitlines()
         nmin = min(len(lines1),len(lines2))

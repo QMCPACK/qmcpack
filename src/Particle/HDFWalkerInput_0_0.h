@@ -20,7 +20,7 @@
 #ifndef QMCPLUSPLUS_WALKER_INPUT_0_0_H
 #define QMCPLUSPLUS_WALKER_INPUT_0_0_H
 
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus

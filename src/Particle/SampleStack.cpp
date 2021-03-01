@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/SampleStack.h"
+#include "SampleStack.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/MCSample.h"
 #include "Utilities/IteratorUtility.h"

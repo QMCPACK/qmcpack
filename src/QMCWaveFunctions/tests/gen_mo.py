@@ -12,45 +12,45 @@ def gen_He():
   for pos in ([0.1, 0.0, 0.0], [1.0, 0.0, 0.0]):
     atomic_orbs = gto.eval_v(*pos)
 
-    print '  // Generated from gen_mo.py for position %s'%str(pos)
-    print '  REQUIRE(values[%d] == Approx(%15.10g));'%(0,atomic_orbs[0])
-    print ''
+    print('  // Generated from gen_mo.py for position %s'%str(pos))
+    print('  REQUIRE(values[%d] == Approx(%15.10g));'%(0,atomic_orbs[0]))
+    print('')
 
     v,g,l = gto.eval_vgl(*pos)
-    print '  // Generated from gen_mo.py for position %s'%str(pos)
-    print '  REQUIRE(values[%d] == Approx(%15.10g));'%(0,v[0])
-    print '  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(0,g[0][0])
-    print '  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(0,g[0][1])
-    print '  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(0,g[0][2])
-    print '  REQUIRE(d2psi[%d] == Approx(%15.10g));'%(0,l[0])
-    print ''
+    print('  // Generated from gen_mo.py for position %s'%str(pos))
+    print('  REQUIRE(values[%d] == Approx(%15.10g));'%(0,v[0]))
+    print('  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(0,g[0][0]))
+    print('  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(0,g[0][1]))
+    print('  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(0,g[0][2]))
+    print('  REQUIRE(d2psi[%d] == Approx(%15.10g));'%(0,l[0]))
+    print('')
    
     v,g,h = gto.eval_vgh(*pos)
     gh    = gto.eval_gradhess(*pos)
-    print '  // Generated from gen_mo.py for position %s'%str(pos)
-    print '  REQUIRE(values[%d] == Approx(%15.10g));'%(0,v[0])
-    print '  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(0,g[0][0])
-    print '  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(0,g[0][1])
-    print '  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(0,g[0][2])
-    print '  //Hessian (xx,xy,xz,yy,yz,zz) '
-    print '  REQUIRE(dhpsi[%d][0] == Approx(%15.10g));'%(0,h[0][0])
-    print '  REQUIRE(dhpsi[%d][1] == Approx(%15.10g));'%(0,h[0][1])
-    print '  REQUIRE(dhpsi[%d][2] == Approx(%15.10g));'%(0,h[0][2])
-    print '  REQUIRE(dhpsi[%d][3] == Approx(%15.10g));'%(0,h[0][3])
-    print '  REQUIRE(dhpsi[%d][4] == Approx(%15.10g));'%(0,h[0][4])
-    print '  REQUIRE(dhpsi[%d][5] == Approx(%15.10g));'%(0,h[0][5])
-    print '  //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) '
-    print '  REQUIRE(dghpsi[%d][0] == Approx(%15.10g));'%(0,gh[0][0])
-    print '  REQUIRE(dghpsi[%d][1] == Approx(%15.10g));'%(0,gh[0][1])
-    print '  REQUIRE(dghpsi[%d][2] == Approx(%15.10g));'%(0,gh[0][2])
-    print '  REQUIRE(dghpsi[%d][3] == Approx(%15.10g));'%(0,gh[0][3])
-    print '  REQUIRE(dghpsi[%d][4] == Approx(%15.10g));'%(0,gh[0][4])
-    print '  REQUIRE(dghpsi[%d][5] == Approx(%15.10g));'%(0,gh[0][5])
-    print '  REQUIRE(dghpsi[%d][6] == Approx(%15.10g));'%(0,gh[0][6])
-    print '  REQUIRE(dghpsi[%d][7] == Approx(%15.10g));'%(0,gh[0][7])
-    print '  REQUIRE(dghpsi[%d][8] == Approx(%15.10g));'%(0,gh[0][8])
-    print '  REQUIRE(dghpsi[%d][9] == Approx(%15.10g));'%(0,gh[0][9])
-    print ''
+    print('  // Generated from gen_mo.py for position %s'%str(pos))
+    print('  REQUIRE(values[%d] == Approx(%15.10g));'%(0,v[0]))
+    print('  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(0,g[0][0]))
+    print('  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(0,g[0][1]))
+    print('  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(0,g[0][2]))
+    print('  //Hessian (xx,xy,xz,yy,yz,zz) ')
+    print('  REQUIRE(dhpsi[%d][0] == Approx(%15.10g));'%(0,h[0][0]))
+    print('  REQUIRE(dhpsi[%d][1] == Approx(%15.10g));'%(0,h[0][1]))
+    print('  REQUIRE(dhpsi[%d][2] == Approx(%15.10g));'%(0,h[0][2]))
+    print('  REQUIRE(dhpsi[%d][3] == Approx(%15.10g));'%(0,h[0][3]))
+    print('  REQUIRE(dhpsi[%d][4] == Approx(%15.10g));'%(0,h[0][4]))
+    print('  REQUIRE(dhpsi[%d][5] == Approx(%15.10g));'%(0,h[0][5]))
+    print('  //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) ')
+    print('  REQUIRE(dghpsi[%d][0] == Approx(%15.10g));'%(0,gh[0][0]))
+    print('  REQUIRE(dghpsi[%d][1] == Approx(%15.10g));'%(0,gh[0][1]))
+    print('  REQUIRE(dghpsi[%d][2] == Approx(%15.10g));'%(0,gh[0][2]))
+    print('  REQUIRE(dghpsi[%d][3] == Approx(%15.10g));'%(0,gh[0][3]))
+    print('  REQUIRE(dghpsi[%d][4] == Approx(%15.10g));'%(0,gh[0][4]))
+    print('  REQUIRE(dghpsi[%d][5] == Approx(%15.10g));'%(0,gh[0][5]))
+    print('  REQUIRE(dghpsi[%d][6] == Approx(%15.10g));'%(0,gh[0][6]))
+    print('  REQUIRE(dghpsi[%d][7] == Approx(%15.10g));'%(0,gh[0][7]))
+    print('  REQUIRE(dghpsi[%d][8] == Approx(%15.10g));'%(0,gh[0][8]))
+    print('  REQUIRE(dghpsi[%d][9] == Approx(%15.10g));'%(0,gh[0][9]))
+    print('')
   
        
 
@@ -61,19 +61,19 @@ def gen_Ne():
     atomic_orbs = gto.eval_v(*pos)
     mol_orbs =  np.dot(MO_matrix, atomic_orbs)
 
-    print '  // Generated from gen_mo.py for position %s'%str(pos)
-    print '  REQUIRE(values[%d] == Approx(%15.10g));'%(0,mol_orbs[0])
+    print('  // Generated from gen_mo.py for position %s'%str(pos))
+    print('  REQUIRE(values[%d] == Approx(%15.10g));'%(0,mol_orbs[0]))
 
     v,g,l = gto.eval_vgl(*pos)
     mo_v = np.dot(MO_matrix, v)
     mo_g = np.dot(MO_matrix, g)
     mo_l = np.dot(MO_matrix, l)
-    print '  // Generated from gen_mo.py for position %s'%str(pos)
-    print '  REQUIRE(values[%d] == Approx(%15.10g));'%(0,mo_v[0])
-    print '  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(0,mo_g[0][0])
-    print '  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(0,mo_g[0][1])
-    print '  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(0,mo_g[0][2])
-    print '  REQUIRE(d2psi[%d] == Approx(%15.10g));'%(0,mo_l[0])
+    print('  // Generated from gen_mo.py for position %s'%str(pos))
+    print('  REQUIRE(values[%d] == Approx(%15.10g));'%(0,mo_v[0]))
+    print('  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(0,mo_g[0][0]))
+    print('  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(0,mo_g[0][1]))
+    print('  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(0,mo_g[0][2]))
+    print('  REQUIRE(d2psi[%d] == Approx(%15.10g));'%(0,mo_l[0]))
 
   
     v,g,h = gto.eval_vgh(*pos)
@@ -82,30 +82,30 @@ def gen_Ne():
     mo_g = np.dot(MO_matrix,g)
     mo_h = np.dot(MO_matrix,h)
     mo_gh = np.dot(MO_matrix,gh)
-    print '  // Generated from gen_mo.py for position %s'%str(pos)
-    print '  REQUIRE(values[%d] == Approx(%15.10g));'%(0,mo_v[0])
-    print '  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(0,mo_g[0][0])
-    print '  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(0,mo_g[0][1])
-    print '  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(0,mo_g[0][2])
-    print '  //Hessian (xx,xy,xz,yy,yz,zz) '
-    print '  REQUIRE(dhpsi[%d][0] == Approx(%15.10g));'%(0,mo_h[0][0])
-    print '  REQUIRE(dhpsi[%d][1] == Approx(%15.10g));'%(0,mo_h[0][1])
-    print '  REQUIRE(dhpsi[%d][2] == Approx(%15.10g));'%(0,mo_h[0][2])
-    print '  REQUIRE(dhpsi[%d][3] == Approx(%15.10g));'%(0,mo_h[0][3])
-    print '  REQUIRE(dhpsi[%d][4] == Approx(%15.10g));'%(0,mo_h[0][4])
-    print '  REQUIRE(dhpsi[%d][5] == Approx(%15.10g));'%(0,mo_h[0][5])
-    print '  //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) '
-    print '  REQUIRE(dghpsi[%d][0] == Approx(%15.10g));'%(0,mo_gh[0][0])
-    print '  REQUIRE(dghpsi[%d][1] == Approx(%15.10g));'%(0,mo_gh[0][1])
-    print '  REQUIRE(dghpsi[%d][2] == Approx(%15.10g));'%(0,mo_gh[0][2])
-    print '  REQUIRE(dghpsi[%d][3] == Approx(%15.10g));'%(0,mo_gh[0][3])
-    print '  REQUIRE(dghpsi[%d][4] == Approx(%15.10g));'%(0,mo_gh[0][4])
-    print '  REQUIRE(dghpsi[%d][5] == Approx(%15.10g));'%(0,mo_gh[0][5])
-    print '  REQUIRE(dghpsi[%d][6] == Approx(%15.10g));'%(0,mo_gh[0][6])
-    print '  REQUIRE(dghpsi[%d][7] == Approx(%15.10g));'%(0,mo_gh[0][7])
-    print '  REQUIRE(dghpsi[%d][8] == Approx(%15.10g));'%(0,mo_gh[0][8])
-    print '  REQUIRE(dghpsi[%d][9] == Approx(%15.10g));'%(0,mo_gh[0][9])
-    print ''
+    print('  // Generated from gen_mo.py for position %s'%str(pos))
+    print('  REQUIRE(values[%d] == Approx(%15.10g));'%(0,mo_v[0]))
+    print('  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(0,mo_g[0][0]))
+    print('  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(0,mo_g[0][1]))
+    print('  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(0,mo_g[0][2]))
+    print('  //Hessian (xx,xy,xz,yy,yz,zz) ')
+    print('  REQUIRE(dhpsi[%d][0] == Approx(%15.10g));'%(0,mo_h[0][0]))
+    print('  REQUIRE(dhpsi[%d][1] == Approx(%15.10g));'%(0,mo_h[0][1]))
+    print('  REQUIRE(dhpsi[%d][2] == Approx(%15.10g));'%(0,mo_h[0][2]))
+    print('  REQUIRE(dhpsi[%d][3] == Approx(%15.10g));'%(0,mo_h[0][3]))
+    print('  REQUIRE(dhpsi[%d][4] == Approx(%15.10g));'%(0,mo_h[0][4]))
+    print('  REQUIRE(dhpsi[%d][5] == Approx(%15.10g));'%(0,mo_h[0][5]))
+    print('  //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) ')
+    print('  REQUIRE(dghpsi[%d][0] == Approx(%15.10g));'%(0,mo_gh[0][0]))
+    print('  REQUIRE(dghpsi[%d][1] == Approx(%15.10g));'%(0,mo_gh[0][1]))
+    print('  REQUIRE(dghpsi[%d][2] == Approx(%15.10g));'%(0,mo_gh[0][2]))
+    print('  REQUIRE(dghpsi[%d][3] == Approx(%15.10g));'%(0,mo_gh[0][3]))
+    print('  REQUIRE(dghpsi[%d][4] == Approx(%15.10g));'%(0,mo_gh[0][4]))
+    print('  REQUIRE(dghpsi[%d][5] == Approx(%15.10g));'%(0,mo_gh[0][5]))
+    print('  REQUIRE(dghpsi[%d][6] == Approx(%15.10g));'%(0,mo_gh[0][6]))
+    print('  REQUIRE(dghpsi[%d][7] == Approx(%15.10g));'%(0,mo_gh[0][7]))
+    print('  REQUIRE(dghpsi[%d][8] == Approx(%15.10g));'%(0,mo_gh[0][8]))
+    print('  REQUIRE(dghpsi[%d][9] == Approx(%15.10g));'%(0,mo_gh[0][9]))
+    print('')
    
 
 def gen_HCN():
@@ -118,22 +118,22 @@ def gen_HCN():
   #print 'first MO',MO_matrix[0,:]
   #print 'atomic_orbs',atomic_orbs
   mol_orbs =  np.dot(MO_matrix, atomic_orbs)
-  print '  // Generated from gen_mo.py for position %s'%str(pos)
+  print('  // Generated from gen_mo.py for position %s'%str(pos))
   for i in range(7):
-    print '  REQUIRE(values[%d] == Approx(%15.10g));'%(i,mol_orbs[i])
+    print('  REQUIRE(values[%d] == Approx(%15.10g));'%(i,mol_orbs[i]))
 
   v,g,l = gtos.eval_vgl(*pos)
   mo_v = np.dot(MO_matrix, v)
   mo_g = np.dot(MO_matrix, g)
   mo_l = np.dot(MO_matrix, l)
-  print '  // Generated from gen_mo.py for position %s'%str(pos)
+  print('  // Generated from gen_mo.py for position %s'%str(pos))
   for i in range(7):
-    print '  REQUIRE(values[%d] == Approx(%15.10g));'%(i,mo_v[i])
-    print '  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(i,mo_g[i][0])
-    print '  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(i,mo_g[i][1])
-    print '  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(i,mo_g[i][2])
-    print '  REQUIRE(d2psi[%d] == Approx(%15.10g));'%(i,mo_l[i])
-    print ''
+    print('  REQUIRE(values[%d] == Approx(%15.10g));'%(i,mo_v[i]))
+    print('  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(i,mo_g[i][0]))
+    print('  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(i,mo_g[i][1]))
+    print('  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(i,mo_g[i][2]))
+    print('  REQUIRE(d2psi[%d] == Approx(%15.10g));'%(i,mo_l[i]))
+    print('')
 
   v,g,h = gtos.eval_vgh(*pos)
   gh    = gtos.eval_gradhess(*pos)
@@ -142,30 +142,30 @@ def gen_HCN():
   mo_h = np.dot(MO_matrix,h)
   mo_gh = np.dot(MO_matrix,gh)
   for i in range(7):
-    print '  // Generated from gen_mo.py for position %s'%str(pos)
-    print '  REQUIRE(values[%d] == Approx(%15.10g));'%(i,mo_v[i])
-    print '  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(i,mo_g[i][0])
-    print '  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(i,mo_g[i][1])
-    print '  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(i,mo_g[i][2])
-    print '  //Hessian (xx,xy,xz,yy,yz,zz) '
-    print '  REQUIRE(dhpsi[%d][0] == Approx(%15.10g));'%(i,mo_h[i][0])
-    print '  REQUIRE(dhpsi[%d][1] == Approx(%15.10g));'%(i,mo_h[i][1])
-    print '  REQUIRE(dhpsi[%d][2] == Approx(%15.10g));'%(i,mo_h[i][2])
-    print '  REQUIRE(dhpsi[%d][3] == Approx(%15.10g));'%(i,mo_h[i][3])
-    print '  REQUIRE(dhpsi[%d][4] == Approx(%15.10g));'%(i,mo_h[i][4])
-    print '  REQUIRE(dhpsi[%d][5] == Approx(%15.10g));'%(i,mo_h[i][5])
-    print '  //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) '
-    print '  REQUIRE(dghpsi[%d][0] == Approx(%15.10g));'%(i,mo_gh[i][0])
-    print '  REQUIRE(dghpsi[%d][1] == Approx(%15.10g));'%(i,mo_gh[i][1])
-    print '  REQUIRE(dghpsi[%d][2] == Approx(%15.10g));'%(i,mo_gh[i][2])
-    print '  REQUIRE(dghpsi[%d][3] == Approx(%15.10g));'%(i,mo_gh[i][3])
-    print '  REQUIRE(dghpsi[%d][4] == Approx(%15.10g));'%(i,mo_gh[i][4])
-    print '  REQUIRE(dghpsi[%d][5] == Approx(%15.10g));'%(i,mo_gh[i][5])
-    print '  REQUIRE(dghpsi[%d][6] == Approx(%15.10g));'%(i,mo_gh[i][6])
-    print '  REQUIRE(dghpsi[%d][7] == Approx(%15.10g));'%(i,mo_gh[i][7])
-    print '  REQUIRE(dghpsi[%d][8] == Approx(%15.10g));'%(i,mo_gh[i][8])
-    print '  REQUIRE(dghpsi[%d][9] == Approx(%15.10g));'%(i,mo_gh[i][9])
-    print ''
+    print('  // Generated from gen_mo.py for position %s'%str(pos))
+    print('  REQUIRE(values[%d] == Approx(%15.10g));'%(i,mo_v[i]))
+    print('  REQUIRE(dpsi[%d][0] == Approx(%15.10g));'%(i,mo_g[i][0]))
+    print('  REQUIRE(dpsi[%d][1] == Approx(%15.10g));'%(i,mo_g[i][1]))
+    print('  REQUIRE(dpsi[%d][2] == Approx(%15.10g));'%(i,mo_g[i][2]))
+    print('  //Hessian (xx,xy,xz,yy,yz,zz) ')
+    print('  REQUIRE(dhpsi[%d][0] == Approx(%15.10g));'%(i,mo_h[i][0]))
+    print('  REQUIRE(dhpsi[%d][1] == Approx(%15.10g));'%(i,mo_h[i][1]))
+    print('  REQUIRE(dhpsi[%d][2] == Approx(%15.10g));'%(i,mo_h[i][2]))
+    print('  REQUIRE(dhpsi[%d][3] == Approx(%15.10g));'%(i,mo_h[i][3]))
+    print('  REQUIRE(dhpsi[%d][4] == Approx(%15.10g));'%(i,mo_h[i][4]))
+    print('  REQUIRE(dhpsi[%d][5] == Approx(%15.10g));'%(i,mo_h[i][5]))
+    print('  //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz) ')
+    print('  REQUIRE(dghpsi[%d][0] == Approx(%15.10g));'%(i,mo_gh[i][0]))
+    print('  REQUIRE(dghpsi[%d][1] == Approx(%15.10g));'%(i,mo_gh[i][1]))
+    print('  REQUIRE(dghpsi[%d][2] == Approx(%15.10g));'%(i,mo_gh[i][2]))
+    print('  REQUIRE(dghpsi[%d][3] == Approx(%15.10g));'%(i,mo_gh[i][3]))
+    print('  REQUIRE(dghpsi[%d][4] == Approx(%15.10g));'%(i,mo_gh[i][4]))
+    print('  REQUIRE(dghpsi[%d][5] == Approx(%15.10g));'%(i,mo_gh[i][5]))
+    print('  REQUIRE(dghpsi[%d][6] == Approx(%15.10g));'%(i,mo_gh[i][6]))
+    print('  REQUIRE(dghpsi[%d][7] == Approx(%15.10g));'%(i,mo_gh[i][7]))
+    print('  REQUIRE(dghpsi[%d][8] == Approx(%15.10g));'%(i,mo_gh[i][8]))
+    print('  REQUIRE(dghpsi[%d][9] == Approx(%15.10g));'%(i,mo_gh[i][9]))
+    print('')
   
 
 def gen_HCN_force():
@@ -180,10 +180,10 @@ def gen_HCN_force():
   Natom=ionpos.shape[0];
   norb=7
 
-  print '  // Generated from gen_mo.py for position %s'%str(pos)
+  print('  // Generated from gen_mo.py for position %s'%str(pos))
 
-  for iat in xrange(0,Natom):
-    for idim in xrange(0,3):
+  for iat in range(0,Natom):
+    for idim in range(0,3):
       ionpos_p=np.array(ionpos)
       ionpos_m=np.array(ionpos)
       
@@ -212,15 +212,15 @@ def gen_HCN_force():
       dmo_v = 0.5*deltainv*(mo_v_p-mo_v_m)
       dmo_g = 0.5*deltainv*(mo_g_p-mo_g_m)
       dmo_l = 0.5*deltainv*(mo_l_p-mo_l_m)
-      print "//============== Ion ",iat," Component ",idim,"==================="
-      for iorb in xrange(0,norb):
-        print '  REQUIRE( dionpsi[0][%d][%d]       == Approx(%15.10g) );  '%(iorb,idim,dmo_v[iorb])
-        print '  REQUIRE( diongradpsi[0][%d](%d,0) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][0])
-        print '  REQUIRE( diongradpsi[0][%d](%d,1) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][1])
-        print '  REQUIRE( diongradpsi[0][%d](%d,2) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][2])
-        print '  REQUIRE( dionlaplpsi[0][%d][%d]  == Approx(%15.10g) );  '%(iorb,idim,dmo_l[iorb])
+      print("//============== Ion ",iat," Component ",idim,"===================")
+      for iorb in range(0,norb):
+        print('  REQUIRE( dionpsi[0][%d][%d]       == Approx(%15.10g) );  '%(iorb,idim,dmo_v[iorb]))
+        print('  REQUIRE( diongradpsi[0][%d](%d,0) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][0]))
+        print('  REQUIRE( diongradpsi[0][%d](%d,1) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][1]))
+        print('  REQUIRE( diongradpsi[0][%d](%d,2) == Approx(%15.10g) );  '%(iorb,idim,dmo_g[iorb][2]))
+        print('  REQUIRE( dionlaplpsi[0][%d][%d]  == Approx(%15.10g) );  '%(iorb,idim,dmo_l[iorb]))
     
-  print '  // Generated from gen_mo.py for position %s'%str(pos)
+  print('  // Generated from gen_mo.py for position %s'%str(pos))
  # for i in range(7):
  #   print '  REQUIRE(values[%d] == Approx(%15.10g));'%(i,mol_orbs[i])
 

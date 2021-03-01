@@ -15,10 +15,10 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SPO_HPP
 #define QMCPLUSPLUS_EINSPLINE_SPO_HPP
 #include <Configuration.h>
-#include <Particle/ParticleSet.h>
-#include <spline2/MultiBspline.hpp>
-#include <spline2/MultiBsplineEval.hpp>
-#include <CPU/SIMD/aligned_allocator.hpp>
+#include "Particle/ParticleSet.h"
+#include "spline2/MultiBspline.hpp"
+#include "spline2/MultiBsplineEval.hpp"
+#include "CPU/SIMD/aligned_allocator.hpp"
 #include <iostream>
 
 namespace qmcplusplus

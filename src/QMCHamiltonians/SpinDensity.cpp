@@ -12,8 +12,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/SpinDensity.h>
-#include <OhmmsData/AttributeSet.h>
+#include "SpinDensity.h"
+#include "OhmmsData/AttributeSet.h"
 #include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus

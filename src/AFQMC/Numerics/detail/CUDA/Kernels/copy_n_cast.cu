@@ -19,56 +19,71 @@
 #include <cuda_runtime.h>
 #define ENABLE_CUDA 1
 #include "AFQMC/Memory/CUDA/cuda_utilities.h"
+#include "AFQMC/Numerics/detail/CUDA/Kernels/cuda_settings.h"
 
 namespace kernels
 {
 template<typename T, typename Q>
-__global__ void kernel_copy_n_cast(T const* A, int n, Q* B)
+__global__ void kernel_copy_n_cast(T const* A, long N, Q* B)
 {
-  int i = threadIdx.x + blockDim.x * blockIdx.x;
-  if (i < n)
-    B[i] = static_cast<Q>(A[i]);
+  long N0(8 * blockDim.x * blockIdx.x);
+  T const* A_(A + N0);
+  Q* B_(B + N0);
+  long N_(min(long(8 * blockDim.x), N - N0));
+  for (long ip = threadIdx.x; ip < N_; ip += blockDim.x)
+  {
+    B_[ip] = static_cast<Q>(A_[ip]);
+  }
 }
 
 template<typename T, typename Q>
-__global__ void kernel_copy_n_cast(thrust::complex<T> const* A, int n, thrust::complex<Q>* B)
+__global__ void kernel_copy_n_cast(thrust::complex<T> const* A, long N, thrust::complex<Q>* B)
 {
-  int i = threadIdx.x + blockDim.x * blockIdx.x;
-  if (i < n)
-    B[i] = static_cast<thrust::complex<Q>>(A[i]);
+  long N0(8 * blockDim.x * blockIdx.x);
+  thrust::complex<T> const* A_(A + N0);
+  thrust::complex<Q>* B_(B + N0);
+  long N_(min(long(8 * blockDim.x), N - N0));
+  for (long ip = threadIdx.x; ip < N_; ip += blockDim.x)
+  {
+    B_[ip] = static_cast<thrust::complex<Q>>(A_[ip]);
+  }
 }
 
-void copy_n_cast(double const* A, int n, float* B)
+void copy_n_cast(double const* A, long n, float* B)
 {
-  int block_dim = 256;
-  int grid_dim  = (n + block_dim - 1) / block_dim;
-  kernel_copy_n_cast<<<grid_dim, block_dim>>>(A, n, B);
+  long n_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((n + n_ - 1) / n_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  kernel_copy_n_cast<<<nblk, nthr>>>(A, n, B);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-void copy_n_cast(float const* A, int n, double* B)
+void copy_n_cast(float const* A, long n, double* B)
 {
-  int block_dim = 256;
-  int grid_dim  = (n + block_dim - 1) / block_dim;
-  kernel_copy_n_cast<<<grid_dim, block_dim>>>(A, n, B);
+  long n_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((n + n_ - 1) / n_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  kernel_copy_n_cast<<<nblk, nthr>>>(A, n, B);
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-void copy_n_cast(std::complex<double> const* A, int n, std::complex<float>* B)
+void copy_n_cast(std::complex<double> const* A, long n, std::complex<float>* B)
 {
-  int block_dim = 256;
-  int grid_dim  = (n + block_dim - 1) / block_dim;
-  kernel_copy_n_cast<<<grid_dim, block_dim>>>(reinterpret_cast<thrust::complex<double> const*>(A), n,
-                                              reinterpret_cast<thrust::complex<float>*>(B));
+  long n_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((n + n_ - 1) / n_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  kernel_copy_n_cast<<<nblk, nthr>>>(reinterpret_cast<thrust::complex<double> const*>(A), n,
+                                     reinterpret_cast<thrust::complex<float>*>(B));
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
-void copy_n_cast(std::complex<float> const* A, int n, std::complex<double>* B)
+void copy_n_cast(std::complex<float> const* A, long n, std::complex<double>* B)
 {
-  int block_dim = 256;
-  int grid_dim  = (n + block_dim - 1) / block_dim;
-  kernel_copy_n_cast<<<grid_dim, block_dim>>>(reinterpret_cast<thrust::complex<float> const*>(A), n,
-                                              reinterpret_cast<thrust::complex<double>*>(B));
+  long n_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((n + n_ - 1) / n_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  kernel_copy_n_cast<<<nblk, nthr>>>(reinterpret_cast<thrust::complex<float> const*>(A), n,
+                                     reinterpret_cast<thrust::complex<double>*>(B));
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }

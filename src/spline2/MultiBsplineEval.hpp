@@ -25,16 +25,16 @@
 #define SPLINE2_MULTIEINSPLINE_EVAL_HPP
 
 #include <algorithm>
-#include <spline2/bspline_traits.hpp>
-#include <spline2/MultiBsplineEval_helper.hpp>
+#include "spline2/bspline_traits.hpp"
+#include "spline2/MultiBsplineEval_helper.hpp"
 
 // select evaluation functions based on the architecture.
 ///include evaluate_v_impl
-#include <spline2/MultiBsplineValue.hpp>
-#include <spline2/MultiBsplineVGLH.hpp>
+#include "spline2/MultiBsplineValue.hpp"
+#include "spline2/MultiBsplineVGLH.hpp"
 
 ///include evaluate_vghgh_impl
-#include <spline2/MultiBsplineVGHGH.hpp>
+#include "spline2/MultiBsplineVGHGH.hpp"
 
 namespace spline2
 {

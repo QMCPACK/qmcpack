@@ -22,7 +22,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {

@@ -34,8 +34,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(2);
@@ -53,8 +55,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   int lmaxIdx             = ion_species.addAttribute("lmax");
 
   ion_species(C_chargeIdx, C_Idx) = 4;
-  ion_species(cutoffIdx, C_Idx) = 0.9;
-  ion_species(lmaxIdx, C_Idx)   = 3;
+  ion_species(cutoffIdx, C_Idx)   = 0.9;
+  ion_species(lmaxIdx, C_Idx)     = 3;
 
   elec_.setName("elec");
   elec_.create(2);
@@ -84,8 +86,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \
@@ -130,7 +132,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
   // lapl
   REQUIRE(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
-#if defined(MIXED_PRECISION) 
+#if defined(MIXED_PRECISION)
   REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257).epsilon(3e-5));
 #else
   REQUIRE(std::real(d2psiM[0][1]) == Approx(22.3851032257));
@@ -158,8 +160,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(4);
@@ -183,8 +187,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   int lmaxIdx             = ion_species.addAttribute("lmax");
 
   ion_species(C_chargeIdx, C_Idx) = 4;
-  ion_species(cutoffIdx, C_Idx) = 0.9;
-  ion_species(lmaxIdx, C_Idx)   = 3;
+  ion_species(cutoffIdx, C_Idx)   = 0.9;
+  ion_species(lmaxIdx, C_Idx)     = 3;
 
   elec_.setName("elec");
   elec_.create(2);
@@ -214,8 +218,8 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_2x1x1
   const char* particles = "<tmp> \
@@ -332,12 +336,12 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
   elec_2.update();
-  RefVector<ParticleSet> P_list;
+  RefVectorWithLeader<ParticleSet> P_list(elec_);
   P_list.push_back(elec_);
   P_list.push_back(elec_2);
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
-  RefVector<SPOSet> spo_list;
+  RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
@@ -358,23 +362,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   dpsi_v_list.push_back(dpsi_2);
   d2psi_v_list.push_back(d2psi);
   d2psi_v_list.push_back(d2psi_2);
-
-  spo->mw_evaluateValue(spo_list, P_list, 1, psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
-  // real part
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
-  // value
-  REQUIRE(std::real(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::real(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
-
-#if defined(QMC_COMPLEX)
-  // imaginary part
-  // value
-  REQUIRE(std::imag(psi_v_list[0].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::imag(psi_v_list[0].get()[1]) == Approx(1.2383049726));
-#endif
 
   spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)

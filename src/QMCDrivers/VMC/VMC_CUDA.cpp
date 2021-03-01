@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/VMC/VMC_CUDA.h"
+#include "VMC_CUDA.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -22,7 +22,7 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "type_traits/scalar_traits.h"
 #include "Utilities/RunTimeManager.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 #ifdef USE_NVTX_API
 #include <nvToolsExt.h>
 #endif
@@ -33,9 +33,9 @@ namespace qmcplusplus
 VMCcuda::VMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 WaveFunctionPool& ppool,
-                 Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "VMCcuda"),
+                 Communicate* comm,
+                 bool enable_profiling)
+    : QMCDriver(w, psi, h, comm, "VMCcuda", enable_profiling),
       UseDrift("yes"),
       myPeriod4WalkerDump(0),
       w_beta(0.0),
@@ -46,12 +46,12 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(nTargetSamples, "targetWalkers", "int");
-  m_param.add(w_beta, "beta", "double");
-  m_param.add(w_alpha, "alpha", "double");
-  m_param.add(GEVtype, "GEVMethod", "string");
+  m_param.add(UseDrift, "useDrift");
+  m_param.add(UseDrift, "usedrift");
+  m_param.add(nTargetSamples, "targetWalkers");
+  m_param.add(w_beta, "beta");
+  m_param.add(w_alpha, "alpha");
+  m_param.add(GEVtype, "GEVMethod");
 
   H.setRandomGenerator(&Random);
 }

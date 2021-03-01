@@ -1,5 +1,5 @@
 #if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -Wall -Wextra -Wfatal-errors $0 -o $0x.x && time mpirun -n 2 $0x.x $@ && rm -f $0x.x; exit
+mpic++ $0 -o $0x&&time mpirun -n 2 $0x&&rm $0x;exit
 #endif
 
 #include "../../mpi3/main.hpp"

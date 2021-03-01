@@ -1228,6 +1228,24 @@ def quantum_package_input():
 
 
 
+def rmg_input():
+    nunit('files')
+
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit('read')
+
+    nunit('write')
+
+    nunit('generate')
+
+    nunit_all()
+#end def rmg_input
+
+
+
 def qmcpack_converter_input():
     nunit('import')
 
@@ -1352,6 +1370,16 @@ def quantum_package_analyzer():
 
 
 
+def rmg_analyzer():
+    nunit('import')
+
+    nunit('empty_init')
+
+    nunit_all()
+#end def rmg_analyzer
+
+
+
 def qmcpack_converter_analyzers():
     nunit('import')
 
@@ -1469,6 +1497,16 @@ def quantum_package_simulation():
 
     nunit_all()
 #end def quantum_package_simulation
+
+
+
+def rmg_simulation():
+    nunit('import')
+
+    #nunit('minimal_init')
+
+    nunit_all()
+#end def rmg_simulation
 
 
 
@@ -1901,6 +1939,7 @@ NexusTest( pwscf_postprocessor_input       )
 NexusTest( gamess_input                    )
 NexusTest( pyscf_input                     )
 NexusTest( quantum_package_input           )
+NexusTest( rmg_input                       )
 NexusTest( qmcpack_converter_input         )
 NexusTest( qmcpack_input                   )
 NexusTest( vasp_analyzer                   )
@@ -1909,6 +1948,7 @@ NexusTest( pwscf_postprocessor_analyzers   )
 NexusTest( gamess_analyzer                 )
 NexusTest( pyscf_analyzer                  )
 NexusTest( quantum_package_analyzer        )
+NexusTest( rmg_analyzer                    )
 NexusTest( qmcpack_converter_analyzers     )
 NexusTest( qmcpack_analyzer                )
 NexusTest( vasp_simulation                 )
@@ -1916,6 +1956,7 @@ NexusTest( pwscf_simulation                )
 NexusTest( gamess_simulation               )
 NexusTest( pyscf_simulation                )
 NexusTest( quantum_package_simulation      )
+NexusTest( rmg_simulation                  )
 NexusTest( pwscf_postprocessor_simulations )
 NexusTest( qmcpack_converter_simulations   )
 NexusTest( qmcpack_simulation              )

@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_PARTICLE_BCONDS_2D_H
 
 #include <config.h>
-#include <Lattice/CrystalLattice.h>
+#include "Lattice/CrystalLattice.h"
 
 namespace qmcplusplus
 {

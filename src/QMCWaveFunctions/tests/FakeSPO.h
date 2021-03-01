@@ -26,6 +26,8 @@ public:
   Vector<ValueType> v;
   Matrix<ValueType> v2;
 
+  SPOSet::GradVector_t gv;
+  
   FakeSPO();
   virtual ~FakeSPO() {}
 

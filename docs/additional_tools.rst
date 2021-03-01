@@ -56,8 +56,9 @@ It is a small C++ executable that is built alongside the QMCPACK
 executable and can be found in ``build/bin``.
 
 To date, ``convert4qmc`` supports the following codes:
-GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018`, QP :cite:`QP`
-and GAMESS-FMO :cite:`Fedorov2004,schmidt93`.
+GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018` and QP2 :cite:`QP2` natively, and NWCHEM :cite:`NWCHEM`, TURBOMOLE :cite:`TURBOMOLE`, PSI4 :cite:`PSI4`, CFOUR 2.0beta :cite:`CFOUR`, ORCA 3.X - 4.X :cite:`ORCA`, DALTON2016 :cite:`DALTON2016`, MOLPRO :cite:`MOLPRO` and QCHEM 4.X :cite:`QCHEM` through the molden2qmc converter (see :ref:`molden2qmc`).
+
+
 
 General use
 ^^^^^^^^^^^
@@ -70,7 +71,7 @@ General use of ``convert4qmc`` can be prompted by running with no options:
 
   Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample
 
-   convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-QP|-pyscf|-orbitals]
+   convert [-gaussian|-casino|-gamess|-orbitals]
    filename
   [-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]
   [-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]
@@ -80,7 +81,7 @@ General use of ``convert4qmc`` can be prompted by running with no options:
   -threshold 0.01 -TargetState 0 -prefix sample
   When the input format is missing, the  extension of filename is used to determine
   the format
-   *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml
+   *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.h5 -> hdf5 format
 
 As an example, to convert a GAMESS calculation using a single determinant, the following use is sufficient:
 
@@ -279,21 +280,14 @@ prefix ``Mysim`` and output files will be
   +-----------------+----------------------------------------------------------------------------+---------------------+
   | **option name** | **description**                                                            |                     |
   +=================+============================================================================+=====================+
-  | ``orbitals``    | Generic HDF5 input file. Mainly automatically generated from QP and PySCF. | Actively maintained |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-pyscf``      | PySCF code                                                                 | Actively maintained |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``QP``          | QP code                                                                    | Actively maintained |
+  | ``-orbitals``   | Generic HDF5 input file. Mainly automatically generated from QP2, Pyscf and|                     |
+  |                 | all codes  in molden2qmc                                                   | Actively maintained |
   +-----------------+----------------------------------------------------------------------------+---------------------+
   | ``-gamess``     | Gamess code                                                                | Maintained          |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-gamesFMO``   | Gamess FMO                                                                 | Maintained          |
   +-----------------+----------------------------------------------------------------------------+---------------------+
   | ``-gaussian``   | Gaussian code                                                              | Obsolete/untested   |
   +-----------------+----------------------------------------------------------------------------+---------------------+
   | ``-casino``     | Casino code                                                                | Obsolete/untested   |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-gamesxml``   | Gamess xml format code                                                     | Obsolete/untested   |
   +-----------------+----------------------------------------------------------------------------+---------------------+
 
 Command line options
@@ -358,7 +352,7 @@ Command line options
 
 - ``-hdf5``
 
-  This option generates the ``*.orbs.h5`` HDF5 file containing the basis set and the orbital coefficients. If the wavefunction contains a multideterminant expansion from QP, it will also be stored in this file. This option minimizes the size of the ``*.wfj.xml`` file, which points to the HDF file, as in the following example:
+  This option generates the ``*.orbs.h5`` HDF5 file containing the basis set and the orbital coefficients. If the wavefunction contains a multideterminant expansion from QP2, it will also be stored in this file. This option minimizes the size of the ``*.wfj.xml`` file, which points to the HDF file, as in the following example:
 
   ::
 
@@ -395,16 +389,7 @@ Command line options
      “**Name**.output,” all files generated by ``convert4qmc`` will carry
      **Name** as a prefix (i.e., **Name**.qmc.in.xml).
 
-  -  **PySCF** If the PySCF output file is named “**Name**.H5,” all files
-     generated by ``convert4qmc`` will carry **Name** as a prefix (i.e.,
-     **Name**.qmc.in.xml).
-
-  -  **QP** If the QP output file is named “**Name**.dump,” all files
-     generated by ``convert4qmc`` will carry **Name** as a prefix (i.e.,
-     **Name**.qmc.in.xml).
-
-  -  **Generic HDF5 input** If a generic HDF5 file (either from PySCF or
-     QP in the HDF5 format) is named “**Name**.H5,” all files generated by
+  -  **Generic HDF5 input** If a generic HDF5 file is named “**Name**.H5,” all files generated by
      ``convert4qmc`` will carry **Name** as a prefix (i.e.,
      **Name**.qmc.in.xml).
 
@@ -434,22 +419,21 @@ Command line options
 
       <slaterdeterminant>
            <determinant id="updet" size="2"
-               cuspInfo="../CuspCorrection/updet.cuspInfo.xml">
+               cuspInfo="../updet.cuspInfo.xml">
              <occupation mode="ground"/>
              <coefficient size="135" id="updetC">
 
      <determinant id="downdet" size="2"
-              cuspInfo="../CuspCorrection/downdet.cuspInfo.xml">
+              cuspInfo="../downdet.cuspInfo.xml">
              <occupation mode="ground"/>
              <coefficient size="135" id="downdetC">
 
   These tags will point to the files ``updet.cuspInfo.xml`` and
   ``downdet.cuspInfo.xml``. By default, the converter assumes that
   the files are located in the relative path
-  ``../CuspCorrection/``. If the directory
-  ``../CuspCorrection`` does not exist, or if the files are not
-  present in that directory, QMCPACK will run the cusp correction
-  algorithm to generate both files.  If the files exist, then QMCPACK
+  ``../``. If the files are not
+  present in the parent directory, QMCPACK will run the cusp correction
+  algorithm to generate both files in the current run directory (not in ``../``).  If the files exist, then QMCPACK
   will apply the corrections to the orbitals.
 
   **Important notes:**
@@ -647,72 +631,59 @@ Supported codes
     specified (converting from PySCF implies the “-hdf5” option is always
     present).
 
-An implementation of periodic boundary conditions with Gaussian orbitals from PySCF is under development.
+Periodic boundary conditions with Gaussian orbitals from PySCF is fully supported for Gamma point and kpoints.
 
 - **Quantum Package**
 
-  QP :cite:`QP` is a quantum chemistry code developed by the
-  LCPQ laboratory in Toulouse, France. It can be downloaded from
-  https://github.com/LCPQ/quantum_package, and the tutorial within is
-  quite extensive. The tutorial section of QP can guide you on how to
+  QP2 :cite:`QP2` is a quantum chemistry code developed by the
+  LCPQ laboratory in Toulouse, France, and Argonne National Laboratory for the PBC version.
+  It can be downloaded from  https://github.com/QuantumPackage/qp2, and the tutorial within is
+  quite extensive. The tutorial section of QP2 can guide you on how to
   install and run the code.
 
-  After a QP calculation, the data needed for ``convert4qmc`` can be
+  After a QP2 calculation, the data needed for ``convert4qmc`` can be
   generated through
 
   ::
 
-    qp_run save_for_qmcpack Myrun.ezfio &> Myrun.dump
+    qp_run save_for_qmcpack Myrun.ezfio 
+    
 
-  ``convert4qmc`` can read this format and generate QMCPACK input files in XML and HDF5 format.  For example:
+  This command will generate an HDF5 file in the QMCPACK format named ``QP2QMCPACK.h5``
+  ``convert4qmc`` can read this file and generate the ``*.structure.xml``, ``*.wfj.xml`` and other files needed to run QMCPACK. .  For example:
 
   ::
 
-    convert4qmc -QP Myrun.dump
+    convert4qmc -orbitals QP2QMCPACK.h5 -multidet QP2QMCPACK.h5 -prefix MySystem
 
-  The main reason to use QP is to access the CIPSI algorithm to generate a
+  The main reason to use QP2 is to access the CIPSI algorithm to generate a
   multideterminant wavefunction. CIPSI is the preferred choice for
   generating a selected CI trial wavefunction for QMCPACK. An example on
-  how to use QP for Hartree-Fock and selected CI can be found in
+  how to use QP2 for Hartree-Fock and selected CI can be found in
   :ref:`cipsi` of this manual. The converter code is actively
-  maintained and codeveloped by both QMCPACK and QP developers.
-
-  We recommend using a trial wavefunction stored in HDF5 format to reduce the reading time when a multideterminant expansion is too large (more than 1K determinants). This can be done with two paths:
-
-  using the *-hdf5* option in the converter as follows:
+  maintained and codeveloped by both QMCPACK and QP2 developers.
 
 - **Using -hdf5 tag**
 
   ::
 
-    convert4qmc -QP Myrun.dump -hdf5
+    convert4qmc -gamess Myrun.out -hdf5
 
-  This will read the multideterminant expansion in the ``Myrun.dump`` file
-  and store it in ``Myrun.dump.orbs.h5``. Note that this method will be
-  deprecated as QP automatically generates a compatible HDF5 file usable
-  by QMCPACK directly.
+  This option is only used/usefull with the gamess code as it is the onlycode not providing an HDF5 output
+  The result will create QMCPACK input files but will also store all key data in the HDF5 format.
 
-- **Using h5 file**
+- **Mixing orbitals and multideterminants**
 
-  QP version 2.0 (released in 2019) directly generates an HDF5 file that completely mimics the QMCPACK readable format. This file can be generated after a CIPSI, Hartree-Fock, or range-separated DFT in QP as follows:
 
-  ::
-
-    qp_run save_for_qmcpack Myrun.ezfio > Myrun.dump
-
-  In addition to ``Myrun.dump``, an HDF5 file always named ``QMC.h5`` is
-  created containing all relevant information to start a QMC run. Input
-  files can be generated as follows:
-
-  ::
-
-    convert4qmc -orbitals QMC.h5 -multidet QMC.h5
-
-  Note that the ``QMC.h5`` combined with the tags ``-orbitals`` and
+  Note that the ``QP2QMCPACK.h5`` combined with the tags ``-orbitals`` and
   ``-multidet`` allows the user to choose orbitals from a different code
-  such as PYSCF and the multideterminant section from QP. These two codes
+  such as PYSCF and the multideterminant section from QP2. These two codes
   are fully compatible, and this route is also the only possible route for
   multideterminants for solids.
+
+  ::
+
+    convert4qmc -orbitals MyPyscfrun.h5 -multidet QP2QMCPACK.h5
 
 - **GAMESS**
 
@@ -801,9 +772,9 @@ wavefunctions suitable for qmcpack calculations with spin-orbit coupling.
 ppconvert
 ~~~~~~~~~
 
-``ppconvert`` is a utility to convert PPs between different commonly used formats.
-It is a stand-alone C++ executable that is not built by default but that is accessible via adding
-``-DBUILD_PPCONVERT=1`` to CMake and then typing ``make ppconvert``.
+``ppconvert`` is a utility to convert PPs between different commonly used formats. As with all operations on pseudopotentials, great care should be exercised when using this tool.
+It is a stand-alone executable that is not built by default but that is accessible via adding
+``-DBUILD_PPCONVERT=1`` to CMake.
 Currently it converts CASINO, FHI, UPF (generated by OPIUM), BFD, and GAMESS formats to several other formats
 including XML (QMCPACK) and UPF (QE). See all the formats via ``ppconvert -h``.
 For output formats requiring Kleinman-Bylander projectors, the atom will be solved with DFT

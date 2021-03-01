@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
-#include "QMCWaveFunctions/Jastrow/CountingJastrowBuilder.h"
+#include "CountingJastrowBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/Jastrow/CountingJastrow.h"

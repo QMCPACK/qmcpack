@@ -12,9 +12,9 @@
 #ifndef SPLINE2_OFFLOAD_MULTIEINSPLINE_VALUE_HPP
 #define SPLINE2_OFFLOAD_MULTIEINSPLINE_VALUE_HPP
 
-#include "OpenMP/OMPstd.hpp"
+#include "OMPTarget/OMPstd.hpp"
 #include "spline2/MultiBsplineData.hpp"
-#include <spline2/MultiBsplineEval_helper.hpp>
+#include "spline2/MultiBsplineEval_helper.hpp"
 
 namespace spline2offload
 {

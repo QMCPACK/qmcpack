@@ -3,7 +3,7 @@
 #define QMCPLUSPLUS_DRIVERFACTORY_H
 
 #include "OhmmsData/libxmldefs.h"
-#include <Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 
 #include "mpi3/communicator.hpp"
 

@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "LongRange/LPQHIBasis.h"
+#include "LPQHIBasis.h"
 #include <cassert>
 
 namespace qmcplusplus

@@ -10,8 +10,8 @@
 ////
 //// File created by: Sergio D. Pineda Flores, sergio_pinedaflores@berkeley.edu, University of California, Berkeley
 ////////////////////////////////////////////////////////////////////////////////////////
-#include "QMCWaveFunctions/RotatedSPOs.h"
-#include <Numerics/MatrixOperators.h>
+#include "RotatedSPOs.h"
+#include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 
@@ -22,7 +22,6 @@ RotatedSPOs::RotatedSPOs(SPOSet* spos)
     : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true),
       Phi(spos),
       params_supplied(false),
-      IsCloned(false),
       nel_major_(0)
 {
   className      = "RotatedSPOs";
@@ -83,7 +82,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
     p = m_act_rot_inds[i].first;
     q = m_act_rot_inds[i].second;
     std::stringstream sstr;
-    sstr << Phi->getName() << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
+    sstr << myName << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
          << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
     // If the user input parameters, use those. Otherwise, initialize the parameters to zero
@@ -1041,11 +1040,11 @@ SPOSet* RotatedSPOs::makeClone() const
 {
   RotatedSPOs* myclone = new RotatedSPOs(Phi->makeClone());
 
-  myclone->IsCloned        = true;
   myclone->params          = this->params;
   myclone->params_supplied = this->params_supplied;
   myclone->m_act_rot_inds  = this->m_act_rot_inds;
   myclone->myVars          = this->myVars;
+  myclone->myName          = this->myName;
   return myclone;
 }
 

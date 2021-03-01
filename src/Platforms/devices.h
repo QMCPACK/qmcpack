@@ -24,7 +24,7 @@
 #include "Message/CommOperators.h"
 #include <cuda_runtime_api.h>
 #include <unistd.h>
-#include <CUDA_legacy/gpu_misc.h>
+#include "CUDA_legacy/gpu_misc.h"
 #include <nvml.h>
 
 #define MAX_GPU_SPLINE_SIZE_MB 81920

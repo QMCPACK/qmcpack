@@ -11,9 +11,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/ReferencePoints.h>
-#include <Utilities/string_utils.h>
-#include <OhmmsData/AttributeSet.h>
+#include "ReferencePoints.h"
+#include "Utilities/string_utils.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {

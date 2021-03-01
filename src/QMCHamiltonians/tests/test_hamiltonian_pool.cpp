@@ -35,10 +35,6 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  HamiltonianPool hpool(c);
-
-  REQUIRE(hpool.empty());
-
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
@@ -51,28 +47,23 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   xmlNodePtr root = doc.getRoot();
 
   ParticleSetPool pp(c);
-  ParticleSet* qp = createElectronParticleSet();
-  pp.addParticleSet(qp);
+  std::unique_ptr<ParticleSet> qp(createElectronParticleSet());
+  pp.addParticleSet(std::move(qp));
 
-  hpool.setParticleSetPool(&pp);
+  WaveFunctionPool wfp(pp, c);
 
-  WaveFunctionPool wfp(c);
-  TrialWaveFunction psi(c);
-  wfp.setParticleSetPool(&pp);
-  wfp.setPrimary(&psi);
-
-  WaveFunctionFactory::PtclPoolType ptcl_pool;
-  ptcl_pool["e"]                  = qp;
-  WaveFunctionFactory* wf_factory = new WaveFunctionFactory(qp, ptcl_pool, c);
-  wf_factory->setPsi(&psi);
+  WaveFunctionFactory* wf_factory = new WaveFunctionFactory("psi0", *pp.getPool()["e"], pp.getPool(), c);
   wfp.getPool()["psi0"] = wf_factory;
+  wfp.setPrimary(wf_factory->getTWF());
 
-  hpool.setWaveFunctionPool(&wfp);
+  HamiltonianPool hpool(pp, wfp, c);
+
+  REQUIRE(hpool.empty());
 
   hpool.put(root);
 
   QMCHamiltonian* h = hpool.getHamiltonian("h0");
-  REQUIRE(h != NULL);
+  REQUIRE(h != nullptr);
 
   // Bare kinetic energy is always added
   REQUIRE(h->size() == 2);

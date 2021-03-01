@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ChiesaCorrection.h"
+#include "ChiesaCorrection.h"
 #include "QMCDrivers/WalkerProperties.h"
 
 namespace qmcplusplus

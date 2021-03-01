@@ -3,7 +3,7 @@
 
 #include "QMCTools/QMCFiniteSize/SkParserBase.h"
 #include "Configuration.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include <vector>
 
 namespace qmcplusplus

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/QMCLinearOptimize.h"
+#include "QMCLinearOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
@@ -43,14 +43,11 @@ namespace qmcplusplus
 QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      TrialWaveFunction& psi,
                                      QMCHamiltonian& h,
-                                     HamiltonianPool& hpool,
-                                     WaveFunctionPool& ppool,
                                      Communicate* comm,
                                      const std::string& QMC_driver_type)
-    : QMCDriver(w, psi, h, ppool, comm, QMC_driver_type),
+    : QMCDriver(w, psi, h, comm, QMC_driver_type),
       PartID(0),
       NumParts(1),
-      hamPool(hpool),
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
@@ -64,7 +61,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
   //     //set the optimization flag
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
-  m_param.add(param_tol, "alloweddifference", "double");
+  m_param.add(param_tol, "alloweddifference");
   //Set parameters for line minimization:
 }
 
@@ -81,7 +78,7 @@ void QMCLinearOptimize::start()
 {
   {
     //generate samples
-    ScopedTimer local(&generate_samples_timer_);
+    ScopedTimer local(generate_samples_timer_);
     generateSamples();
     //store active number of walkers
     NumOfVMCWalkers = W.getActiveWalkers();
@@ -95,7 +92,7 @@ void QMCLinearOptimize::start()
   app_log() << "   Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
   {
     //get configuration from the previous run
-    ScopedTimer local(&initialize_timer_);
+    ScopedTimer local(initialize_timer_);
     Timer t2;
     optTarget->getConfigurations(h5FileRoot);
     optTarget->setRng(vmcEngine->getRng());
@@ -124,7 +121,7 @@ void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineO
 
   {
     //generate samples
-    ScopedTimer local(&generate_samples_timer_);
+    ScopedTimer local(generate_samples_timer_);
     generateSamples();
     //store active number of walkers
     NumOfVMCWalkers = W.getActiveWalkers();
@@ -139,7 +136,7 @@ void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineO
   app_log() << "     Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
   {
     // get configuration from the previous run
-    ScopedTimer local(&initialize_timer_);
+    ScopedTimer local(initialize_timer_);
     Timer t2;
     optTarget->getConfigurations(h5FileRoot);
     optTarget->setRng(vmcEngine->getRng());
@@ -670,10 +667,10 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
   {
 #if defined(QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, myComm, false);
     else
 #endif
-      vmcEngine = std::make_unique<VMC>(W, Psi, H, psiPool, myComm);
+      vmcEngine = std::make_unique<VMC>(W, Psi, H, myComm, false);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
   }
 

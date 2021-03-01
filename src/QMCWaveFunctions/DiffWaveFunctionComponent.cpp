@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
+#include "DiffWaveFunctionComponent.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 /**@file DiffWaveFunctionComponent.cpp
@@ -67,20 +67,20 @@ void NumericalDiffOrbital::evaluateDerivatives(ParticleSet& P,
     int jj = ind_map[j];
     if (jj < 0)
       continue;
-    LogValueType plus=0.0;
-    LogValueType minus=0.0;
-    RealType curvar=std::real(optvars[jj]);
-    dg_p=0.0;
-    dl_p=0.0;
-    dg_m=0.0;
-    dl_m=0.0;
+    LogValueType plus  = 0.0;
+    LogValueType minus = 0.0;
+    RealType curvar    = std::real(optvars[jj]);
+    dg_p               = 0.0;
+    dl_p               = 0.0;
+    dg_m               = 0.0;
+    dl_m               = 0.0;
     //accumulate plus and minus displacement
     for (int i = 0; i < refOrbital.size(); ++i)
     {
-      v[jj]=std::real(optvars[jj])+delta;
+      v[jj] = std::real(optvars[jj]) + delta;
       refOrbital[i]->resetParameters(v);
-      plus+=refOrbital[i]->evaluateLog(P,dg_p,dl_p);
-      v[jj]=std::real(optvars[jj])-delta;
+      plus += refOrbital[i]->evaluateLog(P, dg_p, dl_p);
+      v[jj] = std::real(optvars[jj]) - delta;
       refOrbital[i]->resetParameters(v);
       minus += refOrbital[i]->evaluateLog(P, dg_m, dl_m);
       //restore the variable to the original state

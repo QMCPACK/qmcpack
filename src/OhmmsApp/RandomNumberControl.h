@@ -18,7 +18,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 class Communicate;
 

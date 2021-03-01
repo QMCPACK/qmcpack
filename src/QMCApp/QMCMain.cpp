@@ -20,8 +20,8 @@
 /**@file QMCMain.cpp
  * @brief Implments QMCMain operators.
  */
-#include "QMCApp/QMCMain.h"
-#include "Platforms/accelerators.hpp"
+#include "QMCMain.h"
+#include "accelerators.hpp"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -37,9 +37,9 @@
 #include "Message/OpenMP.h"
 #include <queue>
 #include <cstring>
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
@@ -169,7 +169,7 @@ bool QMCMain::execute()
   if (simulationType == "afqmc")
   {
     NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
-    ScopedTimer t2_scope(t2);
+    ScopedTimer t2_scope(*t2);
     app_log() << std::endl
               << "/*************************************************\n"
               << " ********  This is an AFQMC calculation   ********\n"
@@ -280,7 +280,7 @@ bool QMCMain::execute()
     HDFVersion cur_version;
     v_str << cur_version[0] << " " << cur_version[1];
     xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
-    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot());
+    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
@@ -320,7 +320,7 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       if (cname == "qmc")
       {
         //prevent completed is set
-        bool success = executeQMCSection(tcur, iter > 0);
+        bool success = executeQMCSection(tcur, true);
         if (!success)
         {
           app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
@@ -331,6 +331,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
       tcur = tcur->next;
     }
   }
+  // Destroy the last driver at the end of a loop with no further reuse of a driver needed.
+  last_driver.reset(nullptr);
 }
 
 bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
@@ -462,7 +464,7 @@ bool QMCMain::validateXML()
     }
     else if (cname == "init")
     {
-      InitMolecularSystem moinit(ptclPool);
+      InitMolecularSystem moinit(*ptclPool);
       moinit.put(cur);
     }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -558,38 +560,39 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 
 /** prepare for a QMC run
  * @param cur qmc element
+ * @param reuse if true, the current call is from a loop
  * @return true, if a valid QMCDriver is set.
  */
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
   bool append_run              = false;
 
-  if (!population_)
-  {
-    population_.reset(new MCPopulation(myComm->size(), *qmcSystem, ptclPool->getParticleSet("e"), psiPool->getPrimary(),
-                                       hamPool->getPrimary(), myComm->rank()));
-  }
-  if (reuse)
+  if (reuse && last_driver)
     qmc_driver = std::move(last_driver);
   else
   {
-    QMCDriverFactory driver_factory;
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(myProject.m_series, cur);
-    qmc_driver = driver_factory.newQMCDriver(std::move(last_driver), myProject.m_series, cur, das, *qmcSystem,
-                                             *ptclPool, *psiPool, *hamPool, *population_, myComm);
+    QMCDriverFactory driver_factory(myProject);
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+
+    qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
     append_run = das.append_run;
   }
 
   if (qmc_driver)
   {
+    if (last_branch_engine_legacy_driver)
+    {
+      last_branch_engine_legacy_driver->resetRun(cur);
+      qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
+    }
+
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
       myProject.advance();
 
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), "", append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.
@@ -603,12 +606,13 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer* t1 = timer_manager.createTimer(qmc_driver->getEngineName(), timer_level_coarse);
-    t1->start();
     qmc_driver->run();
-    t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-    last_driver = std::move(qmc_driver);
+    // transfer the states of a driver before its destruction
+    last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
+    // save the driver in a driver loop
+    if (reuse)
+      last_driver = std::move(qmc_driver);
     return true;
   }
   else

@@ -11,11 +11,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h>
-#include <QMCWaveFunctions/SPOSetInputInfo.h>
-#include <OhmmsData/AttributeSet.h>
-#include <Utilities/IteratorUtility.h>
-#include <Utilities/string_utils.h>
+#include "SHOSetBuilder.h"
+#include "QMCWaveFunctions/SPOSetInputInfo.h"
+#include "OhmmsData/AttributeSet.h"
+#include "Utilities/IteratorUtility.h"
+#include "Utilities/string_utils.h"
 
 
 namespace qmcplusplus

@@ -30,6 +30,7 @@ User's Guide and Developer's Manual
    analyzing
    LCAO
    sCI
+   spin_orbit
    afqmc
    examples
    lab_qmc_statistics
@@ -42,6 +43,7 @@ User's Guide and Developer's Manual
    external_tools
    contributing
    unit_testing
+   integration_tests
    design_features
    developing
    appendices

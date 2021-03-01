@@ -17,7 +17,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "Message/CommOperators.h"
 #include <fftw3.h>
-#include <QMCWaveFunctions/einspline_helper.hpp>
+#include "QMCWaveFunctions/einspline_helper.hpp"
 
 namespace qmcplusplus
 {

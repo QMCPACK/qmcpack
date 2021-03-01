@@ -5,15 +5,15 @@
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<vector>
-#include<map>
-#include<utility>
-#include<algorithm>
-#include<complex>
+#include <vector>
+#include <map>
+#include <utility>
+#include <algorithm>
+#include <complex>
 
-#include<formic/utils/exception.h>
-#include<formic/utils/archive.h>
-#include<formic/utils/lmyengine/var_dependencies.h>
+#include "formic/utils/exception.h"
+#include "formic/utils/archive.h"
+#include "var_dependencies.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief Constructs the object from a list of doubles, which should contain triplets of numbers

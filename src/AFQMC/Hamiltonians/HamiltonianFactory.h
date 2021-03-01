@@ -91,7 +91,7 @@ protected:
   {
     std::string type("hdf5");
     ParameterSet m_param;
-    m_param.add(type, "filetype", "std::string");
+    m_param.add(type, "filetype");
     m_param.put(cur);
 
     app_log() << "\n****************************************************\n"

@@ -40,14 +40,15 @@ public:
   UPtrVector<TrialWaveFunction> twfs;
   UPtrVector<QMCHamiltonian> hams;
   std::vector<TinyVector<double, 3>> tpos;
+  const MultiWalkerDispatchers dispatchers_;
 
 public:
-  CrowdWithWalkers(SetupPools& pools) : em(pools.comm)
+  CrowdWithWalkers(SetupPools& pools) : em(pools.comm), dispatchers_(true)
   {
     FakeEstimator* fake_est = new FakeEstimator;
     em.add(fake_est, "fake");
 
-    crowd_ptr    = std::make_unique<Crowd>(em);
+    crowd_ptr    = std::make_unique<Crowd>(em, dispatchers_);
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
@@ -89,11 +90,12 @@ TEST_CASE("Crowd integration", "[drivers]")
 
   ScalarEstimatorBase* est2 = em.getEstimator("fake");
   FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
-  REQUIRE(fake_est2 != NULL);
+  REQUIRE(fake_est2 != nullptr);
   REQUIRE(fake_est2 == fake_est);
   // The above was required behavior for crowd at one point.
   // TODO: determine whether it still is, I don't think so.
-  Crowd crowd(em);
+  const MultiWalkerDispatchers dispatchers(true);
+  Crowd crowd(em, dispatchers);
 }
 
 TEST_CASE("Crowd::loadWalkers", "[particle]")
@@ -115,21 +117,6 @@ TEST_CASE("Crowd::loadWalkers", "[particle]")
   };
   for (int i = 0; i < crowd.size(); ++i)
     checkParticleSetPos(i);
-}
-
-TEST_CASE("Crowd::get_accept_ratio", "[Drivers]")
-{
-  using namespace testing;
-  SetupPools pools;
-
-  CrowdWithWalkers crowd_with_walkers(pools);
-  Crowd& crowd = crowd_with_walkers.get_crowd();
-
-  crowd.incAccept();
-  crowd.incAccept();
-  crowd.incAccept();
-  crowd.incReject();
-  REQUIRE(crowd.get_accept_ratio() == Approx(0.75));
 }
 
 TEST_CASE("Crowd redistribute walkers")

@@ -38,11 +38,25 @@ namespace qmcplusplus
  */
 
 ///free function to create a distable table of s-s
-DistanceTableData* createDistanceTable(ParticleSet& s, std::ostream& description);
+DistanceTableData* createDistanceTableAA(ParticleSet& s, std::ostream& description);
+DistanceTableData* createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description);
+
+inline DistanceTableData* createDistanceTable(ParticleSet& s, std::ostream& description)
+{
+  // during P-by-P move, the cost of single particle evaluation of distance tables
+  // is determined by the number of source particles.
+  // Thus the implementation selection is determined by the source particle set.
+#if defined(ENABLE_OFFLOAD)
+  if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
+    return createDistanceTableAAOMPTarget(s, description);
+  else
+#endif
+    return createDistanceTableAA(s, description);
+}
 
 ///free function create a distable table of s-t
 DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, std::ostream& description);
-DistanceTableData* createDistanceTableABOMP(const ParticleSet& s, ParticleSet& t, std::ostream& description);
+DistanceTableData* createDistanceTableABOMPTarget(const ParticleSet& s, ParticleSet& t, std::ostream& description);
 
 inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, std::ostream& description)
 {
@@ -51,7 +65,7 @@ inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet&
   // Thus the implementation selection is determined by the source particle set.
 #if defined(ENABLE_OFFLOAD)
   if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
-    return createDistanceTableABOMP(s, t, description);
+    return createDistanceTableABOMPTarget(s, t, description);
   else
 #endif
     return createDistanceTableAB(s, t, description);

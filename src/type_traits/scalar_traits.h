@@ -17,10 +17,10 @@
 #ifndef QMCPLUSPLUS_SCLAR_TRAITS_H
 #define QMCPLUSPLUS_SCLAR_TRAITS_H
 #include <complex>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <OhmmsPETE/Tensor.h>
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/TinyVector.h>
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/Tensor.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/TinyVector.h"
 
 namespace qmcplusplus
 {

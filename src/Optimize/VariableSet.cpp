@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include <map>
 #include <stdexcept>
 #include <iomanip>
@@ -233,7 +233,7 @@ void VariableSet::setDefaults(bool optimize_all)
     Index[i] = optimize_all ? i : -1;
 }
 
-void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader)
+void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) const
 {
   std::string pad_str = std::string(leftPadSpaces, ' ');
   int max_name_len    = 0;

@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/DMC_CUDA.h"
+#include "DMC_CUDA.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/QMCUpdateBase.h"
 #include "OhmmsApp/RandomNumberControl.h"
@@ -37,9 +37,9 @@ using WP = WalkerProperties::Indexes;
 DMCcuda::DMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 WaveFunctionPool& ppool,
-                 Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "DMCcuda"),
+                 Communicate* comm,
+                 bool enable_profiling)
+    : QMCDriver(w, psi, h, comm, "DMCcuda", enable_profiling),
       myWarmupSteps(0),
       Mover(0),
       NLop(w.getTotalNum()),
@@ -51,9 +51,9 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
   RootName = "dmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  //m_param.add(myWarmupSteps,"warmupSteps","int");
-  //m_param.add(nTargetSamples,"targetWalkers","int");
-  m_param.add(ScaleWeight, "scaleweight", "string");
+  //m_param.add(myWarmupSteps,"warmupSteps");
+  //m_param.add(nTargetSamples,"targetWalkers");
+  m_param.add(ScaleWeight, "scaleweight");
 
   H.setRandomGenerator(&Random);
 }
@@ -347,7 +347,7 @@ void DMCcuda::resetUpdateEngine()
     W.loadEnsemble();
     branchEngine->initWalkerController(W, false, false);
     Mover = new DMCUpdatePbyPWithRejectionFast(W, Psi, H, Random);
-    Mover->resetRun(branchEngine, Estimators, nullptr, DriftModifier);
+    Mover->resetRun(branchEngine.get(), Estimators, nullptr, DriftModifier);
     //Mover->initWalkersForPbyP(W.begin(),W.end());
   }
   else
@@ -413,11 +413,11 @@ bool DMCcuda::put(xmlNodePtr q)
 
   BranchInterval = -1;
   ParameterSet p;
-  p.add(BranchInterval, "branchInterval", "string");
-  p.add(BranchInterval, "branchinterval", "string");
-  p.add(BranchInterval, "substeps", "int");
-  p.add(BranchInterval, "subSteps", "int");
-  p.add(BranchInterval, "sub_steps", "int");
+  p.add(BranchInterval, "branchInterval");
+  p.add(BranchInterval, "branchinterval");
+  p.add(BranchInterval, "substeps");
+  p.add(BranchInterval, "subSteps");
+  p.add(BranchInterval, "sub_steps");
   p.put(q);
   return true;
 }

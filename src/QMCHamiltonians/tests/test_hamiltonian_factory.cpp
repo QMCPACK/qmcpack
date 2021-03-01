@@ -52,16 +52,15 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 
 
   HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::OrbitalPoolType orbital_map;
+  HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = qp;
   particle_set_map["ion0"] = &ions;
 
-  HamiltonianFactory hf(qp, particle_set_map, orbital_map, c);
+  HamiltonianFactory hf("h0", *qp, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff(qp, particle_set_map, c);
-  orbital_map["psi0"] = &wff;
-
+  WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);
+  psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
@@ -77,12 +76,12 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   hf.put(root);
 
 
-  REQUIRE(hf.targetH);
-  REQUIRE(hf.targetH->size() == 3);
-  REQUIRE(hf.targetH->total_size() == 3);
+  REQUIRE(hf.getH());
+  REQUIRE(hf.getH()->size() == 3);
+  REQUIRE(hf.getH()->total_size() == 3);
 
-  REQUIRE(hf.targetH->getOperatorType("ElecElec") == "coulomb");
-  REQUIRE(hf.targetH->getOperatorType("ElecIon") == "coulomb");
+  REQUIRE(hf.getH()->getOperatorType("ElecElec") == "coulomb");
+  REQUIRE(hf.getH()->getOperatorType("ElecIon") == "coulomb");
 }
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
@@ -106,15 +105,15 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 
 
   HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::OrbitalPoolType orbital_map;
+  HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = qp;
   particle_set_map["ion0"] = &ions;
 
-  HamiltonianFactory hf(qp, particle_set_map, orbital_map, c);
+  HamiltonianFactory hf("h0", *qp, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff(qp, particle_set_map, c);
-  orbital_map["psi0"] = &wff;
+  WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);
+  psi_map["psi0"] = &wff;
 
 
   const char* hamilonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \

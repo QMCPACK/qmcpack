@@ -13,11 +13,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <Particle/MCWalkerConfiguration.h>
-#include <Particle/HDFWalkerInput_0_4.h>
-#include <io/hdf_archive.h>
-#include <mpi/mpi_datatype.h>
-#include <mpi/collectives.h>
+#include "Particle/MCWalkerConfiguration.h"
+#include "HDFWalkerInput_0_4.h"
+#include "hdf/hdf_archive.h"
+#include "mpi/mpi_datatype.h"
+#include "mpi/collectives.h"
 #include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
@@ -121,7 +121,7 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
 
 bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
 {
-  int nw_in = 0;
+  size_t nw_in = 0;
 
   h5name.append(hdf::config_ext);
   hdf_archive hin(myComm, false); //everone reads this
@@ -149,7 +149,7 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
 
   typedef std::vector<QMCTraits::RealType> Buffer_t;
   Buffer_t posin;
-  std::array<int, 3> dims{nw_in, static_cast<int>(targetW.getTotalNum()), OHMMS_DIM};
+  std::array<size_t, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
   posin.resize(dims[0] * dims[1] * dims[2]);
   hin.readSlabReshaped(posin, dims, hdf::walkers);
 
@@ -157,7 +157,6 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
   hin.read(woffsets, "walker_partition");
 
   int np1 = myComm->size() + 1;
-  std::vector<int> counts(np1);
   if (woffsets.size() != np1)
   {
     woffsets.resize(myComm->size() + 1, 0);
@@ -198,7 +197,7 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
 
 bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
 {
-  int nw_in = 0;
+  size_t nw_in = 0;
   h5name.append(hdf::config_ext);
 
   if (myComm->rank() == 0)
@@ -236,7 +235,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
   std::vector<int> counts(myComm->size()), woffsets(np1, 0);
   FairDivideLow(nw_in, myComm->size(), woffsets);
 
-  int nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
 
   int nitems = targetW.getTotalNum() * OHMMS_DIM;
   for (int i = 0; i < woffsets.size(); ++i)
@@ -244,7 +243,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
   for (int i = 0; i < counts.size(); ++i)
     counts[i] = woffsets[i + 1] - woffsets[i];
 
-  std::array<int, 3> dims{nw_in, static_cast<int>(targetW.getTotalNum()), OHMMS_DIM};
+  std::array<size_t, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
   Buffer_t posin(nw_in * nitems), posout(counts[myComm->rank()]);
 
   if (myComm->rank() == 0)
@@ -270,7 +269,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
 
 bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
 {
-  int nw_in = 0;
+  size_t nw_in = 0;
   h5name.append(hdf::config_ext);
   std::vector<int> woffsets;
   int woffsets_size = 0;
@@ -328,7 +327,7 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
 
   typedef std::vector<QMCTraits::RealType> Buffer_t;
   Buffer_t posin;
-  std::array<int, 3> dims{nw_in, static_cast<int>(targetW.getTotalNum()), OHMMS_DIM};
+  std::array<size_t, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
 
   if (woffsets.size() != myComm->size() + 1)
   {
@@ -336,10 +335,10 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
     FairDivideLow(nw_in, myComm->size(), woffsets);
   }
 
-  int nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
 
-  std::array<int, 3> counts{nw_loc, static_cast<int>(targetW.getTotalNum()), OHMMS_DIM};
-  std::array<int, 3> offsets{woffsets[myComm->rank()], 0, 0};
+  std::array<size_t, 3> counts{nw_loc, targetW.getTotalNum(), OHMMS_DIM};
+  std::array<size_t, 3> offsets{static_cast<size_t>(woffsets[myComm->rank()]), 0, 0};
   posin.resize(nw_loc * dims[1] * dims[2]);
 
   hyperslab_proxy<Buffer_t, 3> slab(posin, dims, counts, offsets);

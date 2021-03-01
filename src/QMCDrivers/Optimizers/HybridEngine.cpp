@@ -13,7 +13,7 @@
 #include <vector>
 #include <string>
 #include <numeric>
-#include "QMCDrivers/Optimizers/HybridEngine.h"
+#include "HybridEngine.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
 #include "OhmmsData/XMLParsingString.h"
@@ -42,7 +42,7 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
     {
       std::string children_MinMethod;
       ParameterSet m_param;
-      m_param.add(children_MinMethod, "MinMethod", "string");
+      m_param.add(children_MinMethod, "MinMethod");
       m_param.put(cur);
 
       if (children_MinMethod.empty())
@@ -91,7 +91,7 @@ bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
   const int tot_micro_it = std::accumulate(num_updates_opt_methods_.begin(), num_updates_opt_methods_.end(), 0);
   const int pos          = step_num_ % tot_micro_it;
   //interval is the number of steps between stores based on the number of stores desired
-  int interval =  num_updates_opt_methods_[idx] / store_num;
+  int interval = num_updates_opt_methods_[idx] / store_num;
 
   if (interval == 0)
   {

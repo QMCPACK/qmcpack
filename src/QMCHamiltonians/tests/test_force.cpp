@@ -257,7 +257,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // 2) The species is active
   CoulombPBCAA noElecForce(elec, true, true);
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   noIonForce.evaluateWithIonDerivs(ions3, ions3, psi, noElecForce.forces, noElecForce.forces);
   noElecForce.evaluateWithIonDerivs(elec, ions3, psi, noIonForce.forces, noIonForce.forces);
 
@@ -348,11 +348,11 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   force.evaluate(elec);
   std::cout << " Force ionion = " << force.forces_IonIon << std::endl;
   std::cout << " Force = " << force.forces << std::endl;
-  REQUIRE(force.forces[0][0] == Approx(8.99061106));
-  REQUIRE(force.forces[0][1] == Approx(14.86091659));
+  REQUIRE(force.forces[0][0] == Approx(8.99061106).epsilon(1e-4));
+  REQUIRE(force.forces[0][1] == Approx(14.86091659).epsilon(1e-4));
   REQUIRE(force.forces[0][2] == Approx(0.0));
-  REQUIRE(force.forces[1][0] == Approx(-0.2250998297));
-  REQUIRE(force.forces[1][1] == Approx(0.1388117844));
+  REQUIRE(force.forces[1][0] == Approx(-0.2250998297).epsilon(1e-4));
+  REQUIRE(force.forces[1][1] == Approx(0.1388117844).epsilon(1e-4));
   REQUIRE(force.forces[1][2] == Approx(0.0));
 
   force.N_basis = 6;

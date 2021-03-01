@@ -1,4 +1,4 @@
-#include "QMCTools/QMCFiniteSize/SkParserHDF5.h"
+#include "SkParserHDF5.h"
 #include "QMCTools/QMCFiniteSize/FSUtilities.h"
 #include <cmath>
 

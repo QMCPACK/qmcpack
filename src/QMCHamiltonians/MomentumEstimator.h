@@ -14,7 +14,7 @@
 
 #ifndef QMCPLUSPLUS_MOMENTUM_HAMILTONIAN_H
 #define QMCPLUSPLUS_MOMENTUM_HAMILTONIAN_H
-#include <QMCHamiltonians/OperatorBase.h>
+#include "QMCHamiltonians/OperatorBase.h"
 namespace qmcplusplus
 {
 class MomentumEstimator : public OperatorBase

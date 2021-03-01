@@ -27,10 +27,10 @@ class ExampleHeComponent : public WaveFunctionComponent
 {
 public:
   ExampleHeComponent(const ParticleSet& ions, ParticleSet& els)
-      : ions_(ions), my_table_ee_idx_(els.addTable(els)), my_table_ei_idx_(els.addTable(ions))
-  {
-    ClassName = "ExampleHeComponent";
-  };
+      : WaveFunctionComponent("ExampleHeComponent"),
+        ions_(ions),
+        my_table_ee_idx_(els.addTable(els)),
+        my_table_ei_idx_(els.addTable(ions)){};
 
   using OptVariablesType = optimize::VariableSet;
   using PtclGrpIndexes   = QMCTraits::PtclGrpIndexes;

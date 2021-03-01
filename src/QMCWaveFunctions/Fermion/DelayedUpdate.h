@@ -12,12 +12,12 @@
 #ifndef QMCPLUSPLUS_DELAYED_UPDATE_H
 #define QMCPLUSPLUS_DELAYED_UPDATE_H
 
-#include <OhmmsPETE/OhmmsVector.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <CPU/BLAS.hpp>
-#include <CPU/BlasThreadingEnv.h>
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "CPU/BLAS.hpp"
+#include "CPU/BlasThreadingEnv.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include <Message/OpenMP.h>
+#include "Message/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -103,16 +103,16 @@ public:
       std::copy_n(Ainv[rowchanged], invRow.size(), invRow.data());
       return;
     }
-    const T cone(1);
-    const T czero(0);
+    constexpr T cone(1);
+    constexpr T czero(0);
     const int norb     = Ainv.rows();
     const int lda_Binv = Binv.cols();
     // save Ainv[rowchanged] to invRow
     std::copy_n(Ainv[rowchanged], norb, invRow.data());
     // multiply V (NxK) Binv(KxK) U(KxN) invRow right to the left
     BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, invRow.data(), 1, czero, p.data(), 1);
-    BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
-    BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
+    BLAS::gemv('N', delay_count, delay_count, -cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
+    BLAS::gemv('N', norb, delay_count, cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
   }
 
   /** accept a move with the update delayed
@@ -122,32 +122,30 @@ public:
    *
    * Before delay_count reaches the maximum delay, only Binv is updated with a recursive algorithm
    */
-  template<typename VVT>
-  inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
+  template<typename VVT, typename RATIOT>
+  inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const RATIOT ratio_new)
   {
-    const T cminusone(-1);
-    const T czero(0);
+    constexpr T cone(1);
+    constexpr T czero(0);
     const int norb     = Ainv.rows();
     const int lda_Binv = Binv.cols();
     std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
     std::copy_n(psiV.data(), norb, U[delay_count]);
     delay_list[delay_count] = rowchanged;
-    // the new Binv is [[X Y] [Z x]]
-    BLAS::gemv('T', norb, delay_count + 1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
-    // x
-    T y = -p[delay_count];
-    for (int i = 0; i < delay_count; i++)
-      y += Binv[delay_count][i] * p[i];
-    Binv[delay_count][delay_count] = y = T(1) / y;
+    // the new Binv is [[X Y] [Z sigma]]
+    BLAS::gemv('T', norb, delay_count + 1, -cone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
+    // sigma
+    const T sigma                  = static_cast<T>(RATIOT(1) / ratio_new);
+    Binv[delay_count][delay_count] = sigma;
     // Y
-    BLAS::gemv('T', delay_count, delay_count, y, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
-               lda_Binv);
+    BLAS::gemv('T', delay_count, delay_count, sigma, Binv.data(), lda_Binv, p.data(), 1, czero,
+               Binv.data() + delay_count, lda_Binv);
     // X
-    BLAS::ger(delay_count, delay_count, cminusone, Binv[delay_count], 1, Binv.data() + delay_count, lda_Binv,
-              Binv.data(), lda_Binv);
+    BLAS::ger(delay_count, delay_count, cone, Binv[delay_count], 1, Binv.data() + delay_count, lda_Binv, Binv.data(),
+              lda_Binv);
     // Z
     for (int i = 0; i < delay_count; i++)
-      Binv[delay_count][i] *= -y;
+      Binv[delay_count][i] *= sigma;
     delay_count++;
     // update Ainv when maximal delay is reached
     if (delay_count == lda_Binv)
@@ -162,8 +160,8 @@ public:
     if (delay_count == 0)
       return;
     // update the inverse matrix
-    const T cone(1);
-    const T czero(0);
+    constexpr T cone(1);
+    constexpr T czero(0);
     const int norb = Ainv.rows();
     if (delay_count == 1)
     {

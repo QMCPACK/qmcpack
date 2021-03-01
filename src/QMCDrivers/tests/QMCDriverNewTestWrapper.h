@@ -16,6 +16,7 @@
 #include "Particle/SampleStack.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "OhmmsApp/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -28,18 +29,10 @@ class QMCDriverNewTestWrapper : public QMCDriverNew
 {
 public:
   using Base = QMCDriverNew;
-  QMCDriverNewTestWrapper(QMCDriverInput&& input,
-                          MCPopulation& population,
-                          TrialWaveFunction& psi,
-                          QMCHamiltonian& h,
-                          WaveFunctionPool& ppool,
-                          SampleStack samples,
-                          Communicate* comm)
-      : QMCDriverNew(std::move(input),
-                     population,
-                     psi,
-                     h,
-                     ppool,
+  QMCDriverNewTestWrapper(QMCDriverInput&& input, MCPopulation&& population, SampleStack samples, Communicate* comm)
+      : QMCDriverNew(test_project,
+                     std::move(input),
+                     std::move(population),
                      "QMCDriverTestWrapper::",
                      comm,
                      "QMCDriverNewTestWrapper")
@@ -121,10 +114,10 @@ public:
 
     // Ask for 27 total walkers on 2 ranks of 11 walkers (inconsistent input)
     // results in fatal exception on all ranks.
-    CHECK_THROWS_AS(adjustGlobalWalkerCount(2,1,27,11,1.0,4), UniformCommunicateError);
+    CHECK_THROWS_AS(adjustGlobalWalkerCount(2, 1, 27, 11, 1.0, 4), UniformCommunicateError);
     // Ask for 14 total walkers on 16 ranks (inconsistent input)
     // results in fatal exception on all ranks.
-    CHECK_THROWS_AS(adjustGlobalWalkerCount(16,0,14,0,0,0), UniformCommunicateError);
+    CHECK_THROWS_AS(adjustGlobalWalkerCount(16, 0, 14, 0, 0, 0), UniformCommunicateError);
   }
 
   bool run() { return false; }
@@ -138,6 +131,7 @@ public:
   };
 
 private:
+  ProjectData test_project;
 };
 
 template<class CONCURRENCY>

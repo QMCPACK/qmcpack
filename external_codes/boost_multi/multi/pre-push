@@ -1,0 +1,15 @@
+#!/bin/bash 
+# -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+
+(mkdir -p build.g++         && cd build.g++         && CXX=g++                                 cmake ..                              && make -j 12 && ctest -j 12 --output-on-failure) || exit
+(mkdir -p build.g++-8       && cd build.g++-8       && CXX=g++-8                               cmake ..                              && make -j 12 && ctest -j 12 --output-on-failure) || exit
+(mkdir -p build.g++-std17   && cd build.g++-std17   && CXX=g++                                 cmake .. -DCMAKE_CXX_STANDARD=17      && make -j 12 && ctest -j 12 --output-on-failure) || exit
+(mkdir -p build.clang++     && cd build.clang++     && CXX=clang++                             cmake ..                              && make -j 12 && ctest -j 12 --output-on-failure) || exit
+#(mkdir -p build.clang++-11  && cd build.clang++-11  && CXX=clang++-11                          cmake ..                              && make -j 12 && ctest -j 12 --output-on-failure) || exit
+(mkdir -p build.nvcc        && cd build.nvcc        && CUDACXX="/usr/local/cuda-11.0/bin/nvcc" cmake .. -DENABLE_CUDA=1              && make -j 10 && ctest -j 10 --output-on-failure) || exit
+(mkdir -p build.nvcc-11.1   && cd build.nvcc-11.1   && CUDACXX="/usr/local/cuda-11.1/bin/nvcc" cmake .. -DENABLE_CUDA=1              && make -j 12 && ctest -j 12 --output-on-failure) || exit
+(mkdir -p build.icpc-nomkl  && cd build.icpc-nomkl  && CXX="/opt/intel/sw_dev_tools/bin/icpc"  cmake ..                              && make -j 12 && ctest -j 12 --output-on-failure) || exit
+
+#(source /opt/intel/sw_dev_tools/bin/compilervars.sh intel64; mkdir -p build.icpc        && cd build.icpc        && CXX="icpc"  cmake .. && make -j 10 && ctest -j 10 --output-on-failure) || exit
+#(mkdir -p build.icpc-memchk && cd build.icpc-memchk && CXX="icpc"  cmake .. && make -j && ctest -T memcheck -j --output-on-failure) || exit
+

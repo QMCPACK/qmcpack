@@ -36,6 +36,9 @@ struct MCSample
   ParticleSet::ParticleLaplacian_t L;
   ParticleSet::RealType LogPsi, Sign, PE, KE;
 
+  inline MCSample(const ParticleSet& pset) : R(pset.R), spins(pset.spins) { }
+
+  /// deprecated. Beyond w.R and w.spins, others are used perhaps somewhere but intended not to.
   inline MCSample(const Walker_t& w) : R(w.R), spins(w.spins), G(w.G), L(w.L)
   {
     LogPsi = w.Properties(WP::LOGPSI);

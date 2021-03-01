@@ -14,10 +14,10 @@
  */
 #include <Configuration.h>
 #include <random/random.hpp>
-#include <QMCWaveFunctions/LCAO/SoaSphericalTensor.h>
-#include <QMCWaveFunctions/LCAO/SoaCartesianTensor.h>
-#include <Numerics/SphericalTensor.h> 
-#include <Numerics/CartesianTensor.h> 
+#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
+#include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
+#include "Numerics/SphericalTensor.h" 
+#include "Numerics/CartesianTensor.h" 
 #include <getopt.h>
 
 using namespace std;

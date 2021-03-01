@@ -20,7 +20,7 @@
 #include <tuple>
 #include <mpi.h>
 
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Utilities/taskgroup.h"

@@ -50,7 +50,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet& ptcl, SPOSetPtr const spos, BackflowTransformation* BF, int first = 0);
+  DiracDeterminantWithBackflow(ParticleSet& ptcl, std::shared_ptr<SPOSet>&& spos, BackflowTransformation* BF, int first = 0);
 
   ///default destructor
   ~DiracDeterminantWithBackflow();
@@ -138,7 +138,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(SPOSet* spo) const;
+  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const;
 
   inline ValueType rcdot(TinyVector<RealType, OHMMS_DIM>& lhs, TinyVector<ValueType, OHMMS_DIM>& rhs)
   {

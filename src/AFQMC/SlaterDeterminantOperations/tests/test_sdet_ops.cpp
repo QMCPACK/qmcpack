@@ -37,7 +37,7 @@
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
 
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
@@ -379,8 +379,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
 }
 */
 
-template<class Allocator, class buffer_generator>
-void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
+template<class Allocator, class BufferManager>
+void SDetOps_complex_serial(Allocator alloc, BufferManager b)
 {
   static_assert(std::is_same<typename Allocator::value_type, ComplexType>::value, "Incorrect type.\n");
 
@@ -413,7 +413,7 @@ void SDetOps_complex_serial(Allocator alloc, buffer_generator* bgen)
   array_ref Aref(A.origin(), {NEL, NMO});
   array_ref Bref(B.origin(), {NMO, NEL});
 
-  SlaterDetOperations SDet(SlaterDetOperations_serial<Type, buffer_generator>(NMO, NEL, bgen));
+  SlaterDetOperations SDet(SlaterDetOperations_serial<Type, BufferManager>(NMO, NEL, b));
 
   /**** Overlaps ****/
   //SECTION("Overlaps")
@@ -634,6 +634,7 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   using boost::mpi3::shared_communicator;
   auto world               = boost::mpi3::environment::get_world_instance();
   shared_communicator node = world.split_shared(world.rank());
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   const int NMO = 4;
   const int NEL = 3;
@@ -798,6 +799,7 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   check(Gc2, gc_ref);
   ov_ = SDet.MixedDensityMatrix(A({0, 2}, {0, 3}), B({0, 3}, {0, 2}), Gc2({0, 2}, {0, 3}), 0.0, node_, true);
   check(Gc2({0, 2}, {0, 3}), gc_ref_2);
+  release_memory_managers();
 }
 
 TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
@@ -808,6 +810,7 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
   auto world               = boost::mpi3::environment::get_world_instance();
   shared_communicator node = world.split_shared(world.rank());
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   const int NMO = 4;
   const int NEL = 3;
@@ -963,28 +966,24 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
                           Gc2({0,2},{0,3}),0.0,node_,true);
   check(Gc2({0,2},{0,3}),gc_ref_2);
 */
+  release_memory_managers();
 }
 
-extern std::shared_ptr<host_allocator_generator_type> host_buffer_generator;
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
 
 TEST_CASE("SDetOps_complex_serial", "[sdet_ops]")
 {
   auto world = boost::mpi3::environment::get_world_instance();
   auto node  = world.split_shared(world.rank());
 
-
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
   arch::INIT(node);
-  using Alloc    = device::device_allocator<ComplexType>;
-  using gen_type = device_allocator_generator_type;
-  auto gptr(device_buffer_generator.get());
+  using Alloc = device::device_allocator<ComplexType>;
 #else
-  using Alloc    = std::allocator<ComplexType>;
-  using gen_type = host_allocator_generator_type;
-  auto gptr(host_buffer_generator.get());
+  using Alloc = std::allocator<ComplexType>;
 #endif
-  SDetOps_complex_serial<Alloc, gen_type>(Alloc{}, gptr);
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
+  SDetOps_complex_serial<Alloc, DeviceBufferManager>(Alloc{}, DeviceBufferManager{});
+  release_memory_managers();
 }
 
 /*

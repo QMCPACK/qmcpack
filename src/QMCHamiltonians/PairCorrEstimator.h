@@ -15,8 +15,8 @@
 
 #ifndef QMCPLUSPLUS_PAIRCOOR_HAMILTONIAN_H
 #define QMCPLUSPLUS_PAIRCOOR_HAMILTONIAN_H
-#include <QMCHamiltonians/OperatorBase.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus
 {

@@ -1,4 +1,4 @@
-#include "QMCTools/QMCFiniteSize/SkParserASCII.h"
+#include "SkParserASCII.h"
 #include "QMCTools/QMCFiniteSize/SkParserBase.h"
 #include "Configuration.h"
 #include <fstream>

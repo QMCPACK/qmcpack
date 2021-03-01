@@ -24,6 +24,7 @@ SET(QMCAPPDIR
     QMCMainState.cpp
     QMCMain.cpp
     CoupledMC.cpp
+    accelerators.cpp
 )
 IF(USE_OBJECT_TARGET)
   ADD_LIBRARY(qmc OBJECT ${QMCAPPDIR})
@@ -44,7 +45,7 @@ ADD_CUSTOM_COMMAND(TARGET qmcpack
 
 TARGET_LINK_LIBRARIES(qmcpack qmc qmcdriver)
 IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(qmcpack qmcestimators qmcham qmcwfs qmcparticle qmcutil containers platform_device platform_omp)
+  TARGET_LINK_LIBRARIES(qmcpack qmcestimators qmcham qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget)
 ENDIF()
 
 IF(BUILD_AFQMC)

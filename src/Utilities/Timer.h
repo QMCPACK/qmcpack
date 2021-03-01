@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_TIMER_H
 #define QMCPLUSPLUS_TIMER_H
 
-#include <Utilities/Clock.h>
+#include "Utilities/Clock.h"
 
 namespace qmcplusplus
 {

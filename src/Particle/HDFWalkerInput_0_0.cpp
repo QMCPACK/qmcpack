@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/HDFWalkerInput_0_0.h"
+#include "HDFWalkerInput_0_0.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Particle/HDFParticleAttrib.h"

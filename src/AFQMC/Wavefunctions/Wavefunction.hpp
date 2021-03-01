@@ -101,13 +101,6 @@ public:
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
   }
 
-  template<class MultiArray1D, class task_group>
-  boost::multi::array<ComplexType, 2> getOneBodyPropagatorMatrix(task_group& tg, MultiArray1D const& vMF)
-  {
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");
-    return boost::multi::array<ComplexType, 2>{};
-  }
-
   template<class MatG, class MatA>
   void vbias(const MatG& G, MatA&& v, double a = 1.0)
   {
@@ -290,13 +283,6 @@ public:
   void vbias(Args&&... args)
   {
     boost::apply_visitor([&](auto&& a) { a.vbias(std::forward<Args>(args)...); }, *this);
-  }
-
-  template<class... Args>
-  boost::multi::array<ComplexType, 2> getOneBodyPropagatorMatrix(Args&&... args)
-  {
-    return boost::apply_visitor([&](auto&& a) { return a.getOneBodyPropagatorMatrix(std::forward<Args>(args)...); },
-                                *this);
   }
 
   template<class... Args>

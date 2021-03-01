@@ -19,7 +19,7 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
-#include "QMCDrivers/WaveFunctionTester.h"
+#include "WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
@@ -39,9 +39,8 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
                                        ParticleSetPool& ptclPool,
-                                       WaveFunctionPool& ppool,
                                        Communicate* comm)
-    : QMCDriver(w, psi, h, ppool, comm, "WaveFunctionTester"),
+    : QMCDriver(w, psi, h, comm, "WaveFunctionTester"),
       PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
@@ -55,17 +54,17 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
       outputDeltaVsError(false),
       checkSlaterDet(true)
 {
-  m_param.add(checkRatio, "ratio", "string");
-  m_param.add(checkClone, "clone", "string");
-  m_param.add(checkHamPbyP, "hamiltonianpbyp", "string");
-  m_param.add(sourceName, "source", "string");
-  m_param.add(wftricks, "orbitalutility", "string");
-  m_param.add(checkEloc, "printEloc", "string");
-  m_param.add(checkBasic, "basic", "string");
-  m_param.add(checkRatioV, "virtual_move", "string");
-  m_param.add(deltaParam, "delta", "none");
-  m_param.add(toleranceParam, "tolerance", "none");
-  m_param.add(checkSlaterDetOption, "sd", "string");
+  m_param.add(checkRatio, "ratio");
+  m_param.add(checkClone, "clone");
+  m_param.add(checkHamPbyP, "hamiltonianpbyp");
+  m_param.add(sourceName, "source");
+  m_param.add(wftricks, "orbitalutility");
+  m_param.add(checkEloc, "printEloc");
+  m_param.add(checkBasic, "basic");
+  m_param.add(checkRatioV, "virtual_move");
+  m_param.add(deltaParam, "delta");
+  m_param.add(toleranceParam, "tolerance");
+  m_param.add(checkSlaterDetOption, "sd");
 
   deltaR.resize(w.getTotalNum());
   makeGaussRandom(deltaR);
@@ -826,10 +825,10 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       {
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
-        DiracDeterminantBase* det = sd->Dets[isd];
-        LogValueType logpsi2          = det->evaluateLog(W, G, L); // this won't work with backflow
-        fail_log << "  Slater Determiant " << isd << " (for particles " << det->getFirstIndex() << " to "
-                 << det->getLastIndex() << ") log psi = " << logpsi2 << std::endl;
+        DiracDeterminantBase& det = *sd->Dets[isd];
+        LogValueType logpsi2      = det.evaluateLog(W, G, L); // this won't work with backflow
+        fail_log << "  Slater Determiant " << isd << " (for particles " << det.getFirstIndex() << " to "
+                 << det.getLastIndex() << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
         if (std::real(logpsi2) < -40.0)
@@ -844,7 +843,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.R[it->index] = it->r;
           W.update();
 
-          LogValueType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
+          LogValueType logpsi0 = det.evaluateLog(W, tmpG, tmpL);
 #if defined(QMC_COMPLEX)
           ValueType logpsi(logpsi0.real(), logpsi0.imag());
 #else
@@ -857,7 +856,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         }
         fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-        if (!checkGradients(det->getFirstIndex(), det->getLastIndex(), G, L, G1, L1, fail_log, 2))
+        if (!checkGradients(det.getFirstIndex(), det.getLastIndex(), G, L, G1, L1, fail_log, 2))
         {
           all_okay = false;
         }
@@ -875,7 +874,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
           ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
           ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
-          RealType logpsi3 = det->evaluateLog(W, G, L);
+          RealType logpsi3 = det.evaluateLog(W, G, L);
           FiniteDifference::ValueVector logpsi_vals;
           FiniteDifference::PosChangeVector::iterator it;
           for (it = positions.begin(); it != positions.end(); it++)
@@ -898,7 +897,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           }
           fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-          if (!checkGradients(det->getFirstIndex(), det->getLastIndex(), G, L, G1, L1, fail_log, 3))
+          if (!checkGradients(det.getFirstIndex(), det.getLastIndex(), G, L, G1, L1, fail_log, 3))
           {
             all_okay = false;
           }
@@ -2049,8 +2048,8 @@ void WaveFunctionTester::runwftricks()
   std::string doRotate("yes");
   std::string sClass("C2V");
   ParameterSet aAttrib;
-  aAttrib.add(doProj, "projection", "string");
-  aAttrib.add(doRotate, "rotate", "string");
+  aAttrib.add(doProj, "projection");
+  aAttrib.add(doRotate, "rotate");
   aAttrib.put(myNode);
   while (kids != NULL)
   {
@@ -2268,7 +2267,7 @@ void WaveFunctionTester::runNodePlot()
   xmlNodePtr kids = myNode->children;
   std::string doEnergy("no");
   ParameterSet aAttrib;
-  aAttrib.add(doEnergy, "energy", "string");
+  aAttrib.add(doEnergy, "energy");
   aAttrib.put(myNode);
   std::vector<int> Grid;
   while (kids != NULL)
@@ -2435,9 +2434,9 @@ FiniteDiffErrData::FiniteDiffErrData() : particleIndex(0), gradientComponentInde
 bool FiniteDiffErrData::put(xmlNodePtr q)
 {
   ParameterSet param;
-  param.add(outputFile, "file", "string");
-  param.add(particleIndex, "particle_index", "none");
-  param.add(gradientComponentIndex, "gradient_index", "none");
+  param.add(outputFile, "file");
+  param.add(particleIndex, "particle_index");
+  param.add(gradientComponentIndex, "gradient_index");
   bool s = param.put(q);
   return s;
 }

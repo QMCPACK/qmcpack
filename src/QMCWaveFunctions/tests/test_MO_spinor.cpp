@@ -32,8 +32,10 @@ void test_lcao_spinor()
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(1);
@@ -62,11 +64,12 @@ void test_lcao_spinor()
   elec_.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   const char* particles = "<tmp> \
    <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
+     <basisset transform=\"yes\"/> \
      <sposet name=\"myspo\" size=\"1\"/> \
    </sposet_builder> \
    </tmp> \
@@ -79,10 +82,14 @@ void test_lcao_spinor()
   xmlNodePtr root = doc.getRoot();
 
   xmlNodePtr bnode   = xmlFirstElementChild(root);
-  xmlNodePtr sponode = xmlFirstElementChild(bnode);
-
   LCAOSpinorBuilder bb(elec_, ions_, c, bnode);
-  std::unique_ptr<SPOSet> spo(bb.createSPOSetFromXML(sponode));
+
+  // only pick up the last sposet
+  std::unique_ptr<SPOSet> spo;
+  processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "sposet")
+      spo.reset(bb.createSPOSetFromXML(element));
+  });
   REQUIRE(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -187,6 +194,7 @@ void test_lcao_spinor()
     elec_.rejectMove(iat);
   }
 }
+
 void test_lcao_spinor_excited()
 {
   app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
@@ -198,8 +206,10 @@ void test_lcao_spinor_excited()
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(1);
@@ -228,12 +238,13 @@ void test_lcao_spinor_excited()
   elec_.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   const char* particles = "<tmp> \
    <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
-     <sposet name=\"myspo\" size=\"1\"> \
+     <basisset name=\"myset\" transform=\"yes\"/> \
+     <sposet name=\"myspo\" basisset=\"myset\" size=\"1\"> \
        <occupation mode=\"excited\"> \
          -1 2 \
        </occupation> \
@@ -249,11 +260,18 @@ void test_lcao_spinor_excited()
   xmlNodePtr root = doc.getRoot();
 
   xmlNodePtr bnode   = xmlFirstElementChild(root);
-  xmlNodePtr sponode = xmlFirstElementChild(bnode);
-
   LCAOSpinorBuilder bb(elec_, ions_, c, bnode);
-  std::unique_ptr<SPOSet> spo(bb.createSPOSetFromXML(sponode));
+
+  // only pick up the last sposet
+  std::unique_ptr<SPOSet> spo;
+  processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "sposet")
+      spo.reset(bb.createSPOSetFromXML(element));
+  });
   REQUIRE(spo);
+
+  const int OrbitalSetSize = spo->getOrbitalSetSize();
+  REQUIRE(OrbitalSetSize == 1);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -268,7 +286,6 @@ void test_lcao_spinor_excited()
   ValueType vdz(-0.007002181424606922, -8.90291818048377e-05);
   ValueType vlp(0.04922415803252472, 0.0006258601782677606);
   ValueType vds(-0.0010017050778321178, -5.584596565578559e-05);
-
   const RealType eps = 1e-4;
 
   for (unsigned int iat = 0; iat < 1; iat++)
@@ -280,7 +297,6 @@ void test_lcao_spinor_excited()
     REQUIRE(d2psiM[iat][0] == ComplexApprox(vlp).epsilon(eps));
   }
 
-  int OrbitalSetSize = spo->getOrbitalSetSize();
   //temporary arrays for holding the values of the up and down channels respectively.
   SPOSet::ValueVector_t psi_work;
 

@@ -15,7 +15,8 @@
 #define QMCPLUSPLUS_AFQMC_TEST_UTILS_HPP
 
 #include <complex>
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
+#include "Utils.hpp"
 
 namespace qmcplusplus
 {
@@ -125,7 +126,7 @@ TEST_DATA<T> read_test_results_from_hdf(std::string fileName, std::string wfn_ty
 }
 
 // Create a fake output hdf5 filename for unit tests.
-inline std::string create_test_hdf(std::string& wfn_file, std::string& hamil_file)
+inline std::string create_test_hdf(const std::string& wfn_file, const std::string& hamil_file)
 {
   std::size_t startw   = wfn_file.find_last_of("\\/");
   std::size_t endw     = wfn_file.find_last_of(".");
@@ -138,6 +139,35 @@ inline std::string create_test_hdf(std::string& wfn_file, std::string& hamil_fil
   return wfn_base + "_" + ham_base + ".h5";
 }
 
+inline bool remove_file(const std::string& file_name)
+{
+  bool success=false;
+  std::ifstream ifile;
+  ifile.open(file_name);
+  if (ifile)
+  {
+    if (std::remove(file_name.c_str()) == 0)
+    {
+      success = true;
+    }
+  } else { // no file to remove
+    success = true;
+  }
+  return success;
+}
+
+inline bool check_hamil_wfn_for_utest(const std::string& test_name, std::string& wfn_file, std::string& hamil_file)
+{
+  if (not file_exists(wfn_file) || not file_exists(hamil_file))
+  {
+    app_log() << " Skipping '" << test_name << "' test. Hamiltonian or wavefunction file not found." << std::endl;
+    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat." << std::endl;
+    //throw std::runtime_error("Failed to read testing needed h5 files.");
+    return false;
+  }
+  else
+    return true;
+}
 
 } // namespace afqmc
 } // namespace qmcplusplus

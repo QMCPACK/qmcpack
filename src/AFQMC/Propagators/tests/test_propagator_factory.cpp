@@ -17,9 +17,9 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
-#include <Utilities/TimerManager.h>
+#include "Utilities/TimerManager.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x)             \
@@ -43,6 +43,7 @@
 #include "AFQMC/Propagators/PropagatorFactory.h"
 #include "AFQMC/Propagators/Propagator.hpp"
 #include "AFQMC/Walkers/WalkerSet.hpp"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
@@ -63,12 +64,7 @@ using namespace afqmc;
 
 void propg_fac_shared(boost::mpi3::communicator& world)
 {
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("propg_fac_shared", UTEST_WFN, UTEST_HAMIL))
   {
     timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
@@ -78,6 +74,8 @@ void propg_fac_shared(boost::mpi3::communicator& world)
 
     int NMO, NAEA, NAEB;
     std::tie(NMO, NAEA, NAEB) = read_info_from_hdf(UTEST_HAMIL);
+    WALKER_TYPES type         = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL                  = (type == NONCOLLINEAR) ? 2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -101,10 +99,6 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
 
-    // initialize TG buffer
-    make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
-
-    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
     const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
       <parameter name=\"walker_type\">closed</parameter>  \
     </WalkerSet> \
@@ -126,6 +120,8 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     // Create unique restart filename to avoid issues with running tests in parallel
     // through ctest.
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
+    app_log() << " propg_fac_shared destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
     std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">" +
@@ -148,7 +144,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
     //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
@@ -165,7 +161,6 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     Propagator& prop = PropgFac.getPropagator(TG, prop_name, wfn, &rng);
 
     std::cout << setprecision(12);
-    std::cout << "energy " << std::endl;
     wfn.Energy(wset);
     {
       ComplexType eav = 0, ov = 0;
@@ -238,19 +233,12 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     }
 
     timer_manager.print(nullptr);
-
-    destroy_shm_buffer_generators();
   }
 }
 
 void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
 {
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("propg_fac_distributed", UTEST_WFN, UTEST_HAMIL))
   {
     timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
@@ -260,6 +248,8 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
 
     int NMO, NAEA, NAEB;
     std::tie(NMO, NAEA, NAEB) = read_info_from_hdf(UTEST_HAMIL);
+    WALKER_TYPES type         = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL                  = (type == NONCOLLINEAR) ? 2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -286,10 +276,6 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     RandomGenerator_t rng;
     qmcplusplus::Timer Time;
 
-    // initialize TG buffer
-    make_localTG_buffer_generator(TG.TG_local(), 20 * 1024L * 1024L);
-
-    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
     const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
       <parameter name=\"walker_type\">closed</parameter>  \
     </WalkerSet> \
@@ -309,6 +295,8 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     REQUIRE(okay);
 
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
+    app_log() << " propg_fac_distributed destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
     std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">" +
@@ -330,7 +318,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -425,8 +413,6 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     }
 
     timer_manager.print(nullptr);
-
-    destroy_shm_buffer_generators();
   }
 }
 
@@ -435,13 +421,15 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if (not world.root())
     infoLog.pause();
+  auto node = world.split_shared(world.rank());
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  auto node = world.split_shared(world.rank());
   arch::INIT(node);
 #endif
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   propg_fac_shared(world);
+  release_memory_managers();
 }
 
 TEST_CASE("propg_fac_distributed", "[propagator_factory]")
@@ -449,17 +437,18 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
   auto world = boost::mpi3::environment::get_world_instance();
   if (not world.root())
     infoLog.pause();
+  auto node = world.split_shared(world.rank());
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  auto node = world.split_shared(world.rank());
   int ngrp(world.size());
   arch::INIT(node);
 #else
-  auto node = world.split_shared(world.rank());
   int ngrp(world.size() / node.size());
 #endif
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
 
   propg_fac_distributed(world, ngrp);
+  release_memory_managers();
 }
 
 } // namespace qmcplusplus

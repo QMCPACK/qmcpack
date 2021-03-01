@@ -23,7 +23,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/myTimer.h"
 
 using boost::multi::array;

@@ -13,13 +13,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
+#include "DiracDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsPETE/Tensor.h"
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/SIMD/simd.hpp"
 
 namespace qmcplusplus
 {
@@ -28,14 +28,13 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet& ptcl,
-                                                           SPOSetPtr const spos,
+                                                           std::shared_ptr<SPOSet>&& spos,
                                                            BackflowTransformation* BF,
                                                            int first)
-    : DiracDeterminantBase(spos, first)
+    : DiracDeterminantBase("DiracDeterminantWithBackflow", std::move(spos), first)
 {
   Optimizable  = true;
   is_fermionic = true;
-  ClassName    = "DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans      = BF;
   NumParticles = ptcl.getTotalNum();
@@ -999,11 +998,11 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr spo) const
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
   //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here
-  DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(BFTrans->QP, spo, BFTrans, FirstIndex);
+  DiracDeterminantWithBackflow* dclone = new DiracDeterminantWithBackflow(BFTrans->QP, std::move(spo), BFTrans, FirstIndex);
   dclone->resize(NumPtcls, NumOrbitals);
   dclone->Optimizable = Optimizable;
   return dclone;

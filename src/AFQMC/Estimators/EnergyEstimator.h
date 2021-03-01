@@ -1,7 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_ENERGYESTIMATOR_H
 #define QMCPLUSPLUS_AFQMC_ENERGYESTIMATOR_H
 
-#include <Message/MPIObjectBase.h>
+#include "Message/MPIObjectBase.h"
 #include "AFQMC/config.h"
 #include <vector>
 #include <queue>
@@ -9,8 +9,8 @@
 #include <iostream>
 #include <fstream>
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
@@ -36,7 +36,7 @@ public:
     {
       ParameterSet m_param;
       std::string print_components;
-      m_param.add(print_components, "print_components", "str::string");
+      m_param.add(print_components, "print_components");
       m_param.put(cur);
       if (print_components == "true" || print_components == "yes")
       {
@@ -56,7 +56,7 @@ public:
 
   void accumulate_block(WalkerSet& wset)
   {
-    AFQMCTimers[energy_timer]->start();
+    ScopedTimer local_timer(AFQMCTimers[energy_timer]);
     size_t nwalk = wset.size();
     if (eloc.size(0) != nwalk || eloc.size(1) != 3)
       eloc.reextent({nwalk, 3});
@@ -99,7 +99,6 @@ public:
       }
       TG.TG_heads().all_reduce_in_place_n(data.begin(), data.size(), std::plus<>());
     }
-    AFQMCTimers[energy_timer]->stop();
   }
 
   void tags(std::ofstream& out)
@@ -124,12 +123,12 @@ public:
     {
       int n = wset.get_global_target_population();
       out << data[0].real() / n << " " << data[0].imag() / n << " " << data[1].real() / n << " " << data[1].imag() / n
-          << " " << AFQMCTimers[energy_timer]->get_total() << " ";
+          << " " << AFQMCTimers[energy_timer].get().get_total() << " ";
       if (energy_components)
       {
         out << data[2].real() / n << " " << data[3].real() / n << " " << data[4].real() / n << " ";
       }
-      AFQMCTimers[energy_timer]->reset();
+      AFQMCTimers[energy_timer].get().reset();
     }
   }
 

@@ -781,15 +781,16 @@ device_pointer<T> uninitialized_copy_n(device_pointer<T> A, Size n, device_point
   return copy_n(A, n, B);
 }
 
-template<typename T, typename Size>
-device_pointer<T> uninitialized_copy_n(T const* A, Size n, device_pointer<T> B)
+template<typename T, typename Size, typename Q>
+device_pointer<T> uninitialized_copy_n(T* A, Size n, device_pointer<Q> B)
 {
   return copy_n(A, n, B);
 }
 
-template<typename T, typename Size>
-T* uninitialized_copy_n(device_pointer<T> A, Size n, T* B)
+template<typename T, typename Size, typename Q>
+T* uninitialized_copy_n(device_pointer<T> A, Size n, Q* B)
 {
+  static_assert( std::is_trivially_assignable<Q&, T>{} , "!");
   return copy_n(A, n, B);
 }
 
@@ -799,14 +800,14 @@ device_pointer<T> uninitialized_copy_n(Alloc& a, device_pointer<T> A, Size n, de
   return copy_n(A, n, B);
 }
 
-template<class Alloc, typename T, typename Size>
-device_pointer<T> uninitialized_copy_n(Alloc& a, T const* A, Size n, device_pointer<T> B)
+template<class Alloc, typename T, typename Size, typename Q>
+device_pointer<T> alloc_uninitialized_copy_n(Alloc& a, T* A, Size n, device_pointer<Q> B)
 {
   return copy_n(A, n, B);
 }
 
-template<class Alloc, typename T, typename Size>
-T* uninitialized_copy_n(Alloc& a, device_pointer<T> A, Size n, T* B)
+template<class Alloc, typename T, typename Size, typename Q>
+T* alloc_uninitialized_copy_n(Alloc& a, device_pointer<T> A, Size n, Q* B)
 {
   return copy_n(A, n, B);
 }
@@ -866,8 +867,8 @@ device_pointer<T> uninitialized_copy(device_pointer<T> const Abeg, device_pointe
   return copy_n(Abeg, std::distance(Abeg, Aend), B);
 }
 
-template<typename T>
-device_pointer<T> uninitialized_copy(T* const Abeg, T* const Aend, device_pointer<T> B)
+template<typename T, typename Q>
+device_pointer<T> uninitialized_copy(T* Abeg, T* Aend, device_pointer<Q> B)
 {
   return copy_n(Abeg, std::distance(Abeg, Aend), B);
 }
@@ -908,10 +909,18 @@ device_pointer<T> alloc_uninitialized_copy(Alloc& a,
   return copy_n(Abeg, std::distance(Abeg, Aend), B);
 }
 
-template<class Alloc, typename T>
-device_pointer<T> alloc_uninitialized_copy(Alloc& a, T* const Abeg, T* const Aend, device_pointer<T> B)
+template<class Alloc, typename T, typename Q>
+device_pointer<Q> uninitialized_copy(T* Abeg, T* Aend, device_pointer<Q> B)
 {
+  static_assert( std::is_trivially_assignable<Q&, T>{} ,"!");
   return copy_n(Abeg, std::distance(Abeg, Aend), B);
+}
+
+template<class Alloc, typename T, typename Q>
+device_pointer<Q> alloc_uninitialized_copy(Alloc& a, T* Abeg, T* Aend, device_pointer<Q> B)
+{
+  static_assert( std::is_trivially_assignable<Q&, T>{} ,"!");
+  return uninitialized_copy(Abeg, Aend, B);
 }
 
 template<class Alloc, typename T>
@@ -1075,6 +1084,22 @@ multi::array_iterator<T, 1, device::device_pointer<T>> copy(ForwardIt first,
   return dest + std::distance(first, last);
 }
 
+template<typename T, typename Q, typename QQ>
+multi::array_iterator<T, 1, device::device_pointer<T>> uninitialized_copy(
+                                                            T* first,
+                                                            T* last,
+                                                            multi::array_iterator<Q, 1, device::device_pointer<QQ>> dest)
+{
+  static_assert( std::is_trivially_assignable<QQ&, T>{} , "!");
+  assert(stride(first) == stride(last));
+  if (std::distance(first, last) == 0)
+    return dest;
+  using qmcplusplus::afqmc::to_address;
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * 1,
+                  sizeof(T), std::distance(first, last));
+  return dest + std::distance(first, last);
+}
+
 template<class ForwardIt, class Q1, class Q2>
 ForwardIt copy(multi::array_iterator<Q1, 1, device::device_pointer<Q2>> first,
                multi::array_iterator<Q1, 1, device::device_pointer<Q2>> last,
@@ -1135,13 +1160,13 @@ ForwardIt copy_n(multi::array_iterator<Q1, 1, device::device_pointer<Q2>> first,
   return dest + N;
 }
 
-template<class Alloc, class T, class ForwardIt>
+template<class Q, class QQ, class T, class TT>
 multi::array_iterator<T, 1, device::device_pointer<T>> uninitialized_copy(
-    Alloc& a,
-    ForwardIt first,
-    ForwardIt last,
-    multi::array_iterator<T, 1, device::device_pointer<T>> dest)
+    multi::array_iterator<Q, 1, device::device_pointer<QQ>> first,
+    multi::array_iterator<Q, 1, device::device_pointer<QQ>> last,
+    multi::array_iterator<T, 1, device::device_pointer<TT>> dest)
 {
+  static_assert( std::is_trivially_assignable<TT&, QQ&>{} , "!");
   assert(stride(first) == stride(last));
   if (std::distance(first, last) == 0)
     return dest;
@@ -1158,6 +1183,23 @@ multi::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitialized_copy(
     ForwardIt last,
     multi::array_iterator<T, 1, device::device_pointer<T>> dest)
 {
+  assert(stride(first) == stride(last));
+  if (std::distance(first, last) == 0)
+    return dest;
+  using qmcplusplus::afqmc::to_address;
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+                  sizeof(T), std::distance(first, last));
+  return dest + std::distance(first, last);
+}
+
+template<class Alloc, class Q, class QQ, class T, class TT>
+multi::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitialized_copy(
+    Alloc& a,
+    multi::array_iterator<Q, 1, device::device_pointer<QQ>> first,
+    multi::array_iterator<Q, 1, device::device_pointer<QQ>> last,
+    multi::array_iterator<T, 1, device::device_pointer<TT>> dest)
+{
+  static_assert( std::is_trivially_assignable<TT&, QQ&>{} , "!");
   assert(stride(first) == stride(last));
   if (std::distance(first, last) == 0)
     return dest;

@@ -210,7 +210,7 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   //  QMCDrivers/CloneManager::makeClones
   //  QMCHamiltonian::makeClone
   //  OperatorBase::add2Hamiltonian -> ForceChiesaPBCAA::makeClone
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   std::unique_ptr<ForceChiesaPBCAA> clone(dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec, psi)));
   clone->evaluate(elec);
   REQUIRE(clone->addionion == force.addionion);

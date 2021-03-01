@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/CoulombPotential_CUDA.h"
+#include "CoulombPotential_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
 namespace qmcplusplus

@@ -8,8 +8,8 @@
 #ifndef FORMIC_UTILS_MANTISSA_EXPONENT_HEADER
 #define FORMIC_UTILS_MANTISSA_EXPONENT_HEADER
 
-#include <formic/utils/exception.h>
-#include <formic/utils/zero_one.h>
+#include "formic/utils/exception.h"
+#include "formic/utils/zero_one.h"
 
 namespace formic
 {

@@ -35,13 +35,25 @@ namespace Cuda{
 	namespace pointer{
 		using attributes_t = cudaPointerAttributes;
 		error GetAttributes(attributes_t* ret, void* p){return static_cast<error>(cudaPointerGetAttributes(ret, p));}
-		attributes_t attributes(void* p){
+	/*	attributes_t attributes(void* p){
 			attributes_t ret;
 			auto e = GetAttributes(&ret, p);
 			if(e!=success) throw std::system_error{e, "cannot "s+__PRETTY_FUNCTION__};
 			return ret;
+		}*/
+		bool is_device(void* p){
+			attributes_t ret;
+			auto e = GetAttributes(&ret, p);
+			if(e!=success) throw std::system_error{e, "cannot "s+__PRETTY_FUNCTION__};
+			return ret.devicePointer or p==nullptr;
+		//	return attributes(p).devicePointer or p==nullptr;
 		}
-		bool is_device(void* p){return attributes(p).devicePointer or p==nullptr;}
+		auto type(void* p){
+			attributes_t ret;
+			auto e = GetAttributes(&ret, p);
+			if(e!=success) throw std::system_error{e, "cannot "s+__PRETTY_FUNCTION__};
+			return ret.type;
+		}
 	}
 }
 
@@ -63,7 +75,7 @@ int main(){
 		Cuda::free(p);
 	}
 	{
-		char* p = (char*)Cuda::malloc(1ul<<50);
+		char* p = (char*)Cuda::malloc(1ul<<40);
 		assert(!p);
 		Cuda::free(p);
 	}

@@ -13,21 +13,23 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/VMC/VMCFactoryNew.h"
+#include "VMCFactoryNew.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 //#include "Message/OpenMP.h"
 #include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
-QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
-                                          TrialWaveFunction& psi,
-                                          QMCHamiltonian& h,
-                                          WaveFunctionPool& wf_pool,
+QMCDriverInterface* VMCFactoryNew::create(const ProjectData& project_data,
+                                          MCPopulation&& pop,
                                           SampleStack& samples,
                                           Communicate* comm)
 {
-  QMCDriverInput qmcdriver_input(qmc_counter_);
+#if defined(QMC_CUDA)
+  comm->barrier_and_abort("VMC batched driver is not supported by legacy CUDA builds.");
+#endif
+
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(input_node_);
   VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(input_node_);
@@ -35,7 +37,8 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
 
   if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMCBatched(std::move(qmcdriver_input), std::move(vmcdriver_input), pop, psi, h, wf_pool, samples, comm);
+    qmc = new VMCBatched(project_data, std::move(qmcdriver_input), std::move(vmcdriver_input), std::move(pop), samples,
+                         comm);
   }
   else
   {

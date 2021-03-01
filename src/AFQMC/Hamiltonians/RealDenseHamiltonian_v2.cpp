@@ -15,13 +15,13 @@
 
 #include "Configuration.h"
 #include "type_traits/container_traits_multi.h"
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "AFQMC/Utilities/kp_utilities.hpp"
-#include "AFQMC/Hamiltonians/RealDenseHamiltonian_v2.h"
+#include "RealDenseHamiltonian_v2.h"
 #include "AFQMC/SlaterDeterminantOperations/rotate.hpp"
 
 namespace qmcplusplus
@@ -77,6 +77,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   auto distNode(TG.Node().split(0, TG.Node().rank()));
 #endif
   auto Qcomm_roots(Qcomm.split(distNode.rank(), Qcomm.rank()));
+  auto distNode_roots(TG.Global().split(distNode.rank(), TG.Global().rank()));
 
   hdf_archive dump(TG.Global());
   // right now only Node.root() reads
@@ -162,8 +163,12 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
       APP_ABORT("");
     }
     SpRMatrix_ref L(to_address(Likn.origin()), Likn.extensions());
-    hyperslab_proxy<SpRMatrix_ref, 2> hslab(L, std::array<int, 2>{NMO * NMO, global_ncvecs},
-                                            std::array<int, 2>{NMO * NMO, local_ncv}, std::array<int, 2>{0, nc0});
+    hyperslab_proxy<SpRMatrix_ref, 2> hslab(L,
+                                            std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
+                                                                  static_cast<size_t>(global_ncvecs)},
+                                            std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
+                                                                  static_cast<size_t>(local_ncv)},
+                                            std::array<size_t, 2>{0, static_cast<size_t>(nc0)});
     std::vector<int> shape;
     if (dump.getShape<boost::multi::array<RealType, 2>>("L", shape))
     {
@@ -275,7 +280,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
 
   if (distNode.root())
   {
-    Qcomm_roots.all_reduce_in_place_n(to_address(vn0.origin()), vn0.num_elements(), std::plus<>());
+    distNode_roots.all_reduce_in_place_n(to_address(vn0.origin()), vn0.num_elements(), std::plus<>());
     dump.pop();
     dump.close();
   }

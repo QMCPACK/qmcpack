@@ -58,7 +58,8 @@ protected:
 
 public:
   BsplineSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false)
-      : SPOSet(use_OMP_offload, ion_deriv, optimizable), is_complex(false), MyIndex(0), first_spo(0), last_spo(0) {}
+      : SPOSet(use_OMP_offload, ion_deriv, optimizable), is_complex(false), MyIndex(0), first_spo(0), last_spo(0)
+  {}
 
   auto& getHalfG() const { return HalfG; }
 
@@ -100,14 +101,18 @@ public:
 
   // propagate SPOSet virtual functions
   using SPOSet::evaluateDetRatios;
-  using SPOSet::mw_evaluateDetRatios;
   using SPOSet::evaluateValue;
   using SPOSet::evaluateVGH;
   using SPOSet::evaluateVGHGH;
   using SPOSet::evaluateVGL;
   using SPOSet::finalizeConstruction;
+  using SPOSet::mw_evaluateDetRatios;
   using SPOSet::mw_evaluateVGL;
   using SPOSet::mw_evaluateVGLandDetRatioGrads;
+
+  using SPOSet::createResource;
+  using SPOSet::acquireResource;
+  using SPOSet::releaseResource;
 
   virtual SPOSet* makeClone() const override = 0;
 
@@ -130,6 +135,55 @@ public:
       GradVector_t g(dlogdet[i], OrbitalSetSize);
       ValueVector_t l(d2logdet[i], OrbitalSetSize);
       evaluateVGL(P, iat, v, g, l);
+    }
+  }
+
+  virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                                       const RefVectorWithLeader<ParticleSet>& P_list,
+                                       int first,
+                                       int last,
+                                       const RefVector<ValueMatrix_t>& logdet_list,
+                                       const RefVector<GradMatrix_t>& dlogdet_list,
+                                       const RefVector<ValueMatrix_t>& d2logdet_list) const override
+  {
+    assert(this == &spo_list.getLeader());
+    typedef ValueMatrix_t::value_type value_type;
+    typedef GradMatrix_t::value_type grad_type;
+
+    const size_t nw = spo_list.size();
+    std::vector<ValueVector_t> mw_psi_v;
+    std::vector<GradVector_t> mw_dpsi_v;
+    std::vector<ValueVector_t> mw_d2psi_v;
+    RefVector<ValueVector_t> psi_v_list;
+    RefVector<GradVector_t> dpsi_v_list;
+    RefVector<ValueVector_t> d2psi_v_list;
+    mw_psi_v.reserve(nw);
+    mw_dpsi_v.reserve(nw);
+    mw_d2psi_v.reserve(nw);
+    psi_v_list.reserve(nw);
+    dpsi_v_list.reserve(nw);
+    d2psi_v_list.reserve(nw);
+
+    for (int iat = first, i = 0; iat < last; ++iat, ++i)
+    {
+      mw_psi_v.clear();
+      mw_dpsi_v.clear();
+      mw_d2psi_v.clear();
+      psi_v_list.clear();
+      dpsi_v_list.clear();
+      d2psi_v_list.clear();
+
+      for (int iw = 0; iw < nw; iw++)
+      {
+        mw_psi_v.emplace_back(logdet_list[iw].get()[i], OrbitalSetSize);
+        mw_dpsi_v.emplace_back(dlogdet_list[iw].get()[i], OrbitalSetSize);
+        mw_d2psi_v.emplace_back(d2logdet_list[iw].get()[i], OrbitalSetSize);
+        psi_v_list.push_back(mw_psi_v.back());
+        dpsi_v_list.push_back(mw_dpsi_v.back());
+        d2psi_v_list.push_back(mw_d2psi_v.back());
+      }
+
+      mw_evaluateVGL(spo_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
     }
   }
 

@@ -14,14 +14,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/HDFWalkerInputManager.h"
+#include "HDFWalkerInputManager.h"
 #include "OhmmsData/AttributeSet.h"
 #if defined(HAVE_LIBHDF5)
 #include "Particle/HDFWalkerInput_0_0.h"
 #include "Particle/HDFWalkerInput_0_4.h"
 #endif
 #include "Message/Communicate.h"
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 
 namespace qmcplusplus
 {

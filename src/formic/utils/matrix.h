@@ -16,9 +16,9 @@
 
 #include <boost/format.hpp>
 
-#include <formic/utils/reusable_array.h>
-#include <formic/utils/numeric.h>
-#include <formic/utils/lapack_interface.h>
+#include "formic/utils/reusable_array.h"
+#include "formic/utils/numeric.h"
+#include "formic/utils/lapack_interface.h"
 
 namespace formic {
 

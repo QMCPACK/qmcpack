@@ -7,10 +7,10 @@
 #include "mpi3/communicator.hpp"
 
 #include "AFQMC/Utilities/taskgroup.h"
-#include "AFQMC/Drivers/DriverFactory.h"
+#include "DriverFactory.h"
 #include "AFQMC/Drivers/AFQMCDriver.h"
 #include "AFQMC/Walkers/WalkerIO.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Walkers/WalkerSetFactory.hpp"
 #include "AFQMC/Hamiltonians/HamiltonianFactory.h"
@@ -85,20 +85,24 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   int ncores_per_TG       = 1;
   int nWalkers            = 10;
   ParameterSet m_param;
-  m_param.add(nWalkers, "nWalkers", "int");
-  m_param.add(ncores_per_TG, "ncores_per_TG", "int");
-  m_param.add(ncores_per_TG, "ncores", "int");
-  m_param.add(ncores_per_TG, "cores", "int");
-  m_param.add(dt, "dt", "double");
-  m_param.add(dt, "timestep", "double");
-  m_param.add(str1, "set_nWalker_to_target", "std::string");
-  m_param.add(str1, "set_nwalker_to_target", "std::string");
-  m_param.add(hdf_read_restart, "hdf_read_file", "std::string");
+  m_param.add(nWalkers, "nWalkers");
+  m_param.add(ncores_per_TG, "ncores_per_TG");
+  m_param.add(ncores_per_TG, "ncores");
+  m_param.add(ncores_per_TG, "cores");
+  m_param.add(dt, "dt");
+  m_param.add(dt, "timestep");
+  m_param.add(str1, "set_nWalker_to_target");
+  m_param.add(str1, "set_nwalker_to_target");
+  m_param.add(hdf_read_restart, "hdf_read_file");
   m_param.put(cur);
 
   // hard restriction for now
+  bool first(false);
   if (ncores < 0)
+  {
+    first  = true;
     ncores = ncores_per_TG;
+  }
   else if (ncores != ncores_per_TG)
     APP_ABORT(" Error: Current implementation requires the same ncores in all execution blocks. \n");
 
@@ -197,8 +201,6 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   int nnodes_propg = std::max(1, get_parameter<int>(PropFac, prop_name, "nnodes", 1));
   int nnodes_wfn   = std::max(1, get_parameter<int>(WfnFac, wfn_name, "nnodes", 1));
   RealType cutvn   = get_parameter<RealType>(PropFac, prop_name, "cutoff", 1e-6);
-  // Wavefunction and Hamiltonian Operations already stored in restart file.
-  std::string wfn_restart = get_parameter<std::string>(WfnFac, wfn_name, "restart_file", "");
 
   // setup task groups
   auto& TGprop = TGHandler.getTG(nnodes_propg);
@@ -207,13 +209,14 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   // setting TG buffer generator here, as soon as localTG is available from any TG
   // defaults to 20MB. Read from input!!!
   std::size_t buffer_size(20);
-  make_localTG_buffer_generator(TGwfn.TG_local(), buffer_size * 1024L * 1024L);
+  if (first)
+    LocalTGBufferManager local_buffer(TGwfn.TG_local(), buffer_size * 1024uL * 1024uL);
 
   // walker set and type
   WalkerSet& wset          = WSetFac.getWalkerSet(TGHandler.getTG(1), wset_name, rng);
   WALKER_TYPES walker_type = wset.getWalkerType();
 
-  if (not WfnFac.is_constructed(wfn_name) && wfn_restart == "")
+  if (not WfnFac.is_constructed(wfn_name))
   {
     // hamiltonian
     Hamiltonian& ham0 = HamFac.getHamiltonian(gTG, ham_name);

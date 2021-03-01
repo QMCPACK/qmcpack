@@ -74,9 +74,9 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   elec.update();
 
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
   ConstantOrbital* orb = new ConstantOrbital;
-  psi.addComponent(orb, "Constant");
+  psi.addComponent(orb);
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 

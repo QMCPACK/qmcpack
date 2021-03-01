@@ -117,19 +117,19 @@ cd $sys
 case $sys in
     "build_gcc")
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-SoA-Release
-	ctest -DENABLE_MKL=1 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	ctest -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_complex")
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-SoA-Release
-	ctest -DENABLE_MKL=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	ctest -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_mixed")
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Mixed-SoA-Release
-	ctest -DENABLE_MKL=1 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	ctest -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_complex_mixed")
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-Mixed-SoA-Release
-	ctest -DENABLE_MKL=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	ctest -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_intel2018")
 	# intel compiler should already be loaded

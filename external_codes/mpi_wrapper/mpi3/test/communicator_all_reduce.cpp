@@ -1,5 +1,5 @@
 #if COMPILATION_INSTRUCTIONS
-mpic++ -std=c++14 -O3 -Wall -Wextra `#-Wfatal-errors` $0 -o $0x.x && mpirun -n 8 $0x.x $@ && rm -f $0x.x; exit
+mpic++ $0 -o $0x&&mpirun --oversubscribe -n 8 $0x&&rm $0x;exit
 #endif
 
 #include "../../mpi3/main.hpp"
@@ -40,6 +40,46 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 	auto min_rank = -1;
 	world.all_reduce_n(&rank, 1, &min_rank, mpi3::min<>{});
 	assert( min_rank == 0 );
+
+
+	{
+		std::vector<int> local(20, true);
+		if(world.rank() == 2) local[1] = false;
+
+		std::vector<int> global(local.size());
+		world.all_reduce_n(local.begin(), local.size(), global.begin());
+
+		assert(global[0] == world.size());
+		assert(global[1] == world.size() - 1);
+	}
+	{
+		std::vector<int> local(20, true);
+		if(world.rank() == 2) local[1] = false;
+
+		std::vector<int> global(local.size());
+		world.all_reduce_n(local.begin(), local.size(), global.begin(), std::logical_and<>{});
+
+		assert(global[0] == true);
+		assert(global[1] == false);
+	}
+	{
+		int b = 1;
+		if(world.rank() == 2) b = 0;
+		int all = (world += b);
+		assert( all == world.size() - 1 );
+	}
+	{
+		int b = 1;
+		if(world.rank() == 2) b = 0;
+		int all = (world &= b);
+		assert( all == false );
+	}
+	{
+		bool b = true;
+		if(world.rank() == 2) b = false;
+		bool all = (world &= b);
+		assert( all == false );
+	}
 
 	return 0;
 }

@@ -5,9 +5,9 @@
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<complex>
+#include <complex>
 
-#include<formic/utils/reusable_array.h>
+#include "reusable_array.h"
 
 template<class S> std::map<size_t, std::stack<boost::shared_array<S> > > formic::ReusableArray<S>::available_arrays;
 

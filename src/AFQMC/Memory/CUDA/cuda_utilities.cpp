@@ -21,7 +21,7 @@
 #include <cstdlib>
 #include <stdexcept>
 #include "Platforms/Host/OutputManager.h"
-#include "AFQMC/Memory/CUDA/cuda_utilities.h"
+#include "cuda_utilities.h"
 #include "AFQMC/Memory/device_pointers.hpp"
 #include <cuda_runtime.h>
 #include "cublas_v2.h"

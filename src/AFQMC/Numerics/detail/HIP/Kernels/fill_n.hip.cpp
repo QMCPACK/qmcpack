@@ -14,17 +14,19 @@
 #include <complex>
 #include <type_traits>
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
+#include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 
 namespace kernels
 {
 template<typename Size, typename Size1, typename T>
 __global__ void kernel_fill_n(Size N, T* x, Size1 incx, T const a)
 {
-  if (threadIdx.x >= N)
-    return;
-  for (Size ip = Size(threadIdx.x); ip < N; ip += Size(blockDim.x))
+  Size N0(8 * blockDim.x * blockIdx.x);
+  T* x_(x + Size(incx) * N0);
+  Size N_(min(Size(8 * blockDim.x), N - N0));
+  for (Size ip = Size(threadIdx.x); ip < N_; ip += Size(blockDim.x))
   {
-    x[ip * Size(incx)] = a;
+    x_[ip * Size(incx)] = a;
   }
 }
 
@@ -40,86 +42,128 @@ __global__ void kernel_fill2D_n(Size N, Size M, T* y, Size lda, T const a)
 
 void fill_n(char* first, int N, int incx, char const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, incx, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, incx, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(int* first, int N, int incx, int const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, incx, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, incx, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(float* first, int N, int incx, float const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, incx, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, incx, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(double* first, int N, int incx, double const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, incx, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, incx, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(std::complex<float>* first, int N, int incx, std::complex<float> const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, incx, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, incx, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(std::complex<double>* first, int N, int incx, std::complex<double> const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, incx, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, incx, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 
 void fill_n(char* first, int N, char const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, 1, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, 1, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(long int* first, long unsigned int N, const long int value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, 1, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, 1, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(long unsigned int* first, long unsigned int N, const long unsigned int value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, 1, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, 1, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(int* first, int N, int const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, 1, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, 1, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(float* first, int N, float const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, 1, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, 1, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(double* first, int N, double const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, 1, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, 1, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(std::complex<float>* first, int N, std::complex<float> const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, 1, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, 1, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }
 void fill_n(std::complex<double>* first, int N, std::complex<double> const value)
 {
-  hipLaunchKernelGGL(kernel_fill_n, dim3(1), dim3(256), 0, 0, N, first, 1, value);
+  int N_(8 * DEFAULT_BLOCK_SIZE);
+  size_t nblk((N + N_ - 1) / N_);
+  size_t nthr(DEFAULT_BLOCK_SIZE);
+  hipLaunchKernelGGL(kernel_fill_n, dim3(nblk), dim3(nthr), 0, 0, N, first, 1, value);
   qmc_hip::hip_kernel_check(hipGetLastError());
   qmc_hip::hip_kernel_check(hipDeviceSynchronize());
 }

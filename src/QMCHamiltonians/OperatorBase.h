@@ -22,14 +22,15 @@
 #ifndef QMCPLUSPLUS_HAMILTONIANBASE_H
 #define QMCPLUSPLUS_HAMILTONIANBASE_H
 
-#include <Particle/ParticleSet.h>
-#include <OhmmsData/RecordProperty.h>
-#include <Utilities/RandomGenerator.h>
-#include <QMCHamiltonians/observable_helper.h>
+#include "Particle/ParticleSet.h"
+#include "OhmmsData/RecordProperty.h"
+#include "Utilities/RandomGenerator.h"
+#include "QMCHamiltonians/observable_helper.h"
+#include "Containers/MinimalContainers/RecordArray.hpp"
 #if !defined(REMOVE_TRACEMANAGER)
-#include <Estimators/TraceManager.h>
+#include "Estimators/TraceManager.h"
 #endif
-#include <QMCWaveFunctions/OrbitalSetTraits.h>
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -245,8 +246,21 @@ struct OperatorBase : public QMCTraits
    *@return the value of the Hamiltonian component
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
+  /** Evaluate the local energy contribution of this component, deterministically based on current state.
+   *@param P input configuration containing N particles
+   *@return the value of the Hamiltonian component
+   */
+  virtual Return_t evaluateDeterministic(ParticleSet& P);
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list);
+  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+                           const RefVectorWithLeader<ParticleSet>& P_list) const;
+
+  virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
+                                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                                   const opt_variables_type& optvars,
+                                                   RecordArray<ValueType>& dlogpsi,
+                                                   RecordArray<ValueType>& dhpsioverpsi) const;
+
 
   virtual Return_t rejectedMove(ParticleSet& P) { return 0; }
   /** Evaluate the local energy contribution of this component with Toperators updated if requested
@@ -256,7 +270,8 @@ struct OperatorBase : public QMCTraits
   virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
 
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
+  virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+                                        const RefVectorWithLeader<ParticleSet>& P_list) const
   {
     mw_evaluate(O_list, P_list);
   }

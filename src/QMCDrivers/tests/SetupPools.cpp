@@ -12,7 +12,7 @@
 #include <iostream>
 #include <catch.hpp>
 #include "Concurrency/UtilityFunctions.hpp"
-#include "QMCDrivers/tests/SetupPools.h"
+#include "SetupPools.h"
 
 namespace qmcplusplus
 {
@@ -25,10 +25,9 @@ SetupPools::SetupPools()
   std::cout << "For purposes of multithreaded testing max threads is forced to 8" << '\n';
   Concurrency::OverrideMaxCapacity<> override(8);
   
-  particle_pool.reset(new ParticleSetPool(mpp(comm)));
-  wavefunction_pool.reset(new WaveFunctionPool(wfp(comm, particle_pool.get())));
-  wavefunction_pool->setPrimary(wavefunction_pool->getWaveFunction("psi0"));
-  hamiltonian_pool.reset(new HamiltonianPool(mhp(comm, particle_pool.get(), wavefunction_pool.get())));
+  particle_pool = std::make_unique<ParticleSetPool>(mpp(comm));
+  wavefunction_pool = std::make_unique<WaveFunctionPool>(wfp(comm, *particle_pool));
+  hamiltonian_pool = std::make_unique<HamiltonianPool>(mhp(comm, *particle_pool, *wavefunction_pool));
 }
 
 } // namespace testing

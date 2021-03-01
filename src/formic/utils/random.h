@@ -12,7 +12,7 @@
 #include <typeinfo>
 #include <complex>
 
-#include <formic/utils/exception.h>
+#include "formic/utils/exception.h"
 
 namespace formic {
 

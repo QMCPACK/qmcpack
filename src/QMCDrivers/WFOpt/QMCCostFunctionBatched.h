@@ -12,8 +12,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_COSTFUNCTION_H
-#define QMCPLUSPLUS_COSTFUNCTION_H
+#ifndef QMCPLUSPLUS_COSTFUNCTION_BATCHED_H
+#define QMCPLUSPLUS_COSTFUNCTION_BATCHED_H
 
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
@@ -27,6 +27,10 @@ namespace qmcplusplus
  * Optimization by correlated sampling method with configurations
  * generated from VMC running on a single thread.
  */
+
+class CostFunctionCrowdData;
+
+
 class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
 public:
@@ -35,6 +39,8 @@ public:
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
                          SampleStack& samples,
+                         int opt_num_crowds,
+                         int crowd_size,
                          Communicate* comm);
 
   ///Destructor
@@ -57,28 +63,21 @@ protected:
   std::unique_ptr<QMCHamiltonian> H_KE_Node;
   std::unique_ptr<QMCHamiltonian> extractFixedHamiltonianComponents();
 
-  Matrix<Return_rt> RecordsOnNode;
+  Matrix<Return_rt> RecordsOnNode_;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  Matrix<Return_rt> DerivRecords;
-  Matrix<Return_rt> HDerivRecords;
+  Matrix<Return_rt> DerivRecords_;
+  Matrix<Return_rt> HDerivRecords_;
 
   Return_rt correlatedSampling(bool needGrad = true);
 
   SampleStack& samples_;
 
   int opt_batch_size_;
+  int opt_num_crowds_;
 
-  std::vector<Return_rt> log_psi_fixed_;
-  std::vector<Return_rt> log_psi_opt_;
-
-  UPtrVector<TrialWaveFunction> wf_ptr_list_;
-  UPtrVector<ParticleSet> p_ptr_list_;
-  UPtrVector<QMCHamiltonian> h_ptr_list_;
-  UPtrVector<QMCHamiltonian> h0_ptr_list_;
-  UPtrVector<RandomGenerator_t> rng_ptr_list_;
-  std::unique_ptr<RandomGenerator_t> rng_save_ptr_;
+  std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
 
   NewTimer& check_config_timer_;
   NewTimer& corr_sampling_timer_;

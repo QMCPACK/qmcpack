@@ -15,8 +15,8 @@
 #include <cassert>
 #include <memory>
 #include <mpi.h>
-#include <AFQMC/config.0.h>
-#include <Utilities/FairDivide.h>
+#include "AFQMC/config.0.h"
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
 
 #include "mpi3/communicator.hpp"
@@ -109,7 +109,7 @@ inline void getGlobalListOfWalkerWeights(WlkBucket& wlk,
     *itv = {std::abs(w_data[i]), 1};
   //comm.gather_n(blocal.data(),blocal.size(),buffer.data(),0);
   MPI_Allgather(blocal.data(), blocal.size() * sizeof(Type), MPI_CHAR, buffer.data(), blocal.size() * sizeof(Type),
-                MPI_CHAR, &comm);
+                MPI_CHAR, comm.get());
 }
 
 } // namespace afqmc

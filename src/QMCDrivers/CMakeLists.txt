@@ -39,9 +39,11 @@ SET(QMCDRIVERS
   WFOpt/QMCCorrelatedSamplingLinearOptimize.cpp
   WFOpt/QMCFixedSampleLinearOptimize.cpp
   WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
+  WFOpt/OutputMatrix.cpp
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
   WFOpt/QMCCostFunctionBase.cpp
+  WFOpt/CostFunctionCrowdData.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
   CloneManager.cpp
@@ -59,12 +61,14 @@ SET(QMCDRIVERS
   DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp
+  DMC/DMCUpdatePbyPL2.cpp
   DMC/DMCFactory.cpp
   DMC/DMCFactoryNew.cpp
   DMC/DMCBatched.cpp
   DMC/DMCDriverInput.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
+  DMC/WalkerControl.cpp
   DMC/SODMCUpdatePbyPFast.cpp
   RMC/RMC.cpp
   RMC/RMCUpdatePbyP.cpp
@@ -114,10 +118,12 @@ ELSE()
 ENDIF()
 USE_FAKE_RNG(qmcdriver_unit)
 
-TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcham)
-TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcestimators)
-TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)
-TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcestimators_unit)
+TARGET_INCLUDE_DIRECTORIES(qmcdriver PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_INCLUDE_DIRECTORIES(qmcdriver_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+TARGET_LINK_LIBRARIES(qmcdriver PUBLIC qmcham qmcestimators)
+TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit qmcestimators_unit)
+
 TARGET_LINK_LIBRARIES(qmcdriver PRIVATE Math::BLAS_LAPACK)
 TARGET_LINK_LIBRARIES(qmcdriver_unit PRIVATE Math::BLAS_LAPACK)
 IF(BUILD_LMYENGINE_INTERFACE)

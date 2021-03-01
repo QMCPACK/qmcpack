@@ -23,42 +23,19 @@
 #include "ParticleTags.h"
 #include "DynamicCoordinates.h"
 #include "Walker.h"
-#include <Utilities/SpeciesSet.h>
-#include <Utilities/PooledData.h>
-#include <OhmmsPETE/OhmmsArray.h>
-#include <Utilities/TimerManager.h>
-#include <OhmmsSoA/VectorSoaContainer.h>
+#include "Utilities/SpeciesSet.h"
+#include "Utilities/PooledData.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "Utilities/TimerManager.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+
 namespace qmcplusplus
 {
 ///forward declaration of DistanceTableData
 class DistanceTableData;
 
 class StructFact;
-
-/** Monte Carlo Data of an ensemble
- *
- * The quantities are shared by all the nodes in a group
- * - NumSamples number of samples
- * - Weight     total weight of a sample
- * - Energy     average energy of a sample
- * - Variance   variance
- * - LivingFraction fraction of walkers alive each step.
- */
-template<typename T>
-struct MCDataType
-{
-  T NumSamples;
-  T RNSamples;
-  T Weight;
-  T Energy;
-  T AlternateEnergy;
-  T Variance;
-  T R2Accepted;
-  T R2Proposed;
-  T LivingFraction;
-};
-
 
 /** Specialized paritlce class for atomistic simulations
  *
@@ -88,9 +65,6 @@ public:
   quantum_domains quantum_domain;
 
   //@{ public data members
-  ///property of an ensemble represented by this ParticleSet
-  //MCDataType<FullPrecRealType> EnsembleProperty;
-
   ///ParticleLayout
   ParticleLayout_t Lattice, PrimitiveLattice;
   ///Long-range box
@@ -157,7 +131,7 @@ public:
   SpeciesSet mySpecies;
 
   ///Structure factor
-  StructFact* SK;
+  std::unique_ptr<StructFact> SK;
 
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int, OHMMS_DIM>> DensityReducedGvecs;
@@ -269,7 +243,7 @@ public:
   void update(bool skipSK = false);
 
   /// batched version of update
-  static void flex_update(const RefVector<ParticleSet>& P_list, bool skipSK = false);
+  static void mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false);
 
   /** create Structure Factor with PBCs
    */
@@ -322,9 +296,9 @@ public:
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
 
   /// batched version of makeMove
-  static void flex_makeMove(const RefVector<ParticleSet>& P_list,
-                            int iat,
-                            const std::vector<SingleParticlePos_t>& displs);
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          const std::vector<SingleParticlePos_t>& displs);
 
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
@@ -377,35 +351,41 @@ public:
                                      const ParticlePos_t& deltaR,
                                      const std::vector<RealType>& dt);
 
-  /** accept the move and update the particle attribute by the proposed move
-   *@param iat the index of the particle whose position and other attributes to be updated
-   *@param forward if true, moves of particles are proposed and accepted in order.
+  /** accept or reject a proposed move
+   *  Two operation modes:
+   *  The using and updating distance tables via `ParticleSet` operate in two modes, regular and forward modes.
    *
-   * partial_table_update = true case is an optimization by skipping the DT update to >iat rows.
-   * It works only if the move of each particle is proposed once and in order.
-   * Once the particle sweep is done, all the distance tables are up-to-date.
-   * This can be used during p-by-p moves.
+   *  Regular mode
+   *  The regular mode can only be used when the distance tables for particle pairs are fully up-to-date.
+   *  This is the case after calling `ParticleSet::update()` in a unit test or after p-by-p moves in a QMC driver.
+   *  In this mode, the distance tables remain up-to-date after calling `ParticleSet::acceptMove`
+   *  and calling `ParticleSet::rejectMove` is not mandatory.
    *
-   * partial_table_update = false case is the safe route. Uppon accept a move, all the distance tables are up-to-date.
-   * This can be used on moves proposed on randomly selected electrons.
+   *  Forward mode
+   *  The forward mode assumes that distance table is not fully up-to-date until every particle is accepted
+   *  or rejected to move once in order. This is the mode used in the p-by-p part of drivers.
+   *  In this mode, calling `ParticleSet::accept_rejectMove` is required to handle accept/reject rather than
+   *  calling individual `ParticleSet::acceptMove` and `ParticleSet::reject`.
+   *  `ParticleSet::accept_rejectMove(iel)` ensures the distance tables (jel < iel) part is fully up-to-date
+   *  regardless a move is accepted or rejected. For this reason, the rejecting operation inside
+   *  `ParticleSet::accept_rejectMove` involves writing the distances with respect to the old particle position.
    */
-  void acceptMove(Index_t iat, bool partial_table_update = false);
-  /// batched version of acceptMove
-  static void flex_acceptMove(const RefVector<ParticleSet>& P_list, Index_t iat, bool partial_table_update = false)
-  {
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().acceptMove(iat, partial_table_update);
-  }
+  void accept_rejectMove(Index_t iat, bool accepted, bool forward_mode = true);
 
-  /** reject the move
+  /** accept the move and update the particle attribute by the proposed move in regular mode
+   *@param iat the index of the particle whose position and other attributes to be updated
    */
-  void rejectMove(Index_t iat) { activePtcl = -1; }
-  /// batched version of rejectMove
-  static void flex_rejectMove(const RefVector<ParticleSet>& P_list, Index_t iat)
-  {
-    for (int iw = 0; iw < P_list.size(); iw++)
-      P_list[iw].get().rejectMove(iat);
-  }
+  void acceptMove(Index_t iat);
+
+  /** reject a proposed move in regular mode
+   * @param iat the electron whose proposed move gets rejected.
+   */
+  void rejectMove(Index_t iat);
+  /// batched version of acceptMove and rejectMove fused
+  static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                   Index_t iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool forward_mode = true);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -437,6 +417,10 @@ public:
    * PbyP requires the distance tables and Sk with awalker.R
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
+  /** batched version of loadWalker */
+  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& psets,
+                            const RefVector<Walker_t>& walkers,
+                            bool pbyp);
 
   /** save this to awalker
    *
@@ -449,7 +433,7 @@ public:
    *
    *  just the R, G, and L
    */
-  static void flex_saveWalker(RefVector<ParticleSet>& psets, RefVector<Walker_t>& walkers);
+  static void mw_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
    *
@@ -460,7 +444,7 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  static void flex_donePbyP(const RefVector<ParticleSet>& P_list);
+  static void mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
@@ -592,6 +576,14 @@ public:
   ///return the last index of a group i
   inline int last(int igroup) const { return SubPtcl[igroup + 1]; }
 
+  ///return the group id of a given particle in the particle set.
+  inline int getGroupID(int iat) const
+  {
+    assert(iat >= 0 && iat < TotalNum);
+    return GroupID[iat];
+  }
+
+  ///return the size of a group
   inline int groupsize(int igroup) const { return SubPtcl[igroup + 1] - SubPtcl[igroup]; }
 
   ///add attributes to list for IO
@@ -647,7 +639,9 @@ public:
 
   inline int getNumDistTables() const { return DistTables.size(); }
 
-  static RefVector<DistanceTableData> extractDTRefList(const RefVector<ParticleSet>& p_list, int id);
+  static RefVectorWithLeader<DistanceTableData> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                 int id);
+  static RefVectorWithLeader<DynamicCoordinates> extractCoordsRefList(const RefVectorWithLeader<ParticleSet>& p_list);
 
 protected:
   /** map to handle distance tables
@@ -662,16 +656,6 @@ protected:
 
   /// Descriptions from distance table creation.  Same order as DistTables.
   std::vector<std::string> distTableDescriptions;
-
-  enum PSTimers
-  {
-    PS_newpos,
-    PS_donePbyP,
-    PS_accept,
-    PS_update
-  };
-
-  static const TimerNameList_t<PSTimers> PSTimerNames;
 
   TimerList_t myTimers;
 
@@ -698,15 +682,27 @@ protected:
 
   /** compute temporal DistTables and SK for a new particle position for each walker in a batch
    *
-   * @param P_list the list of wrapped ParticleSet references in a walker batch
+   * @param p_list the list of wrapped ParticleSet references in a walker batch
    * @param iat the particle that is moved on a sphere
    * @param new_positions new particle positions
    * @param maybe_accept if false, the caller guarantees that the proposed move will not be accepted.
    */
-  static void mw_computeNewPosDistTablesAndSK(const RefVector<ParticleSet>& P_list,
+  static void mw_computeNewPosDistTablesAndSK(const RefVectorWithLeader<ParticleSet>& p_list,
                                               Index_t iat,
                                               const std::vector<SingleParticlePos_t>& new_positions,
                                               bool maybe_accept = true);
+
+  /** actual implemenation for accepting a proposed move, support both regular and forward modes
+   *
+   * @param iat the index of the particle whose position and other attributes to be updated
+   * @param forward_mode if ture, in forward mode.
+   */
+  void acceptMove_impl(Index_t iat, bool forward_mode);
+
+  /** reject a proposed move in forward mode
+   * @param iat the electron whose proposed move gets rejected.
+   */
+  void rejectMoveForwardMode(Index_t iat);
 };
 
 } // namespace qmcplusplus

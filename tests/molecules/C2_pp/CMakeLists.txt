@@ -22,6 +22,15 @@ IF (NOT QMC_CUDA)
                     1 C2_PP_MSDJ_SHORT # VMC
                     )
 
+  QMC_RUN_AND_CHECK(short-C2_pp_msdj-H5-msd_no_precompute-vmc
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
+                    C2_TZ_PP_SHORT_H5_MSDJ
+                    vmc_short_pp_msd_no_precompute_jas-H5.xml
+                    1 16
+                    TRUE
+                    1 C2_PP_MSDJ_SHORT # VMC
+                    )
+
   QMC_RUN_AND_CHECK(short-C2_pp_msdj-XML-vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_SHORT_XML_MSDJ

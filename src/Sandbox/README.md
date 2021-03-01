@@ -1,7 +1,7 @@
 QMCPACK miniapps
 ================
 
-Add `-DQMC_BUILD_SANDBOX_ONLY=1 -DENABLE_SOA=0` in CMake to build the miniapps in this folder.
+Add `-DQMC_BUILD_SANDBOX_ONLY=1` in CMake to build the miniapps in this folder.
 Optionally using `-DQMC_MIXED_PRECISION=1` to access mixed precision (most of the element values are single).
 Assume that the mixed precision is sufficient to evaluate the algorithms, implementations and performance.
 

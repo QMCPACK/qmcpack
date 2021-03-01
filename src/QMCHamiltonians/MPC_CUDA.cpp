@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/MPC_CUDA.h"
+#include "MPC_CUDA.h"
 #include "QMCHamiltonians/CudaCoulomb.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"

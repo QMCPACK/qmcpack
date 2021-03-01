@@ -13,10 +13,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/SkEstimator.h>
-#include <LongRange/StructFact.h>
-#include <Utilities/IteratorUtility.h>
-#include <OhmmsData/AttributeSet.h>
+#include "SkEstimator.h"
+#include "LongRange/StructFact.h"
+#include "Utilities/IteratorUtility.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
 {

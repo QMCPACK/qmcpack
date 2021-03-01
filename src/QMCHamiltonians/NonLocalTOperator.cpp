@@ -16,7 +16,7 @@
 /**@file NonLocalTOperator.cpp
  *@brief Definition of NonLocalTOperator
  */
-#include "QMCHamiltonians/NonLocalTOperator.h"
+#include "NonLocalTOperator.h"
 #include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus
@@ -31,14 +31,14 @@ int NonLocalTOperator::put(xmlNodePtr cur)
 {
   std::string use_tmove = "no";
   ParameterSet m_param;
-  m_param.add(Tau, "timeStep", "double");
-  m_param.add(Tau, "timestep", "double");
-  m_param.add(Tau, "Tau", "double");
-  m_param.add(Tau, "tau", "double");
-  m_param.add(Alpha, "alpha", "double");
-  m_param.add(Gamma, "gamma", "double");
-  m_param.add(use_tmove, "nonlocalmove", "double");
-  m_param.add(use_tmove, "nonlocalmoves", "double");
+  m_param.add(Tau, "timeStep");
+  m_param.add(Tau, "timestep");
+  m_param.add(Tau, "Tau");
+  m_param.add(Tau, "tau");
+  m_param.add(Alpha, "alpha");
+  m_param.add(Gamma, "gamma");
+  m_param.add(use_tmove, "nonlocalmove");
+  m_param.add(use_tmove, "nonlocalmoves");
   bool success = m_param.put(cur);
   plusFactor   = Tau * Gamma;
   minusFactor  = -Tau * (1.0 - Alpha * (1.0 + Gamma));

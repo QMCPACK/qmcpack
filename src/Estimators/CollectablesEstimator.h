@@ -14,8 +14,8 @@
 
 #ifndef QMCPLUSPLUS_COLLECTABLES_ESTIMATOR_H
 #define QMCPLUSPLUS_COLLECTABLES_ESTIMATOR_H
-#include <Estimators/ScalarEstimatorBase.h>
-#include <QMCHamiltonians/QMCHamiltonian.h>
+#include "Estimators/ScalarEstimatorBase.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {

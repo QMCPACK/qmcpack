@@ -18,12 +18,12 @@
 // #define USE_SPLIT_SPLINES_MEM_PREFETCH
 
 #include "QMCWaveFunctions/EinsplineSet.h"
-#include <einspline/multi_bspline.h>
-#include <einspline/multi_bspline_eval_cuda.h>
+#include "einspline/multi_bspline.h"
+#include "einspline/multi_bspline_eval_cuda.h"
 #include "Configuration.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/AtomicOrbitalCuda.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/PhaseFactors.h"
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 #ifdef HAVE_MKL
 #include <mkl_vml.h>
 #endif

@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/SkEstimator_CUDA.h"
+#include "SkEstimator_CUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
 

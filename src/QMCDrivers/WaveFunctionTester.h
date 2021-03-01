@@ -50,7 +50,6 @@ public:
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
-                     WaveFunctionPool& ppool,
                      Communicate* comm);
 
   ~WaveFunctionTester();

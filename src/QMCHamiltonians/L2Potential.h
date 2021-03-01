@@ -63,7 +63,7 @@ struct L2Potential : public OperatorBase
   ///distance table index
   int myTableIndex;
   ///unique set of L2 PP to cleanup
-  std::vector<L2RadialPotential*> PPset;
+  std::vector<std::unique_ptr<L2RadialPotential>> PPset;
   ///PP[iat] is the L2 potential for the iat-th particle
   std::vector<L2RadialPotential*> PP;
   ///Associated trial wavefunction
@@ -71,11 +71,12 @@ struct L2Potential : public OperatorBase
 
   L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
-  ~L2Potential();
-
   void resetTargetParticleSet(ParticleSet& P);
 
   Return_t evaluate(ParticleSet& P);
+
+  void evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K);
+  void evaluateD(ParticleSet& P, int iel, TensorType& D);
 
   bool put(xmlNodePtr cur) { return true; }
 
@@ -91,7 +92,7 @@ struct L2Potential : public OperatorBase
    * @param groupID index of the ion species
    * @param ppot L2 pseudopotential
    */
-  void add(int groupID, L2RadialPotential* ppot);
+  void add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot);
 };
 } // namespace qmcplusplus
 #endif

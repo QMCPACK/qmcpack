@@ -22,7 +22,6 @@
 #include "CubicSplineCommon.h"
 #include <vector>
 using namespace IO;
-using namespace blitz;
 
 class ChannelPotential
 {

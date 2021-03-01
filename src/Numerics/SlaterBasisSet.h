@@ -14,17 +14,17 @@
 
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
-#include "Numerics/OptimizableFunctorBase.h"
 #include "Numerics/SlaterTypeOrbital.h"
 #include "OhmmsData/AttributeSet.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {
 template<class T>
-struct SlaterCombo : public OptimizableFunctorBase
+struct SlaterCombo
 {
-  typedef T value_type;
+  static_assert(std::is_floating_point<T>::value, "T must be a float point type");
+  typedef T real_type;
   typedef GenericSTO<T> Component_t;
 
   int L;
@@ -42,10 +42,6 @@ struct SlaterCombo : public OptimizableFunctorBase
                        const char* node_name = "radfunc",
                        const char* exp_name  = "exponent",
                        const char* c_name    = "contraction");
-
-  ~SlaterCombo() {}
-
-  OptimizableFunctorBase* makeClone() const { return new SlaterCombo<value_type>(*this); }
 
   inline real_type f(real_type r)
   {
@@ -121,35 +117,11 @@ struct SlaterCombo : public OptimizableFunctorBase
     }
   }
 
-  //  inline real_type evaluate(T r, T rinv, T& drnl, T& d2rnl) {
-  //    Y=0.0;drnl=0.0;d2rnl=0.0;
-  //    T du, d2u;
-  //    typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
-  //    while(it != it_end) {
-  //      Y+=(*it).evaluate(r,rinv,du,d2u); dY+=du; d2Y+=d2u;
-  //      ++it;
-  //    }
-  //    return Y;
-  //  }
-
   bool putBasisGroup(xmlNodePtr cur);
   bool putBasisGroupH5(hdf_archive& hin)
   {
     APP_ABORT(" Error: Slater Orbitals with HDF5 not implemented. Please contact developers. Aborting.\n");
     return true;
-  }
-
-  bool put(xmlNodePtr cur) { return true; }
-
-  void reset()
-  {
-    //DO NOTHING FOR NOW
-  }
-  void checkInVariables(opt_variables_type& active) {}
-  void checkOutVariables(const opt_variables_type& active) {}
-  void resetParameters(const opt_variables_type& active)
-  {
-    //DO NOTHING FOR NOW
   }
 };
 

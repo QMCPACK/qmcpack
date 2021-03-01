@@ -26,7 +26,7 @@
 #include <mutex>
 
 #include "Configuration.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/Utils.hpp"
 #include "mpi3/shared_communicator.hpp"
@@ -402,7 +402,7 @@ CSR construct_distributed_csr_matrix_from_distributed_containers(Container& Q,
     if (cnt * sizeof(Type) >= static_cast<long>(std::numeric_limits<int>::max()))
       throw std::out_of_range("row size exceeded the maximum");
   }
-  MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, Q.data(), recvcounts.data(), displ.data(), MPI_CHAR, &eq_cores);
+  MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, Q.data(), recvcounts.data(), displ.data(), MPI_CHAR, eq_cores.get());
 
   Timer.stop("G0");
   qmcplusplus::app_log() << " In construct_distributed_csr_matrix_from_distributed_containers Allgatherv: "
@@ -488,7 +488,7 @@ std::ofstream out((std::string("debug.")+std::to_string(TG.Global().rank())).c_s
           throw std::out_of_range("row size exceeded the maximum");
         int to_send_int = int(to_send * sizeof(Type));
         //out<<" sending " <<to_send <<" " <<deltaN <<" " <<i*ncores <<" " <<i <<std::endl;
-        MPI_Send(Q.data() + Q.size() - to_send, to_send_int, MPI_CHAR, i * ncores, tgrank, &eq_node_group);
+        MPI_Send(Q.data() + Q.size() - to_send, to_send_int, MPI_CHAR, i * ncores, tgrank, eq_node_group.get());
         //out<<" done sending " <<to_send <<" " <<deltaN <<" " <<i*ncores <<" " <<i <<std::endl;
         nbefore += to_send;
         deltaN -= to_send;
@@ -524,7 +524,7 @@ std::ofstream out((std::string("debug.")+std::to_string(TG.Global().rank())).c_s
           long curr_sz    = Q.size();
           Q.resize(curr_sz + to_recv);
           //out<<" receiving " <<to_recv <<" " <<deltaN <<" " <<nbefore <<" " <<ip <<std::endl;
-          MPI_Recv(Q.data() + curr_sz, to_recv_int, MPI_CHAR, ip, ip, &eq_node_group, &st);
+          MPI_Recv(Q.data() + curr_sz, to_recv_int, MPI_CHAR, ip, ip, eq_node_group.get(), &st);
           nbefore += to_recv;
           deltaN -= to_recv;
           //out<<" done receiving " <<to_recv <<" " <<deltaN <<" " <<nbefore <<" " <<ip <<std::endl;

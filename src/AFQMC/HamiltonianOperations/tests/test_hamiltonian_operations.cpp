@@ -17,8 +17,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
-#include "io/hdf_archive.h"
-#include "io/hdf_multi.h"
+#include "hdf/hdf_archive.h"
+#include "hdf/hdf_multi.h"
 
 #undef APP_ABORT
 #define APP_ABORT(x)             \
@@ -40,7 +40,7 @@
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Utilities/test_utils.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"
 #include "AFQMC/Numerics/ma_blas.hpp"
@@ -59,22 +59,12 @@ namespace qmcplusplus
 {
 using namespace afqmc;
 
-namespace afqmc
-{
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-}
-
 template<class Alloc>
 void ham_ops_basic_serial(boost::mpi3::communicator& world)
 {
   using pointer = device_ptr<ComplexType>;
 
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("ham_ops_basic_serial", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -110,7 +100,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
 
     using CMatrix = ComplexMatrix<Alloc>;
-    boost::multi::array<ComplexType, 3> OrbMat({2, NMO, NAEA});
     hdf_archive dump;
     if (!dump.open(UTEST_WFN, H5F_ACC_RDONLY))
     {
@@ -118,7 +107,6 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     dump.push("Wavefunction", false);
     dump.push("NOMSD", false);
-    //int walker_type = readWfn(std::string(UTEST_WFN),OrbMat,NMO,NAEA,NAEB);
     std::vector<int> dims(5);
     if (!dump.readEntry(dims, "dims"))
     {
@@ -127,8 +115,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     WALKER_TYPES WTYPE(initWALKER_TYPES(dims[3]));
     //    int walker_type = dims[3];
-    dump.push(std::string("PsiT_0"));
-    int NEL = (WTYPE == CLOSED) ? NAEA : (NAEA + NAEB);
+    int NEL  = (WTYPE == CLOSED) ? NAEA : (NAEA + NAEB);
+    int NPOL = (WTYPE == NONCOLLINEAR) ? 2 : 1;
     //    WALKER_TYPES WTYPE = CLOSED;
     //    if(walker_type==1) WTYPE = COLLINEAR;
     //    if(walker_type==2) WTYPE = NONCOLLINEAR;
@@ -137,32 +125,28 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     Alloc alloc_(make_localTG_allocator<ComplexType>(TG));
     std::vector<PsiT_Matrix> PsiT;
     PsiT.reserve(2);
+    dump.push(std::string("PsiT_0"));
     PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix, shared_allocator<ComplexType>>(dump, gTG.Node()));
-    //PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-    //OrbMat[0],1e-8,'H',gTG.Node()));
-    if (WTYPE != CLOSED)
+    if (WTYPE == COLLINEAR)
     {
       dump.pop();
       dump.push(std::string("PsiT_1"));
       PsiT.emplace_back(csr_hdf5::HDF2CSR<PsiT_Matrix, shared_allocator<ComplexType>>(dump, gTG.Node()));
-      //PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
-      //OrbMat[1](OrbMat.extension(1),{0,NAEB}),
-      //1e-8,'H',gTG.Node()));
-      //}
     }
 
     dump.pop();
+    boost::multi::array<ComplexType, 3> OrbMat({2, NPOL * NMO, NAEA});
     {
-      boost::multi::array<ComplexType, 2> Psi0A({NMO, NAEA});
+      boost::multi::array<ComplexType, 2> Psi0A({NPOL * NMO, NAEA});
       dump.readEntry(Psi0A, "Psi0_alpha");
-      for (int i = 0; i < NMO; i++)
+      for (int i = 0; i < NPOL * NMO; i++)
       {
         for (int j = 0; j < NAEA; j++)
         {
           OrbMat[0][i][j] = Psi0A[i][j];
         }
       }
-      if (WTYPE != CLOSED)
+      if (WTYPE == COLLINEAR)
       {
         boost::multi::array<ComplexType, 2> Psi0B({NMO, NAEA});
         dump.readEntry(Psi0B, "Psi0_beta");
@@ -182,17 +166,15 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     // Calculates Overlap, G
 // NOTE: Make small factory routine!
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-    auto SDet(
-        SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>(NMO, NAEA,
-                                                                                 afqmc::device_buffer_generator.get()));
+    auto SDet(SlaterDetOperations_serial<ComplexType, DeviceBufferManager>(NPOL * NMO, NAEA, DeviceBufferManager{}));
 #else
-    auto SDet(SlaterDetOperations_shared<ComplexType>(NMO, NAEA));
+    auto SDet(SlaterDetOperations_shared<ComplexType>(NPOL * NMO, NAEA));
 #endif
 
     boost::multi::array<ComplexType, 3, Alloc> devOrbMat(OrbMat, alloc_);
     std::vector<devcsr_Matrix> devPsiT(move_vector<devcsr_Matrix>(std::move(PsiT)));
 
-    CMatrix G({NEL, NMO}, alloc_);
+    CMatrix G({NEL, NPOL * NMO}, alloc_);
     ComplexType Ovlp = SDet.MixedDensityMatrix(devPsiT[0], devOrbMat[0], G.sliced(0, NAEA), 0.0, true);
     if (WTYPE == COLLINEAR)
     {
@@ -203,10 +185,16 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     REQUIRE(imag(Ovlp) == Approx(0.0));
 
     boost::multi::array<ComplexType, 2, Alloc> Eloc({1, 3}, alloc_);
-    boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {1, NEL * NMO});
-    // This assumes {nwalk,...} which is not correct for some HamOps
-    // make this generic
-    HOps.energy(Eloc, Gw, 0, TG.getCoreID() == 0);
+    {
+      int nc = 1, nr = NEL * NPOL * NMO;
+      if (HOps.transposed_G_for_E())
+      {
+        nr = 1;
+        nc = NEL * NPOL * NMO;
+      }
+      boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {nr, nc});
+      HOps.energy(Eloc, Gw, 0, TG.getCoreID() == 0);
+    }
     Eloc[0][0] = (TG.Node() += ComplexType(Eloc[0][0]));
     Eloc[0][1] = (TG.Node() += ComplexType(Eloc[0][1]));
     Eloc[0][2] = (TG.Node() += ComplexType(Eloc[0][2]));
@@ -235,38 +223,60 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     auto nCV      = HOps.local_number_of_cholesky_vectors();
 
     CMatrix X({nCV, 1}, alloc_);
-    //HOps.vbias(Gw,X,sqrtdt);
+    {
+      int nc = 1, nr = NEL * NPOL * NMO;
+      if (HOps.transposed_G_for_vbias())
+      {
+        nr = 1;
+        nc = NEL * NPOL * NMO;
+      }
+      boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {nr, nc});
+      HOps.vbias(Gw, X, sqrtdt);
+    }
     TG.local_barrier();
-    ComplexType Xsum = 0;
-    //for(int i=0; i<X.size(); i++)
-    //Xsum += X[i][0];
-    //if(std::abs(file_data.Xsum)>1e-8) {
-    //REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-    //REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
-    //} else {
-    //app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
-    //}
+    ComplexType Xsum = 0, Xsum2 = 0;
+    for (int i = 0; i < X.size(0); i++)
+    {
+      Xsum += X[i][0];
+      Xsum2 += ComplexType(0.5) * X[i][0] * X[i][0];
+    }
+    if (std::abs(file_data.Xsum) > 1e-8)
+    {
+      REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
+      REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+    }
+    else
+    {
+      app_log() << " Xsum: " << setprecision(12) << Xsum << std::endl;
+      app_log() << " Xsum2 (EJ): " << setprecision(12) << Xsum2 / sqrtdt / sqrtdt << std::endl;
+    }
 
-    //int vdim1 = (HOps.transposed_vHS()?1:NMO*NMO);
-    //int vdim2 = (HOps.transposed_vHS()?NMO*NMO:1);
-    //CMatrix vHS({vdim1,vdim2},alloc_);
-    //TG.local_barrier();
-    //HOps.vHS(X,vHS,sqrtdt);
-    //TG.local_barrier();
-    //ComplexType Vsum=0;
-    //if(HOps.transposed_vHS()) {
-    //for(int i=0; i<vHS.size(1); i++)
-    //Vsum += vHS[0][i];
-    //} else {
-    //for(int i=0; i<vHS.size(0); i++)
-    //Vsum += vHS[i][0];
-    //}
-    //if(std::abs(file_data.Vsum)>1e-8) {
-    //REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-    //REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
-    //} else {
-    //app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
-    //}
+    int vdim1 = (HOps.transposed_vHS() ? 1 : NMO * NMO);
+    int vdim2 = (HOps.transposed_vHS() ? NMO * NMO : 1);
+    CMatrix vHS({vdim1, vdim2}, alloc_);
+    TG.local_barrier();
+    HOps.vHS(X, vHS, sqrtdt);
+    TG.local_barrier();
+    ComplexType Vsum = 0;
+    if (HOps.transposed_vHS())
+    {
+      for (int i = 0; i < vHS.size(1); i++)
+        Vsum += vHS[0][i];
+    }
+    else
+    {
+      for (int i = 0; i < vHS.size(0); i++)
+        Vsum += vHS[i][0];
+    }
+    if (std::abs(file_data.Vsum) > 1e-8)
+    {
+      REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
+      REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+    }
+    else
+    {
+      app_log() << " Vsum: " << setprecision(12) << Vsum << std::endl;
+    }
     // Test Generalised Fock matrix.
     int dm_size;
     CMatrix G2({1, 1}, alloc_);
@@ -374,17 +384,18 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
 TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 {
   auto world = boost::mpi3::environment::get_world_instance();
+  auto node  = world.split_shared(world.rank());
 
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  auto node = world.split_shared(world.rank());
 
   arch::INIT(node);
   using Alloc = device::device_allocator<ComplexType>;
 #else
   using Alloc = shared_allocator<ComplexType>;
 #endif
-
+  setup_memory_managers(node, 10uL * 1024uL * 1024uL);
   ham_ops_basic_serial<Alloc>(world);
+  release_memory_managers();
 }
 
 } // namespace qmcplusplus

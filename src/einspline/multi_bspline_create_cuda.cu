@@ -27,7 +27,7 @@ __constant__ float  Acuda[48];
 #include "multi_bspline_cuda_d_impl.h"
 #include "multi_bspline_cuda_z_impl.h"
 
-#include <CUDA_legacy/gpu_vector.h>
+#include "CUDA_legacy/gpu_vector.h"
 
 #define UnifiedVirtualAddressing
 

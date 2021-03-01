@@ -11,13 +11,13 @@
 
 
 SET(HOST_SRCS
-    sysutil.cpp
+    Host/sysutil.cpp
     Host/InfoStream.cpp
     Host/OutputManager.cpp
 )
 
 SET(DEVICE_SRCS
-    accelerators.cpp
+    MemoryUsage.cpp
 )
 
 ADD_LIBRARY(platform_host ${HOST_SRCS})
@@ -34,8 +34,8 @@ TARGET_LINK_LIBRARIES(platform_device PUBLIC message)
 SUBDIRS(CPU)
 TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cpu)
 
-SUBDIRS(OpenMP)
-TARGET_LINK_LIBRARIES(platform_device PRIVATE platform_omp)
+SUBDIRS(OMPTarget)
+TARGET_LINK_LIBRARIES(platform_device PRIVATE platform_omptarget)
 
 IF(QMC_CUDA)
   SUBDIRS(CUDA_legacy)
@@ -46,3 +46,5 @@ IF(ENABLE_CUDA)
   SUBDIRS(CUDA)
   TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda)
 ENDIF(ENABLE_CUDA)
+
+SUBDIRS(tests)

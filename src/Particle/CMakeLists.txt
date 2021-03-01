@@ -13,14 +13,16 @@
 ####################################
 # create libqmcparticle
 ####################################
-SET(PARTICLE ${PARTICLE}
+SET(PARTICLE
   InitMolecularSystem.cpp
   ParticleSetPool.cpp
   ParticleSet.cpp
+  PSdispatcher.cpp
   VirtualParticleSet.cpp
   ParticleSet.BC.cpp
   DynamicCoordinatesBuilder.cpp
   MCWalkerConfiguration.cpp
+  WalkerConfigurations.cpp
   SampleStack.cpp
   createDistanceTableAA.cpp
   createDistanceTableAB.cpp
@@ -36,7 +38,8 @@ SET(PARTICLE ${PARTICLE}
 
 IF(ENABLE_OFFLOAD)
   SET(PARTICLE ${PARTICLE}
-    createDistanceTableABOMP.cpp
+    createDistanceTableAAOMPTarget.cpp
+    createDistanceTableABOMPTarget.cpp
     )
 ENDIF(ENABLE_OFFLOAD)
 

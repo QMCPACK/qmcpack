@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/SPOInfo.h>
+#include "SPOInfo.h"
 #include <limits>
 
 
@@ -37,7 +37,7 @@ SPOInfo::SPOInfo(int orb_index, RealType en)
   energy     = en;
 }
 
-void SPOInfo::report(const std::string& pad)
+void SPOInfo::report(const std::string& pad) const
 {
   if (has_index())
     app_log() << pad << "index      = " << index << std::endl;

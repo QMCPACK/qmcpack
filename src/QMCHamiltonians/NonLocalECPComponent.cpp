@@ -15,7 +15,7 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPPJob.h"
 
 namespace qmcplusplus
@@ -182,20 +182,20 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
   return pairpot;
 }
 
-void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent>& ecp_component_list,
-                                            const RefVector<ParticleSet>& p_list,
-                                            const RefVector<TrialWaveFunction>& psi_list,
-                                            const RefVector<const NLPPJob<RealType>>& joblist,
-                                            TrialWaveFunction& psi_leader,
-                                            std::vector<RealType>& pairpots,
-                                            bool use_DLA)
+void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPComponent>& ecp_component_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const RefVectorWithLeader<TrialWaveFunction>& psi_list,
+                                          const RefVector<const NLPPJob<RealType>>& joblist,
+                                          std::vector<RealType>& pairpots,
+                                          bool use_DLA)
 {
   if (ecp_component_list.size() > 1)
   {
-    if (ecp_component_list[0].get().VP)
+    auto& ecp_component_leader = ecp_component_list.getLeader();
+    if (ecp_component_leader.VP)
     {
       // Compute ratios with VP
-      RefVector<VirtualParticleSet> vp_list;
+      RefVectorWithLeader<VirtualParticleSet> vp_list(*ecp_component_leader.VP);
       RefVector<const VirtualParticleSet> const_vp_list;
       RefVector<const std::vector<PosType>> deltaV_list;
       RefVector<std::vector<ValueType>> psiratios_list;
@@ -217,12 +217,13 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
         psiratios_list.push_back(component.psiratio);
       }
 
-      VirtualParticleSet::flex_makeMoves(vp_list, deltaV_list, joblist, true);
+      VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
+
       if (use_DLA)
-        psi_leader.flex_evaluateRatios(psi_list, const_vp_list, psiratios_list,
-                                               TrialWaveFunction::ComputeType::FERMIONIC);
+        TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,
+                                             TrialWaveFunction::ComputeType::FERMIONIC);
       else
-        psi_leader.flex_evaluateRatios(psi_list, const_vp_list, psiratios_list);
+        TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
     }
     else
     {
@@ -260,9 +261,9 @@ void NonLocalECPComponent::flex_evaluateOne(const RefVector<NonLocalECPComponent
     }
   }
   else if (ecp_component_list.size() == 1)
-    pairpots[0] = ecp_component_list[0].get().evaluateOne(p_list[0], joblist[0].get().ion_id, psi_list[0],
-                                                          joblist[0].get().electron_id, joblist[0].get().ion_elec_dist,
-                                                          joblist[0].get().ion_elec_displ, use_DLA);
+    pairpots[0] =
+        ecp_component_list[0].evaluateOne(p_list[0], joblist[0].get().ion_id, psi_list[0], joblist[0].get().electron_id,
+                                          joblist[0].get().ion_elec_dist, joblist[0].get().ion_elec_displ, use_DLA);
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W,

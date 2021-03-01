@@ -1,5 +1,5 @@
 #if COMPILATION_INSTRUCTIONS
-mpic++ -std=c++14 -O3 -Wall -Wextra -Wpedantic $0 -o $0x.x -lboost_serialization && mpirun -n 4 $0x.x $@ && rm -f $0x.x; exit
+mpicxx.mpich -g -std=c++14 -O3 -Wall -Wextra -Wpedantic $0 -o $0x -lboost_serialization&&mpirun.mpich -n 4 valgrind --error-exitcode=1345 $0x&&rm $0x;exit
 #endif
 
 #include "../../mpi3/main.hpp"

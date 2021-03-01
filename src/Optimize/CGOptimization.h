@@ -304,18 +304,18 @@ template<class T>
 bool CGOptimization<T>::put(xmlNodePtr cur)
 {
   ParameterSet p;
-  p.add(NumSteps, "max_steps", "none");
-  p.add(NumSteps, "maxSteps", "none");
-  p.add(CostTol, "tolerance", "none");
-  p.add(GradTol, "tolerance_g", "none");
-  p.add(GradTol, "toleranceG", "none");
-  p.add(GammaTol, "tolerance_cg", "none");
-  p.add(GammaTol, "toleranceCG", "none");
-  p.add(Displacement, "epsilon", "none");
-  p.add(this->LambdaMax, "stepsize", "none");
-  p.add(this->LambdaMax, "stepSize", "none");
-  p.add(this->ITMAX, "max_linemin", "none");
-  p.add(this->ITMAX, "maxLinemin", "none");
+  p.add(NumSteps, "max_steps");
+  p.add(NumSteps, "maxSteps");
+  p.add(CostTol, "tolerance");
+  p.add(GradTol, "tolerance_g");
+  p.add(GradTol, "toleranceG");
+  p.add(GammaTol, "tolerance_cg");
+  p.add(GammaTol, "toleranceCG");
+  p.add(Displacement, "epsilon");
+  p.add(this->LambdaMax, "stepsize");
+  p.add(this->LambdaMax, "stepSize");
+  p.add(this->ITMAX, "max_linemin");
+  p.add(this->ITMAX, "maxLinemin");
   p.put(cur);
   return true;
 }

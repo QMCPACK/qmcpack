@@ -1,4 +1,4 @@
-add_executable(ppconvert EXCLUDE_FROM_ALL "")
+add_executable(ppconvert) # Build ppconvert with standard make invocation 
 
 add_subdirectory(common)
 

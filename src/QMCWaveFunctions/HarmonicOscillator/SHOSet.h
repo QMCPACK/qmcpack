@@ -14,8 +14,8 @@
 #ifndef QMCPLUSPLUS_SHOSET_H
 #define QMCPLUSPLUS_SHOSET_H
 
-#include <QMCWaveFunctions/SPOSet.h>
-#include <QMCWaveFunctions/SPOInfo.h>
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOInfo.h"
 
 
 namespace qmcplusplus
@@ -38,7 +38,7 @@ struct SHOState : public SPOInfo
     energy         = e;
   }
 
-  inline void sho_report(const std::string& pad = "")
+  inline void sho_report(const std::string& pad = "") const
   {
     app_log() << pad << "qn=" << quantum_number << "  e=" << energy << std::endl;
   }
@@ -72,18 +72,18 @@ struct SHOSet : public SPOSet
 
 
   //SPOSet interface methods
-  SPOSet* makeClone() const;
+  SPOSet* makeClone() const override;
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override;
 
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override;
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+                            ValueMatrix_t& d2logdet) override;
 
 
   //local functions
@@ -93,14 +93,14 @@ struct SHOSet : public SPOSet
   void evaluate_d0(const PosType& xpos, ValueVector_t& psi);
   void evaluate_d1(const PosType& xpos, ValueVector_t& psi, GradVector_t& dpsi);
   void evaluate_d2(const PosType& xpos, ValueVector_t& psi, ValueVector_t& d2psi);
-  void report(const std::string& pad = "");
+  void report(const std::string& pad = "") const override;
   void test_derivatives();
   void test_overlap();
   void evaluate_check(PosType r, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
   //empty methods
   /// number of orbitals is determined only by initial request
-  inline void setOrbitalSetSize(int norbs) {}
+  inline void setOrbitalSetSize(int norbs) override {}
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
@@ -110,28 +110,27 @@ struct SHOSet : public SPOSet
 
 
   //methods to be implemented in the future (possibly)
-  void resetParameters(const opt_variables_type& optVariables);
-  void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
-  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& dddlogdet);
+  void resetParameters(const opt_variables_type& optVariables) override;
+  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& dddlogdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
-                            HessMatrix_t& ddlogdet);
+                            HessMatrix_t& ddlogdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             HessMatrix_t& ddlogdet,
-                            GGGMatrix_t& dddlogdet);
+                            GGGMatrix_t& dddlogdet) override;
   void evaluateGradSource(const ParticleSet& P,
                           int first,
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          GradMatrix_t& gradphi);
+                          GradMatrix_t& gradphi) override;
   void evaluateGradSource(const ParticleSet& P,
                           int first,
                           int last,
@@ -139,7 +138,7 @@ struct SHOSet : public SPOSet
                           int iat_src,
                           GradMatrix_t& dphi,
                           HessMatrix_t& ddphi,
-                          GradMatrix_t& dlapl_phi);
+                          GradMatrix_t& dlapl_phi) override;
 };
 
 } // namespace qmcplusplus

@@ -19,7 +19,7 @@
 
 #include <numeric>
 #include "AFQMC/config.h"
-#include <Utilities/FairDivide.h>
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
@@ -484,7 +484,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
 
   // map from [0:2*NMO) to [0:NMO) in collinear case
-  int k0_alpha, k0_beta, kN_alpha = 0, kN_beta = 0;
+  int k0_alpha = 0, k0_beta = 0, kN_alpha = 0, kN_beta = 0;
   if (k0 >= 0)
   {
     k0_alpha = std::min(k0, NMO);
@@ -494,10 +494,6 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
       k0_beta = std::max(k0, NMO) - NMO;
       kN_beta = std::max(kN, NMO) - NMO;
     }
-  }
-  else
-  {
-    k0_alpha = k0_beta = kN_alpha = kN_beta = 0;
   }
 
   int ak0, ak1;
@@ -612,60 +608,96 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
 }
 
 // design for compact arrays
+/*
+ * Constructs the following contraction of the Slater matrix of the trial wfn and the Cholesky Matrix (Likn).
+ * Case:
+ *   - Closed/Collinear:  L[a][n][k] = sum_i A[a][i] L[i][k][n]
+ *       - In collinear case, two separate calls are made for each spin channel.
+ *   - Non-collinear: L[a][n][sk] = sum_i A[a][si] L[i][k][n]   // [si] == [s][i] combined spinor index
+ *       - In this case, to preserve matrix dimenions, [s][k] --> [sk] is kept as a single index.
+ */
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
-void getLank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lank, MultiArray2D&& buff)
+void getLank(MultiArray2DA&& Aai,
+             MultiArray3DB&& Likn,
+             MultiArray3DC&& Lank,
+             MultiArray2D&& buff,
+             bool noncollinear = false)
 {
-  int na = Aai.size(0);
+  int npol = noncollinear ? 2 : 1;
+  int na   = Aai.size(0);
   if (na == 0)
     return;
-  int ni    = Aai.size(1);
+  int ni    = Aai.size(1) / npol;
   int nk    = Likn.size(1);
   int nchol = Likn.size(2);
   assert(Likn.size(0) == ni);
   assert(Lank.size(0) == na);
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nk);
-  assert(buff.size(0) >= nk);
+  assert(Lank.size(2) == nk * npol);
+  assert(buff.size(0) >= npol * nk);
   assert(buff.size(1) >= nchol);
+  if (noncollinear)
+    assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
 
-  using element = typename std::decay<MultiArray3DC>::type::element;
+  using elementA = typename std::decay<MultiArray2DA>::type::element;
+  using element  = typename std::decay<MultiArray3DC>::type::element;
+  boost::multi::array_ref<elementA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
   boost::multi::array_ref<element, 2> Li_kn(to_address(Likn.origin()), {ni, nk * nchol});
-  boost::multi::array_ref<element, 2> La_kn(to_address(Lank.origin()), {na, nk * nchol});
+  boost::multi::array_ref<element, 2> Las_kn(to_address(Lank.origin()), {na * npol, nk * nchol});
 
-  ma::product(Aai, Li_kn, La_kn);
+  ma::product(Aas_i, Li_kn, Las_kn);
   for (int a = 0; a < na; a++)
   {
-    boost::multi::array_ref<element, 2> Lkn(to_address(Lank[a].origin()), {nk, nchol});
-    boost::multi::array_ref<element, 2> Lnk(to_address(Lank[a].origin()), {nchol, nk});
-    buff({0, nk}, {0, nchol}) = Lkn;
-    ma::transpose(buff({0, nk}, {0, nchol}), Lnk);
+    boost::multi::array_ref<element, 2> Lskn(to_address(Lank[a].origin()), {npol * nk, nchol});
+    boost::multi::array_ref<element, 2> Lnsk(to_address(Lank[a].origin()), {nchol, npol * nk});
+    buff({0, npol * nk}, {0, nchol}) = Lskn;
+    ma::transpose(buff({0, npol * nk}, {0, nchol}), Lnsk);
   }
 }
 
+/*
+ * Constructs the following contraction of the Slater matrix of the trial wfn and the Cholesky Matrix (Likn).
+ * Case:
+ *   - Closed/Collinear:  L[a][n][k] = sum_i A[a][i] conj(L[k][i][n])
+ *       - In collinear case, two separate calls are made for each spin channel.
+ *   - Non-collinear: L[a][n][sk] = sum_i A[a][si] conj(L[k][i][n])   // [si] == [s][i] combined spinor index
+ *       - In this case, to preserve matrix dimenions, [s][k] --> [sk] is kept as a single index.
+ */
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
-void getLank_from_Lkin(MultiArray2DA&& Aai, MultiArray3DB&& Lkin, MultiArray3DC&& Lank, MultiArray2D&& buff)
+void getLank_from_Lkin(MultiArray2DA&& Aai,
+                       MultiArray3DB&& Lkin,
+                       MultiArray3DC&& Lank,
+                       MultiArray2D&& buff,
+                       bool noncollinear = false)
 {
-  int na = Aai.size(0);
+  int npol = noncollinear ? 2 : 1;
+  int na   = Aai.size(0);
   if (na == 0)
     return;
-  int ni    = Aai.size(1);
+  int ni    = Aai.size(1) / npol;
   int nk    = Lkin.size(0);
   int nchol = Lkin.size(2);
   assert(Lkin.size(1) == ni);
   assert(Lank.size(0) == na);
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nk);
-  assert(buff.num_elements() >= na * nchol);
+  assert(Lank.size(2) == nk * npol);
+  assert(buff.num_elements() >= na * npol * nchol);
+  if (noncollinear)
+    assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
 
-  using Type = typename std::decay<MultiArray3DC>::type::element;
-  boost::multi::array_ref<Type, 2> bna(to_address(buff.origin()), {nchol, na});
+  using Type     = typename std::decay<MultiArray3DC>::type::element;
+  using elementA = typename std::decay<MultiArray2DA>::type::element;
+  boost::multi::array_ref<elementA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
+  boost::multi::array_ref<Type, 2> bnas(to_address(buff.origin()), {nchol, na * npol});
   // Lank[a][n][k] = sum_i Aai[a][i] conj(Lkin[k][i][n])
+  // Lank[as][n][k] = sum_i Aai[as][i] conj(Lkin[k][i][n])
   for (int k = 0; k < nk; k++)
   {
-    ma::product(ma::H(Lkin[k]), ma::T(Aai), bna);
+    ma::product(ma::H(Lkin[k]), ma::T(Aas_i), bnas);
     for (int a = 0; a < na; a++)
       for (int n = 0; n < nchol; n++)
-        Lank[a][n][k] = bna[n][a];
+        for (int p = 0; p < npol; p++)
+          Lank[a][n][p * nk + k] = bnas[n][a * npol + p];
   }
 }
 
@@ -675,31 +707,42 @@ namespace ma_rotate_padded
 {
 // designed for padded arrays
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC>
-void getLakn_Lank(MultiArray2DA&& Aai, MultiArray3DB&& Likn, MultiArray3DC&& Lakn, MultiArray3DC&& Lank)
+void getLakn_Lank(MultiArray2DA&& Aai,
+                  MultiArray3DB&& Likn,
+                  MultiArray3DC&& Lakn,
+                  MultiArray3DC&& Lank,
+                  bool noncollinear = false)
 {
-  int na = Aai.size(0);
+  int npol = noncollinear ? 2 : 1;
+  int na   = Aai.size(0);
   if (na == 0)
     return;
-  int ni = Aai.size(1);
+  int ni = Aai.size(1) / npol;
 
   int nmo   = Likn.size(0);
   int nchol = Likn.size(2);
   assert(Likn.size(1) == nmo);
 
-  assert(Lakn.size(1) == nmo);
+  assert(Lakn.size(1) == npol * nmo);
   assert(Lakn.size(2) == nchol);
 
+  assert(Lakn.size(0) >= na);
   assert(Lakn.size(0) == Lank.size(0));
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nmo);
+  assert(Lank.size(2) == npol * nmo);
 
+  if (noncollinear)
+    assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
+
+  using elmA = typename std::decay<MultiArray2DA>::type::element;
   using elmB = typename std::decay<MultiArray3DB>::type::element;
   using elmC = typename std::decay<MultiArray3DC>::type::element;
 
+  boost::multi::array_ref<elmA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
   boost::multi::array_ref<elmB, 2, decltype(Likn.origin())> Li_kn(Likn.origin(), {ni, nmo * nchol});
-  boost::multi::array_ref<elmC, 2, decltype(Lakn.origin())> La_kn(Lakn.origin(), {na, nmo * nchol});
+  boost::multi::array_ref<elmC, 2, decltype(Lakn.origin())> Las_kn(Lakn.origin(), {na * npol, nmo * nchol});
 
-  ma::product(Aai, Li_kn, La_kn);
+  ma::product(Aas_i, Li_kn, Las_kn);
   for (int a = 0; a < na; a++)
     ma::transpose(Lakn[a], Lank[a]);
 }
@@ -709,36 +752,45 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
                             MultiArray3DB&& Lkin,
                             MultiArray3DC&& Lakn,
                             MultiArray3DC&& Lank,
-                            MultiArray2D&& buff)
+                            MultiArray2D&& buff,
+                            bool noncollinear = false)
 {
-  int na = Aai.size(0);
+  int npol = noncollinear ? 2 : 1;
+  int na   = Aai.size(0);
   if (na == 0)
     return;
-  int ni = Aai.size(1);
+  int ni = Aai.size(1) / npol;
 
   int nmo   = Lkin.size(0);
   int nchol = Lkin.size(2);
   assert(Lkin.size(1) == nmo);
 
-  assert(Lakn.size(1) == nmo);
+  assert(Lakn.size(1) == npol * nmo);
   assert(Lakn.size(2) == nchol);
 
+  assert(Lakn.size(0) >= na);
   assert(Lakn.size(0) == Lank.size(0));
   assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nmo);
+  assert(Lank.size(2) == npol * nmo);
 
-  assert(buff.num_elements() >= na * nchol);
+  if (noncollinear)
+    assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
+
+  assert(buff.num_elements() >= na * npol * nchol);
 
   using ptr2 = typename std::decay<MultiArray2D>::type::element_ptr;
   using elm2 = typename std::decay<MultiArray2D>::type::element;
+  using elmA = typename std::decay<MultiArray2DA>::type::element;
 
-  boost::multi::array_ref<elm2, 2, ptr2> bna(buff.origin(), {nchol, na});
-  // Lakn[a][k][n] = sum_i Aai[a][i] conj(Lkin[k][i][n])
+  boost::multi::array_ref<elmA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
+  boost::multi::array_ref<elm2, 2, ptr2> bnas(buff.origin(), {nchol, na * npol});
+  // Lakn[a][sk][n] = sum_i Aai[as][i] conj(Lkin[k][i][n])
   for (int k = 0; k < nmo; k++)
   {
-    ma::product(ma::H(Lkin[k].sliced(0, ni)), ma::T(Aai), bna);
+    ma::product(ma::H(Lkin[k].sliced(0, ni)), ma::T(Aas_i), bnas);
     for (int a = 0; a < na; a++)
-      Lakn[a][k] = bna({0, nchol}, a);
+      for (int p = 0; p < npol; p++)
+        Lakn[a][p * nmo + k] = bnas({0, nchol}, a * npol + p);
   }
   for (int a = 0; a < na; a++)
     ma::transpose(Lakn[a], Lank[a]);

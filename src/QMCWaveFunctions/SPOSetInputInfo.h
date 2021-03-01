@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_SPOSET_INPUT_INFO_H
 #define QMCPLUSPLUS_SPOSET_INPUT_INFO_H
 
-#include <QMCWaveFunctions/SPOSetInfo.h>
+#include "QMCWaveFunctions/SPOSetInfo.h"
 
 
 namespace qmcplusplus

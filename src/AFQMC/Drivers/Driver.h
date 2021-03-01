@@ -1,9 +1,9 @@
 #ifndef QMCPLUSPLUS_AFQMC_DRIVER_H
 #define QMCPLUSPLUS_AFQMC_DRIVER_H
 
-#include <Message/MPIObjectBase.h>
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "Message/MPIObjectBase.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h"

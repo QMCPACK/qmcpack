@@ -174,12 +174,12 @@ public:
     std::string excited_file("");
     int i_ = -1, a_ = -1;
     ParameterSet m_param;
-    m_param.add(number_of_references, "number_of_references", "int");
-    m_param.add(number_of_references, "nrefs", "int");
-    m_param.add(excited_file, "excited", "std::string");
+    m_param.add(number_of_references, "number_of_references");
+    m_param.add(number_of_references, "nrefs");
+    m_param.add(excited_file, "excited");
     // generalize this to multi-particle excitations, how do I read a list of integers???
-    m_param.add(i_, "i", "int");
-    m_param.add(a_, "a", "int");
+    m_param.add(i_, "i");
+    m_param.add(a_, "a");
     m_param.put(cur);
 
     if (excited_file != "" && i_ >= 0 && a_ >= 0)
@@ -241,11 +241,6 @@ public:
 
   template<class Vec>
   void vMF(Vec&& v);
-
-  CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF)
-  {
-    return HamOp.getOneBodyPropagatorMatrix(TG, vMF);
-  }
 
   SlaterDetOperations* getSlaterDetOperations() { return std::addressof(SDetOp); }
   HamiltonianOperations* getHamiltonianOperations() { return std::addressof(HamOp); }

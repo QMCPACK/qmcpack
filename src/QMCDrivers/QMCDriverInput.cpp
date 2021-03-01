@@ -14,13 +14,11 @@
  */
 
 #include "OhmmsData/AttributeSet.h"
-#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDriverInput.h"
 #include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
-QMCDriverInput::QMCDriverInput(int qmc_section_count) : qmc_section_count_(qmc_section_count) {}
-
 /** Reads qmc section xml node parameters
  *
  * All shared parameters are read here
@@ -35,43 +33,46 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 {
   // ParameterSet has an dependency on the lifetime of the backing xmlNodePtr
   // so its better it not live long
+
+  std::string serialize_walkers;
+
   ParameterSet parameter_set;
-  parameter_set.add(RollBackBlocks_, "rewind", "int");
-  parameter_set.add(store_config_period_, "storeconfigs", "int");
-  parameter_set.add(store_config_period_, "store_configs", "int");
-  parameter_set.add(recalculate_properties_period_, "checkProperties", "int");
-  parameter_set.add(recalculate_properties_period_, "checkproperties", "int");
-  parameter_set.add(recalculate_properties_period_, "check_properties", "int");
-  parameter_set.add(config_dump_period_.period, "recordconfigs", "int");
-  parameter_set.add(config_dump_period_.period, "record_configs", "int");
-  parameter_set.add(starting_step_, "current", "int");
-  parameter_set.add(max_blocks_, "blocks", "int");
-  parameter_set.add(max_steps_, "steps", "int");
-  parameter_set.add(sub_steps_, "substeps", "int");
-  parameter_set.add(sub_steps_, "sub_steps", "int");
-  parameter_set.add(warmup_steps_, "warmupsteps", "int");
-  parameter_set.add(warmup_steps_, "warmup_steps", "int");
-  parameter_set.add(num_crowds_, "crowds", "int");
-  parameter_set.add(walkers_per_rank_, "walkers_per_rank", "int");
-  parameter_set.add(total_walkers_, "total_walkers", "int");
-  parameter_set.add(steps_between_samples_, "stepsbetweensamples", "int");
-  parameter_set.add(samples_per_thread_, "samplesperthread", "real");
-  parameter_set.add(requested_samples_, "samples", "real");
-  parameter_set.add(tau_, "timestep", "AU");
-  parameter_set.add(tau_, "time_step", "AU");
-  parameter_set.add(tau_, "tau", "AU");
-  parameter_set.add(max_cpu_secs_, "maxcpusecs", "real");
-  parameter_set.add(blocks_between_recompute_, "blocks_between_recompute", "int");
-  parameter_set.add(drift_modifier_, "drift_modifier", "string");
-  parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a", "double");
-  parameter_set.add(max_disp_sq_, "maxDisplSq", "double");
+  parameter_set.add(RollBackBlocks_, "rewind");
+  parameter_set.add(store_config_period_, "storeconfigs");
+  parameter_set.add(store_config_period_, "store_configs");
+  parameter_set.add(recalculate_properties_period_, "checkProperties");
+  parameter_set.add(recalculate_properties_period_, "checkproperties");
+  parameter_set.add(recalculate_properties_period_, "check_properties");
+  parameter_set.add(config_dump_period_.period, "recordconfigs");
+  parameter_set.add(config_dump_period_.period, "record_configs");
+  parameter_set.add(starting_step_, "current");
+  parameter_set.add(max_blocks_, "blocks");
+  parameter_set.add(max_steps_, "steps");
+  parameter_set.add(sub_steps_, "substeps");
+  parameter_set.add(sub_steps_, "sub_steps");
+  parameter_set.add(warmup_steps_, "warmupsteps");
+  parameter_set.add(warmup_steps_, "warmup_steps");
+  parameter_set.add(num_crowds_, "crowds");
+  parameter_set.add(serialize_walkers, "crowd_serialize_walkers", {"no", "yes"});
+  parameter_set.add(walkers_per_rank_, "walkers_per_rank");
+  parameter_set.add(total_walkers_, "total_walkers");
+  parameter_set.add(steps_between_samples_, "stepsbetweensamples");
+  parameter_set.add(samples_per_thread_, "samplesperthread");
+  parameter_set.add(requested_samples_, "samples");
+  parameter_set.add(tau_, "timestep");
+  parameter_set.add(tau_, "time_step");
+  parameter_set.add(tau_, "tau");
+  parameter_set.add(max_cpu_secs_, "maxcpusecs");
+  parameter_set.add(blocks_between_recompute_, "blocks_between_recompute");
+  parameter_set.add(drift_modifier_, "drift_modifier");
+  parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a");
+  parameter_set.add(max_disp_sq_, "maxDisplSq");
 
   OhmmsAttributeSet aAttrib;
-
   // first stage in from QMCDriverFactory
   aAttrib.add(qmc_method_, "method");
   aAttrib.add(update_mode_, "move");
-
+  aAttrib.add(scoped_profiling_, "profiling");
 
   aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor
@@ -116,6 +117,8 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       tcur = tcur->next;
     }
   }
+
+  crowd_serialize_walkers_ = serialize_walkers == "yes";
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;

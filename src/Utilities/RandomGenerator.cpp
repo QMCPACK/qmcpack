@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Utilities/RandomGenerator.h"
+#include "RandomGenerator.h"
 #include "Message/Communicate.h"
 
 //using namespace qmcplusplus;

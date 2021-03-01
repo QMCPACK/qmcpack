@@ -66,6 +66,19 @@ TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
 
 }
 
+
+TEST_CASE("EstimatorManagerNew::collectOperatorEstimators", "[estimators]")
+{
+  Communicate* c = OHMMS::Controller;
+
+  testing::EstimatorManagerNewTest embt(c, 1);
+  // by design we have done no averaging here
+  // the division by total weight happens only when a block is over and the
+  // accumulated data has been reduced down.  So here there should just be simple sums.
+
+}
+
+
 TEST_CASE("EstimatorManagerNew adhoc addVector operator", "[estimators]")
 {
   int num_scalars = 3;

@@ -17,8 +17,8 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #endif
 #include "Particle/DistanceTableData.h"
-#include <CPU/SIMD/aligned_allocator.hpp>
-#include <CPU/SIMD/algorithm.hpp>
+#include "CPU/SIMD/aligned_allocator.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 #include <map>
 #include <numeric>
 
@@ -110,10 +110,15 @@ public:
   ///alias FuncType
   using FuncType = FT;
 
-  JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
-      : ee_Table_ID_(elecs.addTable(elecs)), ei_Table_ID_(elecs.addTable(ions, true)), Ions(ions), NumVars(0)
+  JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
+      : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
+        ee_Table_ID_(elecs.addTable(elecs)),
+        ei_Table_ID_(elecs.addTable(ions, true)),
+        Ions(ions),
+        NumVars(0)
   {
-    ClassName = "JeeIOrbitalSoA";
+    if (myName.empty())
+      throw std::runtime_error("JeeIOrbitalSoA object name cannot be empty!");
     init(elecs);
   }
 
@@ -121,7 +126,7 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& elecs) const
   {
-    JeeIOrbitalSoA<FT>* eeIcopy = new JeeIOrbitalSoA<FT>(Ions, elecs, false);
+    JeeIOrbitalSoA<FT>* eeIcopy = new JeeIOrbitalSoA<FT>(myName, Ions, elecs, false);
     std::map<const FT*, FT*> fcmap;
     for (int iG = 0; iG < iGroups; iG++)
       for (int eG1 = 0; eG1 < eGroups; eG1++)
@@ -403,8 +408,7 @@ public:
 
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    evaluateGL(P, G, L, true);
-    return LogValue;
+    return evaluateGL(P, G, L, true);
   }
 
   PsiValueType ratio(ParticleSet& P, int iat)
@@ -842,10 +846,10 @@ public:
     build_compact_list(P);
   }
 
-  void evaluateGL(ParticleSet& P,
-                  ParticleSet::ParticleGradient_t& G,
-                  ParticleSet::ParticleLaplacian_t& L,
-                  bool fromscratch = false)
+  LogValueType evaluateGL(ParticleSet& P,
+                          ParticleSet::ParticleGradient_t& G,
+                          ParticleSet::ParticleLaplacian_t& L,
+                          bool fromscratch = false)
   {
     if (fromscratch)
       recompute(P);
@@ -857,7 +861,7 @@ public:
       L[iat] += d2Uat[iat];
     }
 
-    LogValue = -LogValue * 0.5;
+    return LogValue = -LogValue * 0.5;
   }
 
   void evaluateDerivatives(ParticleSet& P,

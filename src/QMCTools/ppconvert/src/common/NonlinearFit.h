@@ -19,8 +19,6 @@
 #include "blitz/array.h"
 #include "MatrixOps.h"
 
-using namespace blitz;
-
 // Template class for fitting a function with M nonlinear parameters.
 template<int M, typename ModelType>
 class NonlinearFitClass

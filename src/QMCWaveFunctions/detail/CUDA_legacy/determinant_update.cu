@@ -1412,6 +1412,7 @@ __global__ void calc_ratio_grad_lapl(T** Ainv_list,
   // ratio to make it w.r.t. new position
   if (tid < 4)
     ratio_prod[(tid + 1) * BS1] /= ratio_prod[0];
+  __syncthreads();  
   if (tid < 5)
     ratio_grad_lapl[5 * blockIdx.x + tid] = ratio_prod[tid * BS1];
 }

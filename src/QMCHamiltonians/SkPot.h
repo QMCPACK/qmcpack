@@ -16,8 +16,8 @@
  */
 #ifndef QMCPLUSPLUS_SK_POT_H
 #define QMCPLUSPLUS_SK_POT_H
-#include <QMCHamiltonians/OperatorBase.h>
-#include <LongRange/StructFact.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "LongRange/StructFact.h"
 namespace qmcplusplus
 {
 /** SkPot evaluate the structure factor of the target particleset

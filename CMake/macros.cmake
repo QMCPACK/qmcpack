@@ -30,36 +30,38 @@ ENDFUNCTION()
 FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
     FILE(MAKE_DIRECTORY "${DST_DIR}")
     # Find all the files but not subdirectories
-    FILE(GLOB FILE_ONLY_NAMES LIST_DIRECTORIES FALSE "${SRC_DIR}/*")
+    FILE(GLOB FILE_ONLY_NAMES LIST_DIRECTORIES TRUE "${SRC_DIR}/*")
     FOREACH(F IN LISTS FILE_ONLY_NAMES)
       #MESSAGE("Creating symlink from  ${F} to directory ${DST_DIR}")
-      EXECUTE_PROCESS( COMMAND cp -ds --remove-destination -t . "${F}" WORKING_DIRECTORY ${DST_DIR})
+      EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
     ENDFOREACH()
 ENDFUNCTION()
 
-# Copy files, but symlink the *.h5 files (which are the large ones)
-FUNCTION( COPY_DIRECTORY_SYMLINK_H5 SRC_DIR DST_DIR)
-    # Copy everything but *.h5 files and pseudopotential files
-    FILE(COPY "${SRC_DIR}/" DESTINATION "${DST_DIR}"
-         PATTERN "*.h5" EXCLUDE
-         PATTERN "*.opt.xml" EXCLUDE
-         PATTERN "*.ncpp.xml" EXCLUDE
-         PATTERN "*.BFD.xml" EXCLUDE)
-
-    # Now find and symlink the *.h5 files and psuedopotential files
-    FILE(GLOB_RECURSE H5 "${SRC_DIR}/*.h5" "${SRC_DIR}/*.opt.xml" "${SRC_DIR}/*.ncpp.xml" "${SRC_DIR}/*.BFD.xml")
-    FOREACH(F IN LISTS H5)
-      FILE(RELATIVE_PATH R "${SRC_DIR}" "${F}")
-      #MESSAGE("Creating symlink from  ${SRC_DIR}/${R} to ${DST_DIR}/${R}")
-      EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink "${SRC_DIR}/${R}" "${DST_DIR}/${R}")
+# Copy selected files only. h5, pseudopotentials, wavefunction, structure and the used one input file are copied.
+FUNCTION( COPY_DIRECTORY_USING_SYMLINK_LIMITED SRC_DIR DST_DIR ${ARGN})
+    FILE(MAKE_DIRECTORY "${DST_DIR}")
+    # Find all the files but not subdirectories
+    FILE(GLOB FILE_FOLDER_NAMES LIST_DIRECTORIES TRUE
+        "${SRC_DIR}/qmc_ref" "${SRC_DIR}/qmc-ref" "${SRC_DIR}/*.h5"
+        "${SRC_DIR}/*.opt.xml" "${SRC_DIR}/*.ncpp.xml" "${SRC_DIR}/*.BFD.xml"
+        "${SRC_DIR}/*.ccECP.xml"
+        "${SRC_DIR}/*.py" "${SRC_DIR}/*.sh" "${SRC_DIR}/*.restart.xml"
+        "${SRC_DIR}/Li.xml" "${SRC_DIR}/H.xml" "${SRC_DIR}/*.L2_test.xml" "${SRC_DIR}/*.opt_L2.xml"
+        "${SRC_DIR}/*.wfnoj.xml" "${SRC_DIR}/*.wfj*.xml" "${SRC_DIR}/*.wfs*.xml"
+        "${SRC_DIR}/*.wfn*.xml" "${SRC_DIR}/*.cuspInfo.xml" "${SRC_DIR}/*.H*.xml"
+        "${SRC_DIR}/*.structure.xml" "${SRC_DIR}/*ptcl.xml")
+    FOREACH(F IN LISTS FILE_FOLDER_NAMES)
+      EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
+    ENDFOREACH()
+    FOREACH(F IN LISTS ARGN)
+      EXECUTE_PROCESS( COMMAND ln -sf "${SRC_DIR}/${F}" "." WORKING_DIRECTORY ${DST_DIR})
     ENDFOREACH()
 ENDFUNCTION()
 
 # Control copy vs. symlink with top-level variable
-FUNCTION( COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR )
+FUNCTION( COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR ${ARGN})
   IF (QMC_SYMLINK_TEST_FILES)
-    COPY_DIRECTORY_USING_SYMLINK("${SRC_DIR}" "${DST_DIR}")
-    #COPY_DIRECTORY_SYMLINK_H5("${SRC_DIR}" "${DST_DIR}" )
+    COPY_DIRECTORY_USING_SYMLINK_LIMITED("${SRC_DIR}" "${DST_DIR}" ${ARGN})
   ELSE()
     COPY_DIRECTORY("${SRC_DIR}" "${DST_DIR}")
   ENDIF()
@@ -95,7 +97,7 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
         IF ( ${TOT_PROCS} GREATER ${TEST_MAX_PROCS} )
             MESSAGE_VERBOSE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
         ELSE()
-            ADD_TEST( ${TESTNAME} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN} )
+            ADD_TEST( NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}"
                 PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
@@ -112,6 +114,11 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
             MESSAGE_VERBOSE("Disabling test ${TESTNAME} (building without MPI)")
         ENDIF()
     ENDIF()
+
+    if (TEST_ADDED_TEMP AND (QMC_CUDA OR ENABLE_CUDA OR ENABLE_OFFLOAD))
+      set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
+    endif()
+
     SET(TEST_LABELS_TEMP "")
     IF ( TEST_ADDED_TEMP )
        ADD_TEST_LABELS( ${TESTNAME} TEST_LABELS_TEMP )
@@ -123,7 +130,13 @@ ENDFUNCTION()
 # Runs qmcpack
 #  Note that TEST_ADDED is an output variable
 FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED TEST_LABELS ${ARGN} )
-    COPY_DIRECTORY_MAYBE_USING_SYMLINK( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
+    # restrict ARGN to only one file or empty
+    LIST(LENGTH ARGN INPUT_FILE_LENGTH)
+    IF(INPUT_FILE_LENGTH GREATER 1)
+      MESSAGE(FATAL_ERROR "Incorrect invocation of RUN_QMC_APP by ${TESTNAME}. ARGN value is \"${ARGN}\"")
+    ENDIF()
+
+    COPY_DIRECTORY_MAYBE_USING_SYMLINK( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" "${ARGN}")
     SET( TEST_ADDED_TEMP FALSE )
     SET( TEST_LABELS_TEMP "" )
     RUN_QMC_APP_NO_COPY( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME} ${PROCS} ${THREADS} TEST_ADDED_TEMP TEST_LABELS_TEMP ${ARGN} )
@@ -133,6 +146,8 @@ ENDFUNCTION()
 
 IF (QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   FUNCTION(QMC_RUN_AND_CHECK)
+  ENDFUNCTION()
+  FUNCTION(QMC_RUN_AND_CHECK_CUSTOM_SCALAR)
   ENDFUNCTION()
   FUNCTION(SIMPLE_RUN_AND_CHECK)
   ENDFUNCTION()
@@ -232,6 +247,97 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
 ENDFUNCTION()
 
 
+# Add a test run and associated scalar checks for a custom named scalar
+# Arguments
+# BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
+#             will be appended to get the full test name)
+# BASE_DIR - source location of test input files
+# PREFIX - prefix for output files
+# INPUT_FILE - XML input file to QMCPACK
+# PROCS - number of MPI processes (default: 1)
+# THREADS - number of OpenMP threads (default: 1)
+# SERIES - series index to compute (default: 0)
+# SCALAR_VALUES - name of list of output values to check with check_scalars.py
+#                 The list entries contain consecutively the name, the value, and the error.
+#                 The name of the variable is passed (instead of the value) in case future support
+#                 for multiple SERIES/SCALAR_VALUES pairs is added
+
+function(QMC_RUN_AND_CHECK_CUSTOM_SCALAR)
+    set(OPTIONS SHOULD_FAIL)
+    set(ONE_VALUE_ARGS BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SERIES SCALAR_VALUES EQUILIBRATION)
+    # Eventually many want to support multiple SERIES/SCALAR_VALUES pairs
+    #SET(MULTI_VALUE_ARGS SERIES SCALAR_VALUES)
+
+    cmake_parse_arguments(QRC "${options}" "${ONE_VALUE_ARGS}" "${MULTI_VALUE_ARGS}" ${ARGN})
+
+    set(PROCS 1)
+    if (QRC_PROCS)
+      set(PROCS ${QRC_PROCS})
+    endif()
+
+    set(THREADS 1)
+    if (QRC_THREADS)
+      set(THREADS ${QRC_THREADS})
+    endif()
+
+    set(BASE_NAME ${QRC_BASE_NAME})
+    set(BASE_DIR ${QRC_BASE_DIR})
+    set(PREFIX ${QRC_PREFIX})
+    set(INPUT_FILE ${QRC_INPUT_FILE})
+
+    set(EQUIL 2)
+    if (DEFINED QRC_EQUILIBRATION)
+      set(EQUIL ${QRC_EQUILIBRATION})
+    endif()
+
+    set( TEST_ADDED FALSE )
+    set( TEST_LABELS "")
+    set( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
+    message_verbose("Adding test ${FULL_NAME}")
+    RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED TEST_LABELS ${INPUT_FILE})
+    if ( TEST_ADDED )
+      set_property(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
+    endif()
+
+    if ( TEST_ADDED AND SHOULD_FAIL)
+      set_property(TEST ${FULL_NAME} APPEND PROPERTY WILL_FAIL TRUE)
+    endif()
+
+    if ( TEST_ADDED AND NOT SHOULD_FAIL)
+      # Derefence the list of scalar values by variable name
+      set(SCALAR_VALUES "${${QRC_SCALAR_VALUES}}")
+
+      list(LENGTH SCALAR_VALUES listlen)
+      math(EXPR listlen2 "${listlen}-1")
+      foreach(sv_idx RANGE 0 ${listlen2} 3)
+
+        math(EXPR sv_idx_p1 "${sv_idx}+1")
+        math(EXPR sv_idx_p2 "${sv_idx}+2")
+
+        list(GET SCALAR_VALUES ${sv_idx} SCALAR_NAME)
+        list(GET SCALAR_VALUES ${sv_idx_p1} SCALAR_VALUE)
+        list(GET SCALAR_VALUES ${sv_idx_p2} SCALAR_ERROR)
+
+        set(SERIES 0)
+        if(QRC_SERIES)
+          set(SERIES ${QRC_SERIES})
+          set( TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_NAME}" )
+        else()
+          set( TEST_NAME "${FULL_NAME}-${SCALAR_NAME}" )
+        endif()
+        set(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e ${EQUIL} --name ${SCALAR_NAME} --ref-value ${SCALAR_VALUE} --ref-error ${SCALAR_ERROR})
+        add_test( NAME ${TEST_NAME}
+                  COMMAND ${CHECK_CMD}
+                  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"
+                  )
+        set_property( TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME} )
+        set_property( TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results" )
+        set_property( TEST ${TEST_NAME} APPEND PROPERTY LABELS ${TEST_LABELS} )
+      endforeach()
+    endif()
+endfunction()
+
+
 
 function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_script)
 
@@ -306,6 +412,6 @@ ENDFUNCTION()
 # Print THE_MESSAGE if verbose configuration is enabled
 FUNCTION ( MESSAGE_VERBOSE THE_MESSAGE )
     IF ( QMC_VERBOSE_CONFIGURATION )
-      MESSAGE( ${THE_MESSAGE} )
+      MESSAGE(STATUS ${THE_MESSAGE})
     ENDIF()
 ENDFUNCTION()

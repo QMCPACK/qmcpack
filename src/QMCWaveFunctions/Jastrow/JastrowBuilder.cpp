@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
+#include "JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
 #if OHMMS_DIM == 3
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"

@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/DMC/DMCFactory.h"
+#include "DMCFactory.h"
 #include "QMCDrivers/DMC/DMC.h"
 #include "Message/OpenMP.h"
 
@@ -27,15 +27,14 @@ namespace qmcplusplus
 QMCDriver* DMCFactory::create(MCWalkerConfiguration& w,
                               TrialWaveFunction& psi,
                               QMCHamiltonian& h,
-                              HamiltonianPool& hpool,
-                              WaveFunctionPool& ppool,
-                              Communicate* comm)
+                              Communicate* comm,
+                              bool enable_profiling)
 {
 #ifdef QMC_CUDA
   if (GPU)
-    return new DMCcuda(w, psi, h, ppool, comm);
+    return new DMCcuda(w, psi, h, comm, enable_profiling);
 #endif
-  QMCDriver* qmc = new DMC(w, psi, h, ppool, comm);
+  QMCDriver* qmc = new DMC(w, psi, h, comm, enable_profiling);
   qmc->setUpdateMode(PbyPUpdate);
   return qmc;
 }

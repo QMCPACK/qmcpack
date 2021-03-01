@@ -12,7 +12,7 @@
 
 
 #include "Particle/DistanceTableData.h"
-#include "QMCHamiltonians/SOECPComponent.h"
+#include "SOECPComponent.h"
 #include "Numerics/Ylm.h"
 
 namespace qmcplusplus
@@ -119,11 +119,12 @@ SOECPComponent::ComplexType SOECPComponent::getAngularIntegral(RealType sold,
                                                                const PosType& dr)
 {
   //quadrature sum for angular integral
+  constexpr RealType fourpi = 2.0 * TWOPI;
   for (int j = 0; j < nknot; j++)
   {
     deltaV[j] = r * rrotsgrid_m[j] - dr;
     W.makeMoveWithSpin(iel, deltaV[j], snew - sold);
-    psiratio[j] = Psi.calcRatio(W, iel) * sgridweight_m[j];
+    psiratio[j] = Psi.calcRatio(W, iel) * sgridweight_m[j] * fourpi;
     W.rejectMove(iel);
     Psi.resetPhaseDiff();
   }
@@ -150,12 +151,12 @@ SOECPComponent::ComplexType SOECPComponent::getAngularIntegral(RealType sold,
           tmp[0]         = rr[2];
           tmp[1]         = rr[0];
           tmp[2]         = rr[1];
-          ComplexType cY = std::conj(Ylm(l, m1, tmp));
+          ComplexType Y  = Ylm(l, m1, tmp);
           tmp[0]         = rrotsgrid_m[j][2];
           tmp[1]         = rrotsgrid_m[j][0];
           tmp[2]         = rrotsgrid_m[j][1];
-          ComplexType Y  = Ylm(l, m2, tmp);
-          msums += cY * Y * ldots;
+          ComplexType cY = std::conj(Ylm(l, m2, tmp));
+          msums += Y * cY * ldots;
         }
       }
       lsum += vrad[il] * msums;
@@ -205,7 +206,7 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
   sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smin, W, Psi, iel, r, dr);
   sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smax, W, Psi, iel, r, dr);
 
-  RealType pairpot = std::real(sint);
+  RealType pairpot = std::real(sint) / TWOPI;
   return pairpot;
 }
 

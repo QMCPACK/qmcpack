@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <cassert>
 #include <complex>
+#include <iostream>
 
 namespace kernels
 {

@@ -23,7 +23,7 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet* qp = new ParticleSet;
+  auto qp = std::make_unique<ParticleSet>();
   std::vector<int> agroup(1);
   agroup[0] = 2;
   qp->setName("e");
@@ -45,10 +45,10 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   qp->update();
 
   WaveFunctionFactory::PtclPoolType particle_set_map;
-  particle_set_map["e"] = qp;
+  particle_set_map["e"] = qp.get();
 
 
-  WaveFunctionFactory wff(qp, particle_set_map, c);
+  WaveFunctionFactory wff("psi0", *qp, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction> \
          <jastrow type=\"Two-Body\" name=\"J2\" function=\"bspline\" print=\"yes\"> \
@@ -67,10 +67,10 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   xmlNodePtr root = doc.getRoot();
   wff.put(root);
 
-  REQUIRE(wff.targetPsi != NULL);
-  REQUIRE(wff.targetPsi->size() == 1);
+  REQUIRE(wff.getTWF() != nullptr);
+  REQUIRE(wff.getTWF()->size() == 1);
 
-  WaveFunctionComponent* j2_base = wff.targetPsi->getOrbitals()[0];
-  REQUIRE(j2_base != NULL);
+  WaveFunctionComponent* j2_base = wff.getTWF()->getOrbitals()[0];
+  REQUIRE(j2_base != nullptr);
 }
 } // namespace qmcplusplus

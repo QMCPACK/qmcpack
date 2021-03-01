@@ -143,6 +143,7 @@ struct SoaBasisSetBase
   ///size of the basis set
   int BasisSetSize;
 
+  virtual ~SoaBasisSetBase() = default;
   inline int getBasisSetSize() { return BasisSetSize; }
 
   virtual SoaBasisSetBase<T>* makeClone() const = 0;

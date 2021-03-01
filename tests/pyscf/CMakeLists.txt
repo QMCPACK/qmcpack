@@ -9,6 +9,8 @@
   RUN_PYSCF_TEST(pyscf-diamond_1x1x1_pp_LCAO ${CMAKE_SOURCE_DIR}/examples/solids/pyscf-inputs
                  diamondC_1x1x1_pp_LCAO PYSCF_TEST_NAME )
 
+  SET_TESTS_PROPERTIES( ${PYSCF_TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "successfully saved to QMCPACK HDF5" )
+
   SOFTLINK_H5( ${PYSCF_TEST_NAME} diamondC_1x1x1_pp-vmc_gaussian_sdj-1-16 C_Diamond C_Diamond.h5 LAST_TEST_NAME )
 
   # LCAO and Bspline test should use the same references.
@@ -40,6 +42,8 @@
             
   RUN_PYSCF_TEST(pyscf-diamond_1x1x1_pp_Bspline ${CMAKE_SOURCE_DIR}/examples/solids/pyscf-inputs
                  diamondC_1x1x1_pp_Bspline PYSCF_TEST_NAME )
+
+  SET_TESTS_PROPERTIES( ${PYSCF_TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "successfully saved to QMCPACK HDF5" )
 
   SOFTLINK_H5( ${PYSCF_TEST_NAME} diamondC_1x1x1_pp-vmc_gaussian-bspline_sdj-1-16 C_Diamond C_Diamond-Bspline.h5 LAST_TEST_NAME )
 

@@ -320,7 +320,7 @@ inline void rotateHijkl(std::string& type,
     {
       if (sparseQk)
       {
-        SpRl = std::move(csr::shm::transpose<SpCType_shm_csr_matrix>(SpQk));
+        SpRl = csr::shm::transpose<SpCType_shm_csr_matrix>(SpQk);
         SpRl.remove_empty_spaces(); // just in case
       }
       else
@@ -392,7 +392,7 @@ inline void rotateHijkl(std::string& type,
       nkbounds.push_back(norb - n0);
     }
 
-    MPI_Allgather(&n_, 1, MPI_INT, Qknum.data(), 1, MPI_INT, &comm);
+    MPI_Allgather(&n_, 1, MPI_INT, Qknum.data(), 1, MPI_INT, comm.get());
 
     int ntt = std::accumulate(Qknum.begin(), Qknum.end(), 0);
     Qksizes.resize(2 * ntt);
@@ -406,14 +406,14 @@ inline void rotateHijkl(std::string& type,
       disp[i] = cnt;
       cnt += cnts[i];
     }
-    MPI_Allgatherv(nkbounds.data(), nkbounds.size(), MPI_INT, Qksizes.data(), cnts.data(), disp.data(), MPI_INT, &comm);
+    MPI_Allgatherv(nkbounds.data(), nkbounds.size(), MPI_INT, Qksizes.data(), cnts.data(), disp.data(), MPI_INT, comm.get());
   }
 
-  MPI_Bcast(Qknum.data(), comm.size(), MPI_INT, 0, &TG.Node());
+  MPI_Bcast(Qknum.data(), comm.size(), MPI_INT, 0, TG.Node().get());
   int ntt = std::accumulate(Qknum.begin(), Qknum.end(), 0);
   if (coreid != 0)
     Qksizes.resize(2 * ntt);
-  MPI_Bcast(Qksizes.data(), Qksizes.size(), MPI_INT, 0, &TG.Node());
+  MPI_Bcast(Qksizes.data(), Qksizes.size(), MPI_INT, 0, TG.Node().get());
 
   // store {nterms,nk} for all nodes
   // use it to know communication pattern

@@ -35,10 +35,8 @@ class PWOrbitalBuilder : public WaveFunctionComponentBuilder
 private:
 #if defined(QMC_COMPLEX)
   typedef PWOrbitalSet SPOSetType;
-  typedef PWOrbitalSet::PWBasisPtr PWBasisPtr;
 #else
   typedef PWRealOrbitalSet SPOSetType;
-  typedef PWRealOrbitalSet::PWBasisPtr PWBasisPtr;
 #endif
 
   std::map<std::string, SPOSetPtr> spomap;
@@ -56,7 +54,7 @@ private:
   ///parameter set
   PWParameterSet* myParam;
   //will do something for twist
-  PWBasisPtr myBasisSet;
+  std::unique_ptr<PWBasis> myBasisSet;
   ////Storage for the orbitals and basis is created in PWOSet.
   //std::map<std::string,SPOSetPtr> PWOSet;
 public:

@@ -13,13 +13,13 @@
  * @brief Test boost::mpi 
  */
 #include <Configuration.h>
-#include <Particle/ParticleSet.h>
-#include <Particle/MCWalkerConfiguration.h>
-#include <Utilities/PrimeNumberSet.h>
+#include "Particle/ParticleSet.h"
+#include "Particle/MCWalkerConfiguration.h"
+#include "Utilities/PrimeNumberSet.h"
 #include <random/random.hpp>
-#include <Sandbox/graphite.hpp>
-#include <Utilities/Timer.h>
-#include <Sandbox/common.hpp>
+#include "Sandbox/graphite.hpp"
+#include "Utilities/Timer.h"
+#include "Sandbox/common.hpp"
 #include <boost/mpi.hpp>
 #include <getopt.h>
 

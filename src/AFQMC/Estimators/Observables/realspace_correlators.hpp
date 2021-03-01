@@ -21,8 +21,8 @@
 #include <string>
 #include <iostream>
 
-#include "io/hdf_multi.h"
-#include "io/hdf_archive.h"
+#include "hdf/hdf_multi.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/Timer.h"
 
@@ -30,14 +30,12 @@
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
-
 /* 
  * Observable class that calculates the walker averaged on-top pair density 
  * Alloc defines the allocator type used to store the orbital and temporary tensors.
@@ -67,8 +65,8 @@ class realspace_correlators : public AFQMCInfo
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
-  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
-  using StaticMatrix          = boost::multi::static_array<ComplexType, 2, shm_buffer_alloc_type>;
+  using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
+  using StaticMatrix         = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
 
 public:
   realspace_correlators(afqmc::TaskGroup_& tg_,
@@ -100,7 +98,7 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(orb_file, "orbitals", "std::string");
+      m_param.add(orb_file, "orbitals");
       m_param.put(cur);
     }
 
@@ -157,10 +155,10 @@ public:
         APP_ABORT("");
       }
       TG.Node().broadcast_n(&npoints, 1, 0);
-      Orbitals = std::move(CMatrix({NMO, npoints}, alloc));
+      Orbitals = CMatrix({NMO, npoints}, alloc);
       // host copy to calculate Orrp
       stdCMatrix host_orb({NMO, npoints});
-      Orrp = std::move(mpi3CMatrix({npoints, npoints}, shared_allocator<ComplexType>{TG.TG_local()}));
+      Orrp = mpi3CMatrix({npoints, npoints}, shared_allocator<ComplexType>{TG.TG_local()});
       for (int k = 0, kn = 0; k < nk; k++)
       {
         for (int i = 0; i < norbs[k]; i++, kn++)
@@ -191,8 +189,8 @@ public:
     else
     {
       TG.Node().broadcast_n(&npoints, 1, 0);
-      Orbitals = std::move(CMatrix({NMO, npoints}, alloc));
-      Orrp     = std::move(mpi3CMatrix({npoints, npoints}, shared_allocator<ComplexType>{TG.TG_local()}));
+      Orbitals = CMatrix({NMO, npoints}, alloc);
+      Orrp     = mpi3CMatrix({npoints, npoints}, shared_allocator<ComplexType>{TG.TG_local()});
     }
     dm_size = npoints * npoints;
     TG.Node().barrier();
@@ -208,7 +206,7 @@ public:
       type_id.emplace_back("CS");
     }
 
-    DMAverage = std::move(mpi3CTensor({nave, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+    DMAverage = mpi3CTensor({nave, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
     fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -248,15 +246,15 @@ public:
     {
       if (denom.size(0) != nw)
       {
-        denom = std::move(mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()}));
+        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (DMWork.size(0) != nw || DMWork.size(1) != 3 || DMWork.size(2) != dm_size)
       {
-        DMWork = std::move(mpi3CTensor({nw, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()}));
+        DMWork = mpi3CTensor({nw, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (Gr_host.size(0) != nw || Gr_host.size(1) != nsp || Gr_host.size(2) != npts || Gr_host.size(3) != npts)
       {
-        Gr_host = std::move(mpi3C4Tensor({nw, nsp, npts, npts}, shared_allocator<ComplexType>{TG.TG_local()}));
+        Gr_host = mpi3C4Tensor({nw, nsp, npts, npts}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
@@ -273,8 +271,9 @@ public:
     // calculate green functions in real space and send to host for processing/accumulation
     // if memory becomes a problem, then batch over walkers
     {
-      StaticMatrix T({nw * nsp * NMO, npts}, localTG_buffer_generator->template get_allocator<ComplexType>());
-      StaticMatrix Gr({nsp * nw, npts * npts}, localTG_buffer_generator->template get_allocator<ComplexType>());
+      LocalTGBufferManager buffer_manager;
+      StaticMatrix T({nw * nsp * NMO, npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      StaticMatrix Gr({nsp * nw, npts * npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
       CTensor_ref Gr3D(make_device_ptr(Gr.origin()), {nw, nsp, npts * npts});
       CTensor_ref T3D(make_device_ptr(T.origin()), {nw, nsp, NMO * npts});
       CMatrix_ref G2D(make_device_ptr(G.origin()), {nw * nsp * NMO, NMO});

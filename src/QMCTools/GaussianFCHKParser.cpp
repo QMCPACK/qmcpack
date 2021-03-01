@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/GaussianFCHKParser.h"
+#include "GaussianFCHKParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>

@@ -30,7 +30,7 @@ jobrun_vesta ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" --p_ref "1
 
 jobrun_vesta rungms H2O.PBE
 
-jobrun_vesta convert4qmc -gamessAscii H2O.CISD.orbs.output -ci H2O.CISD.orbs.output -threshold 0.01 -readInitialGuess 60  -add3BodyJ
+jobrun_vesta convert4qmc -gamess H2O.CISD.orbs.output -ci H2O.CISD.orbs.output -threshold 0.01 -readInitialGuess 60  -add3BodyJ
 
 jobrun_vesta pw.x scf.in
 

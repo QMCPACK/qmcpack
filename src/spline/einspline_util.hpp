@@ -18,11 +18,11 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 #define QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 
-#include <mpi/mpi_datatype.h>
-#include <Message/CommOperators.h>
-#include <OhmmsData/FileUtility.h>
-#include <io/hdf_archive.h>
-#include <einspline/multi_bspline_copy.h>
+#include "mpi/mpi_datatype.h"
+#include "Message/CommOperators.h"
+#include "OhmmsData/FileUtility.h"
+#include "hdf/hdf_archive.h"
+#include "einspline/multi_bspline_copy.h"
 #include <limits>
 
 namespace qmcplusplus

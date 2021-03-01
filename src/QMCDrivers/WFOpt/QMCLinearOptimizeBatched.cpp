@@ -15,11 +15,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCDrivers/WFOpt/QMCLinearOptimizeBatched.h"
+#include "QMCLinearOptimizeBatched.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
@@ -31,40 +32,39 @@
 
 namespace qmcplusplus
 {
-QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
-                                                   TrialWaveFunction& psi,
-                                                   QMCHamiltonian& h,
-                                                   HamiltonianPool& hpool,
-                                                   WaveFunctionPool& ppool,
+QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_data,
+                                                   MCWalkerConfiguration& w,
                                                    QMCDriverInput&& qmcdriver_input,
                                                    VMCDriverInput&& vmcdriver_input,
-                                                   MCPopulation& population,
+                                                   MCPopulation&& population,
                                                    SampleStack& samples,
                                                    Communicate* comm,
                                                    const std::string& QMC_driver_type)
-    : QMCDriver(w, psi, h, ppool, comm, QMC_driver_type),
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
+                   std::move(population),
+                   "QMCLinearOptimizeBatched::",
+                   comm,
+                   "QMCLinearOptimizeBatched"),
       PartID(0),
       NumParts(1),
-      hamPool(hpool),
       wfNode(NULL),
       optNode(NULL),
       param_tol(1e-4),
-      qmcdriver_input_(qmcdriver_input),
       vmcdriver_input_(vmcdriver_input),
-      population_(population),
       samples_(samples),
       generate_samples_timer_(
           *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
       initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
       eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
       line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
-      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium))
+      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
+      W(w)
 {
-  IsQMCDriver = false;
   //     //set the optimization flag
-  qmc_driver_mode.set(QMC_OPTIMIZE, 1);
+  qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
-  m_param.add(param_tol, "alloweddifference", "double");
+  m_param.add(param_tol, "alloweddifference");
   //Set parameters for line minimization:
 }
 
@@ -86,17 +86,16 @@ void QMCLinearOptimizeBatched::start()
   generateSamples();
   generate_samples_timer_.stop();
   //store active number of walkers
-  NumOfVMCWalkers = W.getActiveWalkers();
   app_log() << "<opt stage=\"setup\">" << std::endl;
   app_log() << "  <log>" << std::endl;
   //reset the rootname
-  optTarget->setRootName(RootName);
+  optTarget->setRootName(get_root_name());
   optTarget->setWaveFunctionNode(wfNode);
-  app_log() << "   Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+  app_log() << "   Reading configurations from h5FileRoot " << std::endl;
   //get configuration from the previous run
   Timer t1;
   initialize_timer_.start();
-  optTarget->getConfigurations(h5FileRoot);
+  optTarget->getConfigurations("");
   optTarget->setRng(vmcEngine->getRng());
   optTarget->checkConfigurations();
   initialize_timer_.stop();
@@ -126,14 +125,14 @@ void QMCLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>* 
   app_log() << "  <log>" << std::endl;
 
   // reset the root name
-  optTarget->setRootName(RootName);
+  optTarget->setRootName(get_root_name());
   optTarget->setWaveFunctionNode(wfNode);
-  app_log() << "     Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+  app_log() << "     Reading configurations from h5FileRoot " << std::endl;
 
   // get configuration from the previous run
   Timer t1;
   initialize_timer_.start();
-  optTarget->getConfigurations(h5FileRoot);
+  optTarget->getConfigurations("");
   optTarget->setRng(vmcEngine->getRng());
   optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
                                         MinMethod); // computes derivative ratios and pass into engine
@@ -149,7 +148,6 @@ void QMCLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>* 
 
 void QMCLinearOptimizeBatched::finish()
 {
-  MyCounter++;
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
 
@@ -157,14 +155,6 @@ void QMCLinearOptimizeBatched::finish()
     optTarget->reportParametersH5();
   optTarget->reportParameters();
 
-
-  int nw_removed = W.getActiveWalkers() - NumOfVMCWalkers;
-  app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers."
-            << std::endl;
-  if (nw_removed > 0)
-    W.destroyWalkers(nw_removed);
-  else
-    W.createWalkers(-nw_removed);
   app_log() << "</opt>" << std::endl;
   app_log() << "</optimization-report>" << std::endl;
 }
@@ -172,18 +162,15 @@ void QMCLinearOptimizeBatched::finish()
 void QMCLinearOptimizeBatched::generateSamples()
 {
   app_log() << "<optimization-report>" << std::endl;
-  app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;
   t1.restart();
   //     W.reset();
-  branchEngine->flush(0);
-  branchEngine->reset();
   samples_.resetSampleCount();
   population_.set_variational_parameters(optTarget->getOptVariables());
 
   vmcEngine->run();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
-  h5FileRoot = RootName;
+  h5_file_root_ = get_root_name();
 }
 
 QMCLinearOptimizeBatched::RealType QMCLinearOptimizeBatched::getLowestEigenvector(Matrix<RealType>& A,
@@ -605,57 +592,6 @@ void QMCLinearOptimizeBatched::orthoScale(std::vector<RealType>& dP, Matrix<Real
   //     rescale = 1.0/(1.0-rescale);
   //     app_log()<<rescale<< std::endl;
   //     for (int i=0; i<dP.size(); i++) dP[i] *= rescale;
-}
-
-/** Parses the xml input file for parameter definitions for the wavefunction optimization.
-* @param q current xmlNode
-* @return true if successful
-*/
-bool QMCLinearOptimizeBatched::put(xmlNodePtr q)
-{
-  std::string useGPU("no");
-  std::string vmcMove("pbyp");
-  OhmmsAttributeSet oAttrib;
-  oAttrib.add(useGPU, "gpu");
-  oAttrib.add(vmcMove, "move");
-  oAttrib.put(q);
-  optNode        = q;
-  xmlNodePtr cur = optNode->children;
-  int pid        = OHMMS::Controller->rank();
-  while (cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    if (cname == "mcwalkerset")
-    {
-      mcwalkerNodePtr.push_back(cur);
-    }
-    cur = cur->next;
-  }
-  //no walkers exist, add 10
-  if (W.getActiveWalkers() == 0)
-    addWalkers(omp_get_max_threads());
-  NumOfVMCWalkers = W.getActiveWalkers();
-  bool success    = true;
-  //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunction>(W, Psi, H, myComm);
-  optTarget->setStream(&app_log());
-  success = optTarget->put(q);
-
-  //create VMC engine
-  if (vmcEngine == 0)
-  {
-    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
-    VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
-    vmcEngine = std::make_unique<VMCBatched>(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
-                                             population_, Psi, H, psiPool, samples_, myComm);
-
-    vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-    vmcEngine->setStatus(RootName, h5FileRoot, AppendRun);
-    vmcEngine->process(optNode);
-  }
-  vmcEngine->enable_sample_collection();
-
-  return success;
 }
 
 bool QMCLinearOptimizeBatched::fitMappedStabilizers(std::vector<std::pair<RealType, RealType>>& mappedStabilizers,

@@ -16,8 +16,8 @@
 
 #ifndef QMCPLUSPLUS_DENSITY_HAMILTONIAN_H
 #define QMCPLUSPLUS_DENSITY_HAMILTONIAN_H
-#include <QMCHamiltonians/OperatorBase.h>
-#include <OhmmsPETE/OhmmsArray.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "OhmmsPETE/OhmmsArray.h"
 #include "LongRange/LRCoulombSingleton.h"
 namespace qmcplusplus
 {

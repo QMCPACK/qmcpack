@@ -22,7 +22,7 @@
 #include <iostream>
 #include <tuple>
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/RandomGenerator.h"
 

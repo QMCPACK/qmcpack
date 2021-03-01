@@ -89,7 +89,7 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction psi;
 
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);

@@ -17,9 +17,9 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
-#include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
-#include <QMCWaveFunctions/SPOSet.h>
-#include <config/stdlib/math.hpp>
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "config/stdlib/math.hpp"
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"

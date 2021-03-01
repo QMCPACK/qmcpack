@@ -140,7 +140,7 @@ public:
   }
 
 
-  void dfunc(std::vector<Return_t> RT, std::vector<Return_t>& FG)
+  void dfunc(const std::vector<Return_t>& RT, std::vector<Return_t>& FG)
   {
     ///To test we simply output the analytic and numeric gradients of the cost function. Make sure they agree.
     std::vector<Return_t> Dummy(FG);
@@ -163,7 +163,7 @@ public:
       else
         app_log() << vname << " " << RT[k] << "  " << Dummy[k] << "  " << FG[k] << "   inf" << std::endl;
       if (output_param_file_)
-        param_deriv_file_ << FG[k] << " ";
+        param_deriv_file_ << std::setprecision(10) << FG[k] << " ";
     }
     if (output_param_file_)
       param_deriv_file_ << std::endl;

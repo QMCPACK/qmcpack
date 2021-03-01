@@ -5,15 +5,15 @@
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<algorithm>
-#include<complex>
-#include<cstdlib>
-#include<cmath>
-#include<vector>
+#include <algorithm>
+#include <complex>
+#include <cstdlib>
+#include <cmath>
+#include <vector>
 
-#include<formic/utils/numeric.h>
-#include<formic/utils/lapack_interface.h>
-#include<formic/utils/exception.h>
+#include "formic/utils/numeric.h"
+#include "formic/utils/lapack_interface.h"
+#include "formic/utils/exception.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief   Computes a matrix's inverse and determinant using an LU decomposition.

@@ -38,7 +38,6 @@ public:
   CSVMC(MCWalkerConfiguration& w,
         TrialWaveFunction& psi,
         QMCHamiltonian& h,
-        WaveFunctionPool& ppool,
         Communicate* comm);
 
   bool run();

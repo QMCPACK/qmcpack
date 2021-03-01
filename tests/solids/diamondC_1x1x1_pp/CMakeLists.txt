@@ -295,7 +295,7 @@ ENDIF()
 # estimator tests
 INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
 set(stat_python_reqs numpy;h5py)
-CHECK_PYTHON_REQS(stat_python_reqs diamond-estimator add_tests)
+CHECK_PYTHON_REQS(stat_python_reqs diamond-estimator add_estimator_tests)
 if (NOT QMC_CUDA)
   set(NMPI 4)
   set(NOMP 4)
@@ -310,7 +310,7 @@ if (NOT QMC_COMPLEX)
 else()
   set(OFEXT "_comp")
 endif()
-if (add_tests)
+if (add_estimator_tests)
   # density tests
   SIMPLE_RUN_AND_CHECK(
     short-diamondC_1x1x1_pp-vmc-estimator-density
@@ -354,6 +354,15 @@ if (add_tests)
     check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
     )
 
+  # Still some issue with SpinDensityNew in the complete application
+  # SIMPLE_RUN_AND_CHECK(
+  #   short-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
+  #   "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  #   qmc_spindens_vmcbatch_short${IFEXT}.in.xml
+  #   ${NMPI} ${NOMP}
+  #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
+  #   )
+
   SIMPLE_RUN_AND_CHECK(
     short-diamondC_1x1x1_pp-dmc-estimator-spindensity
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -370,6 +379,7 @@ if (add_tests)
     check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_long -r qmc-ref/qmc_spindens_long.s000.stat_ref_spindensity.dat
     )
 
+  
   SIMPLE_RUN_AND_CHECK(
     long-diamondC_1x1x1_pp-dmc-estimator-spindensity
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -478,6 +488,145 @@ endif()
 # Deterministic tests
 #
 IF(NOT QMC_CUDA)
+
+  # deterministic estimator tests
+  if (add_estimator_tests AND NOT QMC_MIXED_PRECISION)
+    # density tests
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-estimator-density
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_dens_short.in.xml
+      1 1
+      check_stats.py -s 0 -q density -e 0 -c 8 -p det_qmc_dens_short -r qmc-ref/det_qmc_dens_short.s000.stat_ref_density_1_1.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-estimator-density
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_dens_short_mw.in.xml
+      4 4
+      check_stats.py -s 0 -q density -e 0 -c 8 -p det_qmc_dens_short_mw -r qmc-ref/det_qmc_dens_short_mw.s000.stat_ref_density_4_4.dat
+      )
+  
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-density
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_dens_short_vmc_dmc.in.xml
+      1 1
+      check_stats.py -s 1 -q density -e 1 -c 8 -p det_qmc_dens_short_vmc_dmc -r qmc-ref/det_qmc_dens_short_vmc_dmc.s001.stat_ref_density_1_1${OFEXT}.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-density
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_dens_short_vmc_dmc.in.xml
+      4 4
+      check_stats.py -s 1 -q density -e 1 -c 8 -p det_qmc_dens_short_vmc_dmc -r qmc-ref/det_qmc_dens_short_vmc_dmc.s001.stat_ref_density_4_4${OFEXT}.dat
+      )
+
+    # spindensity tests
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_spindens_short.in.xml
+      1 1
+      check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short -r qmc-ref/det_qmc_spindens_short.s000.stat_ref_spindensity_1_1.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_spindens_short_mw.in.xml
+      4 4
+      check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short_mw -r qmc-ref/det_qmc_spindens_short_mw.s000.stat_ref_spindensity_4_4.dat
+      )
+
+    # SIMPLE_RUN_AND_CHECK(
+    #   deterministic-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
+    #   "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    #   det_qmc_spindens_short_vmcbatched.in.xml
+    #   1 1
+    #   check_stats.py -s 0 -q spindensity -e 0 -c 8 -p det_qmc_spindens_short -r qmc-ref/det_qmc_vmcbatch_spindens_short.s000.stat_ref_spindensity_1_1.dat
+    #   )
+    
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_spindens_short_vmc_dmc.in.xml
+      1 1
+      check_stats.py -s 1 -q spindensity -e 1 -c 8 -p det_qmc_spindens_short_vmc_dmc -r qmc-ref/det_qmc_spindens_short_vmc_dmc.s001.stat_ref_spindensity_1_1${OFEXT}.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_spindens_short_vmc_dmc.in.xml
+      4 4
+      check_stats.py -s 1 -q spindensity -e 1 -c 8 -p det_qmc_spindens_short_vmc_dmc -r qmc-ref/det_qmc_spindens_short_vmc_dmc.s001.stat_ref_spindensity_4_4${OFEXT}.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_1rdm_noJ_short.in.xml
+      1 1
+      check_stats.py -s 0 -q 1rdm -e 0 -c 8 -p det_qmc_1rdm_noJ_short -r qmc-ref/det_qmc_1rdm_noJ_short.s000.stat_ref_1rdm${OFEXT}.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_1rdm_J2_short.in.xml
+      1 1
+      check_stats.py -s 0 -q 1rdm -e 0 -c 8 -p det_qmc_1rdm_J2_short -r qmc-ref/det_qmc_1rdm_J2_short.s000.stat_ref_1rdm${OFEXT}.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_1rdm_short_vmc_dmc.in.xml
+      1 1
+      check_stats.py -s 1 -q 1rdm -e 0 -c 8 -p det_qmc_1rdm_short_vmc_dmc -r qmc-ref/det_qmc_1rdm_short_vmc_dmc.s001.stat_ref_1rdm_1_1${OFEXT}.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_1rdm_short_vmc_dmc.in.xml
+      4 4
+      check_stats.py -s 1 -q 1rdm -e 0 -c 8 -p det_qmc_1rdm_short_vmc_dmc -r qmc-ref/det_qmc_1rdm_short_vmc_dmc.s001.stat_ref_1rdm_4_4${OFEXT}.dat
+      )
+
+  # momemtum distribution test
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-estimator-momentum
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_momentum_short.in.xml
+      1 1
+      check_stats.py -s 0 -q momentum -e 0 -c 5 -p det_qmc_momentum_short -r qmc-ref/det_qmc_momentum_short.s000.stat_ref_momentum_1_1.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_momentum_short_vmc_dmc.in.xml
+      1 1
+      check_stats.py -s 1 -q momentum -e 0 -c 5 -p det_qmc_momentum_short_vmc_dmc -r qmc-ref/det_qmc_momentum_short_vmc_dmc.s001.stat_ref_momentum_1_1${OFEXT}.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_momentum_short_vmc_dmc.in.xml
+      4 4
+      check_stats.py -s 1 -q momentum -e 0 -c 5 -p det_qmc_momentum_short_vmc_dmc -r qmc-ref/det_qmc_momentum_short_vmc_dmc.s001.stat_ref_momentum_4_4${OFEXT}.dat
+      ) 
+
+  endif()
+
+
+  # deterministic scalar tests
+
  IF(QMC_MIXED_PRECISION)
    LIST(APPEND DET_DIAMOND_SCALARS "totenergy" "-10.65155712 0.00001582")
    LIST(APPEND DET_DIAMOND_SCALARS "kinetic" "16.03245992 0.00001650")
@@ -1257,4 +1406,26 @@ ENDIF()
                     3 DET_DIAMOND_DMC_MWALKERS2_SCALARS # DMC cycle 2
                     )
 
+
+ENDIF()
+
+
+IF (NOT QMC_CUDA)
+  LIST(APPEND DET_DIAMOND_PARAM uu_0  -1.010849732e-05  0.00001)
+  LIST(APPEND DET_DIAMOND_PARAM uu_1   1.221957505      0.00010)
+  LIST(APPEND DET_DIAMOND_PARAM ud_0   1.094114467e-07  0.00001)
+  LIST(APPEND DET_DIAMOND_PARAM ud_1   0.0001130922027  0.00001)
+  LIST(APPEND DET_DIAMOND_PARAM eC_2   0.0              0.00001)
+  LIST(APPEND DET_DIAMOND_PARAM eC_3   8.196343356      0.00001)
+
+  QMC_RUN_AND_CHECK_CUSTOM_SCALAR(BASE_NAME deterministic-diamondC_1x1x1_pp-param-grad
+                                  BASE_DIR "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                                  PREFIX det_qmc_short_param_grad.param
+                                  INPUT_FILE det_qmc_param_grad.xml
+                                  PROCS 1
+                                  THREADS 1
+                                  SERIES 0
+                                  EQUILIBRATION 0
+                                  SCALAR_VALUES DET_DIAMOND_PARAM
+                                 )
 ENDIF()

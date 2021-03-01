@@ -20,7 +20,7 @@
 #include <regex>
 #include <string>
 
-#include "Utilities/SimpleParser.h"
+#include "SimpleParser.h"
 #include <algorithm>
 
 char* readLine(char* s, int max, std::istream& fp)

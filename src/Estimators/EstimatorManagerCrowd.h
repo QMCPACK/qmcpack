@@ -31,17 +31,18 @@ class MCWalkerConifugration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 
-/** Thread local portion of EstimatorManager
+/** Thread local estimator container/accumulator
  *
  *  Stepping away from the CloneManger + clones design which creates EstimatorManagers
  *  Which operate differently based on internal switches.
+ *  
+ *  see EstimatorManagerNew.h for full description of the new design.
  */
 class EstimatorManagerCrowd : public EstimatorManagerInterface
 {
 public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-  //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
-
+  
   ///name of the primary estimator name
   std::string MainEstimatorName;
   ///the root file name
@@ -50,11 +51,21 @@ public:
   TinyVector<RealType, 4> RefEnergy;
   ///default constructor
   EstimatorManagerCrowd() = delete;
-  ///copy constructor
+  /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
+   *
+   *  This coupling should be removed.
+   */
   EstimatorManagerCrowd(EstimatorManagerNew& em);
+
   ///destructor
   virtual ~EstimatorManagerCrowd(){};
 
+  /** Should be removed from the API
+   *
+   *  This was necessary because the legacy code just clones EstimatorManager for
+   *  each walker but only the first one still manages the others are
+   *  just estimator containers.
+   */
   inline bool is_manager() const { return false; }
 
   ///return the number of ScalarEstimators
@@ -87,17 +98,10 @@ public:
       scalar_estimators_[i]->setNumberOfBlocks(blocks);
   }
 
-  void accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
-  {
-    block_weight_ += walkers.size();
-    //Don't normalize we only divide once after reduction.
-    //RealType norm             = 1.0 / global_walkers;
-    int num_scalar_estimators = scalar_estimators_.size();
-    for (int i = 0; i < num_scalar_estimators; ++i)
-      scalar_estimators_[i]->accumulate(global_walkers, walkers, 1);
-  }
+  void accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets);
 
   RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }
+  RefVector<qmcplusplus::OperatorEstBase> get_operator_estimators() { return convertUPtrToRefVector(operator_ests_); }
   RealType get_block_weight() const { return block_weight_; }
   double get_cpu_block_time() const { return cpu_block_time_; }
 
@@ -155,6 +159,7 @@ protected:
   ///estimators of simple scalars
   std::vector<EstimatorType*> scalar_estimators_;
 
+  std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
 private:
   // This is needed for "efficiency" measure
   Timer crowd_estimator_timer_;

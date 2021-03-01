@@ -1,7 +1,11 @@
 # Check compiler version
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.4 )
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0 )
   MESSAGE(STATUS "Compiler Version ${CMAKE_CXX_COMPILER_VERSION}")
-  MESSAGE(FATAL_ERROR "Requires clang 3.4 or higher ")
+  MESSAGE(FATAL_ERROR "Requires clang 7.0 or higher ")
+ENDIF()
+
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0 AND QMC_CXX_STANDARD EQUAL 17 AND BUILD_AFQMC )
+  MESSAGE(FATAL_ERROR "Avoid Clang 11.0.0 which cannot compile AFQMC properly with C++17!")
 ENDIF()
 
 # Set the std
@@ -12,10 +16,14 @@ IF(QMC_OMP)
   SET(ENABLE_OPENMP 1)
   IF(ENABLE_OFFLOAD AND NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     SET(OFFLOAD_TARGET "nvptx64-nvidia-cuda" CACHE STRING "Offload target architecture")
+    SET(CLANG_OPENMP_OFFLOAD_FLAGS "-fopenmp-targets=${OFFLOAD_TARGET}")
+
     IF(DEFINED OFFLOAD_ARCH)
-      SET(CLANG_OPENMP_OFFLOAD_FLAGS "-fopenmp-targets=${OFFLOAD_TARGET} -Xopenmp-target=${OFFLOAD_TARGET} -march=${OFFLOAD_ARCH}")
-    ELSE()
-      SET(CLANG_OPENMP_OFFLOAD_FLAGS "-fopenmp-targets=${OFFLOAD_TARGET}")
+      SET(CLANG_OPENMP_OFFLOAD_FLAGS "${CLANG_OPENMP_OFFLOAD_FLAGS} -Xopenmp-target=${OFFLOAD_TARGET} -march=${OFFLOAD_ARCH}")
+    ENDIF()
+
+    IF(OFFLOAD_TARGET MATCHES "nvptx64")
+      SET(CLANG_OPENMP_OFFLOAD_FLAGS "${CLANG_OPENMP_OFFLOAD_FLAGS} -Wno-unknown-cuda-version")
     ENDIF()
 
     # Intel clang compiler needs a different flag for the host side OpenMP library when offload is used.

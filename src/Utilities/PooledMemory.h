@@ -97,6 +97,12 @@ struct PooledMemory
     Current_scalar = 0;
   }
 
+  ///zero the data
+  inline void zero()
+  {
+    myData.zero();
+  }
+
   ///allocate the data
   inline void allocate()
   {

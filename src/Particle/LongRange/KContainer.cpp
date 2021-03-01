@@ -13,8 +13,8 @@
 
 
 #include "Message/Communicate.h"
-#include "LongRange/KContainer.h"
-#include <qmc_common.h>
+#include "KContainer.h"
+#include "Utilities/qmc_common.h"
 #include <map>
 
 namespace qmcplusplus

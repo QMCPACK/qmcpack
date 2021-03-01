@@ -11,8 +11,9 @@
 
 
 SET(COMM_SRCS
-    Communicate.cpp
-    MPIObjectBase.cpp
+  Communicate.cpp
+  AppAbort.cpp
+  MPIObjectBase.cpp
 )
 
 ADD_LIBRARY(message ${COMM_SRCS})

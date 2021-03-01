@@ -17,22 +17,12 @@
 #include <stdexcept>
 #include <hip/hip_runtime.h>
 #include "AFQMC/Memory/device_pointers.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "hipblas.h"
 #include "hipsparse.h"
 #include "rocsolver.h"
 #include "rocrand/rocrand.h"
-
-namespace qmcplusplus
-{
-namespace afqmc
-{
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
-} // namespace afqmc
-} // namespace qmcplusplus
 
 namespace arch
 {
@@ -66,25 +56,7 @@ hipMemcpyKind tohipMemcpyKind(MEMCOPYKIND v)
   return hipMemcpyDefault;
 }
 
-void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
-{
-  qmc_hip::HIP_INIT(node, iseed);
-  using qmcplusplus::afqmc::device_allocator_generator_type;
-  using qmcplusplus::afqmc::device_buffer_generator;
-  using qmcplusplus::afqmc::localTG_buffer_generator;
-  if (device_buffer_generator == nullptr)
-  {
-    device_buffer_generator =
-        std::make_shared<device_allocator_generator_type>(device::memory_resource{}, std::size_t(20 * 1024 * 1024),
-                                                          device::constructor<char>{});
-    // same memory space, so use same memory resource
-    localTG_buffer_generator = device_buffer_generator;
-  }
-  else
-  {
-    std::cerr << " Warning: device_buffer_generator already initialized in arch::INIT." << std::endl;
-  }
-}
+void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed) { qmc_hip::HIP_INIT(node, iseed); }
 
 void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, const std::string& message)
 {
@@ -131,7 +103,7 @@ void malloc(void** devPtr, size_t size, const std::string& message)
     {
       std::cerr << " Error from : " << message << std::endl;
     }
-    std::cerr << " Error when call hipMalloc " << < hipGetErrorString(status) << std::endl;
+    std::cerr << " Error when call hipMalloc " << hipGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: hipMalloc returned error code.");
   }
 }

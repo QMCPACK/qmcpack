@@ -12,17 +12,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
+#include "SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
 {
 SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation* BF)
-    : SlaterDet(targetPtcl), BFTrans(BF)
+    : SlaterDet(targetPtcl, "SlaterDetWithBackflow"), BFTrans(BF)
 {
   Optimizable = false;
-  ClassName   = "SlaterDetWithBackflow";
 }
 
 ///destructor
@@ -78,45 +77,13 @@ void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
-  BackflowTransformation* tr = BFTrans->makeClone(tqp);
+  BackflowTransformation* tr     = BFTrans->makeClone(tqp);
   SlaterDetWithBackflow* myclone = new SlaterDetWithBackflow(tqp, tr);
   myclone->Optimizable           = Optimizable;
-  if (mySPOSet.size() > 1) //each determinant owns its own set
+  for (int i = 0; i < Dets.size(); ++i)
   {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      SPOSetPtr spo = Dets[i]->getPhi();
-      // Check to see if this determinants SPOSet has already been
-      // cloned
-      bool found = false;
-      SPOSetPtr spo_clone;
-      for (int j = 0; j < i; j++)
-        if (spo == Dets[j]->getPhi())
-        {
-          found     = true;
-          spo_clone = myclone->Dets[j]->getPhi();
-        }
-      // If it hasn't, clone it now
-      if (!found)
-      {
-        spo_clone = spo->makeClone();
-        myclone->add(spo_clone, spo->getName());
-      }
-      // Make a copy of the determinant.
-      DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*)Dets[i]->makeCopy(spo_clone);
-      myclone->add(dclne, i);
-    }
-  }
-  else
-  {
-    SPOSetPtr spo       = Dets[0]->getPhi();
-    SPOSetPtr spo_clone = spo->makeClone();
-    myclone->add(spo_clone, spo->getName());
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*)Dets[i]->makeCopy(spo_clone);
-      myclone->add(dclne, i);
-    }
+    DiracDeterminantBase* dclne = Dets[i]->makeCopy(std::unique_ptr<SPOSet>(Dets[i]->getPhi()->makeClone()));
+    myclone->add(dclne, i);
   }
   myclone->setBF(tr);
   return myclone;
@@ -149,7 +116,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   RealType dh       = 0.00001;
   for (int k = 0; k < Dets.size(); k++)
   {
-    DiracDeterminantWithBackflow* Dets_ = (DiracDeterminantWithBackflow*)Dets[k];
+    DiracDeterminantWithBackflow* Dets_ = dynamic_cast<DiracDeterminantWithBackflow*>(Dets[k].get());
     Dets_->testGGG(P);
     for (int i = 0; i < Nvars; i++)
     {
@@ -172,7 +139,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
     L2 = 0.0;
     for (int k = 0; k < Dets.size(); k++)
     {
-      DiracDeterminantWithBackflow* Dets_ = (DiracDeterminantWithBackflow*)Dets[k];
+      DiracDeterminantWithBackflow* Dets_ = dynamic_cast<DiracDeterminantWithBackflow*>(Dets[k].get());
       Dets_->evaluateDerivatives(P, wfVars, dlogpsi, dhpsi, &G0, &L0, i);
     }
     for (int j = 0; j < Nvars; j++)

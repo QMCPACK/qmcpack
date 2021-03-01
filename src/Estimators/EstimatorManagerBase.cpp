@@ -19,7 +19,7 @@
 #include <functional>
 
 #include "Particle/MCWalkerConfiguration.h"
-#include "Estimators/EstimatorManagerBase.h"
+#include "EstimatorManagerBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -33,7 +33,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
 //leave it for serialization debug

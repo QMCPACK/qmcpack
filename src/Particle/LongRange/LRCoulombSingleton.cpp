@@ -17,7 +17,7 @@
 /** @file LRHandlerTemp.h
  * @brief Define a LRHandler with two template parameters
  */
-#include "LongRange/LRCoulombSingleton.h"
+#include "LRCoulombSingleton.h"
 #if OHMMS_DIM == 3
 #include "LongRange/EwaldHandler.h"
 #include "LongRange/EwaldHandler3D.h"

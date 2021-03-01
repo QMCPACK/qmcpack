@@ -19,8 +19,8 @@
  */
 #ifndef QMCPLUSPLUS_BSPLINE_READER_BASE_H
 #define QMCPLUSPLUS_BSPLINE_READER_BASE_H
-#include <mpi/collectives.h>
-#include <mpi/point2point.h>
+#include "mpi/collectives.h"
+#include "mpi/point2point.h"
 namespace qmcplusplus
 {
 struct SPOSetInputInfo;

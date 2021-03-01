@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ForwardWalking.h"
+#include "ForwardWalking.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "OhmmsData/ParameterSet.h"

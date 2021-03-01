@@ -8,7 +8,7 @@ def output_for_cpp(A,var_name='a'):
   N = A.shape[0]
   for i in range(N):
     for j in range(N):
-      print '%s(%d,%d) = %12.10g;'%(var_name,i,j,A[i,j])
+      print('%s(%d,%d) = %12.10g;'%(var_name,i,j,A[i,j]))
 
 
 A = np.array([
@@ -23,16 +23,16 @@ A = np.array([
 #[0.8, 4.1, 3.2, 1.1]
 #])
 
-print A
+print(A)
 
-print 'det A',np.abs(np.linalg.det(A))
-print 'log det A',np.log(np.abs(np.linalg.det(A)))
+print('det A',np.abs(np.linalg.det(A)))
+print('log det A',np.log(np.abs(np.linalg.det(A))))
 Ainv = np.linalg.inv(A)
-print Ainv
+print(Ainv)
 
 output_for_cpp(Ainv)
 
-print ''
+print('')
 row = np.array([1.9, 2.0, 3.1])
 #row  = np.array([[1.9, 2.0, 3.1],
 #                 [0.1, 4.2, 1.4]])
@@ -46,12 +46,12 @@ B = A.copy()
 B[:,0] = row
 #B[:,0] = row[0]
 #B[:,1] = row[1]
-print 'Updated A with column to get matrix B:'
-print B
-print 'det B',np.abs(np.linalg.det(B))
-print 'log det B',np.log(np.abs(np.linalg.det(B)))
-print 'det ratio',np.linalg.det(B)/np.linalg.det(A);
+print('Updated A with column to get matrix B:')
+print(B)
+print('det B',np.abs(np.linalg.det(B)))
+print('log det B',np.log(np.abs(np.linalg.det(B))))
+print('det ratio',np.linalg.det(B)/np.linalg.det(A))
 Binv = np.linalg.inv(B)
 
-print ''
+print('')
 output_for_cpp(Binv,var_name='b')

@@ -7,16 +7,22 @@
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCDrivers/Crowd.h"
+#include "Crowd.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
+Crowd::Crowd(EstimatorManagerNew& emb, const MultiWalkerDispatchers& dispatchers)
+    : dispatchers_(dispatchers), estimator_manager_crowd_(emb)
+{}
+
+Crowd::~Crowd() = default;
+
 void Crowd::clearWalkers()
 {
   // We're clearing the refs to the objects not the referred to objects.
   mcp_walkers_.clear();
-  mcp_wfbuffers_.clear();
   walker_elecs_.clear();
   walker_twfs_.clear();
   walker_hamiltonians_.clear();
@@ -34,7 +40,6 @@ void Crowd::reserve(int crowd_size)
 void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian)
 {
   mcp_walkers_.push_back(walker);
-  mcp_wfbuffers_.push_back(walker.DataSet);
   walker_elecs_.push_back(elecs);
   walker_twfs_.push_back(twf);
   walker_hamiltonians_.push_back(hamiltonian);
@@ -50,6 +55,40 @@ void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 {
   for (QMCHamiltonian& ham : walker_hamiltonians_)
     ham.setRandomGenerator(&rng);
+}
+
+void Crowd::initializeResources(const ResourceCollection& twf_resource)
+{
+  if (!twfs_shared_resource_)
+    twfs_shared_resource_ = std::make_unique<ResourceCollection>(twf_resource);
+}
+
+void Crowd::lendResources(size_t receiver)
+{
+  if (walker_twfs_.size() > 0)
+  {
+    if (twfs_shared_resource_->is_lent())
+      throw std::runtime_error("Crowd::lendResources resources are out already!");
+    if (receiver >= walker_twfs_.size())
+      throw std::runtime_error("Crowd::takebackResources receiver out of bound!");
+    twfs_shared_resource_->lock();
+    twfs_shared_resource_->rewind();
+    walker_twfs_[receiver].get().acquireResource(*twfs_shared_resource_);
+  }
+}
+
+void Crowd::takebackResources(size_t receiver)
+{
+  if (walker_twfs_.size() > 0)
+  {
+    if (!twfs_shared_resource_->is_lent())
+      throw std::runtime_error("Crowd::takebackResources resources was not lent out!");
+    if (receiver >= walker_twfs_.size())
+      throw std::runtime_error("Crowd::takebackResources receiver out of bound!");
+    twfs_shared_resource_->rewind();
+    walker_twfs_[receiver].get().releaseResource(*twfs_shared_resource_);
+    twfs_shared_resource_->unlock();
+  }
 }
 
 void Crowd::startBlock(int num_steps)

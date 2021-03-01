@@ -38,8 +38,7 @@ TEST_CASE("ewald3d", "[lrhandler]")
   ParticleSet ref;          // handler needs ref.SK.KLists
   ref.Lattice    = Lattice; // !!!! crucial for access to Volume
   ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  StructFact* SK = new StructFact(ref, Lattice.LR_kc);
-  ref.SK         = SK;
+  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
   EwaldHandler3D handler(ref, Lattice.LR_kc);
 
   // make sure initBreakup changes the default sigma
@@ -87,8 +86,7 @@ TEST_CASE("ewald3d df", "[lrhandler]")
   ParticleSet ref;          // handler needs ref.SK.KLists
   ref.Lattice    = Lattice; // !!!! crucial for access to Volume
   ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  StructFact* SK = new StructFact(ref, Lattice.LR_kc);
-  ref.SK         = SK;
+  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
   EwaldHandler3D handler(ref, Lattice.LR_kc);
 
   // make sure initBreakup changes the default sigma

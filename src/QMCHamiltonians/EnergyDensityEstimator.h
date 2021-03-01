@@ -13,10 +13,10 @@
 
 #ifndef QMCPLUSPLUS_ENERGY_DENSITY_ESTIMATOR_H
 #define QMCPLUSPLUS_ENERGY_DENSITY_ESTIMATOR_H
-#include <QMCHamiltonians/OperatorBase.h>
-#include <OhmmsPETE/OhmmsMatrix.h>
-#include <QMCHamiltonians/ReferencePoints.h>
-#include <QMCHamiltonians/SpaceGrid.h>
+#include "QMCHamiltonians/OperatorBase.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "QMCHamiltonians/ReferencePoints.h"
+#include "QMCHamiltonians/SpaceGrid.h"
 #include <map>
 #include <vector>
 

@@ -6,21 +6,21 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-#include<complex>
-#include<vector>
-#include<string>
-#include<numeric>
-#include<cassert>
-#include<algorithm>
-//#include<mpi.h>
+#include <complex>
+#include <vector>
+#include <string>
+#include <numeric>
+#include <cassert>
+#include <algorithm>
+//#include <mpi.h>
 
-#include<boost/format.hpp>
-#include<boost/shared_ptr.hpp>
+#include <boost/format.hpp>
+#include <boost/shared_ptr.hpp>
 
-#include<formic/utils/exception.h>
-#include<formic/utils/mpi_interface.h>
-#include<formic/utils/lmyengine/engine_numeric.h>
-#include<formic/utils/lmyengine/energy_target_accu.h>
+#include "formic/utils/exception.h"
+#include "formic/utils/mpi_interface.h"
+#include "formic/utils/lmyengine/engine_numeric.h"
+#include "energy_target_accu.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // \brief  constructs the computer

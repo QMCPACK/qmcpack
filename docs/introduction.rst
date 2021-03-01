@@ -3,51 +3,40 @@
 Introduction
 ============
 
-QMCPACK is an open-source, high-performance electronic structure code
-that implements numerous Quantum Monte Carlo (QMC) algorithms. Its main
-applications are electronic structure calculations of molecular,
-periodic 2D, and periodic 3D solid-state systems. Variational Monte
-Carlo (VMC), diffusion Monte Carlo (DMC), and a number of other advanced
-QMC algorithms are implemented. By directly solving the Schrodinger
-equation, QMC methods offer greater accuracy than methods such as
-density functional theory but at a trade-off of much greater
-computational expense. Distinct from many other correlated many-body
-methods, QMC methods are readily applicable to both bulk (periodic) and
-isolated molecular systems.
+QMCPACK is an open-source, high-performance electronic structure code that implements numerous Quantum Monte Carlo (QMC)
+algorithms. Its main applications are electronic structure calculations of molecular, periodic 2D, and periodic 3D solid-state
+systems. Real-space variational Monte Carlo (VMC), diffusion Monte Carlo (DMC), and a number of other advanced QMC algorithms are
+implemented. A full set of orbital-space auxiliary-field QMC (AFQMC) methods is also implemented. By directly solving the
+Schrodinger equation, QMC methods offer greater accuracy than methods such as density functional theory but at a trade-off of much
+greater computational expense. Distinct from many other correlated many-body methods, QMC methods are readily applicable to both
+isolated molecular systems and to bulk (periodic) systems including metals and insulators. The few systematic errors in these
+methods are increasingly testable allowing for greater confidence in predictions and convergence to e.g. chemically accurate
+results in some cases.
 
-QMCPACK is written in C++ and is designed with the modularity afforded
-by object-oriented programming. It makes extensive use of template
-metaprogramming to achieve high computational efficiency. Because of the
-modular architecture, the addition of new wavefunctions, algorithms, and
-observables is relatively straightforward. For parallelization, QMCPACK
-uses a fully hybrid (OpenMP,CUDA)/MPI approach to optimize memory usage
-and to take advantage of the growing number of cores per SMP node or
-graphical processing units (GPUs) and accelerators. High parallel and
-computational efficiencies are achievable on the largest supercomputers.
-Finally, QMCPACK uses standard file formats for input and output in XML
-and HDF5 to facilitate data exchange.
+QMCPACK is written in C++ and is designed with the modularity afforded by object-oriented programming. High parallel and
+computational efficiencies are achievable on the largest supercomputers. Because of the modular architecture, the addition of new
+wavefunctions, algorithms, and observables is relatively straightforward. For parallelization, QMCPACK uses a fully hybrid
+(OpenMP,CUDA)/MPI approach to optimize memory usage and to take advantage of the growing number of cores per SMP node or graphical
+processing units (GPUs) and accelerators. Finally, QMCPACK uses standard file formats for input and output in XML and HDF5 to
+facilitate data exchange.
 
-This manual currently serves as an introduction to the essential
-features of QMCPACK and as a guide to installing and running it. Over
-time this manual will be expanded to include a fuller introduction to
-QMC methods in general and to include more of the specialized features
-in QMCPACK.
+This manual currently serves as an introduction to the essential features of QMCPACK and as a guide to installing and running it.
+Over time this manual will be expanded to include a fuller introduction to QMC methods in general and to include more of the
+specialized features in QMCPACK.
+
+Besides studying this manual we recommend reading a recent review of QMCPACK developments :cite:`KentQMCPACKJCP2020` as well as
+the QMCPACK citation paper :cite:`KimQMCPACKJPCM2018`.
+
 
 Quickstart and a first QMCPACK calculation
 ------------------------------------------
 
-In case you are keen to get started, this section describes how to
-quickly build and run QMCPACK on a standard UNIX or Linux-like system.
-The autoconfiguring build system usually works without much fuss on
-these systems. If C++, MPI, BLAS/LAPACK, FFTW, HDF5, and CMake are
-already installed, QMCPACK can be built and run within five minutes. For
-supercomputers, cross-compilation systems, and other computer clusters,
-the build system might require hints on the locations of libraries and
-which versions to use, typical of any code; see
-:ref:`obtaininginstalling`.
-:ref:`installexamples` includes
-complete examples of installations for common workstations and
-supercomputers that you can reuse.
+In case you are keen to get started, this section describes how to quickly build and run  a first QMCPACK calculation on a
+standard UNIX or Linux-like system. The build system usually works without much fuss on these systems. If C++, MPI, BLAS/LAPACK,
+FFTW, HDF5, and CMake are already installed, QMCPACK can be built and run within five minutes. For supercomputers,
+cross-compilation systems, and some computer clusters, the build system might require hints on the locations of libraries and
+which versions to use, typical of any code; see :ref:`obtaininginstalling`. :ref:`installexamples` includes complete examples of
+installations for common workstations and supercomputers that you can reuse.
 
 To build QMCPACK:
 
@@ -129,69 +118,65 @@ Congratulations, you have completed a DMC calculation with QMCPACK!
 Authors and History
 -------------------
 
-QMCPACK was initially written by Jeongnim Kim while in the group of
-Professor David Ceperley at the University of Illinois at
-Urbana-Champaign, with later contributations being made at Oak Ridge
-National Laboratory (ORNL). Over the years, many others have
-contributed, particularly students and researchers in the groups of
-Professor David Ceperley and Professor Richard M. Martin, as well as
-staff at Lawrence Livermore National Laboratory, Sandia National
-Laboratories, Argonne National Laboratory, and ORNL.
+Development of QMCPACK was started in the late 2000s by Jeongnim Kim while in the group of Professor David Ceperley at the
+University of Illinois at Urbana-Champaign, with later contributions being made at Oak Ridge National Laboratory (ORNL). Over the
+years, many others have contributed, including students and researchers in the groups of Professor David Ceperley and Professor
+Richard M. Martin, and increasingly staff and postdocs at Lawrence Livermore National Laboratory, Sandia National Laboratories,
+Argonne National Laboratory, and ORNL.
 
-Additional developers, contributors, and advisors include Anouar Benali,
-Mark A. Berrill, David M. Ceperley, Simone Chiesa, Raymond C. III Clay,
-Bryan Clark, Kris T. Delaney, Kenneth P. Esler, Paul R. C. Kent, Jaron
-T. Krogel, Ying Wai Li, Ye Luo, Jeremy McMinis, Miguel A. Morales,
-William D. Parker, Nichols A. Romero, Luke Shulenburger, Norman M.
-Tubman, and Jordan E. Vincent.
+Additional developers, contributors, and advisors include Anouar Benali, Mark A. Berrill, David M. Ceperley, Simone Chiesa,
+Raymond C. III Clay, Bryan Clark, Kris T. Delaney, Kenneth P. Esler, Paul R. C. Kent, Jaron T. Krogel, Ying Wai Li, Ye Luo, Jeremy
+McMinis, Miguel A. Morales, William D. Parker, Nichols A. Romero, Luke Shulenburger, Norman M. Tubman, and Jordan E. Vincent. See
+the authors of :cite:`KentQMCPACKJCP2020` and :cite:`KimQMCPACKJPCM2018`.
 
-If you should be added to this list, please let us know.
+If you should be added to these lists, please let us know.
 
 Development of QMCPACK has been supported financially by several grants,
 including the following:
 
+-  "Center for Predictive Simulation of Functional Materials", supported by the U.S. Department of Energy, Office of Science,
+   Basic Energy Sciences, Materials Sciences and Engineering Division, as part of the Computational Materials Sciences Program.
+
+-  The Exascale Computing Project (17-SC-20-SC), a joint project of the U.S. Department of Energy’s Office of Science and
+   National Nuclear Security Administration, responsible for delivering a capable exascale ecosystem, including software,
+   applications, and hardware technology, to support the nation’s exascale computing imperative. 
+
 -  “Network for ab initio many-body methods: development, education and
    training” supported through the Predictive Theory and Modeling for
    Materials and Chemical Science program by the U.S. Department of
-   Energy Office of Science, Basic Energy Sciences
+   Energy Office of Science, Basic Energy Sciences.
 
 -  “QMC Endstation,” supported by Accelerating Delivery of Petascale
    Computing Environment at the DOE Leadership Computing Facility at
-   ORNL
+   ORNL.
 
--  PetaApps, supported by the US National Science Foundation
+-  PetaApps, supported by the US National Science Foundation.
 
 -  Materials Computation Center (MCC), supported by the US National
-   Science Foundation
+   Science Foundation.
 
 .. _support:
 
 Support and Contacting the Developers
 -------------------------------------
 
-Questions about installing, applying, or extending QMCPACK can be posted
-on the QMCPACK Google group at
-https://groups.google.com/forum/#!forum/qmcpack. You may also email any
-of the developers, but we recommend checking the group first. Particular
-attention is given to any problem reports.
+Questions about installing, applying, or extending QMCPACK can be posted on the QMCPACK Google group at
+https://groups.google.com/forum/#!forum/qmcpack. You may also email any of the developers, but we recommend checking the group
+first. Particular attention is given to any problem reports. Technical questions can also be posted on the QMCPACK GitHub
+repository https://github.com/QMCPACK/qmcpack/issues.
 
 .. _performance:
 
 Performance
 -----------
 
-QMCPACK implements modern Monte Carlo (MC) algorithms, is highly
-parallel, and is written using very efficient code for high per-CPU or
-on-node performance. In particular, the code is highly vectorizable,
-giving high performance on modern central processing units (CPUs) and
-GPUs. We believe QMCPACK delivers performance either comparable to or
-better than other QMC codes when similar calculations are run,
-particularly for the most common QMC methods and for large systems. If
-you find a calculation where this is not the case, or you simply find
-performance slower than expected, please post on the Google group or
-contact one of the developers. These reports are valuable. If your
-calculation is sufficiently mainstream we will optimize QMCPACK to
-improve the performance.
+QMCPACK implements modern Monte Carlo (MC) algorithms, is highly parallel, and is written using very efficient code for high
+per-CPU or on-node performance. In particular, the code is highly vectorizable, giving high performance on modern central
+processing units (CPUs) and GPUs. We believe QMCPACK delivers performance either comparable to or better than other QMC codes when
+similar calculations are run, particularly for the most common QMC methods and for large systems. If you find a calculation where
+this is not the case, or you simply find performance slower than expected, please post on the Google group or contact one of the
+developers. These reports are valuable. If your calculation is sufficiently mainstream we will optimize QMCPACK to improve the
+performance.
 
 .. _license:
 
@@ -252,34 +237,28 @@ code as well as the code history.
 Contributing to QMCPACK
 -----------------------
 
-QMCPACK is fully open source, and we welcome contributions. If you are
-planning a development, early discussions are encouraged. Please post on
-the QMCPACK Google group or contact the developers. We can tell you
-whether anyone else is working on a similar feature or whether any
-related work has been done in the past. Credit for your contribution can
-be obtained, for example, through citation of a paper or by becoming one
-of the authors on the next version of the standard QMCPACK reference
-citation.
+QMCPACK is fully open source, and we welcome contributions. If you are planning a development, early discussions are encouraged.
+Please post on the QMCPACK Google group, on the QMCPACK GitHub repository, or contact one of the developers. We can tell you
+whether anyone else is working on a similar feature or whether any related work has been done in the past. Credit for your
+contribution can be obtained, for example, through citation of a paper or by becoming one of the authors on the next version of
+the standard QMCPACK reference citation.
 
-A guide to developing for QMCPACK, including instructions on how to work
-with GitHub and make pull requests (contributions) to the main source
-are listed on the QMCPACK GitHub wiki:
-https://github.com/QMCPACK/qmcpack/wiki.
+See :ref:`developguide` for details about developing for QMCPACK, including instructions on how to work with GitHub, the style
+guide, and examples about the code architecture.
 
-Contributions are made under the same license as QMCPACK, the UIUC/NCSA
-open source license. If this is problematic, please discuss with a
-developer.
+Contributions are made under the same license as QMCPACK, the UIUC/NCSA open source license. If this is problematic, please
+discuss with a developer.
 
 Please note the following guidelines for contributions:
 
 -  Additions should be fully synchronized with the latest release
-   version and ideally the latest develop branch on github. Merging of
+   version and the latest develop branch on GitHub. Merging of
    code developed on older versions is error prone.
 
 -  Code should be cleanly formatted, commented, portable, and accessible
    to other programmers. That is, if you need to use any clever tricks,
    add a comment to note this, why the trick is needed, how it works,
-   etc. Although we like high performance, ease of maintenance and
+   etc. Although we appreciate high performance, ease of maintenance and
    accessibility are also considerations.
 
 -  Comment your code. You are not only writing it for the compiler for
@@ -289,52 +268,44 @@ Please note the following guidelines for contributions:
 -  Write a brief description of the method, algorithms, and inputs and
    outputs suitable for inclusion in this manual.
 
--  Develop some short tests that exercise the functionality that can be
-   used for validation and for examples. We can help with this and their
-   integration into the test system.
+-  Develop tests that exercise the functionality that can be
+   used for validation and for examples. Where is it practical to write them, we prefer unit tests and fully deterministic tests
+   ahead of stochastic tests. Stochastic tests naturally fail on occasion, which is a property that does not scale to hundreds of
+   tests. We can help with this and tests integration into the test system.
 
 .. _roadmap:
 
 QMCPACK Roadmap
 ---------------
 
-A general outline of the QMCPACK roadmap is given in the following sections. Suggestions for improvements are welcome, particularly those
-that would facilitate new scientific applications. For example, if an
-interface to a particular quantum chemical or density functional code
-would help, this would be given strong consideration.
+A general outline of the QMCPACK roadmap is given in the following sections. Suggestions for improvements are welcome,
+particularly those that would facilitate new scientific applications. For example, if an interface to a particular quantum
+chemical or density functional code would help, this would be given strong consideration.
 
 Code
 ~~~~
 
-We will continue to improve the accessibility and usability of QMCPACK
-through combinations of more convenient input parameters, improved
-workflow, integration with more quantum chemical and density functional
-codes, and a wider range of examples.
+We will continue to improve the accessibility and usability of QMCPACK through combinations of more convenient input parameters,
+improved workflow, integration with more quantum chemical and density functional codes, and a wider range of examples. Suggestions
+are very welcome, both from new users of QMC and from those experienced with other QMC codes.
 
-In terms of methodological development, we expect to significantly
-increase the range of QMC algorithms in QMCPACK in the near future.
+A main development focus is the creation of a single performance portable version of the code. All features will consequently be
+available on all platforms, including accelerators (GPUs) from NVIDIA, AMD, and Intel. The internal design is being updated for
+greater simplicity. Overall we expect this to increase performance and improve the overall consistency and robustness of the code.
+It will also enable us to remove legacy implementations. 
 
-Computationally, we are porting QMCPACK to the next generation of
-supercomputer systems. The internal changes required to run efficiently
-on these systems are expected to benefit *all* platforms due to improved
-vectorization, cache utilization, and memory performance.
-
-Documentation
-~~~~~~~~~~~~~
+Documentation and examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This manual describes the core features of QMCPACK that are required for
-routine research calculations, i.e., the VMC and DMC methods, how to
-obtain and optimize trial wavefunctions, and simple observables. Over
-time this manual will be expanded to include a broader introduction to
-QMC methods and to describe more features of the code.
+routine research calculations and standard QMC workflows, i.e., the VMC and DMC methods, auxiliary field QMC, how to
+obtain and optimize trial wavefunctions, and simple observables. This covers at least 95% of use cases. 
 
-Because of its history as a research code, QMCPACK contains a variety of
-additional QMC methods, trial wavefunction forms, potentials, etc.,
-that, although not critical, might be very useful for specialized
-calculations or particular material or chemical systems. These “secret
-features” (every code has these) are not actually secret but simply lack
-descriptions, example inputs, and tests. You are encouraged to browse
-and read the source code to find them. New descriptions will be added
-over time but can also be prioritized and added on request (e.g., if a
-specialized Jastrow factor would help or a historical Jastrow form is
-needed for benchmarking).
+Because of its history as an academically developed research code, QMCPACK contains a variety of additional QMC methods, trial
+wavefunction forms, potentials, etc., that, although far from critical, might be very useful for specialized calculations or
+particular material or chemical systems. These “secret features” (every code has these) are not actually secret but simply lack
+descriptions, example inputs, and tests. You are encouraged to browse and read the source code to find them. New descriptions will
+be added over time but can also be prioritized and added on request (e.g., if a specialized Jastrow factor would help or a
+historical Jastrow form is needed for benchmarking).
+
+.. bibliography:: /bibs/introduction.bib

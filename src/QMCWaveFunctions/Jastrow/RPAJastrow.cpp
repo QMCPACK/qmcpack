@@ -16,7 +16,7 @@
  * @brief Definitions of RPAJastrow
  */
 
-#include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
+#include "RPAJastrow.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
@@ -31,10 +31,10 @@
 
 namespace qmcplusplus
 {
-RPAJastrow::RPAJastrow(ParticleSet& target, bool is_manager) : IsManager(is_manager), targetPtcl(target)
+RPAJastrow::RPAJastrow(ParticleSet& target, bool is_manager)
+    : WaveFunctionComponent("RPAJastrow"), IsManager(is_manager), targetPtcl(target)
 {
   Optimizable = true;
-  ClassName   = "RPAJastrow";
 }
 
 RPAJastrow::~RPAJastrow()
@@ -66,8 +66,8 @@ bool RPAJastrow::put(xmlNodePtr cur)
   Kc                = -1.0;
   std::string ID_Rs = "RPA_rs";
   ParameterSet params;
-  params.add(Rs, "rs", "double");
-  params.add(Kc, "kc", "double");
+  params.add(Rs, "rs");
+  params.add(Kc, "kc");
   params.put(cur);
   buildOrbital(MyName, useL, useS, rpafunc, Rs, Kc);
   return true;
@@ -190,11 +190,11 @@ void RPAJastrow::makeShortRange()
   nfunc = new FuncType;
   SRA   = new ShortRangePartAdapter<RealType>(myHandler);
   SRA->setRmax(Rcut);
-  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>(targetPtcl, IsManager);
-  size_t nparam  = 12;  // number of Bspline parameters
-  size_t npts    = 100; // number of 1D grid points for basis functions
-  RealType cusp  = SRA->df(0);
-  RealType delta = Rcut / static_cast<double>(npts);
+  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl, IsManager);
+  size_t nparam                              = 12;  // number of Bspline parameters
+  size_t npts                                = 100; // number of 1D grid points for basis functions
+  RealType cusp                              = SRA->df(0);
+  RealType delta                             = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)
   {

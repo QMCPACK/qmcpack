@@ -82,7 +82,7 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  ParticleSet::ParticleLayout_t* SimulationCell = new ParticleSet::ParticleLayout_t;
+  auto SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
   LatticeParser lp(*SimulationCell);
   lp.put(part1);
   SimulationCell->print(app_log(), 0);

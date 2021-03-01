@@ -45,15 +45,15 @@ def spinor_matrix(R,s,kup,kdn):
   M=np.zeros((len(R),len(kup)),dtype=complex);
 
  
-  for iat in xrange(0,len(R)):
-    for norb in xrange(0,len(kup)):
+  for iat in range(0,len(R)):
+    for norb in range(0,len(kup)):
       M[iat][norb]=spinor_val(R[iat],s[iat],kup[norb],kdn[norb])
 
   return M
 
 def compute_row_spinor_val(r,s,kup,kdn):
   row=np.zeros(len(kup),dtype=complex)
-  for norb in xrange(0,len(kup)):
+  for norb in range(0,len(kup)):
     row[norb]=spinor_val(r,s,kup[norb],kdn[norb])
   return row
 
@@ -61,7 +61,7 @@ def compute_row_spinor_grad(r,s,kup,kdn):
   rowx=np.zeros(len(kup),dtype=complex)
   rowy=np.zeros(len(kup),dtype=complex)
   rowz=np.zeros(len(kup),dtype=complex)
-  for norb in xrange(0,len(kup)):
+  for norb in range(0,len(kup)):
     g=spinor_grad(r,s,kup[norb],kdn[norb])
     rowx[norb]=g[0]
     rowy[norb]=g[1]
@@ -70,13 +70,13 @@ def compute_row_spinor_grad(r,s,kup,kdn):
     
 def compute_row_spinor_lapl(r,s,kup,kdn):
   row=np.zeros(len(kup),dtype=complex)
-  for norb in xrange(0,len(kup)):
+  for norb in range(0,len(kup)):
     row[norb]=spinor_lapl(r,s,kup[norb],kdn[norb])
   return row
 
 def compute_row_spinor_spingrad(r,s,kup,kdn):
   row=np.zeros(len(kup),dtype=complex)
-  for norb in xrange(0,len(kup)):
+  for norb in range(0,len(kup)):
     row[norb]=spinor_spingrad(r,s,kup[norb],kdn[norb])
   return row
 
@@ -106,22 +106,22 @@ Mtmp = np.copy(Mref)
 det_ref=np.linalg.det(Mref)
 log_ref=np.log(det_ref)
 
-print "############ REFERENCE CONFIG #################"
-print " R = ",R
-print " spins = ",spins
-print "   -----TOTAL MATRIX QUANTITIES-----"
-print "  M = ", Mref
-print " "
-print "  det(M) = ",det_ref
-print " "
-print "  log(det) = ",log_ref
+print("############ REFERENCE CONFIG #################")
+print(" R = ",R)
+print(" spins = ",spins)
+print("   -----TOTAL MATRIX QUANTITIES-----")
+print("  M = ", Mref)
+print(" ")
+print("  det(M) = ",det_ref)
+print(" ")
+print("  log(det) = ",log_ref)
 
 #### Now we're going to compute the 3 gradient components:
 G=np.zeros((3,3),dtype=complex)
 L=np.zeros(3,dtype=complex)
 SG=np.zeros(3,dtype=complex)
 
-for iat in xrange(0,3):
+for iat in range(0,3):
   r=R[iat]
   s=spins[iat]
   gxr,gyr,gzr=compute_row_spinor_grad(r,s,kup,kdn)
@@ -143,37 +143,37 @@ for iat in xrange(0,3):
   Mtmp[iat]=compute_row_spinor_spingrad(r,s,kup,kdn)
   SG[iat]=np.linalg.det(Mtmp)/det_ref
 
-print " "
-print "  G = ",G
-print " "
-print "  L = ",L
-print " "
-print " SG = ",SG
-print "---------------------------------------"
+print(" ")
+print("  G = ",G)
+print(" ")
+print("  L = ",L)
+print(" ")
+print(" SG = ",SG)
+print("---------------------------------------")
 
 iel = 1
 #Now print results for iat move.
-print " VALUE  =  ", det_ref
-print "  GX = ",G[iel][0]
-print "  GY = ",G[iel][1]
-print "  GZ = ",G[iel][2]
-print "  SG = ",SG[iel]
+print(" VALUE  =  ", det_ref)
+print("  GX = ",G[iel][0])
+print("  GY = ",G[iel][1])
+print("  GZ = ",G[iel][2])
+print("  SG = ",SG[iel])
 
-print " "
-print "Now we make a particle/spin move for particle ",iel
+print(" ")
+print("Now we make a particle/spin move for particle ",iel)
 #### Now we're going to compute the ratio and gradients at a proposed move location.  
 dr=np.array([0.1,-0.05,0.2]);
 ds=0.3;
 
-print "  dr = ",dr
-print "  ds = ",ds
+print("  dr = ",dr)
+print("  ds = ",ds)
 
 rnew=R[iel]+dr
 snew=spins[iel]+ds
 
-print " "
-print " r_old = ",R[iel]," r_new = ",rnew
-print " s_old = ",spins[iel]," s_new = ",snew
+print(" ")
+print(" r_old = ",R[iel]," r_new = ",rnew)
+print(" s_old = ",spins[iel]," s_new = ",snew)
 
 Mtmp=np.copy(Mref)
 Mtmp[iel]=compute_row_spinor_val(rnew,snew,kup,kdn)
@@ -194,10 +194,10 @@ gz_new=np.linalg.det(Mtmp)/det_new
 Mtmp[iel]=compute_row_spinor_spingrad(rnew,snew,kup,kdn)
 sg_new=np.linalg.det(Mtmp)/det_new
 
-print " NEW VALUE = ",det_new
-print " NEW LOG(VALUE) = ",np.log(det_new)
-print " RATIO  =  ", det_new/det_ref
-print "  GX = ", gx_new
-print "  GY = ", gy_new
-print "  GZ = ", gz_new
-print "  SG = ", sg_new
+print(" NEW VALUE = ",det_new)
+print(" NEW LOG(VALUE) = ",np.log(det_new))
+print(" RATIO  =  ", det_new/det_ref)
+print("  GX = ", gx_new)
+print("  GY = ", gy_new)
+print("  GZ = ", gz_new)
+print("  SG = ", sg_new)

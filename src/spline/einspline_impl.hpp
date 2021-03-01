@@ -23,7 +23,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_ENGINE_HPP
 #error "einspline_impl.hpp is used only by einspline_engine.hpp"
 #endif
-#include <CPU/SIMD/simd.hpp>
+#include "CPU/SIMD/simd.hpp"
 #include "einspline/multi_bspline_copy.h"
 
 namespace qmcplusplus

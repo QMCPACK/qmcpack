@@ -74,7 +74,7 @@ void setup_He_wavefunction(Communicate* c,
 
   elec.addTable(ions);
 
-  wff = std::make_unique<WaveFunctionFactory>(&elec, particle_set_map, c);
+  wff = std::make_unique<WaveFunctionFactory>("psi0", elec, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">  \
      <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
@@ -113,8 +113,8 @@ void setup_He_wavefunction(Communicate* c,
   xmlNodePtr root = doc.getRoot();
   wff->put(root);
 
-  REQUIRE(wff->targetPsi != NULL);
-  REQUIRE(wff->targetPsi->size() == 2);
+  REQUIRE(wff->getTWF() != nullptr);
+  REQUIRE(wff->getTWF()->size() == 2);
 }
 
 TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]")
@@ -128,7 +128,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   std::unique_ptr<WaveFunctionFactory> wff;
   WaveFunctionFactory::PtclPoolType particle_set_map;
   setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*(wff->targetPsi));
+  TrialWaveFunction& psi(*wff->getTWF());
 
   ions.update();
   elec.update();
@@ -143,8 +143,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   psi.evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
 
-  RefVector<TrialWaveFunction> wf_list;
-  RefVector<ParticleSet> p_list;
+  RefVectorWithLeader<TrialWaveFunction> wf_list(psi, {psi});
+  RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
 
   // Test list with one wavefunction
 
@@ -152,9 +152,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   RecordArray<ValueType> dlogpsi_list(nparam, nentry);
   RecordArray<ValueType> dhpsi_over_psi_list(nparam, nentry);
 
-  wf_list.push_back(psi);
-  p_list.push_back(elec);
-  psi.flex_evaluateParameterDerivatives(wf_list, p_list, var_param, dlogpsi_list, dhpsi_over_psi_list);
+  TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, var_param, dlogpsi_list, dhpsi_over_psi_list);
 
   CHECK(dlogpsi[0] == ValueApprox(dlogpsi_list.getValue(0, 0)));
   CHECK(dhpsioverpsi[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 0)));
@@ -173,7 +171,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   //  If a new one is needed, what is the easiest way to copy?
   wf_list.push_back(psi);
   p_list.push_back(elec2);
-  psi.flex_evaluateParameterDerivatives(wf_list, p_list, var_param, dlogpsi_list, dhpsi_over_psi_list);
+  TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, var_param, dlogpsi_list, dhpsi_over_psi_list);
 
   std::vector<ValueType> dlogpsi2(nparam);
   std::vector<ValueType> dhpsioverpsi2(nparam);
@@ -185,8 +183,6 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 
   CHECK(dlogpsi2[0] == ValueApprox(dlogpsi_list.getValue(0, 1)));
   CHECK(dhpsioverpsi2[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 1)));
-
-  SPOSetBuilderFactory::clear();
 }
 
 
@@ -208,6 +204,7 @@ UPtrVector<ParticleSet::ParticleLaplacian_t> create_particle_laplacian(int nelec
   return L_list;
 }
 
+#ifndef QMC_CUDA
 TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 {
   using ValueType = QMCTraits::ValueType;
@@ -223,7 +220,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
   setup_He_wavefunction(c, elec1, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*(wff->targetPsi));
+  TrialWaveFunction& psi(*wff->getTWF());
   ions.update();
   elec1.update();
 
@@ -236,11 +233,11 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ParticleSet elec2b(elec2);
   elec2b.update();
 
-  TrialWaveFunction psi2(c);
+  TrialWaveFunction psi2;
   WaveFunctionComponent* orb1 = psi.getOrbitals()[0]->makeClone(elec2);
-  psi2.addComponent(orb1, "orb1");
+  psi2.addComponent(orb1);
   WaveFunctionComponent* orb2 = psi.getOrbitals()[1]->makeClone(elec2);
-  psi2.addComponent(orb2, "orb2");
+  psi2.addComponent(orb2);
 
 
   // Prepare to compare using list with one wavefunction and particleset
@@ -248,10 +245,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   int nentry = 1;
   int nelec  = 2;
 
-  RefVector<TrialWaveFunction> wf_list;
-  RefVector<ParticleSet> p_list;
-  wf_list.push_back(psi);
-  p_list.push_back(elec1b);
+  RefVectorWithLeader<ParticleSet> p_list(elec1b, {elec1b});
+  RefVectorWithLeader<TrialWaveFunction> wf_list(psi, {psi});
 
   // Evaluate new flex_evaluateDeltaLogSetup
 
@@ -263,7 +258,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   auto fixedG_list     = convertUPtrToRefVector(fixedG_list_ptr);
   auto fixedL_list     = convertUPtrToRefVector(fixedL_list_ptr);
 
-  psi.flex_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list, fixedL_list);
+  TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list,
+                                              fixedL_list);
 
 
   // Evaluate old (single item) evaluateDeltaLog
@@ -327,7 +323,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   auto fixedG_list2     = convertUPtrToRefVector(fixedG_list2_ptr);
   auto fixedL_list2     = convertUPtrToRefVector(fixedL_list2_ptr);
 
-  psi2.flex_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list2, logpsi_opt_list2, fixedG_list2, fixedL_list2);
+  TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list2, logpsi_opt_list2, fixedG_list2,
+                                              fixedL_list2);
 
   // Evaluate old (single item) evaluateDeltaLog corresponding to the second wavefunction/particleset
 
@@ -397,7 +394,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
 
   std::vector<RealType> logpsi_variable_list(nentry);
-  TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list, dummyG_list, dummyL_list, false);
+  TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list, dummyG_list, dummyL_list, false);
 
   RealType logpsi1 = psi.evaluateDeltaLog(p_list[0], false);
   CHECK(logpsi1 == Approx(logpsi_variable_list[0]));
@@ -414,16 +411,15 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   std::vector<RealType> logpsi_variable_list2(nentry);
 
-  TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list2, dummyG_list2, dummyL_list2, true);
+  TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list2, dummyG_list2, dummyL_list2, true);
 
   RealType logpsi1b = psi.evaluateDeltaLog(p_list[0], true);
   CHECK(logpsi1b == Approx(logpsi_variable_list2[0]));
 
   RealType logpsi2b = psi2.evaluateDeltaLog(p_list[1], true);
   CHECK(logpsi2b == Approx(logpsi_variable_list2[1]));
-
-  SPOSetBuilderFactory::clear();
 }
+#endif
 
 
 } // namespace qmcplusplus

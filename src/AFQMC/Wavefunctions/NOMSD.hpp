@@ -27,7 +27,7 @@
 #include "mpi3/shm/mutex.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Walkers/WalkerConfig.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
@@ -37,9 +37,6 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
-
 /*
  * Class that implements a multi-Slater determinant trial wave-function.
  * Single determinant wfns are also allowed. 
@@ -64,8 +61,8 @@ class NOMSD : public AFQMCInfo
   using pointer_shared       = typename Allocator_shared::pointer;
   using const_pointer_shared = typename Allocator_shared::const_pointer;
 
-  using buffer_alloc_type     = device_buffer_type<ComplexType>;
-  using shm_buffer_alloc_type = localTG_buffer_type<ComplexType>;
+  using buffer_alloc_type     = DeviceBufferManager::template allocator_t<ComplexType>;
+  using shm_buffer_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
 
   using CVector      = boost::multi::array<ComplexType, 1, Allocator>;
   using CMatrix      = boost::multi::array<ComplexType, 2, Allocator>;
@@ -110,10 +107,10 @@ public:
         int targetNW = 1)
       : AFQMCInfo(info),
         TG(tg_),
-        buffer_allocator(device_buffer_generator.get()),
-        shm_buffer_allocator(localTG_buffer_generator.get()),
         alloc_(), // right now device_allocator is default constructible
         alloc_shared_(make_localTG_allocator<ComplexType>(TG)),
+        buffer_manager(),
+        shm_buffer_manager(),
         SDetOp(std::move(sdet_)),
         HamOp(std::move(hop_)),
         ci(std::move(ci_)),
@@ -147,20 +144,20 @@ public:
       nbatch_qr = 0;
 
     ParameterSet m_param;
-    m_param.add(number_of_references, "number_of_references", "int");
-    m_param.add(number_of_references, "nrefs", "int");
-    m_param.add(excited_file, "excited", "std::string");
+    m_param.add(number_of_references, "number_of_references");
+    m_param.add(number_of_references, "nrefs");
+    m_param.add(excited_file, "excited");
     // generalize this to multi-particle excitations, how do I read a list of integers???
-    m_param.add(i_, "i", "int");
-    m_param.add(a_, "a", "int");
-    m_param.add(rediag, "rediag", "std::string");
-    m_param.add(svd_Gf, "svd_with_Gfull", "std::string");
-    m_param.add(svd_Gm, "svd_with_Gmix", "std::string");
-    m_param.add(svd_O, "svd_with_Ovlp", "std::string");
+    m_param.add(i_, "i");
+    m_param.add(a_, "a");
+    m_param.add(rediag, "rediag");
+    m_param.add(svd_Gf, "svd_with_Gfull");
+    m_param.add(svd_Gm, "svd_with_Gmix");
+    m_param.add(svd_O, "svd_with_Ovlp");
     if (TG.TG_local().size() == 1)
-      m_param.add(nbatch, "nbatch", "int");
+      m_param.add(nbatch, "nbatch");
     if (TG.TG_local().size() == 1)
-      m_param.add(nbatch_qr, "nbatch_qr", "int");
+      m_param.add(nbatch_qr, "nbatch_qr");
     m_param.put(cur);
 
     if (omp_get_num_threads() > 1 && (nbatch == 0))
@@ -235,11 +232,6 @@ public:
   template<class Vec>
   void vMF(Vec&& v);
 
-  stdCMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG_, stdCVector const& vMF)
-  {
-    return HamOp.getOneBodyPropagatorMatrix(TG_, vMF);
-  }
-
   SlaterDetOperations* getSlaterDetOperations() { return std::addressof(SDetOp); }
   HamiltonianOperations* getHamiltonianOperations() { return std::addressof(HamOp); }
 
@@ -308,8 +300,8 @@ public:
   void Energy(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix eloc({nw, 3}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix eloc({nw, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Energy(wset, eloc, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -347,7 +339,7 @@ public:
   void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact = true, bool transpose = false)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact, transpose);
   }
 
@@ -436,7 +428,7 @@ public:
   void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact_G_for_vbias, transposed_G_for_vbias_);
   }
 
@@ -459,7 +451,7 @@ public:
   void Overlap(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Overlap(wset, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -559,11 +551,11 @@ public:
 protected:
   TaskGroup_& TG;
 
-  device_allocator_generator_type* buffer_allocator;
-  localTG_allocator_generator_type* shm_buffer_allocator;
-
   Allocator alloc_;
   Allocator_shared alloc_shared_;
+
+  DeviceBufferManager buffer_manager;
+  LocalTGBufferManager shm_buffer_manager;
 
   //SlaterDetOperations_shared<ComplexType> SDetOp;
   SlaterDetOperations SDetOp;
@@ -753,7 +745,7 @@ protected:
       return (full) ? (2 * NMO * NMO) : ((NAEA + NAEB) * NMO);
       break;
     case NONCOLLINEAR:
-      return (full) ? (4 * NMO * NMO) : ((NAEA + NAEB) * 2 * NMO);
+      return (full) ? (4 * NMO * NMO) : (NAEA * 2 * NMO);
       break;
     default:
       APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
@@ -773,7 +765,7 @@ protected:
       return (full) ? (arr{NMO, NMO}) : ((sp == Alpha) ? (arr{NAEA, NMO}) : (arr{NAEB, NMO}));
       break;
     case NONCOLLINEAR:
-      return (full) ? (arr{2 * NMO, 2 * NMO}) : (arr{NAEA + NAEB, 2 * NMO});
+      return (full) ? (arr{2 * NMO, 2 * NMO}) : (arr{NAEA, 2 * NMO});
       break;
     default:
       APP_ABORT(" Error: Unknown walker_type in dm_size. \n");

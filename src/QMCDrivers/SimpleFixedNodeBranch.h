@@ -24,18 +24,18 @@
 
 #include <array>
 #include <Configuration.h>
-#include <OhmmsData/ParameterSet.h>
-#include <Particle/MCWalkerConfiguration.h>
-#include <Estimators/BlockHistogram.h>
-#include <Estimators/accumulators.h>
+#include "OhmmsData/ParameterSet.h"
+#include "Particle/MCWalkerConfiguration.h"
+#include "Estimators/BlockHistogram.h"
+#include "Estimators/accumulators.h"
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
-#include "QMCDrivers/WalkerControlBase.h"
 #include "QMCDrivers/Crowd.h"
 #include <bitset>
 
 namespace qmcplusplus
 {
+class WalkerControlBase;
 class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
@@ -258,7 +258,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   ///copy constructor
   SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch);
 
-  ~SimpleFixedNodeBranch() {}
+  ~SimpleFixedNodeBranch();
 
   inline bool phaseChanged(RealType psi0) const
   {
@@ -467,9 +467,6 @@ struct SimpleFixedNodeBranch : public QMCTraits
   void setRN(bool rn);
 
 private:
-  ///default constructor (disabled)
-  SimpleFixedNodeBranch() {}
-
   ///set branch cutoff, max, filter
   void setBranchCutoff(FullPrecRealType variance,
                        FullPrecRealType targetSigma,

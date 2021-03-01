@@ -20,7 +20,7 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "Particle/DistanceTableData.h"
-#include <QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h>
+#include "QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h"
 
 namespace qmcplusplus
 {

@@ -1,4 +1,4 @@
-#include "QMCTools/QMCFiniteSize/SkParserScalarDat.h"
+#include "SkParserScalarDat.h"
 #include "QMCTools/QMCFiniteSize/SkParserBase.h"
 #include "Configuration.h"
 #include <fstream>

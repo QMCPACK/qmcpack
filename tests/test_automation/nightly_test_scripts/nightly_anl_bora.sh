@@ -81,7 +81,7 @@ if [[ $sys == *"ClangDev"* ]]; then
   export CC=mpicc
   export CXX=mpicxx
 
-  CTEST_FLAGS="$CTEST_FLAGS -DCMAKE_C_FLAGS=-march=skylake -DCMAKE_CXX_FLAGS=-march=skylake -DENABLE_MKL=1"
+  CTEST_FLAGS="$CTEST_FLAGS -DCMAKE_C_FLAGS=-march=skylake -DCMAKE_CXX_FLAGS=-march=skylake"
   if [[ $sys == *"Offload-CUDA"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DCUDA_HOST_COMPILER=`which gcc`;-DCUDA_PROPAGATE_HOST_FLAGS=OFF;-DQMC_NIO_MAX_SIZE=16'"
     CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=1 -DCUDA_ARCH=sm_61"

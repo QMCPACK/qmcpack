@@ -15,7 +15,7 @@
 #include "AFQMC/config.h"
 #include "boost/variant.hpp"
 
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations_shared.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations_serial.hpp"
 
@@ -23,11 +23,8 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-// device_allocator_generator_type is equal to host_allocator_generator_type
-// when devices are not enabled
-class SlaterDetOperations
-    : public boost::variant<SlaterDetOperations_shared<ComplexType>,
-                            SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>>
+class SlaterDetOperations : public boost::variant<SlaterDetOperations_shared<ComplexType>,
+                                                  SlaterDetOperations_serial<ComplexType, DeviceBufferManager>>
 {
 public:
   SlaterDetOperations() : variant()
@@ -39,9 +36,8 @@ public:
 
   explicit SlaterDetOperations(SlaterDetOperations_shared<ComplexType> const& other) = delete;
 
-  explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType, device_allocator_generator_type> const& other) =
-      delete;
-  explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType, device_allocator_generator_type>&& other)
+  explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType, DeviceBufferManager> const& other) = delete;
+  explicit SlaterDetOperations(SlaterDetOperations_serial<ComplexType, DeviceBufferManager>&& other)
       : variant(std::move(other))
   {}
 

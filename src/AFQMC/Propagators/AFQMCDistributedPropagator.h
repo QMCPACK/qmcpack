@@ -22,14 +22,14 @@
 #include <iostream>
 #include <tuple>
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/RandomGenerator.h"
 
 #include "AFQMC/config.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shm/mutex.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 
 #include "AFQMC/Wavefunctions/Wavefunction.hpp"
 
@@ -73,7 +73,7 @@ public:
   AFQMCDistributedPropagator(AFQMCDistributedPropagator&& other) : base(std::move(other)), core_comm()
   {
     // move constructor for communicator seems broken
-    core_comm = std::move(TG.TG().split(TG.getLocalTGRank(), TG.TG().rank()));
+    core_comm = TG.TG().split(TG.getLocalTGRank(), TG.TG().rank());
   }
   AFQMCDistributedPropagator& operator=(AFQMCDistributedPropagator&& other) = delete;
 
@@ -85,7 +85,7 @@ public:
     for (int i = 0; i < nblk; i++)
     {
       step(fix_bias, wset, E1, dt);
-      update_buffer_generators();
+      update_memory_managers();
     }
     if (nextra > 0)
       step(nextra, wset, E1, dt);

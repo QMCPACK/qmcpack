@@ -45,10 +45,10 @@ ENDIF(QMC_CUDA)
 USE_FAKE_RNG(${UTEST_EXE})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
 IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_omp)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget)
 ENDIF()
 
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
 
@@ -68,10 +68,10 @@ IF(NOT QMC_CUDA)
   USE_FAKE_RNG(${UTEST_EXE})
   TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
   IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_omp)
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget)
   ENDIF()
 
-  ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
 
@@ -85,10 +85,10 @@ IF(NOT QMC_CUDA)
     ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
     TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
     IF(USE_OBJECT_TARGET)
-    TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_omp)
+    TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget)
     ENDIF()
     # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-    ADD_MPI_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}" 3)
+    ADD_UNIT_TEST(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
     SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   ENDIF(HAVE_MPI)
 ENDIF(NOT QMC_CUDA)

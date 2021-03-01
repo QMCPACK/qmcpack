@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "LongRange/LPQHISRCoulombBasis.h"
+#include "LPQHISRCoulombBasis.h"
 #include <cassert>
 
 namespace qmcplusplus

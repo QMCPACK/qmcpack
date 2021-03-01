@@ -1,4 +1,4 @@
-#include "QMCTools/QMCFiniteSize/QMCFiniteSize.h"
+#include "QMCFiniteSize.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include <iostream>

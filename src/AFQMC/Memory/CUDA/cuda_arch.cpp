@@ -18,9 +18,8 @@
 #include <stdexcept>
 #include <cuda_runtime.h>
 #include "AFQMC/Memory/CUDA/cuda_init.h"
-#include "AFQMC/Memory/CUDA/cuda_arch.h"
+#include "cuda_arch.h"
 #include "AFQMC/Memory/device_pointers.hpp"
-#include "AFQMC/Memory/buffer_allocators.h"
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
 #include "cublas_v2.h"
@@ -28,15 +27,6 @@
 #include "cusparse.h"
 #include "cusolverDn.h"
 #include "curand.h"
-
-namespace qmcplusplus
-{
-namespace afqmc
-{
-extern std::shared_ptr<device_allocator_generator_type> device_buffer_generator;
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
-} // namespace afqmc
-} // namespace qmcplusplus
 
 namespace arch
 {
@@ -69,25 +59,7 @@ cudaMemcpyKind tocudaMemcpyKind(MEMCOPYKIND v)
   return cudaMemcpyDefault;
 }
 
-void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
-{
-  qmc_cuda::CUDA_INIT(node, iseed);
-  using qmcplusplus::afqmc::device_allocator_generator_type;
-  using qmcplusplus::afqmc::device_buffer_generator;
-  using qmcplusplus::afqmc::localTG_buffer_generator;
-  if (device_buffer_generator == nullptr)
-  {
-    device_buffer_generator =
-        std::make_shared<device_allocator_generator_type>(device::memory_resource{}, std::size_t(20 * 1024 * 1024),
-                                                          device::constructor<char>{});
-    // same memory space, so use same memory resource
-    localTG_buffer_generator = device_buffer_generator;
-  }
-  else
-  {
-    std::cerr << " Warning: device_buffer_generator already initialized in arch::INIT." << std::endl;
-  }
-}
+void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed) { qmc_cuda::CUDA_INIT(node, iseed); }
 
 void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, const std::string& message)
 {
@@ -129,10 +101,10 @@ void malloc(void** devPtr, size_t size, const std::string& message)
   cudaError_t status = cudaMalloc(devPtr, size);
   if (status != cudaSuccess)
   {
-    std::cerr << " Error allocating " << size * 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
+    std::cerr << " Error allocating " << size / 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
     if (message != "")
     {
-      std::cerr << " Error from: " << message  << std::endl;
+      std::cerr << " Error from: " << message << std::endl;
     }
     std::cerr << " Error when calling cudaMalloc: " << cudaGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: cudaMalloc returned error code.");
@@ -146,7 +118,7 @@ void free(void* p, const std::string& message)
   {
     if (message != "")
     {
-      std::cerr << " Error from: " << message  << std::endl;
+      std::cerr << " Error from: " << message << std::endl;
     }
     std::cerr << " Error from calling cudaFree: " << cudaGetErrorString(status) << std::endl;
   }

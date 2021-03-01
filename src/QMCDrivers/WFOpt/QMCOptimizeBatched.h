@@ -46,14 +46,11 @@ class QMCOptimizeBatched : public QMCDriverNew
 {
 public:
   ///Constructor.
-  QMCOptimizeBatched(MCWalkerConfiguration& w,
-                     TrialWaveFunction& psi,
-                     QMCHamiltonian& h,
-                     HamiltonianPool& hpool,
-                     WaveFunctionPool& ppool,
+  QMCOptimizeBatched(const ProjectData& project_data,
+                     MCWalkerConfiguration& w,
                      QMCDriverInput&& qmcdriver_input,
                      VMCDriverInput&& vmcdriver_input,
-                     MCPopulation& population,
+                     MCPopulation&& population,
                      SampleStack& samples,
                      Communicate* comm);
 
@@ -77,8 +74,6 @@ private:
   int NumParts;
   ///total number of VMC walkers
   int NumOfVMCWalkers;
-  ///need to know HamiltonianPool to use OMP
-  HamiltonianPool& hamPool;
   ///target cost function to optimize
   //QMCCostFunction* optTarget;
   std::unique_ptr<QMCCostFunctionBase> optTarget;
@@ -103,8 +98,6 @@ private:
 
   /// VMC-specific driver input
   VMCDriverInput vmcdriver_input_;
-
-  MCPopulation& population_;
 
   /// Samples to use in optimizer
   SampleStack& samples_;

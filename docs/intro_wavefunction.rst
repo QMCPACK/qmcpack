@@ -222,6 +222,8 @@ attribute:
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 | ``source``                  | Text       | Any                      | Ion0    | Particle set with atomic positions.       |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
+| ``skip_checks``             | Text       | Yes/no                   | No      | skips checks for ion information in h5    |
++-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 
 .. centered:: Table 3 Options for the ``determinantset`` xml-block associated with B-spline single particle orbital sets.
 
@@ -272,6 +274,10 @@ Additional information:
   access host memory via zero-copy. Although the performance penalty
   introduced by it is significant, it allows large calculations to go
   through.
+ 
+- ``skip_checks``. When converting the wave function from convertpw4qmc instead
+  of pw2qmcpack, there is missing ionic information. This flag bypasses the requirement
+  that the ionic information in the eshdf.h5 file match the input xml. 
 
 .. _gaussianbasis:
 

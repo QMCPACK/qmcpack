@@ -12,7 +12,7 @@
 
 #include "catch.hpp"
 
-#include <OhmmsSoA/VectorSoaContainer.h>
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBspline.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"

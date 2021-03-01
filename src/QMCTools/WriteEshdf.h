@@ -12,7 +12,7 @@
 
 #ifndef WRITE_ESHDF_H
 #define WRITE_ESHDF_H
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include <string>
 #include <fstream>
 #include <vector>

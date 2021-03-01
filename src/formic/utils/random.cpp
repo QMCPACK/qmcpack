@@ -5,8 +5,8 @@
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <formic/utils/random.h>
-#include <formic/utils/mpi_interface.h>
+#include "random.h"
+#include "formic/utils/mpi_interface.h"
 
 // initialize the global linear congruential random number generator
 formic::LinearCongruentialGenerator formic::global_lcg;

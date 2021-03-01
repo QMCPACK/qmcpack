@@ -10,7 +10,7 @@
 
 #include "Utilities/SimpleParser.h"
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "AFQMC/config.h"
 #include "AFQMC/Matrix/csr_matrix.hpp"
 #include "AFQMC/Matrix/csr_matrix_construct.hpp"

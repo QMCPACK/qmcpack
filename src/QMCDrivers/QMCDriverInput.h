@@ -14,7 +14,7 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "io/InputTypes.hpp"
+#include "QMCDrivers/InputTypes.hpp"
 
 namespace qmcplusplus
 {
@@ -27,39 +27,18 @@ public:
   using RealType              = QMCTraits::RealType;
   using FullPrecisionRealType = QMCTraits::FullPrecRealType;
 
-  QMCDriverInput(int qmc_section_count);
   void readXML(xmlNodePtr cur);
 
   // To allow compile check if move constructor is still implicit
-  QMCDriverInput()                      = delete;
+  QMCDriverInput()                      = default;
   QMCDriverInput(const QMCDriverInput&) = default;
   QMCDriverInput& operator=(const QMCDriverInput&) = default;
   QMCDriverInput(QMCDriverInput&&);
   QMCDriverInput& operator=(QMCDriverInput&&);
 
 protected:
-  /** @ingroup Type dependent behavior
-   * @{
-   * @brief use simple metaprogramming in anticipation of single executable
-   */
-  /** call recompute at the end of each block in the mixed precision case.
-   */
-  template<typename RT = RealType, typename FPRT = FullPrecisionRealType>
-  int defaultBlocksBetweenRecompute()
-  {
-    return 0;
-  }
 
-  template<typename RT = RealType, typename FPRT = FullPrecisionRealType, std::enable_if_t<std::is_same<RT, FPRT>{}>>
-  int defaultBlocksBetweenRecompute()
-  {
-    return 1;
-  }
-  /** @}
-   */
-
-  int qmc_section_count_;
-
+  bool scoped_profiling_ = false;
   /** @ingroup Input Parameters for QMCDriver base class
    *  @{
    *  All input determined variables should be here
@@ -67,6 +46,9 @@ protected:
    *  Do not write out blocks of gets for variables like this
    *  there will be code generation snippets soon in utils
    */
+
+  /// if true, batched operations are serialized over walkers
+  bool crowd_serialize_walkers_ = false;
 
   /// number of blocks to be rolled back
   int RollBackBlocks_ = 0;
@@ -91,7 +73,8 @@ protected:
   IndexType samples_per_thread_       = 0;
   RealType tau_                       = 0.1;
   IndexType max_cpu_secs_             = 360000;
-  IndexType blocks_between_recompute_ = defaultBlocksBetweenRecompute<>();
+  // call recompute at the end of each block in the full/mixed precision case.
+  IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 0 : 1;
   bool append_run_                    = false;
 
   // from QMCDriverFactory
@@ -116,7 +99,6 @@ protected:
    */
 
 public:
-  int get_qmc_section_count() const { return qmc_section_count_; }
   int get_RollBackBlocks() const { return RollBackBlocks_; }
   int get_store_config_period() const { return store_config_period_; }
   int get_recalculate_properties_period() const { return recalculate_properties_period_; }
@@ -145,6 +127,8 @@ public:
 
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }
+  bool get_scoped_profiling() const { return scoped_profiling_; }
+  bool are_walkers_serialized() const { return crowd_serialize_walkers_; }
 
   const std::string get_drift_modifier() const { return drift_modifier_; }
   RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }

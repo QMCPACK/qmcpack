@@ -14,9 +14,9 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
-#include <qmc_common.h>
-#include <CPU/SIMD/aligned_allocator.hpp>
-#include <CPU/SIMD/algorithm.hpp>
+#include "Utilities/qmc_common.h"
+#include "CPU/SIMD/aligned_allocator.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 #include <map>
 #include <numeric>
 
@@ -62,10 +62,12 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : myTableID(els.addTable(ions)), Ions(ions)
+  J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
+      : WaveFunctionComponent("J1OrbitalSoA", obj_name), myTableID(els.addTable(ions)), Ions(ions)
   {
+    if (myName.empty())
+      throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
     initialize(els);
-    ClassName = "J1OrbitalSoA";
   }
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs) = delete;
@@ -120,8 +122,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    evaluateGL(P, G, L, true);
-    return LogValue;
+    return evaluateGL(P, G, L, true);
   }
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
@@ -215,10 +216,10 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       ratios[i] = std::exp(Vat[i] - curAt);
   }
 
-  inline void evaluateGL(ParticleSet& P,
-                         ParticleSet::ParticleGradient_t& G,
-                         ParticleSet::ParticleLaplacian_t& L,
-                         bool fromscratch = false)
+  inline LogValueType evaluateGL(ParticleSet& P,
+                                 ParticleSet::ParticleGradient_t& G,
+                                 ParticleSet::ParticleLaplacian_t& L,
+                                 bool fromscratch = false)
   {
     if (fromscratch)
       recompute(P);
@@ -227,7 +228,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       G[iat] += Grad[iat];
     for (size_t iat = 0; iat < Nelec; ++iat)
       L[iat] -= Lap[iat];
-    LogValue = -simd::accumulate_n(Vat.data(), Nelec, valT());
+    return LogValue = -simd::accumulate_n(Vat.data(), Nelec, valT());
   }
 
   /** compute gradient and lap
@@ -366,7 +367,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
-    J1OrbitalSoA<FT>* j1copy = new J1OrbitalSoA<FT>(Ions, tqp);
+    J1OrbitalSoA<FT>* j1copy = new J1OrbitalSoA<FT>(myName, Ions, tqp);
     j1copy->Optimizable      = Optimizable;
     for (size_t i = 0, n = F.size(); i < n; ++i)
     {

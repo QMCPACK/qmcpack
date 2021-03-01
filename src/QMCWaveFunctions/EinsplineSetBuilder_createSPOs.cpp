@@ -28,8 +28,8 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTableData.h"
 #include <fftw3.h>
-#include <Utilities/ProgressReportEngine.h>
-#include <QMCWaveFunctions/einspline_helper.hpp>
+#include "Utilities/ProgressReportEngine.h"
+#include "QMCWaveFunctions/einspline_helper.hpp"
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
@@ -114,11 +114,13 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   int sortBands(1);
   int spinSet      = 0;
   int TwistNum_inp = 0;
+  bool skipChecks  = false;
 
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
   std::string hybrid_rep("no");
+  std::string skip_checks("no");
   std::string use_einspline_set_extended(
       "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
 #if defined(QMC_CUDA) || defined(ENABLE_OFFLOAD)
@@ -127,7 +129,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string useGPU = "no";
 #endif
   std::string GPUsharing = "no";
-  ScopedTimer spo_timer_scope(timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
+  ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;
@@ -146,6 +148,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(truncate, "truncate");
     a.add(use_einspline_set_extended, "use_old_spline");
     a.add(myName, "tag");
+    a.add(skip_checks, "skip_checks");
 #if defined(QMC_CUDA)
     a.add(gpu::MaxGPUSpineSizeMB, "Spline_Size_Limit_MB");
 #endif
@@ -160,6 +163,10 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (myName.empty())
       myName = "einspline";
   }
+
+  if (skip_checks == "yes")
+    skipChecks = true;
+
 
   SourcePtcl = ParticleSets[sourceName];
   if (SourcePtcl == 0)
@@ -232,9 +239,13 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   iter = SPOSetMap.find(aset);
   if ((iter != SPOSetMap.end()) && (!NewOcc))
   {
-    app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
-              << "cloning EinsplineSet object.\n";
-    return iter->second->makeClone();
+    app_log() << "SPOSet parameters match in EinsplineSetBuilder. cloning EinsplineSet object." << std::endl;
+    app_warning() << "!!!!!!! Deprecated input style: implict sharing one SPOSet for spin-up and spin-down electrions "
+                     "has been deprecated. Create a single SPO set outside determinantset instead."
+                  << "Use sposet_collection to construct an explict sposet for explicit sharing." << std::endl;
+    OrbitalSet = iter->second->makeClone();
+    OrbitalSet->setName("");
+    return OrbitalSet;
   }
 
   if (FullBands[spinSet] == 0)
@@ -250,7 +261,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   // set the internal parameters
   if (spinSet == 0)
-    set_metadata(numOrbs, TwistNum_inp);
+    set_metadata(numOrbs, TwistNum_inp, skipChecks);
   //if (use_complex_orb == "yes") UseRealOrbitals = false; // override given user input
 
   // look for <backflow>, would be a lot easier with xpath, but I cannot get it to work
@@ -285,7 +296,7 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //////////////////////////////////
   Timer mytimer;
   mytimer.restart();
-  OccupyBands(spinSet, sortBands, numOrbs);
+  OccupyBands(spinSet, sortBands, numOrbs, skipChecks);
   if (spinSet == 0)
     TileIons();
 

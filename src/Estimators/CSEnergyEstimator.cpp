@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Estimators/CSEnergyEstimator.h"
+#include "CSEnergyEstimator.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "ParticleBase/ParticleAttribOps.h"

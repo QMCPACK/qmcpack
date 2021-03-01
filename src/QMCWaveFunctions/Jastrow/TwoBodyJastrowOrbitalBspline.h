@@ -152,24 +152,24 @@ public:
 
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (pset, is_master),
-  TwoBodyJastrowOrbitalBspline(ParticleSet& pset, int tid)
-      : J2OrbitalSoA<FT>(pset, tid),
+  TwoBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& pset, int tid)
+      : J2OrbitalSoA<FT>(obj_name, pset, tid),
         PtclRef(pset),
-        L("TwoBodyJastrowOrbitalBspline::L"),
-        Linv("TwoBodyJastrowOrbitalBspline::Linv"),
-        UpdateListGPU("TwoBodyJastrowOrbitalBspline::UpdateListGPU"),
-        SumGPU("TwoBodyJastrowOrbitalBspline::SumGPU"),
-        GradLaplGPU("TwoBodyJastrowOrbitalBspline::GradLaplGPU"),
-        OneGradGPU("TwoBodyJastrowOrbitalBspline::OneGradGPU"),
-        SplineDerivsGPU("TwoBodyJastrowOrbitalBspline::SplineDerivsGPU"),
-        DerivListGPU("TwoBodyJastrowOrbitalBspline::DerivListGPU"),
-        NL_SplineCoefsListGPU("TwoBodyJastrowOrbitalBspline::NL_SplineCoefsListGPU"),
-        NL_JobListGPU("TwoBodyJastrowOrbitalBspline::NL_JobListGPU"),
-        NL_NumCoefsGPU("TwoBodyJastrowOrbitalBspline::NL_NumCoefsGPU"),
-        NL_NumQuadPointsGPU("TwoBodyJastrowOrbitalBspline::NL_NumQuadPointsGPU"),
-        NL_rMaxGPU("TwoBodyJastrowOrbitalBspline::NL_rMaxGPU"),
-        NL_QuadPointsGPU("TwoBodyJastrowOrbitalBspline::NL_QuadPointsGPU"),
-        NL_RatiosGPU("TwoBodyJastrowOrbitalBspline::NL_RatiosGPU")
+        L(obj_name + "L"),
+        Linv(obj_name + "Linv"),
+        UpdateListGPU(obj_name + "UpdateListGPU"),
+        SumGPU(obj_name + "SumGPU"),
+        GradLaplGPU(obj_name + "GradLaplGPU"),
+        OneGradGPU(obj_name + "OneGradGPU"),
+        SplineDerivsGPU(obj_name + "SplineDerivsGPU"),
+        DerivListGPU(obj_name + "DerivListGPU"),
+        NL_SplineCoefsListGPU(obj_name + "NL_SplineCoefsListGPU"),
+        NL_JobListGPU(obj_name + "NL_JobListGPU"),
+        NL_NumCoefsGPU(obj_name + "NL_NumCoefsGPU"),
+        NL_NumQuadPointsGPU(obj_name + "NL_NumQuadPointsGPU"),
+        NL_rMaxGPU(obj_name + "NL_rMaxGPU"),
+        NL_QuadPointsGPU(obj_name + "NL_QuadPointsGPU"),
+        NL_RatiosGPU(obj_name + "NL_RatiosGPU")
   {
     UsePBC = pset.Lattice.SuperCellEnum;
     app_log() << "UsePBC = " << UsePBC << std::endl;
@@ -209,7 +209,6 @@ public:
       L    = LHost;
       Linv = LinvHost;
     }
-    this->ClassName = "TwoBodyJastrowOrbitalBspline";
   }
 };
 } // namespace qmcplusplus

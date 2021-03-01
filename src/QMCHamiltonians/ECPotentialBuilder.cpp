@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCHamiltonians/ECPotentialBuilder.h"
+#include "ECPotentialBuilder.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
@@ -57,10 +57,10 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   {
     int ng = IonConfig.getSpeciesSet().getTotalNum();
     localZeff.resize(ng, 1);
-    localPot.resize(ng, 0);
-    nonLocalPot.resize(ng, 0);
-    soPot.resize(ng, 0);
-    L2Pot.resize(ng, 0);
+    localPot.resize(ng);
+    nonLocalPot.resize(ng);
+    soPot.resize(ng);
+    L2Pot.resize(ng);
   }
   std::string ecpFormat("table");
   std::string NLPP_algo(omp_get_nested() ? "batched" : "default");
@@ -108,7 +108,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 #endif
       for (int i = 0; i < localPot.size(); i++)
         if (localPot[i])
-          apot->add(i, localPot[i], localZeff[i]);
+          apot->add(i, std::move(localPot[i]), localZeff[i]);
       targetH.addOperator(apot, "LocalECP");
     }
     else
@@ -123,7 +123,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       for (int i = 0; i < localPot.size(); i++)
       {
         if (localPot[i])
-          apot->add(i, localPot[i]);
+          apot->add(i, std::move(localPot[i]));
       }
       targetH.addOperator(apot, "LocalECP");
     }
@@ -131,7 +131,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   if (hasNonLocalPot)
   {
 #ifdef QMC_CUDA
-    NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces);
+    NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces, use_DLA == "yes");
 #else
     NonLocalECPotential* apot = new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
 #endif
@@ -143,7 +143,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
         nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
         if (NLPP_algo == "batched")
           nonLocalPot[i]->initVirtualParticle(targetPtcl);
-        apot->addComponent(i, nonLocalPot[i]);
+        apot->addComponent(i, std::move(nonLocalPot[i]));
       }
     }
     app_log() << "\n  Using NonLocalECP potential \n"
@@ -174,7 +174,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       {
         nknot_max = std::max(nknot_max, soPot[i]->getNknot());
         sknot_max = std::max(sknot_max, soPot[i]->getSknot());
-        apot->addComponent(i, soPot[i]);
+        apot->addComponent(i, std::move(soPot[i]));
       }
     }
     app_log() << "\n  Using SOECP potential \n"
@@ -191,7 +191,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     L2Potential* apot = new L2Potential(IonConfig, targetPtcl, targetPsi);
     for (int i = 0; i < L2Pot.size(); i++)
       if (L2Pot[i])
-        apot->add(i, L2Pot[i]);
+        apot->add(i, std::move(L2Pot[i]));
     app_log() << "\n  Using L2 potential" << std::endl;
     targetH.addOperator(apot, "L2");
   }
@@ -211,12 +211,14 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       std::string href("none");
       std::string ionName("none");
       std::string format("xml");
+      int nrule = -1;
       //RealType rc(2.0);//use 2 Bohr
       OhmmsAttributeSet hAttrib;
       hAttrib.add(href, "href");
       hAttrib.add(ionName, "elementType");
       hAttrib.add(ionName, "symbol");
       hAttrib.add(format, "format");
+      hAttrib.add(nrule, "nrule");
       //hAttrib.add(rc,"cutoff");
       hAttrib.put(cur);
       SpeciesSet& ion_species(IonConfig.getSpeciesSet());
@@ -230,7 +232,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
 
-        ECPComponentBuilder ecp(ionName, myComm);
+        ECPComponentBuilder ecp(ionName, myComm, nrule);
         if (format == "xml")
         {
           if (href == "none")
@@ -253,24 +255,24 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
             ecp.printECPTable();
           if (ecp.pp_loc)
           {
-            localPot[speciesIndex]  = ecp.pp_loc;
+            localPot[speciesIndex]  = std::move(ecp.pp_loc);
             localZeff[speciesIndex] = ecp.Zeff;
             hasLocalPot             = true;
           }
           if (ecp.pp_nonloc)
           {
             hasNonLocalPot            = true;
-            nonLocalPot[speciesIndex] = ecp.pp_nonloc;
+            nonLocalPot[speciesIndex] = std::move(ecp.pp_nonloc);
           }
           if (ecp.pp_so)
           {
             hasSOPot            = true;
-            soPot[speciesIndex] = ecp.pp_so;
+            soPot[speciesIndex] = std::move(ecp.pp_so);
           }
           if (ecp.pp_L2)
           {
             hasL2Pot            = true;
-            L2Pot[speciesIndex] = ecp.pp_L2;
+            L2Pot[speciesIndex] = std::move(ecp.pp_L2);
           }
           if (chargeIndex == -1)
           {
@@ -343,7 +345,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
     int numnonloc = 0;
     RealType rmax(0.0);
     app_log() << "  ECPotential for " << species << std::endl;
-    NonLocalECPComponent* mynnloc = 0;
+    std::unique_ptr<NonLocalECPComponent> mynnloc;
     typedef OneDimCubicSpline<RealType> CubicSplineFuncType;
     for (int ij = 0; ij < npotentials; ij++)
     {
@@ -368,9 +370,9 @@ void ECPotentialBuilder::useSimpleTableFormat()
           pp_temp[j] = r * zinv * inFunc.splint(r);
         }
         pp_temp[ng - 1]          = 1.0;
-        RadialPotentialType* app = new RadialPotentialType(agrid, pp_temp);
+        auto app = std::make_unique<RadialPotentialType>(agrid, pp_temp);
         app->spline();
-        localPot[ig] = app;
+        localPot[ig] = std::move(app);
         app_log() << "    LocalECP l=" << angmom << std::endl;
         app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << std::endl;
         hasLocalPot = true; //will create LocalECPotential
@@ -378,8 +380,8 @@ void ECPotentialBuilder::useSimpleTableFormat()
       else
       {
         hasNonLocalPot = true; //will create NonLocalECPotential
-        if (mynnloc == 0)
-          mynnloc = new NonLocalECPComponent;
+        if (!mynnloc)
+          mynnloc = std::make_unique<NonLocalECPComponent>();
         RealType rf     = inFunc.rmax();
         GridType* agrid = new LinearGrid<RealType>;
         int ng          = static_cast<int>(rf * 100) + 1;
@@ -410,7 +412,6 @@ void ECPotentialBuilder::useSimpleTableFormat()
     fin.close();
     if (mynnloc)
     {
-      nonLocalPot[ig]   = mynnloc;
       int numsgridpts   = 0;
       std::string fname = species + ".sgr";
       std::ifstream fin(fname.c_str(), std::ios_base::in);
@@ -428,6 +429,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
       }
       //cout << "Spherical grid : " << numsgridpts << " points" << std::endl;
       mynnloc->resize_warrays(numsgridpts, numnonloc, lmax);
+      nonLocalPot[ig]   = std::move(mynnloc);
     }
   } //species
 }

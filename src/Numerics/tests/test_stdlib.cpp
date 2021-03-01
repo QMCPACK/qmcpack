@@ -4,7 +4,7 @@
 // Put tests for src/config/stdlib functions here
 
 // Ensure that the backup "round" function is always defined
-#include <config/stdlib/math.hpp>
+#include "config/stdlib/math.hpp"
 
 
 namespace qmcplusplus

@@ -140,25 +140,25 @@ public:
                            const opt_variables_type& optvars,
                            RealMatrix_t& dlogpsi,
                            RealMatrix_t& dlapl_over_psi);
-  OneBodyJastrowOrbitalBspline(ParticleSet& centers, ParticleSet& elecs)
-      : J1OrbitalSoA<FT>(centers, elecs),
+  OneBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& centers, ParticleSet& elecs)
+      : J1OrbitalSoA<FT>(obj_name, centers, elecs),
         ElecRef(elecs),
-        L("OneBodyJastrowOrbitalBspline::L"),
-        Linv("OneBodyJastrowOrbitalBspline::Linv"),
-        C("OneBodyJastrowOrbitalBspline::C"),
-        UpdateListGPU("OneBodyJastrowOrbitalBspline::UpdateListGPU"),
-        SumGPU("OneBodyJastrowOrbitalBspline::SumGPU"),
-        GradLaplGPU("OneBodyJastrowOrbitalBspline::GradLaplGPU"),
-        OneGradGPU("OneBodyJastrowOrbitalBspline::OneGradGPU"),
-        SplineDerivsGPU("OneBodyJastrowOrbitalBspline::SplineDerivsGPU"),
-        DerivListGPU("OneBodyJastrowOrbitalBspline::DerivListGPU"),
-        NL_SplineCoefsListGPU("OneBodyJastrowOrbitalBspline::NL_SplineCoefsListGPU"),
-        NL_JobListGPU("OneBodyJastrowOrbitalBspline::NL_JobListGPU"),
-        NL_NumCoefsGPU("OneBodyJastrowOrbitalBspline::NL_NumCoefsGPU"),
-        NL_NumQuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_NumQuadPointsGPU"),
-        NL_rMaxGPU("OneBodyJastrowOrbitalBspline::NL_rMaxGPU"),
-        NL_QuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_QuadPointsGPU"),
-        NL_RatiosGPU("OneBodyJastrowOrbitalBspline::NL_RatiosGPU")
+        L(obj_name + "L"),
+        Linv(obj_name + "Linv"),
+        C(obj_name + "C"),
+        UpdateListGPU(obj_name + "UpdateListGPU"),
+        SumGPU(obj_name + "SumGPU"),
+        GradLaplGPU(obj_name + "GradLaplGPU"),
+        OneGradGPU(obj_name + "OneGradGPU"),
+        SplineDerivsGPU(obj_name + "SplineDerivsGPU"),
+        DerivListGPU(obj_name + "DerivListGPU"),
+        NL_SplineCoefsListGPU(obj_name + "NL_SplineCoefsListGPU"),
+        NL_JobListGPU(obj_name + "NL_JobListGPU"),
+        NL_NumCoefsGPU(obj_name + "NL_NumCoefsGPU"),
+        NL_NumQuadPointsGPU(obj_name + "NL_NumQuadPointsGPU"),
+        NL_rMaxGPU(obj_name + "NL_rMaxGPU"),
+        NL_QuadPointsGPU(obj_name + "NL_QuadPointsGPU"),
+        NL_RatiosGPU(obj_name + "NL_RatiosGPU")
   {
     UsePBC           = elecs.Lattice.SuperCellEnum;
     NumElecGroups    = elecs.groups();
@@ -202,7 +202,6 @@ public:
     // 	for (int dim=0; dim<OHMMS_DIM; dim++)
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
     C               = C_host;
-    this->ClassName = "OneBodyJastrowOrbitalBspline";
   }
 };
 } // namespace qmcplusplus

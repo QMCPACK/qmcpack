@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_WALKER_INPUT_V0_4_H
 #define QMCPLUSPLUS_WALKER_INPUT_V0_4_H
 
-#include "HDFVersion.h"
+#include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include <stack>
 

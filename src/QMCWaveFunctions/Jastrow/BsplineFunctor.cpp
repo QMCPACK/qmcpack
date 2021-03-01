@@ -13,7 +13,7 @@
 
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
+#include "BsplineFunctor.h"
 
 namespace qmcplusplus
 {

@@ -22,12 +22,12 @@
 #include <iostream>
 #include <tuple>
 
-#include "io/hdf_archive.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
 #include "Utilities/RandomGenerator.h"
 
 #include "AFQMC/config.h"
-#include "AFQMC/Memory/buffer_allocators.h"
+#include "AFQMC/Memory/buffer_managers.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 #include "AFQMC/Propagators/generate1BodyPropagator.hpp"
@@ -38,8 +38,6 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-extern std::shared_ptr<localTG_allocator_generator_type> localTG_buffer_generator;
-
 /*
  * Base class for AFQMC propagators.
  */
@@ -53,15 +51,15 @@ protected:
   using aux_allocator = localTG_allocator<ComplexType>;
   using sp_pointer    = typename device_allocator<SPComplexType>::pointer;
 
-  using buffer_alloc_type   = localTG_buffer_type<ComplexType>;
-  using buffer_alloc_SPtype = localTG_buffer_type<SPComplexType>;
+  using stack_alloc_type   = LocalTGBufferManager::template allocator_t<ComplexType>;
+  using stack_alloc_SPtype = LocalTGBufferManager::template allocator_t<SPComplexType>;
 
-  using StaticVector    = boost::multi::static_array<ComplexType, 1, buffer_alloc_type>;
-  using StaticMatrix    = boost::multi::static_array<ComplexType, 2, buffer_alloc_type>;
-  using Static3Tensor   = boost::multi::static_array<ComplexType, 3, buffer_alloc_type>;
-  using StaticSPVector  = boost::multi::static_array<SPComplexType, 1, buffer_alloc_SPtype>;
-  using StaticSPMatrix  = boost::multi::static_array<SPComplexType, 2, buffer_alloc_SPtype>;
-  using StaticSP3Tensor = boost::multi::static_array<SPComplexType, 3, buffer_alloc_SPtype>;
+  using StaticVector    = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
+  using StaticMatrix    = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using Static3Tensor   = boost::multi::static_array<ComplexType, 3, stack_alloc_type>;
+  using StaticSPVector  = boost::multi::static_array<SPComplexType, 1, stack_alloc_SPtype>;
+  using StaticSPMatrix  = boost::multi::static_array<SPComplexType, 2, stack_alloc_SPtype>;
+  using StaticSP3Tensor = boost::multi::static_array<SPComplexType, 3, stack_alloc_SPtype>;
 
   using CVector          = boost::multi::array<ComplexType, 1, allocator>;
   using CMatrix          = boost::multi::array<ComplexType, 2, allocator>;
@@ -95,7 +93,7 @@ public:
                       RandomGenerator_t* r)
       : AFQMCInfo(info),
         TG(tg_),
-        buffer_allocator(localTG_buffer_generator.get()),
+        buffer_manager(),
         alloc_(),
         aux_alloc_(make_localTG_allocator<ComplexType>(TG)),
         wfn(wfn_),
@@ -137,7 +135,7 @@ public:
       step(fix_bias, wset, E1, dt);
       // MAM: I need to update buffer generators here, otherwise the
       //      first block would be quite slow
-      update_buffer_generators();
+      update_memory_managers();
     }
     if (nextra > 0)
       step(nextra, wset, E1, dt);
@@ -163,19 +161,19 @@ public:
     {
       if (walker_type != COLLINEAR)
         APP_ABORT(" Error: Spin dependent P1 being used with CLOSED walker.\n");
-      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[0], printP1eV));
-      P1[1] = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[1], printP1eV));
+      P1[0] = generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[0], printP1eV);
+      P1[1] = generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, H1ext[1], printP1eV);
     }
     else
     {
-      P1[0] = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, printP1eV));
+      P1[0] = generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1, printP1eV);
     }
   }
 
 protected:
   TaskGroup_& TG;
 
-  localTG_allocator_generator_type* buffer_allocator;
+  LocalTGBufferManager buffer_manager;
 
   allocator alloc_;
 

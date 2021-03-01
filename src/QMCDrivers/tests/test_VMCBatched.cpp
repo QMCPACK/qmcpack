@@ -48,19 +48,16 @@ public:
     Libxml2Document doc;
     doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
     xmlNodePtr node = doc.getRoot();
-    QMCDriverInput qmcdriver_input(3);
+    QMCDriverInput qmcdriver_input;
     qmcdriver_input.readXML(node);
 
     MinimalParticlePool mpp;
     ParticleSetPool particle_pool = mpp(comm);
     MinimalWaveFunctionPool wfp;
-    WaveFunctionPool wavefunction_pool = wfp(comm, &particle_pool);
+    WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
     wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
     MinimalHamiltonianPool mhp;
-    HamiltonianPool hamiltonian_pool = mhp(comm, &particle_pool, &wavefunction_pool);
-
-
-      
+    HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
   }
 
 private:

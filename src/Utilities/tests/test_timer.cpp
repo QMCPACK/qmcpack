@@ -54,7 +54,7 @@ TEST_CASE("test_timer_scoped", "[utilities]")
   FakeTimerManager tm;
   FakeTimer* t1 = tm.createTimer("timer1", timer_level_coarse);
   {
-    ScopedFakeTimer st(t1);
+    ScopedFakeTimer st(*t1);
   }
 #if ENABLE_TIMERS
   REQUIRE(t1->get_total() == Approx(1.0));
@@ -65,7 +65,7 @@ TEST_CASE("test_timer_scoped", "[utilities]")
   const std::string prefix_str("Prefix::");
   FakeTimer& t2(*(tm.createTimer(prefix_str + "timer2", timer_level_coarse)));
   {
-    ScopedFakeTimer st(&t2);
+    ScopedFakeTimer st(t2);
   }
 #if ENABLE_TIMERS
   REQUIRE(t1->get_total() == Approx(1.0));
@@ -333,14 +333,13 @@ TEST_CASE("test stack exceeded message")
     FakeTimer* t = tm.createTimer(name.str());
     timer_list.push_back(t);
   }
+
   for (int i = 0; i < StackKey::max_level + 1; i++)
-  {
     timer_list[i]->start();
-  }
-  for (int i = 0; i < StackKey::max_level + 1; i++)
-  {
+
+  for (int i = StackKey::max_level; i >= 0; i--)
     timer_list[i]->stop();
-  }
+
   REQUIRE(timer_max_level_exceeded == true);
 
   //tm.print_stack(NULL);
@@ -386,16 +385,16 @@ TEST_CASE("test setup timers", "[utilities]")
 {
   FakeTimerManager tm;
   // Create  a list of timers and initialize it
-  std::vector<FakeTimer*> Timers;
+  std::vector<std::reference_wrapper<FakeTimer>>  Timers;
   setup_timers(Timers, TestTimerNames, timer_level_coarse, &tm);
 
   FakeCPUClock::fake_cpu_clock_increment = 1.0;
-  Timers[MyTimer1]->start();
-  Timers[MyTimer1]->stop();
+  Timers[MyTimer1].get().start();
+  Timers[MyTimer1].get().stop();
 
 #ifdef ENABLE_TIMERS
-  REQUIRE(Timers[MyTimer1]->get_total() == Approx(1.0));
-  REQUIRE(Timers[MyTimer1]->get_num_calls() == 1);
+  REQUIRE(Timers[MyTimer1].get().get_total() == Approx(1.0));
+  REQUIRE(Timers[MyTimer1].get().get_num_calls() == 1);
 #endif
 }
 

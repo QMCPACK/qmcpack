@@ -7,6 +7,7 @@
 //#include "../../mpi3/shm/memory.hpp"
 //#include<boost/container/vector.hpp>
 #include "../shared_window.hpp"
+#include "../shm/allocator.hpp"
 
 namespace boost{
 namespace mpi3{
@@ -93,7 +94,7 @@ namespace mpi3 = boost::mpi3;
 using std::cout;
 
 
-int mpi3::main(int argc, char* argv[], mpi3::communicator world){
+int mpi3::main(int, char*[], mpi3::communicator world){
 
 	mpi3::shared_communicator node = world.split_shared();
 	mpi3::shm::vector<double> v(100, node);

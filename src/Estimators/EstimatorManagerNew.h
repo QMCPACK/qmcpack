@@ -12,15 +12,19 @@
 #ifndef QMCPLUSPLUS_ESTIMATORMANAGERNEW_H
 #define QMCPLUSPLUS_ESTIMATORMANAGERNEW_H
 
+#include <memory>
+
 #include "Configuration.h"
 #include "Utilities/Timer.h"
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/EstimatorManagerInterface.h"
+#include "OperatorEstBase.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
+#include "type_traits/template_types.hpp"
 #include <bitset>
 
 namespace qmcplusplus
@@ -38,11 +42,13 @@ class EstimatorManagerNewTest;
 class EstimatorManagerNew
 {
 public:
+  /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
   typedef QMCTraits::FullPrecRealType RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
+  using QMCT = QMCTraits;
   typedef ScalarEstimatorBase EstimatorType;
-  typedef std::vector<RealType> BufferType;
+  using FPRBuffer = std::vector<FullPrecRealType>;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///name of the primary estimator name
@@ -63,7 +69,7 @@ public:
 
   /** return the communicator
    */
-  Communicate* getCommunicator() { return myComm; }
+  Communicate* getCommunicator() { return my_comm_; }
 
   ///return the number of ScalarEstimators
   inline int size() const { return Estimators.size(); }
@@ -104,6 +110,16 @@ public:
    */
   int add(EstimatorType* newestimator) { return add(newestimator, MainEstimatorName); }
 
+  /** add a "non" physical operator estimator 
+   *
+   *  this is a dratically reduced version of OperatorBase right now it just supports
+   *  what the SpinDensityNew estimator needs
+   *
+   *  What is actually important is that it has its own locality aware data and
+   *  EstimatorManagerNew doesn't know about or manage that data.
+   */
+  int addEstOperator(OperatorEstBase& op_est);
+
   ///return a pointer to the estimator aname
   EstimatorType* getEstimator(const std::string& a);
 
@@ -114,7 +130,7 @@ public:
   inline RealType variance(int i) const { return Estimators[i]->variance(); }
 
   ///process xml tag associated with estimators
-  bool put(QMCHamiltonian& H, xmlNodePtr cur);
+  bool put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur);
 
   /** reset the estimator
    */
@@ -141,18 +157,33 @@ public:
 
   /** unified: stop a block
    * @param accept acceptance rate of this block
-   * \param[in] accept_ratio
+   * \param[in] accept
+   * \param[in] reject
    * \param[in] block_weight
    * \param[in] cpu_block_time Timer returns double so this is not altered by "mixed" precision
    */
-  void stopBlockNew(RealType accept_ratio, RealType block_weight, double cpu_block_time);
+  void stopBlock(unsigned long accept, unsigned long reject, RealType block_weight, double cpu_block_time);
 
   /** At end of block collect the scalar estimators for the entire rank
    *   
+   *  \todo remove assumption of one ScalarEstimator per crowd.
+   *  see how OperatorEstimators are handled
+   *
    *  Each is currently accumulates on for crowd of 1 or more walkers
    *  returns the total weight across all crowds. 
    */
   RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
+
+  /** Reduces OperatorEstimator data from Crowds to the manager's OperatorEstimator data
+   *
+   *  \param[in] op_ests - vector of each crowds vector of references to their OperatorEstimators.
+   *
+   *  A particular OperatorEstimators reduction via a call to collect may be straight forward
+   *  if the crowd context OperatorEstimator holds a copy of the estimator data structure
+   *  or more complex if it just collects for instance a list of writes to locations
+   *  in the data structure.
+   */
+  void collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& op_ests);
 
   /** get the average of per-block energy and variance of all the blocks
    * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
@@ -180,8 +211,8 @@ protected:
   int weightInd;
   ///index for the block cpu PropertyCache(cpuInd)
   int cpuInd;
-  ///index for the acceptance rate PropertyCache(acceptInd)
-  int acceptInd;
+  ///index for the accept counter PropertyCache(acceptInd)
+  int acceptRatioInd;
   ///hdf5 handler
   hid_t h_file;
   ///total weight accumulated in a block
@@ -191,7 +222,7 @@ protected:
   ///file handler to write data for debugging
   std::ofstream* DebugArchive;
   ///communicator to handle communication
-  Communicate* myComm;
+  Communicate* my_comm_;
   /** pointer to the primary ScalarEstimatorBase
    */
   ScalarEstimatorBase* MainEstimator;
@@ -229,6 +260,15 @@ protected:
   std::vector<EstimatorType*> Estimators;
   ///convenient descriptors for hdf5
   std::vector<observable_helper*> h5desc;
+  /** OperatorEst Observables
+   *
+   * since the operator estimators are also a close set at compile time
+   * they could be treated just like the inputs.
+   * However the idea of a shared interface is much more straight forward for
+   * them.
+   */
+  std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
+
   /////estimators of composite data
   //CompositeEstimatorSet* CompEstimators;
   ///Timer
@@ -237,11 +277,32 @@ protected:
 private:
   ///number of maximum data for a scalar.dat
   int max4ascii;
-  //Data for communication
-  std::vector<BufferType*> RemoteData;
 
   /// collect data and write
-  void makeBlockAverages();
+  void makeBlockAverages(unsigned long accept, unsigned long reject);
+
+  /** do the rank wise reduction of the OperatorEstimators
+   *
+   *  Why do this here?
+   *  1. Operator estimators don't know about the concurrency model
+   *  2. EstimatorManager owns the resources:
+   *       send & receive buffers
+   *  3. The operation is generic as long as OperatorEstimator satisfies
+   *     the requirement that get_data_ref() returns a reference to
+   *     std::vector<RealType>
+   *
+   *  Implementation makes the assumption that sending each OperatorEstimator
+   *  separately is the correct memory use vs. mpi message balance.
+   */
+  void reduceOperatorEstimators();
+  /** Write OperatorEstimator data to *.stat.h5
+   *
+   *  Note that OperatorEstimator owns its own observable_helpers
+   */
+  void writeOperatorEstimators();
+  /** OperatorEstimators need to be zeroed out after the block is finished.
+   */
+  void zeroOperatorEstimators();
 
   ///add header to an std::ostream
   void addHeader(std::ostream& o);

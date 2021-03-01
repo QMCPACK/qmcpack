@@ -18,7 +18,7 @@
  */
 
 #include <omp.h>
-#include <Concurrency/Info.hpp>
+#include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {

@@ -40,8 +40,6 @@ public:
   QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w,
                                       TrialWaveFunction& psi,
                                       QMCHamiltonian& h,
-                                      HamiltonianPool& hpool,
-                                      WaveFunctionPool& ppool,
                                       Communicate* comm);
 
   ///Destructor

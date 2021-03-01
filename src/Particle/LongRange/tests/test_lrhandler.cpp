@@ -43,8 +43,7 @@ TEST_CASE("dummy", "[lrhandler]")
   ParticleSet ref;          // handler needs ref.SK.KLists
   ref.Lattice    = Lattice; // !!!! crucial for access to Volume
   ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  StructFact* SK = new StructFact(ref, Lattice.LR_kc);
-  ref.SK         = SK;
+  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
   DummyLRHandler<CoulombF2> handler(Lattice.LR_kc);
 
   handler.initBreakup(ref);
@@ -62,8 +61,8 @@ TEST_CASE("dummy", "[lrhandler]")
   //  the full Coulomb potential should be retained in kspace
   for (int ish = 0; ish < handler.MaxKshell; ish++)
   {
-    int ik           = SK->KLists.kshell[ish];
-    double k2        = SK->KLists.ksq[ik];
+    int ik           = ref.SK->KLists.kshell[ish];
+    double k2        = ref.SK->KLists.ksq[ik];
     double fk_expect = fk(k2);
     REQUIRE(handler.Fk_symm[ish] == Approx(norm * fk_expect));
   }

@@ -18,7 +18,7 @@
 
 #include <cmath>
 #include <algorithm>
-#include <spline2/MultiBsplineData.hpp>
+#include "spline2/MultiBsplineData.hpp"
 
 namespace spline2
 {

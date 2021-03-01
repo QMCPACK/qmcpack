@@ -142,7 +142,7 @@ IF(OHMMS_DIM MATCHES 3)
         BsplineFactory/SplineC2C.cpp
       )
       IF(ENABLE_OFFLOAD)
-        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2COMP.cpp)
+        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
       ENDIF(ENABLE_OFFLOAD)
     ELSE(QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
@@ -152,7 +152,7 @@ IF(OHMMS_DIM MATCHES 3)
         BsplineFactory/SplineR2R.cpp
         )
       IF(ENABLE_OFFLOAD)
-        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2ROMP.cpp)
+        SET(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/SplineC2ROMPTarget.cpp)
       ENDIF(ENABLE_OFFLOAD)
     ENDIF(QMC_COMPLEX)
 
@@ -197,6 +197,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/MultiSlaterDeterminantWithBackflow.cpp
   SPOSetBuilderFactory.cpp
   TrialWaveFunction.cpp
+  TWFdispatcher.cpp
   WaveFunctionFactory.cpp
   )
 
@@ -225,5 +226,6 @@ IF(QMC_CUDA OR ENABLE_CUDA)
   TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda)
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
+TARGET_INCLUDE_DIRECTORIES(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcparticle platform_device)
 TARGET_LINK_LIBRARIES(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Math::scalar_vector_functions)

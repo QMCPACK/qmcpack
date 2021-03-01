@@ -20,8 +20,8 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_FACTORY_H
 #define QMCPLUSPLUS_HAMILTONIAN_FACTORY_H
 
-#include <QMCHamiltonians/QMCHamiltonian.h>
-#include <QMCWaveFunctions/WaveFunctionFactory.h>
+#include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 namespace qmcplusplus
 {
 /** Factory class to build a many-body wavefunction
@@ -30,38 +30,13 @@ class HamiltonianFactory : public MPIObjectBase
 {
 public:
   typedef std::map<std::string, ParticleSet*> PtclPoolType;
-  typedef std::map<std::string, WaveFunctionFactory*> OrbitalPoolType;
-
-  ///type of the lattice. 0=non-periodic, 1=periodic
-  int PBCType;
-  ///target ParticleSet
-  ParticleSet* targetPtcl;
-  ///many-body wavefunction object
-  QMCHamiltonian* targetH;
-  ///reference to the PtclPoolType
-  PtclPoolType& ptclPool;
-  ///reference to the WaveFunctionFactory Pool
-  OrbitalPoolType& psiPool;
-  ///input node for a many-body wavefunction
-  xmlNodePtr myNode;
-
-  ///name of the TrialWaveFunction
-  std::string psiName;
-
-  ///list of the old to new name
-  std::map<std::string, std::string> RenamedProperty;
+  typedef std::map<std::string, WaveFunctionFactory*> PsiPoolType;
 
   ///constructor
-  HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c);
-
-  ///destructor
-  ~HamiltonianFactory();
+  HamiltonianFactory(const std::string& hName, ParticleSet& qp, PtclPoolType& pset, PsiPoolType& oset, Communicate* c);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
-
-  ///reset member data
-  void reset();
 
   /** add a property whose name will be renamed by b
    * @param a target property whose name should be replaced by b
@@ -76,11 +51,8 @@ public:
    */
   void renameProperty(std::string& a);
 
-  void setCloneSize(int np);
-
-  HamiltonianFactory* clone(ParticleSet* qp, TrialWaveFunction* psi, int ip, const std::string& aname);
-
-  std::vector<HamiltonianFactory*> myClones;
+  ///get targetH
+  QMCHamiltonian* getH() const { return targetH.get(); }
 
 private:
   /** process xmlNode to populate targetPsi
@@ -91,6 +63,25 @@ private:
   void addForceHam(xmlNodePtr cur);
   void addPseudoPotential(xmlNodePtr cur);
   void addMPCPotential(xmlNodePtr cur, bool physical = false);
+
+  ///type of the lattice. 0=non-periodic, 1=periodic
+  int PBCType;
+  ///many-body wavefunction object
+  std::unique_ptr<QMCHamiltonian> targetH;
+  ///target ParticleSet
+  ParticleSet& targetPtcl;
+  ///reference to the PtclPoolType
+  PtclPoolType& ptclPool;
+  ///reference to the WaveFunctionFactory Pool
+  PsiPoolType& psiPool;
+  ///input node for a many-body wavefunction
+  xmlNodePtr myNode;
+
+  ///name of the TrialWaveFunction
+  std::string psiName;
+
+  ///list of the old to new name
+  std::map<std::string, std::string> RenamedProperty;
 };
 } // namespace qmcplusplus
 #endif

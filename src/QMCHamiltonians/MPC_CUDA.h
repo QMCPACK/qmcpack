@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_MPC_CUDA_H
 
 #include "QMCHamiltonians/MPC.h"
-#include <einspline/bspline_create_cuda.h>
+#include "einspline/bspline_create_cuda.h"
 
 namespace qmcplusplus
 {

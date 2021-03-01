@@ -3,7 +3,7 @@
 
 #include<complex>
 
-#include<formic/utils/mangle.h>
+#include"formic/utils/mangle.h"
 
 // Clang issues a warning if the C return type is std::complex<double>
 // Use the C return type instead

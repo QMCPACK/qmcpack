@@ -15,8 +15,8 @@
 #ifndef CUDA_COULOMB_H
 #define CUDA_COULOMB_H
 
-#include <einspline/bspline_base.h>
-#include <einspline/bspline_structs_cuda.h>
+#include "einspline/bspline_base.h"
+#include "einspline/bspline_structs_cuda.h"
 
 class TextureSpline
 {

@@ -12,8 +12,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCHamiltonians/GridExternalPotential.h>
-#include <OhmmsData/AttributeSet.h>
+#include "GridExternalPotential.h"
+#include "OhmmsData/AttributeSet.h"
 
 
 namespace qmcplusplus

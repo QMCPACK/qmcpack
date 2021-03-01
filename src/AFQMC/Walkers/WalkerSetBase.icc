@@ -39,12 +39,12 @@ void WalkerSetBase<Alloc, Ptr>::parse(xmlNodePtr cur)
   std::string pop_control_type  = "pair";
 
   ParameterSet m_param;
-  m_param.add(max_weight, "max_weight", "double");
-  m_param.add(min_weight, "min_weight", "double");
-  m_param.add(type, "walker_type", "std::string");
-  m_param.add(load_balance_type, "load_balance", "std::string");
-  m_param.add(pop_control_type, "pop_control", "std::string");
-  //    m_param.add(nback_prop,"back_propagation_steps","int");
+  m_param.add(max_weight, "max_weight");
+  m_param.add(min_weight, "min_weight");
+  m_param.add(type, "walker_type");
+  m_param.add(load_balance_type, "load_balance");
+  m_param.add(pop_control_type, "pop_control");
+  //    m_param.add(nback_prop,"back_propagation_steps");
   m_param.put(cur);
 
   std::for_each(type.begin(), type.end(), [](char& c) { c = ::tolower(c); });
@@ -54,6 +54,11 @@ void WalkerSetBase<Alloc, Ptr>::parse(xmlNodePtr cur)
     walkerType = CLOSED;
   }
   else if (type.find("non-collinear") != std::string::npos)
+  {
+    app_log() << " Using a non-collinear (GHF) walker. \n";
+    walkerType = NONCOLLINEAR;
+  }
+  else if (type.find("noncollinear") != std::string::npos)
   {
     app_log() << " Using a non-collinear (GHF) walker. \n";
     walkerType = NONCOLLINEAR;
@@ -277,7 +282,7 @@ void WalkerSetBase<Alloc, Ptr>::resize(int n)
 template<class Alloc, typename Ptr>
 void WalkerSetBase<Alloc, Ptr>::popControl(std::vector<ComplexType>& curData)
 {
-  Timers[Branching_t]->start();
+  Timers[Branching_t].get().start();
   ComplexType minus = ComplexType(-1.0, 0.0);
 
   curData.resize(7);
@@ -325,12 +330,12 @@ void WalkerSetBase<Alloc, Ptr>::popControl(std::vector<ComplexType>& curData)
     APP_ABORT(" Error: Distributed comb not implemented yet. \n\n\n");
     //afqmc::DistCombBranching(*this,rng_heads,nwalk_counts_old);
   }
-  Timers[Branching_t]->stop();
+  Timers[Branching_t].get().stop();
 
-  Timers[LoadBalance_t]->start();
+  Timers[LoadBalance_t].get().start();
   // load balance after population control events
   loadBalance(Wexcess);
-  Timers[LoadBalance_t]->stop();
+  Timers[LoadBalance_t].get().stop();
 
   if (tot_num_walkers != targetN_per_TG)
     APP_ABORT(" Error: tot_num_walkers != targetN_per_TG");
@@ -369,13 +374,13 @@ void WalkerSetBase<Alloc, Ptr>::benchmark(std::string& blist, int maxnW, int del
           if (TG.TG_heads().rank() == 0)
           {
             //            Timer.start("M1");
-            MPI_Isend(Cbuff.data(), 2 * Cbuff.size(), MPI_DOUBLE, 1, 999, &(TG.TG_heads()), &req);
+            MPI_Isend(Cbuff.data(), 2 * Cbuff.size(), MPI_DOUBLE, 1, 999, TG.TG_heads().get(), &req);
             MPI_Wait(&req, &st);
             //            Timer.stop("M1");
           }
           else
           {
-            MPI_Irecv(Cbuff.data(), 2 * Cbuff.size(), MPI_DOUBLE, 0, 999, &(TG.TG_heads()), &req);
+            MPI_Irecv(Cbuff.data(), 2 * Cbuff.size(), MPI_DOUBLE, 0, 999, TG.TG_heads().get(), &req);
             MPI_Wait(&req, &st);
           }
         }

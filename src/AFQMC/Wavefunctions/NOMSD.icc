@@ -63,10 +63,10 @@ void NOMSD<devPsiT>::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   if (transposed_G_for_E_)
     std::swap(nr, nc);
   StaticSHMVector shmbuff(iextensions<1u>{(Gsize + 1) * nwalk},
-                          shm_buffer_allocator->template get_allocator<ComplexType>());
+                          shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
   CMatrix_ref G(make_device_ptr(shmbuff.origin()), {nr, nc});
   CVector_ref ov_(G.origin() + G.num_elements(), iextensions<1u>{nwalk});
-  StaticMatrix eloc2({nwalk, 3}, buffer_allocator->template get_allocator<ComplexType>());
+  StaticMatrix eloc2({nwalk, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
   using std::fill_n;
   fill_n(Ov.origin(), nwalk, zero);
@@ -125,7 +125,8 @@ void NOMSD<devPsiT>::Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, T
   //  iii. energies[3] for all walkers on all nodes of TG (assume all nodes have same # of walkers)
   int nt = nwalk * (2 * Gsize + 1);
   // in case the number of walkers changes
-  StaticSHMVector shmbuff(iextensions<1u>{nt}, shm_buffer_allocator->template get_allocator<ComplexType>());
+  StaticSHMVector shmbuff(iextensions<1u>{nt},
+                          shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
   assert(E.dimensionality == 2);
   assert(Ov.dimensionality == 1);
   assert(E.size(0) == wset.size());
@@ -138,16 +139,16 @@ void NOMSD<devPsiT>::Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, T
   CMatrix_ref Gwork(make_device_ptr(shmbuff.origin()), {nr, nc});
   CMatrix_ref Grecv(Gwork.origin() + Gwork.num_elements(), {nr, nc});
   CVector_ref overlaps(Grecv.origin() + Grecv.num_elements(), iextensions<1u>{nwalk});
-  StaticMatrix eloc2({ngroups * nwalk, 3}, buffer_allocator->template get_allocator<ComplexType>());
+  StaticMatrix eloc2({ngroups * nwalk, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
   int nak0, nak1;
   std::tie(nak0, nak1) = FairDivideBoundary(TG.getLocalTGRank(), Gsize * nwalk, TG.getNCoresPerTG());
 
   // use mpi3 when ready
   MPI_Request req_Gsend, req_Grecv;
   MPI_Send_init(to_address(Gwork.origin()) + nak0, (nak1 - nak0) * sizeof(ComplexType), MPI_CHAR, TG.prev_core(), 1234,
-                &(TG.TG()), &req_Gsend);
+                TG.TG().get(), &req_Gsend);
   MPI_Recv_init(to_address(Grecv.origin()) + nak0, (nak1 - nak0) * sizeof(ComplexType), MPI_CHAR, TG.next_core(), 1234,
-                &(TG.TG()), &req_Grecv);
+                TG.TG().get(), &req_Grecv);
 
   fill_n(eloc2.origin(), 3 * ngroups * nwalk, ComplexType(0.0));
   TG.local_barrier();
@@ -228,7 +229,8 @@ void NOMSD<devPsiT>::Energy_distributed_multiDet(const WlkSet& wset, Mat&& E, TV
   //  ii.  1 copy of G (always compact),
   //  iii. ovlps for local walkers
   int nt = nwalk * (3 * Gsize + 1);
-  StaticSHMVector shmbuff(iextensions<1u>{nt}, shm_buffer_allocator->template get_allocator<ComplexType>());
+  StaticSHMVector shmbuff(iextensions<1u>{nt},
+                          shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
   assert(E.dimensionality == 2);
   assert(Ov.dimensionality == 1);
   assert(E.size(0) == wset.size());
@@ -243,8 +245,8 @@ void NOMSD<devPsiT>::Energy_distributed_multiDet(const WlkSet& wset, Mat&& E, TV
   CMatrix_ref Gwork(SMrecv.origin() + SMrecv.num_elements(), {nr, nc});
   CVector_ref overlaps(Gwork.origin() + Gwork.num_elements(), iextensions<1u>{nwalk});
   // used for temporary storage in ndet loop for local calculation
-  StaticMatrix eloc2({nnodes * nwalk, 3}, buffer_allocator->template get_allocator<ComplexType>());
-  StaticMatrix eloc3({nwalk, 3}, buffer_allocator->template get_allocator<ComplexType>());
+  StaticMatrix eloc2({nnodes * nwalk, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+  StaticMatrix eloc3({nwalk, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
   // matrix view to local segment of eloc2, for wasy access later
   // split SM evenly for communication
   int nak0, nak1;
@@ -253,9 +255,9 @@ void NOMSD<devPsiT>::Energy_distributed_multiDet(const WlkSet& wset, Mat&& E, TV
   MPI_Request req_SMsend, req_SMrecv;
   // use mpi3 when ready
   MPI_Send_init(to_address(SMwork.origin()) + nak0, (nak1 - nak0) * sizeof(ComplexType), MPI_CHAR, TG.prev_core(), 2345,
-                &(TG.TG()), &req_SMsend);
+                TG.TG().get(), &req_SMsend);
   MPI_Recv_init(to_address(SMrecv.origin()) + nak0, (nak1 - nak0) * sizeof(ComplexType), MPI_CHAR, TG.next_core(), 2345,
-                &(TG.TG()), &req_SMrecv);
+                TG.TG().get(), &req_SMrecv);
 
   fill_n(eloc2.origin(), 3 * nnodes * nwalk, ComplexType(0.0));
   fill_n(Ov.origin(), nwalk, ComplexType(0));
@@ -353,7 +355,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
   if (walker_type != COLLINEAR)
   {
     auto Gdims = dm_dims(false, Alpha);
-    StaticMatrix G2D_({Gdims.first, Gdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix G2D_({Gdims.first, Gdims.second},
+                      buffer_manager.get_generator().template get_allocator<ComplexType>());
     CVector_ref G1D_(G2D_.origin(), iextensions<1u>{Gsize});
     // notice interchange of dimensions
     CTensor_cref A(SM.origin(), {nw, Gdims.second, Gdims.first});
@@ -374,11 +377,12 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
   else
   {
     // store overlaps locally to be able to split alpha/beta pairs
-    StaticVector ovlp2(iextensions<1u>{2 * nw}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp2(iextensions<1u>{2 * nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     fill_n(ovlp2.origin(), 2 * nw, ComplexType(0.0));
     auto GAdims = dm_dims(false, Alpha);
     auto GBdims = dm_dims(false, Beta);
-    StaticMatrix GA2D_({GAdims.first, GAdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix GA2D_({GAdims.first, GAdims.second},
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
     // can reuse space!!!
     CMatrix_ref GB2D_(GA2D_.origin(), {GBdims.first, GBdims.second});
     CVector_ref GA1D_(GA2D_.origin(), iextensions<1u>{GA2D_.num_elements()});
@@ -461,7 +465,8 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
       assert(RefA.size(1) == dm_dims(false, Alpha).first && RefA.size(0) == dm_dims(false, Alpha).second);
 
     auto Gdims = dm_dims(not compact, Alpha);
-    StaticMatrix G2D_({Gdims.first, Gdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix G2D_({Gdims.first, Gdims.second},
+                      buffer_manager.get_generator().template get_allocator<ComplexType>());
     CVector_ref G1D_(G2D_.origin(), iextensions<1u>{G2D_.num_elements()});
 
     for (int iw = 0; iw < nw; ++iw)
@@ -488,11 +493,12 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
     else
       assert(RefB.size(1) == dm_dims(false, Beta).first && RefB.size(0) == dm_dims(false, Beta).second);
 
-    StaticVector ovlp2(iextensions<1u>{2 * nw}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector ovlp2(iextensions<1u>{2 * nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     fill_n(ovlp2.origin(), 2 * nw, ComplexType(0.0));
     auto GAdims = dm_dims(not compact, Alpha);
     auto GBdims = dm_dims(not compact, Beta);
-    StaticMatrix GA2D_({GAdims.first, GAdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix GA2D_({GAdims.first, GAdims.second},
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref GB2D_(GA2D_.origin(), {GBdims.first, GBdims.second});
     CVector_ref GA1D_(GA2D_.origin(), iextensions<1u>{GA2D_.num_elements()});
     CVector_ref GB1D_(GB2D_.origin(), iextensions<1u>{GB2D_.num_elements()});
@@ -564,7 +570,8 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
   TG.local_barrier();
   fill_n(Ov.origin(), nw, 0);
   fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
-  StaticVector ovlp2(iextensions<1u>{2 * nbatch__}, buffer_allocator->template get_allocator<ComplexType>());
+  StaticVector ovlp2(iextensions<1u>{2 * nbatch__},
+                     buffer_manager.get_generator().template get_allocator<ComplexType>());
   fill_n(ovlp2.origin(), ovlp2.num_elements(), ComplexType(0.0));
   if (G.size(1) != G.stride(0))
     APP_ABORT(" Error: FIX FIX FIX need strided fill_n\n");
@@ -588,7 +595,7 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
       assert(RefA.size(1) == dm_dims(false, Alpha).first && RefA.size(0) == dm_dims(false, Alpha).second);
 
     Static3Tensor G3D_({nbatch__, GAdims.first, GAdims.second},
-                       buffer_allocator->template get_allocator<ComplexType>());
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref G2D_(G3D_.origin(), iextensions<2u>{nbatch__, GAdims.first * GAdims.second});
 
     for (int iw = 0; iw < nw; iw += nbatch__)
@@ -633,7 +640,7 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
 
     auto GBdims = dm_dims(not compact, Beta);
     Static3Tensor GA3D_({nbatch__, GAdims.first, GAdims.second},
-                        buffer_allocator->template get_allocator<ComplexType>());
+                        buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref GA2D_(GA3D_.origin(), iextensions<2u>{nbatch__, GAdims.first * GAdims.second});
     CTensor_ref GB3D_(GA3D_.origin(), {nbatch__, GBdims.first, GBdims.second});
     CMatrix_ref GB2D_(GB3D_.origin(), iextensions<2u>{nbatch__, GBdims.first * GBdims.second});
@@ -743,7 +750,7 @@ void NOMSD<devPsiT>::DensityMatrix_batched(std::vector<MatA>& Left,
   Li.reserve(nbatch__);
   Ri.reserve(nbatch__);
   Gi.reserve(nbatch__);
-  StaticVector ovlp2(iextensions<1u>{nbatch__}, buffer_allocator->template get_allocator<ComplexType>());
+  StaticVector ovlp2(iextensions<1u>{nbatch__}, buffer_manager.get_generator().template get_allocator<ComplexType>());
   fill_n(ovlp2.origin(), ovlp2.num_elements(), ComplexType(0.0));
 
   for (int iw = 0; iw < nw; iw += nbatch__)
@@ -807,7 +814,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
   if (walker_type != COLLINEAR)
   {
     auto Gdims = dm_dims(not compact, Alpha);
-    StaticMatrix G2D_({Gdims.first, Gdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix G2D_({Gdims.first, Gdims.second},
+                      buffer_manager.get_generator().template get_allocator<ComplexType>());
     CVector_ref G1D_(G2D_.origin(), iextensions<1u>{G2D_.num_elements()});
 
     const int ntasks_percore      = (nw * ndet) / TG.getNCoresPerTG();
@@ -862,9 +870,9 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
           }
         }
         // first setup
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank())));
-        shmbuff_for_G    = std::move(std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                                shared_allocator<ComplexType>{local_group_comm}));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
+        shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
+                                                      shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -900,8 +908,10 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
   {
     auto GAdims = dm_dims(not compact, Alpha);
     auto GBdims = dm_dims(not compact, Beta);
-    StaticMatrix GA2D_({GAdims.first, GAdims.second}, buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix GB2D_({GBdims.first, GBdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix GA2D_({GAdims.first, GAdims.second},
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix GB2D_({GBdims.first, GBdims.second},
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
     CVector_ref GA1D_(GA2D_.origin(), iextensions<1u>{GA2D_.num_elements()});
     CVector_ref GB1D_(GB2D_.origin(), iextensions<1u>{GB2D_.num_elements()});
 
@@ -958,10 +968,10 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
           }
         }
         // first setup
-        //local_group_comm = std::move(std::make_unique<shared_communicator>(TG.TG_local().split(last_task_index)));
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank())));
-        shmbuff_for_G    = std::move(std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                                shared_allocator<ComplexType>{local_group_comm}));
+        //local_group_comm = std::make_unique<shared_communicator>(TG.TG_local().split(last_task_index));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
+        shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
+                                                      shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -1056,7 +1066,8 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
   double LogOverlapFactor(wset.getLogOverlapFactor());
   assert(Ov.size() >= nw);
   fill_n(Ov.origin(), nw, 0);
-  StaticVector ovlp2(iextensions<1u>{2 * nbatch__}, buffer_allocator->template get_allocator<ComplexType>());
+  StaticVector ovlp2(iextensions<1u>{2 * nbatch__},
+                     buffer_manager.get_generator().template get_allocator<ComplexType>());
   fill_n(ovlp2.origin(), ovlp2.num_elements(), ComplexType(0.0));
   // need strided fill_n????
   if (G.size(1) != G.stride(0))
@@ -1076,7 +1087,7 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
   {
     auto GAdims = dm_dims(not compact, Alpha);
     Static3Tensor G3D_({nbatch__, GAdims.first, GAdims.second},
-                       buffer_allocator->template get_allocator<ComplexType>());
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref G2D_(G3D_.origin(), iextensions<2u>{nbatch__, GAdims.first * GAdims.second});
     std::vector<pointer> Gx;
     std::vector<pointer> Gy;
@@ -1125,9 +1136,9 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
     auto GAdims = dm_dims(not compact, Alpha);
     auto GBdims = dm_dims(not compact, Beta);
     Static3Tensor GA3D_({nbatch__, GAdims.first, GAdims.second},
-                        buffer_allocator->template get_allocator<ComplexType>());
+                        buffer_manager.get_generator().template get_allocator<ComplexType>());
     Static3Tensor GB3D_({nbatch__, GBdims.first, GBdims.second},
-                        buffer_allocator->template get_allocator<ComplexType>());
+                        buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref GA2D_(GA3D_.origin(), iextensions<2u>{nbatch__, GAdims.first * GAdims.second});
     CMatrix_ref GB2D_(GB3D_.origin(), iextensions<2u>{nbatch__, GBdims.first * GBdims.second});
     std::vector<pointer> Gxa;
@@ -1237,7 +1248,8 @@ void NOMSD<devPsiT>::Overlap_batched(const WlkSet& wset, TVec&& Ov)
   double LogOverlapFactor(wset.getLogOverlapFactor());
   assert(Ov.size() >= nw);
   fill_n(Ov.origin(), nw, 0);
-  StaticVector ovlp2(iextensions<1u>{2 * ndet * nw}, buffer_allocator->template get_allocator<ComplexType>());
+  StaticVector ovlp2(iextensions<1u>{2 * ndet * nw},
+                     buffer_manager.get_generator().template get_allocator<ComplexType>());
   fill_n(ovlp2.origin(), ovlp2.num_elements(), ComplexType(0.0));
   stdCVector hvec(iextensions<1u>{(2 * ndet + 1) * nw});
   fill_n(hvec.origin(), hvec.num_elements(), ComplexType(0.0));
@@ -1357,9 +1369,9 @@ void NOMSD<devPsiT>::Overlap_shared(const WlkSet& wset, TVec&& Ov)
           }
         }
         // first setup
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank())));
-        shmbuff_for_G    = std::move(std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                                shared_allocator<ComplexType>{local_group_comm}));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
+        shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
+                                                      shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -1411,9 +1423,9 @@ void NOMSD<devPsiT>::Overlap_shared(const WlkSet& wset, TVec&& Ov)
           }
         }
         // first setup
-        local_group_comm = std::move(shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank())));
-        shmbuff_for_G    = std::move(std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
-                                                                shared_allocator<ComplexType>{local_group_comm}));
+        local_group_comm = shared_communicator(TG.TG_local().split(last_task_index, TG.TG_local().rank()));
+        shmbuff_for_G    = std::make_unique<mpi3CVector>(iextensions<1u>{dm_size(true)},
+                                                      shared_allocator<ComplexType>{local_group_comm});
       }
       if (last_task_index < 0 || last_task_index > nextra)
         APP_ABORT("Error: Problems in NOMSD<devPsiT>::Overlap(WSet,Ov)");
@@ -1485,10 +1497,11 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared(const WlkSet& wset,
   {
     auto Gdims = dm_dims(not compact, Alpha);
     // Temporaries for determinant component of walker rdm function.
-    StaticMatrix G2D_({Gdims.first, Gdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix G2D_({Gdims.first, Gdims.second},
+                      buffer_manager.get_generator().template get_allocator<ComplexType>());
     CVector_ref G1D_(G2D_.origin(), iextensions<1u>{Gsize});
     // Accumulator for trial wavefunction sum.
-    StaticVector G21D_(iextensions<1u>{Gsize}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticVector G21D_(iextensions<1u>{Gsize}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     // 1D view of walker averaged RDM
     CVector_ref G1D(make_device_ptr(G.origin()), iextensions<1u>{Gsize});
     for (int iw = 0; iw < nwalk; iw++)
@@ -1543,14 +1556,16 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared(const WlkSet& wset,
   {
     auto GAdims = dm_dims(not compact, Alpha);
     auto GBdims = dm_dims(not compact, Beta);
-    StaticMatrix GA2D_({GAdims.first, GAdims.second}, buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix GB2D_({GBdims.first, GBdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix GA2D_({GAdims.first, GAdims.second},
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix GB2D_({GBdims.first, GBdims.second},
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
     CVector_ref GA1D_(GA2D_.origin(), iextensions<1u>{GAdims.first * GAdims.second});
     CVector_ref GB1D_(GB2D_.origin(), iextensions<1u>{GBdims.first * GBdims.second});
     StaticVector GA21D_(iextensions<1u>{GAdims.first * GAdims.second},
-                        buffer_allocator->template get_allocator<ComplexType>());
+                        buffer_manager.get_generator().template get_allocator<ComplexType>());
     StaticVector GB21D_(iextensions<1u>{GBdims.first * GBdims.second},
-                        buffer_allocator->template get_allocator<ComplexType>());
+                        buffer_manager.get_generator().template get_allocator<ComplexType>());
     CVector_ref GA1D(make_device_ptr(G.origin()), iextensions<1u>{GAdims.first * GAdims.second});
     CVector_ref GB1D(make_device_ptr(G.origin()) + GAdims.first * GAdims.second,
                      iextensions<1u>{GBdims.first * GBdims.second});
@@ -1674,7 +1689,8 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet&
   {
     auto Gdims = dm_dims(not compact, Alpha);
     // Temporaries for determinant component of walker rdm function.
-    StaticMatrix G2D_({Gdims.first, Gdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix G2D_({Gdims.first, Gdims.second},
+                      buffer_manager.get_generator().template get_allocator<ComplexType>());
     CVector_ref G1D_(G2D_.origin(), iextensions<1u>{Gsize});
     // 1D view of walker averaged RDM
     CVector_ref G1D(make_device_ptr(G.origin()), iextensions<1u>{Gsize});
@@ -1726,8 +1742,10 @@ void NOMSD<devPsiT>::WalkerAveragedDensityMatrix_shared_single_det(const WlkSet&
   {
     auto GAdims = dm_dims(not compact, Alpha);
     auto GBdims = dm_dims(not compact, Beta);
-    StaticMatrix GA2D_({GAdims.first, GAdims.second}, buffer_allocator->template get_allocator<ComplexType>());
-    StaticMatrix GB2D_({GBdims.first, GBdims.second}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix GA2D_({GAdims.first, GAdims.second},
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix GB2D_({GBdims.first, GBdims.second},
+                       buffer_manager.get_generator().template get_allocator<ComplexType>());
     CVector_ref GA1D_(GA2D_.origin(), iextensions<1u>{GAdims.first * GAdims.second});
     CVector_ref GB1D_(GB2D_.origin(), iextensions<1u>{GBdims.first * GBdims.second});
     CVector_ref GA1D(make_device_ptr(G.origin()), iextensions<1u>{GAdims.first * GAdims.second});
@@ -2038,7 +2056,7 @@ void NOMSD<devPsiT>::Orthogonalize_batched(WlkSet& wset, bool impSamp)
   stdCVector detR(iextensions<1u>{2 * nw});
   std::vector<CMatrix_ptr> Ai;
   Ai.reserve(nbatch__);
-  StaticVector ov(iextensions<1u>{nbatch__}, buffer_allocator->template get_allocator<ComplexType>());
+  StaticVector ov(iextensions<1u>{nbatch__}, buffer_manager.get_generator().template get_allocator<ComplexType>());
   if (walker_type != COLLINEAR)
   {
     for (int iw = 0; iw < nw; iw += nbatch__)
@@ -2314,6 +2332,8 @@ void NOMSD<devPsiT>::vMF(Vec&& v)
 template<class devPsiT>
 inline void NOMSD<devPsiT>::recompute_ci()
 {
+  if (walker_type == NONCOLLINEAR)
+    APP_ABORT(" Error: NOMSD::recompute_ci not implemented with NONCOLLINEAR.\n");
   double LogOverlapFactor(0.0);
   int ndets = ci.size();
   int nspin(1);
@@ -2332,7 +2352,8 @@ inline void NOMSD<devPsiT>::recompute_ci()
   else
   {
     size_t nt = (1 + dm_size(false) + NMO * NAEA);
-    StaticSHMVector shmbuff(iextensions<1u>{nt}, shm_buffer_allocator->template get_allocator<ComplexType>());
+    StaticSHMVector shmbuff(iextensions<1u>{nt},
+                            shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> H({ndets, ndets}, TG.Node());
     boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> S({ndets, ndets}, TG.Node());
@@ -2358,7 +2379,7 @@ inline void NOMSD<devPsiT>::recompute_ci()
       std::swap(nr, nc);
     CVector_ref ov_(make_device_ptr(shmbuff.origin()), iextensions<1u>{1});
     CMatrix_ref G(ov_.origin() + 1, {nr, nc});
-    StaticMatrix eloc2({1, 3}, buffer_allocator->template get_allocator<ComplexType>());
+    StaticMatrix eloc2({1, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     for (int jdet = 0, ji = 0; jdet < ndets; jdet++)
     {

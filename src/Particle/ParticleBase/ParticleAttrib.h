@@ -18,8 +18,8 @@
 #ifndef OHMMS_NEW_PARTICLEATTRIB_PEPE_H
 #define OHMMS_NEW_PARTICLEATTRIB_PEPE_H
 
-#include <OhmmsPETE/TinyVector.h>
-#include <OhmmsPETE/OhmmsVector.h>
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/OhmmsVector.h"
 #include "Utilities/OhmmsObject.h"
 #include "PosUnit.h"
 

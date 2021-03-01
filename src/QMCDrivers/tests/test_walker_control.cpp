@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
-// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -44,17 +45,21 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
 {
   int Cur_pop                 = 8;
   int NumContexts             = 4;
-  std::vector<int> NumPerNode = {4, 4, 0, 0};
   std::vector<int> FairOffset(NumContexts + 1);
 
+  // The in loop copy is necessary to support the assert at the end of the swaps.
+  // This was important for debugging but will go in a future PR as part of cleaning
+  // update determineNewWalkerPopulation
+  std::vector<int> NumPerNode = {4, 4, 0, 0};
   std::vector<int> NewNum = NumPerNode;
   for (int me = 0; me < NumContexts; me++)
   {
     std::vector<int> minus;
     std::vector<int> plus;
+    std::vector<int> num_per_node = NumPerNode;
 
     //std::cout << "For processor number " << me << std::endl;
-    WalkerControlMPI::determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, FairOffset, minus, plus);
+    WalkerControlMPI::determineNewWalkerPopulation(Cur_pop, NumContexts, me, num_per_node, FairOffset, minus, plus);
 
     REQUIRE(minus.size() == plus.size());
     //output_vector("  Minus: ", minus);
@@ -122,9 +127,9 @@ TEST_CASE("Walker control assign walkers odd ranks", "[drivers][walker_control]"
   {
     std::vector<int> minus;
     std::vector<int> plus;
-
+    std::vector<int> num_per_node = NumPerNode;
     //std::cout << "For processor number " << me << std::endl;
-    WalkerControlMPI::determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, FairOffset, minus, plus);
+    WalkerControlMPI::determineNewWalkerPopulation(Cur_pop, NumContexts, me, num_per_node, FairOffset, minus, plus);
 
     REQUIRE(minus.size() == plus.size());
     //output_vector("  Minus: ", minus);

@@ -17,7 +17,7 @@
  *@brief definition of three-body jastrow of Geminal functions
  */
 #include "QMCWaveFunctions/AGPDeterminant.h"
-#include "QMCWaveFunctions/AGPDeterminantBuilder.h"
+#include "AGPDeterminantBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
@@ -36,13 +36,7 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT* abuilder, xmlNodePtr cur)
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
-    if (cname == basisset_tag)
-    {
-      basisSet = abuilder->addBasisSet(cur);
-      if (!basisSet)
-        return false;
-    }
-    else if (cname == "coefficient" || cname == "coefficients")
+    if (cname == "coefficient" || cname == "coefficients")
     {
       if (agpDet == 0)
       {
@@ -110,7 +104,6 @@ WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
   xmlNodePtr curRoot = cur;
   bool success       = true;
   std::string cname, tname;
-  xmlNodePtr bPtr = NULL;
   xmlNodePtr cPtr = NULL;
   xmlNodePtr uPtr = NULL;
   OhmmsAttributeSet oAttrib;
@@ -121,11 +114,7 @@ WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
   while (cur != NULL)
   {
     getNodeName(cname, cur);
-    if (cname == basisset_tag)
-    {
-      bPtr = cur;
-    }
-    else if (cname.find("coeff") < cname.size())
+if (cname.find("coeff") < cname.size())
     {
       cPtr = cur;
     }
@@ -135,11 +124,11 @@ WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
     }
     cur = cur->next;
   }
-  if (bPtr == NULL || cPtr == NULL)
+  if (cPtr == NULL)
   {
     std::ostringstream err_msg;
     err_msg << "  AGPDeterminantBuilder::put Cannot create AGPDeterminant." << std::endl
-            << "    Missing <basisset/> or <coefficients/>" << std::endl;
+            << "    Missing <coefficients/>" << std::endl;
     APP_ABORT(err_msg.str());
     return nullptr;
   }
@@ -147,7 +136,6 @@ WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
   {
     mySPOSetBuilderFactory = new SPOSetBuilderFactory(myComm, targetPtcl, ptclPool);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
-    mySPOSetBuilderFactory->loadBasisSetFromXML(bPtr);
   }
   // mmorales: this needs to be fixed after changes to BasisSetfactory
   //    BasisSetBase<RealType>* myBasisSet=mySPOSetBuilderFactory->getBasisSet();

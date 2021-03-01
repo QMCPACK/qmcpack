@@ -23,8 +23,8 @@
 #endif
 #include "Particle/DistanceTableData.h"
 #include "LongRange/StructFact.h"
-#include <CPU/SIMD/aligned_allocator.hpp>
-#include <CPU/SIMD/algorithm.hpp>
+#include "CPU/SIMD/aligned_allocator.hpp"
+#include "CPU/SIMD/algorithm.hpp"
 
 namespace qmcplusplus
 {
@@ -157,7 +157,7 @@ protected:
   J2KECorrection<RealType, FT> j2_ke_corr_helper;
 
 public:
-  J2OrbitalSoA(ParticleSet& p, int tid);
+  J2OrbitalSoA(const std::string& obj_name, ParticleSet& p, int tid);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
   ~J2OrbitalSoA();
 
@@ -260,10 +260,10 @@ public:
 
   /** compute G and L after the sweep
    */
-  void evaluateGL(ParticleSet& P,
-                  ParticleSet::ParticleGradient_t& G,
-                  ParticleSet::ParticleLaplacian_t& L,
-                  bool fromscratch = false);
+  LogValueType evaluateGL(ParticleSet& P,
+                          ParticleSet::ParticleGradient_t& G,
+                          ParticleSet::ParticleLaplacian_t& L,
+                          bool fromscratch = false);
 
   inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
@@ -347,11 +347,13 @@ public:
 };
 
 template<typename FT>
-J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
+J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p, int tid)
+    : WaveFunctionComponent("J2OrbitalSoA", obj_name), my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
 {
+  if (myName.empty())
+    throw std::runtime_error("J2OrbitalSoA object name cannot be empty!");
   init(p);
-  KEcorr    = 0.0;
-  ClassName = "J2OrbitalSoA";
+  KEcorr = 0.0;
 }
 
 template<typename FT>
@@ -427,7 +429,7 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
 template<typename FT>
 WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 {
-  J2OrbitalSoA<FT>* j2copy = new J2OrbitalSoA<FT>(tqp, -1);
+  J2OrbitalSoA<FT>* j2copy = new J2OrbitalSoA<FT>(myName, tqp, -1);
   if (dPsi)
     j2copy->dPsi = dPsi->makeClone(tqp);
   std::map<const FT*, FT*> fcmap;
@@ -446,6 +448,7 @@ WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
         fcmap[F[ij]] = fc;
       }
     }
+  j2copy->KEcorr      = KEcorr;
   j2copy->Optimizable = Optimizable;
   return j2copy;
 }
@@ -646,15 +649,14 @@ typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSe
                                                                       ParticleSet::ParticleGradient_t& G,
                                                                       ParticleSet::ParticleLaplacian_t& L)
 {
-  evaluateGL(P, G, L, true);
-  return LogValue;
+  return evaluateGL(P, G, L, true);
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
-                                  ParticleSet::ParticleGradient_t& G,
-                                  ParticleSet::ParticleLaplacian_t& L,
-                                  bool fromscratch)
+WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
+                                                                 ParticleSet::ParticleGradient_t& G,
+                                                                 ParticleSet::ParticleLaplacian_t& L,
+                                                                 bool fromscratch)
 {
   if (fromscratch)
     recompute(P);
@@ -666,7 +668,7 @@ void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
     L[iat] += d2Uat[iat];
   }
 
-  LogValue = -LogValue * 0.5;
+  return LogValue = -LogValue * 0.5;
 }
 
 template<typename FT>

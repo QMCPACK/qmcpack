@@ -23,7 +23,7 @@
 #include "OhmmsData/HDFStringAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "qmc_common.h"
+#include "Utilities/qmc_common.h"
 
 namespace qmcplusplus
 {

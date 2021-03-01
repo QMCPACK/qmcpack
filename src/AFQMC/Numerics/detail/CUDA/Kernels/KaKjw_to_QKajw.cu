@@ -29,6 +29,7 @@ namespace kernels
 template<typename T, typename T2>
 __global__ void kernel_KaKjw_to_QKajw(int nwalk,
                                       int nkpts,
+                                      int npol,
                                       int nmo_max,
                                       int nmo_tot,
                                       int nocc_max,
@@ -40,9 +41,10 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
                                       T const* A,
                                       T2* B)
 {
-  int Q = blockIdx.x;
-  int K = blockIdx.y;
-  if (Q >= nkpts || K >= nkpts)
+  int Q   = blockIdx.x;
+  int K   = blockIdx.y;
+  int pol = blockIdx.z;
+  if (Q >= nkpts || K >= nkpts || pol > npol)
     return;
   int QK  = QKtok2[Q * nkpts + K];
   int na0 = nocc0[K];
@@ -50,15 +52,16 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
   int na  = nocc[K];
   int nj  = nmo[QK];
 
-  T const* A_(A + (na0 * nmo_tot + nj0) * nwalk);
-  T2* B_(B + ((Q * nkpts + K) * nocc_max) * nmo_max * nwalk);
+  T const* A_(A + (na0 * npol * nmo_tot + nj0) * nwalk);
+  T2* B_(B + ((Q * nkpts + K) * nocc_max) * npol * nmo_max * nwalk);
 
   if (threadIdx.x >= nj)
     return;
   if (threadIdx.y >= nwalk)
     return;
 
-  for (int a = 0, a0 = 0, a1 = 0; a < na; a++, a0 += nmo_max * nwalk, a1 += nmo_tot * nwalk)
+  for (int a = 0, a0 = pol * nmo_max * nwalk, a1 = pol * nmo_tot * nwalk; a < na;
+       a++, a0 += npol * nmo_max * nwalk, a1 += npol * nmo_tot * nwalk)
     for (int j = threadIdx.x; j < nj; j += blockDim.x)
       for (int n = threadIdx.y; n < nwalk; n += blockDim.y)
         B_[a0 + j * nwalk + n] = static_cast<T2>(A_[a1 + j * nwalk + n]);
@@ -67,6 +70,7 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
 template<typename T, typename T2>
 __global__ void kernel_KaKjw_to_QKajw(int nwalk,
                                       int nkpts,
+                                      int npol,
                                       int nmo_max,
                                       int nmo_tot,
                                       int nocc_max,
@@ -78,9 +82,10 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
                                       thrust::complex<T> const* A,
                                       thrust::complex<T2>* B)
 {
-  int Q = blockIdx.x;
-  int K = blockIdx.y;
-  if (Q >= nkpts || K >= nkpts)
+  int Q   = blockIdx.x;
+  int K   = blockIdx.y;
+  int pol = blockIdx.z;
+  if (Q >= nkpts || K >= nkpts || pol > npol)
     return;
   int QK  = QKtok2[Q * nkpts + K];
   int na0 = nocc0[K];
@@ -88,15 +93,16 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
   int na  = nocc[K];
   int nj  = nmo[QK];
 
-  thrust::complex<T> const* A_(A + (na0 * nmo_tot + nj0) * nwalk);
-  thrust::complex<T2>* B_(B + ((Q * nkpts + K) * nocc_max) * nmo_max * nwalk);
+  thrust::complex<T> const* A_(A + (na0 * npol * nmo_tot + nj0) * nwalk);
+  thrust::complex<T2>* B_(B + ((Q * nkpts + K) * nocc_max) * npol * nmo_max * nwalk);
 
   if (threadIdx.x >= nj)
     return;
   if (threadIdx.y >= nwalk)
     return;
 
-  for (int a = 0, a0 = 0, a1 = 0; a < na; a++, a0 += nmo_max * nwalk, a1 += nmo_tot * nwalk)
+  for (int a = 0, a0 = pol * nmo_max * nwalk, a1 = pol * nmo_tot * nwalk; a < na;
+       a++, a0 += npol * nmo_max * nwalk, a1 += npol * nmo_tot * nwalk)
   {
     for (int j = threadIdx.x; j < nj; j += blockDim.x)
       for (int n = threadIdx.y; n < nwalk; n += blockDim.y)
@@ -106,6 +112,7 @@ __global__ void kernel_KaKjw_to_QKajw(int nwalk,
 
 void KaKjw_to_QKajw(int nwalk,
                     int nkpts,
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -120,8 +127,8 @@ void KaKjw_to_QKajw(int nwalk,
   int xblock_dim = 16;
   int yblock_dim = std::min(nwalk, 32);
   dim3 block_dim(xblock_dim, yblock_dim, 1);
-  dim3 grid_dim(nkpts, nkpts, 1);
-  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
+  dim3 grid_dim(nkpts, nkpts, npol);
+  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
                                                  QKtok2, A, B);
   qmc_cuda::cuda_check(cudaGetLastError(), "KaKjw_to_QKajw");
   qmc_cuda::cuda_check(cudaDeviceSynchronize(), "KaKjw_to_QKajw");
@@ -129,6 +136,7 @@ void KaKjw_to_QKajw(int nwalk,
 
 void KaKjw_to_QKajw(int nwalk,
                     int nkpts,
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -143,8 +151,8 @@ void KaKjw_to_QKajw(int nwalk,
   int xblock_dim = 16;
   int yblock_dim = std::min(nwalk, 32);
   dim3 block_dim(xblock_dim, yblock_dim, 1);
-  dim3 grid_dim(nkpts, nkpts, 1);
-  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
+  dim3 grid_dim(nkpts, nkpts, npol);
+  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
                                                  QKtok2, A, B);
   qmc_cuda::cuda_check(cudaGetLastError(), "KaKjw_to_QKajw");
   qmc_cuda::cuda_check(cudaDeviceSynchronize(), "KaKjw_to_QKajw");
@@ -152,6 +160,7 @@ void KaKjw_to_QKajw(int nwalk,
 
 void KaKjw_to_QKajw(int nwalk,
                     int nkpts,
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -166,8 +175,8 @@ void KaKjw_to_QKajw(int nwalk,
   int xblock_dim = 16;
   int yblock_dim = std::min(nwalk, 32);
   dim3 block_dim(xblock_dim, yblock_dim, 1);
-  dim3 grid_dim(nkpts, nkpts, 1);
-  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
+  dim3 grid_dim(nkpts, nkpts, npol);
+  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
                                                  QKtok2, A, B);
   qmc_cuda::cuda_check(cudaGetLastError(), "KaKjw_to_QKajw");
   qmc_cuda::cuda_check(cudaDeviceSynchronize(), "KaKjw_to_QKajw");
@@ -175,6 +184,7 @@ void KaKjw_to_QKajw(int nwalk,
 
 void KaKjw_to_QKajw(int nwalk,
                     int nkpts,
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -189,8 +199,8 @@ void KaKjw_to_QKajw(int nwalk,
   int xblock_dim = 16;
   int yblock_dim = std::min(nwalk, 32);
   dim3 block_dim(xblock_dim, yblock_dim, 1);
-  dim3 grid_dim(nkpts, nkpts, 1);
-  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
+  dim3 grid_dim(nkpts, nkpts, npol);
+  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
                                                  QKtok2, reinterpret_cast<thrust::complex<float> const*>(A),
                                                  reinterpret_cast<thrust::complex<float>*>(B));
   qmc_cuda::cuda_check(cudaGetLastError(), "KaKjw_to_QKajw");
@@ -199,6 +209,7 @@ void KaKjw_to_QKajw(int nwalk,
 
 void KaKjw_to_QKajw(int nwalk,
                     int nkpts,
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -213,8 +224,8 @@ void KaKjw_to_QKajw(int nwalk,
   int xblock_dim = 16;
   int yblock_dim = std::min(nwalk, 32);
   dim3 block_dim(xblock_dim, yblock_dim, 1);
-  dim3 grid_dim(nkpts, nkpts, 1);
-  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
+  dim3 grid_dim(nkpts, nkpts, npol);
+  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
                                                  QKtok2, reinterpret_cast<thrust::complex<double> const*>(A),
                                                  reinterpret_cast<thrust::complex<double>*>(B));
   qmc_cuda::cuda_check(cudaGetLastError(), "KaKjw_to_QKajw");
@@ -223,6 +234,7 @@ void KaKjw_to_QKajw(int nwalk,
 
 void KaKjw_to_QKajw(int nwalk,
                     int nkpts,
+                    int npol,
                     int nmo_max,
                     int nmo_tot,
                     int nocc_max,
@@ -237,8 +249,8 @@ void KaKjw_to_QKajw(int nwalk,
   int xblock_dim = 16;
   int yblock_dim = std::min(nwalk, 32);
   dim3 block_dim(xblock_dim, yblock_dim, 1);
-  dim3 grid_dim(nkpts, nkpts, 1);
-  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
+  dim3 grid_dim(nkpts, nkpts, npol);
+  kernel_KaKjw_to_QKajw<<<grid_dim, block_dim>>>(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, nmo, nmo0, nocc, nocc0,
                                                  QKtok2, reinterpret_cast<thrust::complex<double> const*>(A),
                                                  reinterpret_cast<thrust::complex<float>*>(B));
   qmc_cuda::cuda_check(cudaGetLastError(), "KaKjw_to_QKajw");

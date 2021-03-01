@@ -205,20 +205,20 @@ def test_convert4qmc_input_write():
     ci = generate_convert4qmc_input(
         gamess_ascii = 'singledet.out',
         )
-    assert(ci.write()=='convert4qmc -gamessAscii singledet.out')
+    assert(ci.write()=='convert4qmc -gamess singledet.out')
 
     ci = generate_convert4qmc_input(
         gamess_ascii = 'orbitals_multidet.out',
         ci           = 'cicoeff_multidet.out',
         )
-    assert(ci.write()=='convert4qmc -gamessAscii orbitals_multidet.out -ci cicoeff_multidet.out')
+    assert(ci.write()=='convert4qmc -gamess orbitals_multidet.out -ci cicoeff_multidet.out')
 
     ci = generate_convert4qmc_input(
         gamess_ascii       = 'multidet.out',
         ci                 = 'multidet.out',
         read_initial_guess = 42,
         )
-    assert(ci.write()=='convert4qmc -gamessAscii multidet.out -ci multidet.out -readInitialGuess 42')
+    assert(ci.write()=='convert4qmc -gamess multidet.out -ci multidet.out -readInitialGuess 42')
 #end def test_convert4qmc_input_write
 
 

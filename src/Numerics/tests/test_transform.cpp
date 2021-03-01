@@ -26,7 +26,7 @@ namespace qmcplusplus
 class Input
 {
 public:
-  typedef double value_type;
+  typedef double real_type;
 
   double f(double r) { return r * r; }
 
