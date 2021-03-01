@@ -40,6 +40,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
+  if (crowd.size() == 0) return;
   assert(QMCDriverNew::checkLogAndGL(crowd));
 
   auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
