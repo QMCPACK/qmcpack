@@ -17,7 +17,7 @@
 #include "OMPTarget/OMPallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrixBatch.h"
+#include "Fermion/DiracMatrixComputeCUDA.hpp"
 #include "Platforms/OMPTarget/ompBLAS.hpp"
 #include <cuda_runtime_api.h>
 #include "CUDA/cuBLAS.hpp"
@@ -46,8 +46,6 @@ class MatrixDelayedUpdateCUDA
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
-  /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  UPtr<DiracMatrixBatch<T_FP>> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
   /// scratch space for rank-1 update
@@ -102,8 +100,13 @@ class MatrixDelayedUpdateCUDA
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
+  /** @ingroup Resources
+   *  @{ */
   // CUDA stream, cublas handle object
   std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
+  /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
+  UPtr<DiracMatrixComputeCUDA<T_FP>> det_inverter_;
+  /**}@ */
 
   inline void waitStream()
   {
@@ -306,7 +309,6 @@ public:
     delay_list_gpu.resize(delay);
     invRow.resize(norb);
     psiMinv.resize(norb, getAlignedSize<T>(norb));
-    work_psiMinv.resize(norb, getAlignedSize<T>(norb));
   }
 
   void createResource(ResourceCollection& collection)
@@ -314,8 +316,8 @@ public:
     auto resource_index = collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
     app_log() << "    CUDALinearAlgebraHandles resource created in MatrixDelayedUpdateCUDA. Index " << resource_index
               << std::endl;
-    auto resource_index_det_eng = collection.addResource(std::make_unique<DiracMatrixBatch<T_FP>>());
-    app_log() << "    DiracMatrixBatched det_inverter_ created in MatrixDelayedUpdateCUDA. Index "
+    auto resource_index_det_eng = collection.addResource(std::make_unique<DiracMatrixComputeCUDA<T_FP>>());
+    app_log() << "    DiracMatrixComputeCUDAed det_inverter_ created in MatrixDelayedUpdateCUDA. Index "
               << resource_index_det_eng << std::endl;
   }
 
@@ -325,10 +327,10 @@ public:
     if (!res_ptr)
       throw std::runtime_error("MatrixDelayedUpdateCUDA::acquireResource dynamic_cast failed");
     cuda_handles_.reset(res_ptr);
-    auto det_eng_ptr = dynamic_cast<DiracMatrixBatch<T_FP>*>(collection.lendResource().release());
+    auto det_eng_ptr = dynamic_cast<DiracMatrixComputeCUDA<T_FP>*>(collection.lendResource().release());
     if (!det_eng_ptr)
       throw std::runtime_error(
-          "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixBatched<T_FP>* failed");
+          "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixComputeCUDAed<T_FP>* failed");
     det_inverter_.reset(det_eng_ptr);
   }
 
@@ -339,7 +341,6 @@ public:
   }
 
   inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
-  inline OffloadPinnedValueMatrix_t& get_work_psiMinv() { return work_psiMinv; }
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
@@ -364,7 +365,7 @@ public:
                        "but only unit tests (expected)."
                     << std::endl;
 
-      det_inverter_ = std::make_unique<DiracMatrixBatch<TREAL>>();
+      det_inverter_ = std::make_unique<DiracMatrixComputeCUDA<T_FP>>();
     }
   }
     
@@ -390,10 +391,9 @@ public:
     mw_invertTranspose(engines, log_dets, log_values);
   }
 
-  template<typename TREAL>
-  inline void mw_invertTranspose(const RefVectorWithLeader<MatrixDelayedUpdateTarget<T, T_FP>>& engines,
-                                 const RefVector<const OffloadPinnedValueMatrix_t<T>>& logdetT_list,
-                                 const RefVector<OffloadPinnedValueVector_t<std::complex<TREAL>>>& LogValues)
+  inline void mw_invertTranspose(const RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
+                                 const RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 const RefVector<OffloadPinnedValueVector_t>& LogValues)
   {
     checkResourcesForTest();
     guard_no_delay();
@@ -408,7 +408,7 @@ public:
       PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
     }
     PRAGMA_OFFLOAD("omp taskwait")
-    det_inverter_->mw_invert_transpose(cuda_handles_, logdetT_list, Ainv_host_views, LogValues);
+    det_inverter_->mw_invertTranspose(cuda_handles_, logdetT_list, Ainv_host_views, LogValues);
   }
 
   // prepare invRow and compute the old gradients.
@@ -751,6 +751,15 @@ public:
                      "cudaMemcpyAsync Ainv failed!");
     waitStream();
   }
+
+  DiracMatrixComputeCUDA<T_FP>& get_det_inverter()
+  {
+    if (det_inverter_)
+      return *det_inverter_;
+    throw std::logic_error("attempted to get null det_inverter_, this is developer logic error");
+  }
+  
+
 };
 } // namespace qmcplusplus
 

@@ -2,18 +2,16 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
-// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
-// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_DIRAC_MATRIX_BATCH_H
-#define QMCPLUSPLUS_DIRAC_MATRIX_BATCH_H
+#ifndef QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_CUDA_H
+#define QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_CUDA_H
 
-#include "CPU/Blasf.h"
-#include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
@@ -33,7 +31,7 @@ namespace qmcplusplus
  *  this prevents needing to deal with the resources.
  */
 template<typename T_FP>
-class DiracMatrixBatch : public Resource
+class DiracMatrixComputeCUDA : public Resource
 {
   // Why not just use QMCTraits::FullPrecRealType?
   using FullPrecReal = typename scalar_traits<T_FP>::real_type;
@@ -78,9 +76,9 @@ class DiracMatrixBatch : public Resource
                                   OffloadPinnedVector<TREAL>& psi_Ms,
                                   const int n,
                                   const int lda,
-                                  OffloadPinnedVector<std::complex<TREAL>>& logdets)
+                                  OffloadPinnedVector<std::complex<TREAL>>& log_dets)
   {
-    int nw = logdets.size();
+    int nw = log_dets.size();
     psiM_ptrs_.resize(sizeof(TREAL*) * nw);
     Vector<const T_FP*> ptr_buffer(reinterpret_cast<const TREAL**>(psiM_ptrs_.data()), nw);
     for (int iw = 0; iw < nw; ++iw)
@@ -92,38 +90,38 @@ class DiracMatrixBatch : public Resource
                                    cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync psiM_ptrs_ failed!");
     computeInverseAndDetLog_batched(hstream, n, lda, psiM_ptrs_.device_data(), LU_diags_fp_.device_data(),
-                                    pivots_.device_data(), infos_.device_data(), logdets.device_data(), nw);
+                                    pivots_.device_data(), infos_.device_data(), log_dets.device_data(), nw);
   }
 
 public:
   template<typename TMAT, typename TREAL>
-  inline void mw_invert_transpose(CUDALinearAlgebraHandles& cuda_handles,
-                                  const RefVector<Matrix<TMAT>>& amats,
-                                  RefVector<Matrix<TMAT>>& invMats,
-                                  std::vector<std::complex<TREAL>>& LogDets)
+  inline void mw_invertTranspose(CUDALinearAlgebraHandles& cuda_handles,
+                                 const RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
+                                  RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
+                                  OffloadPinnedVector<std::complex<TREAL>>& log_dets)
   {
-    const int n   = invMats[0].get().rows();
-    const int lda = invMats[0].get().cols();
+    const int n   = inv_a_mats[0].get().rows();
+    const int lda = inv_a_mats[0].get().cols();
     size_t nsqr{n * n};
-    psiM_fp_.resize(n * lda * amats.size());
-    for (int iw = 0; iw < amats.size(); ++iw)
-      simd::transpose(amats[iw].get().data(), n, amats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
+    psiM_fp_.resize(n * lda * a_mats.size());
+    for (int iw = 0; iw < a_mats.size(); ++iw)
+      simd::transpose(a_mats[iw].get().data(), n, a_mats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
     cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size(), cudaMemcpyHostToDevice,
                                    cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
-    computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, n, lda, LogDets);
+    computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, n, lda, log_dets);
     cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.data(), psiM_fp_.device_data(), psiM_fp_.size(), cudaMemcpyDeviceToHost,
                                    cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying back DiracMatrixBatch::psiM_fp from device");
-    for (int iw = 0; iw < amats.size(); ++iw)
+    for (int iw = 0; iw < a_mats.size(); ++iw)
     {
       Matrix<TMAT> data_ref_matrix;
       data_ref_matrix.attachReference(psiM_fp_.data() + nsqr * iw, n, n);
       // Use ohmms matrix to do element wise assignment with possible narrowing conversion.
-      invMats[iw].get() = data_ref_matrix;
+      inv_a_mats[iw].get() = data_ref_matrix;
     }
   }
 };
 } // namespace qmcplusplus
 
-#endif // QMCPLUSPLUS_DIRAC_MATRIX_H
+#endif //QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_CUDA_H

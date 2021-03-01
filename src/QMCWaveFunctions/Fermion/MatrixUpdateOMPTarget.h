@@ -17,11 +17,11 @@
 #include "OMPTarget/OMPallocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrixBatch.h"
+#include "Fermion/DiracMatrixComputeOMPTarget.hpp"
 #include "OMPTarget/ompBLAS.hpp"
 #include "OMPTarget/ompReduction.hpp"
 #include "ResourceCollection.h"
-
+#include "Configuration.h"
 
 namespace qmcplusplus
 {
@@ -34,7 +34,7 @@ template<typename T, typename T_FP>
 class MatrixUpdateOMPTarget
 {
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
-
+  using Real = QMCTraits::RealType;
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
@@ -43,8 +43,8 @@ class MatrixUpdateOMPTarget
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
-  /// matrix inversion engine this crowd scope resouce and only the leader engine gets it 
-  UPtr<DiracMatrixBatch<T_FP>> det_inverter_;
+  /// matrix inversion engine this crowd scope resouce and only the leader engine gets it
+  UPtr<DiracMatrixComputeOMPTarget<T_FP>> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
   /// scratch space for rank-1 update
@@ -114,18 +114,19 @@ public:
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
 
-  template<typename TREAL>
   inline void mw_invertTranspose(const RefVectorWithLeader<MatrixUpdateOMPTarget<T, T_FP>>& engines,
-				 const RefVector<const OffloadPinnedValueMatrix_t<T>>& logdetT_list,
-                                 const RefVector<OffloadPinnedValueVector_t<std::complex<TREAL>>>& LogValues)
+                                 const RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 const RefVector<OffloadPinnedValueVector_t>& LogValues)
   {
     if (!det_inverter_)
-      det_inverter_ = std::make_unique<DiracMatrixBatch<TREAL>>();
+      det_inverter_ = std::make_unique<DiracMatrixComputeOMPTarget<T_FP>>();
 
+    std::vector<Matrix<T>> Ainv_host_views;
+    Ainv_host_views.reserve(engines.size());
     for (int iw = 0; iw < engines.size(); iw++)
     {
       auto& Ainv = engines[iw].get().psiMinv;
-      Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
+      Ainv_host_views.emplace_back(Ainv.data(), Ainv.rows(), Ainv.cols());
       T* Ainv_ptr = Ainv.data();
       PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
     }
@@ -352,6 +353,13 @@ public:
       auto* ptr = engine.psiMinv.data();
       PRAGMA_OFFLOAD("omp target update from(ptr[:psiMinv.size()])")
     }
+  }
+
+  DiracMatrixComputeOMPTarget<T_FP>& get_det_inverter()
+  {
+    if (det_inverter_)
+      return *det_inverter_;
+    throw std::logic_error("attempted to get null det_inverter_, this is developer logic error");
   }
 };
 } // namespace qmcplusplus

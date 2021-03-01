@@ -16,6 +16,7 @@
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 #define QMCPLUSPLUS_DIRACDETERMINANTBATCHED_H
 
+#include "Configuration.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/MatrixUpdateOMPTarget.h"
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
@@ -30,6 +31,7 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 {
   using ValueType = QMCTraits::ValueType;
   using GradType  = QMCTraits::GradType;
+  using Real = QMCTraits::RealType;
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadVGLVector_t     = VectorSoaContainer<ValueType, QMCTraits::DIM + 2, OffloadPinnedAllocator<ValueType>>;
@@ -62,7 +64,7 @@ public:
   using HessMatrix_t  = SPOSet::HessMatrix_t;
   using HessVector_t  = SPOSet::HessVector_t;
   using HessType      = SPOSet::HessType;
-
+  using Real = QMCTraits::RealType;  
   using mValueType = QMCTraits::QTFull::ValueType;
   using mGradType  = TinyVector<mValueType, DIM>;
 
@@ -212,6 +214,8 @@ public:
   /// return  for testing
   auto& getPsiMinv() const { return psiMinv; }
 
+  auto& get_det_engine() { return det_engine_; }
+  
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_inverter_
   ValueMatrix_t psiMinv;
 
@@ -239,13 +243,14 @@ public:
   ValueVector_t d2psiV;
 
   /// delayed update engine
-  DET_ENGINE_TYPE det_inverter_;
+  DET_ENGINE_TYPE det_engine_;
 
   // psi(r')/psi(r) during a PbyP move
   PsiValueType curRatio;
 
   std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource> mw_res_;
 
+  
 private:
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
