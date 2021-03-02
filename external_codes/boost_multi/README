@@ -1,4 +1,4 @@
-Alfredo A. Correa's boost-multi-array.
+Alfredo A. Correa's boost-multi-array library.
 
 - Created with (run from top level qmcpack directory):
 git subtree add --squash -P external_codes/boost_multi/multi https://gitlab.com/correaa/boost-multi.git master
