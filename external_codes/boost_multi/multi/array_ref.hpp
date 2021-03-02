@@ -90,7 +90,9 @@ struct array_types : Layout{
 	//	typename std::pointer_traits<element_const_ptr>::reference   // this seems more correct but it doesn't work with cuda fancy reference
 	>::type;
 
-	HD constexpr element_ptr   base() const{return base_;}
+	HD constexpr element_ptr        base() const{return base_;}
+       constexpr element_const_ptr cbase() const{return base_;}
+
 	constexpr element_ptr& mbase() const{return base_;}
 	friend constexpr element_ptr base(array_types const& s){return s.base();}
 	constexpr layout_t const& layout() const{return *this;}

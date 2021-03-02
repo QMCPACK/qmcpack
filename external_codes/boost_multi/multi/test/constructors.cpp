@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(multi_constructors_1d){
 		BOOST_REQUIRE( size(A)==10 );
 	}
 	{
-		multi::array<double, 1> A(10, {}); 
+		multi::array<double, 1> A(10, double{}); 
 		BOOST_REQUIRE( size(A)==10 );
 		BOOST_REQUIRE( A[5]== double{} );
 	}
