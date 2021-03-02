@@ -74,6 +74,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
       RealType tauovermass = Tau * MassInvS[ig];
       RealType oneover2tau = 0.5 / (tauovermass);
       RealType sqrttau     = std::sqrt(tauovermass);
+      Psi.prepareGroup(W, ig);
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
         //get the displacement
@@ -147,6 +148,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
       ScopedTimer local_timer(myTimers[SODMC_buffer]);
       thisWalker.Age = 0;
       logpsi         = Psi.updateBuffer(W, w_buffer, recompute);
+      assert(checkLogAndGL(W, Psi));
       W.saveWalker(thisWalker);
     }
     {
