@@ -435,15 +435,15 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) = 0;
 
-  /** initialize a shared resource and hand it to collection
+  /** initialize a shared resource and hand it to a collection
    */
-  virtual void createResource(ResourceCollection& collection) {}
+  virtual void createResource(ResourceCollection& collection) const {}
 
-  /** acquire a shared resource from collection
+  /** acquire a shared resource from a collection
    */
   virtual void acquireResource(ResourceCollection& collection) {}
 
-  /** return a shared resource to collection
+  /** return a shared resource to a collection
    */
   virtual void releaseResource(ResourceCollection& collection) {}
 

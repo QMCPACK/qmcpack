@@ -909,6 +909,28 @@ int ParticleSet::addPropertyHistory(int leng)
 //       }
 //     }
 
+
+void ParticleSet::createResource(ResourceCollection& collection) const
+{
+  coordinates_->createResource(collection);
+  for (int i = 0; i < DistTables.size(); i++)
+    DistTables[i]->createResource(collection);
+}
+
+void ParticleSet::acquireResource(ResourceCollection& collection)
+{
+  coordinates_->acquireResource(collection);
+  for (int i = 0; i < DistTables.size(); i++)
+    DistTables[i]->acquireResource(collection);
+}
+
+void ParticleSet::releaseResource(ResourceCollection& collection)
+{
+  coordinates_->releaseResource(collection);
+  for (int i = 0; i < DistTables.size(); i++)
+    DistTables[i]->releaseResource(collection);
+}
+
 RefVectorWithLeader<DistanceTableData> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                      int id)
 {
