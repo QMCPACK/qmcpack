@@ -20,7 +20,7 @@ template<class Ptr> // TODO test with actual fancy ptr
 Ptr align_up(Ptr p, std::size_t align = alignof(std::max_align_t)){
 	using multi::to_address;
 	auto p_(to_address(p));
-	assert( sizeof(decltype(*p_))==1 );
+	static_assert( sizeof(*p_)==1 , "!"); // crash
 	auto q_ = reinterpret_cast<decltype(p_)>(
 		(reinterpret_cast<std::uintptr_t>(p_) + (align-1))
 		& ~(align-1)

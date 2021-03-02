@@ -15,6 +15,18 @@ g++-latest:
     - cmake --build . --verbose
     - ctest --output-on-failure
 
+g++-cppcheck:
+  stage: test
+  script:
+    - export CXX="g++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev cppcheck
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - cmake -DCMAKE_CXX_CPPCHECK:FILEPATH=cppcheck ..
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
 g++-latest-std20:
   stage: test
   script:
@@ -66,6 +78,7 @@ g++-7-std17:
 
 g++-8:
   stage: test
+  image: debian:stable-backports
   script:
     - export CXX="g++-8"
     - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
@@ -73,7 +86,7 @@ g++-8:
     - $CXX --version
     - mkdir build && cd build
     - cmake ..
-    - cmake --build . --verbose
+    - cmake --build .
     - ctest --output-on-failure
 
 g++-9:
@@ -194,6 +207,20 @@ clang++-11:
     - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 cmake make libboost-test-dev libblas-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . --verbose -- --quiet --no-print-directory
+    - ctest --output-on-failure
+
+clang++-11-gcc9:
+  stage: test
+  image: vistart/cuda:10.2-ubuntu20.04
+  script:
+    - export CXX="clang++-11"
+    - apt-get update 
+    - DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y --quiet gcc-9 clang-11 cmake make libboost-test-dev libblas-dev
+    - ln --symbolic --force . ../multi
+    - $CXX -v
     - mkdir build && cd build
     - cmake ..
     - cmake --build . --verbose -- --quiet --no-print-directory

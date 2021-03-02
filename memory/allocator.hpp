@@ -51,7 +51,11 @@ public:
 	using void_pointer = typename std::pointer_traits<decltype(std::declval<memory_type*>()->allocate(0, 0))>::template rebind<void>;
 	NODISCARD("because otherwise it will generate a memory leak")
 	pointer allocate(size_type n){
-		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type)/*, alignof(T)*/)));
+		static_assert( alignof(std::max_align_t) >= 16 , "for cuda");
+		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(
+			n*sizeof(value_type),
+			alignof(std::max_align_t) // this takes into account 
+		)));
 	}
 	void deallocate(pointer p, size_type n){
 		mp_->deallocate(p, n*sizeof(value_type));
