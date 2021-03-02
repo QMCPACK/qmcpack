@@ -120,6 +120,11 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   }
 
   crowd_serialize_walkers_ = serialize_walkers == "yes";
+  if (crowd_serialize_walkers_)
+    app_summary() << "  Batched operations are serialized over walkers." << std::endl;
+  if (scoped_profiling_)
+    app_summary() << "  Profiler data collection is enabled in this driver scope." << std::endl;
+
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;
