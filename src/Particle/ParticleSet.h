@@ -34,7 +34,7 @@ namespace qmcplusplus
 {
 ///forward declaration of DistanceTableData
 class DistanceTableData;
-
+class ResourceCollection;
 class StructFact;
 
 /** Specialized paritlce class for atomistic simulations
@@ -638,6 +638,17 @@ public:
   }
 
   inline int getNumDistTables() const { return DistTables.size(); }
+
+  /// initialize a shared resource and hand it to a collection
+  void createResource(ResourceCollection& collection) const;
+  /** acquire external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  void acquireResource(ResourceCollection& collection);
+  /** release external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  void releaseResource(ResourceCollection& collection);
 
   static RefVectorWithLeader<DistanceTableData> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  int id);

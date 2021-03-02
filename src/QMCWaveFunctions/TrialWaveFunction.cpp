@@ -53,8 +53,6 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, boo
 {
   if (suffixes.size() != TIMER_SKIP)
     throw std::runtime_error("TrialWaveFunction::TrialWaveFunction mismatched timer enums and suffixes");
-  if (create_local_resource)
-    twf_resource_ = std::make_unique<ResourceCollection>("TrialWaveFunction");
 
   for (auto& suffix : suffixes)
   {
@@ -89,8 +87,6 @@ void TrialWaveFunction::stopOptimization()
  */
 void TrialWaveFunction::addComponent(WaveFunctionComponent* aterm)
 {
-  if (twf_resource_)
-    aterm->createResource(*twf_resource_);
   Z.push_back(aterm);
 
   std::string aname = aterm->ClassName;
@@ -151,7 +147,7 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   // TrialWaveFunction now also holds G and L to move forward but they need to be copied to P.G and P.L
   // to be compatiable with legacy use pattern.
   const int num_particles = p_leader.getTotalNum();
-  auto initGandL    = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
+  auto initGandL          = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient_t& grad,
                                           ParticleSet::ParticleLaplacian_t& lapl) {
     grad.resize(num_particles);
     lapl.resize(num_particles);
@@ -1168,6 +1164,12 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
     for (int j = 0; j < t.size(); ++j)
       ratios[j] *= t[j];
   }
+}
+
+void TrialWaveFunction::createResource(ResourceCollection& collection) const
+{
+  for (int i = 0; i < Z.size(); ++i)
+    Z[i]->createResource(collection);
 }
 
 void TrialWaveFunction::acquireResource(ResourceCollection& collection)

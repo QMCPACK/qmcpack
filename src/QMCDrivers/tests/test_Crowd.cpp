@@ -40,6 +40,7 @@ public:
   UPtrVector<TrialWaveFunction> twfs;
   UPtrVector<QMCHamiltonian> hams;
   std::vector<TinyVector<double, 3>> tpos;
+  DriverWalkerResourceCollection driverwalker_resource_collection_;
   const MultiWalkerDispatchers dispatchers_;
 
 public:
@@ -48,7 +49,7 @@ public:
     FakeEstimator* fake_est = new FakeEstimator;
     em.add(fake_est, "fake");
 
-    crowd_ptr    = std::make_unique<Crowd>(em, dispatchers_);
+    crowd_ptr    = std::make_unique<Crowd>(em, driverwalker_resource_collection_, dispatchers_);
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
@@ -95,7 +96,8 @@ TEST_CASE("Crowd integration", "[drivers]")
   // The above was required behavior for crowd at one point.
   // TODO: determine whether it still is, I don't think so.
   const MultiWalkerDispatchers dispatchers(true);
-  Crowd crowd(em, dispatchers);
+  DriverWalkerResourceCollection driverwalker_resource_collection_;
+  Crowd crowd(em, driverwalker_resource_collection_, dispatchers);
 }
 
 TEST_CASE("Crowd::loadWalkers", "[particle]")

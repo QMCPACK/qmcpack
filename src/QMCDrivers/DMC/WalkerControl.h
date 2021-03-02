@@ -29,6 +29,9 @@
 
 namespace qmcplusplus
 {
+class MultiWalkerDispatchers;
+struct DriverWalkerResourceCollection;
+
 /** Class for controlling the walkers for DMC simulations.
  * w and w/o MPI. Fixed and dynamic population in one place.
  */
@@ -48,10 +51,7 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControl(Communicate* c,
-                const MultiWalkerDispatchers& dispatchers,
-                RandomGenerator_t& rng,
-                bool use_fixed_pop = false);
+  WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
   ~WalkerControl();
@@ -70,7 +70,11 @@ public:
    *
    *  \return global population
    */
-  int branch(int iter, MCPopulation& pop, bool do_not_branch);
+  int branch(int iter,
+             MCPopulation& pop,
+             const MultiWalkerDispatchers& dispatchers,
+             DriverWalkerResourceCollection& driverwalker_res,
+             bool do_not_branch);
 
   bool put(xmlNodePtr cur);
 
@@ -178,8 +182,6 @@ private:
   TimerList_t my_timers_;
   ///Number of walkers sent during the exchange
   IndexType saved_num_walkers_sent_;
-
-  const MultiWalkerDispatchers& dispatchers_;
 };
 
 } // namespace qmcplusplus

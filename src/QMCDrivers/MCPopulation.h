@@ -150,7 +150,6 @@ public:
     auto walker_index = 0;
     for (int i = 0; i < walker_consumers.size(); ++i)
     {
-      walker_consumers[i]->initializeResources(trial_wf_->getResource());
       walker_consumers[i]->clearWalkers();
       for (int j = 0; j < walkers_per_crowd[i]; ++j)
       {

@@ -20,6 +20,7 @@
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "ParticleSet.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -83,19 +84,29 @@ public:
   }
 
   void mw_copyActivePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
-                                   size_t iat,
-                                   const std::vector<PosType>& new_positions) const override
+                        size_t iat,
+                        const std::vector<PosType>& new_positions) const override
   {
     assert(this == &coords_list.getLeader());
     auto& coords_leader = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
-    const auto nw       = coords_list.size();
+    // make this class unit tests friendly without the need of setup resources.
+    if (!coords_leader.mw_mem_)
+    {
+      app_warning()
+          << "RealSpacePositionsOMPTarget: This message should not be seen in production (performance bug) runs but "
+             "only unit tests (expected)."
+          << std::endl;
+      coords_leader.mw_mem_ = std::make_unique<MultiWalkerMem>();
+    }
+    const auto nw = coords_list.size();
 
-    coords_leader.mw_new_pos.resize(nw);
+    auto& mw_new_pos = coords_leader.mw_mem_->mw_new_pos;
+    mw_new_pos.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
-      coords_leader.mw_new_pos(iw) = new_positions[iw];
+      mw_new_pos(iw) = new_positions[iw];
 
-    auto* mw_pos_ptr = coords_leader.mw_new_pos.data();
+    auto* mw_pos_ptr = mw_new_pos.data();
     PRAGMA_OFFLOAD("omp target update to(mw_pos_ptr[:QMCTraits::DIM * mw_new_pos.capacity()])")
 
     coords_leader.is_nw_new_pos_prepared = true;
@@ -107,8 +118,10 @@ public:
                             const std::vector<bool>& isAccepted) const override
   {
     assert(this == &coords_list.getLeader());
-    auto& coords_leader = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
-    const size_t nw     = coords_list.size();
+    auto& coords_leader        = coords_list.getCastedLeader<RealSpacePositionsOMPTarget>();
+    auto& mw_new_pos           = coords_leader.mw_mem_->mw_new_pos;
+    auto& nw_accept_index_ptrs = coords_leader.mw_mem_->nw_accept_index_ptrs;
+    const size_t nw            = coords_list.size();
 
     if (!is_nw_new_pos_prepared)
     {
@@ -118,10 +131,9 @@ public:
 
     coords_leader.is_nw_new_pos_prepared = false;
 
-    coords_leader.nw_accept_index_ptrs.resize((sizeof(int) + sizeof(RealType*)) * nw);
-    auto* RSoA_ptr_array = reinterpret_cast<RealType**>(coords_leader.nw_accept_index_ptrs.data());
-    auto* id_array =
-        reinterpret_cast<int*>(coords_leader.nw_accept_index_ptrs.data() + sizeof(RealType*) * coords_list.size());
+    nw_accept_index_ptrs.resize((sizeof(int) + sizeof(RealType*)) * nw);
+    auto* RSoA_ptr_array = reinterpret_cast<RealType**>(nw_accept_index_ptrs.data());
+    auto* id_array       = reinterpret_cast<int*>(nw_accept_index_ptrs.data() + sizeof(RealType*) * coords_list.size());
 
     size_t num_accepted = 0;
     for (int iw = 0; iw < nw; iw++)
@@ -136,7 +148,7 @@ public:
       }
 
     //offload to GPU
-    auto* restrict w_accept_buffer_ptr = coords_leader.nw_accept_index_ptrs.data();
+    auto* restrict w_accept_buffer_ptr = nw_accept_index_ptrs.data();
     auto* restrict mw_pos_ptr          = mw_new_pos.data();
     const size_t rsoa_stride           = RSoA.capacity();
     const size_t mw_pos_stride         = mw_new_pos.capacity();
@@ -167,17 +179,46 @@ public:
 
   const RealType* getDevicePtr() const { return RSoA.device_data(); }
 
-  const auto& getFusedNewPosBuffer() const { return mw_new_pos; }
+  const auto& getFusedNewPosBuffer() const { return mw_mem_->mw_new_pos; }
+
+  void createResource(ResourceCollection& collection) const override
+  {
+    auto resource_index = collection.addResource(std::make_unique<MultiWalkerMem>());
+    app_log() << "    Multi walker shared memory resource created in RealSpacePositionsOMPTarget. Index "
+              << resource_index << std::endl;
+  }
+
+  void acquireResource(ResourceCollection& collection) override
+  {
+    auto res_ptr = dynamic_cast<MultiWalkerMem*>(collection.lendResource().release());
+    if (!res_ptr)
+      throw std::runtime_error("RealSpacePositionsOMPTarget::acquireResource dynamic_cast failed");
+    mw_mem_.reset(res_ptr);
+  }
+
+  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem_)); }
 
 private:
   ///particle positions in SoA layout
   VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> RSoA;
 
-  ///one particle new/old positions in SoA layout
-  VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_pos;
+  ///multi walker shared memory buffer
+  struct MultiWalkerMem : public Resource
+  {
+    ///one particle new/old positions in SoA layout
+    VectorSoaContainer<RealType, QMCTraits::DIM, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> mw_new_pos;
 
-  /// accept list
-  Vector<char, OMPallocator<char, PinnedAlignedAllocator<char>>> nw_accept_index_ptrs;
+    /// accept list
+    Vector<char, OMPallocator<char, PinnedAlignedAllocator<char>>> nw_accept_index_ptrs;
+
+    MultiWalkerMem() : Resource("MultiWalkerMem") {}
+
+    MultiWalkerMem(const MultiWalkerMem&) : MultiWalkerMem() {}
+
+    Resource* makeClone() const override { return new MultiWalkerMem(*this); }
+  };
+
+  std::unique_ptr<MultiWalkerMem> mw_mem_;
 
   ///host view of RSoA
   PosVectorSoa RSoA_hostview;

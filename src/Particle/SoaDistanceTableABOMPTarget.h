@@ -17,6 +17,7 @@
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -30,36 +31,44 @@ private:
   template<typename DT>
   using OffloadPinnedVector = Vector<DT, OMPallocator<DT, PinnedAlignedAllocator<DT>>>;
 
-  ///accelerator output array for multiple walkers, N_targets x N_sources_padded x (D+1) (distances, displacements)
-  OffloadPinnedVector<RealType> offload_output;
-  ///accelerator input array for a list of target particle positions, N_targets x D
-  OffloadPinnedVector<RealType> target_pos;
-  ///accelerator input buffer for multiple data set
-  OffloadPinnedVector<char> offload_input;
   ///accelerator output buffer for r and dr
   OffloadPinnedVector<RealType> r_dr_memorypool_;
-  ///target particle id
-  std::vector<int> particle_id;
+  ///accelerator input array for a list of target particle positions, N_targets x D
+  OffloadPinnedVector<T> target_pos;
+
+  ///multi walker shared memory buffer
+  struct DTABMultiWalkerMem : public Resource
+  {
+    ///accelerator output array for multiple walkers, N_targets x N_sources_padded x (D+1) (distances, displacements)
+    OffloadPinnedVector<T> offload_output;
+    ///accelerator input buffer for multiple data set
+    OffloadPinnedVector<char> offload_input;
+    ///target particle id
+    std::vector<int> particle_id;
+
+    DTABMultiWalkerMem() : Resource("DTABMultiWalkerMem") {}
+
+    DTABMultiWalkerMem(const DTABMultiWalkerMem&) : DTABMultiWalkerMem() {}
+
+    Resource* makeClone() const override { return new DTABMultiWalkerMem(*this); }
+  };
+
+  std::unique_ptr<DTABMultiWalkerMem> mw_mem_;
 
 public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.Lattice),
         DistanceTableData(source, target),
-        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") +
-                                                      target.getName() + "_" + source.getName(),
-                                                  timer_level_fine)),
-        copy_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::copy_") + target.getName() +
-                                                   "_" + source.getName(),
-                                               timer_level_fine)),
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") +
-                                                       target.getName() + "_" + source.getName(),
+        offload_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") + name_, timer_level_fine)),
+        copy_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::copy_") + name_, timer_level_fine)),
+        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") + name_,
                                                    timer_level_fine)),
-        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::move_") + target.getName() +
-                                                   "_" + source.getName(),
-                                               timer_level_fine)),
-        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::update_") +
-                                                     target.getName() + "_" + source.getName(),
-                                                 timer_level_fine))
+        move_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::move_") + name_, timer_level_fine)),
+        update_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::update_") + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());
@@ -100,6 +109,23 @@ public:
   SoaDistanceTableABOMPTarget(const SoaDistanceTableABOMPTarget&) = delete;
 
   ~SoaDistanceTableABOMPTarget() { PRAGMA_OFFLOAD("omp target exit data map(delete : this[:1])") }
+
+  void createResource(ResourceCollection& collection) const override
+  {
+    auto resource_index = collection.addResource(std::make_unique<DTABMultiWalkerMem>());
+    app_log() << "    Multi walker shared memory resource created in SoaDistanceTableABOMPTarget " << name_
+              << ". Index " << resource_index << std::endl;
+  }
+
+  void acquireResource(ResourceCollection& collection) override
+  {
+    auto res_ptr = dynamic_cast<DTABMultiWalkerMem*>(collection.lendResource().release());
+    if (!res_ptr)
+      throw std::runtime_error("SoaDistanceTableABOMPTarget::acquireResource dynamic_cast failed");
+    mw_mem_.reset(res_ptr);
+  }
+
+  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem_)); }
 
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P) override
@@ -158,6 +184,17 @@ public:
                           const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
     assert(this == &dt_list.getLeader());
+    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
+    // make this class unit tests friendly without the need of setup resources.
+    if (!dt_leader.mw_mem_)
+    {
+      app_warning()
+          << "SoaDistanceTableABOMPTarget: This message should not be seen in production (performance bug) runs but "
+             "only unit tests (expected)."
+          << std::endl;
+      dt_leader.mw_mem_ = std::make_unique<DTABMultiWalkerMem>();
+    }
+
     ScopedTimer local_timer(evaluate_timer_);
     mw_evaluate_fuse_transfer(dt_list, p_list);
   }
@@ -169,8 +206,10 @@ public:
   inline void mw_evaluate_transfer_inplace(const RefVectorWithLeader<DistanceTableData>& dt_list,
                                            const RefVectorWithLeader<ParticleSet>& p_list) const
   {
-    auto& dt_leader      = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
-    const size_t nw      = dt_list.size();
+    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
+    const size_t nw = dt_list.size();
+    auto& mw_mem    = *dt_leader.mw_mem_;
+
     size_t count_targets = 0;
     for (ParticleSet& p : p_list)
       count_targets += p.getTotalNum();
@@ -180,7 +219,7 @@ public:
     constexpr size_t realtype_size = sizeof(RealType);
     constexpr size_t int_size      = sizeof(int);
     constexpr size_t ptr_size      = sizeof(RealType*);
-    auto& offload_input            = dt_leader.offload_input;
+    auto& offload_input            = mw_mem.offload_input;
     offload_input.resize(total_targets * D * realtype_size + total_targets * int_size +
                          (nw + total_targets) * ptr_size);
     auto target_positions = reinterpret_cast<RealType*>(offload_input.data());
@@ -191,8 +230,6 @@ public:
                                                     total_targets * int_size + nw * ptr_size);
 
     const int N_sources_padded = getAlignedSize<T>(N_sources);
-    auto& offload_output       = dt_leader.offload_output;
-    offload_output.resize(total_targets * N_sources_padded * (D + 1));
 
     count_targets = 0;
     for (size_t iw = 0; iw < nw; iw++)
@@ -272,8 +309,10 @@ public:
   void mw_evaluate_fuse_transfer(const RefVectorWithLeader<DistanceTableData>& dt_list,
                                  const RefVectorWithLeader<ParticleSet>& p_list) const
   {
-    auto& dt_leader      = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
-    const size_t nw      = dt_list.size();
+    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
+    const size_t nw = dt_list.size();
+    auto& mw_mem    = *dt_leader.mw_mem_;
+
     size_t count_targets = 0;
     for (ParticleSet& p : p_list)
       count_targets += p.getTotalNum();
@@ -283,18 +322,18 @@ public:
     const size_t realtype_size = sizeof(RealType);
     const size_t int_size      = sizeof(int);
     const size_t ptr_size      = sizeof(RealType*);
-    auto& offload_input        = dt_leader.offload_input;
+    auto& offload_input        = mw_mem.offload_input;
     offload_input.resize(total_targets * D * realtype_size + total_targets * int_size + nw * ptr_size);
     auto target_positions = reinterpret_cast<RealType*>(offload_input.data());
     auto walker_id_ptr    = reinterpret_cast<int*>(offload_input.data() + total_targets * D * realtype_size);
     auto source_ptrs      = reinterpret_cast<RealType**>(offload_input.data() + total_targets * D * realtype_size +
                                                     total_targets * int_size);
 
-    auto& particle_id = dt_leader.particle_id;
+    auto& particle_id = mw_mem.particle_id;
     particle_id.resize(total_targets);
 
     const int N_sources_padded = getAlignedSize<T>(N_sources);
-    auto& offload_output       = dt_leader.offload_output;
+    auto& offload_output       = mw_mem.offload_output;
     offload_output.resize(total_targets * N_sources_padded * (D + 1));
 
     count_targets = 0;

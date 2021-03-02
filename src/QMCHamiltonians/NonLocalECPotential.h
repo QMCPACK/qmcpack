@@ -90,6 +90,18 @@ public:
     return true;
   }
 
+  /** initialize a shared resource and hand it to a collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from a collection
+   */
+  void acquireResource(ResourceCollection& collection) override;
+
+  /** return a shared resource to a collection
+   */
+  void releaseResource(ResourceCollection& collection) override;
+
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   void addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& pp);

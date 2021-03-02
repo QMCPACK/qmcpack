@@ -30,6 +30,24 @@ NonLocalECPComponent::~NonLocalECPComponent()
     delete VP;
 }
 
+void NonLocalECPComponent::createResource(ResourceCollection& collection) const
+{
+  if (VP)
+    VP->createResource(collection);
+}
+
+void NonLocalECPComponent::acquireResource(ResourceCollection& collection)
+{
+  if (VP)
+    VP->acquireResource(collection);
+}
+
+void NonLocalECPComponent::releaseResource(ResourceCollection& collection)
+{
+  if (VP)
+    VP->releaseResource(collection);
+}
+
 NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet& qp)
 {
   NonLocalECPComponent* myclone = new NonLocalECPComponent(*this);

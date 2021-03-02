@@ -26,6 +26,8 @@
 
 namespace qmcplusplus
 {
+class ResourceCollection;
+
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
  *
@@ -88,12 +90,18 @@ protected:
   int old_prepared_elec_id;
 
   ///name of the table
-  std::string Name;
+  const std::string name_;
 
 public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), need_full_table_(false), old_prepared_elec_id(-1)
+      : Origin(&source),
+        N_sources(0),
+        N_targets(0),
+        N_walkers(0),
+        need_full_table_(false),
+        old_prepared_elec_id(-1),
+        name_(source.getName() + "_" + target.getName())
   {}
 
   ///virutal destructor
@@ -106,10 +114,7 @@ public:
   inline void setFullTableNeeds(bool is_needed) { need_full_table_ = is_needed; }
 
   ///return the name of table
-  inline const std::string& getName() const { return Name; }
-
-  ///set the name of table
-  inline void setName(const std::string& tname) { Name = tname; }
+  inline const std::string& getName() const { return name_; }
 
   ///returns the reference the origin particleset
   const ParticleSet& origin() const { return *Origin; }
@@ -268,6 +273,15 @@ public:
    * change in the indices N.
    */
   void resize(int npairs, int nw) { N_walkers = nw; }
+
+  /// initialize a shared resource and hand it to a collection
+  virtual void createResource(ResourceCollection& collection) const {}
+
+  /// acquire a shared resource from a collection
+  virtual void acquireResource(ResourceCollection& collection) {}
+
+  /// return a shared resource to a collection
+  virtual void releaseResource(ResourceCollection& collection) {}
 };
 } // namespace qmcplusplus
 #endif
