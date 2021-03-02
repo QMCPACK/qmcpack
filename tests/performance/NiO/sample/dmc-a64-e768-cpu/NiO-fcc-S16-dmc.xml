@@ -157,7 +157,6 @@
   <qmc method="vmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="walkers">                1 </parameter>
-    <parameter name="stepsbetweensamples">    1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>
     <parameter name="steps">                  1 </parameter>
@@ -168,7 +167,6 @@
   <qmc method="vmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="walkers">                1 </parameter>
-    <parameter name="stepsbetweensamples">    1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>
     <parameter name="steps">                  1 </parameter>
