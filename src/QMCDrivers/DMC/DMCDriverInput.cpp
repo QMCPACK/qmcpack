@@ -54,6 +54,7 @@ void DMCDriverInput::readXML(xmlNodePtr node)
     app_summary() << "  Using Non-local T-moves v3, an approximation to v1";
   else
     app_summary() << "  Using Locality Approximation";
+  app_summary() << std::endl;
 
   // TODO: similar check for alpha and gamma
   if (max_age_ < 0)
