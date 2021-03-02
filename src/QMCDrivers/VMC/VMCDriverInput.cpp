@@ -22,8 +22,6 @@ void VMCDriverInput::readXML(xmlNodePtr node)
   parameter_set_.add(use_drift, "usedrift", {"yes", "no"});
   parameter_set_.add(use_drift, "use_drift", {"yes", "no"});
   parameter_set_.add(samples_, "samples");
-  parameter_set_.add(samples_per_thread_, "samplesperthread", {}, TagStatus::UNSUPPORTED);
-  parameter_set_.add(steps_between_samples_, "stepsbetweensamples", {}, TagStatus::UNSUPPORTED);
   parameter_set_.put(node);
 
   use_drift_ = use_drift == "yes";
