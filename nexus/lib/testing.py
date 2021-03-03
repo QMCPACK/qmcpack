@@ -223,9 +223,27 @@ def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,b
 #end def print_diff
 
 
+# check for value equality and if different, print the difference
+def check_value_eq(v1,v2,**kwargs):
+    same = value_eq(v1,v2,**kwargs)
+    if not same and global_data['verbose']:
+        print('\nValues differ, please see below for details')
+        hline = '========== {} =========='
+        print()
+        print(hline.format('left value'))
+        print(v1)
+        print()
+        print(hline.format('right value'))
+        print(v2)
+        print()
+    #end if
+    return same
+#end def check_value_eq
+
+
 # check for object equality and if different, print the difference
-def check_object_eq(o1,o2):
-    same = object_eq(o1,o2)
+def check_object_eq(o1,o2,**kwargs):
+    same = object_eq(o1,o2,**kwargs)
     if not same and global_data['verbose']:
         print('\nObjects differ, please see below for details')
         print_diff(o1,o2)

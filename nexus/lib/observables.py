@@ -8,8 +8,18 @@ from copy import deepcopy
 
 # Non-standard Python imports
 import numpy as np
-import matplotlib.pyplot as plt
-import h5py
+
+from developer import unavailable # Nexus unavailable module guard
+try:
+    import matplotlib.pyplot as plt
+except:
+    plt = unavailable('matplotlib','pyplot')
+#end try
+try:
+    import h5py
+except:
+    h5py = unavailable('h5py')
+#end try
 
 # Nexus imports
 import memory
