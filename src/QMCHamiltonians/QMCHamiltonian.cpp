@@ -547,8 +547,8 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
 {
   auto& ham_leader = ham_list.getLeader();
   ScopedTimer local_timer(ham_leader.ham_timer_);
-  for (int iw = 0; iw < ham_list.size(); iw++)
-    ham_list[iw].LocalEnergy = 0.0;
+  for (QMCHamiltonian& ham : ham_list)
+    ham.LocalEnergy = 0.0;
 
   const int num_ham_operators = ham_leader.H.size();
   for (int i_ham_op = 0; i_ham_op < num_ham_operators; ++i_ham_op)
@@ -777,8 +777,8 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
     const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  for (int iw = 0; iw < ham_list.size(); iw++)
-    ham_list[iw].LocalEnergy = 0.0;
+  for (QMCHamiltonian& ham : ham_list)
+    ham.LocalEnergy = 0.0;
 
   auto& ham_leader            = ham_list.getLeader();
   const int num_ham_operators = ham_leader.H.size();
@@ -942,6 +942,24 @@ std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<
       num_accepts[iw] = ham_list[iw].nlpp_ptr->makeNonLocalMovesPbyP(p_list[iw]);
   }
   return num_accepts;
+}
+
+void QMCHamiltonian::createResource(ResourceCollection& collection) const
+{
+  for (int i = 0; i < H.size(); ++i)
+    H[i]->createResource(collection);
+}
+
+void QMCHamiltonian::acquireResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < H.size(); ++i)
+    H[i]->acquireResource(collection);
+}
+
+void QMCHamiltonian::releaseResource(ResourceCollection& collection)
+{
+  for (int i = 0; i < H.size(); ++i)
+    H[i]->releaseResource(collection);
 }
 
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

@@ -17,6 +17,7 @@ SET(PARTICLE
   InitMolecularSystem.cpp
   ParticleSetPool.cpp
   ParticleSet.cpp
+  PSdispatcher.cpp
   VirtualParticleSet.cpp
   ParticleSet.BC.cpp
   DynamicCoordinatesBuilder.cpp

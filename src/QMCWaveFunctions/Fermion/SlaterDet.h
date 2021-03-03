@@ -93,7 +93,7 @@ public:
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  void createResource(ResourceCollection& collection) override;
+  void createResource(ResourceCollection& collection) const override;
 
   void acquireResource(ResourceCollection& collection) override;
 

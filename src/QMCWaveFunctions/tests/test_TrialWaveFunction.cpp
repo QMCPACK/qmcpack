@@ -215,7 +215,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
   RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});
 
-  elec_.flex_update(p_ref_list);
+  ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
 #if defined(QMC_COMPLEX)
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==

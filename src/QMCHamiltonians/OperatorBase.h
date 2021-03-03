@@ -44,6 +44,7 @@ class MCWalkerConfiguration;
 class DistanceTableData;
 class TrialWaveFunction;
 class QMCHamiltonian;
+class ResourceCollection;
 
 struct NonLocalData : public QMCTraits
 {
@@ -322,6 +323,18 @@ struct OperatorBase : public QMCTraits
 
   /** write about the class */
   virtual bool get(std::ostream& os) const = 0;
+
+  /** initialize a shared resource and hand it to a collection
+   */
+  virtual void createResource(ResourceCollection& collection) const {}
+
+  /** acquire a shared resource from a collection
+   */
+  virtual void acquireResource(ResourceCollection& collection) {}
+
+  /** return a shared resource to a collection
+   */
+  virtual void releaseResource(ResourceCollection& collection) {}
 
   virtual OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
 

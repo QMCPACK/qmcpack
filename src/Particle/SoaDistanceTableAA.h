@@ -153,7 +153,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
    * only the [0,iat-1) columns need to save the new values.
    * The memory copy goes up to the padded size only for better performance.
    */
-  inline void update(IndexType iat, bool partial_update) override
+  inline void update(IndexType iat) override
   {
     ScopedTimer local_timer(update_timer_);
     //update by a cache line
@@ -162,32 +162,34 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     std::copy_n(temp_r_.data(), nupdate, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(temp_dr_.data(idim), nupdate, displacements_[iat].data(idim));
-    // This is an optimization to reduce update >iat rows during p-by-p forward move when no consumer needs full table.
-    if (need_full_table_ || !partial_update)
+    //copy column
+    for (size_t i = iat + 1; i < N_targets; ++i)
     {
-      //copy column
-      for (size_t i = iat + 1; i < N_targets; ++i)
-      {
-        distances_[i][iat]     = temp_r_[i];
-        displacements_[i](iat) = -temp_dr_[i];
-      }
+      distances_[i][iat]     = temp_r_[i];
+      displacements_[i](iat) = -temp_dr_[i];
     }
   }
 
-  void updateForOldPosPartial(IndexType jat) override
+  void updatePartial(IndexType jat, bool from_temp) override
   {
-    assert(old_prepared_elec_id == jat);
-    if (old_r_.data() == distances_[jat].data())
-      return;
-
     ScopedTimer local_timer(update_timer_);
-
     //update by a cache line
     const int nupdate = getAlignedSize<T>(jat);
-    //copy row
-    std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
-    for (int idim = 0; idim < D; ++idim)
-      std::copy_n(old_dr_.data(idim), nupdate, displacements_[jat].data(idim));
+    if (from_temp)
+    {
+      //copy row
+      std::copy_n(temp_r_.data(), nupdate, distances_[jat].data());
+      for (int idim = 0; idim < D; ++idim)
+        std::copy_n(temp_dr_.data(idim), nupdate, displacements_[jat].data(idim));
+    }
+    else
+    {
+      assert(old_prepared_elec_id == jat);
+      //copy row
+      std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
+      for (int idim = 0; idim < D; ++idim)
+        std::copy_n(old_dr_.data(idim), nupdate, displacements_[jat].data(idim));
+    }
   }
 
 private:

@@ -14,6 +14,7 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+
 #include <cassert>
 #include <stdexcept>
 #include <numeric>
@@ -25,7 +26,8 @@
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "ResourceCollection.h"
+#include "MultiWalkerDispatchers.h"
+#include "DriverWalkerTypes.h"
 
 namespace qmcplusplus
 {
@@ -54,10 +56,7 @@ TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControl
                                                       {WC_send, "WalkerControl::send"},
                                                       {WC_recv, "WalkerControl::recv"}};
 
-WalkerControl::WalkerControl(Communicate* c,
-                             const MultiWalkerDispatchers& dispatchers,
-                             RandomGenerator_t& rng,
-                             bool use_fixed_pop)
+WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop)
     : MPIObjectBase(c),
       rng_(rng),
       use_fixed_pop_(use_fixed_pop),
@@ -70,8 +69,7 @@ WalkerControl::WalkerControl(Communicate* c,
       SwapMode(0),
       use_nonblocking_(true),
       debug_disable_branching_(false),
-      saved_num_walkers_sent_(0),
-      dispatchers_(dispatchers)
+      saved_num_walkers_sent_(0)
 {
   num_per_node_.resize(num_ranks_);
   fair_offset_.resize(num_ranks_ + 1);
@@ -155,7 +153,11 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   }
 }
 
-int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
+int WalkerControl::branch(int iter,
+                          MCPopulation& pop,
+                          const MultiWalkerDispatchers& dispatchers,
+                          DriverWalkerResourceCollection& driverwalker_res,
+                          bool do_not_branch)
 {
   if (debug_disable_branching_)
     do_not_branch = true;
@@ -236,7 +238,6 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       {
         auto walker_elements   = pop.spawnWalker();
         walker_elements.walker = *walkers[iw];
-        walker_elements.pset.loadWalker(walker_elements.walker, true);
         num_copies--;
       }
     }
@@ -248,19 +249,22 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 
     const size_t num_walkers = walkers.size();
     // recomputed received and duplicated walkers, the first untouched_walkers walkers doesn't need to be updated.
+    const auto w_list_no_leader =
+        convertUPtrToRefVectorSubset(pop.get_walkers(), untouched_walkers, num_walkers - untouched_walkers);
     const auto p_list_no_leader =
         convertUPtrToRefVectorSubset(pop.get_elec_particle_sets(), untouched_walkers, num_walkers - untouched_walkers);
     const auto wf_list_no_leader =
         convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
 
-    ResourceCollectionLock<TrialWaveFunction> resource_lock(pop.get_golden_twf().getResource(), pop.get_golden_twf());
+    DriverWalkerResourceCollection_PsetTWF_Lock pbyp_lock(driverwalker_res, *pop.get_golden_electrons(), pop.get_golden_twf());
     // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
 
     const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);
-    ParticleSet::flex_update(p_list, true);
+    dispatchers.ps_dispatcher_.flex_loadWalker(p_list, w_list_no_leader, true);
+    dispatchers.ps_dispatcher_.flex_update(p_list, true);
 
     const RefVectorWithLeader<TrialWaveFunction> wf_list(pop.get_golden_twf(), wf_list_no_leader);
-    dispatchers_.twf_dispatcher_.flex_evaluateLog(wf_list, p_list);
+    dispatchers.twf_dispatcher_.flex_evaluateLog(wf_list, p_list);
   }
 
   const int current_num_global_walkers = std::accumulate(num_per_node_.begin(), num_per_node_.end(), 0);
@@ -511,7 +515,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         ScopedTimer local_timer(my_timers_[WC_recv]);
         myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
         awalker.copyFromBuffer();
-        walker_elements.pset.loadWalker(awalker, true);
       }
     }
     if (use_nonblocking_)
@@ -528,7 +531,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
             {
               auto& walker_elements = newW[job_list[im].walkerID];
               walker_elements.walker.copyFromBuffer();
-              walker_elements.pset.loadWalker(walker_elements.walker, true);
               not_completed[im] = false;
             }
             else

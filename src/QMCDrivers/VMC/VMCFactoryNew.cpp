@@ -29,6 +29,11 @@ QMCDriverInterface* VMCFactoryNew::create(const ProjectData& project_data,
   comm->barrier_and_abort("VMC batched driver is not supported by legacy CUDA builds.");
 #endif
 
+  app_summary() << "\n========================================"
+                   "\n  Reading VMC driver XML input section"
+                   "\n========================================"
+                << std::endl;
+
   QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(input_node_);
   VMCDriverInput vmcdriver_input;

@@ -51,7 +51,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
       population_(std::move(population)),
-      dispatchers_(true),
+      dispatchers_(!qmcdriver_input_.are_walkers_serialized()),
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),
@@ -134,11 +134,11 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
  */
 void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc)
 {
-  app_log() << this->QMCType << " Driver running with target_walkers = " << awc.global_walkers << std::endl
-            << "                               walkers_per_rank = " << awc.walkers_per_rank << std::endl
-            << "                               num_crowds = " << awc.walkers_per_crowd.size() << std::endl
-            << "                    on rank 0, walkers_per_crowd = " << awc.walkers_per_crowd << std::endl
-            << std::endl;
+  app_summary() << this->QMCType << " Driver running with target_walkers = " << awc.global_walkers << std::endl
+                << "                               walkers_per_rank = " << awc.walkers_per_rank << std::endl
+                << "                               num_crowds = " << awc.walkers_per_crowd.size() << std::endl
+                << "                    on rank 0, walkers_per_crowd = " << awc.walkers_per_crowd << std::endl
+                << std::endl;
 
   // set num_global_walkers explicitly and then make local walkers.
   population_.set_num_global_walkers(awc.global_walkers);
@@ -148,12 +148,21 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(), cur);
 
+  if (dispatchers_.are_walkers_batched())
+  {
+    app_log() << "Creating multi walker shared resources" << std::endl;
+    population_.get_golden_electrons()->createResource(golden_resource_.pset_res);
+    population_.get_golden_twf().createResource(golden_resource_.twf_res);
+    population_.get_golden_hamiltonian().createResource(golden_resource_.ham_res);
+    app_log() << "Multi walker shared resources creation completed" << std::endl;
+  }
+
   crowds_.resize(awc.walkers_per_crowd.size());
 
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i].reset(new Crowd(*estimator_manager_, dispatchers_));
+    crowds_[i].reset(new Crowd(*estimator_manager_, golden_resource_, dispatchers_));
   }
 
   //now give walkers references to their walkers
@@ -314,19 +323,21 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   if (crowd.size() == 0)
     return;
 
-  CrowdResourceLock crowd_res_lock(crowd);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
+  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
 
   auto& walkers = crowd.get_walkers();
+  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
+                                            crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
   crowd.loadWalkers();
-  ParticleSet::flex_update(walker_elecs);
+  ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
   // For consistency this should be in ParticleSet as a flex call, but I think its a problem
@@ -509,6 +520,7 @@ void QMCDriverNew::endBlock()
 bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
 {
   bool success         = true;
+  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
 
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
@@ -526,7 +538,7 @@ bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
     Ls.push_back(walker_twfs[iw].L);
   }
 
-  ParticleSet::flex_update(walker_elecs);
+  ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
   const RealType threshold = 100 * std::numeric_limits<float>::epsilon();

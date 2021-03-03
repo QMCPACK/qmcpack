@@ -96,7 +96,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
   }
 
   ///update the stripe for jat-th particle
-  inline void update(IndexType iat, bool partial_update) override
+  inline void update(IndexType iat) override
   {
     ScopedTimer local_timer(update_timer_);
     std::copy_n(temp_r_.data(), N_sources, distances_[iat].data());

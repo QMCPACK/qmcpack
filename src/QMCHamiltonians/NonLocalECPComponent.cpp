@@ -30,6 +30,24 @@ NonLocalECPComponent::~NonLocalECPComponent()
     delete VP;
 }
 
+void NonLocalECPComponent::createResource(ResourceCollection& collection) const
+{
+  if (VP)
+    VP->createResource(collection);
+}
+
+void NonLocalECPComponent::acquireResource(ResourceCollection& collection)
+{
+  if (VP)
+    VP->acquireResource(collection);
+}
+
+void NonLocalECPComponent::releaseResource(ResourceCollection& collection)
+{
+  if (VP)
+    VP->releaseResource(collection);
+}
+
 NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet& qp)
 {
   NonLocalECPComponent* myclone = new NonLocalECPComponent(*this);
@@ -217,7 +235,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
         psiratios_list.push_back(component.psiratio);
       }
 
-      ecp_component_leader.VP->flex_makeMoves(vp_list, deltaV_list, joblist, true);
+      VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
 
       if (use_DLA)
         TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,

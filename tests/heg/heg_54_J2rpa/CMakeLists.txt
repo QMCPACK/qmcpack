@@ -20,7 +20,7 @@ IF (NOT QMC_CUDA)
                     heg.rpa.rs5.xml
                     16 1
                     TRUE
-                    0 HEG54J2RPA_SCALARS
+                    1 HEG54J2RPA_SCALARS
                     )
 
 ELSE()

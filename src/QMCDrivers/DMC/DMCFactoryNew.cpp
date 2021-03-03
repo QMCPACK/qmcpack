@@ -21,6 +21,11 @@ QMCDriverInterface* DMCFactoryNew::create(const ProjectData& project_data, MCPop
   comm->barrier_and_abort("DMC batched driver is not supported by legacy CUDA builds.");
 #endif
 
+  app_summary() << "\n========================================"
+                   "\n  Reading DMC driver XML input section"
+                   "\n========================================"
+                << std::endl;
+
   QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(input_node_);
   DMCDriverInput dmcdriver_input;

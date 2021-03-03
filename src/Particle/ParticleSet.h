@@ -34,7 +34,7 @@ namespace qmcplusplus
 {
 ///forward declaration of DistanceTableData
 class DistanceTableData;
-
+class ResourceCollection;
 class StructFact;
 
 /** Specialized paritlce class for atomistic simulations
@@ -243,7 +243,7 @@ public:
   void update(bool skipSK = false);
 
   /// batched version of update
-  static void flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false);
+  static void mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false);
 
   /** create Structure Factor with PBCs
    */
@@ -296,9 +296,9 @@ public:
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos_t& displ, const Scalar_t& sdispl);
 
   /// batched version of makeMove
-  static void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
-                            int iat,
-                            const std::vector<SingleParticlePos_t>& displs);
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          const std::vector<SingleParticlePos_t>& displs);
 
   /** move the iat-th particle to activePos
    * @param iat the index of the particle to be moved
@@ -382,10 +382,10 @@ public:
    */
   void rejectMove(Index_t iat);
   /// batched version of acceptMove and rejectMove fused
-  static void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
-                                     Index_t iat,
-                                     const std::vector<bool>& isAccepted,
-                                     bool forward_mode = true);
+  static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                   Index_t iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool forward_mode = true);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -417,6 +417,10 @@ public:
    * PbyP requires the distance tables and Sk with awalker.R
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
+  /** batched version of loadWalker */
+  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& psets,
+                            const RefVector<Walker_t>& walkers,
+                            bool pbyp);
 
   /** save this to awalker
    *
@@ -429,7 +433,7 @@ public:
    *
    *  just the R, G, and L
    */
-  static void flex_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
+  static void mw_saveWalker(const RefVectorWithLeader<ParticleSet>& psets, const RefVector<Walker_t>& walkers);
 
   /** update structure factor and unmark activePtcl
    *
@@ -440,7 +444,7 @@ public:
    */
   void donePbyP();
   /// batched version of donePbyP
-  static void flex_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list);
+  static void mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list);
 
   ///return the address of the values of Hamiltonian terms
   inline FullPrecRealType* restrict getPropertyBase() { return Properties.data(); }
@@ -634,6 +638,17 @@ public:
   }
 
   inline int getNumDistTables() const { return DistTables.size(); }
+
+  /// initialize a shared resource and hand it to a collection
+  void createResource(ResourceCollection& collection) const;
+  /** acquire external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  void acquireResource(ResourceCollection& collection);
+  /** release external resource
+   * Note: use RAII ResourceCollectionLock whenever possible
+   */
+  void releaseResource(ResourceCollection& collection);
 
   static RefVectorWithLeader<DistanceTableData> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  int id);

@@ -702,7 +702,7 @@ DiracDeterminant<DU_TYPE>* DiracDeterminant<DU_TYPE>::makeCopy(std::shared_ptr<S
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::createResource(ResourceCollection& collection)
+void DiracDeterminant<DU_TYPE>::createResource(ResourceCollection& collection) const
 {
   Phi->createResource(collection);
 }

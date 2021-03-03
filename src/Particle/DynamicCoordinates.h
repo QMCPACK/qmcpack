@@ -22,6 +22,8 @@
 
 namespace qmcplusplus
 {
+class ResourceCollection;
+
 /** enumerator for DynamicCoordinates kinds
  */
 enum class DynamicCoordinateKind
@@ -56,10 +58,10 @@ public:
    */
   virtual void resize(size_t n) = 0;
   /// return the number of particles
-  virtual size_t size() const   = 0;
+  virtual size_t size() const = 0;
 
   /// overwrite the positions of all the particles.
-  virtual void setAllParticlePos(const ParticlePos_t& R)         = 0;
+  virtual void setAllParticlePos(const ParticlePos_t& R) = 0;
   /// overwrite the position of one the particle.
   virtual void setOneParticlePos(const PosType& pos, size_t iat) = 0;
   /** copy the active positions of particles with a uniform id in all the walkers to a single internal buffer.
@@ -68,8 +70,8 @@ public:
    *  @param new_positions proposed positions
    */
   virtual void mw_copyActivePos(const RefVectorWithLeader<DynamicCoordinates>& coords_list,
-                                           size_t iat,
-                                           const std::vector<PosType>& new_positions) const
+                                size_t iat,
+                                const std::vector<PosType>& new_positions) const
   {
     assert(this == &coords_list.getLeader());
   }
@@ -88,10 +90,19 @@ public:
   /// all particle position accessor
   virtual const PosVectorSoa& getAllParticlePos() const = 0;
   /// one particle position accessor
-  virtual PosType getOneParticlePos(size_t iat) const   = 0;
+  virtual PosType getOneParticlePos(size_t iat) const = 0;
 
   /// secure internal data consistency after p-by-p moves
   virtual void donePbyP() {}
+
+  /// initialize a shared resource and hand it to a collection
+  virtual void createResource(ResourceCollection& collection) const {}
+
+  /// acquire a shared resource from a collection
+  virtual void acquireResource(ResourceCollection& collection) {}
+
+  /// return a shared resource to a collection
+  virtual void releaseResource(ResourceCollection& collection) {}
 
 protected:
   /// type of dynamic coordinates

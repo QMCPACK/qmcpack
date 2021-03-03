@@ -40,11 +40,15 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
+  if (crowd.size() == 0) return;
   assert(QMCDriverNew::checkLogAndGL(crowd));
 
+  auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
   auto& walkers        = crowd.get_walkers();
+  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
+                                            crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
 
@@ -107,7 +111,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                          [sqrttau](const PosType& delta_r) { return sqrttau * delta_r; });
         }
 
-        ParticleSet::flex_makeMove(walker_elecs, iat, drifts);
+        ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
 
         // This is inelegant
         if (use_drift)
@@ -150,13 +154,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
         twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
 
-        ParticleSet::flex_accept_rejectMove(walker_elecs, iat, isAccepted);
+        ps_dispatcher.flex_accept_rejectMove(walker_elecs, iat, isAccepted);
       }
     }
     twf_dispatcher.flex_completeUpdates(walker_twfs);
   }
 
-  ParticleSet::flex_donePbyP(walker_elecs);
+  ps_dispatcher.flex_donePbyP(walker_elecs);
   timers.movepbyp_timer.stop();
 
   timers.buffer_timer.start();
@@ -207,7 +211,7 @@ void VMCBatched::runVMCStep(int crowd_id,
                             std::vector<std::unique_ptr<Crowd>>& crowds)
 {
   Crowd& crowd = *(crowds[crowd_id]);
-  CrowdResourceLock crowd_res_lock(crowd);
+
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
 
   int max_steps = sft.qmcdrv_input.get_max_steps();
@@ -229,11 +233,6 @@ void VMCBatched::process(xmlNodePtr node)
     QMCDriverNew::AdjustedWalkerCounts awc =
         adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
-
-    if (vmcdriver_input_.get_use_drift())
-      app_log() << "  Random walking with drift" << std::endl;
-    else
-      app_log() << "  Random walking without drift" << std::endl;
 
     Base::startup(node, awc);
   }
@@ -287,7 +286,6 @@ bool VMCBatched::run()
   auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
                           UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
     Crowd& crowd = *(crowds[crowd_id]);
-    CrowdResourceLock crowd_res_lock(crowd);
     advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], false);
   };
 
