@@ -134,11 +134,6 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
  */
 void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts awc)
 {
-  if (driver_scope_profiler_.isActive())
-    app_summary() << "  Profiler data collection is enabled in this driver scope." << std::endl;
-  if (!dispatchers_.are_walkers_batched())
-    app_summary() << "  Batched operations are serialized over walkers." << std::endl;
-
   app_summary() << this->QMCType << " Driver running with target_walkers = " << awc.global_walkers << std::endl
                 << "                               walkers_per_rank = " << awc.walkers_per_rank << std::endl
                 << "                               num_crowds = " << awc.walkers_per_crowd.size() << std::endl
