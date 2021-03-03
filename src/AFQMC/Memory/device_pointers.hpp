@@ -420,19 +420,17 @@ struct device_allocator
   bool operator==(device_allocator const& other) const { return true; }
   bool operator!=(device_allocator const& other) const { return false; }
   template<class U, class... Args>
-  void construct(U p, Args&&... args){
-    static_assert( std::is_trivially_copy_constructible<value_type>{}, "!"); // ::new((void*)p) U(std::forward<Args>(args)...);
-  }
+  void construct(U p, Args&&... args) = delete;//{
+//    static_assert( std::is_trivially_copy_constructible<value_type>{}, "!"); // ::new((void*)p) U(std::forward<Args>(args)...);
+//  }
   template<class U>
-  void destroy(U p){
-		static_assert( std::is_trivially_destructible<value_type>{}, "!"); // p->~U();
-  }
+  void destroy(U p) = delete;//{
+//		static_assert( std::is_trivially_destructible<value_type>{}, "!"); // p->~U();
+//  }
   template<class InputIt, class ForwardIt>
   ForwardIt alloc_uninitialized_copy(InputIt first, InputIt last, ForwardIt d_first){
-		static_assert( std::is_trivially_copy_constructible<value_type>{}, "!");
-		static_assert( std::is_trivially_destructible<value_type>{}, "!");
-		std::advance( d_first , std::distance(first, last) );
-		return d_first;
+    static_assert( std::is_trivially_destructible<value_type>{}, "!");
+    return device::copy(first, last, d_first);
   }
 };
 
