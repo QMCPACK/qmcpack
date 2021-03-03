@@ -1591,6 +1591,10 @@ def qmcpack_simulation():
 
 
 def observables():
+    nunit('import')
+
+    nunit('defined_attribute_base')
+
     nunit_all()
 #end def observables
 
@@ -1619,8 +1623,6 @@ def qmc_fit():
 
 
 def qdens():
-    nunit('density')
-
     nunit_all()
 #end def qdens
 
