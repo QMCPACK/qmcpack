@@ -32,8 +32,10 @@ TEST_CASE("QMCDriverInput readXML", "[drivers]")
     REQUIRE(qmcdriver_input.get_qmc_method().size() > 0);
   };
 
-  std::for_each(testing::valid_vmc_input_sections.begin(), testing::valid_vmc_input_sections.end(), xml_test);
+  std::for_each(testing::valid_vmc_input_sections.begin() + testing::valid_vmc_input_vmc_batch_index,
+                testing::valid_vmc_input_sections.end(), xml_test);
 
-  std::for_each(testing::valid_dmc_input_sections.begin(), testing::valid_dmc_input_sections.end(), xml_test);
+  std::for_each(testing::valid_dmc_input_sections.begin() + testing::valid_dmc_input_dmc_batch_index,
+                testing::valid_dmc_input_sections.end(), xml_test);
 }
 } // namespace qmcplusplus

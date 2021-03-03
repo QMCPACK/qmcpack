@@ -65,11 +65,11 @@ int NonLocalTOperator::put(xmlNodePtr cur)
     o << "  Using Non-local T-moves v3, an approximation to v1";
   }
   else
-  {
-    APP_ABORT("NonLocalTOperator::put unknown nonlocalmove option " + use_tmove);
-  }
+    throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + use_tmove);
+
 #pragma omp master
   app_log() << o.str() << std::endl;
+
   return v_tmove;
 }
 
@@ -84,33 +84,17 @@ int NonLocalTOperator::thingsThatShouldBeInMyConstructor(const std::string& non_
   plusFactor  = Tau * Gamma;
   minusFactor = -Tau * (1.0 - Alpha * (1.0 + Gamma));
   int v_tmove = TMOVE_OFF;
-  std::ostringstream o;
 
   if (non_local_move_option == "no")
-  {
     v_tmove = TMOVE_OFF;
-    o << "  Using Locality Approximation";
-  }
   else if (non_local_move_option == "yes" || non_local_move_option == "v0")
-  {
     v_tmove = TMOVE_V0;
-    o << "  Using Non-local T-moves v0, M. Casula, PRB 74, 161102(R) (2006)";
-  }
   else if (non_local_move_option == "v1")
-  {
     v_tmove = TMOVE_V1;
-    o << "  Using Non-local T-moves v1, M. Casula et al., JCP 132, 154113 (2010)";
-  }
   else if (non_local_move_option == "v3")
-  {
     v_tmove = TMOVE_V3;
-    o << "  Using Non-local T-moves v3, an approximation to v1";
-  }
   else
-  {
-    APP_ABORT("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
-  }
-  app_log() << o.str() << std::endl;
+    throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + non_local_move_option);
   return v_tmove;
 }
 void NonLocalTOperator::reset() { Txy.clear(); }
