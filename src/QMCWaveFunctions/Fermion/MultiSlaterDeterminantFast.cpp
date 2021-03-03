@@ -194,10 +194,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
 
       for (int k = 0, n = Dets[id]->FirstIndex; k < Dets[id]->NumPtcls; k++, n++)
       {
-        g_tmp[n] +=
-            temp * Dets[id]->grads(spinC, k); //myG[n] += c*grads_spin(spin,k)*(detValues_otherspin[otherspin]...);
-        l_tmp[n] +=
-            temp * Dets[id]->lapls(spinC, k); //myL[n] += c*lapls_spin(spin,k)*(detValues_otherspin[otherspin]...);
+        g_tmp[n] += temp * Dets[id]->grads(spinC, k);
+        l_tmp[n] += temp * Dets[id]->lapls(spinC, k);
       }
     }
     psi += spin_psi;
@@ -285,7 +283,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no
     ValueType t = cptr[i];
     for (size_t id = 0; id < Dets.size(); id++)
       if (id != det_id)
-        t *= Dets[id]->detValues.data()[(*C2node)[id].data()[i]];
+        t *= Dets[id]->detValues[(*C2node)[id][i]];
     psi += t * detValues0[d0];
     g_at += t * grads(d0, iat - noffset);
   }
@@ -364,7 +362,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_pr
     ValueType t = cptr[i];
     for (size_t id = 0; id < Dets.size(); id++)
       if (id != det_id)
-        t *= Dets[id]->detValues.data()[(*C2node)[id].data()[i]];
+        t *= Dets[id]->detValues[(*C2node)[id][i]];
     t *= detValues0[det0[i]];
     psi += t;
   }
