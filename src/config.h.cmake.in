@@ -68,6 +68,9 @@
 /* Define the full precision: double, long double */
 #cmakedefine OHMMS_PRECISION_FULL @OHMMS_PRECISION_FULL@
 
+/* Define Cache/SIMD alignment in bytes */
+#cmakedefine QMC_CLINE @QMC_CLINE@
+
 /* Define to 1 if precision is mixed, only for the CPU code */
 #cmakedefine MIXED_PRECISION @MIXED_PRECISION@
 

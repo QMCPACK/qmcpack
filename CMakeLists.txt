@@ -144,6 +144,8 @@ SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 MESSAGE(STATUS "defining the float point precision")
 SET(OHMMS_PRECISION_FULL double)
+set(QMC_CLINE 32 CACHE STRING "Cache/SIMD alignment in bytes")
+
 IF(QMC_CUDA)
   SET(QMC_MIXED_PRECISION 1 CACHE BOOL "Enable/disable mixed precision")
   SET(OHMMS_PRECISION double)

@@ -16,8 +16,16 @@
 
 #include <vector>
 #include <cstdlib>
-#include "alignment.config.h"
+#include "config.h"
 #include "Mallocator.hpp"
+
+#if defined(__INTEL_COMPILER)
+  #define ASSUME_ALIGNED(x) __assume_aligned(x,QMC_CLINE)
+#elif defined(__GNUC__) && !defined(__ibmxl__)
+  #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,QMC_CLINE)
+#else
+  #define ASSUME_ALIGNED(x)
+#endif
 
 namespace qmcplusplus
 {
