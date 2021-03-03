@@ -86,16 +86,15 @@
   <qmc gpu="yes" method="opt_batch" move="pbyp">
     <optimize method="test" output_param_file="yes"/>
     <estimator hdf5="no" name="LocalEnergy" />
-    <parameter name="walkers">1</parameter>
-    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="walkers_per_rank">       1 </parameter>
     <parameter name="warmupSteps">            1 </parameter>
     <parameter name="substeps">               1 </parameter>
     <parameter name="steps">                  1 </parameter>
     <parameter name="blocks">                 1 </parameter>
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">             yes </parameter>
-    <parameter name="nonlocalpp"          >   yes            </parameter>
-    <parameter name="use_nonlocalpp_deriv"          >   yes            </parameter>
+    <parameter name="nonlocalpp">           yes </parameter>
+    <parameter name="use_nonlocalpp_deriv"> yes </parameter>
     <cost name="energy"> 1.0 </cost>
     <cost name="reweightedvariance"> 0.0 </cost>
   </qmc>

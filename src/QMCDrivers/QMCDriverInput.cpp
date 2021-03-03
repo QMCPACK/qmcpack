@@ -55,9 +55,10 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(num_crowds_, "crowds");
   parameter_set.add(serialize_walkers, "crowd_serialize_walkers", {"no", "yes"});
   parameter_set.add(walkers_per_rank_, "walkers_per_rank");
+  parameter_set.add(walkers_per_rank_, "walkers", {}, TagStatus::UNSUPPORTED);
   parameter_set.add(total_walkers_, "total_walkers");
-  parameter_set.add(steps_between_samples_, "stepsbetweensamples");
-  parameter_set.add(samples_per_thread_, "samplesperthread");
+  parameter_set.add(steps_between_samples_, "stepsbetweensamples", {}, TagStatus::UNSUPPORTED);
+  parameter_set.add(samples_per_thread_, "samplesperthread", {}, TagStatus::UNSUPPORTED);
   parameter_set.add(requested_samples_, "samples");
   parameter_set.add(tau_, "timestep");
   parameter_set.add(tau_, "time_step");
@@ -119,6 +120,11 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   }
 
   crowd_serialize_walkers_ = serialize_walkers == "yes";
+  if (crowd_serialize_walkers_)
+    app_summary() << "  Batched operations are serialized over walkers." << std::endl;
+  if (scoped_profiling_)
+    app_summary() << "  Profiler data collection is enabled in this driver scope." << std::endl;
+
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;
