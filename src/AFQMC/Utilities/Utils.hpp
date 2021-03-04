@@ -344,18 +344,18 @@ void sampleGaussianFields_n(T* V, int n, RandomNumberGenerator_& rng)
 
 inline void memory_report()
 {
-  qmcplusplus::app_log() << "\n --> CPU Memory Available: " << freemem() << std::endl;
+  qmcplusplus::app_log() << "\n --> CPU Memory Available: " << (freemem() >> 20) << std::endl;
 #ifdef ENABLE_CUDA
   size_t free_, tot_;
   cudaMemGetInfo(&free_, &tot_);
-  qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << free_ / 1024.0 / 1024.0 << " "
-                         << tot_ / 1024.0 / 1024.0 << "\n"
+  qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << (free_ >> 20) << " "
+                         << (tot_ >> 20) << "\n"
                          << std::endl;
 #elif ENABLE_HIP
   size_t free_, tot_;
   hipMemGetInfo(&free_, &tot_);
-  qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << free_ / 1024.0 / 1024.0 << " "
-                         << tot_ / 1024.0 / 1024.0 << "\n"
+  qmcplusplus::app_log() << " --> GPU Memory Available,  Total in MB: " << (free_ >> 20) << " "
+                         << (tot_ >> 20) << "\n"
                          << std::endl;
 #endif
 }
