@@ -323,12 +323,17 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   //temporary arrays for holding the laplacians of the up and down channels respectively.
   SPOSet::ValueVector_t d2psi_work;
 
+  //temporary arrays for holding the spin gradient
+  SPOSet::ValueVector_t dspsi_work;
+
 
   psi_work.resize(OrbitalSetSize);
 
   dpsi_work.resize(OrbitalSetSize);
 
   d2psi_work.resize(OrbitalSetSize);
+
+  dspsi_work.resize(OrbitalSetSize);
 
   //We worked hard to generate nice reference data above.  Let's generate a test for evaluateV
   //and evaluateVGL by perturbing the electronic configuration by dR, and then make
@@ -374,9 +379,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     psi_work   = 0.0;
     dpsi_work  = 0.0;
     d2psi_work = 0.0;
+    dspsi_work = 0.0;
 
     elec_.makeMove(iat, -dR[iat], false);
-    spo->evaluateVGL(elec_, iat, psi_work, dpsi_work, d2psi_work);
+    spo->evaluateVGL_spin(elec_, iat, psi_work, dpsi_work, d2psi_work, dspsi_work);
 
     REQUIRE(psi_work[0] == ComplexApprox(psiM_ref[iat][0]));
     REQUIRE(psi_work[1] == ComplexApprox(psiM_ref[iat][1]));
@@ -397,12 +403,15 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     REQUIRE(d2psi_work[0] == ComplexApprox(d2psiM_ref[iat][0]));
     REQUIRE(d2psi_work[1] == ComplexApprox(d2psiM_ref[iat][1]));
     REQUIRE(d2psi_work[2] == ComplexApprox(d2psiM_ref[iat][2]));
+
+    REQUIRE(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]));
+    REQUIRE(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]));
+    REQUIRE(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]));
+
     elec_.rejectMove(iat);
   }
 
   //Now we test evaluateSpin:
-  SPOSet::ValueVector_t dspsi_work;
-  dspsi_work.resize(OrbitalSetSize);
 
   for (unsigned int iat = 0; iat < 3; iat++)
   {

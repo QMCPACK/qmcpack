@@ -61,6 +61,21 @@ public:
                    GradVector_t& dpsi,
                    ValueVector_t& d2psi) override;
 
+  /** evaluate the values, gradients and laplacians of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param psi values of the SPO
+   * @param dpsi gradients of the SPO
+   * @param d2psi laplacians of the SPO
+   * @param dspin spin gradient of the SPO
+   */
+  void evaluateVGL_spin(const ParticleSet& P,
+                        int iat,
+                        ValueVector_t& psi,
+                        GradVector_t& dpsi,
+                        ValueVector_t& d2psi,
+                        ValueVector_t& dspin) override;
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
    * @param first starting index of the particles
