@@ -233,6 +233,22 @@ public:
                            GradVector_t& dpsi,
                            ValueVector_t& d2psi) = 0;
 
+  /** evaluate the values, gradients and laplacians and spin gradient of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param psi values of the SPO
+   * @param dpsi gradients of the SPO
+   * @param d2psi laplacians of the SPO
+   * @param dspin spin gradients of the SPO
+   */
+  virtual void evaluateVGL_spin(const ParticleSet& P,
+                                int iat,
+                                ValueVector_t& psi,
+                                GradVector_t& dpsi,
+                                ValueVector_t& d2psi,
+                                ValueVector_t& dspin
+                                );
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
    * @param P_list the list of ParticleSet pointers in a walker batch
