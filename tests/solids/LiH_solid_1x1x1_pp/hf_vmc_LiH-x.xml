@@ -2,8 +2,7 @@
 <simulation>
   <project id="hf_vmc_LiH-x" series="0">
   </project>
-  <!--random seed="49154"/-->
-
+  <random seed="195901"/>
   <qmcsystem>
    <wavefunction name="psi0" target="e">
      <determinantset type="einspline" href="LiH-x.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="-1" meshfactor="1.0" source="i"  precision="single"  twist="0.5  0  0">
