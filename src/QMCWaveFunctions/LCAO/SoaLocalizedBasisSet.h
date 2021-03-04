@@ -73,7 +73,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param els electronic system
    */
   SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
-      : ions_(ions), myTableIndex(els.addTable(ions)), SuperTwist(0.0)
+      : ions_(ions), myTableIndex(els.addTable(ions, true)), SuperTwist(0.0)
   {
     NumCenters = ions.getTotalNum();
     NumTargets = els.getTotalNum();
