@@ -38,6 +38,7 @@ bool QMCAppBase::pushDocument(const std::string& infile)
   else
   {
     app_error() << "File " << infile << " is invalid" << std::endl;
+    APP_ABORT("QMCAppBase::pushDocument");
     delete adoc;
   }
   return success;

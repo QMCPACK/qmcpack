@@ -247,6 +247,7 @@ int main(int argc, char** argv)
   }
 
   OHMMS::Controller->finalize();
+  std::cout << "QMCPACK execution completed successfully" << std::endl;
   return 0;
 }
 

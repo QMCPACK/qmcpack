@@ -209,7 +209,7 @@ bool QMCMain::execute()
   bool success = validateXML();
   if (!success)
   {
-    ERRORMSG("Input document does not contain valid objects")
+    APP_ABORT("QMCMain::execute. Input document does not contain valid objects");
     return false;
   }
   //initialize all the instances of distance tables and evaluate them
@@ -450,12 +450,14 @@ bool QMCMain::validateXML()
           popDocument();
         }
         else
-          myComm->abort();
+        {
+          APP_ABORT("QMCMain::validateXML");
+        }
       }
       else
       {
         app_error() << "tag \"include\" must include an \"href\" attribute." << std::endl;
-        myComm->abort();
+        APP_ABORT("QMCMain::validateXML")
       }
     }
     else if (cname == "qmcsystem")
@@ -485,17 +487,17 @@ bool QMCMain::validateXML()
   }
   if (ptclPool->empty())
   {
-    ERRORMSG("Illegal input. Missing particleset ")
+    APP_ABORT("QMCMain::validateXML. Illegal input. Missing particleset.");  
     return false;
   }
   if (psiPool->empty())
   {
-    ERRORMSG("Illegal input. Missing wavefunction. ")
+    APP_ABORT("QMCMain::validateXML. Illegal input. Missing wavefunction.");  
     return false;
   }
   if (hamPool->empty())
   {
-    ERRORMSG("Illegal input. Missing hamiltonian. ")
+    APP_ABORT("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");  
     return false;
   }
   //randomize any particleset with random="yes" && random_source="ion0"
