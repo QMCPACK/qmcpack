@@ -246,8 +246,12 @@ int main(int argc, char** argv)
     APP_ABORT("Unhandled Exception");
   }
 
+  if (OHMMS::Controller->rank() == 0) 
+  {
+    std::cout << "QMCPACK execution completed successfully" << std::endl;
+  }
   OHMMS::Controller->finalize();
-  std::cout << "QMCPACK execution completed successfully" << std::endl;
+
   return 0;
 }
 
