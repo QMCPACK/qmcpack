@@ -124,9 +124,9 @@ private:
   SampleStack& samples_;
   /// Sample collection flag
   bool collect_samples_;
-  /** function to calculate samples per node
+  /** function to calculate samples per MPI rank
    */
-  static int compute_samples_per_node(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers);
+  static int compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers);
 
   friend class qmcplusplus::testing::VMCBatchedTest;
 };
