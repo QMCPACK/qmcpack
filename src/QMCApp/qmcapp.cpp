@@ -217,16 +217,13 @@ int main(int argc, char** argv)
       validInput = qmc->parse(inputs[qmcComm->getGroupID()]);
     else
       validInput = qmc->parse(inputs[0]);
-    if (validInput)
-    { 
-      bool qmcSuccess=qmc->execute();
-      if (!qmcSuccess)
-        qmcComm->barrier_and_abort("main(). QMC Execution failed.");
-    }
-    else
-    {
+    if (!validInput)
       qmcComm->barrier_and_abort("main(). Input invalid.");
-    }
+
+    bool qmcSuccess = qmc->execute();
+    if (!qmcSuccess)
+      qmcComm->barrier_and_abort("main(). QMC Execution failed.");
+
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
     output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
@@ -253,7 +250,7 @@ int main(int argc, char** argv)
     APP_ABORT("Unhandled Exception");
   }
 
-  if (OHMMS::Controller->rank() == 0) 
+  if (OHMMS::Controller->rank() == 0)
   {
     std::cout << "QMCPACK execution completed successfully" << std::endl;
   }

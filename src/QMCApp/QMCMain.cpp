@@ -208,9 +208,8 @@ bool QMCMain::execute()
   //validate the input file
   bool success = validateXML();
   if (!success)
-  {
     myComm->barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
-  }
+
   //initialize all the instances of distance tables and evaluate them
   ptclPool->reset();
   infoSummary.flush();
@@ -452,9 +451,7 @@ bool QMCMain::validateXML()
           myComm->barrier_and_abort("Invalid XML document");
       }
       else
-      {
         myComm->barrier_and_abort("tag \"include\" must include an \"href\" attribute.");
-      }
     }
     else if (cname == "qmcsystem")
     {
@@ -481,18 +478,16 @@ bool QMCMain::validateXML()
       lastInputNode = cur;
     cur = cur->next;
   }
+
   if (ptclPool->empty())
-  {
-    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");  
-  }
+    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");
+
   if (psiPool->empty())
-  {
-    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");  
-  }
+    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");
+
   if (hamPool->empty())
-  {
-    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");  
-  }
+    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
+
   //randomize any particleset with random="yes" && random_source="ion0"
   ptclPool->randomize();
 
@@ -561,7 +556,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  bool append_run              = false;
+  bool append_run = false;
 
   if (reuse && last_driver)
     qmc_driver = std::move(last_driver);
@@ -604,7 +599,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver->run();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
     // transfer the states of a driver before its destruction
-    last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
+    last_branch_engine_legacy_driver = qmc_driver->getBranchEngine();
     // save the driver in a driver loop
     if (reuse)
       last_driver = std::move(qmc_driver);
