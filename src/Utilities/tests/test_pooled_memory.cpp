@@ -91,7 +91,7 @@ TEST_CASE("pack scalar", "[utilities]")
   p >> i5;
 
   p.get(i6_dummy.data(), i6_dummy.data() + i6_dummy.size());
-  bool not_aligned = (((size_t)p.data()) + p.current()) & (QMC_CLINE - 1);
+  bool not_aligned = (((size_t)p.data()) + p.current()) & (QMC_SIMD_ALIGNMENT - 1);
   REQUIRE(!not_aligned);
 
   p.get(i6.data(), i6.data() + i6.size());

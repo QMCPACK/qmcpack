@@ -2,8 +2,7 @@
 <simulation>
   <project id="hf_vmc_LiH-x" series="0">
   </project>
-  <!--random seed="49154"/-->
-
+  <!--random seed="195901"/-->
   <qmcsystem>
     <simulationcell>
        <parameter name="lattice" units="bohr">
