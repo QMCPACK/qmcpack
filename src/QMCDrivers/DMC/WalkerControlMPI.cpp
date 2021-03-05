@@ -90,7 +90,7 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
     sortWalkers(W);
     //use NumWalkersSent from the previous exchange
     curData[SENTWALKERS_INDEX] = NumWalkersSent;
-    //update the number of walkers for this node
+    //update the number of walkers for this rank
     //Causes implicit conversion to FullPrecRealType
     curData[LE_MAX + MyContext] = NumWalkers;
     //{ ScopedTimer local_timer(myTimers[DMC_MPI_imbalance]);
@@ -102,8 +102,8 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
     measureProperties(iter);
     W.EnsembleProperty = ensemble_property_;
     for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
-      NumPerNode[i] = static_cast<int>(curData[j]);
-    int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+      NumPerRank[i] = static_cast<int>(curData[j]);
+    int current_population = std::accumulate(NumPerRank.begin(), NumPerRank.end(), 0);
 
     Cur_pop = applyNmaxNmin(current_population);
   }
@@ -175,27 +175,27 @@ QMCTraits::FullPrecRealType WalkerControlMPI::branch(int iter, MCPopulation& pop
     limitPopulation(adjust);
   }
 
-  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(myComm, adjust.num_walkers);
+  auto num_per_rank = WalkerControlBase::syncFutureWalkersPerRank(myComm, adjust.num_walkers);
 
   {
     ScopedTimer local_timer(myTimers[DMC_MPI_loadbalance]);
-    NumWalkersSent = swapWalkersSimple(pop, adjust, num_per_node);
+    NumWalkersSent = swapWalkersSimple(pop, adjust, num_per_rank);
   }
 
   WalkerControlBase::onRankKill(pop, adjust);
   WalkerControlBase::onRankSpawn(pop, adjust);
 
-  if (adjust.num_walkers != num_per_node[MyContext])
+  if (adjust.num_walkers != num_per_rank[MyContext])
   {
     std::ostringstream error_message;
     error_message << "failure MPI population control pop.get_num_local_walkers() " << pop.get_num_local_walkers()
                   << " != "
-                  << "num_per_node[" << num_per_node[MyContext] << "]\n";
+                  << "num_per_rank[" << num_per_rank[MyContext] << "]\n";
     throw std::runtime_error(error_message.str());
   }
 
   // Update to the current population
-  pop.syncWalkersPerNode(myComm);
+  pop.syncWalkersPerRank(myComm);
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
@@ -206,11 +206,11 @@ QMCTraits::FullPrecRealType WalkerControlMPI::branch(int iter, MCPopulation& pop
   return pop.get_num_global_walkers();
 }
 
-// determine new walker population on each node
+// determine new walker population on each MPI rank
 void WalkerControlMPI::determineNewWalkerPopulation(int cur_pop,
                                                     int num_contexts,
                                                     int my_context,
-                                                    std::vector<int>& num_per_node,
+                                                    std::vector<int>& num_per_rank,
                                                     std::vector<int>& fair_offset,
                                                     std::vector<int>& minus,
                                                     std::vector<int>& plus)
@@ -219,8 +219,8 @@ void WalkerControlMPI::determineNewWalkerPopulation(int cur_pop,
   for (int ip = 0; ip < num_contexts; ip++)
   {
     // (FairOffSet[ip + 1] - FairOffSet[ip]) gives the partiion ip walker pop
-    int dn = num_per_node[ip] - (fair_offset[ip + 1] - fair_offset[ip]);
-    num_per_node[ip] -= dn;
+    int dn = num_per_rank[ip] - (fair_offset[ip + 1] - fair_offset[ip]);
+    num_per_rank[ip] -= dn;
     if (dn > 0)
     {
       plus.insert(plus.end(), dn, ip);
@@ -243,7 +243,7 @@ void WalkerControlMPI::determineNewWalkerPopulation(int cur_pop,
 
 /** swap Walkers with Recv/Send or Irecv/Isend
  *
- * The algorithm ensures that the load per node can differ only by one walker.
+ * The algorithm ensures that the load per rank can differ only by one walker.
  * Each MPI rank can only send or receive or be silent.
  * The communication is one-dimensional and very local.
  * If multiple copies of a walker need to be sent to the target rank, only send one.
@@ -255,14 +255,14 @@ void WalkerControlMPI::determineNewWalkerPopulation(int cur_pop,
 void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 {
   std::vector<int> minus, plus;
-  //legacy code does not modify NumPerNode in this call so we copy NumPerNode
-  std::vector<int> num_per_node(NumPerNode);
-  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, num_per_node, FairOffSet, minus, plus);
+  //legacy code does not modify NumPerRank in this call so we copy NumPerRank
+  std::vector<int> num_per_rank(NumPerRank);
+  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, num_per_rank, FairOffSet, minus, plus);
 
   if (good_w.empty() && bad_w.empty())
   {
     app_error() << "It should never happen that no walkers, "
-                << "neither good nor bad, exist on a node. "
+                << "neither good nor bad, exist on a rank. "
                 << "Please report to developers. " << std::endl;
     APP_ABORT("WalkerControlMPI::swapWalkersSimple no existing walker");
   }
@@ -275,7 +275,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   sprintf(fname, "test.%d", MyContext);
   std::ofstream fout(fname, std::ios::app);
   //fout << NumSwaps << " " << Cur_pop << " ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << NumPerNode[ic] << " ";
+  //for(int ic=0; ic<NumContexts; ic++) fout << NumPerRank[ic] << " ";
   //fout << " | ";
   //for(int ic=0; ic<NumContexts; ic++) fout << FairOffSet[ic+1]-FairOffSet[ic] << " ";
   //fout << " | ";
@@ -466,14 +466,14 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
     good_w[iw]  = good_w_temp[ncopy_pairs[iw].second];
     ncopy_w[iw] = ncopy_pairs[iw].first;
   }
-  //add walkers from other node
+  //add walkers from other rank
   if (newW.size())
   {
     good_w.insert(good_w.end(), newW.begin(), newW.end());
     ncopy_w.insert(ncopy_w.end(), ncopy_newW.begin(), ncopy_newW.end());
   }
 
-  assert(std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) == num_per_node[MyContext]);
+  assert(std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) == num_per_rank[MyContext]);
 }
 
 /** swap Walkers between rank MCPopulations
@@ -484,16 +484,16 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
  *  \param[inout] adjust
  *
  *  This method should not be dependent on legacy state variables of
- *  Cur_pop, NumPernode
+ *  Cur_pop, NumPerRank
  *
  */
 int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
                                         PopulationAdjustment& adjust,
-                                        std::vector<IndexType>& num_per_node)
+                                        std::vector<IndexType>& num_per_rank)
 {
-  int expanded_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
+  int expanded_population = std::accumulate(num_per_rank.begin(), num_per_rank.end(), 0);
   std::vector<int> minus, plus;
-  determineNewWalkerPopulation(expanded_population, num_contexts_, MyContext, num_per_node, FairOffSet, plus, minus);
+  determineNewWalkerPopulation(expanded_population, num_contexts_, MyContext, num_per_rank, FairOffSet, plus, minus);
 
   // local struct for sort vector
   // std::sort requires reference_wrapper for w_elem
@@ -670,7 +670,7 @@ int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
 
   //myComm->barrier();
 
-  assert(adjust.num_walkers == num_per_node[MyContext]);
+  assert(adjust.num_walkers == num_per_rank[MyContext]);
 
   // if ( send_message_list.empty() )
   //   return 0;

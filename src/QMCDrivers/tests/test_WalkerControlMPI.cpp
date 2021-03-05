@@ -51,7 +51,7 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
   wc_.Cur_pop = dpools_.comm->size();
   for (int i = 0; i < dpools_.comm->size(); i++)
   {
-    wc_.NumPerNode[i] = 1;
+    wc_.NumPerRank[i] = 1;
   }
 }
 
@@ -136,10 +136,10 @@ void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& ran
                                                       proper_number_copies(pop_->get_num_local_walkers()),
                                                       std::vector<WalkerElementsRef>{}};
 
-  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(dpools_.comm, pop_->get_num_local_walkers());
+  auto num_per_rank = WalkerControlBase::syncFutureWalkersPerRank(dpools_.comm, pop_->get_num_local_walkers());
 
   reportWalkersPerRank(dpools_.comm, *pop_);
-  wc_.swapWalkersSimple(*pop_, pop_adjust2, num_per_node);
+  wc_.swapWalkersSimple(*pop_, pop_adjust2, num_per_rank);
   reportWalkersPerRank(dpools_.comm, *pop_);
   CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
 }
@@ -172,11 +172,11 @@ TEST_CASE("WalkerControlMPI::determineNewWalkerPopulation", "[drivers][walker_co
 
   for (int i = 0; i < num_contexts; ++i)
   {
-    std::vector<int> num_per_node = {3, 1, 1};
+    std::vector<int> num_per_rank = {3, 1, 1};
     std::vector<int> fair_offset;
     std::vector<int> minus;
     std::vector<int> plus;
-    WalkerControlMPI::determineNewWalkerPopulation(cur_pop, num_contexts, i, num_per_node, fair_offset, minus, plus);
+    WalkerControlMPI::determineNewWalkerPopulation(cur_pop, num_contexts, i, num_per_rank, fair_offset, minus, plus);
 
     CHECK(minus.size() == 2);
     CHECK(plus.size() == 2);

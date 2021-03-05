@@ -86,7 +86,7 @@ bool RMC::run()
       int ip                 = omp_get_thread_num();
       IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
-      MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
+      MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       Movers[ip]->startBlock(nSteps);
       int now_loc = CurrentStep;
 
@@ -253,7 +253,7 @@ void RMC::resetRun()
   {
     Movers[ip]->put(qmcNode);
     Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-    // wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+    // wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerRank[ip],W.begin()+wPerRank[ip+1]);
     wClones[ip]->reptile = W.ReptileList[ip];
     //app_log()<<"Thread # "<<ip<< std::endl;
     // printf(" Thread# %d  WalkerList.size()=%d \n",ip,wClones[ip]->WalkerList.size());
@@ -269,7 +269,7 @@ void RMC::resetRun()
     }
     else
     {
-      Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+      Movers[ip]->initWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     }
 
     //this will "unroll" the reptile according to forced VMC steps (no bounce).  See beginning of function for logic of setting prestepVMC.
@@ -279,7 +279,7 @@ void RMC::resetRun()
     }
 
     //set up initial action and transprob.
-    MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
+    MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
   }
 
 
@@ -291,7 +291,7 @@ void RMC::resetRun()
   {
     for (int prestep = 0; prestep < nWarmupSteps; ++prestep)
     {
-      Movers[ip]->advanceWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], false);
+      Movers[ip]->advanceWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], false);
       branchEngine->collect(CurrentStep, W);
     }
   }
