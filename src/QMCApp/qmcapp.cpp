@@ -219,7 +219,9 @@ int main(int argc, char** argv)
       validInput = qmc->parse(inputs[0]);
     if (validInput)
     { 
-      qmc->execute();
+      bool qmcSuccess=qmc->execute();
+      if (!qmcSuccess)
+        qmcComm->barrier_and_abort("main(). QMC Execution failed.");
     }
     else
     {

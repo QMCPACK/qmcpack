@@ -210,7 +210,6 @@ bool QMCMain::execute()
   if (!success)
   {
     myComm->barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
-    return false;
   }
   //initialize all the instances of distance tables and evaluate them
   ptclPool->reset();
@@ -450,9 +449,7 @@ bool QMCMain::validateXML()
           popDocument();
         }
         else
-        {
           myComm->barrier_and_abort("Invalid XML document");
-        }
       }
       else
       {
@@ -487,17 +484,14 @@ bool QMCMain::validateXML()
   if (ptclPool->empty())
   {
     myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");  
-    return false;
   }
   if (psiPool->empty())
   {
     myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");  
-    return false;
   }
   if (hamPool->empty())
   {
     myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");  
-    return false;
   }
   //randomize any particleset with random="yes" && random_source="ion0"
   ptclPool->randomize();
