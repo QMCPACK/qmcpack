@@ -242,7 +242,7 @@ void VMCBatched::process(xmlNodePtr node)
   }
 }
 
-int VMCBatched::compute_samples_per_node(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers)
+int VMCBatched::compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers)
 {
   int nblocks = qmcdriver_input.get_max_blocks();
   int nsteps  = qmcdriver_input.get_max_steps();
@@ -361,11 +361,13 @@ bool VMCBatched::run()
 
 void VMCBatched::enable_sample_collection()
 {
-  samples_.setMaxSamples(compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()));
+  int samples = compute_samples_per_rank(qmcdriver_input_, population_.get_num_local_walkers());
+  samples_.setMaxSamples(samples);
   collect_samples_ = true;
 
-  app_log() << "VMCBatched Driver collecting samples, samples_per_node = "
-            << compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()) << '\n';
+  int total_samples = samples * population_.get_num_ranks();
+  app_log() << "VMCBatched Driver collecting samples, samples per rank = " << samples << '\n';
+  app_log() << "                                      total samples    = " << total_samples << '\n';
 }
 
 } // namespace qmcplusplus
