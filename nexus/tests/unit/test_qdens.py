@@ -32,12 +32,6 @@ if versions.h5py_available:
 
         out,err,rc = execute(command)
 
-        print(80*'=')
-        print(out)
-        print(80*'=')
-        print(err)
-        print(80*'=')
-
         files_aft = '''
             dmc.err                           dmc.s001.stat.h5
             dmc.in.xml                        dmc.s002.scalar.dat

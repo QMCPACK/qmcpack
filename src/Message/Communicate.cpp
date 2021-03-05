@@ -98,7 +98,7 @@ void Communicate::initialize(const mpi3::environment& env)
   {
     if (OHMMS::Controller->rank() == proc)
     {
-      fprintf(stderr, "Rank = %4d  Free Memory = %5zu MB\n", proc, freemem());
+      fprintf(stderr, "Rank = %4d  Free Memory = %5zu MB\n", proc, (freemem() >> 20));
     }
     comm.barrier();
   }

@@ -3,6 +3,7 @@
    <project id="qmc_short" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
+   <!--random seed="195901"/-->
    <qmcsystem>
       <simulationcell>
          <parameter name="lattice" units="bohr">
