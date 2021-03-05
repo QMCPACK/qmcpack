@@ -251,9 +251,8 @@ int main(int argc, char** argv)
   }
 
   if (OHMMS::Controller->rank() == 0)
-  {
-    std::cout << "QMCPACK execution completed successfully" << std::endl;
-  }
+    std::cout << "\nQMCPACK execution completed successfully" << std::endl;
+
   OHMMS::Controller->finalize();
 
   return 0;
