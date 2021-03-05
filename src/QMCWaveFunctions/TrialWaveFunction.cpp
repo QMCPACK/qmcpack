@@ -166,21 +166,24 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
     ScopedTimer z_timer(wf_leader.WFC_timers_[RECOMPUTE_TIMER + TIMER_SKIP * i]);
     const auto wfc_list(extractWFCRefList(wf_list, i));
     wavefunction_components[i]->mw_evaluateLog(wfc_list, p_list, g_list, l_list);
-    auto accumulateLogAndPhase = [](TrialWaveFunction& twf, WaveFunctionComponent& wfc) {
-      twf.LogValue += std::real(wfc.LogValue);
-      twf.PhaseValue += std::imag(wfc.LogValue);
-    };
-    for (int iw = 0; iw < wf_list.size(); iw++)
-      accumulateLogAndPhase(wf_list[iw], wfc_list[iw]);
   }
-  auto copyToP = [](ParticleSet& pset, TrialWaveFunction& twf) {
+
+  for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    ParticleSet& pset      = p_list[iw];
+    TrialWaveFunction& twf = wf_list[iw];
+
+    for (int i = 0; i < num_wfc; ++i)
+    {
+      twf.LogValue += std::real(twf.Z[i]->LogValue);
+      twf.PhaseValue += std::imag(twf.Z[i]->LogValue);
+    }
+
+    // Ye: temporal workaround to have P.G/L always defined.
+    // remove when KineticEnergy use WF.G/L instead of P.G/L
     pset.G = twf.G;
     pset.L = twf.L;
-  };
-  // Copy TWF::G/L to ParticleSet::G/L
-  // remove when KineticEnergy use WF.G/L instead of P.G/L
-  for (int iw = 0; iw < wf_list.size(); iw++)
-    copyToP(p_list[iw], wf_list[iw]);
+  }
 }
 
 void TrialWaveFunction::recompute(ParticleSet& P)
@@ -829,20 +832,24 @@ void TrialWaveFunction::mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunctio
     ScopedTimer z_timer(wf_leader.WFC_timers_[BUFFER_TIMER + TIMER_SKIP * i]);
     const auto wfc_list(extractWFCRefList(wf_list, i));
     wavefunction_components[i]->mw_evaluateGL(wfc_list, p_list, g_list, l_list, fromscratch);
-    for (int iw = 0; iw < wf_list.size(); iw++)
-    {
-      wf_list[iw].LogValue += std::real(wfc_list[iw].LogValue);
-      wf_list[iw].PhaseValue += std::imag(wfc_list[iw].LogValue);
-    }
   }
-  auto copyToP = [](ParticleSet& pset, TrialWaveFunction& twf) {
+
+  for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    ParticleSet& pset      = p_list[iw];
+    TrialWaveFunction& twf = wf_list[iw];
+
+    for (int i = 0; i < num_wfc; ++i)
+    {
+      twf.LogValue += std::real(twf.Z[i]->LogValue);
+      twf.PhaseValue += std::imag(twf.Z[i]->LogValue);
+    }
+
+    // Ye: temporal workaround to have P.G/L always defined.
+    // remove when KineticEnergy use WF.G/L instead of P.G/L
     pset.G = twf.G;
     pset.L = twf.L;
-  };
-  // Ye: temporal workaround to have P.G/L always defined.
-  // remove when KineticEnergy use WF.G/L instead of P.G/L
-  for (int iw = 0; iw < wf_list.size(); iw++)
-    copyToP(p_list[iw], wf_list[iw]);
+  }
 }
 
 
