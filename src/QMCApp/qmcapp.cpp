@@ -218,8 +218,13 @@ int main(int argc, char** argv)
     else
       validInput = qmc->parse(inputs[0]);
     if (validInput)
+    { 
       qmc->execute();
-
+    }
+    else
+    {
+      qmcComm->barrier_and_abort("main(). Input invalid.");
+    }
     Libxml2Document timingDoc;
     timingDoc.newDoc("resources");
     output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
