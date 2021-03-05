@@ -27,7 +27,6 @@
 #include "cudaError.h"
 #include "allocator_traits.hpp"
 #include "CUDAfill.hpp"
-#include "CPU/SIMD/alignment.config.h"
 
 namespace qmcplusplus
 {
@@ -62,7 +61,7 @@ struct CUDAManagedAllocator
   {
     void* pt;
     cudaErrorCheck(cudaMallocManaged(&pt, n * sizeof(T)), "Allocation failed in CUDAManagedAllocator!");
-    if ((size_t(pt)) & (QMC_CLINE - 1))
+    if ((size_t(pt)) & (QMC_SIMD_ALIGNMENT - 1))
       throw std::runtime_error("Unaligned memory allocated in CUDAManagedAllocator");
     return static_cast<T*>(pt);
   }
