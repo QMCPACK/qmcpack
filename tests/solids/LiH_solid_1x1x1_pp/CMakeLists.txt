@@ -220,11 +220,11 @@ ELSE()
  ENDIF()
 ENDIF()
 
-  QMC_RUN_AND_CHECK(deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
-                    det_hf_vmc_LiH-gamma
-                    det_hf_vmc_LiH-gamma.xml
-                    1 1
-                    TRUE
-                    0 DET_LIH_GAMMA_SCALARS # VMC
-                    )
+# QMC_RUN_AND_CHECK(deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+#                   "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+#                   det_hf_vmc_LiH-gamma
+#                   det_hf_vmc_LiH-gamma.xml
+#                   1 1
+#                   TRUE
+#                   0 DET_LIH_GAMMA_SCALARS # VMC
+#                   )
