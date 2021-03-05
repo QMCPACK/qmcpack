@@ -114,7 +114,6 @@ public:
   }
 
   virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
-  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat) override;
 
   virtual PsiValueType ratioGradWithSpin(ParticleSet& P,
                                          int iat,
@@ -126,12 +125,6 @@ public:
                             int iat,
                             std::vector<PsiValueType>& ratios,
                             std::vector<GradType>& grad_now) const override;
-
-  void mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                         const RefVectorWithLeader<ParticleSet>& p_list,
-                         int iat,
-                         std::vector<PsiValueType>& ratios,
-                         std::vector<GradType>& grad_now) const override;
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 

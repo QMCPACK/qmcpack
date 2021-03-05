@@ -90,10 +90,6 @@ PsiValueType SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   return Dets[getDetID(iat)]->ratioGrad(P, iat, grad_iat);
 }
-void SlaterDet::ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat)
-{
-  Dets[getDetID(iat)]->ratioGradAsync(P, iat, ratio, grad_iat);
-}
 
 PsiValueType SlaterDet::ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat)
 {
@@ -108,16 +104,6 @@ void SlaterDet::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& w
 {
   const int det_id = getDetID(iat);
   Dets[det_id]->mw_ratioGrad(extract_DetRef_list(wfc_list, det_id), p_list, iat, ratios, grad_now);
-}
-
-void SlaterDet::mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                  const RefVectorWithLeader<ParticleSet>& p_list,
-                                  int iat,
-                                  std::vector<PsiValueType>& ratios,
-                                  std::vector<GradType>& grad_now) const
-{
-  const int det_id = getDetID(iat);
-  Dets[det_id]->mw_ratioGradAsync(extract_DetRef_list(wfc_list, det_id), p_list, iat, ratios, grad_now);
 }
 
 void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
