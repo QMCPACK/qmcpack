@@ -167,8 +167,7 @@ typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::rati
 {
   {
     ScopedTimer local_timer(SPOVGLTimer);
-    Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
-    Phi->evaluate_spin(P, iat, psiV, dspin_psiV);
+    Phi->evaluateVGL_spin(P, iat, psiV, dpsiV, d2psiV, dspin_psiV);
   }
 
   {

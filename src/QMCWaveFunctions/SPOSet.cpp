@@ -60,6 +60,16 @@ void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
   }
 }
 
+void SPOSet::evaluateVGL_spin(const ParticleSet& P,
+                              int iat,
+                              ValueVector_t& psi,
+                              GradVector_t& dpsi,
+                              ValueVector_t& d2psi,
+                              ValueVector_t& dspin)
+{
+  APP_ABORT("Need specialization of SPOSet::evaluateVGL_spin");
+}
+
 void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                             const RefVectorWithLeader<ParticleSet>& P_list,
                             int iat,
