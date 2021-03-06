@@ -145,7 +145,7 @@ struct ScalarEstimatorBase
    * @param wgt weight or maybe norm
    *
    */
-  virtual void accumulate(const int global_walkers, RefVector<MCPWalker>&, RealType wgt) = 0;
+  virtual void accumulate(const RefVector<MCPWalker>&) = 0;
 
   /** add the content of the scalar estimator to the record
    * @param record scalar data list

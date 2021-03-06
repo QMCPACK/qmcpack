@@ -35,14 +35,14 @@ public:
 
   /** implement virtual function
   */
-  CollectablesEstimator* clone();
+  CollectablesEstimator* clone() override;
 
-  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
-  void add2Record(RecordListType& record);
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) override;
+  void add2Record(RecordListType& record) override;
   /** do nothing with accumulate */
-  void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) {}
+  void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) override {}
 
-  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt) {}
+  inline void accumulate(const RefVector<MCPWalker>& walkers) override {}
   
   /** accumulate the collectables */
   inline void accumulate_all(const MCWalkerConfiguration::Buffer_t& data, RealType wgt)

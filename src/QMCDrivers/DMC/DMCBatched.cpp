@@ -444,7 +444,7 @@ bool DMCBatched::run()
       {
         Crowd& crowd_ref = *crowd_ptr;
         if (crowd_ref.size() > 0)
-          crowd_ref.accumulate(population_.get_num_global_walkers());
+          crowd_ref.accumulate();
       }
 
       {

@@ -26,7 +26,7 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
   }
 }
 
-void EstimatorManagerCrowd::accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
+void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
 {
   block_num_samples_ += walkers.size();
   for (MCPWalker& awalker : walkers)
@@ -35,7 +35,7 @@ void EstimatorManagerCrowd::accumulate(int global_walkers, RefVector<MCPWalker>&
   //RealType norm             = 1.0 / global_walkers;
   int num_scalar_estimators = scalar_estimators_.size();
   for (int i = 0; i < num_scalar_estimators; ++i)
-    scalar_estimators_[i]->accumulate(global_walkers, walkers, 1);
+    scalar_estimators_[i]->accumulate(walkers);
   for (int i = 0; i < operator_ests_.size(); ++i)
     operator_ests_[i]->accumulate(walkers, psets);
 }

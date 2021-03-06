@@ -64,7 +64,7 @@ public:
 
   void stopBlock();
 
-  void accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets);
+  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets);
 
   RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }
   RefVector<qmcplusplus::OperatorEstBase> get_operator_estimators() { return convertUPtrToRefVector(operator_ests_); }
