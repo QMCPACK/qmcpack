@@ -61,23 +61,6 @@ public:
   ///return the number of ScalarEstimators
   inline int size() const { return Estimators.size(); }
 
-  /** add a property with a name
-   * @param aname name of the column
-   * @return the property index so that its value can be set by setProperty(i)
-   *
-   * Append a named column. BlockProperties do not contain any meaning data
-   * but manages the name to index map for PropertyCache.
-   */
-  inline int addProperty(const char* aname) { return BlockProperties.add(aname); }
-
-  /** set the value of the i-th column with a value v
-   * @param i column index
-   * @param v value
-   */
-  inline void setProperty(int i, RealType v) { PropertyCache[i] = v; }
-
-  inline RealType getProperty(int i) const { return PropertyCache[i]; }
-
   /** add a "non" physical operator estimator 
    *
    *  this is a dratically reduced version of OperatorBase right now it just supports
@@ -118,9 +101,8 @@ public:
    *  see how OperatorEstimators are handled
    *
    *  Each is currently accumulates on for crowd of 1 or more walkers
-   *  returns the total weight across all crowds. 
    */
-  RealType collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
+  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
 
   /** Reduces OperatorEstimator data from Crowds to the manager's OperatorEstimator data
    *

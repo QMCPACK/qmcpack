@@ -115,32 +115,19 @@ struct ScalarEstimatorBase
     }
   }
 
-  /** take the block accumulated scalars and return the block weight
+  /** take the block accumulated scalars
    * @param first starting iterator of values
-   * @param first_sq starting iterator of squared values
    */
   template<typename IT>
-  inline RealType takeBlockSumsGetWeight(IT first, IT first_sq)
+  inline void takeAccumulated(IT first)
   {
     first += FirstIndex;
-    first_sq += FirstIndex;
-    RealType weight = scalars[0].count();
     for (int i = 0; i < scalars.size(); i++)
     {
       *first++         = scalars[i].result();
-      *first_sq++      = scalars[i].result2();
-      // For mixed precision I believe this is where Collectables data goes from Actual QMCT::RealType
-      // to the local RealType which is hard coded to QMCTFullPrecRealType.
-      // I think it is a bad idea to have RealType to have a changing meaning,
-      // I also feel like having the floating point expension needed to write always to
-      // double in hdf5 is poor form especially since I had to figure this out in many
-      // years later.
-      scalars_saved[i] = scalars[i]; //save current block
       scalars[i].clear();
     }
-    return weight;
   }
-
 
   /** a virtual function to accumulate observables or collectables
    * @param W const MCWalkerConfiguration

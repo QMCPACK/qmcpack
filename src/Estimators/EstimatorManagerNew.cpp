@@ -186,7 +186,7 @@ void EstimatorManagerNew::stopBlock(unsigned long accept,
   zeroOperatorEstimators();
 }
 
-QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
+void EstimatorManagerNew::collectScalarEstimators(
     const RefVector<ScalarEstimatorBase>& estimators)
 {
   using ScalarType = ScalarEstimatorBase::RealType;
@@ -210,12 +210,10 @@ QMCTraits::FullPrecRealType EstimatorManagerNew::collectScalarEstimators(
   RealType tot_weight = 0.0;
   for (int i = 0; i < estimators.size(); ++i)
   {
-    RealType weight = estimators[i].get().takeBlockSumsGetWeight(averages_work.begin(), sq_averages_work.begin());
-    tot_weight += weight;
+    estimators[i].get().takeAccumulated(averages_work.begin());
     accumulateVectorsInPlace(AverageCache, averages_work);
     accumulateVectorsInPlace(SquaredAverageCache, sq_averages_work);
   }
-  return tot_weight;
 }
 
 void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
