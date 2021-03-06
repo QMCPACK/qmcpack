@@ -74,13 +74,14 @@ public:
   ///process xml tag associated with estimators
   bool put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur);
 
-  /** start a run
+  /** start a driver run()
    * @param blocks number of blocks
    * @param record if true, will write to a file
    *
    * Replace reportHeader and reset functon.
    */
-  void start(int blocks, bool record = true);
+  void startDriverRun();
+  void stopDriverRun();
 
   /** start  a block
    * @param steps number of steps in a block

@@ -388,7 +388,7 @@ bool DMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
-  estimator_manager_->start(num_blocks);
+  estimator_manager_->startDriverRun();
   StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
 
   LoopTimer<> dmc_loop;
@@ -463,7 +463,11 @@ bool DMCBatched::run()
   }
 
   branch_engine_->printStatus();
+
   print_mem("DMCBatched ends", app_log());
+
+  estimator_manager_->stopDriverRun();
+
   return finalize(num_blocks, true);
 }
 

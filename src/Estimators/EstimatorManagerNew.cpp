@@ -116,7 +116,7 @@ void EstimatorManagerNew::addHeader(std::ostream& o)
 }
 
 /// \todo clean up this method its a mess
-void EstimatorManagerNew::start(int blocks, bool record)
+void EstimatorManagerNew::startDriverRun()
 {
   reset();
   RecordCount = 0;
@@ -131,7 +131,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
   BufferSize = AverageCache.size() + PropertyCache.size();
   //allocate buffer for data collection
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
-  if (record && DebugArchive == 0)
+  if (DebugArchive == 0)
   {
     char fname[128];
     sprintf(fname, "%s.p%03d.scalar.dat", my_comm_->getName().c_str(), my_comm_->rank());
@@ -140,7 +140,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
   }
 #endif
   //set Options[RECORD] to enable/disable output
-  Options.set(RECORD, record && Options[MANAGE]);
+  Options.set(RECORD, Options[MANAGE]);
   if (Options[RECORD])
   {
     if (Archive)
@@ -163,6 +163,10 @@ void EstimatorManagerNew::start(int blocks, bool record)
       uope->registerOperatorEstimator(h_file);
     }
   }
+}
+
+void EstimatorManagerNew::stopDriverRun()
+{
 }
 
 void EstimatorManagerNew::startBlock(int steps) { block_timer_.restart(); }

@@ -266,7 +266,7 @@ bool VMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
-  estimator_manager_->start(num_blocks);
+  estimator_manager_->startDriverRun();
 
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
 
@@ -355,7 +355,11 @@ bool VMCBatched::run()
     o << "\n====================================================";
     app_log() << o.str() << std::endl;
   }
+
   print_mem("VMCBatched ends", app_log());
+
+  estimator_manager_->stopDriverRun();
+
   return finalize(num_blocks, true);
 }
 
