@@ -126,7 +126,6 @@ void EstimatorManagerNew::start(int blocks, bool record)
   BlockAverages.setValues(0.0);
   // \todo Collectables should just have its own data structures not change the EMBS layout.
   AverageCache.resize(BlockAverages.size() + nc);
-  SquaredAverageCache.resize(BlockAverages.size() + nc);
   PropertyCache.resize(BlockProperties.size());
   //count the buffer size for message
   BufferSize  = 2 * AverageCache.size() + PropertyCache.size();
@@ -192,7 +191,6 @@ void EstimatorManagerNew::collectScalarEstimators(
   using ScalarType = ScalarEstimatorBase::RealType;
 
   AverageCache        = 0.0;
-  SquaredAverageCache = 0.0;
 
   // One scalar estimator can be accumulating many scalar values
   int num_scalars = estimators[0].get().size();
@@ -200,7 +198,6 @@ void EstimatorManagerNew::collectScalarEstimators(
     throw std::runtime_error(
         "EstimatorManagerNew and Crowd ScalarManagers do not agree on number of scalars being estimated");
   Vector<ScalarType> averages_work(num_scalars, 0.0);
-  Vector<ScalarType> sq_averages_work(num_scalars, 0.0);
 
   auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
     for (int i = 0; i < vec_a.size(); ++i)
@@ -212,7 +209,6 @@ void EstimatorManagerNew::collectScalarEstimators(
   {
     estimators[i].get().takeAccumulated(averages_work.begin());
     accumulateVectorsInPlace(AverageCache, averages_work);
-    accumulateVectorsInPlace(SquaredAverageCache, sq_averages_work);
   }
 }
 
@@ -247,18 +243,16 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
 
   //Transfer FullPrecisionRead data
   int n1 = AverageCache.size();
-  int n2 = n1 + AverageCache.size();
-  int n3 = n2 + PropertyCache.size();
+  int n2 = n1 + PropertyCache.size();
 
   // This is a hack but it needs to be the correct size
 
-  std::vector<double> send_buffer(n3, 0.0);
-  std::vector<double> recv_buffer(n3, 0.0);
+  std::vector<double> send_buffer(n2, 0.0);
+  std::vector<double> recv_buffer(n2, 0.0);
   {
     auto cur = send_buffer.begin();
     copy(AverageCache.begin(), AverageCache.end(), cur);
-    copy(SquaredAverageCache.begin(), SquaredAverageCache.end(), cur + n1);
-    copy(PropertyCache.begin(), PropertyCache.end(), cur + n2);
+    copy(PropertyCache.begin(), PropertyCache.end(), cur + n1);
   }
 
   // This is necessary to use mpi3's C++ style reduce
@@ -271,11 +265,9 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   {
     auto cur = recv_buffer.begin();
     copy(cur, cur + n1, AverageCache.begin());
-    copy(cur + n1, cur + n2, SquaredAverageCache.begin());
-    copy(cur + n2, cur + n3, PropertyCache.begin());
+    copy(cur + n1, cur + n2, PropertyCache.begin());
     RealType invTotWgt = 1.0 / PropertyCache[weightInd];
     AverageCache *= invTotWgt;
-    SquaredAverageCache *= invTotWgt;
     //do not weight weightInd i.e. its index 0!
     for (int i = 1; i < PropertyCache.size(); i++)
       PropertyCache[i] *= invTotWgt;
@@ -287,7 +279,7 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
 
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
-  varAccumulator(SquaredAverageCache[0]);
+  varAccumulator(AverageCache[1]);
 
   //Do not assume h_file is valid
   if (h_file)
@@ -301,7 +293,8 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
         *Archive << std::setw(FieldWidth) << PropertyCache[j];
       *Archive << std::endl;
       for (int o = 0; o < h5desc.size(); ++o)
-        h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
+        // cheating here, remove SquaredAverageCache from API
+        h5desc[o]->write(AverageCache.data(), AverageCache.data());
       H5Fflush(h_file, H5F_SCOPE_LOCAL);
     }
   RecordCount++;

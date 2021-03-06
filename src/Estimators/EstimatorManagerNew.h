@@ -121,7 +121,6 @@ public:
   void getApproximateEnergyVariance(RealType& e, RealType& var);
 
   auto& get_AverageCache() { return AverageCache; }
-  auto& get_SquaredAverageCache() { return SquaredAverageCache; }
 
 private:
   /** reset the estimator
@@ -202,8 +201,6 @@ private:
   ScalarEstimatorBase::accumulator_type varAccumulator;
   ///cached block averages of the values
   Vector<RealType> AverageCache;
-  ///cached block averages of the squared values
-  Vector<RealType> SquaredAverageCache;
   ///cached block averages of properties, e.g. BlockCPU
   Vector<RealType> PropertyCache;
   ///manager of scalar data

@@ -48,7 +48,6 @@ void EstimatorManagerNewTest::fakeSomeScalarSamples()
   estimators_[2].scalars[3](2.0);
 
   em.get_AverageCache().resize(4);
-  em.get_SquaredAverageCache().resize(4);
 }
 
 void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
