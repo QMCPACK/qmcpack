@@ -191,23 +191,20 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
 
   // This is a hack but it needs to be the correct size
 
-  std::vector<double> send_buffer(n2, 0.0);
-  std::vector<double> recv_buffer(n2, 0.0);
+  std::vector<double> reduce_buffer(n2, 0.0);
   {
-    auto cur = send_buffer.begin();
+    auto cur = reduce_buffer.begin();
     copy(AverageCache.begin(), AverageCache.end(), cur);
     copy(PropertyCache.begin(), PropertyCache.end(), cur + n1);
   }
 
   // This is necessary to use mpi3's C++ style reduce
 #ifdef HAVE_MPI
-  my_comm_->comm.reduce_n(send_buffer.begin(), send_buffer.size(), recv_buffer.begin(), std::plus<>{}, 0);
-#else
-  recv_buffer = send_buffer;
+  my_comm_->comm.reduce_in_place_n(reduce_buffer.begin(), reduce_buffer.size(), std::plus<>{});
 #endif
   if (my_comm_->rank() == 0)
   {
-    auto cur = recv_buffer.begin();
+    auto cur = reduce_buffer.begin();
     copy(cur, cur + n1, AverageCache.begin());
     copy(cur + n1, cur + n2, PropertyCache.begin());
     const RealType invTotWgt = 1.0 / PropertyCache[weightInd];
