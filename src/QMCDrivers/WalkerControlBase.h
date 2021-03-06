@@ -64,7 +64,7 @@ public:
 
   /** An enum to access curData and accumData for reduction
    *
-   * curData is larger than this //LE_MAX + n_node * T
+   * curData is larger than this //LE_MAX + n_rank * T
    */
   enum
   {
@@ -187,7 +187,7 @@ public:
    */
   void limitPopulation(PopulationAdjustment& adjust);
 
-  /** legacy: apply per node limit Nmax and Nmin
+  /** legacy: apply per rank limit Nmax and Nmin
    */
   int applyNmaxNmin(int current_population);
 
@@ -256,8 +256,8 @@ protected:
   FullPrecRealType trialEnergy;
   ///target sigma to limit fluctuations of the trial energy
   FullPrecRealType target_sigma_;
-  ///number of particle per node
-  std::vector<int> NumPerNode;
+  ///number of particle per rank
+  std::vector<int> NumPerRank;
   ///offset of the particle index
   std::vector<int> OffSet;
   ///offset of the particle index for a fair distribution
@@ -267,7 +267,7 @@ protected:
   std::string dmcFname;
   ///file to save energy histogram
   std::ofstream* dmcStream;
-  ///Number of walkers created by this node
+  ///Number of walkers created by this rank
   IndexType NumWalkersCreated;
   ///context id
   IndexType MyContext;

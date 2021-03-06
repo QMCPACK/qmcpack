@@ -45,7 +45,7 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
   num_contexts_ = myComm->size();
   MyContext     = myComm->rank();
   curData.resize(LE_MAX + num_contexts_);
-  NumPerNode.resize(num_contexts_);
+  NumPerRank.resize(num_contexts_);
   OffSet.resize(num_contexts_ + 1);
   FairOffSet.resize(num_contexts_ + 1);
   accumData.resize(LE_MAX);
@@ -67,7 +67,7 @@ WalkerControlBase::~WalkerControlBase()
 //  NumContexts=myComm->size();
 //  MyContext=myComm->rank();
 //  curData.resize(LE_MAX+NumContexts);
-//  NumPerNode.resize(NumContexts);
+//  NumPerRank.resize(NumContexts);
 //  OffSet.resize(NumContexts+1);
 //  FairOffSet.resize(NumContexts+1);
 //  accumData.resize(LE_MAX);
@@ -345,7 +345,7 @@ QMCTraits::FullPrecRealType WalkerControlBase::doNotBranch(int iter, MCPopulatio
 
 int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger)
 {
-  NumPerNode[0] = sortWalkers(W);
+  NumPerRank[0] = sortWalkers(W);
   measureProperties(iter);
   W.EnsembleProperty = ensemble_property_;
   //un-biased variance but we use the saimple one
@@ -355,7 +355,7 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
   //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
   //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
-  int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  int current_population = std::accumulate(NumPerRank.begin(), NumPerRank.end(), 0);
   applyNmaxNmin(current_population);
   int nw_tot = copyWalkers(W);
   //set Weight and Multiplicity to default values
@@ -424,7 +424,7 @@ QMCTraits::FullPrecRealType WalkerControlBase::branch(int iter, MCPopulation& po
   WalkerControlBase::onRankKill(pop, adjust);
   WalkerControlBase::onRankSpawn(pop, adjust);
 
-  pop.syncWalkersPerNode(myComm);
+  pop.syncWalkersPerRank(myComm);
 
   for (UPtr<MCPWalker>& walker : pop.get_walkers())
   {
@@ -720,14 +720,14 @@ int WalkerControlBase::applyNmaxNmin(int current_population)
   {
     app_warning() << "Exceeding Max Walkers per MPI rank : " << n_max_ << ". Ceiling is applied" << std::endl;
     int nsub = current_population - n_max_ * num_contexts_;
-    for (int inode = 0; inode < num_contexts_; inode++)
-      if (NumPerNode[inode] > n_max_)
+    for (int irank = 0; irank < num_contexts_; irank++)
+      if (NumPerRank[irank] > n_max_)
       {
-        int n_remove = std::min(nsub, NumPerNode[inode] - n_max_);
-        NumPerNode[inode] -= n_remove;
+        int n_remove = std::min(nsub, NumPerRank[irank] - n_max_);
+        NumPerRank[irank] -= n_remove;
         nsub -= n_remove;
 
-        if (inode == MyContext)
+        if (irank == MyContext)
         {
           for (int iw = 0; iw < ncopy_w.size(); iw++)
           {
@@ -753,7 +753,7 @@ int WalkerControlBase::applyNmaxNmin(int current_population)
 
           if (n_remove)
             APP_ABORT("WalkerControlBase::applyNmaxNmin not able to remove sufficient walkers on a node!");
-          if (std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) != NumPerNode[inode])
+          if (std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) != NumPerRank[irank])
             APP_ABORT("WalkerControlBase::applyNmaxNmin walker removal mismatch!");
         }
 
@@ -771,14 +771,14 @@ int WalkerControlBase::applyNmaxNmin(int current_population)
     app_warning() << "The number of walkers is running lower than Min Walkers per MPI rank : " << n_min_
                   << ". Floor is applied" << std::endl;
     int nadd = n_min_ * num_contexts_ - current_population;
-    for (int inode = 0; inode < num_contexts_; inode++)
-      if (NumPerNode[inode] > 0 && NumPerNode[inode] < n_min_)
+    for (int irank = 0; irank < num_contexts_; irank++)
+      if (NumPerRank[irank] > 0 && NumPerRank[irank] < n_min_)
       {
-        int n_insert = std::min(nadd, n_min_ - NumPerNode[inode]);
-        NumPerNode[inode] += n_insert;
+        int n_insert = std::min(nadd, n_min_ - NumPerRank[irank]);
+        NumPerRank[irank] += n_insert;
         nadd -= n_insert;
 
-        if (inode == MyContext)
+        if (irank == MyContext)
         {
           int n_avg_insert_per_walker = (n_insert + ncopy_w.size() - 1) / ncopy_w.size();
           for (int iw = 0; iw < ncopy_w.size(); iw++)
@@ -790,7 +790,7 @@ int WalkerControlBase::applyNmaxNmin(int current_population)
               break;
           }
 
-          if (std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) != NumPerNode[inode])
+          if (std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) != NumPerRank[irank])
             APP_ABORT("WalkerControlBase::applyNmaxNmin walker insertion mismatch!");
         }
 
@@ -803,7 +803,7 @@ int WalkerControlBase::applyNmaxNmin(int current_population)
   }
 
   // check current population
-  current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+  current_population = std::accumulate(NumPerRank.begin(), NumPerRank.end(), 0);
   // at least one walker after load-balancing
   if (current_population / num_contexts_ == 0)
   {
@@ -830,15 +830,15 @@ std::vector<WalkerControlBase::IndexType> WalkerControlBase::syncFutureWalkersPe
 void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
 {
   // In the unified driver design each ranks MCPopulation knows this and it is not
-  // stored a bunch of other places, i.e. NumPerNode shouldn't be how we know.
+  // stored a bunch of other places, i.e. NumPerRank shouldn't be how we know.
   // Nothing should have touched the walker counts since we synced them at the top of branch
   // What we care about here are the populations we'll have after the adjusts are
   // applied on each rank.
   // This differs from the legacy implementation which had partially updated state at this point.
 
   //strong assumption that adjust.num_walkers is correct.
-  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
-  IndexType current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
+  auto num_per_rank = WalkerControlBase::syncFutureWalkersPerRank(this->getCommunicator(), adjust.num_walkers);
+  IndexType current_population = std::accumulate(num_per_rank.begin(), num_per_rank.end(), 0);
 
   // limit Nmax
   // TODO:  this seems to be the wrong pace to do this.
@@ -851,16 +851,16 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
     app_warning() << "Exceeding Max Walkers per MPI rank : " << n_max_ << ". Ceiling is applied" << std::endl;
     int nsub = current_population - n_max_ * num_contexts_;
 
-    for (int inode = 0; inode < num_contexts_; inode++)
+    for (int irank = 0; irank < num_contexts_; irank++)
     {
-      if (num_per_node[inode] > n_max_)
+      if (num_per_rank[irank] > n_max_)
       {
         // this seems suspect, a function with unit test is needed
-        int n_remove = std::min(nsub, num_per_node[inode] - n_max_);
-        num_per_node[inode] -= n_remove;
+        int n_remove = std::min(nsub, num_per_rank[irank] - n_max_);
+        num_per_rank[irank] -= n_remove;
         nsub -= n_remove;
 
-        if (inode == MyContext)
+        if (irank == MyContext)
         {
           // prone to error function with unit test better
           for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
@@ -894,13 +894,13 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
 #ifndef NDEBUG
           IndexType total_copies_to_make =
               std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), adjust.copies_to_make.size());
-          if (total_copies_to_make != num_per_node[inode])
+          if (total_copies_to_make != num_per_rank[irank])
           {
             std::ostringstream error_message;
             error_message
                 << "When removing walkers:\n"
-                << "WalkerControlBase::adjustPopulation has conflicting adjust.copies_to_make and num_per_node["
-                << inode << "] = " << num_per_node[inode] << '\n';
+                << "WalkerControlBase::adjustPopulation has conflicting adjust.copies_to_make and num_per_rank["
+                << irank << "] = " << num_per_rank[irank] << '\n';
 
             error_message << "adjust.ctm.size() = " << adjust.copies_to_make.size()
                           << " and total copies to make = " << total_copies_to_make << '\n';
@@ -926,14 +926,14 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
     app_warning() << "The number of walkers " << (current_population / num_contexts_) << " over ranks:" << num_contexts_
                   << " is running lower than Min Walkers per MPI rank : " << n_min_ << ". Floor is applied, adding "
                   << nadd << " walkers." << '\n';
-    for (int inode = 0; inode < num_contexts_; inode++)
+    for (int irank = 0; irank < num_contexts_; irank++)
     {
-      if (num_per_node[inode] > 0 && num_per_node[inode] < n_min_)
+      if (num_per_rank[irank] > 0 && num_per_rank[irank] < n_min_)
       {
-        int n_insert = std::min(nadd, n_min_ - num_per_node[inode]);
-        num_per_node[inode] += n_insert;
+        int n_insert = std::min(nadd, n_min_ - num_per_rank[irank]);
+        num_per_rank[irank] += n_insert;
         nadd -= n_insert;
-        if (inode == MyContext)
+        if (irank == MyContext)
         {
           int n_avg_insert_per_walker = (n_insert + adjust.num_walkers - 1) / adjust.num_walkers;
           for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
@@ -953,13 +953,13 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
 #ifndef NDEBUG
           IndexType total_copies_to_make =
               std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), adjust.copies_to_make.size());
-          if (total_copies_to_make != num_per_node[inode])
+          if (total_copies_to_make != num_per_rank[irank])
           {
             std::ostringstream error_message;
             error_message
                 << "When adding walker:\n"
-                << "WalkerControlBase::adjustPopulation has conflicting adjust.copies_to_make and num_per_node[inode]: "
-                << inode << "num_per_node[inode] = " << num_per_node[inode] << '\n'
+                << "WalkerControlBase::adjustPopulation has conflicting adjust.copies_to_make and num_per_rank[irank]: "
+                << irank << "num_per_rank[irank] = " << num_per_rank[irank] << '\n'
                 << "adjust.ctm.size() = " << adjust.copies_to_make.size()
                 << " and total copies to make = " << total_copies_to_make << '\n';
             throw std::runtime_error(error_message.str());
@@ -973,11 +973,11 @@ void WalkerControlBase::limitPopulation(PopulationAdjustment& adjust)
     }
     while (nadd > 0)
     {
-      for (int inode = 0; inode < num_contexts_; inode++)
+      for (int irank = 0; irank < num_contexts_; irank++)
       {
-        if (num_per_node[inode] < n_max_)
+        if (num_per_rank[irank] < n_max_)
         {
-          if (inode == MyContext)
+          if (irank == MyContext)
             for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
             {
               adjust.copies_to_make[iw] += 1;
