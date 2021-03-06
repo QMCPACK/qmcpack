@@ -15,12 +15,10 @@
 namespace qmcplusplus
 {
 EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
-    : MainEstimatorName(em.MainEstimatorName),
-      Options(em.Options),
+    : Options(em.Options),
       RecordCount(0),
       Archive(0),
       DebugArchive(0),
-      MainEstimator(0),
       Collectables(0),
       EstimatorMap(em.EstimatorMap),
       max4ascii(em.max4ascii),
@@ -30,7 +28,6 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
   // i.e. not continue into the scalar_estimators and collectables
   for (int i = 0; i < em.Estimators.size(); i++)
     scalar_estimators_.push_back(em.Estimators[i]->clone());
-  MainEstimator = scalar_estimators_[EstimatorMap[MainEstimatorName]];
   for (UPtr<OperatorEstBase>& upeb : em.operator_ests_)
   {
     operator_ests_.emplace_back(upeb->clone());

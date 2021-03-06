@@ -55,7 +55,6 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
       Archive(0),
       DebugArchive(0),
       my_comm_(c),
-      MainEstimator(0),
       Collectables(0),
       max4ascii(8),
       FieldWidth(20)
@@ -488,9 +487,6 @@ int EstimatorManagerNew::add(EstimatorType* newestimator, const std::string& ana
     delete Estimators[n];
     Estimators[n] = newestimator;
   }
-  //check the name and set the MainEstimator
-  if (aname == MainEstimatorName)
-    MainEstimator = newestimator;
   return n;
 }
 

@@ -25,6 +25,8 @@
 
 namespace qmcplusplus
 {
+
+/*FIXME should be handled in testing::EstimatorManagerNewTest
 TEST_CASE("EstimatorManagerNew", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
@@ -43,6 +45,7 @@ TEST_CASE("EstimatorManagerNew", "[estimators]")
   REQUIRE(fake_est2 != NULL);
   REQUIRE(fake_est2 == fake_est);
 }
+*/
 
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
 {

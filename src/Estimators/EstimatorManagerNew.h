@@ -52,7 +52,7 @@ public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///default constructor
-  EstimatorManagerNew(Communicate* c = 0);
+  EstimatorManagerNew(Communicate* c);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
   ///destructor
@@ -84,19 +84,6 @@ public:
 
   void getData(int i, std::vector<RealType>& values);
 
-  /** add an Estimator
-   * @param newestimator New Estimator
-   * @param aname name of the estimator
-   * @return locator of newestimator
-   */
-  int add(EstimatorType* newestimator, const std::string& aname);
-
-  /** add a main estimator
-   * @param newestimator New Estimator
-   * @return locator of newestimator
-   */
-  int add(EstimatorType* newestimator) { return add(newestimator, MainEstimatorName); }
-
   /** add a "non" physical operator estimator 
    *
    *  this is a dratically reduced version of OperatorBase right now it just supports
@@ -107,21 +94,8 @@ public:
    */
   int addEstOperator(OperatorEstBase& op_est);
 
-  ///return a pointer to the estimator aname
-  EstimatorType* getEstimator(const std::string& a);
-
-  ///return the average for estimator i
-  inline RealType average(int i) const { return Estimators[i]->average(); }
-
-  ///returns a variance for estimator i
-  inline RealType variance(int i) const { return Estimators[i]->variance(); }
-
   ///process xml tag associated with estimators
   bool put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur);
-
-  /** reset the estimator
-   */
-  void reset();
 
   /** start a run
    * @param blocks number of blocks
@@ -181,7 +155,46 @@ public:
   auto& get_SquaredAverageCache() { return SquaredAverageCache; }
 
 private:
-  friend class EstimatorManagerCrowd;
+  /** reset the estimator
+   */
+  void reset();
+
+  /** add an Estimator
+   * @param newestimator New Estimator
+   * @param aname name of the estimator
+   * @return locator of newestimator
+   */
+  int add(EstimatorType* newestimator, const std::string& aname);
+
+  ///return a pointer to the estimator aname
+  EstimatorType* getEstimator(const std::string& a);
+
+  /// collect data and write
+  void makeBlockAverages(unsigned long accept, unsigned long reject);
+
+  /** do the rank wise reduction of the OperatorEstimators
+   *
+   *  Why do this here?
+   *  1. Operator estimators don't know about the concurrency model
+   *  2. EstimatorManager owns the resources:
+   *       send & receive buffers
+   *  3. The operation is generic as long as OperatorEstimator satisfies
+   *     the requirement that get_data_ref() returns a reference to
+   *     std::vector<RealType>
+   *
+   *  Implementation makes the assumption that sending each OperatorEstimator
+   *  separately is the correct memory use vs. mpi message balance.
+   */
+  void reduceOperatorEstimators();
+  /** Write OperatorEstimator data to *.stat.h5
+   *
+   *  Note that OperatorEstimator owns its own observable_helpers
+   */
+  void writeOperatorEstimators();
+  /** OperatorEstimators need to be zeroed out after the block is finished.
+   */
+  void zeroOperatorEstimators();
+
   ///name of the primary estimator name
   std::string MainEstimatorName;
   //  TODO: fix needless use of bitset instead of clearer more visible booleans
@@ -206,9 +219,6 @@ private:
   std::ofstream* DebugArchive;
   ///communicator to handle communication
   Communicate* my_comm_;
-  /** pointer to the primary ScalarEstimatorBase
-   */
-  ScalarEstimatorBase* MainEstimator;
   /** pointer to the CollectablesEstimator
    *
    * Do not need to clone: owned by the master thread
@@ -257,40 +267,14 @@ private:
   ///Timer
   Timer MyTimer;
 
-private:
   ///number of maximum data for a scalar.dat
   int max4ascii;
-
-  /// collect data and write
-  void makeBlockAverages(unsigned long accept, unsigned long reject);
-
-  /** do the rank wise reduction of the OperatorEstimators
-   *
-   *  Why do this here?
-   *  1. Operator estimators don't know about the concurrency model
-   *  2. EstimatorManager owns the resources:
-   *       send & receive buffers
-   *  3. The operation is generic as long as OperatorEstimator satisfies
-   *     the requirement that get_data_ref() returns a reference to
-   *     std::vector<RealType>
-   *
-   *  Implementation makes the assumption that sending each OperatorEstimator
-   *  separately is the correct memory use vs. mpi message balance.
-   */
-  void reduceOperatorEstimators();
-  /** Write OperatorEstimator data to *.stat.h5
-   *
-   *  Note that OperatorEstimator owns its own observable_helpers
-   */
-  void writeOperatorEstimators();
-  /** OperatorEstimators need to be zeroed out after the block is finished.
-   */
-  void zeroOperatorEstimators();
 
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;
 
+  friend class EstimatorManagerCrowd;
   friend class qmcplusplus::testing::EstimatorManagerNewTest;
 };
 } // namespace qmcplusplus

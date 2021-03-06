@@ -43,8 +43,6 @@ class EstimatorManagerCrowd : public EstimatorManagerInterface
 public:
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
   
-  ///name of the primary estimator name
-  std::string MainEstimatorName;
   ///the root file name
   std::string RootName;
   ///energy
@@ -117,9 +115,6 @@ protected:
   std::ofstream* Archive;
   ///file handler to write data for debugging
   std::ofstream* DebugArchive;
-  /** pointer to the primary ScalarEstimatorBase
-   */
-  ScalarEstimatorBase* MainEstimator;
   /** pointer to the CollectablesEstimator
    *
    * Do not need to clone: owned by the master thread
