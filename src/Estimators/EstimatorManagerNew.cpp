@@ -28,7 +28,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#include "hdf/HDFVersion.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
 //leave it for serialization debug
@@ -49,15 +49,7 @@ enum
 
 //initialize the name of the primary estimator
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
-    : MainEstimatorName("LocalEnergy"),
-      RecordCount(0),
-      h_file(-1),
-      Archive(0),
-      DebugArchive(0),
-      my_comm_(c),
-      Collectables(0),
-      max4ascii(8),
-      FieldWidth(20)
+    : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), Collectables(0), max4ascii(8), FieldWidth(20)
 {
   // This is a flag to tell manager if there is more than one rank
   // running walkers, its discovered by smelly query of my_comm_.
@@ -131,11 +123,11 @@ void EstimatorManagerNew::startDriverRun()
   BufferSize = AverageCache.size() + PropertyCache.size();
   //allocate buffer for data collection
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
-  if (DebugArchive == 0)
+  if (!DebugArchive)
   {
     char fname[128];
     sprintf(fname, "%s.p%03d.scalar.dat", my_comm_->getName().c_str(), my_comm_->rank());
-    DebugArchive = new std::ofstream(fname);
+    DebugArchive = std::make_unique<std::ofstream>(fname);
     addHeader(*DebugArchive);
   }
 #endif
@@ -143,11 +135,9 @@ void EstimatorManagerNew::startDriverRun()
   Options.set(RECORD, Options[MANAGE]);
   if (Options[RECORD])
   {
-    if (Archive)
-      delete Archive;
     std::string fname(my_comm_->getName());
     fname.append(".scalar.dat");
-    Archive = new std::ofstream(fname.c_str());
+    Archive = std::make_unique<std::ofstream>(fname.c_str());
     addHeader(*Archive);
     if (h5desc.size())
     {
@@ -155,19 +145,16 @@ void EstimatorManagerNew::startDriverRun()
       h5desc.clear();
     }
     fname  = my_comm_->getName() + ".stat.h5";
-    h_file = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    h_file = std::make_unique<hdf_archive>();
+    h_file->create(fname);
     for (int i = 0; i < Estimators.size(); i++)
-      Estimators[i]->registerObservables(h5desc, h_file);
+      Estimators[i]->registerObservables(h5desc, h_file->getFileID());
     for (auto& uope : operator_ests_)
-    {
-      uope->registerOperatorEstimator(h_file);
-    }
+      uope->registerOperatorEstimator(h_file->getFileID());
   }
 }
 
-void EstimatorManagerNew::stopDriverRun()
-{
-}
+void EstimatorManagerNew::stopDriverRun() { h_file.reset(); }
 
 void EstimatorManagerNew::startBlock(int steps) { block_timer_.restart(); }
 
@@ -266,20 +253,23 @@ void EstimatorManagerNew::writeScalarH5()
 {
   //Do not assume h_file is valid
   if (h_file)
-    if (Archive)
-    {
-      *Archive << std::setw(10) << RecordCount;
-      int maxobjs = std::min(BlockAverages.size(), max4ascii);
-      for (int j = 0; j < maxobjs; j++)
-        *Archive << std::setw(FieldWidth) << AverageCache[j];
-      for (int j = 0; j < PropertyCache.size(); j++)
-        *Archive << std::setw(FieldWidth) << PropertyCache[j];
-      *Archive << std::endl;
-      for (int o = 0; o < h5desc.size(); ++o)
-        // cheating here, remove SquaredAverageCache from API
-        h5desc[o]->write(AverageCache.data(), AverageCache.data());
-      H5Fflush(h_file, H5F_SCOPE_LOCAL);
-    }
+  {
+    for (int o = 0; o < h5desc.size(); ++o)
+      // cheating here, remove SquaredAverageCache from API
+      h5desc[o]->write(AverageCache.data(), AverageCache.data());
+    H5Fflush(h_file->getFileID(), H5F_SCOPE_LOCAL);
+  }
+
+  if (Archive)
+  {
+    *Archive << std::setw(10) << RecordCount;
+    int maxobjs = std::min(BlockAverages.size(), max4ascii);
+    for (int j = 0; j < maxobjs; j++)
+      *Archive << std::setw(FieldWidth) << AverageCache[j];
+    for (int j = 0; j < PropertyCache.size(); j++)
+      *Archive << std::setw(FieldWidth) << PropertyCache[j];
+    *Archive << std::endl;
+  }
 }
 
 void EstimatorManagerNew::reduceOperatorEstimators()
@@ -333,7 +323,7 @@ void EstimatorManagerNew::writeOperatorEstimators()
     {
       for (auto& op_est : operator_ests_)
         op_est->write();
-      H5Fflush(h_file, H5F_SCOPE_LOCAL);
+      H5Fflush(h_file->getFileID(), H5F_SCOPE_LOCAL);
     }
   }
 }

@@ -31,6 +31,7 @@ namespace qmcplusplus
 {
 class QMCHamiltonian;
 class CollectablesEstimator;
+class hdf_archive;
 
 namespace testing
 {
@@ -74,13 +75,18 @@ public:
   ///process xml tag associated with estimators
   bool put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur);
 
-  /** start a driver run()
+  /** Start the manager at the beginning of a driver run().
+   * Open files. Setting zeros.
    * @param blocks number of blocks
    * @param record if true, will write to a file
    *
    * Replace reportHeader and reset functon.
    */
   void startDriverRun();
+
+  /** Stop the manager at the end of a driver run().
+   * Flush/close files.
+   */
   void stopDriverRun();
 
   /** start  a block
@@ -182,11 +188,11 @@ private:
   ///index for the accept counter PropertyCache(acceptInd)
   int acceptRatioInd;
   ///hdf5 handler
-  hid_t h_file;
+  std::unique_ptr<hdf_archive> h_file;
   ///file handler to write data
-  std::ofstream* Archive;
+  std::unique_ptr<std::ofstream> Archive;
   ///file handler to write data for debugging
-  std::ofstream* DebugArchive;
+  std::unique_ptr<std::ofstream> DebugArchive;
   ///communicator to handle communication
   Communicate* my_comm_;
   /** pointer to the CollectablesEstimator
