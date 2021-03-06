@@ -26,7 +26,6 @@
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
-#include "Estimators/EstimatorManagerInterface.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
@@ -45,7 +44,7 @@ class EstimatorManagerBaseTest;
 
 
 /** Class to manage a set of ScalarEstimators */
-class EstimatorManagerBase : public EstimatorManagerInterface
+class EstimatorManagerBase
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;

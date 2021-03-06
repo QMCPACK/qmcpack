@@ -19,7 +19,6 @@
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
-#include "Estimators/EstimatorManagerInterface.h"
 #include "OperatorEstBase.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -39,7 +38,10 @@ class EstimatorManagerNewTest;
 } // namespace testing
 
 
-/** Class to manage a set of ScalarEstimators */
+/** Class to manage a set of ScalarEstimators
+ * As a manager, this class handles the aggregation of data from crowds, MPI ranks and I/O logics.
+ * The actually per-crowd data accumulation is done by EstimatorManagerCrowd.
+ */
 class EstimatorManagerNew
 {
 public:
