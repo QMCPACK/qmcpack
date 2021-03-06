@@ -36,7 +36,9 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
 
 void EstimatorManagerCrowd::accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
 {
-  block_weight_ += walkers.size();
+  block_num_samples_ += walkers.size();
+  for (MCPWalker& awalker : walkers)
+    block_weight_ += awalker.Weight;
   //Don't normalize we only divide once after reduction.
   //RealType norm             = 1.0 / global_walkers;
   int num_scalar_estimators = scalar_estimators_.size();
@@ -49,18 +51,14 @@ void EstimatorManagerCrowd::accumulate(int global_walkers, RefVector<MCPWalker>&
 
 void EstimatorManagerCrowd::startBlock(int steps)
 {
-  crowd_estimator_timer_.restart();
   for (auto& uope : operator_ests_)
-  {
     uope->startBlock(steps);
-  }
+  block_num_samples_ = 0.0;
   block_weight_ = 0.0;
 }
 
 void EstimatorManagerCrowd::stopBlock()
 {
-  cpu_block_time_ = crowd_estimator_timer_.elapsed();
-  //didn't we already normalize by the global number of walkers?
   // the main estimator does it some more inside of here.
 }
 

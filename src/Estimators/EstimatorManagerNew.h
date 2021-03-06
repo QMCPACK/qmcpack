@@ -109,9 +109,8 @@ public:
    * \param[in] accept
    * \param[in] reject
    * \param[in] block_weight
-   * \param[in] cpu_block_time Timer returns double so this is not altered by "mixed" precision
    */
-  void stopBlock(unsigned long accept, unsigned long reject, RealType block_weight, double cpu_block_time);
+  void stopBlock(unsigned long accept, unsigned long reject, RealType block_weight);
 
   /** At end of block collect the scalar estimators for the entire rank
    *   
@@ -244,10 +243,8 @@ private:
    */
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
 
-  /////estimators of composite data
-  //CompositeEstimatorSet* CompEstimators;
-  ///Timer
-  Timer MyTimer;
+  ///block timer
+  Timer block_timer_;
 
   ///number of maximum data for a scalar.dat
   int max4ascii;

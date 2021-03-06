@@ -169,18 +169,17 @@ void EstimatorManagerNew::start(int blocks, bool record)
 
 void EstimatorManagerNew::startBlock(int steps)
 {
-  MyTimer.restart();
+  block_timer_.restart();
   BlockWeight = 0.0;
 }
 
 void EstimatorManagerNew::stopBlock(unsigned long accept,
                                     unsigned long reject,
-                                    RealType block_weight,
-                                    double cpu_block_time)
+                                    RealType block_weight)
 {
   //take block averages and update properties per block
   PropertyCache[weightInd] = block_weight;
-  PropertyCache[cpuInd]    = cpu_block_time;
+  PropertyCache[cpuInd]    = block_timer_.elapsed();
   makeBlockAverages(accept, reject);
   reduceOperatorEstimators();
   writeOperatorEstimators();

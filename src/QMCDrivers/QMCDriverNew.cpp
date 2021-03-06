@@ -470,7 +470,6 @@ void QMCDriverNew::endBlock()
 
   FullPrecRealType total_block_weight = 0.0;
   // Collect all the ScalarEstimatorsFrom EMCrowds
-  double cpu_block_time      = 0.0;
   unsigned long block_accept = 0;
   unsigned long block_reject = 0;
 
@@ -485,7 +484,6 @@ void QMCDriverNew::endBlock()
     total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
     block_accept += crowd->get_accept();
     block_reject += crowd->get_reject();
-    cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
 
     // This seems altogether easier and more sane.
     crowd_operator_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_operator_estimators());
@@ -503,7 +501,7 @@ void QMCDriverNew::endBlock()
   /// get the average cpu_block time per crowd
   /// cpu_block_time /= crowds_.size();
 
-  estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight, cpu_block_time);
+  estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight);
 }
 
 bool QMCDriverNew::checkLogAndGL(Crowd& crowd)

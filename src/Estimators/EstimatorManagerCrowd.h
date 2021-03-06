@@ -95,7 +95,6 @@ public:
   RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }
   RefVector<qmcplusplus::OperatorEstBase> get_operator_estimators() { return convertUPtrToRefVector(operator_ests_); }
   RealType get_block_weight() const { return block_weight_; }
-  double get_cpu_block_time() const { return cpu_block_time_; }
 
 protected:
   ///use bitset to handle options
@@ -108,6 +107,8 @@ protected:
   int cpuInd;
   ///index for the acceptance rate PropertyCache(acceptInd)
   int acceptInd;
+  ///number of samples accumulated in a block
+  RealType block_num_samples_;
   ///total weight accumulated in a block
   RealType block_weight_;
 
@@ -150,10 +151,6 @@ protected:
 
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
 private:
-  // This is needed for "efficiency" measure
-  Timer crowd_estimator_timer_;
-  double cpu_block_time_ = 0;
-
   ///number of maximum data for a scalar.dat
   int max4ascii;
   ///collect data and write
