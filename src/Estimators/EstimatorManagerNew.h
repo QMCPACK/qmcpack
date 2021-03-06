@@ -51,25 +51,12 @@ public:
   using FPRBuffer = std::vector<FullPrecRealType>;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  ///name of the primary estimator name
-  std::string MainEstimatorName;
-  ///the root file name
-  std::string RootName;
-  ///energy
-  TinyVector<RealType, 4> RefEnergy;
   ///default constructor
   EstimatorManagerNew(Communicate* c = 0);
-  ///copy constructor
-  EstimatorManagerNew(EstimatorManagerNew& em);
+  ///copy constructor, deleted
+  EstimatorManagerNew(EstimatorManagerNew& em) = delete;
   ///destructor
-  virtual ~EstimatorManagerNew();
-
-  /** set the communicator */
-  void setCommunicator(Communicate* c);
-
-  /** return the communicator
-   */
-  Communicate* getCommunicator() { return my_comm_; }
+  ~EstimatorManagerNew();
 
   ///return the number of ScalarEstimators
   inline int size() const { return Estimators.size(); }
@@ -149,12 +136,6 @@ public:
    */
   void startBlock(int steps);
 
-  void setNumberOfBlocks(int blocks)
-  {
-    for (int i = 0; i < Estimators.size(); i++)
-      Estimators[i]->setNumberOfBlocks(blocks);
-  }
-
   /** unified: stop a block
    * @param accept acceptance rate of this block
    * \param[in] accept
@@ -199,8 +180,10 @@ public:
   auto& get_AverageCache() { return AverageCache; }
   auto& get_SquaredAverageCache() { return SquaredAverageCache; }
 
-protected:
+private:
   friend class EstimatorManagerCrowd;
+  ///name of the primary estimator name
+  std::string MainEstimatorName;
   //  TODO: fix needless use of bitset instead of clearer more visible booleans
   std::bitset<8> Options;
   ///size of the message buffer

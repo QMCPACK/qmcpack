@@ -176,10 +176,6 @@ struct ScalarEstimatorBase
   ///clone the object
   virtual ScalarEstimatorBase* clone() = 0;
 
-  inline void setNumberOfBlocks(int nsamples)
-  {
-    //       NSTEPS=1.0/ static_cast<RealType>(nsamples);
-  }
 };
 } // namespace qmcplusplus
 

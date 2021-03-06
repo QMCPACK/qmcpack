@@ -54,39 +54,12 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
       h_file(-1),
       Archive(0),
       DebugArchive(0),
-      my_comm_(0),
+      my_comm_(c),
       MainEstimator(0),
       Collectables(0),
       max4ascii(8),
       FieldWidth(20)
-{
-  setCommunicator(c);
-}
-
-EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerNew& em)
-    : MainEstimatorName(em.MainEstimatorName),
-      Options(em.Options),
-      RecordCount(0),
-      h_file(-1),
-      Archive(0),
-      DebugArchive(0),
-      my_comm_(0),
-      MainEstimator(0),
-      Collectables(0),
-      EstimatorMap(em.EstimatorMap),
-      max4ascii(em.max4ascii),
-      FieldWidth(20)
-{
-  //inherit communicator
-  setCommunicator(em.my_comm_);
-
-  // Here Estimators are ScalarEstimatorNew
-  for (int i = 0; i < em.Estimators.size(); i++)
-    Estimators.push_back(em.Estimators[i]->clone());
-  MainEstimator = Estimators[EstimatorMap[MainEstimatorName]];
-  if (em.Collectables)
-    Collectables = em.Collectables->clone();
-}
+{ }
 
 EstimatorManagerNew::~EstimatorManagerNew()
 {
@@ -94,20 +67,6 @@ EstimatorManagerNew::~EstimatorManagerNew()
   delete_iter(h5desc.begin(), h5desc.end());
   if (Collectables)
     delete Collectables;
-}
-
-void EstimatorManagerNew::setCommunicator(Communicate* c)
-{
-  // I think this is actually checking if this is the "Main Estimator"
-  if (my_comm_ && my_comm_ == c)
-    return;
-  my_comm_ = c ? c : OHMMS::Controller;
-  //set the default options
-  // This is a flag to tell manager if there is more than one rank
-  // running walkers, its discovered by smelly query of my_comm_.
-  // New code should not make use of these useless options
-  Options.set(COLLECT, my_comm_->size() > 1);
-  Options.set(MANAGE, my_comm_->rank() == 0);
 }
 
 /** reset names of the properties
@@ -154,8 +113,6 @@ void EstimatorManagerNew::addHeader(std::ostream& o)
 /// \todo clean up this method its a mess
 void EstimatorManagerNew::start(int blocks, bool record)
 {
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->setNumberOfBlocks(blocks);
   reset();
   RecordCount = 0;
   energyAccumulator.clear();

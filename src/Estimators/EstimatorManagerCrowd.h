@@ -92,12 +92,6 @@ public:
 
   void stopBlock();
 
-  void setNumberOfBlocks(int blocks)
-  {
-    for (int i = 0; i < scalar_estimators_.size(); i++)
-      scalar_estimators_[i]->setNumberOfBlocks(blocks);
-  }
-
   void accumulate(int global_walkers, RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets);
 
   RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }
