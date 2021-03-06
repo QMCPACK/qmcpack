@@ -15,14 +15,6 @@
 namespace qmcplusplus
 {
 EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
-    : Options(em.Options),
-      RecordCount(0),
-      Archive(0),
-      DebugArchive(0),
-      Collectables(0),
-      EstimatorMap(em.EstimatorMap),
-      max4ascii(em.max4ascii),
-      FieldWidth(20)
 {
   // For now I'm going to try to refactor away the clone pattern only at the manager level.
   // i.e. not continue into the scalar_estimators and collectables
