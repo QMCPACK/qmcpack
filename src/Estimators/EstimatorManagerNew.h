@@ -140,6 +140,9 @@ private:
   /// collect data and write
   void makeBlockAverages(unsigned long accept, unsigned long reject);
 
+  /// write scalars to scalar.dat and h5
+  void writeScalarH5();
+
   /** do the rank wise reduction of the OperatorEstimators
    *
    *  Why do this here?
@@ -179,8 +182,6 @@ private:
   int acceptRatioInd;
   ///hdf5 handler
   hid_t h_file;
-  ///total weight accumulated in a block
-  RealType BlockWeight;
   ///file handler to write data
   std::ofstream* Archive;
   ///file handler to write data for debugging

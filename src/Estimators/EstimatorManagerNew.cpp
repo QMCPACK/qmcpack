@@ -128,8 +128,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
   AverageCache.resize(BlockAverages.size() + nc);
   PropertyCache.resize(BlockProperties.size());
   //count the buffer size for message
-  BufferSize  = 2 * AverageCache.size() + PropertyCache.size();
-  int sources = 2;
+  BufferSize  = AverageCache.size() + PropertyCache.size();
   //allocate buffer for data collection
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (record && DebugArchive == 0)
@@ -169,7 +168,6 @@ void EstimatorManagerNew::start(int blocks, bool record)
 void EstimatorManagerNew::startBlock(int steps)
 {
   block_timer_.restart();
-  BlockWeight = 0.0;
 }
 
 void EstimatorManagerNew::stopBlock(unsigned long accept,
@@ -178,11 +176,14 @@ void EstimatorManagerNew::stopBlock(unsigned long accept,
 {
   //take block averages and update properties per block
   PropertyCache[weightInd] = block_weight;
-  PropertyCache[cpuInd]    = block_timer_.elapsed();
   makeBlockAverages(accept, reject);
   reduceOperatorEstimators();
   writeOperatorEstimators();
   zeroOperatorEstimators();
+  // intentionally put after all the estimator I/O
+  PropertyCache[cpuInd] = block_timer_.elapsed();
+  writeScalarH5();
+  RecordCount++;
 }
 
 void EstimatorManagerNew::collectScalarEstimators(
@@ -266,7 +267,7 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
     auto cur = recv_buffer.begin();
     copy(cur, cur + n1, AverageCache.begin());
     copy(cur + n1, cur + n2, PropertyCache.begin());
-    RealType invTotWgt = 1.0 / PropertyCache[weightInd];
+    const RealType invTotWgt = 1.0 / PropertyCache[weightInd];
     AverageCache *= invTotWgt;
     //do not weight weightInd i.e. its index 0!
     for (int i = 1; i < PropertyCache.size(); i++)
@@ -280,7 +281,10 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
   //add the block average to summarize
   energyAccumulator(AverageCache[0]);
   varAccumulator(AverageCache[1]);
+}
 
+void EstimatorManagerNew::writeScalarH5()
+{
   //Do not assume h_file is valid
   if (h_file)
     if (Archive)
@@ -297,7 +301,6 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
         h5desc[o]->write(AverageCache.data(), AverageCache.data());
       H5Fflush(h_file, H5F_SCOPE_LOCAL);
     }
-  RecordCount++;
 }
 
 void EstimatorManagerNew::reduceOperatorEstimators()
