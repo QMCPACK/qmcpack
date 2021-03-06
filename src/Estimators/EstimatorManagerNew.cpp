@@ -59,7 +59,13 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
       Collectables(0),
       max4ascii(8),
       FieldWidth(20)
-{ }
+{
+  // This is a flag to tell manager if there is more than one rank
+  // running walkers, its discovered by smelly query of my_comm_.
+  // New code should not make use of these useless options
+  Options.set(COLLECT, my_comm_->size() > 1);
+  Options.set(MANAGE, my_comm_->rank() == 0);
+}
 
 EstimatorManagerNew::~EstimatorManagerNew()
 {
