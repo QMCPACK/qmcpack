@@ -102,8 +102,8 @@ struct ScalarEstimatorBase
     first_sq += FirstIndex;
     for (int i = 0; i < scalars.size(); i++)
     {
-      *first++         = scalars[i].mean();
-      *first_sq++      = scalars[i].mean2();
+      *first++    = scalars[i].mean();
+      *first_sq++ = scalars[i].mean2();
       // For mixed precision I believe this is where Collectables data goes from Actual QMCT::RealType
       // to the local RealType which is hard coded to QMCTFullPrecRealType.
       // I think it is a bad idea to have RealType to have a changing meaning,
@@ -115,16 +115,16 @@ struct ScalarEstimatorBase
     }
   }
 
-  /** take the block accumulated scalars
+  /** add the block accumulated scalars
    * @param first starting iterator of values
    */
   template<typename IT>
-  inline void takeAccumulated(IT first)
+  inline void addAccumulated(IT first)
   {
     first += FirstIndex;
     for (int i = 0; i < scalars.size(); i++)
     {
-      *first++         = scalars[i].result();
+      *first++ += scalars[i].result();
       scalars[i].clear();
     }
   }
@@ -162,7 +162,6 @@ struct ScalarEstimatorBase
 
   ///clone the object
   virtual ScalarEstimatorBase* clone() = 0;
-
 };
 } // namespace qmcplusplus
 

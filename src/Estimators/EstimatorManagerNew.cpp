@@ -128,7 +128,7 @@ void EstimatorManagerNew::start(int blocks, bool record)
   AverageCache.resize(BlockAverages.size() + nc);
   PropertyCache.resize(BlockProperties.size());
   //count the buffer size for message
-  BufferSize  = AverageCache.size() + PropertyCache.size();
+  BufferSize = AverageCache.size() + PropertyCache.size();
   //allocate buffer for data collection
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (record && DebugArchive == 0)
@@ -165,14 +165,9 @@ void EstimatorManagerNew::start(int blocks, bool record)
   }
 }
 
-void EstimatorManagerNew::startBlock(int steps)
-{
-  block_timer_.restart();
-}
+void EstimatorManagerNew::startBlock(int steps) { block_timer_.restart(); }
 
-void EstimatorManagerNew::stopBlock(unsigned long accept,
-                                    unsigned long reject,
-                                    RealType block_weight)
+void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, RealType block_weight)
 {
   //take block averages and update properties per block
   PropertyCache[weightInd] = block_weight;
@@ -186,31 +181,11 @@ void EstimatorManagerNew::stopBlock(unsigned long accept,
   RecordCount++;
 }
 
-void EstimatorManagerNew::collectScalarEstimators(
-    const RefVector<ScalarEstimatorBase>& estimators)
+void EstimatorManagerNew::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators)
 {
-  using ScalarType = ScalarEstimatorBase::RealType;
-
-  AverageCache        = 0.0;
-
-  // One scalar estimator can be accumulating many scalar values
-  int num_scalars = estimators[0].get().size();
-  if (AverageCache.size() != num_scalars)
-    throw std::runtime_error(
-        "EstimatorManagerNew and Crowd ScalarManagers do not agree on number of scalars being estimated");
-  Vector<ScalarType> averages_work(num_scalars, 0.0);
-
-  auto accumulateVectorsInPlace = [](auto& vec_a, const auto& vec_b) {
-    for (int i = 0; i < vec_a.size(); ++i)
-      vec_a[i] += vec_b[i];
-  };
-
-  RealType tot_weight = 0.0;
-  for (int i = 0; i < estimators.size(); ++i)
-  {
-    estimators[i].get().takeAccumulated(averages_work.begin());
-    accumulateVectorsInPlace(AverageCache, averages_work);
-  }
+  AverageCache = 0.0;
+  for (ScalarEstimatorBase& est : estimators)
+    est.addAccumulated(AverageCache.begin());
 }
 
 void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
