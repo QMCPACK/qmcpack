@@ -490,23 +490,4 @@ int EstimatorManagerNew::add(EstimatorType* newestimator, const std::string& ana
   return n;
 }
 
-int EstimatorManagerNew::addObservable(const char* aname)
-{
-  int mine = BlockAverages.add(aname);
-  int add  = TotalAverages.add(aname);
-  if (mine < Block2Total.size())
-    Block2Total[mine] = add;
-  else
-    Block2Total.push_back(add);
-  return mine;
-}
-
-void EstimatorManagerNew::getData(int i, std::vector<RealType>& values)
-{
-  int entries = TotalAveragesData.rows();
-  values.resize(entries);
-  for (int a = 0; a < entries; a++)
-    values[a] = TotalAveragesData(a, Block2Total[i]);
-}
-
 } // namespace qmcplusplus

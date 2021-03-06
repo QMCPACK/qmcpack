@@ -74,17 +74,6 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   }
 }
 
-int QMCDriverNew::addObservable(const std::string& aname)
-{
-  if (estimator_manager_)
-    return estimator_manager_->addObservable(aname.c_str());
-  else
-    return -1;
-}
-
-QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
-
-
 // The Rng pointers are transferred from global storage (RandomNumberControl::Children)
 // to local storage (Rng) for the duration of QMCDriverNew.
 // They are transferred to local storage in createRngsStepContext (called from startup,

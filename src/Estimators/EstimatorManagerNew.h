@@ -78,12 +78,6 @@ public:
 
   inline RealType getProperty(int i) const { return PropertyCache[i]; }
 
-  int addObservable(const char* aname);
-
-  inline RealType getObservable(int i) const { return TotalAverages[i]; }
-
-  void getData(int i, std::vector<RealType>& values);
-
   /** add a "non" physical operator estimator 
    *
    *  this is a dratically reduced version of OperatorBase right now it just supports
@@ -144,12 +138,6 @@ public:
    * Note: this is not weighted average. It can be the same as weighted average only when block weights are identical.
    */
   void getApproximateEnergyVariance(RealType& e, RealType& var);
-
-  template<class CT>
-  void write(CT& anything, bool doappend)
-  {
-    anything.write(h_file, doappend);
-  }
 
   auto& get_AverageCache() { return AverageCache; }
   auto& get_SquaredAverageCache() { return SquaredAverageCache; }
@@ -241,12 +229,6 @@ private:
   RecordNamedProperty<RealType> BlockAverages;
   ///manager of property data
   RecordNamedProperty<RealType> BlockProperties;
-  ///block averages: name to value
-  RecordNamedProperty<RealType> TotalAverages;
-  ///data accumulated over the blocks
-  Matrix<RealType> TotalAveragesData;
-  ///index mapping between BlockAverages and TotalAverages
-  std::vector<int> Block2Total;
   ///column map
   std::map<std::string, int> EstimatorMap;
   ///estimators of simple scalars
