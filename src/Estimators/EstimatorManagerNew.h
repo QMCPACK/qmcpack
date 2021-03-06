@@ -175,10 +175,6 @@ private:
 
   ///name of the primary estimator name
   std::string MainEstimatorName;
-  //  TODO: fix needless use of bitset instead of clearer more visible booleans
-  std::bitset<8> Options;
-  ///size of the message buffer
-  int BufferSize;
   ///number of records in a block
   int RecordCount;
   ///index for the block weight PropertyCache(weightInd)

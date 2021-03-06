@@ -36,26 +36,10 @@
 
 namespace qmcplusplus
 {
-/** enumeration for EstimatorManagerBase.Options
- */
-enum
-{
-  COLLECT = 0,
-  MANAGE,
-  RECORD,
-  POSTIRECV,
-  APPEND
-};
-
 //initialize the name of the primary estimator
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
     : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), Collectables(0), max4ascii(8), FieldWidth(20)
 {
-  // This is a flag to tell manager if there is more than one rank
-  // running walkers, its discovered by smelly query of my_comm_.
-  // New code should not make use of these useless options
-  Options.set(COLLECT, my_comm_->size() > 1);
-  Options.set(MANAGE, my_comm_->rank() == 0);
 }
 
 EstimatorManagerNew::~EstimatorManagerNew()
@@ -119,9 +103,6 @@ void EstimatorManagerNew::startDriverRun()
   // \todo Collectables should just have its own data structures not change the EMBS layout.
   AverageCache.resize(BlockAverages.size() + nc);
   PropertyCache.resize(BlockProperties.size());
-  //count the buffer size for message
-  BufferSize = AverageCache.size() + PropertyCache.size();
-  //allocate buffer for data collection
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (!DebugArchive)
   {
@@ -131,9 +112,7 @@ void EstimatorManagerNew::startDriverRun()
     addHeader(*DebugArchive);
   }
 #endif
-  //set Options[RECORD] to enable/disable output
-  Options.set(RECORD, Options[MANAGE]);
-  if (Options[RECORD])
+  if (my_comm_->rank() == 0)
   {
     std::string fname(my_comm_->getName());
     fname.append(".scalar.dat");
@@ -185,9 +164,7 @@ void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<
   {
     RefVector<OperatorEstBase> this_op_est_for_all_crowds;
     for (int icrowd = 0; icrowd < crowd_op_ests.size(); ++icrowd)
-    {
       this_op_est_for_all_crowds.emplace_back(crowd_op_ests[icrowd][iop]);
-    }
     operator_ests_[iop]->collect(this_op_est_for_all_crowds);
   }
 }
@@ -209,8 +186,8 @@ void EstimatorManagerNew::makeBlockAverages(unsigned long accepts, unsigned long
                                                      accepts_and_rejects.begin() + my_comm_->size() * 2, 0);
 
   //Transfer FullPrecisionRead data
-  int n1 = AverageCache.size();
-  int n2 = n1 + PropertyCache.size();
+  const size_t n1 = AverageCache.size();
+  const size_t n2 = n1 + PropertyCache.size();
 
   // This is a hack but it needs to be the correct size
 
@@ -336,21 +313,13 @@ void EstimatorManagerNew::zeroOperatorEstimators()
 
 void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& var)
 {
-  if (Options[COLLECT]) //need to broadcast the value
-  {
-    RealType tmp[3];
-    tmp[0] = energyAccumulator.count();
-    tmp[1] = energyAccumulator.result();
-    tmp[2] = varAccumulator.result();
-    my_comm_->bcast(tmp, 3);
-    e   = tmp[1] / tmp[0];
-    var = tmp[2] / tmp[0] - e * e;
-  }
-  else
-  {
-    e   = energyAccumulator.mean();
-    var = varAccumulator.mean() - e * e;
-  }
+  RealType tmp[3];
+  tmp[0] = energyAccumulator.count();
+  tmp[1] = energyAccumulator.result();
+  tmp[2] = varAccumulator.result();
+  my_comm_->bcast(tmp, 3);
+  e   = tmp[1] / tmp[0];
+  var = tmp[2] / tmp[0] - e * e;
 }
 
 EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std::string& a)
