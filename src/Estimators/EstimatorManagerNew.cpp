@@ -139,6 +139,10 @@ void EstimatorManagerNew::startBlock(int steps) { block_timer_.restart(); }
 
 void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, RealType block_weight)
 {
+  /* Need a redesign of how accept, reject and block_weight are handled from driver to this manager.
+   * DMC needs to add non-local move counters.
+   * also need to add num_samples which differs from block_weight
+   */
   //take block averages and update properties per block
   PropertyCache[weightInd] = block_weight;
   makeBlockAverages(accept, reject);
