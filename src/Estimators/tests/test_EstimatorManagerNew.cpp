@@ -16,7 +16,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerNew.h"
-#include "Estimators/tests/FakeEstimator.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/tests/EstimatorManagerNewTest.h"
 
@@ -25,23 +24,16 @@
 
 namespace qmcplusplus
 {
+
 TEST_CASE("EstimatorManagerNew", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
 
-  EstimatorManagerNew em(c);
+  testing::EstimatorManagerNewTest embt(c, 1);
 
-  REQUIRE(em.size() == 0);
+  REQUIRE(embt.em.size() == 0);
 
-  // Must create on heap since the EstimatorManager destructor deletes all estimators
-  FakeEstimator* fake_est = new FakeEstimator;
-
-  em.add(fake_est, "fake");
-
-  ScalarEstimatorBase* est2 = em.getEstimator("fake");
-  FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
-  REQUIRE(fake_est2 != NULL);
-  REQUIRE(fake_est2 == fake_est);
+  REQUIRE(embt.testAddGetEstimator());
 }
 
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")

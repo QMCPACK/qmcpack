@@ -180,10 +180,6 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
-  int addObservable(const std::string& aname);
-
-  RealType getObservable(int i);
-
   ///set global offsets of the walkers
   void setWalkerOffsets();
 

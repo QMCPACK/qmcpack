@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_TEST_WALKERCONTROLMPI_H
 #define QMCPLUSPLUS_TEST_WALKERCONTROLMPI_H
 
-#include "QMCDrivers/DMC/WalkerControlMPI.h"
+#include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/tests/SetupPools.h"
 
 namespace qmcplusplus
@@ -28,6 +28,7 @@ public:
   void testMultiplicity(std::vector<int>& rank_counts_expanded, std::vector<int>& rank_counts_after);
   void testPopulationDiff(std::vector<int>& rank_counts_before, std::vector<int>& rank_counts_after);
   void makeValidWalkers();
+  static void testNewDistribution(std::vector<int>& minus, std::vector<int>& plus);
 
 private:
   void reportWalkersPerRank(Communicate* c, MCPopulation& pop);
@@ -35,7 +36,7 @@ private:
   SetupPools dpools_;
   WalkerConfigurations walker_confs;
   UPtr<MCPopulation> pop_;
-  WalkerControlMPI wc_;
+  WalkerControl wc_;
 };
 } // namespace testing
 } // namespace qmcplusplus

@@ -16,7 +16,6 @@
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
 #include "Estimators/EstimatorManagerNew.h"
-#include "Estimators/tests/FakeEstimator.h"
 #include "QMCDrivers/SFNBranch.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
@@ -36,16 +35,12 @@ public:
   {
     comm_                   = comm;
     emb_                    = std::make_unique<EstimatorManagerNew>(comm_);
-    FakeEstimator* fake_est = new FakeEstimator;
-    emb_->add(fake_est, "fake");
   }
 
   SetupSFNBranch()
   {
     comm_                   = OHMMS::Controller;
     emb_                    = std::make_unique<EstimatorManagerNew>(comm_);
-    FakeEstimator* fake_est = new FakeEstimator;
-    emb_->add(fake_est, "fake");
   }
 
   SFNBranch operator()(ParticleSet& p_set, TrialWaveFunction& twf, QMCHamiltonian& ham)
