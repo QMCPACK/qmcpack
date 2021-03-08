@@ -2,10 +2,11 @@
  IF (NOT QMC_CUDA)
 
 # VMC long run with no Jastrows 
-# Compare directly to sCI Energy of: E=-10.39616312
+# Compare directly to sCI Energy of: E=-10.39616312, T=11.2105174, and V=-21.60668054
+# The other references are from VMC reference runs.
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "totenergy" "-10.39616312 0.0080035848")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "kinetic" "11.20613561 0.0344527216")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "potential" "-21.60290306 0.034737248")
+LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "kinetic" "11.2105174 0.0344527216")
+LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "potential" "-21.60668054 0.034737248")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "eeenergy" "-2.51687510 0.0123828708")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "localecp" "-7.13621881 0.0461973356")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "nonlocalecp" "0.82585828 0.015849296")
@@ -20,10 +21,11 @@ LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_LONG_SCALARS "ionion" "-12.77566743 0
                     )
 
 # VMC short run with no Jastrows 
-# Compare directly to sCI Energy of: E=--10.39616312 
+# Compare directly to sCI Energy of: E=-10.39616312, T=11.2105174, and V=-21.60668054
+# The other references are from VMC reference runs. 
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_SHORT_SCALARS "totenergy" "-10.39616312 0.025291327968")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_SHORT_SCALARS "kinetic" "11.20613561 0.108870600256")
-LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_SHORT_SCALARS "potential" "-21.60290306 0.10976970368")
+LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_SHORT_SCALARS "kinetic" "11.2105174 0.108870600256")
+LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_SHORT_SCALARS "potential" "-21.60668054 0.10976970368")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_SHORT_SCALARS "eeenergy" "-2.51687510 0.039129871728")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_SHORT_SCALARS "localecp" "-7.13621881 0.145983580496")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_MSD_SHORT_SCALARS "nonlocalecp" "0.82585828 0.05008377536")
