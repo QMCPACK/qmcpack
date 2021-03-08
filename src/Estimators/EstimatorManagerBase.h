@@ -26,7 +26,6 @@
 #include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
-#include "Estimators/EstimatorManagerInterface.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
@@ -45,7 +44,7 @@ class EstimatorManagerBaseTest;
 
 
 /** Class to manage a set of ScalarEstimators */
-class EstimatorManagerBase : public EstimatorManagerInterface
+class EstimatorManagerBase
 {
 public:
   typedef QMCTraits::FullPrecRealType RealType;
@@ -129,12 +128,6 @@ public:
   ///return a pointer to the estimator
   EstimatorType* getMainEstimator();
 
-  ///return the average for estimator i
-  inline RealType average(int i) const { return Estimators[i]->average(); }
-
-  ///returns a variance for estimator i
-  inline RealType variance(int i) const { return Estimators[i]->variance(); }
-
   void setCollectionMode(bool collect);
   //void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
 
@@ -169,12 +162,6 @@ public:
    * @param steps number of steps in a block
    */
   void startBlock(int steps);
-
-  void setNumberOfBlocks(int blocks)
-  {
-    for (int i = 0; i < Estimators.size(); i++)
-      Estimators[i]->setNumberOfBlocks(blocks);
-  }
 
   /** stop a block
    * @param accept acceptance rate of this block

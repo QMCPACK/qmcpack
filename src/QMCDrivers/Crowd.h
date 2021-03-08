@@ -70,11 +70,11 @@ public:
    */
   void clearWalkers();
 
-  void accumulate(int global_walkers)
+  void accumulate()
   {
     if (this->size() == 0)
       return;
-    estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_);
+    estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_);
   }
 
   void setRNGForHamiltonian(RandomGenerator_t& rng);

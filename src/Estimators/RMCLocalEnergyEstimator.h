@@ -48,12 +48,12 @@ public:
    */
   inline void accumulate(const Walker_t& awalker, RealType wgt) {}
 
-  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
     throw std::runtime_error("RMC not supported by Unified Driver interfaces");
   }
   /*@{*/
-  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt)
+  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) override
   {
     //WalkerIterator tail=first+W.activeBead+W.direction;
     //WalkerIterator head=first+W.activeBead;
@@ -137,9 +137,9 @@ public:
     //       for(; first != last; ++first) std::accumulate(**first,wgt);*/
   }
 
-  void add2Record(RecordListType& record);
-  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) {}
-  ScalarEstimatorBase* clone();
+  void add2Record(RecordListType& record) override;
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) override {}
+  ScalarEstimatorBase* clone() override;
   /*@}*/
 };
 } // namespace qmcplusplus
