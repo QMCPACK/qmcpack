@@ -17,38 +17,11 @@
 #define QMCPLUSPLUS_WALKER_CONTROL_MPI_H
 
 #include "QMCDrivers/WalkerControlBase.h"
-#include "QMCDrivers/WalkerElementsRef.h"
 #include "Utilities/TimerManager.h"
 
 namespace qmcplusplus
 {
 struct WalkerControlMPITest;
-
-namespace testing
-{
-class UnifiedDriverWalkerControlMPITest;
-}
-
-/** Datastruct of a WalkerMessage
- */
-struct WalkerMessage
-{
-  WalkerElementsRef walker_elements;
-  // i.e. MPI rank
-  const int source_rank;
-  const int target_rank;
-  WalkerMessage(WalkerElementsRef w_elem, const int source, const int target)
-      : walker_elements(w_elem), source_rank(source), target_rank(target)
-  {}
-};
-
-/** needed for repressing duplicate messages, this optimization is currently unimplemented.
- */
-/* inline bool isRepeatedMessage(const WalkerMessage& A, const WalkerMessage& B) */
-/* { */
-/*   // since all the walker references are to one queue of unique_ptrs in MCPopulation */
-/*   return (&A.walker == &B.walker) && (A.target_rank == B.target_rank); */
-/* } */
 
 /** Class to handle walker controls with simple global sum
  *
@@ -96,25 +69,12 @@ struct WalkerControlMPI : public WalkerControlBase
   /** legacy: perform branch and swap walkers as required */
   int branch(int iter, MCWalkerConfiguration& W, FullPrecRealType trigger);
 
-  /** unified driver: perform branch and swap walkers as required */
-  FullPrecRealType branch(int iter, MCPopulation& pop);
-
   /** legacy: swap implementation
    */
   void swapWalkersSimple(MCWalkerConfiguration& W);
 
-  /** unified: swap implementation
-   *
-   * Walkers are transfered between ranks in order to reach a difference of no more than 1 walker.
-   * \param[inout] pops rankscope population
-   * \param[inout] adjust population adjustment, it's updated for so on rank adjustments can occur
-   * \param[inout]    num_per_rank number of walkers per rank expanded by multiplicity.
-   */
-  int swapWalkersSimple(MCPopulation& pop, PopulationAdjustment& adjust, std::vector<IndexType>& num_per_rank);
-
   // Testing wrappers
   friend WalkerControlMPITest;
-  friend testing::UnifiedDriverWalkerControlMPITest;
 };
 
 } // namespace qmcplusplus

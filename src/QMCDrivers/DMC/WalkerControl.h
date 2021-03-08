@@ -29,6 +29,11 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class UnifiedDriverWalkerControlMPITest;
+}
+
 class MultiWalkerDispatchers;
 struct DriverWalkerResourceCollection;
 
@@ -182,6 +187,8 @@ private:
   TimerList_t my_timers_;
   ///Number of walkers sent during the exchange
   IndexType saved_num_walkers_sent_;
+
+  friend testing::UnifiedDriverWalkerControlMPITest;
 };
 
 } // namespace qmcplusplus
