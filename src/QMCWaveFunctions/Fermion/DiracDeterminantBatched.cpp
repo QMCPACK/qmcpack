@@ -22,8 +22,8 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-template<typename DET_ENGINE_TYPE>
-DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos, int first)
+template<typename DET_ENGINE>
+DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::shared_ptr<SPOSet>&& spos, int first)
     : DiracDeterminantBase("DiracDeterminantBatched", std::move(spos), first),
       ndelay(1),
       D2HTimer(*timer_manager.createTimer("DiracDeterminantBatched::D2H", timer_level_fine)),
@@ -34,8 +34,8 @@ DiracDeterminantBatched<DET_ENGINE_TYPE>::DiracDeterminantBatched(std::shared_pt
  *@param first index of first particle
  *@param nel number of particles in the determinant
  */
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::set(int first, int nel, int delay)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::set(int first, int nel, int delay)
 {
   FirstIndex = first;
   ndelay     = delay;
@@ -46,35 +46,41 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::set(int first, int nel, int delay
     Phi->buildOptVariables(nel);
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::invertPsiM(const ValueMatrix_t& logdetT)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+							  const OffloadPinnedValueMatrix_t& logdetT)
 {
   ScopedTimer inverse_timer(InverseTimer);
-  det_engine_.invert_transpose(logdetT, LogValue);
+  det_engine_.invert_transpose(logdetT, mw_res.log_values);
+  log_value_ = mw_res.log_values[0];
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                             const RefVector<const ValueMatrix_t>& logdetT_list)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+                                                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                        RefVector<OffloadPinnedValueMatrix_t>& logdetT_list)
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   ScopedTimer inverse_timer(wfc_leader.InverseTimer);
   const auto nw = wfc_list.size();
 
-  RefVector<LogValueType> log_value_list;
-  RefVectorWithLeader<DET_ENGINE_TYPE> engine_list(wfc_leader.get_det_engine());
+  RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.get_det_engine());
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
-    log_value_list.push_back(det.LogValue);
+    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     engine_list.push_back(det.get_det_engine());
   }
-  wfc_leader.det_engine_.mw_invertTranspose(engine_list, logdetT_list, log_value_list);
+  wfc_leader.det_engine_.mw_invertTranspose(engine_list, logdetT_list, mw_res.log_values);
+  for (int iw = 0; iw < nw; ++iw)
+  {
+    auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+    det.log_value_ = mw_res.log_values[iw];
+  }
 }
 
 ///reset the size: with the number of particles and number of orbtials
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::resize(int nel, int morb)
 {
   int norb = morb;
   if (norb <= 0)
@@ -99,10 +105,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resize(int nel, int morb)
   d2psiV.resize(NumOrbitals);
 }
 
-template<typename DET_ENGINE_TYPE>
-typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatched<DET_ENGINE_TYPE>::evalGrad(
-    ParticleSet& P,
-    int iat)
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::GradType DiracDeterminantBatched<DET_ENGINE>::evalGrad(ParticleSet& P,
+                                                                                                     int iat)
 {
   ScopedTimer local_timer(RatioTimer);
   const int WorkingIndex = iat - FirstIndex;
@@ -111,25 +116,25 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
   return g;
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                                           int iat,
-                                                           std::vector<GradType>& grad_now) const
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                                      int iat,
+                                                      std::vector<GradType>& grad_now) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   ScopedTimer local_timer(RatioTimer);
 
   const int nw = wfc_list.size();
   std::vector<const ValueType*> dpsiM_row_list(nw, nullptr);
-  RefVector<DET_ENGINE_TYPE> engine_list;
+  RefVector<DET_ENGINE> engine_list;
   engine_list.reserve(nw);
 
   const int WorkingIndex = iat - FirstIndex;
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+    auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     dpsiM_row_list[iw] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
     engine_list.push_back(det.det_engine_);
   }
@@ -142,8 +147,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVectorWithLe
 #endif
 }
 
-template<typename DET_ENGINE_TYPE>
-typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::ratioGrad(
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::PsiValueType DiracDeterminantBatched<DET_ENGINE>::ratioGrad(
     ParticleSet& P,
     int iat,
     GradType& grad_iat)
@@ -166,15 +171,15 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
 }
 
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVectorWithLeader<ParticleSet>& p_list,
-                                                            int iat,
-                                                            std::vector<PsiValueType>& ratios,
-                                                            std::vector<GradType>& grad_new) const
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       int iat,
+                                                       std::vector<PsiValueType>& ratios,
+                                                       std::vector<GradType>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
@@ -185,13 +190,13 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
     ScopedTimer local_timer(SPOVGLTimer);
     RefVectorWithLeader<SPOSet> phi_list(*Phi);
     phi_list.reserve(wfc_list.size());
-    RefVector<DET_ENGINE_TYPE> engine_list;
+    RefVector<DET_ENGINE> engine_list;
     engine_list.reserve(wfc_list.size());
 
     const int WorkingIndex = iat - FirstIndex;
     for (int iw = 0; iw < wfc_list.size(); iw++)
     {
-      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
       phi_list.push_back(*det.Phi);
       engine_list.push_back(det.det_engine_);
     }
@@ -212,7 +217,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
   wfc_leader.UpdateMode = ORB_PBYP_PARTIAL;
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
-    auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+    auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     det.UpdateMode = ORB_PBYP_PARTIAL;
     ratios[iw] = det.curRatio = ratios_local[iw];
     grad_new[iw] += grad_new_local[iw];
@@ -223,8 +228,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
 /** Move was accepted, update the real container.
  *  Why does a "Batched class have an acceptMove method
 */
-// template<typename DET_ENGINE_TYPE>
-// void DiracDeterminantBatched<DET_ENGINE_TYPE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
+// template<typename DET_ENGINE>
+// void DiracDeterminantBatched<DET_ENGINE>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 // {
 //   const int WorkingIndex = iat - FirstIndex;
 //   LogValue += convertValueToLog(curRatio);
@@ -240,8 +245,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
 //   curRatio = 1.0;
 // }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
     int iat,
@@ -249,7 +254,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
     bool safe_to_delay) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   wfc_leader.guardMultiWalkerRes();
   auto& mw_res       = *wfc_leader.mw_res_;
   auto& phi_vgl_v    = mw_res.phi_vgl_v;
@@ -264,7 +269,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
       count++;
   const int n_accepted = count;
 
-  RefVector<DET_ENGINE_TYPE> engine_list;
+  RefVector<DET_ENGINE> engine_list;
   engine_list.reserve(nw);
   std::vector<ValueType*> psiM_g_dev_ptr_list(n_accepted, nullptr);
   std::vector<ValueType*> psiM_l_dev_ptr_list(n_accepted, nullptr);
@@ -272,13 +277,13 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
   const int WorkingIndex = iat - FirstIndex;
   for (int iw = 0, count = 0; iw < nw; iw++)
   {
-    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     engine_list.push_back(det.det_engine_);
     if (isAccepted[iw])
     {
       psiM_g_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
       psiM_l_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
-      det.LogValue += convertValueToLog(det.curRatio);
+      det.log_value_ += convertValueToLog(det.curRatio);
       count++;
     }
     det.curRatio = 1.0;
@@ -300,14 +305,14 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
 
 /** move was rejected. copy the real container to the temporary to move on
 */
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::restore(int iat)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::restore(int iat)
 {
   curRatio = 1.0;
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::completeUpdates()
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::completeUpdates()
 {
   ScopedTimer update(UpdateTimer);
   if (UpdateMode == ORB_PBYP_PARTIAL)
@@ -319,18 +324,18 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::completeUpdates()
   }
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_completeUpdates(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   const auto nw    = wfc_list.size();
-  RefVector<DET_ENGINE_TYPE> engine_list;
+  RefVector<DET_ENGINE> engine_list;
   engine_list.reserve(nw);
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     engine_list.push_back(det.det_engine_);
   }
 
@@ -349,7 +354,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(
     {
       for (int iw = 0; iw < nw; iw++)
       {
-        auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+        auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
         auto& my_psiM_vgl  = det.psiM_vgl;
         auto* psiM_vgl_ptr = my_psiM_vgl.data();
         // transfer device to host, total size 4, g(3) + l(1)
@@ -360,9 +365,9 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(
   }
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::computeGL(ParticleSet::ParticleGradient_t& G,
-                                                         ParticleSet::ParticleLaplacian_t& L) const
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::computeGL(ParticleSet::ParticleGradient_t& G,
+                                                    ParticleSet::ParticleLaplacian_t& L) const
 {
   for (size_t i = 0, iat = FirstIndex; i < NumPtcls; ++i, ++iat)
   {
@@ -373,8 +378,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::computeGL(ParticleSet::ParticleGr
   }
 }
 
-template<typename DET_ENGINE_TYPE>
-typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateGL(
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatched<DET_ENGINE>::evaluateGL(
     ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L,
@@ -387,29 +392,30 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
     if (UpdateMode == ORB_PBYP_RATIO)
     { //need to compute dpsiM and d2psiM. Do not touch psiM!
       ScopedTimer spo_timer(SPOVGLTimer);
-      Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+      ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
+      Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, d2psiM);
     }
 
     computeGL(G, L);
   }
-  return LogValue;
+  return log_value_;
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                             const RefVectorWithLeader<ParticleSet>& p_list,
-                                                             const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                                                             const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
-                                                             bool fromscratch) const
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                        const RefVectorWithLeader<ParticleSet>& p_list,
+                                                        const RefVector<ParticleSet::ParticleGradient_t>& G_list,
+                                                        const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                                                        bool fromscratch) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   if (fromscratch)
     mw_evaluateLog(wfc_list, p_list, G_list, L_list);
   else
   {
     const auto nw = wfc_list.size();
-    RefVector<DET_ENGINE_TYPE> engine_list;
+    RefVector<DET_ENGINE> engine_list;
     engine_list.reserve(nw);
 
     if (UpdateMode == ORB_PBYP_RATIO)
@@ -424,24 +430,25 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVectorWith
       psiM_temp_list.reserve(nw);
       dpsiM_list.reserve(nw);
       d2psiM_list.reserve(nw);
+      std::vector<ValueMatrix_t> psiM_temp_host_list;
 
       for (int iw = 0; iw < nw; iw++)
       {
-        auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+        auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
         engine_list.push_back(det.det_engine_);
         phi_list.push_back(*det.Phi);
-        psiM_temp_list.push_back(det.psiM_temp);
+        psiM_temp_host_list.emplace_back(det.psiM_temp.data(), det.psiM_temp.rows(), det.psiM_temp.cols());
+        psiM_temp_list.push_back(psiM_temp_host_list.back());
         dpsiM_list.push_back(det.dpsiM);
         d2psiM_list.push_back(det.d2psiM);
       }
-
       Phi->mw_evaluate_notranspose(phi_list, p_list, FirstIndex, LastIndex, psiM_temp_list, dpsiM_list, d2psiM_list);
       wfc_leader.det_engine_.mw_transferAinv_D2H(engine_list);
     }
 
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
 
 #ifndef NDEBUG
       GradMatrix_t dpsiM_from_device   = det.dpsiM;
@@ -463,17 +470,17 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateGL(const RefVectorWith
   }
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::registerData(ParticleSet& P, WFBufferType& buf)
 {
   buf.add(psiMinv.first_address(), psiMinv.last_address());
   buf.add(dpsiM.first_address(), dpsiM.last_address());
   buf.add(d2psiM.first_address(), d2psiM.last_address());
-  buf.add(LogValue);
+  buf.add(log_value_);
 }
 
-template<typename DET_ENGINE_TYPE>
-typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::updateBuffer(
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatched<DET_ENGINE>::updateBuffer(
     ParticleSet& P,
     WFBufferType& buf,
     bool fromscratch)
@@ -484,12 +491,12 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminant
   buf.put(psiMinv.first_address(), psiMinv.last_address());
   buf.put(dpsiM.first_address(), dpsiM.last_address());
   buf.put(d2psiM.first_address(), d2psiM.last_address());
-  buf.put(LogValue);
-  return LogValue;
+  buf.put(log_value_);
+  return log_value_;
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   ScopedTimer local_timer(BufferTimer);
   buf.get(psiMinv.first_address(), psiMinv.last_address());
@@ -501,17 +508,16 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::copyFromBuffer(ParticleSet& P, WF
   const size_t psiM_vgl_stride = psiM_vgl.capacity();
   // transfer host to device, total size 4, g(3) + l(1)
   PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl_stride:psiM_vgl_stride*4])")
-  buf.get(LogValue);
+  buf.get(log_value_);
 }
 
 /** return the ratio only for the  iat-th partcle move
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-template<typename DET_ENGINE_TYPE>
-typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::ratio(
-    ParticleSet& P,
-    int iat)
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::PsiValueType DiracDeterminantBatched<DET_ENGINE>::ratio(ParticleSet& P,
+                                                                                                      int iat)
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
@@ -526,14 +532,14 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::PsiValueType DiracDeterminant
   return curRatio;
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVectorWithLeader<ParticleSet>& p_list,
-                                                            int iat,
-                                                            std::vector<PsiValueType>& ratios) const
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                                       int iat,
+                                                       std::vector<PsiValueType>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   wfc_leader.guardMultiWalkerRes();
   auto& mw_res         = *wfc_leader.mw_res_;
   auto& phi_vgl_v      = mw_res.phi_vgl_v;
@@ -544,13 +550,13 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithL
     ScopedTimer local_timer(SPOVTimer);
     RefVectorWithLeader<SPOSet> phi_list(*Phi);
     phi_list.reserve(wfc_list.size());
-    RefVector<DET_ENGINE_TYPE> engine_list;
+    RefVector<DET_ENGINE> engine_list;
     engine_list.reserve(wfc_list.size());
 
     const int WorkingIndex = iat - FirstIndex;
     for (int iw = 0; iw < wfc_list.size(); iw++)
     {
-      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
       phi_list.push_back(*det.Phi);
       engine_list.push_back(det.det_engine_);
     }
@@ -573,15 +579,14 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithL
   wfc_leader.UpdateMode = ORB_PBYP_RATIO;
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
-    auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+    auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     det.UpdateMode = ORB_PBYP_RATIO;
     ratios[iw] = det.curRatio = ratios_local[iw];
   }
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatios(const VirtualParticleSet& VP,
-                                                              std::vector<ValueType>& ratios)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   {
     ScopedTimer local_timer(RatioTimer);
@@ -594,14 +599,13 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatios(const VirtualParti
   }
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateRatios(
-    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-    const RefVector<const VirtualParticleSet>& vp_list,
-    std::vector<std::vector<ValueType>>& ratios) const
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                            const RefVector<const VirtualParticleSet>& vp_list,
+                                                            std::vector<std::vector<ValueType>>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   const size_t nw  = wfc_list.size();
 
   RefVectorWithLeader<SPOSet> phi_list(*Phi);
@@ -615,7 +619,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateRatios(
     ScopedTimer local_timer(RatioTimer);
     for (size_t iw = 0; iw < nw; iw++)
     {
-      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
       const VirtualParticleSet& vp(vp_list[iw]);
       const int WorkingIndex = vp.refPtcl - FirstIndex;
       // build lists
@@ -634,8 +638,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateRatios(
   }
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   {
     ScopedTimer local_timer(SPOVTimer);
@@ -646,8 +650,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateRatiosAlltoOne(ParticleSe
 }
 
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::resizeScratchObjectsForIonDerivs()
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::resizeScratchObjectsForIonDerivs()
 {
   grad_source_psiM.resize(NumPtcls, NumOrbitals);
   grad_lapl_source_psiM.resize(NumPtcls, NumOrbitals);
@@ -658,8 +662,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::resizeScratchObjectsForIonDerivs(
   grad_phi_alpha_Minv.resize(NumPtcls, NumOrbitals);
 }
 
-template<typename DET_ENGINE_TYPE>
-typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatched<DET_ENGINE_TYPE>::evalGradSource(
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::GradType DiracDeterminantBatched<DET_ENGINE>::evalGradSource(
     ParticleSet& P,
     ParticleSet& source,
     int iat)
@@ -676,13 +680,14 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
   return g;
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   // Hessian is not often used, so only resize/allocate if used
   grad_grad_source_psiM.resize(psiMinv.rows(), NumOrbitals);
   //IM A HACK.  Assumes evaluateLog has already been executed.
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
+  ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, grad_grad_source_psiM);
   invertPsiM(psiM_temp);
 
   phi_alpha_Minv      = 0.0;
@@ -702,8 +707,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateHessian(ParticleSet& P, H
   }
 }
 
-template<typename DET_ENGINE_TYPE>
-typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatched<DET_ENGINE_TYPE>::evalGradSource(
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::GradType DiracDeterminantBatched<DET_ENGINE>::evalGradSource(
     ParticleSet& P,
     ParticleSet& source,
     int iat,
@@ -813,125 +818,129 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-template<typename DET_ENGINE_TYPE>
-typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateLog(
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::LogValueType DiracDeterminantBatched<DET_ENGINE>::evaluateLog(
     ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
 {
   recompute(P);
   computeGL(G, L);
-  return LogValue;
+  return log_value_;
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateLog(
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(
     const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
     const RefVector<ParticleSet::ParticleGradient_t>& G_list,
     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
 {
   assert(this == &wfc_list.getLeader());
-  mw_recompute(wfc_list, p_list);
+  mw_recompute(*(this->mw_res_), wfc_list, p_list);
 
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
-    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     det.computeGL(G_list[iw], L_list[iw]);
   }
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+						    ParticleSet& P)
 {
   {
     ScopedTimer spo_timer(SPOVGLTimer);
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+    ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
+    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, d2psiM);
     auto* psiM_vgl_ptr = psiM_vgl.data();
     // transfer host to device, total size 4, g(3) + l(1)
     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
   }
 
-  invertPsiM(psiM_temp);
+  invertPsiM(mw_res,psiM_temp);
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVectorWithLeader<ParticleSet>& p_list)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+                                                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                       const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   const auto nw    = wfc_list.size();
   {
     ScopedTimer spo_timer(wfc_leader.SPOVGLTimer);
 
     RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
-    RefVector<ValueMatrix_t> psiM_temp_list;
     RefVector<GradMatrix_t> dpsiM_list;
     RefVector<ValueMatrix_t> d2psiM_list;
     phi_list.reserve(wfc_list.size());
-    psiM_temp_list.reserve(nw);
     dpsiM_list.reserve(nw);
     d2psiM_list.reserve(nw);
+    std::vector<ValueMatrix_t> psiM_temp_host_list;
+    psiM_temp_host_list.reserve(nw);
 
     for (int iw = 0; iw < nw; iw++)
     {
-      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
       phi_list.push_back(*det.Phi);
-      psiM_temp_list.push_back(det.psiM_temp);
+      psiM_temp_host_list.emplace_back(det.psiM_temp.data(), det.psiM_temp.rows(), det.psiM_temp.cols());
       dpsiM_list.push_back(det.dpsiM);
       d2psiM_list.push_back(det.d2psiM);
     }
 
     wfc_leader.Phi->mw_evaluate_notranspose(phi_list, p_list, wfc_leader.FirstIndex, wfc_leader.LastIndex,
-                                            psiM_temp_list, dpsiM_list, d2psiM_list);
+                                            makeRefVector<ValueMatrix_t>(psiM_temp_host_list), dpsiM_list, d2psiM_list);
   }
 
-  RefVector<const ValueMatrix_t> psiM_temp_list;
+  RefVector<OffloadPinnedValueMatrix_t> psiM_temp_list;
   psiM_temp_list.reserve(nw);
 
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+    auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     auto* psiM_vgl_ptr = det.psiM_vgl.data();
     size_t stride      = wfc_leader.psiM_vgl.capacity();
     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
     psiM_temp_list.push_back(det.psiM_temp);
   }
-  mw_invertPsiM(wfc_list, psiM_temp_list);
+  mw_invertPsiM(*(wfc_leader.mw_res_), wfc_list, psiM_temp_list);
   PRAGMA_OFFLOAD("omp taskwait")
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateDerivatives(ParticleSet& P,
-                                                                   const opt_variables_type& active,
-                                                                   std::vector<ValueType>& dlogpsi,
-                                                                   std::vector<ValueType>& dhpsioverpsi)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
+                                                              const opt_variables_type& active,
+                                                              std::vector<ValueType>& dlogpsi,
+                                                              std::vector<ValueType>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
 }
 
-template<typename DET_ENGINE_TYPE>
-DiracDeterminantBatched<DET_ENGINE_TYPE>* DiracDeterminantBatched<DET_ENGINE_TYPE>::makeCopy(
-    std::shared_ptr<SPOSet>&& spo) const
+template<typename DET_ENGINE>
+DiracDeterminantBatched<DET_ENGINE>* DiracDeterminantBatched<DET_ENGINE>::makeCopy(std::shared_ptr<SPOSet>&& spo) const
 {
-  DiracDeterminantBatched<DET_ENGINE_TYPE>* dclone = new DiracDeterminantBatched<DET_ENGINE_TYPE>(std::move(spo));
+  DiracDeterminantBatched<DET_ENGINE>* dclone = new DiracDeterminantBatched<DET_ENGINE>(std::move(spo));
   dclone->set(FirstIndex, LastIndex - FirstIndex, ndelay);
   return dclone;
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::createResource(ResourceCollection& collection)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::createResource(ResourceCollection& collection)
 {
-  auto resource_index = collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource>());
+  auto resource_index =
+      collection.addResource(std::make_unique<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>>());
   app_log() << "    Shared resource created in DiracDeterminantBatched. Index " << resource_index << std::endl;
   Phi->createResource(collection);
   det_engine_.createResource(collection);
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::acquireResource(ResourceCollection& collection)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::acquireResource(ResourceCollection& collection)
 {
-  auto res_ptr = dynamic_cast<DiracDeterminantBatchedMultiWalkerResource*>(collection.lendResource().release());
+  auto res_ptr =
+      dynamic_cast<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("DiracDeterminantBatched::acquireResource dynamic_cast failed");
   mw_res_.reset(res_ptr);
@@ -939,16 +948,19 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::acquireResource(ResourceCollectio
   det_engine_.acquireResource(collection);
 }
 
-template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::releaseResource(ResourceCollection& collection)
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::releaseResource(ResourceCollection& collection)
 {
   collection.takebackResource(std::move(mw_res_));
   Phi->releaseResource(collection);
   det_engine_.releaseResource(collection);
 }
 
+template struct DiracDeterminantBatchedMultiWalkerResource<>;
 template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+template struct DiracDeterminantBatchedMultiWalkerResource<
+    MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 template class DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 

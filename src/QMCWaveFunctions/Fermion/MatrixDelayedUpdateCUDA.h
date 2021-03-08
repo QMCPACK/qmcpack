@@ -36,6 +36,7 @@ namespace qmcplusplus
 template<typename T, typename T_FP>
 class MatrixDelayedUpdateCUDA
 {
+public:
   using This_t = MatrixDelayedUpdateCUDA<T, T_FP>;
 
   template<typename DT>
@@ -43,9 +44,10 @@ class MatrixDelayedUpdateCUDA
   template<typename DT>
   using OffloadPinnedAllocator     = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
+  using OffloadPinnedLogValueVector_t = Vector<std::complex<T>, OffloadPinnedAllocator<std::complex<T>>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
-
+private:
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
   /// scratch space for rank-1 update
@@ -377,38 +379,35 @@ public:
    * @param logdetT orbital value matrix
    * @param LogValue log(det(logdetT))
    */
-  template<typename TREAL>
-  inline void invert_transpose(const Matrix<T>& log_det, std::complex<TREAL>& log_value)
+
+  inline void invert_transpose(const OffloadPinnedValueMatrix_t& log_det, OffloadPinnedLogValueVector_t& log_values)
   {
     checkResourcesForTest();
     guard_no_delay();
     RefVector<MatrixUpdateOMPTarget<T, T_FP>> engines;
     RefVector<const Matrix<T>> log_dets;
-    RefVector<std::complex<TREAL>> log_values;
     engines.push_back(*this);
     log_dets.push_back(log_det);
-    log_values.push_back(log_value);
     mw_invertTranspose(engines, log_dets, log_values);
   }
 
-  inline void mw_invertTranspose(const RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
-                                 const RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
-                                 const RefVector<OffloadPinnedValueVector_t>& LogValues)
+  inline void mw_invertTranspose(RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
+                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 OffloadPinnedLogValueVector_t& log_values)
   {
     checkResourcesForTest();
     guard_no_delay();
-    std::vector<Matrix<T>> Ainv_host_views;
-    Ainv_host_views.reserve(engines.size());
+    RefVector<OffloadPinnedValueMatrix_t> a_inv_refs;
+    a_inv_refs.reserve(engines.size());
     for (int iw = 0; iw < engines.size(); iw++)
     {
-      auto& Ainv = engines[iw].get().psiMinv;
-      Ainv_host_views.emplace_back(Ainv.data(), Ainv.rows(), Ainv.cols());
-      T* Ainv_ptr = Ainv.data();
+      a_inv_refs.emplace_back(engines[iw].psiMinv);
+      T* a_inv_ptr = a_inv_refs.back().get().data();
       // This seems likely to be inefficient
-      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+      PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
     }
     PRAGMA_OFFLOAD("omp taskwait")
-    det_inverter_->mw_invertTranspose(cuda_handles_, logdetT_list, Ainv_host_views, LogValues);
+    det_inverter_->mw_invertTranspose(*cuda_handles_, logdetT_list, a_inv_refs, log_values);
   }
 
   // prepare invRow and compute the old gradients.

@@ -27,14 +27,18 @@
 
 namespace qmcplusplus
 {
+template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 {
   using ValueType = QMCTraits::ValueType;
   using GradType  = QMCTraits::GradType;
-  using Real = QMCTraits::RealType;
+  using Real      = QMCTraits::RealType;
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadVGLVector_t     = VectorSoaContainer<ValueType, QMCTraits::DIM + 2, OffloadPinnedAllocator<ValueType>>;
+  // I don't think its a good idea create a hard dependency all the way back to WaveFunctionComponent for this.
+  using LogValue                    = std::complex<Real>;
+  using OffloadPinnedLogValueVector = Vector<LogValue, typename DET_ENGINE::template OffloadPinnedAllocator<LogValue>>;
 
   DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}
 
@@ -44,7 +48,7 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 
   Resource* makeClone() const override { return new DiracDeterminantBatchedMultiWalkerResource(*this); }
 
-
+  OffloadPinnedLogValueVector log_values;
   /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
   OffloadVGLVector_t phi_vgl_v;
   // multi walker of ratio
@@ -53,7 +57,7 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
   std::vector<GradType> grad_new_local;
 };
 
-template<typename DET_ENGINE_TYPE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
@@ -64,9 +68,10 @@ public:
   using HessMatrix_t  = SPOSet::HessMatrix_t;
   using HessVector_t  = SPOSet::HessVector_t;
   using HessType      = SPOSet::HessType;
-  using Real = QMCTraits::RealType;  
-  using mValueType = QMCTraits::QTFull::ValueType;
-  using mGradType  = TinyVector<mValueType, DIM>;
+  using Real          = QMCTraits::RealType;
+  using mValueType    = QMCTraits::QTFull::ValueType;
+  using mGradType     = TinyVector<mValueType, DIM>;
+  using LogValue      = std::complex<QTFull::RealType>;
 
   template<typename DT>
   using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
@@ -181,7 +186,8 @@ public:
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  void recompute(ParticleSet& P) override;
+  void recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+		 ParticleSet& P) override;
 
   LogValueType evaluateGL(ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
@@ -215,14 +221,14 @@ public:
   auto& getPsiMinv() const { return psiMinv; }
 
   auto& get_det_engine() { return det_engine_; }
-  
+
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_inverter_
   ValueMatrix_t psiMinv;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
   OffloadVGLVector_t psiM_vgl;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
-  ValueMatrix_t psiM_temp;
+  OffloadPinnedValueMatrix_t psiM_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
   GradMatrix_t dpsiM;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$. partial memory view of psiM_vgl
@@ -233,6 +239,7 @@ public:
   HessMatrix_t grad_grad_source_psiM;
 
   GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
+
   ValueMatrix_t lapl_phi_Minv;
   HessMatrix_t grad_phi_alpha_Minv;
 
@@ -243,25 +250,31 @@ public:
   ValueVector_t d2psiV;
 
   /// delayed update engine
-  DET_ENGINE_TYPE det_engine_;
+  DET_ENGINE det_engine_;
 
   // psi(r')/psi(r) during a PbyP move
   PsiValueType curRatio;
 
-  std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource> mw_res_;
+  std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>> mw_res_;
 
-  
+  LogValue get_log_value() const { return log_value_; }
+
 private:
+  LogValue log_value_;
+
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
 
   /// invert logdetT(psiM), result is in the engine.
-  void invertPsiM(const ValueMatrix_t& logdetT);
+  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+		  const OffloadPinnedValueMatrix_t& logdetT);
 
-  static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVector<const ValueMatrix_t>& logdetT_list);
+  static void mw_invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+                            const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            RefVector<OffloadPinnedValueMatrix_t>& logdetT_list);
 
-  static void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+  static void mw_recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+                           const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                            const RefVectorWithLeader<ParticleSet>& p_list);
 
   // make this class unit tests friendly without the need of setup resources.
@@ -273,7 +286,7 @@ private:
           << "WARNING DiracDeterminantBatched : This message should not be seen in production (performance bug) runs "
              "but only unit tests (expected)."
           << std::endl;
-      mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource>();
+      mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>>();
     }
   }
 
@@ -287,8 +300,12 @@ private:
   NewTimer &D2HTimer, &H2DTimer;
 };
 
+
+extern template struct DiracDeterminantBatchedMultiWalkerResource<>;
 extern template class DiracDeterminantBatched<>;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+extern template struct DiracDeterminantBatchedMultiWalkerResource<
+    MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 extern template class DiracDeterminantBatched<
     MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif

@@ -33,16 +33,18 @@ namespace qmcplusplus
 template<typename T, typename T_FP>
 class MatrixUpdateOMPTarget
 {
+public:
   using This_t = MatrixUpdateOMPTarget<T, T_FP>;
-  using Real = QMCTraits::RealType;
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
   using OffloadPinnedAllocator     = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
+  using OffloadPinnedLogValueVector_t = Vector<std::complex<T>, OffloadPinnedAllocator<std::complex<T>>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
+private:
   /// matrix inversion engine this crowd scope resouce and only the leader engine gets it
   UPtr<DiracMatrixComputeOMPTarget<T_FP>> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
@@ -105,7 +107,7 @@ public:
    * @param LogValue log(det(logdetT))
    */
   template<typename TREAL>
-  inline void invert_transpose(const Matrix<T>& logdetT, std::complex<TREAL>& LogValue)
+  inline void invert_transpose(const OffloadPinnedValueMatrix_t& logdetT, std::complex<TREAL>& LogValue)
   {
     auto& Ainv = psiMinv;
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
@@ -114,24 +116,23 @@ public:
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
 
-  inline void mw_invertTranspose(const RefVectorWithLeader<MatrixUpdateOMPTarget<T, T_FP>>& engines,
-                                 const RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
-                                 const RefVector<OffloadPinnedValueVector_t>& LogValues)
+  inline void mw_invertTranspose(RefVectorWithLeader<MatrixUpdateOMPTarget<T, T_FP>>& engines,
+                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 OffloadPinnedLogValueVector_t& log_values)
   {
     if (!det_inverter_)
       det_inverter_ = std::make_unique<DiracMatrixComputeOMPTarget<T_FP>>();
 
-    std::vector<Matrix<T>> Ainv_host_views;
-    Ainv_host_views.reserve(engines.size());
+    RefVector<OffloadPinnedValueMatrix_t> a_inv_refs;
+    a_inv_refs.reserve(engines.size());
     for (int iw = 0; iw < engines.size(); iw++)
     {
-      auto& Ainv = engines[iw].get().psiMinv;
-      Ainv_host_views.emplace_back(Ainv.data(), Ainv.rows(), Ainv.cols());
-      T* Ainv_ptr = Ainv.data();
-      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+      a_inv_refs.emplace_back(engines[iw].psiMinv);
+      const T* a_inv_ptr = a_inv_refs.back().get().data();
+      PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
     }
     PRAGMA_OFFLOAD("omp taskwait")
-    det_inverter_->mw_invert_transpose(logdetT_list, Ainv_host_views, LogValues);
+    det_inverter_->mw_invertTranspose(logdetT_list, a_inv_refs, log_values);
   }
 
   template<typename GT>
