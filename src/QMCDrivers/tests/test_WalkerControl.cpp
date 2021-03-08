@@ -9,17 +9,14 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <functional>
 
+#include <functional>
 #include "catch.hpp"
 
-//#include <catch.hpp>
-
+#include "test_WalkerControl.h"
 #include "Message/Communicate.h"
-
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInput.h"
-#include "test_WalkerControlMPI.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
 #include "Platforms/Host/OutputManager.h"
 
@@ -31,10 +28,8 @@ namespace qmcplusplus
 {
 namespace testing
 {
-UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpools_.comm)
+UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpools_.comm, Random)
 {
-  using namespace testing;
-
   int num_ranks = dpools_.comm->size();
   if (num_ranks != 3)
     throw std::runtime_error("Bad Rank Count, WalkerControlMPI tests can only be run with 3 MPI ranks.");
@@ -44,15 +39,6 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
                                      dpools_.wavefunction_pool->getPrimary(), dpools_.hamiltonian_pool->getPrimary());
 
   pop_->createWalkers(1);
-
-  wc_.use_nonblocking = true;
-
-  // Set up Cur_pop
-  wc_.Cur_pop = dpools_.comm->size();
-  for (int i = 0; i < dpools_.comm->size(); i++)
-  {
-    wc_.NumPerRank[i] = 1;
-  }
 }
 
 /** Getting the "fat" walker valid enough to be MPI swapable
@@ -80,70 +66,6 @@ void UnifiedDriverWalkerControlMPITest::makeValidWalkers()
   }
 }
 
-void UnifiedDriverWalkerControlMPITest::testMultiplicity(std::vector<int>& rank_counts_expanded,
-                                                         std::vector<int>& rank_counts_after)
-{
-  using MCPWalker = MCPopulation::MCPWalker;
-
-  int rank = dpools_.comm->rank();
-
-  // Currently some/all this duplicate state is necessary to have a a successful swap.
-  // \todo remove duplicate state effecting population control
-
-  pop_->get_walkers()[0]->Multiplicity = rank_counts_expanded[rank];
-  int future_pop                       = std::accumulate(rank_counts_expanded.begin(), rank_counts_expanded.end(), 0);
-
-  std::vector<WalkerElementsRef> walker_elements = pop_->get_walker_elements();
-
-  WalkerControlBase::PopulationAdjustment pop_adjust{future_pop,
-                                                     walker_elements,
-                                                     {rank_counts_expanded[rank] - 1},
-                                                     std::vector<WalkerElementsRef>{}};
-
-  reportWalkersPerRank(dpools_.comm, *pop_);
-  wc_.swapWalkersSimple(*pop_, pop_adjust, rank_counts_expanded);
-  reportWalkersPerRank(dpools_.comm, *pop_);
-  CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
-}
-
-void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& rank_counts_before,
-                                                           std::vector<int>& rank_counts_after)
-{
-  using MCPWalker = MCPopulation::MCPWalker;
-
-  int rank = dpools_.comm->rank();
-
-  pop_->get_walkers()[0]->Multiplicity = rank_counts_before[rank];
-
-  std::vector<WalkerElementsRef> walker_elements = pop_->get_walker_elements();
-
-  WalkerControlBase::PopulationAdjustment pop_adjust{rank_counts_before[rank],
-                                                     walker_elements,
-                                                     {rank_counts_before[rank] - 1},
-                                                     std::vector<WalkerElementsRef>{}};
-
-  // this expands the walkers to be copied into real walkers.
-  WalkerControlBase::onRankKill(*pop_, pop_adjust);
-  WalkerControlBase::onRankSpawn(*pop_, pop_adjust);
-
-  wc_.Cur_pop = std::accumulate(rank_counts_before.begin(), rank_counts_before.end(), 0);
-
-  auto proper_number_copies = [](int size) -> std::vector<int> { return std::vector<int>(size, 0); };
-
-  std::vector<WalkerElementsRef> walker_elements2 = pop_->get_walker_elements();
-
-  WalkerControlBase::PopulationAdjustment pop_adjust2{rank_counts_before[rank], walker_elements2,
-                                                      proper_number_copies(pop_->get_num_local_walkers()),
-                                                      std::vector<WalkerElementsRef>{}};
-
-  auto num_per_rank = WalkerControlBase::syncFutureWalkersPerRank(dpools_.comm, pop_->get_num_local_walkers());
-
-  reportWalkersPerRank(dpools_.comm, *pop_);
-  wc_.swapWalkersSimple(*pop_, pop_adjust2, num_per_rank);
-  reportWalkersPerRank(dpools_.comm, *pop_);
-  CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
-}
-
 void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCPopulation& pop)
 {
 #if !defined(NDEBUG)
@@ -151,9 +73,11 @@ void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCP
   rank_walker_count[c->rank()] = pop.get_num_local_walkers();
   c->allreduce(rank_walker_count);
 
+  const int current_population = std::accumulate(rank_walker_count.begin(), rank_walker_count.end(), 0);
+
   if (c->rank() == 0)
   {
-    std::cout << "Walkers Per Rank (Total: " << wc_.Cur_pop << ")\n";
+    std::cout << "Walkers Per Rank (Total: " << current_population << ")\n";
     for (int i = 0; i < rank_walker_count.size(); ++i)
     {
       std::cout << " " << i << "  " << rank_walker_count[i] << '\n';
@@ -162,25 +86,23 @@ void UnifiedDriverWalkerControlMPITest::reportWalkersPerRank(Communicate* c, MCP
 #endif
 }
 
+void UnifiedDriverWalkerControlMPITest::testNewDistribution(std::vector<int>& minus, std::vector<int>& plus)
+{
+  std::vector<int> num_per_rank = {3, 1, 1};
+  std::vector<int> fair_offset;
+  WalkerControl::determineNewWalkerPopulation(num_per_rank, fair_offset, minus, plus);
+}
+
 } // namespace testing
 
-TEST_CASE("WalkerControlMPI::determineNewWalkerPopulation", "[drivers][walker_control]")
+TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_control]")
 {
-  int cur_pop      = 5;
-  int num_contexts = 3;
+  std::vector<int> minus;
+  std::vector<int> plus;
 
-
-  for (int i = 0; i < num_contexts; ++i)
-  {
-    std::vector<int> num_per_rank = {3, 1, 1};
-    std::vector<int> fair_offset;
-    std::vector<int> minus;
-    std::vector<int> plus;
-    WalkerControlMPI::determineNewWalkerPopulation(cur_pop, num_contexts, i, num_per_rank, fair_offset, minus, plus);
-
-    CHECK(minus.size() == 2);
-    CHECK(plus.size() == 2);
-  }
+  testing::UnifiedDriverWalkerControlMPITest::testNewDistribution(minus, plus);
+  CHECK(minus.size() == 2);
+  CHECK(plus.size() == 2);
 }
 
 /** Here we manipulate just the Multiplicity of a set of 1 walkers per rank
