@@ -42,26 +42,15 @@ WaveFunctionPool::~WaveFunctionPool()
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  std::string id("psi0"), target("e"), role("extra"), tasking("no");
+  std::string id("psi0"), target("e"), role("extra"), tasking;
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
   pAttrib.add(target, "target");
   pAttrib.add(target, "ref");
-  pAttrib.add(tasking, "tasking");
+  pAttrib.add(tasking, "tasking", {"no", "yes"});
   pAttrib.add(role, "role");
   pAttrib.put(cur);
-
-  if (tasking != "yes" && tasking != "no")
-    myComm->barrier_and_abort("Incorrect input value of 'tasking' attribute. It can only be 'yes' or 'no'.");
-
-#if defined(__INTEL_COMPILER)
-  if (tasking == "yes")
-  {
-    tasking = "no";
-    app_warning() << "Asynchronous tasking has to be turned off on builds using Intel compilers." << std::endl;
-  }
-#endif
 
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 

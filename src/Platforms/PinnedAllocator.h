@@ -29,7 +29,7 @@ using PinnedAllocator = CUDALockedPageAllocator<T>;
 using PinnedAllocator = std::allocator<T>;
 #endif
 
-template<typename T, size_t ALIGN = QMC_CLINE>
+template<typename T, size_t ALIGN = QMC_SIMD_ALIGNMENT>
 #ifdef ENABLE_CUDA
 using PinnedAlignedAllocator = CUDALockedPageAllocator<T, aligned_allocator<T, ALIGN>>;
 #else

@@ -88,12 +88,6 @@ PsiValueType WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType&
   return ValueType();
 }
 
-void WaveFunctionComponent::ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat)
-{
-#pragma omp task default(none) firstprivate(iat) shared(P, ratio, grad_iat)
-  ratio = ratioGrad(P, iat, grad_iat);
-}
-
 void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                          int iat,
@@ -104,19 +98,6 @@ void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionC
 #pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list[iw].ratioGrad(p_list[iw], iat, grad_new[iw]);
-}
-
-void WaveFunctionComponent::mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                              const RefVectorWithLeader<ParticleSet>& p_list,
-                                              int iat,
-                                              std::vector<PsiValueType>& ratios,
-                                              std::vector<GradType>& grad_new) const
-{
-  assert(this == &wfc_list.getLeader());
-#if !defined(__INTEL_COMPILER)
-#pragma omp task default(none) firstprivate(wfc_list, p_list, iat) shared(ratios, grad_new)
-#endif
-  mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new);
 }
 
 void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,

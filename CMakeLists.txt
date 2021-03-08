@@ -144,6 +144,7 @@ SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 MESSAGE(STATUS "defining the float point precision")
 SET(OHMMS_PRECISION_FULL double)
+
 IF(QMC_CUDA)
   SET(QMC_MIXED_PRECISION 1 CACHE BOOL "Enable/disable mixed precision")
   SET(OHMMS_PRECISION double)
@@ -426,6 +427,31 @@ ENDIF(ENABLE_GCOV)
 IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
+
+#-------------------------------------------------------------------------------
+# Check SIMD alignment for CPU only
+#-------------------------------------------------------------------------------
+# This is intentionally placed before adding OpenMP offload compile options
+# to avoid contamination from device compilation pass.
+# When '-march=skylake-avx512 -fopenmp-targets=nvptx64 -march=sm_70' is added
+# for Clang, the source code is parsed twice for both host and offload targets.
+# A trap for macro __AVX512F__ always fails because the offload pass doesn't
+# carry '-march=skylake-avx512' but only takes '-march=sm_70'.
+#-------------------------------------------------------------------------------
+include(CMake/CheckSIMDAlignment.cmake)
+set(QMC_SIMD_ALIGNMENT ${default_alignment} CACHE STRING "Cache/SIMD alignment in bytes")
+math(EXPR alignment_remainder "${QMC_SIMD_ALIGNMENT} % ${default_alignment}")
+if (alignment_remainder)
+  message(FATAL_ERROR "QMC_SIMD_ALIGNMENT must be a multiple of ${default_alignment}. Bad cached value is ${QMC_SIMD_ALIGNMENT}")
+endif()
+message(STATUS "Setting QMC_SIMD_ALIGNMENT to ${QMC_SIMD_ALIGNMENT}")
+
+#---------------------------------------------------------
+# Set up OpenMP offload compile options
+#---------------------------------------------------------
+if (ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
+endif()
 
 #-------------------------------------------------------------------
 #  check MPI installation
