@@ -15,7 +15,6 @@
 #include "Message/Communicate.h"
 #include "QMCDrivers/Crowd.h"
 #include "type_traits/template_types.hpp"
-#include "Estimators/tests/FakeEstimator.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Particle/tests/MinimalParticlePool.h"
@@ -46,9 +45,6 @@ public:
 public:
   CrowdWithWalkers(SetupPools& pools) : em(pools.comm), dispatchers_(true)
   {
-    FakeEstimator* fake_est = new FakeEstimator;
-    em.add(fake_est, "fake");
-
     crowd_ptr    = std::make_unique<Crowd>(em, driverwalker_resource_collection_, dispatchers_);
     Crowd& crowd = *crowd_ptr;
     // To match the minimal particle set
@@ -85,16 +81,6 @@ TEST_CASE("Crowd integration", "[drivers]")
 
   EstimatorManagerNew em(comm);
 
-  FakeEstimator* fake_est = new FakeEstimator;
-
-  em.add(fake_est, "fake");
-
-  ScalarEstimatorBase* est2 = em.getEstimator("fake");
-  FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
-  REQUIRE(fake_est2 != nullptr);
-  REQUIRE(fake_est2 == fake_est);
-  // The above was required behavior for crowd at one point.
-  // TODO: determine whether it still is, I don't think so.
   const MultiWalkerDispatchers dispatchers(true);
   DriverWalkerResourceCollection driverwalker_resource_collection_;
   Crowd crowd(em, driverwalker_resource_collection_, dispatchers);

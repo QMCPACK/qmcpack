@@ -80,7 +80,6 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   // This pattern is begging for a micro benchmark, is this really better
   // than the simpler walkers_.pushback;
   walkers_.resize(num_walkers_plus_reserve);
-  walker_weights_.resize(num_walkers_plus_reserve, 1.0);
   walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
   walker_trial_wavefunctions_.resize(num_walkers_plus_reserve);
   walker_hamiltonians_.resize(num_walkers_plus_reserve);
@@ -99,10 +98,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     walkers_[iw]->DataSet.allocate();
 
     if (iw < walker_configs_ref_.WalkerList.size())
-    {
       *walkers_[iw]       = *walker_configs_ref_[iw];
-      walker_weights_[iw] = walker_configs_ref_[iw]->Weight;
-    }
 
     walker_elec_particle_sets_[iw] = std::make_unique<ParticleSet>(*elec_particle_set_);
     walker_trial_wavefunctions_[iw].reset(trial_wf_->makeClone(*walker_elec_particle_sets_[iw]));
@@ -320,12 +316,7 @@ void MCPopulation::saveWalkerConfigurations()
 {
   walker_configs_ref_.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
-  {
     walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
-    // FIXME: if is just a temporal safeguard.
-    if (iw < walker_weights_.size())
-      walker_configs_ref_[iw]->Weight = walker_weights_[iw];
-  }
 }
 
 
