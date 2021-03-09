@@ -70,8 +70,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
   {
-    assert(QMCDriverNew::checkLogAndGL(crowd));
-
     int nnode_crossing(0);
     auto& walkers = crowd.get_walkers();
     DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
@@ -80,6 +78,11 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
     const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                   crowd.get_walker_hamiltonians());
+
+    ps_dispatcher.flex_loadWalker(walker_elecs, crowd.get_walkers(), true);
+    ps_dispatcher.flex_update(walker_elecs, true);
+    twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
+
     const int num_walkers = crowd.size();
 
     //This generates an entire steps worth of deltas.
@@ -450,7 +453,7 @@ bool DMCBatched::run()
       {
         int iter = block * qmcdriver_input_.get_max_steps() + step;
         const int population_now =
-            walker_controller_->branch(iter, population_, dispatchers_, golden_resource_, iter == 0);
+            walker_controller_->branch(iter, population_, iter == 0);
         branch_engine_->updateParamAfterPopControl(population_now, walker_controller_->get_ensemble_property(),
                                                    population_.get_num_particles());
         walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
