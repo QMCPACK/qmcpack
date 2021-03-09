@@ -97,13 +97,13 @@ public:
       Dets[id]->setBF(bf);
   }
 
-  PsiValueType evaluate_vgl_impl(ParticleSet& P,
+  PsiValueType evaluate_vgl_impl(const ParticleSet& P,
                                  ParticleSet::ParticleGradient_t& g_tmp,
                                  ParticleSet::ParticleLaplacian_t& l_tmp);
 
-  PsiValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  PsiValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  LogValueType evaluateLog(ParticleSet& P,
+  LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 

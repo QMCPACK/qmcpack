@@ -382,7 +382,7 @@ public:
     }
   }
 
-  void build_compact_list(ParticleSet& P)
+  void build_compact_list(const ParticleSet& P)
   {
     const auto& eI_dists  = P.getDistTable(ei_Table_ID_).getDistances();
     const auto& eI_displs = P.getDistTable(ei_Table_ID_).getDisplacements();
@@ -406,7 +406,7 @@ public:
           }
   }
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     return evaluateGL(P, G, L, true);
   }
@@ -567,7 +567,7 @@ public:
     }
   }
 
-  inline void recompute(ParticleSet& P)
+  inline void recompute(const ParticleSet& P)
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
@@ -846,7 +846,7 @@ public:
     build_compact_list(P);
   }
 
-  LogValueType evaluateGL(ParticleSet& P,
+  LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch = false)

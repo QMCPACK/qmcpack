@@ -60,7 +60,7 @@ public:
 
   void reportStatus(std::ostream& os) override;
 
-  virtual LogValueType evaluateLog(ParticleSet& P,
+  virtual LogValueType evaluateLog(const ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
                                    ParticleSet::ParticleLaplacian_t& L) override;
 
@@ -69,7 +69,7 @@ public:
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  virtual LogValueType evaluateGL(ParticleSet& P,
+  virtual LogValueType evaluateGL(const ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L,
                                   bool fromscratch) override;
@@ -80,7 +80,10 @@ public:
                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                              bool fromscratch) const override;
 
-  virtual void recompute(ParticleSet& P) override;
+  virtual void recompute(const ParticleSet& P) override;
+
+  virtual void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 

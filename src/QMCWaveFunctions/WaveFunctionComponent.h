@@ -180,7 +180,7 @@ struct WaveFunctionComponent : public QMCTraits
    * Mainly for walker-by-walker move. The initial stage of particle-by-particle
    * move also uses this.
    */
-  virtual LogValueType evaluateLog(ParticleSet& P,
+  virtual LogValueType evaluateLog(const ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
                                    ParticleSet::ParticleLaplacian_t& L) = 0;
 
@@ -199,7 +199,10 @@ struct WaveFunctionComponent : public QMCTraits
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.
    * needed for Slater Determinants but not needed for most types of WaveFunctionComponents
    */
-  virtual void recompute(ParticleSet& P) {}
+  virtual void recompute(const ParticleSet& P);
+
+  virtual void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list) const;
 
   // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
   // {
@@ -383,7 +386,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param fromscratch if true, all the internal data are recomputed from scratch
    * @return log(psi)
    */
-  virtual LogValueType evaluateGL(ParticleSet& P,
+  virtual LogValueType evaluateGL(const ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L,
                                   bool fromscratch);

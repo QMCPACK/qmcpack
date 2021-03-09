@@ -49,6 +49,23 @@ void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctio
     wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
 }
 
+void WaveFunctionComponent::recompute(const ParticleSet& P)
+{
+  ParticleSet::ParticleGradient_t temp_G(P.getTotalNum());
+  ParticleSet::ParticleLaplacian_t temp_L(P.getTotalNum());
+
+  evaluateLog(P, temp_G, temp_L);
+}
+
+void WaveFunctionComponent::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list) const
+{
+  assert(this == &wfc_list.getLeader());
+#pragma omp parallel for
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+    wfc_list[iw].recompute(p_list[iw]);
+}
+
 void WaveFunctionComponent::mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                             const RefVectorWithLeader<ParticleSet>& p_list,
                                             int ig) const
@@ -123,7 +140,7 @@ void WaveFunctionComponent::mw_completeUpdates(const RefVectorWithLeader<WaveFun
     wfc_list[iw].completeUpdates();
 }
 
-WaveFunctionComponent::LogValueType WaveFunctionComponent::evaluateGL(ParticleSet& P,
+WaveFunctionComponent::LogValueType WaveFunctionComponent::evaluateGL(const ParticleSet& P,
                                                                       ParticleSet::ParticleGradient_t& G,
                                                                       ParticleSet::ParticleLaplacian_t& L,
                                                                       bool fromscratch)

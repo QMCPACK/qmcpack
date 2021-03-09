@@ -377,7 +377,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::computeGL(ParticleSet::ParticleGr
 
 template<typename DET_ENGINE_TYPE>
 typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateGL(
-    ParticleSet& P,
+    const ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L,
     bool fromscratch)
@@ -816,7 +816,7 @@ typename DiracDeterminantBatched<DET_ENGINE_TYPE>::GradType DiracDeterminantBatc
  */
 template<typename DET_ENGINE_TYPE>
 typename DiracDeterminantBatched<DET_ENGINE_TYPE>::LogValueType DiracDeterminantBatched<DET_ENGINE_TYPE>::evaluateLog(
-    ParticleSet& P,
+    const ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
 {
@@ -843,7 +843,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateLog(
 }
 
 template<typename DET_ENGINE_TYPE>
-void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
+void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(const ParticleSet& P)
 {
   {
     ScopedTimer spo_timer(SPOVGLTimer);
@@ -858,7 +858,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(ParticleSet& P)
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVectorWithLeader<ParticleSet>& p_list)
+                                                            const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
   const auto nw    = wfc_list.size();

@@ -55,10 +55,9 @@ public:
       dets_dn[i]->setBF(bf);
   }
 
-  ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  LogValueType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
-                           ,
+  LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L);
 

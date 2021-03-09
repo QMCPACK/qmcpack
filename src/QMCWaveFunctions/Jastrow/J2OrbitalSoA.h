@@ -235,12 +235,12 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
   /** recompute internal data assuming distance table is fully ready */
-  void recompute(ParticleSet& P);
+  void recompute(const ParticleSet& P);
 
   PsiValueType ratio(ParticleSet& P, int iat);
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -260,7 +260,7 @@ public:
 
   /** compute G and L after the sweep
    */
-  LogValueType evaluateGL(ParticleSet& P,
+  LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch = false);
@@ -595,7 +595,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
+void J2OrbitalSoA<FT>::recompute(const ParticleSet& P)
 {
   const auto& d_table = P.getDistTable(my_table_ID_);
   for (int ig = 0; ig < NumGroups; ++ig)
@@ -645,7 +645,7 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
+typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(const ParticleSet& P,
                                                                       ParticleSet::ParticleGradient_t& G,
                                                                       ParticleSet::ParticleLaplacian_t& L)
 {
@@ -653,7 +653,7 @@ typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSe
 }
 
 template<typename FT>
-WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
+WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleSet& P,
                                                                  ParticleSet::ParticleGradient_t& G,
                                                                  ParticleSet::ParticleLaplacian_t& L,
                                                                  bool fromscratch)
