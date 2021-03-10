@@ -13,7 +13,7 @@ IF (NOT QMC_CUDA)
                     H2
                     h2_orb_opt.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     10 H2_OPT_SCALARS # Final VMC step
                     TRUE)
 
