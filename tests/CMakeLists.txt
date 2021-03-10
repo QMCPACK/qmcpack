@@ -31,6 +31,12 @@ ELSE()
   SET(MP_SUCCESS TRUE)
 ENDIF()
 
+IF(ENABLE_OFFLOAD)
+  SET(SUCCESS_STATUS_OFFLOAD FALSE)
+ELSE()
+  SET(SUCCESS_STATUS_OFFLOAD TRUE)
+ENDIF()
+
 IF(BUILD_AFQMC)
   INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
   SET(afqmctools_python_reqs numpy;h5py;mpi4py;scipy;pyscf)
