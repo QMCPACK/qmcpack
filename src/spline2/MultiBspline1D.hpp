@@ -135,7 +135,7 @@ inline void MultiBspline1D<T>::evaluate_v_impl(T x, T* restrict vals) const
   const T* restrict coefs2 = spline_m->coefs + ((ix + 2) * xs);
   const T* restrict coefs3 = spline_m->coefs + ((ix + 3) * xs);
 
-#pragma omp simd aligned(vals, coefs0, coefs1, coefs2, coefs3)
+#pragma omp simd aligned(vals, coefs0, coefs1, coefs2, coefs3: QMC_SIMD_ALIGNMENT)
   for (int n = 0; n < spline_m->num_splines; n++)
     vals[n] = a[0] * coefs0[n] + a[1] * coefs1[n] + a[2] * coefs2[n] + a[3] * coefs3[n];
 }
@@ -159,7 +159,7 @@ inline void MultiBspline1D<T>::evaluate_vgl_impl(T x, T* restrict vals, T* restr
   const T* restrict coefs2 = spline_m->coefs + ((ix + 2) * xs);
   const T* restrict coefs3 = spline_m->coefs + ((ix + 3) * xs);
 
-#pragma omp simd aligned(vals, grads, lapl, coefs0, coefs1, coefs2, coefs3)
+#pragma omp simd aligned(vals, grads, lapl, coefs0, coefs1, coefs2, coefs3: QMC_SIMD_ALIGNMENT)
   for (int n = 0; n < spline_m->num_splines; n++)
   {
     const T coef_0 = coefs0[n];

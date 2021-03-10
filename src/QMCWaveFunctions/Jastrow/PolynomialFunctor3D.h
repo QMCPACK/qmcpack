@@ -361,7 +361,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     const real_type L = chalf * cutoff_radius;
     real_type val_tot = czero;
 
-#pragma omp simd aligned(r_12_array, r_1I_array, r_2I_array) reduction(+ : val_tot)
+#pragma omp simd aligned(r_12_array, r_1I_array, r_2I_array: QMC_SIMD_ALIGNMENT) reduction(+ : val_tot)
     for (int ptcl = 0; ptcl < Nptcl; ptcl++)
     {
       const real_type r_12 = r_12_array[ptcl];
@@ -509,7 +509,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
                          hess11_array, \
                          hess22_array, \
                          hess01_array, \
-                         hess02_array)
+                         hess02_array: QMC_SIMD_ALIGNMENT)
     for (int ptcl = 0; ptcl < Nptcl; ptcl++)
     {
       const real_type r_12 = r_12_array[ptcl];
