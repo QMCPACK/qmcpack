@@ -78,7 +78,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
     if (!coordinates_soa)
       throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
-    resize(target.getTotalNum());
+    resize();
     PRAGMA_OFFLOAD("omp target enter data map(to : this[:1])")
   }
 
@@ -93,12 +93,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     return (N_padded * (2 * N - N_padded + 1) + (Alignment - 1) * N_padded) / 2;
   }
 
-  void resize(int n)
+  void resize()
   {
-    N_sources = N_targets = n;
-
     // initialize memory containers and views
-    Ntargets_padded         = getAlignedSize<T>(n);
+    Ntargets_padded         = getAlignedSize<T>(N_targets);
     const size_t total_size = compute_size(N_targets);
     memory_pool_displs_.resize(total_size * D);
     distances_.resize(N_targets);

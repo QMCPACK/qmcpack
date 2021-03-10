@@ -47,7 +47,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
                                                      target.getName(),
                                                  timer_level_fine))
   {
-    resize(target.getTotalNum());
+    resize();
   }
 
   SoaDistanceTableAA()                          = delete;
@@ -61,12 +61,10 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableDat
     return (N_padded * (2 * N - N_padded + 1) + (Alignment - 1) * N_padded) / 2;
   }
 
-  void resize(int n)
+  void resize()
   {
-    N_sources = N_targets = n;
-
     // initialize memory containers and views
-    Ntargets_padded         = getAlignedSize<T>(n);
+    Ntargets_padded         = getAlignedSize<T>(N_targets);
     const size_t total_size = compute_size(N_targets);
     memory_pool_displs_.resize(total_size * D);
     distances_.resize(N_targets);
