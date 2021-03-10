@@ -44,11 +44,11 @@ inline int Xgetrf(int n, int m, std::complex<float>* restrict a, int lda, int* r
 
 /** inversion of a float matrix after lu factorization*/
 inline int Xgetri(int n,
-                   std::complex<float>* restrict a,
-                   int lda,
-                   int* restrict piv,
-                   std::complex<float>* restrict work,
-                   int& lwork)
+                  std::complex<float>* restrict a,
+                  int lda,
+                  int* restrict piv,
+                  std::complex<float>* restrict work,
+                  int& lwork)
 {
   int status;
   cgetri(n, a, lda, piv, work, lwork, status);
@@ -78,11 +78,11 @@ inline int Xgetrf(int n, int m, std::complex<double>* restrict a, int lda, int* 
 
 /** inversion of a std::complex<double> matrix after lu factorization*/
 inline int Xgetri(int n,
-                   std::complex<double>* restrict a,
-                   int lda,
-                   int* restrict piv,
-                   std::complex<double>* restrict work,
-                   int& lwork)
+                  std::complex<double>* restrict a,
+                  int lda,
+                  int* restrict piv,
+                  std::complex<double>* restrict work,
+                  int& lwork)
 {
   int status;
   zgetri(n, a, lda, piv, work, lwork, status);
@@ -156,8 +156,8 @@ class DiracMatrix
       msg << "Xgetrf failed with error " << status << std::endl;
       throw std::runtime_error(msg.str());
     }
-    for(int i=0; i<n; i++)
-      LU_diag[i] = invMat[i*lda+i];
+    for (int i = 0; i < n; i++)
+      LU_diag[i] = invMat[i * lda + i];
     computeLogDet(LU_diag.data(), n, m_pivot.data(), LogDet);
     status = Xgetri(n, invMat, lda, m_pivot.data(), m_work.data(), Lwork);
     if (status != 0)
@@ -169,7 +169,6 @@ class DiracMatrix
   }
 
 public:
-
   DiracMatrix() : Lwork(0) {}
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
@@ -178,10 +177,9 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value>
-  invert_transpose(const Matrix<TMAT>& amat,
-                   Matrix<TMAT>& invMat,
-                   std::complex<TREAL>& LogDet)
+  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT>& amat,
+                                                                            Matrix<TMAT>& invMat,
+                                                                            std::complex<TREAL>& LogDet)
   {
     const int n   = invMat.rows();
     const int lda = invMat.cols();
@@ -195,19 +193,17 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value>
-  invert_transpose(const Matrix<TMAT>& amat,
-                   Matrix<TMAT>& invMat,
-                   std::complex<TREAL>& LogDet)
+  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT>& amat,
+                                                                             Matrix<TMAT>& invMat,
+                                                                             std::complex<TREAL>& LogDet)
   {
     const int n   = invMat.rows();
     const int lda = invMat.cols();
-    psiM_fp.resize(n,lda);
+    psiM_fp.resize(n, lda);
     simd::transpose(amat.data(), n, amat.cols(), psiM_fp.data(), n, lda);
     computeInvertAndLog(psiM_fp.data(), n, lda, LogDet);
     invMat = psiM_fp;
   }
-
 };
 } // namespace qmcplusplus
 
