@@ -21,26 +21,29 @@
 
 namespace qmcplusplus
 {
-inline void Xgetrf(int n, int m, float* restrict a, int lda, int* restrict piv)
+inline int Xgetrf(int n, int m, float* restrict a, int lda, int* restrict piv)
 {
   int status;
   sgetrf(n, m, a, lda, piv, status);
+  return status;
 }
 
-inline void Xgetri(int n, float* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
+inline int Xgetri(int n, float* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
 {
   int status;
   sgetri(n, a, lda, piv, work, lwork, status);
+  return status;
 }
 
-inline void Xgetrf(int n, int m, std::complex<float>* restrict a, int lda, int* restrict piv)
+inline int Xgetrf(int n, int m, std::complex<float>* restrict a, int lda, int* restrict piv)
 {
   int status;
   cgetrf(n, m, a, lda, piv, status);
+  return status;
 }
 
 /** inversion of a float matrix after lu factorization*/
-inline void Xgetri(int n,
+inline int Xgetri(int n,
                    std::complex<float>* restrict a,
                    int lda,
                    int* restrict piv,
@@ -49,28 +52,32 @@ inline void Xgetri(int n,
 {
   int status;
   cgetri(n, a, lda, piv, work, lwork, status);
+  return status;
 }
 
-inline void Xgetrf(int n, int m, double* restrict a, int lda, int* restrict piv)
+inline int Xgetrf(int n, int m, double* restrict a, int lda, int* restrict piv)
 {
   int status;
   dgetrf(n, m, a, lda, piv, status);
+  return status;
 }
 
-inline void Xgetri(int n, double* restrict a, int lda, int* restrict piv, double* restrict work, int& lwork)
+inline int Xgetri(int n, double* restrict a, int lda, int* restrict piv, double* restrict work, int& lwork)
 {
   int status;
   dgetri(n, a, lda, piv, work, lwork, status);
+  return status;
 }
 
-inline void Xgetrf(int n, int m, std::complex<double>* restrict a, int lda, int* restrict piv)
+inline int Xgetrf(int n, int m, std::complex<double>* restrict a, int lda, int* restrict piv)
 {
   int status;
   zgetrf(n, m, a, lda, piv, status);
+  return status;
 }
 
 /** inversion of a std::complex<double> matrix after lu factorization*/
-inline void Xgetri(int n,
+inline int Xgetri(int n,
                    std::complex<double>* restrict a,
                    int lda,
                    int* restrict piv,
@@ -79,6 +86,7 @@ inline void Xgetri(int n,
 {
   int status;
   zgetri(n, a, lda, piv, work, lwork, status);
+  return status;
 }
 
 
@@ -141,11 +149,23 @@ class DiracMatrix
     BlasThreadingEnv knob(getNextLevelNumThreads());
     if (Lwork < lda)
       reset(invMat, lda);
-    Xgetrf(n, n, invMat, lda, m_pivot.data());
+    int status = Xgetrf(n, n, invMat, lda, m_pivot.data());
+    if (status != 0)
+    {
+      std::ostringstream msg;
+      msg << "Xgetrf failed with error " << status << std::endl;
+      throw std::runtime_error(msg.str());
+    }
     for(int i=0; i<n; i++)
       LU_diag[i] = invMat[i*lda+i];
     computeLogDet(LU_diag.data(), n, m_pivot.data(), LogDet);
-    Xgetri(n, invMat, lda, m_pivot.data(), m_work.data(), Lwork);
+    status = Xgetri(n, invMat, lda, m_pivot.data(), m_work.data(), Lwork);
+    if (status != 0)
+    {
+      std::ostringstream msg;
+      msg << "Xgetri failed with error " << status << std::endl;
+      throw std::runtime_error(msg.str());
+    }
   }
 
 public:
