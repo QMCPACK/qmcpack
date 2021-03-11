@@ -117,7 +117,7 @@ struct conjugate<> : private basic_conjugate_t{
 #pragma GCC diagnostic ignored "-Wsubobject-linkage"
 #endif
 template<class ComplexRef> struct conjd : test::involuted<ComplexRef, conjugate<>>{
-	conjd(ComplexRef r) : test::involuted<ComplexRef, conjugate<>>(r){}
+	explicit conjd(ComplexRef r) : test::involuted<ComplexRef, conjugate<>>(r){}
 	decltype(auto) real() const{return this->r_.real();}
 	decltype(auto) imag() const{return negated<decltype(this->r_.imag())>(this->r_.imag());}//-this->r_.imag();}//negated<std::decay_t<decltype(this->r_.imag())>>(this->r_.imag());} 
 	friend decltype(auto) real(conjd const& self){using std::real; return real(static_cast<typename conjd::decay_type>(self));}
@@ -170,8 +170,8 @@ struct bitransformer{
 template<class P = std::complex<double>*>
 struct indirect_real{// : std::iterator_traits<typename std::pointer_traits<P>::element_type::value_type*>{
 	P impl_;
-	indirect_real(P const& p) : impl_{p}{}
-    auto operator+(std::ptrdiff_t n) const{return indirect_real{impl_ + n};}
+	explicit indirect_real(P const& p) : impl_{p}{}
+	auto operator+(std::ptrdiff_t n) const{return indirect_real{impl_ + n};}
 	double& operator*() const{return reinterpret_cast<double(&)[2]>(*impl_)[0];}
 
 	using difference_type = std::ptrdiff_t;
@@ -198,16 +198,13 @@ BOOST_AUTO_TEST_CASE(transformed_array){
 		auto&& z = test::conjd<complex&>{c};
 		BOOST_REQUIRE(( z == complex{1., -2.} ));
 
-		auto pz = &z;
-		BOOST_REQUIRE( real(*pz)  ==  1. );
-		BOOST_REQUIRE( imag(*pz)  == -2. );
-		BOOST_REQUIRE( pz->real() ==  1. );
-		BOOST_REQUIRE( pz->imag() == -2. );
+		BOOST_REQUIRE( real(z)  ==  1. );
+		BOOST_REQUIRE( imag(z)  == -2. );
+		BOOST_REQUIRE( z.real() ==  1. );
+		BOOST_REQUIRE( z.imag() == -2. );
 	}
 	{
 		double a = 5;
-		double& b = a;
-		BOOST_REQUIRE( b == 5 );
 
 		auto&& c = test::involuted<double&, decltype(test::neg)>(a, test::neg);
 		BOOST_REQUIRE( c == -5. );

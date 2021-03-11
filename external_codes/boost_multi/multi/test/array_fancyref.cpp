@@ -19,8 +19,8 @@ public:
 	using reference = ref<T>;
 	using iterator_category = std::random_access_iterator_tag;
 	ptr() = default;//ptr(ptr const=default; ptr& operator=(ptr const&)=default;
-	ptr(std::nullptr_t){}
-	template<class Other> ptr(ptr<Other> const&){}
+	explicit ptr(std::nullptr_t){}
+	template<class Other> explicit ptr(ptr<Other> const&){}
 	reference operator*() const{return reference{&value};}
 	ptr operator+(difference_type) const{return *this;}
 	ptr& operator+=(difference_type){return *this;}
@@ -43,11 +43,11 @@ template<class T> struct ref;
 template<class T> struct ref{
 protected:
 	T* p_;
-	ref(T* p) : p_{p}{}
+	explicit ref(T* p) : p_{p}{}
 	friend class ptr<T>;
 	friend struct ref<T const>;
 public:
-	ref(ref<std::remove_const_t<T>> const& other) : p_{other.p_}{}
+	explicit ref(ref<std::remove_const_t<T>> const& other) : p_{other.p_}{}
 	bool operator==(ref const&) const{return true;}
 	bool operator!=(ref const&) const{return false;}
 	using decay_t = std::decay_t<T>;
