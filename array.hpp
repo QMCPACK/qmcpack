@@ -252,9 +252,11 @@ public:
 //		array_alloc::uninitialized_move_elements(data_elements(o));
 //	}
 	// cppcheck-suppress noExplicitConstructor ; to allow assigment-like construction of nested arrays
-	constexpr static_array(std::initializer_list<typename static_array<T, D>::value_type> mil) : static_array(mil.begin(), mil.end()){}
+	constexpr static_array(std::initializer_list<typename static_array<T, D>::value_type> mil) : 
+		static_array(static_array<T, D>(mil.begin(), mil.end()))
+	{}
 	static_array(
-		std::initializer_list<typename static_array::value_type> mil, 
+		std::initializer_list<typename static_array<T, D>::value_type> mil, 
 		typename static_array::allocator_type const& a
 	) : static_array(static_array<T, D>(mil.begin(), mil.end()), a){}
 //	template<std::size_t N>
