@@ -1,14 +1,12 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXXX $CXXFLAGS -DMULTI_NDEBUG_ACCESS $0 -o $0x &&$0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2019-2020
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+// © Alfredo A. Correa 2019-2021
 
 #ifndef MULTI_CONFIG_ASSERT_HPP
 #define MULTI_CONFIG_ASSERT_HPP
 
 #include<cassert>
 
-#ifdef MULTI_ACCESS_NDEBUG
+#if defined(MULTI_ACCESS_NDEBUG) or defined(__CUDACC__)
 #define MULTI_ACCESS_ASSERT(Expr)
 #else
 #define MULTI_ACCESS_ASSERT(Expr) assert(Expr)
@@ -21,5 +19,4 @@ int main(){
 }
 #endif
 #endif
-
 

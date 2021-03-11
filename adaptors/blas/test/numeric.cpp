@@ -83,7 +83,8 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_decay){
 
 	namespace blas = multi::blas;
 	multi::array<complex, 2> conjB = blas::conj(B);
-	
+
+	BOOST_REQUIRE( conjB[2][1] == std::conj(B[2][1]) );
 	BOOST_REQUIRE( blas::conj(B)[2][1] == std::conj(B[2][1]) );
 
 	BOOST_REQUIRE( blas::transposed(B)[1][2] == B[2][1] );
@@ -119,7 +120,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_decay_thrust){
 
 	namespace blas = multi::blas;
 	multi::array<complex, 2> conjB = blas::conj(B);
-
+	BOOST_REQUIRE( conjB[1][2] == conj(B[1][2]) );
 }
 #endif
 
@@ -153,13 +154,14 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_decay_thrust){
 
 BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_imag_part){
 
-	using complex = std::complex<double>; complex const I{0, 1};
+	using complex = std::complex<double>; complex const I{0., 1.};
 
 	multi::array<double, 2> A = {
 		{1., 3., 4.}, 
 		{9., 7., 1.}
 	};
 	multi::array<complex, 2> Acplx = A;
+	BOOST_REQUIRE( Acplx[1][1] == A[1][1] );
 
 	multi::array<complex, 2> B = {
 		{1. - 3.*I, 6. + 2.*I},

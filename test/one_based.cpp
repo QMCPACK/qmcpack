@@ -29,6 +29,9 @@ BOOST_AUTO_TEST_CASE(one_based_1D){
 
 	auto Af1 = multi::array<double, 1>(10, 0.).reindex(1);
 
+	BOOST_REQUIRE( size(Af1) == 10 );
+	BOOST_REQUIRE( Af1[10] == 0. );
+
 	multi::array<double, 1> B({{0, 10}}, 0.);
 	B[0] = 1.;
 	B[1] = 2.;
@@ -57,6 +60,9 @@ BOOST_AUTO_TEST_CASE(one_based_2D){
 	BOOST_REQUIRE( extension(Af).finish() == 11 );
 
 	auto Af1 = multi::array<double, 2>({10, 10}, 0.).reindex(1, 1);
+	
+	BOOST_REQUIRE( size(Af1) == 10 );
+	BOOST_REQUIRE( Af1[10][10] == 0. );
 
 	multi::array<double, 2> B({{0, 10}, {0, 20}}, 0.);
 	B[0][0] = 1.;

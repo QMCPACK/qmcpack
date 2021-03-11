@@ -136,7 +136,6 @@ int main(){
 		m.deallocate((char*)p1 + 10000, 1*sizeof(double));
 	}catch(...){}
 }
-	return 0;
 {
 	alignas(double) char buffer[300*sizeof(double)];
 	multi::memory::monotonic<char*> m(&buffer[0], 300*sizeof(double));

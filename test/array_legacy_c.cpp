@@ -28,9 +28,9 @@ void fftw_plan_dft(
 }
 
 BOOST_AUTO_TEST_CASE(array_legacy_c){
-	using std::complex;
 
-	multi::array<complex<double>, 2> const in = {
+	using complex = std::complex<double>;
+	multi::array<complex, 2> const in = {
 		{150., 16., 17., 18., 19.},
 		{  5.,  5.,  5.,  5.,  5.}, 
 		{100., 11., 12., 13., 14.}, 
@@ -38,8 +38,8 @@ BOOST_AUTO_TEST_CASE(array_legacy_c){
 	};
 	multi::array<std::complex<double>, 2> out(extensions(in));
 
-	assert( dimensionality(out) == dimensionality(in) );
-	assert( sizes(out) == sizes(in) );
+	BOOST_REQUIRE( dimensionality(out) == dimensionality(in) );
+	BOOST_REQUIRE( sizes(out) == sizes(in) );
 
 	using multi::sizes_as;
 	fake::fftw_plan_dft(
@@ -73,7 +73,6 @@ struct ref : basic{
 		BOOST_REQUIRE( not rotated(d2D)[2].is_compact() );
 	}
 	{
-		using complex = std::complex<double>;
 		multi::array<complex, 2> d2D({5, 3});
 		BOOST_REQUIRE( d2D.is_compact() );
 		BOOST_REQUIRE( rotated(d2D).is_compact() );

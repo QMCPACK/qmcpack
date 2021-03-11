@@ -65,7 +65,7 @@ template<typename T, typename Diff>
 struct block<T*, Diff> : detail::basic_block<T*, Diff>{
 	using detail::basic_block<T*, Diff>::basic_block;
 	template<std::size_t N>
-	constexpr block(T(&t)[N]) : detail::basic_block<T*, Diff>{t, N}{}
+	constexpr explicit block(T(&t)[N]) : detail::basic_block<T*, Diff>{t, N}{}
 };
 
 #if (__cpp_deduction_guides >= 201703)

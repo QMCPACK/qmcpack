@@ -21,7 +21,7 @@ namespace multi = boost::multi;
 using complex = std::complex<double>;
 
 struct multiplies_bind1st{
-	multiplies_bind1st(multi::array<complex, 2>&& m) : m_(std::move(m)){} // this produces a bug in nvcc11.0
+	explicit multiplies_bind1st(multi::array<complex, 2>&& m) : m_(std::move(m)){} // this produces a bug in nvcc11.0
 	multi::array<complex, 2> m_;
 };
 

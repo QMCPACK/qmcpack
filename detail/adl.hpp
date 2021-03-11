@@ -344,7 +344,7 @@ constexpr auto alloc_uninitialized_copy(std::allocator<T>&, InputIt f, InputIt l
 	return adl_uninitialized_copy(f, l, d);
 }
 
-template<class Alloc, class InputIt, class ForwardIt, class=std::enable_if_t<std::is_constructible<typename std::iterator_traits<ForwardIt>::value_type, typename std::iterator_traits<InputIt>::reference>{}> >
+template<class Alloc, class InputIt, class ForwardIt, class=decltype(std::addressof(*std::declval<ForwardIt>())), class=std::enable_if_t<std::is_constructible<typename std::iterator_traits<ForwardIt>::value_type, typename std::iterator_traits<InputIt>::reference>{}> >
 auto alloc_uninitialized_copy(Alloc& a, InputIt first, InputIt last, ForwardIt d_first)
 //->std::decay_t<decltype(a.construct(std::addressof(*d_first), *first), d_first)> // problematic in clang-11 + gcc-9
 {

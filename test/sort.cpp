@@ -17,6 +17,8 @@ namespace multi = boost::multi;
 BOOST_AUTO_TEST_CASE(multi_array_stable_sort){
 
 	std::vector<double> v = {1.,2.,3.};
+	BOOST_REQUIRE( std::is_sorted(begin(v), end(v)) );
+
 	multi::array<double, 2> d2D = {
 		{150, 16, 17, 18, 19},
 		{ 30,  1,  2,  3,  4}, 
@@ -58,6 +60,8 @@ BOOST_AUTO_TEST_CASE(multi_array_stable_sort){
 BOOST_AUTO_TEST_CASE(multi_array_ref_stable_sort){
 
 	std::vector<double> v = {1.,2.,3.};
+	BOOST_REQUIRE( std::is_sorted(begin(v), end(v)) );
+
 	double d2D[4][5] = {
 		{150, 16, 17, 18, 19},
 		{ 30,  1,  2,  3,  4}, 

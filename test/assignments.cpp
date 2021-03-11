@@ -13,7 +13,7 @@ $CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 
 namespace multi = boost::multi;
 
-multi::array_ref<double, 2> make_ref(double* p){return {p, {5, 7}};}
+auto make_ref(double* p){return multi::array_ref<double, 2>(p, {5, 7});}
 
 BOOST_AUTO_TEST_CASE(equality_1D){
 	multi::array<double, 1> A = {1., 2., 3.};
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(multi_copy_move){
 	auto A_data = A.data_elements();
 	multi::array<double, 2> C = std::move(A);
 	BOOST_REQUIRE( is_empty(A) );
-	BOOST_REQUIRE( A_data = C.data_elements() );
+	BOOST_REQUIRE( A_data == C.data_elements() );
 	
 	multi::array<double, 2> D(std::move(B));
 	BOOST_REQUIRE( is_empty(B) );

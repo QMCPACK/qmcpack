@@ -27,7 +27,7 @@ public:
 template<class T> class ptr2 : public std::iterator_traits<T*>{ // minimalistic pointer
 	T* impl_;
 public:
-	constexpr ptr2(T* impl) : impl_{impl}{}
+	constexpr explicit ptr2(T* impl) : impl_{impl}{}
 	constexpr explicit ptr2(ptr<T> p) : impl_{p.impl_}{} 
 	constexpr typename ptr2::reference operator*() const{return *impl_;}
 	constexpr auto operator+(typename ptr2::difference_type n) const{return ptr2{impl_ + n};}
@@ -36,12 +36,6 @@ public:
 };
 
 }
-
-struct X{
-	int a1;
-	double a2;
-	double b;
-};
 
 BOOST_AUTO_TEST_CASE(test_minimalistic_ptr){
 
@@ -56,7 +50,7 @@ BOOST_AUTO_TEST_CASE(test_minimalistic_ptr){
 	(*CCP)[2]; // requires operator+ 
 	(*CCP)[1][1]; // requires operator*
 	(*CCP)[1][1] = 9;
-	BOOST_REQUIRE((*CCP)[1][1] == 9);
+	BOOST_REQUIRE( &(*CCP)[1][1] == &buffer[11] );
 
 	auto&& CC2 = CCP->template static_array_cast<double, minimalistic::ptr2<double>>();
 	BOOST_REQUIRE( &CC2[1][1] == &(*CCP)[1][1] );
