@@ -13,7 +13,7 @@ IF (NOT QMC_CUDA)
                       H4
                       H4_msd_orb_opt.xml
                       16 1
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       4 H4_MSD_ORB_OPT_SCALARS # OPT step 4
                       )
  ELSE()
