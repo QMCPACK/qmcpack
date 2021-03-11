@@ -25,7 +25,14 @@ typedef double scalar;
 
 // #define NDIM 3
 
-template<class T, std::size_t N> using TinyVector = typename blitz::TinyVector<T, N>;
+//template<class T, std::size_t N> using TinyVector = typename blitz::TinyVector<T, N>;
+
+template<class T, std::size_t N> struct TinyVector
+// : std::array<T, N>{ using base_type =  std::array<T, N>;
+ : blitz::TinyVector<T, N>{ using base_type =  blitz::TinyVector<T, N>;
+//	using base_type::base_type;
+	template<class... Args> TinyVector(Args... args) : base_type(std::forward<Args>(args)...){}
+};
 
 template<class T, std::size_t N1, std::size_t N2> using TinyMatrix = typename blitz::TinyMatrix<T, N1, N2>;
 
