@@ -428,10 +428,10 @@ struct device_allocator
 //		static_assert( std::is_trivially_destructible<value_type>{}, "!"); // p->~U();
 //  }
   template<class InputIt, class ForwardIt>
-  ForwardIt alloc_uninitialized_copy(InputIt first, InputIt last, ForwardIt d_first){
-    static_assert( std::is_trivially_destructible<value_type>{}, "!");
-    return device::copy(first, last, d_first);
-  }
+  ForwardIt alloc_uninitialized_copy(InputIt first, InputIt last, ForwardIt d_first);//{
+//    static_assert( std::is_trivially_destructible<value_type>{}, "!");
+//    return device::copy(first, last, d_first);
+//  }
 };
 
 struct memory_resource
@@ -1411,6 +1411,21 @@ multi::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitialized_copy_
   return dest + n;
 }
 
+//template<class Alloc, class T, class ForwardIt>
+//multi::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitialized_copy_n(
+//    Alloc& a,
+//    ForwardIt first, ForwardIt last, 
+//    multi::array_iterator<T, 1, device::device_pointer<T>> dest)
+//{
+//  if (n == 0)
+//    return dest;
+//  using qmcplusplus::afqmc::to_address;
+//  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+//                  sizeof(T), n);
+//  return dest + n;
+//}
+
+
 template<class Alloc, class T, class Q1, class Q2, typename Size>
 multi::array_iterator<T, 1, T*> alloc_uninitialized_move_n(
     Alloc& a,
@@ -1483,5 +1498,14 @@ multi::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitialized_value
 } // namespace multi
 } // namespace boost
 
+namespace device{
+  template<class T> template<class InputIt, class ForwardIt>
+  ForwardIt device_allocator<T>::alloc_uninitialized_copy(InputIt first, InputIt last, ForwardIt d_first){
+    static_assert( std::is_trivially_destructible<value_type>{}, "!");
+    using std::copy_n;
+    using device::copy_n;
+    return copy_n(first, last - first, d_first);
+  }
+}
 
 #endif
