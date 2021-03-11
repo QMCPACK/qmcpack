@@ -14,6 +14,7 @@
 #ifndef MYBLITZ_H
 #define MYBLITZ_H
 
+#include <array>
 #include <complex>
 
 #include <string.h>
