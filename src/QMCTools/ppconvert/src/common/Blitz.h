@@ -344,9 +344,6 @@ inline cVec3 operator*(const cMat3& A, const cVec3& x)
 
 inline double distSqrd(Vec2 a, Vec2 b) { return dot(a - b, a - b); }
 
-inline double distSqrd(Vec3 a, Vec3 b) { return dot(a - b, a - b); }
-
-
 template<class T>
 class SymmArray
 {
