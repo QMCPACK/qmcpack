@@ -29,6 +29,11 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class UnifiedDriverWalkerControlMPITest;
+}
+
 class MultiWalkerDispatchers;
 struct DriverWalkerResourceCollection;
 
@@ -102,12 +107,12 @@ private:
    *
    *  populates the minus and plus vectors they contain 1 copy of a partition index 
    *  for each adjustment in population to the context.
-   *  \param[in] num_per_node as if all walkers were copied out to multiplicity
+   *  \param[in] num_per_rank as if all walkers were copied out to multiplicity
    *  \param[out] fair_offset running population count at each partition boundary
    *  \param[out] minus list of partition indexes one occurance for each walker removed
    *  \param[out] plus list of partition indexes one occurance for each walker added
    */
-  static void determineNewWalkerPopulation(const std::vector<int>& num_per_node,
+  static void determineNewWalkerPopulation(const std::vector<int>& num_per_rank,
                                            std::vector<int>& fair_offset,
                                            std::vector<int>& minus,
                                            std::vector<int>& plus);
@@ -156,8 +161,8 @@ private:
   IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
-  ///number of walkers on each node after branching before load balancing
-  std::vector<int> num_per_node_;
+  ///number of walkers on each MPI rank after branching before load balancing
+  std::vector<int> num_per_rank_;
   ///offset of the particle index for a fair distribution
   std::vector<int> fair_offset_;
   ///filename for dmc.dat
@@ -182,6 +187,8 @@ private:
   TimerList_t my_timers_;
   ///Number of walkers sent during the exchange
   IndexType saved_num_walkers_sent_;
+
+  friend testing::UnifiedDriverWalkerControlMPITest;
 };
 
 } // namespace qmcplusplus

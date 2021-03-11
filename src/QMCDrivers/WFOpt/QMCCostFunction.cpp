@@ -212,21 +212,21 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
   //load samples from SampleStack
   outputManager.resume();
   app_log() << "   Number of samples loaded to each thread : ";
-  wPerNode[0] = 0;
+  wPerRank[0] = 0;
   for (int ip = 0; ip < NumThreads; ++ip)
   {
-    wPerNode[ip + 1] = wPerNode[ip] + wClones[ip]->numSamples();
+    wPerRank[ip + 1] = wPerRank[ip] + wClones[ip]->numSamples();
     app_log() << wClones[ip]->numSamples() << " ";
   }
   app_log() << std::endl;
   app_log().flush();
 
-  if (dLogPsi.size() != wPerNode[NumThreads])
+  if (dLogPsi.size() != wPerRank[NumThreads])
   {
     delete_iter(dLogPsi.begin(), dLogPsi.end());
     delete_iter(d2LogPsi.begin(), d2LogPsi.end());
     int nptcl = W.getTotalNum();
-    int nwtot = wPerNode[NumThreads];
+    int nwtot = wPerRank[NumThreads];
     dLogPsi.resize(nwtot);
     d2LogPsi.resize(nwtot);
     for (int i = 0; i < nwtot; ++i)
@@ -277,7 +277,7 @@ void QMCCostFunction::checkConfigurations()
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
     Return_rt e2 = 0.0;
-    for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
+    for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
       wRef.loadSample(wRef.R, iw);
       wRef.update();
@@ -323,11 +323,11 @@ void QMCCostFunction::checkConfigurations()
     //       eft_tot+=ef;
   }
   OptVariablesForPsi.setComputed();
-  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << std::endl;
+  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerRank[NumThreads]) << std::endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
   etemp[0] = et_tot;
-  etemp[1] = static_cast<Return_rt>(wPerNode[NumThreads]);
+  etemp[1] = static_cast<Return_rt>(wPerRank[NumThreads]);
   etemp[2] = e2_tot;
   myComm->allreduce(etemp);
   Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
@@ -405,7 +405,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     Return_rt e2 = 0.0;
 
 
-    for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
+    for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
       wRef.loadSample(wRef.R, iw);
       wRef.update();
@@ -470,11 +470,11 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     //       eft_tot+=ef;
   }
 
-  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
+  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerRank[NumThreads]) << endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
   etemp[0] = et_tot;
-  etemp[1] = static_cast<Return_rt>(wPerNode[NumThreads]);
+  etemp[1] = static_cast<Return_rt>(wPerRank[NumThreads]);
   etemp[2] = e2_tot;
   myComm->allreduce(etemp);
   Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
@@ -553,7 +553,7 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
 
     MCWalkerConfiguration& wRef(*wClones[ip]);
     Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
-    for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
+    for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
       wRef.loadSample(wRef.R, iw);
       wRef.update(true);

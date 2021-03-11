@@ -1264,6 +1264,7 @@ def test_generate():
                                        dtype=float),
             ),
         )
-    assert(check_object_eq(gr,gr_ref))
+
+    assert(check_object_eq(gr,gr_ref,atol=1e-12))
 
 #end def test_generate

@@ -295,8 +295,6 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
-  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat);
-
   /** evaluate the ratio of the new to old WaveFunctionComponent value and the new spin gradient
    * Default implementation assumes that WaveFunctionComponent does not explicitly depend on Spin.
    * @param P the active ParticleSet
@@ -321,12 +319,6 @@ struct WaveFunctionComponent : public QMCTraits
                             int iat,
                             std::vector<PsiValueType>& ratios,
                             std::vector<GradType>& grad_new) const;
-
-  virtual void mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                 const RefVectorWithLeader<ParticleSet>& p_list,
-                                 int iat,
-                                 std::vector<PsiValueType>& ratios,
-                                 std::vector<GradType>& grad_new) const;
 
   /** a move for iat-th particle is accepted. Update the current content.
    * @param P target ParticleSet

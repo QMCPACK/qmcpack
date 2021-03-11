@@ -93,6 +93,40 @@ void SpinorSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, G
   d2psi = eis * d2psi_work_up + emis * d2psi_work_down;
 }
 
+void SpinorSet::evaluateVGL_spin(const ParticleSet& P,
+                                 int iat,
+                                 ValueVector_t& psi,
+                                 GradVector_t& dpsi,
+                                 ValueVector_t& d2psi,
+                                 ValueVector_t& dspin)
+{
+  psi_work_up     = 0.0;
+  psi_work_down   = 0.0;
+  dpsi_work_up    = 0.0;
+  dpsi_work_down  = 0.0;
+  d2psi_work_up   = 0.0;
+  d2psi_work_down = 0.0;
+
+  spo_up->evaluateVGL(P, iat, psi_work_up, dpsi_work_up, d2psi_work_up);
+  spo_dn->evaluateVGL(P, iat, psi_work_down, dpsi_work_down, d2psi_work_down);
+
+  ParticleSet::Scalar_t s = P.activeSpin(iat);
+
+  RealType coss(0.0), sins(0.0);
+
+  coss = std::cos(s);
+  sins = std::sin(s);
+
+  ValueType eis(coss, sins);
+  ValueType emis(coss, -sins);
+  ValueType eye(0, 1.0);
+
+  psi   = eis * psi_work_up + emis * psi_work_down;
+  dpsi  = eis * dpsi_work_up + emis * dpsi_work_down;
+  d2psi = eis * d2psi_work_up + emis * d2psi_work_down;
+  dspin = eye * (eis * psi_work_up - emis * psi_work_down);
+}
+
 void SpinorSet::evaluate_notranspose(const ParticleSet& P,
                                      int first,
                                      int last,
