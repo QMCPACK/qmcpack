@@ -74,7 +74,7 @@ ENDIF()
                     qmc_short
                     qmc_short_opt.in.xml
                     1 16
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     3 DIAMOND_OPT_SCALARS # VMC
                     )
 
