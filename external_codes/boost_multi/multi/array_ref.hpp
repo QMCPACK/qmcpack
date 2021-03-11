@@ -630,7 +630,12 @@ public:
 		return {this->layout().transpose(), types::base_};
 	}
 	friend constexpr basic_array transposed(basic_array const& s){return s.transposed();}
-	friend constexpr basic_array operator~ (basic_array const& s){return s.transposed();}
+	friend 
+#if(defined(__INTEL_COMPILER) and (__INTEL_COMPILER < 1911))
+#else
+	constexpr 
+#endif
+	basic_array operator~ (basic_array const& s){return s.transposed();}
 
 	constexpr basic_array rotated()&{
 		typename types::layout_t new_layout = *this; new_layout.rotate();

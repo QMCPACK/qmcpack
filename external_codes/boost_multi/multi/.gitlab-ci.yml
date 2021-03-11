@@ -352,97 +352,97 @@ inq-cuda-11.2-compileonly:
       - ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda
       - make silicon
 
-#g++-runner:
-#    stage: test
-#    tags:
-#      - intel_compiler
-#    script:
-#      - export CXX="g++"
-#      - $CXX --version
-#      - mkdir build && cd build
-#      - cmake --version
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -j 12
-#      - ctest --output-on-failure
+g++-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - export CXX="g++"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake --version
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - ctest --output-on-failure
 
-#icpc-nomkl-runner:
-#    stage: test
-#    tags:
-#      - intel_compiler
-#    script:
-#      - export CXX="/opt/intel/system_studio_2020/bin/icpc"
-#      - $CXX --version
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -j 12
-#      - export MKL_VERBOSE=1
-#      - ctest --output-on-failure
+icpc-nomkl-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - export CXX="/opt/intel/system_studio_2020/bin/icpc"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - export MKL_VERBOSE=1
+      - ctest --output-on-failure
 
-#icpc-runner:
-#    stage: test
-#    tags:
-#      - intel_compiler
-#    script:
-#      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
-#      - export CXX="icpc"
-#      - $CXX --version
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -j 12
-#      - export MKL_VERBOSE=1
-#      - ctest --output-on-failure
+icpc-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
+      - export CXX="icpc"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - export MKL_VERBOSE=1
+      - ctest --output-on-failure
 
-#icpc-memcheck-runner:
-#    stage: test
-#    tags:
-#      - intel_compiler
-#    script:
-#      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
-#      - export CXX="icpc"
-#      - $CXX --version
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -j 12
-#      - ctest -T memcheck --output-on-failure || (cat Testing/Temporary/MemoryChecker.*.log && exit 0)
+icpc-memcheck-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
+      - export CXX="icpc"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - ctest -T memcheck --output-on-failure || (cat Testing/Temporary/MemoryChecker.*.log && exit 0)
 
-#icpc-std17-runner:
-#    stage: test
-#    tags:
-#      - intel_compiler
-#    script:
-#      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
-#      - export CXX="icpc"
-#      - $CXX --version
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -j 12
-#      - export MKL_VERBOSE=1
-#      - ctest --output-on-failure
+icpc-std17-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
+      - export CXX="icpc"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - export MKL_VERBOSE=1
+      - ctest --output-on-failure
 
-#inq-nvcc-ompi:
-#  stage: test
-#  tags:
-#    - intel_compiler
-#  script:
-#    - export PREFIX=`mktemp -d`
-#    - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
-#    - cd inq
-#    - cd external_libs/multi
-#    - git checkout $CI_COMMIT_BRANCH
-#    - cd ../..
-#    - mkdir build && cd build
-#    - export CUDACXX=/usr/local/cuda/bin/nvcc
-#    - export CUDAFLAGS="$(for x in `mpic++ --showme:incdirs`; do echo -n -I$x" " ; done) -std=c++17 -DFMT_USE_UDL_TEMPLATE=0 -D_DISABLE_CUDA_SLOW -O3 --gpu-architecture sm_70 --expt-relaxed-constexpr --expt-extended-lambda --Werror=cross-execution-space-call --compiler-options -Ofast,-std=c++17,-Wall,-Wfatal-errors"
-#    - export LDFLAGS=$(for x in `mpic++ --showme:libdirs`; do echo -n -L$x" " ; done)
-#    - export LIBS=$(for x in `mpic++ --showme:libs`; do echo -n -l$x" " ; done)
-#    - $CUDACXX -V
-#    - ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda
-#    - make -j8
-#    - make -j8 install
-#    - ctest --output-on-failure --timeout 600
-#    - cd src; INQ_EXEC_ENV="mpirun --oversubscribe -np 4" ctest --output-on-failure --timeout 600; cd ..
-#    - cd src; INQ_EXEC_ENV="mpirun --oversubscribe -np 4" ctest --output-on-failure --timeout 600; cd ..
-
+inq-nvcc-ompi:
+  stage: test
+  tags:
+    - intel_compiler
+  script:
+    - export PREFIX=`mktemp -d`
+    - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
+    - cd inq
+    - cd external_libs/multi
+    - git checkout $CI_COMMIT_BRANCH
+    - cd ../..
+    - mkdir build && cd build
+    - export CUDACXX=/usr/local/cuda/bin/nvcc
+    - export CUDAFLAGS="$(for x in `mpic++ --showme:incdirs`; do echo -n -I$x" " ; done) -std=c++17 -DFMT_USE_UDL_TEMPLATE=0 -D_DISABLE_CUDA_SLOW -O3 --gpu-architecture sm_70 --expt-relaxed-constexpr --expt-extended-lambda --Werror=cross-execution-space-call --compiler-options -Ofast,-std=c++17,-Wall,-Wfatal-errors"
+    - export LDFLAGS=$(for x in `mpic++ --showme:libdirs`; do echo -n -L$x" " ; done)
+    - export LIBS=$(for x in `mpic++ --showme:libs`; do echo -n -l$x" " ; done)
+    - $CUDACXX -V
+    - ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda
+    - make -j8
+    - make -j8 install
+    - ctest --output-on-failure --timeout 600
+    - cd src; INQ_EXEC_ENV="mpirun --oversubscribe -np 4" ctest --output-on-failure --timeout 600; cd ..
+    - cd src; INQ_EXEC_ENV="mpirun --oversubscribe -np 4" ctest --output-on-failure --timeout 600; cd ..
+    - rm -rf $PREFIX
 
 #blas&fft:
 #    stage: test
