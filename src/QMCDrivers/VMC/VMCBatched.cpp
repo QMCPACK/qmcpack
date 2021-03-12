@@ -283,21 +283,25 @@ bool VMCBatched::run()
 
   ParallelExecutor<> crowd_task;
 
-  auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
-                          UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
-    Crowd& crowd = *(crowds[crowd_id]);
-    advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], false);
-  };
-
-  for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
+  if (qmcdriver_input_.get_warmup_steps() > 0)
   {
-    ScopedTimer local_timer(timers_.run_steps_timer);
-    crowd_task(crowds_.size(), runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_),
-               std::ref(crowds_));
-  }
+    // Run warm-up steps
+    auto runWarmupStep = [](int crowd_id, StateForThread& sft, DriverTimers& timers,
+                            UPtrVector<ContextForSteps>& context_for_steps, UPtrVector<Crowd>& crowds) {
+      Crowd& crowd = *(crowds[crowd_id]);
+      advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], false);
+    };
 
-  app_log() << "Warm-up is completed!" << std::endl;
-  print_mem("VMCBatched after Warmup", app_log());
+    for (int step = 0; step < qmcdriver_input_.get_warmup_steps(); ++step)
+    {
+      ScopedTimer local_timer(timers_.run_steps_timer);
+      crowd_task(crowds_.size(), runWarmupStep, vmc_state, std::ref(timers_), std::ref(step_contexts_),
+                 std::ref(crowds_));
+    }
+
+    app_log() << "Warm-up is completed!" << std::endl;
+    print_mem("VMCBatched after Warmup", app_log());
+  }
 
   for (int block = 0; block < num_blocks; ++block)
   {
