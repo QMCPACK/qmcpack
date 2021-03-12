@@ -30,7 +30,7 @@ enum
   DUMMYOPT
 };
 
-SFNBranch::SFNBranch(RealType tau, int nideal)
+SFNBranch::SFNBranch(RealType tau, int nideal) : ToDoSteps(0), myNode(NULL)
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -55,20 +55,6 @@ SFNBranch::SFNBranch(RealType tau, int nideal)
   sParam.resize(DUMMYOPT, "no");
   //default is classic
   branching_cutoff_scheme = "classic";
-  registerParameters();
-}
-
-/** copy constructor
- *
- * Copy only selected data members.
- */
-SFNBranch::SFNBranch(const SFNBranch& abranch)
-    : BranchMode(abranch.BranchMode),
-      iParam(abranch.iParam),
-      vParam(abranch.vParam),
-      branching_cutoff_scheme(abranch.branching_cutoff_scheme),
-      sParam(abranch.sParam)
-{
   registerParameters();
 }
 
@@ -143,7 +129,7 @@ int SFNBranch::initParam(const MCPopulation& population,
 
 void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec)
 {
-  FullPrecRealType logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
+  FullPrecRealType logN    = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
   FullPrecRealType pop_now = static_cast<FullPrecRealType>(pop_int);
   //population for trial energy modification should not include any released node walkers.
   pop_now -= wc_ensemble_prop.RNSamples;
@@ -281,6 +267,7 @@ bool SFNBranch::put(xmlNodePtr cur)
   //save it
   myNode = cur;
   m_param.put(cur);
+  ToDoSteps = iParam[B_WARMUPSTEPS];
   return true;
 }
 
