@@ -14,8 +14,10 @@
 #ifndef MYBLITZ_H
 #define MYBLITZ_H
 
+#include <algorithm> // transform
 #include <array>
 #include <complex>
+#include <numeric> // inner_product
 
 #include <string.h>
 #include "blitz/array.h"
@@ -28,10 +30,16 @@ typedef double scalar;
 //template<class T, std::size_t N> using TinyVector = typename blitz::TinyVector<T, N>;
 
 template<class T, std::size_t N> struct TinyVector
-// : std::array<T, N>{ using base_type =  std::array<T, N>;
- : blitz::TinyVector<T, N>{ using base_type =  blitz::TinyVector<T, N>;
+ : std::array<T, N>{ using base_type =  std::array<T, N>;
+// : blitz::TinyVector<T, N>{ using base_type =  blitz::TinyVector<T, N>;
 //	using base_type::base_type;
 	template<class... Args> TinyVector(Args... args) : base_type(std::forward<Args>(args)...){}
+	T const& operator()(std::size_t n) const{return base_type::operator[](n);}
+	T&       operator()(std::size_t n)      {return base_type::operator[](n);}
+	TinyVector(T d){base_type::fill(d);}
+	TinyVector(blitz::TinyVector<T, N> const& other) : base_type(reinterpret_cast<base_type const&>(other)){}
+	operator blitz::TinyVector<T, N> const&() const{return reinterpret_cast<blitz::TinyVector<T, N> const&>(*this);}
+	friend TinyVector& operator*=(TinyVector& v, scalar s){std::transform(v.begin(), v.end(), v.begin(), [&s](auto e){return e*s;}); return v;}
 };
 
 template<class T, std::size_t N1, std::size_t N2> using TinyMatrix = typename blitz::TinyMatrix<T, N1, N2>;
@@ -342,7 +350,9 @@ inline cVec3 operator*(const cMat3& A, const cVec3& x)
   return Ax;
 }
 
-inline double distSqrd(Vec2 a, Vec2 b) { return dot(a - b, a - b); }
+inline double distSqrd(Vec2 a, Vec2 b) { 
+	return std::inner_product(a.begin(), a.end(), b.begin(), 0., std::plus<>{}, [](auto ae, auto be){return (ae - be)*(ae - be);});
+}
 
 template<class T>
 class SymmArray
