@@ -53,7 +53,13 @@ template<class T, std::size_t N1, std::size_t N2> struct TinyMatrix
 // : blitz::TinyMatrix<T, N1, N2>{
 //	using base_type = blitz::TinyMatrix<T, N1, N2>;
 	using base_type::base_type;
-	TinyMatrix& operator=(T t){assert(t == 0); blitz::TinyMatrix<T, N1, N2>::operator=(t); return *this;}
+	TinyMatrix& operator=(T t){
+		assert(t == 0);
+		std::array<T, N2> val; val.fill(t);
+		base_type::fill(val);
+	//	blitz::TinyMatrix<T, N1, N2>::operator=(t); 
+		return *this;
+	}
 };
 
 template<class T, std::size_t D> using Array = typename blitz::Array<T, D>;
