@@ -151,7 +151,12 @@ public:
                              const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** recompute the value of the orbitals which require critical accuracy */
-  void recompute(ParticleSet& P);
+  void recompute(const ParticleSet& P);
+
+  /** batched version of recompute*/
+  static void mw_recompute(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           const std::vector<bool>& recompute);
 
   /** evaluate the log value of a many-body wave function
    * @param P input configuration containing N particles

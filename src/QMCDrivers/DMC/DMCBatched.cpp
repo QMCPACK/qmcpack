@@ -81,7 +81,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     ps_dispatcher.flex_loadWalker(walker_elecs, crowd.get_walkers(), true);
     ps_dispatcher.flex_update(walker_elecs, true);
-    twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
+    const std::vector<bool> recompute_all(walker_twfs.size(), true);
+    twf_dispatcher.flex_recompute(walker_twfs, walker_elecs, recompute_all);
 
     const int num_walkers = crowd.size();
 

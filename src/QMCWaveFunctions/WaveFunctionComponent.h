@@ -202,7 +202,8 @@ struct WaveFunctionComponent : public QMCTraits
   virtual void recompute(const ParticleSet& P);
 
   virtual void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVectorWithLeader<ParticleSet>& p_list) const;
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            const std::vector<bool>& recompute) const;
 
   // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
   // {

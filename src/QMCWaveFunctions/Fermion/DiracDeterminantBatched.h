@@ -257,7 +257,8 @@ private:
                             const RefVector<const ValueMatrix_t>& logdetT_list);
 
   void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                    const RefVectorWithLeader<ParticleSet>& p_list) const override;
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    const std::vector<bool>& recompute) const override;
 
   // make this class unit tests friendly without the need of setup resources.
   void guardMultiWalkerRes()

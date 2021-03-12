@@ -833,7 +833,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evaluateLog(
     const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
 {
   assert(this == &wfc_list.getLeader());
-  mw_recompute(wfc_list, p_list);
+  const std::vector<bool> recompute_all(wfc_list.size(), true);
+  mw_recompute(wfc_list, p_list, recompute_all);
 
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
@@ -858,7 +859,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::recompute(const ParticleSet& P)
 
 template<typename DET_ENGINE_TYPE>
 void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                                            const RefVectorWithLeader<ParticleSet>& p_list) const
+                                                            const RefVectorWithLeader<ParticleSet>& p_list,
+                                                            const std::vector<bool>& recompute) const
 {
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
   const auto nw    = wfc_list.size();

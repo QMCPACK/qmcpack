@@ -58,12 +58,14 @@ void WaveFunctionComponent::recompute(const ParticleSet& P)
 }
 
 void WaveFunctionComponent::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                         const RefVectorWithLeader<ParticleSet>& p_list) const
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                         const std::vector<bool>& recompute) const
 {
   assert(this == &wfc_list.getLeader());
 #pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    wfc_list[iw].recompute(p_list[iw]);
+    if (recompute[iw])
+      wfc_list[iw].recompute(p_list[iw]);
 }
 
 void WaveFunctionComponent::mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,

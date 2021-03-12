@@ -179,12 +179,13 @@ void SlaterDet::recompute(const ParticleSet& P)
 }
 
 void SlaterDet::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                             const RefVectorWithLeader<ParticleSet>& p_list) const
+                             const RefVectorWithLeader<ParticleSet>& p_list,
+                             const std::vector<bool>& recompute) const
 {
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto Det_list(extract_DetRef_list(wfc_list, i));
-    Dets[i]->mw_recompute(Det_list, p_list);
+    Dets[i]->mw_recompute(Det_list, p_list, recompute);
   }
 }
 

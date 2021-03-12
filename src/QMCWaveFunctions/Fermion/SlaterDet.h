@@ -83,7 +83,8 @@ public:
   virtual void recompute(const ParticleSet& P) override;
 
   virtual void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            const RefVectorWithLeader<ParticleSet>& p_list) const override;
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            const std::vector<bool>& recompute) const override;
 
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
