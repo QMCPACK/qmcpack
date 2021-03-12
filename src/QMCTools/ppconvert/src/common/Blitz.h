@@ -70,10 +70,39 @@ template<class T, std::size_t N1, std::size_t N2> struct TinyMatrix
 template<class T> void what(T&&) = delete;
 //template<class T, std::size_t D> using Array = typename blitz::Array<T, D>;
 
-template<class T, int D, class base_type = blitz::Array<T, D>> // needs to be *int* for matching template parameters in functions
+template<class T, int D, class base_type = boost::multi::array<T, D> /*blitz::Array<T, D>*/> // needs to be *int* for matching template parameters in functions
 struct Array : base_type{
 	using base_type::base_type;
 	Array& operator=(T t){blitz::Array<T, D>::operator=(t); return *this;}
+	Array(int rs, int cs) : base_type({rs, cs}){}
+	std::ptrdiff_t extent(int d) const{
+		switch(d){
+			case 0: return std::get<0>(base_type::sizes());
+			case 1: return std::get<1>(base_type::sizes());
+		}
+		assert(false);
+		return 0;
+	}
+	auto rows() const{return std::get<0>(base_type::sizes());}
+	auto cols() const{return std::get<1>(base_type::sizes());}
+	void resize(int rs, int cs){
+		base_type::reextent({rs, cs});
+	}
+	using sizes_type = decltype(std::declval<base_type const&>().sizes());
+	sizes_type shape() const{return base_type::sizes();}
+	auto resize(sizes_type sizes) const{return base_type::reextent(sizes);}
+};
+
+template<class T> // needs to be int for matching templates
+struct Array<T, 0> : blitz::Array<T, 0>{
+	using blitz::Array<T, 1>::Array;
+	Array& operator=(T t){blitz::Array<T, 1>::operator=(t); return *this;}
+	friend Array operator-(Array const& a, Array const& b){
+		assert(a.size() == b.size());
+		Array ret(a.size());
+		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a - b;});
+		return ret;
+	}
 };
 
 template<class T> // needs to be int for matching templates
@@ -88,8 +117,10 @@ struct Array<T, 1> : blitz::Array<T, 1>{
 	}
 };
 
-
-using Range = blitz::Range;
+//using Range = blitz::Range;
+struct Range : blitz::Range{
+	static auto all(){return boost::multi::all;}
+};
 
 typedef TinyVector<scalar, 1> Vec1;
 typedef TinyVector<scalar, 2> Vec2;
