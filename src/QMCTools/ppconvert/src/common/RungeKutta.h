@@ -126,7 +126,7 @@ private:
     {
       x                           = grid(i);
       h                           = grid(i + 1) - x;
-      y                           = result(i, Range::all());
+      y                           = result(i);//result(i, Range::all());
       k1                          = h * Integrand(x, y);
       yplus                       = y + 0.5 * k1;
       k2                          = h * Integrand(x + 0.5 * h, yplus);
@@ -134,7 +134,7 @@ private:
       k3                          = h * Integrand(x + 0.5 * h, yplus);
       yplus                       = y + k3;
       k4                          = h * Integrand(x + h, yplus);
-      result(i + 1, Range::all()) = y + (OneSixth * (k1 + k4) + OneThird * (k2 + k3));
+      result(i + 1)/*, Range::all())*/ = y + (OneSixth * (k1 + k4) + OneThird * (k2 + k3));
     }
   }
 
@@ -152,7 +152,7 @@ private:
     {
       x                           = grid(i);
       h                           = grid(i - 1) - x;
-      y                           = result(i, Range::all());
+      y                           = result(i);//, Range::all());
       k1                          = h * Integrand(x, y);
       yplus                       = y + 0.5 * k1;
       k2                          = h * Integrand(x + 0.5 * h, yplus);
@@ -160,7 +160,7 @@ private:
       k3                          = h * Integrand(x + 0.5 * h, yplus);
       yplus                       = y + k3;
       k4                          = h * Integrand(x + h, yplus);
-      result(i - 1, Range::all()) = y + (OneSixth * (k1 + k4) + OneThird * (k2 + k3));
+      result(i - 1)/*, Range::all())*/ = y + (OneSixth * (k1 + k4) + OneThird * (k2 + k3));
     }
   }
 
