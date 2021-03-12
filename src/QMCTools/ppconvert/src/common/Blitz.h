@@ -48,12 +48,13 @@ template<class T, std::size_t N> struct TinyVector
 //template<class T, std::size_t N1, std::size_t N2> using TinyMatrix = typename blitz::TinyMatrix<T, N1, N2>;
 
 template<class T, std::size_t N1, std::size_t N2> struct TinyMatrix
- : blitz::TinyMatrix<T, N1, N2>{
-	using base_type = blitz::TinyMatrix<T, N1, N2>;
+	: std::array<std::array<T, N2>, N1>{
+	using base_type = std::array<std::array<T, N2>, N1>;
+// : blitz::TinyMatrix<T, N1, N2>{
+//	using base_type = blitz::TinyMatrix<T, N1, N2>;
 	using base_type::base_type;
 	TinyMatrix& operator=(T t){assert(t == 0); blitz::TinyMatrix<T, N1, N2>::operator=(t); return *this;}
 };
-
 
 template<class T, std::size_t D> using Array = typename blitz::Array<T, D>;
 
