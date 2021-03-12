@@ -35,7 +35,14 @@ BOOST_AUTO_TEST_CASE(iterator_1d){
 		multi::array<double, 1> A({100}, 99.); 
 		BOOST_REQUIRE( size(A) == 100 );
 		BOOST_REQUIRE( begin(A) < end(A) );
+		
+		auto b = A.begin();
+		multi::array<double, 1>::const_iterator cbb = b;
+		BOOST_REQUIRE( cbb == b );
+		BOOST_REQUIRE( b == cbb );
 	}
+	
+	*begin( multi::array<double, 1>(10, 99.) ) = 44.;
 }
 
 BOOST_AUTO_TEST_CASE(iterator_2d){

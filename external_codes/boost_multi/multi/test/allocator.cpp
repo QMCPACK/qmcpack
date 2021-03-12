@@ -31,9 +31,9 @@ BOOST_AUTO_TEST_CASE(std_vector_of_arrays){
 	BOOST_REQUIRE( va[2] [0][0] == 2 );
 
 	std::vector<multi::array<double, 2>> wa = {
-		multi::array<double, 2>({0, 0}, 0),
-		multi::array<double, 2>({1, 1}, 1),
-		multi::array<double, 2>({2, 2}, 2),
+		multi::array<double, 2>({0, 0}, 0.),
+		multi::array<double, 2>({1, 1}, 1.),
+		multi::array<double, 2>({2, 2}, 2.),
 	};
 	BOOST_REQUIRE( size(va) == size(wa) );
 	BOOST_REQUIRE( va == wa );
@@ -62,5 +62,35 @@ BOOST_AUTO_TEST_CASE(array_3d_of_array_2d){
 			AA[i][j] = multi::array<double, 3>({i+j, i+j, i+j}, 99.);
 	BOOST_REQUIRE( size(AA[9][19]) == 9 + 19 );
 	BOOST_REQUIRE( AA[9][19][1][1][1] == 99. );
+}
+
+BOOST_AUTO_TEST_CASE(array_3d_with_hint_int){
+	multi::array<double, 2> const A({3, 4});
+	multi::array<int, 3> B({3, 4, 5}, A.cbase());
+
+	B[1][2][3] = 4;
+	BOOST_REQUIRE( size(B) == 3 );
+	BOOST_REQUIRE( B[1][2][3] == 4 );
+
+	multi::array<int, 3> C({3, 4, 5}, 0);
+	BOOST_REQUIRE( size(C) == 3 );
+
+	multi::array<int, 3> D({3, 4, 5}, 99);
+	BOOST_REQUIRE( size(D) == 3 );
+}
+
+BOOST_AUTO_TEST_CASE(array_3d_with_hint_size_t){
+	multi::array<double, 2> const A({3, 4});
+	multi::array<size_t, 3> B({3, 4, 5}, A.cbase());
+
+	B[1][2][3] = 4;
+	BOOST_REQUIRE( size(B) == 3 );
+	BOOST_REQUIRE( B[1][2][3] == 4 );
+
+	multi::array<size_t, 3> C({3, 4, 5}, 0ul);
+	BOOST_REQUIRE( size(C) == 3 );
+
+	multi::array<size_t, 3> D({3, 4, 5}, 99);
+	BOOST_REQUIRE( size(D) == 3 );
 }
 
