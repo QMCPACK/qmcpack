@@ -93,16 +93,21 @@ struct Array : base_type{
 	auto resize(sizes_type sizes) const{return base_type::reextent(sizes);}
 };
 
-template<class T> // needs to be int for matching templates
-struct Array<T, 0> : blitz::Array<T, 0>{
-	using blitz::Array<T, 1>::Array;
-	Array& operator=(T t){blitz::Array<T, 1>::operator=(t); return *this;}
-	friend Array operator-(Array const& a, Array const& b){
-		assert(a.size() == b.size());
-		Array ret(a.size());
-		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a - b;});
-		return ret;
-	}
+template<class T, class base_type> // needs to be int for matching templates
+struct Array<T, 0, base_type> : base_type{
+	using base_type::base_type;
+//	using blitz::Array<T, 0>::Array;
+	Array(T const& t) = delete;
+	Array& operator=(T t){base_type::operator=(t); return *this;}
+//	friend Array operator-(Array const& a, Array const& b){
+//		assert(a.size() == b.size());
+//		Array ret(a.size());
+//		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a - b;});
+//		return ret;
+//	}
+	using sizes_type = decltype(std::declval<base_type const&>().sizes());
+	sizes_type shape() const{return base_type::sizes();}
+	auto resize(sizes_type sizes) const{return base_type::reextent(sizes);}
 };
 
 template<class T> // needs to be int for matching templates
