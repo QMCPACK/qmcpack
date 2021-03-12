@@ -221,7 +221,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   advanceWalkers(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step);
-  crowd.accumulate(sft.population.get_num_global_walkers());
+  crowd.accumulate();
 }
 
 void VMCBatched::process(xmlNodePtr node)
@@ -242,7 +242,7 @@ void VMCBatched::process(xmlNodePtr node)
   }
 }
 
-int VMCBatched::compute_samples_per_node(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers)
+int VMCBatched::compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers)
 {
   int nblocks = qmcdriver_input.get_max_blocks();
   int nsteps  = qmcdriver_input.get_max_steps();
@@ -266,7 +266,7 @@ bool VMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
-  estimator_manager_->start(num_blocks);
+  estimator_manager_->startDriverRun();
 
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
 
@@ -355,17 +355,23 @@ bool VMCBatched::run()
     o << "\n====================================================";
     app_log() << o.str() << std::endl;
   }
+
   print_mem("VMCBatched ends", app_log());
+
+  estimator_manager_->stopDriverRun();
+
   return finalize(num_blocks, true);
 }
 
 void VMCBatched::enable_sample_collection()
 {
-  samples_.setMaxSamples(compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()));
+  int samples = compute_samples_per_rank(qmcdriver_input_, population_.get_num_local_walkers());
+  samples_.setMaxSamples(samples);
   collect_samples_ = true;
 
-  app_log() << "VMCBatched Driver collecting samples, samples_per_node = "
-            << compute_samples_per_node(qmcdriver_input_, population_.get_num_local_walkers()) << '\n';
+  int total_samples = samples * population_.get_num_ranks();
+  app_log() << "VMCBatched Driver collecting samples, samples per rank = " << samples << '\n';
+  app_log() << "                                      total samples    = " << total_samples << '\n';
 }
 
 } // namespace qmcplusplus

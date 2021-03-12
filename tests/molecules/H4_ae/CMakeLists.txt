@@ -12,7 +12,7 @@ IF (NOT QMC_CUDA)
                     H4-linear
                     optm-linear.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
 
@@ -21,7 +21,7 @@ IF (NOT QMC_CUDA)
                     H4-linear-rescale
                     optm-linear-rescale.xml
                     4 4
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
 
@@ -30,7 +30,7 @@ IF (NOT QMC_CUDA)
                     H4-linear-linemin
                     optm-linear-linemin.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
 
@@ -39,7 +39,7 @@ IF (NOT QMC_CUDA)
                     H4-cslinear-quartic
                     optm-cslinear-quartic.xml
                     4 4
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     7 H4_OPT_SCALARS # OPT step 7
                     )
 
@@ -48,7 +48,7 @@ IF (NOT QMC_CUDA)
                     H4-cslinear-rescale
                     optm-cslinear-rescale.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     7 H4_OPT_SCALARS # OPT step 7
                     )
 
@@ -57,7 +57,7 @@ IF (NOT QMC_CUDA)
                     H4-cslinear-linemin
                     optm-cslinear-linemin.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     7 H4_OPT_SCALARS # OPT step 7
                     )
 
@@ -67,7 +67,7 @@ IF (NOT QMC_CUDA)
                       H4-adaptive
                       optm-adaptive.xml
                       16 1
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       5 H4_OPT_SCALARS # OPT step 5
                       )
 
@@ -76,7 +76,7 @@ IF (NOT QMC_CUDA)
                       H4-adaptive
                       optm-adaptive.xml
                       1 16
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       5 H4_OPT_SCALARS # OPT step 5
                       )
 
@@ -90,7 +90,7 @@ IF (NOT QMC_CUDA)
                       H4
                       H4_RHF_orb_opt.xml
                       16 1
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       14 H4_ORB_OPT_SCALARS # Final VMC step
                       TRUE)
 
@@ -99,7 +99,7 @@ IF (NOT QMC_CUDA)
                       H4
                       H4_orb_opt.xml
                       16 1
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       14 H4_ORB_OPT_SCALARS # Final VMC step
                       TRUE)
 
@@ -108,7 +108,7 @@ IF (NOT QMC_CUDA)
                       H4
                       H4_orb_opt.xml
                       1 16
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       14 H4_ORB_OPT_SCALARS # Final VMC step
                       TRUE)
 
@@ -123,7 +123,7 @@ IF (NOT QMC_CUDA)
                       H4
                       H4_orb_opt_dmc.xml
                       16 1
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
                       TRUE)
 
@@ -132,7 +132,7 @@ IF (NOT QMC_CUDA)
                       H4
                       H4_orb_opt_dmc.xml
                       1 16
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
                       TRUE)
     #
@@ -146,7 +146,7 @@ IF (NOT QMC_CUDA)
                       H4
                       H4_cjs_vmc.xml
                       16 1
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       0 H4_CJS_SCALARS
                       TRUE)
 
@@ -162,7 +162,7 @@ IF (NOT QMC_CUDA)
                     H4-descent
                     optm-descent.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     9 H4_DESCENT_SCALARS
                     TRUE)
 
@@ -171,7 +171,7 @@ IF (NOT QMC_CUDA)
                     H4-descent
                     optm-descent.xml
                     1 16
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     9 H4_DESCENT_SCALARS
                     TRUE)
 
@@ -182,7 +182,7 @@ IF (NOT QMC_CUDA)
                     H4-target-descent
                     optm-target-descent.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     9 H4_TARGET_DESCENT_SCALARS
                     TRUE)
 
@@ -191,7 +191,7 @@ IF (NOT QMC_CUDA)
                     H4-target-descent
                     optm-target-descent.xml
                     1 16
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     9 H4_TARGET_DESCENT_SCALARS
                     TRUE)
 
@@ -202,7 +202,7 @@ IF (NOT QMC_CUDA)
                     H4-hybrid
                     optm-hybrid.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
 		    9 H4_HYBRID_SCALARS
                     TRUE)
 
@@ -211,7 +211,7 @@ IF (NOT QMC_CUDA)
                     H4-hybrid
                     optm-hybrid.xml
                     1 16
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
 		    9 H4_HYBRID_SCALARS
                     TRUE)
   
@@ -222,7 +222,7 @@ IF (NOT QMC_CUDA)
                     H4-target-hybrid
                     optm-target-hybrid.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     9 H4_TARGET_HYBRID_SCALARS
                     TRUE)
 
@@ -231,7 +231,7 @@ IF (NOT QMC_CUDA)
                     H4-target-hybrid
                     optm-target-hybrid.xml
                     1 16
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     9 H4_TARGET_HYBRID_SCALARS
                     TRUE)
 
@@ -240,7 +240,7 @@ IF (NOT QMC_CUDA)
                     H4-OneShiftOnly
                     optm-OneShiftOnly.xml
                     16 1
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
 
@@ -249,7 +249,7 @@ IF (NOT QMC_CUDA)
                     H4-OneShiftOnly
                     optm-OneShiftOnly.xml
                     1 16
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
  ELSE()

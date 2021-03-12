@@ -111,10 +111,8 @@ public:
   using WaveFunctionComponent::mw_completeUpdates;
   using WaveFunctionComponent::mw_evalGrad;
   using WaveFunctionComponent::mw_ratioGrad;
-  using WaveFunctionComponent::mw_ratioGradAsync;
   using WaveFunctionComponent::ratio;
   using WaveFunctionComponent::ratioGrad;
-  using WaveFunctionComponent::ratioGradAsync;
   using WaveFunctionComponent::restore;
 
   using WaveFunctionComponent::evalGradSource;

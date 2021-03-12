@@ -74,17 +74,6 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   }
 }
 
-int QMCDriverNew::addObservable(const std::string& aname)
-{
-  if (estimator_manager_)
-    return estimator_manager_->addObservable(aname.c_str());
-  else
-    return -1;
-}
-
-QMCDriverNew::RealType QMCDriverNew::getObservable(int i) { return estimator_manager_->getObservable(i); }
-
-
 // The Rng pointers are transferred from global storage (RandomNumberControl::Children)
 // to local storage (Rng) for the duration of QMCDriverNew.
 // They are transferred to local storage in createRngsStepContext (called from startup,
@@ -481,7 +470,6 @@ void QMCDriverNew::endBlock()
 
   FullPrecRealType total_block_weight = 0.0;
   // Collect all the ScalarEstimatorsFrom EMCrowds
-  double cpu_block_time      = 0.0;
   unsigned long block_accept = 0;
   unsigned long block_reject = 0;
 
@@ -496,7 +484,6 @@ void QMCDriverNew::endBlock()
     total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
     block_accept += crowd->get_accept();
     block_reject += crowd->get_reject();
-    cpu_block_time += crowd->get_estimator_manager_crowd().get_cpu_block_time();
 
     // This seems altogether easier and more sane.
     crowd_operator_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_operator_estimators());
@@ -514,7 +501,7 @@ void QMCDriverNew::endBlock()
   /// get the average cpu_block time per crowd
   /// cpu_block_time /= crowds_.size();
 
-  estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight, cpu_block_time);
+  estimator_manager_->stopBlock(block_accept, block_reject, total_block_weight);
 }
 
 bool QMCDriverNew::checkLogAndGL(Crowd& crowd)
