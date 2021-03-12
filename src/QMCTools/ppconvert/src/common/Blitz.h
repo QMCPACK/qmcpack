@@ -60,6 +60,8 @@ template<class T, std::size_t N1, std::size_t N2> struct TinyMatrix
 	//	blitz::TinyMatrix<T, N1, N2>::operator=(t); 
 		return *this;
 	}
+	decltype(auto) operator()(std::size_t i, std::size_t j) const{return base_type::operator[](i)[j];}
+	decltype(auto) operator()(std::size_t i, std::size_t j)      {return base_type::operator[](i)[j];}
 };
 
 template<class T, std::size_t D> using Array = typename blitz::Array<T, D>;
@@ -70,6 +72,7 @@ typedef TinyVector<scalar, 1> Vec1;
 typedef TinyVector<scalar, 2> Vec2;
 typedef TinyVector<scalar, 3> Vec3;
 typedef TinyVector<scalar, 4> Vec4;
+
 typedef TinyMatrix<scalar, 2, 2> Mat2;
 typedef TinyMatrix<scalar, 3, 3> Mat3;
 typedef TinyVector<std::complex<double>, 3> cVec3;
