@@ -109,7 +109,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     F[source_type] = afunc;
   }
 
-  void recompute(ParticleSet& P)
+  void recompute(const ParticleSet& P)
   {
     const DistanceTableData& d_ie(P.getDistTable(myTableID));
     for (int iat = 0; iat < Nelec; ++iat)
@@ -120,7 +120,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     return evaluateGL(P, G, L, true);
   }
@@ -216,7 +216,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       ratios[i] = std::exp(Vat[i] - curAt);
   }
 
-  inline LogValueType evaluateGL(ParticleSet& P,
+  inline LogValueType evaluateGL(const ParticleSet& P,
                                  ParticleSet::ParticleGradient_t& G,
                                  ParticleSet::ParticleLaplacian_t& L,
                                  bool fromscratch = false)
@@ -258,7 +258,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
    * @param iat the moving particle
    * @param dist starting address of the distances of the ions wrt the iat-th particle
    */
-  inline void computeU3(ParticleSet& P, int iat, const DistRow& dist)
+  inline void computeU3(const ParticleSet& P, int iat, const DistRow& dist)
   {
     if (NumGroups > 0)
     { //ions are grouped

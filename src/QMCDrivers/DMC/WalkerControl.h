@@ -20,12 +20,10 @@
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCDrivers/WalkerElementsRef.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RandomGenerator.h"
-#include "MultiWalkerDispatchers.h"
 
 namespace qmcplusplus
 {
@@ -33,9 +31,6 @@ namespace testing
 {
 class UnifiedDriverWalkerControlMPITest;
 }
-
-class MultiWalkerDispatchers;
-struct DriverWalkerResourceCollection;
 
 /** Class for controlling the walkers for DMC simulations.
  * w and w/o MPI. Fixed and dynamic population in one place.
@@ -75,11 +70,7 @@ public:
    *
    *  \return global population
    */
-  int branch(int iter,
-             MCPopulation& pop,
-             const MultiWalkerDispatchers& dispatchers,
-             DriverWalkerResourceCollection& driverwalker_res,
-             bool do_not_branch);
+  int branch(int iter, MCPopulation& pop, bool do_not_branch);
 
   bool put(xmlNodePtr cur);
 

@@ -66,7 +66,10 @@ public:
   {
   public:
     NewTimer& tmove_timer;
-    DMCTimers(const std::string& prefix) : tmove_timer(*timer_manager.createTimer(prefix + "Tmove", timer_level_medium))
+    NewTimer& step_begin_recompute_timer;
+    DMCTimers(const std::string& prefix)
+        : tmove_timer(*timer_manager.createTimer(prefix + "Tmove", timer_level_medium)),
+          step_begin_recompute_timer(*timer_manager.createTimer(prefix + "Step_begin_recompute", timer_level_medium))
     {}
   };
 

@@ -813,9 +813,15 @@ void ParticleSet::mw_loadWalker(const RefVectorWithLeader<ParticleSet>& psets,
                                 const RefVector<Walker_t>& walkers,
                                 bool pbyp)
 {
+  auto loadWalkerConfig = [](ParticleSet& pset, Walker_t& awalker)
+  {
+    pset.R     = awalker.R;
+    pset.spins = awalker.spins;
+    pset.coordinates_->setAllParticlePos(pset.R);
+  };
 #pragma omp parallel for
   for (int iw = 0; iw < psets.size(); ++iw)
-    psets[iw].loadWalker(walkers[iw], pbyp);
+    loadWalkerConfig(psets[iw], walkers[iw]);
 }
 
 void ParticleSet::saveWalker(Walker_t& awalker)

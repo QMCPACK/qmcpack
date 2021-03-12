@@ -269,7 +269,7 @@ void DiracDeterminant<DU_TYPE>::completeUpdates()
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::updateAfterSweep(ParticleSet& P,
+void DiracDeterminant<DU_TYPE>::updateAfterSweep(const ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& G,
                                                  ParticleSet::ParticleLaplacian_t& L)
 {
@@ -329,7 +329,7 @@ void DiracDeterminant<DU_TYPE>::registerData(ParticleSet& P, WFBufferType& buf)
 
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateGL(
-    ParticleSet& P,
+    const ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L,
     bool fromscratch)
@@ -635,7 +635,7 @@ typename DiracDeterminant<DU_TYPE>::GradType DiracDeterminant<DU_TYPE>::evalGrad
  */
 template<typename DU_TYPE>
 typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::evaluateLog(
-    ParticleSet& P,
+    const ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
 {
@@ -662,7 +662,7 @@ typename DiracDeterminant<DU_TYPE>::LogValueType DiracDeterminant<DU_TYPE>::eval
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
+void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
 {
   {
     ScopedTimer local_timer(SPOVGLTimer);
@@ -675,9 +675,7 @@ void DiracDeterminant<DU_TYPE>::recompute(ParticleSet& P)
     LogValue      = convertValueToLog(det);
   }
   else
-  {
     invertPsiM(psiM_temp, psiM);
-  }
 
   // invRow becomes invalid after updating the inverse matrix
   invRow_id = -1;

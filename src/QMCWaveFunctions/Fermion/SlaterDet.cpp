@@ -112,7 +112,7 @@ void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& r
     Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
-SlaterDet::LogValueType SlaterDet::evaluateLog(ParticleSet& P,
+SlaterDet::LogValueType SlaterDet::evaluateLog(const ParticleSet& P,
                                                ParticleSet::ParticleGradient_t& G,
                                                ParticleSet::ParticleLaplacian_t& L)
 {
@@ -141,7 +141,7 @@ void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>&
   }
 }
 
-SlaterDet::LogValueType SlaterDet::evaluateGL(ParticleSet& P,
+SlaterDet::LogValueType SlaterDet::evaluateGL(const ParticleSet& P,
                                               ParticleSet::ParticleGradient_t& G,
                                               ParticleSet::ParticleLaplacian_t& L,
                                               bool from_scratch)
@@ -172,10 +172,21 @@ void SlaterDet::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& 
   }
 }
 
-void SlaterDet::recompute(ParticleSet& P)
+void SlaterDet::recompute(const ParticleSet& P)
 {
   for (int i = 0; i < Dets.size(); ++i)
     Dets[i]->recompute(P);
+}
+
+void SlaterDet::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                             const RefVectorWithLeader<ParticleSet>& p_list,
+                             const std::vector<bool>& recompute) const
+{
+  for (int i = 0; i < Dets.size(); ++i)
+  {
+    const auto Det_list(extract_DetRef_list(wfc_list, i));
+    Dets[i]->mw_recompute(Det_list, p_list, recompute);
+  }
 }
 
 void SlaterDet::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
