@@ -480,15 +480,9 @@ void f(T&& t){
 	std::cout<< dimensionality(t) <<'\n';
 }
 
-template<class T> void f();
-
 BOOST_AUTO_TEST_CASE(multi_utility_test){
 
 	static_assert( std::is_same<std::iterator_traits<double const*>::value_type, double>{}, "!");
-
-	MAYBE_UNUSED std::vector<double>::iterator it;
-	using multi::get_allocator;
-//	std::allocator<double> all = get_allocator(it);
 
 	using multi::corigin;
 	using multi::dimensionality;

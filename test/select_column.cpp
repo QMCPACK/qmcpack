@@ -27,11 +27,13 @@ BOOST_AUTO_TEST_CASE(multi_array_range_section){
 	BOOST_REQUIRE( size( A(   multi::all  , 2) ) == 4 );
 	BOOST_REQUIRE( size( A(   multi::all<2, 2) ) == 2 );
 	BOOST_REQUIRE( size( A(1<=multi::all  , 2) ) == 3 );
+	// cppcheck-suppress compareBoolExpressionWithInt ; because DSL
 	BOOST_REQUIRE( size( A(1<=multi::all<3, 2) ) == 2 );
 
 	BOOST_REQUIRE( size( A(   multi::_  , 2) ) == 4 );
 	BOOST_REQUIRE( size( A(   multi::_<2, 2) ) == 2 );
 	BOOST_REQUIRE( size( A(1<=multi::_  , 2) ) == 3 );
+	// cppcheck-suppress compareBoolExpressionWithInt ; because DSL
 	BOOST_REQUIRE( size( A(1<=multi::_<3, 2) ) == 2 );
 
 	using multi::_;
@@ -39,6 +41,7 @@ BOOST_AUTO_TEST_CASE(multi_array_range_section){
 	BOOST_REQUIRE( size( A(   _  , 2) ) == 4 );
 	BOOST_REQUIRE( size( A(   _<2, 2) ) == 2 );
 	BOOST_REQUIRE( size( A(1<=_  , 2) ) == 3 );
+	// cppcheck-suppress compareBoolExpressionWithInt ; because DSL
 	BOOST_REQUIRE( size( A(1<=_<3, 2) ) == 2 );
 
 	using multi::__; using multi::U;
@@ -54,8 +57,11 @@ BOOST_AUTO_TEST_CASE(multi_array_range_section){
 	BOOST_REQUIRE( size( A(1<=*_, 2) ) == 3 );
 	BOOST_REQUIRE( size( A(1<=U, 2) ) == 3 );
 
+	// cppcheck-suppress compareBoolExpressionWithInt ; because DSL
 	BOOST_REQUIRE( size( A(1<=_<3, 2) ) == 2 );
+	// cppcheck-suppress compareBoolExpressionWithInt ; because DSL
 	BOOST_REQUIRE( size( A(1<=*_<3, 2) ) == 2 );
+	// cppcheck-suppress compareBoolExpressionWithInt ; because DSL
 	BOOST_REQUIRE( size( A(1<=U<3, 2) ) == 2 );
 
 	BOOST_REQUIRE( size( A(*_<2, 2) ) == 2 );

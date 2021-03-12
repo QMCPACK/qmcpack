@@ -113,24 +113,12 @@ template<dimensionality_type D> using index_extensions = typename detail::repeat
 //template<dimensionality_type D> using iextensions = index_extensions<D>;
 
 template<dimensionality_type D> 
-struct iextensions : detail::repeat<index_extension, D>::type{
-	static constexpr dimensionality_type dimensionality = D;
+struct iextensions :       detail::repeat<index_extension, D>::type{
 	using base_ = typename detail::repeat<index_extension, D>::type;
+	static constexpr dimensionality_type dimensionality = D;
 	using base_::base_;
-//	template<class... Args, typename = std::enable_if_t<sizeof...(Args)==D>>
-//	iextensions(Args... args) : detail::repeat<index_extension, D>::type{args...}{}
-	iextensions() = default;
-	template<class T>
-	constexpr iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
-	constexpr iextensions(std::array<iextension, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
 	constexpr base_ const& base() const{return *this;}
 	friend constexpr decltype(auto) base(iextensions const& s){return s.base();}
-private:
-//	template<std::size_t... Ns> bool bool_aux(std::index_sequence<Ns...>) const{return (not std::get<0>(*this).empty() and tail(*this));}
-public:
-//	explicit operator bool() const{return bool_aux(std::make_index_sequence<D>());}
-//	bool is_empty() const{return bool_aux(std::make_index_sequence<D>());}
-//	bool empty() const{return is_empty();}
 private:
 	template <class T, size_t... Is> 
 	constexpr iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr, std::index_sequence<Is...>) : iextensions{arr[Is]...}{}

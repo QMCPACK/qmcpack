@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(array_ref_1D_reindexed){
 		BOOST_REQUIRE( &mar.stenciled({2, 4})[i] == &mar[i] );
 		
 		
-	multi::array<std::string, 1> arr({{2, 7}}, "xx");
+	multi::array<std::string, 1> arr({{2, 7}}, std::string{"xx"});
 	BOOST_REQUIRE( size(arr) == 5 );
 	BOOST_REQUIRE( extension(arr) == multi::iextension(2, 7) );
 	arr[2] = "a";

@@ -73,6 +73,9 @@ BOOST_AUTO_TEST_CASE(layout){
 		 {4., 5., 6.}, 
 		 {7., 8., 9.}}
 	;
+
+	BOOST_REQUIRE( size(A2) == 3 );
+
 	multi::array<int, 2> B2(
 #if defined(__INTEL_COMPILER) or (defined(__GNUC__) and (__GNUC__ < 6))
 		multi::iextensions<2>
@@ -84,6 +87,8 @@ BOOST_AUTO_TEST_CASE(layout){
 	
 //	decltype(B2({0,2}, {0,2}))::decay_type B2copy = B2({0,2}, {0,2});
 	auto B2copy =+ B2({0,2}, {0,2});
+	
+	BOOST_REQUIRE( &B2copy[1][1] != &B2({0,2}, {0,2})[1][1] );
 
 	decltype(B2({0,2}, {0,2})) B2blk[2][2] = 
 		{{B2({0,2}, {0,2}), B2({0, 2}, {2, 4})},

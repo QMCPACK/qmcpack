@@ -244,6 +244,7 @@ BOOST_AUTO_TEST_CASE(multi_tests_static_array_initializer_list){
 		{1. , 2.},
 		{3. , 4.},
 	};
+	BOOST_REQUIRE( SA[1][1] == 4. );
 }
 
 BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_3d){
