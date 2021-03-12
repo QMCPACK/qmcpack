@@ -252,6 +252,12 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       walker->Multiplicity = 1.0;
     }
 
+  for (int iw = 0; iw < untouched_walkers; iw++)
+    pop.get_walkers()[iw]->wasTouched = false;
+
+  for (int iw = untouched_walkers; iw < pop.get_num_local_walkers(); iw++)
+    pop.get_walkers()[iw]->wasTouched = true;
+
   return pop.get_num_global_walkers();
 }
 

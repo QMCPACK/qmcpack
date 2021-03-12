@@ -79,10 +79,19 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                   crowd.get_walker_hamiltonians());
 
-    ps_dispatcher.flex_loadWalker(walker_elecs, crowd.get_walkers(), true);
+    ps_dispatcher.flex_loadWalker(walker_elecs, walkers, true);
     ps_dispatcher.flex_update(walker_elecs, true);
-    const std::vector<bool> recompute_all(walker_twfs.size(), true);
-    twf_dispatcher.flex_recompute(walker_twfs, walker_elecs, recompute_all);
+    std::vector<bool> recompute_mask;
+    recompute_mask.reserve(walkers.size());
+    for (MCPWalker& awalker : walkers)
+      if (awalker.wasTouched)
+      {
+        recompute_mask.push_back(true);
+        awalker.wasTouched = false;
+      }
+      else
+        recompute_mask.push_back(false);
+    twf_dispatcher.flex_recompute(walker_twfs, walker_elecs, recompute_mask);
 
     const int num_walkers = crowd.size();
 
