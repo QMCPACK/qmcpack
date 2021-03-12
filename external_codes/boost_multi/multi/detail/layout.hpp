@@ -93,6 +93,8 @@ typedef std::tuple<> base_;
 	static constexpr dimensionality_type dimensionality = 0;
 	using nelems_type = index;
 	using std::tuple<>::tuple;
+	// cppcheck-suppress noExplicitConstructor ; why is it not taking the inheredited constructor above?
+	extensions_t(std::tuple<> const& t) : std::tuple<>{t}{}
 	extensions_t() = default;
 	constexpr base_ const& base() const{return *this;}
 	friend constexpr decltype(auto) base(extensions_t const& s){return s.base();}
