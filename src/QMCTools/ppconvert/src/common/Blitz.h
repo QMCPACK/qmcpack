@@ -21,7 +21,7 @@
 
 #include <string.h>
 #include "blitz/array.h"
-#include "blitz/tinyvec-et.h"
+//#include "blitz/tinyvec-et.h"
 
 typedef double scalar;
 
@@ -33,16 +33,27 @@ template<class T, std::size_t N> struct TinyVector
  : std::array<T, N>{ using base_type =  std::array<T, N>;
 // : blitz::TinyVector<T, N>{ using base_type =  blitz::TinyVector<T, N>;
 //	using base_type::base_type;
-	template<class... Args> TinyVector(Args... args) : base_type(std::forward<Args>(args)...){}
-	T const& operator()(std::size_t n) const{return base_type::operator[](n);}
+	template<class... Args, decltype(base_type(std::declval<Args&&>()...))* = nullptr> 
+	explicit TinyVector(Args&&... args) : base_type(std::forward<Args>(args)...){}
+//	T const& operator()(std::size_t n) const{return base_type::operator[](n);}
 	T&       operator()(std::size_t n)      {return base_type::operator[](n);}
 	TinyVector(T d){base_type::fill(d);}
-	TinyVector(blitz::TinyVector<T, N> const& other) : base_type(reinterpret_cast<base_type const&>(other)){}
-	operator blitz::TinyVector<T, N> const&() const{return reinterpret_cast<blitz::TinyVector<T, N> const&>(*this);}
+	template<class OtherTinyVector, std::enable_if_t<sizeof(OtherTinyVector)==sizeof(T)*N and std::is_same<typename OtherTinyVector::T_numtype, T>{}, int> = 0>
+	TinyVector(OtherTinyVector const& other) : base_type(reinterpret_cast<base_type const&>(other)){}
+	template<class OtherTinyVector, std::enable_if_t<sizeof(OtherTinyVector)==sizeof(T)*N and std::is_same<typename OtherTinyVector::T_numtype, T>{}, int> = 0>
+	operator OtherTinyVector const&() const{return reinterpret_cast<OtherTinyVector const&>(*this);}
 	friend TinyVector& operator*=(TinyVector& v, scalar s){std::transform(v.begin(), v.end(), v.begin(), [&s](auto e){return e*s;}); return v;}
 };
 
-template<class T, std::size_t N1, std::size_t N2> using TinyMatrix = typename blitz::TinyMatrix<T, N1, N2>;
+//template<class T, std::size_t N1, std::size_t N2> using TinyMatrix = typename blitz::TinyMatrix<T, N1, N2>;
+
+template<class T, std::size_t N1, std::size_t N2> struct TinyMatrix
+ : blitz::TinyMatrix<T, N1, N2>{
+	using base_type = blitz::TinyMatrix<T, N1, N2>;
+	using base_type::base_type;
+	TinyMatrix& operator=(T t){assert(t == 0); blitz::TinyMatrix<T, N1, N2>::operator=(t); return *this;}
+};
+
 
 template<class T, std::size_t D> using Array = typename blitz::Array<T, D>;
 
