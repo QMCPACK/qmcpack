@@ -64,7 +64,28 @@ template<class T, std::size_t N1, std::size_t N2> struct TinyMatrix
 	decltype(auto) operator()(std::size_t i, std::size_t j)      {return base_type::operator[](i)[j];}
 };
 
-template<class T, std::size_t D> using Array = typename blitz::Array<T, D>;
+
+template<class T> void what(T&&) = delete;
+//template<class T, std::size_t D> using Array = typename blitz::Array<T, D>;
+
+template<class T, int D, class base_type = blitz::Array<T, D>> // needs to be *int* for matching template parameters in functions
+struct Array : base_type{
+	using base_type::base_type;
+	Array& operator=(T t){blitz::Array<T, D>::operator=(t); return *this;}
+};
+
+template<class T> // needs to be int for matching templates
+struct Array<T, 1> : blitz::Array<T, 1>{
+	using blitz::Array<T, 1>::Array;
+	Array& operator=(T t){blitz::Array<T, 1>::operator=(t); return *this;}
+	friend Array operator-(Array const& a, Array const& b){
+		assert(a.size() == b.size());
+		Array ret(a.size());
+		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a - b;});
+		return ret;
+	}
+};
+
 
 using Range = blitz::Range;
 
