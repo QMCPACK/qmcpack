@@ -23,6 +23,8 @@
 #include "blitz/array.h"
 //#include "blitz/tinyvec-et.h"
 
+#include <multi/array.hpp>
+
 typedef double scalar;
 
 // #define NDIM 3
