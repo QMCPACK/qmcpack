@@ -121,8 +121,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<DTAAMultiWalkerMem>());
-    app_log() << "    Multi walker shared memory resource created in SoaDistanceTableAAOMPTarget " << name_
-              << ". Index " << resource_index << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection,

@@ -332,7 +332,6 @@ public:
   void createResource(ResourceCollection& collection) const
   {
     auto resource_index = collection.addResource(std::make_unique<CUDALinearAlgebraHandles>());
-    app_log() << "    Shared resource created in MatrixDelayedUpdateCUDA. Index " << resource_index << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection)

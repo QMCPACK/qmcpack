@@ -111,8 +111,6 @@ public:
   void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<DTABMultiWalkerMem>());
-    app_log() << "    Multi walker shared memory resource created in SoaDistanceTableABOMPTarget " << name_
-              << ". Index " << resource_index << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection,

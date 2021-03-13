@@ -30,7 +30,7 @@ public:
   size_t size() const { return collection_.size(); }
   void printResources() const;
 
-  size_t addResource(std::unique_ptr<Resource>&& res);
+  size_t addResource(std::unique_ptr<Resource>&& res, bool noprint = false);
   std::unique_ptr<Resource> lendResource();
   void takebackResource(std::unique_ptr<Resource>&& res);
 

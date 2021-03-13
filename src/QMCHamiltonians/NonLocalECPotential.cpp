@@ -604,8 +604,6 @@ void NonLocalECPotential::createResource(ResourceCollection& collection) const
       break;
     }
   auto resource_index = collection.addResource(std::move(new_res));
-  app_log() << "    Multi walker shared memory resource created in NonLocalECPotential. Index " << resource_index
-            << std::endl;
 }
 
 void NonLocalECPotential::acquireResource(ResourceCollection& collection)
