@@ -485,7 +485,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
  *for local energy calculations.
  */
 DiracDeterminantWithBackflow::LogValueType DiracDeterminantWithBackflow::evaluateLog(
-    ParticleSet& P,
+    const ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
 {

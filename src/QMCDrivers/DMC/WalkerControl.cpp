@@ -22,12 +22,9 @@
 
 #include "WalkerControl.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "MultiWalkerDispatchers.h"
-#include "DriverWalkerTypes.h"
 
 namespace qmcplusplus
 {
@@ -153,11 +150,7 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   }
 }
 
-int WalkerControl::branch(int iter,
-                          MCPopulation& pop,
-                          const MultiWalkerDispatchers& dispatchers,
-                          DriverWalkerResourceCollection& driverwalker_res,
-                          bool do_not_branch)
+int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   if (debug_disable_branching_)
     do_not_branch = true;
@@ -243,30 +236,6 @@ int WalkerControl::branch(int iter,
     }
   }
 
-  if (walkers.size() - untouched_walkers > 0)
-  {
-    ScopedTimer recomputing_timer(my_timers_[WC_recomputing]);
-
-    const size_t num_walkers = walkers.size();
-    // recomputed received and duplicated walkers, the first untouched_walkers walkers doesn't need to be updated.
-    const auto w_list_no_leader =
-        convertUPtrToRefVectorSubset(pop.get_walkers(), untouched_walkers, num_walkers - untouched_walkers);
-    const auto p_list_no_leader =
-        convertUPtrToRefVectorSubset(pop.get_elec_particle_sets(), untouched_walkers, num_walkers - untouched_walkers);
-    const auto wf_list_no_leader =
-        convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
-
-    DriverWalkerResourceCollection_PsetTWF_Lock pbyp_lock(driverwalker_res, *pop.get_golden_electrons(), pop.get_golden_twf());
-    // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
-
-    const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);
-    dispatchers.ps_dispatcher_.flex_loadWalker(p_list, w_list_no_leader, true);
-    dispatchers.ps_dispatcher_.flex_update(p_list, true);
-
-    const RefVectorWithLeader<TrialWaveFunction> wf_list(pop.get_golden_twf(), wf_list_no_leader);
-    dispatchers.twf_dispatcher_.flex_evaluateLog(wf_list, p_list);
-  }
-
   const int current_num_global_walkers = std::accumulate(num_per_rank_.begin(), num_per_rank_.end(), 0);
   pop.set_num_global_walkers(current_num_global_walkers);
 #ifndef NDEBUG
@@ -282,6 +251,12 @@ int WalkerControl::branch(int iter,
       walker->Weight       = 1.0;
       walker->Multiplicity = 1.0;
     }
+
+  for (int iw = 0; iw < untouched_walkers; iw++)
+    pop.get_walkers()[iw]->wasTouched = false;
+
+  for (int iw = untouched_walkers; iw < pop.get_num_local_walkers(); iw++)
+    pop.get_walkers()[iw]->wasTouched = true;
 
   return pop.get_num_global_walkers();
 }

@@ -99,7 +99,7 @@ void AGPDeterminant::reportStatus(std::ostream& os)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-AGPDeterminant::LogValueType AGPDeterminant::evaluateLog(ParticleSet& P,
+AGPDeterminant::LogValueType AGPDeterminant::evaluateLog(const ParticleSet& P,
                                                          ParticleSet::ParticleGradient_t& G,
                                                          ParticleSet::ParticleLaplacian_t& L)
 {
@@ -109,7 +109,7 @@ AGPDeterminant::LogValueType AGPDeterminant::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
-void AGPDeterminant::evaluateLogAndStore(ParticleSet& P)
+void AGPDeterminant::evaluateLogAndStore(const ParticleSet& P)
 {
   //GeminalBasis->evaluate(P);
   GeminalBasis->evaluateForWalkerMove(P); //@@

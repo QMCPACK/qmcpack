@@ -361,6 +361,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
     walker.ReleasedNodeAge    = 0;
     walker.ReleasedNodeWeight = 0;
     walker.Weight             = 1;
+    walker.wasTouched         = false;
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     doesDoinTheseLastMatter(walkers[iw]);

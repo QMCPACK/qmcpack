@@ -162,7 +162,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
  * Miguel's note: can this change over time??? I don't know yet
  */
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate_vgl_impl(
-    ParticleSet& P,
+    const ParticleSet& P,
     ParticleSet::ParticleGradient_t& g_tmp,
     ParticleSet::ParticleLaplacian_t& l_tmp)
 {
@@ -206,7 +206,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
   return psi;
 }
 
-WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate(ParticleSet& P,
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate(const ParticleSet& P,
                                                                          ParticleSet::ParticleGradient_t& G,
                                                                          ParticleSet::ParticleLaplacian_t& L)
 {
@@ -223,7 +223,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate(Particl
   return psiCurrent;
 }
 
-WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluateLog(const ParticleSet& P,
                                                                             ParticleSet::ParticleGradient_t& G,
                                                                             ParticleSet::ParticleLaplacian_t& L)
 {

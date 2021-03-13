@@ -113,6 +113,8 @@ public:
   FullPrecRealType Multiplicity;
   /// mark true if this walker is being sent.
   bool SendInProgress;
+  /// if true, this walker is either copied or tranferred from another MPI rank.
+  bool wasTouched = true;
 
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
