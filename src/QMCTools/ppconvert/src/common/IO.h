@@ -38,7 +38,8 @@ bool IOTreeClass::WriteVar(std::string name, T val)
 {
   if (GetFileType() == ASCII_TYPE)
   {
-    VarList.push_back(new IOVarASCII<T, 0>(name, val));
+  	assert(0);
+//    VarList.push_back(new IOVarASCII<T, 0>(name, val));
   }
   else
   {
