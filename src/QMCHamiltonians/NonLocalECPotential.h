@@ -26,6 +26,8 @@ namespace qmcplusplus
 template<typename T>
 struct NLPPJob;
 
+struct NonLocalECPotentialMultiWalkerResource;
+
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
@@ -161,6 +163,8 @@ private:
 #endif
   ///NLPP job list of ion-electron pairs by spin group
   std::vector<std::vector<NLPPJob<RealType>>> nlpp_jobs;
+  /// mult walker shared resource
+  std::unique_ptr<NonLocalECPotentialMultiWalkerResource> mw_res_;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
