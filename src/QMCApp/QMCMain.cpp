@@ -86,7 +86,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << NodeComm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(QMC_CUDA) || defined(ENABLE_ROCM)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM)
       << "\n  Accelerators per node     = " << num_accelerators
 #endif
       << std::endl;
