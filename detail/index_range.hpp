@@ -179,8 +179,8 @@ constexpr range<IndexType, IndexTypeLast> make_range(IndexType first, IndexTypeL
 template<class IndexType = std::ptrdiff_t>
 class intersecting_range{
 	range<IndexType> impl_{std::numeric_limits<IndexType>::min(), std::numeric_limits<IndexType>::max()};
-	intersecting_range() = default;	
-	constexpr explicit intersecting_range(IndexType first, IndexType last) = delete;//: impl_{first, last}{}
+	intersecting_range() = default;
+//	constexpr intersecting_range(IndexType first, IndexType last) = delete;//: impl_{first, last}{}
 	static constexpr intersecting_range make(IndexType first, IndexType last){
 		intersecting_range ret; ret.impl_ = range<IndexType>{first, last}; return ret;
 	}
