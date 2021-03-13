@@ -101,6 +101,12 @@ public:
   void Resize(int n);
 
   bool VarRead(Array<T, RANK>& val);
+  template<class TT>
+  bool VarRead(Array<TT, 1>& val){
+  	assert(0);
+	return false;
+  }
+ 
   template<typename T0,
            typename T1,
            typename T2,
@@ -339,8 +345,10 @@ inline int IOVarASCII<T, RANK>::GetExtent(int dim)
 template<typename T, int RANK>
 inline void IOVarASCII<T, RANK>::Resize(int n)
 {
-  TinyVector<int, RANK> dims = ArrayValue.shape();
-  dims[0]                    = n;
+//  TinyVector<int, RANK> 
+  auto dims = ArrayValue.shape();
+  std::get<0>(dims) = n;
+//  dims[0]                    = n;
   ArrayValue.resizeAndPreserve(dims);
 }
 
