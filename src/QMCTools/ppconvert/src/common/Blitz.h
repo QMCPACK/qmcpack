@@ -20,7 +20,7 @@
 #include <numeric> // inner_product
 
 #include <string.h>
-#include "blitz/array.h"
+//#include "blitz/array.h"
 //#include "blitz/tinyvec-et.h"
 
 #include <multi/array.hpp>
@@ -49,7 +49,8 @@ template<class T, std::size_t N> struct TinyVector
 
 //template<class T, std::size_t N1, std::size_t N2> using TinyMatrix = typename blitz::TinyMatrix<T, N1, N2>;
 
-template<class T, std::size_t N1, std::size_t N2> struct TinyMatrix
+template<class T, std::size_t N1, std::size_t N2> 
+struct TinyMatrix
 	: std::array<std::array<T, N2>, N1>{
 	using base_type = std::array<std::array<T, N2>, N1>;
 // : blitz::TinyMatrix<T, N1, N2>{
@@ -73,7 +74,7 @@ template<class T> void what(T&&) = delete;
 template<class T, int D, class base_type = boost::multi::array<T, D> /*blitz::Array<T, D>*/> // needs to be *int* for matching template parameters in functions
 struct Array : base_type{
 	using base_type::base_type;
-	Array& operator=(T t){blitz::Array<T, D>::operator=(t); return *this;}
+	Array& operator=(T t){base_type::operator=(t); return *this;}
 	Array(int rs, int cs) : base_type({rs, cs}){}
 	std::ptrdiff_t extent(int d) const{
 		switch(d){
@@ -90,7 +91,10 @@ struct Array : base_type{
 	}
 	using sizes_type = decltype(std::declval<base_type const&>().sizes());
 	sizes_type shape() const{return base_type::sizes();}
-	auto resize(sizes_type sizes) const{return base_type::reextent(sizes);}
+	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
+	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
+	template<class... Ints>
+	void resize(Ints... ns){base_type::reextent(std::make_tuple(ns...));}
 };
 
 template<class T, class base_type> // needs to be int for matching templates
@@ -107,23 +111,53 @@ struct Array<T, 0, base_type> : base_type{
 //	}
 	using sizes_type = decltype(std::declval<base_type const&>().sizes());
 	sizes_type shape() const{return base_type::sizes();}
-	auto resize(sizes_type sizes) const{return base_type::reextent(sizes);}
+	auto resize(sizes_type sizes){return base_type::reextent(sizes);}
+	operator T const&() const&{return *base_type::data_elements();}
+	operator T&() &{return *base_type::data_elements();}
+	operator T&&() &&{return std::move(*base_type::data_elements());}
 };
 
-template<class T> // needs to be int for matching templates
-struct Array<T, 1> : blitz::Array<T, 1>{
-	using blitz::Array<T, 1>::Array;
-	Array& operator=(T t){blitz::Array<T, 1>::operator=(t); return *this;}
+template<class T, class base_type> // needs to be int for matching templates
+struct Array<T, 1, base_type> : base_type{//blitz::Array<T, 1>{
+	using base_type::base_type;
+//	using blitz::Array<T, 1>::Array;
+	Array& operator=(T t){std::fill(base_type::begin(), base_type::end(), t); return *this;}
 	friend Array operator-(Array const& a, Array const& b){
 		assert(a.size() == b.size());
 		Array ret(a.size());
 		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a - b;});
 		return ret;
 	}
+	friend Array operator+(Array const& a, Array const& b){
+		assert(a.extensions() == b.extensions());
+		Array ret(a.extensions());
+		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a + b;});
+		return ret;
+	}
+	operator Array<Array<T, 1>, 0>() const{return Array<Array<T, 1>, 0>({}, *this);}
+	using sizes_type = decltype(std::declval<base_type const&>().sizes());
+	auto rows() const{return base_type::size();}
+	sizes_type shape() const{return base_type::sizes();}
+	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
+	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
+	std::ptrdiff_t extent(int d) const{
+		switch(d){
+			case 0: return std::get<0>(base_type::sizes());
+		}
+		assert(false);
+		return 0;
+	}
+	template<class... Ints>
+	void resize(Ints... ns){base_type::reextent(std::make_tuple(ns...));}
+	friend Array operator*(T const& t, Array const& a){
+		Array ret(a.extensions());
+		std::transform(a.begin(), a.end(), ret.begin(), [&](auto const& e){return t*e;});
+		return ret;
+	}
 };
 
 //using Range = blitz::Range;
-struct Range : blitz::Range{
+struct Range{// : blitz::Range{
 	static auto all(){return boost::multi::all;}
 };
 
