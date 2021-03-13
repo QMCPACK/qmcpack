@@ -125,15 +125,20 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
               << ". Index " << resource_index << std::endl;
   }
 
-  void acquireResource(ResourceCollection& collection) override
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
   {
     auto res_ptr = dynamic_cast<DTAAMultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SoaDistanceTableAAOMPTarget::acquireResource dynamic_cast failed");
-    mw_mem_.reset(res_ptr);
+    dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem_)); }
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
+  {
+    collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_));
+  }
 
   inline void evaluate(ParticleSet& P) override
   {

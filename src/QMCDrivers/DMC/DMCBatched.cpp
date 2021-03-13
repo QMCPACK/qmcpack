@@ -69,15 +69,20 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
+
+  auto& walkers = crowd.get_walkers();
+  const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
+  const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
+  const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
+                                                                crowd.get_walker_hamiltonians());
+
+  ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+
   {
+    DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
+                                                 crowd.get_walker_hamiltonians()[0]);
+
     int nnode_crossing(0);
-    auto& walkers = crowd.get_walkers();
-    DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
-                                                 crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
-    const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
-    const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
-                                                                  crowd.get_walker_hamiltonians());
 
     {
       ScopedTimer recompute_timer(dmc_timers.step_begin_recompute_timer);
@@ -289,13 +294,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
 
-    auto& walkers = crowd.get_walkers();
-    const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
-    const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
-                                                                  crowd.get_walker_hamiltonians());
     const auto num_walkers = walkers.size();
-
     std::vector<int> walker_non_local_moves_accepted(num_walkers, 0);
     RefVector<MCPWalker> moved_nonlocal_walkers;
     RefVectorWithLeader<ParticleSet> moved_nonlocal_walker_elecs(crowd.get_walker_elecs()[0]);
@@ -306,8 +305,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
-      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[iw],
-                                                    crowd.get_walker_twfs()[iw], crowd.get_walker_hamiltonians()[iw]);
+      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[iw],
+                                                    crowd.get_walker_hamiltonians()[iw]);
       walker_non_local_moves_accepted[iw] = walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw]);
 
       if (walker_non_local_moves_accepted[iw] > 0)
@@ -321,8 +320,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     if (moved_nonlocal_walkers.size())
     {
-      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
-                                                    crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
+      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
+                                                    crowd.get_walker_hamiltonians()[0]);
 
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
       assert(QMCDriverNew::checkLogAndGL(crowd));

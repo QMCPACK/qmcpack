@@ -115,15 +115,20 @@ public:
               << ". Index " << resource_index << std::endl;
   }
 
-  void acquireResource(ResourceCollection& collection) override
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
   {
     auto res_ptr = dynamic_cast<DTABMultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SoaDistanceTableABOMPTarget::acquireResource dynamic_cast failed");
-    mw_mem_.reset(res_ptr);
+    dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>().mw_mem_.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem_)); }
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
+  {
+    collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>().mw_mem_));
+  }
 
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P) override
