@@ -1306,13 +1306,13 @@ public:
 	constexpr basic_array       operator()()     &&{return *this;}
 	constexpr basic_array       operator()()      &{return *this;}
 
-	constexpr auto operator()(index_range const& ir) &{return range(ir);}
-	constexpr auto operator()(index_range const& ir) &&{return range(ir);}
-	constexpr auto operator()(index_range const& ir) const&{return range(ir);}
+	constexpr auto operator()(index_range const& ir)      &{return                  range(ir);}
+	constexpr auto operator()(index_range const& ir)     &&{return std::move(*this).range(ir);}
+	constexpr auto operator()(index_range const& ir) const&{return                  range(ir);}
 
-	HD constexpr decltype(auto) operator()(index i) &     {return operator[](i);}
-	HD constexpr decltype(auto) operator()(index i) &&    {return operator[](i);}
-	HD constexpr decltype(auto) operator()(index i) const&{return operator[](i);}
+	HD constexpr decltype(auto) operator()(index i) &     {return                  operator[](i);}
+	HD constexpr decltype(auto) operator()(index i) &&    {return std::move(*this).operator[](i);}
+	HD constexpr decltype(auto) operator()(index i) const&{return                  operator[](i);}
 
 	HD constexpr auto paren() &{return operator()();}
 	HD constexpr auto paren() &&{return operator()();}
@@ -1325,6 +1325,15 @@ public:
 	HD constexpr decltype(auto) paren(index i) &     {return operator[](i);}
 	HD constexpr decltype(auto) paren(index i) &&    {return operator[](i);}
 	HD constexpr decltype(auto) paren(index i) const&{return operator[](i);}
+
+	constexpr decltype(auto) paren(intersecting_range<index> inr) &     {return                  paren(intersection(this->extension(), inr));}
+	constexpr decltype(auto) paren(intersecting_range<index> inr) &&    {return std::move(*this).paren(intersection(this->extension(), inr));}
+	constexpr decltype(auto) paren(intersecting_range<index> inr) const&{return                  paren(intersection(this->extension(), inr));}
+
+	constexpr decltype(auto) operator()(intersecting_range<index> const& ir)      &{return                  paren(ir);}
+	constexpr decltype(auto) operator()(intersecting_range<index> const& ir)     &&{return std::move(*this).paren(ir);}
+	constexpr decltype(auto) operator()(intersecting_range<index> const& ir) const&{return                  paren(ir);}
+
 
 public:
 	using partitioned_type       = basic_array<T, 2, element_ptr      >;
