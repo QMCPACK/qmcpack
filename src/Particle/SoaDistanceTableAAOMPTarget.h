@@ -255,7 +255,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
             PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
-              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_padded,
                                                             iel, activePtcl_local);
           }
 
@@ -266,11 +266,11 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
             T pos[D];
             for (int idim = 0; idim < D; idim++)
-              pos[idim] = source_pos_ptr[idim * N_sources_local + iat];
+              pos[idim] = source_pos_ptr[idim * N_sources_padded + iat];
 
             PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
-              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_padded,
                                                             iel, iat);
             r_iw_ptr[iat] = std::numeric_limits<T>::max(); //assign a big number
           }
