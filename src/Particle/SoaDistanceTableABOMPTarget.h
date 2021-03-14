@@ -225,9 +225,6 @@ public:
     }
   }
 
-  /** It has two implementation mw_evaluate_transfer_inplace and mw_evaluate_fuse_transfer with different D2H memory transfer schemes.
-   * Eventually, there will be only one version wihtout any transfer and solve the dilemma.
-   */
   inline void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
                           const RefVectorWithLeader<ParticleSet>& p_list) const override
   {
@@ -245,17 +242,7 @@ public:
     }
 
     ScopedTimer local_timer(evaluate_timer_);
-    mw_evaluate_fuse_transfer(dt_list, p_list);
-  }
 
-  /** this function implements mw_evaluate.
-   * After offloading the computation of distances and displacements, the result for all the walkers is transferred back together in one shot
-   * and then copied to per-walker data structure. Memory copy on the CPU is still costly and not beneficial for large problem size with a few walkers.
-   */
-  void mw_evaluate_fuse_transfer(const RefVectorWithLeader<DistanceTableData>& dt_list,
-                                 const RefVectorWithLeader<ParticleSet>& p_list) const
-  {
-    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableABOMPTarget>();
     const size_t nw = dt_list.size();
     auto& mw_mem    = *dt_leader.mw_mem_;
     auto& mw_r_dr   = mw_mem.mw_r_dr;
