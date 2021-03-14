@@ -310,11 +310,11 @@ inline void TestCholesky()
   D(2, 2) = 3.0;
 
   C = V * D * Transpose(V);
-//  std::cerr << "C = " << C << "\n";
-//  std::cerr << "V = " << V << "\n";
+  std::cerr << "C = " << C << "\n";
+  std::cerr << "V = " << V << "\n";
   L = Cholesky(C);
-//  std::cerr << "L = " << L << "\n";
-//  std::cerr << "L L^T = " << L * Transpose(L) << "\n";
+  std::cerr << "L = " << L << "\n";
+  std::cerr << "L L^T = " << L * Transpose(L) << "\n";
 
   Mat3 E, U;
   Vec3 Lambda;
