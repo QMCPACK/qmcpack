@@ -65,6 +65,15 @@ struct TinyMatrix
 	}
 	decltype(auto) operator()(std::size_t i, std::size_t j) const{return base_type::operator[](i)[j];}
 	decltype(auto) operator()(std::size_t i, std::size_t j)      {return base_type::operator[](i)[j];}
+	friend std::ostream& operator<<(std::ostream& os, TinyMatrix const& self){
+		for(auto i = 0; i != N1; ++i){
+			for(auto j = 0; j != N2; ++j){
+				os<< self(i, j) <<',';
+			}
+			os<<'\n';
+		}
+		return os;
+	}
 };
 
 
