@@ -326,7 +326,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
                                                                 crowd.get_walker_hamiltonians());
 
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
-  crowd.loadWalkers();
+
+  ps_dispatcher.flex_loadWalker(walker_elecs, walkers, true);
   ps_dispatcher.flex_update(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
