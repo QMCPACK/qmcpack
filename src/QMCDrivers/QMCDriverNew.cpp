@@ -327,8 +327,9 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 
   ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
 
-  ps_dispatcher.flex_loadWalker(walker_elecs, walkers, true);
-  ps_dispatcher.flex_update(walker_elecs);
+  std::vector<bool> recompute_mask(walkers.size(), true);
+  ps_dispatcher.flex_loadWalker(walker_elecs, walkers, recompute_mask, true);
+  ps_dispatcher.flex_donePbyP(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
   // For consistency this should be in ParticleSet as a flex call, but I think its a problem

@@ -418,8 +418,9 @@ public:
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
   /** batched version of loadWalker */
-  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& psets,
+  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
                             const RefVector<Walker_t>& walkers,
+                            const std::vector<bool>& recompute,
                             bool pbyp);
 
   /** save this to awalker
