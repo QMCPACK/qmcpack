@@ -642,12 +642,12 @@ public:
 
   /// initialize a shared resource and hand it to a collection
   void createResource(ResourceCollection& collection) const;
-  /** acquire external resource
-   * Note: use RAII ResourceCollectionLock whenever possible
+  /** acquire external resource and assocaite it with the list of ParticleSet
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
    */
   static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
   /** release external resource
-   * Note: use RAII ResourceCollectionLock whenever possible
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
    */
   static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
 

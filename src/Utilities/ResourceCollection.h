@@ -44,6 +44,8 @@ private:
   std::vector<std::unique_ptr<Resource>> collection_;
 };
 
+/** handles acquire/release resource by the consumer.
+ */
 template<class CONSUMER>
 class ResourceCollectionLock
 {
@@ -78,6 +80,8 @@ private:
 };
 
 
+/** handles acquire/release resource by the consumer (RefVectorWithLeader type).
+ */
 template<class CONSUMER>
 class ResourceCollectionTeamLock
 {

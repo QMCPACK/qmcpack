@@ -179,7 +179,7 @@ public:
                              const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              std::vector<RealType>& pairpots,
-                                          ResourceCollection& collection,
+                             ResourceCollection& collection,
                              bool use_DLA);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
