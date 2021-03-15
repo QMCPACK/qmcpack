@@ -74,6 +74,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   }
 }
 
+NonLocalECPotential::~NonLocalECPotential() = default;
+
 #if !defined(REMOVE_TRACEMANAGER)
 void NonLocalECPotential::contribute_particle_quantities() { request.contribute_array(myName); }
 
