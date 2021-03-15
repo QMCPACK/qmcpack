@@ -38,8 +38,8 @@ bool IOTreeClass::WriteVar(std::string name, T val)
 {
   if (GetFileType() == ASCII_TYPE)
   {
-//  	assert(0);
-    VarList.push_back(new IOVarASCII<T, 0>(name, val));
+		throw std::logic_error{"this case is unimplement for rank 0"};
+//    VarList.push_back(new IOVarASCII<T, 0>(name, val));
   }
   else
   {
