@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(blas_dot_no_context_out_param_complex){
 	multi::array<complex, 1> const B = {1.,2.,3.};
 	complex C;
 	blas::dot(A, B, C);
-	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), complex{0.}, std::plus<>{}, [](auto& a, auto& b){return a*std::conj(b);}) );
+	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), complex{0.}, std::plus<>{}, [](auto const& a, auto const& b){return a*std::conj(b);}) );
 }
 
 BOOST_AUTO_TEST_CASE(blas_dot_no_context_out_param_complex_C){
@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(blas_dot_no_context_out_param_complex_C){
 	multi::array<complex, 1> const B = {1.,2. + 2.*I, 3.};
 	complex C;
 	blas::dot(blas::C(A), B, C);
-	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), complex{0.}, std::plus<>{}, [](auto& a, auto& b){return conj(a)*b;}) );
+	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), complex{0.}, std::plus<>{}, [](auto const& a, auto const& b){return conj(a)*b;}) );
 }
 
 #if defined(CUDA_FOUND) and CUDA_FOUND

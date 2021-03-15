@@ -49,7 +49,8 @@ public:
 	constexpr size_type size() const{return size_;}
 	constexpr operator Ptr const&() const{return start_;}
 	constexpr bool contains(typename basic_block::pointer p) const{
-		using std::distance; auto d = distance(start_, p);
+		using std::distance;
+		difference_type d = distance(start_, p);
 		return d >= 0 and d < size_;
 	}
 	friend constexpr size_type size(basic_block const& self){return self.size();}

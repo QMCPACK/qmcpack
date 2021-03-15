@@ -173,9 +173,6 @@ template<class M> decltype(auto) print(M const& C){
 	return cout << std::endl;
 }
 
-using complex = std::complex<double>; 
-constexpr complex I(0, 1);
-
 BOOST_AUTO_TEST_CASE(inq_case){
 	using namespace multi::blas;
 	multi::array<double, 2> const a = {

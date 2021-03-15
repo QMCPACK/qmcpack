@@ -360,7 +360,7 @@ struct layout_t : multi::equality_comparable2<layout_t<D>, void>{
 		sub_type sub, stride_type stride, offset_type offset, nelems_type nelems
 	) : sub_{sub}, stride_{stride}, offset_{offset}, nelems_{nelems}{}
 	layout_t() = default;
-	layout_t(layout_t const&) = default;
+//	layout_t(layout_t const&) = default;
 	constexpr explicit layout_t(extensions_type const& e) :
 		sub_{detail::tail(e)}, 
 		stride_{sub_.size()*sub_.stride()},//std::get<0>(e).size()*sub_.num_elements()!=0?sub_.size()*sub_.stride():1}, 

@@ -68,12 +68,12 @@ BOOST_AUTO_TEST_CASE(iterator_2d){
 		std::vector<double> v(10000);
 		multi::array_ref<double, 2> A(v.data(), {100, 100}); 
 		BOOST_REQUIRE(size(A) == 100);
-		begin(std::move(A))[4][3] = 2.; // ok 
+		begin(A)[4][3] = 2.;
 	}
 }
 
 BOOST_AUTO_TEST_CASE(iterator_reverse){
-	multi::array<double, 3>::reverse_iterator rit;
+	multi::array<double, 3>::reverse_iterator rit = {};
 	BOOST_REQUIRE(( rit.base() == multi::array<double, 3>::reverse_iterator{}.base() ));
 	BOOST_REQUIRE(( multi::array<double, 3>::reverse_iterator{}.base() == multi::array<double, 3>::reverse_iterator{}.base() ));
 	BOOST_REQUIRE(( multi::array<double, 3>::reverse_iterator{} == multi::array<double, 3>::reverse_iterator{} ));

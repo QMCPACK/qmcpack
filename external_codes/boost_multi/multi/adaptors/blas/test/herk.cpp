@@ -18,10 +18,11 @@ $CXX $0 -o $0x -lcudart -lcublas -lboost_unit_test_framework `pkg-config --libs 
 namespace multi = boost::multi;
 //namespace cuda = multi::cuda;
 
-using complex = std::complex<double>; constexpr complex I{0, 1};
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk){
 	namespace blas = multi::blas;
+	using complex = std::complex<double>; constexpr complex I{0, 1};
+
 	multi::array<complex, 2> const a = {
 		{ 1. + 3.*I, 3.- 2.*I, 4.+ 1.*I},
 		{ 9. + 1.*I, 7.- 8.*I, 1.- 3.*I}

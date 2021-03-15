@@ -45,10 +45,10 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_conjugated){
 	namespace blas = multi::blas;
 	auto BdataC = blas::make_conjugater(B.data_elements());
 	auto BconstdataC = blas::make_conjugater(Bconst.data_elements());
-	decltype(BconstdataC) ppp = BdataC;
+	decltype(BconstdataC) ppp;// = BdataC;
 	ppp = BdataC;
 
-	BOOST_REQUIRE( *BdataC == 1. + 3.*I );
+	BOOST_REQUIRE( *ppp == 1. + 3.*I );
 
 //	static_assert(    multi::blas::is_complex_array<multi::array<thrust::complex<double>, 2>>{}, "!");
 	static_assert(    blas::is_complex_array<decltype(B)>{} );

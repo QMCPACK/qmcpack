@@ -140,7 +140,8 @@ public:
 	involuter(involuter const& other) = default;
 //	template<class Other, > constexpr involuter(Other const& other) : it_{other.it_}, f_{other.f_}{}
 
-	template<class Other, typename = decltype(_implicit_cast<It>(typename Other::underlying_type{}))> // cppcheck-suppress noExplicitConstructor
+	template<class Other, typename = decltype(_implicit_cast<It>(typename Other::underlying_type{}))> 
+	// cppcheck-suppress noExplicitConstructor
 	constexpr          involuter(Other const& o) : it_{o.it_}, f_{o.f_}{}
 	template<class Other, typename = decltype(_explicit_cast<It>(typename Other::underlying_type{}))> 
 	constexpr explicit involuter(Other const& o, int = 0) : it_{o.it_}, f_{o.f_}{}
