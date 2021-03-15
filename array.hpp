@@ -597,9 +597,9 @@ public:
 	friend allocator_type get_allocator(static_array const& self){return self.get_allocator();}
 
 	[[deprecated("use data_elements() instead of data()")]]
-	constexpr typename static_array::element_ptr       data()      {return ref::data();}
+	constexpr typename static_array::element_ptr       data()      {return ref::data_elements();}
 	[[deprecated("use data_elements() instead of data()")]]
-	constexpr auto data() const{return typename static_array::element_const_ptr{ref::data()};}
+	constexpr auto data() const{return typename static_array::element_const_ptr{ref::data_elements()};}
 
 	// TODO find how to use `deprecated` with nvcc
 	friend constexpr typename static_array::element_ptr       data(static_array&       s)
