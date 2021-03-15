@@ -14,37 +14,81 @@
 #include "cuBLAS_LU.hpp"
 #include "cudaError.h"
 #include <stdexcept>
+#include <type_traits>
+#include <complex>
 #include <cuComplex.h>
 #include "cuBLAS.hpp"
-#include <thrust/complex.h>
 #include <thrust/system/cuda/detail/core/util.h>
 
 namespace qmcplusplus
 {
-namespace QMC_CUDA
+namespace cuBLAS_LU
 {
-  
-template<typename T, typename COMPT, int COLBS>
-__global__ void computeLogDet_kernel(const int n, const T* const LU_diags, const int* const pivots, COMPT* logdets)
+
+
+template<int COLBS>
+__global__ void computeLogDet_kernel(const int n,
+                                     const cuDoubleComplex* const LU_diags,
+                                     const int* const pivots,
+                                     cuDoubleComplex* logdets)
 {
-  const int iw                     = blockIdx.x;
-  const int block_num              = blockIdx.y;
-  const T* __restrict__ LU_diag_iw = LU_diags + iw * n;
-  const int* __restrict__ pivot_iw = pivots + iw * n;
-  int n_index                      = threadIdx.x + block_num * COLBS;
-  __shared__ COMPT logdet_vals[COLBS];
-  logdet_vals[threadIdx.x] = 0.0;
+  const int iw                                   = blockIdx.x;
+  const int block_num                            = blockIdx.y;
+  const cuDoubleComplex* __restrict__ LU_diag_iw = LU_diags + iw * n;
+  const int* __restrict__ pivot_iw               = pivots + iw * n;
+  int n_index                                    = threadIdx.x + block_num * COLBS;
+  __shared__ cuDoubleComplex logdet_vals[COLBS];
+  logdet_vals[threadIdx.x] = {0.0, 0.0};
   if (n_index < n)
-    logdet_vals[threadIdx.x] = log(((pivot_iw[n_index] == n_index + 1) ? LU_diag_iw[n_index] : -LU_diag_iw[n_index]));
+  {
+    logdet_vals[threadIdx.x].x = norm(2, (double*)(LU_diag_iw + n_index));
+    logdet_vals[threadIdx.x].y = atan2(LU_diag_iw[n_index].y, LU_diag_iw[n_index].x);
+  }
   // insure that when we reduce logdet_vals all the threads in the block are done.
   __syncthreads();
-  if(threadIdx.x == 0)
+  {
+    cuDoubleComplex block_sum_log_det{0.0, 0.0};
+    for (int iv = 0; iv < COLBS; ++iv)
     {
-      COMPT block_sum_log_det = 0.0;
-      for(int iv = 0; iv < COLBS; ++iv)
-	block_sum_log_det += logdet_vals[iv];
-      atomicAdd(logdets + iw, block_sum_log_det);
+      block_sum_log_det.x += logdet_vals[iv].x;
+      block_sum_log_det.y += logdet_vals[iv].y;
     }
+    atomicAdd((double*)(logdets + iw), block_sum_log_det.x);
+    atomicAdd((double*)(logdets + iw) + 1, block_sum_log_det.y);
+  }
+}
+
+template<int COLBS>
+__global__ void computeLogDet_kernel(const int n,
+                                     const double* const LU_diags,
+                                     const int* const pivots,
+                                     cuDoubleComplex* logdets)
+{
+  const int iw                          = blockIdx.x;
+  const int block_num                   = blockIdx.y;
+  const double* __restrict__ LU_diag_iw = LU_diags + iw * n;
+  const int* __restrict__ pivots_iw     = pivots + iw * n;
+  int n_index                           = threadIdx.x + block_num * COLBS;
+  __shared__ cuDoubleComplex logdet_vals[COLBS];
+  logdet_vals[threadIdx.x] = {0.0, 0.0};
+  if (n_index < n)
+  {
+    logdet_vals[threadIdx.x].x = log(abs(LU_diag_iw[n_index]));
+    logdet_vals[threadIdx.x].y = ((LU_diag_iw[n_index] < 0) != ((pivots_iw[n_index] - 1) == n_index)) * M_PI;
+  }
+  // insure that when we reduce logdet_vals all the threads in the block are done.
+  __syncthreads();
+  if (threadIdx.x == 0)
+  {
+    cuDoubleComplex block_sum_log_det{0.0, 0.0};
+    for (int iv = 0; iv < COLBS; ++iv)
+    {
+      block_sum_log_det.x += logdet_vals[iv].x;
+      block_sum_log_det.y += logdet_vals[iv].y;
+    }
+    atomicAdd((double*)(logdets + iw), block_sum_log_det.x);
+    atomicAdd((double*)(logdets + iw) + 1, block_sum_log_det.y);
+  }
 }
 
 /** Calculates logdets using LU_diags and pivots
@@ -52,13 +96,13 @@ __global__ void computeLogDet_kernel(const int n, const T* const LU_diags, const
  *  \param[out] LU_diags - the LU_diags from the LU
  *  \param[in] batch_size - no a big deal here.
  */
-template<typename T, typename COMPT>
+template<typename T>
 cudaError_t computeLogDet_batched_impl(cudaStream_t& hstream,
-                                           const int n,
-                                           const T* LU_diags,
-					   const int* pivots,
-					   COMPT* logdets,
-                                           const int batch_size)
+                                       const int n,
+                                       const T* LU_diags,
+                                       const int* pivots,
+                                       cuDoubleComplex* logdets,
+                                       const int batch_size)
 {
   // Perhaps this should throw an exception. I can think of no good reason it should ever happen other than
   // developer error.
@@ -69,22 +113,33 @@ cudaError_t computeLogDet_batched_impl(cudaStream_t& hstream,
   const int num_col_blocks = (n + COLBS - 1) / COLBS;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_size, num_col_blocks);
-  computeLogDet_kernel<T, COMPT, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, LU_diags, pivots, logdets);
+  computeLogDet_kernel<COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, LU_diags, pivots, logdets);
 
   return cudaPeekAtLastError();
 }
 
-  
-template<typename T, int COLBS>
-__global__ void computeLUDiag_kernel(const int n, const int lda, const T* const invA[], T* LU_diag)
+void computeLogDet_batched(cudaStream_t& hstream,
+                           const int n,
+                           const double* LU_diags,
+                           const int* pivots,
+                           std::complex<double>* logdets,
+                           const int batch_size)
 {
-  const int iw                  = blockIdx.x;
-  const int block_num           = blockIdx.y;
-  const T* __restrict__ invA_iw = invA[iw * (blockDim.y * COLBS)];
-  T* __restrict__ LU_diag_iw    = LU_diag + iw * n;
-  int n_index                   = threadIdx.x + block_num * COLBS;
+  cudaErrorCheck(computeLogDet_batched_impl(hstream, n, LU_diags, pivots, reinterpret_cast<cuDoubleComplex*>(logdets),
+                                            batch_size),
+                 "failed to calculate log determinant values in computeLogDet_batched_impl");
+}
+
+template<typename T, int COLBS>
+__global__ void computeLUDiag_kernel(const int n, const int lda, T** mat_lus, T* LU_diag)
+{
+  const int iw                = blockIdx.x;
+  const int block_num         = blockIdx.y;
+  const T* __restrict__ lu_iw = mat_lus[iw];
+  T* __restrict__ LU_diag_iw  = LU_diag + iw * n;
+  int n_index                 = threadIdx.x + block_num * COLBS;
   if (n_index < n)
-    *(LU_diag_iw + n_index) = *(invA_iw + n_index * lda + n_index);
+    *(LU_diag_iw + n_index) = *(lu_iw + n_index * lda + n_index);
 }
 
 /** Extracts the LU_diags from the LU in invA.
@@ -94,11 +149,11 @@ __global__ void computeLUDiag_kernel(const int n, const int lda, const T* const 
  */
 template<typename T>
 cudaError_t computeLUDiag_batched_impl(cudaStream_t hstream,
-                                           const int n,
-                                           const int lda,
-                                           T** LU_mat,
-					   T* LU_diags,
-                                           const int batch_size)
+                                       const int n,
+                                       const int lda,
+                                       T** LU_mat,
+                                       T* LU_diags,
+                                       const int batch_size)
 {
   // Perhaps this should throw an exception. I can think of no good reason it should ever happen other than
   // developer error.
@@ -124,22 +179,113 @@ cudaError_t computeLUDiag_batched_impl(cudaStream_t hstream,
  *  \param[in]    batch_size - if this changes over run a huge performance hit will be taken as memory allocation syncs device.
  */
 void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
-				     cudaStream_t& hstream,
-                                                  const int n,
-                                                  const int lda,
-						  double* Ms[],
-						  double* LU_diags,
-						  int* pivots,
-						  int* infos,
-                                                  double* log_dets,
-                                                  const int batch_size)
+                                     cudaStream_t& hstream,
+                                     const int n,
+                                     const int lda,
+                                     double* Ms[],
+                                     double* Cs[],
+                                     double* LU_diags,
+                                     int* pivots,
+                                     int* infos,
+                                     std::complex<double>* log_dets,
+                                     const int batch_size)
 {
   //LU is returned in Ms
-  cublasErrorCheck(cuBLAS::getrf_batched(h_cublas, n, Ms, lda, pivots, infos, batch_size), "cuBLAS::getrf_batched failed in computeInverseAndDetLog_batched");
-  cudaErrorCheck(computeLUDiag_batched_impl(hstream, n, lda, Ms, LU_diags, batch_size), "failed to extract LU diag values at cuomputeLUDiag_batched_impl");
-  cudaErrorCheck(computeLogDet_batched_impl(hstream, n, LU_diags, pivots, log_dets, batch_size), "failed to calculate log determinant values in computeLogDet_batched_impl");
+  cublasErrorCheck(cuBLAS::getrf_batched(h_cublas, n, Ms, lda, pivots, infos, batch_size),
+                   "cuBLAS::getrf_batched failed in computeInverseAndDetLog_batched");
+  cudaErrorCheck(computeLUDiag_batched_impl(hstream, n, lda, Ms, LU_diags, batch_size),
+                 "failed to extract LU diag values at cuomputeLUDiag_batched_impl");
+  cudaErrorCheck(computeLogDet_batched_impl(hstream, n, LU_diags, pivots, reinterpret_cast<cuDoubleComplex*>(log_dets),
+                                            batch_size),
+                 "failed to calculate log determinant values in computeLogDet_batched_impl");
+  cublasErrorCheck(cuBLAS::getri_batched(h_cublas, n, Ms, lda, pivots, Cs, lda, infos, batch_size),
+                   "cuBLAS::getri_batched failed in computeInverseAndDetLog_batched");
+}
+
+void computeGetrf_batched(cublasHandle_t& h_cublas,
+                          const int n,
+                          const int lda,
+                          double* Ms[],
+                          int* pivots,
+                          int* infos,
+                          const int batch_size)
+{
+  cublasErrorCheck(cuBLAS::getrf_batched(h_cublas, n, Ms, lda, pivots, infos, batch_size),
+                   "cuBLAS::getrf_batched failed in computeInverseAndDetLog_batched");
+}
+
+void computeGetri_batched(cublasHandle_t& h_cublas,
+                          const int n,
+                          const int lda,
+                          double* Ms[],
+                          double* Cs[],
+                          int* pivots,
+                          int* infos,
+                          const int batch_size)
+{
+  cublasErrorCheck(cuBLAS::getri_batched(h_cublas, n, Ms, lda, pivots, Cs, lda, infos, batch_size),
+                   "cuBLAS::getri_batched failed in computeInverseAndDetLog_batched");
 }
 
 
-} // namespace cuBLAS_MFs
+void computeLUDiag_batched(cudaStream_t& hstream,
+                           const int n,
+                           const int lda,
+                           double** Ms,
+                           double* LU_diags,
+                           const int batch_size)
+{
+  cudaErrorCheck(computeLUDiag_batched_impl(hstream, n, lda, Ms, LU_diags, batch_size),
+                 "failed to extract LU diag values at cuomputeLUDiag_batched_impl");
+}
+
+template<typename T, typename COMPLT, int COLBS>
+__global__ void peekinvM_kernel(T** M, T** invM, int* pivots, int* infos, COMPLT* log_dets)
+{
+  const int iw        = blockIdx.x;
+  const int block_num = blockIdx.y;
+  const T* invM_iw    = invM[iw];
+  const T* M_iw       = M[iw];
+  COMPLT* log_dets_iw         = log_dets + iw;
+}
+
+template<typename T, typename COMPLT>
+cudaError_t peekinvM_batched_impl(cudaStream_t hstream,
+                                  T** M,
+                                  T** invM,
+                                  int* pivots,
+                                  int* infos,
+                                  COMPLT* log_dets,
+                                  const int batch_size)
+{
+  const int COLBS = 256;
+  dim3 dimBlock(COLBS);
+  dim3 dimGrid(batch_size, 1);
+  peekinvM_kernel<T, COMPLT, COLBS>
+    <<<dimGrid, dimBlock, 0, hstream>>>(M, invM, pivots, infos, log_dets);
+  return cudaPeekAtLastError();
+}
+
+template cudaError_t peekinvM_batched_impl<double, cuDoubleComplex>(cudaStream_t hstream,
+                                  double** M,
+                                  double** invM,
+                                  int* pivots,
+                                  int* infos,
+                                  cuDoubleComplex* log_dets,
+                                  const int batch_size);
+  
+void peekinvM_batched(cudaStream_t& hstream,
+                      double** Ms,
+                      double** invMs,
+                      int* pivots,
+                      int* infos,
+                      std::complex<double>* log_dets,
+                      const int batch_size)
+{
+  cudaErrorCheck(peekinvM_batched_impl(hstream, Ms, invMs, pivots, infos, reinterpret_cast<TypesMapper<std::complex<double>>*>(log_dets), batch_size),
+                 "failed to extract LU diag values at cuomputeLUDiag_batched_impl");
+}
+
+
+} // namespace cuBLAS_LU
 } // namespace qmcplusplus

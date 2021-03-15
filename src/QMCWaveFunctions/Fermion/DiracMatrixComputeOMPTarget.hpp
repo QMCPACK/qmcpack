@@ -97,7 +97,6 @@ inline void TansposeSquare(const TIN* restrict in, TOUT* restrict out, size_t n,
       out[i * lda + j] = in[i + j * lda];
 }
 
-
 template<typename T, typename T_FP>
 inline void computeLogDet(const T* restrict diag, int n, const int* restrict pivot, std::complex<T_FP>& logdet)
 {
@@ -163,6 +162,24 @@ class DiracMatrixComputeOMPTarget : public Resource
     }
   }
 
+  /** reset internal work space for single walker case
+   *  My understanding might be off.
+   *
+   *  it smells that this is so complex.
+   */
+  template<typename TREAL>
+  inline void reset(OffloadPinnedMatrix<TREAL>& psi_M, const int n,  const int lda)
+  {
+    pivots_.resize(lda);
+    lwork_ = -1;
+    T_FP tmp;
+    FullPrecReal lw;
+    DMCOMPT::Xgetri(lda, psi_M.data(), lda, pivots_.data(), &tmp, lwork_);
+    convert(tmp, lw);
+    lwork_ = static_cast<int>(lw);
+    m_work_.resize(lwork_);
+  }
+
   /** compute the inverse of invMat (in place) and the log value of determinant
    * @tparam TREAL real type
    * @param n invMat is n x n matrix
@@ -170,8 +187,19 @@ class DiracMatrixComputeOMPTarget : public Resource
    * @param LogDet log determinant value of invMat before inversion
    */
   template<typename TREAL>
-  inline void computeInvertAndLog(T_FP* invMat, const int n, const int lda, std::complex<TREAL>& log_value);
+  inline void computeInvertAndLog(OffloadPinnedMatrix<TREAL>& invMat, const int n, const int lda, std::complex<T_FP>& log_value)
+  {
+    BlasThreadingEnv knob(getNextLevelNumThreads());
+    if (lwork_ < lda)
+      reset(invMat, n, lda);
+    DMCOMPT::Xgetrf(n, n, invMat.data(), lda, m_pivots_.data());
+    for(int i=0; i<n; i++)
+      LU_diags_fp_[i] = invMat.data()[i*lda+i];
+    DMCOMPT::computeLogDet(LU_diags_fp_.data(), n, m_pivots_.data(), log_value);
+    DMCOMPT::Xgetri(n, invMat.data(), lda, m_pivots_.data(), m_work_.data(), lwork_);
+  }
 
+  
   template<typename TREAL>
   inline void computeInvertAndLog(OffloadPinnedVector<TREAL>& psi_Ms,
                                   const int n,
@@ -208,14 +236,14 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT>& a_mat,
-                                                                            const Matrix<TMAT>& inv_a_mat,
+  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(OffloadPinnedMatrix<TMAT>& a_mat,
+                                                                            OffloadPinnedMatrix<TMAT>& inv_a_mat,
                                                                             std::complex<TREAL>& log_value)
   {
     const int n   = inv_a_mat.rows();
     const int lda = inv_a_mat.cols();
     simd::transpose(a_mat.data(), n, lda, inv_a_mat.data(), n, lda);
-    computeInvertAndLog(inv_a_mat.data(), n, lda, log_value);
+    computeInvertAndLog(inv_a_mat, n, lda, log_value);
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
@@ -224,7 +252,7 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT>& a_mat,
+  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(const OffloadPinnedMatrix<TMAT>& a_mat,
                                                                              const Matrix<TMAT>& inv_a_mat,
                                                                              std::complex<TREAL>& log_value)
   {
@@ -232,7 +260,7 @@ public:
     const int lda = inv_a_mat.cols();
     psiM_fp_.resize(n * lda);
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
-    computeInvertAndLog(psiM_fp_.data(), n, lda, log_value);
+    computeInvertAndLog(psiM_fp_, n, lda, log_value);
     Matrix<TMAT> data_ref_matrix;
     //maybe n, lda
     data_ref_matrix.attachReference(psiM_fp_.data(), n, n);
@@ -256,6 +284,7 @@ public:
     psiM_fp_.resize(n * lda * nw);
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, lda, psiM_fp_.data() + nsqr * iw, n, lda);
+    
     computeInvertAndLog(psiM_fp_, n, lda, log_values);
     for (int iw = 0; iw < nw; ++iw)
     {
@@ -267,5 +296,9 @@ public:
   }
 };
 } // namespace qmcplusplus
+
+// template<typename TREAL>
+// inline void computeInvertAndLog(T_FP* invMat, const int n, const int lda, std::complex<TREAL>& log_value);
+
 
 #endif // QMCPLUSPLUS_DIRAC_MATRIX_COMPUTE_OMPTARGET_H

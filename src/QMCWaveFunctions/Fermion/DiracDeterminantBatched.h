@@ -27,6 +27,11 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class DiracDeterminantBatchedTest;
+}
+
 template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 struct DiracDeterminantBatchedMultiWalkerResource : public Resource
 {
@@ -72,10 +77,12 @@ public:
   using mValueType    = QMCTraits::QTFull::ValueType;
   using mGradType     = TinyVector<mValueType, DIM>;
   using LogValue      = std::complex<QTFull::RealType>;
-
+  using DetEngine_t   = DET_ENGINE;
+  
   template<typename DT>
   using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadPinnedValueVector_t    = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
+  using OffloadPinnedLogValueVector_t = Vector<LogValue, OffloadPinnedAllocator<LogValue>>;
   using OffloadPinnedValueMatrix_t    = Matrix<ValueType, OffloadPinnedAllocator<ValueType>>;
   using OffloadPinnedPsiValueVector_t = Vector<PsiValueType, OffloadPinnedAllocator<PsiValueType>>;
   using OffloadVGLVector_t            = VectorSoaContainer<ValueType, DIM + 2, OffloadPinnedAllocator<ValueType>>;
@@ -186,8 +193,7 @@ public:
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  void recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
-		 ParticleSet& P) override;
+  void recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, ParticleSet& P);
 
   LogValueType evaluateGL(ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
@@ -249,6 +255,10 @@ public:
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
+
+  /// Log values for invert_transpose results
+  //OffloadPinnedLogValueVector_t log_values;
+
   /// delayed update engine
   DET_ENGINE det_engine_;
 
@@ -258,24 +268,6 @@ public:
   std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>> mw_res_;
 
   LogValue get_log_value() const { return log_value_; }
-
-private:
-  LogValue log_value_;
-
-  /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
-  void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
-
-  /// invert logdetT(psiM), result is in the engine.
-  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
-		  const OffloadPinnedValueMatrix_t& logdetT);
-
-  static void mw_invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
-                            const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                            RefVector<OffloadPinnedValueMatrix_t>& logdetT_list);
-
-  static void mw_recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
-                           const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                           const RefVectorWithLeader<ParticleSet>& p_list);
 
   // make this class unit tests friendly without the need of setup resources.
   void guardMultiWalkerRes()
@@ -287,8 +279,27 @@ private:
              "but only unit tests (expected)."
           << std::endl;
       mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>>();
+      mw_res_->log_values.resize(1);
     }
   }
+
+private:
+  /// Smelly second source of truth for this DDB's logvalue in the mw_res_;
+  LogValue log_value_;
+
+  /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
+  void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
+
+  /// invert logdetT(psiM), result is in the engine.
+  void invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, OffloadPinnedValueMatrix_t& logdetT);
+
+  static void mw_invertPsiM(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+                            const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            RefVector<OffloadPinnedValueMatrix_t>& logdetT_list);
+
+  static void mw_recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
+                           const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list);
 
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
@@ -298,6 +309,8 @@ private:
 
   /// timers
   NewTimer &D2HTimer, &H2DTimer;
+
+  friend class qmcplusplus::testing::DiracDeterminantBatchedTest;
 };
 
 

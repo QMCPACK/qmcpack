@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +29,11 @@
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+  class DiracDeterminantBatchedTest;
+}
 /** implements dirac matrix delayed update using OpenMP offload and CUDA.
  * It is used as DET_ENGINE_TYPE in DiracDeterminantBatched.
  * @tparam T base precision for most computation
@@ -47,6 +53,9 @@ public:
   using OffloadPinnedLogValueVector_t = Vector<std::complex<T>, OffloadPinnedAllocator<std::complex<T>>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
+
+  using DiracMatrixCompute = DiracMatrixComputeCUDA<T_FP>;
+  using Handles = CUDALinearAlgebraHandles;
 private:
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
@@ -105,11 +114,11 @@ private:
   /** @ingroup Resources
    *  @{ */
   // CUDA stream, cublas handle object
-  std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
+  std::unique_ptr<Handles> cuda_handles_;
   /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
-  UPtr<DiracMatrixComputeCUDA<T_FP>> det_inverter_;
+  UPtr<DiracMatrixCompute> det_inverter_;
   /**}@ */
-
+  
   inline void waitStream()
   {
     cudaErrorCheck(cudaStreamSynchronize(cuda_handles_->hstream), "cudaStreamSynchronize failed!");
@@ -291,6 +300,8 @@ private:
     }
   }
 
+  Handles& getHandles() { return *cuda_handles_; }
+
 public:
   /// default constructor
   MatrixDelayedUpdateCUDA() : invRow_id(-1), delay_count(0) {}
@@ -380,15 +391,16 @@ public:
    * @param LogValue log(det(logdetT))
    */
 
-  inline void invert_transpose(const OffloadPinnedValueMatrix_t& log_det, OffloadPinnedLogValueVector_t& log_values)
+  inline void invert_transpose(OffloadPinnedValueMatrix_t& log_det, OffloadPinnedLogValueVector_t& log_values)
   {
     checkResourcesForTest();
     guard_no_delay();
-    RefVector<MatrixUpdateOMPTarget<T, T_FP>> engines;
-    RefVector<const Matrix<T>> log_dets;
-    engines.push_back(*this);
-    log_dets.push_back(log_det);
-    mw_invertTranspose(engines, log_dets, log_values);
+    det_inverter_->invert_transpose(*cuda_handles_, log_det, psiMinv, log_values);
+    // RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>> engines(*this);
+    // RefVector<OffloadPinnedValueMatrix_t> log_dets;
+    // engines.push_back(*this);
+    // log_dets.push_back(std::ref(log_det));
+    // mw_invertTranspose(engines, log_dets, log_values);
   }
 
   inline void mw_invertTranspose(RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
@@ -397,6 +409,8 @@ public:
   {
     checkResourcesForTest();
     guard_no_delay();
+    auto& engine_leader = engines.getLeader();
+
     RefVector<OffloadPinnedValueMatrix_t> a_inv_refs;
     a_inv_refs.reserve(engines.size());
     for (int iw = 0; iw < engines.size(); iw++)
@@ -407,7 +421,7 @@ public:
       PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
     }
     PRAGMA_OFFLOAD("omp taskwait")
-    det_inverter_->mw_invertTranspose(*cuda_handles_, logdetT_list, a_inv_refs, log_values);
+      det_inverter_->mw_invertTranspose(*(engine_leader.cuda_handles_), logdetT_list, a_inv_refs, log_values);
   }
 
   // prepare invRow and compute the old gradients.
@@ -757,8 +771,8 @@ public:
       return *det_inverter_;
     throw std::logic_error("attempted to get null det_inverter_, this is developer logic error");
   }
-  
 
+  friend class qmcplusplus::testing::DiracDeterminantBatchedTest;
 };
 } // namespace qmcplusplus
 

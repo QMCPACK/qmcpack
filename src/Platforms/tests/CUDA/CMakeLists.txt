@@ -16,7 +16,7 @@ SET(SRC_DIR CUDA)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-ADD_EXECUTABLE(${UTEST_EXE} test_CUDAallocator.cpp)
+ADD_EXECUTABLE(${UTEST_EXE} test_CUDAallocator.cpp test_cuBLAS_LU.cpp )
 TARGET_LINK_LIBRARIES(${UTEST_EXE} platform_device containers catch_main)
 IF(USE_OBJECT_TARGET)
   TARGET_LINK_LIBRARIES(${UTEST_EXE}  platform_omptarget)

@@ -40,13 +40,15 @@ public:
   template<typename DT>
   using OffloadPinnedAllocator     = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
-  using OffloadPinnedLogValueVector_t = Vector<std::complex<T>, OffloadPinnedAllocator<std::complex<T>>>;
+  using OffloadPinnedLogValueVector_t = Vector<std::complex<T_FP>, OffloadPinnedAllocator<std::complex<T_FP>>>;
   using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
+  using DiracMatrixCompute = DiracMatrixComputeOMPTarget<T_FP>;
+
 private:
   /// matrix inversion engine this crowd scope resouce and only the leader engine gets it
-  UPtr<DiracMatrixComputeOMPTarget<T_FP>> det_inverter_;
+  UPtr<DiracMatrixCompute> det_inverter_;
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
   /// scratch space for rank-1 update
@@ -106,12 +108,13 @@ public:
    * @param logdetT orbital value matrix
    * @param LogValue log(det(logdetT))
    */
-  template<typename TREAL>
-  inline void invert_transpose(const OffloadPinnedValueMatrix_t& logdetT, std::complex<TREAL>& LogValue)
+  inline void invert_transpose(OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedLogValueVector_t& log_values)
   {
     auto& Ainv = psiMinv;
     Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    det_inverter_.invert_transpose(logdetT, Ainv_host_view, LogValue);
+    Matrix<T> logdetT_host_view(logdetT.data(), logdetT.rows(), logdetT.cols());
+    auto& log_value = log_values[0];
+    det_inverter_->invert_transpose(logdetT, Ainv, log_value);
     T* Ainv_ptr = Ainv.data();
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }

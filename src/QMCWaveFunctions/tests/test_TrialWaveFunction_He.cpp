@@ -22,14 +22,111 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "SetupDiracDeterminantResources.hpp"
 
 namespace qmcplusplus
 {
+// void setup_He_wavefunction(Communicate* c,
+//                            ParticleSet& elec,
+//                            ParticleSet& ions,
+//                            std::unique_ptr<WaveFunctionFactory>& wff,
+//                            WaveFunctionFactory::PtclPoolType& particle_set_map)
+// {
+//   std::vector<int> agroup(2);
+//   int nelec = 2;
+//   agroup[0] = 1;
+//   agroup[1] = 1;
+//   elec.setName("e");
+//   elec.create(agroup);
+//   elec.R[0][0] = 1.0;
+//   elec.R[0][1] = 2.0;
+//   elec.R[0][2] = 3.0;
+//   elec.R[1][0] = 1.0;
+//   elec.R[1][1] = 2.1;
+//   elec.R[1][2] = 2.2;
+
+//   SpeciesSet& tspecies = elec.getSpeciesSet();
+//   int upIdx            = tspecies.addSpecies("u");
+//   int downIdx          = tspecies.addSpecies("d");
+//   int massIdx          = tspecies.addAttribute("mass");
+//   // Define the charge so the Jastrow cusp is set automatically
+//   int e_chargeIdx = tspecies.addAttribute("charge");
+//   // Mass is set oddly so the parameter derivative code is tested properly
+//   tspecies(massIdx, upIdx)       = 3.0;
+//   tspecies(massIdx, downIdx)     = 3.0;
+//   tspecies(e_chargeIdx, upIdx)   = -1.0;
+//   tspecies(e_chargeIdx, downIdx) = -1.0;
+//   elec.resetGroups();
+
+//   particle_set_map["e"] = &elec;
+
+//   ions.setName("ion0");
+//   ions.create(1);
+//   ions.R[0][0] = 0.0;
+//   ions.R[0][1] = 0.0;
+//   ions.R[0][2] = 0.0;
+
+//   SpeciesSet& he_species      = ions.getSpeciesSet();
+//   int He_Idx                  = he_species.addSpecies("He");
+//   int chargeIdx               = he_species.addAttribute("charge");
+//   tspecies(chargeIdx, He_Idx) = 2.0;
+//   tspecies(massIdx, upIdx)    = 2.0;
+//   particle_set_map["ion0"]    = &ions;
+
+//   elec.addTable(ions);
+
+//   wff = std::make_unique<WaveFunctionFactory>("psi0", elec, particle_set_map, c);
+
+//   const char* wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">  \
+//      <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
+//       <correlation speciesA=\"u\" speciesB=\"d\"> \
+//         <var id=\"jud_b\" name=\"B\">0.8</var> \
+//       </correlation> \
+//      </jastrow> \
+//      <determinantset type=\"MO\" key=\"STO\" transform=\"no\" source=\"ion0\"> \
+//       <basisset> \
+//         <atomicBasisSet type=\"STO\" elementType=\"He\"> \
+//           <basisGroup rid=\"R0\" n=\"1\" l=\"0\" m=\"0\" type=\"Slater\"> \
+//              <radfunc exponent=\"2.0\"/> \
+//           </basisGroup> \
+//         </atomicBasisSet> \
+//       </basisset> \
+//       <slaterdeterminant> \
+//         <determinant id=\"updet\" spin=\"1\" size=\"1\"> \
+//           <coefficient id=\"updetC\" type=\"Array\" size=\"1\"> \
+//             1.0 \
+//           </coefficient> \
+//         </determinant> \
+//         <determinant id=\"downdet\" spin=\"-1\" size=\"1\"> \
+//           <coefficient id=\"downdetC\" type=\"Array\" size=\"1\"> \
+//             1.0 \
+//           </coefficient> \
+//         </determinant> \
+//       </slaterdeterminant> \
+//       </determinantset> \
+//     </wavefunction>";
+
+
+//   Libxml2Document doc;
+//   bool okay = doc.parseFromString(wavefunction_xml);
+//   REQUIRE(okay);
+
+//   xmlNodePtr root = doc.getRoot();
+//   wff->put(root);
+
+//   REQUIRE(wff->getTWF() != nullptr);
+//   REQUIRE(wff->getTWF()->size() == 2);
+// }
+
+/** This is mind boggling
+ *  
+ */
 void setup_He_wavefunction(Communicate* c,
                            ParticleSet& elec,
                            ParticleSet& ions,
                            std::unique_ptr<WaveFunctionFactory>& wff,
-                           WaveFunctionFactory::PtclPoolType& particle_set_map)
+				   WaveFunctionFactory::PtclPoolType& particle_set_map,
+				   bool batched = false)
 {
   std::vector<int> agroup(2);
   int nelec = 2;
@@ -76,38 +173,41 @@ void setup_He_wavefunction(Communicate* c,
 
   wff = std::make_unique<WaveFunctionFactory>("psi0", elec, particle_set_map, c);
 
-  const char* wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">  \
-     <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
-      <correlation speciesA=\"u\" speciesB=\"d\"> \
-        <var id=\"jud_b\" name=\"B\">0.8</var> \
-      </correlation> \
-     </jastrow> \
-     <determinantset type=\"MO\" key=\"STO\" transform=\"no\" source=\"ion0\"> \
-      <basisset> \
-        <atomicBasisSet type=\"STO\" elementType=\"He\"> \
-          <basisGroup rid=\"R0\" n=\"1\" l=\"0\" m=\"0\" type=\"Slater\"> \
-             <radfunc exponent=\"2.0\"/> \
-          </basisGroup> \
-        </atomicBasisSet> \
-      </basisset> \
-      <slaterdeterminant> \
-        <determinant id=\"updet\" spin=\"1\" size=\"1\"> \
-          <coefficient id=\"updetC\" type=\"Array\" size=\"1\"> \
-            1.0 \
-          </coefficient> \
-        </determinant> \
-        <determinant id=\"downdet\" spin=\"-1\" size=\"1\"> \
-          <coefficient id=\"downdetC\" type=\"Array\" size=\"1\"> \
-            1.0 \
-          </coefficient> \
-        </determinant> \
-      </slaterdeterminant> \
-      </determinantset> \
-    </wavefunction>";
-
-
+  constexpr std::array<const char*, 2> wavefunction_xml{
+							R"(
+<wavefunction name="psi0" target="e">  
+     <jastrow name="Jee" type="Two-Body" function="pade"> 
+      <correlation speciesA="u" speciesB="d"> 
+        <var id="jud_b" name="B">0.8</var> 
+      </correlation> 
+     </jastrow> 
+     <determinantset type="MO" key="STO" transform="no" source="ion0"> 
+      <basisset> 
+        <atomicBasisSet type="STO" elementType="He"> 
+          <basisGroup rid="R0" n="1" l="0" m="0" type="Slater"> 
+             <radfunc exponent="2.0"/> 
+          </basisGroup> 
+        </atomicBasisSet> 
+      </basisset> 
+      <slaterdeterminant batch=)",
+R"(
+        <determinant id="updet" spin="1" size="1" > 
+          <coefficient id="updetC" type="Array" size="1"> 
+            1.0 
+          </coefficient> 
+        </determinant> 
+        <determinant id="downdet" spin="-1" size="1"> 
+          <coefficient id="downdetC" type="Array" size="1"> 
+            1.0 
+          </coefficient> 
+        </determinant> 
+      </slaterdeterminant> 
+      </determinantset> 
+    </wavefunction>)"
+  };
+  std::string wavefunction_constructor_arguments_in_xml(std::string(wavefunction_xml[0]) + (batched ? std::string("\"yes\">\n") : std::string("\"no\">\n")) + std::string(wavefunction_xml[1]));
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wavefunction_xml);
+  bool okay = doc.parseFromString(wavefunction_constructor_arguments_in_xml);
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
@@ -117,6 +217,7 @@ void setup_He_wavefunction(Communicate* c,
   REQUIRE(wff->getTWF()->size() == 2);
 }
 
+  
 TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]")
 {
   using ValueType = QMCTraits::ValueType;
@@ -218,7 +319,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
-  setup_He_wavefunction(c, elec1, ions, wff, particle_set_map);
+  setup_He_wavefunction(c, elec1, ions, wff, particle_set_map, true);
+  
   TrialWaveFunction& psi(*wff->getTWF());
   ions.update();
   elec1.update();
@@ -232,11 +334,37 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ParticleSet elec2b(elec2);
   elec2b.update();
 
-  TrialWaveFunction psi2;
-  WaveFunctionComponent* orb1 = psi.getOrbitals()[0]->makeClone(elec2);
-  psi2.addComponent(orb1);
-  WaveFunctionComponent* orb2 = psi.getOrbitals()[1]->makeClone(elec2);
-  psi2.addComponent(orb2);
+  // The old way of doing this (see commented sections) just isn't viable
+  // with the state sequence shared resource TWF's must be instantiated.
+  ParticleSet elec1_2;
+  ParticleSet ions_2;
+  std::unique_ptr<WaveFunctionFactory> wff_2;
+  WaveFunctionFactory::PtclPoolType particle_set_map_2;
+  // This He wavefunction has two components
+  // The orbitals are fixed and have not optimizable parameters.
+  // The Jastrow factor does have an optimizable parameter.
+  setup_He_wavefunction(c, elec1_2, ions_2, wff_2, particle_set_map_2, true);
+  
+  TrialWaveFunction& psi2(*wff_2->getTWF());
+  ions_2.update();
+  elec1_2.update();
+
+  ParticleSet elec1b_2(elec1_2);
+  elec1b_2.update();
+
+  ParticleSet elec2_2(elec1_2);
+  elec2_2.R[0][0] = 0.9;
+  elec2_2.update();
+  ParticleSet elec2b_2(elec2_2);
+  elec2b_2.update();
+
+  // TrialWaveFunction psi2;
+
+  // We have these components because the psi2 was properly instantiated
+  // WaveFunctionComponent* orb1 = psi.getOrbitals()[0]->makeClone(elec2);
+  // psi2.addComponent(orb1);
+  // WaveFunctionComponent* orb2 = psi.getOrbitals()[1]->makeClone(elec2);
+  // psi2.addComponent(orb2);
 
 
   // Prepare to compare using list with one wavefunction and particleset
@@ -295,7 +423,26 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   // Prepare to compare using list with two wavefunctions and particlesets
 
+  // If psi2 doesn't get mw_prepareblahblah called its state is invalid for calling evaluateDeltaLog
+  RefVectorWithLeader<ParticleSet> p_list_2(elec1b_2, {elec1b_2});
+  RefVectorWithLeader<TrialWaveFunction> wf_list_2(psi2, {psi2});
+
+  // Evaluate new flex_evaluateDeltaLogSetup
+
+  std::vector<RealType> logpsi_fixed_list_2(nentry);
+  std::vector<RealType> logpsi_opt_list_2(nentry);
+
+  auto fixedG_list_ptr_2 = create_particle_gradient(nelec, nentry);
+  auto fixedL_list_ptr_2 = create_particle_laplacian(nelec, nentry);
+  auto fixedG_list_2     = convertUPtrToRefVector(fixedG_list_ptr_2);
+  auto fixedL_list_2     = convertUPtrToRefVector(fixedL_list_ptr_2);
+
+  TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list_2, p_list_2, logpsi_fixed_list_2, logpsi_opt_list_2, fixedG_list_2,
+                                              fixedL_list_2);
+
+
   nentry = 2;
+
 
   wf_list.push_back(psi2);
   p_list.push_back(elec2b);
@@ -312,7 +459,12 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   RealType logpsi_fixed_r1b;
   RealType logpsi_opt_r1b;
-  psi2.evaluateDeltaLog(elec1, logpsi_fixed_r1b, logpsi_opt_r1b, fixedG1, fixedL1);
+  // The way this psi2 is created violates the normal state sequence of the main application.
+  // expect big issues if you change that in the main app.
+  // psi2 hasn't been created in a "normal" way, i.e. it wasn't emmited by wave function factory and
+  // is therefor invalid.
+
+  psi2.evaluateDeltaLog(elec1_2, logpsi_fixed_r1b, logpsi_opt_r1b, fixedG1, fixedL1);
 
   CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_r1b));
   CHECK(logpsi_opt_r1 == Approx(logpsi_opt_r1b));
@@ -335,7 +487,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   fixedL2.resize(nelec);
 
   psi2.setLogPsi(0.0);
-  psi2.evaluateDeltaLog(elec2, logpsi_fixed_r2, logpsi_opt_r2, fixedG2, fixedL2);
+  psi2.evaluateDeltaLog(elec2_2, logpsi_fixed_r2, logpsi_opt_r2, fixedG2, fixedL2);
 
 
   CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_r1b));
@@ -381,11 +533,11 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   // This should be temporary until these get removed from ParticleSet
   CHECK(elec1b.L[0] == ValueApprox(elec1.L[0]));
   CHECK(elec1b.L[1] == ValueApprox(elec1.L[1]));
-  CHECK(elec2b.L[0] == ValueApprox(elec2.L[0]));
-  CHECK(elec2b.L[1] == ValueApprox(elec2.L[1]));
+  CHECK(elec2b_2.L[0] == ValueApprox(elec2.L[0]));
+  CHECK(elec2b_2.L[1] == ValueApprox(elec2.L[1]));
 
-  CHECK(elec2b.G[0][0] == ValueApprox(elec2.G[0][0]));
-  CHECK(elec2b.G[1][1] == ValueApprox(elec2.G[1][1]));
+  CHECK(elec2b_2.G[0][0] == ValueApprox(elec2.G[0][0]));
+  CHECK(elec2b_2.G[1][1] == ValueApprox(elec2.G[1][1]));
 
 
   // these lists not used if 'recompute' is false

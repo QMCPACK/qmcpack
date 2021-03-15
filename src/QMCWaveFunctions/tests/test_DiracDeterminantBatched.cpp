@@ -2,10 +2,11 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -18,6 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 #include "QMCWaveFunctions/tests/FakeSPO.h"
+#include "QMCWaveFunctions/tests/CheckMatrix.hpp"
 
 #ifdef QMC_COMPLEX //This is for the spinor test.
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
@@ -48,17 +50,40 @@ typedef DiracDeterminantBatched<MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFu
 typedef DiracDeterminantBatched<> DetType;
 #endif
 
-template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
-void check_matrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b)
+namespace testing
 {
-  REQUIRE(a.rows() >= b.rows());
-  REQUIRE(a.cols() >= b.cols());
-  for (int i = 0; i < b.rows(); i++)
-    for (int j = 0; j < b.cols(); j++)
-    {
-      REQUIRE(a(i, j) == ValueApprox(b(i, j)));
-    }
+// checks if clas has a member handles
+template<class T, typename = void>
+struct has_handles : std::false_type
+{};
+// Other handle using det engines could be added.
+template<class T>
+struct has_handles<T, decltype(std::declval<T>().cuda_handles_, void())> : std::true_type
+{};
+
+
+class DiracDeterminantBatchedTest
+{
+public:
+  template<class DET_ENGINE>
+  DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& get_mw_res(DiracDeterminantBatched<DET_ENGINE>& ddb)
+  {
+    return *(ddb.mw_res_);
+  }
+  template<class DET_ENGINE>
+  void guardMultiWalkerRes(DiracDeterminantBatched<DET_ENGINE>& ddb)
+  {
+    return ddb.guardMultiWalkerRes();
+  }
+
+  template<class DET_ENGINE, typename = std::enable_if<testing::has_handles<DET_ENGINE>::value>>
+  typename DET_ENGINE::Handles& getHandles(DiracDeterminantBatched<DET_ENGINE>& ddb)
+  {
+    return ddb.get_det_engine().getHandles();
+  }
+};
 }
+
 
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 {
@@ -78,7 +103,10 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   ParticleSet elec;
 
   elec.create(3);
-  ddb.recompute(elec);
+
+  testing::DiracDeterminantBatchedTest ddbt;
+  ddbt.guardMultiWalkerRes(ddb);
+  ddb.recompute(ddbt.get_mw_res(ddb), elec);
 
   Matrix<ValueType> b;
   b.resize(3, 3);
@@ -93,7 +121,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 1) = -0.04586322768;
   b(2, 2) = 0.3927890292;
 
-  check_matrix(ddb.psiMinv, b);
+  checkMatrix(ddb.psiMinv, b, std::string("ddb.psiMinv in"  __FILE__), __LINE__);
 
 
   ParticleSet::GradType grad;
@@ -113,7 +141,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 1) = 0.7119205298;
   b(2, 2) = 0.9105960265;
 
-  check_matrix(ddb.psiMinv, b);
+  checkMatrix(ddb.psiMinv, b, std::string("ddb.psiMinv in"  __FILE__), __LINE__);
 }
 
 //#define DUMP_INFO
@@ -136,9 +164,13 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   ParticleSet elec;
 
   elec.create(4);
-  ddb.recompute(elec);
 
-  Matrix<ValueType> orig_a;
+  testing::DiracDeterminantBatchedTest ddbt;
+  ddbt.guardMultiWalkerRes(ddb);
+  ddb.recompute(ddbt.get_mw_res(ddb), elec);
+
+  using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;
+  ValueMatrix orig_a;
   orig_a.resize(4, 4);
   orig_a = spo->a2;
 
@@ -150,10 +182,10 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
     }
   }
 
-  //check_matrix(ddb.psiMinv, b);
-  DiracMatrix<ValueType> dm;
+  //checkMatrix(ddb.psiMinv, b);
+  DetType::DetEngine_t::DiracMatrixCompute& dm = ddb.get_det_engine().get_det_inverter();
 
-  Matrix<ValueType> a_update1, scratchT;
+  ValueMatrix a_update1, scratchT;
   a_update1.resize(4, 4);
   scratchT.resize(4, 4);
   a_update1 = spo->a2;
@@ -162,7 +194,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
     a_update1(j, 0) = spo->v2(0, j);
   }
 
-  Matrix<ValueType> a_update2;
+  ValueMatrix a_update2;
   a_update2.resize(4, 4);
   a_update2 = spo->a2;
   for (int j = 0; j < norb; j++)
@@ -171,7 +203,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
     a_update2(j, 1) = spo->v2(1, j);
   }
 
-  Matrix<ValueType> a_update3;
+  ValueMatrix a_update3;
   a_update3.resize(4, 4);
   a_update3 = spo->a2;
   for (int j = 0; j < norb; j++)
@@ -187,8 +219,23 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   LogValueType det_update1;
+  // waiting for C++17
+  // if constexpr (std::is_same<decltype(dm), DiracMatrixComputeCUDA<QMCTraits::QTFull::ValueType>>)
+  //   dm.invert_transpose(ddbt.get_handles(ddb), scratchT, a_update1, det_update1);
+  // else
+  //   dm.invert_transpose(scratchT, a_update1, det_update1);
+
+  auto& mw_res = ddbt.get_mw_res(ddb);
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  dm.invert_transpose(ddbt.getHandles(ddb), scratchT, a_update1, mw_res.log_values);
+  det_update1 = mw_res.log_values[0];
+#else
   dm.invert_transpose(scratchT, a_update1, det_update1);
-  PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddb.LogValue);
+#endif
+
+
+  PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddb.get_log_value());
 #ifdef DUMP_INFO
   std::cout << "det 0 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -204,7 +251,14 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   LogValueType det_update2;
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
+
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  dm.invert_transpose(ddbt.getHandles(ddb), scratchT, a_update2, mw_res.log_values);
+  det_update2 = mw_res.log_values[0];
+
+#else
   dm.invert_transpose(scratchT, a_update2, det_update2);
+#endif
   PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   std::cout << "det 1 = " << std::exp(ddb.LogValue) << std::endl;
@@ -220,7 +274,14 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   LogValueType det_update3;
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
+
+  #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  dm.invert_transpose(ddbt.getHandles(ddb), scratchT, a_update3, mw_res.log_values);
+  det_update3 = mw_res.log_values[0];
+#else
   dm.invert_transpose(scratchT, a_update3, det_update3);
+#endif
+
   PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   std::cout << "det 2 = " << std::exp(ddb.LogValue) << std::endl;
@@ -233,7 +294,12 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   ddb.acceptMove(elec, 2);
 
   simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  dm.invert_transpose(ddbt.getHandles(ddb), scratchT, orig_a, mw_res.log_values);
+  det_update3 = mw_res.log_values[0];
+#else
   dm.invert_transpose(scratchT, orig_a, det_update3);
+#endif
 
 #ifdef DUMP_INFO
   std::cout << "original " << std::endl;
@@ -242,7 +308,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   std::cout << ddb.psiMinv << std::endl;
 #endif
 
-  check_matrix(ddb.psiMinv, orig_a);
+  checkMatrix(ddb.psiMinv, orig_a);
 }
 
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
@@ -264,9 +330,13 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   ParticleSet elec;
 
   elec.create(4);
-  ddc.recompute(elec);
 
-  Matrix<ValueType> orig_a;
+  testing::DiracDeterminantBatchedTest ddbt;
+  ddbt.guardMultiWalkerRes(ddc);
+  ddc.recompute(ddbt.get_mw_res(ddc), elec);
+
+  using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;
+  ValueMatrix orig_a;
   orig_a.resize(4, 4);
   orig_a = spo->a2;
 
@@ -278,10 +348,9 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
     }
   }
 
-  //check_matrix(ddc.psiMinv, b);
-  DiracMatrix<ValueType> dm;
+  DetType::DetEngine_t::DiracMatrixCompute& dm = ddc.get_det_engine().get_det_inverter();
 
-  Matrix<ValueType> a_update1, scratchT;
+  ValueMatrix a_update1, scratchT;
   scratchT.resize(4, 4);
   a_update1.resize(4, 4);
   a_update1 = spo->a2;
@@ -290,7 +359,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
     a_update1(j, 0) = spo->v2(0, j);
   }
 
-  Matrix<ValueType> a_update2;
+  ValueMatrix a_update2;
   a_update2.resize(4, 4);
   a_update2 = spo->a2;
   for (int j = 0; j < norb; j++)
@@ -299,7 +368,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
     a_update2(j, 1) = spo->v2(1, j);
   }
 
-  Matrix<ValueType> a_update3;
+  ValueMatrix a_update3;
   a_update3.resize(4, 4);
   a_update3 = spo->a2;
   for (int j = 0; j < norb; j++)
@@ -310,16 +379,24 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   }
 
 
+  auto& mw_res = ddbt.get_mw_res(ddc);
+  
   ParticleSet::GradType grad;
   PsiValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
 
   simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   LogValueType det_update1;
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  dm.invert_transpose(ddbt.getHandles(ddc), scratchT, a_update1, mw_res.log_values);
+  det_update1 = mw_res.log_values[0];
+#else
   dm.invert_transpose(scratchT, a_update1, det_update1);
-  PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddc.LogValue);
+#endif
+
+  PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddc.get_log_value());
 #ifdef DUMP_INFO
-  std::cout << "det 0 = " << std::exp(ddc.LogValue) << std::endl;
+  std::cout << "det 0 = " << std::exp(ddc.get_log_value()) << std::endl;
   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
   std::cout << "det ratio 1 = " << det_ratio1 << std::endl;
 #endif
@@ -332,7 +409,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
 
-  check_matrix(ddc.psiMinv, a_update1);
+  checkMatrix(ddc.psiMinv, a_update1);
 
   grad = ddc.evalGrad(elec, 1);
 
@@ -340,7 +417,13 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   LogValueType det_update2;
+
+  #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  dm.invert_transpose(ddbt.getHandles(ddc), scratchT, a_update2, mw_res.log_values);
+  det_update2 = mw_res.log_values[0];
+#else
   dm.invert_transpose(scratchT, a_update2, det_update2);
+#endif
   PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
   std::cout << "det 1 = " << std::exp(ddc.LogValue) << std::endl;
@@ -360,7 +443,12 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
                   scratchT.cols());
   LogValueType det_update3;
+  #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  dm.invert_transpose(ddbt.getHandles(ddc), scratchT, a_update3, mw_res.log_values);
+  det_update3 = mw_res.log_values[0];
+#else
   dm.invert_transpose(scratchT, a_update3, det_update3);
+#endif
   PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
   std::cout << "det 2 = " << std::exp(ddc.LogValue) << std::endl;
@@ -377,7 +465,12 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 
   // fresh invert orig_a
   simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+  dm.invert_transpose(ddbt.getHandles(ddc), scratchT, orig_a, mw_res.log_values);
+  det_update3 = mw_res.log_values[0];
+#else
   dm.invert_transpose(scratchT, orig_a, det_update3);
+#endif
 
 #ifdef DUMP_INFO
   std::cout << "original " << std::endl;
@@ -387,7 +480,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 #endif
 
   // compare all the elements of psiMinv in ddc and orig_a
-  check_matrix(ddc.psiMinv, orig_a);
+  checkMatrix(ddc.psiMinv, orig_a);
 }
 
 } // namespace qmcplusplus

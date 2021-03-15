@@ -64,7 +64,9 @@ SET(DETERMINANT_SRC FakeSPO.cpp test_DiracDeterminantBatched.cpp test_dirac_det.
                     test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
                     test_multi_slater_determinant.cpp)
 
-FOREACH(CATEGORY trialwf sposet jastrow determinant)
+SET(MATRIXCOMPUTE_SRC test_DiracMatrixComputeCUDA.cpp)
+		    
+FOREACH(CATEGORY trialwf sposet jastrow determinant matrixcompute)
   SET(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   SET(UTEST_NAME deterministic-unit_${UTEST_EXE})
   STRING(TOUPPER "${CATEGORY}_SRC" SOURCE_FILE_VAR_NAME)

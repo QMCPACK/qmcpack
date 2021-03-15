@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
+#include "SetupDiracDeterminantResources.hpp"
 
 namespace qmcplusplus
 {
@@ -115,8 +116,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   auto* det_up = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_up->set(0, 2, ndelay);
+  setupDiracDetResources<DiracDet>(*det_up);
   auto* det_dn = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_dn->set(2, 2, ndelay);
+  setupDiracDetResources<DiracDet>(*det_dn);
 
   auto* slater_det = new SlaterDet(elec_);
   slater_det->add(det_up, 0);
@@ -151,23 +154,23 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::cout << "debug before YYY logpsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()
             << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(logpsi == Approx(-4.546410485374186));
+  CHECK(logpsi == Approx(-4.546410485374186));
 #else
-  REQUIRE(logpsi == Approx(-5.932711221043984));
+  CHECK(logpsi == Approx(-5.932711221043984));
 #endif
 
   auto logpsi_cplx = psi.evaluateGL(elec_, false);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+  CHECK(std::real(logpsi_cplx) == Approx(-4.546410485374186));
 #else
-  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+  CHECK(std::real(logpsi_cplx) == Approx(-5.932711221043984));
 #endif
 
   logpsi_cplx = psi.evaluateGL(elec_, true);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+  CHECK(std::real(logpsi_cplx) == Approx(-4.546410485374186));
 #else
-  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+  CHECK(std::real(logpsi_cplx) == Approx(-5.932711221043984));
 #endif
 
   // make a TrialWaveFunction Clone
