@@ -31,8 +31,7 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
-    : MPIObjectBase(c), TileMatrix(0)
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), TileMatrix(0)
 {
   TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";

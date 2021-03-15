@@ -260,10 +260,14 @@ public:
   virtual void createResource(ResourceCollection& collection) const {}
 
   /// acquire a shared resource from a collection
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+  {}
 
   /// return a shared resource to a collection
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+  {}
 };
 } // namespace qmcplusplus
 #endif

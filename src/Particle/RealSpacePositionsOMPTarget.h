@@ -184,19 +184,22 @@ public:
   void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<MultiWalkerMem>());
-    app_log() << "    Multi walker shared memory resource created in RealSpacePositionsOMPTarget. Index "
-              << resource_index << std::endl;
   }
 
-  void acquireResource(ResourceCollection& collection) override
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DynamicCoordinates>& coords_list) const override
   {
     auto res_ptr = dynamic_cast<MultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("RealSpacePositionsOMPTarget::acquireResource dynamic_cast failed");
-    mw_mem_.reset(res_ptr);
+    coords_list.getCastedLeader<RealSpacePositionsOMPTarget>().mw_mem_.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem_)); }
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DynamicCoordinates>& coords_list) const override
+  {
+    collection.takebackResource(std::move(coords_list.getCastedLeader<RealSpacePositionsOMPTarget>().mw_mem_));
+  }
 
 private:
   ///particle positions in SoA layout

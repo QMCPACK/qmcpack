@@ -813,8 +813,7 @@ void ParticleSet::mw_loadWalker(const RefVectorWithLeader<ParticleSet>& psets,
                                 const RefVector<Walker_t>& walkers,
                                 bool pbyp)
 {
-  auto loadWalkerConfig = [](ParticleSet& pset, Walker_t& awalker)
-  {
+  auto loadWalkerConfig = [](ParticleSet& pset, Walker_t& awalker) {
     pset.R     = awalker.R;
     pset.spins = awalker.spins;
     pset.coordinates_->setAllParticlePos(pset.R);
@@ -923,18 +922,20 @@ void ParticleSet::createResource(ResourceCollection& collection) const
     DistTables[i]->createResource(collection);
 }
 
-void ParticleSet::acquireResource(ResourceCollection& collection)
+void ParticleSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  coordinates_->acquireResource(collection);
-  for (int i = 0; i < DistTables.size(); i++)
-    DistTables[i]->acquireResource(collection);
+  auto& ps_leader = p_list.getLeader();
+  ps_leader.coordinates_->acquireResource(collection, extractCoordsRefList(p_list));
+  for (int i = 0; i < ps_leader.DistTables.size(); i++)
+    ps_leader.DistTables[i]->acquireResource(collection, extractDTRefList(p_list, i));
 }
 
-void ParticleSet::releaseResource(ResourceCollection& collection)
+void ParticleSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  coordinates_->releaseResource(collection);
-  for (int i = 0; i < DistTables.size(); i++)
-    DistTables[i]->releaseResource(collection);
+  auto& ps_leader = p_list.getLeader();
+  ps_leader.coordinates_->releaseResource(collection, extractCoordsRefList(p_list));
+  for (int i = 0; i < ps_leader.DistTables.size(); i++)
+    ps_leader.DistTables[i]->releaseResource(collection, extractDTRefList(p_list, i));
 }
 
 RefVectorWithLeader<DistanceTableData> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,

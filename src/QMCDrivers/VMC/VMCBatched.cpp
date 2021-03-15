@@ -40,17 +40,20 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
                                 ContextForSteps& step_context,
                                 bool recompute)
 {
-  if (crowd.size() == 0) return;
-  assert(QMCDriverNew::checkLogAndGL(crowd));
-
+  if (crowd.size() == 0)
+    return;
   auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
   auto& walkers        = crowd.get_walkers();
-  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
-                                            crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
+
+  ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
+                                               crowd.get_walker_hamiltonians()[0]);
+
+  assert(QMCDriverNew::checkLogAndGL(crowd));
 
   timers.movepbyp_timer.start();
   const int num_walkers = crowd.size();

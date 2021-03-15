@@ -86,27 +86,6 @@ TEST_CASE("Crowd integration", "[drivers]")
   Crowd crowd(em, driverwalker_resource_collection_, dispatchers);
 }
 
-TEST_CASE("Crowd::loadWalkers", "[particle]")
-{
-  using namespace testing;
-  SetupPools pools;
-
-  CrowdWithWalkers crowd_with_walkers(pools);
-  Crowd& crowd = crowd_with_walkers.get_crowd();
-
-  std::vector<std::pair<int, int>> particle_group_indexes{{0, 1}, {1, 2}};
-
-  RandomGenerator_t random_gen;
-
-  crowd.loadWalkers();
-
-  auto checkParticleSetPos = [&crowd_with_walkers](int iw) {
-    REQUIRE(crowd_with_walkers.psets[iw]->R[0] == crowd_with_walkers.tpos[iw]);
-  };
-  for (int i = 0; i < crowd.size(); ++i)
-    checkParticleSetPos(i);
-}
-
 TEST_CASE("Crowd redistribute walkers")
 {
   using namespace testing;
