@@ -129,8 +129,8 @@ const Array<double,2> operator*(const Array<double,2> &A,
 //  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
 //  Array<double,2> C(m,n,colMajor);
 	Array<double, 2> C({m, n}, 0.);
-  F77_DGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data_elements(), &k, 
-	     B.data_elements(), &n, &beta, C.data_elements(), &m);
+  F77_DGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data(), &k, 
+           B.data(), &n, &beta, C.data(), &m);
   return C;
 }
 
@@ -152,7 +152,7 @@ const Array<std::complex<double>,2> operator*(const Array<std::complex<double>,2
 //  Array<std::complex<double>,2> C(m,n,colMajor);
 	Array<std::complex<double>, 2> C({m, n}, std::complex<double>{});
   F77_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data_elements(), &k, 
-	     B.data_elements(), &n, &beta, C.data_elements(), &m);
+           B.data(), &n, &beta, C.data(), &m);
   return C;
 }
 
