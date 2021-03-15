@@ -474,12 +474,6 @@ namespace serialization{
 using std::cout;
 namespace multi = boost::multi;
 
-template<class T>
-void f(T&& t){
-	using multi::dimensionality;
-	std::cout<< dimensionality(t) <<'\n';
-}
-
 BOOST_AUTO_TEST_CASE(multi_utility_test){
 
 	static_assert( std::is_same<std::iterator_traits<double const*>::value_type, double>{}, "!");

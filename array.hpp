@@ -85,7 +85,7 @@ protected:
 		return adl_alloc_uninitialized_default_construct_n(static_array::alloc(), this->base_, this->num_elements());
 	}
 	template<typename It> auto uninitialized_copy_elements(It first){
-		return array_alloc::uninitialized_copy_n(first, this->num_elements(), this->data());
+		return array_alloc::uninitialized_copy_n(first, this->num_elements(), this->data_elements());
 	}
 	void destroy_aux(std::false_type){array_alloc::destroy_n(this->data_elements(), this->num_elements());}
 	void destroy_aux(std::true_type ){}
@@ -165,15 +165,17 @@ public:
 		class Range, class=std::enable_if_t<not std::is_base_of<static_array, std::decay_t<Range>>{}>, 
 		class=decltype(/*static_array*/(std::declval<Range&&>().begin(), std::declval<Range&&>().end())), // instantiation of static_array here gives a compiler error in 11.0
 		class=std::enable_if_t<not is_basic_array<Range&&>{}>// TODO add is_assignable<value_type> check
-	> // cppcheck-suppress noExplicitConstructor ; because I want to use equal for lazy assigments form range-expressions
+	> 
+	// cppcheck-suppress noExplicitConstructor ; because I want to use equal for lazy assigments form range-expressions
 	static_array(Range&& rng) : static_array(std::forward<Range>(rng).begin(), std::forward<Range>(rng).end()){}
 
 	template<class TT> 
 	auto uninitialized_fill_elements(TT const& value){
 		return array_alloc::uninitialized_fill_n(this->data_elements(), this->num_elements(), value);
 	}
-	
-	template<class TT, class... As> // cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
+
+	template<class TT, class... As> 
+	// cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
 	static_array(array_ref<TT, D, As...> const& other, typename static_array::allocator_type const& a = {}) :
 		array_alloc{a},
 		ref{array_alloc::allocate(other.num_elements()), other.extensions()}
@@ -223,18 +225,16 @@ public:
 	template<class TT, class... Args, 
 		class=std::enable_if_t<std::is_assignable<typename ref::element_ref, typename multi::basic_array<TT, D, Args...>::element>{}>,
 		class=decltype(adl_copy(std::declval<multi::basic_array<TT, D, Args...> const&>().begin(), std::declval<multi::basic_array<TT, D, Args...> const&>().end(), std::declval<typename static_array::iterator>()))
-	> // cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
+	>
+	// cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
 	static_array(multi::basic_array<TT, D, Args...> const& o, typename static_array::allocator_type const& a = {})
 	: static_array(o.extensions(), a) // TODO: should be uninitialized_copy
 	{
 		adl_copy(o.begin(), o.end(), this->begin()); // TODO: should be uninitialized_copy, and recursive
 	}
-//	template<class TT, class... Args>
-//	static_array(static_array<TT, D, Args...> const& o)
-//	: array_alloc{}, ref{array_alloc::allocate(num_elements(o)), extensions(o)}{
-//		static_array::uninitialized_copy_elements(o.data_elements());
-//	}
-	template<class TT, class... Args> // cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
+
+	template<class TT, class... Args>
+	// cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
 	static_array(array_ref<TT, D, Args...>&& o)
 	: array_alloc{}, ref{array_alloc::allocate(o.num_elements()), o.extensions()}{
 		static_array::uninitialized_copy_elements(std::move(o).data_elements());
@@ -259,9 +259,8 @@ public:
 		std::initializer_list<typename static_array<T, D>::value_type> mil, 
 		typename static_array::allocator_type const& a
 	) : static_array(static_array<T, D>(mil.begin(), mil.end()), a){}
-//	template<std::size_t N>
-//	static_array(static_array::value_type const(&array)[N]) : static_array(std::begin(array), std::end(array)){}
-	template<class TT, std::size_t N> // cppcheck-suppress noExplicitConstructor ; to allow assigment-like construction from c-arrays
+	template<class TT, std::size_t N> 
+	// cppcheck-suppress noExplicitConstructor ; to allow assigment-like construction from c-arrays
 	constexpr static_array(TT(&array)[N]) : static_array(std::begin(array), std::end(array)){}
 	template<class It> static auto distance(It a, It b){using std::distance; return distance(a, b);}
 protected:
@@ -317,20 +316,19 @@ public:
 //	const_reference operator[](index i) const&{return ref::operator[](i);}
 //	typename static_array::allocator_type get_allocator() const{return static_cast<typename static_array::allocator_type const&>(*this);}
 	friend typename static_array::allocator_type get_allocator(static_array const& self){return self.get_allocator();}
-	typename static_array::element_ptr data()       {
-		return ref::data();
-	}
-	constexpr auto data() const{return typename static_array::element_const_ptr{ref::data()};}
-	friend typename static_array::element_ptr       data(static_array&       s){return s.data();}
-	friend typename static_array::element_const_ptr data(static_array const& s){return s.data();}
+
+	[[deprecated("use ::data_elements()")]] typename static_array::element_ptr data()       {return ref::data_elements();}
+	[[deprecated("use ::data_elements()")]] constexpr auto data() const{return typename static_array::element_const_ptr{ref::data_elements()};}
+	[[deprecated("use data_elements()")]] friend typename static_array::element_ptr       data(static_array&       s){return s.data_elements();}
+	[[deprecated("use data_elements()")]] friend typename static_array::element_const_ptr data(static_array const& s){return s.data_elements();}
 
 	element_const_ptr                   data_elements() const&{return this->base_;}
 	typename static_array::element_ptr  data_elements()      &{return this->base_;}
 	static_array::element_move_ptr      data_elements()     &&{return std::make_move_iterator(this->base_);}
 
-	friend auto data_elements(static_array const& self){return self.data_elements();}
-	friend auto data_elements(static_array      & self){return self.data_elements();}
-	friend auto data_elements(static_array     && self){return std::move(self).data_elements();}
+	friend auto data_elements(static_array const& s){return           s .data_elements();}
+	friend auto data_elements(static_array      & s){return           s .data_elements();}
+	friend auto data_elements(static_array     && s){return std::move(s).data_elements();}
 
 	constexpr typename static_array::element_ptr       base()      {return ref::base();}
 	constexpr typename static_array::element_const_ptr base() const{return typename static_array::element_const_ptr{ref::base()};}
@@ -499,12 +497,24 @@ protected:
 public:
 	using ref::operator==;
 	using ref::operator!=;
-
-	template<class Range0, class = decltype(adl_uninitialized_copy_n(&std::declval<Range0&>(), 1, std::declval<typename static_array::element_ptr&>()))>
+	
+	template<class TT, 
+		std::enable_if_t<std::is_constructible<T, TT>{}, int>* = nullptr, 
+		class = decltype(adl_uninitialized_copy_n(&std::declval<TT&>(), 1, std::declval<typename static_array::element_ptr&>()))
+	>
 	// cppcheck-suppress noExplicitConstructor ; because I want to use equal for lazy assigments form range-expressions
-	static_array(Range0&& r) : ref(static_array::allocate(typename static_array::layout_t{}.num_elements()), {}){
-		adl_uninitialized_copy_n(&r, 1, this->base());
+	static_array(TT&& tt) : ref(static_array::allocate(typename static_array::layout_t{}.num_elements()), {}){
+		adl_uninitialized_copy_n(&tt, 1, this->base());
 	}
+//	template<class Range0, 
+//		std::enable_if_t<std::is_constructible<typename static_array::element, typename Range0::element>{}, int>* = nullptr, 
+//		class = decltype(adl_uninitialized_copy_n(&std::declval<Range0&>(), 1, std::declval<typename static_array::element_ptr&>()))
+//	>
+////	template<class Range0, class = decltype(adl_uninitialized_copy_n(&std::declval<Range0&>(), 1, std::declval<typename static_array::element_ptr&>()))>
+//	// cppcheck-suppress noExplicitConstructor ; because I want to use equal for lazy assigments form range-expressions
+//	static_array(Range0&& r) : ref(static_array::allocate(typename static_array::layout_t{}.num_elements()), {}){
+//		adl_uninitialized_copy_n(&r, 1, this->base());
+//	}
 	static_array(typename static_array::extensions_type x, typename static_array::element const& e, allocator_type const& a) : //2
 		array_alloc{a}, 
 		ref(static_array::allocate(typename static_array::layout_t{x}.num_elements()), x)
@@ -537,21 +547,23 @@ public:
 	: array_alloc{a}, ref{static_array::allocate(typename static_array::layout_t{x}.num_elements()), x}{
 		if(not std::is_trivially_default_constructible<typename static_array::element>{}) uninitialized_value_construct();
 	}
-	template<class TT, class... Args> // cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
+	template<class TT, class... Args> 
+	// cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
 	static_array(multi::basic_array<TT, 0, Args...> const& other, allocator_type const& a = {})
 		: array_alloc{a}, ref(static_array::allocate(other.num_elements()), extensions(other))
 	{
 		using std::copy; copy(other.begin(), other.end(), this->begin());
 	}
-	template<class TT, class... Args> // cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
+	template<class TT, class... Args> 
+	// cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
 	static_array(array_ref<TT, 0, Args...> const& other)
 	:	array_alloc{}, ref{static_array::allocate(other.num_elements()), extensions(other)}{
-		uninitialized_copy_(other.data());
+		uninitialized_copy_(other.data_elements());
 	}
 	static_array(static_array const& other, allocator_type const& a)                      //5b
 	:	array_alloc{a}, ref{static_array::allocate(other.num_elements()), extensions(other)}{
 	//	assert(0);
-		uninitialized_copy_(other.data());
+		uninitialized_copy_(other.data_elements());
 	}
 	static_array(static_array const& o) :                                  //5b
 		array_alloc{o.get_allocator()}, 

@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv){//, *utf::tolerance(0.0001)){
 		multi::array<double, 1> w(size(M));
 		auto mv = blas::gemv(1., M, v);
 		copy_n(mv.begin(), mv.size(), w.begin());
-		BOOST_REQUIRE( w[1] == 91.3 );
+		BOOST_REQUIRE_CLOSE( w[1] , 91.3 , 0.00001 );
 		
 		multi::array<double, 1> w2(size(M));
 		MV(M, v, w2);
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_real){//, *utf::tolerance(0.0001)){
 		BOOST_REQUIRE( dot[0] == blas::dot(a, b) );
 	}
 	{
-		multi::array<double, 2> const MT = ~M;
+	//	multi::array<double, 2> const MT = ~M;
 		using namespace blas::operators;
 		BOOST_REQUIRE_SMALL( ((~+~M)%X - M%X)^2 , 1e-13 );
 	}
@@ -143,7 +143,8 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_real_complex){
 		multi::array<complex, 1> const Y3 = {214.02, 106.43, 188.37};
 		
 		using namespace blas::operators;
-		//	BOOST_REQUIRE_CLOSE( ((Y - Y3)^2)  ,  0. , 1e-13);
+		double const n2 = blas::nrm2(Y - Y3);
+		BOOST_REQUIRE_SMALL( n2 , 1e-13);
 	}
 }
 
@@ -237,7 +238,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_context){//, *utf::tolerance(0.0001)){
 	{
 		multi::array<double, 1>       w(size(M));
 		blas::gemv_n(ctxt, 1., begin(M), size(M), begin(v), 0., begin(w));
-		BOOST_REQUIRE( w[1] == 91.3 );
+		BOOST_REQUIRE_CLOSE( w[1] , 91.3 , 0.0001 );
 		BOOST_REQUIRE_CLOSE( w[2] , +blas::dot(M[2], v) , 0.0001 );
 	}
 	{
