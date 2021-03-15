@@ -125,8 +125,8 @@ class DiracMatrixComputeCUDA : public Resource
                                                log_values.device_data(), nw);
 #if NDEBUG
     // This is very useful to see whether the data after all kernels and cublas calls are run is wrong on the device or due to copy.
-    cuBLAS_LU::peekinvM_batched(hstream, psiM_mw_ptr, invM_mw_ptr, pivots_.device_data(), infos_.device_data(),
-                                log_values.device_data(), nw);
+    // cuBLAS_LU::peekinvM_batched(hstream, psiM_mw_ptr, invM_mw_ptr, pivots_.device_data(), infos_.device_data(),
+    //                             log_values.device_data(), nw);
 #endif
     cudaErrorCheck(cudaMemcpyAsync(invM_ptrs_.data(), invM_ptrs_.device_data(), invM_ptrs_.size(),
                                    cudaMemcpyDeviceToHost, hstream),

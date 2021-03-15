@@ -26,37 +26,37 @@ namespace cuBLAS_LU
 {
 
 
-template<int COLBS>
-__global__ void computeLogDet_kernel(const int n,
-                                     const cuDoubleComplex* const LU_diags,
-                                     const int* const pivots,
-                                     cuDoubleComplex* logdets)
-{
-  const int iw                                   = blockIdx.x;
-  const int block_num                            = blockIdx.y;
-  const cuDoubleComplex* __restrict__ LU_diag_iw = LU_diags + iw * n;
-  const int* __restrict__ pivot_iw               = pivots + iw * n;
-  int n_index                                    = threadIdx.x + block_num * COLBS;
-  __shared__ cuDoubleComplex logdet_vals[COLBS];
-  logdet_vals[threadIdx.x] = {0.0, 0.0};
-  if (n_index < n)
-  {
-    logdet_vals[threadIdx.x].x = norm(2, (double*)(LU_diag_iw + n_index));
-    logdet_vals[threadIdx.x].y = atan2(LU_diag_iw[n_index].y, LU_diag_iw[n_index].x);
-  }
-  // insure that when we reduce logdet_vals all the threads in the block are done.
-  __syncthreads();
-  {
-    cuDoubleComplex block_sum_log_det{0.0, 0.0};
-    for (int iv = 0; iv < COLBS; ++iv)
-    {
-      block_sum_log_det.x += logdet_vals[iv].x;
-      block_sum_log_det.y += logdet_vals[iv].y;
-    }
-    atomicAdd((double*)(logdets + iw), block_sum_log_det.x);
-    atomicAdd((double*)(logdets + iw) + 1, block_sum_log_det.y);
-  }
-}
+// template<int COLBS>
+// __global__ void computeLogDet_kernel(const int n,
+//                                      const cuDoubleComplex* const LU_diags,
+//                                      const int* const pivots,
+//                                      cuDoubleComplex* logdets)
+// {
+//   const int iw                                   = blockIdx.x;
+//   const int block_num                            = blockIdx.y;
+//   const cuDoubleComplex* __restrict__ LU_diag_iw = LU_diags + iw * n;
+//   const int* __restrict__ pivot_iw               = pivots + iw * n;
+//   int n_index                                    = threadIdx.x + block_num * COLBS;
+//   __shared__ cuDoubleComplex logdet_vals[COLBS];
+//   logdet_vals[threadIdx.x] = {0.0, 0.0};
+//   if (n_index < n)
+//   {
+//     logdet_vals[threadIdx.x].x = norm(2, (double*)(LU_diag_iw + n_index));
+//     logdet_vals[threadIdx.x].y = atan2(LU_diag_iw[n_index].y, LU_diag_iw[n_index].x);
+//   }
+//   // insure that when we reduce logdet_vals all the threads in the block are done.
+//   __syncthreads();
+//   {
+//     cuDoubleComplex block_sum_log_det{0.0, 0.0};
+//     for (int iv = 0; iv < COLBS; ++iv)
+//     {
+//       block_sum_log_det.x += logdet_vals[iv].x;
+//       block_sum_log_det.y += logdet_vals[iv].y;
+//     }
+//     atomicAdd((double*)(logdets + iw), block_sum_log_det.x);
+//     atomicAdd((double*)(logdets + iw) + 1, block_sum_log_det.y);
+//   }
+// }
 
 template<int COLBS>
 __global__ void computeLogDet_kernel(const int n,
@@ -76,18 +76,27 @@ __global__ void computeLogDet_kernel(const int n,
     logdet_vals[threadIdx.x].x = log(abs(LU_diag_iw[n_index]));
     logdet_vals[threadIdx.x].y = ((LU_diag_iw[n_index] < 0) != ((pivots_iw[n_index] - 1) == n_index)) * M_PI;
   }
+  if (threadIdx.x == 0 && blockIdx.y == 0)
+    logdets[iw] = {0.0, 0.0};
   // insure that when we reduce logdet_vals all the threads in the block are done.
   __syncthreads();
   if (threadIdx.x == 0)
   {
-    cuDoubleComplex block_sum_log_det{0.0, 0.0};
+    __shared__ cuDoubleComplex block_sum_log_det;
+    block_sum_log_det = {0.0, 0.0};
     for (int iv = 0; iv < COLBS; ++iv)
     {
       block_sum_log_det.x += logdet_vals[iv].x;
       block_sum_log_det.y += logdet_vals[iv].y;
     }
-    atomicAdd((double*)(logdets + iw), block_sum_log_det.x);
-    atomicAdd((double*)(logdets + iw) + 1, block_sum_log_det.y);
+    // No atomicAdd in cuda 10 for cuComplex/cuDoubleComplex
+    // c cast has precedence over +
+    atomicAdd((double*)&(logdets[iw].x), block_sum_log_det.x);
+    atomicAdd((double*)&(logdets[iw].y), block_sum_log_det.y);
+
+    // // this will not work of n > COLBS
+    // logdets[iw].x = block_sum_log_det.x;
+    // logdets[iw].y = block_sum_log_det.y;
   }
 }
 

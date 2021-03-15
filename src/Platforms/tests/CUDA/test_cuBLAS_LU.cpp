@@ -164,8 +164,12 @@ TEST_CASE("cuBLAS_LU::computeLogDet(batch=2)", "[platform][CUDA]")
   double* dev_lu;
   cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 8), "cudaMalloc failed");
 
-  std::complex<double>* log_values;
-  cudaErrorCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 2), "cudaMallocHost failed");
+  void * vp_log_values;
+  cudaErrorCheck(cudaMallocHost(&vp_log_values, sizeof(std::complex<double>) * 2), "cudaMallocHost failed");
+  // For values we expect zeroed as a side effect of a call we should poison them to test.
+  std::complex<double>* log_values = reinterpret_cast<std::complex<double>*>(new (vp_log_values) double[4]{1.0,1.0,1.0,1.0});
+  
+
   std::complex<double>* dev_log_values;
   cudaErrorCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 2), "cudaMalloc failed");
 
@@ -185,6 +189,12 @@ TEST_CASE("cuBLAS_LU::computeLogDet(batch=2)", "[platform][CUDA]")
                  "cudaMemcpyAsync failed copying log_values to device");
 
   int batch_size = 2;
+
+  // This is done artificially non zero initialize the log_values as they would be from a previous calculation.
+  cudaErrorCheck(cudaMemcpyAsync(dev_log_values, log_values, sizeof(std::complex<double>) * 2, cudaMemcpyHostToDevice,
+                                 hstream),
+                 "cudaMemcpyAsync failed copying log_values to device");
+
   cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, dev_lu, dev_pivots, dev_log_values, batch_size);
 
   cudaErrorCheck(cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 2, cudaMemcpyDeviceToHost,

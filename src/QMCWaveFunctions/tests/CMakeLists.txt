@@ -2,10 +2,11 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2020 QMCPACK developers.
+#// Copyright (c) 2021 QMCPACK developers.
 #//
 #// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
