@@ -116,7 +116,8 @@ struct Array<T, 0, base_type> : base_type{
 	Array& operator=(T t){base_type::operator=(t); return *this;}
 	using sizes_type = decltype(std::declval<base_type const&>().sizes());
 	sizes_type shape() const{return base_type::sizes();}
-	auto resize(sizes_type sizes){return base_type::reextent(sizes);}
+	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
+	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
 	operator T const&() const&{return *base_type::data_elements();}
 	operator T&() &{return *base_type::data_elements();}
 	operator T&&() &&{return std::move(*base_type::data_elements());}
@@ -159,6 +160,8 @@ struct Array<T, 1, base_type> : base_type{//blitz::Array<T, 1>{
 		std::transform(a.begin(), a.end(), ret.begin(), [&](auto const& e){return t*e;});
 		return ret;
 	}
+	typename base_type::element_ptr       data()      {return base_type::data_elements();}
+	typename base_type::element_const_ptr data() const{return base_type::data_elements();}
 };
 
 //using Range = blitz::Range;
