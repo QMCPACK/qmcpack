@@ -35,6 +35,7 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
+  ~NonLocalECPotential();
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
