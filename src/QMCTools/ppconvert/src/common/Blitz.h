@@ -6,6 +6,7 @@
 //
 // File developed by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Alfredo A. Correa, correaa@llnl.gov, Lawrence Livermore National Laboratory
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -20,67 +21,37 @@
 #include <numeric> // inner_product
 
 #include <string.h>
-//#include "blitz/array.h"
-//#include "blitz/tinyvec-et.h"
 
 #include <multi/array.hpp>
 
-typedef double scalar;
-
-// #define NDIM 3
-
-//template<class T, std::size_t N> using TinyVector = typename blitz::TinyVector<T, N>;
-
-template<class T, std::size_t N> struct TinyVector
- : std::array<T, N>{ using base_type =  std::array<T, N>;
-// : blitz::TinyVector<T, N>{ using base_type =  blitz::TinyVector<T, N>;
-//	using base_type::base_type;
-	template<class... Args, decltype(base_type(std::declval<Args&&>()...))* = nullptr> 
-	explicit TinyVector(Args&&... args) : base_type(std::forward<Args>(args)...){}
-//	T const& operator()(std::size_t n) const{return base_type::operator[](n);}
+template<class T, std::size_t N, class base_type = std::array<T, N>> 
+struct TinyVector : base_type{
+	TinyVector(T d = T(0)){base_type::fill(d);}
+	T const& operator()(std::size_t n) const{return base_type::operator[](n);}
 	T&       operator()(std::size_t n)      {return base_type::operator[](n);}
-	TinyVector(T d){base_type::fill(d);}
-	template<class OtherTinyVector, std::enable_if_t<sizeof(OtherTinyVector)==sizeof(T)*N and std::is_same<typename OtherTinyVector::T_numtype, T>{}, int> = 0>
-	TinyVector(OtherTinyVector const& other) : base_type(reinterpret_cast<base_type const&>(other)){}
-	template<class OtherTinyVector, std::enable_if_t<sizeof(OtherTinyVector)==sizeof(T)*N and std::is_same<typename OtherTinyVector::T_numtype, T>{}, int> = 0>
-	operator OtherTinyVector const&() const{return reinterpret_cast<OtherTinyVector const&>(*this);}
-	friend TinyVector& operator*=(TinyVector& v, scalar s){std::transform(v.begin(), v.end(), v.begin(), [&s](auto e){return e*s;}); return v;}
+	template<class Scalar>
+	friend TinyVector& operator*=(TinyVector& v, Scalar s){std::transform(v.begin(), v.end(), v.begin(), [&s](auto e){return e*s;}); return v;}
 };
 
-//template<class T, std::size_t N1, std::size_t N2> using TinyMatrix = typename blitz::TinyMatrix<T, N1, N2>;
-
-template<class T, std::size_t N1, std::size_t N2> 
-struct TinyMatrix
-	: std::array<std::array<T, N2>, N1>{
-	using base_type = std::array<std::array<T, N2>, N1>;
-// : blitz::TinyMatrix<T, N1, N2>{
-//	using base_type = blitz::TinyMatrix<T, N1, N2>;
-	using base_type::base_type;
+template<class T, std::size_t N1, std::size_t N2, class base_type = std::array<std::array<T, N2>, N1>> 
+struct TinyMatrix : base_type{
 	TinyMatrix& operator=(T t){
-		assert(t == 0);
 		std::array<T, N2> val; val.fill(t);
 		base_type::fill(val);
-	//	blitz::TinyMatrix<T, N1, N2>::operator=(t); 
 		return *this;
 	}
-	decltype(auto) operator()(std::size_t i, std::size_t j) const{return base_type::operator[](i)[j];}
-	decltype(auto) operator()(std::size_t i, std::size_t j)      {return base_type::operator[](i)[j];}
+	T const& operator()(std::size_t i, std::size_t j) const{return base_type::operator[](i)[j];}
+	T&       operator()(std::size_t i, std::size_t j)      {return base_type::operator[](i)[j];}
 	friend std::ostream& operator<<(std::ostream& os, TinyMatrix const& self){
 		for(auto i = 0; i != N1; ++i){
-			for(auto j = 0; j != N2; ++j){
-				os<< self(i, j) <<',';
-			}
+			for(auto j = 0; j != N2; ++j) os<< self(i, j) <<',';
 			os<<'\n';
 		}
 		return os;
 	}
 };
 
-
-template<class T> void what(T&&) = delete;
-//template<class T, std::size_t D> using Array = typename blitz::Array<T, D>;
-
-template<class T, int D, class base_type = boost::multi::array<T, D> /*blitz::Array<T, D>*/> // needs to be *int* for matching template parameters in functions
+template<class T, int D, class base_type = boost::multi::array<T, D>> // needs to be *int* for matching template parameters in functions
 struct Array : base_type{
 	using base_type::base_type;
 	Array& operator=(T t){base_type::operator=(t); return *this;}
@@ -108,25 +79,9 @@ struct Array : base_type{
 	typename base_type::element_const_ptr data() const{return base_type::data_elements();}
 };
 
-template<class T, class base_type> // needs to be int for matching templates
-struct Array<T, 0, base_type> : base_type{
+template<class T, class base_type>
+struct Array<T, 1, base_type> : base_type{
 	using base_type::base_type;
-//	using blitz::Array<T, 0>::Array;
-	Array(T const& t) = delete;
-	Array& operator=(T t){base_type::operator=(t); return *this;}
-	using sizes_type = decltype(std::declval<base_type const&>().sizes());
-	sizes_type shape() const{return base_type::sizes();}
-	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
-	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
-	operator T const&() const&{return *base_type::data_elements();}
-	operator T&() &{return *base_type::data_elements();}
-	operator T&&() &&{return std::move(*base_type::data_elements());}
-};
-
-template<class T, class base_type> // needs to be int for matching templates
-struct Array<T, 1, base_type> : base_type{//blitz::Array<T, 1>{
-	using base_type::base_type;
-//	using blitz::Array<T, 1>::Array;
 	Array& operator=(T t){std::fill(base_type::begin(), base_type::end(), t); return *this;}
 	friend Array operator-(Array const& a, Array const& b){
 		assert(a.size() == b.size());
@@ -140,7 +95,7 @@ struct Array<T, 1, base_type> : base_type{//blitz::Array<T, 1>{
 		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a + b;});
 		return ret;
 	}
-	operator Array<Array<T, 1>, 0>() const{return Array<Array<T, 1>, 0>({}, *this);}
+//	operator Array<Array<T, 1>, 0>() const{return Array<Array<T, 1>, 0>({}, *this);}
 	using sizes_type = decltype(std::declval<base_type const&>().sizes());
 	auto rows() const{return base_type::size();}
 	sizes_type shape() const{return base_type::sizes();}
@@ -164,10 +119,11 @@ struct Array<T, 1, base_type> : base_type{//blitz::Array<T, 1>{
 	typename base_type::element_const_ptr data() const{return base_type::data_elements();}
 };
 
-//using Range = blitz::Range;
-struct Range{// : blitz::Range{
+struct Range{
 	static auto all(){return boost::multi::all;}
 };
+
+typedef double scalar;
 
 typedef TinyVector<scalar, 1> Vec1;
 typedef TinyVector<scalar, 2> Vec2;
@@ -190,7 +146,6 @@ typedef TinyMatrix<std::complex<double>, 3, 3> cMat3;
 /* #define isinf(x) __isinfd(x) */
 /* #endif */
 
-// using blitz::Array;
 template<class T, int size>
 inline TinyVector<T, size> operator-(TinyVector<T, size> v)
 {
