@@ -17,7 +17,6 @@
 #ifndef IO_VAR_BASE_H
 #define IO_VAR_BASE_H
 
-#include "blitz/array.h"
 #include <iostream>
 
 #include "Blitz.h"
@@ -60,7 +59,7 @@ public:
 class IOVarBase
 {
 private:
-  blitz::nilArraySection n0;
+  nilArraySection n0;
 
 protected:
   std::string Name;
