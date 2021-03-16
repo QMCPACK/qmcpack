@@ -14,7 +14,7 @@
 /////////////////////////////////////////////////////////////
 
 #include "MatrixOps.h"
-#include <blitz/mstruct.h>
+
 #include "../config.h"
 
 //#ifdef NOUNDERSCORE 
