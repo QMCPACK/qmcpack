@@ -83,7 +83,7 @@ bool IOTreeClass::WriteVar(std::string name, const Array<TinyVector<T, LEN>, RAN
     shape[dim] = val.extent(dim);
   shape[RANK] = LEN;
 
-  Array<T, RANK + 1> aval((T*)&(val(0)[0]), shape, blitz::neverDeleteData);
+  Array<T, RANK + 1> aval((T*)&(val(0)[0]), shape, neverDeleteData);
   return WriteVar(name, aval);
 }
 
