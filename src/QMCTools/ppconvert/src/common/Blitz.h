@@ -95,9 +95,8 @@ struct Array<T, 1, base_type> : base_type{
 		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a + b;});
 		return ret;
 	}
-//	operator Array<Array<T, 1>, 0>() const{return Array<Array<T, 1>, 0>({}, *this);}
-	using sizes_type = decltype(std::declval<base_type const&>().sizes());
 	auto rows() const{return base_type::size();}
+	using sizes_type = decltype(std::declval<base_type const&>().sizes());
 	sizes_type shape() const{return base_type::sizes();}
 	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
 	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
@@ -122,6 +121,12 @@ struct Array<T, 1, base_type> : base_type{
 struct Range{
 	static auto all(){return boost::multi::all;}
 };
+
+class nilArraySection{};
+
+template<class... Args> class SliceInfo{};
+
+constexpr class neverDeleteData_t{} neverDeleteData;
 
 typedef double scalar;
 
