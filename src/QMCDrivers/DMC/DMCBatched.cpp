@@ -86,8 +86,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     {
       ScopedTimer recompute_timer(dmc_timers.step_begin_recompute_timer);
-      ps_dispatcher.flex_loadWalker(walker_elecs, walkers, true);
-      ps_dispatcher.flex_update(walker_elecs, true);
       std::vector<bool> recompute_mask;
       recompute_mask.reserve(walkers.size());
       for (MCPWalker& awalker : walkers)
@@ -98,6 +96,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         }
         else
           recompute_mask.push_back(false);
+      ps_dispatcher.flex_loadWalker(walker_elecs, walkers, recompute_mask, true);
       twf_dispatcher.flex_recompute(walker_twfs, walker_elecs, recompute_mask);
     }
 
