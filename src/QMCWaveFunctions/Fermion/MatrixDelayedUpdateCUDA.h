@@ -180,16 +180,6 @@ class MatrixDelayedUpdateCUDA
     }
   }
 
-  void resize_updateRow_scratch_arrays(int norb, size_t nw)
-  {
-    size_t total_size = norb * nw;
-    if (mw_mem_->mw_temp.size() < total_size)
-    {
-      mw_mem_->mw_temp.resize(total_size);
-      mw_mem_->mw_rcopy.resize(total_size);
-    }
-  }
-
   /** compute the row of up-to-date Ainv
    * @param Ainv inverse matrix
    * @param rowchanged the row id corresponding to the proposed electron
@@ -275,14 +265,14 @@ class MatrixDelayedUpdateCUDA
 
     auto& hstream              = engine_leader.cuda_handles_->hstream;
     auto& updateRow_buffer_H2D = engine_leader.mw_mem_->updateRow_buffer_H2D;
-    auto& cminusone_vec        = engine_leader.mw_mem_->cminusone_vec;
     auto& mw_temp              = engine_leader.mw_mem_->mw_temp;
     auto& mw_rcopy             = engine_leader.mw_mem_->mw_rcopy;
     auto& cone_vec             = engine_leader.mw_mem_->cone_vec;
     auto& czero_vec            = engine_leader.mw_mem_->czero_vec;
     const int norb             = engine_leader.psiMinv.rows();
     const int lda              = engine_leader.psiMinv.cols();
-    engine_leader.resize_updateRow_scratch_arrays(norb, n_accepted);
+    mw_temp.resize(norb * n_accepted);
+    mw_rcopy.resize(norb * n_accepted);
     updateRow_buffer_H2D.resize((sizeof(T*) * 8 + sizeof(T)) * n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
@@ -670,9 +660,6 @@ public:
     // update the inverse matrix
     auto& hstream              = engine_leader.cuda_handles_->hstream;
     auto& h_cublas             = engine_leader.cuda_handles_->h_cublas;
-    auto& cminusone_vec        = engine_leader.mw_mem_->cminusone_vec;
-    auto& cone_vec             = engine_leader.mw_mem_->cone_vec;
-    auto& czero_vec            = engine_leader.mw_mem_->czero_vec;
     auto& updateInv_buffer_H2D = engine_leader.mw_mem_->updateInv_buffer_H2D;
     const int norb             = engine_leader.psiMinv.rows();
     const int lda              = engine_leader.psiMinv.cols();
