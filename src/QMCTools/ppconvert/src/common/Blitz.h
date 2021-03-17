@@ -118,7 +118,8 @@ struct Array<T, 1, base_type> : base_type{
 	typename base_type::element_const_ptr data() const{return base_type::data_elements();}
 };
 
-struct Range{
+struct Range : boost::multi::index_range{
+	using boost::multi::index_range::index_range;
 	static auto all(){return boost::multi::all;}
 };
 
