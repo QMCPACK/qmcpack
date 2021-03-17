@@ -13,8 +13,8 @@
 //#include "../../blas/cuda.hpp"
 //#include "../../../adaptors/cuda.hpp"
 
-#include<complex>
 #include<cassert>
+#include<complex>
 #include<numeric>
 #include<type_traits>
 
@@ -26,22 +26,22 @@ BOOST_AUTO_TEST_CASE(blas_dot_context){
 	multi::array<float, 1> const B = {1.,2.,3.};
 	blas::context ctxt;
 	auto C = +blas::dot(ctxt, A, B);
-	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), 0.f) );
+	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), 0.F) );
 }
 
 BOOST_AUTO_TEST_CASE(blas_dot_no_context){
 	multi::array<float, 1> const A = {1.,2.,3.};
 	multi::array<float, 1> const B = {1.,2.,3.};
 	auto C = +blas::dot(A, B);
-	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), 0.f) );
+	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), 0.F) );
 }
 
 BOOST_AUTO_TEST_CASE(blas_dot_no_context_out_param){
 	multi::array<float, 1> const A = {1.,2.,3.};
 	multi::array<float, 1> const B = {1.,2.,3.};
-	float C;
+	float C = NAN;
 	blas::dot(A, B, C);
-	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), 0.f) );
+	BOOST_REQUIRE( C == std::inner_product(begin(A), end(A), begin(B), 0.F) );
 }
 
 BOOST_AUTO_TEST_CASE(blas_dot_no_context_out_param_complex){

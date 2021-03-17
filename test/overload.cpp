@@ -13,8 +13,8 @@ $CXX $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 
 namespace multi = boost::multi;
 
-std::string what_is(multi::array<             double , 2>&){return "real"   ;}
-std::string what_is(multi::array<std::complex<double>, 2>&){return "complex";}
+auto what_is(multi::array<             double , 2> const& /*arr*/){return std::string{"real"}   ;}
+auto what_is(multi::array<std::complex<double>, 2> const& /*arr*/){return std::string{"complex"};}
 
 BOOST_AUTO_TEST_CASE(multi_array_range_section){
 	multi::array<             double , 2> real_A({10, 20});

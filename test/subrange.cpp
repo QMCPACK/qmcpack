@@ -24,7 +24,8 @@ namespace multi = boost::multi;
 BOOST_AUTO_TEST_CASE(multi_array_range_section){
 {
 	multi::array<double, 4> A({10, 20, 30, 40}, 99.);
-	std::iota(data_elements(A), data_elements(A) + num_elements(A), 0.);
+	std::iota(A.elements().begin(), A.elements().end(), 0.);
+
 #if 0
 #if defined(__cpp_lib_apply) and __cpp_lib_apply>=201603
 	using std::apply;

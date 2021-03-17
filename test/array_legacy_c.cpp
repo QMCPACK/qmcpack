@@ -6,9 +6,6 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include<iostream>
-
-#include "../array_ref.hpp"
 #include "../array.hpp"
 
 #include<iostream>
@@ -16,16 +13,16 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #include<complex>
 
 namespace multi = boost::multi;
-using std::cout; using std::cerr;
 
 namespace fake{
-typedef double fftw_complex[2];
+using fftw_complex = double[2];
+
 void fftw_plan_dft(
 	int rank, const int *n, 
 	fftw_complex *in, fftw_complex *out, int sign, unsigned flags){
 	(void)rank, (void)n, (void)in, (void)out, (void)sign, (void)flags;
 }
-}
+} // namespace fake
 
 BOOST_AUTO_TEST_CASE(array_legacy_c){
 

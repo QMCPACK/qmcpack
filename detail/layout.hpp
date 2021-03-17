@@ -283,6 +283,7 @@ public:
 //	friend constexpr bool empty(layout_t const& s){return s.empty();}
 	       constexpr bool is_empty()        const    {return not nelems_;}
 	friend constexpr bool is_empty(layout_t const& s){return s.is_empty();}
+	[[deprecated("use ::is_empty()")]]
 	       constexpr bool    empty()        const    {return is_empty();}
 
 	constexpr index_extension extension()        const&{

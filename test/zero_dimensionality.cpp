@@ -57,11 +57,11 @@ BOOST_AUTO_TEST_CASE(zero_dimensionality){
 	}
 	{
 		multi::array<std::complex<double>, 2> a({1, 2}, std::allocator<std::complex<double>>{});
-		assert( size(a) == 1 );
+		BOOST_REQUIRE( size(a) == 1 );
 	}
 	{
 		multi::array<std::complex<double>, 0> a = std::complex<double>{1., 2.};
-		assert( num_elements(a) == 1 );
+		BOOST_REQUIRE( num_elements(a) == 1 );
 	}
 	{
 		double d = 2.;

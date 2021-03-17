@@ -18,7 +18,6 @@ template<class It, class F> class involuter;
 
 template<class Ref, class Involution>
 class involuted{
-protected:
 	Ref r_;
 	MULTI_NO_UNIQUE_ADDRESS Involution f_;
 public:
@@ -26,8 +25,9 @@ public:
 	constexpr involuted(Ref r, Involution f) : r_{std::forward<Ref>(r)}, f_{f}{}
 	constexpr explicit involuted(Ref r) : r_{std::forward<Ref>(r)}, f_{}{}
 	involuted(involuted const&) = default;
-	involuted(involuted&&)      = default;
-	constexpr involuted& operator=(involuted const& other)=delete;
+	involuted(involuted&&) noexcept = default;
+	constexpr auto operator=(involuted const& other) = delete;
+	~involuted() = default;
 	constexpr operator decay_type() const&{return f_(r_);}
 	constexpr decltype(auto) operator&()&&{return involuter<decltype(&std::declval<Ref>()), Involution>{&r_, f_};}
 	template<class DecayType>
