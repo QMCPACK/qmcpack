@@ -24,7 +24,6 @@
 
 namespace qmcplusplus
 {
-
 /** DriverWalker multi walker resource collections
  * It currently supports VMC and DMC only
  */
@@ -43,30 +42,15 @@ struct DriverWalkerResourceCollection
 class DriverWalkerResourceCollectionLock
 {
 public:
-  DriverWalkerResourceCollectionLock(DriverWalkerResourceCollection& driverwalker_res, ParticleSet& pset, TrialWaveFunction& twf, QMCHamiltonian& ham)
-      : pset_res_lock_(driverwalker_res.pset_res, pset), twf_res_lock_(driverwalker_res.twf_res, twf), ham_res_lock_(driverwalker_res.ham_res, ham)
+  DriverWalkerResourceCollectionLock(DriverWalkerResourceCollection& driverwalker_res,
+                                     TrialWaveFunction& twf,
+                                     QMCHamiltonian& ham)
+      : twf_res_lock_(driverwalker_res.twf_res, twf), ham_res_lock_(driverwalker_res.ham_res, ham)
   {}
 
 private:
-  ResourceCollectionLock<ParticleSet> pset_res_lock_;
   ResourceCollectionLock<TrialWaveFunction> twf_res_lock_;
   ResourceCollectionLock<QMCHamiltonian> ham_res_lock_;
-};
-
-/** DriverWalkerResourceCollection locks
- * Helper class for acquiring and releasing multi walker resources.
- * Only ParticleSet and TrialWaveFunction resources are engaged.
- */
-class DriverWalkerResourceCollection_PsetTWF_Lock
-{
-public:
-  DriverWalkerResourceCollection_PsetTWF_Lock(DriverWalkerResourceCollection& driverwalker_res, ParticleSet& pset, TrialWaveFunction& twf)
-      : pset_res_lock_(driverwalker_res.pset_res, pset), twf_res_lock_(driverwalker_res.twf_res, twf)
-  {}
-
-private:
-  ResourceCollectionLock<ParticleSet> pset_res_lock_;
-  ResourceCollectionLock<TrialWaveFunction> twf_res_lock_;
 };
 } // namespace qmcplusplus
 #endif

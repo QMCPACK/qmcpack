@@ -30,24 +30,6 @@ NonLocalECPComponent::~NonLocalECPComponent()
     delete VP;
 }
 
-void NonLocalECPComponent::createResource(ResourceCollection& collection) const
-{
-  if (VP)
-    VP->createResource(collection);
-}
-
-void NonLocalECPComponent::acquireResource(ResourceCollection& collection)
-{
-  if (VP)
-    VP->acquireResource(collection);
-}
-
-void NonLocalECPComponent::releaseResource(ResourceCollection& collection)
-{
-  if (VP)
-    VP->releaseResource(collection);
-}
-
 NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet& qp)
 {
   NonLocalECPComponent* myclone = new NonLocalECPComponent(*this);
@@ -205,6 +187,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
                                           const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                                           const RefVector<const NLPPJob<RealType>>& joblist,
                                           std::vector<RealType>& pairpots,
+                                          ResourceCollection& collection,
                                           bool use_DLA)
 {
   if (ecp_component_list.size() > 1)
@@ -234,6 +217,9 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
         deltaV_list.push_back(component.deltaV);
         psiratios_list.push_back(component.psiratio);
       }
+
+      auto vp_to_p_list = VirtualParticleSet::RefVectorWithLeaderParticleSet(vp_list);
+      ResourceCollectionTeamLock<ParticleSet> vp_res_lock(collection, vp_to_p_list);
 
       VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
 

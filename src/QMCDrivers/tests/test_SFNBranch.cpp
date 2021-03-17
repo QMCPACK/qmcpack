@@ -33,17 +33,17 @@ class SetupSFNBranch
 public:
   SetupSFNBranch(Communicate* comm)
   {
-    comm_                   = comm;
-    emb_                    = std::make_unique<EstimatorManagerNew>(comm_);
+    comm_ = comm;
+    emb_  = std::make_unique<EstimatorManagerNew>(comm_);
   }
 
   SetupSFNBranch()
   {
-    comm_                   = OHMMS::Controller;
-    emb_                    = std::make_unique<EstimatorManagerNew>(comm_);
+    comm_ = OHMMS::Controller;
+    emb_  = std::make_unique<EstimatorManagerNew>(comm_);
   }
 
-  SFNBranch operator()(ParticleSet& p_set, TrialWaveFunction& twf, QMCHamiltonian& ham)
+  std::unique_ptr<SFNBranch> operator()(ParticleSet& p_set, TrialWaveFunction& twf, QMCHamiltonian& ham)
   {
     pop_ = std::make_unique<MCPopulation>(1, comm_->rank(), walker_confs_, &p_set, &twf, &ham);
     // MCPopulation owns it walkers it cannot just take refs so we just create and then update its walkers.
@@ -54,11 +54,11 @@ public:
     walkers[0].get().R[0] = 1.0;
     walkers[1].get().R[0] = 0.5;
 
-    SFNBranch sfnb(tau_, num_global_walkers_);
+    auto sfnb = std::make_unique<SFNBranch>(tau_, num_global_walkers_);
 
-    createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
+    createMyNode(*sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
 
-    sfnb.initParam(*pop_, 0, 0, false, false);
+    sfnb->initParam(*pop_, 0, 0, false, false);
 
     return sfnb;
   }
@@ -88,8 +88,9 @@ TEST_CASE("SFNBranch::branch(MCPopulation...)", "[drivers]")
   using namespace testing;
   SetupPools pools;
   SetupSFNBranch setup_sfnb(pools.comm);
-  SFNBranch sfnb = setup_sfnb(*pools.particle_pool->getParticleSet("e"), *pools.wavefunction_pool->getPrimary(),
-                              *pools.hamiltonian_pool->getPrimary());
+  std::unique_ptr<SFNBranch> sfnb =
+      setup_sfnb(*pools.particle_pool->getParticleSet("e"), *pools.wavefunction_pool->getPrimary(),
+                 *pools.hamiltonian_pool->getPrimary());
 }
 
 

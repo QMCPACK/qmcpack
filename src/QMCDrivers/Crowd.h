@@ -59,8 +59,6 @@ public:
   EstimatorManagerCrowd& get_estimator_manager_crowd() { return estimator_manager_crowd_; }
   void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
 
-  void loadWalkers();
-
   /** Clears all walker vectors
    *
    *  Unless you are _redistributing_ walkers to crowds don't

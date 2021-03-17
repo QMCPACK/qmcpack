@@ -318,15 +318,18 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
 
   auto& walkers = crowd.get_walkers();
-  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_elecs()[0],
-                                            crowd.get_walker_twfs()[0], crowd.get_walker_hamiltonians()[0]);
+  DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
+                                               crowd.get_walker_hamiltonians()[0]);
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
   const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
                                                                 crowd.get_walker_hamiltonians());
 
-  crowd.loadWalkers();
-  ps_dispatcher.flex_update(walker_elecs);
+  ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+
+  std::vector<bool> recompute_mask(walkers.size(), true);
+  ps_dispatcher.flex_loadWalker(walker_elecs, walkers, recompute_mask, true);
+  ps_dispatcher.flex_donePbyP(walker_elecs);
   twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
 
   // For consistency this should be in ParticleSet as a flex call, but I think its a problem
@@ -361,6 +364,7 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
     walker.ReleasedNodeAge    = 0;
     walker.ReleasedNodeWeight = 0;
     walker.Weight             = 1;
+    walker.wasTouched         = false;
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     doesDoinTheseLastMatter(walkers[iw]);

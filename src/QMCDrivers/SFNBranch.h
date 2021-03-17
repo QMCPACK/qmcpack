@@ -151,7 +151,7 @@ public:
   SFNBranch(RealType tau, int nideal);
 
   ///copy constructor
-  SFNBranch(const SFNBranch& abranch);
+  SFNBranch(const SFNBranch& abranch) = delete;
 
   ~SFNBranch();
 
@@ -273,23 +273,6 @@ public:
     //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
   }
 
-  /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
-   * @param enew new energy
-   * @param eold old energy
-   * @param scnew  \f$ V_{sc}(R_{new})/V(R_{new}) \f$
-   * @param scold  \f$ V_{sc}(R_{old})/V(R_{old}) \f$
-   * @param taueff
-   */
-  inline RealType branchWeightTau(RealType enew, RealType eold, RealType scnew, RealType scold, RealType taueff)
-  {
-    ScaleSum += scnew + scold;
-    ScaleNum += 2;
-    FullPrecRealType scavg = (ScaleNum > 10000) ? ScaleSum / (RealType)ScaleNum : 1.0;
-    FullPrecRealType s1    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew / scavg;
-    FullPrecRealType s0    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold / scavg;
-    return std::exp(taueff * 0.5 * (s1 + s0));
-  }
-
   inline RealType getEref() const { return vParam[SBVP::EREF]; }
   inline RealType getEtrial() const { return vParam[SBVP::ETRIAL]; }
   inline RealType getTau() const { return vParam[SBVP::TAU]; }
@@ -350,18 +333,6 @@ private:
   ParameterSet m_param;
   ///string parameters
   std::vector<std::string> sParam;
-
-  /// Used for the average scaling
-  FullPrecRealType ScaleSum;
-  unsigned long ScaleNum;
-  //@TODO move these to private
-  ///LogJacob
-  RealType LogJacobRef;
-  ///LogNorm
-  std::vector<RealType> LogNorm;
-
-  ///Releasednode
-  bool RN;
 };
 
 std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);

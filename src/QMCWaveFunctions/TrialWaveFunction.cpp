@@ -186,7 +186,7 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   }
 }
 
-void TrialWaveFunction::recompute(ParticleSet& P)
+void TrialWaveFunction::recompute(const ParticleSet& P)
 {
   ScopedTimer local_timer(TWF_timers_[RECOMPUTE_TIMER]);
   for (int i = 0; i < Z.size(); ++i)
@@ -196,6 +196,23 @@ void TrialWaveFunction::recompute(ParticleSet& P)
   }
 }
 
+void TrialWaveFunction::mw_recompute(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                     const RefVectorWithLeader<ParticleSet>& p_list,
+                                     const std::vector<bool>& recompute)
+{
+  auto& wf_leader = wf_list.getLeader();
+  auto& p_leader  = p_list.getLeader();
+  ScopedTimer local_timer(wf_leader.TWF_timers_[RECOMPUTE_TIMER]);
+
+  auto& wavefunction_components = wf_leader.Z;
+  const int num_wfc             = wf_leader.Z.size();
+  for (int i = 0; i < num_wfc; ++i)
+  {
+    ScopedTimer z_timer(wf_leader.WFC_timers_[RECOMPUTE_TIMER + TIMER_SKIP * i]);
+    const auto wfc_list(extractWFCRefList(wf_list, i));
+    wavefunction_components[i]->mw_recompute(wfc_list, p_list, recompute);
+  }
+}
 
 TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, bool recomputeall)
 {

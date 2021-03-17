@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <vector>
 #include "Resource.h"
+#include "type_traits/RefVectorWithLeader.h"
 
 namespace qmcplusplus
 {
@@ -29,7 +30,7 @@ public:
   size_t size() const { return collection_.size(); }
   void printResources() const;
 
-  size_t addResource(std::unique_ptr<Resource>&& res);
+  size_t addResource(std::unique_ptr<Resource>&& res, bool noprint = false);
   std::unique_ptr<Resource> lendResource();
   void takebackResource(std::unique_ptr<Resource>&& res);
 
@@ -43,6 +44,8 @@ private:
   std::vector<std::unique_ptr<Resource>> collection_;
 };
 
+/** handles acquire/release resource by the consumer.
+ */
 template<class CONSUMER>
 class ResourceCollectionLock
 {
@@ -72,6 +75,44 @@ public:
 private:
   ResourceCollection& resource;
   CONSUMER& consumer;
+  const size_t cursor_begin_;
+  const bool active;
+};
+
+
+/** handles acquire/release resource by the consumer (RefVectorWithLeader type).
+ */
+template<class CONSUMER>
+class ResourceCollectionTeamLock
+{
+public:
+  ResourceCollectionTeamLock(ResourceCollection& res_ref,
+                             const RefVectorWithLeader<CONSUMER>& consumer_ref,
+                             size_t cursor = 0)
+      : resource(res_ref), consumer(consumer_ref), cursor_begin_(cursor), active(!res_ref.empty())
+  {
+    if (active)
+    {
+      resource.rewind(cursor_begin_);
+      consumer.getLeader().acquireResource(resource, consumer);
+    }
+  }
+
+  ~ResourceCollectionTeamLock()
+  {
+    if (active)
+    {
+      resource.rewind(cursor_begin_);
+      consumer.getLeader().releaseResource(resource, consumer);
+    }
+  }
+
+  ResourceCollectionTeamLock(const ResourceCollectionTeamLock&) = delete;
+  ResourceCollectionTeamLock(ResourceCollectionTeamLock&&)      = delete;
+
+private:
+  ResourceCollection& resource;
+  const RefVectorWithLeader<CONSUMER>& consumer;
   const size_t cursor_begin_;
   const bool active;
 };

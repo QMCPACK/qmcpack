@@ -18,13 +18,15 @@ PSdispatcher::PSdispatcher(bool use_batch) : use_batch_(use_batch) {}
 
 void PSdispatcher::flex_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
                                    const RefVector<Walker_t>& walkers,
+                                   const std::vector<bool>& recompute,
                                    bool pbyp) const
 {
   if (use_batch_)
-    ParticleSet::mw_loadWalker(p_list, walkers, pbyp);
+    ParticleSet::mw_loadWalker(p_list, walkers, recompute, pbyp);
   else
     for (size_t iw = 0; iw < p_list.size(); iw++)
-      p_list[iw].loadWalker(walkers[iw], pbyp);
+      if (recompute[iw])
+        p_list[iw].loadWalker(walkers[iw], pbyp);
 }
 
 void PSdispatcher::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK) const

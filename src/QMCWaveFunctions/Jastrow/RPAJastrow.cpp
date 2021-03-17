@@ -232,7 +232,7 @@ void RPAJastrow::reportStatus(std::ostream& os)
     Psi[i]->reportStatus(os);
 }
 
-RPAJastrow::LogValueType RPAJastrow::evaluateLog(ParticleSet& P,
+RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& G,
                                                  ParticleSet::ParticleLaplacian_t& L)
 {

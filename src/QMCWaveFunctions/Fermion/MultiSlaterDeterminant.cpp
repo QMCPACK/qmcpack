@@ -147,7 +147,7 @@ void MultiSlaterDeterminant::resize(int n1, int n2)
   }
 }
 
-WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P,
+WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(const ParticleSet& P,
                                                                   ParticleSet::ParticleGradient_t& G,
                                                                   ParticleSet::ParticleLaplacian_t& L)
 {
@@ -205,7 +205,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
   return psi;
 }
 
-WaveFunctionComponent::LogValueType MultiSlaterDeterminant::evaluateLog(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminant::evaluateLog(const ParticleSet& P,
                                                                         ParticleSet::ParticleGradient_t& G,
                                                                         ParticleSet::ParticleLaplacian_t& L)
 {

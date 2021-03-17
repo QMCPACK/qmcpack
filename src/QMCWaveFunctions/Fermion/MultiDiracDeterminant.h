@@ -220,13 +220,13 @@ public:
     return PsiValueType();
   }
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
   }
 
-  ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
@@ -386,9 +386,9 @@ public:
   void evaluateDetsForPtclMove(ParticleSet& P, int iat);
   void evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat);
   void evaluateGrads(ParticleSet& P, int iat);
-  void evaluateAllForPtclMove(ParticleSet& P, int iat);
+  void evaluateAllForPtclMove(const ParticleSet& P, int iat);
   // full evaluation of all the structures from scratch, used in evaluateLog for example
-  void evaluateForWalkerMove(ParticleSet& P, bool fromScratch = true);
+  void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
 
   ///total number of particles
   int NP;
