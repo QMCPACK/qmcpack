@@ -139,11 +139,11 @@ void QMCDriverNew::startup(xmlNodePtr cur, QMCDriverNew::AdjustedWalkerCounts aw
 
   if (dispatchers_.are_walkers_batched())
   {
-    app_log() << "Creating multi walker shared resources" << std::endl;
+    app_debug() << "Creating multi walker shared resources" << std::endl;
     population_.get_golden_electrons()->createResource(golden_resource_.pset_res);
     population_.get_golden_twf().createResource(golden_resource_.twf_res);
     population_.get_golden_hamiltonian().createResource(golden_resource_.ham_res);
-    app_log() << "Multi walker shared resources creation completed" << std::endl;
+    app_debug() << "Multi walker shared resources creation completed" << std::endl;
   }
 
   crowds_.resize(awc.walkers_per_crowd.size());

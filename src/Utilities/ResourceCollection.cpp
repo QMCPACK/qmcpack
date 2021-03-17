@@ -38,8 +38,8 @@ size_t ResourceCollection::addResource(std::unique_ptr<Resource>&& res, bool nop
   size_t index              = collection_.size();
   res->index_in_collection_ = index;
   if (!noprint)
-    app_log() << "Multi walker shared resource \"" << res->getName() << "\" created in resource collection \"" << name_
-              << "\" index " << index << std::endl;
+    app_debug_stream() << "Multi walker shared resource \"" << res->getName() << "\" created in resource collection \""
+                << name_ << "\" index " << index << std::endl;
   collection_.emplace_back(std::move(res));
   return index;
 }
