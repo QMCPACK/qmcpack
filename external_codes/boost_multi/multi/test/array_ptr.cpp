@@ -10,10 +10,9 @@ $CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #include "../array.hpp"
 
 namespace multi = boost::multi;
-namespace utf = boost::unit_test;
 
-template<class T> T&& fwd_array(T&& t){
-	return std::forward<T>(t);}
+// NOLINTNEXTLINE(fuchsia-trailing-return): trailing return helps readability
+template<class T> auto fwd_array(T&& t)->T&&{return std::forward<T>(t);}
 
 BOOST_AUTO_TEST_CASE(multi_array_ptr_equality){
 	multi::array<double, 2> A = {
@@ -39,25 +38,27 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr_equality){
 
 BOOST_AUTO_TEST_CASE(multi_array_ptr){
 	{
-		double a[4][5] = {
-			{ 0,  1,  2,  3,  4}, 
-			{ 5,  6,  7,  8,  9}, 
-			{10, 11, 12, 13, 14}, 
-			{15, 16, 17, 18, 19}
+		std::array<std::array<double, 5>, 4> a{
+			{
+				{ 0.,  1.,  2.,  3.,  4.}, 
+				{ 5.,  6.,  7.,  8.,  9.}, 
+				{10., 11., 12., 13., 14.}, 
+				{15., 16., 17., 18., 19.}
+			}
 		};
-		double b[4][5];
+		std::array<std::array<double, 5>, 4> b{};
 
-		multi::array_ptr<double, 2> aP = &a; // = multi::addressof(a);
+		multi::array_ptr<double, 2> aP{&a};
 		BOOST_REQUIRE( aP->extensions() == multi::extensions(a) );
 		BOOST_REQUIRE( extensions(*aP) == multi::extensions(a) );
 		using multi::extensions;
 		BOOST_REQUIRE( extensions(*aP) == extensions(a) );
 		BOOST_REQUIRE( &aP->operator[](1)[1] == &a[1][1] );
 
-		multi::array_ptr<double, 2> aP2 = &a;
+		multi::array_ptr<double, 2> aP2{&a};
 		BOOST_REQUIRE( aP == aP2 );
 
-		multi::array_ptr<double, 2> bP = &b;
+		multi::array_ptr<double, 2> bP{&b};
 		BOOST_REQUIRE( bP != aP );
 
 		bP = aP;
@@ -72,11 +73,13 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr){
 		BOOST_REQUIRE( size(aR) == aP->size() );
 	}
 	{
-		double a[4][5] = {
-			{ 0,  1,  2,  3,  4}, 
-			{ 5,  6,  7,  8,  9}, 
-			{10, 11, 12, 13, 14}, 
-			{15, 16, 17, 18, 19}
+		std::array<std::array<double, 5>, 4> a = 
+	//	double a[4][5] 
+		{
+			std::array<double, 5>{ 0.,  1.,  2.,  3.,  4.}, 
+			std::array<double, 5>{ 5.,  6.,  7.,  8.,  9.}, 
+			std::array<double, 5>{10., 11., 12., 13., 14.}, 
+			std::array<double, 5>{15., 16., 17., 18., 19.}
 		};
 		
 		std::vector<multi::array_ptr<double, 1>> ps;

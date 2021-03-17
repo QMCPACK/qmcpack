@@ -125,6 +125,13 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_realcomplex){
 	using complex = std::complex<double>;
 {
 	complex c{1, 2};
+	auto pC = reinterpret_cast<std::array<double, 2>*>(&c);
+	(*pC)[0] = 11;
+	BOOST_REQUIRE( pC );
+	BOOST_REQUIRE(real(c)==11);
+}
+{
+	complex c{1, 2};
 	auto pC = reinterpret_cast<double(*)[2]>(&c);
 	(*pC)[0] = 11;
 	BOOST_REQUIRE( pC );

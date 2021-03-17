@@ -1629,7 +1629,11 @@ public:
 
 	[[deprecated("use ::data_elements()")]]
 	       constexpr typename array_ref::element_ptr data()         const&   {return data_elements();}//array_ref::base_;} 
+#if not defined(__NVCC__)
 	[[deprecated("use data_elements()")]] 
+#else
+	__attribute__((deprecated))
+#endif
 	friend constexpr typename array_ref::element_ptr data(array_ref const& s){return s.data_elements();}
 
 //	constexpr typename array_ref::decay_type const& operator*() const&{return static_cast<typename array_ref::decay_type const&>(*this);}
@@ -1679,6 +1683,10 @@ public:
 	template<class TT, std::size_t N> 
 	// cppcheck-suppress noExplicitConstructor ; because array_ptr can represent a pointer to a c-array
 	constexpr array_ptr(TT(*t)[N]) : basic_ptr(data_elements(*t), layout(*t)){}
+	template<class TT, std::size_t N>
+	constexpr explicit array_ptr(std::array<TT, N>* p) :basic_ptr(data_elements(*p), layout(*p)){}
+	template<class TT, std::size_t N>
+	constexpr explicit array_ptr(std::array<TT, N> const* p) :basic_ptr(data_elements(*p), layout(*p)){}
 	constexpr array_ref<T, D, Ptr> operator*() const{
 		return array_ref<T, D, Ptr>{this->base(), (*this)->extensions()};//multi::layout_t<D>{x}};
 	}

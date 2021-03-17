@@ -3,8 +3,12 @@ $CXX $0 -o $0x&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2018-2020
 
-#include<iostream>
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi constructors"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
+
 #include<cassert>
+#include<iostream>
 
 namespace fancy{
 
@@ -20,20 +24,29 @@ public:
 	using iterator_category = std::random_access_iterator_tag;
 	ptr() = default;//ptr(ptr const=default; ptr& operator=(ptr const&)=default;
 	explicit ptr(std::nullptr_t){}
-	template<class Other> explicit ptr(ptr<Other> const&){}
-	reference operator*() const{return reference{&value};}
-	ptr operator+(difference_type) const{return *this;}
-	ptr& operator+=(difference_type){return *this;}
-	ptr& operator++(){return operator+=(1);}
-	friend difference_type operator-(ptr const&, ptr const&){return 0;}
-	bool operator==(ptr const&) const{return true;}
-	bool operator!=(ptr const&) const{return false;}
+	template<class Other> explicit ptr(ptr<Other> const& /*unused*/){}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+	auto operator*() const -> reference {return reference{&value};}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+	auto operator+(difference_type /*unused*/) const -> ptr{return *this;}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+	auto operator+=(difference_type /*unused*/) -> ptr&{return *this;}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+	auto operator++() -> ptr& {return operator+=(1);}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+	friend auto operator-(ptr const& /*a*/, ptr const& /*b*/) -> difference_type{return 0;}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+	auto operator==(ptr const& /*other*/) const -> bool{return true;}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+	auto operator!=(ptr const& /*other*/) const -> bool{return false;}
 //	explicit operator T*() const{return &value;}
-	ptr const& operator->() const{return *this;}
-	friend ptr to_address(ptr const& p){return p;}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
+	auto operator->() const -> ptr const&{return *this;}
+	// NOLINTNEXTLINE(fuchsia-trailing-return): this class simulates pointer
+	friend auto to_address(ptr const& p) -> ptr {return p;}
 	explicit operator bool(){return false;}
 //	operator double*() const{return &value;}
-	friend std::allocator<value_type> get_allocator(ptr const&){return std::allocator<value_type>{};}
+	friend auto get_allocator(ptr const& /*self*/){return std::allocator<value_type>{};}
 };
 template<> double ptr<double>::value = 42.;
 template<> double ptr<double const>::value = 42.;
@@ -41,49 +54,51 @@ template<> double ptr<double const>::value = 42.;
 template<class T> struct ref;
 
 template<class T> struct ref{
-protected:
+private:
 	T* p_;
 	explicit ref(T* p) : p_{p}{}
 	friend class ptr<T>;
 	friend struct ref<T const>;
 public:
 	explicit ref(ref<std::remove_const_t<T>> const& other) : p_{other.p_}{}
-	bool operator==(ref const&) const{return true;}
-	bool operator!=(ref const&) const{return false;}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator): this class simulates a reference
+	auto operator==(ref const& /*other*/) const{return true;}
+	// NOLINTNEXTLINE(fuchsia-overloaded-operator): this class simulates a reference
+	auto operator!=(ref const& /*other*/) const{return false;}
 	using decay_t = std::decay_t<T>;
 };
 
 template<class T> struct allocator{
 	using pointer = ptr<T>;
 	using value_type = T;
-	auto allocate(std::size_t){return pointer{};}
-	void deallocate(pointer, std::size_t){}
-	std::true_type operator==(allocator const&){return {};}
-	allocator(){}
-	template<class T2> allocator(allocator<T2> const&){}
+	auto allocate(std::size_t /*size*/){return pointer{};}
+	void deallocate(pointer /*base*/, std::size_t /*size*/){}
+//	std::true_type operator==(allocator const&){return {};}
+	allocator() = default;
+	template<class T2> explicit allocator(allocator<T2> const& /*other*/){}
 	template<class... Args>
-	void construct(pointer, Args&&...){}
-	void destroy(pointer){}
+	void construct(pointer /*location*/, Args&&... /*args*/){}
+	void destroy(pointer /*location*/){}
 };
 
 // all these are optional, depending on the level of specialization needed
 template<class Ptr, class T, class Size>
-ptr<T> copy_n(Ptr, Size, ptr<T> d){ // custom copy_n, Boost.Multi uses copy_n
+auto copy_n(Ptr /*first*/, Size /*count*/, ptr<T> result){
 	std::cerr << "called Pointer-based copy_n(Ptr, n, fancy::ptr)" << std::endl; 
-	return d;
+	return result;
 }
 template<class Ptr, class T, class Size>
-Ptr copy_n(ptr<T>, Size, Ptr d){ // custom copy_n, Boost.Multi uses copy_n
+auto copy_n(ptr<T> /*first*/, Size /*count*/, Ptr result){
 	std::cerr << "called Pointer-based copy_n(fancy::ptr, n, Ptr)" << std::endl; 
-	return d;
+	return result;
 }
 template<class T1, class T2, class Size>
-ptr<T2> copy_n(ptr<T1>, Size, ptr<T2> d){ // custom copy_n, Boost.Multi uses copy_n
+auto copy_n(ptr<T1> /*first*/, Size /*count*/, ptr<T2> result){
 	std::cerr << "called Pointer-based copy_n(fancy::ptr, n, fancy::ptr)" << std::endl; 
-	return d;
+	return result;
 }
 
-}
+} // namespace fancy
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // multi-fancy glue, where should this be? 
@@ -95,8 +110,8 @@ ptr<T2> copy_n(ptr<T1>, Size, ptr<T2> d){ // custom copy_n, Boost.Multi uses cop
 namespace boost{
 namespace multi{
 
-template<class It, class T>  // custom copy 1D (aka strided copy)
-fancy::ptr<T> copy(It first, It last, fancy::ptr<T> dest){ (void)last;
+template<class It, class T>
+auto copy(It first, It last, fancy::ptr<T> dest){
 	return copy(first, last, multi::array_iterator<T, 1, fancy::ptr<T>>{dest});
 //	std::cerr << "1D copy(it1D, it1D, it1D) with strides " << stride(first) << " " << stride(dest) << std::endl;
 //	return dest;
@@ -120,23 +135,22 @@ auto copy(It first, It last, multi::array_iterator<T, 2, fancy::ptr<T>> dest){ (
 //	return copy(first, last, dest);
 //}
 
-}}
+} // namespace multi
+} // namespace boost
 
 ////////////////////////////////////////////////////////////////////////////////
 // user code
 ////////////////////////////////////////////////////////////////////////////////
 
-using std::cout; using std::cerr;
-namespace multi = boost::multi;
+//namespace multi = boost::multi;
 
-int main(){
+BOOST_AUTO_TEST_CASE(multi_fancy){
+//	multi::array<double, 2, fancy::allocator<double>> A({5, 5});
+//	BOOST_REQUIRE( size(A) == 5 );
+//	BOOST_REQUIRE( A[1][1] == A[2][2] );
+}
+
 #if 0
-	multi::array<double, 2, fancy::allocator<double>> A( 
-//		multi::index_extensions<2>
-		{5, 5}
-	); // default element ctor
-	assert( size(A) == 5 );
-	assert( A[1][1] == A[2][2] );
 
 	multi::array<double, 2, fancy::allocator<double>> B(A); // copy ctor
 	assert( A[1][1] == B[1][1] );
@@ -160,6 +174,6 @@ int main(){
 //	copy_n(A.data(), 25, A.data());
 	static_assert( multi::array_iterator<double, 2, double*>::rank{} == 2, "!");
 #endif
-}
+
 
 

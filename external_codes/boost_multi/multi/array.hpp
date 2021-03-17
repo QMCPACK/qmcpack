@@ -319,8 +319,18 @@ public:
 
 	[[deprecated("use ::data_elements()")]] typename static_array::element_ptr data()       {return ref::data_elements();}
 	[[deprecated("use ::data_elements()")]] constexpr auto data() const{return typename static_array::element_const_ptr{ref::data_elements()};}
-	[[deprecated("use data_elements()")]] friend typename static_array::element_ptr       data(static_array&       s){return s.data_elements();}
-	[[deprecated("use data_elements()")]] friend typename static_array::element_const_ptr data(static_array const& s){return s.data_elements();}
+#ifndef __NVCC__ // deprecated friend doesn't work in nvcc
+	[[deprecated("use data_elements()")]] 
+#else
+	__attribute__((deprecated))
+#endif
+	friend typename static_array::element_ptr       data(static_array&       s){return s.data_elements();}
+#ifndef __NVCC__ // deprecated friend doesn't work in nvcc
+	[[deprecated("use data_elements()")]] 
+#else
+	__attribute__((deprecated))
+#endif
+	friend typename static_array::element_const_ptr data(static_array const& s){return s.data_elements();}
 
 	element_const_ptr                   data_elements() const&{return this->base_;}
 	typename static_array::element_ptr  data_elements()      &{return this->base_;}

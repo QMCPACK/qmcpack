@@ -176,6 +176,20 @@ clang++:
     - cmake --build . --verbose -- --quiet --no-print-directory
     - ctest --output-on-failure
 
+clang++-tidy:
+  stage: test
+  script:
+    - export CXX="clang++"
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet clang clang-tidy cmake make libboost-test-dev libblas-dev libblas-dev liblapack-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - clang-tidy --version
+    - mkdir build && cd build
+    - clang-tidy -checks=*,-fuchsia-default-arguments-calls,-fuchsia-statically-constructed-objects,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-cppcoreguidelines-macro-usage,-cppcoreguidelines-avoid-non-const-global-variables,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-llvmlibc-restrict-system-libc-headers,-cert-err58-cpp --warnings-as-errors=* --list-checks
+    - cmake .. -DCMAKE_CXX_CLANG_TIDY="clang-tidy;-checks=*,-fuchsia-default-arguments-calls,-fuchsia-statically-constructed-objects,-fuchsia-overloaded-operator,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-cppcoreguidelines-macro-usage,-cppcoreguidelines-avoid-non-const-global-variables,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-llvmlibc-restrict-system-libc-headers,-cert-err58-cpp;--warnings-as-errors=-*"
+    - cmake --build . --verbose -- --quiet --no-print-directory
+    - ctest --output-on-failure
+
 clang++-std17:
   stage: test
   script:
@@ -376,6 +390,7 @@ g++-cppcheck:
     - mkdir build && cd build
     - cmake -DCMAKE_CXX_CPPCHECK="cppcheck;--enable=all;--suppress=missingIncludeSystem;--suppress=unmatchedSuppression;--suppress=missingInclude;--inline-suppr;-D__align__;-DCUDARTAPI;--language=c++;--std=c++17;--error-exitcode=666" ..
     - cmake --build .
+    - ctest --output-on-failure
 
 inq-g++-latest:
   stage: test

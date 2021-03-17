@@ -6,18 +6,16 @@ $CXX $0 -o $0x -DMULTI_ACCESS_NDEBUG -lboost_unit_test_framework&&$0x&&rm $0x;ex
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi element access"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
-#include <boost/test/execution_monitor.hpp>  // for boost::execution_exception
 
 #include "../array.hpp"
 
 #include <boost/hana/integral_constant.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
-#include<vector>
 #include<cassert>
 #include<iostream>
+#include<vector>
 
-namespace multi = boost::multi;
 namespace hana = boost::hana;
 
 using std::cout;
@@ -44,42 +42,38 @@ if constexpr(noexcept(const_aux(ConD))) static_assert(ConD, MsG);\
 template<typename Integral, Integral const n>
 struct integral_constant : private hana::integral_constant<Integral, n>{
 //	using hana::integral_constant<Integral, n>::integral_constant;
-	constexpr operator Integral const&() const{
+	constexpr explicit operator Integral const&() const{
 		return hana::integral_constant<Integral, n>::value;
 	}
-	constexpr integral_constant(){}
-	explicit constexpr integral_constant(Integral const& i){
+	integral_constant() = default;
+	constexpr explicit integral_constant(Integral const& i){
 		assert(i == n);
 	}
 	constexpr auto operator==(Integral const& o) const{return static_cast<Integral const&>(*this)==o;}
-	constexpr std::true_type operator==(integral_constant const&){return {};}
+	constexpr auto operator==(integral_constant const&/*other*/){return std::true_type{};}
 	template<Integral n2, typename = std::enable_if_t<n2!=n> >
-	constexpr std::false_type operator==(integral_constant<Integral, n2> const&){return {};}
+	constexpr auto operator==(integral_constant<Integral, n2> const&/*other*/){return std::false_type{};}
 	template<Integral n2>
-	friend constexpr auto operator+(integral_constant const&, integral_constant<Integral, n2> const&){
+	friend constexpr auto operator+(integral_constant const&/*a*/, integral_constant<Integral, n2> const&/*b*/){
 		return integral_constant<Integral, hana::integral_constant<Integral, n>::value + n2>{};
 	}
 	template<Integral n2>
-	friend constexpr auto operator-(integral_constant const&, integral_constant<Integral, n2> const&){
+	friend constexpr auto operator-(integral_constant const&/*a*/, integral_constant<Integral, n2> const&/*b*/){
 		return integral_constant<Integral, hana::integral_constant<Integral, n>::value - n2>{};
 	}
-	constexpr integral_constant& operator=(Integral other){assert(other == n); return *this;}
-	friend constexpr auto operator>=(Integral const& a, integral_constant const&){return a >= n;}
-	friend constexpr auto operator<(Integral const& a, integral_constant const&){return a < n;}
+//	constexpr auto operator=(Integral other) -> integral_constant&{assert(other == n); return *this;}
+	friend constexpr auto operator>=(Integral const& a, integral_constant const&/*self*/){return a >= n;}
+	friend constexpr auto operator<(Integral const& a, integral_constant const&/*self*/){return a < n;}
 };
-
-template<class T> T& evoke(T&& t){return t;}
-
-template<class T> void what(T&&) = delete;
 
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(multi_range){
 
 #if defined(__cpp_deduction_guides) and __cpp_deduction_guides
-	BOOST_REQUIRE(( multi::range{5, 5}.size() == 0 ));
+	BOOST_REQUIRE(( multi::range{5, 5}.empty() ));
 #else
-	BOOST_REQUIRE(( multi::range<std::ptrdiff_t>{5, 5}.size() == 0 ));
+	BOOST_REQUIRE(( multi::range<std::ptrdiff_t>{5, 5}.empty() ));
 #endif
 {
 	auto r = multi::range<std::ptrdiff_t>{5, 10};

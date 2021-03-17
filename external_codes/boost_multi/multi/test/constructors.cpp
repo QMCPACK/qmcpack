@@ -13,8 +13,8 @@ $CXXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #include<complex>
 #include<functional>
 #include<iostream>
-#include<vector>
 #include<numeric>
+#include<vector>
 
 namespace multi = boost::multi;
 
@@ -22,6 +22,7 @@ using complex = std::complex<double>;
 
 struct multiplies_bind1st{
 	explicit multiplies_bind1st(multi::array<complex, 2>&& m) : m_(std::move(m)){} // this produces a bug in nvcc11.0
+private:
 	multi::array<complex, 2> m_;
 };
 

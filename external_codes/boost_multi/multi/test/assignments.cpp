@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(assignments){
 		BOOST_REQUIRE( not is_empty(A) );
 
 		multi::array<double, 1> V;
-		BOOST_REQUIRE( V.empty() );
+		BOOST_REQUIRE( V.is_empty() );
 	}
 	{
 		std::vector<double> v(5*7, 99.), w(5*7, 33.);
@@ -136,12 +136,15 @@ BOOST_AUTO_TEST_CASE(assignments){
 	}
 }
 
-template<class T, class Allocator = std::allocator<T> > // T must be specified, double, complex<double>
-multi::array<T, 2, Allocator> eye(multi::iextensions<2> ie, Allocator alloc = {}){
+template<class T, class Allocator>
+multi::array<T, 2, Allocator> eye(multi::iextensions<2> ie, Allocator alloc){
 	multi::array<T, 2, Allocator> ret(ie, 0., alloc);
 	ret.diagonal().fill(1.);
 	return ret;
 }
+
+template<class T>
+auto eye(multi::iextensions<2> ie){return eye<T>(ie, std::allocator<T>{});}
 
 BOOST_AUTO_TEST_CASE(assigment_temporary){
 	multi::array<double, 2> Id = eye<double>({3, 3});

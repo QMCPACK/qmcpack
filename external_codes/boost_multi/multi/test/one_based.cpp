@@ -86,11 +86,11 @@ BOOST_AUTO_TEST_CASE(one_based_2D){
 
 BOOST_AUTO_TEST_CASE(one_base_2D_ref){
 	
-	double A[3][5] = {
+	std::array<std::array<double, 5>, 3> A = {{
 		{ 1.,  2.,  3.,  4.,  5.},
 		{ 6.,  7.,  8.,  9., 10.},
 		{11., 12., 13., 14., 15.}
-	};
+	}};
 	
 	multi::array_ref<double, 2> const& Ar = *multi::array_ptr<double, 2>(&A[0][0], {3, 5});
 	BOOST_REQUIRE( &Ar[1][3] == &A[1][3] );
