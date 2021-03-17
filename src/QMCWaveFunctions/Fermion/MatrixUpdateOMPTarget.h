@@ -23,7 +23,6 @@
 
 namespace qmcplusplus
 {
-
 template<typename T>
 struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
 {
@@ -46,7 +45,9 @@ struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
 
   MatrixUpdateOMPTargetMultiWalkerMem() : Resource("MatrixUpdateOMPTargetMultiWalkerMem") {}
 
-  MatrixUpdateOMPTargetMultiWalkerMem(const MatrixUpdateOMPTargetMultiWalkerMem&) : MatrixUpdateOMPTargetMultiWalkerMem() {}
+  MatrixUpdateOMPTargetMultiWalkerMem(const MatrixUpdateOMPTargetMultiWalkerMem&)
+      : MatrixUpdateOMPTargetMultiWalkerMem()
+  {}
 
   Resource* makeClone() const override { return new MatrixUpdateOMPTargetMultiWalkerMem(*this); }
 };
@@ -118,14 +119,12 @@ public:
   {
     auto res_ptr = dynamic_cast<MatrixUpdateOMPTargetMultiWalkerMem<T>*>(collection.lendResource().release());
     if (!res_ptr)
-      throw std::runtime_error("MatrixUpdateOMPTarget::acquireResource dynamic_cast MatrixUpdateOMPTargetMultiWalkerMem failed");
+      throw std::runtime_error(
+          "MatrixUpdateOMPTarget::acquireResource dynamic_cast MatrixUpdateOMPTargetMultiWalkerMem failed");
     mw_mem_.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection)
-  {
-    collection.takebackResource(std::move(mw_mem_));
-  }
+  void releaseResource(ResourceCollection& collection) { collection.takebackResource(std::move(mw_mem_)); }
 
   OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
 
@@ -178,7 +177,7 @@ public:
                           std::vector<GT>& grad_now)
   {
     auto& engine_leader = engines.getLeader();
-    auto& buffer_H2D = engine_leader.mw_mem_->buffer_H2D;
+    auto& buffer_H2D    = engine_leader.mw_mem_->buffer_H2D;
     auto& grads_value_v = engine_leader.mw_mem_->grads_value_v;
 
     const int norb = engine_leader.psiMinv.rows();
@@ -269,14 +268,14 @@ public:
       return;
 
     auto& engine_leader = engines.getLeader();
-    auto& buffer_H2D = engine_leader.mw_mem_->buffer_H2D;
+    auto& buffer_H2D    = engine_leader.mw_mem_->buffer_H2D;
     auto& grads_value_v = engine_leader.mw_mem_->grads_value_v;
-    auto& cone_vec = engine_leader.mw_mem_->cone_vec;
-    auto& czero_vec = engine_leader.mw_mem_->czero_vec;
-    auto& mw_temp = engine_leader.mw_mem_->mw_temp;
-    auto& mw_rcopy = engine_leader.mw_mem_->mw_rcopy;
-    const int norb          = engine_leader.psiMinv.rows();
-    const int lda           = engine_leader.psiMinv.cols();
+    auto& cone_vec      = engine_leader.mw_mem_->cone_vec;
+    auto& czero_vec     = engine_leader.mw_mem_->czero_vec;
+    auto& mw_temp       = engine_leader.mw_mem_->mw_temp;
+    auto& mw_rcopy      = engine_leader.mw_mem_->mw_rcopy;
+    const int norb      = engine_leader.psiMinv.rows();
+    const int lda       = engine_leader.psiMinv.cols();
 
     engine_leader.resize_scratch_arrays(norb, n_accepted);
 
@@ -376,7 +375,7 @@ public:
 
   std::vector<const T*> static mw_getInvRow(const RefVectorWithLeader<This_t>& engines, const int row_id, bool on_host)
   {
-    const size_t nw = engines.size();
+    const size_t nw    = engines.size();
     const size_t ncols = engines.getLeader().psiMinv.cols();
     std::vector<const T*> row_ptr_list;
     row_ptr_list.reserve(nw);

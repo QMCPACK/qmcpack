@@ -199,8 +199,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
       engine_list.push_back(det.det_engine_);
     }
 
-    auto psiMinv_row_dev_ptr_list =
-        DET_ENGINE_TYPE::mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
+    auto psiMinv_row_dev_ptr_list = DET_ENGINE_TYPE::mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
     phi_vgl_v.resize(NumOrbitals * wfc_list.size());
     ratios_local.resize(wfc_list.size());
@@ -293,8 +292,8 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
     PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
   }
 
-  DET_ENGINE_TYPE::mw_accept_rejectRow(engine_list, WorkingIndex, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list,
-                                             isAccepted, phi_vgl_v.device_data(), phi_vgl_v.capacity(), ratios_local);
+  DET_ENGINE_TYPE::mw_accept_rejectRow(engine_list, WorkingIndex, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, isAccepted,
+                                       phi_vgl_v.device_data(), phi_vgl_v.capacity(), ratios_local);
 
   if (!safe_to_delay)
     DET_ENGINE_TYPE::mw_updateInvMat(engine_list);
@@ -556,8 +555,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithL
       engine_list.push_back(det.det_engine_);
     }
 
-    auto psiMinv_row_dev_ptr_list =
-        DET_ENGINE_TYPE::mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
+    auto psiMinv_row_dev_ptr_list = DET_ENGINE_TYPE::mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
     phi_vgl_v.resize(NumOrbitals * wfc_list.size());
     ratios_local.resize(wfc_list.size());
