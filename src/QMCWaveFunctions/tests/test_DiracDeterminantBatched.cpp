@@ -101,13 +101,11 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 
 
   ParticleSet elec;
-
   elec.create(3);
 
   testing::DiracDeterminantBatchedTest ddbt;
   ddbt.guardMultiWalkerRes(ddb);
   ddb.recompute(ddbt.get_mw_res(ddb), elec);
-
   Matrix<ValueType> b;
   b.resize(3, 3);
 
@@ -141,7 +139,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 1) = 0.7119205298;
   b(2, 2) = 0.9105960265;
 
-  checkMatrix(ddb.psiMinv, b, std::string("bad ddb.psiMinv after accept move in"  __FILE__), __LINE__);
+  checkMatrix(ddb.get_det_engine().get_psiMinv(), b, std::string("bad ddb.psiMinv after accept move in"  __FILE__), __LINE__);
 }
 
 //#define DUMP_INFO
@@ -308,7 +306,7 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
   std::cout << ddb.psiMinv << std::endl;
 #endif
 
-  checkMatrix(ddb.psiMinv, orig_a);
+  checkMatrix(ddb.get_det_engine().get_psiMinv(), orig_a);
 }
 
 TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
@@ -409,7 +407,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   // force update Ainv in ddc using SM-1 code path
   ddc.completeUpdates();
 
-  checkMatrix(ddc.psiMinv, a_update1);
+  checkMatrix(ddc.get_det_engine().get_psiMinv(), a_update1);
 
   grad = ddc.evalGrad(elec, 1);
 
@@ -480,7 +478,7 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 #endif
 
   // compare all the elements of psiMinv in ddc and orig_a
-  checkMatrix(ddc.psiMinv, orig_a);
+  checkMatrix(ddc.get_det_engine().get_psiMinv(), orig_a);
 }
 
 } // namespace qmcplusplus

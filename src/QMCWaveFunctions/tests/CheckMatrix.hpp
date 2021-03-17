@@ -16,7 +16,7 @@
 
 namespace qmcplusplus {
 template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
-void checkMatrix(Matrix<T1, ALLOC1>& a, Matrix<T2, ALLOC2>& b, const std::string & desc = "", int line = 0)
+void checkMatrix(const Matrix<T1, ALLOC1>& a, const Matrix<T2, ALLOC2>& b, const std::string & desc = "", int line = 0)
 {
   REQUIRE(a.rows() >= b.rows());
   REQUIRE(a.cols() >= b.cols());

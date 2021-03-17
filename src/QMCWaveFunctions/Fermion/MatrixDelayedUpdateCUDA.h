@@ -353,7 +353,10 @@ public:
     collection.takebackResource(std::move(det_inverter_));
   }
 
-  inline OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
+  inline const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv; }
+  /** Why do you need to modify another classes data member?
+   */
+  inline OffloadPinnedValueMatrix_t& get_nonconst_psiMinv() { return psiMinv; }
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 

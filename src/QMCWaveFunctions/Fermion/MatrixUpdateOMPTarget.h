@@ -100,7 +100,8 @@ public:
   void acquireResource(ResourceCollection& collection) {}
   void releaseResource(ResourceCollection& collection) {}
 
-  OffloadPinnedValueMatrix_t& get_psiMinv() { return psiMinv; }
+  const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv; }
+  OffloadPinnedValueMatrix_t& get_nonconst_psiMinv() { return psiMinv; }
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
