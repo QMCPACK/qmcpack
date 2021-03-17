@@ -121,7 +121,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 1) = -0.04586322768;
   b(2, 2) = 0.3927890292;
 
-  checkMatrix(ddb.psiMinv, b, std::string("ddb.psiMinv in"  __FILE__), __LINE__);
+  checkMatrix(ddb.get_det_engine().get_psiMinv(), b, std::string("ddb.psiMinv in"  __FILE__), __LINE__);
 
 
   ParticleSet::GradType grad;
@@ -141,7 +141,7 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
   b(2, 1) = 0.7119205298;
   b(2, 2) = 0.9105960265;
 
-  checkMatrix(ddb.psiMinv, b, std::string("ddb.psiMinv in"  __FILE__), __LINE__);
+  checkMatrix(ddb.psiMinv, b, std::string("bad ddb.psiMinv after accept move in"  __FILE__), __LINE__);
 }
 
 //#define DUMP_INFO

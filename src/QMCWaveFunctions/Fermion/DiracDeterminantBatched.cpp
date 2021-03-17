@@ -843,7 +843,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   wfc_leader.guardMultiWalkerRes();
   auto& mw_res       = *wfc_leader.mw_res_;
-
+  mw_res.log_values.resize(wfc_list.size());
   mw_recompute(mw_res, wfc_list, p_list);
 
   for (int iw = 0; iw < wfc_list.size(); iw++)
@@ -861,11 +861,12 @@ void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMulti
     ScopedTimer spo_timer(SPOVGLTimer);
     ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, d2psiM);
+    psiM_temp = psiM_temp_host;
     auto* psiM_vgl_ptr = psiM_vgl.data();
     // transfer host to device, total size 4, g(3) + l(1)
     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[psiM_vgl.capacity():psiM_vgl.capacity()*4])")
   }
-
+  mw_res.log_values.resize(1);
   invertPsiM(mw_res,psiM_temp);
 }
 

@@ -355,13 +355,13 @@ if (add_estimator_tests)
     )
 
   # Still some issue with SpinDensityNew in the complete application
-  # SIMPLE_RUN_AND_CHECK(
-  #   short-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
-  #   "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  #   qmc_spindens_vmcbatch_short${IFEXT}.in.xml
-  #   ${NMPI} ${NOMP}
-  #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
-  #   )
+  SIMPLE_RUN_AND_CHECK(
+    short-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_spindens_vmcbatch_short${IFEXT}.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
+    )
 
   SIMPLE_RUN_AND_CHECK(
     short-diamondC_1x1x1_pp-dmc-estimator-spindensity

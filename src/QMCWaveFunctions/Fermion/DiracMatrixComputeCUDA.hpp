@@ -111,6 +111,9 @@ class DiracMatrixComputeCUDA : public Resource
     LU_diags_fp_.resize(n * nw);
     cudaStream_t hstream;
     cublasErrorCheck(cublasGetStream(h_cublas, &hstream), "cublasGetStream failed!");
+    cudaErrorCheck(cudaMemcpyAsync(psi_Ms.device_data(), psi_Ms.data(), psi_Ms.size() * sizeof(T_FP),
+                                   cudaMemcpyHostToDevice, hstream),
+                   "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
     cudaErrorCheck(cudaMemcpyAsync(psiM_ptrs_.device_data(), psiM_ptrs_.data(), psiM_ptrs_.size(),
                                    cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync psiM_ptrs_ failed!");
@@ -138,9 +141,6 @@ class DiracMatrixComputeCUDA : public Resource
                                    log_values.size() * sizeof(std::complex<TREAL>), cudaMemcpyDeviceToHost, hstream),
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
-
-    std::cout << "invM_fp_ (" << inv_Ms.size() << "): " << inv_Ms << '\n';
-    std::cout << "log_values_ [" << log_values << "]\n";
   }
 
 public:
@@ -154,8 +154,8 @@ public:
                         OffloadPinnedMatrix<TMAT>& inv_a_mat,
                         OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
-    const int n   = inv_a_mat.rows();
-    const int lda = inv_a_mat.cols();
+    const int n   = a_mat.rows();
+    const int lda = a_mat.cols();
     psiM_fp_.resize(n * lda);
     invM_fp_.resize(n * lda);
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
@@ -163,11 +163,11 @@ public:
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
     computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
-    cudaErrorCheck(cudaStreamSynchronize(cuda_handles.hstream), "cudaStreamSynchronize failed!");
-    Matrix<T_FP> data_ref_matrix;
+    OffloadPinnedMatrix<T_FP> data_ref_matrix;
     data_ref_matrix.attachReference(invM_fp_.data(), n, n);
     // Use ohmms matrix to do element wise assignment with possible narrowing conversion.
     inv_a_mat = data_ref_matrix;
+    cudaErrorCheck(cudaMemcpyAsync(inv_a_mat.device_data(), inv_a_mat.data(), inv_a_mat.size()*sizeof(TMAT), cudaMemcpyHostToDevice, cuda_handles.hstream), "cudaMemcpyAsync of inv_a_mat to device failed!");
   }
 
   /** as it stands there is no point in a_mats and inv_a_mats being Pinned since they aren't 
@@ -187,20 +187,14 @@ public:
     invM_fp_.resize(n * lda * nw);
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, a_mats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
-    cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size() * sizeof(T_FP),
-                                   cudaMemcpyHostToDevice, cuda_handles.hstream),
-                   "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
     computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
-    cudaErrorCheck(cudaMemcpyAsync(invM_fp_.data(), invM_fp_.device_data(), invM_fp_.size() * sizeof(T_FP),
-                                   cudaMemcpyDeviceToHost, cuda_handles.hstream),
-                   "cudaMemcpyAsync failed copying back DiracMatrixBatch::invM_fp from device");
-    cudaErrorCheck(cudaStreamSynchronize(cuda_handles.hstream), "cudaStreamSynchronize failed!");
     for (int iw = 0; iw < a_mats.size(); ++iw)
     {
       OffloadPinnedMatrix<T_FP> data_ref_matrix;
       data_ref_matrix.attachReference(invM_fp_.data() + nsqr * iw, n, n);
       // Use ohmms matrix to do element wise assignment with possible narrowing conversion.
       inv_a_mats[iw].get() = data_ref_matrix;
+      cudaErrorCheck(cudaMemcpyAsync(inv_a_mats[iw].get().device_data(), inv_a_mats[iw].get().data(), inv_a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice, cuda_handles.hstream), "cudaMemcpyAsync of inv_a_mat to device failed!");
     }
   }
 };
