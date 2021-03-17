@@ -59,6 +59,7 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       RealType tauovermass = Tau * MassInvS[ig];
       RealType oneover2tau = 0.5 / (tauovermass);
       RealType sqrttau     = std::sqrt(tauovermass);
+      Psi.prepareGroup(W, ig);
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
         PosType dr;
@@ -128,6 +129,7 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   movepbyp_timer_.stop();
   buffer_timer_.start();
   RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
+  assert(checkLogAndGL(W, Psi));
   W.saveWalker(thisWalker);
   buffer_timer_.stop();
   // end PbyP moves

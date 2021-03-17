@@ -102,7 +102,7 @@ void out1(int n, std::string str = "NULL") {}
 //{ std::cout <<"MDD: " <<str <<"  " <<n << std::endl; std::cout.flush(); }
 
 
-void MultiDiracDeterminant::evaluateForWalkerMove(ParticleSet& P, bool fromScratch)
+void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fromScratch)
 {
   evalWTimer.start();
   if (fromScratch)

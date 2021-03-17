@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 
 template<typename ST, typename TT>
-struct OffloadMultiWalkerMem: public Resource
+struct SplineOMPTargetMultiWalkerMem: public Resource
 {
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
@@ -41,11 +41,11 @@ struct OffloadMultiWalkerMem: public Resource
   ///multi purpose H2D buffer for mw_evaluateDetRatios
   Vector<char, OffloadPinnedAllocator<char>> det_ratios_buffer_H2D;
 
-  OffloadMultiWalkerMem() : Resource("OffloadMultiWalkerMem") {}
+  SplineOMPTargetMultiWalkerMem() : Resource("SplineOMPTargetMultiWalkerMem") {}
 
-  OffloadMultiWalkerMem(const OffloadMultiWalkerMem&) : OffloadMultiWalkerMem() {}
+  SplineOMPTargetMultiWalkerMem(const SplineOMPTargetMultiWalkerMem&) : SplineOMPTargetMultiWalkerMem() {}
 
-  Resource* makeClone() const override { return new OffloadMultiWalkerMem(*this); }
+  Resource* makeClone() const override { return new SplineOMPTargetMultiWalkerMem(*this); }
 };
 }
 #endif

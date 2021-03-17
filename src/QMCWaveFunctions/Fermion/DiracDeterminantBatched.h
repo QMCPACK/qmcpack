@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -62,6 +63,118 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
   std::vector<GradType> grad_new_local;
 };
 
+namespace dd_details
+{
+
+template<class DET_ENGINE>
+void mw_recomputeDispatch(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list,
+                          const std::vector<bool>& recompute)
+{
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  const auto nw    = wfc_list.size();
+
+  RefVectorWithLeader<WaveFunctionComponent> wfc_filtered_list(wfc_list.getLeader());
+  RefVectorWithLeader<ParticleSet> p_filtered_list(p_list.getLeader());
+  RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
+  RefVector<ValueMatrix_t> psiM_temp_list;
+  RefVector<GradMatrix_t> dpsiM_list;
+  RefVector<ValueMatrix_t> d2psiM_list;
+
+  wfc_filtered_list.reserve(nw);
+  p_filtered_list.reserve(nw);
+  phi_list.reserve(nw);
+  psiM_temp_list.reserve(nw);
+  dpsiM_list.reserve(nw);
+  d2psiM_list.reserve(nw);
+
+  for (int iw = 0; iw < nw; iw++)
+    if (recompute[iw])
+    {
+      wfc_filtered_list.push_back(wfc_list[iw]);
+      p_filtered_list.push_back(p_list[iw]);
+
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+      phi_list.push_back(*det.Phi);
+      psiM_temp_list.push_back(det.psiM_temp);
+      dpsiM_list.push_back(det.dpsiM);
+      d2psiM_list.push_back(det.d2psiM);
+    }
+
+  if (!wfc_filtered_list.size())
+    return;
+
+  {
+    ScopedTimer spo_timer(wfc_leader.SPOVGLTimer);
+    wfc_leader.Phi->mw_evaluate_notranspose(phi_list, p_filtered_list, wfc_leader.FirstIndex, wfc_leader.LastIndex,
+                                            psiM_temp_list, dpsiM_list, d2psiM_list);
+  }
+
+  { // transfer dpsiM, d2psiM, psiMinv to device
+    ScopedTimer d2h(H2DTimer);
+
+    RefVector<const ValueMatrix_t> const_psiM_temp_list;
+    for (int iw = 0; iw < wfc_filtered_list.size(); iw++)
+    {
+      auto& det          = wfc_filtered_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE_TYPE>>(iw);
+      auto* psiM_vgl_ptr = det.psiM_vgl.data();
+      size_t stride      = wfc_leader.psiM_vgl.capacity();
+      PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
+      const_psiM_temp_list.push_back(det.psiM_temp);
+    }
+    mw_invertPsiM(wfc_filtered_list, const_psiM_temp_list);
+    PRAGMA_OFFLOAD("omp taskwait")
+  }
+}
+
+template<>
+void mw_recomputeDispatch<MatrixDelayedUpdateCUDA>(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                                   const std::vector<bool>& recompute)
+{
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  const auto nw    = wfc_list.size();
+
+  {
+    ScopedTimer spo_timer(wfc_leader.SPOVGLTimer);
+
+    RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
+    RefVector<GradMatrix_t> dpsiM_list;
+    RefVector<ValueMatrix_t> d2psiM_list;
+    phi_list.reserve(wfc_list.size());
+    dpsiM_list.reserve(nw);
+    d2psiM_list.reserve(nw);
+    std::vector<ValueMatrix_t> psiM_temp_host_list;
+    psiM_temp_host_list.reserve(nw);
+
+    for (int iw = 0; iw < nw; iw++)
+    {
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+      phi_list.push_back(*det.Phi);
+      psiM_temp_host_list.emplace_back(det.psiM_temp.data(), det.psiM_temp.rows(), det.psiM_temp.cols());
+      dpsiM_list.push_back(det.dpsiM);
+      d2psiM_list.push_back(det.d2psiM);
+    }
+
+    wfc_leader.Phi->mw_evaluate_notranspose(phi_list, p_list, wfc_leader.FirstIndex, wfc_leader.LastIndex,
+                                            makeRefVector<ValueMatrix_t>(psiM_temp_host_list), dpsiM_list, d2psiM_list);
+  }
+  RefVector<OffloadPinnedValueMatrix_t> psiM_temp_list;
+  psiM_temp_list.reserve(nw);
+
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+    auto* psiM_vgl_ptr = det.psiM_vgl.data();
+    size_t stride      = wfc_leader.psiM_vgl.capacity();
+    PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
+    psiM_temp_list.push_back(det.psiM_temp);
+  }
+  mw_invertPsiM(*(wfc_leader.mw_res_), wfc_list, psiM_temp_list);
+  PRAGMA_OFFLOAD("omp taskwait")
+}
+}
+
 template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
@@ -78,7 +191,7 @@ public:
   using mGradType     = TinyVector<mValueType, DIM>;
   using LogValue      = std::complex<QTFull::RealType>;
   using DetEngine_t   = DET_ENGINE;
-  
+
   template<typename DT>
   using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
   using OffloadPinnedValueVector_t    = Vector<ValueType, OffloadPinnedAllocator<ValueType>>;
@@ -184,7 +297,7 @@ public:
   /** evaluate log of a determinant for a particle set
    * This is the most defensive call. The psiM, dpsiM, d2psiM should be up-to-date on both device and host sides.
    */
-  LogValueType evaluateLog(ParticleSet& P,
+  LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
@@ -193,9 +306,9 @@ public:
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  void recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, ParticleSet& P);
+  void recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res, const ParticleSet& P);
 
-  LogValueType evaluateGL(ParticleSet& P,
+  LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch) override;
@@ -208,7 +321,7 @@ public:
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
-  void createResource(ResourceCollection& collection) override;
+  void createResource(ResourceCollection& collection) const override;
   void acquireResource(ResourceCollection& collection) override;
   void releaseResource(ResourceCollection& collection) override;
 
@@ -263,20 +376,6 @@ public:
 
   LogValue get_log_value() const { return log_value_; }
 
-  // make this class unit tests friendly without the need of setup resources.
-  void guardMultiWalkerRes()
-  {
-    if (!mw_res_)
-    {
-      std::cerr
-          << "WARNING DiracDeterminantBatched : This message should not be seen in production (performance bug) runs "
-             "but only unit tests (expected)."
-          << std::endl;
-      mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>>();
-      mw_res_->log_values.resize(1);
-    }
-  }
-
 private:
   /// Smelly second source of truth for this DDB's logvalue in the mw_res_;
   LogValue log_value_;
@@ -291,10 +390,6 @@ private:
                             const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                             RefVector<OffloadPinnedValueMatrix_t>& logdetT_list);
 
-  static void mw_recompute(DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>& mw_res,
-                           const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                           const RefVectorWithLeader<ParticleSet>& p_list);
-
   /// Resize all temporary arrays required for force computation.
   void resizeScratchObjectsForIonDerivs();
 
@@ -304,9 +399,22 @@ private:
   /// timers
   NewTimer &D2HTimer, &H2DTimer;
 
+  // make this class unit tests friendly without the need of setup resources.
+  void guardMultiWalkerRes()
+  {
+    if (!mw_res_)
+    {
+      std::cerr
+          << "WARNING DiracDeterminantBatched : This message should not be seen in production (performance bug) runs "
+             "but only unit tests (expected)."
+          << std::endl;
+      mw_res_ = std::make_unique<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>>();
+      mw_res_->log_values.resize(1);
+    }
+  }
+
   friend class qmcplusplus::testing::DiracDeterminantBatchedTest;
 };
-
 
 extern template struct DiracDeterminantBatchedMultiWalkerResource<>;
 extern template class DiracDeterminantBatched<>;

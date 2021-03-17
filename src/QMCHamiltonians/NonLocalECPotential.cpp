@@ -14,14 +14,24 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTableData.h"
 #include "NonLocalECPotential.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
-#include "QMCHamiltonians/NLPPJob.h"
-#include "Utilities/IteratorUtility.h"
+#include <DistanceTableData.h>
+#include <IteratorUtility.h>
+#include <ResourceCollection.h>
+#include "NonLocalECPComponent.h"
+#include "NLPPJob.h"
 
 namespace qmcplusplus
 {
+struct NonLocalECPotentialMultiWalkerResource : public Resource
+{
+  NonLocalECPotentialMultiWalkerResource() : Resource("NonLocalECPotential"), collection("NLPPcollection") {}
+
+  Resource* makeClone() const override { return new NonLocalECPotentialMultiWalkerResource(*this); }
+
+  ResourceCollection collection;
+};
+
 void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
 /** constructor
@@ -63,6 +73,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
     nlpp_jobs[ig].reserve(2 * els.groupsize(ig));
   }
 }
+
+NonLocalECPotential::~NonLocalECPotential() = default;
 
 #if !defined(REMOVE_TRACEMANAGER)
 void NonLocalECPotential::contribute_particle_quantities() { request.contribute_array(myName); }
@@ -288,6 +300,21 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     O.Value = 0.0;
   }
 
+  // make this class unit tests friendly without the need of setup resources.
+  if (!O_leader.mw_res_)
+  {
+    app_warning() << "NonLocalECPotential: This message should not be seen in production (performance bug) runs "
+                     "but only unit tests (expected)."
+                  << std::endl;
+    O_leader.mw_res_ = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
+    for (int ig = 0; ig < O_leader.PPset.size(); ++ig)
+    if (O_leader.PPset[ig]->getVP())
+    {
+      O_leader.PPset[ig]->getVP()->createResource(O_leader.mw_res_->collection);
+      break;
+    }
+  }
+
   auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
   assert(pp_component != std::end(O_leader.PPset));
 
@@ -336,7 +363,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       }
 
       NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
-                                           O_leader.use_DLA);
+                                           O_leader.mw_res_->collection, O_leader.use_DLA);
 
       for (size_t j = 0; j < ecp_potential_list.size(); j++)
       {
@@ -567,6 +594,31 @@ void NonLocalECPotential::addComponent(int groupID, std::unique_ptr<NonLocalECPC
     if (IonConfig.GroupID[iat] == groupID)
       PP[iat] = ppot.get();
   PPset[groupID] = std::move(ppot);
+}
+
+void NonLocalECPotential::createResource(ResourceCollection& collection) const
+{
+  auto new_res = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
+  for (int ig = 0; ig < PPset.size(); ++ig)
+    if (PPset[ig]->getVP())
+    {
+      PPset[ig]->getVP()->createResource(new_res->collection);
+      break;
+    }
+  auto resource_index = collection.addResource(std::move(new_res));
+}
+
+void NonLocalECPotential::acquireResource(ResourceCollection& collection)
+{
+  auto res_ptr = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("NonLocalECPotential::acquireResource dynamic_cast failed");
+  mw_res_.reset(res_ptr);
+}
+
+void NonLocalECPotential::releaseResource(ResourceCollection& collection)
+{
+  collection.takebackResource(std::move(mw_res_));
 }
 
 OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

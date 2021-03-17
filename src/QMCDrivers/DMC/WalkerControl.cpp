@@ -14,6 +14,7 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+
 #include <cassert>
 #include <stdexcept>
 #include <numeric>
@@ -21,11 +22,9 @@
 
 #include "WalkerControl.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
 #include "type_traits/template_types.hpp"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -54,10 +53,7 @@ TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControl
                                                       {WC_send, "WalkerControl::send"},
                                                       {WC_recv, "WalkerControl::recv"}};
 
-WalkerControl::WalkerControl(Communicate* c,
-                             const MultiWalkerDispatchers& dispatchers,
-                             RandomGenerator_t& rng,
-                             bool use_fixed_pop)
+WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop)
     : MPIObjectBase(c),
       rng_(rng),
       use_fixed_pop_(use_fixed_pop),
@@ -70,10 +66,9 @@ WalkerControl::WalkerControl(Communicate* c,
       SwapMode(0),
       use_nonblocking_(true),
       debug_disable_branching_(false),
-      saved_num_walkers_sent_(0),
-      dispatchers_(dispatchers)
+      saved_num_walkers_sent_(0)
 {
-  num_per_node_.resize(num_ranks_);
+  num_per_rank_.resize(num_ranks_);
   fair_offset_.resize(num_ranks_ + 1);
 
   setup_timers(my_timers_, WalkerControlTimerNames, timer_level_medium);
@@ -199,7 +194,7 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
           walker->Multiplicity = static_cast<int>(walker->Weight + rng_());
       computeCurData(walkers, curData);
       for (int i = 0, j = LE_MAX; i < num_ranks_; i++, j++)
-        num_per_node_[i] = static_cast<int>(curData[j]);
+        num_per_rank_[i] = static_cast<int>(curData[j]);
     }
     // at this point, curData[LE_MAX + rank_num_] and walker->Multiplicity are ready.
 
@@ -236,38 +231,16 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       {
         auto walker_elements   = pop.spawnWalker();
         walker_elements.walker = *walkers[iw];
-        walker_elements.pset.loadWalker(walker_elements.walker, true);
         num_copies--;
       }
     }
   }
 
-  if (walkers.size() - untouched_walkers > 0)
-  {
-    ScopedTimer recomputing_timer(my_timers_[WC_recomputing]);
-
-    const size_t num_walkers = walkers.size();
-    // recomputed received and duplicated walkers, the first untouched_walkers walkers doesn't need to be updated.
-    const auto p_list_no_leader =
-        convertUPtrToRefVectorSubset(pop.get_elec_particle_sets(), untouched_walkers, num_walkers - untouched_walkers);
-    const auto wf_list_no_leader =
-        convertUPtrToRefVectorSubset(pop.get_twfs(), untouched_walkers, num_walkers - untouched_walkers);
-
-    ResourceCollectionLock<TrialWaveFunction> resource_lock(pop.get_golden_twf().getResource(), pop.get_golden_twf());
-    // a defensive update may not be necessary due to loadWalker above. however, load walker needs to be batched.
-
-    const RefVectorWithLeader<ParticleSet> p_list(*pop.get_golden_electrons(), p_list_no_leader);
-    ParticleSet::flex_update(p_list, true);
-
-    const RefVectorWithLeader<TrialWaveFunction> wf_list(pop.get_golden_twf(), wf_list_no_leader);
-    dispatchers_.twf_dispatcher_.flex_evaluateLog(wf_list, p_list);
-  }
-
-  const int current_num_global_walkers = std::accumulate(num_per_node_.begin(), num_per_node_.end(), 0);
+  const int current_num_global_walkers = std::accumulate(num_per_rank_.begin(), num_per_rank_.end(), 0);
   pop.set_num_global_walkers(current_num_global_walkers);
 #ifndef NDEBUG
   pop.checkIntegrity();
-  pop.syncWalkersPerNode(myComm);
+  pop.syncWalkersPerRank(myComm);
   if (current_num_global_walkers != pop.get_num_global_walkers())
     throw std::runtime_error("Potential bug! Population num_global_walkers mismatched!");
 #endif
@@ -278,6 +251,12 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       walker->Weight       = 1.0;
       walker->Multiplicity = 1.0;
     }
+
+  for (int iw = 0; iw < untouched_walkers; iw++)
+    pop.get_walkers()[iw]->wasTouched = false;
+
+  for (int iw = untouched_walkers; iw < pop.get_num_local_walkers(); iw++)
+    pop.get_walkers()[iw]->wasTouched = true;
 
   return pop.get_num_global_walkers();
 }
@@ -323,17 +302,17 @@ void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::ve
 }
 
 // determine new walker population on each node
-void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per_node,
+void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per_rank,
                                                  std::vector<int>& fair_offset,
                                                  std::vector<int>& minus,
                                                  std::vector<int>& plus)
 {
-  const int num_contexts       = num_per_node.size();
-  const int current_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
+  const int num_contexts       = num_per_rank.size();
+  const int current_population = std::accumulate(num_per_rank.begin(), num_per_rank.end(), 0);
   FairDivideLow(current_population, num_contexts, fair_offset);
   for (int ip = 0; ip < num_contexts; ip++)
   {
-    int dn = num_per_node[ip] - (fair_offset[ip + 1] - fair_offset[ip]);
+    int dn = num_per_rank[ip] - (fair_offset[ip + 1] - fair_offset[ip]);
     if (dn > 0)
       plus.insert(plus.end(), dn, ip);
     else if (dn < 0)
@@ -354,14 +333,14 @@ void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per
 void WalkerControl::swapWalkersSimple(MCPopulation& pop)
 {
   std::vector<int> minus, plus;
-  determineNewWalkerPopulation(num_per_node_, fair_offset_, minus, plus);
+  determineNewWalkerPopulation(num_per_rank_, fair_offset_, minus, plus);
 
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname, "test.%d", rank_num_);
   std::ofstream fout(fname, std::ios::app);
   //fout << NumSwaps << " " << Cur_pop << " ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << num_per_node_[ic] << " ";
+  //for(int ic=0; ic<NumContexts; ic++) fout << num_per_rank_[ic] << " ";
   //fout << " | ";
   //for(int ic=0; ic<NumContexts; ic++) fout << fair_offset_[ic+1]-fair_offset_[ic] << " ";
   //fout << " | ";
@@ -511,7 +490,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
         ScopedTimer local_timer(my_timers_[WC_recv]);
         myComm->comm.receive_n(awalker.DataSet.data(), byteSize, jobit->target);
         awalker.copyFromBuffer();
-        walker_elements.pset.loadWalker(awalker, true);
       }
     }
     if (use_nonblocking_)
@@ -528,7 +506,6 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
             {
               auto& walker_elements = newW[job_list[im].walkerID];
               walker_elements.walker.copyFromBuffer();
-              walker_elements.pset.loadWalker(walker_elements.walker, true);
               not_completed[im] = false;
             }
             else

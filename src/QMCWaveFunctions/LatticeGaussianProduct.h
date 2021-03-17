@@ -62,7 +62,7 @@ public:
    */
   void resetParameters(const opt_variables_type& active);
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   PsiValueType ratio(ParticleSet& P, int iat);
 
@@ -83,7 +83,7 @@ public:
 
   WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
 
-  void evaluateLogAndStore(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
+  void evaluateLogAndStore(const ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
 };
 } // namespace qmcplusplus
 #endif

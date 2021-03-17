@@ -344,7 +344,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       }
 
       // Compute distance tables.
-      ParticleSet::flex_update(p_list);
+      ParticleSet::mw_update(p_list);
 
       // Log psi and prepare for difference the log psi
       opt_data.zero_log_psi();
@@ -559,7 +559,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       }
 
       // Update distance tables, etc for the loaded sample positions
-      ParticleSet::flex_update(p_list, true);
+      ParticleSet::mw_update(p_list, true);
 
       // Evaluate difference in log psi
 

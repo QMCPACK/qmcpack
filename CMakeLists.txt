@@ -32,55 +32,8 @@ SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 INCLUDE(CMake/macros.cmake)
 
 ######################################################################
-# Verify Python3 available
-######################################################################
-INCLUDE(CMake/python.cmake)
-find_package(Python3)
-IF ( NOT Python3_FOUND )
-  MESSAGE( FATAL_ERROR "Could not find required python3" )
-ENDIF ( NOT Python3_FOUND )
-
-######################################################################
-# Check is PySCF is availabile within Python
-######################################################################
-TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
-IF (NOT HAVE_PYSCF)
-  MESSAGE( STATUS "Unable to import PySCF python module. PySCF tests will not be run." )
-ELSE()
-  MESSAGE( STATUS "Successfully imported PySCF python module." )
-ENDIF()
-  
-######################################################################
-# Verify QE executables present if QE_BIN specified
-######################################################################
-IF ( DEFINED QE_BIN )
-  INCLUDE(CMake/run_qe.cmake)
-  VERIFY_QE_PRESENT( ${QE_BIN} )
-ENDIF()
-
-######################################################################
 # CTest
 ######################################################################
-SET( DROP_METHOD "http" )
-SET( DROP_SITE "cdash.qmcpack.org" )
-SET( DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
-SET( TRIGGER_SITE "" )
-SET( DROP_SITE_CDASH TRUE )
-# Increase timeout per test over the default of 1500 seconds (25 minutes)
-SET( DART_TESTING_TIMEOUT 3600 CACHE STRING "Maximum time for one test")
-ENABLE_TESTING()
-INCLUDE( CTest )
-
-OPTION(QMC_SYMLINK_TEST_FILES "Use symbolic links for test files to save space.  Set to false to copy files instead." ON)
-
-
-IF (QMC_SYMLINK_TEST_FILES)
-  SET(SYMLINK_MSG "Using symbolic links for large test files may cause test failures if the build is installed on a separate filesystem from the source.  For example, Titan at OLCF.")
-ELSE()
-  SET(SYMLINK_MSG "Copying large test files uses more disk space than using symbolic links.")
-ENDIF()
-MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
-
 # The following option disables the extremely slow setup of full system run tests
 # This is a developer option
 # It offers a more reasonable compile debug loop if CMakeLists.txt files are being changed
@@ -93,6 +46,57 @@ MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_M
 OPTION(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS "Disable the slow cmake custom commands for integration tests." OFF)
 MARK_AS_ADVANCED(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
+SET( DROP_METHOD "http" )
+SET( DROP_SITE "cdash.qmcpack.org" )
+SET( DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
+SET( TRIGGER_SITE "" )
+SET( DROP_SITE_CDASH TRUE )
+# Increase timeout per test over the default of 1500 seconds (25 minutes)
+SET( DART_TESTING_TIMEOUT 3600 CACHE STRING "Maximum time for one test")
+ENABLE_TESTING()
+INCLUDE( CTest )
+
+OPTION(QMC_SYMLINK_TEST_FILES "Use symbolic links for test files to save space.  Set to false to copy files instead." ON)
+
+IF (QMC_SYMLINK_TEST_FILES)
+  SET(SYMLINK_MSG "Using symbolic links for large test files may cause test failures if the build is installed on a separate filesystem from the source.")
+ELSE()
+  SET(SYMLINK_MSG "Copying large test files uses more disk space than using symbolic links.")
+ENDIF()
+MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
+
+######################################################################
+# Verify Python3 available
+######################################################################
+INCLUDE(CMake/python.cmake)
+find_package(Python3)
+IF ( NOT Python3_FOUND )
+  MESSAGE( FATAL_ERROR "Could not find required python3" )
+ENDIF ( NOT Python3_FOUND )
+
+######################################################################
+# Check if PySCF is available
+######################################################################
+IF( NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS )
+  TEST_PYTHON_MODULE(pyscf HAVE_PYSCF)
+  IF (NOT HAVE_PYSCF)
+    MESSAGE( STATUS "Unable to import PySCF python module. PySCF tests will not be run." )
+  ELSE()
+    MESSAGE( STATUS "Successfully imported PySCF python module." )
+  ENDIF() 
+ENDIF()
+
+######################################################################
+# Check if QE executables available at QE_BIN or on the PATH
+######################################################################
+IF (NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  INCLUDE("CMake/FindQE.cmake")
+  IF (QE_FOUND)
+    MESSAGE( STATUS "Found and using patched Quantum ESPRESSO (QE) with pw2qmcpack.x at ${QE_PW_DIR}" )
+  ELSE(QE_FOUND)
+    MESSAGE( STATUS "Did not find a patched Quantum ESPRESSO (QE) distribution with pw2qmcpack.x. QE tests will not be run." )
+  ENDIF(QE_FOUND)
+ENDIF()
 
 ######################################################################
 # Build level
@@ -140,6 +144,7 @@ SET(OHMMS_DIM 3 CACHE STRING "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 MESSAGE(STATUS "defining the float point precision")
 SET(OHMMS_PRECISION_FULL double)
+
 IF(QMC_CUDA)
   SET(QMC_MIXED_PRECISION 1 CACHE BOOL "Enable/disable mixed precision")
   SET(OHMMS_PRECISION double)
@@ -423,6 +428,31 @@ IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
 
+#-------------------------------------------------------------------------------
+# Check SIMD alignment for CPU only
+#-------------------------------------------------------------------------------
+# This is intentionally placed before adding OpenMP offload compile options
+# to avoid contamination from device compilation pass.
+# When '-march=skylake-avx512 -fopenmp-targets=nvptx64 -march=sm_70' is added
+# for Clang, the source code is parsed twice for both host and offload targets.
+# A trap for macro __AVX512F__ always fails because the offload pass doesn't
+# carry '-march=skylake-avx512' but only takes '-march=sm_70'.
+#-------------------------------------------------------------------------------
+include(CMake/CheckSIMDAlignment.cmake)
+set(QMC_SIMD_ALIGNMENT ${default_alignment} CACHE STRING "Cache/SIMD alignment in bytes")
+math(EXPR alignment_remainder "${QMC_SIMD_ALIGNMENT} % ${default_alignment}")
+if (alignment_remainder)
+  message(FATAL_ERROR "QMC_SIMD_ALIGNMENT must be a multiple of ${default_alignment}. Bad cached value is ${QMC_SIMD_ALIGNMENT}")
+endif()
+message(STATUS "Setting QMC_SIMD_ALIGNMENT to ${QMC_SIMD_ALIGNMENT}")
+
+#---------------------------------------------------------
+# Set up OpenMP offload compile options
+#---------------------------------------------------------
+if (ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
+endif()
+
 #-------------------------------------------------------------------
 #  check MPI installation
 #-------------------------------------------------------------------
@@ -503,7 +533,7 @@ ENDIF(QMC_MPI)
 # list of libraries to be linked with the main applications using I/O
 
 #-------------------------------------------------------------------
-# check lapack/blas
+# Check LAPACK/BLAS
 #-------------------------------------------------------------------
 # Add Math::BLAS_LAPACK target
 ADD_LIBRARY(Math::BLAS_LAPACK INTERFACE IMPORTED)
@@ -643,7 +673,7 @@ IF(HDF5_FOUND)
   ENDIF(ENABLE_PHDF5)
 
   IF(HAVE_MPI AND NOT ENABLE_PHDF5)
-    MESSAGE(WARNING "MPI builds may have potential performance loss not using parallel HDF5!")
+    MESSAGE(WARNING "MPI builds may have performance loss by not using parallel HDF5! (Safe to ignore for workstation builds).")
   ENDIF()
 
   IF ( CMAKE_BUILD_TYPE AND HDF5_LIBRARIES_DEBUG )

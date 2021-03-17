@@ -26,6 +26,8 @@ namespace qmcplusplus
 template<typename T>
 struct NLPPJob;
 
+struct NonLocalECPotentialMultiWalkerResource;
+
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
@@ -33,6 +35,7 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
+  ~NonLocalECPotential();
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
@@ -89,6 +92,18 @@ public:
     os << "NonLocalECPotential: " << IonConfig.getName();
     return true;
   }
+
+  /** initialize a shared resource and hand it to a collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from a collection
+   */
+  void acquireResource(ResourceCollection& collection) override;
+
+  /** return a shared resource to a collection
+   */
+  void releaseResource(ResourceCollection& collection) override;
 
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
@@ -149,6 +164,8 @@ private:
 #endif
   ///NLPP job list of ion-electron pairs by spin group
   std::vector<std::vector<NLPPJob<RealType>>> nlpp_jobs;
+  /// mult walker shared resource
+  std::unique_ptr<NonLocalECPotentialMultiWalkerResource> mw_res_;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set

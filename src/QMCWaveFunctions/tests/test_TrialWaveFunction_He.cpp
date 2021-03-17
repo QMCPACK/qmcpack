@@ -305,6 +305,7 @@ UPtrVector<ParticleSet::ParticleLaplacian_t> create_particle_laplacian(int nelec
   return L_list;
 }
 
+#ifndef QMC_CUDA
 TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 {
   using ValueType = QMCTraits::ValueType;
@@ -570,6 +571,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   RealType logpsi2b = psi2.evaluateDeltaLog(p_list[1], true);
   CHECK(logpsi2b == Approx(logpsi_variable_list2[1]));
 }
+#endif
 
 
 } // namespace qmcplusplus

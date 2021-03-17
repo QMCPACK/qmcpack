@@ -47,7 +47,7 @@ FUNCTION( COPY_DIRECTORY_USING_SYMLINK_LIMITED SRC_DIR DST_DIR ${ARGN})
         "${SRC_DIR}/*.ccECP.xml"
         "${SRC_DIR}/*.py" "${SRC_DIR}/*.sh" "${SRC_DIR}/*.restart.xml"
         "${SRC_DIR}/Li.xml" "${SRC_DIR}/H.xml" "${SRC_DIR}/*.L2_test.xml" "${SRC_DIR}/*.opt_L2.xml"
-        "${SRC_DIR}/*.wfnoj.xml" "${SRC_DIR}/*.wfj.xml" "${SRC_DIR}/*.wfs*.xml"
+        "${SRC_DIR}/*.wfnoj.xml" "${SRC_DIR}/*.wfj*.xml" "${SRC_DIR}/*.wfs*.xml"
         "${SRC_DIR}/*.wfn*.xml" "${SRC_DIR}/*.cuspInfo.xml" "${SRC_DIR}/*.H*.xml"
         "${SRC_DIR}/*.structure.xml" "${SRC_DIR}/*ptcl.xml")
     FOREACH(F IN LISTS FILE_FOLDER_NAMES)
@@ -99,6 +99,7 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
         ELSE()
             ADD_TEST( NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}"
+                PASS_REGULAR_EXPRESSION "QMCPACK execution completed successfully"
                 PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( TEST_ADDED_TEMP TRUE )
@@ -107,6 +108,7 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
         IF ( ( ${PROCS} STREQUAL "1" ) )
             ADD_TEST( ${TESTNAME} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}"
+                PASS_REGULAR_EXPRESSION "QMCPACK execution completed successfully"
                 PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( TEST_ADDED_TEMP TRUE )

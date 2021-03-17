@@ -5,6 +5,8 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -32,6 +34,10 @@ public:
 
   void flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                         const RefVectorWithLeader<ParticleSet>& p_list) const;
+
+  void flex_recompute(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                      const RefVectorWithLeader<ParticleSet>& p_list,
+                      const std::vector<bool>& recompute) const;
 
   void flex_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                       const RefVectorWithLeader<ParticleSet>& p_list,

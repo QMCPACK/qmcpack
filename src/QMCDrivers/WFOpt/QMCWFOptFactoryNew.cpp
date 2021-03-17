@@ -15,6 +15,11 @@ QMCOptimizeBatched* QMCWFOptFactoryNew(xmlNodePtr cur,
                                        SampleStack& samples,
                                        Communicate* comm)
 {
+  app_summary() << "\n========================================"
+                   "\n  Reading WFOpt driver XML input section"
+                   "\n========================================"
+                << std::endl;
+
   QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(cur);
   VMCDriverInput vmcdriver_input;
@@ -32,6 +37,11 @@ QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
                                                               SampleStack& samples,
                                                               Communicate* comm)
 {
+  app_summary() << "\n========================================"
+                   "\n  Reading WFOpt driver XML input section"
+                   "\n========================================"
+                << std::endl;
+
   QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(cur);
   VMCDriverInput vmcdriver_input;

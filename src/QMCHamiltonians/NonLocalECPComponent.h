@@ -17,12 +17,13 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
-#include "QMCHamiltonians/NLPPJob.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include <ResourceCollection.h>
+#include <TrialWaveFunction.h>
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "NLPPJob.h"
 
 namespace qmcplusplus
 {
@@ -178,6 +179,7 @@ public:
                              const RefVectorWithLeader<TrialWaveFunction>& psi_list,
                              const RefVector<const NLPPJob<RealType>>& joblist,
                              std::vector<RealType>& pairpots,
+                             ResourceCollection& collection,
                              bool use_DLA);
 
   /** @brief Evaluate the nonlocal pp contribution via randomized quadrature grid
@@ -246,6 +248,7 @@ public:
   inline int getNknot() const { return nknot; }
   inline void setLmax(int Lmax) { lmax = Lmax; }
   inline int getLmax() const { return lmax; }
+  const VirtualParticleSet* getVP() const { return VP; };
 
   // copy sgridxyz_m to rrotsgrid_m without rotation. For testing only.
   friend void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp);

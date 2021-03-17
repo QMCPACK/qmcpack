@@ -808,7 +808,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
     app_warning() << "SplineC2ROMPTarget : This message should not be seen in production (performance bug) runs but "
                      "only unit tests (expected)."
                   << std::endl;
-    phi_leader.mw_mem_ = std::make_unique<OffloadMultiWalkerMem<ST, TT>>();
+    phi_leader.mw_mem_ = std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>();
   }
   auto& mw_mem             = *phi_leader.mw_mem_;
   auto& mw_pos_copy        = mw_mem.mw_pos_copy;

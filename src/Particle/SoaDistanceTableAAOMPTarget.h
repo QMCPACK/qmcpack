@@ -18,6 +18,7 @@
 #include "OMPTarget/OMPallocator.hpp"
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -44,32 +45,40 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   DistRow temp_r_mem_;
   DisplRow temp_dr_mem_;
 
-  ///dist displ
-  Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ_;
+  ///multi walker shared memory buffer
+  struct DTAAMultiWalkerMem : public Resource
+  {
+    ///dist displ
+    Vector<RealType, OMPallocator<RealType, PinnedAlignedAllocator<RealType>>> nw_new_old_dist_displ;
 
-  Vector<const RealType*, OMPallocator<const RealType*, PinnedAlignedAllocator<const RealType*>>> rsoa_dev_list_;
+    Vector<const RealType*, OMPallocator<const RealType*, PinnedAlignedAllocator<const RealType*>>> rsoa_dev_list;
+
+    DTAAMultiWalkerMem() : Resource("DTAAMultiWalkerMem") {}
+
+    DTAAMultiWalkerMem(const DTAAMultiWalkerMem&) : DTAAMultiWalkerMem() {}
+
+    Resource* makeClone() const override { return new DTAAMultiWalkerMem(*this); }
+  };
+
+  std::unique_ptr<DTAAMultiWalkerMem> mw_mem_;
 
   SoaDistanceTableAAOMPTarget(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.Lattice),
         DistanceTableData(target, target),
-        offload_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") +
-                                                      target.getName() + "_" + target.getName(),
-                                                  timer_level_fine)),
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") +
-                                                       target.getName() + "_" + target.getName(),
+        offload_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::offload_") + name_, timer_level_fine)),
+        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::evaluate_") + name_,
                                                    timer_level_fine)),
-        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::move_") + target.getName() +
-                                                   "_" + target.getName(),
-                                               timer_level_fine)),
-        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::update_") +
-                                                     target.getName() + "_" + target.getName(),
-                                                 timer_level_fine))
+        move_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::move_") + name_, timer_level_fine)),
+        update_timer_(
+            *timer_manager.createTimer(std::string("SoaDistanceTableAAOMPTarget::update_") + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&target.getCoordinates());
     if (!coordinates_soa)
       throw std::runtime_error("Source particle set doesn't have OpenMP offload. Contact developers!");
-    resize(target.getTotalNum());
+    resize();
     PRAGMA_OFFLOAD("omp target enter data map(to : this[:1])")
   }
 
@@ -84,12 +93,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     return (N_padded * (2 * N - N_padded + 1) + (Alignment - 1) * N_padded) / 2;
   }
 
-  void resize(int n)
+  void resize()
   {
-    N_sources = N_targets = n;
-
     // initialize memory containers and views
-    Ntargets_padded         = getAlignedSize<T>(n);
+    Ntargets_padded         = getAlignedSize<T>(N_targets);
     const size_t total_size = compute_size(N_targets);
     memory_pool_displs_.resize(total_size * D);
     distances_.resize(N_targets);
@@ -110,6 +117,26 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
   const DistRow& getOldDists() const override { return old_r_; }
   const DisplRow& getOldDispls() const override { return old_dr_; }
+
+  void createResource(ResourceCollection& collection) const override
+  {
+    auto resource_index = collection.addResource(std::make_unique<DTAAMultiWalkerMem>());
+  }
+
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
+  {
+    auto res_ptr = dynamic_cast<DTAAMultiWalkerMem*>(collection.lendResource().release());
+    if (!res_ptr)
+      throw std::runtime_error("SoaDistanceTableAAOMPTarget::acquireResource dynamic_cast failed");
+    dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_.reset(res_ptr);
+  }
+
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
+  {
+    collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_));
+  }
 
   inline void evaluate(ParticleSet& P) override
   {
@@ -154,29 +181,43 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
                bool prepare_old    = true) const override
   {
     assert(this == &dt_list.getLeader());
-    auto& dt_leader   = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
+    // make this class unit tests friendly without the need of setup resources.
+    if (!dt_leader.mw_mem_)
+    {
+      app_warning()
+          << "SoaDistanceTableAAOMPTarget: This message should not be seen in production (performance bug) runs but "
+             "only unit tests (expected)."
+          << std::endl;
+      dt_leader.mw_mem_ = std::make_unique<DTAAMultiWalkerMem>();
+    }
+    auto& mw_mem      = *dt_leader.mw_mem_;
     auto& pset_leader = p_list.getLeader();
+
     ScopedTimer local_timer(move_timer_);
     const size_t nw          = dt_list.size();
     const size_t stride_size = Ntargets_padded * (D + 1);
-    dt_leader.nw_new_old_dist_displ_.resize(nw * 2 * stride_size);
-    dt_leader.rsoa_dev_list_.resize(nw);
+
+    auto& nw_new_old_dist_displ = mw_mem.nw_new_old_dist_displ;
+    auto& rsoa_dev_list         = mw_mem.rsoa_dev_list;
+    nw_new_old_dist_displ.resize(nw * 2 * stride_size);
+    rsoa_dev_list.resize(nw);
 
     for (int iw = 0; iw < nw; iw++)
     {
       auto& dt                = dt_list.getCastedElement<SoaDistanceTableAAOMPTarget>(iw);
       dt.old_prepared_elec_id = prepare_old ? iat : -1;
-      dt.temp_r_.attachReference(dt_leader.nw_new_old_dist_displ_.data() + stride_size * iw, Ntargets_padded);
+      dt.temp_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * iw, Ntargets_padded);
       dt.temp_dr_.attachReference(N_targets, Ntargets_padded,
-                                  dt_leader.nw_new_old_dist_displ_.data() + stride_size * iw + Ntargets_padded);
+                                  nw_new_old_dist_displ.data() + stride_size * iw + Ntargets_padded);
       if (prepare_old)
       {
-        dt.old_r_.attachReference(dt_leader.nw_new_old_dist_displ_.data() + stride_size * (iw + nw), Ntargets_padded);
+        dt.old_r_.attachReference(nw_new_old_dist_displ.data() + stride_size * (iw + nw), Ntargets_padded);
         dt.old_dr_.attachReference(N_targets, Ntargets_padded,
-                                   dt_leader.nw_new_old_dist_displ_.data() + stride_size * (iw + nw) + Ntargets_padded);
+                                   nw_new_old_dist_displ.data() + stride_size * (iw + nw) + Ntargets_padded);
       }
-      auto& coordinates_soa        = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
-      dt_leader.rsoa_dev_list_[iw] = coordinates_soa.getDevicePtr();
+      auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
+      rsoa_dev_list[iw]     = coordinates_soa.getDevicePtr();
     }
 
     const int ChunkSizePerTeam = 256;
@@ -187,16 +228,16 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const auto activePtcl_local = pset_leader.activePtcl;
     const auto N_sources_local  = N_targets;
     const auto N_sources_padded = Ntargets_padded;
-    auto* rsoa_dev_list_ptr     = dt_leader.rsoa_dev_list_.data();
-    auto* r_dr_ptr              = dt_leader.nw_new_old_dist_displ_.data();
+    auto* rsoa_dev_list_ptr     = rsoa_dev_list.data();
+    auto* r_dr_ptr              = nw_new_old_dist_displ.data();
     auto* new_pos_ptr           = coordinates_leader.getFusedNewPosBuffer().data();
     const size_t new_pos_stride = coordinates_leader.getFusedNewPosBuffer().capacity();
 
     {
       ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(nw * num_teams) \
-                        map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list_.size()]) \
-                        map(always, from: r_dr_ptr[:nw_new_old_dist_displ_.size()])")
+                        map(always, to: rsoa_dev_list_ptr[:rsoa_dev_list.size()]) \
+                        map(always, from: r_dr_ptr[:nw_new_old_dist_displ.size()])")
       for (int iw = 0; iw < nw; ++iw)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
@@ -214,7 +255,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
             PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
-              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_padded,
                                                             iel, activePtcl_local);
           }
 
@@ -225,11 +266,11 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
             T pos[D];
             for (int idim = 0; idim < D; idim++)
-              pos[idim] = source_pos_ptr[idim * N_sources_local + iat];
+              pos[idim] = source_pos_ptr[idim * N_sources_padded + iat];
 
             PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
-              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_padded,
                                                             iel, iat);
             r_iw_ptr[iat] = std::numeric_limits<T>::max(); //assign a big number
           }
@@ -272,42 +313,43 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
    * only the [0,iat-1) columns need to save the new values.
    * The memory copy goes up to the padded size only for better performance.
    */
-  inline void update(IndexType iat, bool partial_update) override
+  inline void update(IndexType iat) override
   {
     ScopedTimer local_timer(update_timer_);
-
     //update by a cache line
     const int nupdate = getAlignedSize<T>(iat);
     //copy row
     std::copy_n(temp_r_.data(), nupdate, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
       std::copy_n(temp_dr_.data(idim), nupdate, displacements_[iat].data(idim));
-    // This is an optimization to reduce update >iat rows during p-by-p forward move when no consumer needs full table.
-    if (need_full_table_ || !partial_update)
+    //copy column
+    for (size_t i = iat + 1; i < N_targets; ++i)
     {
-      //copy column
-      for (size_t i = iat + 1; i < N_targets; ++i)
-      {
-        distances_[i][iat]     = temp_r_[i];
-        displacements_[i](iat) = -temp_dr_[i];
-      }
+      distances_[i][iat]     = temp_r_[i];
+      displacements_[i](iat) = -temp_dr_[i];
     }
   }
 
-  void updateForOldPosPartial(IndexType jat) override
+  void updatePartial(IndexType jat, bool from_temp) override
   {
-    assert(old_prepared_elec_id == jat);
-    if (old_r_.data() == distances_[jat].data())
-      return;
-
     ScopedTimer local_timer(update_timer_);
-
     //update by a cache line
     const int nupdate = getAlignedSize<T>(jat);
-    //copy row
-    std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
-    for (int idim = 0; idim < D; ++idim)
-      std::copy_n(old_dr_.data(idim), nupdate, displacements_[jat].data(idim));
+    if (from_temp)
+    {
+      //copy row
+      std::copy_n(temp_r_.data(), nupdate, distances_[jat].data());
+      for (int idim = 0; idim < D; ++idim)
+        std::copy_n(temp_dr_.data(idim), nupdate, displacements_[jat].data(idim));
+    }
+    else
+    {
+      assert(old_prepared_elec_id == jat);
+      //copy row
+      std::copy_n(old_r_.data(), nupdate, distances_[jat].data());
+      for (int idim = 0; idim < D; ++idim)
+        std::copy_n(old_dr_.data(idim), nupdate, displacements_[jat].data(idim));
+    }
   }
 
 private:

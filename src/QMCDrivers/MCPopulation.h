@@ -72,9 +72,6 @@ private:
   std::vector<RealType> ptclgrp_inv_mass_;
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
-  size_t size_dataset_;
-  // walker weights
-  std::vector<FullPrecRealType> walker_weights_;
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
@@ -150,7 +147,6 @@ public:
     auto walker_index = 0;
     for (int i = 0; i < walker_consumers.size(); ++i)
     {
-      walker_consumers[i]->initializeResources(trial_wf_->getResource());
       walker_consumers[i]->clearWalkers();
       for (int j = 0; j < walkers_per_crowd[i]; ++j)
       {
@@ -161,7 +157,7 @@ public:
     }
   }
 
-  void syncWalkersPerNode(Communicate* comm);
+  void syncWalkersPerRank(Communicate* comm);
   void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
 
   /**@ingroup Accessors

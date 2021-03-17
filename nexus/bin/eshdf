@@ -8,10 +8,6 @@ from optparse import OptionParser
 # Non-standard Python library imports
 import numpy as np
 
-# Nexus imports
-from generic import obj
-from developer import log,warn,error,ci
-
 
 
 def find_nexus_modules():
@@ -34,12 +30,17 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+
     generic = import_nexus_module('generic')
     obj = generic.obj
     del generic
 
     developer = import_nexus_module('developer')
-    DevBase     = developer.DevBase
+    log         = developer.log
+    warn        = developer.warn
     error       = developer.error
     ci          = developer.ci
     del developer
@@ -48,8 +49,9 @@ try:
     read_hdf = hdfreader.read_hdf
     del hdfreader
 except:
+    from versions import nexus_version
     from generic import obj
-    from developer import DevBase,error,ci
+    from developer import log,warn,error,ci
     from hdfreader import read_hdf
 #end try
 
@@ -159,7 +161,7 @@ def kinetic():
 
     # read command line inputs
     usage = '''usage: %prog kinetic [options] [eshdf_file]'''
-    parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
+    parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
 
     parser.add_option('-h','--help',dest='help',
                       action='store_true',default=False,

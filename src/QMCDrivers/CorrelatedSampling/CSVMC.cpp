@@ -158,10 +158,10 @@ bool CSVMC::run()
       int ip                 = omp_get_thread_num();
       IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
       //assign the iterators and resuse them
-      MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
+      MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       CSMovers[ip]->startBlock(nSteps);
       int now_loc    = CurrentStep;
-      RealType cnorm = 1.0 / static_cast<RealType>(wPerNode[ip + 1] - wPerNode[ip]);
+      RealType cnorm = 1.0 / static_cast<RealType>(wPerRank[ip + 1] - wPerRank[ip]);
       for (int step = 0; step < nSteps; ++step)
       {
         CSMovers[ip]->set_step(now_loc);
@@ -216,13 +216,13 @@ void CSVMC::resetRun()
 
 
   makeClones(W, Psi1, H1);
-  FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
+  FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
 
   if (NumThreads > 1)
     APP_ABORT("OpenMP Parallelization for CSVMC not working at the moment");
 
   app_log() << "  Initial partition of walkers ";
-  copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(app_log(), " "));
+  copy(wPerRank.begin(), wPerRank.end(), std::ostream_iterator<int>(app_log(), " "));
   app_log() << std::endl;
 
 
@@ -292,7 +292,7 @@ void CSVMC::resetRun()
 
   app_log() << "  Total Sample Size   =" << nTargetSamples << std::endl;
   app_log() << "  Walker distribution on root = ";
-  copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(app_log(), " "));
+  copy(wPerRank.begin(), wPerRank.end(), std::ostream_iterator<int>(app_log(), " "));
   app_log() << std::endl;
   app_log().flush();
 
@@ -303,13 +303,13 @@ void CSVMC::resetRun()
     CSMovers[ip]->put(qmcNode);
     CSMovers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
-      CSMovers[ip]->initCSWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], nWarmupSteps > 0);
+      CSMovers[ip]->initCSWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], nWarmupSteps > 0);
     else
-      CSMovers[ip]->initCSWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], nWarmupSteps > 0);
+      CSMovers[ip]->initCSWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], nWarmupSteps > 0);
 
     for (int prestep = 0; prestep < nWarmupSteps; ++prestep)
     {
-      CSMovers[ip]->advanceWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], true);
+      CSMovers[ip]->advanceWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], true);
       if (prestep == nWarmupSteps - 1)
         CSMovers[ip]->updateNorms();
     }

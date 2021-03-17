@@ -5,6 +5,8 @@
 // Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -25,6 +27,19 @@ void TWFdispatcher::flex_evaluateLog(const RefVectorWithLeader<TrialWaveFunction
   else
     for (size_t iw = 0; iw < wf_list.size(); iw++)
       wf_list[iw].evaluateLog(p_list[iw]);
+}
+
+void TWFdispatcher::flex_recompute(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   const std::vector<bool>& recompute) const
+{
+  assert(wf_list.size() == p_list.size());
+  if (use_batch_)
+    TrialWaveFunction::mw_recompute(wf_list, p_list, recompute);
+  else
+    for (size_t iw = 0; iw < wf_list.size(); iw++)
+      if (recompute[iw])
+        wf_list[iw].recompute(p_list[iw]);
 }
 
 void TWFdispatcher::flex_calcRatio(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -115,8 +130,8 @@ void TWFdispatcher::flex_completeUpdates(const RefVectorWithLeader<TrialWaveFunc
   if (use_batch_)
     TrialWaveFunction::mw_completeUpdates(wf_list);
   else
-    for (size_t iw = 0; iw < wf_list.size(); iw++)
-      wf_list[iw].completeUpdates();
+    for (TrialWaveFunction& wf : wf_list)
+      wf.completeUpdates();
 }
 
 void TWFdispatcher::flex_evaluateGL(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

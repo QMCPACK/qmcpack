@@ -39,6 +39,7 @@
 #include "QMCDrivers/ContextForSteps.h"
 #include "OhmmsApp/ProjectData.h"
 #include "MultiWalkerDispatchers.h"
+#include "DriverWalkerTypes.h"
 
 class Communicate;
 
@@ -178,10 +179,6 @@ public:
   void createRngsStepContexts(int num_crowds);
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
-
-  int addObservable(const std::string& aname);
-
-  RealType getObservable(int i);
 
   ///set global offsets of the walkers
   void setWalkerOffsets();
@@ -352,9 +349,17 @@ protected:
   ///root of all the output files
   std::string root_name_;
 
-
-  ///the entire (or on node) walker population
+  /** the entire (on node) walker population
+   * it serves VMCBatch and DMCBatch right now but will be polymorphic
+   */
   MCPopulation population_;
+
+  /** the golden multi walker shared resource
+   * serves ParticleSet TrialWaveFunction right now but actually should be based on MCPopulation.
+   * per crowd resources are copied from this gold instance
+   * it should be activated when dispatchers don't serialize walkers
+   */
+  struct DriverWalkerResourceCollection golden_resource_;
 
   /// multi walker dispatchers
   const MultiWalkerDispatchers dispatchers_;

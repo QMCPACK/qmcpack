@@ -85,13 +85,13 @@ void DMC::resetUpdateEngines()
     Rng.resize(NumThreads, 0);
     estimatorClones.resize(NumThreads, 0);
     traceClones.resize(NumThreads, 0);
-    FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
+    FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
 
     {
       //log file
       std::ostringstream o;
       o << "  Initial partition of walkers on a node: ";
-      copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(o, " "));
+      copy(wPerRank.begin(), wPerRank.end(), std::ostream_iterator<int>(o, " "));
       o << "\n";
       if (qmc_driver_mode[QMC_UPDATE_MODE])
       {
@@ -134,7 +134,7 @@ void DMC::resetUpdateEngines()
           Movers[ip]->setSpinMass(SpinMass);
           Movers[ip]->put(qmcNode);
           Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-          Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+          Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
         }
         else
         {
@@ -152,7 +152,7 @@ void DMC::resetUpdateEngines()
 
           Movers[ip]->put(qmcNode);
           Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-          Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+          Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
         }
         else
         {
@@ -162,7 +162,7 @@ void DMC::resetUpdateEngines()
             Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
           Movers[ip]->put(qmcNode);
           Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
-          Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+          Movers[ip]->initWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
         }
       }
     }
@@ -275,7 +275,7 @@ bool DMC::run()
       //           W.resetWalkerParents();
       //         }
       if (variablePop)
-        FairDivideLow(W.getActiveWalkers(), NumThreads, wPerNode);
+        FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
       sample++;
     }
     //       branchEngine->debugFWconfig();

@@ -298,6 +298,9 @@ protected:
   ///copy constructor (disabled)
   QMCUpdateBase(const QMCUpdateBase&) = delete;
 
+  /// check logpsi and grad and lap against values computed from scratch
+  static bool checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf);
+
 private:
   ///set default parameters
   void setDefaults();

@@ -234,7 +234,7 @@ public:
   }
 
   // evaluate using the log of the counting basis
-  void evaluate(ParticleSet& P)
+  void evaluate(const ParticleSet& P)
   {
     // clear arrays
     std::fill(val.begin(), val.end(), 0);
@@ -286,7 +286,7 @@ public:
     }
   }
 
-  void evaluate_print(std::ostream& os, ParticleSet& P)
+  void evaluate_print(std::ostream& os, const ParticleSet& P)
   {
     for (auto it = C.begin(); it != C.end(); ++it)
       (*it)->evaluate_print(os, P);
@@ -307,7 +307,7 @@ public:
   }
 
 
-  void evaluateTemp(ParticleSet& P, int iat)
+  void evaluateTemp(const ParticleSet& P, int iat)
   {
     // clear arrays
     std::fill(val_t.begin(), val_t.end(), 0);
@@ -357,7 +357,7 @@ public:
     }
   }
 
-  void evaluateTemp_print(std::ostream& os, ParticleSet& P)
+  void evaluateTemp_print(std::ostream& os, const ParticleSet& P)
   {
     os << "CountingGaussianRegion::evaluateTemp_print" << std::endl;
     os << "val_t: ";

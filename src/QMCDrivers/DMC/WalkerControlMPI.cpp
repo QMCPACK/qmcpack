@@ -90,7 +90,7 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
     sortWalkers(W);
     //use NumWalkersSent from the previous exchange
     curData[SENTWALKERS_INDEX] = NumWalkersSent;
-    //update the number of walkers for this node
+    //update the number of walkers for this rank
     //Causes implicit conversion to FullPrecRealType
     curData[LE_MAX + MyContext] = NumWalkers;
     //{ ScopedTimer local_timer(myTimers[DMC_MPI_imbalance]);
@@ -102,8 +102,8 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
     measureProperties(iter);
     W.EnsembleProperty = ensemble_property_;
     for (int i = 0, j = LE_MAX; i < num_contexts_; i++, j++)
-      NumPerNode[i] = static_cast<int>(curData[j]);
-    int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+      NumPerRank[i] = static_cast<int>(curData[j]);
+    int current_population = std::accumulate(NumPerRank.begin(), NumPerRank.end(), 0);
 
     Cur_pop = applyNmaxNmin(current_population);
   }
@@ -130,87 +130,11 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
   return Cur_pop;
 }
 
-/** Unified Driver version
- *
- *  It takes 5 steps:
- *    1. calcPopulationAdjustment produces a PopulationAdjustment
- *    2. allreduce collects the number of good walkers + copies on every rank.
- *    3. properties are measured which updates the ensemble properties.
- *    4. adjustPopulation applies nMinNmax if ranks have exceeded min or max limits
-
- *    5. swapWalkersSimple enacts the population adjustment, sending and recieving walkers.
- *       Receiving side recycles bad walkers' memory first.
- *    6. onRankspawnkill kill's remaining bad walkers, spawns any walkers who have not yet been copied.
- *
- *  In order to reduce the time for allocating walker memory,
- *  this algorithm does not destroy the bad walkers in step 1.
- *  All the dead walkers are reused in step 5 & 6. None are ever GC'd
- */
-QMCTraits::FullPrecRealType WalkerControlMPI::branch(int iter, MCPopulation& pop)
-{
-  ScopedTimer local_timer(myTimers[DMC_MPI_branch]);
-  // This has the same ridiculous side effect as SortWalkers
-  // i.e. it updates most of curData
-  PopulationAdjustment adjust(calcPopulationAdjustment(pop));
-
-  {
-    ScopedTimer local_timer(myTimers[DMC_MPI_prebalance]);
-
-    //use NumWalkersSent from the previous exchange
-    //You need another copy because curData is zeroed out defensively.
-    curData[SENTWALKERS_INDEX] = NumWalkersSent;
-
-    //This should not be used by the new driver code
-    //curData[LE_MAX + MyContext] = -1000;
-    {
-      ScopedTimer local_timer(myTimers[DMC_MPI_allreduce]);
-      // You might think we are just reducing LE and sent walkers but
-      // see calcPopulationAdjustments massive side effects.
-      myComm->allreduce(curData);
-    }
-    measureProperties(iter);
-
-    pop.set_ensemble_property(ensemble_property_);
-
-    limitPopulation(adjust);
-  }
-
-  auto num_per_node = WalkerControlBase::syncFutureWalkersPerRank(myComm, adjust.num_walkers);
-
-  {
-    ScopedTimer local_timer(myTimers[DMC_MPI_loadbalance]);
-    NumWalkersSent = swapWalkersSimple(pop, adjust, num_per_node);
-  }
-
-  WalkerControlBase::onRankKill(pop, adjust);
-  WalkerControlBase::onRankSpawn(pop, adjust);
-
-  if (adjust.num_walkers != num_per_node[MyContext])
-  {
-    std::ostringstream error_message;
-    error_message << "failure MPI population control pop.get_num_local_walkers() " << pop.get_num_local_walkers()
-                  << " != "
-                  << "num_per_node[" << num_per_node[MyContext] << "]\n";
-    throw std::runtime_error(error_message.str());
-  }
-
-  // Update to the current population
-  pop.syncWalkersPerNode(myComm);
-
-  for (UPtr<MCPWalker>& walker : pop.get_walkers())
-  {
-    walker->Weight       = 1.0;
-    walker->Multiplicity = 1.0;
-  }
-
-  return pop.get_num_global_walkers();
-}
-
-// determine new walker population on each node
+// determine new walker population on each MPI rank
 void WalkerControlMPI::determineNewWalkerPopulation(int cur_pop,
                                                     int num_contexts,
                                                     int my_context,
-                                                    std::vector<int>& num_per_node,
+                                                    std::vector<int>& num_per_rank,
                                                     std::vector<int>& fair_offset,
                                                     std::vector<int>& minus,
                                                     std::vector<int>& plus)
@@ -219,8 +143,8 @@ void WalkerControlMPI::determineNewWalkerPopulation(int cur_pop,
   for (int ip = 0; ip < num_contexts; ip++)
   {
     // (FairOffSet[ip + 1] - FairOffSet[ip]) gives the partiion ip walker pop
-    int dn = num_per_node[ip] - (fair_offset[ip + 1] - fair_offset[ip]);
-    num_per_node[ip] -= dn;
+    int dn = num_per_rank[ip] - (fair_offset[ip + 1] - fair_offset[ip]);
+    num_per_rank[ip] -= dn;
     if (dn > 0)
     {
       plus.insert(plus.end(), dn, ip);
@@ -243,7 +167,7 @@ void WalkerControlMPI::determineNewWalkerPopulation(int cur_pop,
 
 /** swap Walkers with Recv/Send or Irecv/Isend
  *
- * The algorithm ensures that the load per node can differ only by one walker.
+ * The algorithm ensures that the load per rank can differ only by one walker.
  * Each MPI rank can only send or receive or be silent.
  * The communication is one-dimensional and very local.
  * If multiple copies of a walker need to be sent to the target rank, only send one.
@@ -255,14 +179,14 @@ void WalkerControlMPI::determineNewWalkerPopulation(int cur_pop,
 void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 {
   std::vector<int> minus, plus;
-  //legacy code does not modify NumPerNode in this call so we copy NumPerNode
-  std::vector<int> num_per_node(NumPerNode);
-  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, num_per_node, FairOffSet, minus, plus);
+  //legacy code does not modify NumPerRank in this call so we copy NumPerRank
+  std::vector<int> num_per_rank(NumPerRank);
+  determineNewWalkerPopulation(Cur_pop, num_contexts_, MyContext, num_per_rank, FairOffSet, minus, plus);
 
   if (good_w.empty() && bad_w.empty())
   {
     app_error() << "It should never happen that no walkers, "
-                << "neither good nor bad, exist on a node. "
+                << "neither good nor bad, exist on a rank. "
                 << "Please report to developers. " << std::endl;
     APP_ABORT("WalkerControlMPI::swapWalkersSimple no existing walker");
   }
@@ -275,7 +199,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   sprintf(fname, "test.%d", MyContext);
   std::ofstream fout(fname, std::ios::app);
   //fout << NumSwaps << " " << Cur_pop << " ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << NumPerNode[ic] << " ";
+  //for(int ic=0; ic<NumContexts; ic++) fout << NumPerRank[ic] << " ";
   //fout << " | ";
   //for(int ic=0; ic<NumContexts; ic++) fout << FairOffSet[ic+1]-FairOffSet[ic] << " ";
   //fout << " | ";
@@ -466,217 +390,14 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
     good_w[iw]  = good_w_temp[ncopy_pairs[iw].second];
     ncopy_w[iw] = ncopy_pairs[iw].first;
   }
-  //add walkers from other node
+  //add walkers from other rank
   if (newW.size())
   {
     good_w.insert(good_w.end(), newW.begin(), newW.end());
     ncopy_w.insert(ncopy_w.end(), ncopy_newW.begin(), ncopy_newW.end());
   }
 
-  assert(std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) == num_per_node[MyContext]);
+  assert(std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size()) == num_per_rank[MyContext]);
 }
-
-/** swap Walkers between rank MCPopulations
- *
- *  MCPopulation is sufficiently different from MCWalkerConfiguration that this is 
- *  basically a rewrite.
- *  \param[inout] pop
- *  \param[inout] adjust
- *
- *  This method should not be dependent on legacy state variables of
- *  Cur_pop, NumPernode
- *
- */
-int WalkerControlMPI::swapWalkersSimple(MCPopulation& pop,
-                                        PopulationAdjustment& adjust,
-                                        std::vector<IndexType>& num_per_node)
-{
-  int expanded_population = std::accumulate(num_per_node.begin(), num_per_node.end(), 0);
-  std::vector<int> minus, plus;
-  determineNewWalkerPopulation(expanded_population, num_contexts_, MyContext, num_per_node, FairOffSet, plus, minus);
-
-  // local struct for sort vector
-  // std::sort requires reference_wrapper for w_elem
-  struct CopiesAndWE
-  {
-    int copies;
-    std::reference_wrapper<WalkerElementsRef> w_elem;
-  };
-  // sort good walkers by the number of copies
-  std::vector<CopiesAndWE> sorted_good_walkers;
-  for (int iw = 0; iw < adjust.copies_to_make.size(); iw++)
-    sorted_good_walkers.push_back(CopiesAndWE{adjust.copies_to_make[iw], adjust.good_walkers[iw]});
-
-  // Sort only on the number of copies
-  std::sort(sorted_good_walkers.begin(), sorted_good_walkers.end(),
-            [](CopiesAndWE& a, CopiesAndWE& b) { return a.copies < b.copies; });
-
-  int nswap = plus.size();
-
-  std::vector<WalkerMessage> send_message_list;
-  // overallocated by number of duplicate messages but message isn't big.
-  std::vector<WalkerMessage> recv_message_list;
-  std::vector<WalkerElementsRef> new_walkers;
-  // Their data needs to not get written over until we are done.
-  RefVector<WalkerElementsRef> zombies;
-  for (int ic = 0; ic < nswap; ic++)
-  {
-    if (minus[ic] == MyContext)
-    {
-      // always send the last good walker or if we're out send the first zombie
-      if (!sorted_good_walkers.empty())
-      {
-        send_message_list.push_back(WalkerMessage{sorted_good_walkers.back().w_elem, minus[ic], plus[ic]});
-        --(sorted_good_walkers.back().copies);
-        if (sorted_good_walkers.back().copies < 0)
-        {
-          // Danger possible race condition if this dead walker ends up back in the pool
-          // so temporary refvector for those to be killed.
-          zombies.push_back(sorted_good_walkers.back().w_elem);
-          sorted_good_walkers.pop_back();
-        }
-      }
-      else
-      {
-        send_message_list.push_back(WalkerMessage{zombies.front(), minus[ic], plus[ic]});
-        app_warning() << "Rank " << myComm->rank() << "Had to send best zombie for population control.\n";
-      }
-    }
-    else if (plus[ic] == MyContext)
-    {
-      if (adjust.bad_walkers.size() > 0)
-      {
-        pop.killWalker(adjust.bad_walkers.back().walker);
-        adjust.bad_walkers.pop_back();
-      }
-      new_walkers.push_back(pop.spawnWalker());
-      recv_message_list.push_back(WalkerMessage{new_walkers.back(), minus[ic], plus[ic]});
-    }
-  }
-
-  //create send requests
-  std::vector<mpi3::request> send_requests;
-
-  if (send_message_list.size() > 0)
-  {
-    std::for_each(send_message_list.begin(), send_message_list.end(), [&send_requests, this](WalkerMessage& message) {
-      MCPWalker& this_walker = message.walker_elements.walker;
-      ParticleSet& this_pset = message.walker_elements.pset;
-      // Most of these calls are unecessary,
-      // evaluateLog definitely is but is invaluable for checking for the state of the walker before and after transfer
-      // \todo narrow these down to a minimum and manage to reason out the state of a valid fat walker.
-      this_pset.saveWalker(this_walker);
-      this_walker.updateBuffer();
-      send_requests.emplace_back(myComm->comm.isend_n(message.walker_elements.walker.DataSet.data(),
-                                                      message.walker_elements.walker.DataSet.size(),
-                                                      message.target_rank));
-    });
-  }
-
-  //create recv requests
-  std::vector<mpi3::request> recv_requests;
-  if (recv_message_list.size() > 0)
-  {
-    std::for_each(recv_message_list.begin(), recv_message_list.end(), [&recv_requests, this](WalkerMessage& message) {
-      recv_requests.emplace_back(myComm->comm.ireceive_n(message.walker_elements.walker.DataSet.data(),
-                                                         message.walker_elements.walker.DataSet.size(),
-                                                         message.source_rank));
-      size_t dsize = message.walker_elements.walker.DataSet.size();
-    });
-  }
-
-  if (recv_message_list.size() > 0)
-  {
-    ScopedTimer local_timer(myTimers[DMC_MPI_recv]);
-    std::vector<int> recv_completed(recv_message_list.size(), 0);
-    std::vector<int> recv_waited(recv_message_list.size(), 0);
-
-    while (std::any_of(recv_completed.begin(), recv_completed.end(), [](int i) { return i == 0; }))
-    {
-      for (int im = 0; im < recv_requests.size(); ++im)
-      {
-        if (!recv_waited[im])
-        {
-          //recv_requests[im].wait();
-          recv_waited[im] = 1;
-        }
-
-        if (!recv_completed[im] && recv_requests[im].completed())
-        {
-          MCPWalker& this_walker = recv_message_list[im].walker_elements.walker;
-          // This sequence of calls is our best effort to go from the wire to a working fat walker.
-          // \todo narrow these down to a minimum and manage to reason out the state of a valid fat walker.
-          this_walker.copyFromBuffer();
-#ifndef NDEBUG
-          this_walker.set_has_been_on_wire(true);
-#endif
-          ParticleSet& this_pset = recv_message_list[im].walker_elements.pset;
-          this_pset.loadWalker(this_walker, true);
-          // If this update isn't called then the Jastrow's will not match those in the sent walker.
-          // The update call is required to update the internal state of pset used by TWF to do the
-          // Jastrow evaluations in evaluateLog.
-          this_pset.update();
-          TrialWaveFunction& this_twf = recv_message_list[im].walker_elements.twf;
-          this_twf.evaluateLog(this_pset);
-          recv_completed[im] = 1;
-        }
-      }
-    }
-  }
-
-  if (send_message_list.size() > 0)
-  {
-    ScopedTimer local_timer(myTimers[DMC_MPI_send]);
-    std::vector<int> send_completed(send_message_list.size(), 0);
-    std::vector<int> send_waited(send_message_list.size(), 0);
-
-    // After we've got all our receives wait if we're not done sending.
-    while (std::any_of(send_completed.begin(), send_completed.end(), [](int i) { return i == 0; }))
-    {
-      for (int im = 0; im < send_requests.size(); im++)
-      {
-        if (!send_waited[im])
-        {
-          //send_requests[im].wait();
-          send_waited[im] = 1;
-        }
-
-        send_requests[im].wait();
-        if (!send_completed[im] && send_requests[im].completed())
-          send_completed[im] = 1;
-      }
-    }
-  }
-
-
-  std::for_each(zombies.begin(), zombies.end(), [&pop](WalkerElementsRef& zombie) { pop.killWalker(zombie.walker); });
-  adjust.good_walkers.clear();
-  adjust.copies_to_make.clear();
-  for (int iw = 0; iw < sorted_good_walkers.size(); ++iw)
-  {
-    assert(sorted_good_walkers[iw].copies >= 0);
-    adjust.good_walkers.push_back(sorted_good_walkers[iw].w_elem);
-    adjust.copies_to_make.push_back(sorted_good_walkers[iw].copies);
-  }
-  for (int iw = 0; iw < new_walkers.size(); ++iw)
-  {
-    assert(new_walkers[iw].walker.get_has_been_on_wire());
-    adjust.good_walkers.push_back(new_walkers[iw]);
-    adjust.copies_to_make.push_back(0);
-  }
-
-  adjust.num_walkers =
-      std::accumulate(adjust.copies_to_make.begin(), adjust.copies_to_make.end(), adjust.copies_to_make.size());
-
-  //myComm->barrier();
-
-  assert(adjust.num_walkers == num_per_node[MyContext]);
-
-  // if ( send_message_list.empty() )
-  //   return 0;
-  // else
-  return send_message_list.size();
-}
-
 
 } // namespace qmcplusplus

@@ -382,7 +382,7 @@ public:
     }
   }
 
-  void build_compact_list(ParticleSet& P)
+  void build_compact_list(const ParticleSet& P)
   {
     const auto& eI_dists  = P.getDistTable(ei_Table_ID_).getDistances();
     const auto& eI_displs = P.getDistTable(ei_Table_ID_).getDisplacements();
@@ -406,7 +406,7 @@ public:
           }
   }
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     return evaluateGL(P, G, L, true);
   }
@@ -501,7 +501,7 @@ public:
       valT* restrict save_g      = dUat.data(idim);
       const valT* restrict new_g = newdUk.data(idim);
       const valT* restrict old_g = olddUk.data(idim);
-#pragma omp simd aligned(save_g, new_g, old_g)
+#pragma omp simd aligned(save_g, new_g, old_g: QMC_SIMD_ALIGNMENT)
       for (int jel = 0; jel < Nelec; jel++)
         save_g[jel] += new_g[jel] - old_g[jel];
     }
@@ -567,7 +567,7 @@ public:
     }
   }
 
-  inline void recompute(ParticleSet& P)
+  inline void recompute(const ParticleSet& P)
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
@@ -591,7 +591,7 @@ public:
       {
         valT* restrict save_g      = dUat.data(idim);
         const valT* restrict new_g = newdUk.data(idim);
-#pragma omp simd aligned(save_g, new_g)
+#pragma omp simd aligned(save_g, new_g: QMC_SIMD_ALIGNMENT)
         for (int kel = 0; kel < jel; kel++)
           save_g[kel] += new_g[kel];
       }
@@ -691,7 +691,7 @@ public:
       valT* restrict jI = Disp_jI_Compressed.data(idim);
       valT* restrict kI = Disp_kI_Compressed.data(idim);
       valT dUj_x(0);
-#pragma omp simd aligned(gradF0, gradF1, gradF2, hessF11, jk, jI, kI) reduction(+ : dUj_x)
+#pragma omp simd aligned(gradF0, gradF1, gradF2, hessF11, jk, jI, kI: QMC_SIMD_ALIGNMENT) reduction(+ : dUj_x)
       for (int kel_index = 0; kel_index < kel_counter; kel_index++)
       {
         // recycle hessF11
@@ -708,7 +708,7 @@ public:
       valT* restrict jk0 = Disp_jk_Compressed.data(0);
       if (idim > 0)
       {
-#pragma omp simd aligned(jk, jk0)
+#pragma omp simd aligned(jk, jk0: QMC_SIMD_ALIGNMENT)
         for (int kel_index = 0; kel_index < kel_counter; kel_index++)
           jk0[kel_index] += jk[kel_index];
       }
@@ -719,12 +719,12 @@ public:
     }
     valT sum(0);
     valT* restrict jk0 = Disp_jk_Compressed.data(0);
-#pragma omp simd aligned(jk0, hessF01) reduction(+ : sum)
+#pragma omp simd aligned(jk0, hessF01: QMC_SIMD_ALIGNMENT) reduction(+ : sum)
     for (int kel_index = 0; kel_index < kel_counter; kel_index++)
       sum += hessF01[kel_index] * jk0[kel_index];
     d2Uj -= ctwo * sum;
 
-#pragma omp simd aligned(hessF00, hessF22, gradF0, gradF2, hessF02, hessF11)
+#pragma omp simd aligned(hessF00, hessF22, gradF0, gradF2, hessF02, hessF11: QMC_SIMD_ALIGNMENT)
     for (int kel_index = 0; kel_index < kel_counter; kel_index++)
       hessF00[kel_index] = hessF00[kel_index] + hessF22[kel_index] + lapfac * (gradF0[kel_index] + gradF2[kel_index]) -
           ctwo * hessF02[kel_index] * hessF11[kel_index];
@@ -846,7 +846,7 @@ public:
     build_compact_list(P);
   }
 
-  LogValueType evaluateGL(ParticleSet& P,
+  LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch = false)

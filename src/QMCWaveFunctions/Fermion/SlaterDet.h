@@ -60,7 +60,7 @@ public:
 
   void reportStatus(std::ostream& os) override;
 
-  virtual LogValueType evaluateLog(ParticleSet& P,
+  virtual LogValueType evaluateLog(const ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
                                    ParticleSet::ParticleLaplacian_t& L) override;
 
@@ -69,7 +69,7 @@ public:
                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  virtual LogValueType evaluateGL(ParticleSet& P,
+  virtual LogValueType evaluateGL(const ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L,
                                   bool fromscratch) override;
@@ -80,7 +80,11 @@ public:
                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
                              bool fromscratch) const override;
 
-  virtual void recompute(ParticleSet& P) override;
+  virtual void recompute(const ParticleSet& P) override;
+
+  virtual void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            const std::vector<bool>& recompute) const override;
 
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
@@ -93,7 +97,7 @@ public:
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  void createResource(ResourceCollection& collection) override;
+  void createResource(ResourceCollection& collection) const override;
 
   void acquireResource(ResourceCollection& collection) override;
 
@@ -114,7 +118,6 @@ public:
   }
 
   virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
-  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat) override;
 
   virtual PsiValueType ratioGradWithSpin(ParticleSet& P,
                                          int iat,
@@ -126,12 +129,6 @@ public:
                             int iat,
                             std::vector<PsiValueType>& ratios,
                             std::vector<GradType>& grad_now) const override;
-
-  void mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                         const RefVectorWithLeader<ParticleSet>& p_list,
-                         int iat,
-                         std::vector<PsiValueType>& ratios,
-                         std::vector<GradType>& grad_now) const override;
 
   virtual GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 

@@ -122,7 +122,7 @@ def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]
   root.extend(a)
 
   doc.write(xml_fname,pretty_print=True)
-
+  print ('Wavefunction successfully saved to QMCPACK HDF5 spline format')
 
 
 
@@ -253,7 +253,7 @@ def generate_pwscf_h5(cell,gvecs,eig_df,h5_fname):
 
   # transfer version info. !!!! hard code for now
   new.create_dataset('application/code',data=[np.string_('PySCF')])
-  new.create_dataset('application/version',data=[np.string_('1.6.2')])
+  new.create_dataset('application/version',data=[np.string_('1.7.5')])
   new.create_dataset('format',data=[np.string_('ES-HDF')])
   new.create_dataset('version',data=[2,1,0])
   new.close()
