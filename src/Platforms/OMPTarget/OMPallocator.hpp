@@ -11,8 +11,8 @@
 // -*- C++ -*-
 /** @file OMPallocator.hpp
  */
-#ifndef QMCPLUSPLUS_OPENMP_ALLOCATOR_H
-#define QMCPLUSPLUS_OPENMP_ALLOCATOR_H
+#ifndef QMCPLUSPLUS_OMPTARGET_ALLOCATOR_H
+#define QMCPLUSPLUS_OMPTARGET_ALLOCATOR_H
 
 #include <memory>
 #include <type_traits>
