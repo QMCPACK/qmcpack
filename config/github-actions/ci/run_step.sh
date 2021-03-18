@@ -8,7 +8,7 @@ case "$1" in
     cd ${GITHUB_WORKSPACE}/..
     mkdir qmcpack-build
     cd qmcpack-build
-    cmake -GNinja -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/../ncio-install ${GITHUB_WORKSPACE}
+    cmake -GNinja -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/../qmcpack-install ${GITHUB_WORKSPACE}
     ;;
 
   # Build using ninja
@@ -20,8 +20,8 @@ case "$1" in
   # Run unit and deterministic tests
   test)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    ctest -R unit
-    ctest -R deterministic -LE unstable
+    ctest -L unit
+    ctest -L deterministic
     ;;
 
   # Install the library
