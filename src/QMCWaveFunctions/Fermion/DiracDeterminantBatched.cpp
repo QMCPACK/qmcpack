@@ -61,7 +61,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_invertPsiM(const RefVectorWith
   ScopedTimer inverse_timer(wfc_leader.InverseTimer);
   const auto nw = wfc_list.size();
 
-  RefVector<DET_ENGINE_TYPE> engine_list;
+  RefVectorWithLeader<DET_ENGINE_TYPE> engine_list(wfc_leader.det_engine_);
   RefVector<LogValueType> log_value_list;
   engine_list.reserve(nw);
 
@@ -72,7 +72,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_invertPsiM(const RefVectorWith
     log_value_list.push_back(det.LogValue);
   }
 
-  wfc_leader.det_engine_.mw_invert_transpose(engine_list, logdetT_list, log_value_list);
+  DET_ENGINE_TYPE::mw_invert_transpose(engine_list, logdetT_list, log_value_list);
 }
 
 ///reset the size: with the number of particles and number of orbtials
@@ -126,7 +126,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVectorWithLe
 
   const int nw = wfc_list.size();
   std::vector<const ValueType*> dpsiM_row_list(nw, nullptr);
-  RefVector<DET_ENGINE_TYPE> engine_list;
+  RefVectorWithLeader<DET_ENGINE_TYPE> engine_list(wfc_leader.det_engine_);
   engine_list.reserve(nw);
 
   const int WorkingIndex = iat - FirstIndex;
@@ -137,7 +137,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_evalGrad(const RefVectorWithLe
     engine_list.push_back(det.det_engine_);
   }
 
-  wfc_leader.det_engine_.mw_evalGrad(engine_list, dpsiM_row_list, WorkingIndex, grad_now);
+  DET_ENGINE_TYPE::mw_evalGrad(engine_list, dpsiM_row_list, WorkingIndex, grad_now);
 
 #ifndef NDEBUG
   for (int iw = 0; iw < nw; iw++)
@@ -188,7 +188,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
     ScopedTimer local_timer(SPOVGLTimer);
     RefVectorWithLeader<SPOSet> phi_list(*Phi);
     phi_list.reserve(wfc_list.size());
-    RefVector<DET_ENGINE_TYPE> engine_list;
+    RefVectorWithLeader<DET_ENGINE_TYPE> engine_list(wfc_leader.det_engine_);
     engine_list.reserve(wfc_list.size());
 
     const int WorkingIndex = iat - FirstIndex;
@@ -199,8 +199,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_ratioGrad(const RefVectorWithL
       engine_list.push_back(det.det_engine_);
     }
 
-    auto psiMinv_row_dev_ptr_list =
-        wfc_leader.det_engine_.mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
+    auto psiMinv_row_dev_ptr_list = DET_ENGINE_TYPE::mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
     phi_vgl_v.resize(NumOrbitals * wfc_list.size());
     ratios_local.resize(wfc_list.size());
@@ -266,7 +265,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
       count++;
   const int n_accepted = count;
 
-  RefVector<DET_ENGINE_TYPE> engine_list;
+  RefVectorWithLeader<DET_ENGINE_TYPE> engine_list(wfc_leader.det_engine_);
   engine_list.reserve(nw);
   std::vector<ValueType*> psiM_g_dev_ptr_list(n_accepted, nullptr);
   std::vector<ValueType*> psiM_l_dev_ptr_list(n_accepted, nullptr);
@@ -293,11 +292,11 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_accept_rejectMove(
     PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
   }
 
-  wfc_leader.det_engine_.mw_accept_rejectRow(engine_list, WorkingIndex, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list,
-                                             isAccepted, phi_vgl_v.device_data(), phi_vgl_v.capacity(), ratios_local);
+  DET_ENGINE_TYPE::mw_accept_rejectRow(engine_list, WorkingIndex, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, isAccepted,
+                                       phi_vgl_v.device_data(), phi_vgl_v.capacity(), ratios_local);
 
   if (!safe_to_delay)
-    wfc_leader.det_engine_.mw_updateInvMat(engine_list);
+    DET_ENGINE_TYPE::mw_updateInvMat(engine_list);
 }
 
 /** move was rejected. copy the real container to the temporary to move on
@@ -328,7 +327,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE_TYPE>>();
   const auto nw    = wfc_list.size();
-  RefVector<DET_ENGINE_TYPE> engine_list;
+  RefVectorWithLeader<DET_ENGINE_TYPE> engine_list(wfc_leader.det_engine_);
   engine_list.reserve(nw);
   for (int iw = 0; iw < nw; iw++)
   {
@@ -338,14 +337,14 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_completeUpdates(
 
   {
     ScopedTimer update(UpdateTimer);
-    wfc_leader.det_engine_.mw_updateInvMat(engine_list);
+    DET_ENGINE_TYPE::mw_updateInvMat(engine_list);
   }
 
   { // transfer dpsiM, d2psiM, psiMinv to host
     ScopedTimer d2h(D2HTimer);
 
     // this call also completes all the device copying of dpsiM, d2psiM before the target update
-    wfc_leader.det_engine_.mw_transferAinv_D2H(engine_list);
+    DET_ENGINE_TYPE::mw_transferAinv_D2H(engine_list);
 
     if (UpdateMode == ORB_PBYP_PARTIAL)
     {
@@ -545,7 +544,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithL
     ScopedTimer local_timer(SPOVTimer);
     RefVectorWithLeader<SPOSet> phi_list(*Phi);
     phi_list.reserve(wfc_list.size());
-    RefVector<DET_ENGINE_TYPE> engine_list;
+    RefVectorWithLeader<DET_ENGINE_TYPE> engine_list(wfc_leader.det_engine_);
     engine_list.reserve(wfc_list.size());
 
     const int WorkingIndex = iat - FirstIndex;
@@ -556,8 +555,7 @@ void DiracDeterminantBatched<DET_ENGINE_TYPE>::mw_calcRatio(const RefVectorWithL
       engine_list.push_back(det.det_engine_);
     }
 
-    auto psiMinv_row_dev_ptr_list =
-        wfc_leader.det_engine_.mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
+    auto psiMinv_row_dev_ptr_list = DET_ENGINE_TYPE::mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
     phi_vgl_v.resize(NumOrbitals * wfc_list.size());
     ratios_local.resize(wfc_list.size());
