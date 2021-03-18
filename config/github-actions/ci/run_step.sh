@@ -20,7 +20,6 @@ case "$1" in
   # Run unit and deterministic tests
   test)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    ctest -L unit
     ctest -L deterministic
     ;;
 
