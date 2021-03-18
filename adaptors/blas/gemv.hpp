@@ -110,7 +110,7 @@ public:
 	iterator begin() const{return {alpha_, m_begin_, v_first_, ctxt_};}
 	iterator end()   const{return {alpha_, m_end_  , v_first_, ctxt_};}
 	size_type size() const{return end() - begin();}
-	typename decay_type::extensions_type extensions() const{return {{0, size()}};}
+	typename decay_type::extensions_type extensions() const{return typename decay_type::extensions_type{{0, size()}};}
 	decay_type decay() const{
 		decay_type ret; 
 		ret = *this;

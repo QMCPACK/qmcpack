@@ -42,8 +42,9 @@ public:
 //	static_assert( std::is_same<pointer, typename constructor_type::pointer>{}, 
 //		"incompatible pointer types");
 	allocator() = default;
+	// cppcheck-suppress noExplicitConstructor ; allocator *is* a pointer to a heap
 	allocator(memory_type* mp, constructor_type const& ctor = {}) : mp_{mp}, ctor_{ctor}{}
-	allocator(constructor_type const& ctor) : mp_{}, ctor_{ctor}{}
+	explicit allocator(constructor_type const& ctor) : mp_{}, ctor_{ctor}{}
 	allocator(allocator const& o) = default;//: mp_{o.mp_}, ctor_{o.ctor_}{}
 	allocator& operator=(allocator const&) = default;
 	bool operator==(allocator const& o) const{return mp_ == o.mp_;}
@@ -51,7 +52,11 @@ public:
 	using void_pointer = typename std::pointer_traits<decltype(std::declval<memory_type*>()->allocate(0, 0))>::template rebind<void>;
 	NODISCARD("because otherwise it will generate a memory leak")
 	pointer allocate(size_type n){
-		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(n*sizeof(value_type)/*, alignof(T)*/)));
+		static_assert( alignof(std::max_align_t) >= 16 , "for cuda");
+		return static_cast<pointer>(static_cast<void_pointer>(mp_->allocate(
+			n*sizeof(value_type),
+			alignof(std::max_align_t) // this takes into account 
+		)));
 	}
 	void deallocate(pointer p, size_type n){
 		mp_->deallocate(p, n*sizeof(value_type));

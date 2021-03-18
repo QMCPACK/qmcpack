@@ -37,6 +37,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_copy){
 	}
 	{
 		multi::array<double, 1> B = {5., 6., 7., 8.};
+		BOOST_REQUIRE( size(B) == size(A) );
 		B = blas::copy(A);
 		BOOST_REQUIRE( B == A );
 	}
@@ -97,6 +98,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_copy_context){
 	}
 	{
 		multi::array<double, 1> B = {5., 6., 7., 8.};
+		BOOST_REQUIRE( size(B) == size(A) );
 		B = blas::copy(ctx, A);
 		BOOST_REQUIRE( A == B );
 	}

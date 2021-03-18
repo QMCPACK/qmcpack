@@ -31,6 +31,7 @@ BOOST_AUTO_TEST_CASE(member_array_cast_soa_aos){
 		particle() = default;
 		particle(double m, v3d v) : mass{m}, position{v}{}
 		particle(particle const&) = default;
+		// cppcheck-suppress noExplicitConstructor ; particle can represent a particle-reference
 		particle(particles_SoA::reference&& r) : mass{r.mass}, position{r.position}{}
 	};
 
@@ -42,6 +43,8 @@ BOOST_AUTO_TEST_CASE(member_array_cast_soa_aos){
 	BOOST_REQUIRE( masses[1][1] == 99. );
 
 	multi::array<double, 2> masses_copy = masses;
+	BOOST_REQUIRE( &masses_copy[1][1] != &masses[1][1] );
+	
 	particles_SoA SoA = {
 		AoS.member_cast<double>(&particle::mass), 
 		AoS.member_cast<v3d>(&particle::position)
@@ -60,7 +63,7 @@ BOOST_AUTO_TEST_CASE(member_array_cast_soa_aos_employee){
 		short salary;
 		std::size_t age;
 		char padding_[9];
-		employee(std::string name_, short salary_, std::size_t age_) : name{name_}, salary{salary_}, age{age_}{}
+		employee(std::string name_, short salary_, std::size_t age_) : name{std::move(name_)}, salary{salary_}, age{age_}, padding_{}{}
 	};
 
 	multi::array<employee, 1> d1D = { {"Al"  , 1430, 35}, {"Bob"  , 3212, 34} }; 
