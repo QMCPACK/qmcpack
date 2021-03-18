@@ -62,7 +62,7 @@ struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   OffloadValueVector_t mw_temp;
   // scratch space for keeping one row of Ainv
   OffloadValueVector_t mw_rcopy;
-
+  
   MatrixDelayedUpdateCUDAMultiWalkerMem() : Resource("MatrixDelayedUpdateCUDAMultiWalkerMem") {}
 
   MatrixDelayedUpdateCUDAMultiWalkerMem(const MatrixDelayedUpdateCUDAMultiWalkerMem&)
@@ -89,6 +89,9 @@ public:
   using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
 
   using DiracMatrixCompute = DiracMatrixComputeCUDA<T_FP>;
+
+  // This facilitates generic testing code don't use to obscure the handle type 
+  using Handles = CUDALinearAlgebraHandles;
 private:
   /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   OffloadPinnedValueMatrix_t psiMinv;
@@ -126,7 +129,7 @@ private:
    *  @{ */
   // CUDA stream, cublas handle object
 
-  std::unique_ptr<Handles> cuda_handles_;
+  std::unique_ptr<CUDALinearAlgebraHandles> cuda_handles_;
   /// matrix inversion engine this a crowd scope resource and only the leader engine gets it
   UPtr<DiracMatrixCompute> det_inverter_;
   /**}@ */
@@ -428,9 +431,8 @@ public:
     // mw_invertTranspose(engines, log_dets, log_values);
   }
 
-
-  inline void mw_invertTranspose(RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
-                                 RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+  static void mw_invertTranspose(const RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
+                                 const RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
                                  OffloadPinnedLogValueVector_t& log_values)
   {
     auto& engine_leader = engines.getLeader();
@@ -447,7 +449,7 @@ public:
       PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
         }
     PRAGMA_OFFLOAD("omp taskwait")
-      det_inverter_->mw_invertTranspose(*(engine_leader.cuda_handles_), logdetT_list, a_inv_refs, log_values);
+      engine_leader.get_det_inverter().mw_invertTranspose(*(engine_leader.cuda_handles_), logdetT_list, a_inv_refs, log_values);
   }
 
   // prepare invRow and compute the old gradients.

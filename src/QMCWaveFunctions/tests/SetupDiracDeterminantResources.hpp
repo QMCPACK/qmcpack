@@ -24,35 +24,30 @@ template<class V>
 struct has_guard : decltype(has_guard_aux(std::declval<V>()))
 {};
 
-
-// template<class DiracDet, typename = std::enable_if_t<has_guard<DiracDet>{}>>
-// void setupDiracDetResources(DiracDet& ddet, double = 0)
-// {
-//   ddet.guardMultiWalkerRes();
-// }
-
-// template<class DiracDet, typename = std::enable_if_t<not has_guard<DiracDet>{}>>
-// void setupDiracDetResources(DiracDet& ddet)
-// {}
-
-template<class DiracDet,
-         std::enable_if_t<
-             std::is_same<DiracDet,
-                          DiracDeterminantBatched<
-                              MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>::value,
-             int> = 0>
-void setupDiracDetResources(DiracDet& ddet)
+namespace testing
 {
-  ddet.guardMultiWalkerRes();
-}
+struct SetupDiracDetResources
+{
+  template<class DiracDet,
+           std::enable_if_t<
+               std::is_same<DiracDet,
+                            DiracDeterminantBatched<
+                                MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>::value,
+               int> = 0>
+  void operator()(DiracDet& ddet)
+  {
+    ddet.guardMultiWalkerRes();
+  }
 
-template<class DiracDet,
-         std::enable_if_t<
-             !std::is_same<DiracDet,
-                           DiracDeterminantBatched<
-                               MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>::value,
-             int> = 0>
-void setupDiracDetResources(DiracDet& ddet, double = 0)
-{}
+  template<class DiracDet,
+           std::enable_if_t<
+               !std::is_same<DiracDet,
+                             DiracDeterminantBatched<
+                                 MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>>::value,
+               int> = 0>
+  void operator()(DiracDet& ddet, double = 0)
+  {}
+};
+} // namespace testing
 } // namespace qmcplusplus
 #endif

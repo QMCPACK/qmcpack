@@ -65,11 +65,11 @@ public:
   template<typename DT>
   using OffloadAllocator = OMPallocator<DT, aligned_allocator<DT>>;
   template<typename DT>
-  using OffloadPinnedAllocator     = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-  using OffloadValueVector_t       = Vector<T, OffloadAllocator<T>>;
+  using OffloadPinnedAllocator        = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
+  using OffloadValueVector_t          = Vector<T, OffloadAllocator<T>>;
   using OffloadPinnedLogValueVector_t = Vector<std::complex<T_FP>, OffloadPinnedAllocator<std::complex<T_FP>>>;
-  using OffloadPinnedValueVector_t = Vector<T, OffloadPinnedAllocator<T>>;
-  using OffloadPinnedValueMatrix_t = Matrix<T, OffloadPinnedAllocator<T>>;
+  using OffloadPinnedValueVector_t    = Vector<T, OffloadPinnedAllocator<T>>;
+  using OffloadPinnedValueMatrix_t    = Matrix<T, OffloadPinnedAllocator<T>>;
 
   using DiracMatrixCompute = DiracMatrixComputeOMPTarget<T_FP>;
 
@@ -154,31 +154,24 @@ public:
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
   }
 
-  template<typename TREAL>
-  static void mw_invert_transpose(const RefVectorWithLeader<This_t>& engines,
-                                  const RefVector<const Matrix<T>>& logdetT_list,
-                                  const RefVector<std::complex<TREAL>>& LogValues)
+  static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
+                                 const RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 OffloadPinnedLogValueVector_t& log_values)
   {
     auto& engine_leader = engines.getLeader();
-    // make this class unit tests friendly without the need of setup resources.
-    if (!engine_leader.mw_mem_)
-    {
-      app_warning() << "MatrixUpdateOMPTarget : This message should not be seen in production (performance bug) runs "
-                       "but only unit tests (expected)."
-                    << std::endl;
-      engine_leader.mw_mem_ = std::make_unique<MatrixUpdateOMPTargetMultiWalkerMem<T>>();
-    }
+    auto& det_inverter  = engine_leader.get_det_inverter();
+
+    RefVector<OffloadPinnedValueMatrix_t> a_inv_refs;
+    a_inv_refs.reserve(engines.size());
 
     for (int iw = 0; iw < engines.size(); iw++)
     {
-      auto& Ainv = engines[iw].psiMinv;
-      Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-      engine_leader.detEng.invert_transpose(logdetT_list[iw].get(), Ainv_host_view, LogValues[iw].get());
-      T* Ainv_ptr = Ainv.data();
-      PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+      a_inv_refs.emplace_back(engines[iw].psiMinv);
+      const T* a_inv_ptr = a_inv_refs.back().get().data();
+      PRAGMA_OFFLOAD("omp target update to(a_inv_ptr[:a_inv_refs.back().get().size()])")
     }
     PRAGMA_OFFLOAD("omp taskwait")
-    det_inverter_->mw_invertTranspose(logdetT_list, a_inv_refs, log_values);
+    det_inverter.mw_invertTranspose(logdetT_list, a_inv_refs, log_values);
   }
 
   template<typename GT>
@@ -403,7 +396,7 @@ public:
     return row_ptr_list;
   }
 
-  static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines)
+  static void mw_transferAinv_D2H(const RefVector<This_t>& engines)
   {
     for (This_t& engine : engines)
     {
