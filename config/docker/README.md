@@ -1,4 +1,4 @@
-# Docker containers for QMCPack
+# Docker containers for QMCPACK
 
 This directory contains Dockerfile for:
 
