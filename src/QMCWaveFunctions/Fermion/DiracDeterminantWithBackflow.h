@@ -71,13 +71,13 @@ public:
   }
 
   ///set BF pointers
-  void setBF(BackflowTransformation* bf) { BFTrans = bf; }
+  void setBF(BackflowTransformation* bf) override { BFTrans = bf; }
 
   // in general, assume that P is the quasiparticle set
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           std::vector<ValueType>& dhpsioverpsi) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
@@ -92,44 +92,44 @@ public:
                            int offset,
                            Matrix<RealType>& dlogpsi,
                            Array<GradType, OHMMS_DIM>& dG,
-                           Matrix<RealType>& dL);
+                           Matrix<RealType>& dL) override;
 
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
 
-  void registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  PsiValueType ratio(ParticleSet& P, int iat);
+  PsiValueType ratio(ParticleSet& P, int iat) override;
 
-  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  GradType evalGrad(ParticleSet& P, int iat);
-  GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  GradType evalGrad(ParticleSet& P, int iat) override;
+  GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& source,
                           int iat,
                           TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad);
+                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override;
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 
   /** move was rejected. copy the real container to the temporary to move on
    */
-  void restore(int iat);
+  void restore(int iat) override;
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override;
 
   /** cloning function
    * @param tqp target particleset
@@ -138,7 +138,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const;
+  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
 
   inline ValueType rcdot(TinyVector<RealType, OHMMS_DIM>& lhs, TinyVector<ValueType, OHMMS_DIM>& rhs)
   {
