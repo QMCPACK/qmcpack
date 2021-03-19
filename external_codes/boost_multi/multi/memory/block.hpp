@@ -49,7 +49,8 @@ public:
 	constexpr size_type size() const{return size_;}
 	constexpr operator Ptr const&() const{return start_;}
 	constexpr bool contains(typename basic_block::pointer p) const{
-		using std::distance; auto d = distance(start_, p);
+		using std::distance;
+		difference_type d = distance(start_, p);
 		return d >= 0 and d < size_;
 	}
 	friend constexpr size_type size(basic_block const& self){return self.size();}
@@ -65,7 +66,7 @@ template<typename T, typename Diff>
 struct block<T*, Diff> : detail::basic_block<T*, Diff>{
 	using detail::basic_block<T*, Diff>::basic_block;
 	template<std::size_t N>
-	constexpr block(T(&t)[N]) : detail::basic_block<T*, Diff>{t, N}{}
+	constexpr explicit block(T(&t)[N]) : detail::basic_block<T*, Diff>{t, N}{}
 };
 
 #if (__cpp_deduction_guides >= 201703)

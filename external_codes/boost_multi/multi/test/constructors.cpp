@@ -13,15 +13,16 @@ $CXXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #include<complex>
 #include<functional>
 #include<iostream>
-#include<vector>
 #include<numeric>
+#include<vector>
 
 namespace multi = boost::multi;
 
 using complex = std::complex<double>;
 
 struct multiplies_bind1st{
-	multiplies_bind1st(multi::array<complex, 2>&& m) : m_(std::move(m)){} // this produces a bug in nvcc11.0
+	explicit multiplies_bind1st(multi::array<complex, 2>&& m) : m_(std::move(m)){} // this produces a bug in nvcc11.0
+private:
 	multi::array<complex, 2> m_;
 };
 
@@ -42,7 +43,7 @@ BOOST_AUTO_TEST_CASE(multi_constructors_1d){
 		BOOST_REQUIRE( size(A)==10 );
 	}
 	{
-		multi::array<double, 1> A(10, {}); 
+		multi::array<double, 1> A(10, double{}); 
 		BOOST_REQUIRE( size(A)==10 );
 		BOOST_REQUIRE( A[5]== double{} );
 	}

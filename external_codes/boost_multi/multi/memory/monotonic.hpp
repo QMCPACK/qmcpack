@@ -20,7 +20,7 @@ template<class Ptr> // TODO test with actual fancy ptr
 Ptr align_up(Ptr p, std::size_t align = alignof(std::max_align_t)){
 	using multi::to_address;
 	auto p_(to_address(p));
-	assert( sizeof(decltype(*p_))==1 );
+	static_assert( sizeof(*p_)==1 , "!"); // crash
 	auto q_ = reinterpret_cast<decltype(p_)>(
 		(reinterpret_cast<std::uintptr_t>(p_) + (align-1))
 		& ~(align-1)
@@ -136,7 +136,6 @@ int main(){
 		m.deallocate((char*)p1 + 10000, 1*sizeof(double));
 	}catch(...){}
 }
-	return 0;
 {
 	alignas(double) char buffer[300*sizeof(double)];
 	multi::memory::monotonic<char*> m(&buffer[0], 300*sizeof(double));
