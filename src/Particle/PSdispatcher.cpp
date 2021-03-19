@@ -26,7 +26,11 @@ void PSdispatcher::flex_loadWalker(const RefVectorWithLeader<ParticleSet>& p_lis
   else
     for (size_t iw = 0; iw < p_list.size(); iw++)
       if (recompute[iw])
-        p_list[iw].loadWalker(walkers[iw], pbyp);
+      {
+        p_list[iw].loadWalker(walkers[iw], false);
+        // loadWalker and mw_loadWalker doesn't have the same behavior. Need the following update call.
+        p_list[iw].update(true);
+      }
 }
 
 void PSdispatcher::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK) const

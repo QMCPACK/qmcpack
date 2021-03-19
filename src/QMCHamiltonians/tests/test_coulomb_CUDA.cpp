@@ -227,7 +227,7 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   ions.updateLists_GPU();
 
 
-  CoulombPBCAA_CUDA caa(ions, true);
+  CoulombPBCAA_CUDA caa(ions, false);
 
   // Background charge term
   double consts = caa.evalConsts();
