@@ -142,8 +142,6 @@ public:
   void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, ComplexT>>());
-    app_log() << "    Multi walker shared memory resource created in SplineC2COMPTarget. Index " << resource_index
-              << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection) override

@@ -418,8 +418,9 @@ public:
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
   /** batched version of loadWalker */
-  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& psets,
+  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
                             const RefVector<Walker_t>& walkers,
+                            const std::vector<bool>& recompute,
                             bool pbyp);
 
   /** save this to awalker
@@ -641,14 +642,14 @@ public:
 
   /// initialize a shared resource and hand it to a collection
   void createResource(ResourceCollection& collection) const;
-  /** acquire external resource
-   * Note: use RAII ResourceCollectionLock whenever possible
+  /** acquire external resource and assocaite it with the list of ParticleSet
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
    */
-  void acquireResource(ResourceCollection& collection);
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
   /** release external resource
-   * Note: use RAII ResourceCollectionLock whenever possible
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
    */
-  void releaseResource(ResourceCollection& collection);
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
 
   static RefVectorWithLeader<DistanceTableData> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  int id);

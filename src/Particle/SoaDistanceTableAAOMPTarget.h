@@ -121,19 +121,22 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<DTAAMultiWalkerMem>());
-    app_log() << "    Multi walker shared memory resource created in SoaDistanceTableAAOMPTarget " << name_
-              << ". Index " << resource_index << std::endl;
   }
 
-  void acquireResource(ResourceCollection& collection) override
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
   {
     auto res_ptr = dynamic_cast<DTAAMultiWalkerMem*>(collection.lendResource().release());
     if (!res_ptr)
       throw std::runtime_error("SoaDistanceTableAAOMPTarget::acquireResource dynamic_cast failed");
-    mw_mem_.reset(res_ptr);
+    dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_.reset(res_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) override { collection.takebackResource(std::move(mw_mem_)); }
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<DistanceTableData>& dt_list) const override
+  {
+    collection.takebackResource(std::move(dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>().mw_mem_));
+  }
 
   inline void evaluate(ParticleSet& P) override
   {
@@ -252,7 +255,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
             PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
-              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_padded,
                                                             iel, activePtcl_local);
           }
 
@@ -263,11 +266,11 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
 
             T pos[D];
             for (int idim = 0; idim < D; idim++)
-              pos[idim] = source_pos_ptr[idim * N_sources_local + iat];
+              pos[idim] = source_pos_ptr[idim * N_sources_padded + iat];
 
             PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
-              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_local,
+              DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, r_iw_ptr, dr_iw_ptr, N_sources_padded,
                                                             iel, iat);
             r_iw_ptr[iat] = std::numeric_limits<T>::max(); //assign a big number
           }

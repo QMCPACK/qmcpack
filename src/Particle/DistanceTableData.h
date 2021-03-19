@@ -178,6 +178,21 @@ public:
       dt_list[iw].evaluate(p_list[iw]);
   }
 
+  /** recompute multi walker internal data, recompute
+   * @param dt_list the distance table batch
+   * @param p_list the target particle set batch
+   * @param recompute if true, must recompute. Otherwise, implementation dependent.
+   */
+  virtual void mw_recompute(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            const std::vector<bool>& recompute) const
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      if (recompute[iw])
+        dt_list[iw].evaluate(p_list[iw]);
+  }
+
   /** evaluate the temporary pair relations when a move is proposed
    * @param P the target particle set
    * @param rnew proposed new position
@@ -260,10 +275,14 @@ public:
   virtual void createResource(ResourceCollection& collection) const {}
 
   /// acquire a shared resource from a collection
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+  {}
 
   /// return a shared resource to a collection
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+  {}
 };
 } // namespace qmcplusplus
 #endif
