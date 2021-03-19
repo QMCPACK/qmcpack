@@ -51,15 +51,10 @@ BOOST_AUTO_TEST_CASE(multi_copy_move){
 
 	auto* A_data = A.data_elements();
 	multi::array<double, 2> C = std::move(A);
-	
-	A.clear();
-	BOOST_REQUIRE( is_empty(A) );
-	BOOST_REQUIRE( A_data == C.data_elements() );
+
+	BOOST_REQUIRE( C.data_elements() == A_data );
 
 	multi::array<double, 2> D(std::move(B));
-	
-	B.clear();
-	BOOST_REQUIRE( is_empty(B) );
 	BOOST_REQUIRE( size(D) == 3 );
 }
 
@@ -134,7 +129,8 @@ BOOST_AUTO_TEST_CASE(assignments){
 		BOOST_REQUIRE( v[9] == 33. );
 	}
 	{
-		std::vector<double> v(5*7, 99.), w(5*7, 33.);
+		std::vector<double> v(5*7, 99.);
+		std::vector<double> w(5*7, 33.);
 
 		make_ref(v.data()) = make_ref(w.data());
 

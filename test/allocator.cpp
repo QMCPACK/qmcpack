@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(array_3d_with_hint_size_t){
 	BOOST_REQUIRE( size(B) == 3 );
 	BOOST_REQUIRE( B[1][2][3] == 4 );
 
-	multi::array<size_t, 3> C({3, 4, 5}, 0ul);
+	multi::array<size_t, 3> C({3, 4, 5}, 0UL);
 	BOOST_REQUIRE( size(C) == 3 );
 
 	multi::array<size_t, 3> D({3, 4, 5}, 99);
