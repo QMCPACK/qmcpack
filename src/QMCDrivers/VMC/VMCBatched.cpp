@@ -338,6 +338,7 @@ bool VMCBatched::run()
     }
     print_mem("VMCBatched after a block", app_debug_stream());
     endBlock();
+    vmc_loop.stop();
 
     bool stop_requested = runtimeControl.checkStop(vmc_loop);
     // Rank 0 decides whether the time limit was reached

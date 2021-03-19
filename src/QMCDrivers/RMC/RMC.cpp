@@ -116,8 +116,8 @@ bool RMC::run()
     //why was this commented out? Are checkpoints stored some other way?
     if (storeConfigs)
       recordBlock(block);
-
     rmc_loop.stop();
+
     bool stop_requested = runtimeControl.checkStop(rmc_loop);
     // Rank 0 decides whether the time limit was reached
     myComm->bcast(stop_requested);

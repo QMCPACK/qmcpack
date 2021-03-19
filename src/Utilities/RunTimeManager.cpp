@@ -90,6 +90,13 @@ bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loo
 {
   m_loop_time      = loop_timer.get_time_per_iteration();
   m_elapsed        = runtimeManager.elapsed();
+
+  if (m_elapsed >= MaxCPUSecs)
+  {
+    stop_status_ = StopStatus::MAX_SECONDS_PASSED;
+    return false;
+  }
+
   m_remaining      = MaxCPUSecs - m_elapsed;
   bool enough_time = true;
   if ((m_loop_margin * m_loop_time + m_runtime_safety_padding) > m_remaining)
@@ -124,9 +131,13 @@ template<class CLOCK>
 std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driverName, int block) const
 {
   std::stringstream log;
-  if (stop_status_ == StopStatus::NOT_ENOUGH_TIME)
+  log << "RunTimeControl in " << driverName << " kicks in." << std::endl;
+  if (stop_status_ == StopStatus::MAX_SECONDS_PASSED)
+    log << "Time limit reached. Stopping after block " << block << std::endl
+        << "Hard limit (seconds) " << MaxCPUSecs << ", elapsed (seconds) " << m_elapsed << std::endl;
+  else if (stop_status_ == StopStatus::NOT_ENOUGH_TIME)
   {
-    log << "Time limit reached for " << driverName << ", stopping after block " << block << std::endl;
+    log << "Insufficeint time for next block. Stopping after block " << block << std::endl;
     log << "  Iteration time per " << driverName << " block (seconds) = " << m_loop_time << std::endl;
     log << "  Elapsed time (seconds)       = " << m_elapsed << std::endl;
     log << "  Remaining time (seconds)      = " << m_remaining << std::endl;

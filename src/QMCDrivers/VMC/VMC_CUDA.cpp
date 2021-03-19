@@ -306,8 +306,8 @@ bool VMCcuda::run()
     nRejectTot += nReject;
     ++block;
     recordBlock(block);
-
     vmc_loop.stop();
+
     bool stop_requested = runtimeControl.checkStop(vmc_loop);
     // Rank 0 decides whether the time limit was reached
     myComm->bcast(stop_requested);

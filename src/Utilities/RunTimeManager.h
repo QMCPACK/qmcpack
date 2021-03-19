@@ -77,9 +77,10 @@ class RunTimeControl
 
   enum class StopStatus
   {
-    CONTINUE,        // keep running
-    NOT_ENOUGH_TIME, // not enough time for next iteration
-    STOP_FILE,       // reqsuted stop from a file
+    CONTINUE,           // keep running
+    MAX_SECONDS_PASSED, // all already passed max_seconds
+    NOT_ENOUGH_TIME,    // not enough time for next iteration
+    STOP_FILE,          // reqsuted stop from a file
   } stop_status_;
 
   bool enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer);

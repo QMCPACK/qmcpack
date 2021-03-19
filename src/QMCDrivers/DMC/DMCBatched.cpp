@@ -476,6 +476,7 @@ bool DMCBatched::run()
     }
     print_mem("DMCBatched after a block", app_debug_stream());
     endBlock();
+    dmc_loop.stop();
 
     bool stop_requested = runtimeControl.checkStop(dmc_loop);
     // Rank 0 decides whether the time limit was reached
