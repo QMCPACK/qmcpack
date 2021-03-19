@@ -20,16 +20,12 @@ namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(std_vector_of_arrays){
 	std::vector<multi::array<double, 2>> va;
-
-//	for(int i = 0; i != 3; ++i) va.emplace_back(multi::index_extensions<2>{i, i}, i); // segfaults nvcc 11.0
-//	for(int i = 0; i != 3; ++i){
-//		va.emplace_back(multi::array<double, 2>(multi::index_extensions<2>{i, i}, i));
-//	}
 	std::transform(
 		begin(multi::iextension(3)), end(multi::iextension(3)),
 		std::back_inserter(va),
 		[](auto i){return multi::array<double, 2>({i, i}, static_cast<double>(i));}
 	);
+
 	BOOST_REQUIRE( size(va[0]) == 0 );
 	BOOST_REQUIRE( size(va[1]) == 1 );
 	BOOST_REQUIRE( size(va[2]) == 2 );
@@ -54,6 +50,8 @@ BOOST_AUTO_TEST_CASE(std_vector_of_arrays){
 
 BOOST_AUTO_TEST_CASE(array1d_of_arrays2d){
 	multi::array<multi::array<double, 2>, 1> A(10, multi::array<double, 2>{});
+	BOOST_REQUIRE( size(A) == 10 );
+
 	std::transform(
 		begin(extension(A)), end(extension(A)), begin(A), 
 		[](auto i){return multi::array<double, 2>({i, i}, static_cast<double>(i));}
@@ -70,6 +68,12 @@ BOOST_AUTO_TEST_CASE(array_3d_of_array_2d){
 	for(int i = 0; i != 10; ++i)
 		for(int j = 0; j != 20; ++j)
 			AA[i][j] = multi::array<double, 3>({i+j, i+j, i+j}, 99.);
+//	std::for_each(begin(extension(AA)), end(extension(AA)), 
+//		[&AA](auto& row){std::transform(
+//			begin(extension(row)), end(extension(row)), begin(row), 
+//			[](auto j){return multi::array<double, 3>({i+j, i+j, i+j}, 99.);}
+//		);}
+//	);
 	BOOST_REQUIRE( size(AA[9][19]) == 9 + 19 );
 	BOOST_REQUIRE( AA[9][19][1][1][1] == 99. );
 }
