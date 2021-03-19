@@ -24,7 +24,7 @@ performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 10.2.0, 7.3.0
+  * GCC 10.2.0, 8.3.0
   * Clang/LLVM 10.0.1, 6.0.1
   * Intel 19.1.1.217 configured to use C++ library from GCC 8.3.0 
   * PGI 19.4 configured to use C++ library from GCC 8.3.0
