@@ -8,7 +8,7 @@ case "$1" in
     cd ${GITHUB_WORKSPACE}/..
     mkdir qmcpack-build
     cd qmcpack-build
-    cmake -GNinja -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/../qmcpack-install ${GITHUB_WORKSPACE}
+    cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/../qmcpack-install ${GITHUB_WORKSPACE}
     ;;
 
   # Build using ninja
@@ -17,9 +17,17 @@ case "$1" in
     ninja
     ;;
 
-  # Run unit and deterministic tests
+  # Run deterministic tests
   test)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    
+    # Enable overscription in OpenMPI
+    if [[ "${GH_JOBNAME}" =~ (openmpi) ]]
+    then
+      export OMPI_MCA_rmaps_base_oversubscribe=1
+      export OMPI_MCA_hwloc_base_binding_policy=none
+    fi 
+    
     ctest -L deterministic
     ;;
 

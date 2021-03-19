@@ -27,18 +27,17 @@ jobs:
         - jobname: ubuntu20-gcc9-openmpi
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
-            options: -u user
+            options: -u 1001
 
     steps:
     - name: Checkout Action
       uses: actions/checkout@v1
 
     - name: Configure
-      run: config/github-actions/ci/run_step.sh configure
+      run: tests/test_automation/github-actions/ci/run_step.sh configure
 
     - name: Build
-      run: config/github-actions/ci/run_step.sh build
+      run: tests/test_automation/github-actions/ci/run_step.sh build
 
     - name: Test
-      run: config/github-actions/ci/run_step.sh test
-
+      run: tests/test_automation/github-actions/ci/run_step.sh test
