@@ -405,10 +405,11 @@ bool DMCBatched::run()
   estimator_manager_->startDriverRun();
   StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
 
-  LoopTimer<> dmc_loop;
 
   int sample = 0;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
+
+  LoopTimer<> dmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, project_data_.getTitle(), myComm->getGroupID() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -473,6 +474,16 @@ bool DMCBatched::run()
     }
     print_mem("DMCBatched after a block", app_debug_stream());
     endBlock();
+
+    bool stop_requested = runtimeControl.checkStop(dmc_loop);
+    // Rank 0 decides whether the time limit was reached
+    myComm->bcast(stop_requested);
+
+    if (stop_requested)
+    {
+      app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
+      break;
+    }
   }
 
   branch_engine_->printStatus();

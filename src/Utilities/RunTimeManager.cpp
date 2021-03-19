@@ -16,7 +16,8 @@
  */
 #include "RunTimeManager.h"
 #include <sstream>
-
+#include <fstream>
+#include <cstdio>
 
 namespace qmcplusplus
 {
@@ -39,6 +40,31 @@ template class LoopTimer<CPUClock>;
 template class LoopTimer<FakeCPUClock>;
 
 template<class CLOCK>
+RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
+                                      int maxCPUSecs,
+                                      const std::string& stop_file_prefix,
+                                      bool cleanup)
+    : MaxCPUSecs(maxCPUSecs),
+      runtimeManager(rm),
+      stop_filename_(stop_file_prefix + ".STOP"),
+      stop_status_(StopStatus::CONTINUE)
+{
+  if (stop_file_prefix.empty())
+    throw std::runtime_error("Stop control filename prefix must not be empty!");
+
+  if (cleanup)
+  {
+    std::remove(stop_filename_.c_str());
+    if (std::ifstream(stop_filename_.c_str()))
+      throw std::runtime_error("Failed to delete the existing stop control file \"" + stop_filename_ +
+                               "\", cannot continue!");
+  }
+
+  m_runtime_safety_padding = 10.0; // 10 seconds - enough to shut down?
+  m_loop_margin            = 1.1;  // 10% margin on average loop time?
+}
+
+template<class CLOCK>
 bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer)
 {
   m_loop_time      = loop_timer.get_time_per_iteration();
@@ -48,17 +74,49 @@ bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loo
   if ((m_loop_margin * m_loop_time + m_runtime_safety_padding) > m_remaining)
     enough_time = false;
 
+  stop_status_ = StopStatus::NOT_ENOUGH_TIME;
   return enough_time;
 }
 
 template<class CLOCK>
-std::string RunTimeControl<CLOCK>::time_limit_message(const std::string& driverName, int block)
+bool RunTimeControl<CLOCK>::stop_file_reqeusted()
+{
+  if (std::ifstream(stop_filename_.c_str()))
+  {
+    stop_status_ = StopStatus::STOP_FILE;
+    return true;
+  }
+  else
+    return false;
+}
+
+template<class CLOCK>
+bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer)
+{
+  if (!enough_time_for_next_iteration(loop_timer))
+    return true;
+  if (stop_file_reqeusted())
+    return true;
+  return false;
+}
+
+template<class CLOCK>
+std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driverName, int block) const
 {
   std::stringstream log;
-  log << "Time limit reached for " << driverName << ", stopping after block " << block - 1 << std::endl;
-  log << "  Iteration time per " << driverName << " block (seconds) = " << m_loop_time << std::endl;
-  log << "  Elapsed time (seconds)       = " << m_elapsed << std::endl;
-  log << "  Remaining time (seconds)      = " << m_remaining << std::endl;
+  if (stop_status_ == StopStatus::NOT_ENOUGH_TIME)
+  {
+    log << "Time limit reached for " << driverName << ", stopping after block " << block << std::endl;
+    log << "  Iteration time per " << driverName << " block (seconds) = " << m_loop_time << std::endl;
+    log << "  Elapsed time (seconds)       = " << m_elapsed << std::endl;
+    log << "  Remaining time (seconds)      = " << m_remaining << std::endl;
+  }
+  else if (stop_status_ == StopStatus::STOP_FILE)
+    log << "Stop requested from the control file \"" + stop_filename_ + "\", stopping after block " << block
+        << std::endl;
+  else
+    throw std::runtime_error("Unidentified stop status!");
+
   return log.str();
 }
 

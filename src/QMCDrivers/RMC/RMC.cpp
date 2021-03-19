@@ -77,7 +77,7 @@ bool RMC::run()
   const bool has_collectables = W.Collectables.size();
 
   LoopTimer<> rmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->getGroupID() == 0);
   for (int block = 0; block < nBlocks; ++block)
   {
     rmc_loop.start();
@@ -118,13 +118,13 @@ bool RMC::run()
       recordBlock(block);
 
     rmc_loop.stop();
-    bool enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(rmc_loop);
+    bool stop_requested = runtimeControl.checkStop(rmc_loop);
     // Rank 0 decides whether the time limit was reached
-    myComm->bcast(enough_time_for_next_iteration);
+    myComm->bcast(stop_requested);
 
-    if (!enough_time_for_next_iteration)
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("RMC", block);
+      app_log() << runtimeControl.generateStopMessage("RMC", block);
       break;
     }
   } //block

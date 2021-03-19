@@ -335,9 +335,8 @@ protected:
   ///counter for number of moves /rejected
   IndexType nReject;
 
-
   ///maximum cpu in secs
-  RealType MaxCPUSecs;
+  int MaxCPUSecs = 360000;
 
   ///Time-step factor \f$ 1/(2\tau)\f$
   RealType m_oneover2tau;

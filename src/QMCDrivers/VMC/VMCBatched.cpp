@@ -274,7 +274,7 @@ bool VMCBatched::run()
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, project_data_.getTitle(), myComm->getGroupID() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -336,6 +336,16 @@ bool VMCBatched::run()
     }
     print_mem("VMCBatched after a block", app_debug_stream());
     endBlock();
+
+    bool stop_requested = runtimeControl.checkStop(vmc_loop);
+    // Rank 0 decides whether the time limit was reached
+    myComm->bcast(stop_requested);
+
+    if (stop_requested)
+    {
+      app_log() << runtimeControl.generateStopMessage("VMCBatched", block);
+      break;
+    }
   }
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
   // and clean it up

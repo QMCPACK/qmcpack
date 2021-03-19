@@ -229,8 +229,7 @@ bool DMC::run()
   IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int sample             = 0;
 
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
-  bool enough_time_for_next_iteration = true;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->getGroupID() == 0);
 
   do // block
   {
@@ -293,18 +292,19 @@ bool DMC::run()
     }
     recordBlock(block);
     dmc_loop.stop();
-    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(dmc_loop);
+
+    bool stop_requested = runtimeControl.checkStop(dmc_loop);
     // Rank 0 decides whether the time limit was reached
-    myComm->bcast(enough_time_for_next_iteration);
+    myComm->bcast(stop_requested);
 
-    if (!enough_time_for_next_iteration)
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("DMC", block);
+      app_log() << runtimeControl.generateStopMessage("DMC", block - 1);
+      break;
     }
-  } while (block < nBlocks && enough_time_for_next_iteration);
 
+  } while (block < nBlocks);
 
-  //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
 #ifndef USE_FAKE_RNG
   for (int ip = 0; ip < NumThreads; ip++)
     *(RandomNumberControl::Children[ip]) = *(Rng[ip]);

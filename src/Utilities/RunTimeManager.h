@@ -66,26 +66,46 @@ extern template class LoopTimer<FakeCPUClock>;
 template<class CLOCK = CPUClock>
 class RunTimeControl
 {
-  int MaxCPUSecs;
+  const int MaxCPUSecs;
   double m_runtime_safety_padding;
   double m_loop_margin;
   double m_loop_time;
   double m_elapsed;
   double m_remaining;
   RunTimeManager<CLOCK>& runtimeManager;
+  /// the prefix of the stop file (stop_file_prefix + ".STOP")
+  const std::string stop_filename_;
 
-public:
-  RunTimeControl(RunTimeManager<CLOCK>& rm, int maxCPUSecs) : MaxCPUSecs(maxCPUSecs), runtimeManager(rm)
+  enum class StopStatus
   {
-    m_runtime_safety_padding = 10.0; // 10 seconds - enough to shut down?
-    m_loop_margin            = 1.1;  // 10% margin on average loop time?
-  }
-
-  void runtime_padding(int runtime_padding) { m_runtime_safety_padding = runtime_padding; }
-  void loop_margin(int loopMargin) { m_loop_margin = loopMargin; }
+    CONTINUE,        // keep running
+    NOT_ENOUGH_TIME, // not enough time for next iteration
+    STOP_FILE,       // reqsuted stop from a file
+  } stop_status_;
 
   bool enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer);
-  std::string time_limit_message(const std::string& driverName, int block);
+  bool stop_file_reqeusted();
+
+public:
+  /** constructor
+   * @param rm the RunTimeManager attached to
+   * @param maxCPUSecs maxmimal allowed seconds from the beginning of the simulation
+   * @param stop_file_prefix the prefix of the stop file
+   * @param cleanup if true, clean up stop files left from previous simulations. Fine control needed for ensemble runs.
+   */
+  RunTimeControl(RunTimeManager<CLOCK>& rm, int maxCPUSecs, const std::string& stop_file_prefix, bool cleanup = true);
+
+  /** check if the run needs to stop because of walltime or stop control file.
+   * it should be called at the end of each block in a driver.
+   */
+  bool checkStop(LoopTimer<CLOCK>& loop_timer);
+
+  /// generate stop message explaining why
+  std::string generateStopMessage(const std::string& driverName, int block) const;
+
+  // for testing
+  void runtime_padding(int runtime_padding) { m_runtime_safety_padding = runtime_padding; }
+  void loop_margin(int loopMargin) { m_loop_margin = loopMargin; }
 };
 
 extern template class RunTimeControl<CPUClock>;
