@@ -1645,13 +1645,13 @@ public:
 //	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0>
 //	[[deprecated("use ::data_elements()")]] typename static_array::element_ptr data() &{return ref::data_elements();}
 
-	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0> [[deprecated("use ::data_elements()")]] constexpr auto data() const&{return data_elements();}
-	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0> [[deprecated("use ::data_elements()")]] constexpr auto data()     &&{return data_elements();}
-	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0> [[deprecated("use ::data_elements()")]] constexpr auto data()      &{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = nullptr> [[deprecated("use ::data_elements()")]] constexpr auto data() const&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = nullptr> [[deprecated("use ::data_elements()")]] constexpr auto data()     &&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = nullptr> [[deprecated("use ::data_elements()")]] constexpr auto data()      &{return data_elements();}
 
-	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = 0> constexpr auto data() const&{return data_elements();}
-	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = 0> constexpr auto data()     &&{return data_elements();}
-	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = 0> constexpr auto data()      &{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = nullptr> constexpr auto data() const&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = nullptr> constexpr auto data()     &&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = nullptr> constexpr auto data()      &{return data_elements();}
 
 
 //	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = 0>
