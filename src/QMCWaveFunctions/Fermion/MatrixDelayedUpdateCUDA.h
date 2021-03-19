@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
@@ -432,7 +432,7 @@ public:
   }
 
   static void mw_invertTranspose(const RefVectorWithLeader<MatrixDelayedUpdateCUDA<T, T_FP>>& engines,
-                                 const RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 const RefVector<const OffloadPinnedValueMatrix_t>& logdetT_list,
                                  OffloadPinnedLogValueVector_t& log_values)
   {
     auto& engine_leader = engines.getLeader();

@@ -52,8 +52,8 @@ IF (NOT QMC_CUDA)
   ENDIF()
 ENDIF()
 
-SET(TRIALWF_SRC test_wf.cpp test_TrialWaveFunction.cpp test_wavefunction_factory.cpp
-                test_TrialWaveFunction_diamondC_2x1x1.cpp test_TrialWaveFunction_He.cpp
+SET(TRIALWF_SRC test_wf.cpp FakeSPO.cpp test_TrialWaveFunction.cpp test_wavefunction_factory.cpp
+                test_TrialWaveFunction_diamondC_1x1x1.cpp test_TrialWaveFunction_diamondC_2x1x1.cpp test_TrialWaveFunction_He.cpp
                 test_wavefunction_pool.cpp test_example_he.cpp test_lattice_gaussian.cpp)
 SET(SPOSET_SRC test_spo_collection_input_spline.cpp test_spo_collection_input_LCAO_xml.cpp
                test_spo_collection_input_MSD_LCAO_h5.cpp test_einset.cpp

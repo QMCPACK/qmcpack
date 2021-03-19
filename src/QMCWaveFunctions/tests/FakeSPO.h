@@ -30,7 +30,7 @@ public:
   
   FakeSPO();
   virtual ~FakeSPO() {}
-
+  virtual SPOSet* makeClone() const{ return new FakeSPO; }
   virtual void report() {}
   virtual void resetParameters(const opt_variables_type& optVariables) {}
   virtual void setOrbitalSetSize(int norbs);

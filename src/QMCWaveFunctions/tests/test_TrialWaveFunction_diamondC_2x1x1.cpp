@@ -116,11 +116,11 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   auto* det_up = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_up->set(0, 2, ndelay);
-  testing::SetupDiracDetResources setupResources;
-  setupResources(*det_up);
+  // testing::SetupDiracDetResources setupResources;
+  // setupResources(*det_up);
   auto* det_dn = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));
   det_dn->set(2, 2, ndelay);
-  setupResources(*det_dn);
+  //setupResources(*det_dn);
 
   auto* slater_det = new SlaterDet(elec_);
   slater_det->add(det_up, 0);
@@ -146,6 +146,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
+
+  ResourceCollection res_col("og collection");
+  psi.createResource(res_col);
+  psi.acquireResource(res_col);
 
 #if !defined(QMC_CUDA)
   // initialize distance tables.
@@ -173,13 +177,16 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #else
   CHECK(std::real(logpsi_cplx) == Approx(-5.932711221043984));
 #endif
+  
+  res_col.rewind();
+  psi.releaseResource(res_col);
 
   // make a TrialWaveFunction Clone
   std::unique_ptr<TrialWaveFunction> psi_clone(psi.makeClone(elec_clone));
-  ResourceCollection collection("cloned collection");
-  psi_clone->createResource(collection);
-  psi_clone->acquireResource(collection);
   elec_clone.update();
+  res_col.rewind();
+  psi_clone->acquireResource(res_col);
+  
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
 #if defined(QMC_COMPLEX)
   REQUIRE(logpsi_clone == Approx(-4.546410485374186));
@@ -196,6 +203,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   elec_.makeMove(moved_elec_id, delta);
 
+  res_col.rewind();
+  psi_clone->releaseResource(res_col);
+  res_col.rewind();  
+  psi.acquireResource(res_col);
   ValueType r_all_val       = psi.calcRatio(elec_, moved_elec_id);
   ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
   ValueType r_bosonic_val   = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
@@ -214,20 +225,22 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   psi.acceptMove(elec_, moved_elec_id);
   elec_.acceptMove(moved_elec_id);
+
+  // Here we check that the equivalent to evaluateLog has happened as a side effect of acceptMove?
   std::cout << "before YYY getLogPsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()
             << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
+  CHECK(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-8.013162503965223));
+  CHECK(psi.getLogPsi() == Approx(-8.013162503965223));
 #endif
 
   elec_.update(true);
   psi.evaluateLog(elec_);
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
+  CHECK(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-8.013162503965223));
+  CHECK(psi.getLogPsi() == Approx(-8.013162503965223));
 #endif
 
   // testing batched interfaces
@@ -488,25 +501,13 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
   using VT   = QMCTraits::ValueType;
   using FPVT = QMCTraits::QTFull::ValueType;
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-  {
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(1);
-  }
-  {
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(2);
-  }
 #endif
-  {
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(1);
-  }
-  {
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(2);
-  }
-  {
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(1);
-  }
-  {
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(2);
-  }
 }
 
 } // namespace qmcplusplus

@@ -155,7 +155,7 @@ public:
   }
 
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,
-                                 const RefVector<OffloadPinnedValueMatrix_t>& logdetT_list,
+                                 const RefVector<const OffloadPinnedValueMatrix_t>& logdetT_list,
                                  OffloadPinnedLogValueVector_t& log_values)
   {
     auto& engine_leader = engines.getLeader();
@@ -412,6 +412,9 @@ public:
     throw std::logic_error("attempted to get null det_inverter_, this is developer logic error");
   }
 };
+
+extern template class MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>;
+
 } // namespace qmcplusplus
 
 #endif // QMCPLUSPLUS_MATRIX_UPDATE_H

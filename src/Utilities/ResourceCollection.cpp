@@ -54,10 +54,12 @@ std::unique_ptr<Resource> ResourceCollection::lendResource()
   return std::move(collection_[cursor_index_++]);
 }
 
+/** Self explanatory but you must rewind or at least somewhat.
+ */  
 void ResourceCollection::takebackResource(std::unique_ptr<Resource>&& res)
 {
   if (cursor_index_ >= collection_.size())
-    throw std::runtime_error("ResourceCollection::takebackResource BUG cannot take back resources more than owned.");
+    throw std::runtime_error("ResourceCollection::takebackResource BUG cannot take back resources more than owned. Don't forget the intuitive call to resource_collection.rewind");
   if (cursor_index_ != res->index_in_collection_)
     throw std::runtime_error(
         "ResourceCollection::takebackResource BUG mismatched cursor index and recorded index in the resource.");

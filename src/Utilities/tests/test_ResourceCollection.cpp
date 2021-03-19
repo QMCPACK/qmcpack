@@ -24,6 +24,17 @@ public:
   std::vector<int> data;
 };
 
+class HandleResource : public Resource
+{
+public:
+  HandleResource(const std::string& name) : Resource(name) {}
+
+  HandleResource* makeClone() const override { return new HandleResource(*this); }
+
+  int handle;
+};
+
+  
 TEST_CASE("Resource", "[utilities]")
 {
   auto mem_res = std::make_unique<MemoryResource>("test_res");
@@ -41,6 +52,8 @@ public:
     external_memory_handle = std::make_unique<MemoryResource>("test_res");
     external_memory_handle->data.resize(5);
     collection.addResource(std::move(external_memory_handle));
+    handle = std::make_unique<HandleResource>("test_handle");
+    collection.addResource(std::move(handle));
   }
 
   void acquireResource(ResourceCollection& collection)
@@ -49,35 +62,47 @@ public:
     if (!res_ptr)
       throw std::runtime_error("WFCResourceConsumer::acquireResource dynamic_cast failed");
     external_memory_handle.reset(res_ptr);
+    auto res_ptr2 = dynamic_cast<HandleResource*>(collection.lendResource().release());
+    if (!res_ptr2)
+      throw std::runtime_error("WFCResourceConsumer::acquireResource dynamic_cast failed");
+    handle.reset(res_ptr2);
   }
 
   void releaseResource(ResourceCollection& collection)
   {
     collection.takebackResource(std::move(external_memory_handle));
+    collection.takebackResource(std::move(handle));
   }
 
-  MemoryResource* getPtr() const { return external_memory_handle.get(); }
+  MemoryResource* getMemoryPtr() const { return external_memory_handle.get(); }
+  MemoryResource& getMemory() const { return *external_memory_handle; }
+  HandleResource& getHandle() const { return *handle; }
 
 private:
   std::unique_ptr<MemoryResource> external_memory_handle;
+  std::unique_ptr<HandleResource> handle;
+
 };
 
 TEST_CASE("ResourceCollection", "[utilities]")
 {
   ResourceCollection res_collection("abc");
   WFCResourceConsumer wfc;
-  REQUIRE(wfc.getPtr() == nullptr);
+  REQUIRE(wfc.getMemoryPtr() == nullptr);
 
+  // This is actually UB
+  //REQUIRE_THROWS(wfc.getMemory());
+  
   wfc.createResource(res_collection);
-  REQUIRE(wfc.getPtr() == nullptr);
+  REQUIRE(wfc.getMemoryPtr() == nullptr);
 
   wfc.acquireResource(res_collection);
-  REQUIRE(wfc.getPtr() != nullptr);
-  REQUIRE(wfc.getPtr()->data.size() == 5);
+  REQUIRE(wfc.getMemoryPtr() != nullptr);
+  REQUIRE(wfc.getMemory().data.size() == 5);
 
   res_collection.rewind();
   wfc.releaseResource(res_collection);
-  REQUIRE(wfc.getPtr() == nullptr);
+  REQUIRE(wfc.getMemoryPtr() == nullptr);
 }
 
 } // namespace qmcplusplus

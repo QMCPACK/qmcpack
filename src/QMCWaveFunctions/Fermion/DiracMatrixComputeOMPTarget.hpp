@@ -19,6 +19,7 @@
 #include "Platforms/PinnedAllocator.h"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "type_traits/scalar_traits.h"
+#include "type_traits/template_types.hpp"
 #include "Message/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
 #include "ResourceCollection.h"
@@ -272,7 +273,7 @@ public:
    *  \todo measure if using the a_mats without a copy to contiguous vector is better.
    */
   template<typename TMAT, typename TREAL>
-  inline void mw_invertTranspose(const RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
+  inline void mw_invertTranspose(const RefVector<const OffloadPinnedMatrix<TMAT>>& a_mats,
                                  const RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {

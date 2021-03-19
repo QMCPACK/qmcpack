@@ -84,7 +84,22 @@ public:
 };
 }
 
+// I've observed downstream unit tests fail due to small issues in resource create/acquire/release.
+// unit test these.
+TEST_CASE("DiracDeterminantBatched_resources", "[wavefunction][fermion]")
+{
+  auto spo_init = std::make_unique<FakeSPO>();
+  spo_init->setOrbitalSetSize(3);
+  DetType ddb(std::move(spo_init));
+  auto spo = dynamic_cast<FakeSPO*>(ddb.getPhi());
 
+  ResourceCollection res_col("test resources");
+  ddb.createResource(res_col);
+  ddb.acquireResource(res_col);
+  res_col.rewind();
+  ddb.releaseResource(res_col);
+}
+  
 TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 {
   auto spo_init = std::make_unique<FakeSPO>();

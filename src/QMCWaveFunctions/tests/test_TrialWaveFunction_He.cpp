@@ -326,6 +326,10 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ions.update();
   elec1.update();
 
+  ResourceCollection res_col("og collection");
+  psi.createResource(res_col);
+  psi.acquireResource(res_col);
+
   ParticleSet elec1b(elec1);
   elec1b.update();
 
