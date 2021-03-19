@@ -20,13 +20,6 @@ namespace test{
 
 namespace test{
 
-template<class T, std::enable_if_t<std::is_empty<T>{}, int> =0> 
-T default_construct(){return *(T*)(&default_construct<T>);} // nvcc needs this in a namespace
-
-template<class T, std::enable_if_t<not std::is_empty<T>{}, int> =0> 
-T default_construct(){return {};}
-
-
 template<class It, class F> class involuter;
 
 template<class Ref, class Involution>
