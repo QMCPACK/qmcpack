@@ -1077,9 +1077,12 @@ private:
 public:
 	HD constexpr array_iterator operator+(difference_type n) const{array_iterator ret{*this}; ret+=n; return ret;}
 	[[deprecated("use base() for iterator")]] constexpr element_ptr data() const{return data_;}
-	// constexpr here creates problems with intel 19
 	       constexpr element_ptr base()              const&   {return data_;}
-	friend constexpr element_ptr base(array_iterator const& s){return s.base();}
+	friend 
+#ifndef __INTEL_COMPILER
+	constexpr // this generates a problem with intel compiler 19 "a constexpr function cannot have a nonliteral return type"
+#endif
+	element_ptr base(array_iterator const& s){return s.base();}
 	constexpr stride_type stride()              const&   {return   stride_;} friend
 	constexpr stride_type stride(array_iterator const& s){return s.stride_;}
 	constexpr array_iterator& operator++(){data_+=stride_; return *this;}
