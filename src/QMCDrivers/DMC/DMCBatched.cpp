@@ -484,6 +484,7 @@ bool DMCBatched::run()
     if (stop_requested)
     {
       app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
+      run_time_manager.markStop();
       break;
     }
   }

@@ -346,6 +346,7 @@ bool VMCBatched::run()
     if (stop_requested)
     {
       app_log() << runtimeControl.generateStopMessage("VMCBatched", block);
+      run_time_manager.markStop();
       break;
     }
   }

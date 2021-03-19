@@ -111,6 +111,7 @@ bool VMC::run()
     if (stop_requested)
     {
       app_log() << runtimeControl.generateStopMessage("VMC", block);
+      run_time_manager.markStop();
       break;
     }
   } //block

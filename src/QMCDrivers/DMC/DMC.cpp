@@ -300,6 +300,7 @@ bool DMC::run()
     if (stop_requested)
     {
       app_log() << runtimeControl.generateStopMessage("DMC", block - 1);
+      run_time_manager.markStop();
       break;
     }
 

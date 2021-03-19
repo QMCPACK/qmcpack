@@ -125,6 +125,7 @@ bool RMC::run()
     if (stop_requested)
     {
       app_log() << runtimeControl.generateStopMessage("RMC", block);
+      run_time_manager.markStop();
       break;
     }
   } //block

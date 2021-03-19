@@ -117,8 +117,6 @@ bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer)
   bool need_to_stop = false;
   need_to_stop |= !enough_time_for_next_iteration(loop_timer);
   need_to_stop |= stop_file_reqeusted();
-  if (need_to_stop)
-    runtimeManager.markStop();
   return need_to_stop;
 }
 

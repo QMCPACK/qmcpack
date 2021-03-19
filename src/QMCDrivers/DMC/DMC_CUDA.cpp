@@ -330,6 +330,7 @@ bool DMCcuda::run()
     if (stop_requested)
     {
       app_log() << runtimeControl.generateStopMessage("DMC_CUDA", block);
+      run_time_manager.markStop();
       break;
     }
   } while (block < nBlocks);
