@@ -84,7 +84,7 @@ class RunTimeControl
   } stop_status_;
 
   bool enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer);
-  bool stop_file_reqeusted();
+  bool stop_file_requested();
 
 public:
   /** constructor

@@ -107,7 +107,7 @@ bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loo
 }
 
 template<class CLOCK>
-bool RunTimeControl<CLOCK>::stop_file_reqeusted()
+bool RunTimeControl<CLOCK>::stop_file_requested()
 {
   if (std::ifstream(stop_filename_.c_str()))
   {
@@ -123,7 +123,7 @@ bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer)
 {
   bool need_to_stop = false;
   need_to_stop |= !enough_time_for_next_iteration(loop_timer);
-  need_to_stop |= stop_file_reqeusted();
+  need_to_stop |= stop_file_requested();
   return need_to_stop;
 }
 
@@ -131,13 +131,13 @@ template<class CLOCK>
 std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driverName, int block) const
 {
   std::stringstream log;
-  log << "RunTimeControl in " << driverName << " kicks in." << std::endl;
+  log << "RunTimeControl takes action in " << driverName << " driver." << std::endl;
   if (stop_status_ == StopStatus::MAX_SECONDS_PASSED)
     log << "Time limit reached. Stopping after block " << block << std::endl
         << "Hard limit (seconds) " << MaxCPUSecs << ", elapsed (seconds) " << m_elapsed << std::endl;
   else if (stop_status_ == StopStatus::NOT_ENOUGH_TIME)
   {
-    log << "Insufficeint time for next block. Stopping after block " << block << std::endl;
+    log << "Insufficient time for next block. Stopping after block " << block << std::endl;
     log << "  Iteration time per " << driverName << " block (seconds) = " << m_loop_time << std::endl;
     log << "  Elapsed   time (seconds) = " << m_elapsed << std::endl;
     log << "  Remaining time (seconds) = " << m_remaining << std::endl;
