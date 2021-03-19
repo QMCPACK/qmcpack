@@ -180,7 +180,7 @@ bool ProjectData::put(xmlNodePtr cur)
   const XMLAttrString series_str(cur, "series");
   if (!series_str.empty())
     m_series = std::stoi(series_str);
-  const XMLAttrString max_cpu_secs_str(cur, "max_cpu_seconds");
+  const XMLAttrString max_cpu_secs_str(cur, "max_seconds");
   if (!max_cpu_secs_str.empty())
     max_cpu_secs_ = std::stoi(max_cpu_secs_str);
 
