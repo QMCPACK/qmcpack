@@ -131,7 +131,8 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   //m_param.add(Tau,"Tau");
   m_param.add(Tau, "tau");
   MaxCPUSecs = 360000; //100 hours
-  m_param.add(MaxCPUSecs, "maxcpusecs");
+  m_param.add(MaxCPUSecs, "maxcpusecs", {}, TagStatus::DEPRECATED);
+  m_param.add(MaxCPUSecs, "max_seconds");
   // by default call recompute at the end of each block in the mixed precision case.
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
