@@ -88,8 +88,8 @@ RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
 template<class CLOCK>
 bool RunTimeControl<CLOCK>::enough_time_for_next_iteration(LoopTimer<CLOCK>& loop_timer)
 {
-  m_loop_time      = loop_timer.get_time_per_iteration();
-  m_elapsed        = runtimeManager.elapsed();
+  m_loop_time = loop_timer.get_time_per_iteration();
+  m_elapsed   = runtimeManager.elapsed();
 
   if (m_elapsed >= MaxCPUSecs)
   {
@@ -139,8 +139,8 @@ std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driver
   {
     log << "Insufficeint time for next block. Stopping after block " << block << std::endl;
     log << "  Iteration time per " << driverName << " block (seconds) = " << m_loop_time << std::endl;
-    log << "  Elapsed time (seconds)       = " << m_elapsed << std::endl;
-    log << "  Remaining time (seconds)      = " << m_remaining << std::endl;
+    log << "  Elapsed   time (seconds) = " << m_elapsed << std::endl;
+    log << "  Remaining time (seconds) = " << m_remaining << std::endl;
   }
   else if (stop_status_ == StopStatus::STOP_FILE)
     log << "Stop requested from the control file \"" + stop_filename_ + "\", stopping after block " << block

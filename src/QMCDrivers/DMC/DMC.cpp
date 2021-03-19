@@ -229,7 +229,8 @@ bool DMC::run()
   IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int sample             = 0;
 
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->getGroupID() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(),
+                                  myComm->getGroupID() == 0 && myComm->rank() == 0);
 
   do // block
   {
@@ -293,13 +294,16 @@ bool DMC::run()
     recordBlock(block);
     dmc_loop.stop();
 
-    bool stop_requested = runtimeControl.checkStop(dmc_loop);
+    bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(dmc_loop);
     myComm->bcast(stop_requested);
 
     if (stop_requested)
     {
-      app_log() << runtimeControl.generateStopMessage("DMC", block - 1);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("DMC", block - 1);
       run_time_manager.markStop();
       break;
     }

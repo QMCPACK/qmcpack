@@ -108,7 +108,8 @@ bool DMCcuda::run()
     W[iw]->Weight = 1.0;
 
   LoopTimer<> dmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->getGroupID() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(),
+                                  myComm->getGroupID() == 0 && myComm->rank() == 0);
 
   do
   {
@@ -324,12 +325,15 @@ bool DMCcuda::run()
     recordBlock(block);
     dmc_loop.stop();
 
-    bool stop_requested = runtimeControl.checkStop(dmc_loop);
+    bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(dmc_loop);
     myComm->bcast(stop_requested);
     if (stop_requested)
     {
-      app_log() << runtimeControl.generateStopMessage("DMC_CUDA", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("DMC_CUDA", block);
       run_time_manager.markStop();
       break;
     }

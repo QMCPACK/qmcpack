@@ -276,7 +276,7 @@ bool VMCBatched::run()
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
-                                  myComm->getGroupID() == 0);
+                                  myComm->getGroupID() == 0 && myComm->rank() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -340,13 +340,16 @@ bool VMCBatched::run()
     endBlock();
     vmc_loop.stop();
 
-    bool stop_requested = runtimeControl.checkStop(vmc_loop);
+    bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(vmc_loop);
     myComm->bcast(stop_requested);
 
     if (stop_requested)
     {
-      app_log() << runtimeControl.generateStopMessage("VMCBatched", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("VMCBatched", block);
       run_time_manager.markStop();
       break;
     }
