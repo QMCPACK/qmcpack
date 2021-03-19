@@ -17,6 +17,7 @@
 #include "Message/Communicate.h"
 #include "Host/sysutil.h"
 #include "Utilities/qmc_common.h"
+#include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus
 {
@@ -180,9 +181,10 @@ bool ProjectData::put(xmlNodePtr cur)
   const XMLAttrString series_str(cur, "series");
   if (!series_str.empty())
     m_series = std::stoi(series_str);
-  const XMLAttrString max_cpu_secs_str(cur, "max_seconds");
-  if (!max_cpu_secs_str.empty())
-    max_cpu_secs_ = std::stoi(max_cpu_secs_str);
+
+  ParameterSet m_param;
+  m_param.add(max_cpu_secs_, "max_seconds");
+  m_param.put(cur);
 
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
