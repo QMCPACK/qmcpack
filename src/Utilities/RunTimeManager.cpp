@@ -27,12 +27,33 @@ template class RunTimeManager<CPUClock>;
 template class RunTimeManager<FakeCPUClock>;
 
 template<class CLOCK>
-double LoopTimer<CLOCK>::get_time_per_iteration()
+LoopTimer<CLOCK>::LoopTimer() : nloop(0), ticking(false), start_time(0.0), total_time(0.0)
+{}
+
+template<class CLOCK>
+void LoopTimer<CLOCK>::start()
+{
+  if (ticking)
+    throw std::runtime_error("LoopTimer started already!");
+  start_time = CLOCK()();
+  ticking    = true;
+}
+
+template<class CLOCK>
+void LoopTimer<CLOCK>::stop()
+{
+  if (!ticking)
+    throw std::runtime_error("LoopTimer didn't start but called stop!");
+  nloop++;
+  total_time += CLOCK()() - start_time;
+  ticking = false;
+}
+
+template<class CLOCK>
+double LoopTimer<CLOCK>::get_time_per_iteration() const
 {
   if (nloop > 0)
-  {
     return total_time / nloop;
-  }
   return 0.0;
 }
 

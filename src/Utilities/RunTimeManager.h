@@ -44,18 +44,14 @@ template<class CLOCK = CPUClock>
 class LoopTimer
 {
 public:
-  void start() { start_time = CLOCK()(); }
-  void stop()
-  {
-    nloop++;
-    total_time += CLOCK()() - start_time;
-  }
-  double get_time_per_iteration();
-
-  LoopTimer() : nloop(0), start_time(0.0), total_time(0.0) {}
+  LoopTimer();
+  void start();
+  void stop();
+  double get_time_per_iteration() const;
 
 private:
   int nloop;
+  bool ticking;
   double start_time;
   double total_time;
 };
