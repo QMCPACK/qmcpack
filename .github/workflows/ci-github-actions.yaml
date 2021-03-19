@@ -27,7 +27,7 @@ jobs:
         - jobname: ubuntu20-gcc9-openmpi
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
-            options: -u user
+            options: -u 1001
 
     steps:
     - name: Checkout Action
