@@ -17,9 +17,17 @@ case "$1" in
     ninja
     ;;
 
-  # Run unit and deterministic tests
+  # Run deterministic tests
   test)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    
+    # Enable overscription in OpenMPI
+    if [[ "${GH_JOBNAME}" =~ (openmpi) ]]
+    then
+      export OMPI_MCA_rmaps_base_oversubscribe=1
+      export OMPI_MCA_hwloc_base_binding_policy=none
+    fi 
+    
     ctest -L deterministic
     ;;
 
