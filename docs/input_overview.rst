@@ -109,6 +109,10 @@ Output file names also contain the series number, starting at the value given by
 For the input file shown previously, the output files will start with ``vmc.s000``, for example, ``vmc.s000.scalar.dat``.
 If there were another ``<qmc>`` section in the input file, the corresponding output files would use the prefix ``vmc.s001``.
 
+``<project>`` tag accepts additional control parameters ``<parameters/>``. Batched drivers check against ``max_seconds`` and make efforts to stop the execution cleanly before reaching it. Classic drivers remain taking ``maxcpusecs`` parameter for the same effect in the per driver XML section.
+
+In addition, a file named ``id`` plus ``.STOP``, in this case ``vmc.STOP``, stops QMCPACK execution on the fly cleanly once being found in the working directory.
+
 Random number initialization
 ----------------------------
 
