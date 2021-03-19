@@ -471,6 +471,11 @@ template<class T, std::size_t M, std::size_t N>
 constexpr dimensionality_type dimensionality(std::array<std::array<T, M>, N> const& arr){return 1 + dimensionality(arr[0]);}
 
 template<class T, std::size_t N>
+constexpr auto size(std::array<T, N> const& /*arr*/){
+	return multi::size_type{N};
+}
+
+template<class T, std::size_t N>
 constexpr auto extensions(std::array<T, N> const& /*arr*/){
 	return multi::extensions_t<1>{{0, N}};
 }

@@ -1638,14 +1638,43 @@ public:
 	       constexpr typename array_ref::element_ptr data_elements()        &&   {return array_ref::base_;}
 	friend constexpr typename array_ref::element_ptr data_elements(array_ref&& s){return std::move(s).data_elements();}
 
-	[[deprecated("use ::data_elements()")]]
-	       constexpr typename array_ref::element_ptr data()         const&   {return data_elements();}//array_ref::base_;} 
+//	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0>
+//	[[deprecated("use ::data_elements()")]]
+//	       constexpr typename array_ref::element_ptr data() const& {return data_elements();}
+
+//	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0>
+//	[[deprecated("use ::data_elements()")]] typename static_array::element_ptr data() &{return ref::data_elements();}
+
+	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0> [[deprecated("use ::data_elements()")]] constexpr auto data() const&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0> [[deprecated("use ::data_elements()")]] constexpr auto data()     &&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0> [[deprecated("use ::data_elements()")]] constexpr auto data()      &{return data_elements();}
+
+	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = 0> constexpr auto data() const&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = 0> constexpr auto data()     &&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = 0> constexpr auto data()      &{return data_elements();}
+
+
+//	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = 0>
+//	       constexpr typename array_ref::element_ptr data() const& {return data_elements();}
+
 #if not defined(__NVCC__)
 	[[deprecated("use data_elements()")]] 
 #else
 	__attribute__((deprecated))
 #endif
 	friend constexpr typename array_ref::element_ptr data(array_ref const& s){return s.data_elements();}
+#if not defined(__NVCC__)
+	[[deprecated("use data_elements()")]] 
+#else
+	__attribute__((deprecated))
+#endif
+	friend constexpr typename array_ref::element_ptr data(array_ref& s){return s.data_elements();}
+#if not defined(__NVCC__)
+	[[deprecated("use data_elements()")]] 
+#else
+	__attribute__((deprecated))
+#endif
+	friend constexpr typename array_ref::element_ptr data(array_ref&& s){return std::move(s).data_elements();}
 
 //	constexpr typename array_ref::decay_type const& operator*() const&{return static_cast<typename array_ref::decay_type const&>(*this);}
 //	constexpr typename array_ref::decay_type const& operator*() const&{return *this;}

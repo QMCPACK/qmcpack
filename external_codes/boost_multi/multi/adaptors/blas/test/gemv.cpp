@@ -13,15 +13,12 @@
 #include "../../../array.hpp"
 #include "../../../utility.hpp"
 
-#include "../../blas/dot.hpp"
 #include "../../blas/axpy.hpp"
-#include "../../blas/nrm2.hpp"
+#include "../../blas/dot.hpp"
 #include "../../blas/gemm.hpp"
+#include "../../blas/nrm2.hpp"
 
 #include<random>
-
-namespace utf = boost::unit_test;
-namespace tt = boost::test_tools;
 
 namespace multi = boost::multi;
 namespace blas = multi::blas;
@@ -137,12 +134,13 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_real_complex){
 	multi::array<complex, 1> const X = {1.1, 2.1, 3.1, 4.1};
 	{
 		multi::array<complex, 1> Y = {4., 5., 6.};
-		double const a = 1.1, b = 1.2;
+		double const a = 1.1;
+		double const b = 1.2;
 		blas::gemv(a, M, X, b, Y); // y = a*M*x + b*y
 		
 		multi::array<complex, 1> const Y3 = {214.02, 106.43, 188.37};
 		
-		using namespace blas::operators;
+		using blas::operators::operator-;
 		double const n2 = blas::nrm2(Y - Y3);
 		BOOST_REQUIRE_SMALL( n2 , 1e-13);
 	}
@@ -211,7 +209,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_temporary){
 	
 	auto const B = []{
 		multi::array<complex, 2> _({3, 3});
-		auto rand = [d=std::normal_distribution<>{}, g=std::mt19937{}]()mutable{return complex{d(g), d(g)};};
+		auto rand = [d=std::normal_distribution<>{}, g=std::mt19937{1}]()mutable{return complex{d(g), d(g)};};
 		std::generate(_.elements().begin(), _.elements().end(), rand);
 		return _;
 	}();

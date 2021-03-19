@@ -31,8 +31,11 @@ auto triangular(multi::blas::filling f, Matrix const& m){
 			for(multi::size_type j = 0; j != std::min(i, size(~ret)); ++j) ret[i][j] = 0.;
 		break;
 	case multi::blas::filling::lower:
-		for(multi::size_type j = 0; j != size(~ret); ++j)
-			for(multi::size_type i = 0; i != std::min(j, size( ret)); ++i) ret[i][j] = 0.;
+		for(multi::size_type j = 0; j != size(~ret); ++j){
+			for(multi::size_type i = 0; i != std::min(j, size( ret)); ++i){
+				ret[i][j] = 0.;
+			}
+		}
 		break;
 	}
 	return ret;
