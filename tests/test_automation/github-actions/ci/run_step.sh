@@ -8,7 +8,7 @@ case "$1" in
     cd ${GITHUB_WORKSPACE}/..
     mkdir qmcpack-build
     cd qmcpack-build
-    cmake -GNinja -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/../qmcpack-install ${GITHUB_WORKSPACE}
+    cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/../qmcpack-install ${GITHUB_WORKSPACE}
     ;;
 
   # Build using ninja
