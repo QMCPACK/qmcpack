@@ -13,6 +13,7 @@
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "Message/CommOperators.h"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
@@ -274,7 +275,8 @@ bool VMCBatched::run()
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, project_data_.getTitle(), myComm->getGroupID() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
+                                  myComm->getGroupID() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);

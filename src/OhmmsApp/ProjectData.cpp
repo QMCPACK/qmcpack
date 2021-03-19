@@ -24,7 +24,8 @@ namespace qmcplusplus
 // ProjectData
 //----------------------------------------------------------------------------
 // constructors and destructors
-ProjectData::ProjectData(const char* aname) : m_title("asample"), m_host("none"), m_date("none"), m_series(0), m_cur(0)
+ProjectData::ProjectData(const char* aname)
+    : m_title("asample"), m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000)
 {
   myComm = OHMMS::Controller;
   if (aname == 0)
@@ -174,10 +175,14 @@ bool ProjectData::PreviousRoot(std::string& oldroot) const
 
 bool ProjectData::put(xmlNodePtr cur)
 {
-  m_cur                  = cur;
+  m_cur   = cur;
   m_title = XMLAttrString(cur, "id");
   const XMLAttrString series_str(cur, "series");
-  if (!series_str.empty()) m_series = std::stoi(series_str);
+  if (!series_str.empty())
+    m_series = std::stoi(series_str);
+  const XMLAttrString max_cpu_secs_str(cur, "max_cpu_seconds");
+  if (!max_cpu_secs_str.empty())
+    max_cpu_secs_ = std::stoi(max_cpu_secs_str);
 
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;

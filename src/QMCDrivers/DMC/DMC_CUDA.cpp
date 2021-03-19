@@ -330,7 +330,7 @@ bool DMCcuda::run()
     if (stop_requested)
     {
       app_log() << runtimeControl.generateStopMessage("DMC_CUDA", block);
-      break
+      break;
     }
   } while (block < nBlocks);
 #ifdef USE_NVTX_API

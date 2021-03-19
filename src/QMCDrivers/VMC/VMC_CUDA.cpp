@@ -314,7 +314,7 @@ bool VMCcuda::run()
     if (stop_requested)
     {
       app_log() << runtimeControl.generateStopMessage("VMC_CUDA", block);
-      break
+      break;
     }
 
   } while (block < nBlocks);
