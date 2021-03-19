@@ -860,6 +860,7 @@ public:
 //	constexpr 
 	basic_array& operator=(basic_array<TT, D, As...> const& o)&{assert( this->extension() == o.extension() );
 		MULTI_MARK_SCOPE(std::string{"multi::operator= "}+std::to_string(D)+" from "+typeid(TT).name()+" to "+typeid(T).name() );
+		if(this->is_empty()) return *this;
 		if(this->num_elements() == this->nelems() and o.num_elements() == this->nelems() and this->layout() == o.layout()){
 			adl_copy_n(o.base(), o.num_elements(), this->base());
 		}else if(o.stride() < (~o).stride()){
@@ -870,7 +871,11 @@ public:
 		return *this;
 	}
 	template<class TT, class... As>
-	constexpr basic_array&& operator=(basic_array<TT, D, As...>&& o)&&{return std::move(basic_array::operator=(std::move(o)));}
+	constexpr basic_array&& operator=(basic_array<TT, D, As...>&& o)&&{
+		assert( this->extensions() == o.extensions() );
+		if(this->is_empty()) return std::move(*this);
+		return std::move(basic_array::operator=(std::move(o)));
+	}
 
 	template<class TT, class... As>
 	constexpr basic_array&& operator=(basic_array<TT, D, As...> const& o)&&{return std::move(this->operator=(o));}
