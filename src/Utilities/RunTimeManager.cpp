@@ -114,11 +114,12 @@ bool RunTimeControl<CLOCK>::stop_file_reqeusted()
 template<class CLOCK>
 bool RunTimeControl<CLOCK>::checkStop(LoopTimer<CLOCK>& loop_timer)
 {
-  if (!enough_time_for_next_iteration(loop_timer))
-    return true;
-  if (stop_file_reqeusted())
-    return true;
-  return false;
+  bool need_to_stop = false;
+  need_to_stop |= !enough_time_for_next_iteration(loop_timer);
+  need_to_stop |= stop_file_reqeusted();
+  if (need_to_stop)
+    runtimeManager.markStop();
+  return need_to_stop;
 }
 
 template<class CLOCK>

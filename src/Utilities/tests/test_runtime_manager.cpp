@@ -56,21 +56,24 @@ TEST_CASE("test_loop_control", "[utilities]")
   RunTimeManager<FakeCPUClock> rm; // fake clock = 1
   RunTimeControl<FakeCPUClock> rc(rm, max_cpu_secs, "dummy", false);
   rc.runtime_padding(1.0);
-  bool stop_requested = rc.checkStop(loop); // fake clock = 2
-  REQUIRE(!stop_requested);
-  loop.start();                                          // fake clock = 3
-  loop.stop();                                           // fake clock = 4
-  stop_requested = rc.checkStop(loop); // fake clock = 5
-      // estimated time with margin and padding =  1.0 sec/it * 1.1 + 1.0 (pad) = 2.1
-      // remaining = 9 - 4.0 = 5.0  enough time for another loop.
-  REQUIRE(!stop_requested);
+  REQUIRE(!rc.checkStop(loop)); // fake clock = 2
+  REQUIRE(!rm.isStopNeeded());
 
-  loop.start();                                          // fake clock = 6
-  loop.stop();                                           // fake clock = 7
-  stop_requested = rc.checkStop(loop); // fake clock = 8
-      // estimated time with margin and padding = 1.0 sec/it * 1.1 + 1.0 = 2.1
-      // remaining = 9 - 8.0 = 1.0  not enough time for another loop
-  REQUIRE(stop_requested);
+  loop.start(); // fake clock = 3
+  loop.stop();  // fake clock = 4
+  // fake clock = 5
+  // estimated time with margin and padding =  1.0 sec/it * 1.1 + 1.0 (pad) = 2.1
+  // remaining = 9 - 4.0 = 5.0  enough time for another loop.
+  REQUIRE(!rc.checkStop(loop));
+  REQUIRE(!rm.isStopNeeded());
+
+  loop.start(); // fake clock = 6
+  loop.stop();  // fake clock = 7
+  // fake clock = 8
+  // estimated time with margin and padding = 1.0 sec/it * 1.1 + 1.0 = 2.1
+  // remaining = 9 - 8.0 = 1.0  not enough time for another loop
+  REQUIRE(rc.checkStop(loop));
+  REQUIRE(rm.isStopNeeded());
 
   std::string msg = rc.generateStopMessage("QMC", 2);
   REQUIRE(msg.size() > 0);

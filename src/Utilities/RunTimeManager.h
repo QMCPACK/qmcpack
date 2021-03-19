@@ -26,13 +26,16 @@ template<class CLOCK = CPUClock>
 class RunTimeManager
 {
 public:
-  void start() { start_time = CLOCK()(); }
   inline double elapsed() { return CLOCK()() - start_time; }
   // Initialize the start time at static class initialization time
-  RunTimeManager() { start(); }
+  RunTimeManager() : start_time(CLOCK()()) {}
+
+  bool isStopNeeded() const { return need_to_stop_; }
+  void markStop() { need_to_stop_ = true; }
 
 private:
-  double start_time;
+  const double start_time;
+  bool need_to_stop_;
 };
 
 extern RunTimeManager<CPUClock> run_time_manager;
