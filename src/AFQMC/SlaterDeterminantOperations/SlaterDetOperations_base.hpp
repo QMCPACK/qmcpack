@@ -195,7 +195,7 @@ public:
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
-    return SlaterDeterminantOperations::base::Overlap<T>(A, A, LogOverlapFactor, TNN, IWORK, TNN2, false);
+    return SlaterDeterminantOperations::base::Overlap<T>(A, A, LogOverlapFactor, TNN, IWORK, TNN2.elements(), false);
   }
 
   template<class MatA, class MatB>
@@ -205,7 +205,7 @@ public:
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
-    return SlaterDeterminantOperations::base::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2, herm);
+    return SlaterDeterminantOperations::base::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), herm);
   }
 
   template<class MatA, class MatB>
@@ -215,7 +215,7 @@ public:
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
-    return SlaterDeterminantOperations::base::Overlap<T>(A, B, LogOverlapFactor, TNN, IWORK, TNN2, false);
+    return SlaterDeterminantOperations::base::Overlap<T>(A, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), false);
   }
 
   // routines for PHMSD

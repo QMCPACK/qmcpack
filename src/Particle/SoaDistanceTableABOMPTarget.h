@@ -85,6 +85,7 @@ private:
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
       count_targets += dt.targets();
+      dt.r_dr_memorypool_.free();
     }
 
     const int N_sources        = dt_leader.N_sources;

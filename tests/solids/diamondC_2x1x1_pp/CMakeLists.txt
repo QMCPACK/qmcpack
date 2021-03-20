@@ -419,7 +419,7 @@ IF(NOT QMC_CUDA)
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "nonlocalecp" "1.72101007 0.000001")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-12.47274689 0.000001")
-  ELSE()  
+  ELSE()
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "totenergy" "-20.94387935 0.000001")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "kinetic" "16.53547309 0.000001")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "potential" "-37.47935243 0.000001")
@@ -430,7 +430,7 @@ IF(NOT QMC_CUDA)
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-12.48031692 0.000001")
   ENDIF()
- ENDIF()  
+ ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-delayed_update-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -792,7 +792,18 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS # VMC without drift
                     1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS # VMC with drift
-                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC 
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers-serialized_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers_serialized
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers_serialized.in.xml
+                    1 4
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
                     )
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
@@ -803,7 +814,7 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS # VMC without drift
                     1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS # VMC with drift
-                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC 
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
                     )
 
 
@@ -941,7 +952,7 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS # VMC without drift
                     1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS # VMC with drift
-                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS # DMC 
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS # DMC
                     )
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
@@ -952,7 +963,7 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS # VMC without drift
                     1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS # VMC with drift
-                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS # DMC 
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS # DMC
                     )
 
  IF(QMC_MIXED_PRECISION)
@@ -1089,7 +1100,7 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS # VMC without drift
                     1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS # VMC with drift
-                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS # DMC 
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS # DMC
                     )
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
@@ -1100,7 +1111,7 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS # VMC without drift
                     1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS # VMC with drift
-                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS # DMC 
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS # DMC
                     )
 
 
@@ -1238,7 +1249,7 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS # VMC without drift
                     1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS # VMC with drift
-                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC 
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
                     )
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
@@ -1249,11 +1260,11 @@ IF(NOT QMC_CUDA)
                     TRUE
                     0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS # VMC without drift
                     1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS # VMC with drift
-                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC 
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
                     )
 
 
-# CUDA references  
+# CUDA references
 ELSE()
  # VMC runs
  IF(QMC_MIXED_PRECISION)
