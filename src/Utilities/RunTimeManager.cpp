@@ -81,7 +81,7 @@ RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
                                "\", cannot continue!");
   }
 
-  m_runtime_safety_padding = 10.0; // 10 seconds - enough to shut down?
+  m_runtime_safety_padding = 30.0; // generous 30 seconds to allow for shut down?
   m_loop_margin            = 1.1;  // 10% margin on average loop time?
 }
 
