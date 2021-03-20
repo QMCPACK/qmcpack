@@ -48,8 +48,8 @@ QMCPACK generates multiple files documented in :ref:`output-overview`.
 Stopping a running simulation
 -----------------------------
 
-As detailed in :ref:`input-overview`, QMCPACK will cleanly stop execution at the end of the current block if it finds a file name
-``project_id.STOP``, where ``project_id`` is the name of the project given in the input XML. You can also the ``max_seconds``
+As detailed in :ref:`input-overview`, QMCPACK will cleanly stop execution at the end of the current block if it finds a file named
+``project_id.STOP``, where ``project_id`` is the name of the project given in the input XML. You can also set the ``max_seconds``
 parameter to establish an overall time limit.
 
 .. _parallelrunning:
