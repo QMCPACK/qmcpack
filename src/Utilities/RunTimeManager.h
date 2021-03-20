@@ -91,7 +91,7 @@ public:
    * @param rm the RunTimeManager attached to
    * @param maxCPUSecs maxmimal allowed seconds from the beginning of the simulation
    * @param stop_file_prefix the prefix of the stop file
-   * @param cleanup if true, clean up stop files left from previous simulations. Fine control needed for ensemble runs.
+   * @param cleanup if true, clean up stop files left from previous simulations. Rank 0 handle this.
    */
   RunTimeControl(RunTimeManager<CLOCK>& rm, int maxCPUSecs, const std::string& stop_file_prefix, bool cleanup = true);
 

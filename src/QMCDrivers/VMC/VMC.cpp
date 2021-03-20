@@ -62,8 +62,7 @@ bool VMC::run()
 #endif
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(),
-                                  myComm->getGroupID() == 0 && myComm->rank() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
 
   const bool has_collectables = W.Collectables.size();
   for (int block = 0; block < nBlocks; ++block)

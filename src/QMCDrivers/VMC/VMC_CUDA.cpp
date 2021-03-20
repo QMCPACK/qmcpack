@@ -210,8 +210,7 @@ bool VMCcuda::run()
   double Esum;
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(),
-                                  myComm->getGroupID() == 0 && myComm->rank() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
 
   // First do warmup steps
   for (int step = 0; step < nWarmupSteps; step++)

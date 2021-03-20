@@ -229,8 +229,7 @@ bool DMC::run()
   IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int sample             = 0;
 
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(),
-                                  myComm->getGroupID() == 0 && myComm->rank() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
 
   do // block
   {

@@ -276,7 +276,7 @@ bool VMCBatched::run()
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
-                                  myComm->getGroupID() == 0 && myComm->rank() == 0);
+                                  myComm->rank() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);

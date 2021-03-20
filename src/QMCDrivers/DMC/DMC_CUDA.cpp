@@ -108,8 +108,7 @@ bool DMCcuda::run()
     W[iw]->Weight = 1.0;
 
   LoopTimer<> dmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(),
-                                  myComm->getGroupID() == 0 && myComm->rank() == 0);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
 
   do
   {
