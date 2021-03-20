@@ -496,4 +496,201 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
   checkMatrix(ddc.get_det_engine().get_psiMinv(), orig_a);
 }
 
+TEST_CASE("DiracDeterminantBatched_mw_delayed_update", "[wavefunction][fermion]")
+{
+  UPtrVector<DetType> dets;
+  UPtrVector<ParticleSet> psets;
+  int nw = 4;
+  int norb = 4;
+
+  for(int i = 0; i < nw; ++i){
+    auto spo = std::make_unique<FakeSPO>();
+    spo->setOrbitalSetSize(4);
+    dets.emplace_back(std::make_unique<DetType>(std::move(spo)));
+    // maximum delay 2
+    dets.back()->set(0, norb, 2);
+    dets.back()->dpsiV.resize(norb);
+    dets.back()->d2psiV.resize(norb);
+    psets.emplace_back(std::make_unique<ParticleSet>());
+    psets.back()->create(4);
+  }
+
+  testing::DiracDeterminantBatchedTest ddbt;
+  ResourceCollection collection("test resources");;
+  dets[0]->createResource(collection);
+  dets[0]->acquireResource(collection);
+  auto& mw_res = ddbt.get_mw_res(*(dets[0]));
+  mw_res.log_values.resize(4);
+
+  RefVectorWithLeader<WaveFunctionComponent> det_refs(*dets[0]);
+  RefVectorWithLeader<ParticleSet> pset_refs(*psets[0]);
+  for(int iw = 0; iw < nw; ++iw){
+    det_refs.push_back(*dets[iw]);
+    pset_refs.push_back(*psets[iw]);
+  }
+  auto& det_leader = det_refs.getCastedLeader<DetType>();
+  std::vector<bool> recompute_mask(det_refs.size(), true);
+  det_leader.mw_recompute(det_refs, pset_refs, recompute_mask);
+
+  std::vector<PsiValueType> ratios(nw, 0.0);
+  std::vector<ParticleSet::GradType> grads_new(nw, 0.0);
+  det_leader.mw_ratioGrad(det_refs, pset_refs, 0, ratios, grads_new);
+  
+  
+//   ParticleSet elec;
+
+//   elec.create(4);
+
+//   testing::DiracDeterminantBatchedTest ddbt;
+//   ddbt.guardMultiWalkerRes(ddc);
+//   ddc.recompute(ddbt.get_mw_res(ddc), elec);
+
+//   using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;
+//   ValueMatrix orig_a;
+//   orig_a.resize(4, 4);
+//   orig_a = spo->a2;
+
+//   for (int i = 0; i < 3; i++)
+//   {
+//     for (int j = 0; j < norb; j++)
+//     {
+//       orig_a(j, i) = spo->v2(i, j);
+//     }
+//   }
+
+//   DetType::DetEngine_t::DiracMatrixCompute& dm = ddc.get_det_engine().get_det_inverter();
+
+//   ValueMatrix a_update1, scratchT;
+//   scratchT.resize(4, 4);
+//   a_update1.resize(4, 4);
+//   a_update1 = spo->a2;
+//   for (int j = 0; j < norb; j++)
+//   {
+//     a_update1(j, 0) = spo->v2(0, j);
+//   }
+
+//   ValueMatrix a_update2;
+//   a_update2.resize(4, 4);
+//   a_update2 = spo->a2;
+//   for (int j = 0; j < norb; j++)
+//   {
+//     a_update2(j, 0) = spo->v2(0, j);
+//     a_update2(j, 1) = spo->v2(1, j);
+//   }
+
+//   ValueMatrix a_update3;
+//   a_update3.resize(4, 4);
+//   a_update3 = spo->a2;
+//   for (int j = 0; j < norb; j++)
+//   {
+//     a_update3(j, 0) = spo->v2(0, j);
+//     a_update3(j, 1) = spo->v2(1, j);
+//     a_update3(j, 2) = spo->v2(2, j);
+//   }
+
+
+//   auto& mw_res = ddbt.get_mw_res(ddc);
+  
+//   ParticleSet::GradType grad;
+//   PsiValueType det_ratio = ddc.ratioGrad(elec, 0, grad);
+
+//   simd::transpose(a_update1.data(), a_update1.rows(), a_update1.cols(), scratchT.data(), scratchT.rows(),
+//                   scratchT.cols());
+//   LogValueType det_update1;
+// #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+//   dm.invert_transpose(ddbt.getHandles(ddc), scratchT, a_update1, mw_res.log_values);
+//   det_update1 = mw_res.log_values[0];
+// #else
+//   dm.invert_transpose(scratchT, a_update1, det_update1);
+// #endif
+
+//   PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddc.get_log_value());
+// #ifdef DUMP_INFO
+//   std::cout << "det 0 = " << std::exp(ddc.get_log_value()) << std::endl;
+//   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
+//   std::cout << "det ratio 1 = " << det_ratio1 << std::endl;
+// #endif
+//   //double det_ratio1 = 0.178276269185;
+
+//   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+
+//   // update of Ainv in ddc is delayed
+//   ddc.acceptMove(elec, 0, true);
+//   // force update Ainv in ddc using SM-1 code path
+//   ddc.completeUpdates();
+
+//   checkMatrix(ddc.get_det_engine().get_psiMinv(), a_update1);
+
+//   grad = ddc.evalGrad(elec, 1);
+
+//   PsiValueType det_ratio2 = ddc.ratioGrad(elec, 1, grad);
+//   simd::transpose(a_update2.data(), a_update2.rows(), a_update2.cols(), scratchT.data(), scratchT.rows(),
+//                   scratchT.cols());
+//   LogValueType det_update2;
+
+//   #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+//   dm.invert_transpose(ddbt.getHandles(ddc), scratchT, a_update2, mw_res.log_values);
+//   det_update2 = mw_res.log_values[0];
+// #else
+//   dm.invert_transpose(scratchT, a_update2, det_update2);
+// #endif
+//   PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
+// #ifdef DUMP_INFO
+//   std::cout << "det 1 = " << std::exp(ddc.LogValue) << std::endl;
+//   std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
+//   std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
+// #endif
+//   // check ratio computed directly and the one computed by ddc with no delay
+//   //double det_ratio2_val = 0.178276269185;
+//   REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
+
+//   // update of Ainv in ddc is delayed
+//   ddc.acceptMove(elec, 1, true);
+
+//   grad = ddc.evalGrad(elec, 2);
+
+//   PsiValueType det_ratio3 = ddc.ratioGrad(elec, 2, grad);
+//   simd::transpose(a_update3.data(), a_update3.rows(), a_update3.cols(), scratchT.data(), scratchT.rows(),
+//                   scratchT.cols());
+//   LogValueType det_update3;
+//   #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+//   dm.invert_transpose(ddbt.getHandles(ddc), scratchT, a_update3, mw_res.log_values);
+//   det_update3 = mw_res.log_values[0];
+// #else
+//   dm.invert_transpose(scratchT, a_update3, det_update3);
+// #endif
+//   PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
+// #ifdef DUMP_INFO
+//   std::cout << "det 2 = " << std::exp(ddc.LogValue) << std::endl;
+//   std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
+//   std::cout << "det ratio 3 = " << det_ratio3 << std::endl;
+// #endif
+//   // check ratio computed directly and the one computed by ddc with 1 delay
+//   REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
+//   //check_value(det_ratio3, det_ratio3_val);
+
+//   // maximal delay reached and Ainv is updated fully
+//   ddc.acceptMove(elec, 2, true);
+//   ddc.completeUpdates();
+
+//   // fresh invert orig_a
+//   simd::transpose(orig_a.data(), orig_a.rows(), orig_a.cols(), scratchT.data(), scratchT.rows(), scratchT.cols());
+// #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+//   dm.invert_transpose(ddbt.getHandles(ddc), scratchT, orig_a, mw_res.log_values);
+//   det_update3 = mw_res.log_values[0];
+// #else
+//   dm.invert_transpose(scratchT, orig_a, det_update3);
+// #endif
+
+// #ifdef DUMP_INFO
+//   std::cout << "original " << std::endl;
+//   std::cout << orig_a << std::endl;
+//   std::cout << "delayed update " << std::endl;
+//   std::cout << ddc.psiMinv << std::endl;
+// #endif
+
+//   // compare all the elements of psiMinv in ddc and orig_a
+//   checkMatrix(ddc.get_det_engine().get_psiMinv(), orig_a);
+}
+
 } // namespace qmcplusplus

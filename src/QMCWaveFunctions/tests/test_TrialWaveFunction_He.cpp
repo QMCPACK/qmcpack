@@ -351,6 +351,12 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   setup_He_wavefunction(c, elec1_2, ions_2, wff_2, particle_set_map_2, true);
   
   TrialWaveFunction& psi2(*wff_2->getTWF());
+  // elsewhere we prove we can make and move mw resources, so we make psi2 its own since this test
+  // predates shared resource management.
+  ResourceCollection res_col2("test_resources_2");
+  psi2.createResource(res_col2);
+  psi2.acquireResource(res_col2);
+    
   ions_2.update();
   elec1_2.update();
 

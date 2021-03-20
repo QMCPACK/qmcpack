@@ -331,6 +331,9 @@ void TrialWaveFunction::mw_evaluateDeltaLogSetup(const RefVectorWithLeader<Trial
   };
   for (int iw = 0; iw < wf_list.size(); iw++)
     addAndCopyToP(p_list[iw], wf_list[iw], fixedG_list[iw], fixedL_list[iw]);
+
+  // Here we try to set up the DiracDeterminantBatched multi_walker_res
+  
 }
 
 
