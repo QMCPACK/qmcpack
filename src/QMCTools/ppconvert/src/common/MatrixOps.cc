@@ -14,7 +14,7 @@
 /////////////////////////////////////////////////////////////
 
 #include "MatrixOps.h"
-#include <blitz/mstruct.h>
+
 #include "../config.h"
 
 //#ifdef NOUNDERSCORE 
@@ -125,11 +125,12 @@ const Array<double,2> operator*(const Array<double,2> &A,
   char transB = 'T';
   double alpha = 1.0;
   double beta = 0.0;
-  blitz::GeneralArrayStorage<2> colMajor;
-  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
-  Array<double,2> C(m,n,colMajor);
+//  blitz::GeneralArrayStorage<2> colMajor;
+//  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
+//  Array<double,2> C(m,n,colMajor);
+	Array<double, 2> C({m, n}, 0.);
   F77_DGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data(), &k, 
-	     B.data(), &n, &beta, C.data(), &m);
+           B.data(), &n, &beta, C.data(), &m);
   return C;
 }
 
@@ -146,11 +147,12 @@ const Array<std::complex<double>,2> operator*(const Array<std::complex<double>,2
   char transB = 'T';
   std::complex<double> alpha(1.0, 0.0);
   std::complex<double> beta(0.0, 0.0);
-  blitz::GeneralArrayStorage<2> colMajor;
-  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
-  Array<std::complex<double>,2> C(m,n,colMajor);
-  F77_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data(), &k, 
-	     B.data(), &n, &beta, C.data(), &m);
+//  blitz::GeneralArrayStorage<2> colMajor;
+//  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
+//  Array<std::complex<double>,2> C(m,n,colMajor);
+	Array<std::complex<double>, 2> C({m, n}, std::complex<double>{});
+  F77_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data_elements(), &k, 
+           B.data(), &n, &beta, C.data(), &m);
   return C;
 }
 

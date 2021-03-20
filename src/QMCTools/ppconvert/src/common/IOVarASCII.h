@@ -101,6 +101,12 @@ public:
   void Resize(int n);
 
   bool VarRead(Array<T, RANK>& val);
+  template<class TT>
+  bool VarRead(Array<TT, 1>& val){
+  	assert(0);
+	return false;
+  }
+ 
   template<typename T0,
            typename T1,
            typename T2,
@@ -112,7 +118,7 @@ public:
            typename T8,
            typename T9,
            typename T10>
-  bool VarRead(typename blitz::SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
+  bool VarRead(typename SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
                T0 s0,
                T1 s1,
                T2 s2,
@@ -137,7 +143,7 @@ public:
            typename T8,
            typename T9,
            typename T10>
-  bool VarWrite(const typename blitz::SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
+  bool VarWrite(const typename SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
                 T0 s0,
                 T1 s1,
                 T2 s2,
@@ -339,8 +345,10 @@ inline int IOVarASCII<T, RANK>::GetExtent(int dim)
 template<typename T, int RANK>
 inline void IOVarASCII<T, RANK>::Resize(int n)
 {
-  TinyVector<int, RANK> dims = ArrayValue.shape();
-  dims[0]                    = n;
+//  TinyVector<int, RANK> 
+  auto dims = ArrayValue.shape();
+  std::get<0>(dims) = n;
+//  dims[0]                    = n;
   ArrayValue.resizeAndPreserve(dims);
 }
 
@@ -365,7 +373,7 @@ template<typename T0,
          typename T9,
          typename T10>
 inline bool IOVarASCII<T, RANK>::VarRead(
-    typename blitz::SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
+    typename SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
     T0 s0,
     T1 s1,
     T2 s2,
@@ -409,7 +417,7 @@ template<typename T0,
          typename T9,
          typename T10>
 inline bool IOVarASCII<T, RANK>::VarWrite(
-    const typename blitz::SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
+    const typename SliceInfo<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::T_slice& val,
     T0 s0,
     T1 s1,
     T2 s2,
