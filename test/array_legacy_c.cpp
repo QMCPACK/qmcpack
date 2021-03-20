@@ -8,13 +8,15 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 
 #include "../array.hpp"
 
+#include<complex>
 #include<iostream>
 #include<vector>
-#include<complex>
 
 namespace multi = boost::multi;
 
 namespace fake{
+
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays): testing a legacy interface
 using fftw_complex = double[2];
 
 void fftw_plan_dft(
@@ -39,17 +41,22 @@ BOOST_AUTO_TEST_CASE(array_legacy_c){
 	BOOST_REQUIRE( sizes(out) == sizes(in) );
 
 	using multi::sizes_as;
+
+	static_assert( sizeof(complex) == sizeof(fake::fftw_complex), "!" );
 	fake::fftw_plan_dft(
 		dimensionality(in), sizes_as<int>(in).data(),
-		(fake::fftw_complex*)in.data_elements(), (fake::fftw_complex*)out.data_elements(), 1, 0
+		reinterpret_cast<fake::fftw_complex*>(const_cast<complex*>(in .data_elements())), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast, cppcoreguidelines-pro-type-const-cast): testing legacy code
+		reinterpret_cast<fake::fftw_complex*>(                     out.data_elements() ), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast): testing legacy code
+		1, 0
 	);
 
-struct basic : multi::layout_t<2>{
-	double* p;
-};
+//struct basic : multi::layout_t<2>{
+//	double* p = {};
+//	basic() = default;
+//};
 
-struct ref : basic{
-};
+//struct ref : basic{
+//};
 
 
 	{

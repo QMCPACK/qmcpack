@@ -10,8 +10,8 @@ $CXX $0 -o $0x -lcudart -lcublas -lboost_unit_test_framework `pkg-config --libs 
 //#include "../../../adaptors/cuda.hpp" // multi::cuda ns
 
 //#include "../../../adaptors/blas/cuda.hpp"
-#include "../../../adaptors/blas/herk.hpp"
 #include "../../../adaptors/blas/gemm.hpp"
+#include "../../../adaptors/blas/herk.hpp"
 
 #include "../../../array.hpp"
 

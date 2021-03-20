@@ -44,8 +44,8 @@ BOOST_AUTO_TEST_CASE(multi_blas_numeric_real_conjugated){
 
 	namespace blas = multi::blas;
 	auto BdataC = blas::make_conjugater(B.data_elements());
-	auto BconstdataC = blas::make_conjugater(Bconst.data_elements());
-	decltype(BconstdataC) ppp;// = BdataC;
+
+	decltype(blas::make_conjugater(Bconst.data_elements())) ppp;// = BdataC;
 	ppp = BdataC;
 
 	BOOST_REQUIRE( *ppp == 1. + 3.*I );

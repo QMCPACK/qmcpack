@@ -62,11 +62,13 @@ BOOST_AUTO_TEST_CASE(multi_array_ref_stable_sort){
 	std::vector<double> v = {1.,2.,3.};
 	BOOST_REQUIRE( std::is_sorted(begin(v), end(v)) );
 
-	double d2D[4][5] = {
-		{150, 16, 17, 18, 19},
-		{ 30,  1,  2,  3,  4}, 
-		{100, 11, 12, 13, 14}, 
-		{ 50,  6,  7,  8,  9} 
+	std::array<std::array<double, 5>, 4> d2D{
+		{
+			{150, 16, 17, 18, 19}, 
+			{ 30,  1,  2,  3,  4}, 
+			{100, 11, 12, 13, 14}, 
+			{ 50,  6,  7,  8,  9} 
+		}
 	};
 	auto&& d2D_ref = *multi::array_ptr<double, 2>(&d2D[0][0], {4, 5});
 	

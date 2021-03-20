@@ -28,13 +28,14 @@ public:
 	involuted(involuted&&) noexcept = default;
 	constexpr auto operator=(involuted const& other) = delete;
 	~involuted() = default;
+	// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions): simulates a reference
 	constexpr operator decay_type() const&{return f_(r_);}
+	// NOLINTNEXTLINE(google-runtime-operator,-warnings-as-errors): simulates reference
 	constexpr decltype(auto) operator&()&&{return involuter<decltype(&std::declval<Ref>()), Involution>{&r_, f_};}
-	template<class DecayType>
-	constexpr auto           operator=(DecayType&& other)&
-	->decltype(r_=f_(std::forward<DecayType>(other)), *this){
-		return r_=f_(std::forward<DecayType>(other)), *this;}
-	constexpr involuted& operator=(involuted&& other) = default;
+	// NOLINTNEXTLINE(fuchsia-trailing-return,-warnings-as-errors): trailing return helps reading
+	template<class DecayType> constexpr auto operator=(DecayType&& other)& -> involuted&{r_=f_(std::forward<DecayType>(other)); return *this;}
+	// NOLINTNEXTLINE(fuchsia-trailing-return,-warnings-as-errors): trailing return helps reading
+	constexpr auto operator=(involuted&& other)& noexcept -> involuted& = default;
 	template<class DecayType>
 	auto operator==(DecayType&& other) const&
 	->decltype(this->operator decay_type()==other){
@@ -46,6 +47,8 @@ class involuter{
 	It it_;
 	MULTI_NO_UNIQUE_ADDRESS F f_;
 	template<class, class> friend class involuter;
+	template<class From, std::enable_if_t<std::is_convertible<From, It>{},int> =0>
+	static constexpr auto implicit_cast(From&& f){return static_cast<It>(f);}
 public:
 	using pointer           = involuter<typename std::iterator_traits<It>::pointer, F>;
 	using element_type      = typename std::pointer_traits<It>::element_type;
@@ -57,15 +60,17 @@ public:
 	using iterator_category = typename std::iterator_traits<It>::iterator_category;
 	explicit constexpr involuter(It it) : it_{std::move(it)}, f_{}{}
 	constexpr involuter(It it, F f) : it_{std::move(it)}, f_{std::move(f)}{}
-	involuter(involuter const& other) = default;
-	template<class Other> // this is needed to make involuter<T> implicitly convertible to involuter<T const>
-	involuter(involuter<Other, F> const& o) : it_{o.it_}, f_{o.f_}{}
-	constexpr auto       operator*() const{return reference{*it_, f_};}
-	constexpr bool       operator==(involuter const& o) const{return it_==o.it_;}
-	constexpr bool       operator!=(involuter const& o) const{return it_!=o.it_;}
-	constexpr involuter& operator+=(typename involuter::difference_type n){it_+=n; return *this;}
-	constexpr involuter  operator+(typename involuter::difference_type n) const{return {it_+n, f_};}
-	constexpr pointer    operator->() const{return {&*it_, f_};}
+//	involuter(involuter const& other) = default;
+	// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions): this is needed to make involuter<T> implicitly convertible to involuter<T const>
+	template<class Other> constexpr involuter(involuter<Other, F> const& o) : it_{implicit_cast(o.it_)}, f_{o.f_}{}
+//	auto operator=(involuter const& other) -> involuter& = default;
+	constexpr auto operator*() const{return reference{*it_, f_};}
+	constexpr auto operator==(involuter const& o) const{return it_==o.it_;}
+	constexpr auto operator!=(involuter const& o) const{return it_!=o.it_;}
+	constexpr decltype(auto) operator+=(typename involuter::difference_type n){it_+=n; return *this;}
+	constexpr auto operator+(typename involuter::difference_type n) const{return involuter{it_+n, f_};}
+	constexpr auto operator->() const{return pointer{&*it_, f_};}
+//	~involuter() = default;
 };
 
 #if defined(__cpp_deduction_guides)
@@ -100,7 +105,7 @@ BOOST_AUTO_TEST_CASE(static_array_cast){
 }
 {
 	multi::array<double, 2> A({2, 5});
-	std::iota(data_elements(A), data_elements(A) + num_elements(A), 0.);
+	std::iota(A.elements().begin(), A.elements().end(), 0.);
 
 	auto&& A_ref = A.static_array_cast<double, double const*>();
 	BOOST_REQUIRE( A_ref[1][1] == A[1][1] );

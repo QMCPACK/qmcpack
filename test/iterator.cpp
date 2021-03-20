@@ -7,11 +7,11 @@ $CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X $@&&rm $0.$X;exit
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include<iostream>
-#include<vector>
-#include<numeric>
-
 #include "../array.hpp"
+
+#include<iostream>
+#include<numeric>
+#include<vector>
 
 namespace multi = boost::multi;
 

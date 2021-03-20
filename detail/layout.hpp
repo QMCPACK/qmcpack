@@ -393,7 +393,7 @@ public:
 
 	       constexpr bool is_empty()        const    {return not nelems_;}
 	friend constexpr bool is_empty(layout_t const& s){return s.is_empty();}
-	NODISCARD(".empty means .is_empty")
+	NODISCARD(".empty means .is_empty") [[deprecated("use is_empty()")]]
 	       constexpr bool    empty()        const    {return is_empty();}
 	constexpr size_type size() const{
 		if(not nelems_) return 0;

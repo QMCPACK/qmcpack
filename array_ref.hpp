@@ -69,7 +69,7 @@ struct array_types : Layout{
 	using element_type = element; // this follows more closely https://en.cppreference.com/w/cpp/memory/pointer_traits
 	constexpr static dimensionality_type dimensionality = D;
 	using element_ptr = ElementPtr;
-	using element_const_ptr = typename std::pointer_traits<ElementPtr>::template rebind<element_type const>; //multi::const_iterator<ElementPtr>; 
+	using element_const_ptr = typename std::pointer_traits<ElementPtr>::template rebind<element const>; //multi::const_iterator<ElementPtr>; 
 	using element_ref = typename std::iterator_traits<element_ptr>::reference;
 	using layout_t = Layout;
 	using value_type = typename std::conditional<
@@ -93,6 +93,7 @@ struct array_types : Layout{
 		basic_array<element, dimensionality-1, element_const_ptr>,
 	//	decltype(*std::declval<element_const_ptr>())&
 		typename std::iterator_traits<element_const_ptr>::reference
+	//	std::add_lvalue_reference_t<std::add_const_t<std::remove_reference_t<typename std::iterator_traits<element_ptr>::reference>>>
 	//	typename std::pointer_traits<element_const_ptr>::reference   // this seems more correct but it doesn't work with cuda fancy reference
 	>::type;
 
@@ -859,6 +860,7 @@ public:
 //	constexpr 
 	basic_array& operator=(basic_array<TT, D, As...> const& o)&{assert( this->extension() == o.extension() );
 		MULTI_MARK_SCOPE(std::string{"multi::operator= "}+std::to_string(D)+" from "+typeid(TT).name()+" to "+typeid(T).name() );
+		if(this->is_empty()) return *this;
 		if(this->num_elements() == this->nelems() and o.num_elements() == this->nelems() and this->layout() == o.layout()){
 			adl_copy_n(o.base(), o.num_elements(), this->base());
 		}else if(o.stride() < (~o).stride()){
@@ -869,7 +871,11 @@ public:
 		return *this;
 	}
 	template<class TT, class... As>
-	constexpr basic_array&& operator=(basic_array<TT, D, As...>&& o)&&{return std::move(basic_array::operator=(std::move(o)));}
+	constexpr basic_array&& operator=(basic_array<TT, D, As...>&& o)&&{
+		assert( this->extensions() == o.extensions() );
+		if(this->is_empty()) return std::move(*this);
+		return std::move(basic_array::operator=(std::move(o)));
+	}
 
 	template<class TT, class... As>
 	constexpr basic_array&& operator=(basic_array<TT, D, As...> const& o)&&{return std::move(this->operator=(o));}
@@ -1071,9 +1077,12 @@ private:
 public:
 	HD constexpr array_iterator operator+(difference_type n) const{array_iterator ret{*this}; ret+=n; return ret;}
 	[[deprecated("use base() for iterator")]] constexpr element_ptr data() const{return data_;}
-	// constexpr here creates problems with intel 19
 	       constexpr element_ptr base()              const&   {return data_;}
-	friend constexpr element_ptr base(array_iterator const& s){return s.base();}
+	friend 
+#ifndef __INTEL_COMPILER
+	constexpr // this generates a problem with intel compiler 19 "a constexpr function cannot have a nonliteral return type"
+#endif
+	element_ptr base(array_iterator const& s){return s.base();}
 	constexpr stride_type stride()              const&   {return   stride_;} friend
 	constexpr stride_type stride(array_iterator const& s){return s.stride_;}
 	constexpr array_iterator& operator++(){data_+=stride_; return *this;}
@@ -1417,10 +1426,12 @@ public:
 	auto operator=(basic_array<TT, 1, As...> const& other)&&
 	->decltype(adl_copy(other.begin(), other.end(), std::declval<iterator>()), std::declval<basic_array&&>()){assert(this->extensions() == other.extensions());
 		MULTI_MARK_SCOPE(std::string{"multi::operator= D=1 from "}+typeid(TT).name()+" to "+typeid(T).name() );
+		if(this->is_empty()) return std::move(*this);
 		return adl_copy(other.begin(), other.end(), this->begin()                                 ), std::move(*this);             }
 
 	template<class TT, class... As>//, DELETE((not std::is_assignable<typename basic_array::reference, typename basic_array<TT, 1, As...>::reference>{}))>
 	basic_array&  operator=(basic_array<TT, 1, As...> const& other)&{assert(this->extensions() == other.extensions());
+		if(this->is_empty()) return *this;
 		adl_copy(other.begin(), other.end(), this->begin());
 		return *this;
 	}
@@ -1627,14 +1638,43 @@ public:
 	       constexpr typename array_ref::element_ptr data_elements()        &&   {return array_ref::base_;}
 	friend constexpr typename array_ref::element_ptr data_elements(array_ref&& s){return std::move(s).data_elements();}
 
-	[[deprecated("use ::data_elements()")]]
-	       constexpr typename array_ref::element_ptr data()         const&   {return data_elements();}//array_ref::base_;} 
+//	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0>
+//	[[deprecated("use ::data_elements()")]]
+//	       constexpr typename array_ref::element_ptr data() const& {return data_elements();}
+
+//	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = 0>
+//	[[deprecated("use ::data_elements()")]] typename static_array::element_ptr data() &{return ref::data_elements();}
+
+	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = nullptr> [[deprecated("use ::data_elements()")]] constexpr auto data() const&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = nullptr> [[deprecated("use ::data_elements()")]] constexpr auto data()     &&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D != 1) and sizeof(Dummy*), int*> = nullptr> [[deprecated("use ::data_elements()")]] constexpr auto data()      &{return data_elements();}
+
+	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = nullptr> constexpr auto data() const&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = nullptr> constexpr auto data()     &&{return data_elements();}
+	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = nullptr> constexpr auto data()      &{return data_elements();}
+
+
+//	template<class Dummy = void, std::enable_if_t<(D == 1) and sizeof(Dummy*), int*> = 0>
+//	       constexpr typename array_ref::element_ptr data() const& {return data_elements();}
+
 #if not defined(__NVCC__)
 	[[deprecated("use data_elements()")]] 
 #else
 	__attribute__((deprecated))
 #endif
 	friend constexpr typename array_ref::element_ptr data(array_ref const& s){return s.data_elements();}
+#if not defined(__NVCC__)
+	[[deprecated("use data_elements()")]] 
+#else
+	__attribute__((deprecated))
+#endif
+	friend constexpr typename array_ref::element_ptr data(array_ref& s){return s.data_elements();}
+#if not defined(__NVCC__)
+	[[deprecated("use data_elements()")]] 
+#else
+	__attribute__((deprecated))
+#endif
+	friend constexpr typename array_ref::element_ptr data(array_ref&& s){return std::move(s).data_elements();}
 
 //	constexpr typename array_ref::decay_type const& operator*() const&{return static_cast<typename array_ref::decay_type const&>(*this);}
 //	constexpr typename array_ref::decay_type const& operator*() const&{return *this;}

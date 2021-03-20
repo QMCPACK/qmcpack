@@ -49,19 +49,19 @@ BOOST_AUTO_TEST_CASE(multi_copy_move){
 	multi::array<double, 2> B = A;//identy();//multi::array<double, 2>({3, 3}, 0.);// = eye<double>({3, 
 	BOOST_REQUIRE( A == B );
 
-	auto A_data = A.data_elements();
+	auto* A_data = A.data_elements();
 	multi::array<double, 2> C = std::move(A);
-	BOOST_REQUIRE( is_empty(A) );
-	BOOST_REQUIRE( A_data == C.data_elements() );
-	
+
+	BOOST_REQUIRE( C.data_elements() == A_data );
+
 	multi::array<double, 2> D(std::move(B));
-	BOOST_REQUIRE( is_empty(B) );
+	BOOST_REQUIRE( size(D) == 3 );
 }
 
 #if 1
 BOOST_AUTO_TEST_CASE(range_assignment){
 {
-	auto r = multi::make_extension_t(10l);
+	auto r = multi::make_extension_t(10L);
 	multi::array<double, 1> v(r.begin(), r.end());
 	BOOST_REQUIRE( r.size() == v.size() );
 	BOOST_REQUIRE( v[1] = 10 );
@@ -119,7 +119,8 @@ BOOST_AUTO_TEST_CASE(assignments){
 		BOOST_REQUIRE( V.is_empty() );
 	}
 	{
-		std::vector<double> v(5*7, 99.), w(5*7, 33.);
+		std::vector<double> v(5*7, 99.);
+		std::vector<double> w(5*7, 33.);
 
 		multi::array_ptr<double, 2> Bp{w.data(), {5, 7}};
 		make_ref(v.data()) = *Bp;
@@ -128,7 +129,8 @@ BOOST_AUTO_TEST_CASE(assignments){
 		BOOST_REQUIRE( v[9] == 33. );
 	}
 	{
-		std::vector<double> v(5*7, 99.), w(5*7, 33.);
+		std::vector<double> v(5*7, 99.);
+		std::vector<double> w(5*7, 33.);
 
 		make_ref(v.data()) = make_ref(w.data());
 
@@ -137,7 +139,7 @@ BOOST_AUTO_TEST_CASE(assignments){
 }
 
 template<class T, class Allocator>
-multi::array<T, 2, Allocator> eye(multi::iextensions<2> ie, Allocator alloc){
+auto eye(multi::iextensions<2> ie, Allocator alloc){
 	multi::array<T, 2, Allocator> ret(ie, 0., alloc);
 	ret.diagonal().fill(1.);
 	return ret;
