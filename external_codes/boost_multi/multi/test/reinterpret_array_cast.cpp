@@ -30,8 +30,9 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_struct_to_dimension){
 	BOOST_REQUIRE(  A2D[8][1] ==  A[8].y );
 	BOOST_REQUIRE( &A2D[8][1] != &A[8].y );
 
-	A.reinterpret_array_cast<double>(3)[8][1] = 99.;
-	BOOST_REQUIRE( A[8].y == 99.);
+	BOOST_REQUIRE( & A[8].x == & A.reinterpret_array_cast<double>(3)[8][0] );
+	BOOST_REQUIRE( & A[8].y == & A.reinterpret_array_cast<double>(3)[8][1] );
+	BOOST_REQUIRE( & A[8].z == & A.reinterpret_array_cast<double>(3)[8][2] );
 }
 
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_complex_to_real_extra_dimension){
@@ -88,7 +89,7 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_tuple_as_extra_dimension){
 	}
 }
 
-template<class T> struct Complex_{T real; T imag; T const& re() const{return real;}};
+template<class T> struct Complex_{T real; T imag;};
 
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast){
 {
@@ -124,8 +125,16 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_realcomplex){
 	using complex = std::complex<double>;
 {
 	complex c{1, 2};
+	auto pC = reinterpret_cast<std::array<double, 2>*>(&c);
+	(*pC)[0] = 11;
+	BOOST_REQUIRE( pC );
+	BOOST_REQUIRE(real(c)==11);
+}
+{
+	complex c{1, 2};
 	auto pC = reinterpret_cast<double(*)[2]>(&c);
 	(*pC)[0] = 11;
+	BOOST_REQUIRE( pC );
 	BOOST_REQUIRE(real(c)==11);
 }
 {
@@ -135,6 +144,22 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_realcomplex){
 	A2[8][1] = 2000.;
 	BOOST_REQUIRE( A[8] == std::complex<double>(1000., 2000.) );
 }
+}
+
+BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_pair_to_complex){
+	using complex = std::complex<double>;
+	using pair    = std::pair<double, double>;
+	multi::array<complex, 2> A({10, 10}, complex{3., 4.});
+
+	multi::array<complex, 2> const& Aconst = A;
+	auto&& A_block = Aconst({0, 5}, {0, 5});
+
+	auto&& Apair_block = A_block.template reinterpret_array_cast<pair const>(); // const is important // cppcheck needs `template`
+	
+	BOOST_REQUIRE( (void const*)&Apair_block[1][2] == (void*)&A[1][2] );
+	
+	auto&& Adoubles_block = A_block.reinterpret_array_cast<double const>(2);
+	BOOST_REQUIRE( (void const*)&Adoubles_block[1][2][0] == (void*)&A[1][2] );
 }
 
 #if 0

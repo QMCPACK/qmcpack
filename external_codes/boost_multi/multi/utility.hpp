@@ -14,13 +14,6 @@ namespace multi{
 template<class Array, typename Reference = void, typename Element = void>
 struct array_traits;
 
-template<>
-struct array_traits<std::array<double, 3>, void, void>{
-	using reference = double&;
-	using element = double;//std::remove_all_extents_t<T[N]>;
-	using decay_type = std::array<double, 3>;
-};
-
 template<class Array, typename Reference, typename Element>
 struct array_traits{
 	using reference = typename Array::reference;
@@ -36,12 +29,6 @@ struct array_traits<Element, void, void>{
 	using element   = Element;
 };*/
 
-template<class T, size_t N>
-struct array_traits<std::array<T, N>, void, void>{
-	using reference = T&;
-	using element = typename array_traits<T>::element;//std::remove_all_extents_t<T[N]>;
-};
-
 template<class T, typename = typename T::rank>
        std::true_type  has_rank_aux(T const&){return {};}
 inline std::false_type has_rank_aux(...     ){return {};}
@@ -49,9 +36,6 @@ inline std::false_type has_rank_aux(...     ){return {};}
 template<class T> struct has_rank : decltype(has_rank_aux(std::declval<T>())){};
 
 template<typename T> struct rank;
-
-template<typename T, size_t N> 
-constexpr std::integral_constant<size_t, 1 + multi::rank<T>{}> rank_aux(std::array<T, N> const&);
 
 template<typename T, typename = std::enable_if_t<has_rank<T>{}> > 
 constexpr typename T::rank rank_aux(T const&);
@@ -209,8 +193,6 @@ template<class T, std::size_t N> struct num_elements_t<T(&)[N]>: num_elements_t<
 template<class T, std::size_t N>
 constexpr auto num_elements(const T(&/*t*/)[N]) noexcept{return num_elements_t<T[N]>{};}
 
-template<class T, size_t N>
-constexpr size_type num_elements(std::array<T, N>){return N*num_elements_t<T>{};}
 
 template<class Vector>
 constexpr auto num_elements(Vector const& v, std::enable_if_t<std::is_same<typename Vector::pointer, decltype(std::declval<Vector>().data())>{}, int> =0)
@@ -266,9 +248,6 @@ constexpr auto dimensionality(T const&, void* = nullptr){return 0;}
 
 template<class T, std::size_t N>
 constexpr auto dimensionality(T const(&t)[N]){return 1 + dimensionality(t[0]);}
-
-template<class T, std::size_t N>
-constexpr auto dimensionality(std::array<T, N> const&){return 1 + dimensionality<T>();}
 
 template<class T, typename = decltype(std::declval<T>().sizes())>
 std::true_type has_sizes_aux(T const&);
@@ -380,13 +359,6 @@ constexpr auto extensions(T(&t)[N]){
 	return index_extension(N)*extensions(t[0]);
 }
 
-template<class T, size_t N>
-constexpr auto extensions(std::array<T, N> const& t){
-	return index_extension(N)*extensions(t[0]);
-//	return std::tuple_cat(std::make_tuple(index_extension(N)), extensions(st[0]) );
-//	multi::layout_t<1>::extensions_type(index_extension(N)).x(extensions(t[0])
-}
-
 template<dimensionality_type D>
 struct extensions_aux{
 	template<class T>
@@ -452,6 +424,75 @@ constexpr auto strides(T(&t)[N]){return layout(t).strides();}
 
 }}
 
+
+// std::array specializations
+namespace boost{
+namespace multi{
+
+template<class T, std::size_t N>
+struct array_traits<std::array<T, N>>{
+	static constexpr dimensionality_type dimensionality = 1;
+	using reference = T&;
+	using value_type = std::decay_t<T>;
+	using pointer = T*;
+	using element = value_type;
+	using element_ptr = pointer;
+	using decay_type = std::array<value_type, N>;
+};
+
+template<class T, std::size_t N, std::size_t M>
+struct array_traits<std::array<std::array<T, M>, N>>{
+	static constexpr dimensionality_type dimensionality = 1 + array_traits<std::array<T, M>>::dimensionality;
+	using reference = std::array<T, M>&;
+	using value_type = std::array<std::decay_t<T>, M>;
+	using pointer = std::array<T, M>*;
+	using element = typename array_traits<std::array<T, M>>::element;
+	using element_ptr = typename array_traits<std::array<T, M>>::element;
+	using decay_type = std::array<value_type, M>;
+};
+
+template<class T, std::size_t N> constexpr auto data_elements(std::array<T, N>&       arr) noexcept{return arr.data();}
+template<class T, std::size_t M, std::size_t N> constexpr auto data_elements(std::array<std::array<T, M>, N>& arr) noexcept{return data_elements(arr[0]);}
+
+template<class T, std::size_t N> constexpr auto data_elements(std::array<T, N> const&       arr) noexcept{return arr.data();}
+template<class T, std::size_t M, std::size_t N> constexpr auto data_elements(std::array<std::array<T, M>, N> const& arr) noexcept{return data_elements(arr[0]);}
+
+template<class T, std::size_t N> constexpr auto data_elements(std::array<T, N>&&       arr) noexcept{return arr.data();}
+template<class T, std::size_t M, std::size_t N> constexpr auto data_elements(std::array<std::array<T, M>, N>&& arr) noexcept{return data_elements(arr[0]);}
+
+template<class T, std::size_t N> constexpr std::ptrdiff_t num_elements(std::array<T, N> const& /*unused*/) noexcept{return N;}
+template<class T, std::size_t M, std::size_t N> 
+constexpr std::ptrdiff_t num_elements(std::array<std::array<T, M>, N> const& arr){return N*num_elements(arr[0]);}
+
+template<class T, std::size_t N> 
+constexpr dimensionality_type dimensionality(std::array<T, N> const& /*unused*/){return 1;}
+
+template<class T, std::size_t M, std::size_t N> 
+constexpr dimensionality_type dimensionality(std::array<std::array<T, M>, N> const& arr){return 1 + dimensionality(arr[0]);}
+
+template<class T, std::size_t N>
+constexpr auto size(std::array<T, N> const& /*arr*/){
+	return multi::size_type{N};
+}
+
+template<class T, std::size_t N>
+constexpr auto extensions(std::array<T, N> const& /*arr*/){
+	return multi::extensions_t<1>{{0, N}};
+}
+
+template<class T, std::size_t N, std::size_t M>
+auto extensions(std::array<std::array<T, N>, M> const& arr){
+	return multi::iextension(M)*extensions(arr[0]);
+}
+
+template<class T, std::size_t N>
+constexpr auto layout(std::array<T, N> const& arr){
+	return multi::layout_t<multi::array_traits<std::array<T, N>>::dimensionality>{multi::extensions(arr)};
+}
+
+}}
+
+
 namespace boost{
 namespace serialization{
 //	template<class Archive, template<class,  std::size_t> class ArrayRef, class E,  std::size_t D>
@@ -474,21 +515,9 @@ namespace serialization{
 using std::cout;
 namespace multi = boost::multi;
 
-template<class T>
-void f(T&& t){
-	using multi::dimensionality;
-	std::cout<< dimensionality(t) <<'\n';
-}
-
-template<class T> void f();
-
 BOOST_AUTO_TEST_CASE(multi_utility_test){
 
 	static_assert( std::is_same<std::iterator_traits<double const*>::value_type, double>{}, "!");
-
-	MAYBE_UNUSED std::vector<double>::iterator it;
-	using multi::get_allocator;
-//	std::allocator<double> all = get_allocator(it);
 
 	using multi::corigin;
 	using multi::dimensionality;
