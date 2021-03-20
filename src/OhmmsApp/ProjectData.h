@@ -81,6 +81,7 @@ public:
   bool PreviousRoot(std::string& oldroot) const;
 
   int getSeriesIndex() const { return m_series; }
+  int getMaxCPUSeconds() const { return max_cpu_secs_; }
 
 private:
   ///title of the project
@@ -109,6 +110,9 @@ private:
 
   ///the xml node for <Project/>
   xmlNodePtr m_cur;
+
+  ///max cpu seconds
+  int max_cpu_secs_;
 };
 } // namespace qmcplusplus
 

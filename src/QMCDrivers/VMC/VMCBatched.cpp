@@ -13,6 +13,7 @@
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "Message/CommOperators.h"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
@@ -274,7 +275,8 @@ bool VMCBatched::run()
   StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
+                                  myComm->rank() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -336,6 +338,21 @@ bool VMCBatched::run()
     }
     print_mem("VMCBatched after a block", app_debug_stream());
     endBlock();
+    vmc_loop.stop();
+
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(vmc_loop);
+    myComm->bcast(stop_requested);
+
+    if (stop_requested)
+    {
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("VMCBatched", block);
+      run_time_manager.markStop();
+      break;
+    }
   }
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
   // and clean it up

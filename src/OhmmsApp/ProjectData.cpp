@@ -17,6 +17,7 @@
 #include "Message/Communicate.h"
 #include "Host/sysutil.h"
 #include "Utilities/qmc_common.h"
+#include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus
 {
@@ -24,7 +25,8 @@ namespace qmcplusplus
 // ProjectData
 //----------------------------------------------------------------------------
 // constructors and destructors
-ProjectData::ProjectData(const char* aname) : m_title("asample"), m_host("none"), m_date("none"), m_series(0), m_cur(0)
+ProjectData::ProjectData(const char* aname)
+    : m_title("asample"), m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000)
 {
   myComm = OHMMS::Controller;
   if (aname == 0)
@@ -174,10 +176,15 @@ bool ProjectData::PreviousRoot(std::string& oldroot) const
 
 bool ProjectData::put(xmlNodePtr cur)
 {
-  m_cur                  = cur;
+  m_cur   = cur;
   m_title = XMLAttrString(cur, "id");
   const XMLAttrString series_str(cur, "series");
-  if (!series_str.empty()) m_series = std::stoi(series_str);
+  if (!series_str.empty())
+    m_series = std::stoi(series_str);
+
+  ParameterSet m_param;
+  m_param.add(max_cpu_secs_, "max_seconds");
+  m_param.put(cur);
 
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;

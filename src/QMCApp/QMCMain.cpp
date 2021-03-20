@@ -30,6 +30,7 @@
 #include "Platforms/Host/OutputManager.h"
 #include "Utilities/Timer.h"
 #include "Utilities/TimerManager.h"
+#include "Utilities/RunTimeManager.h"
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/InitMolecularSystem.h"
 #include "QMCDrivers/QMCDriver.h"
@@ -233,6 +234,8 @@ bool QMCMain::execute()
   qmc_common.qmc_counter = 0;
   for (int qa = 0; qa < m_qmcaction.size(); qa++)
   {
+    if (run_time_manager.isStopNeeded())
+      break;
     xmlNodePtr cur = m_qmcaction[qa].first;
     std::string cname((const char*)cur->name);
     if (cname == "qmc" || cname == "optimize")
@@ -311,6 +314,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   app_log() << "Loop execution max-interations = " << niter << std::endl;
   for (int iter = 0; iter < niter; iter++)
   {
+    if (run_time_manager.isStopNeeded())
+      break;
     xmlNodePtr tcur = cur->children;
     while (tcur != NULL)
     {

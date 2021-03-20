@@ -19,6 +19,7 @@
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "Message/CommOperators.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/RunTimeManager.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -405,10 +406,12 @@ bool DMCBatched::run()
   estimator_manager_->startDriverRun();
   StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
 
-  LoopTimer<> dmc_loop;
 
   int sample = 0;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
+
+  LoopTimer<> dmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
+                                  myComm->rank() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -473,6 +476,21 @@ bool DMCBatched::run()
     }
     print_mem("DMCBatched after a block", app_debug_stream());
     endBlock();
+    dmc_loop.stop();
+
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(dmc_loop);
+    myComm->bcast(stop_requested);
+
+    if (stop_requested)
+    {
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
+      run_time_manager.markStop();
+      break;
+    }
   }
 
   branch_engine_->printStatus();

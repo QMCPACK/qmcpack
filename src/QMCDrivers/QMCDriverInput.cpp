@@ -63,7 +63,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(tau_, "timestep");
   parameter_set.add(tau_, "time_step");
   parameter_set.add(tau_, "tau");
-  parameter_set.add(max_cpu_secs_, "maxcpusecs");
   parameter_set.add(blocks_between_recompute_, "blocks_between_recompute");
   parameter_set.add(drift_modifier_, "drift_modifier");
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a");

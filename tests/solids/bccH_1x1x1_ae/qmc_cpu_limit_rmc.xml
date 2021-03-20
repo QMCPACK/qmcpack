@@ -91,7 +91,7 @@
      <parameter name="steps">   400 </parameter>
      <parameter name="blocks">  20000 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
-     <parameter name="maxcpusecs"> 60 </parameter>
+     <parameter name="max_seconds"> 60 </parameter>
    </qmc>
    
 </simulation>
