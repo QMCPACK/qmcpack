@@ -18,8 +18,6 @@ $CXX $0 -o $0x -DMULTI_ACCESS_NDEBUG -lboost_unit_test_framework&&$0x&&rm $0x;ex
 
 namespace hana = boost::hana;
 
-using std::cout;
-
 ////https://stackoverflow.com/a/35110453/225186
 //template<class T>constexpr std::remove_reference_t<T> const_aux(T&&t){return t;}
 //template<bool b> struct logic_assert_aux;
@@ -92,7 +90,8 @@ BOOST_AUTO_TEST_CASE(multi_range){
 }
 
 BOOST_AUTO_TEST_CASE(multi_range_with_hana_literals){
-	using namespace hana::literals; // contains the _c suffix
+//	using namespace hana::literals; // contains the _c suffix
+	
 	static_assert(( integral_constant<int, 1234>{} == 1234 ), "!");
 	static_assert(( (integral_constant<int, 1234>{} + integral_constant<int, 1>{})  == 1235 ), "!");
 	static_assert(( (integral_constant<int, 1234>{} + integral_constant<int, 1>{})  == integral_constant<int, 1235>{} ), "!");
@@ -106,94 +105,9 @@ BOOST_AUTO_TEST_CASE(multi_range_with_hana_literals){
 BOOST_AUTO_TEST_CASE(multi_range_in_constexpr){
 	BOOST_REQUIRE( multi::extension_t<int>{5} == 5 ); // this is not a constexpr in cuda 10
 	BOOST_REQUIRE(( multi::extension_t<int>{5, 12}.contains(10) ));
-//	static_assert(( multi::extension_t{integral_constant<int, 5>{}, integral_constant<int, 12>{}}.contains(10) ), "!");
-//	static_assert(( multi::extension_t{integral_constant<int, 5>{}, integral_constant<int, 12>{}}.contains(integral_constant<int, 10>{}) ), "!");
 
-
-//	logic_assert( size(multi::range<int>{5, 5}) == 0 , "!");
-//	static_assert( is_empty(multi::range<int>{5, 5}) , "!");
-	
-//	logic_assert( size(multi::range<int>{}) == 0 , "!");
-//	logic_assert( empty(multi::range<int>{}) , "!");
-	
-	for(auto const& i : multi::range<int>{5, 12}) cout<< i <<' ';
-	cout<<'\n';
-	
-//	static_assert(
-//		empty(intersection(multi::range<int>{5, 12}, multi::range<int>{14, 16}))// == multi::range<int>{}
-//	);
-	cout<< intersection(multi::range<int>{5, 12}, multi::range<int>{14, 16}) <<'\n';
-	cout<< intersection(multi::range<int>{5, 12}, multi::range<int>{14, 16}) <<'\n';
-
-//	for(auto const& i : intersection(multi::range<int>{5, 12}, multi::range<int>{8, 16})) cout<< i <<' ';
-//	cout <<'\n';
-	
 	multi::range<int> rr{5, 12};
-	assert( rr.contains(6) );
-	assert( not rr.contains(12) );
-	for(auto it = rr.begin(); it != rr.end(); ++it) cout<< *it <<' ';
-	cout<<'\n';
-	for(auto it = rr.rbegin(); it != rr.rend(); ++it) cout<< *it <<' ';
-	cout<<'\n';
-
-
-
-//	cout<< *rr.rbegin() <<'\n';
-//	for(auto it = rr.rbegin(); it != rr.rend(); ++it) cout<< *it <<' ';
-//	cout <<'\n';
-	
-//	multi::extension<int> ei{5, 10}; 
-#if 0
-	std::iterator_traits<multi::range<multi::index>::const_iterator>::value_type p = multi::index{4};
-
-	{
-		multi::index_range ir{5, 10};
-		cout << ir << " = {" << format(index_ % ", ", ir) << "}\n";
-		std::vector<multi::index_range::value_type> v(5);
-		copy(begin(ir), end(ir), begin(v));
-		assert(v[0] == 5);
-		for(auto& i : ir) cout << i << ' ';
-		cout << '\n';
-		auto f = ir.find(6);
-		cerr << "*f " << *f << '\n';
-		assert(*f == 6);
-		using std::find;
-		auto f2 = find(ir.begin(), ir.end(), 12);
-		assert(f2 == ir.end());
-		auto f3 = find(ir.begin(), ir.end(), 2);
-		assert(f3 == ir.end());
-	}
-/*	{
-		multi::strided_index_range ir{6, 12, 2};
-		cout << ir << " = {" << format(index_ % ", ", ir) << "}\n";
-		std::vector<multi::index_range::value_type> v(5);
-		copy(begin(ir), end(ir), begin(v));
-		assert( v[0] == 6 );
-		assert( v[1] == 8 );
-		for(auto& i : ir) cout << i <<' ';
-		cout <<'\n';
-	}*/
-	{
-		multi::index_range ir(5);
-		cout << ir << " = {" << format(index_ % ", ", ir) << "}\n";
-		assert(*begin(ir) == 5);
-		assert(ir.front() == 5);
-		assert(ir.back() == 5);
-	}
-	{
-		multi::index_range ir; // partially formed
-		ir = multi::index_range{8, 8};
-		assert(ir.empty());
-	}
-	{
-		multi::index_range ir = {};
-		assert(ir.empty());
-	}
-	{
-		multi::index_extension ie(5);
-		cout << ie << " = {" << format(index_ % ", ", ie) << "}";
-	}
-#endif
-
+	BOOST_REQUIRE( rr.contains(6) );
+	BOOST_REQUIRE( not rr.contains(12) );
 }
 

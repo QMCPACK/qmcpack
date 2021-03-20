@@ -317,20 +317,20 @@ public:
 //	typename static_array::allocator_type get_allocator() const{return static_cast<typename static_array::allocator_type const&>(*this);}
 	friend typename static_array::allocator_type get_allocator(static_array const& self){return self.get_allocator();}
 
-	[[deprecated("use ::data_elements()")]] typename static_array::element_ptr data()       {return ref::data_elements();}
-	[[deprecated("use ::data_elements()")]] constexpr auto data() const{return typename static_array::element_const_ptr{ref::data_elements()};}
-#ifndef __NVCC__ // deprecated friend doesn't work in nvcc
-	[[deprecated("use data_elements()")]] 
-#else
-	__attribute__((deprecated))
-#endif
-	friend typename static_array::element_ptr       data(static_array&       s){return s.data_elements();}
-#ifndef __NVCC__ // deprecated friend doesn't work in nvcc
-	[[deprecated("use data_elements()")]] 
-#else
-	__attribute__((deprecated))
-#endif
-	friend typename static_array::element_const_ptr data(static_array const& s){return s.data_elements();}
+//	[[deprecated("use ::data_elements()")]] typename static_array::element_ptr data()       {return ref::data_elements();}
+//	[[deprecated("use ::data_elements()")]] constexpr auto data() const{return typename static_array::element_const_ptr{ref::data_elements()};}
+//#ifndef __NVCC__ // deprecated friend doesn't work in nvcc
+//	[[deprecated("use data_elements()")]] 
+//#else
+//	__attribute__((deprecated))
+//#endif
+//	friend typename static_array::element_ptr       data(static_array&       s){return s.data_elements();}
+//#ifndef __NVCC__ // deprecated friend doesn't work in nvcc
+//	[[deprecated("use data_elements()")]] 
+//#else
+//	__attribute__((deprecated))
+//#endif
+//	friend typename static_array::element_const_ptr data(static_array const& s){return s.data_elements();}
 
 	element_const_ptr                   data_elements() const&{return this->base_;}
 	typename static_array::element_ptr  data_elements()      &{return this->base_;}
@@ -606,16 +606,16 @@ public:
 	using element_const_ptr = typename std::pointer_traits<typename static_array::element_ptr>::template rebind<typename static_array::element const>;
 	friend allocator_type get_allocator(static_array const& self){return self.get_allocator();}
 
-	[[deprecated("use data_elements() instead of data()")]]
-	constexpr typename static_array::element_ptr       data()      {return ref::data_elements();}
-	[[deprecated("use data_elements() instead of data()")]]
-	constexpr auto data() const{return typename static_array::element_const_ptr{ref::data_elements()};}
+//	[[deprecated("use data_elements() instead of data()")]]
+//	constexpr typename static_array::element_ptr       data()      {return ref::data_elements();}
+//	[[deprecated("use data_elements() instead of data()")]]
+//	constexpr auto data() const{return typename static_array::element_const_ptr{ref::data_elements()};}
 
 	// TODO find how to use `deprecated` with nvcc
-	friend constexpr typename static_array::element_ptr       data(static_array&       s)
-	{return s.data_elements();}
-	friend constexpr typename static_array::element_const_ptr data(static_array const& s)
-	{return s.data_elements();}
+//	friend constexpr typename static_array::element_ptr       data(static_array&       s)
+//	{return s.data_elements();}
+//	friend constexpr typename static_array::element_const_ptr data(static_array const& s)
+//	{return s.data_elements();}
 
 	       constexpr typename static_array::element_ptr       base()                 &   {return ref::base();}
 	       constexpr typename static_array::element_const_ptr base()            const&   {return ref::base();}

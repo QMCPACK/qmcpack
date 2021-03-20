@@ -8,23 +8,17 @@ $CXXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 
 #include "../array.hpp"
 
-#include<complex>
 #include<boost/iterator/transform_iterator.hpp> //might need -DBOOST_RESULT_OF_USE_DECLTYPE
+
+#include<complex>
 
 namespace test{
 	auto neg = [](auto const& x){return -x;};
 
 	template<class It, class F> class involuter; 
-}
+} // namespace test
 
 namespace test{
-
-template<class T, std::enable_if_t<std::is_empty<T>{}, int> =0> 
-T default_construct(){return *(T*)(&default_construct<T>);} // nvcc needs this in a namespace
-
-template<class T, std::enable_if_t<not std::is_empty<T>{}, int> =0> 
-T default_construct(){return {};}
-
 
 template<class It, class F> class involuter;
 
@@ -91,10 +85,10 @@ template<class It>  using negater = involuter<It , std::negate<>>;
 
 class basic_conjugate_t{
 	template<int N> struct prio : std::conditional_t<N!=0, prio<N-1>, std::true_type>{};
-	template<class T> static auto _(prio<0>, T const& t) DECLRETURN(std::conj(t))
-	template<class T> static auto _(prio<1>, T const& t) DECLRETURN(     conj(t))
-	template<class T> static auto _(prio<2>, T const& t) DECLRETURN(  T::conj(t))
-	template<class T> static auto _(prio<3>, T const& t) DECLRETURN(   t.conj( ))
+	template<class T> static auto _(prio<0>/**/, T const& t) DECLRETURN(std::conj(t))
+	template<class T> static auto _(prio<1>/**/, T const& t) DECLRETURN(     conj(t))
+	template<class T> static auto _(prio<2>/**/, T const& t) DECLRETURN(  T::conj(t))
+	template<class T> static auto _(prio<3>/**/, T const& t) DECLRETURN(   t.conj( ))
 public:
 	template<class T> static auto _(T const& t) DECLRETURN(_(prio<3>{}, t))
 } basic_conjugate;
