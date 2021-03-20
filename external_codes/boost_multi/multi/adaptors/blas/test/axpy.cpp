@@ -7,8 +7,8 @@
 
 #include "config.hpp"
 
-#include       "../../blas.hpp"
 #include "../../../array.hpp"
+#include       "../../blas.hpp"
 
 #include<complex>
 
@@ -106,10 +106,13 @@ BOOST_AUTO_TEST_CASE(multi_blas_axpy_complex_context){
 
 BOOST_AUTO_TEST_CASE(multi_blas_axpy_operator_minus){
 	using complex = std::complex<double>;
-	multi::array<complex, 1> const x = {10., 11., 12., 13.};
-	multi::array<complex, 1> const y = x;
+	multi::array<complex, 1> x = {10., 11., 12., 13.};
+	multi::array<complex, 1> y = x;
 	
-	using namespace blas::operators;
+	using blas::operators::operator-;
+	using blas::operators::operator+;
+	using blas::operators::operator-=;
+
 	BOOST_REQUIRE( (x - y)[0] == 0. );
 	BOOST_REQUIRE( (y - x)[0] == 0. );
 	

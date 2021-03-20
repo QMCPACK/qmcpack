@@ -8,23 +8,17 @@ $CXXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 
 #include "../array.hpp"
 
-#include<complex>
 #include<boost/iterator/transform_iterator.hpp> //might need -DBOOST_RESULT_OF_USE_DECLTYPE
+
+#include<complex>
 
 namespace test{
 	auto neg = [](auto const& x){return -x;};
 
 	template<class It, class F> class involuter; 
-}
+} // namespace test
 
 namespace test{
-
-template<class T, std::enable_if_t<std::is_empty<T>{}, int> =0> 
-T default_construct(){return *(T*)(&default_construct<T>);} // nvcc needs this in a namespace
-
-template<class T, std::enable_if_t<not std::is_empty<T>{}, int> =0> 
-T default_construct(){return {};}
-
 
 template<class It, class F> class involuter;
 
@@ -91,10 +85,10 @@ template<class It>  using negater = involuter<It , std::negate<>>;
 
 class basic_conjugate_t{
 	template<int N> struct prio : std::conditional_t<N!=0, prio<N-1>, std::true_type>{};
-	template<class T> static auto _(prio<0>, T const& t) DECLRETURN(std::conj(t))
-	template<class T> static auto _(prio<1>, T const& t) DECLRETURN(     conj(t))
-	template<class T> static auto _(prio<2>, T const& t) DECLRETURN(  T::conj(t))
-	template<class T> static auto _(prio<3>, T const& t) DECLRETURN(   t.conj( ))
+	template<class T> static auto _(prio<0>/**/, T const& t) DECLRETURN(std::conj(t))
+	template<class T> static auto _(prio<1>/**/, T const& t) DECLRETURN(     conj(t))
+	template<class T> static auto _(prio<2>/**/, T const& t) DECLRETURN(  T::conj(t))
+	template<class T> static auto _(prio<3>/**/, T const& t) DECLRETURN(   t.conj( ))
 public:
 	template<class T> static auto _(T const& t) DECLRETURN(_(prio<3>{}, t))
 } basic_conjugate;
@@ -117,7 +111,7 @@ struct conjugate<> : private basic_conjugate_t{
 #pragma GCC diagnostic ignored "-Wsubobject-linkage"
 #endif
 template<class ComplexRef> struct conjd : test::involuted<ComplexRef, conjugate<>>{
-	conjd(ComplexRef r) : test::involuted<ComplexRef, conjugate<>>(r){}
+	explicit conjd(ComplexRef r) : test::involuted<ComplexRef, conjugate<>>(r){}
 	decltype(auto) real() const{return this->r_.real();}
 	decltype(auto) imag() const{return negated<decltype(this->r_.imag())>(this->r_.imag());}//-this->r_.imag();}//negated<std::decay_t<decltype(this->r_.imag())>>(this->r_.imag());} 
 	friend decltype(auto) real(conjd const& self){using std::real; return real(static_cast<typename conjd::decay_type>(self));}
@@ -170,8 +164,8 @@ struct bitransformer{
 template<class P = std::complex<double>*>
 struct indirect_real{// : std::iterator_traits<typename std::pointer_traits<P>::element_type::value_type*>{
 	P impl_;
-	indirect_real(P const& p) : impl_{p}{}
-    auto operator+(std::ptrdiff_t n) const{return indirect_real{impl_ + n};}
+	explicit indirect_real(P const& p) : impl_{p}{}
+	auto operator+(std::ptrdiff_t n) const{return indirect_real{impl_ + n};}
 	double& operator*() const{return reinterpret_cast<double(&)[2]>(*impl_)[0];}
 
 	using difference_type = std::ptrdiff_t;
@@ -198,16 +192,13 @@ BOOST_AUTO_TEST_CASE(transformed_array){
 		auto&& z = test::conjd<complex&>{c};
 		BOOST_REQUIRE(( z == complex{1., -2.} ));
 
-		auto pz = &z;
-		BOOST_REQUIRE( real(*pz)  ==  1. );
-		BOOST_REQUIRE( imag(*pz)  == -2. );
-		BOOST_REQUIRE( pz->real() ==  1. );
-		BOOST_REQUIRE( pz->imag() == -2. );
+		BOOST_REQUIRE( real(z)  ==  1. );
+		BOOST_REQUIRE( imag(z)  == -2. );
+		BOOST_REQUIRE( z.real() ==  1. );
+		BOOST_REQUIRE( z.imag() == -2. );
 	}
 	{
 		double a = 5;
-		double& b = a;
-		BOOST_REQUIRE( b == 5 );
 
 		auto&& c = test::involuted<double&, decltype(test::neg)>(a, test::neg);
 		BOOST_REQUIRE( c == -5. );

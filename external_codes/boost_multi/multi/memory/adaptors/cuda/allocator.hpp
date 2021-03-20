@@ -42,8 +42,9 @@ long allocation_counter::bytes_deallocated = 0;
 
 template<class T=void> 
 class allocator : protected allocation_counter{
+	static_assert(std::is_same<T, std::decay_t<T>>{}, 
+		"allocated type should be a value type, not a reference or decorated type");
 public:
-	static_assert( std::is_same<T, std::decay_t<T>>{}, "!" );
 	using value_type = T;
 	using pointer = ptr<T>;
 	using const_pointer = ptr<T const>;

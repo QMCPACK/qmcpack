@@ -21,6 +21,8 @@ BOOST_AUTO_TEST_CASE(array_partitioned_1d){
 	BOOST_REQUIRE( size(A2_ref)==2 );
 	BOOST_REQUIRE( size(A2_ref[0])==3 );
 	BOOST_REQUIRE( &A2_ref[1][0] == &A1[3] );
+	
+	BOOST_REQUIRE(( A2_ref == multi::array<double, 2>{ {0, 1, 2}, {3, 4, 5} } ));
 }
 
 BOOST_AUTO_TEST_CASE(array_partitioned_2d){
@@ -71,7 +73,7 @@ template<class Ref> class propagate_const;
 template<class T> class propagate_const<T&>{
 	T& r_;
 public:
-	propagate_const(T& other) : r_{other}{}
+	explicit propagate_const(T& other) : r_{other}{}
 	propagate_const& operator=(propagate_const const&) = default;
 	propagate_const& operator=(T const& other){r_ = other; return *this;}
 	operator T const&() const noexcept{return r_;}
@@ -81,7 +83,7 @@ public:
 template<class T> class propagate_const<T const&>{
 	T const& r_;
 public:
-	propagate_const(T const& other) : r_{other}{}
+	explicit propagate_const(T const& other) : r_{other}{}
 	propagate_const& operator=(propagate_const const&) = delete;
 	propagate_const& operator=(T const& other) = delete;
 	operator T const&() const noexcept{return r_;}
@@ -126,15 +128,17 @@ BOOST_AUTO_TEST_CASE(array_encoded_subarray){
 		using raw_source_reference = decltype(std::declval<multi::array<double, 2>&>()[0]);
 		using internal_array_type = decltype(std::declval<raw_source_reference>()({2, 8}).partitioned(3));
 	public:
-		walker_ref(raw_source_reference&& row) 
-			: prop1{row[0]}, prop2{row[1]}, slater_array{row({2, 8}).partitioned(3)}, prop3{row[8]}{}
+		// cppcheck-suppress uninitMemberVar ; because this class is very special
+		explicit walker_ref(raw_source_reference&& row) : prop1(row[0]), prop2(row[1]), slater_array{row({2, 8}).partitioned(3)}, prop3{row[8]}{}
 		propagate_const<double&> prop1;
 		propagate_const<double&> prop2;
 		internal_array_type slater_array;
 		propagate_const<double&> prop3;
 	};
+	
+	auto&& wr = walker_ref(A[5]);
 
-	walker_ref&& wr(A[5]);
+//	walker_ref&& wr(A[5]); (void)wr;
 
 	wr.prop1 = 88;
 	BOOST_REQUIRE( wr.slater_array[2][1] == 5.21 );

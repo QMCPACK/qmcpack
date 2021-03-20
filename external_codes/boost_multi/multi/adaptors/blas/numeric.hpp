@@ -141,6 +141,7 @@ public:
 //	template<class Other, > constexpr involuter(Other const& other) : it_{other.it_}, f_{other.f_}{}
 
 	template<class Other, typename = decltype(_implicit_cast<It>(typename Other::underlying_type{}))> 
+	// cppcheck-suppress noExplicitConstructor
 	constexpr          involuter(Other const& o) : it_{o.it_}, f_{o.f_}{}
 	template<class Other, typename = decltype(_explicit_cast<It>(typename Other::underlying_type{}))> 
 	constexpr explicit involuter(Other const& o, int = 0) : it_{o.it_}, f_{o.f_}{}
@@ -280,8 +281,8 @@ auto default_allocator_of(multi::blas::involuter<It, F, Reference> it){
 }
 
 namespace std{
-	template<> struct is_convertible<boost::multi::blas::Complex_<double>*, std::complex<double>*> : std::true_type{};
-	template<class T> struct is_convertible<boost::multi::blas::Complex_<double>*, T*> : boost::multi::blas::numeric::is_complex_of<T, double>{};
+//	template<> struct is_convertible<boost::multi::blas::Complex_<double>*, std::complex<double>*> : std::true_type{};
+//	template<class T> struct is_convertible<boost::multi::blas::Complex_<double>*, T*> : boost::multi::blas::numeric::is_complex_of<T, double>{};
 }
 
 #endif
