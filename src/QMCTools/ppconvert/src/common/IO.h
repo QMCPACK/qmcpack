@@ -38,7 +38,8 @@ bool IOTreeClass::WriteVar(std::string name, T val)
 {
   if (GetFileType() == ASCII_TYPE)
   {
-    VarList.push_back(new IOVarASCII<T, 0>(name, val));
+		throw std::logic_error{"this case is unimplement for rank 0"};
+//    VarList.push_back(new IOVarASCII<T, 0>(name, val));
   }
   else
   {
@@ -82,7 +83,7 @@ bool IOTreeClass::WriteVar(std::string name, const Array<TinyVector<T, LEN>, RAN
     shape[dim] = val.extent(dim);
   shape[RANK] = LEN;
 
-  Array<T, RANK + 1> aval((T*)&(val(0)[0]), shape, blitz::neverDeleteData);
+  Array<T, RANK + 1> aval((T*)&(val(0)[0]), shape, neverDeleteData);
   return WriteVar(name, aval);
 }
 
