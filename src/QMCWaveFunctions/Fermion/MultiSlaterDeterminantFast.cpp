@@ -560,51 +560,51 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     // need to modify for CSF later on, right now assume Slater Det basis
     if (recalculate)
     {
-      if (usingCSF)
+      ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
+      laplSum.resize(Dets.size());
+      for (size_t id = 0; id < Dets.size(); id++)
       {
-        ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
-        laplSum.resize(Dets.size());
+        laplSum[id].resize(Dets[id]->detValues.size());
+        // assume that evaluateLog has been called in opt routine before
+        //   Dets[id]->evaluateForWalkerMove(P);
+        // myG,myL should already be calculated
+        for (size_t i = 0; i < laplSum[id].size(); i++)
+        {
+          laplSum[id][i] = 0.0;
+          for (size_t k = 0; k < Dets[id]->NumPtcls; k++)
+            laplSum[id][i] += Dets[id]->lapls[i][k];
+        }
+      }
+
+      const ValueType* restrict C_p = C->data();
+      myG_temp                      = 0.0;
+      ValueType lapl_sum            = 0.0;
+      for (size_t i = 0; i < C->size(); i++)
+      {
         for (size_t id = 0; id < Dets.size(); id++)
         {
-          laplSum[id].resize(Dets[id]->detValues.size());
-          // assume that evaluateLog has been called in opt routine before
-          //   Dets[id]->evaluateForWalkerMove(P);
-          // myG,myL should already be calculated
-          for (size_t i = 0; i < laplSum[id].size(); i++)
+          size_t spinC  = (*C2node)[id][i];
+          ValueType tmp = C_p[i] * psiinv;
+          for (size_t other_id = 0; other_id < Dets.size(); other_id++)
           {
-            laplSum[id][i] = 0.0;
-            for (size_t k = 0; k < Dets[id]->NumPtcls; k++)
-              laplSum[id][i] += Dets[id]->lapls[i][k];
+            if (id == other_id)
+              continue;
+            size_t otherspinC = (*C2node)[other_id][i];
+            tmp *= Dets[other_id]->detValues[otherspinC];
           }
+          lapl_sum += tmp * laplSum[id][spinC];
+          for (size_t k = 0, j = Dets[id]->FirstIndex; k < Dets[id]->NumPtcls; k++, j++)
+            myG_temp[j] += tmp * Dets[id]->grads(spinC, k);
         }
+      }
+      ValueType gg = 0.0;
+      for (size_t i = 0; i < P.getTotalNum(); i++)
+        gg += dot(myG_temp[i], myG_temp[i]) - dot(P.G[i], myG_temp[i]);
 
-        const ValueType* restrict C_p = C->data();
-        myG_temp                      = 0.0;
-        ValueType lapl_sum            = 0.0;
-        for (size_t i = 0; i < C->size(); i++)
-        {
-          for (size_t id = 0; id < Dets.size(); id++)
-          {
-            size_t spinC  = (*C2node)[id][i];
-            ValueType tmp = C_p[i] * psiinv;
-            for (size_t other_id = 0; other_id < Dets.size(); other_id++)
-            {
-              if (id == other_id)
-                continue;
-              size_t otherspinC = (*C2node)[other_id][i];
-              tmp *= Dets[other_id]->detValues[otherspinC];
-            }
-            lapl_sum += tmp * laplSum[id][spinC];
-            for (size_t k = 0, j = Dets[id]->FirstIndex; k < Dets[id]->NumPtcls; k++, j++)
-              myG_temp[j] += tmp * Dets[id]->grads(spinC, k);
-          }
-        }
-        ValueType gg = 0.0;
-        for (size_t i = 0; i < P.getTotalNum(); i++)
-          gg += dot(myG_temp[i], myG_temp[i]) - dot(P.G[i], myG_temp[i]);
-
+      if (usingCSF)
+      {
         const int num = CSFcoeff->size() - 1;
-        int cnt = 0;
+        int cnt       = 0;
         //        this one is not optable
         cnt += (*DetsPerCSF)[0];
         int ip(1);
@@ -649,45 +649,6 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       }
       else
       { //usingDETS
-        ValueType psiinv   = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
-        ValueType lapl_sum = 0.0;
-        laplSum.resize(Dets.size());
-        for (size_t id = 0; id < Dets.size(); id++)
-        {
-          laplSum[id].resize(Dets[id]->detValues.size());
-          // assume that evaluateLog has been called in opt routine before
-          //   Dets[id]->evaluateForWalkerMove(P);
-          for (size_t i = 0; i < laplSum[id].size(); i++)
-          {
-            laplSum[id][i] = 0.0;
-            for (size_t k = 0; k < Dets[id]->NumPtcls; k++)
-              laplSum[id][i] += Dets[id]->lapls[i][k];
-          }
-        }
-        const ValueType* restrict C_p = C->data();
-        myG_temp                      = 0.0;
-        for (size_t i = 0; i < C->size(); i++)
-        {
-          for (size_t id = 0; id < Dets.size(); id++)
-          {
-            size_t spinC  = (*C2node)[id][i];
-            ValueType tmp = C_p[i] * psiinv;
-            for (size_t other_id = 0; other_id < Dets.size(); other_id++)
-            {
-              if (id == other_id)
-                continue;
-              size_t otherspinC = (*C2node)[other_id][i];
-              tmp *= Dets[other_id]->detValues[otherspinC];
-            }
-            lapl_sum += tmp * laplSum[id][spinC];
-            for (size_t k = 0, j = Dets[id]->FirstIndex; k < Dets[id]->NumPtcls; k++, j++)
-              myG_temp[j] += tmp * Dets[id]->grads(spinC, k);
-          }
-        }
-        ValueType gg = 0.0;
-        for (size_t i = 0; i < P.getTotalNum(); i++)
-          gg += dot(myG_temp[i], myG_temp[i]) - dot(P.G[i], myG_temp[i]);
-
         ValueType q0 = 0.0;
         std::vector<ValueType> v(Dets.size());
         for (size_t i = 1; i < C->size(); i++)
@@ -759,7 +720,7 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
         ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psiCurrent);
 
         const int num = CSFcoeff->size() - 1;
-        int cnt = 0;
+        int cnt       = 0;
         //        this one is not optable
         cnt += (*DetsPerCSF)[0];
         int ip(1);
