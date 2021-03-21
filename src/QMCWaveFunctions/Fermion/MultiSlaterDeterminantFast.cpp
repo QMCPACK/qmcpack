@@ -167,9 +167,9 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
     ParticleSet::ParticleLaplacian_t& l_tmp)
 {
   const ValueType czero(0);
-  PsiValueType psi      = czero;
-  g_tmp                 = czero;
-  l_tmp                 = czero;
+  PsiValueType psi = czero;
+  g_tmp            = czero;
+  l_tmp            = czero;
 
   for (size_t ig = 0; ig < Dets.size(); ig++)
     precomputeC_otherDs(P, ig);
@@ -561,27 +561,17 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         }
       }
 
-      const auto& Coefs = *C;
-      myG_temp                      = 0.0;
-      ValueType lapl_sum            = 0.0;
-      for (size_t i = 0; i < C->size(); i++)
-      {
-        for (size_t id = 0; id < Dets.size(); id++)
+      ValueType lapl_sum = 0.0;
+      myG_temp           = 0.0;
+      for (size_t id = 0; id < Dets.size(); id++)
+        for (size_t i = 0; i < Dets[id]->NumDets; i++)
         {
-          size_t spinC  = (*C2node)[id][i];
-          ValueType tmp = Coefs[i] * psiinv;
-          for (size_t other_id = 0; other_id < Dets.size(); other_id++)
-          {
-            if (id == other_id)
-              continue;
-            size_t otherspinC = (*C2node)[other_id][i];
-            tmp *= Dets[other_id]->detValues[otherspinC];
-          }
-          lapl_sum += tmp * laplSum[id][spinC];
+          // assume C_otherDs prepared by evaluateLog already
+          ValueType tmp = C_otherDs[id][i] * psiinv;
+          lapl_sum += tmp * laplSum[id][i];
           for (size_t k = 0, j = Dets[id]->FirstIndex; k < Dets[id]->NumPtcls; k++, j++)
-            myG_temp[j] += tmp * Dets[id]->grads(spinC, k);
+            myG_temp[j] += tmp * Dets[id]->grads(i, k);
         }
-      }
 
       ValueType gg = 0.0;
       for (size_t i = 0; i < P.getTotalNum(); i++)
@@ -667,6 +657,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       }
     }
   }
+
   if (Dets.size() != 2)
   {
     throw std::runtime_error(
