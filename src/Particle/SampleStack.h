@@ -50,7 +50,7 @@ public:
   ///save the position of current walkers
   void saveEnsemble(std::vector<MCSample>& walker_list);
   /// load a single sample from SampleStack
-  void loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const;
+  void loadSample(ParticleSet& pset, size_t iw) const;
 
   void appendSample(MCSample&& sample);
 

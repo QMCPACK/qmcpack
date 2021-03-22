@@ -67,7 +67,11 @@ void SampleStack::appendSample(MCSample&& sample)
 
 /** load a single sample from SampleStack
  */
-void SampleStack::loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const { Pos = sample_vector_[iw]->R; }
+void SampleStack::loadSample(ParticleSet& pset, size_t iw) const
+{
+  pset.R     = sample_vector_[iw]->R;
+  pset.spins = sample_vector_[iw]->spins;
+}
 
 bool SampleStack::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock)
 {
