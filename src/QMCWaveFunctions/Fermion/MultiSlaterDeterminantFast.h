@@ -198,6 +198,12 @@ private:
     return id;
   }
 
+  /** precompute C_otherDs for a given particle group
+   * @param P a particle set
+   * @param ig group id
+   */
+  void precomputeC_otherDs(const ParticleSet& P, int ig);
+
   ///the last particle of each group
   std::vector<int> Last;
   ///use pre-compute (fast) algorithm
