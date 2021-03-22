@@ -148,6 +148,14 @@ public:
 
   Resource* makeClone() const override { return new DiracMatrixComputeCUDA(*this); }
 
+  /** Given a_mat returns inverted amit and log determinant of a_matches.
+   *  \param [in] a_mat a matrix input
+   *  \param [out] inv_a_mat inverted matrix
+   *  \param [out] log determinant is in logvalues[0]
+   *
+   *  I consider this single call to be semi depricated so the log determinant values
+   *  vector is used to match the primary batched interface to the accelerated routings.
+   */
   template<typename TMAT, typename TREAL>
   void invert_transpose(CUDALinearAlgebraHandles& cuda_handles,
                         const OffloadPinnedMatrix<TMAT>& a_mat,
@@ -158,6 +166,10 @@ public:
     const int lda = a_mat.cols();
     psiM_fp_.resize(n * lda);
     invM_fp_.resize(n * lda);
+    std::fill(log_values.begin(), log_values.end(), std::complex<TREAL>{0.0,0.0});
+    cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(std::complex<TREAL>),
+                                   cudaMemcpyHostToDevice, cuda_handles.hstream),
+                   "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
     cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size() * sizeof(T_FP),
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
@@ -185,6 +197,10 @@ public:
     size_t nsqr   = n * n;
     psiM_fp_.resize(n * lda * nw);
     invM_fp_.resize(n * lda * nw);
+    std::fill(log_values.begin(), log_values.end(), std::complex<TREAL>{0.0,0.0});
+    cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(std::complex<TREAL>),
+                                   cudaMemcpyHostToDevice, cuda_handles.hstream),
+                                  "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, a_mats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
     computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);

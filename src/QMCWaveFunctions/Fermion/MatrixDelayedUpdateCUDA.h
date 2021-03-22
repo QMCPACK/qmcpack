@@ -389,24 +389,27 @@ public:
    *  belongs in a friend class in test
    */
   inline void checkResourcesForTest()
-  {    
+  {
+
     if (!cuda_handles_)
     {
-      app_warning() << "MatrixDelayedUpdateCUDA local cuda_handles_ made : This message should not be seen in "
-                       "production (performance bug) runs "
-                       "but only unit tests (expected)."
-                    << std::endl;
-      cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
+      throw std::logic_error("Null cuda_handles_, Even for testing proper resource creation and acquisition must be made.");
+      // app_warning() << "MatrixDelayedUpdateCUDA local cuda_handles_ made : This message should not be seen in "
+      //                  "production (performance bug) runs "
+      //                  "but only unit tests (expected)."
+      //               << std::endl;
+      // cuda_handles_ = std::make_unique<CUDALinearAlgebraHandles>();
     }
-
+    
     if (!det_inverter_)
     {
-      app_warning() << "MatrixDelayedUpdateCUDA local det_inverter_ made : This message should not be seen in "
-                       "production (performance bug) runs "
-                       "but only unit tests (expected)."
-                    << std::endl;
+      throw std::logic_error("Null det_inverter_, Even for testing proper resource creation and acquisition must be made.");
+      // app_warning() << "MatrixDelayedUpdateCUDA local det_inverter_ made : This message should not be seen in "
+      //                  "production (performance bug) runs "
+      //                  "but only unit tests (expected)."
+      //               << std::endl;
 
-      det_inverter_ = std::make_unique<DiracMatrixComputeCUDA<T_FP>>();
+      // det_inverter_ = std::make_unique<DiracMatrixComputeCUDA<T_FP>>();
     }
   }
     

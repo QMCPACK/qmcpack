@@ -90,7 +90,6 @@ __global__ void computeLogDet_kernel(const int n,
       block_sum_log_det.y += logdet_vals[iv].y;
     }
     // No atomicAdd in cuda 10 for cuComplex/cuDoubleComplex
-    // c cast has precedence over +
     atomicAdd((double*)&(logdets[iw].x), block_sum_log_det.x);
     atomicAdd((double*)&(logdets[iw].y), block_sum_log_det.y);
 

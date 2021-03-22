@@ -489,7 +489,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
                                               fixedL_list2);
 
   // Evaluate old (single item) evaluateDeltaLog corresponding to the second wavefunction/particleset
-
+  // So if psi2 is invalid are the following check correct or not?  I have no idea what this test tests.
+  
   RealType logpsi_fixed_r2;
   RealType logpsi_opt_r2;
   ParticleSet::ParticleGradient_t fixedG2;

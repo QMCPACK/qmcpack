@@ -139,6 +139,7 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   auto& p_leader  = p_list.getLeader();
   ScopedTimer local_timer(wf_leader.TWF_timers_[RECOMPUTE_TIMER]);
 
+  // \todo Rename this variable or explain why a Real 0 is named czero
   constexpr RealType czero(0);
   const auto g_list(TrialWaveFunction::extractGRefList(wf_list));
   const auto l_list(TrialWaveFunction::extractLRefList(wf_list));

@@ -28,7 +28,7 @@ WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, cons
       Optimizable(true),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
-      LogValue(0.0),
+      LogValue(0.0),  // std::complex constructor defaults to 0.0 for real and imaginary so setting real to 0.0 is weird.
       dPsi(nullptr),
       ClassName(class_name),
       myName(obj_name),
