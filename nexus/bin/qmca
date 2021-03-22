@@ -223,15 +223,16 @@ class DatAnalyzer(QBase):
 
     def __init__(self,filepath,index,type='unknown',units='Ha'):
         self.info  = obj(
-            index    = index,
-            type     = type,
-            units    = units,
-            series   = None,
-            filepath = None,
-            filename = None,
-            prefix   = None,
-            nsamples = None,
-            weight   = 1.0
+            index       = index,
+            type        = type,
+            units       = units,
+            series      = None,
+            filepath    = None,
+            filename    = None,
+            prefix      = None,
+            nsamples    = None,
+            weight      = 1.0,
+            load_failed = False,
             )
         self.data  = obj()
         self.stats = obj()
@@ -290,6 +291,10 @@ class DatAnalyzer(QBase):
         lt = np.loadtxt(filepath)
         if len(lt.shape)==1:
             lt.shape = (1,len(lt))
+        #end if
+        if lt.size==0:
+            self.info.load_failed = True
+            return
         #end if
         data = lt[:,1:].transpose()
         self.info.nsamples = data.shape[1]
@@ -1123,6 +1128,12 @@ QMCA examples:
                         type     = filetype,
                         units    = opt.units
                         )
+                    if d.info.load_failed:
+                        if not self.options.nowarn:
+                            self.warn('Load failed for {}, results unavailable.'.format(file))
+                        #end if
+                        continue
+                    #end if
                     self.file_map[file] = d
                     prefix = d.info.prefix
                     series = d.info.series
