@@ -202,10 +202,7 @@ else() #{{{
   ENDIF(BUILD_FCIQMC)
 
   SUBDIRS(QMCApp)
-
-  #IF(BUILD_QMCTOOLS)
   SUBDIRS(QMCTools)
-  #ENDIF(BUILD_QMCTOOLS)
 
   IF (BUILD_UNIT_TESTS) #{
     #Unit test directories

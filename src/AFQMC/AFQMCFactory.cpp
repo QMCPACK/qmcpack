@@ -58,6 +58,40 @@ TimerNameList_t<AFQMCTimerIDs> AFQMCTimerNames = {{block_timer, "Block"},
 
 namespace afqmc
 {
+AFQMCFactory::AFQMCFactory(boost::mpi3::communicator& comm_)
+    : m_series(0),
+      project_title("afqmc"),
+      gTG(comm_),
+      TGHandler(gTG, -10),
+      InfoMap(),
+      HamFac(InfoMap),
+      WSetFac(InfoMap),
+      WfnFac(InfoMap),
+      PropFac(InfoMap),
+      DriverFac(gTG, TGHandler, InfoMap, WSetFac, PropFac, WfnFac, HamFac)
+{
+#if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+  // taken from src/OhmmsApp/RandomNumberControl.cpp
+  int rank   = gTG.Global().rank();
+  int nprocs = gTG.Global().size();
+  int baseoffset;
+  using uint_type = RandomNumberControl::uint_type;
+  if (gTG.Global().root())
+    baseoffset = static_cast<int>(static_cast<uint_type>(std::time(0)) % 1024);
+  gTG.Global().broadcast_value(baseoffset);
+  std::vector<uint_type> myprimes;
+  RandomNumberControl::PrimeNumbers.get(baseoffset, nprocs, myprimes);
+  arch::INIT(gTG.Node(), (unsigned long long int)(myprimes[rank]));
+#endif
+  // Global host buffers manager
+  HostBufferManager host_buffer(10uL * 1024uL * 1024uL);  // setup monostate
+  DeviceBufferManager dev_buffer(10uL * 1024uL * 1024uL); // setup monostate
+  timer_manager.set_timer_threshold(timer_level_coarse);
+  setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
+}
+
+AFQMCFactory::~AFQMCFactory() { release_memory_managers(); }
+
 bool AFQMCFactory::parse(xmlNodePtr cur)
 {
   if (cur == NULL)
