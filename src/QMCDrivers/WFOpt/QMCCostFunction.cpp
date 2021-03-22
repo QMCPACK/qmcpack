@@ -43,7 +43,9 @@ QMCCostFunction::~QMCCostFunction()
   delete_iter(HDerivRecords.begin(), HDerivRecords.end());
 }
 
-void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff)
+void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
+                               const std::vector<Return_rt>& PM,
+                               Return_rt FiniteDiff)
 {
   if (FiniteDiff > 0)
   {
@@ -279,7 +281,7 @@ void QMCCostFunction::checkConfigurations()
     Return_rt e2 = 0.0;
     for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
-      wRef.loadSample(wRef.R, iw);
+      wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
@@ -407,7 +409,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 
     for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
-      wRef.loadSample(wRef.R, iw);
+      wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
@@ -444,12 +446,12 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         }
         else if (MinMethod == "descent")
         {
-	    //Could remove this copying over if LM engine becomes compatible with complex numbers
-	    //so that der_rat_samp and le_der_samp are vectors of std::complex<double> when QMC_COMPLEX=1
-	    std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(),der_rat_samp.end());
-	    std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(),le_der_samp.end());
-	  
-        descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
+          //Could remove this copying over if LM engine becomes compatible with complex numbers
+          //so that der_rat_samp and le_der_samp are vectors of std::complex<double> when QMC_COMPLEX=1
+          std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(), der_rat_samp.end());
+          std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(), le_der_samp.end());
+
+          descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
         }
 #endif
       }
@@ -555,7 +557,7 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
     Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
     for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
-      wRef.loadSample(wRef.R, iw);
+      wRef.loadSample(wRef, iw);
       wRef.update(true);
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_rt logpsi;

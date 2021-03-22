@@ -327,7 +327,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       // Load samples into the crowd data
       for (int ib = 0; ib < curr_crowd_size; ib++)
       {
-        samples.loadSample(p_list[ib].R, base_sample_index + ib);
+        samples.loadSample(p_list[ib], base_sample_index + ib);
 
         // Set the RNG used in QMCHamiltonian.  This is used to offset the grid
         // during spherical integration in the non-local pseudopotential.
@@ -552,7 +552,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       // Load this batch of samples into the crowd data
       for (int ib = 0; ib < curr_crowd_size; ib++)
       {
-        samples.loadSample(p_list[ib].R, base_sample_index + ib);
+        samples.loadSample(p_list[ib], base_sample_index + ib);
         // Copy the saved RNG state
         *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
         h0_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
