@@ -1242,6 +1242,7 @@ def test_generate():
     qi = generate_qmcpack_input(
         input_type      = 'basic',
         system          = system,
+        randomsrc       = False,
         pseudos         = ['V.opt.xml','O.opt.xml'],
         spin_polarized  = True,
         twistnum        = 0,

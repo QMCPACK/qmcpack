@@ -4358,7 +4358,7 @@ def generate_particlesets(electrons   = 'e',
                           up          = 'u',
                           down        = 'd',
                           system      = None,
-                          randomsrc   = False,
+                          randomsrc   = True,
                           hybrid_rcut = None,
                           hybrid_lmax = None,
                           ):
@@ -6014,6 +6014,7 @@ vmc_legacy_defaults = obj(
     substeps    = 3,
     timestep    = 0.3,
     checkpoint  = -1,
+    usedrift    = None,
     )
 vmc_test_legacy_defaults = obj(
     warmupsteps = 10,
@@ -6390,19 +6391,26 @@ def generate_legacy_vmc_calculations(
     substeps   ,
     timestep   ,
     checkpoint ,
+    usedrift   ,
     loc        = 'generate_vmc_calculations',
     ):
-    vmc_calcs = [
-        vmc(
-            walkers     = walkers,
-            warmupsteps = warmupsteps,
-            blocks      = blocks,
-            steps       = steps,
-            substeps    = substeps,
-            timestep    = timestep,
-            checkpoint  = checkpoint,
-            )
-        ]
+
+    vmc_calc = vmc(
+        walkers     = walkers,
+        warmupsteps = warmupsteps,
+        blocks      = blocks,
+        steps       = steps,
+        substeps    = substeps,
+        timestep    = timestep,
+        checkpoint  = checkpoint,
+        )
+
+    if usedrift is not None:
+        vmc_calc.usedrift = usedrift
+    #end if
+
+    vmc_calcs = [vmc_calc]
+
     return vmc_calcs
 #end def generate_legacy_vmc_calculations
 
@@ -6775,7 +6783,7 @@ gen_basic_input_defaults = obj(
     lr_tol         = None,               
     lr_handler     = None,               
     remove_cell    = False,            
-    randomsrc      = False,            
+    randomsrc      = True,            
     meshfactor     = 1.0,              
     orbspline      = None,             
     precision      = 'float',          
@@ -6917,7 +6925,7 @@ def generate_basic_input(**kwargs):
         kw.system.structure.set_bconds(kw.bconds)
         particlesets = generate_particlesets(
             system      = kw.system,
-            randomsrc   = kw.randomsrc or tuple(kw.bconds)!=('p','p','p'),
+            randomsrc   = kw.randomsrc,
             hybrid_rcut = kw.hybrid_rcut,
             hybrid_lmax = kw.hybrid_lmax,
             )

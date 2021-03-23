@@ -736,6 +736,8 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
         s = -1
     elif len(other)>0:
         cells = other
+    else:
+        cells = []
     #end if
     skew_min = 1e99
     if len(cells)>0:
