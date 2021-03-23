@@ -64,6 +64,12 @@ public:
     delete_iter(lapLogPsi.begin(), lapLogPsi.end());
   }
 
+  // Accessors for unit testing
+  std::pair<int, int> getOffset(int index) { return OffSet.at(index); }
+
+  opt_variables_type& getVars() { return myVars; }
+
+
   void addFunc(int ia, int ib, FT* j)
   {
     // make all pair terms equal to uu initially
@@ -139,7 +145,18 @@ public:
         lapLogPsi[i]  = new ValueVectorType(NumPtcls);
       }
       OffSet.resize(F.size());
-      int varoffset = myVars.Index[0];
+
+      // Find first active variable for the starting offset
+      int varoffset = -1;
+      for (int i = 0; i < myVars.size(); i++)
+      {
+        varoffset = myVars.Index[i];
+        if (varoffset != -1)
+        {
+          break;
+        }
+      }
+
       for (int i = 0; i < F.size(); ++i)
       {
         if (F[i] && F[i]->myVars.Index.size())
