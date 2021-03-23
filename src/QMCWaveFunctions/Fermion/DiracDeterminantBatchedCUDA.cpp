@@ -20,7 +20,6 @@ void DiracDeterminantDetails<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMC
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DetEngine>>();
   const auto nw    = wfc_list.size();
   using DDBT       = std::decay_t<decltype(wfc_leader)>;
-  std::cout << "wpppp CUDA\n";
   {
     ScopedTimer spo_timer(wfc_leader.SPOVGLTimer);
 

@@ -167,6 +167,7 @@ public:
     psiM_fp_.resize(n * lda);
     invM_fp_.resize(n * lda);
     std::fill(log_values.begin(), log_values.end(), std::complex<TREAL>{0.0,0.0});
+    // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(std::complex<TREAL>),
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
@@ -176,6 +177,7 @@ public:
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
     computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
     OffloadPinnedMatrix<T_FP> data_ref_matrix;
+
     data_ref_matrix.attachReference(invM_fp_.data(), n, n);
     // Use ohmms matrix to do element wise assignment with possible narrowing conversion.
     inv_a_mat = data_ref_matrix;
@@ -191,6 +193,7 @@ public:
                                  RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                  OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
+    assert(log_values.size() == a_mats.size());
     int nw        = a_mats.size();
     const int n   = inv_a_mats[0].get().rows();
     const int lda = inv_a_mats[0].get().cols();
@@ -198,6 +201,7 @@ public:
     psiM_fp_.resize(n * lda * nw);
     invM_fp_.resize(n * lda * nw);
     std::fill(log_values.begin(), log_values.end(), std::complex<TREAL>{0.0,0.0});
+    // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(std::complex<TREAL>),
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
                                   "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");

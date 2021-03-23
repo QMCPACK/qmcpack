@@ -378,9 +378,10 @@ public:
     collection.takebackResource(std::move(mw_mem_));
   }
 
-  inline const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv; }
   /** Why do you need to modify another classes data member?
    */
+  inline const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv; }
+
   inline OffloadPinnedValueMatrix_t& get_nonconst_psiMinv() { return psiMinv; }
 
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
