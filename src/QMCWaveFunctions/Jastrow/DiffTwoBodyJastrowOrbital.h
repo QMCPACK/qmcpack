@@ -152,9 +152,7 @@ public:
       {
         varoffset = myVars.Index[i];
         if (varoffset != -1)
-        {
           break;
-        }
       }
 
       for (int i = 0; i < F.size(); ++i)
