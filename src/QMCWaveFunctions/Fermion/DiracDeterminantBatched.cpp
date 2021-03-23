@@ -147,133 +147,7 @@ void DiracDeterminantDetails<DiracDeterminantBatched<MatrixUpdateOMPTarget<QMCTr
     DiracDeterminantBatched<DetEngine>::mw_invertPsiM(wfc_filtered_list, const_psiM_temp_list);
     PRAGMA_OFFLOAD("omp taskwait")
   }
-  // auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-  // const auto nw    = wfc_list.size();
-  // using DDBT = std::decay_t<decltype(wfc_leader)>;
-  // RefVectorWithLeader<WaveFunctionComponent> wfc_filtered_list(wfc_list.getLeader());
-  // RefVectorWithLeader<ParticleSet> p_filtered_list(p_list.getLeader());
-  // RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
-  // RefVector<typename DDBT::ValueMatrix_t> psiM_temp_list;
-  // RefVector<typename DDBT::GradMatrix_t> dpsiM_list;
-  // RefVector<typename DDBT::ValueMatrix_t> d2psiM_list;
-
-  // wfc_filtered_list.reserve(nw);
-  // p_filtered_list.reserve(nw);
-  // phi_list.reserve(nw);
-  // psiM_temp_list.reserve(nw);
-  // dpsiM_list.reserve(nw);
-  // d2psiM_list.reserve(nw);
-
-  // for (int iw = 0; iw < nw; iw++)
-  //   if (recompute[iw])
-  //   {
-  //     wfc_filtered_list.push_back(wfc_list[iw]);
-  //     p_filtered_list.push_back(p_list[iw]);
-
-  //     auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-  //     phi_list.push_back(*det.Phi);
-  //     psiM_temp_list.push_back(det.psiM_temp);
-  //     dpsiM_list.push_back(det.dpsiM);
-  //     d2psiM_list.push_back(det.d2psiM);
-  //   }
-
-  // if (!wfc_filtered_list.size())
-  //   return;
-
-  // {
-  //   ScopedTimer spo_timer(wfc_leader.SPOVGLTimer);
-  //   wfc_leader.Phi->mw_evaluate_notranspose(phi_list, p_filtered_list, wfc_leader.FirstIndex, wfc_leader.LastIndex,
-  //                                           psiM_temp_list, dpsiM_list, d2psiM_list);
-  // }
-
-  // { // transfer dpsiM, d2psiM, psiMinv to device
-  //   ScopedTimer d2h(DDBT::H2DTimer);
-
-  //   RefVector<const typename DDBT::ValueMatrix_t> const_psiM_temp_list;
-  //   for (int iw = 0; iw < wfc_filtered_list.size(); iw++)
-  //   {
-  //     auto& det          = wfc_filtered_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-  //     auto* psiM_vgl_ptr = det.psiM_vgl.data();
-  //     size_t stride      = wfc_leader.psiM_vgl.capacity();
-  //     PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
-  //     const_psiM_temp_list.push_back(det.psiM_temp);
-  //   }
-  //   DDBT::mw_invertPsiM(wfc_filtered_list, const_psiM_temp_list);
-  //   PRAGMA_OFFLOAD("omp taskwait")
-  // }
 }
-
-//   template<class DET_ENGINE>
-//   template<class DET_ENGINE_P, typename = std::enable_if_t<std::is_same<DET_ENGINE_P,MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>::value, int>>
-//   void DiracDeterminantBatched<DET_ENGINE>::mw_recompute_impl(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-//                           const RefVectorWithLeader<ParticleSet>& p_list,
-//                           const std::vector<bool>& recompute_mask) const
-// {
-//   static_assert(!std::is_same<DET_ENGINE, MatrixDelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>::value);
-//   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
-//   const auto nw    = wfc_list.size();
-//   RefVectorWithLeader<WaveFunctionComponent> wfc_filtered_list(wfc_list.getLeader());
-//   RefVectorWithLeader<ParticleSet> p_filtered_list(p_list.getLeader());
-//   RefVectorWithLeader<SPOSet> phi_list(*wfc_leader.Phi);
-//   RefVector<ValueMatrix_t> psiM_temp_list;
-//   RefVector<GradMatrix_t> dpsiM_list;
-//   RefVector<ValueMatrix_t> d2psiM_list;
-
-//   wfc_filtered_list.reserve(nw);
-//   p_filtered_list.reserve(nw);
-//   phi_list.reserve(nw);
-//   psiM_temp_list.reserve(nw);
-//   dpsiM_list.reserve(nw);
-//   d2psiM_list.reserve(nw);
-//   std::vector<ValueMatrix_t> psiM_temp_views;
-//   psiM_temp_views.reserve(nw);
-
-//   for (int iw = 0; iw < nw; iw++)
-//     if (recompute_mask[iw])
-//     {
-//       wfc_filtered_list.push_back(wfc_list[iw]);
-//       p_filtered_list.push_back(p_list[iw]);
-//       auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-//       phi_list.push_back(*det.Phi);
-//       psiM_temp_views.emplace_back(det.psiM_temp.data(),det.psiM_temp.rows(),det.psiM_temp.cols());
-//       psiM_temp_list.push_back(psiM_temp_views.back());
-//       dpsiM_list.push_back(det.dpsiM);
-//       d2psiM_list.push_back(det.d2psiM);
-//     }
-
-//   if (!wfc_filtered_list.size())
-//     return;
-
-//   {
-//     ScopedTimer spo_timer(wfc_leader.SPOVGLTimer);
-//     wfc_leader.Phi->mw_evaluate_notranspose(phi_list, p_filtered_list, wfc_leader.FirstIndex, wfc_leader.LastIndex,
-//                                             psiM_temp_list, dpsiM_list, d2psiM_list);
-//   }
-
-//   { // transfer dpsiM, d2psiM, psiMinv to device
-//     ScopedTimer d2h(H2DTimer);
-
-//     RefVector<const OffloadPinnedValueMatrix_t> const_psiM_temp_list;
-//     for (int iw = 0; iw < wfc_filtered_list.size(); iw++)
-//     {
-//       auto& det          = wfc_filtered_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-//       auto* psiM_vgl_ptr = det.psiM_vgl.data();
-//       size_t stride      = wfc_leader.psiM_vgl.capacity();
-//       PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
-//       const_psiM_temp_list.push_back(det.psiM_temp);
-//     }
-//     mw_invertPsiM(wfc_filtered_list, const_psiM_temp_list);
-//     PRAGMA_OFFLOAD("omp taskwait")
-//   }
-// }
-
-// template<class DET_ENGINE>
-// void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-//                           const RefVectorWithLeader<ParticleSet>& p_list,
-//                           const std::vector<bool>& recompute_mask) const
-// {
-//   mw_recompute_impl(wfc_list, p_list, recompute_mask);
-// }
   
 ///reset the size: with the number of particles and number of orbtials
 template<typename DET_ENGINE>
@@ -473,7 +347,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
   const int WorkingIndex = iat - FirstIndex;
   for (int iw = 0, count = 0; iw < nw; iw++)
   {
-    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+    // This can be auto but some debuggers can't figure the type out.
+    DiracDeterminantBatched<DET_ENGINE>& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     engine_list.push_back(det.det_engine_);
     if (isAccepted[iw])
     {
@@ -1045,7 +920,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(
   assert(this == &wfc_list.getLeader());
   const std::vector<bool> recompute_all(wfc_list.size(), true);
   DiracDeterminantBatched::mw_recompute(wfc_list, p_list, recompute_all);
-
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
     auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);

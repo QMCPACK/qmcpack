@@ -88,6 +88,8 @@ public:
 // unit test these.
 TEST_CASE("DiracDeterminantBatched_resources", "[wavefunction][fermion]")
 {
+  int count = 0;
+
   auto spo_init = std::make_unique<FakeSPO>();
   spo_init->setOrbitalSetSize(3);
   DetType ddb(std::move(spo_init));
@@ -120,6 +122,11 @@ TEST_CASE("DiracDeterminantBatched_first", "[wavefunction][fermion]")
 
   testing::DiracDeterminantBatchedTest ddbt;
   ddbt.guardMultiWalkerRes(ddb);
+
+  ResourceCollection res_col("test_determinant");
+  ddb.createResource(res_col);
+  ddb.acquireResource(res_col);
+  
   ddb.recompute(ddbt.get_mw_res(ddb), elec);
   Matrix<ValueType> b;
   b.resize(3, 3);
@@ -178,8 +185,11 @@ TEST_CASE("DiracDeterminantBatched_second", "[wavefunction][fermion]")
 
   elec.create(4);
 
+  ResourceCollection res_col("test_determinant");
+  ddb.createResource(res_col);
+  ddb.acquireResource(res_col);
+
   testing::DiracDeterminantBatchedTest ddbt;
-  ddbt.guardMultiWalkerRes(ddb);
   ddb.recompute(ddbt.get_mw_res(ddb), elec);
 
   using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;
@@ -344,8 +354,11 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 
   elec.create(4);
 
+  ResourceCollection res_col("test_determinant");
+  ddc.createResource(res_col);
+  ddc.acquireResource(res_col);
+
   testing::DiracDeterminantBatchedTest ddbt;
-  ddbt.guardMultiWalkerRes(ddc);
   ddc.recompute(ddbt.get_mw_res(ddc), elec);
 
   using ValueMatrix = DetType::DetEngine_t::OffloadPinnedValueMatrix_t;

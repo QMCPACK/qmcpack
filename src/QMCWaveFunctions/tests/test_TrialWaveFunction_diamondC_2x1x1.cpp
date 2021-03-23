@@ -271,11 +271,12 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #else
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-8.013162503965042, 6.283185307179586)));
-  REQUIRE(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
+  // The second "walker" was not moved so this value should be the same as the single eval of
+  // psi clone, but this eval seems to be missing the Jastrow value. I believe the correct value is
+  // (-7.92627,6.28319i)
+  CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-5.932711221043984, 6.283185307179586)));
 #endif
-
-
   std::vector<GradType> grad_old(2);
 
   grad_old[0] = WF_list[0]->evalGrad(*P_list[0], moved_elec_id);

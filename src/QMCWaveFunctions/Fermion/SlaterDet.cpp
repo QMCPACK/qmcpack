@@ -116,7 +116,8 @@ SlaterDet::LogValueType SlaterDet::evaluateLog(const ParticleSet& P,
                                                ParticleSet::ParticleGradient_t& G,
                                                ParticleSet::ParticleLaplacian_t& L)
 {
-  LogValue = 0.0;
+  constexpr LogValueType czero(0);
+  LogValue = czero;
   for (int i = 0; i < Dets.size(); ++i)
     LogValue += Dets[i]->evaluateLog(P, G, L);
   return LogValue;
