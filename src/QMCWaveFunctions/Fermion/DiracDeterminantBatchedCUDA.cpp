@@ -20,6 +20,7 @@ void DiracDeterminantDetails<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMC
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DetEngine>>();
   const auto nw    = wfc_list.size();
   using DDBT       = std::decay_t<decltype(wfc_leader)>;
+  std::vector<DDBT::ValueMatrix_t> psiM_temp_host_list;
   {
     ScopedTimer spo_timer(wfc_leader.SPOVGLTimer);
 
@@ -29,7 +30,6 @@ void DiracDeterminantDetails<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMC
     phi_list.reserve(wfc_list.size());
     dpsiM_list.reserve(nw);
     d2psiM_list.reserve(nw);
-    std::vector<DDBT::ValueMatrix_t> psiM_temp_host_list;
     psiM_temp_host_list.reserve(nw);
 
     for (int iw = 0; iw < nw; iw++)
@@ -51,9 +51,6 @@ void DiracDeterminantDetails<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<QMC
   for (int iw = 0; iw < nw; iw++)
   {
     auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DetEngine>>(iw);
-    auto* psiM_vgl_ptr = det.psiM_vgl.data();
-    size_t stride      = wfc_leader.psiM_vgl.capacity();
-    PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
     psiM_temp_list.push_back(det.psiM_temp);
   }
   DiracDeterminantBatched<DetEngine>::mw_invertPsiM(wfc_list, psiM_temp_list);

@@ -374,8 +374,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
       psiM_l_dev_ptr_list[count] = det.psiM_vgl.device_data() + psiM_vgl.capacity() * 4 + NumOrbitals * WorkingIndex;
       det.LogValue += convertValueToLog(det.curRatio);
       count++;
+      det.curRatio = 1.0;
     }
-    det.curRatio = 1.0;
   }
 
   if (!Phi->isOMPoffload() && n_accepted > 0)
@@ -942,7 +942,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateLog(
   {
     auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     det.computeGL(G_list[iw], L_list[iw]);
-    det.LogValue = mw_res_->log_values[0];
+    det.LogValue = mw_res_->log_values[iw];
   }
 }
 

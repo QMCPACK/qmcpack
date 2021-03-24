@@ -136,6 +136,8 @@ void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>&
   for (int i = 0; i < Dets.size(); ++i)
   {
     const auto Det_list(extract_DetRef_list(wfc_list, i));
+    for(auto& det : Det_list)
+      det.get().LogValue = {0.0,0.0};
     Dets[i]->mw_evaluateLog(Det_list, p_list, G_list, L_list);
     for (int iw = 0; iw < wfc_list.size(); iw++)
       wfc_list[iw].LogValue += Det_list[iw].LogValue;

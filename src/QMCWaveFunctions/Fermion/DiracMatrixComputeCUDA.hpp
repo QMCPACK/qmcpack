@@ -195,8 +195,9 @@ public:
   {
     assert(log_values.size() == a_mats.size());
     int nw        = a_mats.size();
-    const int n   = inv_a_mats[0].get().rows();
-    const int lda = inv_a_mats[0].get().cols();
+    const int n   = a_mats[0].get().rows();
+    const int lda = a_mats[0].get().cols();
+    const int ldb = inv_a_mats[0].get().cols();
     size_t nsqr   = n * n;
     psiM_fp_.resize(n * lda * nw);
     invM_fp_.resize(n * lda * nw);

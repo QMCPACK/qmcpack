@@ -272,6 +272,8 @@ public:
     }
   }
 
+  /** The potential for mayhem here without a unit test is great.
+   */
   static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
                            int rowchanged,
                            const std::vector<T*>& psiM_g_list,

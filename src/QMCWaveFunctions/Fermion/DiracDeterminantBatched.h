@@ -259,7 +259,6 @@ public:
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
 
-
   /// Log values for invert_transpose results
   //OffloadPinnedLogValueVector_t log_values;
 
@@ -272,7 +271,6 @@ public:
   std::unique_ptr<DiracDeterminantBatchedMultiWalkerResource<DET_ENGINE>> mw_res_;
 
   LogValueType get_log_value() const { return LogValue; }
-
 private:
   /// compute G adn L assuming psiMinv, dpsiM, d2psiM are ready for use
   void computeGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) const;
