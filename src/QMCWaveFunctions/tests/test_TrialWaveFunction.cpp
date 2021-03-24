@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "ResourceCollection.h"
 #include "FakeSPO.h"
+#include "Utilities/StlPrettyPrint.hpp"
 
 namespace qmcplusplus
 {
@@ -297,6 +298,65 @@ TEST_CASE("TrialWaveFunction_mw_evaluateLog", "[wavefunction][fermion]")
   psi.releaseResource(res_col);
   res_col.rewind();
 }
+
+TEST_CASE("TrialWaveFunction_evaluateGrad", "[wavefunction][fermion]")
+{
+  MinimalTrialWaveFunction mtw;
+
+  ResourceCollection res_col("test");
+  TrialWaveFunction& psi = *(mtw.psi);
+  psi.createResource(res_col);
+  psi.acquireResource(res_col);
+
+  auto& elec = *(mtw.elec);
+  elec.update();
+
+  double logpsi = psi.evaluateLog(elec);
+
+  using PosType   = QMCTraits::PosType;
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  PosType delta(0.1, 0.1, 0.2);
+  int moved_elec_id = 0;
+  elec.makeMove(moved_elec_id, delta);
+
+  GradType grad = psi.evalGrad(elec, 0);
+  std::cout << grad << '\n';
+}
+
+TEST_CASE("TrialWaveFunction_mw_evaluateGrad", "[wavefunction][fermion]")
+{
+  MinimalTrialWaveFunction mtw;
+  ResourceCollection res_col("test");
+  TrialWaveFunction& psi = *(mtw.psi);
+  psi.createResource(res_col);
+  psi.acquireResource(res_col);
+
+  auto& elec = *(mtw.elec);
+  elec.update();
+
+  ParticleSet elec_clone(elec);
+
+  UPtr<TrialWaveFunction> psi_clone_ptr(psi.makeClone(elec_clone));
+  TrialWaveFunction& psi_clone = *psi_clone_ptr;
+
+  RefVectorWithLeader<ParticleSet> p_ref_list(elec, {elec, elec_clone});
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, psi_clone});
+  int nw = p_ref_list.size();
+  ParticleSet::mw_update(p_ref_list);
+  TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
+
+  using PosType   = QMCTraits::PosType;
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  std::vector<PosType> deltas{{0.1, 0.1, 0.2}, {0.05, 0.15, 0.15}};
+  int moved_elec_id = 0;
+  ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, deltas);
+  std::vector<GradType> grads_now(nw);
+  TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grads_now);
+  std::cout << grads_now << '\n';
+}
+
 #endif
 
 } // namespace qmcplusplus
