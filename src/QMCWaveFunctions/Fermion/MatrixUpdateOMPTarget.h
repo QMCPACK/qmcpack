@@ -115,6 +115,8 @@ public:
   /** resize the internal storage
    * @param norb number of electrons/orbitals
    * @param delay, maximum delay 0<delay<=norb
+   *
+   * Wow does this seem wrong. After this psiMinv can report nothing useful about its actual dimensions.
    */
   inline void resize(int norb, int delay) { psiMinv.resize(norb, getAlignedSize<T>(norb)); }
 
@@ -150,8 +152,10 @@ public:
   inline T* getRow_psiMinv_offload(int row_id) { return psiMinv.device_data() + row_id * psiMinv.cols(); }
 
   /** compute the inverse of the transpose of matrix logdetT, result is in psiMinv
-   * @param logdetT orbital value matrix
+   * @param logdetT orbital value matrix (this has trustworth dimensions)
    * @param LogValue log(det(logdetT))
+   *
+   * note psiMinv has had its dimensions messed with.  rows have been padded to alignment adding colums.
    */
   inline void invert_transpose(OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedLogValueVector_t& log_values)
   {

@@ -243,10 +243,11 @@ public:
                                                                             OffloadPinnedMatrix<TMAT>& inv_a_mat,
                                                                             std::complex<TREAL>& log_value)
   {
-    const int n   = inv_a_mat.rows();
-    const int lda = inv_a_mat.cols();
-    simd::transpose(a_mat.data(), n, lda, inv_a_mat.data(), n, lda);
-    computeInvertAndLog(inv_a_mat, n, lda, log_value);
+    const int n   = a_mat.rows();
+    const int lda = a_mat.cols();
+    const int ldb = inv_a_mat.cols();
+    simd::transpose(a_mat.data(), n, lda, inv_a_mat.data(), n, ldb);
+    computeInvertAndLog(inv_a_mat, n, ldb, log_value);
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
@@ -259,15 +260,19 @@ public:
                                                                              OffloadPinnedMatrix<TMAT>& inv_a_mat,
                                                                              std::complex<TREAL>& log_value)
   {
-    const int n   = inv_a_mat.rows();
-    const int lda = inv_a_mat.cols();
+    const int n   = a_mat.rows();
+    const int lda = a_mat.cols();
+    const int ldb = inv_a_mat.cols();
+    
     psiM_fp_.resize(n * lda);
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
     computeInvertAndLog(psiM_fp_, n, lda, log_value);
-    Matrix<TMAT> data_ref_matrix;
+
+    //Matrix<TMAT> data_ref_matrix;
     //maybe n, lda
-    data_ref_matrix.attachReference(psiM_fp_.data(), n, n);
-    inv_a_mat = data_ref_matrix;
+    //data_ref_matrix.attachReference(psiM_fp_.data(), n, n);
+    //Because inv_a_mat is "aligned" this is unlikely to work.
+    simd::remapCopyMatrix(psiM_fp_.data(), n, lda, inv_a_mat.data(), n, ldb);
   }
   
   /** This covers both mixed and Full precision case.
@@ -280,9 +285,10 @@ public:
                                  OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
     int nw           = a_mats.size();
-    const size_t n   = inv_a_mats[0].get().rows();
-    const size_t lda = inv_a_mats[0].get().cols();
-    assert(n == lda);
+    const size_t n   = a_mats[0].get().rows();
+    const size_t lda = a_mats[0].get().cols();
+    const size_t ldb = inv_a_mats[0].get().cols();
+
     size_t nsqr{n * n};
     psiM_fp_.resize(n * lda * nw);
     for (int iw = 0; iw < nw; ++iw)
@@ -291,10 +297,7 @@ public:
     computeInvertAndLog(psiM_fp_, n, lda, log_values);
     for (int iw = 0; iw < nw; ++iw)
     {
-      Matrix<TMAT> data_ref_matrix;
-      data_ref_matrix.attachReference(psiM_fp_.data() + nsqr * iw, n, n);
-      // Use ohmms matrix to do element wise assignment with possible narrowing conversion.
-      inv_a_mats[iw].get() = data_ref_matrix;
+      simd::remapCopyMatrix(psiM_fp_.data() + nsqr * iw, n, lda, inv_a_mats[iw].get().data(), n, ldb);
     }
   }
 };

@@ -954,6 +954,7 @@ void DiracDeterminantBatched<DET_ENGINE>::recompute(DiracDeterminantBatchedMulti
     ScopedTimer spo_timer(SPOVGLTimer);
     ValueMatrix_t psiM_temp_host(psiM_temp.data(), psiM_temp.rows(), psiM_temp.cols());
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp_host, dpsiM, d2psiM);
+    // at least with MatrixUpdateOMPTarget this is a self assignment.
     psiM_temp          = psiM_temp_host;
     auto* psiM_vgl_ptr = psiM_vgl.data();
     // transfer host to device, total size 4, g(3) + l(1)

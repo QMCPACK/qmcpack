@@ -211,6 +211,25 @@ inline void transpose(const T* restrict A, size_t m, size_t lda, TO* restrict B,
       B[i * ldb + j] = A[j * lda + i];
 }
 
+/** translation of of A(m,n) to B(m,n) 
+     * @param A starting address, A(m,lda)
+     * @param m number of A rows
+     * @param lda stride of A's row
+     * @param B starting address B(m,ldb)
+     * @param n number of B rows
+     * @param ldb stride of B's row
+     *
+     * Blas-like interface
+     */
+template<typename T, typename TO>
+inline void remapCopyMatrix(const T* restrict A, size_t m, size_t lda, TO* restrict B, size_t n, size_t ldb)
+{
+  for (size_t i = 0; i < n; ++i)
+    for (size_t j = 0; j < m; ++j)
+      B[j * ldb + i] = A[j * lda + i];
+}
+
+  
 } // namespace simd
 } // namespace qmcplusplus
 #endif

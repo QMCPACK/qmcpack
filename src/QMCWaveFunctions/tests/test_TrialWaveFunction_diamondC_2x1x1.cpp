@@ -177,7 +177,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #else
   CHECK(std::real(logpsi_cplx) == Approx(-5.932711221043984));
 #endif
-  
+
   res_col.rewind();
   psi.releaseResource(res_col);
 
@@ -186,7 +186,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   elec_clone.update();
   res_col.rewind();
   psi_clone->acquireResource(res_col);
-  
+
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
   res_col.rewind();
   psi_clone->releaseResource(res_col);
@@ -211,7 +211,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   // Since calc ration depends on stored psiMinv and these are not loaded for the MatrixUpdateOMPTarget
   // addition operations are necessary.
-  
+
   ValueType r_all_val       = psi.calcRatio(elec_, moved_elec_id);
   ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
   ValueType r_bosonic_val   = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
@@ -280,7 +280,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   // psi clone, but this eval seems to be missing the Jastrow value. I believe the correct value is
   // (-7.92627,6.28319i)
   CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-5.932711221043984, 6.283185307179586)));
+        LogComplexApprox(std::complex<RealType>(-5.932711221043984, 6.283185307179586)));
 #endif
   std::vector<GradType> grad_old(2);
 
@@ -403,7 +403,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(std::complex<RealType>(WF_list[0]->getLogPsi(), WF_list[0]->getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-8.013162503965155, 6.283185307179586)));
   CHECK(std::complex<RealType>(WF_list[1]->getLogPsi(), WF_list[1]->getPhase()) ==
-          LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
+        LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
   ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, false);
@@ -479,7 +479,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
 #ifndef NDEBUG
 
-//getPsiMinv is a debugging function not supported properly by DiracDeterminantBatched.
+  //getPsiMinv is a debugging function not supported properly by DiracDeterminantBatched.
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
             << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
             << " " << std::endl;
@@ -496,7 +496,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
 #endif
-  
+
   std::vector<LogValueType> log_values(wf_ref_list.size());
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
   for (int iw = 0; iw < log_values.size(); iw++)
@@ -508,20 +508,34 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 }
 
-TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
+#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
+TEST_CASE("TrialWaveFunction_diamondC_2x1x1_DiracDeterminantBatched_MatrixDelayedUpdateCUDA", "[wavefunction]")
 {
   using VT   = QMCTraits::ValueType;
   using FPVT = QMCTraits::QTFull::ValueType;
-#if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(1);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(2);
-#endif
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(1);
-    std::cout << "TESTING OMPTARGET 2\n";
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(2);
-    std::cout << "TESTING DelayedUpdateClassic\n";
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(1);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(2);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(2);
 }
+#endif
+
+TEST_CASE("TrialWaveFunction_diamondC_2x1x1_DiracDeterminantBatched_MatrixUpdateOMPTarget", "[wavefunction]")
+{
+  using VT   = QMCTraits::ValueType;
+  using FPVT = QMCTraits::QTFull::ValueType;
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(2);
+  std::cout << "TESTING DelayedUpdateClassic\n";
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(2);
+}
+
+TEST_CASE("TrialWaveFunction_diamondC_2x1x1_DiracDeterminant_DelayedUpdate", "[wavefunction]")
+{
+  using VT   = QMCTraits::ValueType;
+  using FPVT = QMCTraits::QTFull::ValueType;
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(1);
+  testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(2);
+}
+
 
 } // namespace qmcplusplus
