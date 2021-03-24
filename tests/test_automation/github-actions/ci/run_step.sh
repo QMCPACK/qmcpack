@@ -14,35 +14,35 @@ case "$1" in
       *"asan"*)
         echo 'Configure for address sanitizer asan including lsan (leaks)'
         CC=clang CXX=clang++ \
-        cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
-                      -DCMAKE_BUILD_TYPE=Debug -ENABLE_SANITIZER=ASAN \
+        cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
+                      -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=ASAN \
                       ${GITHUB_WORKSPACE}
       ;;
       *"ubsan"*)
         echo 'Configure for undefined behavior sanitizer ubsan'
         CC=clang CXX=clang++ \
-        cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
-                      -DCMAKE_BUILD_TYPE=Debug -ENABLE_SANITIZER=UBSAN \
+        cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
+                      -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=UBSAN \
                       ${GITHUB_WORKSPACE}
       ;;
       *"tsan"*)
         echo 'Configure for thread sanitizer tsan'
         CC=clang CXX=clang++ \
-        cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
-                      -DCMAKE_BUILD_TYPE=Debug -ENABLE_SANITIZER=TSAN \
+        cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
+                      -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=TSAN \
                       ${GITHUB_WORKSPACE}
       ;;
       *"msan"*)
         echo 'Configure for (uninitialized) memory sanitizer msan'
         CC=clang CXX=clang++ \
-        cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
-                      -DCMAKE_BUILD_TYPE=Debug -ENABLE_SANITIZER=MSAN \
+        cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
+                      -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZER=MSAN \
                       ${GITHUB_WORKSPACE}
       ;;
       # Configure with default compilers
       *)
         echo 'Configure for default system compilers'
-        cmake -GNinja -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
+        cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
                       ${GITHUB_WORKSPACE}
       ;;
     esac
@@ -72,6 +72,8 @@ case "$1" in
       echo "Enabling ASAN suppression file config/sanitizers/lsan.supp"
       export ASAN_OPTIONS=suppression=${GITHUB_WORKSPACE}/config/sanitizers/lsan.supp	
     fi
+    
+    # Run only deterministic tests (reasonable for CI)
     ctest -L deterministic
     ;;
 

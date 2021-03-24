@@ -277,7 +277,7 @@ SET_PROPERTY(CACHE ENABLE_SANITIZER PROPERTY STRINGS "NONE" "ASAN" "UBSAN" "MSAN
 
 # Perform sanitizer option check, only works in debug mode
 IF( NOT "${ENABLE_SANITIZER}" STREQUAL "NONE")
-  MESSAGE( "-- Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}" )
+  MESSAGE( STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}" )
   IF( "${ENABLE_SANITIZER}" STREQUAL "ASAN" AND NOT "${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG" )
     # better to fail than override debug mode
     MESSAGE( FATAL_ERROR "-DENABLE_SANITIZER=ASAN can only be enabled with -DCMAKE_BUILD_TYPE=Debug" )
