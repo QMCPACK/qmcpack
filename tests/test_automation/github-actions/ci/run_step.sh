@@ -61,6 +61,7 @@ case "$1" in
     # Enable oversubscription in OpenMPI
     if [[ "${GH_JOBNAME}" =~ (openmpi) ]]
     then
+      echo "Enabling OpenMPI oversubscription"
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
     fi 
@@ -68,6 +69,7 @@ case "$1" in
     # Enable ASAN_OPTION=suppression=suppresion_file
     if [[ "${GH_JOBNAME}" =~ (asan) ]]
     then
+      echo "Enabling ASAN suppression file config/sanitizers/lsan.supp"
       export ASAN_OPTIONS=suppression=${GITHUB_WORKSPACE}/config/sanitizers/lsan.supp	
     fi
     ctest -L deterministic
