@@ -188,10 +188,14 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   psi_clone->acquireResource(res_col);
   
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
+  res_col.rewind();
+  psi_clone->releaseResource(res_col);
+  res_col.rewind();
+
 #if defined(QMC_COMPLEX)
   REQUIRE(logpsi_clone == Approx(-4.546410485374186));
 #else
-  REQUIRE(logpsi_clone == Approx(-5.932711221043984));
+  CHECK(logpsi_clone == Approx(-5.932711221043984));
 #endif
 
   const int moved_elec_id = 0;
@@ -203,10 +207,11 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   elec_.makeMove(moved_elec_id, delta);
 
-  res_col.rewind();
-  psi_clone->releaseResource(res_col);
-  res_col.rewind();  
   psi.acquireResource(res_col);
+
+  // Since calc ration depends on stored psiMinv and these are not loaded for the MatrixUpdateOMPTarget
+  // addition operations are necessary.
+  
   ValueType r_all_val       = psi.calcRatio(elec_, moved_elec_id);
   ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
   ValueType r_bosonic_val   = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
@@ -218,7 +223,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(r_all_val == ComplexApprox(std::complex<RealType>(0.1248738460467855, 0)).epsilon(2e-5));
   REQUIRE(r_fermionic_val == ComplexApprox(std::complex<RealType>(0.1362181543980086, 0)).epsilon(2e-5));
 #else
-  REQUIRE(r_all_val == Approx(0.1248738460469678));
+  CHECK(r_all_val == Approx(0.1248738460469678));
   REQUIRE(r_fermionic_val == ValueApprox(0.1362181543982075));
 #endif
   REQUIRE(r_bosonic_val == ValueApprox(0.9167195562048454));
@@ -498,7 +503,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
     log_values[iw] = {wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()};
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
-    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
+    CHECK(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
 
 #endif
 }
@@ -512,7 +517,9 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>>(2);
 #endif
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(1);
+    std::cout << "TESTING OMPTARGET 2\n";
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>>(2);
+    std::cout << "TESTING DelayedUpdateClassic\n";
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(1);
     testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>>(2);
 }

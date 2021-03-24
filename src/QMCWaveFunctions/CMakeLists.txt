@@ -188,7 +188,6 @@ IF(ENABLE_OFFLOAD AND ENABLE_CUDA)
       )
 ENDIF()
 
-
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminant.cpp
   Fermion/DiracDeterminantBatched.cpp
@@ -211,6 +210,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
 
 IF(ENABLE_CUDA)
   SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
+      detail/CUDA/cuBLAS_LU.cu
       detail/CUDA/delayed_update_helper.cu
       detail/CUDA/matrix_update_helper.cu
       )

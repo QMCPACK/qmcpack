@@ -121,6 +121,7 @@ public:
   void createResource(ResourceCollection& collection) const
   {
     collection.addResource(std::make_unique<MatrixUpdateOMPTargetMultiWalkerMem<T>>());
+    collection.addResource(std::make_unique<DiracMatrixComputeOMPTarget<T_FP>>());
   }
 
   void acquireResource(ResourceCollection& collection)
@@ -130,9 +131,18 @@ public:
       throw std::runtime_error(
           "MatrixUpdateOMPTarget::acquireResource dynamic_cast MatrixUpdateOMPTargetMultiWalkerMem failed");
     mw_mem_.reset(res_ptr);
+    auto det_eng_ptr = dynamic_cast<DiracMatrixComputeOMPTarget<T_FP>*>(collection.lendResource().release());
+    if (!det_eng_ptr)
+      throw std::runtime_error(
+          "MatrixDelayedUpdateCUDA::acquireResource dynamic_cast to DiracMatrixComputeCUDA<T_FP>* failed");
+    det_inverter_.reset(det_eng_ptr);
   }
 
-  void releaseResource(ResourceCollection& collection) { collection.takebackResource(std::move(mw_mem_)); }
+  void releaseResource(ResourceCollection& collection)
+  {
+    collection.takebackResource(std::move(mw_mem_));
+    collection.takebackResource(std::move(det_inverter_));
+  }
 
   const OffloadPinnedValueMatrix_t& get_psiMinv() const { return psiMinv; }
   OffloadPinnedValueMatrix_t& get_nonconst_psiMinv() { return psiMinv; }
@@ -146,12 +156,12 @@ public:
   inline void invert_transpose(OffloadPinnedValueMatrix_t& logdetT, OffloadPinnedLogValueVector_t& log_values)
   {
     auto& Ainv = psiMinv;
-    Matrix<T> Ainv_host_view(Ainv.data(), Ainv.rows(), Ainv.cols());
-    Matrix<T> logdetT_host_view(logdetT.data(), logdetT.rows(), logdetT.cols());
     auto& log_value = log_values[0];
     det_inverter_->invert_transpose(logdetT, Ainv, log_value);
     T* Ainv_ptr = Ainv.data();
     PRAGMA_OFFLOAD("omp target update to(Ainv_ptr[:Ainv.size()])")
+    // needed?
+    PRAGMA_OFFLOAD("omp taskwait")
   }
 
   static void mw_invertTranspose(const RefVectorWithLeader<This_t>& engines,

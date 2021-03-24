@@ -12,12 +12,12 @@
 
 #include <cublas_v2.h>
 #include "cuBLAS_LU.hpp"
-#include "cudaError.h"
+#include "Platforms/CUDA/cudaError.h"
 #include <stdexcept>
 #include <type_traits>
 #include <complex>
 #include <cuComplex.h>
-#include "cuBLAS.hpp"
+#include "Platforms/CUDA/cuBLAS.hpp"
 #include <thrust/system/cuda/detail/core/util.h>
 
 namespace qmcplusplus

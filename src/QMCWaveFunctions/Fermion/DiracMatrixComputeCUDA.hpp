@@ -17,7 +17,7 @@
 #include "Platforms/PinnedAllocator.h"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 #include "Platforms/CUDA/cuBLAS.hpp"
-#include "Platforms/CUDA/cuBLAS_LU.hpp"
+#include "detail/CUDA/cuBLAS_LU.hpp"
 #include "type_traits/scalar_traits.h"
 #include "Message/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"

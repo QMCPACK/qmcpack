@@ -69,7 +69,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
   ScopedTimer inverse_timer(wfc_leader.InverseTimer);
   const auto nw = wfc_list.size();
-  // It would be nice make this call over and over.
+  // It would be nice to not make this call over and over.
   wfc_leader.mw_res_->log_values.resize(nw);
 
   RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
@@ -79,7 +79,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_invertPsiM(const RefVectorWithLeade
   {
     auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     engine_list.push_back(det.get_det_engine());
-    wfc_leader.mw_res_->log_values[iw] = det.LogValue;
+    wfc_leader.mw_res_->log_values[iw] = {0.0,0.0};
+    //typename decltype(mw_res_)::element_type{}; // Logdet.LogValue;
   }
 
   DET_ENGINE::mw_invertTranspose(engine_list, logdetT_list, wfc_leader.mw_res_->log_values);

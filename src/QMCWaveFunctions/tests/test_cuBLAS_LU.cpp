@@ -16,7 +16,7 @@
 #include "CUDA/cudaError.h"
 #include "CUDA/CUDAallocator.hpp"
 #include "CUDA/cuBLAS.hpp"
-#include "CUDA/cuBLAS_LU.hpp"
+#include "detail/CUDA/cuBLAS_LU.hpp"
 namespace qmcplusplus
 {
 namespace testing

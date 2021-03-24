@@ -132,7 +132,7 @@ class DiracMatrixComputeOMPTarget : public Resource
   aligned_vector<T_FP> m_work_;
   int lwork_;
   //Unlike for the DirecMatrix.h this is going to be contiguous vectors for each walker of size lda.
-  OffloadPinnedVector<int> m_pivots_;
+  //OffloadPinnedVector<int> m_pivots_;
   // Contiguous Matrices for each walker, n^2 elements
   OffloadPinnedVector<T_FP> psiM_fp_;
   OffloadPinnedVector<T_FP> LU_diags_fp_;
@@ -172,6 +172,7 @@ class DiracMatrixComputeOMPTarget : public Resource
   inline void reset(OffloadPinnedMatrix<TREAL>& psi_M, const int n,  const int lda)
   {
     pivots_.resize(lda);
+    LU_diags_fp_.resize(lda);
     lwork_ = -1;
     T_FP tmp;
     FullPrecReal lw;
@@ -193,11 +194,12 @@ class DiracMatrixComputeOMPTarget : public Resource
     BlasThreadingEnv knob(getNextLevelNumThreads());
     if (lwork_ < lda)
       reset(invMat, n, lda);
-    DMCOMPT::Xgetrf(n, n, invMat.data(), lda, m_pivots_.data());
+    DMCOMPT::Xgetrf(n, n, invMat.data(), lda, pivots_.data());
     for(int i=0; i<n; i++)
       LU_diags_fp_[i] = invMat.data()[i*lda+i];
-    DMCOMPT::computeLogDet(LU_diags_fp_.data(), n, m_pivots_.data(), log_value);
-    DMCOMPT::Xgetri(n, invMat.data(), lda, m_pivots_.data(), m_work_.data(), lwork_);
+    log_value = {0.0,0.0};
+    DMCOMPT::computeLogDet(LU_diags_fp_.data(), n, pivots_.data(), log_value);
+    DMCOMPT::Xgetri(n, invMat.data(), lda, pivots_.data(), m_work_.data(), lwork_);
   }
 
   
@@ -237,7 +239,7 @@ public:
    * @tparam TREAL real type
    */
   template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(OffloadPinnedMatrix<TMAT>& a_mat,
+  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(const OffloadPinnedMatrix<TMAT>& a_mat,
                                                                             OffloadPinnedMatrix<TMAT>& inv_a_mat,
                                                                             std::complex<TREAL>& log_value)
   {
@@ -254,7 +256,7 @@ public:
    */
   template<typename TMAT, typename TREAL>
   inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(const OffloadPinnedMatrix<TMAT>& a_mat,
-                                                                             const Matrix<TMAT>& inv_a_mat,
+                                                                             OffloadPinnedMatrix<TMAT>& inv_a_mat,
                                                                              std::complex<TREAL>& log_value)
   {
     const int n   = inv_a_mat.rows();

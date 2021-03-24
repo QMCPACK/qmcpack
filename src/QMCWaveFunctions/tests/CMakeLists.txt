@@ -65,6 +65,12 @@ SET(DETERMINANT_SRC FakeSPO.cpp test_DiracDeterminantBatched.cpp test_dirac_det.
                     test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
                     test_multi_slater_determinant.cpp)
 
+IF(ENABLE_OFFLOAD AND ENABLE_CUDA)
+  SET(DETERMINANT_SRC ${DETERMINANT_SRC}
+    test_cuBLAS_LU.cpp
+      )
+ENDIF()
+
 SET(MATRIXCOMPUTE_SRC test_DiracMatrixComputeCUDA.cpp)
 		    
 FOREACH(CATEGORY trialwf sposet jastrow determinant matrixcompute)
