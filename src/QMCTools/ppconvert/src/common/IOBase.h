@@ -20,7 +20,7 @@
 #include <string>
 #include <list>
 #include <stack>
-#include "blitz/array.h"
+
 #include <fstream>
 
 #include "IOVar.h"

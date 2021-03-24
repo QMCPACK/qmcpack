@@ -128,7 +128,7 @@ public:
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NAEA, NAEA});
     boost::multi::array_ref<T, 2> TNN2(to_address(SM_TMats->origin()) + NAEA * NAEA, {NAEA, NAEA});
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
-    return SlaterDeterminantOperations::shm::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2, comm, herm);
+    return SlaterDeterminantOperations::shm::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), comm, herm);
   }
 
   template<typename integer, class MatA, class MatB, class MatC>

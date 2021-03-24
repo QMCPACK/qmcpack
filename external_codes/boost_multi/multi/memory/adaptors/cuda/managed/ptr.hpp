@@ -74,6 +74,7 @@ public:
 	friend ptr to_address(ptr const& p){return p;}
 	void operator*() const = delete;
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
+	friend raw_pointer raw_pointer_cast(ptr const& self){return self.rp_;}
 };
 
 template<typename RawPtr>
@@ -88,7 +89,7 @@ private:
 	ptr(ptr<void const> const& p) : rp_{const_cast<void*>(p.rp_)}{}
 	template<class TT> friend ptr<TT> const_pointer_cast(ptr<TT const> const&);
 	template<class, class> friend struct ptr;
-	template<class> friend class allocator;
+	template<class TT, class DP> friend class allocator;
 public:
 	template<class Other> ptr(ptr<Other> const& p) : rp_{p.rp_}{}
 	explicit ptr(raw_pointer rp) : rp_{rp}{}
@@ -107,9 +108,10 @@ public:
 	explicit operator raw_pointer&()&{return rp_;}
 	friend ptr to_address(ptr const& p){return p;}
 	void operator*() = delete;
+	friend raw_pointer raw_pointer_cast(ptr const& self){return self.rp_;}
 };
 
-template<class T> class allocator;
+template<class T, class PrefetchDevice = std::integral_constant<int, -99> > class allocator;
 
 template<typename T, typename RawPtr>
 struct ptr : cuda::ptr<T, RawPtr>{
@@ -117,7 +119,7 @@ struct ptr : cuda::ptr<T, RawPtr>{
 //	raw_pointer rp_;
 protected:
 	friend struct cuda::ptr<T, RawPtr>; // to allow automatic conversions
-	template<class TT> friend class allocator;
+	template<class TT, class DP> friend class allocator;
 	template<typename, typename> friend struct ptr;
 //	template<class TT, typename = typename std::enable_if<not std::is_const<TT>{}>::type> 
 //	ptr(ptr<TT const> const& p) : rp_{const_cast<T*>(p.impl_)}{}

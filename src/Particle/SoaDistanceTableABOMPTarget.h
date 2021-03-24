@@ -85,6 +85,7 @@ private:
     {
       auto& dt = dt_list.getCastedElement<SoaDistanceTableABOMPTarget>(iw);
       count_targets += dt.targets();
+      dt.r_dr_memorypool_.free();
     }
 
     const int N_sources        = dt_leader.N_sources;
@@ -107,7 +108,7 @@ private:
       {
         dt.distances_[i].attachReference(mw_r_dr.data() + (i + count_targets) * stride_size, N_sources);
         dt.displacements_[i].attachReference(N_sources, N_sources_padded,
-                                          mw_r_dr.data() + (i + count_targets) * stride_size + N_sources_padded);
+                                             mw_r_dr.data() + (i + count_targets) * stride_size + N_sources_padded);
       }
       count_targets += dt.targets();
     }
@@ -214,8 +215,8 @@ public:
           for (int idim = 0; idim < D; idim++)
             pos[idim] = target_pos_ptr[iat * D + idim];
 
-          auto* r_iat_ptr          = r_dr_ptr + iat * stride_size;
-          auto* dr_iat_ptr         = r_iat_ptr + N_sources_padded;
+          auto* r_iat_ptr  = r_dr_ptr + iat * stride_size;
+          auto* dr_iat_ptr = r_iat_ptr + N_sources_padded;
 
           PRAGMA_OFFLOAD("omp parallel for")
           for (int iel = first; iel < last; iel++)
@@ -276,10 +277,10 @@ public:
     const size_t ptr_size      = sizeof(RealType*);
     auto& offload_input        = mw_mem.offload_input;
     offload_input.resize(total_targets * D * realtype_size + total_targets * int_size + nw * ptr_size);
-    auto target_positions = reinterpret_cast<RealType*>(offload_input.data());
-    auto walker_id_ptr    = reinterpret_cast<int*>(offload_input.data() + total_targets * D * realtype_size);
-    auto source_ptrs      = reinterpret_cast<RealType**>(offload_input.data() + total_targets * D * realtype_size +
-                                                    total_targets * int_size);
+    auto source_ptrs      = reinterpret_cast<RealType**>(offload_input.data());
+    auto target_positions = reinterpret_cast<RealType*>(offload_input.data() + ptr_size * nw);
+    auto walker_id_ptr =
+        reinterpret_cast<int*>(offload_input.data() + ptr_size * nw + total_targets * D * realtype_size);
 
     count_targets = 0;
     for (size_t iw = 0; iw < nw; iw++)
@@ -317,10 +318,10 @@ public:
       for (int iat = 0; iat < total_targets; ++iat)
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
-          auto* target_pos_ptr = reinterpret_cast<RealType*>(input_ptr);
-          const int walker_id  = reinterpret_cast<int*>(input_ptr + total_targets * D * realtype_size)[iat];
-          auto* source_pos_ptr = reinterpret_cast<RealType**>(input_ptr + total_targets * D * realtype_size +
-                                                              total_targets * int_size)[walker_id];
+          auto* target_pos_ptr = reinterpret_cast<RealType*>(input_ptr + ptr_size * nw);
+          const int walker_id =
+              reinterpret_cast<int*>(input_ptr + ptr_size * nw + total_targets * D * realtype_size)[iat];
+          auto* source_pos_ptr = reinterpret_cast<RealType**>(input_ptr)[walker_id];
           auto* r_iat_ptr      = r_dr_ptr + iat * N_sources_padded * (D + 1);
           auto* dr_iat_ptr     = r_dr_ptr + iat * N_sources_padded * (D + 1) + N_sources_padded;
 

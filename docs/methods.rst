@@ -1077,7 +1077,9 @@ parameters:
   |                                |              |                         |             |                                               |
   |                                | string       | classic/DRV/ZSGMA/YL    | classic     | Branch cutoff scheme                          |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``maxcpusecs``                 | real         | :math:`\geq 0`          | 3.6e5       | Maximum allowed walltime in seconds           |
+  | ``maxcpusecs``                 | real         | :math:`\geq 0`          | 3.6e5       | Deprecated. Superseded by ``max_seconds``     |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``max_seconds``                | real         | :math:`\geq 0`          | 3.6e5       | Maximum allowed walltime in seconds           |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
@@ -1166,7 +1168,9 @@ Additional information:
    variable specifies how often to reset all the variables kept in the
    buffer.
 
--  ``maxcpusecs``: The default is 100 hours. Once the specified time has
+-  ``maxcpusecs``: Deprecated. Superseded by ``max_seconds``.
+
+-  ``max_seconds``: The default is 100 hours. Once the specified time has
    elapsed, the program will finalize the simulation even if all blocks
    are not completed.
 

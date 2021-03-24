@@ -108,8 +108,8 @@ bool DMCcuda::run()
     W[iw]->Weight = 1.0;
 
   LoopTimer<> dmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
-  bool enough_time_for_next_iteration = true;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
+
   do
   {
     dmc_loop.start();
@@ -323,14 +323,20 @@ bool DMCcuda::run()
     ++block;
     recordBlock(block);
     dmc_loop.stop();
-    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(dmc_loop);
+
+    bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
-    myComm->bcast(enough_time_for_next_iteration);
-    if (!enough_time_for_next_iteration)
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(dmc_loop);
+    myComm->bcast(stop_requested);
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("DMC", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("DMC_CUDA", block);
+      run_time_manager.markStop();
+      break;
     }
-  } while (block < nBlocks && enough_time_for_next_iteration);
+  } while (block < nBlocks);
 #ifdef USE_NVTX_API
   nvtxRangePop();
 #endif

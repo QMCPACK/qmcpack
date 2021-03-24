@@ -210,8 +210,7 @@ bool VMCcuda::run()
   double Esum;
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
-  bool enough_time_for_next_iteration = true;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
 
   // First do warmup steps
   for (int step = 0; step < nWarmupSteps; step++)
@@ -307,17 +306,22 @@ bool VMCcuda::run()
     nRejectTot += nReject;
     ++block;
     recordBlock(block);
-
     vmc_loop.stop();
-    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(vmc_loop);
+
+    bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
-    myComm->bcast(enough_time_for_next_iteration);
-    if (!enough_time_for_next_iteration)
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(vmc_loop);
+    myComm->bcast(stop_requested);
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("VMC", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("VMC_CUDA", block);
+      run_time_manager.markStop();
+      break;
     }
 
-  } while (block < nBlocks && enough_time_for_next_iteration);
+  } while (block < nBlocks);
   //Mover->stopRun();
   //finalize a qmc section
   if (!myComm->rank())

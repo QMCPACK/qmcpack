@@ -223,10 +223,7 @@ void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 }
 /** load a single sample from SampleStack
  */
-void MCWalkerConfiguration::loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const
-{
-  samples.loadSample(Pos, iw);
-}
+void MCWalkerConfiguration::loadSample(ParticleSet& pset, size_t iw) const { samples.loadSample(pset, iw); }
 
 /** load SampleStack to WalkerList
  */

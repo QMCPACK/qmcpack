@@ -35,16 +35,8 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 /// Constructor.
-RMC::RMC(MCWalkerConfiguration& w,
-         TrialWaveFunction& psi,
-         QMCHamiltonian& h,
-         Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "RMC"),
-      prestepsVMC(-1),
-      rescaleDrift("no"),
-      beta(-1),
-      beads(-1),
-      fromScratch(true)
+RMC::RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
+    : QMCDriver(w, psi, h, comm, "RMC"), prestepsVMC(-1), rescaleDrift("no"), beta(-1), beads(-1), fromScratch(true)
 {
   RootName = "rmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -77,7 +69,7 @@ bool RMC::run()
   const bool has_collectables = W.Collectables.size();
 
   LoopTimer<> rmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
   for (int block = 0; block < nBlocks; ++block)
   {
     rmc_loop.start();
@@ -116,15 +108,19 @@ bool RMC::run()
     //why was this commented out? Are checkpoints stored some other way?
     if (storeConfigs)
       recordBlock(block);
-
     rmc_loop.stop();
-    bool enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(rmc_loop);
-    // Rank 0 decides whether the time limit was reached
-    myComm->bcast(enough_time_for_next_iteration);
 
-    if (!enough_time_for_next_iteration)
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(rmc_loop);
+    myComm->bcast(stop_requested);
+
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("RMC", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("RMC", block);
+      run_time_manager.markStop();
       break;
     }
   } //block

@@ -1227,12 +1227,12 @@ HamiltonianOperations WavefunctionFactory::getHamOps(const std::string& restart_
     return h.getHamiltonianOperations(pureSD, ndets_to_read > 1, type, PsiT, cutvn, cutv2, TGprop, TGwfn, restart);
   }
 
-  if(restart_file != "")
-  {
-    if(TGwfn.Global().root()) {
-      restart.close();
-    }
-  }
+//  if(restart_file != "")
+//  {
+//    if(TGwfn.Global().root()) {
+//      restart.close();
+//    }
+//  }
 }
 /**
  * Compute the excitation level between two determinants.
