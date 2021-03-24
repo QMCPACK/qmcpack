@@ -187,7 +187,7 @@ public:
         continue;
       if (active.recompute(kk))
         recalculate = true;
-      rcsingles[k] = true;
+      rcsingles[kk] = true;
     }
     if (recalculate)
     {
@@ -196,9 +196,9 @@ public:
         int kk = myVars.where(k);
         if (kk < 0)
           continue;
-        if (rcsingles[k])
+        if (rcsingles[kk])
         {
-          dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
+          dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(*lapLogPsi[kk])) - ValueType(Dot(P.G, *gradLogPsi[kk]));
         }
       }
     }
@@ -217,7 +217,7 @@ public:
         continue;
       if (active.recompute(kk))
         recalculate = true;
-      rcsingles[k] = true;
+      rcsingles[kk] = true;
     }
     if (recalculate)
     {
@@ -285,9 +285,9 @@ public:
         int kk = myVars.where(k);
         if (kk < 0)
           continue;
-        if (rcsingles[k])
+        if (rcsingles[kk])
         {
-          dlogpsi[kk] = dLogPsi[k];
+          dlogpsi[kk] = dLogPsi[kk];
         }
         //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }
