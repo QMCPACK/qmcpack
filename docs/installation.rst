@@ -78,7 +78,7 @@ Obtaining the latest development version
 
 The most recent development version of QMCPACK can be obtained
 anonymously via
-:::::::::::::::
+::
 
   git clone https://github.com/QMCPACK/qmcpack.git
 
