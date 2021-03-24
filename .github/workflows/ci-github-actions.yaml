@@ -52,22 +52,11 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-          clang-openmpi-asan,  # address sanitizer (including leaks)
           clang-openmpi-ubsan, # undefined behavior sanitizer
-          clang-openmpi-tsan,  # thread race sanitizer (expensive)
         ]
         include:
-        - jobname: clang-openmpi-asan
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
-            options: -u 1001
 
         - jobname: clang-openmpi-ubsan
-          container: 
-            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
-            options: -u 1001
-       
-        - jobname: clang-openmpi-tsan
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
             options: -u 1001
