@@ -6035,12 +6035,13 @@ dmc_legacy_defaults = obj(
     checkpoint              = -1,
     vmc_samples             = 2048,
     vmc_samplesperthread    = None, 
-    vmc_walkers             = 1,
+    vmc_walkers             = None,
     vmc_warmupsteps         = 30,
     vmc_blocks              = 40,
     vmc_steps               = 10,
     vmc_substeps            = 3,
     vmc_timestep            = 0.3,
+    vmc_usedrift            = None,
     vmc_checkpoint          = -1,
     eq_dmc                  = False,
     eq_warmupsteps          = 20,
@@ -6430,6 +6431,7 @@ def generate_legacy_dmc_calculations(
     vmc_steps              ,
     vmc_substeps           ,
     vmc_timestep           ,
+    vmc_usedrift           ,
     vmc_checkpoint         ,
     eq_dmc                 ,
     eq_warmupsteps         ,
@@ -6444,8 +6446,11 @@ def generate_legacy_dmc_calculations(
     loc                 = 'generate_dmc_calculations',
     ):
 
-    if vmc_samples is None and vmc_samplesperthread is None:
-        error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread',loc)
+    if vmc_samples is None and vmc_samplesperthread is None and vmc_walkers is None:
+        error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread, vmc_walkers',loc)
+    #end if
+    if vmc_walkers is None:
+        vmc_walkers = 1
     #end if
 
     vmc_calc = vmc(
@@ -6461,6 +6466,9 @@ def generate_legacy_dmc_calculations(
         vmc_calc.samplesperthread = vmc_samplesperthread
     elif vmc_samples is not None:
         vmc_calc.samples = vmc_samples
+    #end if
+    if vmc_usedrift is not None:
+        vmc_calc.usedrift = vmc_usedrift
     #end if
 
     dmc_calcs = [vmc_calc]
