@@ -64,6 +64,10 @@ SET(DETERMINANT_SRC FakeSPO.cpp test_DiracDeterminantBatched.cpp test_dirac_det.
                     test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
                     test_multi_slater_determinant.cpp)
 
+if (ENABLE_CUDA)
+  SET(DETERMINANT_SRC ${DETERMINANT_SRC} test_cuBLAS_LU.cpp)
+endif()
+
 FOREACH(CATEGORY trialwf sposet jastrow determinant)
   SET(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   SET(UTEST_NAME deterministic-unit_${UTEST_EXE})
