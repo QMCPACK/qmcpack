@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -20,7 +20,7 @@ template <typename REAL>
 RandomForTest<REAL>::RandomForTest() { rng.init(0, 1, 111); }
 
 template<typename REAL>
-std::vector<typename RandomForTest<REAL>::Real> RandomForTest<REAL>::getRealRandoms(int ncount)
+std::vector<REAL> RandomForTest<REAL>::getRealRandoms(int ncount)
 {
   std::vector<REAL> rng_reals;
   rng_reals.reserve(ncount);

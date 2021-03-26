@@ -9,13 +9,5 @@
 
 SET(test_utilities_src
   RandomForTest.cpp)
-
-if(USE_OBJECT_TARGET)
-  add_library(utilities_for_test OBJECT ${test_utilities_src})
-else()
-  add_library(utilities_for_test ${test_utilties_src})
-endif()
-
+add_library(utilities_for_test ${test_utilities_src})
 TARGET_INCLUDE_DIRECTORIES(utilities_for_test PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-
-  
