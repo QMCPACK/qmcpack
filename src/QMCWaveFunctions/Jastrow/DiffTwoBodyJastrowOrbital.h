@@ -42,8 +42,10 @@ class DiffTwoBodyJastrowOrbital : public DiffWaveFunctionComponent
   std::vector<FT*> F;
   /// e-e table ID
   const int my_table_ID_;
-  ///offset for the optimizable variables
-  std::vector<std::pair<int, int>> OffSet;
+  /// Map indices from subcomponent variables to component variables
+  std::vector<std::pair<int, int>> Offset_;
+  /// Map indices from component variables to global variables
+  std::vector<std::pair<int, int>> OffsetToGlobal_;
   Vector<RealType> dLogPsi;
   std::vector<GradVectorType*> gradLogPsi;
   std::vector<ValueVectorType*> lapLogPsi;
@@ -65,9 +67,9 @@ public:
   }
 
   // Accessors for unit testing
-  std::pair<int, int> getOffset(int index) { return OffSet.at(index); }
+  std::pair<int, int> getComponentOffset(int index) { return Offset_.at(index); }
 
-  opt_variables_type& getVars() { return myVars; }
+  opt_variables_type& getComponentVars() { return myVars; }
 
 
   void addFunc(int ia, int ib, FT* j)
@@ -144,7 +146,8 @@ public:
         gradLogPsi[i] = new GradVectorType(NumPtcls);
         lapLogPsi[i]  = new ValueVectorType(NumPtcls);
       }
-      OffSet.resize(F.size());
+      Offset_.resize(F.size());
+      OffsetToGlobal_.resize(F.size());
 
       // Find first active variable for the starting offset
       int varoffset = -1;
@@ -159,12 +162,15 @@ public:
       {
         if (F[i] && F[i]->myVars.Index.size())
         {
-          OffSet[i].first  = F[i]->myVars.Index.front() - varoffset;
-          OffSet[i].second = F[i]->myVars.Index.size() + OffSet[i].first;
+          Offset_[i].first          = F[i]->myVars.Index.front() - varoffset;
+          Offset_[i].second         = F[i]->myVars.Index.size() + Offset_[i].first;
+          OffsetToGlobal_[i].first  = F[i]->myVars.Index.front();
+          OffsetToGlobal_[i].second = F[i]->myVars.Index.size() + OffsetToGlobal_[i].first;
         }
         else
         {
-          OffSet[i].first = OffSet[i].second = -1;
+          Offset_[i].first = Offset_[i].second = -1;
+          OffsetToGlobal_[i].first = OffsetToGlobal_[i].second = -1;
         }
       }
     }
@@ -179,6 +185,12 @@ public:
       return;
     evaluateDerivativesWF(P, active, dlogpsi);
     bool recalculate(false);
+
+    // MD 3/26/2021
+    // Leaving rcsingles here for now because the change in the recalculate block below
+    //  might not be correct (won't handle the case where subcomponent variables have some
+    //  active and some inactive)
+    //  See issue #2814
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
     {
@@ -191,14 +203,17 @@ public:
     }
     if (recalculate)
     {
-      for (int k = 0; k < myVars.size(); ++k)
+      // map component-level values (in lapLogPsi and gradLogPsi) to active global variables (in dhpsioverpsi)
+      for (int i = 0; i < F.size(); ++i)
       {
-        int kk = myVars.where(k);
-        if (kk < 0)
-          continue;
-        if (rcsingles[k])
+        if (Offset_[i].first >= 0)
         {
-          dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(*lapLogPsi[k])) - ValueType(Dot(P.G, *gradLogPsi[k]));
+          int rcs2 = OffsetToGlobal_[i].first;
+          for (int rcs = Offset_[i].first; rcs < Offset_[i].second; rcs++, rcs2++)
+          {
+            dhpsioverpsi[rcs2] =
+                -RealType(0.5) * ValueType(Sum(*lapLogPsi[rcs])) - ValueType(Dot(P.G, *gradLogPsi[rcs]));
+          }
         }
       }
     }
@@ -225,18 +240,22 @@ public:
       std::vector<bool> RecalcSwitch(F.size(), false);
       for (int i = 0; i < F.size(); ++i)
       {
-        if (OffSet[i].first < 0)
+        if (OffsetToGlobal_[i].first < 0)
         {
           // nothing to optimize
           RecalcSwitch[i] = false;
         }
         else
         {
-          bool recalcFunc(false);
-          for (int rcs = OffSet[i].first; rcs < OffSet[i].second; rcs++)
-            if (rcsingles[rcs] == true)
-              recalcFunc = true;
-          RecalcSwitch[i] = recalcFunc;
+          // MD 3/26/2021
+          // Leaving this rcsingles code here for now, might be needed if RecalcSwitch needs
+          // to be more fine-grained
+          //bool recalcFunc(false);
+          //for (int rcs = OffsetToGlobal_[i].first; rcs < OffsetToGlobal_[i].second; rcs++)
+          //  if (rcsingles[rcs] == true)
+          //    recalcFunc = true;
+          //RecalcSwitch[i] = recalcFunc;
+          RecalcSwitch[i] = true;
         }
       }
       dLogPsi = 0.0;
@@ -265,8 +284,9 @@ public:
               continue;
             RealType rinv(cone / dist[j]);
             PosType dr(displ[j]);
-            for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
+            for (int p = Offset_[ptype].first, ip = 0; p < Offset_[ptype].second; ++p, ++ip)
             {
+              // Map subcomponent values (in derivs) to component values (in dLogPsi, gradLogPsi, lapLogPsi)
               RealType dudr(rinv * derivs[ip][1]);
               RealType lap(derivs[ip][2] + lapfac * dudr);
               //RealType lap(derivs[ip][2]+(OHMMS_DIM-1.0)*dudr);
@@ -280,16 +300,18 @@ public:
           }
         }
       }
-      for (int k = 0; k < myVars.size(); ++k)
+
+      // map component values (in dLogPsi) to active global variables (in dlogpsi)
+      for (int i = 0; i < F.size(); ++i)
       {
-        int kk = myVars.where(k);
-        if (kk < 0)
-          continue;
-        if (rcsingles[k])
+        if (Offset_[i].first >= 0)
         {
-          dlogpsi[kk] = dLogPsi[k];
+          int rcs2 = OffsetToGlobal_[i].first;
+          for (int rcs = Offset_[i].first; rcs < Offset_[i].second; rcs++, rcs2++)
+          {
+            dlogpsi[rcs2] = dLogPsi[rcs];
+          }
         }
-        //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }
     }
   }
@@ -325,7 +347,8 @@ public:
       j2copy->gradLogPsi[i] = new GradVectorType(NumPtcls);
       j2copy->lapLogPsi[i]  = new ValueVectorType(NumPtcls);
     }
-    j2copy->OffSet = OffSet;
+    j2copy->Offset_         = Offset_;
+    j2copy->OffsetToGlobal_ = OffsetToGlobal_;
     return j2copy;
   }
 };

@@ -237,10 +237,11 @@ void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) c
 {
   std::string pad_str = std::string(leftPadSpaces, ' ');
   int max_name_len    = 0;
-  max_name_len =
-      std::max_element(NameAndValue.begin(), NameAndValue.end(),
-                       [](const pair_type& e1, const pair_type& e2) { return e1.first.length() < e2.first.length(); })
-          ->first.length();
+  if (NameAndValue.size() > 0)
+    max_name_len =
+        std::max_element(NameAndValue.begin(), NameAndValue.end(), [](const pair_type& e1, const pair_type& e2) {
+          return e1.first.length() < e2.first.length();
+        })->first.length();
 
   int max_value_len     = 28; // 6 for the precision and 7 for minus sign, leading value, period, and exponent.
   int max_type_len      = 1;
