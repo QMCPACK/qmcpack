@@ -53,7 +53,7 @@ struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
 };
 
 /** Implements dirac matrix update using OpenMP offload.
- * It is used as DET_ENGINE_TYPE in DiracDeterminantBatched.
+ * It is used as DET_ENGINE in DiracDeterminantBatched.
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
