@@ -274,9 +274,9 @@ VMC method ``vmc_batch`` driver (experimental):
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | **Name**                       | **Datatype** | **Values**              | **Default** | **Description**                               |
   +================================+==============+=========================+=============+===============================================+
-  | ``walkers_per_rank``           | integer      | :math:`> 0`             | 1           | Number of walkers per MPI rank                |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``total_walkers``              | integer      | :math:`> 0`             | 1           | Total number of walkers over all MPI ranks    |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``walkers_per_rank``           | integer      | :math:`> 0`             | 1           | Number of walkers per MPI rank                |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``crowds``                     | integer      | :math:`> 0`             | dep.        | Number of desynchronized dwalker crowds       |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
@@ -303,15 +303,15 @@ VMC method ``vmc_batch`` driver (experimental):
 
 Additional information:
 
+- ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
+
 - ``walkers_per_rank`` The number of walkers per MPI rank. The exact number of walkers will be generated before performing random walking.
   It is not required to be a multiple of the number of OpenMP threads. However, to avoid any idle resources, it is recommended to be at
   least the number of OpenMP threads for pure CPU runs. For GPU runs, a scan of this parameter is necessary to reach reasonable single rank
   efficiency and also get a balanced time to solution.
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided, ``walkers_per_rank`` is set equal to ``crowds``.
 
-- ``total_walkers`` Total number of walkers over all MPI ranks. A valid input requires at least one of ``walkers_per_rank`` and ``total_walkers``.
-  If both are provided, ``total_walkers`` must be equal to ``walkers_per_rank`` times the number MPI ranks.
-
-- ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
+- ``total_walkers`` Total number of walkers over all MPI ranks. if not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers`` and ``walkers_per_rank`` are provided, ``total_walkers`` must be equal to ``walkers_per_rank`` times the number MPI ranks.
 
 - ``blocks`` This parameter is universal for all the QMC methods. The MC processes are divided into a number of
   ``blocks``, each containing a number of steps. At the end of each block, the statistics accumulated in the block are dumped into files,
