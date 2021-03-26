@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 #include "CPU/SIMD/simd.hpp"
+#include "QMCWaveFunctions/tests/CheckMatrix.hpp"
 
 #include <stdio.h>
 #include <string>
@@ -30,19 +31,6 @@ namespace qmcplusplus
 using RealType = QMCTraits::RealType;
 using ValueType = QMCTraits::ValueType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
-
-template<typename T1, typename T2>
-void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
-{
-  REQUIRE(a.size() == b.size());
-  for (int i = 0; i < a.rows(); i++)
-  {
-    for (int j = 0; j < a.cols(); j++)
-    {
-      REQUIRE(a(i, j) == ValueApprox(b(i, j)));
-    }
-  }
-}
 
 TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
 {
@@ -66,7 +54,7 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   eye(1, 1) = 1.0;
   eye(2, 2) = 1.0;
 
-  check_matrix(m_invT, eye);
+  checkMatrix(m_invT, eye);
 }
 
 TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
@@ -106,7 +94,61 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   b(2, 1) = -0.04586322768;
   b(2, 2) = 0.3927890292;
 
-  check_matrix(a_inv, b);
+  checkMatrix(a_inv, b);
+}
+
+TEST_CASE("DiracMatrix_inverse_complex", "[wavefunction][fermion]")
+{
+  DiracMatrix<std::complex<double>> dm;
+
+  Matrix<std::complex<double>> a, a_T, a_inv;
+  LogValueType LogValue;
+  a.resize(4, 4);
+  a_T.resize(4, 4);
+  a_inv.resize(4, 4);
+
+  a(0, 0) = {2.0, 0.1};
+  a(0, 1) = {5.0, 0.1};
+  a(0, 2) = {7.0, 0.2};
+  a(0, 3) = {5.0, 0.0};
+  a(1, 0) = {5.0,0.1};
+  a(1, 1) = {2.0, 0.2};
+  a(1, 2) = {5.0, 1.0};
+  a(1, 3) = {4, -0.1};
+  a(2, 0) = {8.0, 0.5};;
+  a(2, 1) = {2.0, 0.1};
+  a(2, 2) = {6.0, -0.2};
+  a(2 ,3) = {4.0, -0.6};
+  a(3, 0) = {8.0, 0.5};
+  a(3, 1) = {2.0, 0.1};
+  a(3, 2) = {6.0,0.2};
+  a(3, 3) = {8.0, 2.0};
+
+  simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
+  dm.invert_transpose(a_T, a_inv, LogValue);
+  REQUIRE(LogValue == LogComplexApprox(3.78518913425));
+
+  Matrix<std::complex<double>> b;
+  b.resize(4, 4);
+
+b(0,0) = { -0.05356228836958328, 0.018778132944668208 };
+b(0,1) = { -0.16917709116094917, 0.18307841761769691 };
+b(0,2) = { 0.21572431303125872, -0.10633509516999905 };
+b(0,3) = { 0.023435592783503056, -0.030184486280558254 };
+b(1,0) = { 0.20217332569060176, 0.10247607676441389 };
+b(1,1) = { -0.6356039515926515, 0.24028909525203923 };
+b(1,2) = { 0.24869726332502523, -0.11905352270298367 };
+b(1,3) = { 0.09553876547173154, -0.09007339752988484 };
+b(2,0) = { 0.1752053760997507, 0.08545803475354152 };
+b(2,1) = { -0.16030725389326506, -0.2749054789157097 };
+b(2,2) = { 0.16292868571183988, 0.17275739697798137 };
+b(2,3) = { -0.11510984212629605, -0.020898880528951114 };
+b(3,0) = { -0.22019253129809616, -0.23960901438764967 };
+b(3,1) = { 0.9251760746083686, 0.09385511919367814 };
+b(3,2) = { -0.560684625012445, -0.09607837395378985 };
+b(3,3) = { 0.05299966349431483, 0.13363053130258684 };
+
+  checkMatrix(a_inv, b);
 }
 
 
@@ -161,7 +203,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   b(2, 1) = 0.7119205298;
   b(2, 2) = 0.9105960265;
 
-  check_matrix(a_inv, b);
+  checkMatrix(a_inv, b);
 }
 
 
