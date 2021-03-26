@@ -16,17 +16,20 @@ namespace qmcplusplus
 {
 namespace testing
 {
-RandomForTest::RandomForTest() { rng.init(0, 1, 111); }
+template <typename REAL>
+RandomForTest<REAL>::RandomForTest() { rng.init(0, 1, 111); }
 
-std::vector<RandomForTest::Real> RandomForTest::getRealRandoms(int ncount)
+template<typename REAL>
+std::vector<typename RandomForTest<REAL>::Real> RandomForTest<REAL>::getRealRandoms(int ncount)
 {
-  std::vector<Real> rng_reals;
+  std::vector<REAL> rng_reals;
   rng_reals.reserve(ncount);
   std::generate_n(std::back_inserter(rng_reals), ncount, rng);
   return rng_reals;
 }
 
-void RandomForTest::makeRngReals(std::vector<Real>& rngReals)
+template<typename REAL>
+void RandomForTest<REAL>::makeRngReals(std::vector<REAL>& rngReals)
 {
   // until c++ std = 17
   //std::generate(rng_reals.begin(), rng_reals.end(), rng());
@@ -34,5 +37,7 @@ void RandomForTest::makeRngReals(std::vector<Real>& rngReals)
     rng_real = rng();
 }
 
+template class RandomForTest<double>;
+template class RandomForTest<float>;
 } // namespace testing
 } // namespace qmcplusplus
