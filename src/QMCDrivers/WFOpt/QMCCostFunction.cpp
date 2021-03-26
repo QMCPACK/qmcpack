@@ -360,6 +360,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
                                                  DescentEngine& descentEngineObj,
                                                  const std::string& MinMethod)
 {
+    std::cout << "Inside engine_checkConfig" << std::endl;
   if (MinMethod == "descent")
   {
     //Seem to need this line to get non-zero derivatives for traditional Jastrow parameters when using descent.

@@ -514,6 +514,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
                                                  bool reportH5,
                                                  bool useGPU)
 {
+    //std::cout << "In processOptXML" << std::endl;
   m_param.put(opt_xml);
   tolower(targetExcitedStr);
   targetExcited = (targetExcitedStr == "yes");
@@ -1381,6 +1382,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimize::descent_run()
 {
+    //std::cout << "Start of descent_run" << std::endl;
   const bool saved_grads_flag = optTarget->getneedGrads();
 
   //Make sure needGrads is true before engine_checkConfigurations is called
