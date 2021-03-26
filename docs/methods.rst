@@ -119,7 +119,7 @@ In the project id section, make sure that the series number is different from an
 Variational Monte Carlo
 -----------------------
 
-``vmc`` method:
+VMC method ``vmc`` driver:
 
   parameters:
 
@@ -266,6 +266,109 @@ The following is an example of VMC section storing configurations (walker sample
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
+
+VMC method ``vmc_batch`` driver (experimental):
+
+  parameters:
+
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | **Name**                       | **Datatype** | **Values**              | **Default** | **Description**                               |
+  +================================+==============+=========================+=============+===============================================+
+  | ``walkers_per_rank``           | integer      | :math:`> 0`             | 1           | Number of walkers per MPI rank                |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``total_walkers``              | integer      | :math:`> 0`             | 1           | Total number of walkers over all MPI ranks    |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``crowds``                     | integer      | :math:`> 0`             | dep.        | Number of desynchronized dwalker crowds       |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``blocks``                     | integer      | :math:`\geq 0`          | 1           | Number of blocks                              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``steps``                      | integer      | :math:`\geq 0`          | 1           | Number of steps per block                     |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``warmupsteps``                | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``substeps``                   | integer      | :math:`\geq 0`          | 1           | Number of substeps per step                   |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                  |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``samples`` (not ready)        | integer      | :math:`\geq 0`          | 0           | Number of walker samples for in this VMC run  |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``storeconfigs``               | integer      | all values              | 0           | Show configurations                           |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | force looping over single walker APIs         |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+
+Additional information:
+
+- ``walkers_per_rank`` The number of walkers per MPI rank. The exact number of walkers will be generated before performing random walking.
+  It is not required to be a multiple of the number of OpenMP threads. However, to avoid any idle resources, it is recommended to be at
+  least the number of OpenMP threads for pure CPU runs. For GPU runs, a scan of this parameter is necessary to reach reasonable single rank
+  efficiency and also get a balanced time to solution.
+
+- ``total_walkers`` Total number of walkers over all MPI ranks. A valid input requires at least one of ``walkers_per_rank`` and ``total_walkers``.
+  If both are provided, ``total_walkers`` must be equal to ``walkers_per_rank`` times the number MPI ranks.
+
+- ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
+
+- ``blocks`` This parameter is universal for all the QMC methods. The MC processes are divided into a number of
+  ``blocks``, each containing a number of steps. At the end of each block, the statistics accumulated in the block are dumped into files,
+  e.g., ``scalar.dat``. Typically, each block should have a sufficient number of steps that the I/O at the end of each block is negligible
+  compared with the computational cost. Each block should not take so long that monitoring its progress is difficult. There should be a
+  sufficient number of ``blocks`` to perform statistical analysis.
+
+- ``warmupsteps`` - ``warmupsteps`` are used only for
+  equilibration. Property measurements are not performed during
+  warm-up steps.
+
+- ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block.
+
+- ``substeps``  For each substep, an attempt is made to move each of the electrons once only by either particle-by-particle or an
+  all-electron move.  Because the local energy is evaluated only at
+  each full step and not each substep, ``substeps`` are computationally cheaper
+  and can be used to de-correlation at a low computational cost.
+
+- ``usedrift`` The VMC is implemented in two algorithms with
+  or without drift. In the no-drift algorithm, the move of each
+  electron is proposed with a Gaussian distribution. The standard
+  deviation is chosen as the time step input. In the drift algorithm,
+  electrons are moved by Langevin dynamics.
+
+- ``timestep`` The meaning of time step depends on whether or not
+  the drift is used. In general, larger time steps reduce the
+  time correlation but might also reduce the acceptance ratio,
+  reducing overall statistical efficiency. For VMC, typically the
+  acceptance ratio should be close to 50% for an efficient
+  simulation.
+
+- ``samples`` (not ready)
+
+- ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
+  files.
+
+- ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction
+  from scratch: =1 by default when using mixed precision. =0 (no
+  recompute) by default when not using mixed precision. Recomputing
+  introduces a performance penalty dependent on system size.
+
+An example VMC section for a simple ``vmc_batch`` run:
+
+::
+
+  <qmc method="vmc_batch" move="pbyp">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers_per_rank">    256 </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
+    <parameter name="substeps">  5 </parameter>
+    <parameter name="blocks">  20 </parameter>
+    <parameter name="steps">  100 </parameter>
+    <parameter name="timestep">  1.0 </parameter>
+    <parameter name="usedrift">   yes </parameter>
+  </qmc>
+
+Here we set 256 walkers per MPI rank, have a brief initial equilibration of 100 ``steps``, and then have 20 ``blocks`` of 100 ``steps`` with 5 ``substeps`` each.
 
 .. _optimization:
 
