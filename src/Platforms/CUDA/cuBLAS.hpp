@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -228,6 +229,103 @@ inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
                             lda, (const cuDoubleComplex**)B, ldb, (const cuDoubleComplex*)beta, (cuDoubleComplex**)C,
                             ldc, batchCount);
 }
+
+inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
+                                    int n,
+                                    float* A[],
+                                    int lda,
+                                    int* PivotArray,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasSgetrfBatched(handle, n, A, lda, PivotArray, infoArray, batchSize);
+}
+
+inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
+                                    int n,
+                                    double* A[],
+                                    int lda,
+                                    int* PivotArray,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasDgetrfBatched(handle, n, A, lda, PivotArray, infoArray, batchSize);
+}
+
+inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
+                                    int n,
+                                    std::complex<float>* A[],
+                                    int lda,
+                                    int* PivotArray,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasCgetrfBatched(handle, n, reinterpret_cast<cuComplex* const *>(A), lda, PivotArray, infoArray, batchSize);
+}
+
+inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
+                                    int n,
+                                    std::complex<double>* A[],
+                                    int lda,
+                                    int* PivotArray,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasZgetrfBatched(handle, n, reinterpret_cast<cuDoubleComplex* const *>(A), lda, PivotArray, infoArray, batchSize);
+}
+
+inline cublasStatus_t getri_batched(cublasHandle_t& handle,
+                                    int n,
+                                    float* A[],
+                                    int lda,
+                                    int* PivotArray,
+				    float* C[],
+				    int ldc,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasSgetriBatched(handle, n, A, lda, PivotArray, C, ldc, infoArray, batchSize);
+}
+
+inline cublasStatus_t getri_batched(cublasHandle_t& handle,
+                                    int n,
+                                    double* A[],
+                                    int lda,
+                                    int* PivotArray,
+				    double* C[],
+				    int ldc,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasDgetriBatched(handle, n, A, lda, PivotArray, C, ldc, infoArray, batchSize);
+}
+
+inline cublasStatus_t getri_batched(cublasHandle_t& handle,
+                                    int n,
+                                    std::complex<float>* A[],
+                                    int lda,
+                                    int* PivotArray,
+				    std::complex<float>* C[],
+				    int ldc,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasCgetriBatched(handle, n, reinterpret_cast<cuComplex* const *>(A), lda, PivotArray, reinterpret_cast<cuComplex* const *>(C), ldc, infoArray, batchSize);
+}
+
+inline cublasStatus_t getri_batched(cublasHandle_t& handle,
+                                    int n,
+                                    std::complex<double>* A[],
+                                    int lda,
+                                    int* PivotArray,
+				    std::complex<double>* C[],
+				    int ldc,
+                                    int* infoArray,
+                                    int batchSize)
+{
+  return cublasZgetriBatched(handle, n, reinterpret_cast<cuDoubleComplex* const *>(A), lda, PivotArray, reinterpret_cast<cuDoubleComplex* const *>(C), ldc, infoArray, batchSize);
+}
+
 }; // namespace cuBLAS
 
 } // namespace qmcplusplus
