@@ -271,7 +271,7 @@ TEST_CASE("DiffTwoBodyJastrowOrbital other variables", "[wavefunction]")
   using ValueType = QMCTraits::ValueType;
 
   // Check derivative indexing
-  int num_vars = 1;
+  int num_vars = 2;
   j2b.derivs_.resize(num_vars);
   // Elements are d/dp_i u(r), d/dp_i du/dr,  d/dp_i d2u/dr2
   j2b.derivs_[0] = {0.5, 1.3, 2.4};
