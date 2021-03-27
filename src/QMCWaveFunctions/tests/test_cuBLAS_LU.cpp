@@ -161,10 +161,14 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
 
   void* vp_lu = nullptr;
   cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 8), "cudaMallocHost failed");
-  double* lu = new (vp_lu) double[8] {
-    8.0, 0.5, 6.248249027237354, 0.2719844357976654, 4.999337315778741, 0.6013141870887196, 1.0698651110730424,
-        -0.10853319738453365
-  };
+  double* lu = new (vp_lu) double[8]{8.0,
+                                     0.5,
+                                     6.248249027237354,
+                                     0.2719844357976654,
+                                     4.999337315778741,
+                                     0.6013141870887196,
+                                     1.0698651110730424,
+                                     -0.10853319738453365};
 
   std::complex<double>* dev_lu;
   cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 8), "cudaMalloc failed");
@@ -266,7 +270,10 @@ TEST_CASE("cuBLAS_LU::getrf_batched_complex", "[wavefunction][CUDA]")
 
   void* vpM = nullptr;
   cudaErrorCheck(cudaMallocHost(&vpM, sizeof(double) * 32), "cudaMallocHost failed");
-  double* M = new (vpM) double[32]{2.0, 0.1, 5.0, 0.1, 8.0, 0.5, 7.0, 1.0, 5.0, 0.1, 2.0, 0.2, 2.0, 0.1, 8.0, 0.5, 7.0, 0.2, 5.0, 1.0, 6.0, -0.2, 6.0, -0.2, 5.0, 0.0, 4.0, -0.1, 4.0, -0.6, 8.0, -2.0,};
+  double* M = new (vpM) double[32]{
+      2.0, 0.1, 5.0, 0.1, 8.0, 0.5,  7.0, 1.0,  5.0, 0.1, 2.0, 0.2,  2.0, 0.1,  8.0, 0.5,
+      7.0, 0.2, 5.0, 1.0, 6.0, -0.2, 6.0, -0.2, 5.0, 0.0, 4.0, -0.1, 4.0, -0.6, 8.0, -2.0,
+  };
 
   double* devM;
   cudaErrorCheck(cudaMalloc((void**)&devM, sizeof(double) * 32), "cudaMalloc failed");
@@ -306,9 +313,48 @@ TEST_CASE("cuBLAS_LU::getrf_batched_complex", "[wavefunction][CUDA]")
 
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
 
-  double lu[32]{8.0, 0.5, 0.8793774319066148, 0.07003891050583658, 0.24980544747081712, -0.0031128404669260694, 0.6233463035019455, -0.026459143968871595, 2.0, 0.1, 6.248249027237354, 0.2719844357976654, 0.7194170575332381, -0.01831314754114669, 0.1212375092639108, 0.02522449751055713, 6.0, -0.2, 0.7097276264591441, -0.4443579766536965, 4.999337315778741, 0.6013141870887196, 0.26158183940834034, 0.23245112532996867, 4.0, -0.6, 4.440466926070039, -1.7525291828793774, 0.840192589866152, 1.5044529443071093, 1.0698651110730424, -0.10853319738453365};
-
   int real_pivot[4]{3, 4, 3, 4};
+
+  auto checkArray = [](auto* A, auto* B, int n) {
+    for (int i = 0; i < n; ++i)
+    {
+      CHECK(A[i] == B[i]);
+    }
+  };
+  checkArray(real_pivot, pivots, 4);
+
+  double lu[32]{8.0,
+                0.5,
+                0.8793774319066148,
+                0.07003891050583658,
+                0.24980544747081712,
+                -0.0031128404669260694,
+                0.6233463035019455,
+                -0.026459143968871595,
+                2.0,
+                0.1,
+                6.248249027237354,
+                0.2719844357976654,
+                0.7194170575332381,
+                -0.01831314754114669,
+                0.1212375092639108,
+                0.02522449751055713,
+                6.0,
+                -0.2,
+                0.7097276264591441,
+                -0.4443579766536965,
+                4.999337315778741,
+                0.6013141870887196,
+                0.26158183940834034,
+                0.23245112532996867,
+                4.0,
+                -0.6,
+                4.440466926070039,
+                -1.7525291828793774,
+                0.840192589866152,
+                1.5044529443071093,
+                1.0698651110730424,
+                -0.10853319738453365};
 
   // This could actually be any container that supported the concept of
   // access via operator()(i, j) and had <T, ALLOCT> template signature
@@ -317,9 +363,6 @@ TEST_CASE("cuBLAS_LU::getrf_batched_complex", "[wavefunction][CUDA]")
 
   auto check_matrix_result = checkMatrix(lu_mat, M_mat);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
-
-  //complexCheckArray((std::complex<double>*)lu, (std::complex<double>*)M, 16);
-  checkArray(real_pivot, pivots, 4);
 }
 
 TEST_CASE("cuBLAS_LU::getrf_batched", "[wavefunction][CUDA]")
