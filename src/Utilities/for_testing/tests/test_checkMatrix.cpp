@@ -16,10 +16,10 @@
 
 namespace qmcplusplus
 {
-  TEST_CASE("checkMatrix_real", "[utilities][for_testing]")
-  {
-    Matrix<double> a_mat;
-      a_mat.resize(3, 3);
+TEST_CASE("checkMatrix_real", "[utilities][for_testing]")
+{
+  Matrix<double> a_mat;
+  a_mat.resize(3, 3);
   a_mat(0, 0) = 2.3;
   a_mat(0, 1) = 4.5;
   a_mat(0, 2) = 2.6;
@@ -30,8 +30,8 @@ namespace qmcplusplus
   a_mat(2, 1) = 4.4;
   a_mat(2, 2) = 4.9;
 
-      Matrix<double> b_mat;
-      b_mat.resize(3, 3);
+  Matrix<double> b_mat;
+  b_mat.resize(3, 3);
   b_mat(0, 0) = 2.3;
   b_mat(0, 1) = 4.5;
   b_mat(0, 2) = 2.6;
@@ -42,14 +42,29 @@ namespace qmcplusplus
   b_mat(2, 1) = 4.4;
   b_mat(2, 2) = 4.9;
 
-  checkMatrix(a_mat , b_mat);
+  auto check_matrix_result = checkMatrix(a_mat, b_mat);
+  // This would be how you would fail and print the information about what element failed.
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
+  b_mat.resize(4,4);
+  b_mat(0, 0) = 2.3;
+  b_mat(0, 1) = 4.5;
+  b_mat(0, 2) = 2.6;
+  b_mat(1, 0) = 0.5;
+  b_mat(1, 1) = 8.5;
+  b_mat(1, 2) = 3.3;
+  b_mat(2, 0) = 1.8;
+  b_mat(2, 1) = 4.4;
+  b_mat(2, 2) = 4.9;
 
-  b_mat(0,0) = 1.0;
-  //  CHECK_THROWS(checkMatrix(a_mat , b_mat));
-               
-  }
+  check_matrix_result = checkMatrix(a_mat, b_mat);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }  
+  
+  b_mat(0, 0) = 1.0;
 
-
+  check_matrix_result = checkMatrix(a_mat, b_mat);
+  REQUIRE(check_matrix_result.result == false);
 }
 
+
+} // namespace qmcplusplus
