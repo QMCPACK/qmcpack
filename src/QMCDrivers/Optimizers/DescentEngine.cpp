@@ -79,8 +79,8 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   m_param.add(collection_step_, "collection_step");
   m_param.add(compute_step_, "compute_step");
 
-  app_log() << "Omega from input file: " << omega_ << std::endl;
-  app_log() << "Current collection step: " << collection_step_ << std::endl;
+  //app_log() << "Omega from input file: " << omega_ << std::endl;
+  //app_log() << "Current collection step: " << collection_step_ << std::endl;
   // Use -1 as a default value when you don't collect history. Would want to
   // collect only during the descent finalization section
   if (collection_step_ != -1)
@@ -101,7 +101,6 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
 // Prepare for taking samples to compute averaged derivatives
 void DescentEngine::prepareStorage(const int num_replicas, const int num_optimizables)
 {
-    std::cout << "At prepareStorage" << std::endl;
   lderivs_.resize(num_optimizables);
 
   //Resize the history vectors for the current iteration for the number of threads present
@@ -116,14 +115,7 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
   
   }
   
-  for (int i = 0; i < num_replicas; i++)
-  {
-    replica_vg_history_[i].resize(0);
-    replica_w_history_[i].resize(0);
-    replica_lev_history_[i].resize(0);
-  
-  }
-
+ 
   //Also resize the history vectors for descent finalization if necessary
   if (final_descent_num_ > collection_step_ && collect_count_)
   {
@@ -131,13 +123,7 @@ void DescentEngine::prepareStorage(const int num_replicas, const int num_optimiz
   replica_final_w_history_.resize(num_replicas);
   replica_final_lev_history_.resize(num_replicas);
   
-  for (int i = 0; i < num_replicas; i++)
-  {
-    replica_final_vg_history_[i].resize(0);
-    replica_final_w_history_[i].resize(0);
-    replica_final_lev_history_[i].resize(0);
   
-  }
 
     if(engine_target_excited_)
     {
@@ -232,7 +218,6 @@ void DescentEngine::takeSample(const int replica_id,
                                ValueType weight_samp)
 {
 
-    std::cout << "replica_id: " << replica_id << " in takeSample" << std::endl;
     const size_t num_optimizables = der_rat_samp.size() - 1;
 
   ValueType etmp = static_cast<ValueType>(le_der_samp.at(0));
@@ -279,8 +264,6 @@ void DescentEngine::takeSample(const int replica_id,
       replica_final_tdv_history_[replica_id].push_back(d);
     }
 
-    replica_tnv_history_[replica_id].push_back(n);
-    replica_tdv_history_[replica_id].push_back(d);
 
     for (int i = 0; i < num_optimizables; i++)
     {
@@ -352,7 +335,9 @@ void DescentEngine::sample_finish()
             
             final_tnv_history_.insert(final_tnv_history_.end(), replica_final_tnv_history_[i].begin(),replica_final_tnv_history_[i].end());
             final_tdv_history_.insert(final_tdv_history_.end(), replica_final_tdv_history_[i].begin(),replica_final_tdv_history_[i].end());
-        
+ 
+            replica_final_tnv_history_[i].clear();
+            replica_final_tdv_history_[i].clear();       
         }
      }  
   }
