@@ -9,7 +9,6 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "catch.hpp"
 #include "checkMatrix.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -46,7 +45,7 @@ TEST_CASE("checkMatrix_real", "[utilities][for_testing]")
   // This would be how you would fail and print the information about what element failed.
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
-  b_mat.resize(4,4);
+  b_mat.resize(4, 4);
   b_mat(0, 0) = 2.3;
   b_mat(0, 1) = 4.5;
   b_mat(0, 2) = 2.6;
@@ -58,8 +57,8 @@ TEST_CASE("checkMatrix_real", "[utilities][for_testing]")
   b_mat(2, 2) = 4.9;
 
   check_matrix_result = checkMatrix(a_mat, b_mat);
-  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }  
-  
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
   b_mat(0, 0) = 1.0;
 
   check_matrix_result = checkMatrix(a_mat, b_mat);
