@@ -60,10 +60,10 @@ TEST_CASE("checkMatrix_real", "[utilities][for_testing]")
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
   b_mat(0, 0) = 1.0;
-
-  check_matrix_result = checkMatrix(a_mat, b_mat);
+  b_mat(1,1) = 3.6;
+  check_matrix_result = checkMatrix(a_mat, b_mat, true);
+  std::cout << check_matrix_result.result_message;
   REQUIRE(check_matrix_result.result == false);
 }
-
 
 } // namespace qmcplusplus

@@ -59,29 +59,30 @@ struct CheckMatrixResult
 template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
 CheckMatrixResult checkMatrix(const Matrix<T1, ALLOC1>& a_mat,
                               const Matrix<T2, ALLOC2>& b_mat,
-                              const std::string& desc = "",
-                              int line                = 0)
+                              bool check_all = false)
 {
   // This allows use to check a padded b matrix with a nonpadded a
   if (a_mat.rows() > b_mat.rows() || a_mat.cols() > b_mat.cols())
     return {false, "b_mat is too small for a_mat to be a checkable block"};
-
-  auto matrixElementError = [line](int i, int j, auto& a_mat, auto& b_mat, const std::string& desc) -> std::string {
-    std::stringstream error_msg;
-    error_msg << "In " << desc << ":" << line << "\nbad element at " << i << ":" << j << "  " << a_mat(i, j)
+  std::stringstream error_msg;
+  auto matrixElementError = [&error_msg](int i, int j, auto& a_mat, auto& b_mat) {
+    error_msg << "checkMatrix found bad element at " << i << ":" << j << "  " << a_mat(i, j)
               << " != " << b_mat(i, j) << '\n';
-    return error_msg.str();
   };
+  bool all_elements_match = true;
   for (int i = 0; i < a_mat.rows(); i++)
     for (int j = 0; j < a_mat.cols(); j++)
     {
       bool approx_equality = approxEquality<T1>(a_mat(i, j), b_mat(i, j));
       if (!approx_equality)
       {
-        return {false, matrixElementError(i, j, a_mat, b_mat, desc)};
+        matrixElementError(i, j, a_mat, b_mat);
+        all_elements_match = false;
+        if (!check_all)
+          return {false, error_msg.str()};
       }
     }
-  return {true, ""};
+  return {all_elements_match, error_msg.str()};
 }
 
 extern template bool approxEquality<double>(double val_a, double val_b);
