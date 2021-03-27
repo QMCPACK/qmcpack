@@ -54,12 +54,17 @@ struct CheckMatrixResult
   std::string result_message;
 };
 
-/** This function checks equality of matrix b_mat against upper left block a_mat
+/** This function checks equality a_mat and b_mat elements
+ *  \param[in] a_mat     - reference matrix, if padded must be identical to b_mat,
+ *                         can be a smaller than b_mat in which case it is compared to upper
+ *                         left block of b_mat.
+ *  \param[in] b_mat     - the matrix to check
+ *  \param[in] check_all - if true continue to check matrix elements after failure
  */
 template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
 CheckMatrixResult checkMatrix(const Matrix<T1, ALLOC1>& a_mat,
                               const Matrix<T2, ALLOC2>& b_mat,
-                              bool check_all = false)
+                              const bool check_all = false)
 {
   // This allows use to check a padded b matrix with a nonpadded a
   if (a_mat.rows() > b_mat.rows() || a_mat.cols() > b_mat.cols())
