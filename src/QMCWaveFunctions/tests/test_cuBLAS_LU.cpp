@@ -17,6 +17,9 @@
 #include "CUDA/CUDAallocator.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
+#include "checkMatrix.hpp"
+#include "OhmmsPETE/OhmmsMatrix.h"
+
 namespace qmcplusplus
 {
 namespace testing
@@ -158,13 +161,15 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
 
   void* vp_lu = nullptr;
   cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 8), "cudaMallocHost failed");
-  std::complex<double>* lu =
-    new (vp_lu) std::complex<double>[8] { 7, 0.2, 3.699021  ,1.0657421 ,
-      -0.52910995,0.97346985,  6.289567,2.0916762};
+  double* lu = new (vp_lu) double[8] {
+    8.0, 0.5, 6.248249027237354, 0.2719844357976654, 4.999337315778741, 0.6013141870887196, 1.0698651110730424,
+        -0.10853319738453365
+  };
 
   std::complex<double>* dev_lu;
   cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 8), "cudaMalloc failed");
 
+  // The type of the pointer here is imporant.
   std::complex<double>* log_values;
   cudaErrorCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1), "cudaMallocHost failed");
   std::complex<double>* dev_log_values;
@@ -172,7 +177,7 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
 
   void* vp_pivots;
   cudaErrorCheck(cudaMallocHost((void**)&vp_pivots, sizeof(int) * 4), "cudaMallocHost failed");
-  int* pivots = new (vp_pivots) int[4]{3, 3, 4, 4};
+  int* pivots = new (vp_pivots) int[4]{3, 4, 3, 4};
   int* dev_pivots;
   cudaErrorCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4), "cudaMalloc failed");
 
@@ -261,14 +266,13 @@ TEST_CASE("cuBLAS_LU::getrf_batched_complex", "[wavefunction][CUDA]")
 
   void* vpM = nullptr;
   cudaErrorCheck(cudaMallocHost(&vpM, sizeof(double) * 32), "cudaMallocHost failed");
-  double* M = new (vpM) double[32]{2.,  0.1, 5.,  0.1, 7.0, 0.2,  5.0, 0.0,  5.0, 0.6, 2.0, 0.2, 5.0, 1.,   4.0, -0.1,
-                                   8.0, 0.5, 2.0, 0.1, 6.0, -0.2, 4.0, -0.6, 7.0, 1.0, 8.0, 0.5, 6.0, -0.2, 8.0, -2.0};
+  double* M = new (vpM) double[32]{2.0, 0.1, 5.0, 0.1, 8.0, 0.5, 7.0, 1.0, 5.0, 0.1, 2.0, 0.2, 2.0, 0.1, 8.0, 0.5, 7.0, 0.2, 5.0, 1.0, 6.0, -0.2, 6.0, -0.2, 5.0, 0.0, 4.0, -0.1, 4.0, -0.6, 8.0, -2.0,};
 
   double* devM;
   cudaErrorCheck(cudaMalloc((void**)&devM, sizeof(double) * 32), "cudaMalloc failed");
-  double** Ms;
+  std::complex<double>** Ms;
   cudaErrorCheck(cudaMallocHost((void**)&Ms, sizeof(double*)), "cudaMallocHost failed");
-  Ms = &devM;
+  Ms = reinterpret_cast<std::complex<double>**>(&devM);
   std::complex<double>** devMs;
   cudaErrorCheck(cudaMalloc((void**)&devMs, sizeof(double*)), "cudaMalloc failed");
 
@@ -302,43 +306,19 @@ TEST_CASE("cuBLAS_LU::getrf_batched_complex", "[wavefunction][CUDA]")
 
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
 
-  double lu[32]{7, 0.2,  0.285889, 0.00611746, 0.714111, -0.00611746, 0.713703, -0.0203915,
-                5, 1,    3.57667,  -0.216476,  -0.43106, -0.161278,   0.126518, -0.191339,
-                6, -0.2, 6.28344,  0.520473,   0.341156, 1.51726,     0.337414, 0.84877,
-                6, -0.2, 5.28344,  1.02047,    5.82946,  1.97151,     2.56457,  -6.46618};
+  double lu[32]{8.0, 0.5, 0.8793774319066148, 0.07003891050583658, 0.24980544747081712, -0.0031128404669260694, 0.6233463035019455, -0.026459143968871595, 2.0, 0.1, 6.248249027237354, 0.2719844357976654, 0.7194170575332381, -0.01831314754114669, 0.1212375092639108, 0.02522449751055713, 6.0, -0.2, 0.7097276264591441, -0.4443579766536965, 4.999337315778741, 0.6013141870887196, 0.26158183940834034, 0.23245112532996867, 4.0, -0.6, 4.440466926070039, -1.7525291828793774, 0.840192589866152, 1.5044529443071093, 1.0698651110730424, -0.10853319738453365};
 
-  int real_pivot[4]{3, 3, 3, 4};
+  int real_pivot[4]{3, 4, 3, 4};
 
-  auto checkArray = [](auto* A, auto* B, int n) {
-    for (int i = 0; i < n; ++i)
-    {
-      CHECK(A[i] == ValueApprox(B[i]));
-    }
-  };
+  // This could actually be any container that supported the concept of
+  // access via operator()(i, j) and had <T, ALLOCT> template signature
+  Matrix<std::complex<double>> lu_mat(reinterpret_cast<std::complex<double>*>(lu), 4, 4);
+  Matrix<std::complex<double>> M_mat(reinterpret_cast<std::complex<double>*>(M), 4, 4);
 
-  auto complexCheckArray = [](auto* A, auto* B, int n) {
-    for (int i = 0; i < n; ++i)
-    {
-      CHECK(A[i] == ComplexApprox(B[i]));
-    }
-  };
-  for (int ie = 0; ie < 16; ++ie)
-    std::cout << M[ie * 2] << ", " << M[ie * 2 + 1] << ", ";
-  std::cout << "\n";
+  auto check_matrix_result = checkMatrix(lu_mat, M_mat);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
-  for (int ie = 0; ie < 4; ++ie)
-    std::cout << M[ie * 8 + ie * 2] << ", " << M[ie * 8 + ie * 2 + 1] << ", ";
-  std::cout << "\n";
-
-  for (int ip = 0; ip < 4; ++ip)
-    std::cout << pivots[ip] << ", ";
-  std::cout << "\n";
-
-  for (int ip = 0; ip < 4; ++ip)
-    std::cout << infos[ip] << ", ";
-  std::cout << "\n";
-
-  complexCheckArray((std::complex<double>*)lu, (std::complex<double>*)M, 16);
+  //complexCheckArray((std::complex<double>*)lu, (std::complex<double>*)M, 16);
   checkArray(real_pivot, pivots, 4);
 }
 

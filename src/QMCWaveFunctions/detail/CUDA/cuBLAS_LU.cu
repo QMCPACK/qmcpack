@@ -39,12 +39,15 @@ __global__ void computeLogDet_kernel(const int n,
   logdet_vals[threadIdx.x] = {0.0, 0.0};
   if (n_index < n)
   {
-    cuDoubleComplex diag = LU_diag_iw[n_index];
-    diag.x = diag.x * (1 - 2* ((pivots_iw[n_index] - 1) == n_index));
+    cuDoubleComplex diag;
+    double pivot_factor = 1 - 2* ((pivots_iw[n_index] - 1) == n_index);
+    diag.x = LU_diag_iw[n_index].x * pivot_factor;
+    diag.y = LU_diag_iw[n_index].y * pivot_factor;
     logdet_vals[threadIdx.x].x =
       log(sqrt(diag.x * diag.x + diag.y * diag.y));
     logdet_vals[threadIdx.x].y = atan2(diag.y, diag.x);
   }
+  //First thread of each column of blocks zero's logdets[iw]
   if (threadIdx.x == 0 && blockIdx.y == 0)
     logdets[iw] = {0.0, 0.0};
   // insure that when we reduce logdet_vals all the threads in the block are done.
