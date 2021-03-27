@@ -14,5 +14,3 @@ add_library(utilities_for_test ${test_utilities_src})
 target_include_directories(utilities_for_test PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(utilities_for_test PRIVATE "${PROJECT_SOURCE_DIR}/external_codes/catch")
 target_link_libraries(utilities_for_test PUBLIC containers)
-
-subdirs(tests)
