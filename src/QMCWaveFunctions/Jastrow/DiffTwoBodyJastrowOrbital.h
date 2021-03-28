@@ -42,7 +42,7 @@ class DiffTwoBodyJastrowOrbital : public DiffWaveFunctionComponent
   std::vector<FT*> F;
   /// e-e table ID
   const int my_table_ID_;
-  ///offset for the optimizable variables
+  /// Map indices from subcomponent variables to component variables
   std::vector<std::pair<int, int>> OffSet;
   Vector<RealType> dLogPsi;
   std::vector<GradVectorType*> gradLogPsi;
@@ -65,9 +65,9 @@ public:
   }
 
   // Accessors for unit testing
-  std::pair<int, int> getOffset(int index) { return OffSet.at(index); }
+  std::pair<int, int> getComponentOffset(int index) { return OffSet.at(index); }
 
-  opt_variables_type& getVars() { return myVars; }
+  opt_variables_type& getComponentVars() { return myVars; }
 
 
   void addFunc(int ia, int ib, FT* j)
@@ -129,6 +129,9 @@ public:
       myVars.insertFrom((*it).second->myVars);
       ++it;
     }
+    // Remove inactive variables so the mappings are correct
+    myVars.removeInactive();
+
     myVars.getIndex(active);
     NumVars = myVars.size();
 
