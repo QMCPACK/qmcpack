@@ -18,100 +18,13 @@
 #include <complex>
 #include <cuComplex.h>
 #include "Platforms/CUDA/cuBLAS.hpp"
-#include <thrust/system/cuda/detail/core/util.h>
 
 namespace qmcplusplus
 {
 namespace cuBLAS_LU
 {
-template<int COLBS>
-__global__ void computeLogDet_kernel(const int n,
-                                     const cuDoubleComplex* const LU_diags,
-                                     const int* const pivots,
-                                     cuDoubleComplex* logdets)
-{
-  const int iw                                   = blockIdx.x;
-  const int block_num                            = blockIdx.y;
-  const cuDoubleComplex* __restrict__ LU_diag_iw = LU_diags + iw * n;
-  const int* __restrict__ pivots_iw              = pivots + iw * n;
-  int n_index                                    = threadIdx.x + block_num * COLBS;
-  __shared__ cuDoubleComplex logdet_vals[COLBS];
-  logdet_vals[threadIdx.x] = {0.0, 0.0};
-  if (n_index < n)
-  {
-    cuDoubleComplex diag;
-    double pivot_factor        = 1 - 2 * ((pivots_iw[n_index] - 1) == n_index);
-    diag.x                     = LU_diag_iw[n_index].x * pivot_factor;
-    diag.y                     = LU_diag_iw[n_index].y * pivot_factor;
-    logdet_vals[threadIdx.x].x = log(sqrt(diag.x * diag.x + diag.y * diag.y));
-    logdet_vals[threadIdx.x].y = atan2(diag.y, diag.x);
-  }
-  //First thread of each column of blocks zero's logdets[iw]
-  if (threadIdx.x == 0 && blockIdx.y == 0)
-    logdets[iw] = {0.0, 0.0};
-  // insure that when we reduce logdet_vals all the threads in the block are done.
-  __syncthreads();
-  if (threadIdx.x == 0)
-  {
-    __shared__ cuDoubleComplex block_sum_log_det;
-    block_sum_log_det = {0.0, 0.0};
-    for (int iv = 0; iv < COLBS; ++iv)
-    {
-      block_sum_log_det.x += logdet_vals[iv].x;
-      block_sum_log_det.y += logdet_vals[iv].y;
-    }
-    // No atomicAdd in cuda 10 for cuComplex/cuDoubleComplex
-    atomicAdd((double*)&(logdets[iw].x), block_sum_log_det.x);
-    atomicAdd((double*)&(logdets[iw].y), block_sum_log_det.y);
 
-    // // this will not work of n > COLBS
-    // logdets[iw].x = block_sum_log_det.x;
-    // logdets[iw].y = block_sum_log_det.y;
-  }
-}
-
-template<int COLBS>
-__global__ void computeLogDet_kernel(const int n,
-                                     const double* const LU_diags,
-                                     const int* const pivots,
-                                     cuDoubleComplex* logdets)
-{
-  const int iw                          = blockIdx.x;
-  const int block_num                   = blockIdx.y;
-  const double* __restrict__ LU_diag_iw = LU_diags + iw * n;
-  const int* __restrict__ pivots_iw     = pivots + iw * n;
-  int n_index                           = threadIdx.x + block_num * COLBS;
-  __shared__ cuDoubleComplex logdet_vals[COLBS];
-  logdet_vals[threadIdx.x] = {0.0, 0.0};
-  if (n_index < n)
-  {
-    logdet_vals[threadIdx.x].x = log(abs(LU_diag_iw[n_index]));
-    logdet_vals[threadIdx.x].y = ((LU_diag_iw[n_index] < 0) != ((pivots_iw[n_index] - 1) == n_index)) * M_PI;
-  }
-  if (threadIdx.x == 0 && blockIdx.y == 0)
-    logdets[iw] = {0.0, 0.0};
-  // insure that when we reduce logdet_vals all the threads in the block are done.
-  __syncthreads();
-  if (threadIdx.x == 0)
-  {
-    __shared__ cuDoubleComplex block_sum_log_det;
-    block_sum_log_det = {0.0, 0.0};
-    for (int iv = 0; iv < COLBS; ++iv)
-    {
-      block_sum_log_det.x += logdet_vals[iv].x;
-      block_sum_log_det.y += logdet_vals[iv].y;
-    }
-    // No atomicAdd in cuda 10 for cuComplex/cuDoubleComplex
-    atomicAdd((double*)&(logdets[iw].x), block_sum_log_det.x);
-    atomicAdd((double*)&(logdets[iw].y), block_sum_log_det.y);
-
-    // // this will not work of n > COLBS
-    // logdets[iw].x = block_sum_log_det.x;
-    // logdets[iw].y = block_sum_log_det.y;
-  }
-}
-
-__device__ cuDoubleComplex complexDetLog(double lu_diag, int n_index, const int* pivots)
+__device__ cuDoubleComplex complexDetLog(const double lu_diag, const int n_index, const int* pivots)
 {
   cuDoubleComplex log_value;
   log_value.x = log(abs(lu_diag));
@@ -119,7 +32,7 @@ __device__ cuDoubleComplex complexDetLog(double lu_diag, int n_index, const int*
   return log_value;
 }
 
-__device__ cuDoubleComplex complexDetLog(cuDoubleComplex lu_diag, int n_index, const int* pivots)
+__device__ cuDoubleComplex complexDetLog(const cuDoubleComplex lu_diag, const int n_index, const int* pivots)
 {
   cuDoubleComplex diag;
   double pivot_factor = 1 - 2 * ((pivots[n_index] - 1) == n_index);
@@ -211,102 +124,6 @@ void computeLogDet_batched(cudaStream_t& hstream,
                  "fused kernel call failed");
 }
 
-/** Calculates logdets using LU_diags and pivots
- *  \param[in] LU_mat - the LU output from cublasXgetrfBatched
- *  \param[out] LU_diags - the LU_diags from the LU
- *  \param[in] batch_size - no a big deal here.
- */
-cudaError_t computeLogDet_batched_impl(cudaStream_t& hstream,
-                                       const int n,
-                                       const double* LU_diags,
-                                       const int* pivots,
-                                       cuDoubleComplex* logdets,
-                                       const int batch_size)
-{
-  // Perhaps this should throw an exception. I can think of no good reason it should ever happen other than
-  // developer error.
-  if (batch_size == 0 || n == 0)
-    return cudaSuccess;
-
-  const int COLBS          = 256;
-  const int num_col_blocks = (n + COLBS - 1) / COLBS;
-  dim3 dimBlock(COLBS);
-  dim3 dimGrid(batch_size, num_col_blocks);
-  computeLogDet_kernel<COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, LU_diags, pivots, logdets);
-  return cudaPeekAtLastError();
-}
-
-cudaError_t computeLogDet_batched_impl(cudaStream_t& hstream,
-                                       const int n,
-                                       const std::complex<double>* LU_diags,
-                                       const int* pivots,
-                                       cuDoubleComplex* logdets,
-                                       const int batch_size)
-{
-  // Perhaps this should throw an exception. I can think of no good reason it should ever happen other than
-  // developer error.
-  if (batch_size == 0 || n == 0)
-    return cudaSuccess;
-
-  const int COLBS          = 256;
-  const int num_col_blocks = (n + COLBS - 1) / COLBS;
-  dim3 dimBlock(COLBS);
-  dim3 dimGrid(batch_size, num_col_blocks);
-  computeLogDet_kernel<COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, CUDATYPECAST(LU_diags), pivots, logdets);
-  return cudaPeekAtLastError();
-}
-
-template<typename T>
-void computeLogDet_batched(cudaStream_t& hstream,
-                           const int n,
-                           const T* LU_diags,
-                           const int* pivots,
-                           std::complex<double>* log_dets,
-                           const int batch_size)
-{
-  cudaErrorCheck(computeLogDet_batched_impl(hstream, n, LU_diags, pivots, CUDATYPECAST(log_dets), batch_size),
-                 "failed to calculate log determinant values in computeLogDet_batched_impl");
-}
-
-template<typename T, int COLBS>
-__global__ void computeLUDiag_kernel(const int n, const int lda, T** mat_lus, T* LU_diag)
-{
-  const int iw                = blockIdx.x;
-  const int block_num         = blockIdx.y;
-  const T* __restrict__ lu_iw = mat_lus[iw];
-  T* __restrict__ LU_diag_iw  = LU_diag + iw * n;
-  int n_index                 = threadIdx.x + block_num * COLBS;
-  if (n_index < n)
-    *(LU_diag_iw + n_index) = *(lu_iw + n_index * lda + n_index);
-}
-
-/** Extracts the LU_diags from the LU in invA.
- *  \param[in] LU_mat - the LU output from cublasXgetrfBatched
- *  \param[out] LU_diags - the LU_diags from the LU
- *  \param[in] batch_size - no a big deal here.
- */
-template<typename T>
-cudaError_t computeLUDiag_batched_impl(cudaStream_t hstream,
-                                       const int n,
-                                       const int lda,
-                                       T** LU_mat,
-                                       T* LU_diags,
-                                       const int batch_size)
-{
-  // Perhaps this should throw an exception. I can think of no good reason it should ever happen other than
-  // developer error.
-  if (batch_size == 0 || n == 0)
-    return cudaSuccess;
-
-  const int COLBS          = 256;
-  const int num_col_blocks = (n + COLBS - 1) / COLBS;
-  dim3 dimBlock(COLBS);
-  dim3 dimGrid(batch_size, num_col_blocks);
-  computeLUDiag_kernel<T, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, lda, LU_mat, LU_diags);
-
-  return cudaPeekAtLastError();
-}
-
 /** Takes the transpose of PsiM using LU factorization calculates the log determinant and invPsiM
  *
  *  \param[inout] Ms -       pointers to pointers to working memory for Ms that are used to return invMs
@@ -365,67 +182,6 @@ void computeGetri_batched(cublasHandle_t& h_cublas,
                    "cuBLAS::getri_batched failed in computeInverseAndDetLog_batched");
 }
 
-void computeLUDiag_batched(cudaStream_t& hstream,
-                           const int n,
-                           const int lda,
-                           double** Ms,
-                           double* LU_diags,
-                           const int batch_size)
-{
-  cudaErrorCheck(computeLUDiag_batched_impl(hstream, n, lda, Ms, LU_diags, batch_size),
-                 "failed to extract LU diag values at cuomputeLUDiag_batched_impl");
-}
-
-
-#ifndef NDEBUG
-template<typename T, typename COMPLT, int COLBS>
-__global__ void peekinvM_kernel(T** M, T** invM, int* pivots, int* infos, COMPLT* log_dets)
-{
-  const int iw        = blockIdx.x;
-  const int block_num = blockIdx.y;
-  const T* invM_iw    = invM[iw];
-  const T* M_iw       = M[iw];
-  COMPLT* log_dets_iw = log_dets + iw;
-}
-
-template<typename T, typename COMPLT>
-cudaError_t peekinvM_batched_impl(cudaStream_t hstream,
-                                  T** M,
-                                  T** invM,
-                                  int* pivots,
-                                  int* infos,
-                                  COMPLT* log_dets,
-                                  const int batch_size)
-{
-  const int COLBS = 256;
-  dim3 dimBlock(COLBS);
-  dim3 dimGrid(batch_size, 1);
-  peekinvM_kernel<T, COMPLT, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(M, invM, pivots, infos, log_dets);
-  return cudaPeekAtLastError();
-}
-
-void peekinvM_batched(cudaStream_t& hstream,
-                      double** Ms,
-                      double** invMs,
-                      int* pivots,
-                      int* infos,
-                      std::complex<double>* log_dets,
-                      const int batch_size)
-{
-  cudaErrorCheck(peekinvM_batched_impl(hstream, Ms, invMs, pivots, infos, CUDATYPECAST(log_dets), batch_size),
-                 "failed to extract LU diag values at cuomputeLUDiag_batched_impl");
-}
-
-// explicit instantiation for debug peek function.
-template cudaError_t peekinvM_batched_impl<double, cuDoubleComplex>(cudaStream_t hstream,
-                                                                    double** M,
-                                                                    double** invM,
-                                                                    int* pivots,
-                                                                    int* infos,
-                                                                    cuDoubleComplex* log_dets,
-                                                                    const int batch_size);
-#endif
-
 template void computeGetrf_batched<double>(cublasHandle_t& h_cublas,
                                            const int n,
                                            const int lda,
@@ -440,20 +196,6 @@ template void computeGetrf_batched<std::complex<double>>(cublasHandle_t& h_cubla
                                                          int* pivots,
                                                          int* infos,
                                                          const int batch_size);
-
-template void computeLogDet_batched<double>(cudaStream_t& hstream,
-                                            const int n,
-                                            const double* LU_diags,
-                                            const int* pivots,
-                                            std::complex<double>* log_dets,
-                                            const int batch_size);
-
-template void computeLogDet_batched<std::complex<double>>(cudaStream_t& hstream,
-                                                          const int n,
-                                                          const std::complex<double>* LU_diags,
-                                                          const int* pivots,
-                                                          std::complex<double>* log_dets,
-                                                          const int batch_size);
 
 
 template void computeLogDet_batched<std::complex<double>>(cudaStream_t& hstream,

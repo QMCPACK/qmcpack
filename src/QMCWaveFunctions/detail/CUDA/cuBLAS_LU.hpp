@@ -91,27 +91,11 @@ void computeGetrf_batched(cublasHandle_t& h_cublas,
 template<typename T>
 void computeLogDet_batched(cudaStream_t& hstream,
                            const int n,
-                           const T* LU_diags,
-                           const int* pivots,
-                           std::complex<double>* logdets,
-                           const int batch_size);
-
-template<typename T>
-void computeLogDet_batched(cudaStream_t& hstream,
-                           const int n,
                            const int lda,
                            T** Ms,
                            const int* pivots,
                            std::complex<double>* logdets,
                            const int batch_size);
-
-void computeLUDiag_batched(cudaStream_t& hstream,
-                           const int n,
-                           const int lda,
-                           double* Ms[],
-                           double* LU_diags,
-                           const int batch_size);
-
 
 void computeGetri_batched(cublasHandle_t& h_cublas,
                           const int n,
@@ -121,13 +105,6 @@ void computeGetri_batched(cublasHandle_t& h_cublas,
                           int* pivots,
                           int* infos,
                           const int batch_size);
-
-void peekinvM_batched(cudaStream_t& hstream,
-                      double* M[],
-                      double* invM[],
-                      int* pivots,
-                      int* infos,
-                      const int batch_size);
 
 
 } // namespace cuBLAS_LU
