@@ -21,6 +21,7 @@ namespace qmcplusplus
 {
 namespace cuBLAS_LU
 {
+// std::disjuntion is in std::c++17 so remove this when c++14 support is dropped
 template<class...>
 struct disjunction : std::false_type
 {};
@@ -43,16 +44,27 @@ struct default_type : std::true_type
   using type = T;
 };
 
+// This saves us writing specific overloads with reinterpret casts for different std::complex to cuComplex types.
 template<typename T>
-using TypesMapper = typename disjunction<OnTypesEqual<T, std::complex<double>, cuDoubleComplex>,
+using TypesMapper = typename disjunction<OnTypesEqual<T, float, float>,
+                                         OnTypesEqual<T, double, double>,
+                                         OnTypesEqual<T, float*, float*>,
+                                         OnTypesEqual<T, double*, double*>,
+                                         OnTypesEqual<T, float**, float**>,
+                                         OnTypesEqual<T, double**, double**>,
+                                         OnTypesEqual<T, std::complex<double>, cuDoubleComplex>,
                                          OnTypesEqual<T, std::complex<float>, cuComplex>,
                                          OnTypesEqual<T, std::complex<double>*, cuDoubleComplex*>,
+                                         OnTypesEqual<T, std::complex<float>**, cuComplex**>,
+                                         OnTypesEqual<T, std::complex<double>**, cuDoubleComplex**>,
                                          OnTypesEqual<T, std::complex<float>*, cuComplex*>,
                                          OnTypesEqual<T, const std::complex<double>*, const cuDoubleComplex*>,
                                          OnTypesEqual<T, const std::complex<float>*, const cuComplex*>,
+                                         OnTypesEqual<T, const std::complex<float>**, const cuComplex**>,
+                                         OnTypesEqual<T, const std::complex<double>**, const cuDoubleComplex**>,
                                          default_type<void>>::type;
 
-// There must be a way to make this a template function. But it isn't easy.
+// There must be a way to make this a template function. but it's so easy as a macro.
 #define CUDATYPECAST(var) reinterpret_cast<TypesMapper<decltype(var)>>(var)
 
 void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
@@ -80,6 +92,15 @@ template<typename T>
 void computeLogDet_batched(cudaStream_t& hstream,
                            const int n,
                            const T* LU_diags,
+                           const int* pivots,
+                           std::complex<double>* logdets,
+                           const int batch_size);
+
+template<typename T>
+void computeLogDet_batched(cudaStream_t& hstream,
+                           const int n,
+                           const int lda,
+                           T** Ms,
                            const int* pivots,
                            std::complex<double>* logdets,
                            const int batch_size);

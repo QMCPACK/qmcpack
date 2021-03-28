@@ -119,10 +119,21 @@ TEST_CASE("cuBLAS_LU::computeLogDet", "[wavefunction][CUDA]")
   auto& hstream     = cuda_handles->hstream;
 
   void* vp_lu = nullptr;
-  cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 4), "cudaMallocHost failed");
-  double* lu = new (vp_lu) double[4]{7., 3.57142857, -1.04, 7.46153846};
+  cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 16), "cudaMallocHost failed");
+  double* lu = new (vp_lu) double[16]{7., 0.28571429, 0.71428571, 0.71428571,  5., 3.57142857, 0.12, -0.44,
+                                   6., 6.28571429, -1.04,      -0.46153846, 6., 5.28571429, 3.08, 7.46153846};
+  // M[0]      = 3;
+  // M[1]      = 3;
+  // M[2]      = 0;
+  // M[3]      = 0;
+
   double* dev_lu;
-  cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 4), "cudaMalloc failed");
+  cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 16), "cudaMalloc failed");
+  double** lus;
+  cudaErrorCheck(cudaMallocHost((void**)&lus, sizeof(double*)), "cudaMallocHost failed");
+  lus = &dev_lu;
+  double** dev_lus;
+  cudaErrorCheck(cudaMalloc((void**)&dev_lus, sizeof(double*)), "cudaMalloc failed");
 
   std::complex<double>* log_values;
   cudaErrorCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1), "cudaMallocHost failed");
@@ -135,14 +146,15 @@ TEST_CASE("cuBLAS_LU::computeLogDet", "[wavefunction][CUDA]")
   int* dev_pivots;
   cudaErrorCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4), "cudaMalloc failed");
 
-  cudaErrorCheck(cudaMemcpyAsync(dev_lu, lu, sizeof(double) * 4, cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(dev_lu, lu, sizeof(double) * 16, cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying log_values to device");
-
+  cudaErrorCheck(cudaMemcpyAsync(dev_lus, lus, sizeof(double*), cudaMemcpyHostToDevice, hstream),
+                 "cudaMemcpyAsync failed copying log_values to device");
   cudaErrorCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying log_values to device");
 
   int batch_size = 1;
-  cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, dev_lu, dev_pivots, dev_log_values, batch_size);
+  cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus, dev_pivots, dev_log_values, batch_size);
 
   cudaErrorCheck(cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost,
                                  hstream),
@@ -193,6 +205,86 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
 
   int batch_size = 1;
   cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, dev_lu, dev_pivots, dev_log_values, batch_size);
+
+  cudaErrorCheck(cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost,
+                                 hstream),
+                 "cudaMemcpyAsync failed copying log_values from device");
+  cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
+
+  CHECK(log_values[0] == ComplexApprox(std::complex<double>{5.603777579195571, 0.1245249740607651}));
+}
+
+TEST_CASE("cuBLAS_LU::computeLogDetFused_complex", "[wavefunction][CUDA]")
+{
+  auto cuda_handles = std::make_unique<testing::CUDAHandles>();
+  int n             = 4;
+  int lda           = 4;
+  auto& hstream     = cuda_handles->hstream;
+
+  void* vp_lu = nullptr;
+  cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 32), "cudaMallocHost failed");
+  double* lu = new(vp_lu) double[32]{8.0,
+                0.5,
+                0.8793774319066148,
+                0.07003891050583658,
+                0.24980544747081712,
+                -0.0031128404669260694,
+                0.6233463035019455,
+                -0.026459143968871595,
+                2.0,
+                0.1,
+                6.248249027237354,
+                0.2719844357976654,
+                0.7194170575332381,
+                -0.01831314754114669,
+                0.1212375092639108,
+                0.02522449751055713,
+                6.0,
+                -0.2,
+                0.7097276264591441,
+                -0.4443579766536965,
+                4.999337315778741,
+                0.6013141870887196,
+                0.26158183940834034,
+                0.23245112532996867,
+                4.0,
+                -0.6,
+                4.440466926070039,
+                -1.7525291828793774,
+                0.840192589866152,
+                1.5044529443071093,
+                1.0698651110730424,
+                -0.10853319738453365};
+  std::complex<double>* dev_lu;
+  cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 32), "cudaMalloc failed");
+  std::complex<double>** lus;
+  cudaErrorCheck(cudaMallocHost((void**)&lus, sizeof(double*)), "cudaMallocHost failed");
+  std::complex<double>** dev_lus;
+  cudaErrorCheck(cudaMalloc((void**)&dev_lus, sizeof(double*)), "cudaMallocHost failed");
+  lus = &dev_lu;
+    
+  std::complex<double>* log_values;
+  cudaErrorCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1), "cudaMallocHost failed");
+  std::complex<double>* dev_log_values;
+
+  cudaErrorCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1), "cudaMalloc failed");
+
+  void* vp_pivots;
+  cudaErrorCheck(cudaMallocHost((void**)&vp_pivots, sizeof(int) * 4), "cudaMallocHost failed");
+  int* pivots = new (vp_pivots) int[4]{3, 4, 3, 4};
+  int* dev_pivots;
+  cudaErrorCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4), "cudaMalloc failed");
+
+  cudaErrorCheck(cudaMemcpyAsync(dev_lu, lu, sizeof(double) * 32, cudaMemcpyHostToDevice, hstream),
+                 "cudaMemcpyAsync failed copying log_values to device");
+
+  cudaErrorCheck(cudaMemcpyAsync(dev_lus, lus, sizeof(double*), cudaMemcpyHostToDevice, hstream),
+                 "cudaMemcpyAsync failed copying lus to device");
+  cudaErrorCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
+                 "cudaMemcpyAsync failed copying log_values to device");
+
+  int batch_size = 1;
+  cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus, dev_pivots, dev_log_values, batch_size);
 
   cudaErrorCheck(cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost,
                                  hstream),
