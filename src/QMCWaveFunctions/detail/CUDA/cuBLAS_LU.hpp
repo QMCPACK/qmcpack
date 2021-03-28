@@ -15,6 +15,7 @@
 #include <complex>
 #include <type_traits>
 #include <cuda_runtime_api.h>
+#include <cublas_v2.h>
 #include <cuComplex.h>
 
 namespace qmcplusplus
@@ -105,7 +106,6 @@ void computeGetri_batched(cublasHandle_t& h_cublas,
                           int* pivots,
                           int* infos,
                           const int batch_size);
-
 
 } // namespace cuBLAS_LU
 } // namespace qmcplusplus

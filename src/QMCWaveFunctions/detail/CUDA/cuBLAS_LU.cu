@@ -9,14 +9,8 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-#include <cublas_v2.h>
 #include "cuBLAS_LU.hpp"
 #include "Platforms/CUDA/cudaError.h"
-#include <stdexcept>
-#include <type_traits>
-#include <complex>
-#include <cuComplex.h>
 #include "Platforms/CUDA/cuBLAS.hpp"
 
 namespace qmcplusplus
