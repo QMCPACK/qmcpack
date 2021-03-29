@@ -225,7 +225,7 @@ OperatorBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFun
   return myclone;
 }
 
-void LatticeDeviationEstimator::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void LatticeDeviationEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {
@@ -238,9 +238,9 @@ void LatticeDeviationEstimator::registerCollectables(std::vector<observable_help
     }
 
     // open hdf5 entry and resize
-    observable_helper* h5o = new observable_helper(myName);
-    h5o->set_dimensions(ndim, h5_index);
-    h5o->open(gid);
+    observable_helper h5o(myName);
+    h5o.set_dimensions(ndim, h5_index);
+    h5o.open(gid);
 
     // add to h5 file
     h5desc.push_back(h5o);

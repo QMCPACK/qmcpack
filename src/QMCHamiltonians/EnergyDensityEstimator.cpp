@@ -478,28 +478,27 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 }
 
 
-void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
 {
   hid_t g = H5Gcreate(gid, myName.c_str(), 0);
-  observable_helper* oh;
-  oh = new observable_helper("variables");
-  oh->open(g);
-  oh->addProperty(const_cast<int&>(nparticles), "nparticles");
+  observable_helper oh("variables");
+  oh.open(g);
+  oh.addProperty(const_cast<int&>(nparticles), "nparticles");
   int nspacegrids = spacegrids.size();
-  oh->addProperty(const_cast<int&>(nspacegrids), "nspacegrids");
-  oh->addProperty(const_cast<int&>(nsamples), "nsamples");
+  oh.addProperty(const_cast<int&>(nspacegrids), "nspacegrids");
+  oh.addProperty(const_cast<int&>(nsamples), "nsamples");
   if (ion_points)
   {
-    oh->addProperty(const_cast<int&>(nions), "nions");
-    oh->addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions");
+    oh.addProperty(const_cast<int&>(nions), "nions");
+    oh.addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions");
   }
   h5desc.push_back(oh);
   ref.save(h5desc, g);
-  oh = new observable_helper("outside");
+  oh = observable_helper("outside");
   std::vector<int> ng(1);
   ng[0] = (int)nEDValues;
-  oh->set_dimensions(ng, outside_buffer_offset);
-  oh->open(g);
+  oh.set_dimensions(ng, outside_buffer_offset);
+  oh.open(g);
   h5desc.push_back(oh);
   for (int i = 0; i < spacegrids.size(); i++)
   {
@@ -508,12 +507,12 @@ void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper*
   }
   if (ion_points)
   {
-    oh = new observable_helper("ions");
+    oh = observable_helper("ions");
     std::vector<int> ng2(2);
     ng2[0] = nions;
     ng2[1] = (int)nEDValues;
-    oh->set_dimensions(ng2, ion_buffer_offset);
-    oh->open(g);
+    oh.set_dimensions(ng2, ion_buffer_offset);
+    oh.open(g);
     h5desc.push_back(oh);
   }
 }

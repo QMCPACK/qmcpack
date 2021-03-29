@@ -137,14 +137,14 @@ void SkEstimator::setParticlePropertyList(PropertySetType& plist, int offset)
 }
 
 
-void SkEstimator::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void SkEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {
     std::vector<int> ndim(1, NumK);
-    observable_helper* h5o = new observable_helper(myName);
-    h5o->set_dimensions(ndim, myIndex);
-    h5o->open(gid);
+    observable_helper h5o(myName);
+    h5o.set_dimensions(ndim, myIndex);
+    h5o.open(gid);
     h5desc.push_back(h5o);
     hsize_t kdims[2];
     kdims[0]          = NumK;

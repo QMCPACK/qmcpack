@@ -213,7 +213,7 @@ struct OperatorBase : public QMCTraits
    *
    * The default implementation is to register a scalar for this->Value
    */
-  virtual void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  virtual void registerObservables(std::vector<observable_helper>& h5desc, hid_t gid) const;
 
   /*** add to collectables descriptor for hdf5
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
@@ -222,7 +222,7 @@ struct OperatorBase : public QMCTraits
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  virtual void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
+  virtual void registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const {}
 
   /** set the values evaluated by this object to plist
    * @param plist RecordNameProperty

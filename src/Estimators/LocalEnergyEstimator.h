@@ -65,22 +65,24 @@ public:
   }
 
   /*@{*/
-  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) override
+  inline void accumulate(const MCWalkerConfiguration& W,
+                         WalkerIterator first,
+                         WalkerIterator last,
+                         RealType wgt) override
   {
     for (; first != last; ++first)
       accumulate(**first, wgt);
   }
   void add2Record(RecordListType& record) override;
-  void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) override;
+  void registerObservables(std::vector<observable_helper>& h5desc, hid_t gid) override;
   ScalarEstimatorBase* clone() override;
   /*@}*/
 
   inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
-    for (MCPWalker& walker: walkers)
+    for (MCPWalker& walker : walkers)
       accumulate(walker, 1.0);
   }
-
 };
 } // namespace qmcplusplus
 #endif

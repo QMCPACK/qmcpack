@@ -60,7 +60,10 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
 
   void accumulate(const Walker_t& awalker, RealType wgt);
 
-  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) override
+  inline void accumulate(const MCWalkerConfiguration& W,
+                         WalkerIterator first,
+                         WalkerIterator last,
+                         RealType wgt) override
   {
     //accumulate  the number of times accumulation has occurred.
     //d_wgt+=last-first;
@@ -70,7 +73,7 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
 
   inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
-    for (MCPWalker& walker: walkers)
+    for (MCPWalker& walker : walkers)
       accumulate(walker, 1.0);
   }
 
@@ -78,7 +81,7 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
    *@param record storage of scalar records (name,value)
    */
   void add2Record(RecordNamedProperty<RealType>& record) override;
-  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) override;
+  void registerObservables(std::vector<observable_helper>& h5dec, hid_t gid) override;
   ScalarEstimatorBase* clone() override;
 
   void evaluateDiff();

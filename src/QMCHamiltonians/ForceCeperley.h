@@ -31,9 +31,9 @@ private:
   const int d_ei_ID;
 
 public:
-  double Rcut;                    // parameter: radial distance within which estimator is used
-  int m_exp;                      // parameter: exponent in polynomial fit
-  int N_basis;                    // parameter: size of polynomial basis set
+  double Rcut;                   // parameter: radial distance within which estimator is used
+  int m_exp;                     // parameter: exponent in polynomial fit
+  int N_basis;                   // parameter: size of polynomial basis set
   Matrix<FullPrecRealType> Sinv; // terms in fitting polynomial
   Vector<FullPrecRealType> h;    // terms in fitting polynomial
   Vector<FullPrecRealType> c;    // polynomial coefficients
@@ -45,7 +45,7 @@ public:
 
   void InitMatrix();
 
-  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
+  void registerObservables(std::vector<observable_helper>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list, gid);
   }

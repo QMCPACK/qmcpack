@@ -70,14 +70,14 @@ void ForceBase::addObservablesStress(QMCTraits::PropertySetType& plist)
     }
 }
 
-void ForceBase::registerObservablesF(std::vector<observable_helper*>& h5list, hid_t gid) const
+void ForceBase::registerObservablesF(std::vector<observable_helper>& h5list, hid_t gid) const
 {
   std::vector<int> ndim(2);
-  ndim[0]                = Nnuc;
-  ndim[1]                = OHMMS_DIM;
-  observable_helper* h5o = new observable_helper(prefix);
-  h5o->set_dimensions(ndim, FirstForceIndex);
-  h5o->open(gid);
+  ndim[0] = Nnuc;
+  ndim[1] = OHMMS_DIM;
+  observable_helper h5o(prefix);
+  h5o.set_dimensions(ndim, FirstForceIndex);
+  h5o.open(gid);
   h5list.push_back(h5o);
 }
 

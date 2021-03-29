@@ -308,11 +308,11 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
                   << std::endl;
     O_leader.mw_res_ = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
     for (int ig = 0; ig < O_leader.PPset.size(); ++ig)
-    if (O_leader.PPset[ig]->getVP())
-    {
-      O_leader.PPset[ig]->getVP()->createResource(O_leader.mw_res_->collection);
-      break;
-    }
+      if (O_leader.PPset[ig]->getVP())
+      {
+        O_leader.PPset[ig]->getVP()->createResource(O_leader.mw_res_->collection);
+        break;
+      }
   }
 
   auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
@@ -653,22 +653,18 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
   }
 }
 
-void NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
+void NonLocalECPotential::registerObservables(std::vector<observable_helper>& h5list, hid_t gid) const
 {
   OperatorBase::registerObservables(h5list, gid);
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
-    ndim[0]                 = Nnuc;
-    ndim[1]                 = OHMMS_DIM;
-    observable_helper* h5o1 = new observable_helper("FNL");
-    h5o1->set_dimensions(ndim, FirstForceIndex);
-    h5o1->open(gid);
+    ndim[0] = Nnuc;
+    ndim[1] = OHMMS_DIM;
+    observable_helper h5o1("FNL");
+    h5o1.set_dimensions(ndim, FirstForceIndex);
+    h5o1.open(gid);
     h5list.push_back(h5o1);
-    //    observable_helper* h5o2 = new observable_helper("FNL_Pulay");
-    //    h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
-    //    h5o2->open(gid);
-    //    h5list.push_back(h5o2);
   }
 }
 

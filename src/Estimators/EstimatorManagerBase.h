@@ -258,7 +258,7 @@ protected:
   ///estimators of simple scalars
   std::vector<EstimatorType*> Estimators;
   ///convenient descriptors for hdf5
-  std::vector<observable_helper*> h5desc;
+  std::vector<observable_helper> h5desc;
   /////estimators of composite data
   //CompositeEstimatorSet* CompEstimators;
   ///Timer

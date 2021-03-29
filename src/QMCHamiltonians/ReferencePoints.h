@@ -34,7 +34,7 @@ public:
   bool put(xmlNodePtr cur, ParticleSet& P, std::vector<ParticleSet*>& Pref);
   bool put(ParticleSet& P, std::vector<ParticleSet*>& Pref);
   void write_description(std::ostream& os, std::string& indent);
-  void save(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void save(std::vector<observable_helper>& h5desc, hid_t gid) const;
 
 private:
   enum Coordinate

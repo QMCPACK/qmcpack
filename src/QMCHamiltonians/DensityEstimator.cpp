@@ -118,20 +118,16 @@ void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collec
   //collectables.add(tmp2.begin(),tmp2.end());
 }
 
-void DensityEstimator::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void DensityEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
 {
   int loc = h5desc.size();
   std::vector<int> ng(OHMMS_DIM);
   for (int i = 0; i < OHMMS_DIM; ++i)
     ng[i] = NumGrids[i];
-  observable_helper* h5o = new observable_helper(myName);
-  h5o->set_dimensions(ng, myIndex);
-  h5o->open(gid);
+  observable_helper h5o(myName);
+  h5o.set_dimensions(ng, myIndex);
+  h5o.open(gid);
   h5desc.push_back(h5o);
-  //h5o=new observable_helper("Potential");
-  //h5o->set_dimensions(ng,potentialIndex);
-  //h5o->open(gid);
-  //h5desc.push_back(h5o);
 }
 
 void DensityEstimator::setObservables(PropertySetType& plist)

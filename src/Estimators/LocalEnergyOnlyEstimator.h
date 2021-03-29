@@ -29,7 +29,10 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
     scalars_saved.resize(2);
   }
 
-  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) override
+  inline void accumulate(const MCWalkerConfiguration& W,
+                         WalkerIterator first,
+                         WalkerIterator last,
+                         RealType wgt) override
   {
     for (; first != last; ++first)
     {
@@ -40,14 +43,14 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
 
   inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
-    for (MCPWalker& walker: walkers)
+    for (MCPWalker& walker : walkers)
     {
       scalars[0](walker.Properties(WP::LOCALENERGY), 1.0);
       scalars[1](walker.Properties(WP::LOCALPOTENTIAL), 1.0);
     }
   }
 
-  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) override {}
+  void registerObservables(std::vector<observable_helper>& h5dec, hid_t gid) override {}
 
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    * @param record storage of scalar records (name,value)

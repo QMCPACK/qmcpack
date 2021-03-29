@@ -187,7 +187,7 @@ void SpinDensity::addObservables(PropertySetType& plist, BufferType& collectable
 }
 
 
-void SpinDensity::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void SpinDensity::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
 {
   hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
 
@@ -200,9 +200,9 @@ void SpinDensity::registerCollectables(std::vector<observable_helper*>& h5desc, 
 
   for (int s = 0; s < nspecies; ++s)
   {
-    observable_helper* oh = new observable_helper(species_name[s]);
-    oh->set_dimensions(ng, myIndex + s * npoints);
-    oh->open(sgid);
+    observable_helper oh(species_name[s]);
+    oh.set_dimensions(ng, myIndex + s * npoints);
+    oh.open(sgid);
     h5desc.push_back(oh);
   }
 }

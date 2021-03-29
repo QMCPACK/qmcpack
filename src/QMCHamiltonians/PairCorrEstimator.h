@@ -42,7 +42,7 @@ public:
 
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& collectables);
-  void registerCollectables(std::vector<observable_helper*>& h5list, hid_t gid) const;
+  void registerCollectables(std::vector<observable_helper>& h5list, hid_t gid) const;
   void setObservables(PropertySetType& plist);
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);

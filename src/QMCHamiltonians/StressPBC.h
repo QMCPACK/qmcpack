@@ -78,7 +78,7 @@ struct StressPBC : public OperatorBase, public ForceBase
 
   SymTensor<RealType, OHMMS_DIM> evaluateKineticSymTensor(ParticleSet& P);
 
-  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const override
+  void registerObservables(std::vector<observable_helper>& h5list, hid_t gid) const override
   {
     registerObservablesF(h5list, gid);
   }

@@ -72,7 +72,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
       const RealType* restrict phases_vPos_c = phases_vPos[s].data(0);
       const RealType* restrict phases_vPos_s = phases_vPos[s].data(1);
       RealType* restrict nofK_here           = nofK.data();
-#pragma omp simd aligned(nofK_here, phases_c, phases_s, phases_vPos_c, phases_vPos_s: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(nofK_here, phases_c, phases_s, phases_vPos_c, phases_vPos_s : QMC_SIMD_ALIGNMENT)
       for (int ik = 0; ik < nk; ++ik)
         nofK_here[ik] += (phases_c[ik] * phases_vPos_c[ik] - phases_s[ik] * phases_vPos_s[ik]) * ratio_c -
             (phases_s[ik] * phases_vPos_c[ik] + phases_c[ik] * phases_vPos_s[ik]) * ratio_s;
@@ -94,19 +94,19 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-void MomentumEstimator::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void MomentumEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {
     //descriptor for the data, 1-D data
     std::vector<int> ng(1);
     //add nofk
-    ng[0]                  = nofK.size();
-    observable_helper* h5o = new observable_helper("nofk");
-    h5o->set_dimensions(ng, myIndex);
-    h5o->open(gid);
-    h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
-    h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
+    ng[0] = nofK.size();
+    observable_helper h5o("nofk");
+    h5o.set_dimensions(ng, myIndex);
+    h5o.open(gid);
+    h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
+    h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
     h5desc.push_back(h5o);
   }
 }

@@ -35,7 +35,7 @@ public:
   Return_t evaluate(ParticleSet& P);
 
   // pure virtual functions require overrider
-  void resetTargetParticleSet(ParticleSet& P) {}                          // required
+  void resetTargetParticleSet(ParticleSet& P) {}                    // required
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
 
   // allocate multiple columns in scalar.dat
@@ -44,7 +44,7 @@ public:
   void setObservables(PropertySetType& plist);
 
   // allow h5 output
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const;
 
 private:
   ParticleSet& tpset; // reference to target particle set

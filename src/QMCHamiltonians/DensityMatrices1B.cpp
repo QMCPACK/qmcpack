@@ -523,7 +523,7 @@ void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& colle
 }
 
 
-void DensityMatrices1B::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void DensityMatrices1B::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
 {
 #if defined(QMC_COMPLEX)
   std::vector<int> ng(3);
@@ -545,10 +545,9 @@ void DensityMatrices1B::registerCollectables(std::vector<observable_helper*>& h5
   hid_t ngid        = H5Gcreate(dgid, nname.c_str(), 0);
   for (int s = 0; s < nspecies; ++s)
   {
-    observable_helper* oh;
-    oh = new observable_helper(species_name[s]);
-    oh->set_dimensions(ng, nindex + s * nentries);
-    oh->open(ngid);
+    observable_helper oh(species_name[s]);
+    oh.set_dimensions(ng, nindex + s * nentries);
+    oh.open(ngid);
     h5desc.push_back(oh);
   }
 
@@ -558,10 +557,9 @@ void DensityMatrices1B::registerCollectables(std::vector<observable_helper*>& h5
     hid_t egid        = H5Gcreate(dgid, ename.c_str(), 0);
     for (int s = 0; s < nspecies; ++s)
     {
-      observable_helper* oh;
-      oh = new observable_helper(species_name[s]);
-      oh->set_dimensions(ng, eindex + s * nentries);
-      oh->open(egid);
+      observable_helper oh(species_name[s]);
+      oh.set_dimensions(ng, eindex + s * nentries);
+      oh.open(egid);
       h5desc.push_back(oh);
     }
   }
