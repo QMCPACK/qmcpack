@@ -261,7 +261,7 @@ public:
       assert(G.size(1) == size_of_G_for_vbias());
       HamOp.vbias(G(G.extension(0), {0, long(OrbMats[0].size(0) * NMO)}), std::forward<MatA>(v), scl * a, 0.0);
       if (walker_type == COLLINEAR) {
-        APP_ABPRT(" Error in PHMSD::vbias: transposed_G_for_vbias_ should be false. \n");
+        APP_ABORT(" Error in PHMSD::vbias: transposed_G_for_vbias_ should be false. \n");
         HamOp.vbias(G(G.extension(0), {long(OrbMats[0].size(0) * NMO), G.size(1)}), std::forward<MatA>(v), scl * a,
       }
                     1.0);

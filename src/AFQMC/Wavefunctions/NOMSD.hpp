@@ -268,7 +268,7 @@ public:
       else
       {
         if(transposed_G_for_vbias_)
-          APP_ABPRT(" Error in NOMSD::vbias: transposed_G_for_vbias_ should be false. \n");
+          APP_ABORT(" Error in NOMSD::vbias: transposed_G_for_vbias_ should be false. \n");
         // HamOp expects either alpha or beta, so must be called twice
         HamOp.vbias(G.sliced(0, NMO * NMO), std::forward<MatA>(v), a, 0.0);
         HamOp.vbias(G.sliced(NMO * NMO, 2 * NMO * NMO), std::forward<MatA>(v), a, 1.0);
