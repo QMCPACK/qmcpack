@@ -486,9 +486,9 @@ public:
   {
     if (haj.size(0) == 1)
     {
-      assert(Lakn.size(0) == G.size(1));
+      assert(Lakn.size(0) == G.size(0));
       assert(Lakn.size(1) == v.size(0));
-      assert(G.size(0) == v.size(1));
+      assert(G.size(1) == v.size(1));
 
 #if MIXED_PRECISION
       size_t mem_needs = G.num_elements() + v.num_elements();
@@ -498,12 +498,12 @@ public:
       copy_n_cast(make_device_ptr(G.origin()), G.num_elements(), Gsp.origin());
       if (walker_type == CLOSED)
         a *= 2.0;
-      ma::product(SPComplexType(a), ma::T(Lakn), ma::T(Gsp), SPComplexType(c), vsp);
+      ma::product(SPComplexType(a), ma::T(Lakn), Gsp, SPComplexType(c), vsp);
       copy_n_cast(vsp.origin(), vsp.num_elements(), make_device_ptr(v.origin()));
 #else
       if (walker_type == CLOSED)
         a *= 2.0;
-      ma::product(SPComplexType(a), ma::T(Lakn), ma::T(G), SPComplexType(c), v);
+      ma::product(SPComplexType(a), ma::T(Lakn), G, SPComplexType(c), v);
 #endif
     }
     else
@@ -544,7 +544,7 @@ public:
   int global_origin_cholesky_vector() const { return global_origin; }
 
   // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
-  bool transposed_G_for_vbias() const { return (haj.size(0) == 1); }
+  bool transposed_G_for_vbias() const { return false; }
   bool transposed_G_for_E() const { return true; }
   // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
   bool transposed_vHS() const { return false; }
