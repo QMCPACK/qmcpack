@@ -544,7 +544,7 @@ public:
   int global_origin_cholesky_vector() const { return global_origin; }
 
   // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
-  bool transposed_G_for_vbias() const { return (haj.size(0) == 1); }
+  bool transposed_G_for_vbias() const { return false; }
   bool transposed_G_for_E() const { return true; }
   // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
   bool transposed_vHS() const { return false; }
