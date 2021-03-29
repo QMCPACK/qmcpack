@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -53,7 +53,7 @@ struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
 };
 
 /** Implements dirac matrix update using OpenMP offload.
- * It is used as DET_ENGINE_TYPE in DiracDeterminantBatched.
+ * It is used as DET_ENGINE in DiracDeterminantBatched.
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */

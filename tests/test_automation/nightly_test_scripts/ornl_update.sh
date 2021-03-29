@@ -15,6 +15,9 @@ else
     exit 1
 fi
 
+spack uninstall -y gcc@master
+spack install gcc@master
+
 spack uninstall -y llvm@main
 spack install llvm@main +cuda cuda_arch=70 ^python@${python_version}%gcc@${gcc_vnew}
 

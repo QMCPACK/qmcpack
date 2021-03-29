@@ -148,7 +148,8 @@ Naming
 
 The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a
 single terminal window.  If an extremely short variable name is used, its scope must be shorter than :math:`\sim 40` lines. An
-exception is made for template parameters, which must be in all CAPS.
+exception is made for template parameters, which must be in all CAPS. Legacy code contains a great variety of hard to read code
+style, read this section and do not immitate existing code that violates it.
 
 Namespace names
 ~~~~~~~~~~~~~~~
@@ -159,7 +160,12 @@ Type and class names
 ~~~~~~~~~~~~~~~~~~~~
 
 Type and class names should start with a capital letter and have a capital letter for each new word. Underscores (``_``) are not
-allowed.
+allowed. It's redundant to end these names with ``Type`` or ``_t``.
+
+::
+   \\no
+   using ValueMatrix_t = Matrix<Value>;
+   using RealType = double;
 
 Variable names
 ~~~~~~~~~~~~~~
@@ -176,6 +182,11 @@ Class private/protected data members names should follow the convention of varia
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Function names should start with a lowercase character and have a capital letter for each new word.
+
+Template Parameters
+~~~~~~~~~~~~~~~~~~~
+
+Template parameters names should be in all caps with (``_``) separating words.  It's redundant to end these names with ``_TYPE``,
 
 Lambda expressions
 ~~~~~~~~~~~~~~~~~~
