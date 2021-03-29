@@ -5,21 +5,26 @@ External Tools
 
 This chapter provides some information on using QMCPACK with external tools.
 
-.. _LLVM-Sanitizer-Libraries:
+.. _Sanitizer-Libraries:
 
-LLVM Sanitizer Libraries
-------------------------
+Sanitizer Libraries
+-------------------
 
 Using CMake, set one of these flags for using the clang sanitizer libraries with or without lldb.
 
 ::
 
-   -DLLVM_SANITIZE_ADDRESS    link with the Clang address sanitizer library
-   -DLLVM_SANITIZE_MEMORY     link with the Clang memory sanitizer library
+   -DENABLE_SANITIZER  link with the GNU or Clang sanitizer library for asan, ubsan, tsan or msan (default=none)
+   
+In general: 
 
-These set the basic flags required to build with either of these sanitizer libraries. They require a build of clang with dynamic libraries somehow visible (i.e., through ``LD_FLAGS=-L/your/path/to/llvm/lib``). You must link through clang, which is generally the default when building with it. Depending on your system and linker, this may be incompatible with the "Release" build, so set ``-DCMAKE_BUILD_TYPE=Debug``. They have been tested with the default spack install of llvm 7.0.0 and been manually built with llvm 7.0.1. See the following links for additional information on use, run time, and build options of the sanitizers: https://clang.llvm.org/docs/AddressSanitizer.html & https://clang.llvm.org/docs/MemorySanitizer.html.
+- address sanitizer (asan):  catches most pointer-based errors and memory leaks (via lsan) by default. 
+- undefined behavior sanitizer (ubsan): low-overhead, catches undefined behavior accessing misaligned memory or signed or float to integer overflows.
+- undefined behavior sanitizer (tsan): catches potential race conditions in threaded code.
+- memory sanitizer (msan): catches using uninitialized memory errors, but is difficult to use without a full set of msan-instrumented libraries.
 
-In general, the address sanitizer libraries will catch most pointer-based errors. ASAN can also catch memory links but requires that additional options be set. MSAN will catch more subtle memory management errors but is difficult to use without a full set of MSAN-instrumented libraries.
+These set the basic flags required to build with either of these sanitizer libraries which are mutually exclusive. Depending on your system and linker, these may be incompatible with the "Release" build, so set ``-DCMAKE_BUILD_TYPE=Debug`` or ``-DCMAKE_BUILD_TYPE=RelWithDebInfo``. They are tested on GitHub Actions CI using deterministic tests ``ctest -L deterministic`` (currently ubsan). See the following links for additional information on use, run time, and build options of the sanitizers: https://clang.llvm.org/docs/AddressSanitizer.html & https://clang.llvm.org/docs/MemorySanitizer.html.
+
 
 Intel VTune
 -----------

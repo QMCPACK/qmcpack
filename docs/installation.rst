@@ -377,18 +377,22 @@ the path to the source directory.
                            e.g. "-n", "-np", etc.
     MPIEXEC_PREFLAGS       Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
 
-- LLVM/Clang Developer Options
+- Sanitizers Developer Options
 
   ::
 
-    LLVM_SANITIZE_ADDRES  link with the Clang address sanitizer library
-    LLVM_SANITIZE_MEMORY  link with the Clang memory sanitizer library
+    ENABLE_SANITIZER  link with the GNU or Clang sanitizer library for asan, ubsan, tsan or msan (default=none)
+    
 
-`Clang address sanitizer library <https://clang.llvm.org/docs/AddressSanitizer.html>`_
+`Clang address sanitizer library asan <https://clang.llvm.org/docs/AddressSanitizer.html>`_
 
-`Clang memory sanitizer library <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+`Clang address sanitizer library ubsan <https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html>`_
 
-See :ref:`LLVM-Sanitizer-Libraries` for more information.
+`Clang thread sanitizer library tsan <https://clang.llvm.org/docs/ThreadSanitizer.html>`_
+
+`Clang thread sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+
+See :ref:`Sanitizer-Libraries` for more information.
 
 Notes for OpenMP target offload to accelerators (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

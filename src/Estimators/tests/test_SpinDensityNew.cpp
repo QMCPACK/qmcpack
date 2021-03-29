@@ -27,10 +27,11 @@
 
 namespace qmcplusplus
 {
+
+using QMCT = QMCTraits;
+  
 void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEstBase>& crowd_sdns)
 {
-  using QMCT = QMCTraits;
-
   for (int iops = 0; iops < ncrowds; ++iops)
   {
     std::vector<OperatorEstBase::MCPWalker> walkers;
@@ -59,10 +60,8 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
   }
 }
 
-void randomUpdateAccumulate(testing::RandomForTest& rft, UPtrVector<OperatorEstBase>& crowd_sdns)
+void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVector<OperatorEstBase>& crowd_sdns)
 {
-  using QMCT = QMCTraits;
-
   for (auto& uptr_crowd_sdn : crowd_sdns)
   {
     std::vector<OperatorEstBase::MCPWalker> walkers;
@@ -280,7 +279,7 @@ TEST_CASE("SpinDensityNew algorithm comparison", "[estimators]")
   SpinDensityNew sdn_rank(std::move(sdi), species_set, DataLocality::rank);
   UPtrVector<OperatorEstBase> crowd_sdns_rank;
   accumulateFromPsets(ncrowds, sdn_rank, crowd_sdns_rank);
-  testing::RandomForTest rng_for_test_rank;
+  testing::RandomForTest<QMCT::RealType> rng_for_test_rank;
   for (int i = 0; i < nsteps; ++i)
     randomUpdateAccumulate(rng_for_test_rank, crowd_sdns_rank);
   RefVector<OperatorEstBase> crowd_oeb_refs_rank = convertUPtrToRefVector(crowd_sdns_rank);
@@ -290,7 +289,7 @@ TEST_CASE("SpinDensityNew algorithm comparison", "[estimators]")
   SpinDensityNew sdn_crowd(std::move(sdi), species_set, DataLocality::crowd);
   UPtrVector<OperatorEstBase> crowd_sdns_crowd;
   accumulateFromPsets(ncrowds, sdn_crowd, crowd_sdns_crowd);
-  testing::RandomForTest rng_for_test_crowd;
+  testing::RandomForTest<QMCT::RealType> rng_for_test_crowd;
   for (int i = 0; i < nsteps; ++i)
     randomUpdateAccumulate(rng_for_test_crowd, crowd_sdns_crowd);
   RefVector<OperatorEstBase> crowd_oeb_refs_crowd = convertUPtrToRefVector(crowd_sdns_crowd);
