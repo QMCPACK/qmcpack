@@ -146,7 +146,7 @@ VMC method ``vmc`` driver:
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``samplesperthread``           | integer      | :math:`\geq 0`          | 0           | Number of samples per thread                  |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``storeconfigs``               | integer      | all values              | 0           | Write configurations to files                   |
+  | ``storeconfigs``               | integer      | all values              | 0           | Write configurations to files                 |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
@@ -288,17 +288,17 @@ VMC method ``vmc_batch`` driver (experimental):
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``substeps``                   | integer      | :math:`\geq 0`          | 1           | Number of substeps per step                   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                |
+  | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                  |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move                  |
+  | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``samples`` (not ready)        | integer      | :math:`\geq 0`          | 0           | Number of walker samples for in this VMC run  |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``storeconfigs`` (not ready)   | integer      | all values              | 0           | Write configurations to files             |
+  | ``storeconfigs`` (not ready)   | integer      | all values              | 0           | Write configurations to files                 |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency                 |
+  | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing)    |
+  | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 Additional information:
