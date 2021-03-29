@@ -186,7 +186,7 @@ clang++-tidy:
     - clang-tidy --version
     - mkdir build && cd build
     - clang-tidy -checks=*,-fuchsia-default-arguments-calls,-fuchsia-statically-constructed-objects,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-cppcoreguidelines-macro-usage,-cppcoreguidelines-avoid-non-const-global-variables,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-llvmlibc-restrict-system-libc-headers,-cert-err58-cpp --warnings-as-errors=* --list-checks
-    - cmake .. -DCMAKE_CXX_CLANG_TIDY="clang-tidy;-checks=*,-fuchsia-default-arguments-calls,-fuchsia-statically-constructed-objects,-fuchsia-overloaded-operator,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-cppcoreguidelines-macro-usage,-cppcoreguidelines-avoid-non-const-global-variables,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-llvmlibc-restrict-system-libc-headers,-cert-err58-cpp;--warnings-as-errors=-*"
+    - cmake .. -DCMAKE_CXX_CLANG_TIDY="clang-tidy;-checks=*,-fuchsia-default-arguments-calls,-fuchsia-statically-constructed-objects,-fuchsia-overloaded-operator,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-cppcoreguidelines-macro-usage,-cppcoreguidelines-avoid-non-const-global-variables,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-llvmlibc-restrict-system-libc-headers,-cert-err58-cpp;--warnings-as-errors=*"
     - cmake --build . --verbose -- --quiet --no-print-directory
     - ctest --output-on-failure
 
@@ -279,7 +279,7 @@ icc-memcheck:
       - ln --symbolic --force . ../multi
       - $CXX -v
       - mkdir build && cd build
-      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DMEMORYCHECK_COMMAND_OPTIONS="--leak-check=full --show-reachable=yes --track-origins=yes --malloc-fill=0xEE --free-fill=0xFF --leak-check-heuristics=none -v --track-fds=yes --error-limit=no --show-below-main=yes --read-var-info=yes --gen-suppressions=all"
       - cmake --build . -- --quiet --no-print-directory
       - export MKL_VERBOSE=1
       - ctest -T memcheck --output-on-failure || (cat Testing/Temporary/MemoryChecker.*.log && exit 0)
@@ -391,6 +391,37 @@ g++-cppcheck:
     - cmake -DCMAKE_CXX_CPPCHECK="cppcheck;--enable=all;--suppress=missingIncludeSystem;--suppress=unmatchedSuppression;--suppress=missingInclude;--inline-suppr;-D__align__;-DCUDARTAPI;--language=c++;--std=c++17;--error-exitcode=666" ..
     - cmake --build .
     - ctest --output-on-failure
+
+qmcpack-g++:
+  stage: test
+  script:
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ cmake make git ca-certificates   numdiff  python3 python3-numpy python3-h5py python3-mpi4py python3-scipy libxml2-dev libhdf5-dev
+    - git clone https://github.com/QMCPACK/qmcpack.git
+    - cd qmcpack
+    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+    - git subtree add --squash -P external_codes/boost_multi/multi https://gitlab.com/correaa/boost-multi.git $CI_COMMIT_BRANCH
+    - cd build
+    - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DBUILD_PPCONVERT=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror" -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" ..
+    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - ctest -R ppconvert --output-on-failure
+    - ctest -R afqmc     --output-on-failure
+
+qmcpack-cuda-11.2-compileonly:
+    image: nvidia/cuda:11.2.0-devel
+    stage: test
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get -qq update && apt-get -qq install --no-install-recommends -y libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ cmake make git ca-certificates    numdiff  python3 python3-numpy python3-h5py python3-mpi4py python3-scipy libxml2-dev libhdf5-dev
+      - git clone https://github.com/QMCPACK/qmcpack.git
+      - cd qmcpack
+      - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+      - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+      - git subtree add --squash -P external_codes/boost_multi/multi https://gitlab.com/correaa/boost-multi.git $CI_COMMIT_BRANCH
+      - cd build
+      - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DBUILD_PPCONVERT=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 ..
+      - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+      - ctest -R ppconvert --output-on-failure
 
 inq-g++-latest:
   stage: test

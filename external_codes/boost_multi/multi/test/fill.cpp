@@ -6,40 +6,43 @@ $CXX $CXXFLAGS $0 -lm -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include<random>
-
 #include "../array.hpp"
 
 #include<cstddef>
-#include<limits>
-#include<type_traits> // enable_if_t
 #include<iostream>  //cout
-
-//#include <range/v3/all.hpp>
+#include<limits>
+#include<random>
+#include<type_traits> // enable_if_t
 
 #include <boost/iterator/transform_iterator.hpp>
 
 // from Howard Hinnart hash
-std::size_t fnv1a(void const* key, std::size_t len, std::size_t h = 14695981039346656037u) noexcept{
-	unsigned char const* p = static_cast<unsigned char const*>(key);
-	unsigned char const* const e = p + len;
-	for(; p < e; ++p) h = (h ^ *p) * 1099511628211u; // prime
+auto fnv1a(void const* key, std::size_t len, std::size_t h) noexcept{
+	auto const *p = static_cast<unsigned char const*>(key);
+	unsigned char const* const e = p + len; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic): low level
+	for(; p < e; ++p){ // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic): low level
+		h = (h ^ *p) * 1099511628211U; // prime
+	}
 	return h;
 }
 
+auto fnv1a(void const* key, std::size_t len) noexcept{
+	return fnv1a(key, len, 14695981039346656037U);
+}
+
 class fnv1a_t{
-	std::size_t h = 14695981039346656037u; // offset
+	std::size_t h = 14695981039346656037U; // offset
 public:
 	using result_type = std::size_t;
-	static constexpr result_type min(){return std::numeric_limits<std::size_t>::min();}
-	static constexpr result_type max(){return std::numeric_limits<std::size_t>::max();}
+	static constexpr auto min(){return std::numeric_limits<result_type>::min();}
+	static constexpr auto max(){return std::numeric_limits<result_type>::max();}
 	void operator()(void const* key, std::size_t len) noexcept{h = fnv1a(key, len, h);}
 	template<class T, std::enable_if_t<std::is_fundamental<T>{}, int> = 0>
-	fnv1a_t& operator()(T const& t) noexcept{operator()(&t, sizeof(t)); return *this;}
-	result_type operator()() && noexcept{return h;}
-	result_type operator()() & noexcept{return h;}
-	explicit operator result_type() && noexcept{return h;}
-	explicit operator result_type() & noexcept{return h;}
+	decltype(auto) operator()(T const& t) noexcept{operator()(&t, sizeof(t)); return *this;}
+//	result_type operator()() && noexcept{return h;}
+	auto operator()() const& noexcept{return h;}
+//	explicit operator result_type() && noexcept{return h;}
+	explicit operator result_type() const& noexcept{return h;}
 };
 
 std::random_device r;

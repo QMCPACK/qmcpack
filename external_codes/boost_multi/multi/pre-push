@@ -3,6 +3,7 @@
 
 (mkdir -p build.g++.debug   && cd build.g++.debug   && CXX=g++                                 cmake .. -DCMAKE_BUILD_TYPE=Debug     && make -j 12 && ctest -j 12 --output-on-failure) || exit
 (mkdir -p build.g++         && cd build.g++         && CXX=g++                                 cmake ..                              && make -j 12 && ctest -j 12 --output-on-failure) || exit
+(mkdir -p build.g++         && cd build.g++         && CXX=g++                                 cmake ..                              && make -j 12 && ctest -T memcheck -j 12 --output-on-failure) || exit
 (mkdir -p build.g++-8       && cd build.g++-8       && CXX=g++-8                               cmake ..                              && make -j 12 && ctest -j 12 --output-on-failure) || exit
 (mkdir -p build.g++-std17   && cd build.g++-std17   && CXX=g++                                 cmake .. -DCMAKE_CXX_STANDARD=17      && make -j 12 && ctest -j 12 --output-on-failure) || exit
 (mkdir -p build.clang++     && cd build.clang++     && CXX=clang++                             cmake ..                              && make -j 12 && ctest -j 12 --output-on-failure) || exit

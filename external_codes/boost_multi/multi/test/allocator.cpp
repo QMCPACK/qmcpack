@@ -65,9 +65,11 @@ BOOST_AUTO_TEST_CASE(array1d_of_arrays2d){
 
 BOOST_AUTO_TEST_CASE(array_3d_of_array_2d){
 	multi::array<multi::array<double, 3>, 2> AA({10, 20}, multi::array<double, 3>{});
-	for(int i = 0; i != 10; ++i)
-		for(int j = 0; j != 20; ++j)
+	for(int i = 0; i != 10; ++i){
+		for(int j = 0; j != 20; ++j){
 			AA[i][j] = multi::array<double, 3>({i+j, i+j, i+j}, 99.);
+		}
+	}
 //	std::for_each(begin(extension(AA)), end(extension(AA)), 
 //		[&AA](auto& row){std::transform(
 //			begin(extension(row)), end(extension(row)), begin(row), 
