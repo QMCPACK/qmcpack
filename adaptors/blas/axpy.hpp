@@ -13,15 +13,15 @@ namespace multi{namespace blas{
 
 using core::axpy;
 
-template<class T, class It1, class Size, class OutIt>
-auto axpy_n(T alpha, It1 first, Size n, OutIt d_first)
-->decltype(axpy(n, alpha, base(first), stride(first), base(d_first), stride(d_first)), d_first + n){
-	return axpy(n, alpha, base(first), stride(first), base(d_first), stride(d_first)), d_first + n;}
+template<class It1, class Size, class OutIt>
+auto axpy_n(typename It1::value_type alpha, It1 first, Size n, OutIt d_first)
+->decltype(axpy(n, &alpha, first.base(), first.stride(), d_first.base(), d_first.stride()), d_first + n){
+	return axpy(n, &alpha, base(first) , stride(first) , base(d_first) , stride(d_first) ) , d_first + n;}
 
-template<class Context, class T, class It1, class Size, class OutIt, class=std::enable_if_t<is_context<Context>{}>>
-auto axpy_n(Context&& ctxt, T alpha, It1 first, Size n, OutIt d_first)
-->decltype(std::forward<Context>(ctxt).axpy(n, alpha, base(first), stride(first), base(d_first), stride(d_first)), d_first + n){
-	return std::forward<Context>(ctxt).axpy(n, alpha, base(first), stride(first), base(d_first), stride(d_first)), d_first + n;}
+template<class Context, class It1, class Size, class OutIt, class=std::enable_if_t<is_context<Context>{}>>
+auto axpy_n(Context&& ctxt, typename It1::value_type alpha, It1 first, Size n, OutIt d_first)
+->decltype(std::forward<Context>(ctxt).axpy(n, &alpha, first.base(), first.stride(), d_first.base(), d_first.stride()), d_first + n){
+	return std::forward<Context>(ctxt).axpy(n, &alpha, base(first) , stride(first) , base(d_first) , stride(d_first)) , d_first + n;}
 
 template<class X1D, class Y1D, typename = decltype( std::declval<Y1D&&>()[0] = 0. )>
 auto axpy(typename X1D::element alpha, X1D const& x, Y1D&& y)

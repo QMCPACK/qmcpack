@@ -101,7 +101,7 @@ struct array_types : Layout{
        constexpr element_const_ptr cbase() const{return base_;}
 
 	constexpr element_ptr& mbase() const{return base_;}
-	friend constexpr element_ptr base(array_types const& s){return s.base();}
+	friend element_ptr base(array_types const& s){return s.base();}
 	constexpr layout_t const& layout() const{return *this;}
 	friend constexpr layout_t const& layout(array_types const& s){return s.layout();}
 	constexpr element_ptr            origin() const{return base_+Layout::origin();} //	element_const_ptr     corigin() const{return origin();}
@@ -633,8 +633,7 @@ public:
 	}
 	friend constexpr basic_array transposed(basic_array const& s){return s.transposed();}
 	friend 
-#if(defined(__INTEL_COMPILER) and (__INTEL_COMPILER < 1911))
-#else
+#if not((defined(__INTEL_COMPILER) and (__INTEL_COMPILER < 1911)) or defined(__NVCC__))
 	constexpr 
 #endif
 	basic_array operator~ (basic_array const& s){return s.transposed();}
@@ -1079,7 +1078,7 @@ public:
 	[[deprecated("use base() for iterator")]] constexpr element_ptr data() const{return data_;}
 	       constexpr element_ptr base()              const&   {return data_;}
 	friend 
-#ifndef __INTEL_COMPILER
+#if not((defined(__INTEL_COMPILER) and (__INTEL_COMPILER < 1911)) or defined(__NVCC__))
 	constexpr // this generates a problem with intel compiler 19 "a constexpr function cannot have a nonliteral return type"
 #endif
 	element_ptr base(array_iterator const& s){return s.base();}
@@ -1407,13 +1406,13 @@ public:
 	constexpr       iterator end  ()     &{return end_aux();}
 	constexpr       iterator end  ()    &&{return end_aux();}
 
-	friend constexpr const_iterator begin(basic_array const& s){return           s .begin();}
-	friend constexpr       iterator begin(basic_array      & s){return           s .begin();}
-	friend constexpr       iterator begin(basic_array     && s){return std::move(s).begin();}
+	friend const_iterator begin(basic_array const& s){return           s .begin();}
+	friend       iterator begin(basic_array      & s){return           s .begin();}
+	friend       iterator begin(basic_array     && s){return std::move(s).begin();}
 
-	friend constexpr const_iterator end  (basic_array const& s){return           s .end();}
-	friend constexpr       iterator end  (basic_array      & s){return           s .end();}
-	friend constexpr       iterator end  (basic_array     && s){return std::move(s).end();}
+	friend const_iterator end  (basic_array const& s){return           s .end()  ;}
+	friend       iterator end  (basic_array      & s){return           s .end()  ;}
+	friend       iterator end  (basic_array     && s){return std::move(s).end()  ;}
 
 	constexpr const_iterator cbegin() const{return begin();}
 	constexpr const_iterator cend  () const{return end()  ;}

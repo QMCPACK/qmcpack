@@ -16,8 +16,6 @@
 namespace multi = boost::multi;
 namespace blas = multi::blas;
 
-namespace utf = boost::unit_test;
-
 BOOST_AUTO_TEST_CASE(multi_blas_gemm_square_real){
 	multi::array<double, 2> const a = {
 		{1, 3, 4},
@@ -36,8 +34,8 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemm_square_real){
 	}
 	{
 		multi::array<double, 2> c({size(a), size(~b)}, 9999);
-		assert( size( a) == size( c) );
-		assert( size(~b) == size(~c) );
+		BOOST_REQUIRE( size( a) == size( c) );
+		BOOST_REQUIRE( size(~b) == size(~c) );
 		blas::gemm_n(1., begin(a), size(a), begin(b), 0., begin(c));
 		BOOST_REQUIRE( c[2][1] == 86 );
 	}
@@ -275,9 +273,7 @@ BOOST_AUTO_TEST_CASE(multi_adaptors_blas_gemm_real_nonsquare_automatic){//, *utf
 	}
 }
 
-namespace utf = boost::unit_test;
-
-BOOST_AUTO_TEST_CASE(multi_blas_gemm_nh){//, * utf::timeout(2)){
+BOOST_AUTO_TEST_CASE(multi_blas_gemm_nh){
 	using complex = std::complex<double>; complex const I{0,1};
 	multi::array<complex, 2> const a = {
 		{1.-2.*I, 9.-1.*I},
@@ -1493,7 +1489,7 @@ BOOST_AUTO_TEST_CASE(submatrix_result_issue_97){
 
 BOOST_AUTO_TEST_CASE(blas_context_gemm){
 	using complex = std::complex<double>; static constexpr complex I{0, 1};
-	auto rand = [d=std::normal_distribution<>{}, g=std::mt19937{}]()mutable{return d(g) + d(g)*I;};
+	auto rand = [d=std::normal_distribution<>{}, g=std::mt19937{}]()mutable{return d(g) + d(g)*I;}; // NOLINT(cert-msc32-c, cert-msc51-cpp): test purposes
 
 	multi::array<complex, 2> A({30, 40});
 	multi::array<complex, 2> B({40, 50});
