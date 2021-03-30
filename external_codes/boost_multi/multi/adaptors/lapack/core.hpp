@@ -11,6 +11,7 @@
 #include<complex>
 
 //#include <cblas/cblas.h>
+#include<lapacke.h>
 
 #define s float
 #define d double
@@ -21,10 +22,8 @@
 #define INT int
 #define INTEGER INT const&
 
-#define LDA const int& lda
-#define N INTEGER n
+//#define N INTEGER n
 #define CHARACTER char const&
-#define INFO int& info
 #define UPLO CHARACTER
 #define JOBZ CHARACTER
 #define LAPACK(NamE) NamE##_
@@ -32,19 +31,119 @@
 #define LIWORK INTEGER liwork
 #define IWORK int*
 
-#define xPOTRF(T)     v LAPACK(T##potrf)(UPLO, N, T*, LDA, INFO)
-#define xSYEV(T)      v LAPACK(T##syev)(JOBZ, UPLO, N, T*, LDA, T*, T*, LWORK, INFO)
-#define xSYEVD(T)     v LAPACK(T##syevd)(JOBZ, UPLO, N, T*, LDA, T*, T*, LWORK, IWORK, LIWORK, INFO)
-#define xHEEV(T)      v LAPACK(T##heev)(JOBZ, UPLO, N, T*, LDA, T*, T*, LWORK, INFO)
+#define xPOTRF(T)     v LAPACK(T##potrf)(UPLO, int const& N, T*, int const& LDA, int& INFO)
+#define xSYEV(T)      v LAPACK(T##syev) (JOBZ, UPLO, int const& N, T*, int const& LDA, T*, T*, LWORK, int& INFO)
+#define xSYEVD(T)     v LAPACK(T##syevd)(JOBZ, UPLO, int const& N, T*, int const& LDA, T*, T*, LWORK, IWORK, LIWORK, int& INFO)
+#define xHEEV(T)      v LAPACK(T##heev) (JOBZ, UPLO, int const& N, T*, int const& LDA, T*, T*, LWORK, int& INFO)
+
+#define subroutine  void
+#define integer     int const&
+#define integer_out int&
+#define integer_ptr int*
+#define integer_cptr int const*
+#define character   char const&
+
+// http://www.netlib.org/lapack/explore-html/dd/d9a/group__double_g_ecomputational_ga0019443faea08275ca60a734d0593e60.html
+#define xGETRF(T)     \
+subroutine T##getrf_( \
+	integer  	M,    /*The number of rows of the matrix A.  M >= 0.*/           \
+	integer  	N,    /*The number of columns of the matrix A.  N >= 0.*/        \
+	T*  	    A,    /*On entry, the M-by-N matrix to be factored.*/            \
+                      /*On exit, the factors L and U from the factorization*/    \
+	integer  	LDA,  /*The leading dimension of the array A.  LDA >= max(1,M).*/\
+	integer_ptr IPIV, /*The pivot indices; for 1 <= i <= min(M,N), row i of the matrix was interchanged with row IPIV(i).*/\
+	integer_out INFO  /*= 0:  successful exit*/\
+                      /*< 0:  if INFO = -i, the i-th argument had an illegal value*/\
+                      /*> 0:  if INFO = i, U(i,i) is exactly zero. The factorization has been completed, but the factor U is exactly singular, and division by zero will occur if it is used to solve a system of equations.*/\
+)
+
+// http://www.netlib.org/lapack/explore-html/d8/ddc/group__real_g_ecomputational_gaa00bcf4d83a118cb6f0b6619d6ffaa24.html
+#define xGETRS(T)     \
+subroutine T##getrs_( \
+	character    TRANS,/*Specifies the form of the system of equations:             */\
+	                   /* = 'N':  A * X = B  (No transpose)                         */\
+	                   /* = 'T':  A**T* X = B  (Transpose)                          */\
+	                   /* = 'C':  A**T* X = B  (Conjugate transpose = Transpose)    */\
+	integer  	 N,    /*The order of the matrix A.  N >= 0.                        */\
+	integer  	 NRHS, /*The number of right hand sides, i.e., the number of columns*/\
+	                   /*of the matrix B.  NRHS >= 0.                               */\
+	T const*     A,    /* The factors L and U from the factorization A = P*L*U      */\
+	                   /*as computed by SGETRF.                                     */\
+	integer  	 LDA,  /*The leading dimension of the array A.  LDA >= max(1,N).    */\
+	integer_cptr IPIV, /*The pivot indices from SGETRF; for 1<=i<=N, row i of the   */\
+	                   /*matrix was interchanged with row IPIV(i).                  */\
+	T*           B,    /*On entry, the right hand side matrix B.                    */\
+	                   /*On exit, the solution matrix X.                            */\
+	integer      LDB,  /*The leading dimension of the array B.  LDB >= max(1,N).    */\
+	integer      INFO  /*= 0:  successful exit                                      */\
+	                   /*< 0:  if INFO = -i, the i-th argument had an illegal value */\
+)
+
+// TODO // http://www.netlib.org/lapack/explore-html/d7/d3b/group__double_g_esolve_ga5ee879032a8365897c3ba91e3dc8d512.html
+
 
 extern "C"{
-xPOTRF(s)   ; xPOTRF(d)    ;
-xPOTRF(c)   ; xPOTRF(z)    ;
-
-xSYEV(s)    ; xSYEV(d)     ;
-xSYEVD(s)   ; xSYEVD(d)    ;
-                             xHEEV(c)    ; xHEEV(z)     ;
+//xGETRF(s)   ; xGETRF(d)   ; xGETRF(c)   ; xGETRF(z)   ;
+//xGETRS(s)   ; xGETRS(d)   ; xGETRS(c)   ; xGETRS(z)   ;
 }
+
+namespace core{
+// http://www.netlib.org/lapack/explore-html/da/d30/a18643_ga5b625680e6251feb29e386193914981c.html
+
+int getrf(lapack_int m, lapack_int n, double* A, lapack_int lda, int* ipiv){
+	assert( m >= 0 );
+	assert( n >= 0 );
+	assert( lda >= std::max(lapack_int{1}, m) );
+	int info;
+	dgetrf_(&m, &n, A, &lda, ipiv, &info);
+	assert(info >= 0);
+	return info;
+}
+
+void getrs(char trans, lapack_int const n, lapack_int const nrhs, double const* A, lapack_int const lda, int const* ipiv, double* B, lapack_int const ldb){
+	assert( trans == 'T' or trans == 'N' or trans == 'C' );
+	assert( n >= 0 );
+	assert( nrhs >= 0 );
+	assert( lda >= std::max(1, n) );
+	int info;
+	dgetrs_(&trans, &n, &nrhs, A, &lda, ipiv, B, &ldb, &info);
+	switch(info){
+		case -1: throw std::logic_error{"transa ≠ 'N', 'T', or 'C'"};
+		case -2: throw std::logic_error{"n < 0"                    };
+		case -3: throw std::logic_error{"nrhs < 0"                 };
+		case -4: throw std::logic_error{"n > lda"                  };
+		case -5: throw std::logic_error{"lda ≤ 0"                  };
+		case -6: throw std::logic_error{"n > ldb"                  };
+		case -7: throw std::logic_error{"ldb ≤ 0"                  };
+		case -8: throw std::logic_error{"error!"                  };
+	}
+	assert(info == 0 );
+	return;
+}
+
+}
+
+namespace lapack{
+
+struct context{
+	template<class... Args> static auto getrf(Args&&... args)->decltype(core::getrf(args...)){return core::getrf(args...);}
+	template<class... Args> static auto getrs(Args&&... args)->decltype(core::getrs(args...)){return core::getrs(args...);}
+};
+
+}
+
+extern "C"{
+//xPOTRF(s)   ; xPOTRF(d)    ;
+//xPOTRF(c)   ; xPOTRF(z)    ;
+
+//xSYEV(s)    ; xSYEV(d)     ;
+//xSYEVD(s)   ; xSYEVD(d)    ;
+//                             xHEEV(c)    ; xHEEV(z)     ;
+}
+
+#undef subroutine
+#undef integer
+#undef character
 
 #undef JOBZ
 #undef UPLO

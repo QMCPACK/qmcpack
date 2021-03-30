@@ -23,3 +23,5 @@ ADD_EXECUTABLE(${UTEST_EXE} test_rng.cpp test_parser.cpp test_timer.cpp test_run
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil)
 
 ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+
+subdirs(for_testing)

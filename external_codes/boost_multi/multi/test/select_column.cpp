@@ -53,10 +53,9 @@ BOOST_AUTO_TEST_CASE(multi_array_range_section){
 	// cppcheck-suppress compareBoolExpressionWithInt ; because DSL
 	BOOST_REQUIRE( size( A(1<=_<3, 2) ) == 2 );
 
-	using multi::__; using multi::U;
+	using multi::U;
 	BOOST_REQUIRE( size( A(_, 2) ) == size(A) );
 	BOOST_REQUIRE( size( A(*_, 2) ) == size(A) );
-	BOOST_REQUIRE( size( A(__, 2) ) == size(A) );
 
 	BOOST_REQUIRE( size( A(_<2, 2) ) == 2 );
 	BOOST_REQUIRE( size( A(*_<2, 2) ) == 2 );

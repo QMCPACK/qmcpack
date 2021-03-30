@@ -288,6 +288,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     for j in range(i+1,i_occ):
                         seigs+=lines[j]
                     #end for
+                    seigs = seigs.replace('-',' -') # For cases where the eigenvalues "touch", e.g. -144.9938-144.9938 -84.3023
                     seigs = seigs.strip()
                     eigs = array(seigs.split(),dtype=float)
 

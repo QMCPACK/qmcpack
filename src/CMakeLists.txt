@@ -175,7 +175,8 @@ ENDIF(USE_OBJECT_TARGET)
   SUBDIRS(Message)
   SUBDIRS(Platforms)
   SUBDIRS(Particle)
-
+  SUBDIRS(Utilities)
+  
 if(QMC_BUILD_SANDBOX_ONLY)
 
   MESSAGE(STATUS "Minimal build: only Sandbox")
