@@ -42,7 +42,8 @@ case "$1" in
       *"coverage"*)
         echo 'Configure for code coverage with gcc and gcovr'
         cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
-                      -DCMAKE_BUILD_TYPE=Debug -DENABLE_GCOV=TRUE -DQMC_COMPLEX=1 \
+                      -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \
+                      -DQMC_COMPLEX=1 \
                       ${GITHUB_WORKSPACE}
       ;;
       # Configure with default compilers
