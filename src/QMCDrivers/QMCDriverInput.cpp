@@ -37,7 +37,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   std::string serialize_walkers;
 
   ParameterSet parameter_set;
-  parameter_set.add(RollBackBlocks_, "rewind");
   parameter_set.add(store_config_period_, "storeconfigs");
   parameter_set.add(store_config_period_, "store_configs");
   parameter_set.add(recalculate_properties_period_, "checkProperties");
