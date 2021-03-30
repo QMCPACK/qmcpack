@@ -13,6 +13,8 @@
 #include "../../../memory/adaptors/cuda/ptr.hpp"
 #include "../../../memory/adaptors/cuda/managed/ptr.hpp"
 
+#include <thrust/system/cuda/memory.h>
+
 #include<mutex>
 
 namespace boost{
@@ -99,6 +101,19 @@ public:
 		cudaError_t e = cudaStreamSynchronize(stream());
 		if(e != cudaSuccess) throw std::runtime_error{"cannot synchronize stream in cublas context"};
 	}
+	template<class ALPHA, class XP, class X = typename std::pointer_traits<XP>::element_type, class YP, class Y = typename std::pointer_traits<YP>::element_type, 
+		std::enable_if_t<is_d<X>{} and is_d<Y>{}, int> = 0
+	//	std::enable_if_t<is_d<X>{} and is_d<Y>{} and is_assignable<Y&, ALPHA{}*X{} + Y{}>{} and is_convertible_v<XP, thrust::cuda::pointer<X>> and is_convertible_v<YP, thrust::cuda::pointer<Y>>, int> = 0
+	>
+	void axpy(ssize_t n, ALPHA const* alpha, XP x, ssize_t incx, YP y, ssize_t incy){
+		sync_call<cublasDaxpy>(
+			n, 
+			(double const*)alpha, 
+			(double const*)raw_pointer_cast(x), incx, 
+			(double*)raw_pointer_cast(y), incy
+		);
+	}
+	
 	template<class ALPHA, class AAP, class AA = typename std::pointer_traits<AAP>::element_type, class BBP, class BB = typename std::pointer_traits<BBP>::element_type, class BETA, class CCP, class CC = typename std::pointer_traits<CCP>::element_type,
 		std::enable_if_t<
 			is_z<AA>{} and is_z<BB>{} and is_z<CC>{} and is_z<ALPHA>{} and is_z<BETA>{} and is_assignable<CC&, decltype(ALPHA{}*AA{}*BB{})>{} and

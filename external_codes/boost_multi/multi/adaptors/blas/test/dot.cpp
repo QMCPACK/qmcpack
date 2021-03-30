@@ -360,7 +360,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_dot_impl_complex_thrust){
 	}
 	{
 		complex c;
-		blas::context{}.dotu(size(A[1]), A[1].base(), A[1].stride(), A[2].base(), A[2].stride(), &c);
+		blas::context::dotu(size(A[1]), A[1].base(), A[1].stride(), A[2].base(), A[2].stride(), &c);
 		auto inner = std::inner_product(begin(A[1]), end(A[1]), begin(A[2]), complex{0.});
 		BOOST_REQUIRE( c.real() == inner.real() );
 		BOOST_REQUIRE( c.imag() == inner.imag() );

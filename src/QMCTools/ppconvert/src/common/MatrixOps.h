@@ -6,6 +6,7 @@
 //
 // File developed by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Alfredo A. Correa, correaa@llnl.gov, Lawrence Livermore National Laboratory
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -21,9 +22,93 @@
 void LinearLeastSquares(Array<double, 2>& A, Array<double, 1>& x, Array<double, 1>& b);
 void MatVecProd(Array<double, 2>& A, Array<double, 1>& x, Array<double, 1>& Ax);
 
-void LUdecomp(Array<double, 2>& A, Array<int, 1>& perm, double& sign);
+//void LUdecomp(Array<double, 2>& A, Array<int, 1>& perm, double& sign);
 
-void LUsolve(Array<double, 2>& LU, Array<int, 1>& perm, Array<double, 1>& b);
+//void LUsolve(Array<double, 2>& LU, Array<int, 1>& perm, Array<double, 1>& b);
+
+
+struct lup{ // LU method for decomposition and solution
+
+// translated from  https://en.wikipedia.org/wiki/LU_decomposition#C_code_example
+template<class Matrix, class Permutation>
+static auto decompose(Matrix&& A, Permutation&& P, double tol = std::numeric_limits<double>::epsilon()){
+	throw;
+	std::iota(begin(P), end(P), typename std::decay_t<Permutation>::value_type{0});
+	auto const N = std::min(size(A), size(~A));
+	assert( P.size() >= N );
+
+	auto&& ret = A({0, N}, {0, N});
+	for(auto i : extension(ret)){
+		if(lup::permute_max_diagonal(A, P, i) < tol) return A({0, i}, {0, i});
+
+		for(auto&& row : A({i + 1, N})){
+			auto&& urow = row({i + 1, N});
+			std::transform(
+				cbegin(urow), cend(urow), cbegin(A[i]({i + 1, N})), begin(urow), 
+				[f = row[i] /= A[i][i]](auto const& a, auto const& b){return a - f*b;}
+			);
+		}
+	}
+	return std::move(ret);
+}
+
+template<class Matrix, class Permutation, class VectorSol>
+static auto solve(Matrix const& LU, Permutation const& P, VectorSol&& x) -> VectorSol&&{
+	return upper_solve(LU, lower_solve(LU, permute(P, x)));
+}
+
+private:
+
+template<class Matrix, class Permutation, class Index>
+static auto permute_max_diagonal(Matrix&& LU, Permutation&& P, Index i){
+	auto mi = std::max_element(begin(LU) + i, end(LU), [i](auto const& a, auto const& b){return std::abs(a[i]) < std::abs(b[i]);}) - begin(LU);
+	     swap(LU[i], LU[mi]); 
+	std::swap(P [i], P [mi]);
+	return std::abs(LU[i][i]);
+}
+
+template<class Permutation, class Vector>
+static auto permute(Permutation const& p, Vector&& data) -> Vector&&{
+	assert(size(p) <= size(data));
+	using index = typename Permutation::size_type;
+	for(index i = 0; i != size(p); ++i){
+		index k = p[i];
+		for( ; k > i; k = p[k]){}
+		index pk = p[k];
+		if(k >=i and pk != i){
+			auto const t = data[i];
+			for( ; pk != i; k = pk, pk = p[k]){
+				data[k] = data[pk];
+			};
+			data[k] = t;
+		}
+	}
+	return std::forward<Vector>(data);
+}
+
+template<class LUMatrix, class Vector>
+static auto lower_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
+	assert(size(LU) <= size(x));
+	auto const N = size(LU);
+	for(typename LUMatrix::size_type i = 0; i != N; ++i){
+		auto const& Lrowi = LU[i]({0, i});
+		x[i] -= std::inner_product(begin(Lrowi), end(Lrowi), cbegin(x), 0.);
+	}
+	return std::forward<Vector>(x);
+}
+
+template<class LUMatrix, class Vector>
+static auto upper_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
+	assert(size(LU) <= size(x));
+	auto const N = size(LU);
+	for(typename LUMatrix::size_type i = N - 1; i >= 0; --i){
+		auto const& Urowi = LU[i]({i + 1, N});
+		(x[i] -= std::inner_product(begin(Urowi), end(Urowi), cbegin(x) + i + 1, 0.)) /= LU[i][i];
+	}
+	return std::forward<Vector>(x);
+}
+
+};
 
 void SVdecomp(Array<double, 2>& A, Array<double, 2>& U, Array<double, 1>& S, Array<double, 2>& V);
 

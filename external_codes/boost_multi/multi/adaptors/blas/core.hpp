@@ -94,7 +94,7 @@ static_assert(sizeof(INT)==32/8 or sizeof(INT)==64/8, "please set _BLAS_INT to i
 #define xSWAP(T)          v T ##swap##_ (N,              T       *x, INCX, T       *y, INCY)
 #define xSCAL(TT, TA, TX) v TT##scal##_ (N, TA const& a, TX      *x, INCX                  )
 #define xCOPY(T)          v T ##copy##_ (N,              T const *x, INCX, T       *y, INCY) 
-#define xAXPY(T)          v T ##axpy##_ (N,  T const& a, T const *x, INCX, T       *y, INCY)
+#define xAXPY(T)          v T ##axpy##_ (N,  T const* a, T const *x, INCX, T       *y, INCY)
 #define xDOT(R, TT, T)    R BLAS(  TT##dot  )(N,              T const *x, INCX, T const *y, INCY)
 #if defined(RETURN_BY_STACK) || (defined(FORTRAN_COMPLEX_FUNCTIONS_RETURN_VOID) && FORTRAN_COMPLEX_FUNCTIONS_RETURN_VOID)
 #define xDOTU(R, T)       v BLAS(   T##dotu )(R*, N,              T const *x, INCX, T const *y, INCY)
@@ -286,11 +286,11 @@ using std::enable_if_t;
 using std::is_convertible_v;
 
 #define xaxpy(T) \
-template<class A, class SXP, class SX = typename pointer_traits<SXP>::element_type, class SYP, class SY = typename pointer_traits<SYP>::element_type, enable_if_t< \
-	is_##T<SX>{} and is_##T<SY>{} and is_assignable<SY&, decltype(A{}*SX{})>{} \
+template<class ALPHA, class SXP, class SX = typename pointer_traits<SXP>::element_type, class SYP, class SY = typename pointer_traits<SYP>::element_type, enable_if_t< \
+	is_##T<ALPHA>{} and is_##T<SX>{} and is_##T<SY>{} and is_assignable<SY&, decltype(ALPHA{}*SX{})>{} \
 	and is_convertible_v<SXP, SX*> and is_convertible_v<SYP, SY*> \
 , int> =0> \
-void axpy(size_t n, A a, SXP x, size_t incx, SYP y, size_t incy){BLAS(T##axpy)(n, a, (T const*)static_cast<SX*>(x), incx, (T*)static_cast<SY*>(y), incy);}
+void axpy(size_t n, ALPHA const* a, SXP x, size_t incx, SYP y, size_t incy){BLAS(T##axpy)(n, (T const *)a, (T const*)static_cast<SX*>(x), incx, (T*)static_cast<SY*>(y), incy);}
 
 xaxpy(s)       xaxpy(d)       xaxpy(c)       xaxpy(z)
 #undef  xaxpy

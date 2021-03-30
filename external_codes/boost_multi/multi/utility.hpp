@@ -486,6 +486,16 @@ auto extensions(std::array<std::array<T, N>, M> const& arr){
 }
 
 template<class T, std::size_t N>
+constexpr auto stride(std::array<T, N> const& /*arr*/){
+	return multi::size_type{1}; // multi::stride_type?
+}
+
+template<class T, std::size_t N, std::size_t M>
+constexpr auto stride(std::array<std::array<T, N>, M> const& arr){
+	return num_elements(arr[0]);
+}
+
+template<class T, std::size_t N>
 constexpr auto layout(std::array<T, N> const& arr){
 	return multi::layout_t<multi::array_traits<std::array<T, N>>::dimensionality>{multi::extensions(arr)};
 }
@@ -510,7 +520,7 @@ namespace serialization{
 #include<cassert>
 #include<iostream>
 #include<vector>
-#include<cmath>
+//#include<cmath>
 
 using std::cout;
 namespace multi = boost::multi;
