@@ -214,8 +214,6 @@ protected:
    * using MyCounter++ as in RQMC.
    */
   int MyCounter;
-  ///the number of blocks to be rolled back
-  int RollBackBlocks;
   ///the number to delay updates by
   int kDelay;
   /** period of dumping walker configurations and everything else for restart
