@@ -57,7 +57,8 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_tuple_as_extra_dimension){
 //	using vector3 = std::tuple<double, double, double>; // for tuples reinterpret_array_cast is implementation dependent!!
 
 	vector3 v;
-	BOOST_REQUIRE( &reinterpret_cast<double(&)[3]>(v)[1] == &std::get<1>(v) );
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast, cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays): test
+	BOOST_REQUIRE( &reinterpret_cast<double(&)[3]>(v)[1] == &std::get<1>(v) ); 
 	{
 		multi::array<vector3, 1> A(10);
 		BOOST_REQUIRE( &A.reinterpret_array_cast<double>(3)[2][1] == &std::get<1>(A[2]) );
@@ -94,7 +95,7 @@ template<class T> struct Complex_{T real; T imag;};
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast){
 {
 	std::complex<double> c{1, 2};
-	auto pC = reinterpret_cast<Complex_<double>*>(&c);
+	auto *pC = reinterpret_cast<Complex_<double>*>(&c); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	pC->real = 11;
 	BOOST_REQUIRE(real(c)==11);
 }
@@ -125,14 +126,15 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_realcomplex){
 	using complex = std::complex<double>;
 {
 	complex c{1, 2};
-	auto pC = reinterpret_cast<std::array<double, 2>*>(&c);
+	auto *pC = reinterpret_cast<std::array<double, 2>*>(&c); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	(*pC)[0] = 11;
 	BOOST_REQUIRE( pC );
 	BOOST_REQUIRE(real(c)==11);
 }
 {
 	complex c{1, 2};
-	auto pC = reinterpret_cast<double(*)[2]>(&c);
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast, cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays): test purposes
+	auto *pC = reinterpret_cast<double(*)[2]>(&c); 
 	(*pC)[0] = 11;
 	BOOST_REQUIRE( pC );
 	BOOST_REQUIRE(real(c)==11);

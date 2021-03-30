@@ -16,16 +16,17 @@ namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(array_ref_from_carray){
 
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays): test
 	double a[4][5] {
-		{ 0,  1,  2,  3,  4}, 
-		{ 5,  6,  7,  8,  9}, 
-		{10, 11, 12, 13, 14}, 
-		{15, 16, 17, 18, 19}
+		{ 0.,  1.,  2.,  3.,  4.}, 
+		{ 5.,  6.,  7.,  8.,  9.}, 
+		{10., 11., 12., 13., 14.}, 
+		{15., 16., 17., 18., 19.}
 	};
 
-	multi::array_ptr<double, 2> map = &a; // double (*)[4][5]
+	multi::array_ptr<double, 2> map = &a;
 	BOOST_REQUIRE( &map->operator[](1)[1] == &a[1][1] );
-	BOOST_REQUIRE( (&a)[0][1][1] == 6. );
+	BOOST_REQUIRE( (*&a)[1][1] == 6. );
 	
 	multi::array_ref<double, 2>&& mar = *map;
 
@@ -34,7 +35,8 @@ BOOST_AUTO_TEST_CASE(array_ref_from_carray){
 	mar[1][1] = 9.;
 	BOOST_REQUIRE( &mar[1][1] == &a[1][1] );
 
-	double const(&a_const)[4][5] = a;
+	auto const& a_const = a;
+//	double const(&a_const)[4][5] = a;
 	BOOST_REQUIRE( &a_const[1][1] == &a[1][1] );
 
 	BOOST_REQUIRE( mar(2, {1, 3}).dimensionality == 1 );
@@ -46,19 +48,21 @@ BOOST_AUTO_TEST_CASE(array_ref_from_carray){
 }
 
 BOOST_AUTO_TEST_CASE(array_ref_1D_reindexed){
-	std::string (&&a)[5] = {"a", "b", "c", "d", "e"};
 
+	std::array<std::string, 5> a{ {"a", "b", "c", "d", "e"} };
+
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays): test type
 	multi::Array<std::string(&)[1]> mar = *multi::Array<std::string(*)[1]>(&a);
 	BOOST_REQUIRE( &mar[1] == &a[1] );
 	BOOST_REQUIRE( sizes(mar.reindexed(1)) == sizes(mar) );
 	auto diff = &(mar.reindexed(1)[1]) - &mar[0];
 	BOOST_REQUIRE( diff == 0 );
-	
+
 	BOOST_REQUIRE( &mar.blocked(2, 4)[2] == &mar[2] );
-	for(auto i : extension(mar.stenciled({2, 4})))
+	for(auto i : extension(mar.stenciled({2, 4}))){
 		BOOST_REQUIRE( &mar.stenciled({2, 4})[i] == &mar[i] );
-		
-		
+	}
+
 	multi::array<std::string, 1> arr({{2, 7}}, std::string{"xx"});
 	BOOST_REQUIRE( size(arr) == 5 );
 	BOOST_REQUIRE( extension(arr) == multi::iextension(2, 7) );
@@ -75,15 +79,33 @@ BOOST_AUTO_TEST_CASE(array_ref_1D_reindexed){
 	BOOST_REQUIRE( arrB[6] == "e" );
 }
 
+BOOST_AUTO_TEST_CASE(array_ref_of_nested_std_array_reindexed){
+
+	std::array<std::array<double, 5>, 4> a = {
+		{
+			{ 0.,  1.,  2.,  3.,  4.}, 
+			{ 5.,  6.,  7.,  8.,  9.}, 
+			{10., 11., 12., 13., 14.}, 
+			{15., 16., 17., 18., 19.}
+		}
+	};
+
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays): test type
+	multi::Array<double(&)[2]> mar = *multi::Array<double(*)[2]>(&a);
+
+	BOOST_REQUIRE( &mar[1][1] == &a[1][1] );
+}
+
 BOOST_AUTO_TEST_CASE(array_ref_reindexed){
 
-	double (&&a)[4][5] = {
+	double (&&a)[4][5] = { // NOLINT(hicpp-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays): test
 		{ 0,  1,  2,  3,  4}, 
 		{ 5,  6,  7,  8,  9}, 
 		{10, 11, 12, 13, 14}, 
 		{15, 16, 17, 18, 19}
 	};
 
+	// NOLINTNEXTLINE(hicpp-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays): special type
 	multi::Array<double(&)[2]> mar = *multi::Array<double(*)[2]>(&a);
 
 	BOOST_REQUIRE( &mar[1][1] == &a[1][1] );
@@ -162,15 +184,19 @@ BOOST_AUTO_TEST_CASE(array_ref_reindexed){
 
 BOOST_AUTO_TEST_CASE(array_ref_with_stencil){
 
-	double a[4][5] = {
-		{ 0,  1,  2,  3,  4}, 
-		{ 5,  6,  7,  8,  9}, 
-		{10, 11, 12, 13, 14}, 
-		{15, 16, 17, 18, 19}
+	std::array<std::array<double, 5>, 4> a = {
+		{
+			{ 0,  1,  2,  3,  4}, 
+			{ 5,  6,  7,  8,  9}, 
+			{10, 11, 12, 13, 14}, 
+			{15, 16, 17, 18, 19}
+		}
 	};
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays): test type
 	auto const& mar = *multi::Array<double(*)[2]>(&a);
 
-	multi::Array<double[2]> s = {
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays): test type
+	multi::Array<double[2]> s = { 
 		{ 0, +1,  0},
 		{+1, -4, +1},
 		{ 0, +1,  0}
@@ -184,13 +210,16 @@ BOOST_AUTO_TEST_CASE(array_ref_with_stencil){
 
 	{
 		auto xs = extensions(mar);
-		for(auto i = std::get<0>(xs).start()+1; i != std::get<0>(xs).finish()-1; ++i)
+		for(auto i = std::get<0>(xs).start()+1; i != std::get<0>(xs).finish()-1; ++i){
 			for(auto j = std::get<1>(xs).start()+1; j != std::get<1>(xs).finish()-1; ++j){
 				auto xt = extensions(st);
-				for(auto b: std::get<0>(xt))
-					for(auto d: std::get<1>(xt))
-						gy[i][j] += st[b][d]*a[i + b][j + d];
+				for(auto b: std::get<0>(xt)){
+					for(auto d: std::get<1>(xt)){
+						gy[i][j] += st[b][d]*mar[i + b][j + d];
+					}
+				}
 			}
+		}
 	}
 
 }
