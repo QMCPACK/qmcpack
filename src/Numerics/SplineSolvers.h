@@ -16,6 +16,7 @@
 #ifndef QMCPLUSPLUS_SPLINESOLVERS_H
 #define QMCPLUSPLUS_SPLINESOLVERS_H
 
+#include<vector>
 
 ///  Solve for second derivatives for cubic splines
 ///
