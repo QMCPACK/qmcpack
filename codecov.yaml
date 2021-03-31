@@ -1,0 +1,13 @@
+# Configuration file for codecov reporting code coverage
+
+# Disable codecov comments in every PR
+comment: off
+
+# Ignore testing directory itself
+ignore:
+  - "tests"
+
+# Fixes report prefix paths from CI dynamic coverage action
+# from https://docs.codecov.io/docs/fixing-paths
+fixes:
+  - "/__w/::"
