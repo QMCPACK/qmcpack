@@ -260,7 +260,7 @@ inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
                                     int* infoArray,
                                     int batchSize)
 {
-  return cublasCgetrfBatched(handle, n, reinterpret_cast<cuComplex* const *>(A), lda, PivotArray, infoArray, batchSize);
+  return cublasCgetrfBatched(handle, n, reinterpret_cast<cuComplex* const*>(A), lda, PivotArray, infoArray, batchSize);
 }
 
 inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
@@ -271,7 +271,8 @@ inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
                                     int* infoArray,
                                     int batchSize)
 {
-  return cublasZgetrfBatched(handle, n, reinterpret_cast<cuDoubleComplex* const *>(A), lda, PivotArray, infoArray, batchSize);
+  return cublasZgetrfBatched(handle, n, reinterpret_cast<cuDoubleComplex* const*>(A), lda, PivotArray, infoArray,
+                             batchSize);
 }
 
 inline cublasStatus_t getri_batched(cublasHandle_t& handle,
@@ -279,8 +280,8 @@ inline cublasStatus_t getri_batched(cublasHandle_t& handle,
                                     float* A[],
                                     int lda,
                                     int* PivotArray,
-				    float* C[],
-				    int ldc,
+                                    float* C[],
+                                    int ldc,
                                     int* infoArray,
                                     int batchSize)
 {
@@ -292,8 +293,8 @@ inline cublasStatus_t getri_batched(cublasHandle_t& handle,
                                     double* A[],
                                     int lda,
                                     int* PivotArray,
-				    double* C[],
-				    int ldc,
+                                    double* C[],
+                                    int ldc,
                                     int* infoArray,
                                     int batchSize)
 {
@@ -305,12 +306,13 @@ inline cublasStatus_t getri_batched(cublasHandle_t& handle,
                                     std::complex<float>* A[],
                                     int lda,
                                     int* PivotArray,
-				    std::complex<float>* C[],
-				    int ldc,
+                                    std::complex<float>* C[],
+                                    int ldc,
                                     int* infoArray,
                                     int batchSize)
 {
-  return cublasCgetriBatched(handle, n, reinterpret_cast<cuComplex* const *>(A), lda, PivotArray, reinterpret_cast<cuComplex* const *>(C), ldc, infoArray, batchSize);
+  return cublasCgetriBatched(handle, n, reinterpret_cast<cuComplex* const*>(A), lda, PivotArray,
+                             reinterpret_cast<cuComplex* const*>(C), ldc, infoArray, batchSize);
 }
 
 inline cublasStatus_t getri_batched(cublasHandle_t& handle,
@@ -318,12 +320,13 @@ inline cublasStatus_t getri_batched(cublasHandle_t& handle,
                                     std::complex<double>* A[],
                                     int lda,
                                     int* PivotArray,
-				    std::complex<double>* C[],
-				    int ldc,
+                                    std::complex<double>* C[],
+                                    int ldc,
                                     int* infoArray,
                                     int batchSize)
 {
-  return cublasZgetriBatched(handle, n, reinterpret_cast<cuDoubleComplex* const *>(A), lda, PivotArray, reinterpret_cast<cuDoubleComplex* const *>(C), ldc, infoArray, batchSize);
+  return cublasZgetriBatched(handle, n, reinterpret_cast<cuDoubleComplex* const*>(A), lda, PivotArray,
+                             reinterpret_cast<cuDoubleComplex* const*>(C), ldc, infoArray, batchSize);
 }
 
 }; // namespace cuBLAS
