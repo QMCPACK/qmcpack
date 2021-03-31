@@ -87,7 +87,6 @@ case "$1" in
   # Generate coverage reports
   coverage)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    sudo apt-get install gcovr -y
     # filter unreachable branches with gcovr
     # see https://gcovr.com/en/stable/faq.html#why-does-c-code-have-so-many-uncovered-branches
     gcovr --exclude-unreachable-branches --exclude-throw-branches --root=${GITHUB_WORKSPACE}/.. --xml-pretty -o coverage.xml
