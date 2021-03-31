@@ -10,6 +10,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get install gcc g++ \ 
                     clang \
                     clang-format \
+                    gcovr \
                     python3 \
                     cmake \
                     ninja-build \
@@ -35,5 +36,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
 # must add a user different from root 
 # to run MPI executables
 RUN useradd -ms /bin/bash user
+RUN adduser user sudo
+
 USER user
 WORKDIR /home/user
