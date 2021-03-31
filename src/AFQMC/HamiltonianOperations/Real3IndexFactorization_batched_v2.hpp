@@ -455,16 +455,8 @@ public:
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
     boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    if ((haj.size(0) == 1) && (walker_type != COLLINEAR))
-    {
-      boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {1, G.size(0)});
-      return vbias(G_, v_, a, c, k);
-    }
-    else
-    {
-      boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(0), 1});
-      return vbias(G_, v_, a, c, k);
-    }
+    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(0), 1});
+    return vbias(G_, v_, a, c, k);
   }
 
   // v(n,w) = sum_ak L(ak,n) G(w,ak)
