@@ -53,10 +53,16 @@ jobs:
       matrix:
         jobname: [
           clang-openmpi-ubsan, # undefined behavior sanitizer
+          coverage, # run code coverage and upload to codecov
         ]
         include:
 
         - jobname: clang-openmpi-ubsan
+          container: 
+            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+            options: -u 1001
+        
+        - jobname: coverage
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
             options: -u 1001
@@ -73,3 +79,16 @@ jobs:
 
     - name: Test
       run: tests/test_automation/github-actions/ci/run_step.sh test
+    
+    - name: Coverage
+      if: contains(matrix.jobname, 'coverage')
+      run: tests/test_automation/github-actions/ci/run_step.sh coverage
+    
+    - name: Upload Coverage
+      if: contains(matrix.jobname, 'coverage')
+      uses: codecov/codecov-action@v1
+      with:
+        file:  ../qmcpack-build/coverage.xml
+        flags: QMC_COMPLEX-deterministic # optional
+        name: codecov-QMCPACK # optional
+        fail_ci_if_error: true # optional (default = false)

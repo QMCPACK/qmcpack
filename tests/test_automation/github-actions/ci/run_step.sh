@@ -39,6 +39,13 @@ case "$1" in
                       -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZER=msan \
                       ${GITHUB_WORKSPACE}
       ;;
+      *"coverage"*)
+        echo 'Configure for code coverage with gcc and gcovr'
+        cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
+                      -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_GCOV=TRUE \
+                      -DQMC_COMPLEX=1 \
+                      ${GITHUB_WORKSPACE}
+      ;;
       # Configure with default compilers
       *)
         echo 'Configure for default system compilers and options'
@@ -59,7 +66,7 @@ case "$1" in
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     
     # Enable oversubscription in OpenMPI
-    if [[ "${GH_JOBNAME}" =~ (openmpi) ]]
+    if [[ "${GH_JOBNAME}" =~ (openmpi|coverage) ]]
     then
       echo "Enabling OpenMPI oversubscription"
       export OMPI_MCA_rmaps_base_oversubscribe=1
@@ -76,7 +83,17 @@ case "$1" in
     # Run only deterministic tests (reasonable for CI)
     ctest -L deterministic
     ;;
-
+  
+  # Generate coverage reports
+  coverage)
+    cd ${GITHUB_WORKSPACE}/../qmcpack-build
+    # filter unreachable branches with gcovr
+    # see https://gcovr.com/en/stable/faq.html#why-does-c-code-have-so-many-uncovered-branches
+    gcovr --exclude-unreachable-branches --exclude-throw-branches --root=${GITHUB_WORKSPACE}/.. --xml-pretty -o coverage.xml
+    du -hs coverage.xml
+    cat coverage.xml
+    ;;
+  
   # Install the library (not triggered at the moment)
   install)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
