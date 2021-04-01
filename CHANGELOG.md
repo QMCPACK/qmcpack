@@ -2,6 +2,46 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## Unreleased
+
+### Notes
+
+* Quantum Espresso (QE) v6.7 support. [\#2927](https://github.com/QMCPACK/qmcpack/pull/2927) 
+* Detect and automatically use patched version of QE found on the PATH. [\#2974](https://github.com/QMCPACK/qmcpack/pull/2974) ([prckent](https://github.com/prckent))
+* Support for global max\_seconds and STOP file to cleanly halt QMCPACK during a run. [\#3028](https://github.com/QMCPACK/qmcpack/pull/3028) ([ye-luo](https://github.com/ye-luo))
+* Freezing of two-body Jastrow parameters in optimization works. [\#2814](https://github.com/QMCPACK/qmcpack/issues/2814)
+* Multideterminant code now works with only alpha determinants \(no down electrons\). [\#2698](https://github.com/QMCPACK/qmcpack/issues/2698)
+* High l-momentum channels as local channels in ECPs work. [\#2920](https://github.com/QMCPACK/qmcpack/pull/2920) ([camelto2](https://github.com/camelto2))
+* Space Warp Transformation for ZVZB Forces. [\#2828](https://github.com/QMCPACK/qmcpack/pull/2828) ([rcclay](https://github.com/rcclay))
+* Important bug fixes in legacy CUDA implementation causing incorrect energies. [\#2883](https://github.com/QMCPACK/qmcpack/pull/2883) ([prckent](https://github.com/prckent))
+* Implemented DLA in legacy CUDA. [\#2887](https://github.com/QMCPACK/qmcpack/pull/2887) ([prckent](https://github.com/prckent))
+* Updates to support CUDA 11.2.1 e.g. [\#2950](https://github.com/QMCPACK/qmcpack/pull/2950) ([ye-luo](https://github.com/ye-luo))
+* AFQMC supports energy estimator with different Hamiltonian \(from propagation\). [\#2795](https://github.com/QMCPACK/qmcpack/pull/2795) ([mmorale3](https://github.com/mmorale3))
+* Trial wavefunction optimization with spin-orbit supported. [\#3034](https://github.com/QMCPACK/qmcpack/pull/3034) ([ye-luo](https://github.com/ye-luo))
+* ppconvert executable automatically built when configured. [\#2904](https://github.com/QMCPACK/qmcpack/pull/2904) ([prckent](https://github.com/prckent))
+* Tests added for ppconvert. [\#2929](https://github.com/QMCPACK/qmcpack/issues/2929).
+* Fixed SIMD alignment for AVX512 on some systems. [\#2981](https://github.com/QMCPACK/qmcpack/pull/2981) ([ye-luo](https://github.com/ye-luo))
+* Improved wavefunction restart logic in AFQMC. [\#2942](https://github.com/QMCPACK/qmcpack/pull/2942) ([Paul-St-Young](https://github.com/Paul-St-Young))
+* Spin-density supported in batched code. [\#2840](https://github.com/QMCPACK/qmcpack/pull/2840) ([PDoakORNL](https://github.com/PDoakORNL))
+* Reduced I/O operations during cmake. [\#2808](https://github.com/QMCPACK/qmcpack/pull/2808) ([ye-luo](https://github.com/ye-luo))
+* Improved detection of unsupported-by-Intel combinations of Intel compilers and libstdc++. [\#2794](https://github.com/QMCPACK/qmcpack/pull/2794) ([ye-luo](https://github.com/ye-luo))
+* Deterministic tests expanded in scope and made reliable for more build types and compilers.
+* Various minor bug fixes and feature improvements based on user requests for both real-space and AFQMC.
+* Improved error handling throughout.
+* Numerous performance improvements, expansion of tests, and bug fixes to the batched VMC and DMC codes. Reasonable but not optimal GPU acceleration can now be achieved for spline-based wavefunctions.
+
+### NEXUS
+
+* Support AMD nodes on Cori. [\#2809](https://github.com/QMCPACK/qmcpack/pull/2809) ([jtkrogel](https://github.com/jtkrogel))
+* Interface for RMG code. [\#2932](https://github.com/QMCPACK/qmcpack/pull/2932) ([jtkrogel](https://github.com/jtkrogel))
+* Added h-channel to list of possible local channels in pseudopotential. [\#2915](https://github.com/QMCPACK/qmcpack/pull/2915) ([mcbennet](https://github.com/mcbennet))
+* Allow non spin-specific occupations in case of noncollinea. [\#2957](https://github.com/QMCPACK/qmcpack/pull/2957) ([mcbennet](https://github.com/mcbennet))
+* More robust handling of QE output when printed eigenvalues touch. [\#3042](https://github.com/QMCPACK/qmcpack/pull/3042) ([mcbennet](https://github.com/mcbennet))
+* Fixed type check for reblock\_factors in qmc-fit. [\#2830](https://github.com/QMCPACK/qmcpack/pull/2830) ([jtkrogel](https://github.com/jtkrogel))
+* Fixed a Jastrow read error/warning, add several QE inputs. [\#2819](https://github.com/QMCPACK/qmcpack/pull/2819) ([tiihonej](https://github.com/tiihonej))
+* Fixed tests on Summit. [\#2983](https://github.com/QMCPACK/qmcpack/pull/2983) ([jtkrogel](https://github.com/jtkrogel))
+* Fixed module overwrite bug in qmca. [\#2802](https://github.com/QMCPACK/qmcpack/pull/2802) ([jtkrogel](https://github.com/jtkrogel))
+
 ## [3.10.0] - 2020-11-10
 
 ### Notes
