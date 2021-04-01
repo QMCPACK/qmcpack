@@ -268,6 +268,22 @@ CMAKE_DEPENDENT_OPTION(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF
 CMAKE_DEPENDENT_OPTION(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND ( QMC_CUDA OR ENABLE_CUDA )" OFF)
 
 ######################################################################
+# Sanitizer options
+######################################################################
+
+# Add optional sanitizers ASAN, UBSAN, MSAN
+SET(VALID_SANITIZERS "none" "asan" "ubsan" "tsan" "msan")
+SET(ENABLE_SANITIZER "none" CACHE STRING "none,asan,ubsan,tsan,msan")
+SET_PROPERTY(CACHE ENABLE_SANITIZER PROPERTY STRINGS ${VALID_SANITIZERS})
+
+# Perform sanitizer option check, only works in debug mode
+IF(NOT ENABLE_SANITIZER IN_LIST VALID_SANITIZERS)
+  MESSAGE( FATAL_ERROR "Invalid -DENABLE_SANITIZER=${ENABLE_SANITIZER}, value must be one of ${VALID_SANITIZERS}")
+ELSE()
+  MESSAGE( STATUS "Enable sanitizer ENABLE_SANITIZER=${ENABLE_SANITIZER}" )
+ENDIF()
+
+######################################################################
 # Install options
 # INSTALL_NEXUS install Nexus alongside QMCPACK
 ######################################################################
@@ -863,6 +879,30 @@ MESSAGE(STATUS "QMC_DATA is ${QMC_DATA}")
 ENDIF()
 IF(ENABLE_GCOV)
 MESSAGE(STATUS "GCOV is enabled")
+ENDIF()
+
+# SETUP SANITIZERS FLAGS
+IF( NOT "${ENABLE_SANITIZER}" STREQUAL "none")
+  IF( NOT ${COMPILER} MATCHES "GNU" AND NOT ${COMPILER} MATCHES "Clang")
+    MESSAGE(FATAL_ERROR "-DENABLE_SANITIZER=${ENABLE_SANITIZER} only works with GNU or Clang compilers")
+  ENDIF()
+  
+  IF( "${ENABLE_SANITIZER}" STREQUAL "asan" )
+    SET(CMAKE_CXX_FLAGS_SAN "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer"
+        CACHE STRING "AddressSanitizer C++ compiler builds." FORCE)
+  ELSEIF( "${ENABLE_SANITIZER}" STREQUAL "ubsan" )
+    SET(CMAKE_CXX_FLAGS_SAN "-fsanitize=undefined"
+        CACHE STRING "UndefinedBehaviorSanitizer C++ compiler builds." FORCE)
+  ELSEIF( "${ENABLE_SANITIZER}" STREQUAL "msan" )
+    SET(CMAKE_CXX_FLAGS_SAN "-fsanitize=memory"
+        CACHE STRING "MemorySanitizer C++ compiler builds." FORCE)
+  ELSEIF( "${ENABLE_SANITIZER}" STREQUAL "tsan" )
+    SET(CMAKE_CXX_FLAGS_SAN "-fsanitize=thread"
+        CACHE STRING "ThreadSanitizer C++ compiler builds." FORCE)
+  ENDIF()
+  
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
+  
 ENDIF()
 
 ############################################################

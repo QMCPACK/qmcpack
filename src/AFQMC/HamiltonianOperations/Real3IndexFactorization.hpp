@@ -501,16 +501,8 @@ public:
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
     boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {v.size(0), 1});
-    if (haj.size(0) == 1)
-    {
-      boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {1, G.size(0)});
-      return vbias(G_, v_, a, c, k);
-    }
-    else
-    {
-      boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {G.size(0), 1});
-      return vbias(G_, v_, a, c, k);
-    }
+    boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {G.size(0), 1});
+    return vbias(G_, v_, a, c, k);
   }
 
   // v(n,w) = sum_ak L(ak,n) G(w,ak)
@@ -566,15 +558,15 @@ public:
 
     if (haj.size(0) == 1)
     {
-      assert(Lakn.size(0) == G.size(1));
+      assert(Lakn.size(0) == G.size(0));
       assert(Lakn.size(1) == v.size(0));
-      assert(G.size(0) == v.size(1));
+      assert(G.size(1) == v.size(1));
       std::tie(ic0, icN) =
           FairDivideBoundary(long(TG.TG_local().rank()), long(Lakn.size(1)), long(TG.TG_local().size()));
 
       if (walker_type == CLOSED)
         a *= 2.0;
-      ma::product(SPValueType(a), ma::T(Lakn(Lakn.extension(0), {ic0, icN})), ma::T(Gsp), SPValueType(c),
+      ma::product(SPValueType(a), ma::T(Lakn(Lakn.extension(0), {ic0, icN})), Gsp, SPValueType(c),
                   vsp.sliced(ic0, icN));
     }
     else
@@ -612,7 +604,7 @@ public:
   int global_origin_cholesky_vector() const { return global_origin; }
 
   // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
-  bool transposed_G_for_vbias() const { return (haj.size(0) == 1); }
+  bool transposed_G_for_vbias() const { return false; }
   bool transposed_G_for_E() const { return true; }
   // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
   bool transposed_vHS() const { return false; }

@@ -168,12 +168,12 @@ git clone https://github.com/spack/spack.git
 cd $HOME/apps/spack
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-git checkout e15a3438a8311d1be596a949f08cf30584c57d48
-#commit e15a3438a8311d1be596a949f08cf30584c57d48
-#Author: eugeneswalker <38933153+eugeneswalker@users.noreply.github.com>
-#Date:   Wed Feb 10 10:14:16 2021 -0800
+git checkout 08054ffce73dc9aeb1dabe7a3abfdb446653cc4f
+#commit 08054ffce73dc9aeb1dabe7a3abfdb446653cc4f (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Andrew W Elble <aweits@rit.edu>
+#Date:   Mon Feb 22 14:02:10 2021 -0500
 #
-#    ascent: add version v0.6.0 (#21573)
+#    py-torch: ensure libtorch_global_deps is linked with the c++ library (#21860)
 
 echo --- Git version and last log entry
 git log -1
@@ -319,7 +319,7 @@ echo --- New python modules
 #spack install py-numpy^blis%gcc@${gcc_vnew} # will pull in libflame (problems 2020-03-27)
 spack load gcc@${gcc_vnew}
 spack load python@${python_version}%gcc@${gcc_vnew} 
-spack install py-numpy%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew} # Will pull in OpenBLAS
+#spack install py-numpy%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew} # Will pull in OpenBLAS
 spack install py-scipy%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
 #spack install py-mpi4py%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew} ^openmpi@${ompi_vnew}%gcc@${gcc_vnew} ^libxml2@${libxml2_v}%gcc@${gcc_vnew} 
 spack install py-setuptools%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
@@ -328,7 +328,7 @@ spack install py-h5py%gcc@${gcc_vnew}  -mpi ^python@${python_version}%gcc@${gcc_
 spack install py-pandas%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
 spack install py-lxml%gcc@${gcc_vnew}  
 spack install py-matplotlib%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
-spack activate py-numpy%gcc@${gcc_vnew} 
+#spack activate py-numpy%gcc@${gcc_vnew} 
 spack activate py-scipy%gcc@${gcc_vnew} 
 spack activate py-h5py%gcc@${gcc_vnew} 
 spack activate py-pandas%gcc@${gcc_vnew} 
@@ -341,7 +341,7 @@ echo --- Old python modules
 spack load gcc@${gcc_vold}
 spack load python@${python_version}%gcc@${gcc_vold}
 spack install py-numpy%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} # Will pull in OpenBLAS
-#SKIP#BADspack install py-scipy%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} # Will pull in py-pybind11 and cmake which won't bootstrap 20201223
+#spack install py-scipy%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} # Will pull in py-pybind11 and cmake which won't bootstrap 20201223
 #SKIPspack install py-setuptools%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold}
 #SKIP#BAD gives dupe python spack install py-mpi4py%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} ^openmpi@${ompi_vold}%gcc@${gcc_vold} ^libxml2@${libxml2_v}%gcc@${gcc_vold}
 #SKIPspack install py-mpi4py%gcc@${gcc_vold} ^openmpi@${ompi_vold}%gcc@${gcc_vold} ^py-setuptools%gcc@${gcc_vold}  ^python@${python_version}%gcc@${gcc_vold}

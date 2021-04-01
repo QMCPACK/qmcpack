@@ -42,7 +42,7 @@ class DiffTwoBodyJastrowOrbital : public DiffWaveFunctionComponent
   std::vector<FT*> F;
   /// e-e table ID
   const int my_table_ID_;
-  ///offset for the optimizable variables
+  /// Map indices from subcomponent variables to component variables
   std::vector<std::pair<int, int>> OffSet;
   Vector<RealType> dLogPsi;
   std::vector<GradVectorType*> gradLogPsi;
@@ -63,6 +63,12 @@ public:
     delete_iter(gradLogPsi.begin(), gradLogPsi.end());
     delete_iter(lapLogPsi.begin(), lapLogPsi.end());
   }
+
+  // Accessors for unit testing
+  std::pair<int, int> getComponentOffset(int index) { return OffSet.at(index); }
+
+  opt_variables_type& getComponentVars() { return myVars; }
+
 
   void addFunc(int ia, int ib, FT* j)
   {
@@ -123,6 +129,9 @@ public:
       myVars.insertFrom((*it).second->myVars);
       ++it;
     }
+    // Remove inactive variables so the mappings are correct
+    myVars.removeInactive();
+
     myVars.getIndex(active);
     NumVars = myVars.size();
 
@@ -139,7 +148,16 @@ public:
         lapLogPsi[i]  = new ValueVectorType(NumPtcls);
       }
       OffSet.resize(F.size());
-      int varoffset = myVars.Index[0];
+
+      // Find first active variable for the starting offset
+      int varoffset = -1;
+      for (int i = 0; i < myVars.size(); i++)
+      {
+        varoffset = myVars.Index[i];
+        if (varoffset != -1)
+          break;
+      }
+
       for (int i = 0; i < F.size(); ++i)
       {
         if (F[i] && F[i]->myVars.Index.size())

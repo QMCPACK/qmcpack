@@ -455,16 +455,8 @@ public:
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
     boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    if ((haj.size(0) == 1) && (walker_type != COLLINEAR))
-    {
-      boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {1, G.size(0)});
-      return vbias(G_, v_, a, c, k);
-    }
-    else
-    {
-      boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(0), 1});
-      return vbias(G_, v_, a, c, k);
-    }
+    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(0), 1});
+    return vbias(G_, v_, a, c, k);
   }
 
   // v(n,w) = sum_ak L(ak,n) G(w,ak)
@@ -529,10 +521,10 @@ public:
         c_[1] = c;
         if (std::abs(c) < 1e-8)
           c_[1] = 1.0;
+        assert((nel[0]+nel[1])*NMO == G.size(0));
         for (int ispin = 0, is0 = 0; ispin < 2; ispin++)
         {
           assert(Lnak[ispin].size(0) == v.size(0));
-          assert(Lnak[ispin].size(1) == G.size(0));
           SpCMatrix_ref Ln(make_device_ptr(Lnak[ispin].origin()), {local_nCV, nel[ispin] * NMO});
           ma::product(SPComplexType(a), Ln, Gsp.sliced(is0, is0 + nel[ispin] * NMO), SPComplexType(c_[ispin]), vsp);
           is0 += nel[ispin] * NMO;
@@ -540,11 +532,11 @@ public:
       }
       else
       {
-        assert(G.size(0) == v.size(1));
-        assert(Lnak[0].size(1) * Lnak[0].size(2) == G.size(1));
+        assert(G.size(1) == v.size(1));
+        assert(Lnak[0].size(1) * Lnak[0].size(2) == G.size(0));
         assert(Lnak[0].size(0) == v.size(0));
         SpCMatrix_ref Ln(make_device_ptr(Lnak[0].origin()), {local_nCV, Lnak[0].size(1) * Lnak[0].size(2)});
-        ma::product(SPComplexType(a), Ln, ma::T(Gsp), SPComplexType(c), vsp);
+        ma::product(SPComplexType(a), Ln, Gsp, SPComplexType(c), vsp);
       }
     }
     else
@@ -851,7 +843,7 @@ public:
   int global_origin_cholesky_vector() const { return global_origin; }
 
   // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
-  bool transposed_G_for_vbias() const { return ((haj.size(0) == 1) && (walker_type != COLLINEAR)); }
+  bool transposed_G_for_vbias() const { return false; } 
   bool transposed_G_for_E() const { return true; }
   // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
   bool transposed_vHS() const { return false; }
