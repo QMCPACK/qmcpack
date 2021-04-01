@@ -39,7 +39,7 @@ TEST_CASE("test_timer_stack", "[utilities]")
   //  changes will persist from test to test.
   FakeTimerManager tm;
   FakeTimer* t1 = tm.createTimer("timer1", timer_level_coarse);
-#if ENABLE_TIMERS
+#if defined(ENABLE_TIMERS)
 #ifdef USE_STACK_TIMERS
   t1->start();
   REQUIRE(tm.current_timer() == t1);
@@ -56,7 +56,7 @@ TEST_CASE("test_timer_scoped", "[utilities]")
   {
     ScopedFakeTimer st(*t1);
   }
-#if ENABLE_TIMERS
+#if defined(ENABLE_TIMERS)
   REQUIRE(t1->get_total() == Approx(1.0));
   REQUIRE(t1->get_num_calls() == 1);
 #endif
@@ -67,7 +67,7 @@ TEST_CASE("test_timer_scoped", "[utilities]")
   {
     ScopedFakeTimer st(t2);
   }
-#if ENABLE_TIMERS
+#if defined(ENABLE_TIMERS)
   REQUIRE(t1->get_total() == Approx(1.0));
   REQUIRE(t1->get_num_calls() == 1);
 #endif

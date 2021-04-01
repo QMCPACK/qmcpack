@@ -211,7 +211,7 @@ public:
       {
         H1[i][j] += hij[i][j] + vn0[i][j];
         H1[j][i] += hij[j][i] + vn0[j][i];
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         if (std::abs(H1[i][j] - ma::conj(H1[j][i])) > 1e-5)
         {
 #else

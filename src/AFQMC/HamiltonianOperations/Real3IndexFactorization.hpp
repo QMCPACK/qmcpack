@@ -219,7 +219,7 @@ public:
     size_t cnt(0);
     if (addEJ)
     {
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       mem_needs += nwalk * local_nCV;
 #else
       if (not getKl)
@@ -229,7 +229,7 @@ public:
     if (addEXX)
     {
       mem_needs += nwalk * nel[0] * nel[0] * local_nCV;
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       mem_needs += nwalk * nel[0] * NMO;
 #else
       if (nspin == 2)
@@ -250,7 +250,7 @@ public:
         assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
         assert(KEright->stride(0) == KEright->size(1));
       }
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       if (getKl)
       {
         assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
@@ -305,7 +305,7 @@ public:
       {
         size_t cnt_(cnt);
         SPComplexType* ptr(nullptr);
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         ptr = to_address(SM_TMats.origin()) + cnt_;
         cnt_ += nwalk * nel[ispin] * NMO;
         for (int n = 0; n < nwalk; ++n)
@@ -388,7 +388,7 @@ public:
         if (n % TG.TG_local().size() == TG.TG_local().rank())
           E[n][2] += 0.5 * static_cast<ComplexType>(scl * scl * ma::dot(Kl[n], Kl[n]));
       }
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       if (getKl)
       {
         long i0, iN;
