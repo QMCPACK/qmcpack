@@ -5,6 +5,7 @@ comment: off
 
 # Ignore testing directory itself
 ignore:
+  - "external_codes"
   - "tests"
 
 # Fixes report prefix paths from CI dynamic coverage action
