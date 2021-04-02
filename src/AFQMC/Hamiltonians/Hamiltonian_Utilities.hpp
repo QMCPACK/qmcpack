@@ -137,7 +137,7 @@ inline int getSpinSector(const int NMO, const IndexType& i, const IndexType& j)
 
 inline IndexType Index2Col(const int NMO, const IndexType i)
 {
-#if AFQMC_DEBUG
+#if defined(AFQMC_DEBUG)
 // assert( ((i<NMO)&&(j<NMO)) || ((i>NMO)&&(j>NMO))   )
 #endif
   return (i < NMO) ? (i) : (i - NMO);

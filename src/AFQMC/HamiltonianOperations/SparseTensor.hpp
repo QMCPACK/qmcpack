@@ -208,7 +208,7 @@ public:
     if (addEJ and getKr)
       assert(Kr->size(0) == nwalk && Kr->size(1) == SpvnT[k].size(0));
 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
     size_t mem_needs = Gc.num_elements();
     set_buffer(mem_needs);
     boost::multi::array_ref<SPComplexType, 2> Gsp(to_address(SM_TMats.origin()), Gc.extensions());
@@ -269,7 +269,7 @@ public:
       for (int wi = 0; wi < Gc.size(1); wi++)
         E[wi][2] = 0.5 * scl * static_cast<ComplexType>(ma::dot(v_(v_.extension(0), wi), v_(v_.extension(0), wi)));
     }
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
 #endif
   }
 
