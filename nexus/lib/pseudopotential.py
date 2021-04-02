@@ -1956,6 +1956,32 @@ class GaussianPP(SemilocalPP):
         execute(command,verbose=True)
         os.system('rm '+tmpfile)
     #end def ppconvert
+
+
+    # test needed
+    def transform_to_truncated_L2(self,keep=None,lmax=None,outfile=None,inplace=True):
+        if keep is None or lmax is None:
+            self.error('parameters \'keep\' and \'lmax\' must be specified.')
+        #end if
+        chan_labels = ['s','p','d','f','g','h','i','j']
+        keep_chans = keep.split()
+        # Are the labels recognized?
+        if keep_chans[0] not in chan_labels or keep_chans[1] not in chan_labels:
+            print('Requested channel to keep is not recognized')
+            quit()
+        #end if
+        # Does the original potential contain the requested channels?
+        if chan_labels.index(keep_chans[0]) > len(tpots)-1 or chan_labels.index(keep_chans[1]) > len(tpots)-1:
+            print('Cannot keep channel that is not already present')
+            quit()
+        #end if
+        # Are the requested 'keep' channels different?
+        if chan_labels.index(keep_chans[0]) == chan_labels.index(keep_chans[1]):
+            print('The two channels must be different.')
+            quit()
+        #end if
+
+    #end def transform_to_truncated_L2
 #end class GaussianPP
 
 
