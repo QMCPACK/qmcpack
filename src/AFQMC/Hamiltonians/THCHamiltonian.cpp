@@ -253,7 +253,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     if (TG.Node().root())
     {
       copy_n_cast(v0_.origin(), NMO * NMO, to_address(v0.origin()));
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       // MAM: Since Muv gets large, might have problems with the check for hermicity below
       // fixing here
       for (int i = 0; i < NMO; i++)
@@ -304,7 +304,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     if (TG.Node().root())
     {
       copy_n_cast(v0_.origin(), NMO * NMO, to_address(v0.origin()));
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       // MAM: Since Muv gets large, might have problems with the check for hermicity below
       // fixing here
       for (int i = 0; i < NMO; i++)

@@ -49,7 +49,7 @@ int main(int argc, char** argv)
   //use the global generator
 
   bool ionode=(mycomm->rank() == 0);
-#if USE_NIO
+#if defined(USE_NIO)
   int na=1; int nb=1; int nc=1;
   int nx=37,ny=37,nz=37;
 #else
