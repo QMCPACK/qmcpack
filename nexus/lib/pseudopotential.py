@@ -1960,6 +1960,37 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def transform_to_truncated_L2(self,keep=None,lmax=None,outfile=None,inplace=True):
+        # TEMP
+        # components
+        #   d
+        #     0
+        #       coeff           = 17.0
+        #       expon           = 4.18819322
+        #       rpow            = 1
+        #     1
+        #       coeff           = 71.19928469
+        #       expon           = 4.42968808
+        #       rpow            = 3
+        #     2
+        #       coeff           = -77.65278252
+        #       expon           = 4.39800669
+        #       rpow            = 2
+        #   end d
+        #   p
+        #     0
+        #       coeff           = 56.10698766
+        #       expon           = 9.05202771
+        #       rpow            = 2
+        #   end p
+        #   s
+        #     0
+        #       coeff           = 113.90484511
+        #       expon           = 10.86075441
+        #       rpow            = 2
+        #   end s
+        # end components
+        comps = list(self.components.keys())
+        # TEMP
         if keep is None or lmax is None:
             self.error('parameters \'keep\' and \'lmax\' must be specified.')
         #end if
@@ -1967,18 +1998,15 @@ class GaussianPP(SemilocalPP):
         keep_chans = keep.split()
         # Are the labels recognized?
         if keep_chans[0] not in chan_labels or keep_chans[1] not in chan_labels:
-            print('Requested channel to keep is not recognized')
-            quit()
+            slef.error('Requested channel to keep is not recognized')
         #end if
         # Does the original potential contain the requested channels?
-        if chan_labels.index(keep_chans[0]) > len(tpots)-1 or chan_labels.index(keep_chans[1]) > len(tpots)-1:
-            print('Cannot keep channel that is not already present')
-            quit()
+        if keep_chans[0] not in comps or keep_chans[1] not in comps:
+            self.error('Cannot keep channel that is not already present')
         #end if
-        # Are the requested 'keep' channels different?
+        ## Are the requested 'keep' channels different?
         if chan_labels.index(keep_chans[0]) == chan_labels.index(keep_chans[1]):
-            print('The two channels must be different.')
-            quit()
+            self.error('The two channels must be different.')
         #end if
 
     #end def transform_to_truncated_L2
