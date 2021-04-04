@@ -1965,7 +1965,25 @@ class GaussianPP(SemilocalPP):
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
         self.components[chan_labels[l]].append(obj(coeff=coeff,expon=expon,rpow=rpow))
-    #end def ppconvert
+    #end def append_to_component
+
+
+    # test needed
+    def scale_component(self,l,scale):
+        if l>self.lmax:
+            self.error('component {} not present in PP.'.format(l))
+        #end if
+        chan_labels = ['s','p','d','f','g','h','i','j']
+        for term in self.components[chan_labels[l]]:
+            term.coeff*=scale
+        #end for
+    #end def scale_component
+
+
+    # test needed
+    def simplify(self):
+        pass
+    #end def scale_component
 
 
     # test needed
