@@ -1959,7 +1959,19 @@ class GaussianPP(SemilocalPP):
 
 
     # test needed
+    def append_to_component(self,l,coeff,expon,rpow):
+        if l>self.lmax:
+            self.error('component {} not present in PP.'.format(l))
+        #end if
+        chan_labels = ['s','p','d','f','g','h','i','j']
+        self.components[chan_labels[l]].append(obj(coeff=coeff,expon=expon,rpow=rpow))
+    #end def ppconvert
+
+
+    # test needed
     def transform_to_truncated_L2(self,keep=None,lmax=None,outfile=None,inplace=True):
+        print(self.get_channel(0))
+        quit()
         # TEMP
         # components
         #   d
@@ -1989,6 +2001,7 @@ class GaussianPP(SemilocalPP):
         #       rpow            = 2
         #   end s
         # end components
+        print(self)
         comps = list(self.components.keys())
         # TEMP
         if keep is None or lmax is None:
@@ -2008,6 +2021,118 @@ class GaussianPP(SemilocalPP):
         if chan_labels.index(keep_chans[0]) == chan_labels.index(keep_chans[1]):
             self.error('The two channels must be different.')
         #end if
+        keep_l_vals = []
+        keep_l_vals.append(chan_labels.index(keep_chans[0]))
+        keep_l_vals.append(chan_labels.index(keep_chans[1]))
+        keep_l_vals.sort()
+        # Is one of the channels the local channel?
+        if keep_l_vals[0]==self.lmax or keep_l_vals[1]==self.lmax:
+            keep_local=True
+        else:
+            keep_local=False
+        #end if
+        if not keep_local:
+        
+            vm = tpots[keep_l_vals[0]].copy()
+            lm = keep_l_vals[0]
+            vn = tpots[keep_l_vals[1]].copy()
+            ln = keep_l_vals[1]
+
+            vlocp = tpots[-1].copy()
+
+            denom = lm*(lm+1)-ln*(ln+1)
+
+            fctr1 = lm*(lm+1)/denom
+            for i,p in enumerate(vn):
+                vlocp = np.append(vlocp,np.array([[p[0],p[1],p[2]*fctr1]]),axis=0)
+            #end for
+            fctr2 = -ln*(ln+1)/denom
+            for i,p in enumerate(vm):
+                vlocp = np.append(vlocp,np.array([[p[0],p[1],p[2]*fctr2]]),axis=0)
+            #end for
+            fctr3 = lmax*(lmax+1)/denom
+            for i,p in enumerate(vm):
+                vlocp = np.append(vlocp,np.array([[p[0],p[1],p[2]*fctr3]]),axis=0)
+            #end for
+            fctr4 = -lmax*(lmax+1)/denom
+            for i,p in enumerate(vn):
+                vlocp = np.append(vlocp,np.array([[p[0],p[1],p[2]*fctr4]]),axis=0)
+            #end for
+
+            rpots = [] 
+            for l in range(lmax):
+
+                vtmp = vm.copy()
+
+                fctr1 = l*(l+1)/denom
+                for i,p in enumerate(vm):
+                    vtmp[i][2] = p[2]*fctr1
+                #end for
+                fctr2 = -l*(l+1)/denom
+                for i,p in enumerate(vn):
+                    vtmp = np.append(vtmp,np.array([[p[0],p[1],p[2]*fctr2]]),axis=0)
+                #end for
+                fctr3 = -lmax*(lmax+1)/denom
+                for i,p in enumerate(vm):
+                    vtmp = np.append(vtmp,np.array([[p[0],p[1],p[2]*fctr3]]),axis=0)
+                #end for
+                fctr4 = lmax*(lmax+1)/denom
+                for i,p in enumerate(vn):
+                    vtmp = np.append(vtmp,np.array([[p[0],p[1],p[2]*fctr4]]),axis=0)
+                #end for
+                rpots.append(vtmp)
+
+            #end for
+            rpots.append(vlocp)
+
+        else:
+            
+            lm = keep_l_vals[0]
+            lloc = keep_l_vals[1]
+
+
+
+
+            # Old
+
+            # Channel selected to remain unmodified
+            vm = tpots[keep_l_vals[0]].copy()
+            lm = keep_l_vals[0]
+          
+            # Local channel. Selected to remain unmodified
+            vlocp = tpots[keep_l_vals[1]].copy()
+            lloc = keep_l_vals[1]
+
+
+            fctr1 = (-lloc*(lloc+1))/(lm*(lm+1)-lloc*(lloc+1))
+            for i,p in enumerate(vm):
+                vlocp = np.append(vlocp,np.array([[p[0],p[1],p[2]*fctr1]]),axis=0)
+            #end for
+            fctr2 = (lmax*(lmax+1))/(lm*(lm+1)-lloc*(lloc+1))
+            for i,p in enumerate(vm):
+                vlocp = np.append(vlocp,np.array([[p[0],p[1],p[2]*fctr2]]),axis=0)
+            #end for
+
+            rpots = [] 
+            for l in range(lmax):
+
+                vtmp = vm.copy()
+
+                fctr1 = (l*(l+1))/(lm*(lm+1)-lloc*(lloc+1))
+                for i,p in enumerate(vm):
+                    vtmp[i][2] = p[2]*fctr1
+                #end for
+                fctr2 = -(lmax*(lmax+1))/(lm*(lm+1)-lloc*(lloc+1))
+                for i,p in enumerate(vm):
+                    vtmp = np.append(vtmp,np.array([[p[0],p[1],p[2]*fctr2]]),axis=0)
+                #end for
+                rpots.append(vtmp)
+
+            #end for
+            rpots.append(vlocp)
+        #end if
+
+        return rpots
 
     #end def transform_to_truncated_L2
 #end class GaussianPP
