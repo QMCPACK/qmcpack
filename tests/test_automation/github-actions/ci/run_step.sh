@@ -97,7 +97,7 @@ case "$1" in
     fi
     
     # Run only deterministic tests (reasonable for CI)
-    ctest -L deterministic
+    ctest --output-on-failure -L deterministic
     ;;
   
   # Generate coverage reports
