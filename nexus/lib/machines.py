@@ -3291,8 +3291,6 @@ class Andes(Supercomputer):
         c+='cd $SLURM_SUBMIT_DIR\n'
         c+='\n'
         c+='echo JobID : $SLURM_JOBID \n'
-Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
-#Andes_gpu(       9,   2,    14, 1024, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
         c+='echo Number of nodes requested: $SLURM_JOB_NUM_NODES \n'
         c+='echo List of nodes assigned to the job: $SLURM_NODELIST \n'
         c+='\n'
