@@ -17,19 +17,30 @@ namespace qmcplusplus
 {
 namespace cuBLAS_LU
 {
+/** Because the primary branch of atan2 for a complex number z = x + iy
+ *  log(z).real = sqrt( x^2 + y^2 )
+ *  log(z).imag = atan2(y,x) 
+ *
+ *  the expressions with the pivot are to avoid divergence (although the compiler might 
+ *  figure it out) and  is just a factor we need to decide sign of each determinant term.
+ */
 
-__device__ cuDoubleComplex complexDetLog(const double lu_diag, const int n_index, const int* pivots)
+/** because atan2(y, x) = pi for (0, -x)
+ *  we use a short cut for the real valued matrices
+ */
+__device__ cuDoubleComplex complexDetLog(const double lu_diag, const int n_index, const int pivot)
 {
   cuDoubleComplex log_value;
-  log_value.x = log(abs(lu_diag));
-  log_value.y = ((lu_diag < 0) != ((pivots[n_index] - 1) == n_index)) * M_PI;
+  double lud  = lu_diag * (1 - 2 * (pivot != n_index + 1));
+  log_value.x = log(abs(lud));
+  log_value.y = (lud < 0) * M_PI;
   return log_value;
 }
 
-__device__ cuDoubleComplex complexDetLog(const cuDoubleComplex lu_diag, const int n_index, const int* pivots)
+__device__ cuDoubleComplex complexDetLog(const cuDoubleComplex lu_diag, const int n_index, const int pivot)
 {
   cuDoubleComplex diag;
-  double pivot_factor = 1 - 2 * ((pivots[n_index] - 1) == n_index);
+  double pivot_factor = 1 - 2 * (pivot != n_index + 1);
   diag.x              = lu_diag.x * pivot_factor;
   diag.y              = lu_diag.y * pivot_factor;
   cuDoubleComplex log_value;
@@ -49,23 +60,30 @@ __global__ void computeLogDet_kernel(const int n,
 {
   const int iw                = blockIdx.x;
   const int block_num         = blockIdx.y;
-  const T* __restrict__ lu_iw = mat_lus[iw];
+  const T* lu_iw = mat_lus[iw];
+  const int* pivots_iw        = pivots + iw * n;
   __shared__ cuDoubleComplex logdet_vals[COLBS];
+  logdet_vals[threadIdx.x].x = 0.0;
+  logdet_vals[threadIdx.x].y = 0.0;
   T lu_diag;
   int n_index = threadIdx.x + block_num * COLBS;
   if (n_index < n)
   {
     lu_diag                  = *(lu_iw + n_index * lda + n_index);
-    logdet_vals[threadIdx.x] = complexDetLog(lu_diag, n_index, pivots);
+    logdet_vals[threadIdx.x] = complexDetLog(lu_diag, n_index, *(pivots_iw + n_index));
   }
-  if (threadIdx.x == 0 && blockIdx.y == 0)
-    logdets[iw] = {0.0, 0.0};
+  if (threadIdx.x == 0 && block_num == 0)
+  {
+    logdets[iw].x = 0.0;
+    logdets[iw].y = 0.0;
+  }
   // insure that when we reduce logdet_vals all the threads in the block are done.
   __syncthreads();
   if (threadIdx.x == 0)
   {
-    __shared__ cuDoubleComplex block_sum_log_det;
-    block_sum_log_det = {0.0, 0.0};
+    cuDoubleComplex block_sum_log_det;
+    block_sum_log_det.x = 0.0;
+    block_sum_log_det.y = 0.0;
     for (int iv = 0; iv < COLBS; ++iv)
     {
       block_sum_log_det.x += logdet_vals[iv].x;
@@ -201,12 +219,12 @@ template void computeLogDet_batched<std::complex<double>>(cudaStream_t& hstream,
                                                           const int batch_size);
 
 template void computeLogDet_batched<double>(cudaStream_t& hstream,
-                                                          const int n,
-                                                          const int lda,
-                                                          double** LU_mat,
-                                                          const int* pivots,
-                                                          std::complex<double>* log_dets,
-                                                          const int batch_size);
+                                            const int n,
+                                            const int lda,
+                                            double** LU_mat,
+                                            const int* pivots,
+                                            std::complex<double>* log_dets,
+                                            const int batch_size);
 
 } // namespace cuBLAS_LU
 } // namespace qmcplusplus

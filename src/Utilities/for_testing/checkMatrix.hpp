@@ -62,8 +62,8 @@ struct CheckMatrixResult
  *  \param[in] check_all - if true continue to check matrix elements after failure
  */
 template<typename T1, typename ALLOC1, typename T2, typename ALLOC2>
-CheckMatrixResult checkMatrix(const Matrix<T1, ALLOC1>& a_mat,
-                              const Matrix<T2, ALLOC2>& b_mat,
+CheckMatrixResult checkMatrix(Matrix<T1, ALLOC1>& a_mat,
+                              Matrix<T2, ALLOC2>& b_mat,
                               const bool check_all = false)
 {
   // This allows use to check a padded b matrix with a nonpadded a
