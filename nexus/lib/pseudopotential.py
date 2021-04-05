@@ -1996,7 +1996,27 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def simplify(self):
-        pass
+        # Remove terms with coefficients equivalent to zero
+        chan_labels = ['s','p','d','f','g','h','i','j']
+        remove = []
+        for l in np.arange(self.lmax+1):
+            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+                if abs(term.coeff)<1e-8:
+                    remove.append((chan_labels[l],term_idx))
+                #end if
+            #end for
+        #end for
+        for r in remove:
+            self.components[r[0]].delete(r[1])
+        #end for
+        comps = self.components.copy()
+        for l in np.arange(self.lmax+1):
+            comps[chan_labels[l]] = obj()
+            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+                comps[chan_labels[l]].append(term)
+            #end for
+        #end for
+        self.components = comps.copy()
     #end def scale_component
 
 
