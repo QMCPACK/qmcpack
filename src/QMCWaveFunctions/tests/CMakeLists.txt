@@ -63,11 +63,7 @@ SET(JASTROW_SRC test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomi
 SET(DETERMINANT_SRC FakeSPO.cpp test_DiracDeterminantBatched.cpp test_dirac_det.cpp
                     test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
                     test_multi_slater_determinant.cpp)
-
-if (ENABLE_CUDA)
-  SET(DETERMINANT_SRC ${DETERMINANT_SRC} test_cuBLAS_LU.cpp)
-endif()
-
+		  
 FOREACH(CATEGORY trialwf sposet jastrow determinant)
   SET(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   SET(UTEST_NAME deterministic-unit_${UTEST_EXE})
@@ -85,3 +81,20 @@ FOREACH(CATEGORY trialwf sposet jastrow determinant)
     SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS noasan)
   ENDIF()
 ENDFOREACH()
+
+# do not merge with test_wavefunction_determinant until all of
+# test_wavefunction_determinants tests can pass sanitizers
+if (ENABLE_CUDA)
+  SET(UTEST_EXE test_direct_inversion)
+  SET(UTEST_NAME deterministic-unit_${UTEST_EXE})
+  SET(DIRECT_INVERSION_SRC test_cuBLAS_LU.cpp)
+  ADD_EXECUTABLE(${UTEST_EXE} test_cuBLAS_LU.cpp)
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcwfs_direct_inversion_cuda catch_main_no_mpi)
+  IF(USE_OBJECT_TARGET)
+    TARGET_LINK_LIBRARIES(${UTEST_EXE} platform_omptarget)
+  ENDIF()
+  TARGET_INCLUDE_DIRECTORIES(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+  ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+endif()
+
+
