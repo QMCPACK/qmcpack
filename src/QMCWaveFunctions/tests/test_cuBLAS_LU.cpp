@@ -364,12 +364,10 @@ TEST_CASE("cuBLAS_LU::getrf_batched_complexcuBLAS_LU::computeLogDet(batch=2)", "
   cudaErrorCheck(cudaMemcpyAsync(devMs, Ms, sizeof(double*), cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying Ms to device");
 
-  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, n, lda, devMs, dev_pivots, dev_infos, batch_size);
+  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, cuda_handles->hstream,  n, lda, devMs, dev_pivots, infos, dev_infos, batch_size);
 
   cudaErrorCheck(cudaMemcpyAsync(M, devM, sizeof(double) * 32, cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying invM from device");
-  cudaErrorCheck(cudaMemcpyAsync(infos, dev_infos, sizeof(int) * 4, cudaMemcpyDeviceToHost, hstream),
-                 "cudaMemcpyAsync failed copying infos from device");
   cudaErrorCheck(cudaMemcpyAsync(pivots, dev_pivots, sizeof(int) * 4, cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying pivots from device");
 
@@ -479,15 +477,13 @@ TEST_CASE("cuBLAS_LU::getrf_batched", "[wavefunction][CUDA]")
   cudaErrorCheck(cudaMemcpyAsync(devMs, Ms, sizeof(double*) * 2, cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying Ms to device");
 
-  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, n, lda, devMs, dev_pivots, dev_infos, batch_size);
+  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, cuda_handles->hstream, n, lda, devMs, dev_pivots, infos, dev_infos, batch_size);
 
   // copy back the Ms, infos, pivots
   cudaErrorCheck(cudaMemcpyAsync(M, devM, sizeof(double) * 16, cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying invM from device");
   cudaErrorCheck(cudaMemcpyAsync(M2, devM2, sizeof(double) * 16, cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying invM from device");
-  cudaErrorCheck(cudaMemcpyAsync(infos, dev_infos, sizeof(int) * 8, cudaMemcpyDeviceToHost, hstream),
-                 "cudaMemcpyAsync failed copying infos from device");
   cudaErrorCheck(cudaMemcpyAsync(pivots, dev_pivots, sizeof(int) * 8, cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying pivots from device");
 

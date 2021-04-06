@@ -36,10 +36,12 @@ void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
 
 template<typename T>
 void computeGetrf_batched(cublasHandle_t& h_cublas,
+                                           cudaStream_t& hstream,
                           const int n,
                           const int lda,
                           T* Ms[],
                           int* pivots,
+                          int* host_infos,
                           int* infos,
                           const int batch_size);
 

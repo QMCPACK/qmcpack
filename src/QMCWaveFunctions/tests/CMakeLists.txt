@@ -72,7 +72,7 @@ FOREACH(CATEGORY trialwf sposet jastrow determinant)
 
   TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions utilities_for_test)
   IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget utilities_for_test)
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget)
   ENDIF()
 
   ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

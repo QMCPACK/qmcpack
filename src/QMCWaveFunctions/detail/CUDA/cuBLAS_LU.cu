@@ -14,6 +14,11 @@
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "Platforms/CUDA/CUDATypeMapping.hpp"
 
+/** \file
+ *
+ *  Naming note, at this level of the interface all *, **, *[] are assumed to be to
+ *  deal with device addresses.
+ */
 namespace qmcplusplus
 {
 namespace cuBLAS_LU
@@ -137,10 +142,41 @@ void computeLogDet_batched(cudaStream_t& hstream,
                  "fused kernel call failed");
 }
 
+template<typename T>
+void computeGetrf_batched(cublasHandle_t& h_cublas,
+                          cudaStream_t& hstream,
+                          const int n,
+                          const int lda,
+                          T* Ms[],
+                          int* pivots,
+                          int* host_infos,
+                          int* infos,
+                          const int batch_size)
+{
+  //LU is returned in Ms
+  cublasErrorCheck(cuBLAS::getrf_batched(h_cublas, n, Ms, lda, pivots, infos, batch_size),
+                   "cuBLAS::getrf_batched failed in computeInverseAndDetLog_batched");
+  cudaErrorCheck(cudaMemcpyAsync(host_infos, infos, sizeof(int) * batch_size, cudaMemcpyDeviceToHost, hstream),
+                 "cudaMemcpyAsync failed copying cuBLAS::getrf_batched infos from device");
+  cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
+  
+  for(int iw = 0; iw < batch_size; ++iw)
+  {
+      if (*(host_infos + iw) != 0) {
+        std::ostringstream err_msg;
+        err_msg << "cuBLAS::getrf_batched failed with return code " << *(host_infos + iw);
+        throw std::runtime_error(err_msg.str());
+    }
+  }
+
+}
+
+
 /** Takes the transpose of PsiM using LU factorization calculates the log determinant and invPsiM
  *
  *  \param[inout] Ms -       pointers to pointers to working memory for Ms that are used to return invMs
  *  \param[in]    pivots -   pointer to n * nw ints allocated in device memory for pivots array.
+ *  \param[in]    host_infos - pointer to nw ints allocated in pinned host memory for factorization infos
  *  \param[in]    infos -    pointer to nw ints allocated in device memory factorization infos
  *  \param[out]   log_dets - pointer device memory for nw log determinant values to be returned, 
  *                           maybe this is supposed to be just RealType
@@ -154,33 +190,18 @@ void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
                                      double* Cs[],
                                      double* LU_diags,
                                      int* pivots,
+                                     int* host_infos,
                                      int* infos,
                                      std::complex<double>* log_dets,
                                      const int batch_size)
 {
-  //LU is returned in Ms
-  cublasErrorCheck(cuBLAS::getrf_batched(h_cublas, n, Ms, lda, pivots, infos, batch_size),
-                   "cuBLAS::getrf_batched failed in computeInverseAndDetLog_batched");
-  // cudaErrorCheck(computeLUDiag_batched_impl(hstream, n, lda, Ms, LU_diags, batch_size),
-  //                "failed to extract LU diag values at cuomputeLUDiag_batched_impl");
+  computeGetrf_batched(h_cublas, hstream, n ,lda, Ms, pivots, host_infos, infos, batch_size);
   cudaErrorCheck(computeLogDet_batched_impl(hstream, n, lda, Ms, pivots, log_dets, batch_size),
                  "failed to calculate log determinant values in computeLogDet_batched_impl");
   cublasErrorCheck(cuBLAS::getri_batched(h_cublas, n, Ms, lda, pivots, Cs, lda, infos, batch_size),
                    "cuBLAS::getri_batched failed in computeInverseAndDetLog_batched");
 }
 
-template<typename T>
-void computeGetrf_batched(cublasHandle_t& h_cublas,
-                          const int n,
-                          const int lda,
-                          T* Ms[],
-                          int* pivots,
-                          int* infos,
-                          const int batch_size)
-{
-  cublasErrorCheck(cuBLAS::getrf_batched(h_cublas, n, Ms, lda, pivots, infos, batch_size),
-                   "cuBLAS::getrf_batched failed in computeInverseAndDetLog_batched");
-}
 
 void computeGetri_batched(cublasHandle_t& h_cublas,
                           const int n,
@@ -196,17 +217,22 @@ void computeGetri_batched(cublasHandle_t& h_cublas,
 }
 
 template void computeGetrf_batched<double>(cublasHandle_t& h_cublas,
+                                           cudaStream_t& hstream,
                                            const int n,
                                            const int lda,
                                            double* Ms[],
                                            int* pivots,
+                                           int* host_infos,
                                            int* infos,
                                            const int batch_size);
+
 template void computeGetrf_batched<std::complex<double>>(cublasHandle_t& h_cublas,
+                                           cudaStream_t& hstream,
                                                          const int n,
                                                          const int lda,
                                                          std::complex<double>* Ms[],
                                                          int* pivots,
+                                                         int* host_infos,
                                                          int* infos,
                                                          const int batch_size);
 
