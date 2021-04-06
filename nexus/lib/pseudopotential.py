@@ -2001,7 +2001,7 @@ class GaussianPP(SemilocalPP):
         remove = []
         for l in np.arange(self.lmax+1):
             for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                if abs(term.coeff)<1e-8:
+                if abs(term.coeff)<1e-8 and len(self.components[chan_labels[l]])>1:
                     remove.append((chan_labels[l],term_idx))
                 #end if
             #end for
@@ -2017,7 +2017,89 @@ class GaussianPP(SemilocalPP):
             #end for
         #end for
         self.components = comps.copy()
-    #end def scale_component
+        comps = self.components.copy()
+        for l in np.arange(self.lmax+1):
+            terms = []
+            comps[chan_labels[l]] = obj()
+            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+                terms.append(term.list())
+            #end for
+            terms = np.array(terms)
+            like_terms = []
+            if len(terms)>1:
+                rpows  = terms[:,2]
+                expons = terms[:,1]
+                coeffs = terms[:,0]
+                for ex_idx,ex in enumerate(expons.round(decimals=8)):
+                    if any(ex_idx in subl for subl in like_terms):
+                        continue
+                    #end if
+                    match = np.argwhere(expons.round(decimals=8)==ex)
+                    if len(match)>1:
+                        match = match.flatten()
+                        unique_pows = np.unique(rpows[match].round(decimals=8))
+                        if len(unique_pows)==1:
+                            like_terms.append(match.tolist())
+                        else:
+                            for uv in unique_pows:
+                                uv_count = rpows[match].round(decimals=8).tolist().count(uv)
+                                if uv_count>1:
+                                    m = match[rpows[match].round(decimals=8)==uv][0]
+                                    if any(m in subl for subl in like_terms):
+                                        continue
+                                    else:
+                                        like_terms.append(match[rpows[match].round(decimals=8)==uv].tolist())
+                                    #end if
+                                #end if
+                            #end for
+                        #end if
+                    #end if
+                #end for
+            #end if
+            # update comps
+            comps[chan_labels[l]] = obj()
+            added = []
+            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+                if any(term_idx in subl for subl in like_terms):
+                    if term_idx in added:
+                        continue
+                    else:
+                        for mlist in like_terms:
+                            if term_idx in mlist and not term_idx in added:
+                                coeff = 0.0
+                                mod_term = term.copy()
+                                for ti in mlist: 
+                                    coeff += self.components[chan_labels[l]][ti].coeff
+                                #end for
+                                if abs(coeff)>1e-8:
+                                    mod_term.coeff = coeff
+                                    comps[chan_labels[l]].append(mod_term)
+                                #end if
+                                added.extend(mlist)
+                            #end if
+                        #end for
+                    #end if
+                else:
+                    comps[chan_labels[l]].append(term)
+                    added.append(term_idx)
+                #end if
+            #end for
+            if len(comps[chan_labels[l]])==0:
+                # All terms cancelled. Add placeholder
+                plcehldr = self.components['s'][0].copy()
+                plcehldr.coeff = 0.0
+                plcehldr.rpow = 2
+                plcehldr.expon = 1.0
+                comps[chan_labels[l]].append(plcehldr)
+        #end for
+        self.components = comps.copy()
+    #end def simplify
+
+
+    # test needed
+    def is_truncated_L2(self):
+        pass
+    #end def is_truncated_L2
 
 
     # test needed
