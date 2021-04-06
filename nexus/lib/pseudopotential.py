@@ -2022,6 +2022,10 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def transform_to_truncated_L2(self,keep=None,lmax=None,outfile=None,inplace=True):
+        ##############################################################################
+        # WARNING: ONLY PERFORM THIS TRANSFORMATION IF YOU KNOW WHAT YOU ARE DOING.
+        #          TRANSFERABILITY IS GENERALLY REDUCED SEVERELY AFTER TRANSFORM.
+        ##############################################################################
         comps = list(self.components.keys())
         if keep is None or lmax is None:
             self.error('parameters \'keep\' and \'lmax\' must be specified.')
