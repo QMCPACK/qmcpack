@@ -123,15 +123,6 @@ IF(QMC_BUILD_STATIC)
     SET(CMAKE_CXX_LINK_FLAGS " -static")
 ENDIF(QMC_BUILD_STATIC)
 
-SET(LLVM_SANITIZE_ADDRESS FALSE CACHE BOOL "Use llvm address sanitizer library")
-MARK_AS_ADVANCED(LLVM_SANITIZE_ADDRESS)
-IF(LLVM_SANITIZE_ADDRESS)
-  SET(CMAKE_C_FLAGS "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope ${CMAKE_C_FLAGS}")
-  SET(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope ${CMAKE_CXX_FLAGS}")
-  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope")
-  SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope")
-ENDIF(LLVM_SANITIZE_ADDRESS)
-
 # Coverage
 IF (ENABLE_GCOV)
   SET(GCOV_COVERAGE TRUE)
