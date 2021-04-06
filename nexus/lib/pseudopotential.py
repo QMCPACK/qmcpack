@@ -2098,8 +2098,24 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def is_truncated_L2(self):
-        pass
+        # CHECK IF THIS WORKS FOR lmax=1 !!!!!!
+        # Only checked for lmax=2 and higher
+        p1 = self.copy()
+        p1.simplify()
+        p2 = self.copy()
+        p2.transform_to_truncated_L2(keep='s p',lmax=p2.lmax)
+        p2.simplify()
+        return p2.components==p1.components
     #end def is_truncated_L2
+
+
+    # test needed
+    def make_L2_bounded(self):
+        if not self.is_truncated_L2():
+            self.error('The PP must be in the truncated L2 form.')
+        #end if
+        print('L2 form. I will gladly continue')
+    #end def make_L2_bounded
 
 
     # test needed
