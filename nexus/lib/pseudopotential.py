@@ -53,6 +53,7 @@ from basisset import process_gaussian_text,GaussianBasisSet
 from physical_system import PhysicalSystem
 from plotting import *
 from debug import *
+from testing import *
 
 try:
     import matplotlib.pyplot as plt
@@ -1996,12 +1997,13 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def simplify(self):
+        dec=16
         # Remove terms with coefficients equivalent to zero
         chan_labels = ['s','p','d','f','g','h','i','j']
         remove = []
         for l in np.arange(self.lmax+1):
             for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                if abs(term.coeff)<1e-8 and len(self.components[chan_labels[l]])>1:
+                if abs(term.coeff)<1e-12 and len(self.components[chan_labels[l]])>1:
                     remove.append((chan_labels[l],term_idx))
                 #end if
             #end for
@@ -2030,25 +2032,25 @@ class GaussianPP(SemilocalPP):
                 rpows  = terms[:,2]
                 expons = terms[:,1]
                 coeffs = terms[:,0]
-                for ex_idx,ex in enumerate(expons.round(decimals=8)):
+                for ex_idx,ex in enumerate(expons.round(decimals=dec)):
                     if any(ex_idx in subl for subl in like_terms):
                         continue
                     #end if
-                    match = np.argwhere(expons.round(decimals=8)==ex)
+                    match = np.argwhere(expons.round(decimals=dec)==ex)
                     if len(match)>1:
                         match = match.flatten()
-                        unique_pows = np.unique(rpows[match].round(decimals=8))
+                        unique_pows = np.unique(rpows[match].round(decimals=dec))
                         if len(unique_pows)==1:
                             like_terms.append(match.tolist())
                         else:
                             for uv in unique_pows:
-                                uv_count = rpows[match].round(decimals=8).tolist().count(uv)
+                                uv_count = rpows[match].round(decimals=dec).tolist().count(uv)
                                 if uv_count>1:
-                                    m = match[rpows[match].round(decimals=8)==uv][0]
+                                    m = match[rpows[match].round(decimals=dec)==uv][0]
                                     if any(m in subl for subl in like_terms):
                                         continue
                                     else:
-                                        like_terms.append(match[rpows[match].round(decimals=8)==uv].tolist())
+                                        like_terms.append(match[rpows[match].round(decimals=dec)==uv].tolist())
                                     #end if
                                 #end if
                             #end for
@@ -2071,7 +2073,7 @@ class GaussianPP(SemilocalPP):
                                 for ti in mlist: 
                                     coeff += self.components[chan_labels[l]][ti].coeff
                                 #end for
-                                if abs(coeff)>1e-8:
+                                if abs(coeff)>1e-12:
                                     mod_term.coeff = coeff
                                     comps[chan_labels[l]].append(mod_term)
                                 #end if
@@ -2105,16 +2107,170 @@ class GaussianPP(SemilocalPP):
         p2 = self.copy()
         p2.transform_to_truncated_L2(keep='s p',lmax=p2.lmax)
         p2.simplify()
-        return p2.components==p1.components
+        return object_eq(p2,p1)
     #end def is_truncated_L2
 
 
     # test needed
-    def make_L2_bounded(self):
+    def make_L2_bounded(self,db,dbs,exps0=None,plot=False):
         if not self.is_truncated_L2():
             self.error('The PP must be in the truncated L2 form.')
         #end if
-        print('L2 form. I will gladly continue')
+        if exps0 is None:
+            self.error('Please provide a aet of exponents to be used for correction.')
+        import math
+        def poly(x,c):
+            val=0
+            for ci,cv in enumerate(c):
+                val+=cv*x**ci
+            return val
+        #end def
+        
+        def Rs(x,dx,s,c):
+            if x+1-s<-dx:
+                return 0-(1-s)
+            elif x+1-s>dx:
+                return x
+            else:
+                return poly(x+1-s,c)-(1-s)
+        #end def
+        class fitClass:
+        
+            def __init__(self):
+                pass
+        
+            def gauss_correction(self,x,c1,c2,c3):
+                val = 0
+                for ci,c in enumerate([c1,c2,c3]):
+                    val+=x**2.*c*np.exp(-self.exps[ci]*x**2.)
+                #end for
+                return val
+            #end def
+        
+            def gauss_correction_2_param(self,x,c1,c2):
+                val = 0
+                for ci,c in enumerate([c1,c2]):
+                    val+=x**2.*c*np.exp(-self.exps[ci]*x**2.)
+                #end for
+                return val
+            #end def
+        
+            def gauss_correction_1_param(self,x,c1):
+                val = 0
+                for ci,c in enumerate([c1]):
+                    val+=x**2.*c*np.exp(-self.exps[ci]*x**2.)
+                #end for
+                return val
+            #end def
+        
+        #end class
+
+        A=[]
+        for i in range(8):
+            row=[]
+            for j in range(8):
+                if i<4:
+                    if j-i<0:
+                        dcoeff=0
+                        dpower=0
+                    else:
+                        dcoeff=math.factorial(j)/math.factorial(j-i)
+                        dpower=j-i
+                    #end if
+                    row.append(dcoeff*db**dpower)
+                else:
+                    if j-(i-4)<0:
+                        dcoeff=0
+                        dpower=0
+                    else:
+                        dcoeff=math.factorial(j)/math.factorial(j-(i-4))
+                        dpower=j-(i-4)
+                    #end if
+                    row.append(dcoeff*(-db)**dpower)
+                #end if
+            #end for
+            A.append(row)
+        #end for
+        
+        A = np.array(A)
+        b = np.array([db,1]+[0]*6)
+        c = np.linalg.inv(A).dot(b)
+
+        ng=3000
+        gmin=0.02
+        gmax=0.85
+        r = np.linspace( gmin, gmax, ng )
+
+
+        # PP
+        v = []
+        for l in ['s','p']:
+            vtmp = []
+            for ri in r:
+                vtmp.append(self.evaluate_component(r=ri,l=l))
+            #for
+            v.append(vtmp)
+        #for
+        v=np.array(v)
+
+        # 2*r^2*VL2 
+        if self.lmax>1:
+            f = r*r*(v[1]-v[0])
+        elif self.lmax==1:
+            f = -r*r*v[0]
+        else:
+            self.error('Not sure what to do with fully local potential.')
+        #end if
+            
+        # 2*r^2*V'L2 
+        fp = [Rs(fr,db,dbs,c) for fr in f]
+
+        undoundedness = 0
+        for fi,fx in enumerate(f):
+            undoundedness+=(fp[fi]-fx)*(gmax-gmin)/ng 
+        #end for
+        #print('\npseudopotential undoundedness: ',undoundedness)
+        from scipy.optimize import curve_fit
+
+        fit_instance = fitClass()
+        fit_instance.exps=exps0
+        if len(exps0)==1:
+            popt, pcov = curve_fit(fit_instance.gauss_correction_1_param, r, f-fp)
+        elif len(exps0)==2:
+            popt, pcov = curve_fit(fit_instance.gauss_correction_2_param, r, f-fp)
+        elif len(exps0)==3:
+            popt, pcov = curve_fit(fit_instance.gauss_correction, r, f-fp)
+        else:
+            self.error('Number of correction primitives not coded.')
+        #end if
+
+        if plot:
+            import matplotlib.pyplot as plt
+
+            plt.plot(r, fp, 'g-', label='fp')
+
+            plt.xlabel('r (bohr)')
+            plt.ylabel('$2r^2v_{L^2}$')
+
+            if len(exps0)==1:
+                plt.plot(r, f-fit_instance.gauss_correction_1_param(r, *popt), 'r-',label='f-corr')
+            elif len(exps0)==2:
+                plt.plot(r, f-fit_instance.gauss_correction_2_param(r, *popt), 'r-',label='f-corr')
+            elif len(exps0)==3:
+                plt.plot(r, f-fit_instance.gauss_correction(r, *popt), 'r-',label='f-corr')
+            #end if
+
+            plt.plot(r, f, 'b-',label='f')
+            plt.plot(r, [-1]*len(r), 'k-',label=None)
+            plt.legend()
+            plt.show()
+        #end if
+        for expon_idx,expon in enumerate(exps0):
+            self.components['s'].append(obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2))
+        #end if
+        self.transform_to_truncated_L2(keep='s p',lmax=self.lmax)
+        self.simplify()
+
     #end def make_L2_bounded
 
 
@@ -2210,6 +2366,8 @@ class GaussianPP(SemilocalPP):
             #end for
 
         #end if
+
+        self.simplify()
 
     #end def transform_to_truncated_L2
 #end class GaussianPP
