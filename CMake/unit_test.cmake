@@ -32,3 +32,23 @@ FUNCTION( ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY )
     add_test_labels( ${TESTNAME} TEST_LABELS_TEMP )
     set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "unit")
 ENDFUNCTION()
+
+FUNCTION( ADD_NO_MPI_UNIT_TEST TESTNAME THREADS TEST_BINARY )
+    message_verbose("Adding test ${TESTNAME}")
+        add_test(NAME ${TESTNAME} COMMAND ${TEST_BINARY} ${ARGN})
+        set( TEST_ADDED TRUE )
+    if (TEST_ADDED)
+        set_tests_properties( ${TESTNAME} PROPERTIES
+                              PROCESSORS ${THREADS}
+                              ENVIRONMENT OMP_NUM_THREADS=${THREADS}
+                              PROCESSOR_AFFINITY TRUE )
+
+        if (QMC_CUDA OR ENABLE_CUDA OR ENABLE_OFFLOAD)
+            set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
+        endif()
+    endif()
+
+    set(TEST_LABELS_TEMP "")
+    add_test_labels( ${TESTNAME} TEST_LABELS_TEMP )
+    set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "unit")
+ENDFUNCTION()

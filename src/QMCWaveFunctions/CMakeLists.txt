@@ -238,6 +238,7 @@ IF(ENABLE_CUDA)
     )
   CUDA_ADD_LIBRARY(qmcwfs_direct_inversion_cuda "${DIRECT_INVERSION_SRCS}")
   TARGET_LINK_LIBRARIES(qmcwfs_direct_inversion_cuda PUBLIC platform_cuda)
-  TARGET_INCLUDE_DIRECTORIES(qmcwfs_direct_inversion_cuda PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Platforms)
+  # CUDA_ADD_LIBRARY is from deprecated FindCuda and ignores TARGET_INCLUDE_DIRECTORIES so
+  # headers in this target contain full relative path from project root.
   TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcwfs_direct_inversion_cuda)
 ENDIF(ENABLE_CUDA)

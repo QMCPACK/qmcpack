@@ -12,6 +12,7 @@
 #include "cuBLAS_LU.hpp"
 #include "Platforms/CUDA/cudaError.h"
 #include "Platforms/CUDA/cuBLAS.hpp"
+#include "Platforms/CUDA/CUDATypeMapping.hpp"
 
 namespace qmcplusplus
 {
