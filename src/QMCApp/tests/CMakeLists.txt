@@ -29,3 +29,6 @@ IF(USE_OBJECT_TARGET)
 ENDIF()
 
 ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+
+# temporary label until asan leaks are resolved
+SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS noasan)

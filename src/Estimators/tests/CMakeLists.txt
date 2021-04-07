@@ -24,6 +24,8 @@ TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil qmcestimators_unit qmcham_unit qmcwfs
 ENDIF()
 
 ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+# temporary label until asan leaks are resolved
+SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS noasan)
 
 IF(HAVE_MPI)
   SET(UTEST_EXE test_${SRC_DIR}_mpi)
@@ -37,4 +39,6 @@ IF(HAVE_MPI)
   TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcestimators_unit)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   ADD_UNIT_TEST(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  # temporary label until asan leaks are resolved
+  SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS noasan)
 ENDIF()
