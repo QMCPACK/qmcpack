@@ -2112,6 +2112,97 @@ class GaussianPP(SemilocalPP):
 
 
     # test needed
+    def get_unboundedness(self,db,dbs):
+        if not self.is_truncated_L2():
+            self.error('The PP must be in the truncated L2 form.')
+        #end if
+        import math
+        def poly(x,c):
+            val=0
+            for ci,cv in enumerate(c):
+                val+=cv*x**ci
+            return val
+        #end def
+        
+        def Rs(x,dx,s,c):
+            if x+1-s<-dx:
+                return 0-(1-s)
+            elif x+1-s>dx:
+                return x
+            else:
+                return poly(x+1-s,c)-(1-s)
+        #end def
+        A=[]
+        for i in range(8):
+            row=[]
+            for j in range(8):
+                if i<4:
+                    if j-i<0:
+                        dcoeff=0
+                        dpower=0
+                    else:
+                        dcoeff=math.factorial(j)/math.factorial(j-i)
+                        dpower=j-i
+                    #end if
+                    row.append(dcoeff*db**dpower)
+                else:
+                    if j-(i-4)<0:
+                        dcoeff=0
+                        dpower=0
+                    else:
+                        dcoeff=math.factorial(j)/math.factorial(j-(i-4))
+                        dpower=j-(i-4)
+                    #end if
+                    row.append(dcoeff*(-db)**dpower)
+                #end if
+            #end for
+            A.append(row)
+        #end for
+        
+        A = np.array(A)
+        b = np.array([db,1]+[0]*6)
+        c = np.linalg.inv(A).dot(b)
+
+        ng=3000
+        gmin=0.02
+        gmax=0.85
+        r = np.linspace( gmin, gmax, ng )
+
+
+        # PP
+        v = []
+        for l in ['s','p']:
+            vtmp = []
+            for ri in r:
+                vtmp.append(self.evaluate_component(r=ri,l=l))
+            #for
+            v.append(vtmp)
+        #for
+        v=np.array(v)
+
+        # 2*r^2*VL2 
+        if self.lmax>1:
+            f = r*r*(v[1]-v[0])
+        elif self.lmax==1:
+            f = -r*r*v[0]
+        else:
+            self.error('Not sure what to do with fully local potential.')
+        #end if
+            
+        # 2*r^2*V'L2 
+        fp = [Rs(fr,db,dbs,c) for fr in f]
+
+        unboundedness = 0
+        for fi,fx in enumerate(f):
+            unboundedness+=(fp[fi]-fx)*(gmax-gmin)/ng 
+        #end for
+
+        return unboundedness
+
+    #end def get_unboundedness
+
+
+    # test needed
     def make_L2_bounded(self,db,dbs,exps0=None,plot=False):
         if not self.is_truncated_L2():
             self.error('The PP must be in the truncated L2 form.')
@@ -2225,9 +2316,9 @@ class GaussianPP(SemilocalPP):
         # 2*r^2*V'L2 
         fp = [Rs(fr,db,dbs,c) for fr in f]
 
-        undoundedness = 0
+        unboundedness = 0
         for fi,fx in enumerate(f):
-            undoundedness+=(fp[fi]-fx)*(gmax-gmin)/ng 
+            unboundedness+=(fp[fi]-fx)*(gmax-gmin)/ng 
         #end for
         #print('\npseudopotential undoundedness: ',undoundedness)
         from scipy.optimize import curve_fit
