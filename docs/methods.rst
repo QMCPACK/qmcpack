@@ -119,7 +119,8 @@ In the project id section, make sure that the series number is different from an
 Variational Monte Carlo
 -----------------------
 
-VMC method ``vmc`` driver:
+``vmc`` driver
+~~~~~~~~~~~~~~
 
   parameters:
 
@@ -267,7 +268,8 @@ The following is an example of VMC section storing configurations (walker sample
      <parameter name="usedrift">   no </parameter>
    </qmc>
 
-VMC method ``vmc_batch`` driver (experimental):
+``vmc_batch`` driver (experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   parameters:
 
@@ -606,7 +608,7 @@ optimization strategy. To track the progress of optimization, use the
 command ``qmca -q ev *.scalar.dat`` to look at the VMC energy and
 variance for each optimization step.
 
-Adaptive Organizer
+Adaptive Optimizer
 ~~~~~~~~~~~~~~~~~~
 
 The default setting of the adaptive optimizer is to construct the linear
@@ -1130,7 +1132,7 @@ the tag is not added coefficients will not be saved.
 
   The rest of the optimization block remains the same.
 
-When running the optimization, the new coefficients will be stored in a *\**.sXXX.opt.h5 file,  where XXX coressponds to the series number. The H5 file contains only the optimized coefficients. The corresponding *\**.sXXX.opt.xml  will be updated for each optimization block as follows:
+When running the optimization, the new coefficients will be stored in a ``*.sXXX.opt.h5`` file,  where XXX coressponds to the series number. The H5 file contains only the optimized coefficients. The corresponding ``*.sXXX.opt.xml`` will be updated for each optimization block as follows:
 
 ::
 
@@ -1152,9 +1154,10 @@ inconsistencies.
 Diffusion Monte Carlo
 ---------------------
 
-Main input parameters are given in :numref:`table9`, additional in :numref:`table10`.
+``dmc`` driver
+~~~~~~~~~~~~~~
 
-``dmc`` method:
+Main input parameters are given in :numref:`table9`, additional in :numref:`table10`.
 
 parameters:
 
@@ -1481,6 +1484,71 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
     <parameter name="blocks">50</parameter>
     <parameter name="steps">100</parameter>
     <parameter name="timestep">0.005</parameter>
+  </qmc>
+
+``dmc_batch`` driver (experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  parameters:
+
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | **Name**                       | **Datatype** | **Values**              | **Default** | **Description**                               |
+  +================================+==============+=========================+=============+===============================================+
+  | ``total_walkers``              | integer      | :math:`> 0`             | 1           | Total number of walkers over all MPI ranks    |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``walkers_per_rank``           | integer      | :math:`> 0`             | 1           | Number of walkers per MPI rank                |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``crowds``                     | integer      | :math:`> 0`             | dep.        | Number of desynchronized dwalker crowds       |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``blocks``                     | integer      | :math:`\geq 0`          | 1           | Number of blocks                              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``steps``                      | integer      | :math:`\geq 0`          | 1           | Number of steps per block                     |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``warmupsteps``                | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``nonlocalmoves``              | string       | yes, no, v0, v1, v3     | no          | Run with T-moves                              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``branching_cutoff_scheme``    | string       | classic/DRV/ZSGMA/YL    | classic     | Branch cutoff scheme                          |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``feedback``                   | double       | :math:`\geq 0`          | 1.0         | Population feedback on the trial energy       |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``sigmaBound``                 | 10           | :math:`\geq 0`          | 10          | Parameter to cutoff large weights             |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``reconfiguration``            | string       | yes/pure/other          | no          | Fixed population technique                    |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``storeconfigs``               | integer      | all values              | 0           | Store configurations                          |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``use_nonblocking``            | string       | yes/no                  | yes         | Using nonblocking send/recv                   |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``debug_disable_branching``    | string       | yes/no                  | no          | Disable branching for debugging               |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+
+- ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
+
+- ``walkers_per_rank`` The number of walkers per MPI rank. The exact number of walkers will be generated before performing random walking.
+  It is not required to be a multiple of the number of OpenMP threads. However, to avoid any idle resources, it is recommended to be at
+  least the number of OpenMP threads for pure CPU runs. For GPU runs, a scan of this parameter is necessary to reach reasonable single rank
+  efficiency and also get a balanced time to solution.
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided, ``walkers_per_rank`` is set equal to ``crowds``.
+
+- ``total_walkers`` Total number of walkers over all MPI ranks. if not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers`` and ``walkers_per_rank`` are provided, ``total_walkers`` must be equal to ``walkers_per_rank`` times the number MPI ranks.
+
+.. code-block::
+  :caption: The following is an example of a very simple DMC section with ``dmc_batch`` driver
+  :name: Listing 48
+
+  <qmc method="dmc_batch" move="pbyp" target="e">
+    <parameter name="walkers_per_rank">256</parameter>
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">400</parameter>
+    <parameter name="timestep">0.010</parameter>
+    <parameter name="warmupsteps">100</parameter>
   </qmc>
 
 .. _rmc:
