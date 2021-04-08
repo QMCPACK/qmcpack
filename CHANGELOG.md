@@ -7,10 +7,10 @@ Notable changes to QMCPACK are documented in this file.
 ### Notes
 
 This release includes a large number of refinements to QMCPACK and the supporting ecosystem. These include support for the latest version of
-Quantum Espresso, new capabilities in AFQMC, space-warp transformation for forces, numerous bug fixes, user-requested feature improvements,
+Quantum ESPRESSO, new capabilities in AFQMC, space-warp transformation for forces, numerous bug fixes, user-requested feature improvements,
 and further upgrades to the test system.
 
-* Quantum Espresso (QE) v6.7 support. [\#2927](https://github.com/QMCPACK/qmcpack/pull/2927).
+* Quantum ESPRESSO (QE) v6.7 support. [\#2927](https://github.com/QMCPACK/qmcpack/pull/2927).
 * Detect and automatically use patched version of QE found on the PATH. [\#2974](https://github.com/QMCPACK/qmcpack/pull/2974).
 * Support for global max\_seconds and STOP file to cleanly halt QMCPACK during a run. [\#3028](https://github.com/QMCPACK/qmcpack/pull/3028).
 * Freezing of two-body Jastrow parameters in optimization works. [\#2814](https://github.com/QMCPACK/qmcpack/issues/2814).
