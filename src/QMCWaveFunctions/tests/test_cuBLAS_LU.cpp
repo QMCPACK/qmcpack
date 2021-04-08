@@ -72,8 +72,6 @@ TEST_CASE("cuBLAS_LU::computeLogDet", "[wavefunction][CUDA]")
   std::complex<double>* dev_log_values;
   cudaErrorCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1), "cudaMalloc failed");
 
-  CUDAfill_n(dev_log_values, 1, {0.0, 0.0});
-
   void* vp_pivots;
   cudaErrorCheck(cudaMallocHost(&vp_pivots, sizeof(int) * 4), "cudaMallocHost failed");
   int* pivots = new (vp_pivots) int[4]{3, 3, 4, 4};
@@ -163,8 +161,6 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
   std::complex<double>* dev_log_values;
 
   cudaErrorCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1), "cudaMalloc failed");
-
-  CUDAfill_n(dev_log_values, 1, {0.0, 0.0});
 
   void* vp_pivots;
   cudaErrorCheck(cudaMallocHost((void**)&vp_pivots, sizeof(int) * 4), "cudaMallocHost failed");
@@ -279,7 +275,6 @@ TEST_CASE("cuBLAS_LU::computeLogDet(batch=2)", "[wavefunction][CUDA]")
 
   std::complex<double>* dev_log_values;
   cudaErrorCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 2), "cudaMalloc failed");
-  CUDAfill_n(dev_log_values, 2, {0.0, 0.0});
 
   void* vp_pivots;
   cudaErrorCheck(cudaMallocHost((void**)&vp_pivots, sizeof(int) * 8), "cudaMallocHost failed");
@@ -590,7 +585,7 @@ TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
                  "cudaMemcpyAsync failed copying invMs to device");
   cudaErrorCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying pivots to device");
-  CUDAfill_n(dev_invM, 16, {0.0});
+  //CUDAfill_n(dev_invM, 16, {0.0});
   cuBLAS_LU::computeGetri_batched(cuda_handles->h_cublas, n, lda, devMs, invMs, dev_pivots, dev_infos, batch_size);
 
   cudaErrorCheck(cudaMemcpyAsync(invM, dev_invM, sizeof(double) * 16, cudaMemcpyDeviceToHost, hstream),

@@ -13,6 +13,7 @@
 #include "Platforms/CUDA/cudaError.h"
 #include "Platforms/CUDA/cuBLAS.hpp"
 #include "Platforms/CUDA/CUDATypeMapping.hpp"
+#include "Platforms/CUDA/CUDAfill.hpp"
 
 /** \file
  *
@@ -56,7 +57,9 @@ __device__ cuDoubleComplex complexDetLog(const cuDoubleComplex lu_diag, const in
 }
 
 /** computes the log determinant using the output of LU factorization.
-   */
+ *
+ *  logdets are assumed to be zeroed on launch of kernel.
+ */
 template<int COLBS, typename T>
 __global__ void computeLogDet_kernel(const int n,
                                      const int lda,
@@ -77,11 +80,6 @@ __global__ void computeLogDet_kernel(const int n,
   {
     lu_diag                  = *(lu_iw + n_index * lda + n_index);
     logdet_vals[threadIdx.x] = complexDetLog(lu_diag, n_index, *(pivots_iw + n_index));
-  }
-  if (threadIdx.x == 0 && block_num == 0)
-  {
-    logdets[iw].x = 0.0;
-    logdets[iw].y = 0.0;
   }
   // insure that when we reduce logdet_vals all the threads in the block are done.
   __syncthreads();
@@ -115,10 +113,14 @@ cudaError_t computeLogDet_batched_impl(cudaStream_t& hstream,
                                        T* logdets,
                                        const int batch_size)
 {
+  
+
   // Perhaps this should throw an exception. I can think of no good reason it should ever happen other than
   // developer error.
   if (batch_size == 0 || n == 0)
     return cudaSuccess;
+
+  CUDAfill_n(logdets, batch_size, {0.0, 0.0});
 
   const int COLBS          = 256;
   const int num_col_blocks = (n + COLBS - 1) / COLBS;
@@ -174,12 +176,12 @@ void computeGetrf_batched(cublasHandle_t& h_cublas,
 
 /** Takes the transpose of PsiM using LU factorization calculates the log determinant and invPsiM
  *
- *  \param[inout] Ms -       pointers to pointers to working memory for Ms that are used to return invMs
+ *  \param[inout] Ms -       device pointers to pointers to Ms on input and to LU matrices on output
+ *  \param[out]   Cs -     device pointers to memory space same size as M which over written with invM
  *  \param[in]    pivots -   pointer to n * nw ints allocated in device memory for pivots array.
  *  \param[in]    host_infos - pointer to nw ints allocated in pinned host memory for factorization infos
  *  \param[in]    infos -    pointer to nw ints allocated in device memory factorization infos
- *  \param[out]   log_dets - pointer device memory for nw log determinant values to be returned, 
- *                           maybe this is supposed to be just RealType
+ *  \param[out]   log_dets - pointer device memory for nw log determinant values to be returned will be zeroed. 
  *  \param[in]    batch_size - if this changes over run a huge performance hit will be taken as memory allocation syncs device.
  */
 void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
