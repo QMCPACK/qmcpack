@@ -278,9 +278,10 @@ Please note the following guidelines for contributions:
 QMCPACK Roadmap
 ---------------
 
-A general outline of the QMCPACK roadmap is given in the following sections. Suggestions for improvements are welcome,
-particularly those that would facilitate new scientific applications. For example, if an interface to a particular quantum
-chemical or density functional code would help, this would be given strong consideration.
+A general outline of the QMCPACK roadmap is given in the following sections. Suggestions for improvements from current and
+potential users are very welcome, particularly those that would facilitate new uses or new users. For example, if an interface to
+a particular quantum chemical or density functional code, or an improved tutorial would be helpful, these would be given strong
+consideration.
 
 Code
 ~~~~
@@ -290,22 +291,21 @@ improved workflow, integration with more quantum chemical and density functional
 are very welcome, both from new users of QMC and from those experienced with other QMC codes.
 
 A main development focus is the creation of a single performance portable version of the code. All features will consequently be
-available on all platforms, including accelerators (GPUs) from NVIDIA, AMD, and Intel. The internal design is being updated for
-greater simplicity. Overall we expect this to increase performance and improve the overall consistency and robustness of the code.
-It will also enable us to remove legacy implementations. 
+available on all platforms, including accelerators (GPUs) from NVIDIA, AMD, and Intel. These new implementations are currently
+referred to as the ``batched code''. As the initial batched implementation in matured, observables and other functionality will be
+prioritized based on feedback received.
 
 Documentation and examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This manual describes the core features of QMCPACK that are required for
-routine research calculations and standard QMC workflows, i.e., the VMC and DMC methods, auxiliary field QMC, how to
-obtain and optimize trial wavefunctions, and simple observables. This covers at least 95% of use cases. 
+This manual describes the core features of QMCPACK that are required for routine research calculations and standard QMC workflows,
+i.e., the VMC and DMC methods, auxiliary field QMC, how to obtain and optimize trial wavefunctions, and simple observables. This
+covers at least 95% of use cases, and nearly all production research calculations.
 
-Because of its history as an academically developed research code, QMCPACK contains a variety of additional QMC methods, trial
-wavefunction forms, potentials, etc., that, although far from critical, might be very useful for specialized calculations or
-particular material or chemical systems. These “secret features” (every code has these) are not actually secret but simply lack
-descriptions, example inputs, and tests. You are encouraged to browse and read the source code to find them. New descriptions will
-be added over time but can also be prioritized and added on request (e.g., if a specialized Jastrow factor would help or a
-historical Jastrow form is needed for benchmarking).
+Because of its history as an academically developed research code, QMCPACK also contains a variety of additional QMC methods,
+trial wavefunction forms, potentials, etc., that, although far from critical, might be very useful for specialized calculations or
+particular material or chemical systems. If you are interested in these please ask - generally the features are immature, but we
+might have historical inputs available. New descriptions will be added over time but can also be prioritized and added on request
+(e.g., if a specialized Jastrow factor would help or a historical Jastrow form is needed for benchmarking).
 
 .. bibliography:: /bibs/introduction.bib
