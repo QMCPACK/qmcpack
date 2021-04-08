@@ -292,7 +292,7 @@ are very welcome, both from new users of QMC and from those experienced with oth
 
 A main development focus is the creation of a single performance portable version of the code. All features will consequently be
 available on all platforms, including accelerators (GPUs) from NVIDIA, AMD, and Intel. These new implementations are currently
-referred to as the ``batched code''. As the initial batched implementation in matured, observables and other functionality will be
+referred to as the *batched code*. As the initial batched implementation is matured, observables and other functionality will be
 prioritized based on feedback received.
 
 Documentation and examples
