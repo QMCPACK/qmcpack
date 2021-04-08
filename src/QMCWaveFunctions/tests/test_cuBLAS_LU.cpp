@@ -19,10 +19,22 @@
 #include "detail/CUDA/cuBLAS_LU.hpp"
 //#include "checkMatrixNoOhmms.hpp"
 
+/** \file
+ *
+ *  These are unit tests for the low level LU factorization used by the full inversion and
+ *  calculation of log determinant for dirac determinants. Fundamental testing of these kernels
+ *  requires full knowledge of the memory layout and data movement, As such OhmmsMatrices and
+ *  custom allocators are not used.  They have their own unit tests (Hopefully!) This is also documentation
+ *  of how these calls expect the memory handed to them to look.  Please leave this intact.
+ *  Someday those container abstractions will change, if inversion breaks and this stil works you
+ *  will have a fighting chance to know how to change these routines or fix the bug you introduced in the
+ *  higher level abstractions.
+ */
 namespace qmcplusplus
 {
 namespace testing
 {
+/** Don't depend on the resource managment scheme thats out of scope for unit tests */
 struct CUDAHandles
 {
   // CUDA specific variables
@@ -208,36 +220,22 @@ TEST_CASE("cuBLAS_LU::computeLogDet(batch=2)", "[wavefunction][CUDA]")
   void* vp_lu = nullptr;
   // clang-format off
   cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 64), "cudaMallocHost failed");
-  double* lu   = new (vp_lu) double[32]{8.0,
-                                      0.5,
-                                      0.8793774319066148,
-                                      0.07003891050583658,
-                                      0.24980544747081712,
-                                      -0.0031128404669260694,
-                                      0.6233463035019455,
-                                      -0.026459143968871595,
-                                      2.0,
-                                      0.1,
-                                      6.248249027237354,
-                                      0.2719844357976654,
-                                      0.7194170575332381,
-                                      -0.01831314754114669,
-                                      0.1212375092639108,
-                                      0.02522449751055713,
-                                      6.0,
-                                      -0.2,
-                                      0.7097276264591441,
-                                      -0.4443579766536965,
-                                      4.999337315778741,
-                                      0.6013141870887196,
-                                      0.26158183940834034,
-                                      0.23245112532996867,
-                                      4.0,
-                                      -0.6,
-                                      4.440466926070039,
-                                      -1.7525291828793774,
-                                      0.840192589866152, 1.5044529443071093,
-                                      1.0698651110730424, -0.10853319738453365};
+  double* lu   = new (vp_lu) double[32]{8.0,                   0.5,
+                                        0.8793774319066148,    0.07003891050583658,
+                                        0.24980544747081712,   -0.0031128404669260694,
+                                        0.6233463035019455,    -0.026459143968871595,
+                                        2.0,                   0.1,
+                                        6.248249027237354,     0.2719844357976654,
+                                        0.7194170575332381,    -0.01831314754114669,
+                                        0.1212375092639108,    0.02522449751055713,
+                                        6.0,                   -0.2,
+                                        0.7097276264591441,    -0.4443579766536965,
+                                        4.999337315778741,     0.6013141870887196,
+                                        0.26158183940834034,   0.23245112532996867,
+                                        4.0,                   -0.6,
+                                        4.440466926070039,     -1.7525291828793774,
+                                        0.840192589866152,     1.5044529443071093,
+                                        1.0698651110730424,    -0.10853319738453365};
   void* vp_lu2 = reinterpret_cast<void*>(lu + 32);
   double* lu2  = new (vp_lu2) double[32]{8.0, 0.5,
 					 0.8793774319066148, 0.07003891050583658,
@@ -585,7 +583,6 @@ TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
                  "cudaMemcpyAsync failed copying invMs to device");
   cudaErrorCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying pivots to device");
-  //CUDAfill_n(dev_invM, 16, {0.0});
   cuBLAS_LU::computeGetri_batched(cuda_handles->h_cublas, n, lda, devMs, invMs, dev_pivots, dev_infos, batch_size);
 
   cudaErrorCheck(cudaMemcpyAsync(invM, dev_invM, sizeof(double) * 16, cudaMemcpyDeviceToHost, hstream),
