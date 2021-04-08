@@ -326,7 +326,7 @@ the path to the source directory.
 
   ::
 
-    QE_BIN                    Location of Quantum Espresso binaries including pw2qmcpack.x
+    QE_BIN                    Location of Quantum ESPRESSO binaries including pw2qmcpack.x
     QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
     QMC_INCLUDE               Add extra include paths
     QMC_EXTRA_LIBS            Add extra link libraries
@@ -889,9 +889,9 @@ For ease of reproducibility we provide build scripts for Summit.
   ./config/build_olcf_summit.sh
   ls bin
 
-Building Quantum Espresso
+Building Quantum ESPRESSO
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-We provide a build script for the v6.4.1 release of Quantum Espresso (QE).
+We provide a build script for the v6.4.1 release of Quantum ESPRESSO (QE).
 The following can be used to build a CPU version of QE on Summit,
 placing the script in the external\_codes/quantum\_espresso directory.
 
@@ -1626,7 +1626,7 @@ See :ref:`unit-testing` for more details about unit tests.
 
 .. _integtestqe:
 
-Integration tests with Quantum Espresso
+Integration tests with Quantum ESPRESSO
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As described in :ref:`buildqe`, it is possible to test entire
