@@ -1531,16 +1531,19 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
 
 - ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
 
-- ``walkers_per_rank`` The number of walkers per MPI rank. The exact number of walkers will be generated before performing random walking.
-  It is not required to be a multiple of the number of OpenMP threads. However, to avoid any idle resources, it is recommended to be at
-  least the number of OpenMP threads for pure CPU runs. For GPU runs, a scan of this parameter is necessary to reach reasonable single rank
-  efficiency and also get a balanced time to solution.
-  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided, ``walkers_per_rank`` is set equal to ``crowds``.
+- ``walkers_per_rank`` The number of walkers per MPI rank. This number does not have to be a multiple of the number of OpenMP
+  threads. However, to avoid any idle resources, it is recommended to be at least the number of OpenMP threads for pure CPU runs.
+  For GPU runs, a scan of this parameter is necessary to reach reasonable single rank efficiency and also get a balanced time to
+  solution. For highest throughput on GPUs, expect to use hundreds of walkers_per_rank, or the largest number that will fit in GPU
+  memory. If neither ``total_walkers`` nor ``walkers_per_rank`` is provided, ``walkers_per_rank`` is set equal to ``crowds``.
 
-- ``total_walkers`` Total number of walkers over all MPI ranks. if not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers`` and ``walkers_per_rank`` are provided, ``total_walkers`` must be equal to ``walkers_per_rank`` times the number MPI ranks.
+- ``total_walkers`` Total number of walkers summed over all MPI ranks, or equivalently the total number of walkers in the DMC
+calculation. If not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers`` and
+``walkers_per_rank`` are provided, which is not recommended, ``total_walkers`` must be consistently set equal to
+``walkers_per_rank`` times the number MPI ranks.
 
 .. code-block::
-  :caption: The following is an example of a very simple DMC section with ``dmc_batch`` driver
+  :caption: The following is an example of a minimal DMC section using the ``dmc_batch`` driver
   :name: Listing 48
 
   <qmc method="dmc_batch" move="pbyp" target="e">
