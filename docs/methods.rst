@@ -1538,9 +1538,9 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   memory. If neither ``total_walkers`` nor ``walkers_per_rank`` is provided, ``walkers_per_rank`` is set equal to ``crowds``.
 
 - ``total_walkers`` Total number of walkers summed over all MPI ranks, or equivalently the total number of walkers in the DMC
-calculation. If not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers`` and
-``walkers_per_rank`` are provided, which is not recommended, ``total_walkers`` must be consistently set equal to
-``walkers_per_rank`` times the number MPI ranks.
+  calculation. If not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers``
+  and ``walkers_per_rank`` are provided, which is not recommended, ``total_walkers`` must be consistently set equal to
+  ``walkers_per_rank`` times the number MPI ranks.
 
 .. code-block::
   :caption: The following is an example of a minimal DMC section using the ``dmc_batch`` driver
