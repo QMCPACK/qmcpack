@@ -1,5 +1,8 @@
 # Configuration file for codecov reporting code coverage
 
+coverage:
+  precision: 1
+
 # Disable codecov comments in every PR
 comment: off
 
