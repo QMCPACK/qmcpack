@@ -17,7 +17,8 @@ particular emphasis is placed on code quality and reproducibility.
 # Obtaining and installing QMCPACK
 
  Obtain the latest release from https://github.com/QMCPACK/qmcpack/releases or clone the development source from
- https://github.com/QMCPACK/qmcpack. A full installation guide and steps to perform an initial QMC calculation are given in the [extensive online documentation for QMCPACK](https://qmcpack.readthedocs.io/en/develop/index.html)
+ https://github.com/QMCPACK/qmcpack. A full installation guide and steps to perform an initial QMC calculation are given in the
+ [extensive online documentation for QMCPACK](https://qmcpack.readthedocs.io/en/develop/index.html).
 
 # Prerequisites
 
@@ -31,11 +32,11 @@ particular emphasis is placed on code quality and reproducibility.
  * MPI, parallel library. Optional, but a near requirement for production calculations.
  * Python3. Older versions are not supported as of January 2020.
 
-We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions over
-two years old may work but is discouraged and untested. Proprietary compilers (Intel, PGI) are generally supported over the same
-period but may require use of an exact version. We also aim to support the standard software environments on Summit at OLCF, Theta
-at ALCF, and Cori at NERSC. Use of the most recently released compilers and library versions is particularly encouraged for highest
-performance and easiest configuration.
+We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions
+over two years old may work but is discouraged and untested. Proprietary compilers (Intel, PGI) are generally supported over the
+same period but may require use of an exact version. We also aim to support the standard software environments on machines such as
+Summit at OLCF, Theta at ALCF, and Cori at NERSC. Use of the most recently released compilers and library versions is particularly
+encouraged for highest performance and easiest configuration.
 
 Nightly testing currently includes the following software versions on x86:
 
@@ -60,18 +61,13 @@ On a developmental basis we also check the latest Clang and GCC development vers
 
 # Building with CMake
 
- The build system for QMCPACK is based on CMake.  It will auto-configure
- based on the detected compilers and libraries. Previously QMCPACK made
- extensive use of toolchains, but the system has since been updated to
- eliminate the use of toolchain files for most cases.  The build
- system works with GNU, Intel, and IBM XLC compilers.  Specific compile options
- can be specified either through specific environment or CMake
- variables.  When the libraries are installed in standard locations,
- e.g., /usr, /usr/local, there is no need to set environment or CMake
- variables for the packages.
+ The build system for QMCPACK is based on CMake.  It will auto-configure based on the detected compilers and libraries. Previously
+ QMCPACK made extensive use of toolchains, but the system has since been updated to eliminate the use of toolchain files for most
+ cases.  Specific compile options can be specified either through specific environment or CMake variables.  When the libraries are
+ installed in standard locations, e.g., /usr, /usr/local, there is no need to set environment or CMake variables for the packages.
 
  See the manual linked at https://qmcpack.readthedocs.io/en/develop/ and https://www.qmcpack.org/documentation or buildable using
- sphinx from the sources in docs/.
+ sphinx from the sources in docs/. A PDF version is still available at https://qmcpack.readthedocs.io/_/downloads/en/develop/pdf/
 
 ## Quick build
 
@@ -287,22 +283,17 @@ manual](https://qmcpack.readthedocs.io/en/develop/index.html). QMCPACK includes 
 correctness of the code, compilers, tools, and runtime. The tests should ideally be run each compilation, and certainly before any
 research use. The tests include checks of the output against known mean-field, quantum chemistry, and other QMC results.
 
-While some tests are fully deterministic, due to QMCPACK's stochastic
-nature some tests are statistical and can occasionally fail. We employ
-a range of test names and labeling to differentiate between these, as
-well as developmental tests that are known to fail. In particular,
-"deterministic" tests include this in their ctest test name, while
-tests known to be unstable (stochastically or otherwise) are labeled
-unstable using ctest labels.
+While some tests are fully deterministic, due to QMCPACK's stochastic nature some tests are statistical and can occasionally fail.
+We employ a range of test names and labeling to differentiate between these, as well as developmental tests that are known to
+fail. In particular, "deterministic" tests include this in their ctest test name, while tests known to be unstable (stochastically
+or otherwise) are labeled unstable using ctest labels.
 
 The tests currently use up to 16 cores in various combinations of MPI tasks and OpenMP threads. Current status for many
 combinations of systems, compilers, and libraries can be checked at https://cdash.qmcpack.org
 
-Note that due to the small electron and walker counts used in the
-tests, they should not be used for any performance measurements. These
-should be made on problem sizes that are representative of actual
-research calculations. As described in the manual, performance tests
-are provided to aid in monitoring performance.
+Note that due to the small electron and walker counts used in the tests, they should not be used for any performance measurements.
+These should be made on problem sizes that are representative of actual research calculations. As described in the manual,
+performance tests are provided to aid in monitoring performance.
 
 ## Run the unit tests
 
@@ -345,9 +336,8 @@ ctest -R name-of-test-to-run
 
 # Documentation and support
 
-For more information, consult QMCPACK pages at http://www.qmcpack.org,
-the manual at https://qmcpack.readthedocs.io/en/develop/index.html, 
-or its sources in the docs directory.
+For more information, consult QMCPACK pages at http://www.qmcpack.org, the manual at
+https://qmcpack.readthedocs.io/en/develop/index.html, or its sources in the docs directory.
 
 If you have trouble using or building QMCPACK, or have questions about its use, please post to the [Google QMCPACK
 group](https://groups.google.com/forum/#!forum/qmcpack), create a GitHub issue at https://github.com/QMCPACK/qmcpack/issues or
@@ -362,5 +352,4 @@ For an extensive contribution, it can be helpful to discuss on the [Google QMCPA
 group](https://groups.google.com/forum/#!forum/qmcpack), to create a GitHub issue, or to talk directly with a developer in
 advance.
 
-Contributions are made under the same UIUC/NCSA open source license
-that covers QMCPACK. Please contact us if this is problematic.
+Contributions are made under the same UIUC/NCSA open source license that covers QMCPACK. Please contact us if this is problematic.

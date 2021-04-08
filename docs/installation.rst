@@ -28,9 +28,9 @@ are given in the referenced sections.
    (:ref:`buildqe`).
 
 #. Run the cmake configure step and build with make
-   (:ref:`cmake` and :ref:`cmakequick`). Examples for
-   common systems are given in
-   :ref:`installexamples`.
+   (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
+   tests for Quantum ESPRESSO or PYSCF, be sure to specify QE_BIN or ensure that the python modules are available when cmake is
+   run.
 
 #. Run the tests to verify QMCPACK
    (:ref:`testing`).
@@ -1634,9 +1634,9 @@ workflows of trial wavefunction generation, conversion, and eventual
 QMC calculation. A patched QE must be installed so that the
 pw2qmcpack converter is available.
 
-By adding ``-D QE_BIN=your_QE_binary_path`` in the CMake command line when building your QMCPACK,
-tests named with the "qe-" prefix will be included in the test set of your build.
-You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
+By adding ``-D QE_BIN=your_QE_binary_path`` in the CMake command line when building your QMCPACK, tests named with the "qe-"
+prefix will be included in the test set of your build. If CMake finds pw2qmcpack.x and pw.x in the same location on the PATH,
+these tests will also be activated. You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
 
 ::
 
