@@ -16,8 +16,9 @@
 #include "CUDA/cudaError.h"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/CUDAfill.hpp"
+#include "Utilities/for_testing/MatrixAccessor.hpp"
+#include "Utilities/for_testing/checkMatrix.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
-//#include "checkMatrixNoOhmms.hpp"
 
 /** \file
  *
@@ -34,7 +35,7 @@ namespace qmcplusplus
 {
 namespace testing
 {
-/** Don't depend on the resource managment scheme thats out of scope for unit tests */
+/** Doesn't depend on the resource managment scheme thats out of scope for unit tests */
 struct CUDAHandles
 {
   // CUDA specific variables
@@ -58,55 +59,59 @@ struct CUDAHandles
 };
 } // namespace testing
 
+/** Single double computeLogDet */
 TEST_CASE("cuBLAS_LU::computeLogDet", "[wavefunction][CUDA]")
 {
   auto cuda_handles = std::make_unique<testing::CUDAHandles>();
   int n             = 4;
   int lda           = 4;
+  int batch_size    = 1;
   auto& hstream     = cuda_handles->hstream;
 
-  // Trying to be very pedantic about the types to avoid confusion.
+  // The calls in cuBLAS_LU still care about type
+  // being very careful and clear here.
   void* vp_lu = nullptr;
-  cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 16), "cudaMallocHost failed");
+  cudaCheck(cudaMallocHost(&vp_lu, sizeof(double) * 16));
+  // This LU was calculated in numpy from the first M in the getrf test
   double* lu = new (vp_lu) double[16]{7., 0.28571429, 0.71428571, 0.71428571,  5., 3.57142857, 0.12, -0.44,
                                       6., 6.28571429, -1.04,      -0.46153846, 6., 5.28571429, 3.08, 7.46153846};
   double* dev_lu;
-  cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 16), "cudaMalloc failed");
+  cudaCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 16));
   void* vp_lus;
-  cudaErrorCheck(cudaMallocHost(&vp_lus, sizeof(double**)), "cudaMallocHost failed");
+  cudaCheck(cudaMallocHost(&vp_lus, sizeof(double**)));
   double** lus = new (vp_lus) double* [1] { nullptr };
   lus[0]       = dev_lu;
   double** dev_lus;
-  cudaErrorCheck(cudaMalloc((void**)&dev_lus, sizeof(double**)), "cudaMalloc failed");
+  cudaCheck(cudaMalloc((void**)&dev_lus, sizeof(double**)));
 
   std::complex<double>* log_values;
-  cudaErrorCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1), "cudaMallocHost failed");
+  cudaCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1));
   std::complex<double>* dev_log_values;
-  cudaErrorCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1), "cudaMalloc failed");
+  cudaCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1));
+  CUDAfill_n(dev_log_values, batch_size, {0,0});
 
   void* vp_pivots;
-  cudaErrorCheck(cudaMallocHost(&vp_pivots, sizeof(int) * 4), "cudaMallocHost failed");
+  cudaCheck(cudaMallocHost(&vp_pivots, sizeof(int) * 4));
   int* pivots = new (vp_pivots) int[4]{3, 3, 4, 4};
   int* dev_pivots;
-  cudaErrorCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4), "cudaMalloc failed");
+  cudaCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4));
 
-  cudaErrorCheck(cudaMemcpyAsync(dev_lu, lu, sizeof(double) * 16, cudaMemcpyHostToDevice, hstream),
-                 "cudaMemcpyAsync failed copying log_values to device");
-  cudaErrorCheck(cudaMemcpyAsync(dev_lus, lus, sizeof(double**), cudaMemcpyHostToDevice, hstream),
-                 "cudaMemcpyAsync failed copying log_values to device");
-  cudaErrorCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
-                 "cudaMemcpyAsync failed copying log_values to device");
+  // Transfer and run kernel.
+  cudaCheck(cudaMemcpyAsync(dev_lu, lu, sizeof(double) * 16, cudaMemcpyHostToDevice, hstream));
+  cudaCheck(cudaMemcpyAsync(dev_lus, lus, sizeof(double**), cudaMemcpyHostToDevice, hstream));
+  cudaCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream));
 
-  int batch_size = 1;
+  // The types of the pointers passed here matter
   cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus, dev_pivots, dev_log_values, batch_size);
 
-  cudaErrorCheck(cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost,
-                                 hstream),
-                 "cudaMemcpyAsync failed copying log_values from device");
-  cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
+  cudaCheck(
+      cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost, hstream));
+  cudaCheck(cudaStreamSynchronize(hstream));
+
 
   CHECK(*log_values == ComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
 
+  // Free memory
   cudaCheck(cudaFree(dev_pivots));
   cudaCheck(cudaFreeHost(vp_pivots));
   cudaCheck(cudaFree(dev_log_values));
@@ -122,43 +127,29 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
   auto cuda_handles = std::make_unique<testing::CUDAHandles>();
   int n             = 4;
   int lda           = 4;
+  int batch_size = 1;
   auto& hstream     = cuda_handles->hstream;
 
   void* vp_lu = nullptr;
   cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 32), "cudaMallocHost failed");
-  double* lu = new (vp_lu) double[32]{8.0,
-                                      0.5,
-                                      0.8793774319066148,
-                                      0.07003891050583658,
-                                      0.24980544747081712,
-                                      -0.0031128404669260694,
-                                      0.6233463035019455,
-                                      -0.026459143968871595,
-                                      2.0,
-                                      0.1,
-                                      6.248249027237354,
-                                      0.2719844357976654,
-                                      0.7194170575332381,
-                                      -0.01831314754114669,
-                                      0.1212375092639108,
-                                      0.02522449751055713,
-                                      6.0,
-                                      -0.2,
-                                      0.7097276264591441,
-                                      -0.4443579766536965,
-                                      4.999337315778741,
-                                      0.6013141870887196,
-                                      0.26158183940834034,
-                                      0.23245112532996867,
-                                      4.0,
-                                      -0.6,
-                                      4.440466926070039,
-                                      -1.7525291828793774,
-                                      0.840192589866152,
-                                      1.5044529443071093,
-                                      1.0698651110730424,
-                                      -0.10853319738453365};
-
+  // clang-format off
+  double* lu   = new (vp_lu) double[32]{8.0,                   0.5,
+                                        0.8793774319066148,    0.07003891050583658,
+                                        0.24980544747081712,   -0.0031128404669260694,
+                                        0.6233463035019455,    -0.026459143968871595,
+                                        2.0,                   0.1,
+                                        6.248249027237354,     0.2719844357976654,
+                                        0.7194170575332381,    -0.01831314754114669,
+                                        0.1212375092639108,    0.02522449751055713,
+                                        6.0,                   -0.2,
+                                        0.7097276264591441,    -0.4443579766536965,
+                                        4.999337315778741,     0.6013141870887196,
+                                        0.26158183940834034,   0.23245112532996867,
+                                        4.0,                   -0.6,
+                                        4.440466926070039,     -1.7525291828793774,
+                                        0.840192589866152,     1.5044529443071093,
+                                        1.0698651110730424,    -0.10853319738453365};
+  // clang-format on
   std::complex<double>* dev_lu;
   cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 32), "cudaMalloc failed");
   void* vp_lus;
@@ -188,7 +179,6 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
   cudaErrorCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying log_values to device");
 
-  int batch_size = 1;
   cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus, dev_pivots, dev_log_values, batch_size);
 
   cudaErrorCheck(cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost,
@@ -209,6 +199,70 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
   cudaCheck(cudaFreeHost(lu));
 }
 
+/** while this working is a good test, in production code its likely we want to
+ *  widen the matrix M to double and thereby the LU matrix as well.
+ */
+TEST_CASE("cuBLAS_LU::computeLogDet_float", "[wavefunction][CUDA]")
+{
+  auto cuda_handles = std::make_unique<testing::CUDAHandles>();
+  int n             = 4;
+  int lda           = 4;
+  int batch_size    = 1;
+  auto& hstream     = cuda_handles->hstream;
+
+  // The calls in cuBLAS_LU still care about type
+  // being very careful and clear here.
+  void* vp_lu = nullptr;
+  cudaCheck(cudaMallocHost(&vp_lu, sizeof(float) * 16));
+  // This is from numpy which did the LU factorization using float128
+  float* lu = new (vp_lu) float[16]{7., 0.28571429, 0.71428571, 0.71428571,  5., 3.57142857, 0.12, -0.44,
+                                      6., 6.28571429, -1.04,      -0.46153846, 6., 5.28571429, 3.08, 7.46153846};  
+  float* dev_lu;
+  cudaCheck(cudaMalloc((void**)&dev_lu, sizeof(float) * 16));
+  void* vp_lus;
+  cudaCheck(cudaMallocHost(&vp_lus, sizeof(float**)));
+  float** lus = new (vp_lus) float* [batch_size] { nullptr };
+  lus[0]       = dev_lu;
+  float** dev_lus;
+  cudaCheck(cudaMalloc((void**)&dev_lus, sizeof(float**)));
+
+  std::complex<double>* log_values;
+  cudaCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1));
+  std::complex<double>* dev_log_values;
+  cudaCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1));
+  CUDAfill_n(dev_log_values, batch_size, {0,0});
+
+  void* vp_pivots;
+  cudaCheck(cudaMallocHost(&vp_pivots, sizeof(int) * 4));
+  int* pivots = new (vp_pivots) int[4]{3, 3, 4, 4};
+  int* dev_pivots;
+  cudaCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4));
+
+  // Transfer and run kernel.
+  cudaCheck(cudaMemcpyAsync(dev_lu, lu, sizeof(float) * 16, cudaMemcpyHostToDevice, hstream));
+  cudaCheck(cudaMemcpyAsync(dev_lus, lus, sizeof(float**), cudaMemcpyHostToDevice, hstream));
+  cudaCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream));
+
+  // The types of the pointers passed here matter
+  cuBLAS_LU::computeLogDet_batched(hstream, n, lda, dev_lus, dev_pivots, dev_log_values, batch_size);
+
+  cudaCheck(
+      cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost, hstream));
+  cudaCheck(cudaStreamSynchronize(hstream));
+
+
+  CHECK(*log_values == ComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
+
+  // Free memory
+  cudaCheck(cudaFree(dev_pivots));
+  cudaCheck(cudaFreeHost(vp_pivots));
+  cudaCheck(cudaFree(dev_log_values));
+  cudaCheck(cudaFreeHost(log_values));
+  cudaCheck(cudaFree(dev_lus));
+  cudaCheck(cudaFreeHost(vp_lus));
+  cudaCheck(cudaFree(dev_lu));
+  cudaCheck(cudaFreeHost(lu));
+}
 
 TEST_CASE("cuBLAS_LU::computeLogDet(batch=2)", "[wavefunction][CUDA]")
 {
@@ -314,7 +368,7 @@ TEST_CASE("cuBLAS_LU::computeLogDet(batch=2)", "[wavefunction][CUDA]")
 }
 
 
-TEST_CASE("cuBLAS_LU::getrf_batched_complexcuBLAS_LU::computeLogDet(batch=2)", "[wavefunction][CUDA]")
+TEST_CASE("cuBLAS_LU::getrf_batched_complex", "[wavefunction][CUDA]")
 {
   auto cuda_handles = std::make_unique<testing::CUDAHandles>();
   int n             = 4;
@@ -411,13 +465,13 @@ TEST_CASE("cuBLAS_LU::getrf_batched_complexcuBLAS_LU::computeLogDet(batch=2)", "
 
   // This could actually be any container that supported the concept of
   // access via operator()(i, j) and had <T, ALLOCT> template signature
-  // Matrix<std::complex<double>> lu_mat(reinterpret_cast<std::complex<double>*>(lu), 4, 4);
-  // Matrix<std::complex<double>> M_mat(reinterpret_cast<std::complex<double>*>(M), 4, 4);
-  // auto check_matrix_result = checkMatrix(lu_mat, M_mat);
-  // CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+  testing::MatrixAccessor<std::complex<double>> lu_mat(reinterpret_cast<std::complex<double>*>(lu), 4, 4);
+  testing::MatrixAccessor<std::complex<double>> M_mat(reinterpret_cast<std::complex<double>*>(M), 4, 4);
+  auto check_matrix_result = checkMatrix(lu_mat, M_mat);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
-TEST_CASE("cuBLAS_LU::getrf_batched", "[wavefunction][CUDA]")
+TEST_CASE("cuBLAS_LU::getrf_batched(batch=2)", "[wavefunction][CUDA]")
 {
   auto cuda_handles = std::make_unique<testing::CUDAHandles>();
   int n             = 4;
@@ -482,26 +536,25 @@ TEST_CASE("cuBLAS_LU::getrf_batched", "[wavefunction][CUDA]")
 
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
 
+  // clang-format off
+  std::vector<double> lu{7.,                    0.28571429,
+                         0.71428571,            0.71428571,
+                         5.,                    3.57142857,
+                         0.12,                  -0.44,
+                         6.,                    6.28571429,
+                         -1.04,                 -0.46153846,
+                         6.,                    5.28571429,
+                         3.08,                  7.46153846};
 
-  std::vector<double> lu{7., 0.28571429, 0.71428571, 0.71428571,  5., 3.57142857, 0.12, -0.44,
-                         6., 6.28571429, -1.04,      -0.46153846, 6., 5.28571429, 3.08, 7.46153846};
-
-  std::vector<double> lu2{7.0,
-                          0.8571428571428571,
-                          0.7142857142857142,
-                          0.7142857142857142,
-                          5.0,
-                          -2.2857142857142856,
-                          0.6874999999999998,
-                          -0.18750000000000022,
-                          6.0,
-                          2.8571428571428577,
-                          -4.249999999999999,
-                          -0.05882352941176502,
-                          6.0,
-                          -2.1428571428571423,
-                          5.1875,
-                          3.617647058823531};
+  std::vector<double> lu2{7.0,                  0.8571428571428571,
+                          0.7142857142857142,   0.7142857142857142,
+                          5.0,                  -2.2857142857142856,
+                          0.6874999999999998,   -0.18750000000000022,
+                          6.0,                  2.8571428571428577,
+                          -4.249999999999999,   -0.05882352941176502,
+                          6.0,                  -2.1428571428571423,
+                          5.1875,               3.617647058823531};
+  // clang-format on
   int real_pivot[8]{3, 3, 4, 4, 3, 3, 3, 4};
 
   auto checkArray = [](auto* A, auto* B, int n) {
@@ -513,18 +566,16 @@ TEST_CASE("cuBLAS_LU::getrf_batched", "[wavefunction][CUDA]")
   };
   std::cout << '\n';
 
-  
-  
-  // Matrix<double> M_mat(M, 4, 4);
-  // Matrix<double> lu_mat(lu.data(), 4, 4);
-  // Matrix<double> M2_mat(M2, 4, 4);
-  // Matrix<double> lu2_mat(lu2.data(), 4, 4);
+  testing::MatrixAccessor<double> M_mat(M, 4, 4);
+  testing::MatrixAccessor<double> lu_mat(lu.data(), 4, 4);
+  testing::MatrixAccessor<double> M2_mat(M2, 4, 4);
+  testing::MatrixAccessor<double> lu2_mat(lu2.data(), 4, 4);
 
-  // checkArray(real_pivot, pivots, 8);
-  // auto check_matrix_result = checkMatrix(lu_mat, M_mat);
-  // CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
-  // check_matrix_result = checkMatrix(lu2_mat, M2_mat);
-  // CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+  checkArray(real_pivot, pivots, 8);
+  auto check_matrix_result = checkMatrix(lu_mat, M_mat);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+  check_matrix_result = checkMatrix(lu2_mat, M2_mat);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
 TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
@@ -614,11 +665,11 @@ TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
   cudaCheck(cudaFree(dev_infos));
   cudaCheck(cudaFreeHost(vp_infos));
   
-  // Matrix<double> invA_mat(invA, 4, 4);
-  // Matrix<double> invM_mat(invM, 4, 4);
+  testing::MatrixAccessor<double> invA_mat(invA, 4, 4);
+  testing::MatrixAccessor<double> invM_mat(invM, 4, 4);
 
-  // auto check_matrix_result = checkMatrix(invA_mat, invM_mat);
-  // CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+  auto check_matrix_result = checkMatrix(invA_mat, invM_mat);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
 } // namespace qmcplusplus

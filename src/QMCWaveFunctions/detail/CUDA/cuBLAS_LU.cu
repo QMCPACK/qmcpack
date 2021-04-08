@@ -17,8 +17,6 @@
 
 /** \file
  *
- *  Naming note, at this level of the interface all *, **, *[] are assumed to be to
- *  deal with device addresses.
  */
 namespace qmcplusplus
 {
@@ -113,8 +111,6 @@ cudaError_t computeLogDet_batched_impl(cudaStream_t& hstream,
                                        T* logdets,
                                        const int batch_size)
 {
-  
-
   // Perhaps this should throw an exception. I can think of no good reason it should ever happen other than
   // developer error.
   if (batch_size == 0 || n == 0)
@@ -141,7 +137,7 @@ void computeLogDet_batched(cudaStream_t& hstream,
                            const int batch_size)
 {
   cudaErrorCheck(computeLogDet_batched_impl(hstream, n, lda, LU_mat, pivots, log_dets, batch_size),
-                 "fused kernel call failed");
+                 "failed to calculate log determinant values in computeLogDet_batched_impl");
 }
 
 template<typename T>
@@ -173,24 +169,14 @@ void computeGetrf_batched(cublasHandle_t& h_cublas,
 
 }
 
-
-/** Takes the transpose of PsiM using LU factorization calculates the log determinant and invPsiM
- *
- *  \param[inout] Ms -       device pointers to pointers to Ms on input and to LU matrices on output
- *  \param[out]   Cs -     device pointers to memory space same size as M which over written with invM
- *  \param[in]    pivots -   pointer to n * nw ints allocated in device memory for pivots array.
- *  \param[in]    host_infos - pointer to nw ints allocated in pinned host memory for factorization infos
- *  \param[in]    infos -    pointer to nw ints allocated in device memory factorization infos
- *  \param[out]   log_dets - pointer device memory for nw log determinant values to be returned will be zeroed. 
- *  \param[in]    batch_size - if this changes over run a huge performance hit will be taken as memory allocation syncs device.
- */
+template<typename T>
 void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
                                      cudaStream_t& hstream,
                                      const int n,
                                      const int lda,
-                                     double* Ms[],
-                                     double* Cs[],
-                                     double* LU_diags,
+                                     T* Ms[],
+                                     T* Cs[],
+                                     T* LU_diags,
                                      int* pivots,
                                      int* host_infos,
                                      int* infos,
@@ -251,6 +237,14 @@ template void computeLogDet_batched<double>(cudaStream_t& hstream,
                                             const int n,
                                             const int lda,
                                             double** LU_mat,
+                                            const int* pivots,
+                                            std::complex<double>* log_dets,
+                                            const int batch_size);
+
+template void computeLogDet_batched<float>(cudaStream_t& hstream,
+                                            const int n,
+                                            const int lda,
+                                            float** LU_mat,
                                             const int* pivots,
                                             std::complex<double>* log_dets,
                                             const int batch_size);

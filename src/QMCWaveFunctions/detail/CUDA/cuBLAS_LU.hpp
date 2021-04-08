@@ -18,25 +18,46 @@
 #include <cublas_v2.h>
 #include <cuComplex.h>
 
+/** \file
+ *  At the qmcplusplus cuBLAS_LU level all *, **, *[] are assumed to be to device
+ *  addresses.
+ */
 namespace qmcplusplus
 {
 namespace cuBLAS_LU
 {
+
+/** Takes PsiM in column major layout and uses LU factorization to compute the log determinant and invPsiM.
+ *  This is the call the QMCPACK should use.
+ *
+ *  \param[inout] Ms -       device pointers to pointers to Ms on input and to LU matrices on output
+ *  \param[out]   Cs -     device pointers to memory space same size as M which over written with invM
+ *  \param[in]    pivots -   pointer to n * nw ints allocated in device memory for pivots array.
+ *  \param[in]    host_infos - pointer to nw ints allocated in pinned host memory for factorization infos
+ *  \param[in]    infos -    pointer to nw ints allocated in device memory factorization infos
+ *  \param[out]   log_dets - pointer device memory for nw log determinant values to be returned will be zeroed. 
+ *  \param[in]    batch_size - if this changes over run a huge performance hit will be taken as memory allocation syncs device.
+ *
+ *  The host infos is an exception to this that may be changed in the future. The logic for this should probably be in
+ *  the next class up. This would obviously split the computeInverseAndDetLog_batched call.
+ */
+template<typename T>
 void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
                                      cudaStream_t& hstream,
                                      const int n,
                                      const int lda,
-                                     double** Ms,
-                                     double** Cs,
-                                     double* LU_diags,
+                                     T* Ms[],
+                                     T* Cs[],
+                                     T* LU_diags,
                                      int* pivots,
+                                     int* host_infos,
                                      int* infos,
                                      std::complex<double>* log_dets,
                                      const int batch_size);
 
 template<typename T>
 void computeGetrf_batched(cublasHandle_t& h_cublas,
-                                           cudaStream_t& hstream,
+                          cudaStream_t& hstream,
                           const int n,
                           const int lda,
                           T* Ms[],
