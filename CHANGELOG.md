@@ -25,6 +25,7 @@ Notable changes to QMCPACK are documented in this file.
 * Spin-density supported in batched code. [\#2840](https://github.com/QMCPACK/qmcpack/pull/2840).
 * Reduced I/O operations during cmake. [\#2808](https://github.com/QMCPACK/qmcpack/pull/2808).
 * Improved detection of unsupported-by-Intel combinations of Intel compilers and libstdc++. [\#2794](https://github.com/QMCPACK/qmcpack/pull/2794).
+* Initial support for Andes at OLCF. [\#3073](https://github.com/QMCPACK/qmcpack/pull/3073).
 * Deterministic tests expanded in scope and made reliable for more build types and compilers.
 * Various minor bug fixes and feature improvements based on user requests for both real-space and AFQMC.
 * Improved error handling throughout.
