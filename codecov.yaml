@@ -1,7 +1,8 @@
 # Configuration file for codecov reporting code coverage
 
 coverage:
-  precision: 1
+# Percentage drop allowed
+  threshold = 0.5%
 
 # Disable codecov comments in every PR
 comment: off
