@@ -28,9 +28,9 @@ are given in the referenced sections.
    (:ref:`buildqe`).
 
 #. Run the cmake configure step and build with make
-   (:ref:`cmake` and :ref:`cmakequick`). Examples for
-   common systems are given in
-   :ref:`installexamples`.
+   (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
+   tests for Quantum ESPRESSO or PYSCF, be sure to specify QE_BIN or ensure that the python modules are available when cmake is
+   run.
 
 #. Run the tests to verify QMCPACK
    (:ref:`testing`).
@@ -326,7 +326,7 @@ the path to the source directory.
 
   ::
 
-    QE_BIN                    Location of Quantum Espresso binaries including pw2qmcpack.x
+    QE_BIN                    Location of Quantum ESPRESSO binaries including pw2qmcpack.x
     QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
     QMC_INCLUDE               Add extra include paths
     QMC_EXTRA_LIBS            Add extra link libraries
@@ -889,9 +889,9 @@ For ease of reproducibility we provide build scripts for Summit.
   ./config/build_olcf_summit.sh
   ls bin
 
-Building Quantum Espresso
+Building Quantum ESPRESSO
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-We provide a build script for the v6.4.1 release of Quantum Espresso (QE).
+We provide a build script for the v6.4.1 release of Quantum ESPRESSO (QE).
 The following can be used to build a CPU version of QE on Summit,
 placing the script in the external\_codes/quantum\_espresso directory.
 
@@ -1626,7 +1626,7 @@ See :ref:`unit-testing` for more details about unit tests.
 
 .. _integtestqe:
 
-Integration tests with Quantum Espresso
+Integration tests with Quantum ESPRESSO
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As described in :ref:`buildqe`, it is possible to test entire
@@ -1634,9 +1634,9 @@ workflows of trial wavefunction generation, conversion, and eventual
 QMC calculation. A patched QE must be installed so that the
 pw2qmcpack converter is available.
 
-By adding ``-D QE_BIN=your_QE_binary_path`` in the CMake command line when building your QMCPACK,
-tests named with the "qe-" prefix will be included in the test set of your build.
-You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
+By adding ``-D QE_BIN=your_QE_binary_path`` in the CMake command line when building your QMCPACK, tests named with the "qe-"
+prefix will be included in the test set of your build. If CMake finds pw2qmcpack.x and pw.x in the same location on the PATH,
+these tests will also be activated. You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
 
 ::
 
