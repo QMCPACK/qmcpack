@@ -10,7 +10,7 @@ FUNCTION (TEST_PYTHON_MODULE MODULE_NAME MODULE_PRESENT)
     OUTPUT_VARIABLE TMP_OUTPUT_VAR
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
-  SET(${MODULE_PRESENT} ${TMP_OUTPUT_VAR} PARENT_SCOPE)
+  SET(${MODULE_PRESENT} ${TMP_OUTPUT_VAR} CACHE BOOL "" FORCE)
 ENDFUNCTION()
 
 # Test python module prerequisites for a particular test script
@@ -21,8 +21,12 @@ ENDFUNCTION()
 FUNCTION(CHECK_PYTHON_REQS module_list test_name add_test)
   set(${add_test} true PARENT_SCOPE)
   foreach(python_module IN LISTS ${module_list})
-    TEST_PYTHON_MODULE(${python_module} has_python_module)
-    if (NOT(has_python_module))
+    set(cached_result has_${python_module}_python_module)
+    if (NOT DEFINED ${cached_result})
+      TEST_PYTHON_MODULE(${python_module} ${cached_result})
+    endif ()
+    message(${cached_result} " = " ${${cached_result}})
+    if (NOT(${cached_result}))
       if (test_name)
         MESSAGE("Missing python module ${python_module}, not adding test ${test_name}")
       endif()
