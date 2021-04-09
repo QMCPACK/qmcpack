@@ -2,13 +2,17 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## Unreleased
+## [3.11.0] - 2021-04-09
 
 ### Notes
 
-* Quantum Espresso (QE) v6.7 support. [\#2927](https://github.com/QMCPACK/qmcpack/pull/2927). 
+This release includes a large number of refinements to QMCPACK and the supporting ecosystem. These include support for the latest version of
+Quantum ESPRESSO, new capabilities in AFQMC, space-warp transformation for forces, numerous bug fixes, user-requested feature improvements,
+and further upgrades to the test system.
+
+* Quantum ESPRESSO (QE) v6.7 support. [\#2927](https://github.com/QMCPACK/qmcpack/pull/2927).
 * Detect and automatically use patched version of QE found on the PATH. [\#2974](https://github.com/QMCPACK/qmcpack/pull/2974).
-* Support for global max\_seconds and STOP file to cleanly halt QMCPACK during a run. [\#3028](https://github.com/QMCPACK/qmcpack/pull/3028). 
+* Support for global max\_seconds and STOP file to cleanly halt QMCPACK during a run. [\#3028](https://github.com/QMCPACK/qmcpack/pull/3028).
 * Freezing of two-body Jastrow parameters in optimization works. [\#2814](https://github.com/QMCPACK/qmcpack/issues/2814).
 * Multideterminant code now works with only alpha determinants \(no down electrons\). [\#2698](https://github.com/QMCPACK/qmcpack/issues/2698).
 * High l-momentum channels as local channels in ECPs work. [\#2920](https://github.com/QMCPACK/qmcpack/pull/2920).
@@ -25,6 +29,7 @@ Notable changes to QMCPACK are documented in this file.
 * Spin-density supported in batched code. [\#2840](https://github.com/QMCPACK/qmcpack/pull/2840).
 * Reduced I/O operations during cmake. [\#2808](https://github.com/QMCPACK/qmcpack/pull/2808).
 * Improved detection of unsupported-by-Intel combinations of Intel compilers and libstdc++. [\#2794](https://github.com/QMCPACK/qmcpack/pull/2794).
+* Initial support for Andes at OLCF. [\#3073](https://github.com/QMCPACK/qmcpack/pull/3073).
 * Deterministic tests expanded in scope and made reliable for more build types and compilers.
 * Various minor bug fixes and feature improvements based on user requests for both real-space and AFQMC.
 * Improved error handling throughout.

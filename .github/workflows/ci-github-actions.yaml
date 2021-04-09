@@ -23,6 +23,7 @@ jobs:
         jobname: [
           gcc-openmpi-real-coverage,
           gcc-openmpi-complex-coverage,
+          clang-openmpi-real-asan,
           clang-openmpi-real-ubsan
         ]
         include:
@@ -36,6 +37,11 @@ jobs:
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
             options: -u 1001
             
+        - jobname: clang-openmpi-real-asan
+          container: 
+            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+            options: -u 1001
+        
         - jobname: clang-openmpi-real-ubsan
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi

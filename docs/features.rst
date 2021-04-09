@@ -51,7 +51,7 @@ feature that you are interested in, check the remainder of this manual or ask if
    orbitals.
 
 -  Interface and conversion utilities for plane-wave wavefunctions from
-   Quantum Espresso (Plane-Wave Self-Consistent Field package [PWSCF]).
+   Quantum ESPRESSO (Plane-Wave Self-Consistent Field package [PWSCF]).
 
 -  Interface and conversion utilities for Gaussian-basis wavefunctions
    from GAMESS, PySCF, and QP2. Many more are supported via the molden format and molden2qmc.
