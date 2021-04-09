@@ -1,5 +1,12 @@
 # Configuration file for codecov reporting code coverage
 
+# Percentage drop allowed
+coverage:
+  status:
+    project:
+      default:
+        threshold: 0.5%
+
 # Disable codecov comments in every PR
 comment: off
 
