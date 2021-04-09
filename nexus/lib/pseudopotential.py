@@ -53,7 +53,7 @@ from basisset import process_gaussian_text,GaussianBasisSet
 from physical_system import PhysicalSystem
 from plotting import *
 from debug import *
-from testing import *
+#from testing import *
 
 try:
     import matplotlib.pyplot as plt
@@ -1975,6 +1975,11 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def append_to_component(self,l,coeff,expon,rpow):
+        '''
+        This function is used to append a term to a Gaussian ECP component.
+        l: the angular ccomponent that the Gaussian term will be appended to 
+        coeff, expon, rpow: the coefficient, exponent, and r-power of the Gaussian term
+        '''
         if l>self.lmax:
             self.error('component {} not present in PP.'.format(l))
         #end if
@@ -1985,6 +1990,11 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def scale_component(self,l,scale):
+        '''
+        This function is used to scale a Gaussian ECP component by a factor.
+        l: the angular component that is scaled.
+        scale: the scaling factor
+        '''
         if l>self.lmax:
             self.error('component {} not present in PP.'.format(l))
         #end if
@@ -1997,6 +2007,13 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def simplify(self):
+        '''
+        This function simplifies the Guassian ECP. The simplificactions are as follows:
+        1. Remove all terms with coefficients that are equal to zero -- unless only one term exists.
+        2. Within each component, look for terms that have matching exponents and r-powers, if any are
+           present, then sum their coefficicents to make a single term. If the coefficients sum to
+           zero, then remove the terms (unless that leaves the component empty)
+        '''
         dec=16
         # Remove terms with coefficients equivalent to zero
         chan_labels = ['s','p','d','f','g','h','i','j']
@@ -2100,6 +2117,9 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def is_truncated_L2(self):
+        '''
+        Determine if the Gaussian ECP's channels follow an L2 relationship.
+        '''
         # CHECK IF THIS WORKS FOR lmax=1 !!!!!!
         # Only checked for lmax=2 and higher
         p1 = self.copy()
@@ -2113,6 +2133,11 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def get_unboundedness(self,db,dbs):
+        '''
+        This function quantifies how unbounded a truncated L2 potential is.
+        This is done by constructing a function that corrects VL2 in the unbounded region.
+        Then integrating the difference between VL2 and the correcting function.
+        '''
         if not self.is_truncated_L2():
             self.error('The PP must be in the truncated L2 form.')
         #end if
@@ -2204,6 +2229,11 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def make_L2_bounded(self,db,dbs,exps0=None,plot=False):
+        '''
+        For a truncated L2 potential, this function constructs a correction to VL2 in the unbounded region.
+        Then the correction is fit to a set of Gaussian primitives that are provided in the array 'exps0'.
+        The fitted Gaussian primitives are then appended to the ECP, resulting in a bounded truncated L2 potential.
+        '''
         if not self.is_truncated_L2():
             self.error('The PP must be in the truncated L2 form.')
         #end if
@@ -2367,6 +2397,12 @@ class GaussianPP(SemilocalPP):
 
     # test needed
     def transform_to_truncated_L2(self,keep=None,lmax=None,outfile=None,inplace=True):
+        '''
+        This function transforms a Gaussian ECP into a truncated L2 form, i.e., a form
+        for which all channels follow an L2 relationship. For a semi-local ECP, this 
+        transformation can have a significant negative impact on transferability. For
+        an ECP that is already in a trucnated L2 form, the transformation has no affect.
+        '''
         ##############################################################################
         # WARNING: ONLY PERFORM THIS TRANSFORMATION IF YOU KNOW WHAT YOU ARE DOING.
         #          TRANSFERABILITY IS GENERALLY REDUCED SEVERELY AFTER TRANSFORM.
