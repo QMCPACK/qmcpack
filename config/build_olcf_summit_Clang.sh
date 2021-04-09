@@ -18,6 +18,11 @@ module load netlib-lapack
 module load hdf5
 module load python/3.6.6-anaconda3-5.3.0
 # private module until OLCF provides a new llvm build
+if [[ ! -d /ccs/proj/mat151/opt/modules ]] ; then
+  echo "Required module folder /ccs/proj/mat151/opt/modules not found!"
+  exit 1
+fi
+module use /ccs/proj/mat151/opt/modules
 module load llvm/master-latest
 
 #the XL built fftw is buggy, use the gcc version
@@ -28,10 +33,11 @@ export BOOST_ROOT=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914
 TYPE=Release
 Compiler=Clang
 
-for name in offload_real_MP offload_real offload_cplx offload_cplx_MP
+for name in offload_cuda_real offload_cuda_real_MP offload_cuda_cplx offload_cuda_cplx_MP \
+            cpu_real cpu_real_MP cpu_cplx cpu_cplx_MP
 do
 
-CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D ENABLE_MASS=1 -D MASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16'"
+CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D ENABLE_MASS=1 -D MASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16'"
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D QMC_COMPLEX=1"
 fi
@@ -41,7 +47,11 @@ if [[ $name == *"_MP"* ]]; then
 fi
 
 if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_OFFLOAD=ON -D CUDA_HOST_COMPILER=`which gcc` -D USE_OBJECT_TARGET=ON"
+  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -DOFFLOAD_ARCH=sm_70"
+fi
+
+if [[ $name == *"cuda"* ]]; then
+  CMAKE_FLAGS="$CMAKE_FLAGS -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`"
 fi
 
 folder=build_summit_${Compiler}_${name}
@@ -55,7 +65,7 @@ if [ ! -f CMakeCache.txt ] ; then
 cmake $CMAKE_FLAGS -D CMAKE_C_COMPILER=mpicc -D CMAKE_CXX_COMPILER=mpicxx ..
 cmake ..
 fi
-make -j24
+make -j16
 cd ..
 
 echo

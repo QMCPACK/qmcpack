@@ -136,6 +136,7 @@ INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
     Utilities/unit_conversion.cpp
+    Utilities/ResourceCollection.cpp
     OhmmsApp/ProjectData.cpp
     OhmmsApp/RandomNumberControl.cpp
     Numerics/OptimizableFunctorBase.cpp
@@ -152,6 +153,7 @@ IF(USE_OBJECT_TARGET)
 ELSE(USE_OBJECT_TARGET)
   ADD_LIBRARY(qmcutil ${UTILITIES})
 ENDIF(USE_OBJECT_TARGET)
+  TARGET_INCLUDE_DIRECTORIES(qmcutil PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Utilities")
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC message containers qmcio)
   TARGET_LINK_LIBRARIES(qmcutil PUBLIC LibXml2::LibXml2 Boost::boost ${QMC_UTIL_LIBS})
 
@@ -173,7 +175,8 @@ ENDIF(USE_OBJECT_TARGET)
   SUBDIRS(Message)
   SUBDIRS(Platforms)
   SUBDIRS(Particle)
-
+  SUBDIRS(Utilities)
+  
 if(QMC_BUILD_SANDBOX_ONLY)
 
   MESSAGE(STATUS "Minimal build: only Sandbox")
@@ -200,10 +203,7 @@ else() #{{{
   ENDIF(BUILD_FCIQMC)
 
   SUBDIRS(QMCApp)
-
-  #IF(BUILD_QMCTOOLS)
   SUBDIRS(QMCTools)
-  #ENDIF(BUILD_QMCTOOLS)
 
   IF (BUILD_UNIT_TESTS) #{
     #Unit test directories

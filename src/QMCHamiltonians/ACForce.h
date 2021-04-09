@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCHamiltonians/SpaceWarpTransformation.h"
 
 namespace qmcplusplus
 {
@@ -33,7 +34,7 @@ struct ACForce : public OperatorBase
   //ACForce(const ACForce& ac)  {};
 
   /** I/O Routines */
-  bool put(xmlNodePtr cur) { return true; };
+  bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const { return true; };
 
   /** Cloning **/
@@ -54,6 +55,9 @@ struct ACForce : public OperatorBase
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P);
 
+  ///Finite difference timestep
+  RealType delta; 
+
   //** Internal variables **/
   //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
   //  instantiation.  Making sure no crosstalk happens is the job of whatever clones this.
@@ -62,14 +66,21 @@ struct ACForce : public OperatorBase
   TrialWaveFunction& psi;
   QMCHamiltonian& ham;
 
-  //For indexing observables
+  ///For indexing observables
   IndexType FirstForceIndex;
-  IndexType Nions;
+  const IndexType Nions;
 
-  //Temporary Nion x 3 dimensional arrays for force storage.
+  ///Temporary Nion x 3 dimensional arrays for force storage.
   Force_t hf_force;
   Force_t pulay_force;
   Force_t wf_grad;
+  Force_t sw_pulay;
+  Force_t sw_grad;
+
+  bool useSpaceWarp;
+
+  ///The space warp transformation class.
+  SpaceWarpTransformation swt;
 
   //Class info.
   std::string prefix;

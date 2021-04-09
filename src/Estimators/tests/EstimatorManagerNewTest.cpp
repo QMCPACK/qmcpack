@@ -12,10 +12,13 @@
 #include "EstimatorManagerNewTest.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Platforms/Host/OutputManager.h"
+#include "Estimators/tests/FakeEstimator.h"
+#include "FakeOperatorEstimator.h"
 
-namespace qmcplusplus {
-namespace testing {
-
+namespace qmcplusplus
+{
+namespace testing
+{
 EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) : em(comm), comm_(comm)
 {
   int num_ranks = comm_->size();
@@ -23,7 +26,19 @@ EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) :
     throw std::runtime_error("Bad Rank Count, test expects different number of ranks.");
 
   app_log() << "running on " << num_ranks << '\n';
-  
+}
+
+bool EstimatorManagerNewTest::testAddGetEstimator()
+{
+  // Must create on heap since the EstimatorManager destructor deletes all estimators
+  FakeEstimator* fake_est = new FakeEstimator;
+
+  em.add(fake_est, "fake");
+
+  ScalarEstimatorBase* est2 = em.getEstimator("fake");
+  FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
+
+  return fake_est2 == fake_est;
 }
 
 void EstimatorManagerNewTest::fakeSomeScalarSamples()
@@ -47,7 +62,33 @@ void EstimatorManagerNewTest::fakeSomeScalarSamples()
   estimators_[2].scalars[3](2.0);
 
   em.get_AverageCache().resize(4);
-  em.get_SquaredAverageCache().resize(4);
+}
+
+void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
+{
+  em.operator_ests_.emplace_back(new FakeOperatorEstimator(comm_->size(), DataLocality::crowd));
+  FakeOperatorEstimator& foe        = dynamic_cast<FakeOperatorEstimator&>(*(em.operator_ests_.back()));
+  std::vector<QMCT::RealType>& data = foe.get_data_ref();
+  for (int id = 0; id < data.size(); ++id)
+  {
+    if (id > rank)
+      data[id] += rank + 1;
+  }
+  foe.set_walker_weights(1);
+}
+
+std::vector<QMCTraits::RealType> EstimatorManagerNewTest::generateGoodOperatorData(int num_ranks)
+{
+  std::vector<QMCT::RealType> data(num_ranks * 10, 0.0);
+  for (int ir = 0; ir < num_ranks; ++ir)
+  {
+    for (int id = 0; id < data.size(); ++id)
+    {
+      if (id > ir)
+        data[id] += ir + 1;
+    }
+  }
+  return data;
 }
 
 void EstimatorManagerNewTest::collectScalarEstimators()
@@ -56,5 +97,7 @@ void EstimatorManagerNewTest::collectScalarEstimators()
   em.collectScalarEstimators(est_list);
 }
 
-}
-}
+void EstimatorManagerNewTest::testReduceOperatorEstimators() { em.reduceOperatorEstimators(); }
+
+} // namespace testing
+} // namespace qmcplusplus

@@ -1423,7 +1423,11 @@ class SemilocalPP(Pseudopotential):
         zval          = self.Zval
         creator       = 'Nexus'
         npots_down    = len(channels)
-        l_local       = 'spdfgi'.find(self.local)
+        l_local       = 'spdfghi'.find(self.local)
+        if l_local == -1:
+            self.error('Local channel, {}, not coded.'.format(self.local))
+        #end if
+
 
         rmin = 1e99
         rmax = -1e99

@@ -19,8 +19,8 @@
 namespace qmcplusplus
 {
 MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
-                                               SPOSetProxyPtr upspo,
-                                               SPOSetProxyPtr dnspo,
+                                               std::unique_ptr<SPOSetProxyForMSD>&& upspo,
+                                               std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
                                                const std::string& class_name)
     : WaveFunctionComponent(class_name),
       RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
@@ -33,8 +33,8 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
       Ratio1AllTimer(*timer_manager.createTimer(ClassName + "detEval_ratio(all)")),
       AccRejTimer(*timer_manager.createTimer(ClassName + "Accept_Reject")),
       evalOrbTimer(*timer_manager.createTimer(ClassName + "evalOrbGrad")),
-      spo_up(upspo),
-      spo_dn(dnspo)
+      spo_up(std::move(upspo)),
+      spo_dn(std::move(dnspo))
 {
   registerTimers();
   //Optimizable=true;
@@ -56,11 +56,11 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
 WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
   typedef DiracDeterminant<> SingleDet_t;
-  SPOSetProxyForMSD* spo_up_C   = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(), FirstIndex_up, LastIndex_up);
-  SPOSetProxyForMSD* spo_dn_C   = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(), FirstIndex_dn, LastIndex_dn);
+  auto spo_up_C = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()), FirstIndex_up, LastIndex_up);
+  auto spo_dn_C = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()), FirstIndex_dn, LastIndex_dn);
   spo_up_C->occup               = spo_up->occup;
   spo_dn_C->occup               = spo_dn->occup;
-  MultiSlaterDeterminant* clone = new MultiSlaterDeterminant(tqp, spo_up_C, spo_dn_C);
+  MultiSlaterDeterminant* clone = new MultiSlaterDeterminant(tqp, std::move(spo_up_C), std::move(spo_dn_C));
   clone->C2node_up              = C2node_up;
   clone->C2node_dn              = C2node_dn;
   clone->resize(dets_up.size(), dets_dn.size());
@@ -81,7 +81,7 @@ WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) con
     //           spo->occup(i,nq++) = k;
     //         }
     //       }
-    SingleDet_t* adet = new SingleDet_t((SPOSetPtr)clone->spo_up, 0);
+    SingleDet_t* adet = new SingleDet_t(std::static_pointer_cast<SPOSet>(clone->spo_up), 0);
     adet->set(clone->FirstIndex_up, clone->nels_up);
     clone->dets_up.push_back(adet);
   }
@@ -96,7 +96,7 @@ WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) con
     //           spo->occup(i,nq++) = k;
     //         }
     //       }
-    SingleDet_t* adet = new SingleDet_t((SPOSetPtr)clone->spo_dn, 0);
+    SingleDet_t* adet = new SingleDet_t(std::static_pointer_cast<SPOSet>(clone->spo_dn), 0);
     adet->set(clone->FirstIndex_dn, clone->nels_dn);
     clone->dets_dn.push_back(adet);
   }
@@ -147,7 +147,7 @@ void MultiSlaterDeterminant::resize(int n1, int n2)
   }
 }
 
-WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P,
+WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(const ParticleSet& P,
                                                                   ParticleSet::ParticleGradient_t& G,
                                                                   ParticleSet::ParticleLaplacian_t& L)
 {
@@ -205,7 +205,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
   return psi;
 }
 
-WaveFunctionComponent::LogValueType MultiSlaterDeterminant::evaluateLog(ParticleSet& P,
+WaveFunctionComponent::LogValueType MultiSlaterDeterminant::evaluateLog(const ParticleSet& P,
                                                                         ParticleSet::ParticleGradient_t& G,
                                                                         ParticleSet::ParticleLaplacian_t& L)
 {

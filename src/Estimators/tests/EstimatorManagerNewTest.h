@@ -30,21 +30,34 @@ namespace testing
 class EstimatorManagerNewTest
 {
 public:
+  using QMCT = QMCTraits;
+  
   EstimatorManagerNewTest(Communicate* comm, int ranks);
   /** Quickly add scalar samples using FakeEstimator mock estimator. */
   void fakeSomeScalarSamples();
+  /** Quickly add scalar samples using FakeOperatorEstimator mock estimator. */
+  void fakeSomeOperatorEstimatorSamples(int rank);
   /** call private EMB method and colelct EMBTs estimators_ */
   void collectScalarEstimators();
+  /** reduce the OperatorEstimators onto the EstimatorManagerNew copy. */
+  void collectOperatorEstimators();
   /** for mpi test (it's trivial for 1 rank)
    *
    * only used by test_manager_mpi.cpp so implemented there.  
    */
+  std::vector<QMCT::RealType> generateGoodOperatorData(int num_ranks);
+  /// test add and get estimator
+  bool testAddGetEstimator();
+  
   bool testMakeBlockAverages();
+  void testReduceOperatorEstimators();
+
+  std::vector<QMCT::RealType>& get_operator_data() { return em.operator_ests_[0]->get_data_ref(); }
+  
   EstimatorManagerNew em;
 private:
   Communicate* comm_;
   std::vector<FakeEstimator> estimators_;
-
 };
 
 }

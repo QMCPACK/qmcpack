@@ -37,7 +37,7 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_tiny_index]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  QMCDriverInput qmcdriver_input(1);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
@@ -47,11 +47,12 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
 
   MinimalHamiltonianPool mhp;
   HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
-  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                          hamiltonian_pool.getPrimary(), comm->rank());
   SampleStack samples;
-  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input), population, *(wavefunction_pool.getPrimary()),
-                                    *(hamiltonian_pool.getPrimary()), samples, comm);
+  WalkerConfigurations walker_confs;
+  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input),
+                                    MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
+                                                 wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
+                                    samples, comm);
 
   // setStatus must be called before process
   std::string root_name{"Test"};
@@ -65,8 +66,7 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
 
   REQUIRE(qmcdriver.getBranchEngine() == nullptr);
   qmcdriver.process(node);
-  REQUIRE(qmcdriver.getNewBranchEngine() != nullptr);
-  REQUIRE(qmcdriver.get_living_walkers() == 1);
+  REQUIRE(qmcdriver.get_num_living_walkers() == 1);
 
   // What else should we expect after process
 }
@@ -83,7 +83,7 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  QMCDriverInput qmcdriver_input(3);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
@@ -101,12 +101,13 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   if (Concurrency::maxCapacity<>() != 8)
     throw std::runtime_error("Insufficient threads available to match test input");
 
-  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                          hamiltonian_pool.getPrimary(), comm->rank());
   QMCDriverInput qmcdriver_copy(qmcdriver_input);
   SampleStack samples;
-  QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy), population, *(wavefunction_pool.getPrimary()),
-                                      *(hamiltonian_pool.getPrimary()), samples, comm);
+  WalkerConfigurations walker_confs;
+  QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
+                                      MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
+                                                   wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
+                                      samples, comm);
   QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<>> testNumCrowds;
   testNumCrowds(9);
   testNumCrowds(8);
@@ -124,7 +125,7 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  QMCDriverInput qmcdriver_input(3);
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(node);
   MinimalParticlePool mpp;
   ParticleSetPool particle_pool = mpp(comm);
@@ -143,12 +144,13 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   if (num_crowds < 8)
     throw std::runtime_error("Insufficient threads available to match test input");
 
-  MCPopulation population(1, particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
-                          hamiltonian_pool.getPrimary(), comm->rank());
   QMCDriverInput qmcdriver_copy(qmcdriver_input);
   SampleStack samples;
-  QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy), population, *(wavefunction_pool.getPrimary()),
-                                      *(hamiltonian_pool.getPrimary()), samples, comm);
+  WalkerConfigurations walker_confs;
+  QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
+                                      MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
+                                                   wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
+                                      samples, comm);
 
   qmc_batched.testAdjustGlobalWalkerCount();
 }

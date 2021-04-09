@@ -90,7 +90,7 @@
      <parameter name="blocks">  100000 </parameter>
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
-     <parameter name="maxcpusecs"> 60 </parameter>
+     <parameter name="max_seconds"> 60 </parameter>
    </qmc>
 
 </simulation>

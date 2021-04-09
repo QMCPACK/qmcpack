@@ -378,7 +378,7 @@ void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
   }
 }
 
-void MultiDiracDeterminant::evaluateAllForPtclMove(ParticleSet& P, int iat)
+void MultiDiracDeterminant::evaluateAllForPtclMove(const ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_ALL;
   Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);

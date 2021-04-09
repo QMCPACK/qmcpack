@@ -69,14 +69,11 @@ WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodeP
     nc = egGrid.getShellIndex(nup);
   egGrid.createGrid(nc, nup, twist);
   targetPtcl.setTwist(twist);
-  //create a E(lectron)G(as)O(rbital)Set
-  EGOSet* psiu = new EGOSet(egGrid.kpt, egGrid.mk2);
-  EGOSet* psid = new EGOSet(egGrid.kpt, egGrid.mk2);
   //create up determinant
-  Det_t* updet = new Det_t(psiu);
+  Det_t* updet = new Det_t(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
   updet->set(0, nup);
   //create down determinant
-  Det_t* downdet = new Det_t(psid);
+  Det_t* downdet = new Det_t(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
   downdet->set(nup, nup);
   //create a Slater determinant
   //SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;

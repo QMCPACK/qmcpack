@@ -31,8 +31,10 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(4);
@@ -78,8 +80,8 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);
@@ -90,7 +92,7 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
   wf_factory.put(ein_xml);
 
-  SPOSet* spo_ptr(get_sposet("spo"));
+  SPOSet* spo_ptr(wf_factory.getSPOSet("spo"));
   REQUIRE(spo_ptr);
   std::unique_ptr<SPOSet> spo(spo_ptr->makeClone());
 
@@ -135,8 +137,6 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   REQUIRE(std::imag(d2psiM[1][0]) == Approx(-1.3757134676));
   REQUIRE(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
 #endif
-
-  SPOSetBuilderFactory::clear();
 }
 
 TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
@@ -161,7 +161,7 @@ TEST_CASE("SPO input spline from HDF diamond_2x1x1", "[wavefunction]")
 <determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\"> \
   <sposet name=\"spo\" size=\"4\" spindataset=\"0\"/> \
   <slaterdeterminant> \
-    <determinant name=\"det\" sposet=\"spo\" size=\"4\" spindataset=\"0\"/> \
+    <determinant name=\"det\" sposet=\"spo\"/> \
   </slaterdeterminant> \
 </determinantset> \
 </wavefunction> \

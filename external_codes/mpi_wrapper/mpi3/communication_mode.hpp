@@ -3,7 +3,7 @@
 #define MPI3_DETAIL_COMMUNICATION_MODE
 
 #define OMPI_SKIP_MPICXX 1//https://github.com/open-mpi/ompi/issues/5157
-#include <mpi.h>
+#include <mpi.h> // if you get an error here probably you need to compile with and MPI compiler wrapper
 
 #include<utility> // forward
 

@@ -1,5 +1,6 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXX $0 -o $0x &&$0x&&rm $0x;exit
+echo $X
+$CXXX $CXXFLAGS $0 -o $0.$X &&$0.$X&&rm $0.$X;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -10,29 +11,49 @@ $CXX $0 -o $0x &&$0x&&rm $0x;exit
 #define __has_cpp_attribute(name) 0
 #endif
 
-#if (__has_cpp_attribute(nodiscard)) && (__cplusplus>=201703L)
-	#define nodiscard_(MsG) nodiscard
-	#define NODISCARD(MsG) [[nodiscard_(MsG)]]
-	#if (__has_cpp_attribute(nodiscard)>=201907) && (__cplusplus>=201703L)
-		#define nodiscard_(MsG) nodiscard(MsG)
-		#define NODISCARD(MsG) [[nodiscard_(MsG)]]
-	#endif
-#elif __has_cpp_attribute(gnu::warn_unused_result)
+#ifndef NODISCARD
 #if defined(__NVCC__)
 	#define NODISCARD(MsG)
+#elif (__has_cpp_attribute(nodiscard) and (__cplusplus>=201703L))
+	#if (__has_cpp_attribute(nodiscard)>=201907) and (__cplusplus>201703L)
+		#define NODISCARD(MsG) [[nodiscard(MsG)]]
+	#else
+		#define NODISCARD(MsG) [[nodiscard]]
+	#endif
+#elif __has_cpp_attribute(gnu::warn_unused_result)
+	#define NODISCARD(MsG) [[gnu::warn_unused_result]]
 #else
-	#define nodiscard_(MsG) gnu::warn_unused_result
-	#define NODISCARD(MsG) [[nodiscard_(MsG)]]
-#endif
-#else
-	#define nodiscard_(MsG)
 	#define NODISCARD(MsG)
 #endif
+#endif
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_CONFIG_NODISCARD
+#ifndef NODISCARD_CLASS
+	#if(__has_cpp_attribute(nodiscard) and not defined(__NVCC__) and (not defined(__clang__) or (defined(__clang__) and (__cplusplus >= 202002L))))
+		#if (__has_cpp_attribute(nodiscard)>=201907)
+			#define NODISCARD_CLASS(MsG) [[nodiscard_(MsG)]]
+		#else
+			#define NODISCARD_CLASS(MsG) [[nodiscard]]
+		#endif
+	#else
+		#define NODISCARD_CLASS(MsG)
+	#endif
+#endif
+
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
+
+#include "../config/MAYBE_UNUSED.hpp"
 
 NODISCARD("because...") int f(){return 5;}
-//[[nodiscard]] int g(){return 5;} // ok in g++ -std=c++14
+
+struct A{
+	NODISCARD("because...")
+	friend
+	int ff(){return 5.;}
+};
+
+struct NODISCARD_CLASS("because...") B{};
+
+B create_B(){return B{};}
 
 int main(){
 	int i; 
@@ -40,6 +61,8 @@ int main(){
 //	f();  // warning
 	++i;
 	(void)i;
+	
+	MAYBE_UNUSED auto b = create_B();
 }
 #endif
 #endif

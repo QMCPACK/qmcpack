@@ -174,8 +174,6 @@ void EstimatorManagerBase::addHeader(std::ostream& o)
 
 void EstimatorManagerBase::start(int blocks, bool record)
 {
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->setNumberOfBlocks(blocks);
   reset();
   RecordCount = 0;
   energyAccumulator.clear();

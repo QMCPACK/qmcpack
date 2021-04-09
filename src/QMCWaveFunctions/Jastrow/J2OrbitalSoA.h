@@ -235,12 +235,12 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
   /** recompute internal data assuming distance table is fully ready */
-  void recompute(ParticleSet& P);
+  void recompute(const ParticleSet& P);
 
   PsiValueType ratio(ParticleSet& P, int iat);
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -260,10 +260,10 @@ public:
 
   /** compute G and L after the sweep
    */
-  void evaluateGL(ParticleSet& P,
-                  ParticleSet::ParticleGradient_t& G,
-                  ParticleSet::ParticleLaplacian_t& L,
-                  bool fromscratch = false);
+  LogValueType evaluateGL(const ParticleSet& P,
+                          ParticleSet::ParticleGradient_t& G,
+                          ParticleSet::ParticleLaplacian_t& L,
+                          bool fromscratch = false);
 
   inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
@@ -332,7 +332,7 @@ public:
       const valT* restrict dX = displ.data(idim);
       valT s                  = valT();
 
-#pragma omp simd reduction(+ : s) aligned(du, dX)
+#pragma omp simd reduction(+ : s) aligned(du, dX: QMC_SIMD_ALIGNMENT)
       for (int jat = 0; jat < N; ++jat)
         s += du[jat] * dX[jat];
       grad[idim] = s;
@@ -448,7 +448,7 @@ WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
         fcmap[F[ij]] = fc;
       }
     }
-  j2copy->KEcorr = KEcorr;
+  j2copy->KEcorr      = KEcorr;
   j2copy->Optimizable = Optimizable;
   return j2copy;
 }
@@ -578,7 +578,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
     const valT* restrict old_du_pt = old_du.data();
     valT* restrict save_g          = dUat.data(idim);
     valT cur_g                     = cur_dUat[idim];
-#pragma omp simd reduction(+ : cur_g) aligned(old_dX, new_dX, save_g, cur_du_pt, old_du_pt)
+#pragma omp simd reduction(+ : cur_g) aligned(old_dX, new_dX, save_g, cur_du_pt, old_du_pt: QMC_SIMD_ALIGNMENT)
     for (int jat = 0; jat < N; jat++)
     {
       const valT newg = cur_du_pt[jat] * new_dX[jat];
@@ -595,7 +595,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
+void J2OrbitalSoA<FT>::recompute(const ParticleSet& P)
 {
   const auto& d_table = P.getDistTable(my_table_ID_);
   for (int ig = 0; ig < NumGroups; ++ig)
@@ -611,14 +611,14 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
       const valT* restrict d2u = cur_d2u.data();
       const auto& displ        = d_table.getDisplRow(iat);
       constexpr valT lapfac    = OHMMS_DIM - RealType(1);
-#pragma omp simd reduction(+ : lap) aligned(du, d2u)
+#pragma omp simd reduction(+ : lap) aligned(du, d2u: QMC_SIMD_ALIGNMENT)
       for (int jat = 0; jat < iat; ++jat)
         lap += d2u[jat] + lapfac * du[jat];
       for (int idim = 0; idim < OHMMS_DIM; ++idim)
       {
         const valT* restrict dX = displ.data(idim);
         valT s                  = valT();
-#pragma omp simd reduction(+ : s) aligned(du, dX)
+#pragma omp simd reduction(+ : s) aligned(du, dX: QMC_SIMD_ALIGNMENT)
         for (int jat = 0; jat < iat; ++jat)
           s += du[jat] * dX[jat];
         grad[idim] = s;
@@ -626,7 +626,7 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
       dUat(iat)  = grad;
       d2Uat[iat] = -lap;
 // add the contribution from the upper triangle
-#pragma omp simd aligned(u, du, d2u)
+#pragma omp simd aligned(u, du, d2u: QMC_SIMD_ALIGNMENT)
       for (int jat = 0; jat < iat; jat++)
       {
         Uat[jat] += u[jat];
@@ -636,7 +636,7 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
       {
         valT* restrict save_g   = dUat.data(idim);
         const valT* restrict dX = displ.data(idim);
-#pragma omp simd aligned(save_g, du, dX)
+#pragma omp simd aligned(save_g, du, dX: QMC_SIMD_ALIGNMENT)
         for (int jat = 0; jat < iat; jat++)
           save_g[jat] -= du[jat] * dX[jat];
       }
@@ -645,19 +645,18 @@ void J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
+typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(const ParticleSet& P,
                                                                       ParticleSet::ParticleGradient_t& G,
                                                                       ParticleSet::ParticleLaplacian_t& L)
 {
-  evaluateGL(P, G, L, true);
-  return LogValue;
+  return evaluateGL(P, G, L, true);
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
-                                  ParticleSet::ParticleGradient_t& G,
-                                  ParticleSet::ParticleLaplacian_t& L,
-                                  bool fromscratch)
+WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleSet& P,
+                                                                 ParticleSet::ParticleGradient_t& G,
+                                                                 ParticleSet::ParticleLaplacian_t& L,
+                                                                 bool fromscratch)
 {
   if (fromscratch)
     recompute(P);
@@ -669,7 +668,7 @@ void J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
     L[iat] += d2Uat[iat];
   }
 
-  LogValue = -LogValue * 0.5;
+  return LogValue = -LogValue * 0.5;
 }
 
 template<typename FT>

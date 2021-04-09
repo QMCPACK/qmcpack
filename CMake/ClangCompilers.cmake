@@ -4,6 +4,10 @@ IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0 )
   MESSAGE(FATAL_ERROR "Requires clang 7.0 or higher ")
 ENDIF()
 
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0 AND QMC_CXX_STANDARD EQUAL 17 AND BUILD_AFQMC )
+  MESSAGE(FATAL_ERROR "Avoid Clang 11.0.0 which cannot compile AFQMC properly with C++17!")
+ENDIF()
+
 # Set the std
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -std=c99")
 
@@ -12,10 +16,14 @@ IF(QMC_OMP)
   SET(ENABLE_OPENMP 1)
   IF(ENABLE_OFFLOAD AND NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     SET(OFFLOAD_TARGET "nvptx64-nvidia-cuda" CACHE STRING "Offload target architecture")
+    SET(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
+
     IF(DEFINED OFFLOAD_ARCH)
-      SET(CLANG_OPENMP_OFFLOAD_FLAGS "-fopenmp-targets=${OFFLOAD_TARGET} -Xopenmp-target=${OFFLOAD_TARGET} -march=${OFFLOAD_ARCH}")
-    ELSE()
-      SET(CLANG_OPENMP_OFFLOAD_FLAGS "-fopenmp-targets=${OFFLOAD_TARGET}")
+      SET(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Xopenmp-target=${OFFLOAD_TARGET} -march=${OFFLOAD_ARCH}")
+    ENDIF()
+
+    IF(OFFLOAD_TARGET MATCHES "nvptx64")
+      SET(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Wno-unknown-cuda-version")
     ENDIF()
 
     # Intel clang compiler needs a different flag for the host side OpenMP library when offload is used.
@@ -110,12 +118,6 @@ ELSEIF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64" OR CMAKE_SYSTEM_PROCESSOR MATCHES 
   ENDIF()
 ENDIF()
 
-# Add OpenMP offload flags
-# This step is intentionally put after the -march parsing for CPUs.
-IF(DEFINED CLANG_OPENMP_OFFLOAD_FLAGS)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CLANG_OPENMP_OFFLOAD_FLAGS}")
-ENDIF()
-
 # Add static flags if necessary
 IF(QMC_BUILD_STATIC)
     SET(CMAKE_CXX_LINK_FLAGS " -static")
@@ -139,23 +141,3 @@ IF(XRAY_PROFILE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${XRAY_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${XRAY_FLAGS}")
 ENDIF(XRAY_PROFILE)
-
-SET(LLVM_SANITIZE_ADDRESS FALSE CACHE BOOL "Use llvm address sanitizer library")
-MARK_AS_ADVANCED(LLVM_SANITIZE_ADDRESS)
-IF(LLVM_SANITIZE_ADDRESS)
-  SET(CMAKE_C_FLAGS "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope ${CMAKE_C_FLAGS}")
-  SET(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope ${CMAKE_CXX_FLAGS}")
-  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope")
-  SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope")
-ENDIF(LLVM_SANITIZE_ADDRESS)
-
-# Don't expect this to be useful unless you have msan instrumented all libraries
-SET(LLVM_SANITIZE_MEMORY FALSE CACHE BOOL "Use llvm memory sanitizer library")
-MARK_AS_ADVANCED(LLVM_SANITIZE_MEMORY)
-IF(LLVM_SANITIZE_MEMORY)
-  SET(LLVM_BLACKLIST_SANITIZE_MEMORY "-fsanitize-blacklist=${PROJECT_SOURCE_DIR}/llvm_misc/memory_sanitizer_blacklist.txt")
-  SET(CMAKE_C_FLAGS_DEBUG "-fsanitize=memory ${LLVM_BLACKLIST_SANITIZE_MEMORY} ${CMAKE_C_FLAGS_DEBUG}")
-  SET(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=memory ${LLVM_BLACKLIST_SANITIZE_MEMORY} ${CMAKE_CXX_FLAGS_DEBUG}")
-  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=memory ${LLVM_BLACKLIST_SANITIZE_MEMORY}")
-  SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=memory ${LLVM_BLACKLIST_SANITIZE_MEMORY}")
-ENDIF(LLVM_SANITIZE_MEMORY)

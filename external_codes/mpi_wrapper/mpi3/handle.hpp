@@ -1,11 +1,11 @@
-#if COMPILATION_INSTRUCTIONS
+#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
 (echo "#include\""$0"\"" > $0x.cpp) && mpicxx -O3 -std=c++14 -Wfatal-errors -D_TEST_BOOST_MPI3_DETAIL_HANDLE $0x.cpp -o $0x.x && time mpirun -np 4 $0x.x $@ && rm -f $0x.cpp; exit
 #endif
 
 #ifndef BOOST_MPI3_DETAIL_HANDLE_HPP
 #define BOOST_MPI3_DETAIL_HANDLE_HPP
 
-#include<boost/exception/to_string.hpp>
+//#include<boost/exception/to_string.hpp>
 
 #include<cassert>
 #include<stdexcept> // runtime_error
@@ -25,14 +25,13 @@ struct caller{
 	template<class F, class... Args>
 	void static_call(F f, Args&&... args){
 		int status = f(std::forward<Args>(args)...);
-		if(status != 0) throw std::runtime_error("error " + boost::to_string(status));
+		if(status != 0) throw std::runtime_error{"error "+ std::to_string(status)};
 	}
-
 	template<int(*F)(Impl, char const*, char const*)> void call(
 		char const* c1, char const* c2
 	){
 		int status = F(impl(), c1, c2);
-		if(status != 0) throw std::runtime_error("error " + boost::to_string(status));
+		if(status != 0) throw std::runtime_error{"error "+ std::to_string(status)};
 	}
 	template<int(*F)(Impl, char const*, char const*)> void call(
 		std::string const& s1, std::string const& s2
@@ -43,32 +42,32 @@ struct caller{
 		int ret = -1;
 	//	static_call(F, impl_, &ret);
 		int status = F(impl(), &ret);
-		if(status != MPI_SUCCESS) throw std::runtime_error("error " + boost::to_string(status));
+		if(status != MPI_SUCCESS) throw std::runtime_error{"error " + std::to_string(status)};
 		return ret;
 	}
 	template<int(*F)(Impl, int, char*)> std::string call(int n) const{
 		char ret[MPI_MAX_INFO_KEY];
 		int status = F(impl(), n, ret);
-		if(status != 0) throw std::runtime_error("error " + boost::to_string(status));
+		if(status != 0) throw std::runtime_error{"error "+ std::to_string(status)};
 		return ret;
 	}
 	template<int(*F)(Impl, char const*, int*, int*)> std::pair<int, int> call(std::string const& key) const{
 		int flag;
 		int valuelen;
 		int status = F(impl(), key.c_str(), &valuelen, &flag);
-		if(status != 0) throw std::runtime_error("error " + boost::to_string(status));
+		if(status != 0) throw std::runtime_error{"error "+ std::to_string(status)};
 		return {valuelen, flag};
 	}
 	template<int(*F)(Impl, char const*, int, char*, int*)> std::pair<std::string, int> call(std::string const& key, int valuelen) const{
 		char value[MPI_MAX_INFO_VAL];
 		int flag;
 		int status = F(impl(), key.c_str(), valuelen, value, &flag);
-		if(status != 0) throw std::runtime_error("error " + boost::to_string(status));
+		if(status != 0) throw std::runtime_error{"error "+ std::to_string(status)};
 		return {std::string(value), flag};
 	}
 	template<int(*F)(Impl, char const*)> void call(std::string const& key) const{
 		int status = F(impl(), key.c_str());
-		if(status != 0) throw std::runtime_error("error " + boost::to_string(status));
+		if(status != 0) throw std::runtime_error("error "+ std::to_string(status));
 	}
 };
 

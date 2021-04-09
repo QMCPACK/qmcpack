@@ -1,0 +1,120 @@
+# Description of run.
+description="Si bulk"
+test_energy = "-33.43040801"
+
+#spin_polarization="true"
+
+localize_localpp = "false"
+localize_projectors = "false"
+
+compressed_infile = "false"
+compressed_outfile = "false"
+
+# Wavefunction grid
+wavefunction_grid="24 24 24"
+potential_grid_refinement = "2"
+
+input_wave_function_file = "Waves/wave.out"
+output_wave_function_file = "Waves/wave.out"
+
+
+write_pseudopotential_plots = "true"
+
+# number of unoccupied states
+occupations_type = "Fixed"
+#occupations_type = "Fermi Dirac"
+#occupations_type = "MethfesselPaxton"
+
+
+#states_count_and_occupation = "12 0.833333333333 10 0.0"
+states_count_and_occupation = "16 2.0 8 0.0"
+#states_count_and_occupation_spin_down = "1 1.0  3 0.3333333333"
+#states_count_and_occupation_spin_up = "4 1.0"
+
+#preconditioner_threshold = "1.0001"
+
+# Units for bravais_lattice_type and atoms
+#crds_units=
+#"Bohr"
+#"Angstrom"
+
+#bravais_lattice_type="Cubic Primitive"
+
+kpoint_mesh = "4 4 4"
+kpoint_is_shift = "0 0 0 "
+#kpoint_distribution = "1"
+
+#bravais_lattice_type="Cubic Face Centered"
+bravais_lattice_type="Cubic Primitive"
+# Lattice constants 
+a_length="10.2"
+b_length="10.2"
+c_length="10.2"
+alpha="0.0"
+beta="0.0"
+gamma="0.0"
+
+#dos_method = "tetrahedra"
+dos_method = "Gaussian"
+dos_broading = "0.50000000"
+
+start_mode="LCAO Start"
+#start_mode="Random Start"
+#start_mode="Restart From File"
+
+write_qmcpack_restart = "false"
+
+#stress = "true"
+
+exx_mode = "Local fft"
+#filter_factor = "0.125000000"
+#exchange_correlation_type = "pbe0"
+exchange_correlation_type = "gaupbe"
+exxdiv_treatment = "none"
+#exchange_correlation_type = "hse"
+x_gamma_extrapolation = "false"
+calculation_mode="Quench Electrons"
+#calculation_mode="Relax Structure"
+
+#atomic_orbital_type = "localized"
+
+#kohn_sham_solver="multigrid"
+kohn_sham_solver="davidson"
+subdiag_driver="lapack"
+charge_mixing_type = "Broyden"
+#charge_mixing_type = "Pulay"
+#charge_mixing_type = "Linear"
+charge_density_mixing = "0.5"
+kohn_sham_mucycles = "3"
+max_scf_steps="100"
+potential_acceleration_constant_step="1.0"
+write_data_period="10"
+
+# Criterion used to judge SCF convergency 
+energy_convergence_criterion="1.0e-9"
+#rms_convergence_criterion = "1.0e-10"
+
+#atomic_coordinate_type="Absolute"
+atomic_coordinate_type="Cell Relative"
+
+#noncollinear="true"
+#spinorbit="true"
+# List  atomic symbol, coordinates, and movable flag (1 == movable) 
+# symbol and coordinates are required, moveable is optional, default is 1
+atoms = "
+Si   0.0   0.0   0.0   1 1  1  0.0  90.0 00.0    
+Si   0.5   0.5   0.0   1 1  1  0.0  90.0 00.0    
+Si   0.0   0.5   0.5   1 1  1  0.0  90.0 00.0    
+Si   0.5   0.0   0.5   1 1  1  0.0  90.0 00.0    
+Si   0.25   0.25   0.25   1 1  1  0.0  90.0 00.0    
+Si   0.75   0.75   0.25   1 1  1  0.0  90.0 00.0    
+Si   0.25   0.75   0.75   1 1  1  0.0  90.0 00.0    
+Si   0.75   0.25   0.75   1 1  1  0.0  90.0 00.0    
+"
+#kpoint_distribution = "1"
+pseudopotential=
+"
+Si    Si_ONCV_PBE_sr.upf
+"
+
+

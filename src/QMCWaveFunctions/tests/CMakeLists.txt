@@ -59,9 +59,10 @@ SET(SPOSET_SRC test_spo_collection_input_spline.cpp test_spo_collection_input_LC
                test_einset_spinor.cpp test_hybridrep.cpp test_pw.cpp ${MO_SRCS})
 SET(JASTROW_SRC test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomial_eeI_jastrow.cpp
                 test_rpa_jastrow.cpp test_user_jastrow.cpp test_kspace_jastrow.cpp
-                test_short_range_cusp_jastrow.cpp)
+                test_short_range_cusp_jastrow.cpp test_DiffTwoBodyJastrowOrbital.cpp)
 SET(DETERMINANT_SRC FakeSPO.cpp test_DiracDeterminantBatched.cpp test_dirac_det.cpp
-                    test_multi_dirac_determinant.cpp test_dirac_matrix.cpp)
+                    test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
+                    test_multi_slater_determinant.cpp)
 
 FOREACH(CATEGORY trialwf sposet jastrow determinant)
   SET(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
@@ -74,6 +75,9 @@ FOREACH(CATEGORY trialwf sposet jastrow determinant)
   TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget)
   ENDIF()
 
-  ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  IF( "${ENABLE_SANITIZER}" STREQUAL "asan" ) 
+    SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS noasan)
+  ENDIF()
 ENDFOREACH()

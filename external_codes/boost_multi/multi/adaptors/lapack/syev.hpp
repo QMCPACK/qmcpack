@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&$CXX -D_TEST_MULTI_ADAPTORS_LAPACK_SYEV $0.cpp -o $0x `pkg-config --libs blas lapack` -lboost_unit_test_framework&&$0x&&rm $0x $0.cpp;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX $0 -o $0x `pkg-config --libs blas lapack` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2020
 
@@ -27,13 +27,13 @@ auto syev(blas::filling uplo, Array2D&& a, Array1D&& w, Array1DW&& work)
 	assert( size(a) == size(w) );
 	assert( stride(w)==1 );
 	assert( stride(work)==1 );
-	if(size(a)==0) return a();
+	if(size(a)==0) return std::forward<Array2D>(a)();
 	int info = -1;
 	     if(stride(rotated(a))==1) syev('V', uplo==blas::filling::upper?'L':'U', size(a), base(a), stride(        a ), base(w), base(work), size(work), info);
 	else if(stride(        a )==1) syev('V', uplo==blas::filling::upper?'U':'L', size(a), base(a), stride(rotated(a)), base(w), base(work), size(work), info);
 	else                           assert(0); // case not contemplated by lapack
 	if(info < 0) assert(0); // bad argument
-	return a({0, size(a)-info}, {0, size(a)-info});
+	return std::forward<Array2D>(a)({0, size(a)-info}, {0, size(a)-info});
 }
 
 template<class Array2D, class Array1D, class Array1DW = typename std::decay_t<Array1D>::decay_type>
@@ -72,7 +72,7 @@ auto syev(blas::filling uplo, Array2D const& a){
 
 }}}
 
-#if _TEST_MULTI_ADAPTORS_LAPACK_SYEV
+#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_LAPACK_SYEV
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi lapack adaptor syev"
 #define BOOST_TEST_DYN_LINK
@@ -190,9 +190,9 @@ BOOST_AUTO_TEST_CASE(lapack_syev, *boost::unit_test::tolerance(0.00001) ){
 	BOOST_TEST( W[0]==5. );
 }
 {
+	namespace lapack = multi::lapack;
 	multi::array<double, 2> A;
 	multi::array<double, 1> W(size(A));
-	namespace lapack = multi::lapack;
 	lapack::syev(lapack::filling::upper, A, W);
 }
 {

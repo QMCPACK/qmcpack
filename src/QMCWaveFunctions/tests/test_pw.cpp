@@ -33,8 +33,10 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions(*ions_uptr);
+  ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion");
   ions.create(2);
@@ -86,8 +88,8 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec);
-  ptcl.addParticleSet(&ions);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \
@@ -172,8 +174,10 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions(*ions_uptr);
+  ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion");
   ions.create(2);
@@ -231,8 +235,8 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec);
-  ptcl.addParticleSet(&ions);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \

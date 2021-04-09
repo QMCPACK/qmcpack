@@ -87,22 +87,30 @@ private:
 
   /// history of sampled |value/guiding|^2 ratios for one iteration
   std::vector<ValueType> vg_history_;
+  std::vector<std::vector<ValueType>> replica_vg_history_;
+
   /// history of sampled |value/guiding|^2 ratios  during the descent
   /// finalization phase
   std::vector<ValueType> final_vg_history_;
+  std::vector<std::vector<ValueType>> replica_final_vg_history_;
+
 
   /// history of sampled configuration weights for one iteration
   std::vector<ValueType> w_history_;
+  std::vector<std::vector<ValueType>> replica_w_history_;
   /// history of sampled configuration weights during descent finalization phase
   std::vector<ValueType> final_w_history_;
+  std::vector<std::vector<ValueType>> replica_final_w_history_;
 
   /// a history of sampled local energies times the |value/guiding|^2 raitos for
   /// one iteration
   std::vector<ValueType> lev_history_;
+  std::vector<std::vector<ValueType>> replica_lev_history_;
 
   /// history of sampled local energies times the |value/guiding|^2 raitos during
   /// the descent finalization phase
   std::vector<ValueType> final_lev_history_;
+  std::vector<std::vector<ValueType>> replica_final_lev_history_;
 
   /// a vector to store the averages of the energy during the descent
   /// finalization phase
@@ -115,17 +123,21 @@ private:
   /// a history of target function numerator times the |value/guiding|^2 ratios
   /// for one iteration
   std::vector<ValueType> tnv_history_;
+  std::vector<std::vector<ValueType>> replica_tnv_history_;
 
   /// a history of target function numerator times the |value/guiding|^2 ratios
   /// during the descent finalization phase
   std::vector<ValueType> final_tnv_history_;
+  std::vector<std::vector<ValueType>> replica_final_tnv_history_;
 
   /// a history of target function denominator times the |value/guiding|^2 ratios
   /// for one iteration
   std::vector<ValueType> tdv_history_;
+  std::vector<std::vector<ValueType>> replica_tdv_history_;
   /// a history of target function denomerator times the |value/guiding|^2 ratios
   /// during the descent finalization phase
   std::vector<ValueType> final_tdv_history_;
+  std::vector<std::vector<ValueType>> replica_final_tdv_history_;
 
   /// a vector to store the averages of the target function during the descent
   /// finalization phase

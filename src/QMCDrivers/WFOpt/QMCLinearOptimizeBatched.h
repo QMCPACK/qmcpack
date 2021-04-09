@@ -21,7 +21,7 @@
 #define QMCPLUSPLUS_QMCLINEAROPTIMIZATION_BATCHED_H
 
 #include <memory>
-#include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
@@ -49,16 +49,15 @@ class HamiltonianPool;
  * generated from VMC.
  */
 
-class QMCLinearOptimizeBatched : public QMCDriver
+class QMCLinearOptimizeBatched : public QMCDriverNew
 {
 public:
   ///Constructor.
-  QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
-                           TrialWaveFunction& psi,
-                           QMCHamiltonian& h,
+  QMCLinearOptimizeBatched(const ProjectData& project_data,
+                           MCWalkerConfiguration& w,
                            QMCDriverInput&& qmcdriver_input,
                            VMCDriverInput&& vmcdriver_input,
-                           MCPopulation& population,
+                           MCPopulation&& population,
                            SampleStack& samples,
                            Communicate* comm,
                            const std::string& QMC_driver_type = "QMCLinearOptimizeBatched");
@@ -67,9 +66,8 @@ public:
   virtual ~QMCLinearOptimizeBatched() = default;
 
   ///Run the Optimization algorithm.
-  virtual bool run() = 0;
-  ///process xml node
-  virtual bool put(xmlNodePtr cur);
+  virtual bool run() override = 0;
+
   ///add a configuration file to the list of files
   void addConfiguration(const std::string& a);
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
@@ -174,6 +172,7 @@ public:
   ///common operation to start optimization, used by the derived classes
   void start();
 #ifdef HAVE_LMY_ENGINE
+  using ValueType = QMCTraits::ValueType;
   void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
                     DescentEngine& descentEngineObj,
                     std::string MinMethod);
@@ -190,18 +189,22 @@ public:
   RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
 
-  QMCDriverInput qmcdriver_input_;
   VMCDriverInput vmcdriver_input_;
-  MCPopulation& population_;
   SampleStack& samples_;
 
-  virtual QMCRunType getRunType() { return QMCRunType::LINEAR_OPTIMIZE; }
+  virtual QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
   NewTimer& generate_samples_timer_;
   NewTimer& initialize_timer_;
   NewTimer& eigenvalue_timer_;
   NewTimer& line_min_timer_;
   NewTimer& cost_function_timer_;
   Timer t1;
+
+  ParameterSet m_param;
+
+  // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
+  // which still takes an MCWalkerConfiguration in the constructor.
+  MCWalkerConfiguration& W;
 };
 } // namespace qmcplusplus
 #endif

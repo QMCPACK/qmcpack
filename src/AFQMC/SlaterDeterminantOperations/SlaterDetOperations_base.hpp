@@ -49,7 +49,7 @@ public:
   SlaterDetOperations_base(int NMO, int NAEA, BufferManager b) : buffer_manager(b)
   {
     // only used to determine size of WORK
-    
+
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNM({NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TMN({NMO, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
@@ -195,7 +195,7 @@ public:
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
-    return SlaterDeterminantOperations::base::Overlap<T>(A, A, LogOverlapFactor, TNN, IWORK, TNN2, false);
+    return SlaterDeterminantOperations::base::Overlap<T>(A, A, LogOverlapFactor, TNN, IWORK, TNN2.elements(), false);
   }
 
   template<class MatA, class MatB>
@@ -205,7 +205,7 @@ public:
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
-    return SlaterDeterminantOperations::base::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2, herm);
+    return SlaterDeterminantOperations::base::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), herm);
   }
 
   template<class MatA, class MatB>
@@ -215,7 +215,7 @@ public:
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
-    return SlaterDeterminantOperations::base::Overlap<T>(A, B, LogOverlapFactor, TNN, IWORK, TNN2, false);
+    return SlaterDeterminantOperations::base::Overlap<T>(A, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), false);
   }
 
   // routines for PHMSD
@@ -236,14 +236,13 @@ public:
   }
 
   template<class Mat, class MatP1, class MatV>
-  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, 
-                        int order = 6, char TA = 'N', bool noncollinear = false)
+  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, int order = 6, char TA = 'N', bool noncollinear = false)
   {
-    int npol = noncollinear ? 2 : 1; 
+    int npol = noncollinear ? 2 : 1;
     int NMO  = A.size(0);
     int NAEA = A.size(1);
-    int M = NMO/npol;
-    assert(NMO%npol == 0);  
+    int M    = NMO / npol;
+    assert(NMO % npol == 0);
     assert(P1.size(0) == NMO);
     assert(P1.size(1) == NMO);
     assert(V.size(0) == M);
@@ -256,22 +255,22 @@ public:
     if (TA == 'H' || TA == 'h')
     {
       ma::product(ma::H(P1), std::forward<Mat>(A), TMN);
-      for(int p=0; p<npol; ++p)  
-        SlaterDeterminantOperations::base::apply_expM(V, TMN.sliced(p*M,(p+1)*M), T1, T2, order, TA);
+      for (int p = 0; p < npol; ++p)
+        SlaterDeterminantOperations::base::apply_expM(V, TMN.sliced(p * M, (p + 1) * M), T1, T2, order, TA);
       ma::product(ma::H(P1), TMN, std::forward<Mat>(A));
     }
     else if (TA == 'T' || TA == 't')
     {
       ma::product(ma::T(P1), std::forward<Mat>(A), TMN);
-      for(int p=0; p<npol; ++p)  
-        SlaterDeterminantOperations::base::apply_expM(V, TMN.sliced(p*M,(p+1)*M), T1, T2, order, TA);
+      for (int p = 0; p < npol; ++p)
+        SlaterDeterminantOperations::base::apply_expM(V, TMN.sliced(p * M, (p + 1) * M), T1, T2, order, TA);
       ma::product(ma::T(P1), TMN, std::forward<Mat>(A));
     }
     else
     {
       ma::product(P1, std::forward<Mat>(A), TMN);
-      for(int p=0; p<npol; ++p)  
-        SlaterDeterminantOperations::base::apply_expM(V, TMN.sliced(p*M,(p+1)*M), T1, T2, order);
+      for (int p = 0; p < npol; ++p)
+        SlaterDeterminantOperations::base::apply_expM(V, TMN.sliced(p * M, (p + 1) * M), T1, T2, order);
       ma::product(P1, TMN, std::forward<Mat>(A));
     }
   }
@@ -322,7 +321,7 @@ public:
   }
 
 protected:
-  BufferManager buffer_manager;  
+  BufferManager buffer_manager;
 
   // keeping this to avoid having to know which routines are called in the lower level
   //  and let's me use static arrays

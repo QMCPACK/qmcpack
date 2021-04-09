@@ -20,13 +20,21 @@
 
 namespace qmcplusplus
 {
-QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
-                                          TrialWaveFunction& psi,
-                                          QMCHamiltonian& h,
+QMCDriverInterface* VMCFactoryNew::create(const ProjectData& project_data,
+                                          MCPopulation&& pop,
                                           SampleStack& samples,
                                           Communicate* comm)
 {
-  QMCDriverInput qmcdriver_input(qmc_counter_);
+#if defined(QMC_CUDA)
+  comm->barrier_and_abort("VMC batched driver is not supported by legacy CUDA builds.");
+#endif
+
+  app_summary() << "\n========================================"
+                   "\n  Reading VMC driver XML input section"
+                   "\n========================================"
+                << std::endl;
+
+  QMCDriverInput qmcdriver_input;
   qmcdriver_input.readXML(input_node_);
   VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(input_node_);
@@ -34,7 +42,8 @@ QMCDriverInterface* VMCFactoryNew::create(MCPopulation& pop,
 
   if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMCBatched(std::move(qmcdriver_input), std::move(vmcdriver_input), pop, psi, h, samples, comm);
+    qmc = new VMCBatched(project_data, std::move(qmcdriver_input), std::move(vmcdriver_input), std::move(pop), samples,
+                         comm);
   }
   else
   {

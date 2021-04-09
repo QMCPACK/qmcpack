@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
 {
@@ -92,12 +93,15 @@ public:
 
 struct CompositeSPOSetBuilder : public SPOSetBuilder
 {
-  CompositeSPOSetBuilder(Communicate* comm) : SPOSetBuilder("Composite", comm) {}
+  CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory) : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory) {}
 
   //SPOSetBuilder interface
   SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
   SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
+
+  /// reference to the sposet_builder_factory
+  const SPOSetBuilderFactory& sposet_builder_factory_;
 };
 } // namespace qmcplusplus
 

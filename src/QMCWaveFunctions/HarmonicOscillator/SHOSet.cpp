@@ -67,7 +67,7 @@ SHOSet::~SHOSet() {}
 SPOSet* SHOSet::makeClone() const { return new SHOSet(*this); }
 
 
-void SHOSet::report(const std::string& pad)
+void SHOSet::report(const std::string& pad) const
 {
   app_log() << pad << "SHOSet report" << std::endl;
   app_log() << pad << "  length    = " << length << std::endl;
@@ -535,8 +535,6 @@ void SHOSet::test_overlap()
 
 //methods to be implemented later
 void SHOSet::resetParameters(const opt_variables_type& optVariables) { not_implemented("resetParameters"); }
-
-void SHOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi) { not_implemented("evaluate(P,r,psi)"); }
 
 void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
 {

@@ -66,7 +66,7 @@ class realspace_correlators : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix          = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
+  using StaticMatrix         = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
 
 public:
   realspace_correlators(afqmc::TaskGroup_& tg_,
@@ -98,7 +98,7 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(orb_file, "orbitals", "std::string");
+      m_param.add(orb_file, "orbitals");
       m_param.put(cur);
     }
 
@@ -272,10 +272,8 @@ public:
     // if memory becomes a problem, then batch over walkers
     {
       LocalTGBufferManager buffer_manager;
-      StaticMatrix T({nw * nsp * NMO, npts}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
-      StaticMatrix Gr({nsp * nw, npts * npts}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+      StaticMatrix T({nw * nsp * NMO, npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      StaticMatrix Gr({nsp * nw, npts * npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
       CTensor_ref Gr3D(make_device_ptr(Gr.origin()), {nw, nsp, npts * npts});
       CTensor_ref T3D(make_device_ptr(T.origin()), {nw, nsp, NMO * npts});
       CMatrix_ref G2D(make_device_ptr(G.origin()), {nw * nsp * NMO, NMO});

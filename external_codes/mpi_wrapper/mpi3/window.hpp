@@ -1,7 +1,8 @@
-#if COMPILATION_INSTRUCTIONS
+#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
 (echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++17 `#-Wfatal-errors` -Wall -Wextra -Wpedantic -D_TEST_BOOST_MPI3_WINDOW $0x.cpp -o $0x.x && time mpirun -np 4 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
 #endif
-//  (C) Copyright Alfredo A. Correa 2019
+// © Alfredo A. Correa 2018-2020
+
 #ifndef BOOST_MPI3_WINDOW_HPP
 #define BOOST_MPI3_WINDOW_HPP
 
@@ -96,9 +97,7 @@ public:
 	}
 //	get_errhandler(...);
 	group get_group() const{
-		group ret;
-		MPI3_CALL(MPI_Win_get_group)(impl_, &(&ret));
-		return ret;
+		group ret; MPI_(Win_get_group)(impl_, &ret.impl_); return ret;
 	}
 //	group get_group(){use reinterpret_cast?}
 //	... get_info
@@ -153,9 +152,9 @@ public:
 	void fetch_replace_value(T const&  origin, T& target, int target_rank, int target_disp = 0) const{
 		MPI3_CALL(MPI_Fetch_and_op)(&origin, &target, detail::basic_datatype<T>{}, target_rank, target_disp, MPI_REPLACE, impl_);
 	}
-	template<class CI1, class CI2, class datatype = detail::basic_datatype<typename std::iterator_traits<CI1>::value_type> >
+	template<class CI1, class CI2, class datatypeT = detail::basic_datatype<typename std::iterator_traits<CI1>::value_type> >
 	void fetch_replace(CI1 it1, CI2 it2, int target_rank, int target_disp = 0) const{
-		MPI3_CALL(MPI_Fetch_and_op)(std::addressof(*it1), std::addressof(*it2), datatype{}, target_rank, target_disp, MPI_REPLACE, impl_); 
+		MPI3_CALL(MPI_Fetch_and_op)(std::addressof(*it1), std::addressof(*it2), datatypeT{}, target_rank, target_disp, MPI_REPLACE, impl_); 
 	}
 	template<class ContiguousIterator>
 	void blocking_put_n(ContiguousIterator it, int count, int target_rank, int target_offset = 0){

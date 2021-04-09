@@ -3,6 +3,7 @@
 
 #include <complex>
 #include <cmath>
+#include <limits>
 
 // Copy and modify the ComplexApprox class to handle complex numbers for log(complex)
 

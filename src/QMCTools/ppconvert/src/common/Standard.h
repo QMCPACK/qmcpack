@@ -236,7 +236,7 @@ inline void WriteError(std::ostringstream& ss)
   Terminate();
 }
 
-inline void error(char* m)
+inline void error(char const* m)
 {
   std::ostringstream ss;
   ss << m;
@@ -244,7 +244,7 @@ inline void error(char* m)
 }
 
 template<class T>
-inline void error(char* m, const T& n)
+inline void error(char const* m, const T& n)
 {
   std::ostringstream ss;
   ss << m << " " << n;
@@ -252,7 +252,7 @@ inline void error(char* m, const T& n)
 }
 
 template<class T, class U>
-inline void error(char* m, const T& t, const U& u)
+inline void error(char const* m, const T& t, const U& u)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u;
@@ -260,7 +260,7 @@ inline void error(char* m, const T& t, const U& u)
 }
 
 template<class T, class U, class V>
-inline void error(char* m, const T& t, const U& u, const V& v)
+inline void error(char const* m, const T& t, const U& u, const V& v)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v;
@@ -268,7 +268,7 @@ inline void error(char* m, const T& t, const U& u, const V& v)
 }
 
 template<class T, class U, class V, class W>
-inline void error(char* m, const T& t, const U& u, const V& v, const W& w)
+inline void error(char const* m, const T& t, const U& u, const V& v, const W& w)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w;
@@ -276,7 +276,7 @@ inline void error(char* m, const T& t, const U& u, const V& v, const W& w)
 }
 
 template<class T, class U, class V, class W, class X>
-inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x)
+inline void error(char const* m, const T& t, const U& u, const V& v, const W& w, const X& x)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x;
@@ -284,7 +284,7 @@ inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const
 }
 
 template<class T, class U, class V, class W, class X, class Y>
-inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y)
+inline void error(char const* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x << " " << y;
@@ -292,7 +292,7 @@ inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const
 }
 
 template<class T, class U, class V, class W, class X, class Y, class Z>
-inline void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z)
+inline void error(char const* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z)
 {
   std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x << " " << y << " " << z;

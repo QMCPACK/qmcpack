@@ -31,8 +31,9 @@ namespace qmcplusplus
  * Should not modify the name, since composite types, such as MDRunData, use the name.
  *
  */
-struct ProjectData : public OhmmsElementBase
+class ProjectData : public OhmmsElementBase
 {
+public:
   /// constructor
   ProjectData(const char* aname = 0);
 
@@ -56,20 +57,33 @@ struct ProjectData : public OhmmsElementBase
 
   void setCommunicator(Communicate* c);
 
-  ///returns the name of the project
-  inline const char* CurrentMainRoot() const { return m_projectmain.c_str(); }
+  /** returns the title of the project
+   * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
+   * translate to m_title = "det_qmc_short_sdbatch_vmcbatch_mwalkers"
+   */
+  inline const std::string& getTitle() const { return m_title; }
 
-  ///returns the name of the project
-  inline const char* CurrentRoot() const { return m_projectroot.c_str(); }
+  /** returns the projectmain of the project, the series id is incremented at every QMC section
+   * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
+   * translate to m_projectmain = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s000"
+   */
+  inline const std::string& CurrentMainRoot() const { return m_projectmain; }
 
-  ///returns the name of the project
-  inline const char* NextRoot() const { return m_nextroot.c_str(); }
+  /** returns the nextroot of the project, the series id is incremented at every QMC section
+   * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
+   * translate to m_projectmain = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s001"
+   */
+  inline const std::string& NextRoot() const { return m_nextroot; }
 
   /** return the root of the previous sequence
    * @param oldroot is composed by the m_title and m_series
    */
   bool PreviousRoot(std::string& oldroot) const;
 
+  int getSeriesIndex() const { return m_series; }
+  int getMaxCPUSeconds() const { return max_cpu_secs_; }
+
+private:
   ///title of the project
   std::string m_title;
 
@@ -96,6 +110,9 @@ struct ProjectData : public OhmmsElementBase
 
   ///the xml node for <Project/>
   xmlNodePtr m_cur;
+
+  ///max cpu seconds
+  int max_cpu_secs_;
 };
 } // namespace qmcplusplus
 

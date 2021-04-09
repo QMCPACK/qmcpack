@@ -99,7 +99,7 @@ public:
    * Performance may be tunned: define USE_MEMORYSAVEMODE
    * to evaluate the coefficients instead of using aux. arrays
    */
-  inline value_type splint(point_type r)
+  inline value_type splint(point_type r) const override
   {
     if (r >= r_max)
       return ConstValue;
@@ -160,7 +160,7 @@ public:
    * @param d2u second derivative (assigned)
    * @return value obtained by cubic-spline
    */
-  inline value_type splint(point_type r, value_type& du, value_type& d2u)
+  inline value_type splint(point_type r, value_type& du, value_type& d2u) const override
   {
     std::cerr << "  OneDimLinearSpline cannot be used for derivates." << std::endl;
     return 0.0;

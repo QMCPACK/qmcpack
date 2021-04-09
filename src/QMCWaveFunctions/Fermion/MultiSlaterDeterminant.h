@@ -56,7 +56,6 @@ public:
 
   typedef DiracDeterminantBase* DiracDeterminantBasePtr;
   typedef SPOSet* SPOSetPtr;
-  typedef SPOSetProxyForMSD* SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
@@ -71,8 +70,8 @@ public:
 
   ///constructor
   MultiSlaterDeterminant(ParticleSet& targetPtcl,
-                         SPOSetProxyPtr upspo,
-                         SPOSetProxyPtr dnspo,
+                         std::unique_ptr<SPOSetProxyForMSD>&& upspo,
+                         std::unique_ptr<SPOSetProxyForMSD>&& dnspo,
                          const std::string& class_name = "MultiSlaterDeterminant");
 
   ///destructor
@@ -86,10 +85,9 @@ public:
   ///set BF pointers
   virtual void setBF(BackflowTransformation* BFTrans) {}
 
-  virtual ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  virtual ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  virtual LogValueType evaluateLog(ParticleSet& P //const DistanceTableData* dtable,
-                                   ,
+  virtual LogValueType evaluateLog(const ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
                                    ParticleSet::ParticleLaplacian_t& L);
 
@@ -126,8 +124,8 @@ public:
 
   std::map<std::string, int> SPOSetID;
 
-  SPOSetProxyPtr spo_up;
-  SPOSetProxyPtr spo_dn;
+  std::shared_ptr<SPOSetProxyForMSD> spo_up;
+  std::shared_ptr<SPOSetProxyForMSD> spo_dn;
 
   std::vector<DiracDeterminantBasePtr> dets_up;
   std::vector<DiracDeterminantBasePtr> dets_dn;

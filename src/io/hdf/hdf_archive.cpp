@@ -108,7 +108,7 @@ void hdf_archive::set_access_plist(bool request_pio, boost::mpi3::communicator& 
       H5Pset_all_coll_metadata_ops(access_id, true);
       H5Pset_coll_metadata_write(access_id, true);
 #endif
-      H5Pset_fapl_mpio(access_id, &comm, info);
+      H5Pset_fapl_mpio(access_id, comm.get(), info);
       xfer_plist = H5Pcreate(H5P_DATASET_XFER);
       // enable parallel collective I/O
       H5Pset_dxpl_mpio(xfer_plist, H5FD_MPIO_COLLECTIVE);
@@ -139,7 +139,7 @@ bool hdf_archive::create(const std::string& fname, unsigned flags)
   if (Mode[NOIO])
     return true;
   if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
-    std::runtime_error("Only create file in parallel or by master but not every rank!");
+    throw std::runtime_error("Only create file in parallel or by master but not every rank!");
   close();
   file_id = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, access_id);
   return file_id != is_closed;

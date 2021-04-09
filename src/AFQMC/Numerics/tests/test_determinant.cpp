@@ -188,7 +188,7 @@ TEST_CASE("determinant", "[Numerics][determinant]")
                                           0.5226746713525696 + 0.5226746713525696i}};
   std::complex<double> ref(0.12634104339350705, -0.12634104339350705);
   using ma::getrf;
-  getrf(matx, pivot, WORK);
+  getrf(matx, pivot, WORK.elements());
   using ma::determinant;
   std::complex<double> lovlp         = 0.0;
   Tensor2D<std::complex<double>> mat = {{0.8734294027918162 + 0.8734294027918162i,
@@ -199,7 +199,7 @@ TEST_CASE("determinant", "[Numerics][determinant]")
                                         {0.4304688182924905 + 0.4304688182924905i,
                                          0.4023513600373648 + 0.4023513600373648i,
                                          0.5226746713525696 + 0.5226746713525696i}};
-  std::complex<double> ovlp          = determinant(mat, pivot, WORK, lovlp);
+  std::complex<double> ovlp          = determinant(mat, pivot, WORK.elements(), lovlp);
   REQUIRE(std::real(ovlp) == Approx(std::real(ref)));
   REQUIRE(std::imag(ovlp) == Approx(std::imag(ref)));
 }

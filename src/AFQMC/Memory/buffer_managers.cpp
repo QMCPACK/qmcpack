@@ -19,35 +19,38 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-
-  std::unique_ptr<HostBufferManager::generator_t> HostBufferManager::generator(nullptr);
+std::unique_ptr<HostBufferManager::generator_t> HostBufferManager::generator(nullptr);
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  std::unique_ptr<DeviceBufferManager::generator_t> DeviceBufferManager::generator(nullptr);
-  bool DeviceBufferManager::initialized_by_derived_class(false);
+std::unique_ptr<DeviceBufferManager::generator_t> DeviceBufferManager::generator(nullptr);
+bool DeviceBufferManager::initialized_by_derived_class(false);
 #else
-  std::unique_ptr<LocalTGBufferManager::generator_t> LocalTGBufferManager::generator(nullptr);
+std::unique_ptr<LocalTGBufferManager::generator_t> LocalTGBufferManager::generator(nullptr);
 #endif
 
-  bool HostBufferManager::initialized_by_derived_class(false);
+bool HostBufferManager::initialized_by_derived_class(false);
 
 
-void setup_memory_managers(mpi3::shared_communicator& local, size_t size) {
+void setup_memory_managers(mpi3::shared_communicator& local, size_t size)
+{
   // setup global memory resource mono state
   HostBufferManager host_buffer(size);
   DeviceBufferManager dev_buffer(size);
   LocalTGBufferManager local_buffer(local, size);
 }
 
-void setup_memory_managers(mpi3::shared_communicator& node, size_t size, int nc) {
+void setup_memory_managers(mpi3::shared_communicator& node, size_t size, int nc)
+{
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
-  setup_memory_managers(node,size);
+  setup_memory_managers(node, size);
 #else
-  mpi3::shared_communicator local(node.split(node.rank() / ((nc < 1) ? (1) : (std::min(nc, node.size()))), node.rank()));
-  setup_memory_managers(local,size);
+  mpi3::shared_communicator local(
+      node.split(node.rank() / ((nc < 1) ? (1) : (std::min(nc, node.size()))), node.rank()));
+  setup_memory_managers(local, size);
 #endif
 }
 
-void update_memory_managers() {
+void update_memory_managers()
+{
   HostBufferManager host_buffer;
   host_buffer.get_generator().update();
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
@@ -59,7 +62,8 @@ void update_memory_managers() {
 #endif
 }
 
-void release_memory_managers() {
+void release_memory_managers()
+{
   HostBufferManager host_buffer;
   DeviceBufferManager dev_buffer;
   LocalTGBufferManager local_buffer;
@@ -68,5 +72,5 @@ void release_memory_managers() {
   local_buffer.release();
 }
 
-}
-}
+} // namespace afqmc
+} // namespace qmcplusplus

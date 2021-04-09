@@ -62,10 +62,10 @@ bool RMCUpdateAllWithDrift::put(xmlNodePtr cur)
   // bool usedrift=false;
   std::string action   = "SLA";
   std::string usedrift = "no";
-  m_param.add(usedrift, "useScaledDrift", "string");
-  m_param.add(action, "Action", "string");
-  m_param.add(equilSteps, "equilsteps", "int");
-  m_param.add(equilSteps, "equilSteps", "int");
+  m_param.add(usedrift, "useScaledDrift");
+  m_param.add(action, "Action");
+  m_param.add(equilSteps, "equilsteps");
+  m_param.add(equilSteps, "equilSteps");
 
   // m_param.add(scaleDrift,"scaleDrift");
   m_param.put(cur);

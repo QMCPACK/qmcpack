@@ -64,12 +64,7 @@ using namespace afqmc;
 
 void propg_fac_shared(boost::mpi3::communicator& world)
 {
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("propg_fac_shared", UTEST_WFN, UTEST_HAMIL))
   {
     timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
@@ -79,8 +74,8 @@ void propg_fac_shared(boost::mpi3::communicator& world)
 
     int NMO, NAEA, NAEB;
     std::tie(NMO, NAEA, NAEB) = read_info_from_hdf(UTEST_HAMIL);
-    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
-    int NPOL = (type == NONCOLLINEAR) ?  2 : 1;
+    WALKER_TYPES type         = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL                  = (type == NONCOLLINEAR) ? 2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -125,6 +120,8 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     // Create unique restart filename to avoid issues with running tests in parallel
     // through ctest.
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
+    app_log() << " propg_fac_shared destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
     std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">" +
@@ -147,7 +144,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
     //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
@@ -241,12 +238,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
 
 void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
 {
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("propg_fac_distributed", UTEST_WFN, UTEST_HAMIL))
   {
     timer_manager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames, timer_level_coarse);
@@ -256,8 +248,8 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
 
     int NMO, NAEA, NAEB;
     std::tie(NMO, NAEA, NAEB) = read_info_from_hdf(UTEST_HAMIL);
-    WALKER_TYPES type                = afqmc::getWalkerType(UTEST_WFN);
-    int NPOL = (type == NONCOLLINEAR) ?  2 : 1;
+    WALKER_TYPES type         = afqmc::getWalkerType(UTEST_WFN);
+    int NPOL                  = (type == NONCOLLINEAR) ? 2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
@@ -303,6 +295,8 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     REQUIRE(okay);
 
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
+    app_log() << " propg_fac_distributed destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
     std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">" +
@@ -324,7 +318,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 

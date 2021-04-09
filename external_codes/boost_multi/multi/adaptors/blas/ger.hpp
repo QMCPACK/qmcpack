@@ -1,5 +1,5 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX -DADD_ $0 -o $0x -lblas -lboost_unit_test_framework&&$0x&&rm $0x;exit
+$CXXX $CXXFLAGS -DADD_ $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -11,6 +11,8 @@ $CXX -DADD_ $0 -o $0x -lblas -lboost_unit_test_framework&&$0x&&rm $0x;exit
 namespace boost{
 namespace multi{
 namespace blas{
+
+using core::ger;
 
 template<class T, class It1, class Size1, class It2, class Size2, class Out>
 Out ger_n(T alpha, It1 x_first, Size1 x_n, It2 y_first, Size2 y_n, Out A_first){
@@ -135,7 +137,6 @@ BOOST_AUTO_TEST_CASE(multi_blas_ger){
 	//	a = {{2., 3.}, {1., 4.}, {1., 0.}}; GER[1, {1., 2., 5.}, {-2., 1.}, a]; Print[a] : {{0., 4.}, {-3., 6.}, {-9., 5.}}
 	//	assert( A[1][1] == 6. );
 	}
-	return;
 	{
 		multi::array<double, 2> A = {
 			{0., 0.},
@@ -155,14 +156,15 @@ BOOST_AUTO_TEST_CASE(multi_blas_ger){
 //		assert( A[1][2] == 1. );
 	}
 	{
-		multi::array<double, 2> A = {
-			{2., 3., 6., 8.},
-			{4., 1., 6., 8.},
-			{0., 1., 6., 8.}
-		};
-		assert( A[1][2] == 6. );
-		multi::array<double, 1> const x = { 0., 1., 0.};
-		multi::array<double, 1> const y = { 0., 0., 1., 0.};
+//		multi::array<double, 2> A = {
+//			{2., 3., 6., 8.},
+//			{4., 1., 6., 8.},
+//			{0., 1., 6., 8.}
+//		};
+//		assert( A[1][2] == 6. );
+//		multi::array<double, 1> const x = { 0., 1., 0.};
+//		multi::array<double, 1> const y = { 0., 0., 1., 0.};
+		
 	//	multi::blas::ger(0., x, y, rotated(A)); // 
 
 	//	a = {{2., 3.}, {1., 4.}, {1., 0.}}; GER[1, {1., 2., 5.}, {-2., 1.}, a]; Print[a] : {{0., 4.}, {-3., 6.}, {-9., 5.}}

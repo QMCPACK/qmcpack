@@ -95,7 +95,7 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, lx, ly, lz, vals)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, lx, ly, lz, vals: QMC_SIMD_ALIGNMENT)
 #endif
       for (int n = 0; n < num_splines; n++)
       {
@@ -128,7 +128,7 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(gx, gy, gz, lx)
+#pragma omp simd aligned(gx, gy, gz, lx: QMC_SIMD_ALIGNMENT)
 #endif
   for (int n = 0; n < num_splines; n++)
   {
@@ -212,7 +212,7 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals, gx, gy, gz, hxx, hyy, hzz, hxy, hxz, hyz)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals, gx, gy, gz, hxx, hyy, hzz, hxy, hxz, hyz: QMC_SIMD_ALIGNMENT)
 #endif
       for (int n = 0; n < num_splines; n++)
       {
@@ -251,7 +251,7 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(gx, gy, gz, hxx, hyy, hzz, hxy, hxz, hyz)
+#pragma omp simd aligned(gx, gy, gz, hxx, hyy, hzz, hxy, hxz, hyz: QMC_SIMD_ALIGNMENT)
 #endif
   for (int n = 0; n < num_splines; n++)
   {

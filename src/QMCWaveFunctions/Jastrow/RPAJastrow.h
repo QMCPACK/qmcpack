@@ -69,7 +69,7 @@ struct RPAJastrow : public WaveFunctionComponent
     */
   void resetParameters(const opt_variables_type& active);
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   PsiValueType ratio(ParticleSet& P, int iat);
   GradType evalGrad(ParticleSet& P, int iat);

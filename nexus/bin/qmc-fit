@@ -48,6 +48,10 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+
     generic = import_nexus_module('generic')
     obj   = generic.obj
     log   = generic.log
@@ -69,6 +73,7 @@ try:
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
+    from versions import nexus_version
     from generic import obj,log,warn,error
     from developer import DevBase
     from numerics import jackknife,jackknife_aux
@@ -191,7 +196,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         error('must provide one equilibration length per scalar file\nnumber of equils provided: {0}\nnumber of scalar files provided: {1}\nequils provided: {2}\nscalar files provided: {3}'.format(len(equils),len(scalar_files),equils,scalar_files))
     #end if
 
-    if isinstance(reblock_factors,int):
+    if isinstance(reblock_factors,(int,np.int_)):
         reblock_factors = len(scalar_files)*[reblock_factors]
     elif reblock_factors is not None and len(reblock_factors)!=len(scalar_files):
         error('must provide one reblocking factor per scalar file\nnumber of reblock_factors provided: {0}\nnumber of scalar files provided: {1}\nreblock_factors provided: {2}\nscalar files provided: {3}'.format(len(reblock_factors),len(scalar_files),reblock_factors,scalar_files))
@@ -298,7 +303,7 @@ def parse_list(opt,name,dtype,len1=False):
 def timestep_fit():
     # read command line inputs
     usage = '''usage: %prog ts [options] [scalar files]'''
-    parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
+    parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
 
     parser.add_option('-f','--fit',dest='fit_function',
                           default='linear',

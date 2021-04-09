@@ -42,19 +42,19 @@ PWParameterSet::PWParameterSet(Communicate* comm)
       eigvecTag("eigenvector")
 {
   m_param.setName("h5tag");
-  m_param.add(twistIndex, "twistIndex", "int");
-  m_param.add(Rcut, "rcut", "double");
-  m_param.add(BufferRadius, "bufferLayer", "double");
-  m_param.add(BoxDup, "expand", "int3");
-  m_param.add(paramTag, "parameters", "string");
-  m_param.add(basisTag, "basis", "string");
-  m_param.add(pwTag, "planewaves", "string");
-  m_param.add(pwMultTag, "multiplers", "string");
-  m_param.add(eigTag, "eigenstates", "string");
-  m_param.add(twistTag, "twist", "string");
-  m_param.add(bandTag, "band", "string");
-  m_param.add(spinTag, "spin", "string");
-  m_param.add(eigvecTag, "eigenvector", "string");
+  m_param.add(twistIndex, "twistIndex");
+  m_param.add(Rcut, "rcut");
+  m_param.add(BufferRadius, "bufferLayer");
+  m_param.add(BoxDup, "expand");
+  m_param.add(paramTag, "parameters");
+  m_param.add(basisTag, "basis");
+  m_param.add(pwTag, "planewaves");
+  m_param.add(pwMultTag, "multiplers");
+  m_param.add(eigTag, "eigenstates");
+  m_param.add(twistTag, "twist");
+  m_param.add(bandTag, "band");
+  m_param.add(spinTag, "spin");
+  m_param.add(eigvecTag, "eigenvector");
 }
 
 double PWParameterSet::getEcut(double ecut)

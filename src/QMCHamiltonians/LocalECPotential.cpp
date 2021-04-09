@@ -28,20 +28,10 @@ LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els) : 
   NumIons      = ions.getTotalNum();
   myTableIndex = els.addTable(ions);
   //allocate null
-  PPset.resize(ions.getSpeciesSet().getTotalNum(), 0);
+  PPset.resize(ions.getSpeciesSet().getTotalNum());
   PP.resize(NumIons, nullptr);
   Zeff.resize(NumIons, 0.0);
   gZeff.resize(ions.getSpeciesSet().getTotalNum(), 0);
-}
-
-///destructor
-LocalECPotential::~LocalECPotential()
-{
-  delete_iter(PPset.begin(), PPset.end());
-  //map<int,RadialPotentialType*>::iterator pit(PPset.begin()), pit_end(PPset.end());
-  //while(pit != pit_end) {
-  //  delete (*pit).second; ++pit;
-  //}
 }
 
 void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
@@ -53,18 +43,18 @@ void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
   }
 }
 
-void LocalECPotential::add(int groupID, RadialPotentialType* ppot, RealType z)
+void LocalECPotential::add(int groupID, std::unique_ptr<RadialPotentialType>&& ppot, RealType z)
 {
-  PPset[groupID] = ppot;
-  gZeff[groupID] = z;
   for (int iat = 0; iat < PP.size(); iat++)
   {
     if (IonConfig.GroupID[iat] == groupID)
     {
-      PP[iat]   = ppot;
+      PP[iat]   = ppot.get();
       Zeff[iat] = z;
     }
   }
+  PPset[groupID] = std::move(ppot);
+  gZeff[groupID] = z;
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -231,13 +221,8 @@ OperatorBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& ps
 {
   LocalECPotential* myclone = new LocalECPotential(IonConfig, qp);
   for (int ig = 0; ig < PPset.size(); ++ig)
-  {
     if (PPset[ig])
-    {
-      RadialPotentialType* ppot = PPset[ig]->makeClone();
-      myclone->add(ig, ppot, gZeff[ig]);
-    }
-  }
+      myclone->add(ig, std::unique_ptr<RadialPotentialType>(PPset[ig]->makeClone()), gZeff[ig]);
   return myclone;
 }
 } // namespace qmcplusplus

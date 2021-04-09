@@ -1,0 +1,321 @@
+  Input file(s): qmc_ref-SD-C4_AE_Mol_QP.in.xml 
+
+=====================================================
+                    QMCPACK 3.10.9
+
+       (c) Copyright 2003-  QMCPACK developers
+
+                    Please cite:
+ J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
+      https://doi.org/10.1088/1361-648X/aab9c3
+
+  Git branch: MSD-ExcitedStates
+  Last git commit: 31e6dd3593eb61ce85eb3e5ed68c607a89837618-dirty
+  Last git commit date: Fri Feb 5 02:11:35 2021 +0000
+  Last git commit subject: Merge branch develop of https://github.com/QMCPACK/qmcpack into MSD-ExcitedStates merge branch
+=====================================================
+  Global options 
+
+  Total number of MPI ranks = 8
+  Number of MPI groups      = 1
+  MPI group ID              = 0
+  Number of ranks in group  = 8
+  MPI ranks per node        = 1
+  OMP 1st level threads     = 256
+  OMP nested threading disabled or only 1 thread on the 2nd level
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  CPU only build
+  Timer build option is enabled. Current timer level is coarse
+
+  Input XML = qmc_ref-SD-C4_AE_Mol_QP.in.xml
+
+  Project = qmc_ref-SD-C4_AE_Mol_QP
+  date    = 2021-02-05 05:39:18 UTC
+  host    = nid03827
+
+
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 518
+
+  Range of prime numbers to use as seeds over processors and threads = 3727-23021
+
+
+ Particle Set
+ ------------
+  Name: ion0
+
+  All the species have the same mass 1
+  Particle set size: 4
+
+
+ Particle Set
+ ------------
+  Name: e
+
+  All the species have the same mass 1
+  Particle set size: 24
+
+
+ Many-body wavefunction
+ -------------------
+  Name: psi0   tasking: no
+
+WARNING !!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside.
+WARNING !!!!!!! Deprecated input style: missing basisset element. LCAO needs an explicit basisset XML element. Fallback on loading an implicit one.
+  LCAO: SoaAtomicBasisSet<MultiQuintic,0>
+Reading BasisSet from HDF5 file:../C4_AE_Mol_QP.h5
+<input node="atomicBasisSet" name="gaussian" expandYlm="Gamess" angular="cartesian" elementType="C" normalized="no" type="Numerical" expM="0" />
+  AO BasisSet for C
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 0 0 0
+   R(n,l,m,s) 4 1 0 0
+   R(n,l,m,s) 5 1 0 0
+   R(n,l,m,s) 6 1 0 0
+   R(n,l,m,s) 7 2 0 0
+   R(n,l,m,s) 8 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+  Setting cutoff radius 6.84481e+07
+
+   Maximum Angular Momentum  = 2
+   Number of Radial functors = 9
+   Basis size                = 25
+
+  Created SPOSet builder named 'LCAOBSet' of type molecularorbital
+
+   Single Slater determinant
+   -------------------------
+
+
+     Determinant
+     -----------
+      Name: updet   Spin group: 0   SPO name: updet
+
+WARNING !!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside.
+      Create a new SPO set updet
+
+     Single particle orbitals (SPO)
+     ------------------------------
+      Name:    Type: LCAO   Builder class name: LCAOrbitalBuilder
+
+WARNING SPOSet object name not given in the input!
+        Using cusp correction.
+Reading cusp info from : ../SD-C4_AE_Mol_QP-Cusp/updet.cuspInfo.xml
+Found precomputed cusp data for spo set: updet
+WARNING SPOSet object doesn't have a name.
+      Setting delay_rank to default value 1
+      Using rank-1 Sherman-Morrison Fahy update (SM1)
+      Running on CPU.
+
+
+     Determinant
+     -----------
+      Name: downdet   Spin group: 1   SPO name: downdet
+
+WARNING !!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside.
+      Create a new SPO set downdet
+
+     Single particle orbitals (SPO)
+     ------------------------------
+      Name:    Type: LCAO   Builder class name: LCAOrbitalBuilder
+
+WARNING SPOSet object name not given in the input!
+        Using cusp correction.
+Reading cusp info from : ../SD-C4_AE_Mol_QP-Cusp/downdet.cuspInfo.xml
+Found precomputed cusp data for spo set: downdet
+WARNING SPOSet object doesn't have a name.
+      Setting delay_rank to default value 1
+      Using rank-1 Sherman-Morrison Fahy update (SM1)
+      Running on CPU.
+
+  Added a fermionic WaveFunctionComponent SlaterDet
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+
+ Hamiltonian and observables
+ ---------------------------
+  Name: h0
+
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+  QMCHamiltonian::addOperator IonElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonElec
+
+  QMCHamiltonian::add2WalkerProperty added
+    4 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+ParticleSetPool::randomize 1 ParticleSet.
+<init source="ion0" target="e">
+</init>
+  Initialization Execution time = 0.5956 secs
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet 'e' contains 24 particles :  u(12) d(12)
+
+    u -4.8106916225e-01 -1.0558352654e+00 -1.3845676781e-01
+    u -1.0058152291e+00 -1.0001641096e-01  5.8627499133e-01
+    u -4.5866426222e-01 -8.1486294684e-01 -7.0072205292e-01
+    u  1.6054871057e+00  2.8515711601e+00  1.6464970311e+00
+    u  2.6285956627e+00  1.7696760485e+00  1.0002216063e+00
+    u  2.0851309229e+00  2.5889150147e+00  2.3129479339e+00
+    u  4.2478244200e+00  2.9470015138e+00  6.4709972395e-01
+    u  4.2205743196e+00  2.9740524407e+00  6.9856215348e-01
+    u  3.6424592861e+00  2.2656141629e+00  2.5730158615e-01
+    u  4.3107827200e+00  5.9464377669e+00  1.8215489295e+00
+    (... and 14 more particle positions ...)
+
+  Distance table for dissimilar particles (A-B):
+    source: ion0  target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+  Distance table for similar particles (A-A):
+    source/target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  ParticleSet 'ion0' contains 4 particles :  C(4)
+
+    C  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    C  1.6865805662e+00  1.6865805662e+00  1.6865805662e+00
+    C  3.3731611512e+00  3.3731611512e+00  0.0000000000e+00
+    C  5.0597417174e+00  5.0597417174e+00  1.6865805662e+00
+
+  Distance table for similar particles (A-A):
+    source/target: ion0
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAB source=e
+
+  IonIon          CoulombAA source/target ion0
+
+  IonElec         CoulombAA source/target ion0
+
+
+
+=========================================================
+  Start VMC
+  File Root qmc_ref-SD-C4_AE_Mol_QP.s000 append = no 
+=========================================================
+Resetting walkers
+  Adding 256 walkers to 0 existing sets
+  Total number of walkers: 2.0480000000e+03
+  Total weight: 2.0480000000e+03
+  Resetting Properties of the walkers 1 x 13
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 3.0000000000e-01
+  blocks         = 1000
+  steps          = 800
+  substeps       = 2
+  current        = 0
+  target samples = 0.0000000000e+00
+  walkers/mpi    = 256
+
+  stepsbetweensamples = 800800
+  SpinMoves      = no
+<parameter name="blocks" condition="int">1000</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">800800</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">800800</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">0.0000000000e+00</parameter>
+<parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="spinmass" condition="double">1.0000000000e+00</parameter>
+<parameter name="spinmoves" condition="string">no</parameter>
+<parameter name="steps" condition="int">800</parameter>
+<parameter name="stepsbetweensamples" condition="int">800800</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">2</parameter>
+<parameter name="substeps" condition="int">2</parameter>
+<parameter name="tau" condition="au">3.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">3.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">3.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">256</parameter>
+<parameter name="warmup_steps" condition="int">100</parameter>
+<parameter name="warmupsteps" condition="int">100</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 800800 steps.
+</vmc>
+  Set drift_modifier UNR parameter a = 1.0000000000e+00
+  CloneManager::makeClones makes 256 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+===== Memory Usage before cloning =====
+Available memory on node 0, free + buffers : 187621 MB
+Memory footprint by rank 0 on node 0       : 69 MB
+==================================================
+===== Memory Usage after cloning =====
+Available memory on node 0, free + buffers : 187621 MB
+Memory footprint by rank 0 on node 0       : 69 MB
+==================================================
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =0
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 187407 MB
+Memory footprint by rank 0 on node 0       : 148 MB
+==================================================
+  Anonymous Buffer size per walker : 29536 Bytes.
+MEMORY increase 7 MB VMC::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.3
+    reference energy   = -150.961
+    reference variance = 34.7423
+====================================================
+  QMC Execution time = 2.8476e+03 secs
+  Total Execution time = 2.8476e+03 secs
+
+=========================================================
+  A new xml input file : qmc_ref-SD-C4_AE_Mol_QP.s000.cont.xml
+
+Use --enable-timers=<value> command line option to increase or decrease level of timing information
+Stack timer profile
+Timer      Inclusive_time  Exclusive_time  Calls       Time_per_call
+Total      2848.2089     0.0003              1    2848.208878040
+  Startup     0.5982     0.5982              1       0.598159075
+  VMC      2847.6104  2847.6104              1    2847.610424995
+Application 22309701 resources: utime ~5792862s, stime ~22565s, Rss ~154968, inblocks ~19716, outblocks ~1880

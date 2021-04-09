@@ -38,7 +38,7 @@ public:
   typedef SPOSet::GradMatrix_t GradMatrix_t;
   typedef ParticleSet::Walker_t Walker_t;
 
-  DiracDeterminantCUDA(SPOSetPtr const spos, int first = 0);
+  DiracDeterminantCUDA(std::shared_ptr<SPOSet>&& spos, int first = 0);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
 protected:
@@ -149,37 +149,48 @@ protected:
 
 public:
   // safe-guard all CPU interfaces
-  DiracDeterminantCUDA* makeCopy(SPOSet* spo) const { APP_ABORT("Calling DiracDeterminantCUDA::makeCopy is illegal!"); }
-
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  DiracDeterminantCUDA* makeCopy(std::shared_ptr<SPOSet>&& spo) const
   {
-    APP_ABORT("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
+    throw std::runtime_error("Calling DiracDeterminantCUDA::makeCopy is illegal!");
+    return nullptr;
   }
 
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) { APP_ABORT("Calling DiracDeterminantCUDA::acceptMove is illegal!"); }
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  {
+    throw std::runtime_error("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
+    return 0;
+  }
 
-  void restore(int iat) { APP_ABORT("Calling DiracDeterminantCUDA::restore is illegal!"); }
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) { throw std::runtime_error("Calling DiracDeterminantCUDA::acceptMove is illegal!"); }
 
-  PsiValueType ratio(ParticleSet& P, int iat) { APP_ABORT("Calling DiracDeterminantCUDA::ratio is illegal!"); }
+  void restore(int iat) { throw std::runtime_error("Calling DiracDeterminantCUDA::restore is illegal!"); }
+
+  PsiValueType ratio(ParticleSet& P, int iat)
+  {
+    throw std::runtime_error("Calling DiracDeterminantCUDA::ratio is illegal!");
+    return 0;
+  }
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    APP_ABORT("Calling DiracDeterminantCUDA::ratioGrad is illegal!");
+    throw std::runtime_error("Calling DiracDeterminantCUDA::ratioGrad is illegal!");
+    return 0;
   }
 
   void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    APP_ABORT("Calling DiracDeterminantCUDA::registerData is illegal!");
+    throw std::runtime_error("Calling DiracDeterminantCUDA::registerData is illegal!");
   }
 
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false)
   {
-    APP_ABORT("Calling DiracDeterminantCUDA::updateBuffer is illegal!");
+    throw std::runtime_error("Calling DiracDeterminantCUDA::updateBuffer is illegal!");
+    return 0;
   }
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    APP_ABORT("Calling DiracDeterminantCUDA::copyFromBuffer is illegal!");
+    throw std::runtime_error("Calling DiracDeterminantCUDA::copyFromBuffer is illegal!");
   }
 
   void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);

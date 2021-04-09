@@ -1,14 +1,6 @@
-#if defined(COMPILATION)
-$CXX $0 -o $0x&&$0x&&rm $0x $0.cpp;exit
-#endif
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 #ifndef BOOST_MULTI_DETAIL_OPERATORS_HPP
 #define BOOST_MULTI_DETAIL_OPERATORS_HPP
-
-#if defined(__CUDACC__)
-#define HD __host__ __device__
-#else
-#define HD 
-#endif
 
 #include<type_traits> // enable_if
 #include<utility> // forward
@@ -27,7 +19,7 @@ struct equality_comparable2<T, void, B> : B{
 //	template<class U, typename = std::enable_if_t<not std::is_same<U, T>{}> >
 //	friend bool operator!=(const U& y, const T& x){return not (x == y);}
 	template<class U, typename = std::enable_if_t<not std::is_base_of<T, U>{}>> 
-	friend bool operator!=(const T& y, const U& x){return not(y==x);}
+	friend constexpr bool operator!=(const T& y, const U& x){return not(y==x);}
 };
 
 template<class T, class V> struct partially_ordered2;
@@ -35,18 +27,18 @@ template<class T, class V> struct partially_ordered2;
 template <class T>
 struct partially_ordered2<T, void>{
 	template<class U, typename = std::enable_if_t<not std::is_base_of<T, U>{}>>
-	friend bool operator>(const U& x, const T& y){return y < x;}
+	friend constexpr bool operator>(const U& x, const T& y){return y < x;}
 	template<class U, typename = std::enable_if_t<not std::is_base_of<T, U>{}>>
-	friend bool operator<(const U& x, const T& y){return y > x;}
+	friend constexpr bool operator<(const U& x, const T& y){return y > x;}
 
 	template<class U>
-	friend bool operator<=(T&& x, U&& y){return (std::forward<T>(x) < std::forward<T>(y)) or (std::forward<T>(x) == std::forward<T>(y));}
+	friend constexpr bool operator<=(T&& x, U&& y){return (std::forward<T>(x) < std::forward<T>(y)) or (std::forward<T>(x) == std::forward<T>(y));}
 	template<class U, typename = std::enable_if_t<not std::is_base_of<T, U>{}>>
-	friend bool operator<=(const U& x, const T& y){return (y > x) or (y == x);}
+	friend constexpr bool operator<=(const U& x, const T& y){return (y > x) or (y == x);}
 	template<class U>
-	friend bool operator>=(const T& x, const U& y){return (x > y) or (x == y);}
+	friend constexpr bool operator>=(const T& x, const U& y){return (x > y) or (x == y);}
 	template<class U, typename = std ::enable_if_t<not std::is_base_of<T, U>{}>>
-	friend bool operator>=(const U& x, const T& y){return (y < x) or (y == x);}
+	friend constexpr bool operator>=(const U& x, const T& y){return (y < x) or (y == x);}
 };
 
 template<class T, class V, class B = empty_base> struct totally_ordered2;
@@ -54,11 +46,11 @@ template<class T, class V, class B = empty_base> struct totally_ordered2;
 template<class T, class B>
 struct totally_ordered2<T, void, B> : B{
 	template<class U>
-	friend auto operator<=(const T& x, const U& y){return (x < y) or (x == y);}
+	friend constexpr auto operator<=(const T& x, const U& y){return (x < y) or (x == y);}
 	template<class U>
-	friend auto operator>=(const T& x, const U& y){return (y < x) or (x == y);}
+	friend constexpr auto operator>=(const T& x, const U& y){return (y < x) or (x == y);}
 	template<class U>
-	friend auto operator>(const T& x, const U& y){return y < x;}
+	friend constexpr auto operator>(const T& x, const U& y){return y < x;}
 };
 
 template<class T>
@@ -77,22 +69,22 @@ struct weakly_decrementable{
 template<class T>
 struct incrementable : weakly_incrementable<T>{
 	template<class U, typename = std::enable_if_t<not std::is_base_of<T, U>{}>>
-	friend T operator++(U& self, int){T tmp{self}; ++self; return tmp;}
+	friend constexpr T operator++(U& self, int){T tmp{self}; ++self; return tmp;}
 };
 
 template<class T>
 struct decrementable : weakly_decrementable<T>{
 	template<class U, typename = std::enable_if_t<not std::is_base_of<T, U>{}>>
-	friend T operator--(U& self, int){T tmp{self}; --self; return tmp;}
+	friend constexpr T operator--(U& self, int){T tmp{self}; --self; return tmp;}
 };
 
 template<class T>
 struct steppable : incrementable<T>, decrementable<T>{};
 
-template<class T, class Reference>//, typename Reference = decltype(*std::declval<T const&>())>
+template<class T, class Reference>
 struct dereferenceable{
 	using reference = Reference;
-	friend reference operator*(dereferenceable const& t){return *static_cast<T const&>(t);}
+	friend constexpr reference operator*(dereferenceable const& t){return *static_cast<T const&>(t);}
 };
 
 template<class T, class D>
@@ -101,7 +93,7 @@ struct addable2{
 	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}> >
 	friend constexpr T operator+(TT&& t, difference_type const& d){T tmp{std::forward<TT>(t)}; tmp+=d; return tmp;}
 	template<class TT, typename = std::enable_if_t<std::is_base_of<T, TT>{}> >
-	friend constexpr T operator+(difference_type const& d, TT&& t) HD{return std::forward<TT>(t) + d;}
+	friend constexpr T operator+(difference_type const& d, TT&& t) {return std::forward<TT>(t) + d;}
 };
 
 template<class T, class D>
@@ -111,27 +103,24 @@ struct subtractable2{
 	friend T operator-(TT&& t, difference_type const& d){T tmp{std::forward<TT>(t)}; tmp-=d; return tmp;}
 };
 
-template<class T, class D = typename T::difference_type>
-struct affine : addable2<T, D>, subtractable2<T, D>{
-	using difference_type = D;
+template<class T, class Difference>
+struct affine : addable2<T, Difference>, subtractable2<T, Difference>{
+	using difference_type = Difference;
 };
 
 template<class T>
 struct random_iterable{
+	constexpr auto rbegin(){return typename T::reverse_iterator{static_cast<T&>(*this).end  ()};}
+	constexpr auto rend  (){return typename T::reverse_iterator{static_cast<T&>(*this).begin()};}
+	friend 
+	auto rbegin(T& s){return static_cast<random_iterable&>(s).rbegin();}
+	friend
+	auto rend  (T& s){return static_cast<random_iterable&>(s).rend  ();}
 
-//	friend constexpr decltype(auto) begin(T& t){return t.begin();}
-//	friend constexpr decltype(auto) end  (T& t){return t.end();}
-
-	auto rbegin(){return typename T::reverse_iterator{static_cast<T&>(*this).end  ()};}
-	auto rend  (){return typename T::reverse_iterator{static_cast<T&>(*this).begin()};}
-	friend auto rbegin(T& s){return static_cast<random_iterable&>(s).rbegin();}
-	friend auto rend  (T& s){return static_cast<random_iterable&>(s).rend  ();}
-
-	decltype(auto) cfront() const{return static_cast<T const&>(*this).front();}
-	decltype(auto) cback()  const{return static_cast<T const&>(*this).back() ;}
-	friend auto cfront(T const& s){return s.cfront();}
-	friend auto cback (T const& s){return s.cback() ;}
-
+	constexpr decltype(auto) cfront() const{return static_cast<T const&>(*this).front();}
+	constexpr decltype(auto) cback()  const{return static_cast<T const&>(*this).back() ;}
+	friend constexpr auto cfront(T const& s){return s.cfront();}
+	friend constexpr auto cback (T const& s){return s.cback() ;}
 };
 
 #if 0
@@ -174,14 +163,5 @@ struct random_iterable : B{
 
 }}
 
-#if not __INCLUDE_LEVEL__ // _TEST_BOOST_MULTI_DETAIL_OPERATORS
-
-#include<iostream>
-using std::cout;
-namespace multi = boost::multi;
-
-int main(){}
-
-#endif
 #endif
 

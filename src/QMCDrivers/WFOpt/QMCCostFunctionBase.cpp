@@ -330,15 +330,15 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv("no");
   ParameterSet m_param;
-  m_param.add(writeXmlPerStep, "dumpXML", "string");
-  m_param.add(MinNumWalkers, "minwalkers", "scalar");
-  m_param.add(MaxWeight, "maxWeight", "scalar");
-  m_param.add(includeNonlocalH, "nonlocalpp", "string");
-  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", "string");
-  m_param.add(w_beta, "beta", "double");
-  m_param.add(GEVType, "GEVMethod", "string");
-  m_param.add(targetExcitedStr, "targetExcited", "string");
-  m_param.add(omega_shift, "omega", "double");
+  m_param.add(writeXmlPerStep, "dumpXML");
+  m_param.add(MinNumWalkers, "minwalkers");
+  m_param.add(MaxWeight, "maxWeight");
+  m_param.add(includeNonlocalH, "nonlocalpp");
+  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv");
+  m_param.add(w_beta, "beta");
+  m_param.add(GEVType, "GEVMethod");
+  m_param.add(targetExcitedStr, "targetExcited");
+  m_param.add(omega_shift, "omega");
   m_param.put(q);
 
   tolower(targetExcitedStr);

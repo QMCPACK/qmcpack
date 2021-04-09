@@ -312,6 +312,7 @@ __global__ void find_core_electrons_PBC_kernel(T** R,
         disp[tid][1] = r[tid][1] - i[ion][1];
         disp[tid][2] = r[tid][2] - i[ion][2];
         dist[tid]    = min_dist<T>(disp[tid][0], disp[tid][1], disp[tid][2], L, Linv);
+        __syncthreads();
         for (int elec = 0; elec < elecEnd; elec++)
         {
           __syncthreads();

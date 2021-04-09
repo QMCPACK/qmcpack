@@ -50,8 +50,7 @@ TEST_CASE("temp3d", "[lrhandler]")
   ParticleSet ref;          // handler needs ref.SK.KLists
   ref.Lattice    = Lattice; // !!!! crucial for access to Volume
   ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  StructFact* SK = new StructFact(ref, Lattice.LR_kc);
-  ref.SK         = SK;
+  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
   LRHandlerTemp<EslerCoulomb3D, LPQHIBasis> handler(ref);
 
   handler.initBreakup(ref);

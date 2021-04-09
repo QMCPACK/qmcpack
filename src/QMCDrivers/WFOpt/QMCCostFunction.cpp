@@ -43,11 +43,13 @@ QMCCostFunction::~QMCCostFunction()
   delete_iter(HDerivRecords.begin(), HDerivRecords.end());
 }
 
-void QMCCostFunction::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_rt FiniteDiff)
+void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
+                               const std::vector<Return_rt>& PM,
+                               Return_rt FiniteDiff)
 {
   if (FiniteDiff > 0)
   {
-    QMCTraits::ValueType dh = 1.0 / (2.0 * FiniteDiff);
+    QMCTraits::RealType dh = 1.0 / (2.0 * FiniteDiff);
     for (int i = 0; i < NumOptimizables; i++)
     {
       for (int j = 0; j < NumOptimizables; j++)
@@ -212,21 +214,21 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
   //load samples from SampleStack
   outputManager.resume();
   app_log() << "   Number of samples loaded to each thread : ";
-  wPerNode[0] = 0;
+  wPerRank[0] = 0;
   for (int ip = 0; ip < NumThreads; ++ip)
   {
-    wPerNode[ip + 1] = wPerNode[ip] + wClones[ip]->numSamples();
+    wPerRank[ip + 1] = wPerRank[ip] + wClones[ip]->numSamples();
     app_log() << wClones[ip]->numSamples() << " ";
   }
   app_log() << std::endl;
   app_log().flush();
 
-  if (dLogPsi.size() != wPerNode[NumThreads])
+  if (dLogPsi.size() != wPerRank[NumThreads])
   {
     delete_iter(dLogPsi.begin(), dLogPsi.end());
     delete_iter(d2LogPsi.begin(), d2LogPsi.end());
     int nptcl = W.getTotalNum();
-    int nwtot = wPerNode[NumThreads];
+    int nwtot = wPerRank[NumThreads];
     dLogPsi.resize(nwtot);
     d2LogPsi.resize(nwtot);
     for (int i = 0; i < nwtot; ++i)
@@ -277,9 +279,9 @@ void QMCCostFunction::checkConfigurations()
     Return_rt e0 = 0.0;
     //       Return_t ef=0.0;
     Return_rt e2 = 0.0;
-    for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
+    for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
-      wRef.loadSample(wRef.R, iw);
+      wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
@@ -323,11 +325,11 @@ void QMCCostFunction::checkConfigurations()
     //       eft_tot+=ef;
   }
   OptVariablesForPsi.setComputed();
-  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << std::endl;
+  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerRank[NumThreads]) << std::endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
   etemp[0] = et_tot;
-  etemp[1] = static_cast<Return_rt>(wPerNode[NumThreads]);
+  etemp[1] = static_cast<Return_rt>(wPerRank[NumThreads]);
   etemp[2] = e2_tot;
   myComm->allreduce(etemp);
   Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
@@ -405,9 +407,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     Return_rt e2 = 0.0;
 
 
-    for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
+    for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
-      wRef.loadSample(wRef.R, iw);
+      wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
@@ -444,12 +446,12 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         }
         else if (MinMethod == "descent")
         {
-	    //Could remove this copying over if LM engine becomes compatible with complex numbers
-	    //so that der_rat_samp and le_der_samp are vectors of std::complex<double> when QMC_COMPLEX=1
-	    std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(),der_rat_samp.end());
-	    std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(),le_der_samp.end());
-	  
-        descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
+          //Could remove this copying over if LM engine becomes compatible with complex numbers
+          //so that der_rat_samp and le_der_samp are vectors of std::complex<double> when QMC_COMPLEX=1
+          std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(), der_rat_samp.end());
+          std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(), le_der_samp.end());
+
+          descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
         }
 #endif
       }
@@ -470,11 +472,11 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     //       eft_tot+=ef;
   }
 
-  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << endl;
+  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerRank[NumThreads]) << endl;
   //Need to sum over the processors
   std::vector<Return_rt> etemp(3);
   etemp[0] = et_tot;
-  etemp[1] = static_cast<Return_rt>(wPerNode[NumThreads]);
+  etemp[1] = static_cast<Return_rt>(wPerRank[NumThreads]);
   etemp[2] = e2_tot;
   myComm->allreduce(etemp);
   Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
@@ -553,9 +555,9 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
 
     MCWalkerConfiguration& wRef(*wClones[ip]);
     Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
-    for (int iw = 0, iwg = wPerNode[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
+    for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
-      wRef.loadSample(wRef.R, iw);
+      wRef.loadSample(wRef, iw);
       wRef.update(true);
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_rt logpsi;

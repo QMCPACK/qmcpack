@@ -31,8 +31,7 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
-    : MPIObjectBase(c), SimulationCell(nullptr), TileMatrix(0)
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), TileMatrix(0)
 {
   TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";
@@ -41,7 +40,7 @@ ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
 
 ParticleSetPool::ParticleSetPool(ParticleSetPool&& other)
     : MPIObjectBase(other.myComm),
-      SimulationCell(other.SimulationCell),
+      SimulationCell(std::move(other.SimulationCell)),
       TileMatrix(other.TileMatrix),
       myPool(std::move(other.myPool))
 {
@@ -49,6 +48,15 @@ ParticleSetPool::ParticleSetPool(ParticleSetPool&& other)
   myName    = other.myName;
 }
 
+ParticleSetPool::~ParticleSetPool()
+{
+  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
+  while (it != it_end)
+  {
+    delete (*it).second;
+    it++;
+  }
+}
 
 ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 {
@@ -77,13 +85,14 @@ MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const std::string& pname)
   return dynamic_cast<MCWalkerConfiguration*>(mc);
 }
 
-void ParticleSetPool::addParticleSet(ParticleSet* p)
+void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
 {
   PoolType::iterator pit(myPool.find(p->getName()));
   if (pit == myPool.end())
   {
-    LOGMSG("  Adding " << p->getName() << " ParticleSet to the pool")
-    myPool[p->getName()] = p;
+    auto& pname = p->getName();
+    LOGMSG("  Adding " << pname << " ParticleSet to the pool")
+    myPool[pname] = p.release();
   }
   else
   {
@@ -105,10 +114,10 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "putLattice");
   bool printcell = false;
-  if (SimulationCell == 0)
+  if (!SimulationCell)
   {
     app_debug() << "  Creating global supercell " << std::endl;
-    SimulationCell = new ParticleSet::ParticleLayout_t;
+    SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
     printcell      = true;
   }
   else
@@ -147,7 +156,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   std::string role("none");
   std::string randomR("no");
   std::string randomsrc;
-  std::string useGPU("no");
+  std::string useGPU;
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
@@ -156,7 +165,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
 #if defined(ENABLE_OFFLOAD)
-  pAttrib.add(useGPU, "gpu");
+  pAttrib.add(useGPU, "gpu", {"yes", "no"});
 #endif
   pAttrib.put(cur);
   //backward compatibility
@@ -168,7 +177,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     app_summary() << std::endl;
     app_summary() << " Particle Set" << std::endl;
     app_summary() << " ------------" << std::endl;
-    app_summary() << "  Name: " << id << std::endl;
+    app_summary() << "  Name: " << id << "   Offload : " << useGPU << std::endl;
     app_summary() << std::endl;
 
     // select OpenMP offload implementation in ParticleSet.
@@ -371,7 +380,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::str
 
   if (SimulationCell == 0)
   {
-    SimulationCell = new ParticleSet::ParticleLayout_t(ions->Lattice);
+    SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>(ions->Lattice);
   }
 
   if (qp == 0)

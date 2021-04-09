@@ -13,6 +13,8 @@
 #ifndef QMCPLUSPLUS_ACCESS_TRAITS_H
 #define QMCPLUSPLUS_ACCESS_TRAITS_H
 
+#include <algorithm>
+
 namespace qmcplusplus
 {
 /** template class defines whether the memory allocated by the allocator is host accessible
@@ -20,7 +22,15 @@ namespace qmcplusplus
 template<class Allocator>
 struct allocator_traits
 {
-  const static bool is_host_accessible = true;
+  using value_type = typename Allocator::value_type;
+
+  static const bool is_host_accessible = true;
+  static const bool is_dual_space = false;
+
+  static void fill_n(value_type* ptr, size_t n, const value_type& value)
+  {
+    std::fill_n(ptr, n, value);
+  }
 };
 
 template<class Allocator>
@@ -29,6 +39,8 @@ using IsHostSafe = std::enable_if_t<allocator_traits<Allocator>::is_host_accessi
 template<class Allocator>
 using IsNotHostSafe = std::enable_if_t<!allocator_traits<Allocator>::is_host_accessible>;
 
+template<class Allocator>
+using IsDualSpace = std::enable_if_t<allocator_traits<Allocator>::is_dual_space>;
 } // namespace qmcplusplus
 
 #endif // QMCPLUSPLUS_ACCESS_TRAITS_H

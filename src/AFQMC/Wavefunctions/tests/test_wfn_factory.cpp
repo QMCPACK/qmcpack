@@ -65,12 +65,7 @@ void wfn_fac(boost::mpi3::communicator& world)
 {
   using pointer = device_ptr<ComplexType>;
 
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("wfn_fac", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -134,6 +129,8 @@ void wfn_fac(boost::mpi3::communicator& world)
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
+    app_log() << " wfn_fac destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
     std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">" +
@@ -158,7 +155,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
       auto initial_guess = WfnFac.getInitialGuess(wfn_name);
       REQUIRE(initial_guess.size(0) == 2);
-      REQUIRE(initial_guess.size(1) == NPOL*NMO);
+      REQUIRE(initial_guess.size(1) == NPOL * NMO);
       REQUIRE(initial_guess.size(2) == NAEA);
 
       if (type == COLLINEAR)
@@ -296,7 +293,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
       //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
       REQUIRE(initial_guess.size(0) == 2);
-      REQUIRE(initial_guess.size(1) == NPOL*NMO);
+      REQUIRE(initial_guess.size(1) == NPOL * NMO);
       REQUIRE(initial_guess.size(2) == NAEA);
 
       if (type == COLLINEAR)
@@ -406,12 +403,7 @@ void wfn_fac(boost::mpi3::communicator& world)
 template<class Allocator>
 void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
 {
-  if (not file_exists(UTEST_HAMIL) || not file_exists(UTEST_WFN))
-  {
-    app_log() << " Skipping ham_ops_basic_serial. Hamiltonian or wavefunction file not found. \n";
-    app_log() << " Run unit test with --hamil /path/to/hamil.h5 and --wfn /path/to/wfn.dat.\n";
-  }
-  else
+  if (check_hamil_wfn_for_utest("wfn_fac_distributed", UTEST_WFN, UTEST_HAMIL))
   {
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -476,6 +468,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     REQUIRE(okay);
 
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
+    app_log() << " wfn_fac_distributed destroy restart_file " << restart_file << "\n";
+    if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
     std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
       <parameter name=\"filename\">" +
@@ -497,7 +491,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
 
     if (type == COLLINEAR)
@@ -656,7 +650,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     WalkerSet wset2(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     //auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);
-    REQUIRE(initial_guess.size(1) == NPOL*NMO);
+    REQUIRE(initial_guess.size(1) == NPOL * NMO);
     REQUIRE(initial_guess.size(2) == NAEA);
 
     if (type == COLLINEAR)

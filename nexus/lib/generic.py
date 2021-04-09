@@ -317,6 +317,87 @@ class object_interface(object):
         return s
     #end def tree
 
+    def data_repr(self,nindent=1,ret_str_keys=False):
+        pad = '    '
+        npad = nindent*pad
+        normal = []
+        qable  = []
+        str_keys = True
+        for k,v in self._items():
+            k_str = isinstance(k,str)
+            str_keys &= k_str
+            if not k_str or k[0]!='_':
+                if isinstance(v,object_interface):
+                    qable.append(k)
+                else:
+                    normal.append(k)
+                #end if
+            #end if
+        #end for
+        normal = sorted_generic(normal)
+        qable  = sorted_generic(qable)
+        if str_keys:
+            nkmax = 0
+            for k in normal:
+                nkmax = max(nkmax,len(k))
+            #end for
+            for k in qable:
+                nkmax = max(nkmax,len(k))
+            #end for
+            k_fmt   = '{0:<'+str(nkmax)+'} = '
+            k_delim = '='
+            k_func  = str
+        else:
+            nkmax   = 20
+            k_fmt   = '{0:<20} : '
+            k_delim = ':'
+            k_func  = repr
+            o_delim = ''
+        #end if
+        print(str_keys,list(self.keys()))
+        indent = npad+(nkmax+3)*' '
+        if nindent==1:
+            if str_keys:
+                s = 'd = obj(\n'
+            else:
+                s = 'd = obj({\n'
+            #end if
+        else:
+            s=''
+        #end if
+        for k in normal:
+            v = self[k]
+            vstr = (repr(v)+',').replace('\n','\n'+indent)
+            s+=npad+k_fmt.format(k_func(k))+vstr+'\n'
+        #end for
+        for k in qable:
+            v = self[k]
+            sv,contains_str_keys = v.data_repr(nindent+1,ret_str_keys=True)
+            if contains_str_keys:
+                o_open  = ''
+                o_close = ''
+            else:
+                o_open  = '{'
+                o_close = '}'
+            #end if
+            s+=npad+k_func(k)+' {} obj({}\n'.format(k_delim,o_open)
+            s+=sv
+            s+=npad+pad+'{}),\n'.format(o_close)
+        #end for
+        if nindent==1:
+            if str_keys:
+                s += pad + ')\n'
+            else:
+                s += pad + '})\n'
+            #end if
+        #end if
+        if not ret_str_keys:
+            return s
+        else:
+            return s,str_keys
+        #end if
+    #end def data_repr
+
 
     # dict interface
     def keys(self):

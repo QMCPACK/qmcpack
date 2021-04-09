@@ -1,5 +1,5 @@
-#ifdef COMPILATION_INSTRUCTIONS// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
-$CXX -std=c++17 -I$HOME/github.com/LLNL/metall.git/include/ $0 -o $0x -lstdc++fs&&$0x&&rm $0x;exit
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+$CXX -std=c++17 -I~/https/github.com/LLNL/metall.git/include/ $0 -o $0x -lstdc++fs&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 

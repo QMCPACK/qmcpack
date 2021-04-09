@@ -30,7 +30,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ParticleSet* elec = new ParticleSet;
+  auto elec = std::make_unique<ParticleSet>();
   std::vector<int> agroup(1);
   int nelec = 2;
   agroup[0] = nelec;
@@ -52,9 +52,9 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
 
   WaveFunctionFactory::PtclPoolType particle_set_map;
-  particle_set_map["e"] = elec;
+  particle_set_map["e"] = elec.get();
 
-  ParticleSet* ions = new ParticleSet;
+  auto ions = std::make_unique<ParticleSet>();
   ions->setName("ion0");
   ions->create(1);
   ions->R[0][0] = 0.0;
@@ -66,7 +66,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   int chargeIdx               = he_species.addAttribute("charge");
   tspecies(chargeIdx, He_Idx) = 2.0;
   tspecies(massIdx, upIdx)    = 1.0;
-  particle_set_map["ion0"]    = ions;
+  particle_set_map["ion0"]    = ions.get();
 
 
   WaveFunctionFactory wff("psi0", *elec, particle_set_map, c);

@@ -23,13 +23,17 @@ esac
 
 
 if [[ $localonly == "yes" ]]; then
-echo --- Local CMake/Make/CTest only. No cdash drop.
+    echo --- Local CMake/Make/CTest only. No cdash drop.
 fi
 
-if [ -e `dirname "$0"`/ornl_update.sh ]; then
-    echo --- Updates
-    source `dirname "$0"`/ornl_update.sh
+if [[ $jobtype == "weekly" ]]; then
+    if [ -e `dirname "$0"`/ornl_update.sh ]; then
+	echo --- Running compiler updates
+	source `dirname "$0"`/ornl_update.sh
+    fi
 fi
+
+
 
 if [ -e `dirname "$0"`/ornl_versions.sh ]; then
     source `dirname "$0"`/ornl_versions.sh
@@ -62,16 +66,16 @@ echo --- Host is $ourhostname
 case "$ourhostname" in
     sulfur )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_gccnew_nompi_mkl build_gccold_nompi_mkl build_clangnew_nompi_mkl build_clangold_nompi_mkl build_gccnew_nompi build_clangnew_nompi build_gccnew_mkl build_gccnew_mkl_complex build_clangnew_mkl build_clangnew_mkl_complex build_clangnew_mkl_mixed build_gcccuda build_gcccuda_complex build_gcccuda_full build_pgi2019_nompi build_clangdev_nompi_mkl"
+	    buildsys="build_gccnew build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_gccnew_nompi_mkl build_gccold_nompi_mkl build_clangnew_nompi_mkl build_gccnew_nompi build_clangnew_nompi build_gccnew_mkl build_gccnew_mkl_complex build_gccdev_mkl build_gccdev_mkl_complex build_clangnew_mkl build_clangnew_mkl_complex build_clangnew_mkl_mixed build_gcclegacycuda build_gcclegacycuda_complex build_gcclegacycuda_full build_pgi2020_nompi build_clangdev_nompi_mkl build_clangdev_nompi_mkl_complex build_clangdev_offloadcuda_nompi_mkl build_clangdev_offloadcuda_nompi_mkl_complex build_gccnew_debug_mkl build_gccnew_debug_complex_mkl"
 	else
-	    buildsys="build_gccnew_mkl_nompi build_clangnew_mkl_nompi build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_gcccuda build_gcccuda_complex build_pgi2019_nompi"
+	    buildsys="build_gccnew_mkl_nompi build_clangnew_mkl_nompi build_intel2020_nompi build_intel2020 build_intel2020_complex build_intel2020_mixed build_intel2020_complex_mixed build_gcclegacycuda build_gcclegacycuda_complex build_pgi2020_nompi"
 	fi
     ;;
     nitrogen )
 	if [[ $jobtype == "nightly" ]]; then
-	    buildsys="build_gccnew build_pgi2019_nompi build_gccnew_nompi build_gccnew_nompi_complex build_clangnew build_clangnew_complex build_clangnew_mixed build_clangnew_complex_mixed build_aompnew_nompi build_aompnew build_aompnew_nompi_mixed build_aompnew_mixed build_aompnew_nompi_complex_mixed build_aompnew_complex_mixed build_aompnew_nompi_complex build_aompnew_complex build_gcccuda build_gcccuda_full build_gcccuda_complex build_gccnew_complex build_clangdev_nompi_mkl"
+	    buildsys="build_gccnew build_pgi2020_nompi build_clangdev_nompi build_clangdev_offloadcuda_nompi build_gccnew_nompi build_gccnew_nompi_complex build_clangnew build_clangnew_complex build_clangnew_mixed build_clangnew_complex_mixed build_clangdev_offloadcuda_nompi_complex build_clangdev_offloadcuda_nompi_mixed build_clangdev_offloadcuda_nompi_complex_mixed  build_aompnew_nompi build_aompnew build_aompnew_nompi_mixed build_aompnew_mixed build_aompnew_nompi_complex_mixed build_aompnew_complex_mixed build_aompnew_nompi_complex build_aompnew_complex build_gcclegacycuda build_gcclegacycuda_full build_gcclegacycuda_complex build_gccnew_complex build_gccdev build_gccdev_complex"
 	else
-	    buildsys="build_gccnew build_pgi2019_nompi build_aompnew_mixed build_gcccuda build_gcccuda_complex build_gccnew_complex build_clangnew"
+	    buildsys="build_gccnew build_pgi2020_nompi build_aompnew_mixed build_gcclegacycuda build_gcclegacycuda_complex build_gccnew_complex build_clangnew build_clangdev_offloadcuda_nompi build_clangdev_offloadcuda_nompi_complex"
 	fi
     ;;
     * )
@@ -105,27 +109,17 @@ test_path=/scratch/${USER}
 
 test_dir=${test_path}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
+export OMP_NUM_THREADS=16
 
-# CUDA 10 setup
-export CUDAVER=10.2
-#export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-${CUDAVER}/bin/:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-export PATH=/usr/local/cuda-${CUDAVER}/bin/:${PATH}
-#export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64
-export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64:${LD_LIBRARY_PATH}
-
-# Specify GPUs for testing. Obtain device IDs via "nvidia-smi -L"
-#export CUDA_VISIBLE_DEVICES=
-
-# PGI2019  setup
-export PGI=/opt/pgi
-export MANPATH=$MANPATH:$PGI/linux86-64/2019/man
-export LM_LICENSE_FILE=$PGI/license.dat
-export PATH=$PGI/linux86-64/2019/bin:$PATH
+#export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
 # Intel2019.1 MPI configure setting to avoid MPI crash
 # via https://software.intel.com/en-us/forums/intel-clusters-and-hpc-technology/topic/799716
 #export FI_PROVIDER=sockets
 export I_MPI_FABRICS=shm
+
+# LLVM Offload bug workaround 2021-03-02
+export LIBOMP_USE_HIDDEN_HELPER_TASK=OFF
 
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
@@ -173,13 +167,14 @@ echo --- PYTHONPATH=$PYTHONPATH
 # Future improvement: use spack version or build for more compiler variants
 #
 
-export QE_VERSION=6.4.1
+export QE_VERSION=6.7.0
 sys=build_gccnew
 # QE version 6.x unpacks to qe-; Older versions 5.x uses espresso-
 export QE_PREFIX=qe-
 export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin
 echo --- QE_BIN set to ${QE_BIN}
 if [ ! -e ${QE_BIN}/pw.x ]; then
+    echo --- Downloading and installing patched QE
     # Start from clean build if no executable present
     if [ -e ${test_dir}/${sys}_QE ]; then
 	rm -r -f ${test_dir}/${sys}_QE
@@ -194,22 +189,27 @@ if [ ! -e ${QE_BIN}/pw.x ]; then
 (
     spack load gcc@${gcc_vnew}
     spack load openmpi@${ompi_vnew}
-    if [ "$ourplatform" == "AMD" ]; then
-	spack load amdblis
-	spack load netlib-lapack
-    else
-	spack load blis
-	spack load netlib-lapack
-    fi
+#    if [ "$ourplatform" == "AMD" ]; then
+#	spack load amdblis
+#	spack load netlib-lapack
+#    else
+#	spack load blis
+#	spack load netlib-lapack
+#    fi
+#    spack load openblas%gcc@${gcc_vnew} threads=openmp   
+    spack load openblas threads=openmp   
     spack load hdf5@${hdf5_vnew}
-    spack load fftw@${fftw_vnew}
-    ./configure CC=mpicc MPIF90=mpif90 F77=mpif90 BLAS_LIBS=-lblis LAPACK_LIBS=-llapack  --with-scalapack=no --with-hdf5=`spack location -i hdf5@1.10.5`
+    spack load --first fftw@${fftw_vnew}
+#    ./configure CC=mpicc MPIF90=mpif90 F77=mpif90 BLAS_LIBS=-lblis LAPACK_LIBS=-llapack  --with-scalapack=no --with-hdf5=`spack location -i hdf5@1.10.7`
+    ./configure CC=mpicc MPIF90=mpif90 F77=mpif90 BLAS_LIBS=-lopenblas LAPACK_LIBS=-lopenblas  --with-scalapack=no --with-hdf5=`spack location -i hdf5@1.12.0`
     ## GCC10 fortran will abort on argument mismatches in QE MPI unless -fallow-argument-mismatch specified
     cp make.inc make.inc_orig
     sed -i -E 's/(^FFLAGS.*= )/\1 -fallow-argument-mismatch /g' make.inc
     make -j 48 pwall # Parallel build tested OK for pwall with QE 6.4.1. Parallel build of all does NOT work due to broken dependencies
 )
-    echo -- New QE executable `ls -l bin/pw.x`
+    echo -- New QE executable
+    ls -l bin/pw.x
+    ls -l PW/src/pw.x
     cd ${test_dir}
 else
     echo -- Found existing QE ${QE_VERSION} executable
@@ -226,6 +226,7 @@ sys=build_gccnew
 export PYSCF_HOME=${test_dir}/${sys}_pyscf/pyscf
 echo --- PYSCF_HOME set to ${PYSCF_HOME}
 if [ ! -e ${PYSCF_HOME}/pyscf/lib/libxc_itrf.so ]; then
+    echo --- Downloading and installing PYSCF
 # Existence of shared library produced in ~final step of pyscf install as proxy for successful installation
     if [ -e ${test_dir}/${sys}_pyscf ]; then
 	rm -r -f ${test_dir}/${sys}_pyscf
@@ -237,20 +238,21 @@ if [ ! -e ${PYSCF_HOME}/pyscf/lib/libxc_itrf.so ]; then
 
 spack load git
 spack load gcc@${gcc_vnew}
-spack load python%gcc@${gcc_vnew}
-spack load cmake%gcc@${gcc_vnew}
-if [ "$ourplatform" == "AMD" ]; then
-    spack load amdblis
-    spack load netlib-lapack
-else
-    spack load blis
-    spack load netlib-lapack
-fi
+spack load python@${python_version}%gcc@${gcc_vnew}
+spack load --first cmake@${cmake_vnew}%gcc@${gcc_vnew}
+#if [ "$ourplatform" == "AMD" ]; then
+#    spack load amdblis
+#    spack load netlib-lapack
+#else
+#    spack load blis
+#    spack load netlib-lapack
+#fi
+#spack load openblas%gcc@${gcc_vnew} threads=openmp   
+spack load openblas threads=openmp   
 
 git clone https://github.com/pyscf/pyscf.git
 cd pyscf
-#git checkout v1.7.1 # Relased 2020-03-01
-git checkout v1.7.4 # Relased 2020-08-02
+git checkout v1.7.5 # Released 2020-10-04
 topdir=`pwd`
 here=`pwd`/opt
 herelib=`pwd`/opt/lib
@@ -261,12 +263,12 @@ cd opt
 echo --- libcint
 git clone https://github.com/sunqm/libcint.git
 cd libcint
-git checkout origin/cint3
+git checkout v4.0.7
 mkdir build
 cd build
 cmake -DWITH_F12=1 -DWITH_RANGE_COULOMB=1 -DWITH_COULOMB_ERF=1 \
     -DCMAKE_INSTALL_PREFIX:PATH=$here -DCMAKE_INSTALL_LIBDIR:PATH=lib ..
-make
+make -j 48
 make install
 
 cd ..
@@ -276,10 +278,11 @@ cd ..
 echo --- libxc
 git clone https://gitlab.com/libxc/libxc.git
 cd libxc
-git checkout 3.0.0
+git checkout 4.3.4
 autoreconf -i
-./configure --prefix=$here --libdir=$herelib --enable-shared --disable-fortran LIBS=-lm
-make
+./configure --prefix=$here --libdir=$herelib --enable-vxc --enable-fxc --enable-kxc \
+    --enable-shared --disable-static --enable-shared --disable-fortran LIBS=-lm
+make -j 48
 make install
 cd ..
 
@@ -287,24 +290,25 @@ cd ..
 echo --- xcfun library
 git clone https://github.com/dftlibs/xcfun.git
 cd xcfun
-git checkout 355f42497a9cd17d16ae91da1f1aaaf93756ae8b
+git checkout 8ec13b06e06feccbc9e968665977df14d7bfdff8
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS=1 -DXC_MAX_ORDER=3 -DXCFUN_ENABLE_TESTS=0 \
     -DCMAKE_INSTALL_PREFIX:PATH=$here -DCMAKE_INSTALL_LIBDIR:PATH=lib ..
-make
+make -j 48
 make install
 cd ..
 cd ..
 echo --- PySCF dependency setup complete
 cd ..
 
+
 echo --- Top level PySCF directory `pwd`
 cd pyscf/lib
 mkdir build
 cd build
 cmake -DBUILD_LIBCINT=0 -DBUILD_LIBXC=0 -DBUILD_XCFUN=0 -DCMAKE_INSTALL_PREFIX:PATH=$here ..
-make
+make -j 48
 echo --- PySCF build done
 export PYTHONPATH=$topdir:$PYTHONPATH
 export LD_LIBRARY_PATH=$herelib:$LD_LIBRARY_PATH
@@ -326,7 +330,7 @@ echo --- Starting test builds and tests
 for sys in $buildsys
 do
 
-echo --- START $sys `date`
+echo --- START build configuration $sys `date`
 
 cd ${test_dir}
 
@@ -344,28 +348,34 @@ cd $sys
 if [[ $sys == *"gccnew"* ]]; then
 ourenv=gccnewbuild
 fi
+if [[ $sys == *"gccdev"* ]]; then
+ourenv=gccdevbuild
+fi
 if [[ $sys == *"gccold"* ]]; then
 ourenv=gccoldbuild
 fi
-if [[ $sys == *"gcccuda"* ]]; then
-ourenv=gcccudabuild
+if [[ $sys == *"gcclegacycuda"* ]]; then
+ourenv=gcclegacycudabuild
 fi
 if [[ $sys == *"clangnew"* ]]; then
 ourenv=clangnewbuild
 fi
 if [[ $sys == *"clangold"* ]]; then
-ourenv=clangoldbuild
+    # Drop support for old
+    echo "*** Support for OLD clang builds dropped 20201223"
+    exit 1
+    ourenv=clangoldbuild
 fi
 if [[ $sys == *"clangdev"* ]]; then
 ourenv=clangdevbuild
 fi
-if [[ $sys == *"clangcuda"* ]]; then
-ourenv=clangcudabuild
+if [[ $sys == *"clanglegacycuda"* ]]; then
+ourenv=clanglegacycudabuild
 fi
 if [[ $sys == *"intel"* ]]; then
 ourenv=gccintelbuild
 fi
-if [[ $sys == *"pgi2019"* ]]; then
+if [[ $sys == *"pgi2020"* ]]; then
 ourenv=gccnewbuild
 fi
 if [[ $sys == *"aompnew"* ]]; then
@@ -381,22 +391,30 @@ case "$ourenv" in
 gccnewbuild) echo $ourenv
 	spack load gcc@$gcc_vnew
 	spack load python%gcc@$gcc_vnew
-	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load --first boost@$boost_vnew%gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load --first cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load --first libxml2@$libxml2_v%gcc@$gcc_vnew
+	spack load --first fftw@$fftw_vnew%gcc@$gcc_vnew
 	if [[ $sys != *"nompi"* ]]; then
 	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	    spack load py-mpi4py%gcc@$gcc_vnew
 	fi
-	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
-	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
-	if [ "$ourplatform" == "AMD" ]; then
-	    spack load amdblis
-	    spack load netlib-lapack
-	else
-	    spack load blis
-	    spack load netlib-lapack
-	fi
+	spack load py-numpy%gcc@$gcc_vnew
+	spack load py-scipy%gcc@$gcc_vnew
+	spack load py-h5py%gcc@$gcc_vnew
+	spack load py-lxml%gcc@$gcc_vnew
+	spack load py-pandas%gcc@$gcc_vnew
+#	if [ "$ourplatform" == "AMD" ]; then
+#	    spack load amdblis
+#	    spack load netlib-lapack
+#	else
+#	    spack load blis
+#	    spack load netlib-lapack
+#	fi
+#	spack load openblas%gcc@${gcc_vnew} threads=openmp   
+	spack load openblas threads=openmp   
+	
 	# Make PySCF available
 	export PYSCF_BIN=$PYSCF_HOME
 	export PYTHONPATH=${test_dir}/build_gccnew_pyscf/pyscf:$PYTHONPATH
@@ -409,132 +427,162 @@ gccnewbuild) echo $ourenv
 	# For debugging module availability etc. can check if afmctools are working here
 	#${test_dir}/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py
 ;;
+gccdevbuild) echo $ourenv
+	spack load gcc@master
+	spack load python%gcc@$gcc_vnew
+	spack load --first boost@$boost_vnew%gcc@$gcc_vnew
+	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
+	spack load --first cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load --first libxml2@$libxml2_v%gcc@$gcc_vnew
+	spack load --first fftw@$fftw_vnew%gcc@$gcc_vnew
+	if [[ $sys != *"nompi"* ]]; then
+	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
+	    spack load py-mpi4py%gcc@$gcc_vnew
+	fi
+	spack load py-numpy%gcc@$gcc_vnew
+	spack load py-scipy%gcc@$gcc_vnew
+	spack load py-h5py%gcc@$gcc_vnew
+	spack load py-lxml%gcc@$gcc_vnew
+	spack load py-pandas%gcc@$gcc_vnew
+#	if [ "$ourplatform" == "AMD" ]; then
+#	    spack load amdblis
+#	    spack load netlib-lapack
+#	else
+#	    spack load blis
+#	    spack load netlib-lapack
+#	fi
+#	spack load openblas%gcc@${gcc_vnew} threads=openmp   
+	spack load openblas threads=openmp   
+	
+#	# Make PySCF available
+#	export PYSCF_BIN=$PYSCF_HOME
+#	export PYTHONPATH=${test_dir}/build_gccnew_pyscf/pyscf:$PYTHONPATH
+#	export PYTHONPATH=${test_dir}/qmcpack/utils/afqmctools/:$PYTHONPATH
+#	export PYTHONPATH=${test_dir}/qmcpack/src/QMCTools/:$PYTHONPATH
+#	export LD_LIBRARY_PATH=${test_dir}/build_gccnew_pyscf/pyscf/opt/lib:$LD_LIBRARY_PATH
+#	echo PYSCF_BIN=$PYSCF_HOME
+#	echo PYTHONPATH=$PYTHONPATH
+#	echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+#	# For debugging module availability etc. can check if afmctools are working here
+#	#${test_dir}/qmcpack/utils/afqmctools/bin/pyscf_to_afqmc.py
+;;
 gccoldbuild) echo $ourenv
 	spack load gcc@$gcc_vold
 	spack load python%gcc@$gcc_vold
-	spack load boost@$boost_vold%gcc@$gcc_vold
+	spack load --first boost@$boost_vold%gcc@$gcc_vold
 	spack load hdf5@$hdf5_vold%gcc@$gcc_vold
-	spack load cmake@$cmake_vold%gcc@$gcc_vold
+#	spack load --first cmake@$cmake_vold%gcc@$gcc_vold
+	spack load --first cmake@$cmake_vold
 	if [[ $sys != *"nompi"* ]]; then
 	    spack load openmpi@$ompi_vold%gcc@$gcc_vold
 	fi
-	spack load libxml2@$libxml2_vold%gcc@$gcc_vold
-	spack load fftw@$fftw_vold%gcc@$gcc_vold
-	if [ "$ourplatform" == "AMD" ]; then
-	    spack load amdblis
-	    spack load netlib-lapack
-	else
-	    spack load blis
-	    spack load netlib-lapack
-	fi
+	spack load --first libxml2@$libxml2_v%gcc@$gcc_vold
+	spack load --first fftw@$fftw_vold%gcc@$gcc_vold
+#	if [ "$ourplatform" == "AMD" ]; then
+#	    spack load amdblis
+#	    spack load netlib-lapack
+#	else
+#	    spack load blis
+#	    spack load netlib-lapack
+#	fi
+#	spack load openblas%gcc@${gcc_vold} threads=openmp   
+	spack load openblas threads=openmp   
 ;;
-gcccudabuild) echo $ourenv
+gcclegacycudabuild) echo $ourenv
 	spack load gcc@$gcc_vcuda
 	spack load python%gcc@$gcc_vnew
-	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load --first boost@$boost_vnew%gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load --first cmake@$cmake_vnew%gcc@$gcc_vnew
 	if [[ $sys != *"nompi"* ]]; then
 	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	fi
-	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
-	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
-	if [ "$ourplatform" == "AMD" ]; then
-	    spack load amdblis
-	    spack load netlib-lapack
-	else
-	    spack load blis
-	    spack load netlib-lapack
-	fi
+	spack load --first libxml2@$libxml2_v%gcc@$gcc_vnew
+	spack load --first fftw@$fftw_vnew%gcc@$gcc_vnew
+#	if [ "$ourplatform" == "AMD" ]; then
+#	    spack load amdblis
+#	    spack load netlib-lapack
+#	else
+#	    spack load blis
+#	    spack load netlib-lapack
+#	fi
+#	spack load openblas%gcc@${gcc_vnew} threads=openmp   
+	spack load openblas threads=openmp   
 ;;
 clangnewbuild) echo $ourenv
 	spack load llvm@$llvm_vnew
 	spack load gcc@$gcc_vnew
 	spack load python%gcc@$gcc_vnew
-	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load --first boost@$boost_vnew%gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load --first cmake@$cmake_vnew%gcc@$gcc_vnew
 	if [[ $sys != *"nompi"* ]]; then
 	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	fi
-	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
-	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
-	if [ "$ourplatform" == "AMD" ]; then
-	    spack load amdblis
-	    spack load netlib-lapack
-	else
-	    spack load blis
-	    spack load netlib-lapack
-	fi
+	spack load --first libxml2@$libxml2_v%gcc@$gcc_vnew
+	spack load --first fftw@$fftw_vnew%gcc@$gcc_vnew
+#	if [ "$ourplatform" == "AMD" ]; then
+#	    spack load amdblis
+#	    spack load netlib-lapack
+#	else
+#	    spack load blis
+#	    spack load netlib-lapack
+#	fi
+#	spack load openblas%gcc@${gcc_vnew} threads=openmp   
+	spack load openblas threads=openmp   
 ;;
 clangdevbuild) echo $ourenv
-	spack load llvm@master
+	spack load llvm@main
 	spack load gcc@$gcc_vnew
 	spack load python%gcc@$gcc_vnew
-	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load --first boost@$boost_vnew%gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load --first cmake@$cmake_vnew%gcc@$gcc_vnew
 	if [[ $sys != *"nompi"* ]]; then
 	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	fi
-	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
-	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
-	if [ "$ourplatform" == "AMD" ]; then
-	    spack load amdblis
-	    spack load netlib-lapack
-	else
-	    spack load blis
-	    spack load netlib-lapack
-	fi
+	spack load --first libxml2@$libxml2_v%gcc@$gcc_vnew
+	spack load --first fftw@$fftw_vnew%gcc@$gcc_vnew
+#	if [ "$ourplatform" == "AMD" ]; then
+#	    spack load amdblis
+#	    spack load netlib-lapack
+#	else
+#	    spack load blis
+#	    spack load netlib-lapack
+#	fi
+#	spack load openblas%gcc@${gcc_vnew} threads=openmp   
+	spack load openblas threads=openmp   
 ;;
 aompnewbuild) echo $ourenv
 #	spack load llvm@$llvm_vnew
         export PATH=/usr/lib/aomp/bin:$PATH
 	spack load gcc@$gcc_vnew
 	spack load python%gcc@$gcc_vnew
-	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load --first boost@$boost_vnew%gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load --first cmake@$cmake_vnew%gcc@$gcc_vnew
 	if [[ $sys != *"nompi"* ]]; then
 	    spack load openmpi@$ompi_vnew%gcc@$gcc_vnew
 	fi
-	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
-	spack load fftw@$fftw_vnew%gcc@$gcc_vnew
-	if [ "$ourplatform" == "AMD" ]; then
-	    spack load amdblis
-	    spack load netlib-lapack
-	else
-	    spack load blis
-	    spack load netlib-lapack
-	fi
-;;
-clangoldbuild) echo $ourenv
-	spack load llvm@$llvm_vold
-	spack load gcc@$gcc_vold
-	spack load python%gcc@$gcc_vold
-	spack load boost@$boost_vold%gcc@$gcc_vold
-	spack load hdf5@$hdf5_vold%gcc@$gcc_vold
-	spack load cmake@$cmake_vold%gcc@$gcc_vold
-	if [[ $sys != *"nompi"* ]]; then
-	    spack load openmpi@$ompi_vold%gcc@$gcc_vold
-	fi
-	spack load libxml2@$libxml2_vold%gcc@$gcc_vold
-	spack load fftw@$fftw_vold%gcc@$gcc_vold
-	if [ "$ourplatform" == "AMD" ]; then
-	    spack load amdblis
-	    spack load netlib-lapack
-	else
-	    spack load blis
-	    spack load netlib-lapack
-	fi
+	spack load --first libxml2@$libxml2_v%gcc@$gcc_vnew
+	spack load --first fftw@$fftw_vnew%gcc@$gcc_vnew
+#	if [ "$ourplatform" == "AMD" ]; then
+#	    spack load amdblis
+#	    spack load netlib-lapack
+#	else
+#	    spack load blis
+#	    spack load netlib-lapack
+#	fi
+#	spack load openblas%gcc@${gcc_vnew} threads=openmp   
+	spack load openblas threads=openmp   
 ;;
 gccintelbuild) echo $ourenv
 	spack load gcc@$gcc_vintel # Provides old enough C++ library for Intel compiler
 	spack load python%gcc@$gcc_vnew
-	spack load boost@$boost_vnew%gcc@$gcc_vnew
+	spack load --first boost@$boost_vnew%gcc@$gcc_vnew
 	spack load hdf5@$hdf5_vnew%gcc@$gcc_vnew~mpi
-	spack load cmake@$cmake_vnew%gcc@$gcc_vnew
-	spack load libxml2@$libxml2_vnew%gcc@$gcc_vnew
+	spack load --first cmake@$cmake_vnew%gcc@$gcc_vnew
+	spack load --first libxml2@$libxml2_v%gcc@$gcc_vnew
 ;;
 *) echo "Problems: Unknown build environment"
 	exit 1
@@ -545,7 +593,11 @@ module list
 # Construct test name and configure flags
 # Compiler and major version, MPI or not
 if [[ $sys == *"gcc"* ]]; then
-compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'|sed 's/\..*//g'`
+    if [[ $sys == *"gccdev"* ]]; then
+	compilerversion=Dev
+    else
+	compilerversion=`gcc --version|grep ^gcc|sed 's/^.* //g'|sed 's/\..*//g'`
+    fi
 if [[ $sys == *"nompi"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=GCC${compilerversion}-NoMPI
 CTCFG="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DQMC_MPI=0"
@@ -563,16 +615,16 @@ fi
 
 fi
 # On sulfur with gcc builds, workaround presumed AVX512 bug
-case "$ourhostname" in
-    sulfur )
-	echo "Using GCC broadwell architecture override on $ourhostname"
-	CTXCFG="-DCMAKE_CXX_FLAGS='-march=broadwell -O3 -DNDEBUG -fomit-frame-pointer -ffast-math';-DCMAKE_C_FLAGS='-march=broadwell -O3 -DNDEBUG -fomit-frame-pointer -ffast-math'"
-    ;;
-    *)
+#case "$ourhostname" in
+#    sulfur )
+#	echo "Using GCC broadwell architecture override on $ourhostname"
+#        CTXCFG="-DCMAKE_CXX_FLAGS='-march=broadwell -O3 -DNDEBUG -fomit-frame-pointer -ffast-math';-DCMAKE_C_FLAGS='-march=broadwell -O3 -DNDEBUG -fomit-frame-pointer -ffast-math'"
+#        ;;
+#    *)
 	echo "No GCC workaround used on this host"
 	CTXCFG=""
-	;;
-esac
+#	;;
+#esac
 echo $CTXCFG
 fi
 
@@ -591,6 +643,12 @@ if [[ $sys == *"clang"* ]]; then
 	CTCFG="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_MPI=1"
 	export OMPI_CC=clang
 	export OMPI_CXX=clang++
+    fi
+
+# Clang OpenMP offload CUDA builds. Setup here due to clang specific arguments
+    if [[ $sys == *"offloadcuda"* ]]; then
+        QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Offload-CUDA
+        CTCFG="$CTCFG -DCMAKE_CXX_FLAGS=-Wno-unknown-cuda-version -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DENABLE_CUDA=ON;-DCUDA_ARCH=sm_70;-DCUDA_HOST_COMPILER=`which gcc`'"
     fi
 fi
 
@@ -639,9 +697,20 @@ CTCFG="-DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_MPI=1"
 fi
 fi
 
-# PGI
+# NVIDIA HPC SDK / PGI compiler
+# Will need future update to use nvcc and nvc++ instead of pgcc and pgc++
+# TODO: Ensure consistent CUDA versions used for future pgi+cuda builds
 if [[ $sys == *"pgi"* ]]; then
-compilerversion=`pgcc -V|grep pgcc|sed 's/^pgcc //g'|sed 's/\..*//g'`
+    export NVHPC=/opt/nvidia/hpc_sdk
+if [ -e $NVHPC/Linux_x86_64/2020/compilers/bin/nvc++ ]; then
+    echo --- Found nvc++ NVIDIA HPC SDK compiler. Adding to PATH
+    export PATH=${NVHPC}/Linux_x86_64/2020/compilers/bin:${PATH}
+else
+    echo --- Did not find expected nvc++ compiler for pgi build. Error.
+    exit 1
+fi
+#compilerversion=`pgcc -V|grep pgcc|sed 's/^pgcc //g'|sed 's/\..*//g'`
+compilerversion=`pgcc -V|grep pgcc|sed 's/^pgcc //g'|sed 's/\..*//g'|sed 's/.* //g'`
 if [[ $sys == *"nompi"* ]]; then
 QMCPACK_TEST_SUBMIT_NAME=PGI20${compilerversion}-NoMPI
 CTCFG="-DCMAKE_C_COMPILER=pgcc -DCMAKE_CXX_COMPILER=pgc++ -DQMC_MPI=0"
@@ -652,9 +721,21 @@ export OMPI_CXX=pgc++
 fi
 fi
 
-# CUDA
-if [[ $sys == *"cuda"* ]]; then
-QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-CUDA
+# Legacy CUDA builds setup
+# TODO: Ensure consistent CUDA versions for pgi+cuda, spack sourced compilers etc.
+if [[ $sys == *"legacycuda"* ]]; then
+export CUDAVER=11.2
+if [ -e /usr/local/cuda-${CUDAVER}/bin/nvcc ]; then
+    echo --- Found nvcc from CUDA ${CUDAVER} . Adding to PATH
+    export PATH=/usr/local/cuda-${CUDAVER}/bin:${PATH}
+    export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64:${LD_LIBRARY_PATH}
+else
+    echo --- Did not find expected nvcc compiler for CUDA build. Error.
+    exit 1
+fi
+# Specify GPUs for testing. Obtain device IDs via "nvidia-smi -L"
+#export CUDA_VISIBLE_DEVICES=
+QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Legacy-CUDA
 CTCFG="$CTCFG -DQMC_CUDA=1"
 fi
 
@@ -708,16 +789,25 @@ fi
 
 # Adjust which tests are run to control overall runtime
 case "$sys" in
-*intel2020*|*gccnew*|*clangnew*|*pgi*|*gcccuda*|*aompnew_nompi*) echo "Running full ("less limited") test set for $sys"
+*intel2020*|*gccnew*|*clangnew*|*clangdev*|*pgi*|*gcccuda|*aompnew_nompi_mixed) echo "Running full ("less limited") test set for $sys"
 THETESTS=$LESSLIMITEDTESTS
 ;;
 *) echo "Running limited test set for $sys"
 THETESTS=$LIMITEDTESTS
 ;;
 esac
+#THETESTS=$LIMITEDTESTS # for DEBUG. Remove for production.
 echo $THETESTS
 
-export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Release
+if [[ $sys == *"debug"* ]]; then
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Debug
+    CTCFG="-DCMAKE_BUILD_TYPE=Debug $CTCFG"
+    ctestscriptarg=debug
+else
+    export QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Release
+    ctestscriptarg=release
+fi
+
 echo $QMCPACK_TEST_SUBMIT_NAME
 echo $CTCFG
 if [[ $localonly == "yes" ]]; then
@@ -734,20 +824,20 @@ case "$sys" in
 	ctest ${GLOBALTCFG} ${THETESTS} -DN_CONCURRENT_TESTS=1
 	;;
     *)
-	ctest ${GLOBALTCFG} ${THETESTS}
+	ctest -j 48 ${GLOBALTCFG} ${THETESTS}
 	;;
 esac
 echo --- END ctest `date`
 else
 echo --- START ctest `date` 
-echo ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
+echo ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,$ctestscriptarg ${THETESTS}
 #Workaround CUDA concurrency problems
 case "$sys" in
     *cuda*)
-	ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS} -DN_CONCURRENT_TESTS=1
+	ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,$ctestscriptarg ${THETESTS} -DN_CONCURRENT_TESTS=1
 	;;
     *)
-	ctest ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release ${THETESTS}
+	ctest -j 48 ${CTCFG} ${GLOBALTCFG} "$CTXCFG" -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,$ctestscriptarg ${THETESTS}
 	;;
 esac
 echo --- END ctest `date`
@@ -757,7 +847,7 @@ fi
 
 module purge
 
-echo --- END $sys `date`
+echo --- END build configuration $sys `date`
 done
 
 else

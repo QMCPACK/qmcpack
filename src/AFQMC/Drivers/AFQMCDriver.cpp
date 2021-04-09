@@ -33,57 +33,59 @@ bool AFQMCDriver::run(WalkerSet& wset)
   int step_tot      = step0, iBlock;
   for (iBlock = block0; iBlock < nBlock; ++iBlock)
   {
-    for (int iStep = 0; iStep < nStep; ++iStep, ++step_tot)
     {
-      // propagate nSubstep
-      prop0.Propagate(nSubstep, wset, Eshift, dt, fix_bias);
-      total_time += nSubstep * dt;
-
-      if ((step_tot + 1) % nStabilize == 0)
+      ScopedTimer local_timer(AFQMCTimers[block_timer]);
+      for (int iStep = 0; iStep < nStep; ++iStep, ++step_tot)
       {
-        AFQMCTimers[ortho_timer]->start();
-        wfn0.Orthogonalize(wset, !prop0.free_propagation());
-        AFQMCTimers[ortho_timer]->stop();
+        // propagate nSubstep
+        prop0.Propagate(nSubstep, wset, Eshift, dt, fix_bias);
+        total_time += nSubstep * dt;
+
+        if ((step_tot + 1) % nStabilize == 0)
+        {
+          ScopedTimer local_timer(AFQMCTimers[ortho_timer]);
+          wfn0.Orthogonalize(wset, !prop0.free_propagation());
+        }
+
+        if (total_time < weight_reset_period && !prop0.free_propagation())
+          wset.resetWeights();
+
+        {
+          {
+            ScopedTimer local_timer(AFQMCTimers[popcont_timer]);
+            wset.popControl(curData);
+          }
+          estim0.accumulate_step(wset, curData);
+        }
+
+        if (total_time < 1.0)
+          Eshift = estim0.getEloc_step();
+        else
+          Eshift += dShift * (estim0.getEloc_step() - Eshift);
+
+        // MAM: updating here to avoid doing multiple loops with secondary allocation.
+        // should do nothing after first block is finished
       }
 
-      if (total_time < weight_reset_period && !prop0.free_propagation())
-        wset.resetWeights();
+      // checkpoint
+      if (nCheckpoint > 0 && (iBlock + 1) % nCheckpoint == 0)
+        if (!checkpoint(wset, iBlock, step_tot))
+        {
+          app_error() << " Error in AFQMCDriver::checkpoint(). \n" << std::endl;
+          return false;
+        }
 
-      {
-        AFQMCTimers[popcont_timer]->start();
-        wset.popControl(curData);
-        AFQMCTimers[popcont_timer]->stop();
-        estim0.accumulate_step(wset, curData);
-      }
+      // write samples
+      if (samplePeriod > 0 && (iBlock + 1) % samplePeriod == 0)
+        if (!writeSamples(wset))
+        {
+          app_error() << " Error in AFQMCDriver::writeSamples(). \n" << std::endl;
+          return false;
+        }
 
-      if (total_time < 1.0)
-        Eshift = estim0.getEloc_step();
-      else
-        Eshift += dShift * (estim0.getEloc_step() - Eshift);
-
-      // MAM: updating here to avoid doing multiple loops with secondary allocation.
-      // should do nothing after first block is finished
+      // quantities that are measured once per block
+      estim0.accumulate_block(wset);
     }
-
-    // checkpoint
-    if (nCheckpoint > 0 && (iBlock + 1) % nCheckpoint == 0)
-      if (!checkpoint(wset, iBlock, step_tot))
-      {
-        app_error() << " Error in AFQMCDriver::checkpoint(). \n" << std::endl;
-        return false;
-      }
-
-    // write samples
-    if (samplePeriod > 0 && (iBlock + 1) % samplePeriod == 0)
-      if (!writeSamples(wset))
-      {
-        app_error() << " Error in AFQMCDriver::writeSamples(). \n" << std::endl;
-        return false;
-      }
-
-    // quantities that are measured once per block
-    estim0.accumulate_block(wset);
-
     estim0.print(iBlock + 1, total_time, Eshift, wset);
 
     // resize stack pointers to match maximum buffer use
@@ -113,18 +115,18 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   fix_bias     = 1;
 
   ParameterSet m_param;
-  m_param.add(nBlock, "blocks", "int");
-  m_param.add(nStep, "steps", "int");
-  m_param.add(nSubstep, "substeps", "int");
-  m_param.add(fix_bias, "fix_bias", "int");
-  m_param.add(nStabilize, "ortho", "int");
-  m_param.add(nCheckpoint, "checkpoint", "int");
-  m_param.add(samplePeriod, "samplePeriod", "int");
-  m_param.add(weight_reset_period, "weight_reset", "double");
-  m_param.add(dt, "dt", "double");
-  m_param.add(dt, "timestep", "double");
-  m_param.add(dShift, "dshift", "double");
-  m_param.add(hdf_write_restart, "hdf_write_file", "std::string");
+  m_param.add(nBlock, "blocks");
+  m_param.add(nStep, "steps");
+  m_param.add(nSubstep, "substeps");
+  m_param.add(fix_bias, "fix_bias");
+  m_param.add(nStabilize, "ortho");
+  m_param.add(nCheckpoint, "checkpoint");
+  m_param.add(samplePeriod, "samplePeriod");
+  m_param.add(weight_reset_period, "weight_reset");
+  m_param.add(dt, "dt");
+  m_param.add(dt, "timestep");
+  m_param.add(dShift, "dshift");
+  m_param.add(hdf_write_restart, "hdf_write_file");
   m_param.put(cur);
 
   // write all the choices here ...

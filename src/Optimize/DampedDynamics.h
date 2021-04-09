@@ -235,13 +235,13 @@ template<class T>
 bool DampedDynamics<T>::put(xmlNodePtr cur)
 {
   ParameterSet p;
-  p.add(NumSteps, "max_steps", "int");
-  p.add(CostTol, "tolerance", "scalar");
-  p.add(GradTol, "tolerance_g", "scalar");
-  p.add(Displacement, "epsilon", "scalar");
-  p.add(Dt, "stepsize", "scalar");
-  p.add(Friction, "friction", "scalar");
-  p.add(Mass, "mass", "scalar");
+  p.add(NumSteps, "max_steps");
+  p.add(CostTol, "tolerance");
+  p.add(GradTol, "tolerance_g");
+  p.add(Displacement, "epsilon");
+  p.add(Dt, "stepsize");
+  p.add(Friction, "friction");
+  p.add(Mass, "mass");
   p.put(cur);
   return true;
 }

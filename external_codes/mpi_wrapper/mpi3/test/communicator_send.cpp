@@ -1,7 +1,7 @@
 #if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -O3 -Wall -Wextra $0 -o $0x.x -D_MAKE_BOOST_SERIALIZATION_HEADER_ONLY `#-lboost_serialization` && time mpirun -n 3 $0x.x $@ && rm -f $0x.x; exit
+mpic++ -g -O3 -Wall -Wextra $0 -o $0x -D_MAKE_BOOST_SERIALIZATION_HEADER_ONLY`#-lboost_serialization`&&mpirun -n 3 valgrind --leak-check=full --show-reachable=yes --error-limit=no                                 --suppressions=communicator_main.cpp.openmpi.supp $0x&&rm $0x;exit
 #endif
-//  (C) Copyright Alfredo A. Correa 2018.
+// © Alfredo A. Correa 2018-2020
 
 #include "../../mpi3/communicator.hpp"
 #include "../../mpi3/main.hpp"
@@ -23,7 +23,8 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 		}; break;
 		case 1: {
 			std::vector<int> b2(3);
-			world.receive(begin(b2), 0);
+			auto e = world.receive(begin(b2), 0);
+			assert( e == end(b2) );
 			assert( b2[1] == 4. );
 		}; break;
 	}

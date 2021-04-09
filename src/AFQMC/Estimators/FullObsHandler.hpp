@@ -66,8 +66,8 @@ class FullObsHandler : public AFQMCInfo
   using stdCVector_ref = boost::multi::array_ref<ComplexType, 1>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticSHMVector       = boost::multi::static_array<ComplexType, 1, shm_stack_alloc_type>;
-  using StaticSHM4Tensor      = boost::multi::static_array<ComplexType, 4, shm_stack_alloc_type>;
+  using StaticSHMVector      = boost::multi::static_array<ComplexType, 1, shm_stack_alloc_type>;
+  using StaticSHM4Tensor     = boost::multi::static_array<ComplexType, 4, shm_stack_alloc_type>;
 
 public:
   FullObsHandler(afqmc::TaskGroup_& tg_,
@@ -93,8 +93,8 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(nave, "naverages", "int");
-      m_param.add(block_size, "block_size", "int");
+      m_param.add(nave, "naverages");
+      m_param.add(block_size, "block_size");
       m_param.put(cur);
     }
 
@@ -128,7 +128,7 @@ public:
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
         std::string str("false");
         ParameterSet m_param;
-        m_param.add(str, "use_host_memory", "std::string");
+        m_param.add(str, "use_host_memory");
         m_param.put(cur);
         std::transform(str.begin(), str.end(), str.begin(), (int (*)(int))tolower);
         if (str == "false" || str == "no")
@@ -197,9 +197,9 @@ public:
     double LogOverlapFactor(wset.getLogOverlapFactor());
     LocalTGBufferManager shm_buffer_manager;
     StaticSHM4Tensor G4D({nw, nspins, std::get<0>(Gdims), std::get<1>(Gdims)},
-                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticSHMVector DevOv(iextensions<1u>{2 * nw}, 
-                shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+                         shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticSHMVector DevOv(iextensions<1u>{2 * nw},
+                          shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
     sharedCMatrix_ref G2D(G4D.origin(), {nw, dm_size});
 
     if (G4D_host.num_elements() != G4D.num_elements())

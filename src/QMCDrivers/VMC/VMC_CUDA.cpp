@@ -33,8 +33,9 @@ namespace qmcplusplus
 VMCcuda::VMCcuda(MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
-                 Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "VMCcuda"),
+                 Communicate* comm,
+                 bool enable_profiling)
+    : QMCDriver(w, psi, h, comm, "VMCcuda", enable_profiling),
       UseDrift("yes"),
       myPeriod4WalkerDump(0),
       w_beta(0.0),
@@ -45,12 +46,12 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(nTargetSamples, "targetWalkers", "int");
-  m_param.add(w_beta, "beta", "double");
-  m_param.add(w_alpha, "alpha", "double");
-  m_param.add(GEVtype, "GEVMethod", "string");
+  m_param.add(UseDrift, "useDrift");
+  m_param.add(UseDrift, "usedrift");
+  m_param.add(nTargetSamples, "targetWalkers");
+  m_param.add(w_beta, "beta");
+  m_param.add(w_alpha, "alpha");
+  m_param.add(GEVtype, "GEVMethod");
 
   H.setRandomGenerator(&Random);
 }
@@ -209,8 +210,7 @@ bool VMCcuda::run()
   double Esum;
 
   LoopTimer<> vmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
-  bool enough_time_for_next_iteration = true;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
 
   // First do warmup steps
   for (int step = 0; step < nWarmupSteps; step++)
@@ -306,17 +306,22 @@ bool VMCcuda::run()
     nRejectTot += nReject;
     ++block;
     recordBlock(block);
-
     vmc_loop.stop();
-    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(vmc_loop);
+
+    bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
-    myComm->bcast(enough_time_for_next_iteration);
-    if (!enough_time_for_next_iteration)
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(vmc_loop);
+    myComm->bcast(stop_requested);
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("VMC", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("VMC_CUDA", block);
+      run_time_manager.markStop();
+      break;
     }
 
-  } while (block < nBlocks && enough_time_for_next_iteration);
+  } while (block < nBlocks);
   //Mover->stopRun();
   //finalize a qmc section
   if (!myComm->rank())

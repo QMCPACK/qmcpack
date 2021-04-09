@@ -91,7 +91,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   // read lattice
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
-  ParticleSet::ParticleLayout_t* SimulationCell = new ParticleSet::ParticleLayout_t;
+  auto SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
   LatticeParser lp(*SimulationCell);
   lp.put(part1);
   SimulationCell->print(app_log(), 0);

@@ -29,7 +29,7 @@ The single particle spinors used in QMCPACK take the form
 
 where :math:`s` is the spin variable and using the complex spin representation.
 In order to carry out spin-orbit calculations in solids, the single-particle spinors
-can be obtained using Quantum Espresso. After carrying out the spin-orbit calculation in QE
+can be obtained using Quantum ESPRESSO. After carrying out the spin-orbit calculation in QE
 (with flags ``noncolin`` = .true., ``lspinorb`` = .true., and a relativistic ``.UPF`` pseudopotential), 
 the spinors can be obtained by using the converter *convertpw4qmc*:
 
@@ -65,7 +65,7 @@ where we now utilize determinants of spinors, as opposed to the usual product of
       </sposet_builder>
       <determinantset>
         <slaterdeterminant>
-          <determinant id="det" group="u" sposet="myspo" size="10"\>
+          <determinant id="det" group="u" sposet="myspo" size="10"/>
         </slaterdeterminant>
       </determinantset>
       <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">

@@ -645,7 +645,7 @@ public:
     }
   }
 
-  void evaluate_print(std::ostream& os, ParticleSet& P)
+  void evaluate_print(std::ostream& os, const ParticleSet& P)
   {
     // calculate all intermediates and values for electrons in a particle set
     std::vector<PosType> r_vec;

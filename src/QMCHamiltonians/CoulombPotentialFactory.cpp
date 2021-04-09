@@ -211,6 +211,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
     }
     TrialWaveFunction& psi = *psi_it->second->getTWF();
     ACForce* acforce       = new ACForce(*source, *target, psi, *targetH);
+    acforce->put(cur);
     targetH->addOperator(acforce, title, false);
   }
   else

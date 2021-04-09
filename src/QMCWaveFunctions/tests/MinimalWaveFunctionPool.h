@@ -38,8 +38,6 @@ class MinimalWaveFunctionPool
 public:
   MinimalWaveFunctionPool() : comm_(nullptr) {}
 
-  ~MinimalWaveFunctionPool() { SPOSetBuilderFactory::clear(); }
-
   WaveFunctionPool operator()(Communicate* comm, ParticleSetPool& particle_pool)
   {
     comm_ = comm;

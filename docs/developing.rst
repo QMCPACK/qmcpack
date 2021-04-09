@@ -3,22 +3,33 @@
 Development Guide
 =================
 
-The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the addition of a Jastrow function or a new QMC method.
+The section gives guidance on how to extend the functionality of QMCPACK. Future examples will likely include topics such as the
+addition of a Jastrow function or a new QMC method.
 
 QMCPACK coding standards
 ------------------------
 
-This chapter presents what we collectively have agreed are best practices for the code. This includes formatting style, naming conventions, documentation conventions, and certain prescriptions for C++ language use. At the moment only the formatting can be enforced in an objective fashion.
+This chapter presents what we collectively have agreed are best practices for the code. This includes formatting style, naming
+conventions, documentation conventions, and certain prescriptions for C++ language use. At the moment only the formatting can be
+enforced in an objective fashion.
 
-New development should follow these guidelines, and contributors are expected to adhere to them as they represent an integral part of our effort to continue QMCPACK as a world-class, sustainable QMC code. Although some of the source code has a ways to go to live up to these ideas, new code, even in old files, should follow the new conventions not the local conventions of the file whenever possible. Work on the code with continuous improvement in mind rather than a commitment to stasis.
+New development should follow these guidelines, and contributors are expected to adhere to them as they represent an integral part
+of our effort to continue QMCPACK as a world-class, sustainable QMC code. Although some of the source code has a ways to go to
+live up to these ideas, new code, even in old files, should follow the new conventions not the local conventions of the file
+whenever possible. Work on the code with continuous improvement in mind rather than a commitment to stasis.
 
-The `current workflow conventions`_ for the project are described in the wiki on the GitHub repository. It will save you and all the maintainers considerable time if you read these and ask questions up front.
+The `current workflow conventions`_ for the project are described in the wiki on the GitHub repository. It will save you and all
+the maintainers considerable time if you read these and ask questions up front.
 
-A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting conventions if you use clang-format.  The mechanics of clang-format setup and use can be found at https://github.com/QMCPACK/qmcpack/wiki/Source-formatting.
+A PR should follow these standards before inclusion in the mainline. You can be sure of properly following the formatting
+conventions if you use clang-format.  The mechanics of clang-format setup and use can be found at
+https://github.com/QMCPACK/qmcpack/wiki/Source-formatting.
 
-The clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR before a pull request is prepared. We also encourage developers to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
+The clang-format file found at ``qmcpack/src/.clang-format`` should be run over all code touched in a PR before a pull request is
+prepared. We also encourage developers to run clang-tidy with the ``qmcpack/src/.clang-tidy`` configuration over all new code.
 
-As much as possible, try to break up refactoring, reformatting, feature, and bugs into separate, small PRs. Aim for something that would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
+As much as possible, try to break up refactoring, reformatting, feature, and bugs into separate, small PRs. Aim for something that
+would take a reviewer no more than an hour. In this way we can maintain a good collective development velocity.
 
 .. _current workflow conventions: https://github.com/QMCPACK/qmcpack/wiki/Development-workflow
 
@@ -33,7 +44,7 @@ Each file should start with the header.
   // This file is distributed under the University of Illinois/NCSA Open Source License.
   // See LICENSE file in top directory for details.
   //
-  // Copyright (c) 2020 QMCPACK developers
+  // Copyright (c) 2021 QMCPACK developers
   //
   // File developed by: Name, email, affiliation
   //
@@ -45,37 +56,78 @@ If you make significant changes to an existing file, add yourself to the list of
 File organization
 ~~~~~~~~~~~~~~~~~
 
-Header files should be placed in the same directory as their implementations.
-Unit tests should be written for all new functionality. These tests should be placed in a ``tests`` subdirectory below the implementations.
+Header files should be placed in the same directory as their implementations. Unit tests should be written for all new
+functionality. These tests should be placed in a ``tests`` subdirectory below the implementations.
 
 File names
 ~~~~~~~~~~
 
-Each class should be defined in a separate file with the same name as the class name. Use separate ``.cpp`` implementation files whenever possible to aid in incremental compilation.
+Each class should be defined in a separate file with the same name as the class name. Use separate ``.cpp`` implementation files
+whenever possible to aid in incremental compilation.
 
-The filenames of tests are composed by the filename of the object tested and the prefix ``test_``.
-The filenames of *fake* and *mock* objects used in tests are composed by the prefixes ``fake_`` and ``mock_``, respectively, and the filename of the object that is imitated.
+The filenames of tests are composed by the filename of the object tested and the prefix ``test_``. The filenames of *fake* and
+*mock* objects used in tests are composed by the prefixes ``fake_`` and ``mock_``, respectively, and the filename of the object
+that is imitated.
 
 Header files
 ~~~~~~~~~~~~
 
-All header files should be self-contained (i.e., not dependent on following any other header when it is included). Nor should they include files that are not necessary for their use (i.e., headers needed only by the implementation). Implementation files should not include files only for the benefit of files they include.
+All header files should be self-contained (i.e., not dependent on following any other header when it is included). Nor should they
+include files that are not necessary for their use (i.e., headers needed only by the implementation). Implementation files should
+not include files only for the benefit of files they include.
 
-There are many header files that currently violate this.
-Each header must use ``#define`` guards to prevent multiple inclusion.
+There are many header files that currently violate this. Each header must use ``#define`` guards to prevent multiple inclusion.
 The symbol name of the ``#define`` guards should be ``NAMESPACE(s)_CLASSNAME_H``.
 
 Includes
 ~~~~~~~~
 
-Header files should be included with the full path based on the ``src`` directory.
-For example, the file ``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
+Related header files should be included without any path. Header files from external projects and standard libraries should be
+includes using the ``<iostream>`` convention, while headers that are part of the QMCPACK project should be included using the
+``"our_header.h"`` convention.
+
+We are now using a new header file inclusion style following the modern CMake transition in QMCPACK, while the legacy code may
+still use the legacy style. Newly written code and refactored code should be transitioned to the new style.
+
+New style for modern CMake
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In QMCPACK, include paths are handled by modern CMake target dependency. Every top level folder is at least one target. For
+example, ``src/Particle/CMakeLists.txt`` defines `qmcparticle` target. It propagates include path ``qmcpack/src/Particle`` to
+compiling command lines in CMake via
+
+::
+
+  TARGET_INCLUDE_DIRECTORIES(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+For this reason, the file ``qmcpack/src/Particle/Lattice/ParticleBConds3DSoa.h`` should be included as
+
+::
+
+  #include "Lattice/ParticleBConds3DSoa.h"
+
+If the compiled file is not part of the same target as `qmcparticle`, the target it belongs to should have a dependency on
+`qmcparticle`. For example, test source files under ``qmcpack/src/Particle/tests`` are not part of `qmcparticle` and thus requires
+the following additional CMake setting
+
+::
+
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle)
+
+Legacy style
+^^^^^^^^^^^^
+
+Header files should be included with the full path based on the ``src`` directory. For example, the file
+``qmcpack/src/QMCWaveFunctions/SPOSet.h`` should be included as
 
 ::
 
   #include "QMCWaveFunctions/SPOSet.h"
 
-Even if the included file is located in the same directory as the including file, this rule should be obeyed. Header files from external projects and standard libraries should be includes using the ``<iostream>`` convention, while headers that are part of the QMCPACK project should be included using the ``"our_header.h"`` convention.
+Even if the included file is located in the same directory as the including file, this rule should be obeyed.
+
+Ordering
+^^^^^^^^
 
 For readability, we suggest using the following standard order of includes:
 
@@ -94,7 +146,10 @@ In each section the included files should be sorted in alphabetical order.
 Naming
 ------
 
-The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a single terminal window.  If an extremely short variable name is used, its scope must be shorter than :math:`\sim 40` lines. An exception is made for template parameters, which must be in all CAPS.
+The balance between description and ease of implementation should be balanced such that the code remains self-documenting within a
+single terminal window.  If an extremely short variable name is used, its scope must be shorter than :math:`\sim 40` lines. An
+exception is made for template parameters, which must be in all CAPS. Legacy code contains a great variety of hard to read code
+style, read this section and do not immitate existing code that violates it.
 
 Namespace names
 ~~~~~~~~~~~~~~~
@@ -104,13 +159,19 @@ Namespace names should be one word, lowercase.
 Type and class names
 ~~~~~~~~~~~~~~~~~~~~
 
-Type and class names should start with a capital letter and have a capital letter for each new word.
-Underscores (``_``) are not allowed.
+Type and class names should start with a capital letter and have a capital letter for each new word. Underscores (``_``) are not
+allowed. It's redundant to end these names with ``Type`` or ``_t``.
+
+::
+   \\no
+   using ValueMatrix_t = Matrix<Value>;
+   using RealType = double;
 
 Variable names
 ~~~~~~~~~~~~~~
 
-Variable names should not begin with a capital letter, which is reserved for type and class names. Underscores (``_``) should be used to separate words.
+Variable names should not begin with a capital letter, which is reserved for type and class names. Underscores (``_``) should be
+used to separate words.
 
 Class data members
 ~~~~~~~~~~~~~~~~~~
@@ -121,6 +182,11 @@ Class private/protected data members names should follow the convention of varia
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Function names should start with a lowercase character and have a capital letter for each new word.
+
+Template Parameters
+~~~~~~~~~~~~~~~~~~~
+
+Template parameters names should be in all caps with (``_``) separating words.  It's redundant to end these names with ``_TYPE``,
 
 Lambda expressions
 ~~~~~~~~~~~~~~~~~~
@@ -134,8 +200,7 @@ Named lambda expressions follow the naming convention for functions:
 Macro names
 ~~~~~~~~~~~
 
-Macro names should be all uppercase and can include underscores (``_``).
-The underscore is not allowed as first or last character.
+Macro names should be all uppercase and can include underscores (``_``). The underscore is not allowed as first or last character.
 
 Test case and test names
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -197,15 +262,15 @@ Do not put the file name after the ``\file`` Doxygen command. Doxygen will fill 
 Class docs
 ^^^^^^^^^^
 
-Every class should have a short description (in the header of the file) of what it is and what is does.
-Comments for public class member functions follow the same rules as general function comments.
-Comments for private members are allowed but are not mandatory.
+Every class should have a short description (in the header of the file) of what it is and what is does. Comments for public class
+member functions follow the same rules as general function comments. Comments for private members are allowed but are not
+mandatory.
 
 Function docs
 ^^^^^^^^^^^^^
 
-For function parameters whose type is non-const reference or pointer to non-const memory,
-it should be specified if they are input (In:), output (Out:) or input-output parameters (InOut:).
+For function parameters whose type is non-const reference or pointer to non-const memory, it should be specified if they are input
+(In:), output (Out:) or input-output parameters (InOut:).
 
 Example:
 
@@ -238,7 +303,9 @@ Formatting and "style"
 
 Use the provided clang-format style in ``src/.clang-format`` to format ``.h``, ``.hpp``, ``.cu``, and ``.cpp`` files. Many of the following rules will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
-You should use clang-format support and the ``.clangformat`` file with your editor, use a Git precommit hook to run clang-format or run clang-format manually on every file you modify.  However, if you see numerous formatting updates outside of the code you have modified, first commit the formatting changes in a separate PR.
+You should use clang-format support and the ``.clangformat`` file with your editor, use a Git precommit hook to run clang-format
+or run clang-format manually on every file you modify.  However, if you see numerous formatting updates outside of the code you
+have modified, first commit the formatting changes in a separate PR.
 
 Indentation
 ~~~~~~~~~~~
@@ -253,8 +320,8 @@ The length of each line of your code should be at most *120* characters.
 Horizontal spacing
 ~~~~~~~~~~~~~~~~~~
 
-No trailing white spaces should be added to any line.
-Use no space before a comma (``,``) and a semicolon (``;``), and add a space after them if they are not at the end of a line.
+No trailing white spaces should be added to any line. Use no space before a comma (``,``) and a semicolon (``;``), and add a space
+after them if they are not at the end of a line.
 
 Preprocessor directives
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -275,8 +342,8 @@ Do not put any space between an unary operator and its argument.
 Types
 ~~~~~
 
-The ``using`` syntax is preferred to ``typedef`` for type aliases.
-If the actual type is not excessively long or complex, simply use it; renaming simple types makes code less understandable.
+The ``using`` syntax is preferred to ``typedef`` for type aliases. If the actual type is not excessively long or complex, simply
+use it; renaming simple types makes code less understandable.
 
 Pointers and references
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -306,10 +373,8 @@ The angle brackets of templates should not have any external or internal padding
 Vertical spacing
 ~~~~~~~~~~~~~~~~
 
-Use empty lines when it helps to improve the readability of the code, but do not use too many.
-Do not use empty lines after a brace that opens a scope
-or before a brace that closes a scope.
-Each file should contain an empty line at the end of the file.
+Use empty lines when it helps to improve the readability of the code, but do not use too many. Do not use empty lines after a
+brace that opens a scope or before a brace that closes a scope. Each file should contain an empty line at the end of the file.
 Some editors add an empty line automatically, some do not.
 
 Variable declarations and definitions
@@ -352,9 +417,8 @@ Variable declarations and definitions
 Function declarations and definitions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The return type should be on the same line as the function name.
-Parameters should also be on the same line unless they do not fit on it, in which case one parameter
-per line aligned with the first parameter should be used.
+The return type should be on the same line as the function name. Parameters should also be on the same line unless they do not fit
+on it, in which case one parameter per line aligned with the first parameter should be used.
 
 Also include the parameter names in the declaration of a function, that is,
 
@@ -366,11 +430,11 @@ Also include the parameter names in the declaration of a function, that is,
   // avoid
   double function(double, double, double);
 
-  //dont do this
+  // dont do this
   double function(BigTemplatedSomething<double> a, BigTemplatedSomething<double> b,
                   BigTemplatedSomething<double> c);
 
-  //do this
+  // do this
   double function(BigTemplatedSomething<double> a,
                   BigTemplatedSomething<double> b,
                   BigTemplatedSomething<double> c);
@@ -530,9 +594,9 @@ Examples:
 Namespace formatting
 ~~~~~~~~~~~~~~~~~~~~
 
-The content of namespaces is not indented.
-A comment should indicate when a namespace is closed. (clang-format will add these if absent).
-If nested namespaces are used, a comment with the full namespace is required after opening a set of namespaces or an inner namespace.
+The content of namespaces is not indented. A comment should indicate when a namespace is closed. (clang-format will add these if
+absent). If nested namespaces are used, a comment with the full namespace is required after opening a set of namespaces or an
+inner namespace.
 
 Examples:
 
@@ -572,22 +636,28 @@ Examples:
 QMCPACK C++ guidance
 --------------------
 
-The guidance here, like any advice on how to program, should not be treated as a set of rules but rather the hard-won wisdom of many hours of suffering development. In the past, many rules were ignored, and the absolute worst results of that will affect whatever code you need to work with. Your PR should go much smoother if you do not ignore them.
+The guidance here, like any advice on how to program, should not be treated as a set of rules but rather the hard-won wisdom of
+many hours of suffering development. In the past, many rules were ignored, and the absolute worst results of that will affect
+whatever code you need to work with. Your PR should go much smoother if you do not ignore them.
 
 Encapsulation
 ~~~~~~~~~~~~~
 
-A class is not just a naming scheme for a set of variables and functions. It should provide a logical set of methods, could contain the state of a logical object, and might allow access to object data through a well-defined interface related variables, while preserving maximally ability to change internal implementation of the class.
+A class is not just a naming scheme for a set of variables and functions. It should provide a logical set of methods, could
+contain the state of a logical object, and might allow access to object data through a well-defined interface related variables,
+while preserving maximally ability to change internal implementation of the class.
 
-Do not use ``struct`` as a way to avoid controlling access to the class. Only in rare cases where a class is a fully public data structure ``struct`` is this appropriate. Ignore (or fix one) the many examples of this in QMCPACK.
+Do not use ``struct`` as a way to avoid controlling access to the class. Only in rare cases where a class is a fully public data
+structure ``struct`` is this appropriate. Ignore (or fix one) the many examples of this in QMCPACK.
 
-Do not use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class, do that, and access it solely through its public interface. This will reduce dependencies.
+Do not use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class, do
+that, and access it solely through its public interface. This will reduce dependencies.
 
 Casting
 ~~~~~~~
 
-In C++ source, avoid C style casts; they are difficult to search for and imprecise in function.
-An exception is made for controlling implicit conversion of simple numerical types.
+In C++ source, avoid C style casts; they are difficult to search for and imprecise in function. An exception is made for
+controlling implicit conversion of simple numerical types.
 
 Explicit C++ style casts make it clear what the safety of the cast is and what sort of conversion is expected to be possible.
 
@@ -609,8 +679,8 @@ Explicit C++ style casts make it clear what the safety of the cast is and what s
 Pre-increment and pre-decrement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the pre-increment (pre-decrement) operator when a variable is incremented (decremented) and the value of the expression is not used.
-In particular, use the pre-increment (pre-decrement) operator for loop counters where i is not used:
+Use the pre-increment (pre-decrement) operator when a variable is incremented (decremented) and the value of the expression is not
+used. In particular, use the pre-increment (pre-decrement) operator for loop counters where i is not used:
 
 ::
 
@@ -624,7 +694,8 @@ In particular, use the pre-increment (pre-decrement) operator for loop counters 
     doSomething(i);
   }
 
-The post-increment and post-decrement operators create an unnecessary copy that the compiler cannot optimize away in the case of iterators or other classes with overloaded increment and decrement operators.
+The post-increment and post-decrement operators create an unnecessary copy that the compiler cannot optimize away in the case of
+iterators or other classes with overloaded increment and decrement operators.
 
 Alternative operator representations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -664,23 +735,47 @@ Use of const
       int getCount() const { return count_;}
     }
 
+Smart pointers
+~~~~~~~~~~~~~~
+
+Use of smart pointers is being adopted to help make QMCPACK memory leak free. Prior to C++11, C++ uses C-style pointers. A C-style
+pointer can have several meanings and the ownership of a piece of help memory may not be clear. This leads to confusion and causes
+memory leaks if pointers are not managed properly. Since C++11, smart pointers were introduced to resolve this issue. In addition,
+it demands developers to think about the ownership and lifetime of declared pointer objects.
+
+std::unique_ptr
+^^^^^^^^^^^^^^^
+
+A unique pointer is the unique owner of a piece of allocated memory. Pointers in per-walker data structure with distinct contents
+should be unique pointers. For example, every walker has a trial wavefunction object which contains an SPO object pointer. Because
+the SPO object has a vector to store SPO evaluation results, it cannot be shared between two trial wavefunction objects. For this
+reason the SPO object pointer should be an unique pointer.
+
+In QMCPACK, most raw pointers can be directly replaced with ``std::unique_ptr``.
+Corresponding use of ``new`` operator can be replaced with ``std:make_unique``.
+
+std::shared_ptr
+^^^^^^^^^^^^^^^
+
+A shared pointer is the shared owner of a piece of allocated memory. Moving a pointer ownership from one place to another should
+not use shared pointers but C++ move semantics. Shared contents between walkers may be candidates for shared pointers. For example,
+although the Jastrow factor object must be unique per walker, the pointer to the parameter data structure can be a shared pointer.
+During Jastrow optimization, any update to the parameter data managed by the shared pointer will be effective immediately in all
+the Jastrow objects. In another example, spline coefficients are managed by a shared pointer which achieves a single copy in
+memory shared by an SPOSet and all of its clones.
+
 Scalar estimator implementation
 -------------------------------
 
 Introduction: Life of a specialized OperatorBase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Almost all observables in QMCPACK are implemented as specialized derived
-classes of the OperatorBase base class. Each observable is instantiated
-in HamiltonianFactory and added to QMCHamiltonian for tracking.
-QMCHamiltonian tracks two types of observables: main and auxiliary. Main
-observables contribute to the local energy. These observables are
-elements of the simulated Hamiltonian such as kinetic or potential
-energy. Auxiliary observables are expectation values of matrix elements
-that do not contribute to the local energy. These Hamiltonians do not
-affect the dynamics of the simulation. In the code, the main observables
-are labeled by “physical” flag; the auxiliary observables have
-“physical” set to false.
+Almost all observables in QMCPACK are implemented as specialized derived classes of the OperatorBase base class. Each observable
+is instantiated in HamiltonianFactory and added to QMCHamiltonian for tracking. QMCHamiltonian tracks two types of observables:
+main and auxiliary. Main observables contribute to the local energy. These observables are elements of the simulated Hamiltonian
+such as kinetic or potential energy. Auxiliary observables are expectation values of matrix elements that do not contribute to the
+local energy. These Hamiltonians do not affect the dynamics of the simulation. In the code, the main observables are labeled by
+“physical” flag; the auxiliary observables have“physical” set to false.
 
 Initialization
 ^^^^^^^^^^^^^^
@@ -1999,7 +2094,7 @@ Distance tables
 
 Distance tables store distances between particles. There are symmetric
 (AA) tables for distance between like particles (electron-electron or
-ion-ion) and asymmetric (BA) tables for distance between unlike
+ion-ion) and asymmetric (AB) tables for distance between unlike
 particles (electron-ion)
 
 The ``Distances`` and ``Displacements`` members contain the data. The

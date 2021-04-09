@@ -26,6 +26,7 @@
 #define zaxpy zaxpy_
 #define dnrm2 dnrm2_
 #define snrm2 snrm2_
+#define scnrm2 scnrm2_
 #define dznrm2 dznrm2_
 #define dsymv dsymv_
 #define ssymv ssymv_
@@ -107,29 +108,13 @@
 #define dpotrf dpotrf_
 #define zpotrf zpotrf_
 
-#if defined(HAVE_MKL)
-#define dzgemv dzgemv_
-#define scgemv scgemv_
-#define dzgemm dzgemm_
-#define scgemm scgemm_
-typedef enum
-{
-  CblasRowMajor = 101,
-  CblasColMajor = 102
-} CBLAS_LAYOUT;
-typedef enum
-{
-  CblasNoTrans   = 111,
-  CblasTrans     = 112,
-  CblasConjTrans = 113
-} CBLAS_TRANSPOSE;
-#endif
-
 #endif
 
 // declaring Fortran interfaces
 extern "C"
 {
+  void saxpy(const int& n, const float& da, const float* dx, const int& incx, float* dy, const int& incy);
+
   void caxpy(const int& n,
              const std::complex<float>& da,
              const std::complex<float>* dx,
@@ -139,8 +124,6 @@ extern "C"
 
   void daxpy(const int& n, const double& da, const double* dx, const int& incx, double* dy, const int& incy);
 
-  void saxpy(const int& n, const float& da, const float* dx, const int& incx, float* dy, const int& incy);
-
   void zaxpy(const int& n,
              const std::complex<double>& da,
              const std::complex<double>* dx,
@@ -149,18 +132,18 @@ extern "C"
              const int& incy);
 
 
-  double dnrm2(const int& n, const double* dx, const int& incx);
   float snrm2(const int& n, const float* dx, const int& incx);
+  float scnrm2(const int& n, const std::complex<float>* dx, const int& incx);
+  double dnrm2(const int& n, const double* dx, const int& incx);
   double dznrm2(const int& n, const std::complex<double>* dx, const int& incx);
 
 
-  double dscal(const int& n, const double&, double* x, const int&);
-  double sscal(const int& n, const float&, float* x, const int&);
-
-  double cscal(const int& n, const std::complex<float>&, std::complex<float>* x, const int&);
-  double zscal(const int& n, const std::complex<double>&, std::complex<double>* x, const int&);
-  double zdscal(const int& n, const double&, std::complex<double>* x, const int&);
-  double csscal(const int& n, const float&, std::complex<float>* x, const int&);
+  void sscal(const int& n, const float&, float* x, const int&);
+  void cscal(const int& n, const std::complex<float>&, std::complex<float>* x, const int&);
+  void dscal(const int& n, const double&, double* x, const int&);
+  void zscal(const int& n, const std::complex<double>&, std::complex<double>* x, const int&);
+  void csscal(const int& n, const float&, std::complex<float>* x, const int&);
+  void zdscal(const int& n, const double&, std::complex<double>* x, const int&);
 
   void dsymv(const char& uplo,
              const int& n,
@@ -339,130 +322,6 @@ extern "C"
              const std::complex<float>& beta,
              std::complex<float>* cv,
              const int& incy);
-
-#if defined(HAVE_MKL)
-
-  void dzgemm(const char&,
-              const char&,
-              const int&,
-              const int&,
-              const int&,
-              const std::complex<double>&,
-              const double*,
-              const int&,
-              const std::complex<double>*,
-              const int&,
-              const std::complex<double>&,
-              std::complex<double>*,
-              const int&);
-
-  void scgemm(const char&,
-              const char&,
-              const int&,
-              const int&,
-              const int&,
-              const std::complex<float>&,
-              const float*,
-              const int&,
-              const std::complex<float>*,
-              const int&,
-              const std::complex<float>&,
-              std::complex<float>*,
-              const int&);
-
-  void dzgemv(const char& trans,
-              const int& nr,
-              const int& nc,
-              const std::complex<double>& alpha,
-              const double* amat,
-              const int& lda,
-              const std::complex<double>* bv,
-              const int& incx,
-              const std::complex<double>& beta,
-              std::complex<double>* cv,
-              const int& incy);
-
-  void scgemv(const char& trans,
-              const int& nr,
-              const int& nc,
-              const std::complex<float>& alpha,
-              const float* amat,
-              const int& lda,
-              const std::complex<float>* bv,
-              const int& incx,
-              const std::complex<float>& beta,
-              std::complex<float>* cv,
-              const int& incy);
-
-  void cblas_sgemm_batch(const CBLAS_LAYOUT Layout,
-                         const CBLAS_TRANSPOSE* transa_array,
-                         const CBLAS_TRANSPOSE* transb_array,
-                         const int* m_array,
-                         const int* n_array,
-                         const int* k_array,
-                         const void* alpha_array,
-                         const void** a_array,
-                         const int* lda_array,
-                         const void** b_array,
-                         const int* ldb_array,
-                         const void* beta_array,
-                         void** c_array,
-                         const int* ldc_array,
-                         const int group_count,
-                         const int* group_size);
-
-  void cblas_cgemm_batch(const CBLAS_LAYOUT Layout,
-                         const CBLAS_TRANSPOSE* transa_array,
-                         const CBLAS_TRANSPOSE* transb_array,
-                         const int* m_array,
-                         const int* n_array,
-                         const int* k_array,
-                         const void* alpha_array,
-                         const void** a_array,
-                         const int* lda_array,
-                         const void** b_array,
-                         const int* ldb_array,
-                         const void* beta_array,
-                         void** c_array,
-                         const int* ldc_array,
-                         const int group_count,
-                         const int* group_size);
-
-  void cblas_dgemm_batch(const CBLAS_LAYOUT Layout,
-                         const CBLAS_TRANSPOSE* transa_array,
-                         const CBLAS_TRANSPOSE* transb_array,
-                         const int* m_array,
-                         const int* n_array,
-                         const int* k_array,
-                         const void* alpha_array,
-                         const void** a_array,
-                         const int* lda_array,
-                         const void** b_array,
-                         const int* ldb_array,
-                         const void* beta_array,
-                         void** c_array,
-                         const int* ldc_array,
-                         const int group_count,
-                         const int* group_size);
-
-  void cblas_zgemm_batch(const CBLAS_LAYOUT Layout,
-                         const CBLAS_TRANSPOSE* transa_array,
-                         const CBLAS_TRANSPOSE* transb_array,
-                         const int* m_array,
-                         const int* n_array,
-                         const int* k_array,
-                         const void* alpha_array,
-                         const void** a_array,
-                         const int* lda_array,
-                         const void** b_array,
-                         const int* ldb_array,
-                         const void* beta_array,
-                         void** c_array,
-                         const int* ldc_array,
-                         const int group_count,
-                         const int* group_size);
-
-#endif
 
   void dsyrk(const char&,
              const char&,

@@ -202,9 +202,9 @@ struct OneDimGridFunctor
   //  ///DO NOTHING
   //}
 
-  virtual value_type splint(point_type r, value_type& du, value_type& d2u) { return 0.0; }
+  virtual value_type splint(point_type r, value_type& du, value_type& d2u) const { return 0.0; }
 
-  virtual value_type splint(point_type r) { return 0.0; }
+  virtual value_type splint(point_type r) const { return 0.0; }
 
   virtual void spline(int imin, value_type yp1, int imax, value_type ypn) {}
 
@@ -263,9 +263,9 @@ public:
 
   OneDimConstFunctor(grid_type* gt = 0) : base_type(gt), ConstValue(0.0) {}
 
-  inline value_type splint(point_type r) { return ConstValue; }
+  inline value_type splint(point_type r) const override { return ConstValue; }
 
-  inline value_type splint(point_type r, value_type& du, value_type& d2u)
+  inline value_type splint(point_type r, value_type& du, value_type& d2u) const override
   {
     du  = 0.0;
     d2u = 0.0;

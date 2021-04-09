@@ -19,13 +19,13 @@ try:
   from lxml import etree
 except:
   import sys
-  sys.exit("Error: lxml module is needed for the generation of the XML file. Please install it using your favorite package manager")
+  sys.exit("Error: lxml python module is needed for the generation of the XML file by PyscfToQmcpack_Spline.py. Install as other packages, either directly or with a package manager.")
 
 try:
   import pandas as pd
 except:
   import sys
-  sys.exit("Error: Panda module is needed for the save_eigensystem and eigensystem functions. Please install it using your package manager")
+  sys.exit("Error: Pandas python module is needed for the save_eigensystem and eigensystem functions by PyscfToQmcpack_Spline.py. Install as other packages, either directly or with a package manager.")
 
 
 def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]):
@@ -122,7 +122,7 @@ def pyscf2qmcpackspline(cell,mf,title="Default", kpts=[], kmesh=[],  sp_twist=[]
   root.extend(a)
 
   doc.write(xml_fname,pretty_print=True)
-
+  print ('Wavefunction successfully saved to QMCPACK HDF5 spline format')
 
 
 
@@ -253,7 +253,7 @@ def generate_pwscf_h5(cell,gvecs,eig_df,h5_fname):
 
   # transfer version info. !!!! hard code for now
   new.create_dataset('application/code',data=[np.string_('PySCF')])
-  new.create_dataset('application/version',data=[np.string_('1.6.2')])
+  new.create_dataset('application/version',data=[np.string_('1.7.5')])
   new.create_dataset('format',data=[np.string_('ES-HDF')])
   new.create_dataset('version',data=[2,1,0])
   new.close()
@@ -295,12 +295,12 @@ class PwscfH5:
 
   def val(self,loc):
     """ get value array of an arbitrary entry at location 'loc' """
-    return self.fp[loc].value
+    return self.fp[loc][()]
 
   def get(self,name):
     """ get value array of a known entry """
     loc   = self.locations[name]
-    return self.fp[loc].value
+    return self.fp[loc][()]
 
   # =======================================================================
   # Advance Read Methods i.e. more specific to QMCPACK 3.0.0
@@ -324,11 +324,11 @@ class PwscfH5:
   # access specific eigenvalue or eigenvector
   def psig(self,ikpt=0,ispin=0,istate=0):
     psig_loc = self.state_path(ikpt,ispin,istate)+'psi_g'
-    return self.fp[psig_loc].value
+    return self.fp[psig_loc][()]
 
   def psir(self,ikpt=0,ispin=0,istate=0):
     psir_loc = self.state_path(ikpt,ispin,istate)+'psi_r'
-    return self.fp[psir_loc].value
+    return self.fp[psir_loc][()]
 
   def eigenvalues(self):
     """ return all eigenvalues, shape=(nkpt,nspin,nstate) """
@@ -395,16 +395,16 @@ class PwscfH5:
     nspin= self.get('nspin')
     for ikpt in range(nkpt):
       k_grp = self.fp[self.kpoint_path(ikpt)]
-      rkvec = k_grp['reduced_k'].value
+      rkvec = k_grp['reduced_k'][()]
       for ispin in range(nspin):
         spin_loc = self.spin_path(ikpt,ispin)
         sp_grp   = self.fp[spin_loc]
-        nstate   = sp_grp['number_of_states'].value[0]
-        evals    = sp_grp['eigenvalues'].value
+        nstate   = sp_grp['number_of_states'][(0)]
+        evals    = sp_grp['eigenvalues'][()]
         for istate in range(nstate):
           st_loc = self.state_path(ikpt,ispin,istate)
           st_grp = self.fp[st_loc]
-          evector= st_grp['psi_g'].value # shape (ngvec,2) (real,complex)
+          evector= st_grp['psi_g'][()] # shape (ngvec,2) (real,complex)
           entry  = {'ikpt':ikpt,'ispin':ispin,'istate':istate,
             'reduced_k':rkvec,'evalue':evals[istate],'evector':evector}
           data.append(entry)
@@ -665,19 +665,19 @@ class InputXml:
 
   def particleset_from_hdf5(self,h5_handle):
     atom_grp = h5_handle.get('atoms')
-    nspec = atom_grp.get('number_of_species').value[0]
-    species_ids = atom_grp.get('species_ids').value
-    positions = atom_grp.get('positions').value
+    nspec = atom_grp.get('number_of_species')[(0)]
+    species_ids = atom_grp.get('species_ids')[()]
+    positions = atom_grp.get('positions')[()]
 
-    natom_total = atom_grp.get('number_of_atoms').value[0]
+    natom_total = atom_grp.get('number_of_atoms')[(0)]
     # Get the name of the atoms
     groups = []
     for ispec in range(nspec):
       # turn h5 group into dictionary (i.e. h5ls -d)
       sp_grp         = atom_grp.get('species_%d'%ispec)
-      name           = sp_grp.get('name').value[0]
-      valence_charge = sp_grp.get('valence_charge').value[0]
-      atomic_number  = sp_grp.get('atomic_number').value[0]
+      name           = sp_grp.get('name')[(0)]
+      valence_charge = sp_grp.get('valence_charge')[(0)]
+      atomic_number  = sp_grp.get('atomic_number')[(0)]
 
       # locate particles of this species
       atom_idx = np.where(species_ids==ispec)
@@ -703,7 +703,7 @@ class InputXml:
     groups.append(pos_node)
 
     ionid_node = etree.Element('attrib',{'name':'ionid','datatype':'stringArray'})
-    ionid_node.text = self.arr2text(np.array([atom_grp.get('species_{}/name'.format(id_)).value[0]  for id_ in species_ids]))
+    ionid_node.text = self.arr2text(np.array([atom_grp.get('species_{}/name'.format(id_))[(0)]  for id_ in species_ids]))
 
     groups.append(ionid_node)
 
@@ -718,7 +718,7 @@ class InputXml:
     pset_node = etree.Element('particleset',{'name':'e','random':"yes", 'randomsrc':'ion0'})
 
     # size = number of electron up and down
-    elec_alpha_beta = h5_handle.get('electrons/number_of_electrons').value
+    elec_alpha_beta = h5_handle.get('electrons/number_of_electrons')[()]
     l_name = ("u","d")
     for name, electron in zip(l_name,elec_alpha_beta):
       groupe_node = etree.Element('group',{'name':"{}".format(name),'size':"{}".format(electron)})
@@ -741,7 +741,7 @@ class InputXml:
     determinantset_node.append(basisset_node)
 
     atom_grp = h5_handle.get('electrons')
-    alpha, beta = atom_grp.get('number_of_electrons').value
+    alpha, beta = atom_grp.get('number_of_electrons')[()]
 
     # Slaterdet,imamt
     slaterdet_node = etree.fromstring('''
@@ -774,8 +774,8 @@ class InputXml:
 
     # Species_id
     atom_grp = h5_handle.get('atoms')
-    species_ids = atom_grp.get('species_ids').value
-    list_atom = sorted(set(atom_grp.get('species_{}/name'.format(id_)).value[0].decode()  for id_ in species_ids))
+    species_ids = atom_grp.get('species_ids')[()]
+    list_atom = sorted(set(atom_grp.get('species_{}/name'.format(id_))[(0)].decode()  for id_ in species_ids))
 
     jastrow_node =   etree.Element('jastrow', {'name':"J1", 'type':"One-Body", "function":"Bspline", "print":"yes", "source":"ion0"})
 
@@ -791,8 +791,8 @@ class InputXml:
   def hamiltonian(self,h5_handle, cell):
 
     atom_grp = h5_handle.get('atoms')
-    species_ids = atom_grp.get('species_ids').value
-    list_atom = sorted(set(atom_grp.get('species_{}/name'.format(id_)).value[0].decode()  for id_ in species_ids))
+    species_ids = atom_grp.get('species_ids')[()]
+    list_atom = sorted(set(atom_grp.get('species_{}/name'.format(id_))[(0)].decode()  for id_ in species_ids))
 
     if cell.has_ecp():
       hamiltonian_node = etree.fromstring('''

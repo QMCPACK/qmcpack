@@ -179,7 +179,7 @@ void timeExchangeKernel(std::ostream& out, Allocator& alloc, Buff& buffer, int n
 template<class Allocator, class Buff>
 void timeBatchedGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch, int m)
 {
-  using T = typename Allocator::value_type;
+  using T    = typename Allocator::value_type;
   int offset = 0;
   Tensor2D_ref<T> a(buffer.origin(), {m, m});
   offset += a.num_elements();
@@ -202,14 +202,13 @@ void timeBatchedGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int nbat
   Timer timer;
   gemmBatched('N', 'N', m, m, m, alpha, A_array.data(), m, B_array.data(), m, beta, C_array.data(), m, nbatch);
   double tgemm = timer.elapsed();
-  out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m << " " << std::scientific << tgemm
-      << "\n";
+  out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m << " " << std::scientific << tgemm << "\n";
 }
 
 template<class Allocator, class Buff>
 void timeGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int m, int n)
 {
-  using T = typename Allocator::value_type;
+  using T    = typename Allocator::value_type;
   int offset = 0;
   Tensor2D_ref<T> a(buffer.origin(), {m, m});
   offset += a.num_elements();
@@ -220,14 +219,13 @@ void timeGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int m, int n)
   Timer timer;
   product(a, b, c);
   double tproduct = timer.elapsed();
-  out << "  " << std::setw(6) << m << " " << std::setw(5) << n << " " << std::scientific << tproduct
-      << "\n";
+  out << "  " << std::setw(6) << m << " " << std::setw(5) << n << " " << std::scientific << tproduct << "\n";
 }
 
 template<class Allocator, class Buff>
 void timeBatchedMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch, int m)
 {
-  using T = typename Allocator::value_type;
+  using T    = typename Allocator::value_type;
   int offset = 0;
   Tensor3D_ref<T> a(buffer.origin(), {nbatch, m, m});
   Tensor3D_ref<T> b(buffer.origin() + a.num_elements(), {nbatch, m, m});
@@ -251,14 +249,14 @@ void timeBatchedMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer,
   getriBatched(m, A_array.data(), m, ma::pointer_dispatch(IWORK.origin()), B_array.data(), m,
                ma::pointer_dispatch(IWORK.origin()) + nbatch * m, nbatch);
   double tgetri = timer.elapsed();
-  out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m << " " << std::scientific
-      << tgetrf << " " << tgetri << "\n";
+  out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m << " " << std::scientific << tgetrf << " " << tgetri
+      << "\n";
 }
 
 template<class Allocator, class Buff>
 void timeMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
 {
-  using T = typename Allocator::value_type;
+  using T    = typename Allocator::value_type;
   int offset = 0;
   Tensor2D_ref<T> a(buffer.origin(), {m, m});
   Tensor1D_ref<T> WORK(buffer.origin() + a.num_elements(), boost::multi::iextensions<1u>{m * m});
@@ -272,8 +270,7 @@ void timeMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
   timer.restart();
   getri(a, IWORK, WORK);
   double tgetri = timer.elapsed();
-  out << "  " << std::setw(6) << m << " " << std::scientific << tgetrf << " " << tgetri
-      << "\n";
+  out << "  " << std::setw(6) << m << " " << std::scientific << tgetrf << " " << tgetri << "\n";
 }
 
 int main(int argc, char* argv[])
@@ -285,6 +282,7 @@ int main(int argc, char* argv[])
   arch::INIT(node);
 #endif
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+/*
   {
     std::ofstream out;
     out.open("time_batched_zqr.dat");
@@ -305,6 +303,7 @@ int main(int argc, char* argv[])
       }
     }
   }
+*/
 #endif
   {
     std::ofstream out;
@@ -357,7 +356,7 @@ int main(int argc, char* argv[])
   {
     std::ofstream out;
     out.open("time_exchange_kernel.dat");
-    std::cout << " - exchange kernel (E[w] = sum_{abn} Twabn Twanb)" << std::endl;
+    std::cout << " - exchange kernel (E[w] = sum_{abn} Twabn Twabn)" << std::endl;
     out << "   nbatch nwalk  nocc nchol tExchangeKernel\n";
     Alloc<std::complex<double>> alloc{};
     int nwalk                = 5;

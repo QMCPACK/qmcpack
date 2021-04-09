@@ -36,6 +36,16 @@ HamiltonianPool::HamiltonianPool(ParticleSetPool& pset_pool,
   myName    = aname;
 }
 
+HamiltonianPool::~HamiltonianPool()
+{
+  PoolType::iterator it(myPool.begin());
+  while (it != myPool.end())
+  {
+    delete (*it).second;
+    ++it;
+  }
+}
+
 bool HamiltonianPool::put(xmlNodePtr cur)
 {
   ReportEngine PRE("HamiltonianPool", "put");

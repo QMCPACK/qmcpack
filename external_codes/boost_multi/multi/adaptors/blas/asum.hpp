@@ -1,7 +1,8 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $0 -o $0x `pkg-config --cflags --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
+$CXXX $CXXFLAGS $0 -o $0x `pkg-config --cflags --libs blas` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
+// TODO make it work with thrust complex
 
 #ifndef MULTI_ADAPTORS_BLAS_ASUM_HPP
 #define MULTI_ADAPTORS_BLAS_ASUM_HPP
@@ -38,7 +39,7 @@ auto asum(X1D const& x)
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi.BLAS asum"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
-#include<boost/test/floating_point_comparison.hpp>
+//#include<boost/test/tools/floating_point_comparison.hpp>
 
 #include "../../array.hpp"
 //#include "../../utility.hpp"
@@ -57,17 +58,16 @@ BOOST_AUTO_TEST_CASE(multi_blas_asum_double){
 	BOOST_REQUIRE(asum(A[1]) == std::accumulate(begin(A[1]), end(A[1]), 0., [](auto&& a, auto&& b){return a+std::abs(b);}));
 }
 
-using complex = std::complex<double>;
-constexpr complex I{0, 1};
-
 BOOST_AUTO_TEST_CASE(multi_blas_asum_complex){
 
+	using complex = std::complex<double>; complex const I{0, 1};
 	multi::array<complex, 2> const A = {
 		{ 1. + 1.*I,  2.,  3.,  4.},
 		{-5. + 3.*I,  6.,  -7.,  8.},
 		{ 9. - 2.*I, 10., 11., 12.}
 	};
 	BOOST_REQUIRE(asum(rotated(A)[0]) == 1.+1. + 5.+3. + 9.+2.);
+
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_asum_double_carray){

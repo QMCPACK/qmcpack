@@ -123,7 +123,7 @@ protected:
   {
     std::string type;
     ParameterSet m_param;
-    m_param.add(type, "filetype", "std::string");
+    m_param.add(type, "filetype");
     m_param.put(cur);
 
     app_log() << "\n****************************************************\n"
@@ -161,8 +161,7 @@ protected:
                         Hamiltonian& h,
                         RealType cutvn,
                         int targetNW);
-  HamiltonianOperations getHamOps(bool read,
-                                  hdf_archive& dump,
+  HamiltonianOperations getHamOps(const std::string& restart_file,
                                   WALKER_TYPES type,
                                   int NMO,
                                   int NAEA,

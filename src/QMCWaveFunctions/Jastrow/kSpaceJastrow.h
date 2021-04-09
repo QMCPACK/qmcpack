@@ -141,7 +141,7 @@ private:
   double Prefactor;
 
 public:
-  kSpaceJastrow(ParticleSet& ions,
+  kSpaceJastrow(const ParticleSet& ions,
                 ParticleSet& elecs,
                 SymmetryType oneBodySymm,
                 RealType oneBodyCutoff,
@@ -161,7 +161,7 @@ public:
   void resetParameters(const opt_variables_type& active);
   void reportStatus(std::ostream& os);
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   PsiValueType ratio(ParticleSet& P, int iat);
 
@@ -190,8 +190,6 @@ public:
   // crystal symmetry
   bool operator()(PosType G1, PosType G2);
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
-
-  WaveFunctionComponentPtr makeThrScope(PtclGrpIndexes& pgi) const;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,

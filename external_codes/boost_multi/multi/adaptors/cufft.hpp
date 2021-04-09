@@ -6,16 +6,16 @@ $CXX $0 -o $0x -lcudart -lcufft `pkg-config --libs fftw3` -lboost_unit_test_fram
 #ifndef MULTI_ADAPTORS_CUFFTW_HPP
 #define MULTI_ADAPTORS_CUFFTW_HPP
 
-#include "../../multi/utility.hpp"
-#include "../../multi/array.hpp"
-#include "../../multi/config/NODISCARD.hpp"
+#include "../adaptors/../utility.hpp"
+#include "../adaptors/../array.hpp"
+#include "../adaptors/../config/NODISCARD.hpp"
 
 #include "../adaptors/cuda.hpp"
 
 #include<numeric>
 
-#include<experimental/tuple>
-#include<experimental/array>
+#include<tuple> // std::apply
+#include<array>
 
 #include<vector>
 
@@ -30,6 +30,7 @@ namespace multi{
 namespace memory{
 namespace cuda{
 
+#if 0
 template<class T1, class T1const, class T2, class T2const>
 auto copy(
 	array_iterator<T1, 1, managed::ptr<T1const>> first, 
@@ -38,9 +39,17 @@ auto copy(
 ){
 	assert(first.stride() == last.stride());
 	auto s = cudaMemcpy2D(raw_pointer_cast(d_first.data()), d_first.stride()*sizeof(T2), raw_pointer_cast(first.data()), first.stride()*sizeof(T2), sizeof(T2), last - first, cudaMemcpyDefault);
-	assert( s == cudaSuccess );
+	switch(s){
+		case cudaSuccess: break;
+		case cudaErrorInvalidValue: assert(0);
+		case cudaErrorInvalidPitchValue: assert(0);
+		case cudaErrorInvalidDevicePointer: assert(0);
+		case cudaErrorInvalidMemcpyDirection: assert(0);
+		default: assert(0); // unknown error
+	}
 	return d_first + (last - first);
 }
+#endif
 
 }}}}
 
@@ -70,10 +79,16 @@ class plan{
 	cufftHandle h_;
 	plan() = default;
 	plan(plan const&) = delete;
-	plan(plan&& other) : h_{std::exchange(other.h_, {})}{} // needed in <=C++14 for return
+	plan(plan&& other) : 
+		idata_{std::exchange(other.idata_, nullptr)}, 
+		odata_{std::exchange(other.odata_, nullptr)}, 
+		direction_{std::exchange(other.direction_, 0)}, 
+		h_{std::exchange(other.h_, {})}
+	{} // needed in <=C++14 for return
 	void ExecZ2Z(complex_type const* idata, complex_type* odata, int direction) const{
 		++tl_execute_count;
-		assert(idata_ and odata_); assert(direction_!=0);
+	//	assert(idata_ and odata_); 
+	//	assert(direction_!=0);
 		cufftResult r = ::cufftExecZ2Z(h_, const_cast<complex_type*>(idata), odata, direction); 
 		switch(r){
 			case CUFFT_SUCCESS        : break;// "cuFFT successfully executed the FFT plan."
@@ -136,10 +151,10 @@ public:
 		assert( CUFFT_FORWARD == s or CUFFT_INVERSE == s or s == 0 );
 		assert( sizes(i) == sizes(o) );
 
-		using std::experimental::apply;// using std::experimental::make_array;
-		auto ion      = apply([](auto... t){return std::array< size_type, D>{static_cast< size_type>(t)...};}, sizes  (i));
-		auto istrides = apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(i));
-		auto ostrides = apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(o));
+//		using std::experimental::apply;// using std::experimental::make_array;
+		auto ion      = std::apply([](auto... t){return std::array< size_type, D>{static_cast< size_type>(t)...};}, sizes  (i));
+		auto istrides = std::apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(i));
+		auto ostrides = std::apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(o));
 
 		std::array<std::tuple<int, int, int>, I::dimensionality> ssn;
 		for(std::size_t i = 0; i != ssn.size(); ++i) ssn[i] = std::make_tuple(istrides[i], ostrides[i], ion[i]);
@@ -189,18 +204,25 @@ public:
 			default                   : throw std::runtime_error{"cufftPlanMany unknown error"};
 		}
 	}
+#ifndef __INTEL_COMPILER
 	template<class It1, class It2, dimensionality_type D = decltype(*It1{})::dimensionality>
 	static auto many(It1 first, It1 last, It2 d_first, int sign = 0, unsigned = 0)
 	->std::decay_t<decltype(const_cast<complex_type*>(reinterpret_cast<complex_type*>(raw_pointer_cast(base(d_first)))), std::declval<plan>())>
+#else
+	template<class It1, class It2, 
+		dimensionality_type D = decltype(*It1{})::dimensionality, 
+		typename TT = decltype(const_cast<complex_type*>(reinterpret_cast<complex_type*>(It2{}.base().raw_pointer_cast())))
+	>
+	static auto many(It1 first, It1 last, It2 d_first, int sign = 0, unsigned = 0)
+#endif
 	{
 		assert( CUFFT_FORWARD == sign or CUFFT_INVERSE == sign or sign == 0 );
-		using namespace std::experimental; //using std::apply;
 		assert(sizes(*first)==sizes(*d_first));
-		auto ion      = apply([](auto... t){return std::array< size_type, D>{static_cast< size_type>(t)...};}, sizes  (*  first));
+		auto ion      = std::apply([](auto... t){return std::array< size_type, D>{static_cast< size_type>(t)...};}, sizes  (*  first));
 
 		assert(strides(*first) == strides(*last));
-		auto istrides = apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(*  first));
-		auto ostrides = apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(*d_first));
+		auto istrides = std::apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(*  first));
+		auto ostrides = std::apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(*d_first));
 
 		std::array<std::tuple<int, int, int>, std::decay_t<decltype(*It1{})>::dimensionality> ssn;
 		for(std::size_t i = 0; i != ssn.size(); ++i) ssn[i] = std::make_tuple(istrides[i], ostrides[i], ion[i]);
@@ -226,8 +248,8 @@ public:
 
 		plan ret;
 		ret.direction_ = sign;
-		ret.idata_ =                           reinterpret_cast<complex_type const*>(raw_pointer_cast(base(  first))) ;
-		ret.odata_ = const_cast<complex_type*>(reinterpret_cast<complex_type*      >(raw_pointer_cast(base(d_first))));
+		ret.idata_ =                           reinterpret_cast<complex_type const*>(  first.base().raw_pointer_cast()) ;
+		ret.odata_ = const_cast<complex_type*>(reinterpret_cast<complex_type*      >(d_first.base().raw_pointer_cast()));
 
 		switch(::cufftPlanMany(
 			/*cufftHandle *plan*/ &ret.h_, 
@@ -281,10 +303,17 @@ R dft(In const& i, int s){
 	return ret;
 }
 
+#ifndef __INTEL_COMPILER
 template<typename It1, typename It2>
 auto many_dft(It1 first, It1 last, It2 d_first, sign s)
 ->decltype(plan::many(first, last, d_first, s)(), d_first + (last - first)){
 	return plan::many(first, last, d_first, s)(), d_first + (last - first);}
+#else
+template<typename It1, typename It2>
+auto many_dft(It1 first, It1 last, It2 d_first, sign s)
+->decltype(plan::many(first, last, d_first, s)(), d_first + (last - first)){
+	return plan::many(first, last, d_first, s)(), d_first + (last - first);}
+#endif
 
 template<typename In, class Out,  std::size_t D = In::dimensionality, std::enable_if_t<(D==1), int> = 0>
 Out&& dft(std::array<bool, D> which, In const& i, Out&& o, int s){
@@ -292,40 +321,53 @@ Out&& dft(std::array<bool, D> which, In const& i, Out&& o, int s){
 	else return std::forward<Out>(std::forward<Out>(o) = i);
 }
 
+template <class Array, std::size_t... Ns>
+constexpr auto array_tail_impl(Array const& t, std::index_sequence<Ns...>){
+	return std::array<typename Array::value_type, std::tuple_size<Array>{} - 1>{std::get<Ns + 1>(t)...};
+}
+
+template<class Array>
+constexpr auto array_tail(Array const& t)
+->decltype(array_tail_impl(t, std::make_index_sequence<std::tuple_size<Array>{} - 1>())){
+	return array_tail_impl(t, std::make_index_sequence<std::tuple_size<Array>{} - 1>());}
+
 template<typename In, class Out, std::size_t D = In::dimensionality, std::enable_if_t<(D>1), int> = 0> 
 auto dft(std::array<bool, D> which, In const& i, Out&& o, int s)
 ->decltype(many_dft(i.begin(), i.end(), o.begin(), s),std::forward<Out>(o))
 {
 	assert(extension(i) == extension(o));
-	std::array<bool, D-1> tail = reinterpret_cast<std::array<bool, D-1> const&>(which[1]);
 	auto ff = std::find(begin(which)+1, end(which), false);
 	if(which[0] == true){
 		if(ff==end(which)) cufft::dft(i, std::forward<Out>(o), s);
 		else{
 			auto n = ff - which.begin();
 			std::rotate(begin(which), ff, end(which));
-			dft(which, (i<<n), (o<<n), s);
+			dft(which, i<<n, o<<n, s);
 		}
 	}else if(which[0]==false){
-		if(D==1 or std::all_of(begin(which)+1, end(which), [](auto e){return e==false;})){
-			if(base(o) != base(i)) std::forward<Out>(o) = i;//.assign(i);//std::forward<Out>(o) = i;
+		if(D==1 or std::none_of(begin(which)+1, end(which), [](auto e){return e;})){
+			if(base(o) != base(i)) std::forward<Out>(o) = i;
 			else if(o.layout() != i.layout()) std::forward<Out>(o) = +i;
 		}
 		else if(ff==end(which)) many_dft(i.begin(), i.end(), o.begin(), s);
 		else{
-			if(which.size() > 1 and which[1] == false and i.is_flattable() and o.is_flattable()) cufft::dft(tail, i.flatted(), o.flatted(), s);
+			std::array<bool, D-1> tail = array_tail(which);
+			if(which[1] == false and i.is_flattable() and o.is_flattable()) cufft::dft(tail, i.flatted(), o.flatted(), s);
 			else{
 				auto d_min = 0; auto n_min = size(i);
-				for(auto d = 0; d != D; ++d){if((size(i<<d) < n_min) and (tail[d]==false)){n_min = size(i<<d); d_min = d;}}
-				if(d_min!=0){
+				for(auto d = 0; d != D - 1; ++d){
+					if((size(i<<d) < n_min) and (tail[d]==false)){
+						n_min = size(i<<d); 
+						d_min = d;
+					}
+				}
+				if( d_min!=0 ){
 					std::rotate(which.begin(), which.begin()+d_min, which.end());
 					dft(which, i<<d_min, o<<d_min, s);
-				}else{
-					std::clog<<"                 warning: needs loops! (loop size "<< (i<<d_min).size() <<")\n";
-					std::clog<<"                 internal case "; std::copy(which.begin(), which.end(), std::ostream_iterator<bool>{std::clog,", "}); std::clog<<"\n";
+				}else
+				{
 					if(base(i) == base(o) and i.layout() != o.layout()){
-						std::clog<<"                 and needs an internal copy!";
-						auto tmp = +i;
+						auto const tmp = +i;
 						for(auto idx : extension(i)) cufft::dft(tail, tmp[idx], o[idx], s);
 					}else for(auto idx : extension(i)) cufft::dft(tail, i[idx], o[idx], s);
 				}
@@ -384,79 +426,6 @@ auto dft_backward(A const& a)
 
 }}
 
-#include "../adaptors/cuda.hpp"
-
-namespace boost{
-namespace multi{
-namespace fft{
-	using cufft::many_dft;
-	using cufft::dft;
-	using cufft::dft_forward;
-	using cufft::dft_backward;
-
-	template<class Complex, dimensionality_type D, class... PAs, class... As, class Out>
-	auto dft(basic_array<Complex, D, memory::cuda::managed::ptr<PAs...>, As...> const& i, Out&& o, int s)
-	->decltype(cufft::dft(i, std::forward<Out>(o), s)){
-		return cufft::dft(i, std::forward<Out>(o), s);}
-
-	template<class Complex, dimensionality_type D, class... AAs, class Out>
-	auto dft(array<Complex, D, memory::cuda::managed::allocator<AAs...> > const& i, Out&& o, int s)
-	->decltype(cufft::dft(i, std::forward<Out>(o), s)){
-		return cufft::dft(i, std::forward<Out>(o), s);}
-
-	template<class Complex, dimensionality_type D, class... AAs> NODISCARD("when first argument is const")
-	auto dft(array<Complex, D, memory::cuda::managed::allocator<AAs...> > const& i, int s)
-	->decltype(cufft::dft(i, s)){
-		return cufft::dft(i, s);}
-
-	template<class Complex, dimensionality_type D, class... PAs, class... As, class Out>
-	auto dft(std::array<bool, D> which, basic_array<Complex, D, memory::cuda::managed::ptr<PAs...>, As...> const& i, Out&& o, int s)
-	->decltype(cufft::dft(which, i, std::forward<Out>(o), s)){
-		return cufft::dft(which, i, std::forward<Out>(o), s);}
-
-	template<class Complex, dimensionality_type D, class... AAs, class Out>
-	auto dft(std::array<bool, D> which, array<Complex, D, memory::cuda::managed::allocator<AAs...> > const& i, Out&& o, int s)
-	->decltype(cufft::dft(which, i, std::forward<Out>(o), s)){
-		return cufft::dft(which, i, std::forward<Out>(o), s);}
-
-	template<class Complex, dimensionality_type D, class... AAs> NODISCARD("when first argument is const")
-	auto dft(std::array<bool, D> which, array<Complex, D, memory::cuda::managed::allocator<AAs...> > const& i, int s)
-	->decltype(cufft::dft(which, i, s)){
-		return cufft::dft(which, i, s);}
-
-	template<class... Arr, class Complex, dimensionality_type D, class... PAs, class... As, class Out>
-	auto dft_forward(Arr... which, basic_array<Complex, D, memory::cuda::managed::ptr<PAs...>, As...> const& i, Out&& o)
-	->decltype(cufft::dft_forward(which..., i, std::forward<Out>(o))){
-		return cufft::dft_forward(which..., i, std::forward<Out>(o));}
-
-	template<class... Arr, class Complex, dimensionality_type D, class... AAs, class Out>
-	auto dft_forward(Arr... which, array<Complex, D, memory::cuda::managed::allocator<AAs...> > const& i, Out&& o)
-	->decltype(cufft::dft_forward(which..., i, std::forward<Out>(o))){
-		return cufft::dft_forward(which..., i, std::forward<Out>(o));}
-
-	template<class... Arr, class Complex, dimensionality_type D, class... AAs> NODISCARD("when first argument is const")
-	auto dft_forward(Arr... which, array<Complex, D, memory::cuda::managed::allocator<AAs...> > const& i)
-	->decltype(cufft::dft_forward(which..., i)){
-		return cufft::dft_forward(which..., i);}
-
-	template<class... Arr, class Complex, dimensionality_type D, class... PAs, class... As, class Out>
-	auto dft_backward(Arr... which, basic_array<Complex, D, memory::cuda::managed::ptr<PAs...>, As...> const& i, Out&& o)
-	->decltype(cufft::dft_backward(which..., i, std::forward<Out>(o))){
-		return cufft::dft_backward(which..., i, std::forward<Out>(o));}
-
-	template<class... Arr, class Complex, dimensionality_type D, class... AAs, class Out>
-	auto dft_backward(Arr... which, array<Complex, D, memory::cuda::managed::allocator<AAs...> > const& i, Out&& o)
-	->decltype(cufft::dft_backward(which..., i, std::forward<Out>(o))){
-		return cufft::dft_backward(which..., i, std::forward<Out>(o));}
-
-	template<class... Arr, class Complex, dimensionality_type D, class... AAs> NODISCARD("when first argument is const")
-	auto dft_backward(Arr... which, array<Complex, D, memory::cuda::managed::allocator<AAs...> > const& i)
-	->decltype(cufft::dft_backward(which..., i)){
-		return cufft::dft_backward(which..., i);}
-
-}
-
-}}
 
 #if not __INCLUDE_LEVEL__ // TEST BELOW
 
@@ -469,6 +438,8 @@ namespace fft{
 #include "../adaptors/cuda.hpp"
 #include "../adaptors/fftw.hpp"
 #include "../adaptors/cufft.hpp"
+
+//#include "../adaptors/fft.hpp"
 
 #include<complex>
 #include<thrust/complex.h>
@@ -519,20 +490,20 @@ BOOST_AUTO_TEST_CASE(cufft_2D, *boost::unit_test::tolerance(0.0001)){
 
 	multi::cuda::array<complex, 2> const in_gpu = in_cpu;
 	multi::cuda::array<complex, 2> fw_gpu(extensions(in_gpu));
-	multi::fft::dft(in_gpu, fw_gpu, multi::fft::forward);
+	multi::cufft::dft(in_gpu, fw_gpu, multi::cufft::forward);
 
 	BOOST_TEST( imag(static_cast<complex>(fw_gpu[3][2]) - fw_cpu[3][2]) == 0. );
 
-	auto fw2_gpu = multi::fft::dft(in_gpu, multi::fft::forward);
+	auto fw2_gpu = multi::cufft::dft(in_gpu, multi::cufft::forward);
 	BOOST_TEST( imag(static_cast<complex>(fw2_gpu[3][1]) - fw_cpu[3][1]) == 0. );
 
 	multi::cuda::managed::array<complex, 2> const in_mng = in_cpu;
 	multi::cuda::managed::array<complex, 2> fw_mng(extensions(in_gpu));
-	multi::fft::dft(in_mng, fw_mng, multi::fft::forward);
+	multi::cufft::dft(in_mng, fw_mng, multi::cufft::forward);
 
 	BOOST_TEST( imag(fw_mng[3][2] - fw_cpu[3][2]) == 0. );
 
-	auto fw2_mng = multi::fftw::dft(in_mng, multi::fft::forward);
+	auto fw2_mng = multi::fftw::dft(in_mng, multi::fftw::forward);
 	BOOST_TEST( imag(fw2_mng[3][1] - fw_cpu[3][1]) == 0. );
 
 }
@@ -565,59 +536,15 @@ BOOST_AUTO_TEST_CASE(cufft_3D_timing, *boost::unit_test::tolerance(0.0001)){
 		multi::cuda::managed::array<complex, 3> fw_gpu(extensions(in_gpu), 99.);
 		{
 		//	boost::timer::auto_cpu_timer t; //  0.208237s wall, 0.200000s user + 0.010000s system = 0.210000s CPU (100.8%)
-			multi::fft::dft(in_gpu, fw_gpu, multi::fft::forward);
+			multi::cufft::dft(in_gpu, fw_gpu, multi::cufft::forward);
 		//	BOOST_TEST( fw_gpu[8][9][10].operator complex() != 99. );
 		}
 		{
 		//	boost::timer::auto_cpu_timer t; //  0.208237s wall, 0.200000s user + 0.010000s system = 0.210000s CPU (100.8%)
-			multi::fft::dft(in_gpu, fw_gpu, multi::fft::forward);
+			multi::cufft::dft(in_gpu, fw_gpu, multi::cufft::forward);
 		//	BOOST_TEST( fw_gpu[8][9][10].operator complex() != 99. );
 		}
 	}
-}
-
-BOOST_AUTO_TEST_CASE(cufft_many_3D, *utf::tolerance(0.00001) ){
-
-	auto const in_cpu = []{
-		multi::array<complex, 4> ret({45, 18, 32, 16});
-		std::generate(
-			ret.data_elements(), ret.data_elements() + ret.num_elements(), 
-			[](){return complex{std::rand()*1./RAND_MAX, std::rand()*1./RAND_MAX};}
-		);
-		return ret;
-	}();
-
-	multi::cuda::array<complex, 4> const in = in_cpu;
-	multi::cuda::array<complex, 4>       out(extensions(in));
-
-	multi::fft::many_dft(begin(unrotated(in)), end(unrotated(in)), begin(unrotated(out)), +1);
-
-	multi::array<complex, 4> out_cpu(extensions(in));
-	multi::fft::many_dft(begin(unrotated(in_cpu)), end(unrotated(in_cpu)), begin(unrotated(out_cpu)), +1);
-
-	BOOST_TEST( imag( static_cast<complex>(out[5][4][3][2]) - out_cpu[5][4][3][2]) == 0. );
-
-}
-
-BOOST_AUTO_TEST_CASE(cufft_4D, *utf::tolerance(0.00001)){
-	auto const in = []{
-		multi::array<complex, 3> ret({10, 10, 10});
-		std::generate(ret.data_elements(), ret.data_elements() + ret.num_elements(), 
-			[](){return complex{std::rand()*1./RAND_MAX, std::rand()*1./RAND_MAX};}
-		);
-		return ret;
-	}();
-
-	multi::array<complex, 3> out(extensions(in));
-//	multi::fftw::dft({true, false, true}, in, out, multi::fftw::forward);
-	multi::fft::many_dft(begin(in<<1), end(in<<1), begin(out<<1), multi::fftw::forward);
-
-	multi::cuda::array<complex, 3> in_gpu = in;
-	multi::cuda::array<complex, 3> out_gpu(extensions(in));
-
-//	multi::cufft::dft({true, false, true}, in_gpu, out_gpu, multi::fft::forward);//multi::cufft::forward);	
-	multi::cufft::many_dft(begin(in_gpu<<1), end(in_gpu<<1), begin(out_gpu<<1), multi::fftw::forward);
-	BOOST_TEST( imag( static_cast<complex>(out_gpu[5][4][3]) - out[5][4][3]) == 0. );	
 }
 
 BOOST_AUTO_TEST_CASE(cufft_combinations, *utf::tolerance(0.00001)){
@@ -647,7 +574,7 @@ BOOST_AUTO_TEST_CASE(cufft_combinations, *utf::tolerance(0.00001)){
 		multi::array<complex, 4> out = in;
 		multi::array<complex, 4> in_rw = in;
 		[&, _ = watch{"cpu_opl "}]{
-			multi::fft::dft_forward(c, in, out);
+			multi::fftw::dft_forward(c, in, out);
 		}();
 		[&, _ = watch{"cpu_ipl "}]{
 			multi::fftw::dft(c, in_rw, multi::fftw::forward);
@@ -656,7 +583,7 @@ BOOST_AUTO_TEST_CASE(cufft_combinations, *utf::tolerance(0.00001)){
 		{
 			multi::array<complex, 4> in_rw2 = in;
 			[&, _ = watch{"cpu_mov "}]{
-				multi::array<complex, 4> const out_mov = multi::fft::dft_forward(c, std::move(in_rw2));
+				multi::array<complex, 4> const out_mov = multi::fftw::dft_forward(c, std::move(in_rw2));
 			//	what(out_mov);
 				BOOST_TEST( abs( static_cast<multi::complex<double>>(out_mov[5][4][3][1]) - multi::complex<double>(out[5][4][3][1]) ) == 0. );			
 				BOOST_REQUIRE( is_empty(in_rw2) );
@@ -666,25 +593,25 @@ BOOST_AUTO_TEST_CASE(cufft_combinations, *utf::tolerance(0.00001)){
 
 
 		[&, _ = watch{"cpu_new "}]{
-			auto const out_cpy = multi::fft::dft_forward(c, in);
+			auto const out_cpy = multi::fftw::dft_forward(c, in);
 			BOOST_TEST( abs( static_cast<multi::complex<double>>(out_cpy[5][4][3][1]) - multi::complex<double>(out[5][4][3][1]) ) == 0. );
 		}();
 		multi::cuda::array<complex, 4> out_gpu(extensions(in_gpu));
 		[&, _ = watch{"gpu_opl "}]{
-			multi::fft::dft(c, in_gpu   , out_gpu, multi::fft::forward);
+			multi::cufft::dft(c, in_gpu   , out_gpu, multi::cufft::forward);
 			BOOST_TEST( abs( static_cast<complex>(out_gpu[5][4][3][1]) - out[5][4][3][1] ) == 0. );
 		}();
 		{
 			multi::cuda::array<complex, 4> in_rw_gpu = in_gpu;
 			[&, _ = watch{"gpu_ipl "}]{
-				multi::fft::dft(c, in_rw_gpu, multi::fft::forward);
+				multi::cufft::dft(c, in_rw_gpu, multi::cufft::forward);
 				BOOST_TEST( abs( static_cast<complex>(in_rw_gpu[5][4][3][1]) - out[5][4][3][1] ) == 0. );
 			}();
 		}
 		{
 			multi::cuda::array<complex, 4> in_rw_gpu = in_gpu;
 			[&, _ = watch{"gpu_mov "}]{
-				multi::cuda::array<complex, 4> const out_mov = multi::fft::dft_forward(c, std::move(in_rw_gpu));
+				multi::cuda::array<complex, 4> const out_mov = multi::cufft::dft_forward(c, std::move(in_rw_gpu));
 			//	BOOST_REQUIRE( in_rw_gpu.empty() );
 			//	BOOST_TEST( abs( static_cast<complex>(out_mov[5][4][3][1]) - out[5][4][3][1] ) == 0. );
 			}();
@@ -693,45 +620,81 @@ BOOST_AUTO_TEST_CASE(cufft_combinations, *utf::tolerance(0.00001)){
 			multi::cuda::array<complex, 4> in_rw_gpu = in_gpu;
 			[&, _ = watch{"gpu_mov "}]{
 				multi::cuda::array<complex, 4> out_mov = std::move(in_rw_gpu);
-				multi::fft::dft(c, out_mov, multi::fft::forward);
+				multi::cufft::dft(c, out_mov, multi::cufft::forward);
 			//	BOOST_REQUIRE( in_rw_gpu.empty() );
 			//	BOOST_TEST( abs( static_cast<complex>(out_mov[5][4][3][1]) - out[5][4][3][1] ) == 0. );
 			}();
 		}
 		cudaDeviceSynchronize();
 		[&, _ = watch{"gpu_new "}]{
-			multi::cuda::array<complex, 4> const out_cpy = multi::fft::dft(c, in_gpu, multi::fft::forward);
+			multi::cuda::array<complex, 4> const out_cpy = multi::cufft::dft(c, in_gpu, multi::cufft::forward);
 		}();
 		multi::cuda::managed::array<complex, 4> out_mng(extensions(in_mng));
 		[&, _ = watch{"mng_cld "}]{
-			multi::fft::dft(c, in_mng, out_mng, multi::fft::forward);
+			multi::cufft::dft(c, in_mng, out_mng, multi::cufft::forward);
 			BOOST_TEST( abs( out_mng[5][4][3][1] - out[5][4][3][1] ) == 0. );
 		}();
 		[&, _ = watch{"mng_hot "}]{
-			multi::fft::dft(c, in_mng   , out_mng, multi::fft::forward);
+			multi::cufft::dft(c, in_mng   , out_mng, multi::cufft::forward);
 			BOOST_TEST( abs( out_mng[5][4][3][1] - out[5][4][3][1] ) == 0. );
 		}();
 		[&, _ = watch{"mng_new "}]{
-			auto const out_mng = multi::fft::dft(c, in_mng, multi::fft::forward);
+			auto const out_mng = multi::cufft::dft(c, in_mng, multi::cufft::forward);
 			BOOST_TEST( abs( out_mng[5][4][3][1] - out[5][4][3][1] ) == 0. );
 		}();
 	}
 	std::clog<<std::endl;
-#if 0
-
-	#if 1
-	#endif
-
-		{
-			boost::timer::auto_cpu_timer t{"mng_hot %ws wall, CPU (%p%)\n"};
-			multi::fft::dft(c, in_mng   , out_mng   , multi::fft::forward);
-		}
-	//	BOOST_TEST( imag( out_mng[5][4][3][1] - out[5][4][3][1]) == 0. );
-
-	}
-#endif
 
 }
+
+BOOST_AUTO_TEST_CASE(cufft_many_3D, *utf::tolerance(0.00001) ){
+
+	auto const in_cpu = []{
+		multi::array<complex, 4> ret({45, 18, 32, 16});
+		std::generate(
+			ret.data_elements(), ret.data_elements() + ret.num_elements(), 
+			[](){return complex{std::rand()*1./RAND_MAX, std::rand()*1./RAND_MAX};}
+		);
+		return ret;
+	}();
+
+	multi::cuda::array<complex, 4> const in = in_cpu;
+	multi::cuda::array<complex, 4>       out(extensions(in));
+
+#if 0
+	multi::cufft::many_dft(begin(unrotated(in)), end(unrotated(in)), begin(unrotated(out)), +1);
+
+	multi::array<complex, 4> out_cpu(extensions(in));
+	multi::fft::many_dft(begin(unrotated(in_cpu)), end(unrotated(in_cpu)), begin(unrotated(out_cpu)), +1);
+
+	BOOST_TEST( imag( static_cast<complex>(out[5][4][3][2]) - out_cpu[5][4][3][2]) == 0. );
+#endif
+}
+
+#if 0
+
+BOOST_AUTO_TEST_CASE(cufft_4D, *utf::tolerance(0.00001)){
+	auto const in = []{
+		multi::array<complex, 3> ret({10, 10, 10});
+		std::generate(ret.data_elements(), ret.data_elements() + ret.num_elements(), 
+			[](){return complex{std::rand()*1./RAND_MAX, std::rand()*1./RAND_MAX};}
+		);
+		return ret;
+	}();
+
+	multi::array<complex, 3> out(extensions(in));
+//	multi::fftw::dft({true, false, true}, in, out, multi::fftw::forward);
+	multi::fft::many_dft(begin(in<<1), end(in<<1), begin(out<<1), multi::fftw::forward);
+
+	multi::cuda::array<complex, 3> in_gpu = in;
+	multi::cuda::array<complex, 3> out_gpu(extensions(in));
+
+//	multi::cufft::dft({true, false, true}, in_gpu, out_gpu, multi::fft::forward);//multi::cufft::forward);	
+	multi::cufft::many_dft(begin(in_gpu<<1), end(in_gpu<<1), begin(out_gpu<<1), multi::fftw::forward);
+	BOOST_TEST( imag( static_cast<complex>(out_gpu[5][4][3]) - out[5][4][3]) == 0. );	
+}
+
+
 
 //BOOST_AUTO_TEST_CASE(cu
 
@@ -767,6 +730,7 @@ BOOST_AUTO_TEST_CASE(cufft_4D){
 #endif
 
 }
+#endif
 #endif
 #endif
 

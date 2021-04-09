@@ -99,39 +99,39 @@ RadialWF::OriginBC(double r0, double &u0, double &du0)
 }
 
 
-void
-RadialWF::IntegrateOut()
-{
-  Grid &grid = *u.grid;
-  Array<Vec2,1> Temp(grid.NumPoints);
-  // Set up initial conditions:
-  double r0 = grid(0); 
-  OriginBC(r0, Temp(0)[0], Temp(0)[1]);
+//void
+//RadialWF::IntegrateOut()
+//{
+//  Grid &grid = *u.grid;
+//  Array<Vec2,1> Temp(grid.NumPoints);
+//  // Set up initial conditions:
+//  double r0 = grid(0); 
+//  OriginBC(r0, Temp(0)[0], Temp(0)[1]);
 
-  // Now do integration
-  if (pot->IsPH()) {
-    PHDerivs derivs(*this);
-    RungeKutta<PHDerivs,Vec2> integrator(derivs);
-    integrator.Integrate(grid, 0, grid.NumPoints-1, Temp);
-  }
-  else if (pot->NeedsRel()) {
-    NonPHDerivs derivs(*this);
-    RungeKutta<NonPHDerivs,Vec2> integrator(derivs);
-    integrator.Integrate(grid, 0, grid.NumPoints-1, Temp);    
-  }
-  else {
-    RegularDerivs derivs(*this);
-    RungeKutta<RegularDerivs,Vec2> integrator(derivs);
-    integrator.Integrate(grid, 0, grid.NumPoints-1, Temp);    
-  }
+//  // Now do integration
+//  if (pot->IsPH()) {
+//    PHDerivs derivs(*this);
+//    RungeKutta<PHDerivs,Vec2> integrator(derivs);
+//    integrator.Integrate(grid, 0, grid.NumPoints-1, Temp);
+//  }
+//  else if (pot->NeedsRel()) {
+//    NonPHDerivs derivs(*this);
+//    RungeKutta<NonPHDerivs,Vec2> integrator(derivs);
+//    integrator.Integrate(grid, 0, grid.NumPoints-1, Temp);    
+//  }
+//  else {
+//    RegularDerivs derivs(*this);
+//    RungeKutta<RegularDerivs,Vec2> integrator(derivs);
+//    integrator.Integrate(grid, 0, grid.NumPoints-1, Temp);    
+//  }
 
-  // Copy results of integration into RadialWF
-  for (int i=0; i < grid.NumPoints; i++) {
-    u(i) = Temp(i)[0];
-    dudr(i) = Temp(i)[1];
-  }
-  Normalize();
-}
+//  // Copy results of integration into RadialWF
+//  for (int i=0; i < grid.NumPoints; i++) {
+//    u(i) = Temp(i)[0];
+//    dudr(i) = Temp(i)[1];
+//  }
+//  Normalize();
+//}
 
 
 double 
@@ -325,13 +325,13 @@ RadialWF::Solve(double tolerance)
   Normalize();
   NumNodes = CountNodes();
   if (NumNodes != TotalNodes) {
-    cerr << "Node number error!  We have " << NumNodes 
+    std::cerr << "Node number error!  We have " << NumNodes 
 	 << " nodes and want " << TotalNodes << ".\n";
 //     IOSectionClass out;
 //     out.NewFile ("BadWF.h5");
 //     out.WriteVar ("u", u.Data());
 //     out.CloseFile();
-    cerr << "Energy = " << Energy << endl;
+    std::cerr << "Energy = " << Energy << std::endl;
   }
   //out.CloseFile();
 }
@@ -436,7 +436,7 @@ RadialWF::Read (IOSectionClass &in)
 {
   bool succ;
   if (u.grid == NULL) {
-    cerr << "Grid not set prior to calling RadialWF::Read.\n";
+    std::cerr << "Grid not set prior to calling RadialWF::Read.\n";
     exit(1);
   }
   in.ReadVar ("u", u.Data());

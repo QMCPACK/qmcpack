@@ -26,6 +26,8 @@
 
 namespace qmcplusplus
 {
+class ResourceCollection;
+
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
  *
@@ -46,9 +48,8 @@ public:
 protected:
   const ParticleSet* Origin;
 
-  int N_sources;
-  int N_targets;
-  int N_walkers;
+  const int N_sources;
+  const int N_targets;
 
   /**defgroup SoA data */
   /*@{*/
@@ -82,13 +83,23 @@ protected:
    */
   bool need_full_table_;
 
+  /** set to particle id after move() with prepare_old = true. -1 means not prepared.
+   * It is intended only for safety checks, not for codepath selection.
+   */
+  int old_prepared_elec_id;
+
   ///name of the table
-  std::string Name;
+  const std::string name_;
 
 public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), need_full_table_(false)
+      : Origin(&source),
+        N_sources(source.getTotalNum()),
+        N_targets(target.getTotalNum()),
+        need_full_table_(false),
+        old_prepared_elec_id(-1),
+        name_(source.getName() + "_" + target.getName())
   {}
 
   ///virutal destructor
@@ -101,10 +112,7 @@ public:
   inline void setFullTableNeeds(bool is_needed) { need_full_table_ = is_needed; }
 
   ///return the name of table
-  inline const std::string& getName() const { return Name; }
-
-  ///set the name of table
-  inline void setName(const std::string& tname) { Name = tname; }
+  inline const std::string& getName() const { return name_; }
 
   ///returns the reference the origin particleset
   const ParticleSet& origin() const { return *Origin; }
@@ -162,11 +170,27 @@ public:
    * @param P the target particle set
    */
   virtual void evaluate(ParticleSet& P) = 0;
-  virtual void mw_evaluate(const RefVector<DistanceTableData>& dt_list, const RefVector<ParticleSet>& p_list)
+  virtual void mw_evaluate(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list) const
   {
 #pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
-      dt_list[iw].get().evaluate(p_list[iw]);
+      dt_list[iw].evaluate(p_list[iw]);
+  }
+
+  /** recompute multi walker internal data, recompute
+   * @param dt_list the distance table batch
+   * @param p_list the target particle set batch
+   * @param recompute if true, must recompute. Otherwise, implementation dependent.
+   */
+  virtual void mw_recompute(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            const std::vector<bool>& recompute) const
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      if (recompute[iw])
+        dt_list[iw].evaluate(p_list[iw]);
   }
 
   /** evaluate the temporary pair relations when a move is proposed
@@ -179,12 +203,33 @@ public:
    * Drivers/Hamiltonians know whether moves will be accepted or not and manage this flag when calling ParticleSet::makeMoveXXX functions.
    */
   virtual void move(const ParticleSet& P, const PosType& rnew, const IndexType iat = 0, bool prepare_old = true) = 0;
+  virtual void mw_move(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                       const RefVectorWithLeader<ParticleSet>& p_list,
+                       const std::vector<PosType>& rnew_list,
+                       const IndexType iat = 0,
+                       bool prepare_old    = true) const
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      dt_list[iw].move(p_list[iw], rnew_list[iw], iat, prepare_old);
+  }
 
-  /** update the distance table by the pair relations if a move is accepted
+  /** update the distance table by the pair relations from the temporal position.
+   *  Used when a move is accepted in regular mode
    * @param iat the particle with an accepted move
-   * @param partial_update If true, rows after iat will not be updated. If false, upon accept a move, the full table should be up-to-date
    */
-  virtual void update(IndexType jat, bool partial_update = false) = 0;
+  virtual void update(IndexType jat) = 0;
+
+  /** fill partially the distance table by the pair relations from the temporary or old particle position.
+   *  Used in forward mode when a move is reject
+   * @param iat the particle with an accepted move
+   * @param from_temp if true, copy from temp. if false, copy from old
+   */
+  virtual void updatePartial(IndexType jat, bool from_temp)
+  {
+    if (from_temp)
+      update(jat);
+  }
 
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id
@@ -226,21 +271,18 @@ public:
     //os << std::endl;
   }
 
-  /**resize the storage
-   *@param npairs number of pairs which is evaluated by a derived class
-   *@param nw number of copies
-   *
-   * The data for the pair distances, displacements
-   *and the distance inverses are stored in a linear storage.
-   * The logical view of these storages is (ipair,iwalker),
-   * where 0 <= ipair < M[N[SourceIndex]] and 0 <= iwalker < N[WalkerIndex]
-   * This scheme can handle both dense and sparse distance tables,
-   * and full or half of the pairs.
-   * Note that this function is protected and the derived classes are
-   * responsible to call this function for memory allocation and any
-   * change in the indices N.
-   */
-  void resize(int npairs, int nw) { N_walkers = nw; }
+  /// initialize a shared resource and hand it to a collection
+  virtual void createResource(ResourceCollection& collection) const {}
+
+  /// acquire a shared resource from a collection
+  virtual void acquireResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+  {}
+
+  /// return a shared resource to a collection
+  virtual void releaseResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+  {}
 };
 } // namespace qmcplusplus
 #endif

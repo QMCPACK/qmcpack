@@ -33,8 +33,10 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(2);
@@ -87,8 +89,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_1x1x1
   const char* particles = "<tmp> \
@@ -241,8 +243,10 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  auto ions_uptr = std::make_unique<ParticleSet>();
+  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
   ions_.create(4);
@@ -288,8 +292,8 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(&elec_);
-  ptcl.addParticleSet(&ions_);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  ptcl.addParticleSet(std::move(ions_uptr));
 
   //diamondC_2x1x1
   const char* particles = "<tmp> \
@@ -357,12 +361,12 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   // interchange positions
   elec_2.R[0] = elec_.R[1];
   elec_2.R[1] = elec_.R[0];
-  RefVector<ParticleSet> P_list;
-  P_list.push_back(elec_);
-  P_list.push_back(elec_2);
+  RefVectorWithLeader<ParticleSet> p_list(elec_);
+  p_list.push_back(elec_);
+  p_list.push_back(elec_2);
 
   std::unique_ptr<SPOSet> spo_2(spo->makeClone());
-  RefVector<SPOSet> spo_list;
+  RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
@@ -384,7 +388,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   d2psi_v_list.push_back(d2psi);
   d2psi_v_list.push_back(d2psi_2);
 
-  spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
+  spo->mw_evaluateVGL(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
@@ -427,7 +431,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   Communicate* c;
   c = OHMMS::Controller;
 
-  ParticleSet* elec = new ParticleSet;
+  auto elec = std::make_unique<ParticleSet>();
 
   elec->setName("elec");
   std::vector<int> agroup(2);
@@ -447,7 +451,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   elec->Lattice.R(2, 2) = 1.0;
 
   EinsplineSetBuilder::PtclPoolType ptcl_map;
-  ptcl_map["e"] = elec;
+  ptcl_map["e"] = elec.get();
 
   xmlNodePtr cur = NULL;
   EinsplineSetBuilder esb(*elec, ptcl_map, c, cur);

@@ -53,11 +53,12 @@ DMCUpdatePbyPWithRejectionFast::~DMCUpdatePbyPWithRejectionFast() {}
 
 void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
-  myTimers[DMC_buffer]->start();
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
-  W.loadWalker(thisWalker, true);
-  Psi.copyFromBuffer(W, w_buffer);
-  myTimers[DMC_buffer]->stop();
+  {
+    ScopedTimer local_timer(myTimers[DMC_buffer]);
+    W.loadWalker(thisWalker, true);
+    Psi.copyFromBuffer(W, w_buffer);
+  }
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR, RandomGen);
   int nAcceptTemp(0);
@@ -68,82 +69,91 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
   RealType gf_acc      = 1.0;
-  myTimers[DMC_movePbyP]->start();
-  for (int ig = 0; ig < W.groups(); ++ig) //loop over species
   {
-    RealType tauovermass = Tau * MassInvS[ig];
-    RealType oneover2tau = 0.5 / (tauovermass);
-    RealType sqrttau     = std::sqrt(tauovermass);
-    for (int iat = W.first(ig); iat < W.last(ig); ++iat)
+    ScopedTimer local_timer(myTimers[DMC_movePbyP]);
+    for (int ig = 0; ig < W.groups(); ++ig) //loop over species
     {
-      //get the displacement
-      GradType grad_iat = Psi.evalGrad(W, iat);
-      PosType dr;
-      DriftModifier->getDrift(tauovermass, grad_iat, dr);
-      dr += sqrttau * deltaR[iat];
-      bool is_valid = W.makeMoveAndCheck(iat, dr);
-      RealType rr = tauovermass * dot(deltaR[iat], deltaR[iat]);
-      rr_proposed += rr;
-      if (!is_valid || rr > m_r2max)
+      RealType tauovermass = Tau * MassInvS[ig];
+      RealType oneover2tau = 0.5 / (tauovermass);
+      RealType sqrttau     = std::sqrt(tauovermass);
+      Psi.prepareGroup(W, ig);
+      for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
-        ++nRejectTemp;
-        continue;
-      }
-      ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
-      //node is crossed reject the move
-      if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
-      {
-        ++nRejectTemp;
-        ++nNodeCrossing;
-        W.rejectMove(iat);
-        Psi.rejectMove(iat);
-      }
-      else
-      {
-        FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
-        //Use the force of the particle iat
+        //get the displacement
+        GradType grad_iat = Psi.evalGrad(W, iat);
+        PosType dr;
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
-        dr                     = W.R[iat] - W.activePos - dr;
-        FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
-        RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
-        if (RandomGen() < prob)
+        dr += sqrttau * deltaR[iat];
+        bool is_valid = W.makeMoveAndCheck(iat, dr);
+        RealType rr   = tauovermass * dot(deltaR[iat], deltaR[iat]);
+        rr_proposed += rr;
+        if (!is_valid || rr > m_r2max)
         {
-          ++nAcceptTemp;
-          Psi.acceptMove(W, iat, true);
-          W.acceptMove(iat, true);
-          rr_accepted += rr;
-          gf_acc *= prob; //accumulate the ratio
+          ++nRejectTemp;
+          W.accept_rejectMove(iat, false);
+          continue;
+        }
+        ValueType ratio = Psi.calcRatioGrad(W, iat, grad_iat);
+        //node is crossed reject the move
+        if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
+        {
+          ++nRejectTemp;
+          ++nNodeCrossing;
+          W.accept_rejectMove(iat, false);
+          Psi.rejectMove(iat);
         }
         else
         {
-          ++nRejectTemp;
-          W.rejectMove(iat);
-          Psi.rejectMove(iat);
+          FullPrecRealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
+          //Use the force of the particle iat
+          DriftModifier->getDrift(tauovermass, grad_iat, dr);
+          dr                     = W.R[iat] - W.activePos - dr;
+          FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
+          RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
+          bool is_accepted       = false;
+          if (RandomGen() < prob)
+          {
+            is_accepted = true;
+            ++nAcceptTemp;
+            Psi.acceptMove(W, iat, true);
+            rr_accepted += rr;
+            gf_acc *= prob; //accumulate the ratio
+          }
+          else
+          {
+            ++nRejectTemp;
+            Psi.rejectMove(iat);
+          }
+          W.accept_rejectMove(iat, is_accepted);
         }
       }
     }
+    Psi.completeUpdates();
+    W.donePbyP();
   }
-  Psi.completeUpdates();
-  W.donePbyP();
-  myTimers[DMC_movePbyP]->stop();
 
   if (nAcceptTemp > 0)
   {
     //need to overwrite the walker properties
-    myTimers[DMC_buffer]->start();
-    thisWalker.Age  = 0;
-    RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
-    W.saveWalker(thisWalker);
-    myTimers[DMC_buffer]->stop();
-    myTimers[DMC_hamiltonian]->start();
-    enew = H.evaluateWithToperator(W);
-    myTimers[DMC_hamiltonian]->stop();
+    RealType logpsi(0);
+    {
+      ScopedTimer local_timer(myTimers[DMC_buffer]);
+      thisWalker.Age = 0;
+      logpsi         = Psi.updateBuffer(W, w_buffer, recompute);
+      assert(checkLogAndGL(W, Psi));
+      W.saveWalker(thisWalker);
+    }
+    {
+      ScopedTimer local_timer(myTimers[DMC_hamiltonian]);
+      enew = H.evaluateWithToperator(W);
+    }
     thisWalker.resetProperty(logpsi, Psi.getPhase(), enew, rr_accepted, rr_proposed, 1.0);
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
-    myTimers[DMC_collectables]->start();
-    H.auxHevaluate(W, thisWalker);
-    H.saveProperty(thisWalker.getPropertyBase());
-    myTimers[DMC_collectables]->stop();
+    {
+      ScopedTimer local_timer(myTimers[DMC_collectables]);
+      H.auxHevaluate(W, thisWalker);
+      H.saveProperty(thisWalker.getPropertyBase());
+    }
   }
   else
   {
@@ -164,19 +174,20 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
 #endif
-  myTimers[DMC_tmoves]->start();
-  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
-  if (NonLocalMoveAcceptedTemp > 0)
   {
-    RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
-    // debugging lines
-    //W.update(true);
-    //RealType logpsi2 = Psi.evaluateLog(W);
-    //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
-    W.saveWalker(thisWalker);
-    NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
+    ScopedTimer local_timer(myTimers[DMC_tmoves]);
+    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+    if (NonLocalMoveAcceptedTemp > 0)
+    {
+      RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
+      // debugging lines
+      //W.update(true);
+      //RealType logpsi2 = Psi.evaluateLog(W);
+      //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
+      W.saveWalker(thisWalker);
+      NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
+    }
   }
-  myTimers[DMC_tmoves]->stop();
   nAccept += nAcceptTemp;
   nReject += nRejectTemp;
 

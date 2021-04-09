@@ -59,10 +59,7 @@ cudaMemcpyKind tocudaMemcpyKind(MEMCOPYKIND v)
   return cudaMemcpyDefault;
 }
 
-void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed)
-{
-  qmc_cuda::CUDA_INIT(node, iseed);
-}
+void INIT(boost::mpi3::shared_communicator& node, unsigned long long int iseed) { qmc_cuda::CUDA_INIT(node, iseed); }
 
 void memcopy(void* dst, const void* src, size_t count, MEMCOPYKIND kind, const std::string& message)
 {
@@ -104,10 +101,10 @@ void malloc(void** devPtr, size_t size, const std::string& message)
   cudaError_t status = cudaMalloc(devPtr, size);
   if (status != cudaSuccess)
   {
-    std::cerr << " Error allocating " << size * 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
+    std::cerr << " Error allocating " << size / 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
     if (message != "")
     {
-      std::cerr << " Error from: " << message  << std::endl;
+      std::cerr << " Error from: " << message << std::endl;
     }
     std::cerr << " Error when calling cudaMalloc: " << cudaGetErrorString(status) << std::endl;
     throw std::runtime_error("Error: cudaMalloc returned error code.");
@@ -121,7 +118,7 @@ void free(void* p, const std::string& message)
   {
     if (message != "")
     {
-      std::cerr << " Error from: " << message  << std::endl;
+      std::cerr << " Error from: " << message << std::endl;
     }
     std::cerr << " Error from calling cudaFree: " << cudaGetErrorString(status) << std::endl;
   }

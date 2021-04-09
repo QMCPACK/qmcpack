@@ -46,6 +46,7 @@ from vasp    import Vasp   , VaspInput   , VaspAnalyzer   , generate_vasp_input 
 from qmcpack import Qmcpack, QmcpackInput, QmcpackAnalyzer, generate_qmcpack_input, generate_qmcpack
 from quantum_package import QuantumPackage,QuantumPackageInput,QuantumPackageAnalyzer,generate_quantum_package_input,generate_quantum_package
 from pyscf_sim import Pyscf, PyscfInput, PyscfAnalyzer, generate_pyscf_input, generate_pyscf
+from rmg import Rmg, RmgInput, RmgAnalyzer, generate_rmg_input, generate_rmg
 
 from qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
 from qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc

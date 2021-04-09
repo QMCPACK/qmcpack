@@ -32,7 +32,7 @@ a correction string"
           (make-string (- (point) (line-beginning-position)) ? )
         "")))
 
-(setq qmcp-variable-declaration-re "\\( *\\)\\([<>,A-Za-z:_&\\*]+\\)\\( +\\)\\([A-Za-z_0-9]+\\)_.*;")
+(setq qmcp-variable-declaration-re "\\( *\\)\\([<>,A-Za-z:_&\\*]+ *[<>,A-Za-z:_&\\*]+\\)\\( +\\)\\([A-Za-z_0-9]+\\)_.*;")
 
 (defun qmcp-add-getters()
   "For each C++ variable declaration in REGION write getter.

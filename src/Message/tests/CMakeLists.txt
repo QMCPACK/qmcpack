@@ -19,7 +19,7 @@ SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 ADD_EXECUTABLE(${UTEST_EXE} test_communciate.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} PUBLIC message catch_main)
 
-ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 
 IF(HAVE_MPI)
   SET(UTEST_EXE test_${SRC_DIR}_mpi)
@@ -30,5 +30,5 @@ IF(HAVE_MPI)
   #Way too many depenedencies make for very slow test linking
   TARGET_LINK_LIBRARIES(${UTEST_EXE} PUBLIC message catch_main)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-  ADD_MPI_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}" 3)
+  ADD_UNIT_TEST(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ENDIF(HAVE_MPI)

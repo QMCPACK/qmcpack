@@ -66,7 +66,9 @@ public:
     MCPWalker w2(1);
     w2.R[0] = 0.5;
 
-    mcwc_->fakeWalkerList(&w1, &w2);
+    mcwc_->createWalkers(2);
+    (*mcwc_)[0]->R = w1.R;
+    (*mcwc_)[1]->R = w2.R;
 
     SimpleFixedNodeBranch sfnb(tau_, num_global_walkers_);
 

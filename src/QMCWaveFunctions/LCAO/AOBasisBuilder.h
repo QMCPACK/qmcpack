@@ -171,8 +171,6 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     hin.read(Normalized, "normalized");
     hin.read(Morder, "expandYlm");
     hin.read(basisName, "name");
-    hin.read(basisType, "type");
-    hin.read(addsignforM, "expM");
   }
 
   myComm->bcast(sph);

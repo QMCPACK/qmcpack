@@ -52,21 +52,21 @@ void AFQMCBasePropagator::parse(xmlNodePtr cur)
   std::string P1ev("no");
   double extfield_scale(1.0);
   ParameterSet m_param;
-  m_param.add(vbias_bound, "vbias_bound", "double");
-  m_param.add(constrain, "apply_constrain", "std::string");
-  m_param.add(impsam, "importance_sampling", "std::string");
-  m_param.add(hyb, "hybrid", "std::string");
-  m_param.add(external_field, "external_field", "std::string");
-  m_param.add(extfield_scale, "external_field_scale", "double");
-  m_param.add(P1ev, "printP1eigval", "std::string");
+  m_param.add(vbias_bound, "vbias_bound");
+  m_param.add(constrain, "apply_constrain");
+  m_param.add(impsam, "importance_sampling");
+  m_param.add(hyb, "hybrid");
+  m_param.add(external_field, "external_field");
+  m_param.add(extfield_scale, "external_field_scale");
+  m_param.add(P1ev, "printP1eigval");
   if (TG.TG_local().size() == 1)
-    m_param.add(nbatched_propagation, "nbatch", "int");
+    m_param.add(nbatched_propagation, "nbatch");
   if (TG.TG_local().size() == 1)
-    m_param.add(nbatched_qr, "nbatch_qr", "int");
-  m_param.add(freep, "free_projection", "std::string");
+    m_param.add(nbatched_qr, "nbatch_qr");
+  m_param.add(freep, "free_projection");
 
-  //m_param.add(sz_pin_field_file,"sz_pinning_field_file","std::string");
-  //m_param.add(sz_pin_field_mag,"sz_pinning_field","double");
+  //m_param.add(sz_pin_field_file,"sz_pinning_field_file");
+  //m_param.add(sz_pin_field_mag,"sz_pinning_field");
 
   m_param.put(cur);
 

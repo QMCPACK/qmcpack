@@ -61,8 +61,6 @@ public:
 
   SPOSetBuilder(const std::string& SPO_type_name_in, Communicate* comm);
   virtual ~SPOSetBuilder() {}
-  /// load from XML if there is a basisset
-  virtual void loadBasisSetFromXML(xmlNodePtr cur) {}
 
   /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
   void reserve_states(int nsets = 1);

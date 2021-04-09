@@ -23,15 +23,10 @@ L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFun
   NumIons      = ions.getTotalNum();
   myTableIndex = els.addTable(ions);
   size_t ns    = ions.getSpeciesSet().getTotalNum();
-  PPset.resize(ns, 0);
+  PPset.resize(ns);
   PP.resize(NumIons, nullptr);
   psi_ref = &psi;
 }
-
-
-///destructor
-L2Potential::~L2Potential() { delete_iter(PPset.begin(), PPset.end()); }
-
 
 void L2Potential::resetTargetParticleSet(ParticleSet& P)
 {
@@ -43,12 +38,12 @@ void L2Potential::resetTargetParticleSet(ParticleSet& P)
 }
 
 
-void L2Potential::add(int groupID, L2RadialPotential* ppot)
+void L2Potential::add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot)
 {
-  PPset[groupID] = ppot;
   for (int iat = 0; iat < PP.size(); iat++)
     if (IonConfig.GroupID[iat] == groupID)
-      PP[iat] = ppot;
+      PP[iat] = ppot.get();
+  PPset[groupID] = std::move(ppot);
 }
 
 
@@ -159,10 +154,7 @@ OperatorBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   L2Potential* myclone = new L2Potential(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)
     if (PPset[ig])
-    {
-      L2RadialPotential* ppot = PPset[ig]->makeClone();
-      myclone->add(ig, ppot);
-    }
+      myclone->add(ig, std::unique_ptr<L2RadialPotential>(PPset[ig]->makeClone()));
   return myclone;
 }
 

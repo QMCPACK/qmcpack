@@ -75,7 +75,8 @@ public:
                            ParticleSet& els,
                            TrialWaveFunction& psi,
                            bool usePBC,
-                           bool doForces = false);
+                           bool doForces   = false,
+                           bool enable_DLA = false);
 
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 

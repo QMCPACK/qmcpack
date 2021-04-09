@@ -30,12 +30,11 @@ namespace qmcplusplus
 {
 namespace afqmc
 {
-
 template<class T = ComplexType>
 class SlaterDetOperations_shared : public SlaterDetOperations_base<T, HostBufferManager>
 {
 public:
-  using Base         = SlaterDetOperations_base<T, HostBufferManager>; 
+  using Base         = SlaterDetOperations_base<T, HostBufferManager>;
   using communicator = boost::mpi3::shared_communicator;
   using shmTVector   = boost::multi::array<T, 1, shared_allocator<T>>;
 
@@ -51,13 +50,11 @@ public:
   using IVector = typename Base::IVector;
   using TVector = typename Base::TVector;
 
-  SlaterDetOperations_shared()
-      : SlaterDetOperations_base<T, HostBufferManager>(HostBufferManager{}), SM_TMats(nullptr)
+  SlaterDetOperations_shared() : SlaterDetOperations_base<T, HostBufferManager>(HostBufferManager{}), SM_TMats(nullptr)
   {}
 
   SlaterDetOperations_shared(int NMO, int NAEA)
-      : SlaterDetOperations_base<T, HostBufferManager>(NMO, NAEA, HostBufferManager{}),
-        SM_TMats(nullptr)
+      : SlaterDetOperations_base<T, HostBufferManager>(NMO, NAEA, HostBufferManager{}), SM_TMats(nullptr)
   {}
 
   ~SlaterDetOperations_shared() {}
@@ -131,7 +128,7 @@ public:
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NAEA, NAEA});
     boost::multi::array_ref<T, 2> TNN2(to_address(SM_TMats->origin()) + NAEA * NAEA, {NAEA, NAEA});
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
-    return SlaterDeterminantOperations::shm::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2, comm, herm);
+    return SlaterDeterminantOperations::shm::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), comm, herm);
   }
 
   template<typename integer, class MatA, class MatB, class MatC>
@@ -158,20 +155,25 @@ public:
   }
 
   template<class Mat, class MatP1, class MatV>
-  void Propagate(Mat&& A, const MatP1& P1, const MatV& V, communicator& comm, 
-                                int order = 6, char TA = 'N', bool noncollinear = false)
+  void Propagate(Mat&& A,
+                 const MatP1& P1,
+                 const MatV& V,
+                 communicator& comm,
+                 int order         = 6,
+                 char TA           = 'N',
+                 bool noncollinear = false)
   {
     int npol = noncollinear ? 2 : 1;
     int NMO  = A.size(0);
     int NAEA = A.size(1);
-    int M = NMO/npol;
-    assert(NMO%npol == 0);
+    int M    = NMO / npol;
+    assert(NMO % npol == 0);
     assert(P1.size(0) == NMO);
     assert(P1.size(1) == NMO);
     assert(V.size(0) == M);
     assert(V.size(1) == M);
-    set_shm_buffer(comm, NAEA * (NMO + 2*M) );
-    assert(SM_TMats->num_elements() >= NAEA * (NMO + 2*M) );
+    set_shm_buffer(comm, NAEA * (NMO + 2 * M));
+    assert(SM_TMats->num_elements() >= NAEA * (NMO + 2 * M));
     boost::multi::array_ref<T, 2> T0(to_address(SM_TMats->origin()), {NMO, NAEA});
     boost::multi::array_ref<T, 2> T1(to_address(T0.origin()) + T0.num_elements(), {M, NAEA});
     boost::multi::array_ref<T, 2> T2(to_address(T1.origin()) + T1.num_elements(), {M, NAEA});
@@ -187,8 +189,8 @@ public:
         ma::product(P1, std::forward<Mat>(A), T0);
     }
     comm.barrier();
-    for(int p=0; p<npol; ++p)
-      SlaterDeterminantOperations::shm::apply_expM(V, T0.sliced(p*M,(p+1)*M), T1, T2, comm, order, TA);
+    for (int p = 0; p < npol; ++p)
+      SlaterDeterminantOperations::shm::apply_expM(V, T0.sliced(p * M, (p + 1) * M), T1, T2, comm, order, TA);
     comm.barrier();
     if (comm.root())
     {
@@ -238,7 +240,12 @@ public:
   }
 
   template<class MatA, class MatP1, class MatV>
-  void BatchedPropagate(std::vector<MatA>& Ai, const MatP1& P1, const MatV& V, int order = 6, char TA = 'N', bool noncollinear=false)
+  void BatchedPropagate(std::vector<MatA>& Ai,
+                        const MatP1& P1,
+                        const MatV& V,
+                        int order         = 6,
+                        char TA           = 'N',
+                        bool noncollinear = false)
   {
     APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedPropagate \n");
   }

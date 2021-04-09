@@ -78,7 +78,6 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
-         <pairpot name="MPC" type="MPC" source="e" target="e" ecut="60.0" physical="false"/>         
          <estimator type="flux" name="Flux"/>
          <estimator type="spindensity" name="SpinDensity" report="yes">
            <parameter name="grid"> 10 10 10 </parameter>

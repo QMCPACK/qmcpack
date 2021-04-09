@@ -69,8 +69,8 @@ class full2rdm : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticVector      = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
-  using StaticMatrix      = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using StaticVector     = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
+  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -99,8 +99,8 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(rot_file, "rotation", "std::string");
-      m_param.add(path, "path", "std::string");
+      m_param.add(rot_file, "rotation");
+      m_param.add(path, "path");
       m_param.put(cur);
     }
 
@@ -316,15 +316,13 @@ private:
     size_t M4(M2 * M2);
     size_t N = size_t(dN) * M2;
     DeviceBufferManager buffer_manager;
-    StaticMatrix R({dN, NMO * NMO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix R({dN, NMO * NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref Q(R.origin(), {NMO * NMO, NMO});
     CVector_ref R1D(R.origin(), R.num_elements());
     CVector_ref Q1D(Q.origin(), Q.num_elements());
 
     // put this in shared memory!!!
-    StaticMatrix Gt({NMO, NMO}, 
-                buffer_manager.get_generator().template get_allocator<ComplexType>());
+    StaticMatrix Gt({NMO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref GtC(Gt.origin(), {NMO * NMO, 1});
 #if defined(ENABLE_CUDA) || defined(ENABLE_HIP)
     if (Grot.size() < R.num_elements())
@@ -416,7 +414,7 @@ private:
       set_buffer(N);
       CMatrix_ref R( Buff.origin(), {dN,NMO*NMO});
       CVector_ref R1D( Buff.origin(), {dN*NMO*NMO});
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA)
       if(Grot.size() < R.num_elements()) 
         Grot = stdCVector(iextensions<1u>(R.num_elements()));
 #endif
@@ -430,7 +428,7 @@ private:
         // use ger later
         ma::product( Gw.sliced(i0,iN), ma::T(Gw), R );
 
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA)
         using std::copy_n;
         copy_n(R.origin(),R.num_elements(),Grot.origin());
         ma::axpy( Xw[iw], Grot, DMWork[iw].sliced(i0*NMO*NMO,iN*NMO*NMO) );

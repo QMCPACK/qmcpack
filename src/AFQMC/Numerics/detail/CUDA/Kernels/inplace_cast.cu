@@ -32,17 +32,17 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
   thrust::complex<Q> Bi;
   if (sizeof(T) >= sizeof(Q))
   {
-// MAM: using shared memory should speed this up considerably
-//      not worring about this now, since it is not currently used in the code
-//      and the implementation is tricky!
-//    Size nel(SM_SIZE_KB/sizeof(thrust::complex<Q>)); 
-//    __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<Q>, 
-//                             SM_SIZE_KB*MAX_THREADS_PER_DIM/sizeof(thrust::complex<Q>)> cache;
-// copy and cast into the cache without need to sync, sync when the cache is full, 
-// then copy to B without sync.
-// Alternatively, instead of using shared memory here, you can use the device buffers
-// and get buffer space from there if available. Then just call copy_n_cast followed by memcpy
-// to and from the buffer, instead of using hand written kernels like this.
+    // MAM: using shared memory should speed this up considerably
+    //      not worring about this now, since it is not currently used in the code
+    //      and the implementation is tricky!
+    //    Size nel(SM_SIZE_KB/sizeof(thrust::complex<Q>));
+    //    __shared__ thrust::cuda_cub::core::uninitialized_array<thrust::complex<Q>,
+    //                             SM_SIZE_KB*MAX_THREADS_PER_DIM/sizeof(thrust::complex<Q>)> cache;
+    // copy and cast into the cache without need to sync, sync when the cache is full,
+    // then copy to B without sync.
+    // Alternatively, instead of using shared memory here, you can use the device buffers
+    // and get buffer space from there if available. Then just call copy_n_cast followed by memcpy
+    // to and from the buffer, instead of using hand written kernels like this.
     for (Size i = 0; i < n; i += nb, ni += nb)
     {
       if (ni < n)
@@ -71,15 +71,16 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
 
 void inplace_cast(unsigned long n, std::complex<float>* A, std::complex<double>* B)
 {
-  while(n > 4ul*32ul) {
-    unsigned long ni = n/2uL;  // number of elements to be copied in this iteration, ni <= n/2
+  while (n > 4ul * 32ul)
+  {
+    unsigned long ni = n / 2uL; // number of elements to be copied in this iteration, ni <= n/2
     // copy_n_cast last ni elements
-    copy_n_cast(A+(n-ni), int(ni), B+(n-ni));
+    copy_n_cast(A + (n - ni), int(ni), B + (n - ni));
     n -= ni;
-  } 
+  }
   kernel_inplace_cast<<<1, 32>>>(n, reinterpret_cast<thrust::complex<float>*>(A),
-                                    reinterpret_cast<thrust::complex<double>*>(B));
-  
+                                 reinterpret_cast<thrust::complex<double>*>(B));
+
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
@@ -94,14 +95,15 @@ void inplace_cast(unsigned long n, std::complex<double>* A, std::complex<float>*
 
 void inplace_cast(long n, std::complex<float>* A, std::complex<double>* B)
 {
-  while(n > long(4*32)) {
-    long ni = n/long(2);  // number of elements to be copied in this iteration, ni <= n/2
+  while (n > long(4 * 32))
+  {
+    long ni = n / long(2); // number of elements to be copied in this iteration, ni <= n/2
     // copy_n_cast last ni elements
-    copy_n_cast(A+(n-ni), int(ni), B+(n-ni));
+    copy_n_cast(A + (n - ni), int(ni), B + (n - ni));
     n -= ni;
   }
   kernel_inplace_cast<<<1, 32>>>(n, reinterpret_cast<thrust::complex<float>*>(A),
-                                    reinterpret_cast<thrust::complex<double>*>(B));
+                                 reinterpret_cast<thrust::complex<double>*>(B));
   qmc_cuda::cuda_check(cudaGetLastError());
   qmc_cuda::cuda_check(cudaDeviceSynchronize());
 }
