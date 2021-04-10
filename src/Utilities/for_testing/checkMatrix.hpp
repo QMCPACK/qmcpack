@@ -52,6 +52,11 @@ struct CheckMatrixResult
 };
 
 /** This function checks equality a_mat and b_mat elements
+ *  M1, M2 need to have their element type declared M1::value_type
+ *         and have an operator(i,j) accessor.
+ *  I leave the c++14 template meta programming to insure 
+ *  this as an exercise for the reader. Or just enjoy the compiler error.
+ *
  *  \param[in] a_mat     - reference matrix, if padded must be identical to b_mat,
  *                         can be a smaller than b_mat in which case it is compared to upper
  *                         left block of b_mat.

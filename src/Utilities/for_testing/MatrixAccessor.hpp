@@ -21,6 +21,10 @@ enum class MA_ori
   COLUMN
 };
 
+/** Read only access, for testing!
+ *
+ *  Makes checkMatrix dependency free
+ */
 template<typename T>
 class MatrixAccessor
 {
