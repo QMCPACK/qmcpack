@@ -21,19 +21,17 @@
 
 #define cudaErrorCheck(ans, cause)                \
   {                                               \
-    cudaAssert((ans), __FILE__, __LINE__, cause);	  \
+    cudaAssert((ans), cause, __FILE__, __LINE__); \
   }
 
-// The cause is largely redundant with the __FILE__ and __LINE__ information
-// and it makes CUDA heavy code tedious to write and read
+// If the cause is largely redundant with the __FILE__ and __LINE__ information
 #define cudaCheck(ans)                            \
   {                                               \
-    cudaAssert((ans), __FILE__, __LINE__); \
+    cudaAssert((ans), "", __FILE__, __LINE__);     \
   }                                               \
 
-
 /// prints CUDA error messages. Always use cudaErrorCheck macro.
-inline void cudaAssert(cudaError_t code, const std::string& cause, int line, const char* filename = "")
+inline void cudaAssert(cudaError_t code, const std::string& cause, const char* filename, int line, bool abort = true)
 {
   if (code != cudaSuccess)
   {
@@ -42,7 +40,8 @@ inline void cudaAssert(cudaError_t code, const std::string& cause, int line, con
         << ", line " << line << std::endl
         << cause << std::endl;
     std::cerr << err.str();
-    throw std::runtime_error(cause);
+    if (abort)
+      throw std::runtime_error(cause);
   }
 }
 
