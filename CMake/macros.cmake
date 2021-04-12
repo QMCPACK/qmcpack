@@ -22,15 +22,16 @@ FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
     EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
 ENDFUNCTION()
 
-#
-#Remove once CMake 3.14+ is required.
-FUNCTION( SYMLINK_LIST_OF_FILES FILE_ONLY_NAMES DST_DIR)
+# Create symlinks for a list of files.
+# This uses file(CREATE_LINK ...) when available.
+# Remove function once CMake 3.14 or later is required.
+FUNCTION( SYMLINK_LIST_OF_FILES FILENAMES DST_DIR)
     IF(${CMAKE_VERSION} VERSION_LESS "3.14")
-        FOREACH(F IN LISTS FILE_ONLY_NAMES)
+        FOREACH(F IN LISTS FILENAMES)
             EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
         ENDFOREACH()
     ELSE()
-        FOREACH(F IN LISTS FILE_ONLY_NAMES)
+        FOREACH(F IN LISTS FILENAMES)
              get_filename_component(NAME_ONLY ${F} NAME)
              file(CREATE_LINK ${F} "${DST_DIR}/${NAME_ONLY}" SYMBOLIC)
         ENDFOREACH()
