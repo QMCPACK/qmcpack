@@ -560,11 +560,9 @@ TEST_CASE("cuBLAS_LU::getrf_batched(batch=2)", "[wavefunction][CUDA]")
   auto checkArray = [](auto* A, auto* B, int n) {
     for (int i = 0; i < n; ++i)
     {
-      std::cout << A[i] << ":" << B[i] << ", ";
       CHECK(A[i] == Approx(B[i]));
     }
   };
-  std::cout << '\n';
 
   testing::MatrixAccessor<double> M_mat(M, 4, 4);
   testing::MatrixAccessor<double> lu_mat(lu.data(), 4, 4);
