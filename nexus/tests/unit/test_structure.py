@@ -1642,6 +1642,6 @@ if versions.spglib_available and versions.seekpath_available:
                  )
         #end for
 
-        assert(testing.check_object_eq(res,ref))
+        assert(testing.check_object_eq(res,ref,atol=1e-12))
     #end def test_rmg_transform
 #end if
