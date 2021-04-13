@@ -22,6 +22,23 @@ FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
     EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
 ENDFUNCTION()
 
+# Create symlinks for a list of files.
+# This uses file(CREATE_LINK ...) when available.
+# Remove function once CMake 3.14 or later is required.
+FUNCTION( SYMLINK_LIST_OF_FILES FILENAMES DST_DIR)
+    IF(${CMAKE_VERSION} VERSION_LESS "3.14")
+        FOREACH(F IN LISTS FILENAMES)
+            EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
+        ENDFOREACH()
+    ELSE()
+        FOREACH(F IN LISTS FILENAMES)
+            get_filename_component(NAME_ONLY ${F} NAME)
+            file(CREATE_LINK ${F} "${DST_DIR}/${NAME_ONLY}" SYMBOLIC)
+        ENDFOREACH()
+    ENDIF()
+ENDFUNCTION()
+
+
 # Function to copy a directory using symlinks for the files to save storage space.
 # Subdirectories are ignored.
 # SRC_DIR must be an absolute path
@@ -31,10 +48,7 @@ FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
     FILE(MAKE_DIRECTORY "${DST_DIR}")
     # Find all the files but not subdirectories
     FILE(GLOB FILE_ONLY_NAMES LIST_DIRECTORIES TRUE "${SRC_DIR}/*")
-    FOREACH(F IN LISTS FILE_ONLY_NAMES)
-      #MESSAGE("Creating symlink from  ${F} to directory ${DST_DIR}")
-      EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
-    ENDFOREACH()
+    SYMLINK_LIST_OF_FILES("${FILE_ONLY_NAMES}" "${DST_DIR}")
 ENDFUNCTION()
 
 # Copy selected files only. h5, pseudopotentials, wavefunction, structure and the used one input file are copied.
@@ -50,12 +64,9 @@ FUNCTION( COPY_DIRECTORY_USING_SYMLINK_LIMITED SRC_DIR DST_DIR ${ARGN})
         "${SRC_DIR}/*.wfnoj.xml" "${SRC_DIR}/*.wfj*.xml" "${SRC_DIR}/*.wfs*.xml"
         "${SRC_DIR}/*.wfn*.xml" "${SRC_DIR}/*.cuspInfo.xml" "${SRC_DIR}/*.H*.xml"
         "${SRC_DIR}/*.structure.xml" "${SRC_DIR}/*ptcl.xml")
-    FOREACH(F IN LISTS FILE_FOLDER_NAMES)
-      EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
-    ENDFOREACH()
-    FOREACH(F IN LISTS ARGN)
-      EXECUTE_PROCESS( COMMAND ln -sf "${SRC_DIR}/${F}" "." WORKING_DIRECTORY ${DST_DIR})
-    ENDFOREACH()
+    SYMLINK_LIST_OF_FILES("${FILE_FOLDER_NAMES}" "${DST_DIR}")
+    list(TRANSFORM ARGN PREPEND "${SRC_DIR}/")
+    SYMLINK_LIST_OF_FILES("${ARGN}" "${DST_DIR}")
 ENDFUNCTION()
 
 # Control copy vs. symlink with top-level variable
