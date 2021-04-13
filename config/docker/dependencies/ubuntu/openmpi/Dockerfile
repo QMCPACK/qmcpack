@@ -24,6 +24,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     libxml2-dev \
                     sudo \
                     curl \
+                    rsync \
                     -y
 
 # Python packages for tests
