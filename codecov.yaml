@@ -14,6 +14,8 @@ comment: off
 ignore:
   - "external_codes"
   - "tests"
+  - "src/*/tests"
+  - "src/*/*/tests"
 
 # Fixes report prefix paths from CI dynamic coverage action
 # from https://docs.codecov.io/docs/fixing-paths
