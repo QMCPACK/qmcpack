@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.12.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.14.0)
 
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
@@ -191,11 +191,6 @@ OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
-IF(USE_OBJECT_TARGET)
-   IF(${CMAKE_VERSION} VERSION_LESS "3.14.0")
-     MESSAGE(FATAL_ERROR "USE_OBJECT_TARGET=ON requires cmake 3.14.0 or above!")
-   ENDIF()
-ENDIF()
 IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
 ENDIF(ENABLE_CUDA AND QMC_CUDA)
