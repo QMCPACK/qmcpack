@@ -26,6 +26,8 @@ namespace qmcplusplus
 template<typename T>
 struct NLPPJob;
 
+struct NonLocalECPotentialMultiWalkerResource;
+
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
@@ -33,6 +35,7 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
+  ~NonLocalECPotential();
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
@@ -44,11 +47,13 @@ public:
 
   Return_t evaluate(ParticleSet& P) override;
   Return_t evaluateDeterministic(ParticleSet& P) override;
-  void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+                   const RefVectorWithLeader<ParticleSet>& P_list) const override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
 
-  void mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list) override;
+  void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+                                const RefVectorWithLeader<ParticleSet>& P_list) const override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
@@ -88,6 +93,18 @@ public:
     return true;
   }
 
+  /** initialize a shared resource and hand it to a collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from a collection
+   */
+  void acquireResource(ResourceCollection& collection) override;
+
+  /** return a shared resource to a collection
+   */
+  void releaseResource(ResourceCollection& collection) override;
+
   OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   void addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& pp);
@@ -116,6 +133,10 @@ protected:
   ParticleSet& IonConfig;
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
+  ///true if we should compute forces
+  bool ComputeForces;
+  ///true, determinant localization approximation(DLA) is enabled
+  bool use_DLA;
 
 private:
   ///number of ions
@@ -134,10 +155,6 @@ private:
   std::vector<bool> elecTMAffected;
   ///non local operator
   NonLocalTOperator nonLocalOps;
-  ///true if we should compute forces
-  bool ComputeForces;
-  ///true, determinant localization approximation(DLA) is enabled
-  bool use_DLA;
   ///Pulay force vector
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -147,6 +164,8 @@ private:
 #endif
   ///NLPP job list of ion-electron pairs by spin group
   std::vector<std::vector<NLPPJob<RealType>>> nlpp_jobs;
+  /// mult walker shared resource
+  std::unique_ptr<NonLocalECPotentialMultiWalkerResource> mw_res_;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
@@ -160,7 +179,9 @@ private:
    * @param P_list the list of ParticleSet in a walker batch
    * @param Tmove whether Txy for Tmove is updated
    */
-  void mw_evaluateImpl(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list, bool Tmove);
+  static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& O_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              bool Tmove);
 
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated

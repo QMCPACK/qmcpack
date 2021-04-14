@@ -15,8 +15,10 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_RULE_MESSAGES OFF)
 
 enable_testing()
+find_program(MEMORYCHECK_COMMAND valgrind)
+set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --error-exitcode=1")
 include(CTest)
 
 add_subdirectory(test)
-add_subdirectory(adaptors/blas/test)
+add_subdirectory(adaptors/blas)
 

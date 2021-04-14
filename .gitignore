@@ -9,3 +9,14 @@ qmcpack_manual.pdf
 .DS_Store
 /build_*/
 docs/_build
+nexus/tests/unit/*output
+tests/solids/NiO_a4_e48_pp/NiO-fcc-supertwist111-supershift000-S1.h5
+
+# Eclipse IDE
+.cproject
+.project
+.settings/
+.pydevproject
+
+# Visual Studio code settings
+.vscode/

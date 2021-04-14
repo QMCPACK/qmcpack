@@ -20,7 +20,7 @@
 #include <string>
 #include <list>
 #include <stack>
-#include "blitz/array.h"
+
 #include <fstream>
 
 #include "IOVar.h"
@@ -130,9 +130,9 @@ public:
   template<typename T, int LEN>
   bool WriteVar(std::string name, const TinyVector<T, LEN>& val);
   template<typename T, int RANK>
-  bool WriteVar(std::string name, const blitz::Array<T, RANK>& val);
+  bool WriteVar(std::string name, const Array<T, RANK>& val);
   template<typename T, int RANK, int LEN>
-  bool WriteVar(std::string name, const blitz::Array<TinyVector<T, LEN>, RANK>& val);
+  bool WriteVar(std::string name, const Array<TinyVector<T, LEN>, RANK>& val);
 
 
   /// Append a value to a variable of dimension of 1 higher than val.
@@ -146,6 +146,7 @@ public:
   {
     // Nothing for now
   }
+  virtual ~IOTreeClass(){}
 };
 
 void IOTreeClass::MarkModified()

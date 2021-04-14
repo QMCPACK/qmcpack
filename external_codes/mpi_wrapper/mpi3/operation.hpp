@@ -1,4 +1,4 @@
-#if COMPILATION_INSTRUCTIONS
+#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
 (echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -D_TEST_BOOST_MPI3_OPERATION $0x.cpp -o $0x.x && time mpirun -n 4 $0x.x $@ && rm -f $0x.cpp; exit
 #endif
 #ifndef BOOST_MPI3_OPERATION_HPP
@@ -90,8 +90,9 @@ template<> struct predefined_operation<CppoP>{ \
 }; \
 using NamE = predefined_operation<CppoP>
 
-BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(std::plus<>, MPI_SUM, sum);
-BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(std::multiplies<>, MPI_PROD, product);
+BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(std::plus<>       , MPI_SUM , sum        );
+BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(std::multiplies<> , MPI_PROD, product    );
+BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(std::logical_and<>, MPI_LAND, logical_and);
 
 BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(max<>, MPI_MAX, maximum);
 BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(min<>, MPI_MIN, minimum);

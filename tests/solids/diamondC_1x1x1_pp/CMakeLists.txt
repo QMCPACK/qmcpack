@@ -74,7 +74,7 @@ ENDIF()
                     qmc_short
                     qmc_short_opt.in.xml
                     1 16
-                    ${MP_SUCCESS}
+                    ${SUCCESS_STATUS_MP}
                     3 DIAMOND_OPT_SCALARS # VMC
                     )
 
@@ -360,7 +360,7 @@ if (add_estimator_tests)
   #   "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   #   qmc_spindens_vmcbatch_short${IFEXT}.in.xml
   #   ${NMPI} ${NOMP}
-  #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_vmcbatch_short.s000.stat_ref_spindensity.dat
+  #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
   #   )
 
   SIMPLE_RUN_AND_CHECK(
@@ -596,6 +596,31 @@ IF(NOT QMC_CUDA)
       4 4
       check_stats.py -s 1 -q 1rdm -e 0 -c 8 -p det_qmc_1rdm_short_vmc_dmc -r qmc-ref/det_qmc_1rdm_short_vmc_dmc.s001.stat_ref_1rdm_4_4${OFEXT}.dat
       )
+
+  # momemtum distribution test
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-vmc-estimator-momentum
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_momentum_short.in.xml
+      1 1
+      check_stats.py -s 0 -q momentum -e 0 -c 5 -p det_qmc_momentum_short -r qmc-ref/det_qmc_momentum_short.s000.stat_ref_momentum_1_1.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_momentum_short_vmc_dmc.in.xml
+      1 1
+      check_stats.py -s 1 -q momentum -e 0 -c 5 -p det_qmc_momentum_short_vmc_dmc -r qmc-ref/det_qmc_momentum_short_vmc_dmc.s001.stat_ref_momentum_1_1${OFEXT}.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_momentum_short_vmc_dmc.in.xml
+      4 4
+      check_stats.py -s 1 -q momentum -e 0 -c 5 -p det_qmc_momentum_short_vmc_dmc -r qmc-ref/det_qmc_momentum_short_vmc_dmc.s001.stat_ref_momentum_4_4${OFEXT}.dat
+      ) 
 
   endif()
 
@@ -1386,11 +1411,12 @@ ENDIF()
 
 
 IF (NOT QMC_CUDA)
-  LIST(APPEND DET_DIAMOND_PARAM uu_0  -2.098053491e-05  0.00001)
-  LIST(APPEND DET_DIAMOND_PARAM uu_1   0.002041215419   0.00001)
-  LIST(APPEND DET_DIAMOND_PARAM ud_0   4.808401303      0.00001)
-  LIST(APPEND DET_DIAMOND_PARAM ud_1 -22.6632382        0.00001)
-  LIST(APPEND DET_DIAMOND_PARAM eC_2   4.147872422      0.00001)
+  LIST(APPEND DET_DIAMOND_PARAM uu_0  -1.010849732e-05  0.00001)
+  LIST(APPEND DET_DIAMOND_PARAM uu_1   1.221957505      0.00010)
+  LIST(APPEND DET_DIAMOND_PARAM ud_0   1.094114467e-07  0.00001)
+  LIST(APPEND DET_DIAMOND_PARAM ud_1   0.0001130922027  0.00001)
+  LIST(APPEND DET_DIAMOND_PARAM eC_2   0.0              0.00001)
+  LIST(APPEND DET_DIAMOND_PARAM eC_3   8.196343356      0.00001)
 
   QMC_RUN_AND_CHECK_CUSTOM_SCALAR(BASE_NAME deterministic-diamondC_1x1x1_pp-param-grad
                                   BASE_DIR "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"

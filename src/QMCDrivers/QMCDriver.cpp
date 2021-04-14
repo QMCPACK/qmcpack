@@ -57,7 +57,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
       Psi(psi),
       H(h),
       wOut(0),
-      driver_scope_timer_(timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
+      driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
   ResetRandom  = false;
@@ -69,69 +69,68 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  RollBackBlocks = 0;
-  m_param.add(RollBackBlocks, "rewind", "int");
   Period4CheckPoint = -1;
   storeConfigs      = 0;
-  //m_param.add(storeConfigs,"storeConfigs","int");
-  m_param.add(storeConfigs, "storeconfigs", "int");
-  m_param.add(storeConfigs, "store_configs", "int");
+  //m_param.add(storeConfigs,"storeConfigs");
+  m_param.add(storeConfigs, "storeconfigs");
+  m_param.add(storeConfigs, "store_configs");
   Period4CheckProperties = 100;
-  m_param.add(Period4CheckProperties, "checkProperties", "int");
-  m_param.add(Period4CheckProperties, "checkproperties", "int");
-  m_param.add(Period4CheckProperties, "check_properties", "int");
+  m_param.add(Period4CheckProperties, "checkProperties");
+  m_param.add(Period4CheckProperties, "checkproperties");
+  m_param.add(Period4CheckProperties, "check_properties");
   Period4WalkerDump = 0;
-  //m_param.add(Period4WalkerDump,"recordWalkers","int");
-  m_param.add(Period4WalkerDump, "record_walkers", "int");
-  m_param.add(Period4WalkerDump, "recordwalkers", "int");
+  //m_param.add(Period4WalkerDump,"recordWalkers");
+  m_param.add(Period4WalkerDump, "record_walkers");
+  m_param.add(Period4WalkerDump, "recordwalkers");
   Period4ConfigDump = 0;
-  //m_param.add(Period4ConfigDump,"recordConfigs","int");
-  m_param.add(Period4ConfigDump, "recordconfigs", "int");
-  m_param.add(Period4ConfigDump, "record_configs", "int");
+  //m_param.add(Period4ConfigDump,"recordConfigs");
+  m_param.add(Period4ConfigDump, "recordconfigs");
+  m_param.add(Period4ConfigDump, "record_configs");
   CurrentStep = 0;
-  m_param.add(CurrentStep, "current", "int");
+  m_param.add(CurrentStep, "current");
   nBlocks = 1;
-  m_param.add(nBlocks, "blocks", "int");
+  m_param.add(nBlocks, "blocks");
   nSteps = 1;
-  m_param.add(nSteps, "steps", "int");
+  m_param.add(nSteps, "steps");
   nSubSteps = 1;
-  m_param.add(nSubSteps, "substeps", "int");
-  //m_param.add(nSubSteps,"subSteps","int");
-  m_param.add(nSubSteps, "sub_steps", "int");
+  m_param.add(nSubSteps, "substeps");
+  //m_param.add(nSubSteps,"subSteps");
+  m_param.add(nSubSteps, "sub_steps");
   nWarmupSteps = 0;
-  m_param.add(nWarmupSteps, "warmupsteps", "int");
-  //m_param.add(nWarmupSteps,"warmupSteps","int");
-  m_param.add(nWarmupSteps, "warmup_steps", "int");
+  m_param.add(nWarmupSteps, "warmupsteps");
+  //m_param.add(nWarmupSteps,"warmupSteps");
+  m_param.add(nWarmupSteps, "warmup_steps");
   nAccept        = 0;
   nReject        = 0;
   nTargetWalkers = W.getActiveWalkers();
-  m_param.add(nTargetWalkers, "walkers", "int");
+  m_param.add(nTargetWalkers, "walkers");
   //sample-related parameters
   //samples will set nTargetPopulation
   nTargetSamples       = 0;
   nStepsBetweenSamples = 1;
-  m_param.add(nStepsBetweenSamples, "stepsbetweensamples", "int");
+  m_param.add(nStepsBetweenSamples, "stepsbetweensamples");
   nSamplesPerThread = 0;
-  m_param.add(nSamplesPerThread, "samplesperthread", "real");
-  m_param.add(nSamplesPerThread, "dmcwalkersperthread", "real");
+  m_param.add(nSamplesPerThread, "samplesperthread");
+  m_param.add(nSamplesPerThread, "dmcwalkersperthread");
 
   nTargetPopulation = 0;
 
-  m_param.add(nTargetPopulation, "samples", "real");
+  m_param.add(nTargetPopulation, "samples");
 
   SpinMoves = "no";
   SpinMass  = 1.0;
-  m_param.add(SpinMoves, "SpinMoves", "string");
-  m_param.add(SpinMass, "SpinMass", "double");
+  m_param.add(SpinMoves, "SpinMoves");
+  m_param.add(SpinMass, "SpinMass");
 
   Tau = 0.1;
-  //m_param.add(Tau,"timeStep","AU");
-  m_param.add(Tau, "timestep", "AU");
-  m_param.add(Tau, "time_step", "AU");
-  //m_param.add(Tau,"Tau","AU");
-  m_param.add(Tau, "tau", "AU");
+  //m_param.add(Tau,"timeStep");
+  m_param.add(Tau, "timestep");
+  m_param.add(Tau, "time_step");
+  //m_param.add(Tau,"Tau");
+  m_param.add(Tau, "tau");
   MaxCPUSecs = 360000; //100 hours
-  m_param.add(MaxCPUSecs, "maxcpusecs", "real");
+  m_param.add(MaxCPUSecs, "maxcpusecs", {}, TagStatus::DEPRECATED);
+  m_param.add(MaxCPUSecs, "max_seconds");
   // by default call recompute at the end of each block in the mixed precision case.
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
@@ -154,7 +153,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   nBlocksBetweenRecompute = 0;
 #endif
 #endif
-  m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute", "int");
+  m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute");
   ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);

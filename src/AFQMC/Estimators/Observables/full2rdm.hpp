@@ -99,8 +99,8 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(rot_file, "rotation", "std::string");
-      m_param.add(path, "path", "std::string");
+      m_param.add(rot_file, "rotation");
+      m_param.add(path, "path");
       m_param.put(cur);
     }
 
@@ -414,7 +414,7 @@ private:
       set_buffer(N);
       CMatrix_ref R( Buff.origin(), {dN,NMO*NMO});
       CVector_ref R1D( Buff.origin(), {dN*NMO*NMO});
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA)
       if(Grot.size() < R.num_elements()) 
         Grot = stdCVector(iextensions<1u>(R.num_elements()));
 #endif
@@ -428,7 +428,7 @@ private:
         // use ger later
         ma::product( Gw.sliced(i0,iN), ma::T(Gw), R );
 
-#if ENABLE_CUDA
+#if defined(ENABLE_CUDA)
         using std::copy_n;
         copy_n(R.origin(),R.num_elements(),Grot.origin());
         ma::axpy( Xw[iw], Grot, DMWork[iw].sliced(i0*NMO*NMO,iN*NMO*NMO) );

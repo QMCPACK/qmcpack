@@ -20,16 +20,18 @@
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCDrivers/WalkerElementsRef.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
-// #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
-
-//#include <boost/archive/binary_oarchive.hpp>
+#include "Utilities/RandomGenerator.h"
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class UnifiedDriverWalkerControlMPITest;
+}
+
 /** Class for controlling the walkers for DMC simulations.
  * w and w/o MPI. Fixed and dynamic population in one place.
  */
@@ -58,25 +60,17 @@ public:
   void start();
 
   /** take averages and writes to a file */
-  void measureProperties(int iter);
+  void writeDMCdat(int iter, const std::vector<FullPrecRealType>& curData);
 
-  /** set the trial energy
+  /** set the trial energy for writing to dmc.dat
    */
   inline void setTrialEnergy(FullPrecRealType et) { trial_energy_ = et; }
-
-  /** reset to accumulate data */
-  void reset();
 
   /** unified: perform branch and swap walkers as required 
    *
    *  \return global population
    */
-  FullPrecRealType branch(int iter, MCPopulation& pop, bool do_not_branch);
-
-  FullPrecRealType getFeedBackParameter(int ngen, FullPrecRealType tau)
-  {
-    return 1.0 / (static_cast<FullPrecRealType>(ngen) * tau);
-  }
+  int branch(int iter, MCPopulation& pop, bool do_not_branch);
 
   bool put(xmlNodePtr cur);
 
@@ -84,7 +78,6 @@ public:
 
   int get_n_max() const { return n_max_; }
   int get_n_min() const { return n_min_; }
-  FullPrecRealType get_target_sigma() const { return target_sigma_; }
   MCDataType<FullPrecRealType>& get_ensemble_property() { return ensemble_property_; }
   void set_ensemble_property(MCDataType<FullPrecRealType>& ensemble_property)
   {
@@ -98,21 +91,19 @@ private:
 
   static std::vector<IndexType> syncFutureWalkersPerRank(Communicate* comm, IndexType n_walkers);
 
-  void Write2XYZ(MCWalkerConfiguration& W);
-
   /// compute curData
-  void computeCurData(const UPtrVector<MCPWalker>& walkers);
+  void computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData);
 
   /** creates the distribution plan
    *
    *  populates the minus and plus vectors they contain 1 copy of a partition index 
    *  for each adjustment in population to the context.
-   *  \param[in] num_per_node as if all walkers were copied out to multiplicity
+   *  \param[in] num_per_rank as if all walkers were copied out to multiplicity
    *  \param[out] fair_offset running population count at each partition boundary
    *  \param[out] minus list of partition indexes one occurance for each walker removed
    *  \param[out] plus list of partition indexes one occurance for each walker added
    */
-  static void determineNewWalkerPopulation(const std::vector<int>& num_per_node,
+  static void determineNewWalkerPopulation(const std::vector<int>& num_per_rank,
                                            std::vector<int>& fair_offset,
                                            std::vector<int>& minus,
                                            std::vector<int>& plus);
@@ -161,10 +152,8 @@ private:
   IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
-  ///target sigma to limit fluctuations of the trial energy
-  FullPrecRealType target_sigma_;
-  ///number of walkers on each node after branching before load balancing
-  std::vector<int> num_per_node_;
+  ///number of walkers on each MPI rank after branching before load balancing
+  std::vector<int> num_per_rank_;
   ///offset of the particle index for a fair distribution
   std::vector<int> fair_offset_;
   ///filename for dmc.dat
@@ -172,21 +161,25 @@ private:
   ///file to save energy histogram
   std::ofstream* dmcStream;
   ///context id
-  IndexType rank_num_;
+  const IndexType rank_num_;
   ///number of contexts
-  IndexType num_ranks_;
+  const IndexType num_ranks_;
   ///0 is default
   IndexType SwapMode;
   ///any temporary data includes many ridiculous conversions of integral types to and from fp
   std::vector<FullPrecRealType> curData;
   ///Use non-blocking isend/irecv
   bool use_nonblocking_;
+  ///disable branching for debugging
+  bool debug_disable_branching_;
   ///ensemble properties
   MCDataType<FullPrecRealType> ensemble_property_;
   ///timers
-  TimerList_t myTimers;
+  TimerList_t my_timers_;
   ///Number of walkers sent during the exchange
   IndexType saved_num_walkers_sent_;
+
+  friend testing::UnifiedDriverWalkerControlMPITest;
 };
 
 } // namespace qmcplusplus

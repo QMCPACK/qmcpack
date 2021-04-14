@@ -102,6 +102,11 @@ public:
             const std::string& QMC_driver_type,
             bool enable_profiling = false);
 
+  ///Copy Constructor (disabled).
+  QMCDriver(const QMCDriver&) = delete;
+  ///Copy operator (disabled).
+  QMCDriver& operator=(const QMCDriver&) = delete;
+
   virtual ~QMCDriver() override;
 
   ///return current step
@@ -209,8 +214,6 @@ protected:
    * using MyCounter++ as in RQMC.
    */
   int MyCounter;
-  ///the number of blocks to be rolled back
-  int RollBackBlocks;
   ///the number to delay updates by
   int kDelay;
   /** period of dumping walker configurations and everything else for restart
@@ -278,7 +281,7 @@ protected:
   RealType Tau;
 
   ///maximum cpu in secs
-  RealType MaxCPUSecs;
+  int MaxCPUSecs;
 
   ///Time-step factor \f$ 1/(2\tau)\f$
   RealType m_oneover2tau;
@@ -331,11 +334,6 @@ protected:
   ///turn on spin moves
   std::string SpinMoves;
   RealType SpinMass;
-
-  ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver&) = delete;
-  ///Copy operator (disabled).
-  QMCDriver& operator=(const QMCDriver&) = delete;
 
   bool putQMCInfo(xmlNodePtr cur);
 

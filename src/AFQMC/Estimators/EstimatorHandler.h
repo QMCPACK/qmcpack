@@ -1,7 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_ESTIMATORHANDLER_H
 #define QMCPLUSPLUS_AFQMC_ESTIMATORHANDLER_H
 
-#include "Platforms/sysutil.h"
+#include "Host/sysutil.h"
 #include "AFQMC/config.h"
 
 #include "AFQMC/Utilities/taskgroup.h"
@@ -83,7 +83,7 @@ public:
         else if (name == "energy")
         {
           ParameterSet m_param;
-          m_param.add(overwrite_default_energy, "overwrite", "string");
+          m_param.add(overwrite_default_energy, "overwrite");
           m_param.put(cur);
         }
       }
@@ -136,8 +136,8 @@ public:
               APP_ABORT("Error: Wavefunction name not found. \n");
             }
             ParameterSet m_param;
-            m_param.add(nnodes, "nnodes_per_TG", "int");
-            m_param.add(nnodes, "nnodes", "int");
+            m_param.add(nnodes, "nnodes_per_TG");
+            m_param.add(nnodes, "nnodes");
             m_param.put(wfn_cur);
             if (WfnFac.is_constructed(wfn_name))
             {

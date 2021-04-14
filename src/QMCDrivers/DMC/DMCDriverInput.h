@@ -32,7 +32,7 @@ public:
   bool get_reconfiguration() const { return reconfiguration_; }
   IndexType get_max_age() const { return max_age_; }
   IndexType get_branch_interval() const { return branch_interval_; }
-  std::string& get_non_local_move() { return NonLocalMove; }
+  const std::string& get_non_local_move() const { return NonLocalMove; }
   double get_alpha() const { return alpha_; }
   double get_gamma() const { return gamma_; }
   RealType get_reserve() const { return reserve_; }

@@ -27,11 +27,11 @@ namespace IO {
   inline void ASCIIPrintIndent(int num)
   {
     for (int counter=0;counter<num*2;counter++)
-      cout<<' ';
+      std::cout<<' ';
   }
 
   /// Simply prints 3*num spaces
-  inline void ASCIIPrintIndent(int num,ofstream &outFile)
+  inline void ASCIIPrintIndent(int num,std::ofstream &outFile)
   {
     for (int counter=0;counter<num*2;counter++)
       outFile<<' ';
@@ -43,14 +43,14 @@ namespace IO {
   void IOTreeASCIIClass::PrintTree(int indentNum)
   {
     ASCIIPrintIndent(indentNum);
-    cout<<"Section: "<<Name<<endl;
-    list<IOVarBase*>::iterator varIter=VarList.begin();
+    std::cout<<"Section: "<<Name<<std::endl;
+    std::list<IOVarBase*>::iterator varIter=VarList.begin();
     while (varIter!=VarList.end()){
       ASCIIPrintIndent(indentNum+1);
-      cout<<"Variable: "<<(*varIter)->GetName()<<" "<<endl;
+      std::cout<<"Variable: "<<(*varIter)->GetName()<<" "<<std::endl;
       varIter++;
     }
-    list<IOTreeClass*>::iterator secIter=SectionList.begin();
+    std::list<IOTreeClass*>::iterator secIter=SectionList.begin();
     while (secIter!=SectionList.end()){
       //    cout<<"Section: "<<(*secIter)->Name<<endl;
       (*secIter)->PrintTree(indentNum+1);
@@ -125,7 +125,7 @@ namespace IO {
   /// Valid tokens are special characters: "(){}[]<>,", quoted strings,
   /// words, or numbers.  White space is not significant, except in
   /// separating tokens.
-  void Tokenize(blitz::Array<char,1> buffer, list<TokenClass>& tokenList)
+  void Tokenize(Array<char,1> buffer, std::list<TokenClass>& tokenList)
   {
     int pos=0;
     int lineNum=1;
@@ -176,10 +176,10 @@ namespace IO {
       else if (buffer(pos)=='\0')
 	break;
       else {
-	cerr<<"There was a token we do not recognize in line "<<lineNum<<endl;
-	cerr <<"The rest of the file is as follows:\n";
+	std::cerr<<"There was a token we do not recognize in line "<<lineNum<<std::endl;
+	std::cerr <<"The rest of the file is as follows:\n";
 	while (pos<buffer.size()) {
-	  cerr << (int)buffer(pos);
+	  std::cerr << (int)buffer(pos);
 	  pos++;
 	}
 	exit(1);
@@ -189,7 +189,7 @@ namespace IO {
 	  
 
   /// Just a shortcut to look at two characters at a time.
-  bool checkPair(blitz::Array<char,1> &buffer,int counter,char* toSee)
+  bool checkPair(Array<char,1> &buffer,int counter,char const* toSee)
   {
     if (counter+1>=buffer.size()){
       return false;
@@ -203,15 +203,15 @@ namespace IO {
 
   /// Reads a file into a character array, removing C and C++ style
   /// comments. 
-  bool IOTreeASCIIClass::ReadWithoutComments(string fileName,
-					     blitz::Array<char,1> 
+  bool IOTreeASCIIClass::ReadWithoutComments(std::string fileName,
+					     Array<char,1> 
 					     &buffer)
   {
-    ifstream infile;
+    std::ifstream infile;
     infile.open(fileName.c_str());
     if (!infile.is_open()) 
       return false;
-    blitz::Array<char,1> tmpBuffer;
+    Array<char,1> tmpBuffer;
     int counter=0;
     bool inQuote=false;
     char dummyChar;
@@ -224,7 +224,7 @@ namespace IO {
     buffer.resize(counter);
     counter=-1;
     infile.close();
-    ifstream infile2;
+    std::ifstream infile2;
     infile2.open(fileName.c_str());
     while (!infile2.eof()){
       counter++;
@@ -282,20 +282,20 @@ namespace IO {
 
   /// If isError is true, then we print out an error message giving the
   /// line number and the string passed to us in ErrorStr.
-  inline void ReadAbort (bool isError, int lineNumber, string ErrorStr)
+  inline void ReadAbort (bool isError, int lineNumber, std::string ErrorStr)
   {
     if (isError) {
-      cerr << "Error in input file at line number " << lineNumber 
+      std::cerr << "Error in input file at line number " << lineNumber 
 	   << ":\n";
-      cerr << ErrorStr;
+      std::cerr << ErrorStr;
       exit(1);
     }
   }
 
   /// Removes all double quotes from the input string and return it.
-  string StripQuote(string str)
+  std::string StripQuote(std::string str)
   {
-    string newString;
+    std::string newString;
     int i=0;
     assert (str[0] == '\"');
     assert (str[str.length()-1] == '\"');
@@ -312,7 +312,7 @@ namespace IO {
   /// Looks at the string passed to it and returns the corresponding
   /// enumerated type.  If the type is not recognized, it returns
   /// INVALID.  
-  IODataType GetType (string typeString)
+  IODataType GetType (std::string typeString)
   {
     if (typeString=="double")
       return DOUBLE_TYPE;
@@ -350,7 +350,7 @@ namespace IO {
 
   /// Takes a token and reads its value into a string, aborting if there
   /// is a problem.
-  void ReadAtomicVar(TokenClass token,string &d)
+  void ReadAtomicVar(TokenClass token,std::string &d)
   {
 
     ReadAbort (token.Str[0] != '\"', token.LineNumber, 
@@ -375,18 +375,18 @@ namespace IO {
 
   /// Takes a token and reads its value into a bool, aborting if there
   /// is a problem.
-  void ReadAtomicVar(TokenClass token, complex<double> &a)
+  void ReadAtomicVar(TokenClass token, std::complex<double> &a)
   {
-    cerr << "Reading complex not yet implemented.";
+    std::cerr << "Reading complex not yet implemented.";
   }
 
   /// This template function reads a 1-D array from a token list into
   /// the array.  The syntax requires an opening '[' the a
   /// comma-separated list of values, then a closing ']'.
   template <class T>
-  void ReadArrayData(list<TokenClass>::iterator &iter,
-		     list<TokenClass> &tokenList,
-		     blitz::Array<T,1> valArray)
+  void ReadArrayData(std::list<TokenClass>::iterator &iter,
+		     std::list<TokenClass> &tokenList,
+		     Array<T,1> valArray)
   {
     ReadAbort(iter->Str != "[", iter->LineNumber, "Expected [ not found\n");
     iter++;
@@ -412,9 +412,9 @@ namespace IO {
   /// read row-ordered, i.e. the first index changes fastests as we read
   /// in the values.
   template <class T>
-  void ReadArrayData(list<TokenClass>::iterator &iter,
-		     list<TokenClass> &tokenList,
-		     blitz::Array<T,2> valArray)
+  void ReadArrayData(std::list<TokenClass>::iterator &iter,
+		     std::list<TokenClass> &tokenList,
+		     Array<T,2> valArray)
   {
     ReadAbort(iter->Str != "[", iter->LineNumber, "Expected [ not found\n");
     iter++;
@@ -443,9 +443,9 @@ namespace IO {
   /// read row-ordered, i.e. the first index changes fastests as we read
   /// in the values.
   template <class T>
-  void ReadArrayData(list<TokenClass>::iterator &iter,
-		     list<TokenClass> &tokenList,
-		     blitz::Array<T,3> valArray)
+  void ReadArrayData(std::list<TokenClass>::iterator &iter,
+		     std::list<TokenClass> &tokenList,
+		     Array<T,3> valArray)
   {
     ReadAbort(iter->Str != "[", iter->LineNumber, "Expected [ not found\n");
     iter++;
@@ -476,9 +476,9 @@ namespace IO {
   /// read row-ordered, i.e. the first index changes fastests as we read
   /// in the values.
   template <class T>
-  void ReadArrayData(list<TokenClass>::iterator &iter,
-		     list<TokenClass> &tokenList,
-		     blitz::Array<T,4> valArray)
+  void ReadArrayData(std::list<TokenClass>::iterator &iter,
+		     std::list<TokenClass> &tokenList,
+		     Array<T,4> valArray)
   {
     ReadAbort(iter->Str != "[", iter->LineNumber, "Expected [ not found\n");
     iter++;
@@ -505,8 +505,8 @@ namespace IO {
   }
 
 
-  IOVarBase *NewASCIIVar (string name, IODataType newType, int ndim,
-			  blitz::Array<int,1> dims)
+  IOVarBase *NewASCIIVar (std::string name, IODataType newType, int ndim,
+			  Array<int,1> dims)
   {
     if (ndim == 0) {
       if (newType == DOUBLE_TYPE)
@@ -514,11 +514,11 @@ namespace IO {
       else if (newType == INT_TYPE)
 	return new IOVarASCII<int,0>(name);
       else if (newType == STRING_TYPE)
-	return new IOVarASCII<string,0>(name);
+	return new IOVarASCII<std::string,0>(name);
       else if (newType == BOOL_TYPE)
 	return new IOVarASCII<bool,0>(name);
       else if (newType == COMPLEX_TYPE)
-	return new IOVarASCII<complex<double>,0>(name);
+	return new IOVarASCII<std::complex<double>,0>(name);
     }
     else if (ndim == 1) {
       if (newType == DOUBLE_TYPE) {
@@ -532,7 +532,7 @@ namespace IO {
 	return newVar;
       }
       else if (newType == STRING_TYPE) {
-	IOVarASCII<string,1> *newVar = new IOVarASCII<string,1>(name);
+	IOVarASCII<std::string,1> *newVar = new IOVarASCII<std::string,1>(name);
 	newVar->ArrayValue.resize(dims(0));
 	return newVar;
       }
@@ -542,7 +542,7 @@ namespace IO {
 	return newVar;
       }
       else if (newType == COMPLEX_TYPE) {
-	IOVarASCII<complex<double>,1> *newVar = new IOVarASCII<complex<double>,1>(name);
+	IOVarASCII<std::complex<double>,1> *newVar = new IOVarASCII<std::complex<double>,1>(name);
 	newVar->ArrayValue.resize(dims(0));
 	return newVar;
       }
@@ -559,7 +559,7 @@ namespace IO {
 	return newVar;
       }
       else if (newType == STRING_TYPE) {
-	IOVarASCII<string,2> *newVar = new IOVarASCII<string,2>(name);
+	IOVarASCII<std::string,2> *newVar = new IOVarASCII<std::string,2>(name);
 	newVar->ArrayValue.resize(dims(0), dims(1));
 	return newVar;
       }
@@ -569,7 +569,7 @@ namespace IO {
 	return newVar;
       }
       else if (newType == COMPLEX_TYPE) {
-	IOVarASCII<complex<double>,2> *newVar = new IOVarASCII<complex<double>,2>(name);
+	IOVarASCII<std::complex<double>,2> *newVar = new IOVarASCII<std::complex<double>,2>(name);
 	newVar->ArrayValue.resize(dims(0), dims(1));
 	return newVar;
       }
@@ -586,7 +586,7 @@ namespace IO {
 	return newVar;
       }
       else if (newType == STRING_TYPE) {
-	IOVarASCII<string,3> *newVar = new IOVarASCII<string,3>(name);
+	IOVarASCII<std::string,3> *newVar = new IOVarASCII<std::string,3>(name);
 	newVar->ArrayValue.resize(dims(0), dims(1), dims(2));
 	return newVar;
       }
@@ -596,7 +596,7 @@ namespace IO {
 	return newVar;
       }
       else if (newType == COMPLEX_TYPE) {
-	IOVarASCII<complex<double>,3> *newVar = new IOVarASCII<complex<double>,3>(name);
+	IOVarASCII<std::complex<double>,3> *newVar = new IOVarASCII<std::complex<double>,3>(name);
 	newVar->ArrayValue.resize(dims(0), dims(1), dims(2));
 	return newVar;
       }
@@ -613,7 +613,7 @@ namespace IO {
 	return newVar;
       }
       else if (newType == STRING_TYPE) {
-	IOVarASCII<string,4> *newVar = new IOVarASCII<string,4>(name);
+	IOVarASCII<std::string,4> *newVar = new IOVarASCII<std::string,4>(name);
 	newVar->ArrayValue.resize(dims(0), dims(1), dims(2), dims(3));
 	return newVar;
       }
@@ -623,7 +623,7 @@ namespace IO {
 	return newVar;
       }
       else if (newType == COMPLEX_TYPE) {
-	IOVarASCII<complex<double>,4> *newVar = new IOVarASCII<complex<double>,4>(name);
+	IOVarASCII<std::complex<double>,4> *newVar = new IOVarASCII<std::complex<double>,4>(name);
 	newVar->ArrayValue.resize(dims(0), dims(1), dims(2), dims(3));
 	return newVar;
       }
@@ -638,8 +638,8 @@ namespace IO {
   /// Reads an array from a list of tokens, starting at the token
   /// pointed to by iter.  It places the array into the newVar object.
   /// It expects to begin reading after the word "Array".
-  IOVarBase * ReadArray(list<TokenClass>::iterator &iter,
-			list<TokenClass> &tokenList)
+  IOVarBase * ReadArray(std::list<TokenClass>::iterator &iter,
+			std::list<TokenClass> &tokenList)
   {
     ReadAbort(iter->Str != "<", iter->LineNumber, "Expected < not found\n");
     iter++;
@@ -655,9 +655,9 @@ namespace IO {
     ReadAbort(iter->Str != ">", iter->LineNumber, "Expected , not found\n");
     iter++;
   
-    blitz::Array<int,1> dimSize(numDim);
+    Array<int,1> dimSize(numDim);
   
-    string myName=iter->Str;
+    std::string myName=iter->Str;
 
     iter++;
     ReadAbort(iter->Str != "(", iter->LineNumber, "Expected ( not found\n");
@@ -685,11 +685,11 @@ namespace IO {
       else if (myType == INT_TYPE)
 	ReadArrayData(iter, tokenList, ((IOVarASCII<int,1> *)   newVar)->ArrayValue);
       else if (myType == STRING_TYPE)
-	ReadArrayData(iter, tokenList, ((IOVarASCII<string,1> *)newVar)->ArrayValue);
+	ReadArrayData(iter, tokenList, ((IOVarASCII<std::string,1> *)newVar)->ArrayValue);
       else if (myType == BOOL_TYPE)
 	ReadArrayData(iter, tokenList, ((IOVarASCII<bool,1> *)  newVar)->ArrayValue);
       else if (myType == COMPLEX_TYPE)
-	ReadArrayData(iter, tokenList, ((IOVarASCII<complex<double>,1> *)  newVar)->ArrayValue);
+	ReadArrayData(iter, tokenList, ((IOVarASCII<std::complex<double>,1> *)  newVar)->ArrayValue);
     }
     if (numDim == 2) {
       if (myType == DOUBLE_TYPE)
@@ -697,11 +697,11 @@ namespace IO {
       else if (myType == INT_TYPE)
 	ReadArrayData(iter, tokenList, ((IOVarASCII<int,2> *)   newVar)->ArrayValue);
       else if (myType == STRING_TYPE)
-	ReadArrayData(iter, tokenList, ((IOVarASCII<string,2> *)newVar)->ArrayValue);
+	ReadArrayData(iter, tokenList, ((IOVarASCII<std::string,2> *)newVar)->ArrayValue);
       else if (myType == BOOL_TYPE)
 	ReadArrayData(iter, tokenList, ((IOVarASCII<bool,2> *)  newVar)->ArrayValue);
       else if (myType == COMPLEX_TYPE)
-	ReadArrayData(iter, tokenList, ((IOVarASCII<complex<double>,2> *) newVar)->ArrayValue);
+	ReadArrayData(iter, tokenList, ((IOVarASCII<std::complex<double>,2> *) newVar)->ArrayValue);
     }
     if (numDim == 3) {
       if (myType == DOUBLE_TYPE)
@@ -709,11 +709,11 @@ namespace IO {
       else if (myType == INT_TYPE)
 	ReadArrayData(iter, tokenList, ((IOVarASCII<int,3> *)   newVar)->ArrayValue);
       else if (myType == STRING_TYPE)
-	ReadArrayData(iter, tokenList, ((IOVarASCII<string,3> *)newVar)->ArrayValue);
+	ReadArrayData(iter, tokenList, ((IOVarASCII<std::string,3> *)newVar)->ArrayValue);
       else if (myType == BOOL_TYPE)
 	ReadArrayData(iter, tokenList, ((IOVarASCII<bool,3> *)  newVar)->ArrayValue);
       else if (myType == COMPLEX_TYPE)
-	ReadArrayData(iter, tokenList, ((IOVarASCII<complex<double>,3> *)  newVar)->ArrayValue);
+	ReadArrayData(iter, tokenList, ((IOVarASCII<std::complex<double>,3> *)  newVar)->ArrayValue);
     }
     if (numDim == 4) {
       if (myType == DOUBLE_TYPE)
@@ -721,11 +721,11 @@ namespace IO {
       else if (myType == INT_TYPE)
 	ReadArrayData(iter, tokenList, ((IOVarASCII<int,4> *)   newVar)->ArrayValue);
       else if (myType == STRING_TYPE)
-	ReadArrayData(iter, tokenList, ((IOVarASCII<string,4> *)newVar)->ArrayValue);
+	ReadArrayData(iter, tokenList, ((IOVarASCII<std::string,4> *)newVar)->ArrayValue);
       else if (myType == BOOL_TYPE)
 	ReadArrayData(iter, tokenList, ((IOVarASCII<bool,4> *)  newVar)->ArrayValue);
       else if (myType == COMPLEX_TYPE)
-	ReadArrayData(iter, tokenList, ((IOVarASCII<complex<double>,4> *)  newVar)->ArrayValue);
+	ReadArrayData(iter, tokenList, ((IOVarASCII<std::complex<double>,4> *)  newVar)->ArrayValue);
     }
     return (newVar);
   }
@@ -736,8 +736,8 @@ namespace IO {
   /// creates a new VarASCIIClass object and puts the appropriate value
   /// in that object.  It recognizes any of the atomic types or arrays
   /// of theose atomic types.
-  IOVarBase* ReadASCIIVar (list<TokenClass>::iterator &iter,
-			       list<TokenClass> &tokenList)
+  IOVarBase* ReadASCIIVar (std::list<TokenClass>::iterator &iter,
+			       std::list<TokenClass> &tokenList)
   {
     IOVarBase *newVar;
     IODataType myType=GetType(iter->Str);
@@ -749,7 +749,7 @@ namespace IO {
     }
     else {
       iter++;
-      string myName=iter->Str;
+      std::string myName=iter->Str;
 
       iter++;
       ReadAbort(iter->Str!="=",iter->LineNumber,"Expected equals sign\n");
@@ -758,18 +758,18 @@ namespace IO {
       iter++;
       ReadAbort(iter->Str!=";",iter->LineNumber,"Expected semicolon\n");
       iter++;
-      blitz::Array<int,1> dims(1);
+      Array<int,1> dims(1);
       newVar = NewASCIIVar (myName, myType, 0, dims);
       if (myType == DOUBLE_TYPE)
 	ReadAtomicVar (valToken, ((IOVarASCII<double,0> *)newVar)->Value);
       else if (myType == INT_TYPE)
 	ReadAtomicVar (valToken, ((IOVarASCII<int,0> *)newVar)->Value);
       else if (myType == STRING_TYPE)
-	ReadAtomicVar (valToken, ((IOVarASCII<string,0> *)newVar)->Value);
+	ReadAtomicVar (valToken, ((IOVarASCII<std::string,0> *)newVar)->Value);
       else if (myType == BOOL_TYPE)
 	ReadAtomicVar (valToken, ((IOVarASCII<bool,0> *)newVar)->Value);
       else if (myType == COMPLEX_TYPE)
-	ReadAtomicVar (valToken, ((IOVarASCII<complex<double>,0> *)newVar)->Value);
+	ReadAtomicVar (valToken, ((IOVarASCII<std::complex<double>,0> *)newVar)->Value);
     }
     return(newVar);
   }
@@ -782,9 +782,9 @@ namespace IO {
   /// buffer runs out.  Calls itself recursively as necessary, builing
   /// up a tree of sections and variables.
   bool IOTreeASCIIClass::ReadSection (IOTreeClass *parent,
-				      string myName,
-				      list<TokenClass>::iterator &iter,
-				      list<TokenClass> &tokenList,
+				      std::string myName,
+				      std::list<TokenClass>::iterator &iter,
+				      std::list<TokenClass> &tokenList,
 				      bool wantEndBrace)
   {
     Parent = parent;
@@ -795,13 +795,13 @@ namespace IO {
 	iter++;
 	ReadAbort(iter->Str != "(", iter->LineNumber, "Expected ( not found\n");
 	iter++;
-	string newName = iter->Str;
+	std::string newName = iter->Str;
 	iter++;
 	// Check for included section
 	if (iter->Str == ",") {
 	  // Get filename
 	  iter++;
-	  string fileName = StripQuote(iter->Str);
+	  std::string fileName = StripQuote(iter->Str);
 	  iter++;
 	  ReadAbort (iter->Str!=")", iter->LineNumber, "Expected ) not found\n");
 	  iter++;
@@ -829,7 +829,7 @@ namespace IO {
       }
     }
     if ((iter==tokenList.end()) && wantEndBrace) {
-      cerr << "Unexpected end of file before } \n";
+      std::cerr << "Unexpected end of file before } \n";
       exit (1);
     }
 	    
@@ -838,7 +838,7 @@ namespace IO {
     return (true);
   }
 
-  IOTreeClass* IOTreeASCIIClass::NewSection(string name)
+  IOTreeClass* IOTreeASCIIClass::NewSection(std::string name)
   {
     IOTreeClass* tempSection=new IOTreeASCIIClass();
     tempSection->Name=name;
@@ -860,8 +860,8 @@ namespace IO {
 
 
 
-  bool IOTreeASCIIClass::NewFile (string fileName,
-				  string mySectionName,
+  bool IOTreeASCIIClass::NewFile (std::string fileName,
+				  std::string mySectionName,
 				  IOTreeClass *parent)
   {
     FileName=fileName;
@@ -876,31 +876,31 @@ namespace IO {
   /// the parent of this section.  It reads the file into a buffer,
   /// converts it to a list of tokens, then parses the tokens,
   /// constructing a tree of sections containing variables lists.  
-  bool IOTreeASCIIClass::OpenFile(string fileName, string myName, 
+  bool IOTreeASCIIClass::OpenFile(std::string fileName, std::string myName, 
 				  IOTreeClass *parent)
   {
-    blitz::Array<char,1> buffer;
+    Array<char,1> buffer;
     bool success = ReadWithoutComments(fileName,buffer);
     if (!success)
       return false;
-    list<TokenClass> tokenList;
+    std::list<TokenClass> tokenList;
     Tokenize(buffer,tokenList);
-    list<TokenClass>::iterator iter=tokenList.begin();
+    std::list<TokenClass>::iterator iter=tokenList.begin();
     ReadSection(parent,myName,iter,tokenList, false);
     return true;
   }
 
 
 
-  void IOTreeASCIIClass::WriteSection(ofstream &outFile,int indentNum)
+  void IOTreeASCIIClass::WriteSection(std::ofstream &outFile,int indentNum)
   {
-    list<IOVarBase*>::iterator varIter=VarList.begin();
+    std::list<IOVarBase*>::iterator varIter=VarList.begin();
     while (varIter!=VarList.end()){
       ASCIIPrintIndent(indentNum,outFile);
       (*varIter)->Print(outFile);    
       varIter++;
     }
-    list<IOTreeClass*>::iterator secIter=SectionList.begin();
+    std::list<IOTreeClass*>::iterator secIter=SectionList.begin();
     while (secIter!=SectionList.end()){
       if ((*secIter)->FileName==""){
 	ASCIIPrintIndent(indentNum,outFile);
@@ -914,7 +914,7 @@ namespace IO {
       else {
 	ASCIIPrintIndent(indentNum,outFile);
 	outFile<<"Section ("<<(*secIter)->Name<<", \"";
-	outFile<<(*secIter)->FileName<<"\");"<<endl;
+	outFile<<(*secIter)->FileName<<"\");"<<std::endl;
 	(*secIter)->FlushFile();
       }
       secIter++;
@@ -925,13 +925,13 @@ namespace IO {
 
   void IOTreeASCIIClass::FlushFile()
   {
-    ofstream outfile;
+    std::ofstream outfile;
     if ((FileName!="") && IsModified){
       outfile.open(FileName.c_str());
       WriteSection(outfile,0);
     }
 
-    list<IOTreeClass*>::iterator iter = SectionList.begin();
+    std::list<IOTreeClass*>::iterator iter = SectionList.begin();
     while (iter != SectionList.end()) {
       (*iter)->FlushFile();
       iter++;
@@ -971,7 +971,7 @@ namespace IO {
   void
   IOVarASCII<double,0>::Resize(int n)
   {
-    cerr << "Cannot resize atomic variable.\n";
+    std::cerr << "Cannot resize atomic variable.\n";
     abort();
   }
 
@@ -990,30 +990,30 @@ namespace IO {
   void
   IOVarASCII<int,0>::Resize(int n)
   {
-    cerr << "Cannot resize atomic variable.\n";
+    std::cerr << "Cannot resize atomic variable.\n";
     abort();
   }
 
   int 
-  IOVarASCII<string,0>::GetRank()
+  IOVarASCII<std::string,0>::GetRank()
   { return 0; }
   IODataType 
-  IOVarASCII<string,0>::GetType()
+  IOVarASCII<std::string,0>::GetType()
   { return STRING_TYPE; }
   IOFileType 
-  IOVarASCII<string,0>::GetFileType()
+  IOVarASCII<std::string,0>::GetFileType()
   { return ASCII_TYPE; }
   int
-  IOVarASCII<string,0>::GetExtent(int i)
+  IOVarASCII<std::string,0>::GetExtent(int i)
   { return 1; }
   void
-  IOVarASCII<string,0>::Resize(int n)
+  IOVarASCII<std::string,0>::Resize(int n)
   {
-    cerr << "Cannot resize atomic variable.\n";
+    std::cerr << "Cannot resize atomic variable.\n";
     abort();
   }
   bool
-  IOVarASCII<string,0>::VarRead (string &val) 
+  IOVarASCII<std::string,0>::VarRead (std::string &val) 
   { 
     val = Value; 
     return true; 
@@ -1034,26 +1034,26 @@ namespace IO {
   void
   IOVarASCII<bool,0>::Resize(int n)
   {
-    cerr << "Cannot resize atomic variable.\n";
+    std::cerr << "Cannot resize atomic variable.\n";
     abort();
   }
 
   int 
-  IOVarASCII<complex<double>,0>::GetRank()
+  IOVarASCII<std::complex<double>,0>::GetRank()
   { return 0; }
   IODataType 
-  IOVarASCII<complex<double>,0>::GetType()
+  IOVarASCII<std::complex<double>,0>::GetType()
   { return COMPLEX_TYPE; }
   IOFileType 
-  IOVarASCII<complex<double>,0>::GetFileType()
+  IOVarASCII<std::complex<double>,0>::GetFileType()
   { return ASCII_TYPE; }
   int
-  IOVarASCII<complex<double>,0>::GetExtent(int i)
+  IOVarASCII<std::complex<double>,0>::GetExtent(int i)
   { return 1; }
   void
-  IOVarASCII<complex<double>,0>::Resize(int n)
+  IOVarASCII<std::complex<double>,0>::Resize(int n)
   {
-    cerr << "Cannot resize atomic variable.\n";
+    std::cerr << "Cannot resize atomic variable.\n";
     abort();
   }
 

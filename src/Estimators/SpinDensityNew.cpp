@@ -33,6 +33,9 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& speci
   species_size_ = getSpeciesSize(species_);
 
   data_ = createLocalData(getFullDataSize(), data_locality_);
+
+  if (input_.get_write_report())
+    report("  ");
 }
 
 SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
@@ -51,8 +54,10 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
     throw std::runtime_error("SpinDensityNew cannot be constructed from a lattice that is not explicitly defined");
 
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
-  species_size_ = getSpeciesSize(species_);
-  data_ = createLocalData(getFullDataSize(), data_locality_);
+  species_size_       = getSpeciesSize(species_);
+  data_               = createLocalData(getFullDataSize(), data_locality_);
+  if (input_.get_write_report())
+    report("  ");
 }
 
 std::vector<int> SpinDensityNew::getSpeciesSize(SpeciesSet& species)
@@ -115,7 +120,7 @@ void SpinDensityNew::startBlock(int steps)
  *  I tried for readable and not doing the optimizers job.
  *  The offsets into bare data are already bad enough.
  */
-void SpinDensityNew::accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
+void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
 {
   auto& dp_ = derived_parameters_;
   for (int iw = 0; iw < walkers.size(); ++iw)
@@ -123,15 +128,17 @@ void SpinDensityNew::accumulate(RefVector<MCPWalker>& walkers, RefVector<Particl
     MCPWalker& walker     = walkers[iw];
     ParticleSet& pset     = psets[iw];
     QMCT::RealType weight = walker.Weight;
+    assert(weight >= 0);
     // for testing
     walkers_weight_ += weight;
     int p                             = 0;
     std::vector<QMCT::RealType>& data = *data_;
-    for (int s = 0; s < species_.size(); ++s)
+    size_t offset                     = 0;
+    for (int s = 0; s < species_.size(); ++s, offset += dp_.npoints)
       for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
       {
         QMCT::PosType u = lattice_.toUnit(pset.R[p] - dp_.corner);
-        size_t point    = dp_.npoints * s;
+        size_t point    = offset;
         for (int d = 0; d < QMCT::DIM; ++d)
           point += dp_.gdims[d] * ((int)(dp_.grid[d] * (u[d] - std::floor(u[d])))); //periodic only
         accumulateToData(point, weight);
@@ -179,7 +186,7 @@ void SpinDensityNew::collect(const RefVector<OperatorEstBase>& type_erased_opera
         (*data_)[point] += weight;
         walkers_weight_ += weight;
       }
-      oeb.walkers_weight_ = 0;
+      oeb.zero();
     }
   }
   else if (data_locality_ == DataLocality::crowd)
@@ -209,12 +216,13 @@ void SpinDensityNew::report(const std::string& pad)
   app_log() << pad << "  nspecies = " << species_.size() << std::endl;
   for (int s = 0; s < species_.size(); ++s)
     app_log() << pad << "    species[" << s << "]"
-              << " = " << species_.speciesName[s] << " " << species_.attribName.size() << std::endl;
+              << " = " << species_.speciesName[s] << " " << species_size_[s] << std::endl;
   app_log() << pad << "end SpinDensity report" << std::endl;
 }
 
-void SpinDensityNew::registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void SpinDensityNew::registerOperatorEstimator(hid_t gid)
 {
+  std::vector<size_t> my_indexes;
   hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
 
   //vector<int> ng(DIM);
@@ -226,11 +234,13 @@ void SpinDensityNew::registerOperatorEstimator(std::vector<observable_helper*>& 
 
   for (int s = 0; s < species_.size(); ++s)
   {
-    observable_helper* oh = new observable_helper(species_.speciesName[s]);
+    h5desc_.emplace_back(std::make_unique<observable_helper>(species_.speciesName[s]));
+    auto& oh = h5desc_.back();
     oh->set_dimensions(ng, 0);
     oh->open(sgid);
-    h5desc.push_back(oh);
+    // bad smell
   }
 }
+
 
 } // namespace qmcplusplus

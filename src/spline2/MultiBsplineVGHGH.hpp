@@ -126,7 +126,7 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
 
 
 #pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, hxx, hxy, hxz, hyy, hyz, hzz, gh_xxx, gh_xxy, \
-                         gh_xxz, gh_xyy, gh_xyz, gh_xzz, gh_yyy, gh_yyz, gh_yzz, gh_zzz, vals)
+                         gh_xxz, gh_xyy, gh_xyz, gh_xzz, gh_yyy, gh_yyz, gh_yzz, gh_zzz, vals: QMC_SIMD_ALIGNMENT)
       for (int n = 0; n < num_splines; n++)
       {
         T coefsv    = coefs[n];
@@ -185,7 +185,7 @@ inline void evaluate_vghgh_impl(const typename qmcplusplus::bspline_traits<T, 3>
   const T dzzz = dzInv * dzInv * dzInv;
 
 #pragma omp simd aligned(gx, gy, gz, hxx, hxy, hxz, hyy, hyz, hzz, gh_xxx, gh_xxy, gh_xxz, gh_xyy, gh_xyz, gh_xzz, \
-                         gh_yyy, gh_yyz, gh_yzz, gh_zzz)
+                         gh_yyy, gh_yyz, gh_yzz, gh_zzz: QMC_SIMD_ALIGNMENT)
   for (int n = 0; n < num_splines; n++)
   {
     gx[n]  *= dxInv;

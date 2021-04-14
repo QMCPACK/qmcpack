@@ -66,8 +66,8 @@ bool RPAJastrow::put(xmlNodePtr cur)
   Kc                = -1.0;
   std::string ID_Rs = "RPA_rs";
   ParameterSet params;
-  params.add(Rs, "rs", "double");
-  params.add(Kc, "kc", "double");
+  params.add(Rs, "rs");
+  params.add(Kc, "kc");
   params.put(cur);
   buildOrbital(MyName, useL, useS, rpafunc, Rs, Kc);
   return true;
@@ -232,7 +232,7 @@ void RPAJastrow::reportStatus(std::ostream& os)
     Psi[i]->reportStatus(os);
 }
 
-RPAJastrow::LogValueType RPAJastrow::evaluateLog(ParticleSet& P,
+RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& G,
                                                  ParticleSet::ParticleLaplacian_t& L)
 {

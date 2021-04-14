@@ -19,31 +19,42 @@ void DMCDriverInput::readXML(xmlNodePtr node)
 {
   ParameterSet parameter_set_;
   std::string reconfig_str;
-  parameter_set_.add(reconfig_str, "reconfiguration", "string");
-  if (!reconfig_str.empty() && reconfig_str != "no" && reconfig_str != "runwhileincorrect")
+  parameter_set_.add(reconfig_str, "reconfiguration", {"no", "yes", "runwhileincorrect"});
+  parameter_set_.add(NonLocalMove, "nonlocalmove", {"no", "yes", "v0", "v1", "v3"});
+  parameter_set_.add(NonLocalMove, "nonlocalmoves", {"no", "yes", "v0", "v1", "v3"});
+  parameter_set_.add(max_age_, "MaxAge");
+
+  // from DMC.cpp put(xmlNodePtr)
+  parameter_set_.add(branch_interval_, "branchInterval");
+  parameter_set_.add(branch_interval_, "branchinterval");
+  parameter_set_.add(branch_interval_, "substeps");
+  parameter_set_.add(branch_interval_, "subStep");
+  parameter_set_.add(branch_interval_, "sub_stepd");
+
+  //from NonLocalTOperator.cpp
+  parameter_set_.add(alpha_, "alpha");
+  parameter_set_.add(gamma_, "gamma");
+
+  parameter_set_.add(reserve_, "reserve");
+
+  parameter_set_.put(node);
+
+  if (reconfig_str == "yes")
     throw std::runtime_error(
         "Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the "
         "reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to "
         "\"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.");
-  reconfiguration_ = (reconfig_str == "runwhileincorrect");
-  parameter_set_.add(NonLocalMove, "nonlocalmove", "string");
-  parameter_set_.add(NonLocalMove, "nonlocalmoves", "string");
-  parameter_set_.add(max_age_, "MaxAge", "double");
+  reconfiguration_ = (reconfig_str == "yes");
 
-  // from DMC.cpp put(xmlNodePtr)
-  parameter_set_.add(branch_interval_, "branchInterval", "string");
-  parameter_set_.add(branch_interval_, "branchinterval", "string");
-  parameter_set_.add(branch_interval_, "substeps", "int");
-  parameter_set_.add(branch_interval_, "subStep", "int");
-  parameter_set_.add(branch_interval_, "sub_stepd", "int");
-
-  //from NonLocalTOperator.cpp
-  parameter_set_.add(alpha_, "alpha", "double");
-  parameter_set_.add(gamma_, "gamma", "double");
-
-  parameter_set_.add(reserve_, "reserve", "double");
-
-  parameter_set_.put(node);
+  if (NonLocalMove == "yes" || NonLocalMove == "v0")
+    app_summary() << "  Using Non-local T-moves v0, M. Casula, PRB 74, 161102(R) (2006)";
+  else if (NonLocalMove == "v1")
+    app_summary() << "  Using Non-local T-moves v1, M. Casula et al., JCP 132, 154113 (2010)";
+  else if (NonLocalMove == "v3")
+    app_summary() << "  Using Non-local T-moves v3, an approximation to v1";
+  else
+    app_summary() << "  Using Locality Approximation";
+  app_summary() << std::endl;
 
   // TODO: similar check for alpha and gamma
   if (max_age_ < 0)

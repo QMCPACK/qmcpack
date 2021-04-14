@@ -25,6 +25,7 @@ namespace qmcplusplus
 class ParticleSetPool;
 class HamiltonianPool;
 class MCPopulation;
+class ProjectData;
 
 class VMCFactoryNew
 {
@@ -32,16 +33,12 @@ private:
   const int vmc_mode_;
   // const ?
   xmlNodePtr input_node_;
-  const int qmc_counter_;
 
 public:
-  VMCFactoryNew(xmlNodePtr cur, const int vmode, const int qmc_counter)
-      : vmc_mode_(vmode), input_node_(cur), qmc_counter_(qmc_counter)
-  {}
+  VMCFactoryNew(xmlNodePtr cur, const int vmode) : vmc_mode_(vmode), input_node_(cur) {}
 
-  QMCDriverInterface* create(MCPopulation&& pop,
-                             TrialWaveFunction& psi,
-                             QMCHamiltonian& h,
+  QMCDriverInterface* create(const ProjectData& project_data,
+                             MCPopulation&& pop,
                              SampleStack& samples,
                              Communicate* comm);
 };

@@ -63,7 +63,7 @@ public:
    *  Depending on data locality the accumlation of the result may be different from
    *  the single thread write directly into the OperatorEstimator data.
    */
-  virtual void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) = 0;
+  virtual void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *
@@ -82,23 +82,44 @@ public:
   std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
 
   Data& get_data() { return data_; };
-  /*** add to OperatorEstimator descriptor for hdf5
-   * @param h5desc contains a set of hdf5 descriptors for a scalar observable
+
+  /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
    * @param gid hdf5 group to which the observables belong
    *
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  virtual void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
+  virtual void registerOperatorEstimator(hid_t gid) {}
 
   virtual OperatorEstBase* clone() = 0;
 
+  /** Write to previously registered observable_helper hdf5 wrapper.
+   *
+   *  if you haven't registered Operator Estimator 
+   *  this will do nothing.
+   */
+  void write();
+
+  /** zero data appropriately for the DataLocality
+   */
+  void zero();
+
+  /** Return the total walker weight for this block
+   */
   QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
 protected:
   QMCT::FullPrecRealType walkers_weight_;
 
+  // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator  
+  UPtrVector<observable_helper> h5desc_;
 
-  /** data management
+  /** create the typed data block for the Operator.
+   *
+   *  this is only slightly better than a byte buffer
+   *  it allows easy porting of the legacy implementations
+   *  Which wrote into a shared buffer per walker.
+   *  And it make's datalocality fairly easy but
+   *  more descriptive and safe data structures would be better
    */
   static Data createLocalData(size_t size, DataLocality data_locality);
 

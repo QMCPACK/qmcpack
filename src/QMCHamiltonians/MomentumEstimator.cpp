@@ -72,7 +72,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
       const RealType* restrict phases_vPos_c = phases_vPos[s].data(0);
       const RealType* restrict phases_vPos_s = phases_vPos[s].data(1);
       RealType* restrict nofK_here           = nofK.data();
-#pragma omp simd aligned(nofK_here, phases_c, phases_s, phases_vPos_c, phases_vPos_s)
+#pragma omp simd aligned(nofK_here, phases_c, phases_s, phases_vPos_c, phases_vPos_s: QMC_SIMD_ALIGNMENT)
       for (int ik = 0; ik < nk; ++ik)
         nofK_here[ik] += (phases_c[ik] * phases_vPos_c[ik] - phases_s[ik] * phases_vPos_s[ik]) * ratio_c -
             (phases_s[ik] * phases_vPos_c[ik] + phases_c[ik] * phases_vPos_s[ik]) * ratio_s;

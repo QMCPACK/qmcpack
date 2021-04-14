@@ -71,12 +71,23 @@ public:
   SpinDensityNew(SpinDensityInput&& sdi, const Lattice&, const SpeciesSet& species, const DataLocality dl = DataLocality::crowd);
   SpinDensityNew(const SpinDensityNew& sdn);
 
+  /** This allows us to allocate the necessary data for the DataLocality::queue 
+   */
   void startBlock(int steps) override;
-  //standard interface
-  OperatorEstBase* clone() override;
-  void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) override;
 
-  /** These absolutely must be of this derived type
+  /** standard interface
+   */
+  OperatorEstBase* clone() override;
+
+  /** accumulate 1 or more walkers of SpinDensity samples
+   */
+  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) override;
+
+  /** this allows the EstimatorManagerNew to reduce without needing to know the details
+   *  of SpinDensityNew's data.
+   *
+   *  can use base class default until crowd level SpinDensity
+   *  estimators don't have a copy of the density grid.
    */
   void collect(const RefVector<OperatorEstBase>& operator_estimators) override;
 
@@ -93,7 +104,7 @@ public:
    *, needs to be unraveled and simplified the hdf5 output is another 
    *  big state big coupling design.
    */
-  void registerOperatorEstimator(std::vector<observable_helper*>& h5desc, hid_t gid) const override;
+  void registerOperatorEstimator(hid_t gid) override;
 
 private:
   static std::vector<int> getSpeciesSize(SpeciesSet& species);

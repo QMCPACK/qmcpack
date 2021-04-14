@@ -146,9 +146,9 @@ void NOMSD<devPsiT>::Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, T
   // use mpi3 when ready
   MPI_Request req_Gsend, req_Grecv;
   MPI_Send_init(to_address(Gwork.origin()) + nak0, (nak1 - nak0) * sizeof(ComplexType), MPI_CHAR, TG.prev_core(), 1234,
-                &(TG.TG()), &req_Gsend);
+                TG.TG().get(), &req_Gsend);
   MPI_Recv_init(to_address(Grecv.origin()) + nak0, (nak1 - nak0) * sizeof(ComplexType), MPI_CHAR, TG.next_core(), 1234,
-                &(TG.TG()), &req_Grecv);
+                TG.TG().get(), &req_Grecv);
 
   fill_n(eloc2.origin(), 3 * ngroups * nwalk, ComplexType(0.0));
   TG.local_barrier();
@@ -255,9 +255,9 @@ void NOMSD<devPsiT>::Energy_distributed_multiDet(const WlkSet& wset, Mat&& E, TV
   MPI_Request req_SMsend, req_SMrecv;
   // use mpi3 when ready
   MPI_Send_init(to_address(SMwork.origin()) + nak0, (nak1 - nak0) * sizeof(ComplexType), MPI_CHAR, TG.prev_core(), 2345,
-                &(TG.TG()), &req_SMsend);
+                TG.TG().get(), &req_SMsend);
   MPI_Recv_init(to_address(SMrecv.origin()) + nak0, (nak1 - nak0) * sizeof(ComplexType), MPI_CHAR, TG.next_core(), 2345,
-                &(TG.TG()), &req_SMrecv);
+                TG.TG().get(), &req_SMrecv);
 
   fill_n(eloc2.origin(), 3 * nnodes * nwalk, ComplexType(0.0));
   fill_n(Ov.origin(), nwalk, ComplexType(0));

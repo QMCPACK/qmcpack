@@ -46,6 +46,8 @@
 
 namespace qmcplusplus
 {
+QMCDriverFactory::QMCDriverFactory(const ProjectData& project_data) : project_data_(project_data) {}
+
 /** Read the xml specifify the driver for this QMC section
  *
  *  Copy elision should result in just a move of the
@@ -242,9 +244,10 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   }
   else if (das.new_run_type == QMCRunType::VMC_BATCH)
   {
-    VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE], qmc_common.qmc_counter);
-    new_driver.reset(fac.create(MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
-                                *primaryPsi, *primaryH, qmc_system.getSampleStack(), comm));
+    VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
+    new_driver.reset(fac.create(project_data_,
+                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
+                                qmc_system.getSampleStack(), comm));
   }
   else if (das.new_run_type == QMCRunType::DMC)
   {
@@ -253,11 +256,10 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   }
   else if (das.new_run_type == QMCRunType::DMC_BATCH)
   {
-    DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE], qmc_common.qmc_counter);
-    new_driver.reset(fac.create(MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH)
-
-                                    ,
-                                *primaryPsi, *primaryH, comm));
+    DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
+    new_driver.reset(fac.create(project_data_,
+                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
+                                comm));
   }
   else if (das.new_run_type == QMCRunType::RMC)
   {
@@ -274,7 +276,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::OPTIMIZE_BATCH)
   {
     QMCOptimizeBatched* opt =
-        QMCWFOptFactoryNew(cur, qmc_common.qmc_counter, qmc_system, *primaryPsi, *primaryH,
+        QMCWFOptFactoryNew(cur, project_data_, qmc_system,
                            MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                            qmc_system.getSampleStack(), comm);
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
@@ -299,7 +301,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
         "full precision build instead.");
 #endif
     QMCFixedSampleLinearOptimizeBatched* opt =
-        QMCWFOptLinearFactoryNew(cur, qmc_common.qmc_counter, qmc_system, *primaryPsi, *primaryH,
+        QMCWFOptLinearFactoryNew(cur, project_data_, qmc_system,
                                  MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi,
                                               primaryH),
                                  qmc_system.getSampleStack(), comm);

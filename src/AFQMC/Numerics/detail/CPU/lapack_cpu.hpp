@@ -38,7 +38,7 @@
 
 namespace ma
 {
-inline static void gesvd(char jobu,
+inline void gesvd(char jobu,
                          char jobvt,
                          int m,
                          int n,
@@ -57,7 +57,7 @@ inline static void gesvd(char jobu,
   //sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
 }
 
-inline static void gesvd(char jobu,
+inline void gesvd(char jobu,
                          char jobvt,
                          int m,
                          int n,
@@ -76,7 +76,7 @@ inline static void gesvd(char jobu,
   //dgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
 }
 
-inline static void gesvd(char jobu,
+inline void gesvd(char jobu,
                          char jobvt,
                          int m,
                          int n,
@@ -96,7 +96,7 @@ inline static void gesvd(char jobu,
   //cgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
 }
 
-inline static void gesvd(char jobu,
+inline void gesvd(char jobu,
                          char jobvt,
                          int m,
                          int n,
@@ -117,7 +117,7 @@ inline static void gesvd(char jobu,
 }
 
 template<typename T>
-inline static void gesvd_bufferSize(const int m, const int n, T* a, int& lwork)
+inline void gesvd_bufferSize(const int m, const int n, T* a, int& lwork)
 {
   T work, S;
   int status;
@@ -127,7 +127,7 @@ inline static void gesvd_bufferSize(const int m, const int n, T* a, int& lwork)
 }
 
 template<typename T>
-inline static void gesvd_bufferSize(const int m, const int n, std::complex<T>* a, int& lwork)
+inline void gesvd_bufferSize(const int m, const int n, std::complex<T>* a, int& lwork)
 {
   std::complex<T> work;
   T rwork;
@@ -137,7 +137,7 @@ inline static void gesvd_bufferSize(const int m, const int n, std::complex<T>* a
   lwork = int(real(work));
 }
 
-inline static void geev(char* jobvl,
+inline void geev(char* jobvl,
                         char* jobvr,
                         int* n,
                         double* a,
@@ -155,7 +155,7 @@ inline static void geev(char* jobvl,
   dgeev(jobvl, jobvr, n, a, lda, alphar, alphai, vl, ldvl, vr, ldvr, work, lwork, info);
 }
 
-inline static void geev(char* jobvl,
+inline void geev(char* jobvl,
                         char* jobvr,
                         int* n,
                         float* a,
@@ -173,7 +173,7 @@ inline static void geev(char* jobvl,
   sgeev(jobvl, jobvr, n, a, lda, alphar, alphai, vl, ldvl, vr, ldvr, work, lwork, info);
 }
 
-inline static void ggev(char* jobvl,
+inline void ggev(char* jobvl,
                         char* jobvr,
                         int* n,
                         double* a,
@@ -194,7 +194,7 @@ inline static void ggev(char* jobvl,
   dggev(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work, lwork, info);
 }
 
-inline static void ggev(char* jobvl,
+inline void ggev(char* jobvl,
                         char* jobvr,
                         int* n,
                         float* a,
@@ -215,7 +215,7 @@ inline static void ggev(char* jobvl,
   sggev(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work, lwork, info);
 }
 
-inline static void hevr(char& JOBZ,
+inline void hevr(char& JOBZ,
                         char& RANGE,
                         char& UPLO,
                         int& N,
@@ -256,7 +256,7 @@ inline static void hevr(char& JOBZ,
   }
 }
 
-inline static void hevr(char& JOBZ,
+inline void hevr(char& JOBZ,
                         char& RANGE,
                         char& UPLO,
                         int& N,
@@ -297,7 +297,7 @@ inline static void hevr(char& JOBZ,
   }
 }
 
-inline static void hevr(char& JOBZ,
+inline void hevr(char& JOBZ,
                         char& RANGE,
                         char& UPLO,
                         int& N,
@@ -338,7 +338,7 @@ inline static void hevr(char& JOBZ,
   }
 }
 
-inline static void hevr(char& JOBZ,
+inline void hevr(char& JOBZ,
                         char& RANGE,
                         char& UPLO,
                         int& N,
@@ -379,7 +379,7 @@ inline static void hevr(char& JOBZ,
   }
 }
 
-inline static void gvx(int ITYPE,
+inline void gvx(int ITYPE,
                        char& JOBZ,
                        char& RANGE,
                        char& UPLO,
@@ -417,7 +417,7 @@ inline static void gvx(int ITYPE,
   }
 }
 
-inline static void gvx(int ITYPE,
+inline void gvx(int ITYPE,
                        char& JOBZ,
                        char& RANGE,
                        char& UPLO,
@@ -455,7 +455,7 @@ inline static void gvx(int ITYPE,
   }
 }
 
-inline static void gvx(int ITYPE,
+inline void gvx(int ITYPE,
                        char& JOBZ,
                        char& RANGE,
                        char& UPLO,
@@ -493,7 +493,7 @@ inline static void gvx(int ITYPE,
   }
 }
 
-inline static void gvx(int ITYPE,
+inline void gvx(int ITYPE,
                        char& JOBZ,
                        char& RANGE,
                        char& UPLO,
@@ -531,28 +531,28 @@ inline static void gvx(int ITYPE,
   }
 }
 
-inline static void getrf_bufferSize(const int n, const int m, float* a, const int lda, int& lwork) { lwork = 0; }
-inline static void getrf_bufferSize(const int n, const int m, double* a, const int lda, int& lwork) { lwork = 0; }
-inline static void getrf_bufferSize(const int n, const int m, std::complex<float>* a, const int lda, int& lwork)
+inline void getrf_bufferSize(const int n, const int m, float* a, const int lda, int& lwork) { lwork = 0; }
+inline void getrf_bufferSize(const int n, const int m, double* a, const int lda, int& lwork) { lwork = 0; }
+inline void getrf_bufferSize(const int n, const int m, std::complex<float>* a, const int lda, int& lwork)
 {
   lwork = 0;
 }
-inline static void getrf_bufferSize(const int n, const int m, std::complex<double>* a, const int lda, int& lwork)
+inline void getrf_bufferSize(const int n, const int m, std::complex<double>* a, const int lda, int& lwork)
 {
   lwork = 0;
 }
 
-void static getrf(const int& n, const int& m, double* a, const int& n0, int* piv, int& st, double* work = nullptr)
+inline void getrf(const int& n, const int& m, double* a, const int& n0, int* piv, int& st, double* work = nullptr)
 {
   dgetrf(n, m, a, n0, piv, st);
 }
 
-void static getrf(const int& n, const int& m, float* a, const int& n0, int* piv, int& st, float* work = nullptr)
+inline void getrf(const int& n, const int& m, float* a, const int& n0, int* piv, int& st, float* work = nullptr)
 {
   sgetrf(n, m, a, n0, piv, st);
 }
 
-void static getrf(const int& n,
+inline void getrf(const int& n,
                   const int& m,
                   std::complex<double>* a,
                   const int& n0,
@@ -563,7 +563,7 @@ void static getrf(const int& n,
   zgetrf(n, m, a, n0, piv, st);
 }
 
-void static getrf(const int& n,
+inline void getrf(const int& n,
                   const int& m,
                   std::complex<float>* a,
                   const int& n0,
@@ -574,31 +574,31 @@ void static getrf(const int& n,
   cgetrf(n, m, a, n0, piv, st);
 }
 
-inline static void getrfBatched(const int n, float** a, int lda, int* piv, int* info, int batchSize)
+inline void getrfBatched(const int n, float** a, int lda, int* piv, int* info, int batchSize)
 {
   for (int i = 0; i < batchSize; i++)
     getrf(n, n, a[i], lda, piv + i * n, *(info + i));
 }
 
-inline static void getrfBatched(const int n, double** a, int lda, int* piv, int* info, int batchSize)
+inline void getrfBatched(const int n, double** a, int lda, int* piv, int* info, int batchSize)
 {
   for (int i = 0; i < batchSize; i++)
     getrf(n, n, a[i], lda, piv + i * n, *(info + i));
 }
 
-inline static void getrfBatched(const int n, std::complex<double>** a, int lda, int* piv, int* info, int batchSize)
+inline void getrfBatched(const int n, std::complex<double>** a, int lda, int* piv, int* info, int batchSize)
 {
   for (int i = 0; i < batchSize; i++)
     getrf(n, n, a[i], lda, piv + i * n, *(info + i));
 }
 
-inline static void getrfBatched(const int n, std::complex<float>** a, int lda, int* piv, int* info, int batchSize)
+inline void getrfBatched(const int n, std::complex<float>** a, int lda, int* piv, int* info, int batchSize)
 {
   for (int i = 0; i < batchSize; i++)
     getrf(n, n, a[i], lda, piv + i * n, *(info + i));
 }
 
-inline static void getri_bufferSize(int n, float const* a, int lda, int& lwork)
+inline void getri_bufferSize(int n, float const* a, int lda, int& lwork)
 {
   float work;
   int status;
@@ -607,7 +607,7 @@ inline static void getri_bufferSize(int n, float const* a, int lda, int& lwork)
   lwork = int(work);
 }
 
-inline static void getri_bufferSize(int n, double const* a, int lda, int& lwork)
+inline void getri_bufferSize(int n, double const* a, int lda, int& lwork)
 {
   double work;
   int status;
@@ -616,7 +616,7 @@ inline static void getri_bufferSize(int n, double const* a, int lda, int& lwork)
   lwork = int(work);
 }
 
-inline static void getri_bufferSize(int n, std::complex<float> const* a, int lda, int& lwork)
+inline void getri_bufferSize(int n, std::complex<float> const* a, int lda, int& lwork)
 {
   std::complex<float> work;
   int status;
@@ -625,7 +625,7 @@ inline static void getri_bufferSize(int n, std::complex<float> const* a, int lda
   lwork = int(real(work));
 }
 
-inline static void getri_bufferSize(int n, std::complex<double> const* a, int lda, int& lwork)
+inline void getri_bufferSize(int n, std::complex<double> const* a, int lda, int& lwork)
 {
   std::complex<double> work;
   int status;
@@ -635,12 +635,12 @@ inline static void getri_bufferSize(int n, std::complex<double> const* a, int ld
 }
 
 
-void static getri(int n, float* restrict a, int n0, int const* restrict piv, float* restrict work, int n1, int& status)
+inline void getri(int n, float* restrict a, int n0, int const* restrict piv, float* restrict work, int n1, int& status)
 {
   sgetri(n, a, n0, piv, work, n1, status);
 }
 
-void static getri(int n,
+inline void getri(int n,
                   double* restrict a,
                   int n0,
                   int const* restrict piv,
@@ -651,7 +651,7 @@ void static getri(int n,
   dgetri(n, a, n0, piv, work, n1, status);
 }
 
-void static getri(int n,
+inline void getri(int n,
                   std::complex<float>* restrict a,
                   int n0,
                   int const* restrict piv,
@@ -662,7 +662,7 @@ void static getri(int n,
   cgetri(n, a, n0, piv, work, n1, status);
 }
 
-void static getri(int n,
+inline void getri(int n,
                   std::complex<double>* restrict a,
                   int n0,
                   int const* restrict piv,
@@ -674,7 +674,7 @@ void static getri(int n,
 }
 
 template<typename T>
-inline static void getriBatched(int n, T** a, int lda, int* piv, T** ainv, int ldc, int* info, int batchSize)
+inline void getriBatched(int n, T** a, int lda, int* piv, T** ainv, int ldc, int* info, int batchSize)
 {
   for (int i = 0; i < batchSize; i++)
   {
@@ -684,7 +684,7 @@ inline static void getriBatched(int n, T** a, int lda, int* piv, T** ainv, int l
   }
 }
 
-void static geqrf(int M,
+inline void geqrf(int M,
                   int N,
                   std::complex<double>* A,
                   const int LDA,
@@ -701,7 +701,7 @@ void static geqrf(int M,
 #endif
 }
 
-void static geqrf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+inline void geqrf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
 {
 #ifdef __NO_QR__
   INFO    = 0;
@@ -711,7 +711,7 @@ void static geqrf(int M, int N, double* A, const int LDA, double* TAU, double* W
 #endif
 }
 
-void static geqrf(int M,
+inline void geqrf(int M,
                   int N,
                   std::complex<float>* A,
                   const int LDA,
@@ -728,7 +728,7 @@ void static geqrf(int M,
 #endif
 }
 
-void static geqrf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
+inline void geqrf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
 {
 #ifdef __NO_QR__
   INFO    = 0;
@@ -739,7 +739,7 @@ void static geqrf(int M, int N, float* A, const int LDA, float* TAU, float* WORK
 }
 
 template<typename T>
-static void geqrf_bufferSize(int m, int n, T* a, int lda, int& lwork)
+inline void geqrf_bufferSize(int m, int n, T* a, int lda, int& lwork)
 {
   typename std::decay<T>::type work;
   int status;
@@ -748,7 +748,7 @@ static void geqrf_bufferSize(int m, int n, T* a, int lda, int& lwork)
   lwork = int(real(work));
 }
 
-void static gelqf(int M,
+inline void gelqf(int M,
                   int N,
                   std::complex<double>* A,
                   const int LDA,
@@ -765,7 +765,7 @@ void static gelqf(int M,
 #endif
 }
 
-void static gelqf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+inline void gelqf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
 {
 #ifdef __NO_QR__
   INFO    = 0;
@@ -775,7 +775,7 @@ void static gelqf(int M, int N, double* A, const int LDA, double* TAU, double* W
 #endif
 }
 
-void static gelqf(int M,
+inline void gelqf(int M,
                   int N,
                   std::complex<float>* A,
                   const int LDA,
@@ -792,7 +792,7 @@ void static gelqf(int M,
 #endif
 }
 
-void static gelqf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
+inline void gelqf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
 {
 #ifdef __NO_QR__
   INFO    = 0;
@@ -803,7 +803,7 @@ void static gelqf(int M, int N, float* A, const int LDA, float* TAU, float* WORK
 }
 
 template<typename T>
-static void gelqf_bufferSize(int m, int n, T* a, int lda, int& lwork)
+inline void gelqf_bufferSize(int m, int n, T* a, int lda, int& lwork)
 {
   typename std::decay<T>::type work;
   int status;
@@ -812,7 +812,7 @@ static void gelqf_bufferSize(int m, int n, T* a, int lda, int& lwork)
   lwork = int(real(work));
 }
 
-void static gqr(int M,
+inline void gqr(int M,
                 int N,
                 int K,
                 std::complex<double>* A,
@@ -830,7 +830,7 @@ void static gqr(int M,
 #endif
 }
 
-void static gqr(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+inline void gqr(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
 {
 #ifdef __NO_QR__
   INFO    = 0;
@@ -840,7 +840,7 @@ void static gqr(int M, int N, int K, double* A, const int LDA, double* TAU, doub
 #endif
 }
 
-void static gqr(int M,
+inline void gqr(int M,
                 int N,
                 int K,
                 std::complex<float>* A,
@@ -858,7 +858,7 @@ void static gqr(int M,
 #endif
 }
 
-void static gqr(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
+inline void gqr(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
 {
 #ifdef __NO_QR__
   INFO    = 0;
@@ -869,7 +869,7 @@ void static gqr(int M, int N, int K, float* A, const int LDA, float* TAU, float*
 }
 
 template<typename T>
-static void gqr_bufferSize(int m, int n, int k, T* a, int lda, int& lwork)
+inline void gqr_bufferSize(int m, int n, int k, T* a, int lda, int& lwork)
 {
   typename std::decay<T>::type work;
   int status;
@@ -878,7 +878,7 @@ static void gqr_bufferSize(int m, int n, int k, T* a, int lda, int& lwork)
   lwork = int(real(work));
 }
 
-void static glq(int M,
+inline void glq(int M,
                 int N,
                 int K,
                 std::complex<double>* A,
@@ -896,7 +896,7 @@ void static glq(int M,
 #endif
 }
 
-void static glq(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+inline void glq(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
 {
 #ifdef __NO_QR__
   INFO    = 0;
@@ -906,7 +906,7 @@ void static glq(int M, int N, int K, double* A, const int LDA, double* TAU, doub
 #endif
 }
 
-void static glq(int M,
+inline void glq(int M,
                 int N,
                 int K,
                 std::complex<float>* A,
@@ -924,7 +924,7 @@ void static glq(int M,
 #endif
 }
 
-void static glq(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int const LWORK, int& INFO)
+inline void glq(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int const LWORK, int& INFO)
 {
 #ifdef __NO_QR__
   INFO    = 0;
@@ -935,7 +935,7 @@ void static glq(int M, int N, int K, float* A, const int LDA, float* TAU, float*
 }
 
 template<typename T>
-static void glq_bufferSize(int m, int n, int k, T* a, int lda, int& lwork)
+inline void glq_bufferSize(int m, int n, int k, T* a, int lda, int& lwork)
 {
   typename std::decay<T>::type work;
   int status;
@@ -945,7 +945,7 @@ static void glq_bufferSize(int m, int n, int k, T* a, int lda, int& lwork)
 }
 
 template<typename T1, typename T2>
-inline static void matinvBatched(int n, T1* const* a, int lda, T2** ainv, int lda_inv, int* info, int batchSize)
+inline void matinvBatched(int n, T1* const* a, int lda, T2** ainv, int lda_inv, int* info, int batchSize)
 {
   std::vector<int> piv(n);
   int lwork(-1);

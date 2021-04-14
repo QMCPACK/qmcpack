@@ -88,11 +88,13 @@ namespace BLAS
     zaxpy(n, x, a, incx, b, incy);
   }
 
+  inline static float norm2(int n, const float* a, int incx = 1) { return snrm2(n, a, incx); }
+
+  inline static float norm2(int n, const std::complex<float>* a, int incx = 1) { return scnrm2(n, a, incx); }
+
   inline static double norm2(int n, const double* a, int incx = 1) { return dnrm2(n, a, incx); }
 
   inline static double norm2(int n, const std::complex<double>* a, int incx = 1) { return dznrm2(n, a, incx); }
-
-  inline static float norm2(int n, const float* a, int incx = 1) { return snrm2(n, a, incx); }
 
   inline static void scal(int n, float alpha, float* x, int incx = 1) { sscal(n, alpha, x, incx); }
 
@@ -112,10 +114,6 @@ namespace BLAS
 
   inline static void scal(int n, float alpha, std::complex<float>* x, int incx = 1) { csscal(n, alpha, x, incx); }
 
-  //inline static
-  //void gemv(char trans, int n, int m, const double* amat, const double* x, double* y) {
-  //  dgemv(trans, n, m, done, amat, n, x, INCX, dzero, y, INCY);
-  //}
   inline static void gemv(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y)
   {
     dgemv(NOTRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
@@ -232,190 +230,6 @@ namespace BLAS
     cgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
 
-#if defined(HAVE_MKL)
-  inline static void gemv(char trans_in,
-                          int n,
-                          int m,
-                          const std::complex<double>& alpha,
-                          const double* restrict amat,
-                          int lda,
-                          const std::complex<double>* restrict x,
-                          int incx,
-                          const std::complex<double>& beta,
-                          std::complex<double>* y,
-                          int incy)
-  {
-    dzgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
-  }
-
-  inline static void gemv(char trans_in,
-                          int n,
-                          int m,
-                          const std::complex<float>& alpha,
-                          const float* restrict amat,
-                          int lda,
-                          const std::complex<float>* restrict x,
-                          int incx,
-                          const std::complex<float>& beta,
-                          std::complex<float>* y,
-                          int incy)
-  {
-    scgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
-  }
-
-  inline static void gemm_batch(const CBLAS_LAYOUT Layout,
-                                const CBLAS_TRANSPOSE* transa_array,
-                                const CBLAS_TRANSPOSE* transb_array,
-                                const int* m_array,
-                                const int* n_array,
-                                const int* k_array,
-                                const float* alpha_array,
-                                const void** a_array,
-                                const int* lda_array,
-                                const void** b_array,
-                                const int* ldb_array,
-                                const void* beta_array,
-                                void** c_array,
-                                const int* ldc_array,
-                                const int group_count,
-                                const int* group_size)
-  {
-    cblas_sgemm_batch(Layout, transa_array, transb_array, m_array, n_array, k_array, alpha_array, a_array, lda_array,
-                      b_array, ldb_array, beta_array, c_array, ldc_array, group_count, group_size);
-  }
-
-  inline static void gemm_batch(const CBLAS_LAYOUT Layout,
-                                const CBLAS_TRANSPOSE* transa_array,
-                                const CBLAS_TRANSPOSE* transb_array,
-                                const int* m_array,
-                                const int* n_array,
-                                const int* k_array,
-                                const double* alpha_array,
-                                const void** a_array,
-                                const int* lda_array,
-                                const void** b_array,
-                                const int* ldb_array,
-                                const void* beta_array,
-                                void** c_array,
-                                const int* ldc_array,
-                                const int group_count,
-                                const int* group_size)
-  {
-    cblas_dgemm_batch(Layout, transa_array, transb_array, m_array, n_array, k_array, alpha_array, a_array, lda_array,
-                      b_array, ldb_array, beta_array, c_array, ldc_array, group_count, group_size);
-  }
-
-  inline static void gemm_batch(const CBLAS_LAYOUT Layout,
-                                const CBLAS_TRANSPOSE* transa_array,
-                                const CBLAS_TRANSPOSE* transb_array,
-                                const int* m_array,
-                                const int* n_array,
-                                const int* k_array,
-                                const std::complex<float>* alpha_array,
-                                const void** a_array,
-                                const int* lda_array,
-                                const void** b_array,
-                                const int* ldb_array,
-                                const void* beta_array,
-                                void** c_array,
-                                const int* ldc_array,
-                                const int group_count,
-                                const int* group_size)
-  {
-    cblas_cgemm_batch(Layout, transa_array, transb_array, m_array, n_array, k_array, alpha_array, a_array, lda_array,
-                      b_array, ldb_array, beta_array, c_array, ldc_array, group_count, group_size);
-  }
-
-  inline static void gemm_batch(const CBLAS_LAYOUT Layout,
-                                const CBLAS_TRANSPOSE* transa_array,
-                                const CBLAS_TRANSPOSE* transb_array,
-                                const int* m_array,
-                                const int* n_array,
-                                const int* k_array,
-                                const std::complex<double>* alpha_array,
-                                const void** a_array,
-                                const int* lda_array,
-                                const void** b_array,
-                                const int* ldb_array,
-                                const void* beta_array,
-                                void** c_array,
-                                const int* ldc_array,
-                                const int group_count,
-                                const int* group_size)
-  {
-    cblas_zgemm_batch(Layout, transa_array, transb_array, m_array, n_array, k_array, alpha_array, a_array, lda_array,
-                      b_array, ldb_array, beta_array, c_array, ldc_array, group_count, group_size);
-  }
-#endif
-
-  template<typename T>
-  inline static void gemmStridedBatched(char Atrans,
-                                        char Btrans,
-                                        int M,
-                                        int N,
-                                        int K,
-                                        T alpha,
-                                        const T* A,
-                                        int lda,
-                                        int strideA,
-                                        const T* restrict B,
-                                        int ldb,
-                                        int strideB,
-                                        T beta,
-                                        T* restrict C,
-                                        int ldc,
-                                        int strideC,
-                                        int batchSize)
-  {
-#ifdef HAVE_MKL
-    // MKL has batched gemm, but with pointer interface. Translate here
-    std::vector<const void*> Aptrs(batchSize);
-    std::vector<const void*> Bptrs(batchSize);
-    std::vector<const void*> Cptrs(batchSize);
-
-    for (int i = 0; i < batchSize; i++)
-    {
-      Aptrs[i] = static_cast<const void*>(A + i * strideA);
-      Bptrs[i] = static_cast<const void*>(B + i * strideB);
-      Cptrs[i] = static_cast<const void*>(C + i * strideC);
-    }
-
-    // Expect arrays of size group_count.
-    // This is 1 in strided case, so passing pointers to everything
-    gemm_batch(CblasColMajor, &Atrans, &Btrans, &M, &N, &K, &alpha, Aptrs.data(), &lda, Bptrs.data(), &ldb, &beta,
-               Cptrs.data(), &ldc, 1, &batchSize);
-#else
-    // No batched gemm, :-( gemm loop
-    for (int i = 0; i < batchSize; i++)
-      gemm(Atrans, Btrans, M, N, K, alpha, A + i * strideA, lda, B + i * strideB, ldb, beta, C + i * strideC, ldc);
-#endif
-  }
-
-  template<typename T>
-  inline static void gemmBatched(char Atrans,
-                                 char Btrans,
-                                 int M,
-                                 int N,
-                                 int K,
-                                 T alpha,
-                                 T const** A,
-                                 int lda,
-                                 T const** B,
-                                 int ldb,
-                                 T beta,
-                                 T** C,
-                                 int ldc,
-                                 int batchSize)
-  {
-#ifdef HAVE_MKL
-    gemm_batch(CblasColMajor, &Atrans, &Btrans, &M, &N, &K, &alpha, A, &lda, B, &ldb, &beta, C, &ldc, 1, &batchSize);
-#else
-    // No batched gemm, :-( gemm loop
-    for (int i = 0; i < batchSize; i++)
-      gemm(Atrans, Btrans, M, N, K, alpha, A[i], lda, B[i], ldb, beta, C[i], ldc);
-#endif
-  }
-
   inline static void gemm(char Atrans,
                           char Btrans,
                           int M,
@@ -483,77 +297,6 @@ namespace BLAS
   {
     cgemm(Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
   }
-
-
-  //   inline static
-  //   void symv(char uplo, int n, const double alpha, double* a, int lda,
-  //             double* x, const int incx, const double beta, double* y,
-  //             const int incy) {
-  //     dsymv(&uplo,&n,&alpha,a,&lda,x,&incx,&beta,y,&incy);
-  //   }
-
-  //   inline static
-  //   void symv(char uplo, int n, const std::complex<double> alpha,
-  //             std::complex<double>* a, int lda, std::complex<double>* x, const int incx,
-  //             const std::complex<double> beta, std::complex<double>* y, const int incy) {
-  //     zsymv(&uplo,&n,&alpha,a,&lda,x,&incx,&beta,y,&incy);
-  //   }
-
-  //   inline static
-  //   void symv(const char uplo, int n, const float alpha, float* a, int lda,
-  //             float* x, const int incx, const float beta, float* y,
-  //             const int incy) {
-  //     ssymv(&uplo,&n,&alpha,a,&lda,x,&incx,&beta,y,&incy);
-  //   }
-
-  //   inline static
-  //   void symv(const char uplo, int n, const std::complex<float> alpha,
-  //             std::complex<float>* a, int lda, std::complex<float>* x, const int incx,
-  //             const std::complex<float> beta, std::complex<float>* y, const int incy) {
-  //     csymv(&uplo,&n,&alpha,a,&lda,x,&incx,&beta,y,&incy);
-  //   }
-
-  //   inline static
-  //   void symv(int n, double alpha, double* a, double* x, double* y) {
-  //     dsymv(&UPLO,&n,&alpha,a,&n,x,&INCX,&dzero,y,&INCY);
-  //   }
-
-  //   inline static
-  //   void symv(int n, const double* a, const double* x, double* y) {
-  //     dsymv(&UPLO,&n,&done,a,&n,x,&INCX,&dzero,y,&INCY);
-  //   }
-
-  //   inline static
-  //   void symv(int n, float alpha, float* a, float* x, float* y) {
-  //     ssymv(&UPLO,&n,&alpha,a,&n,x,&INCX,&szero,y,&INCY);
-  //   }
-
-  //   inline static
-  //   void symv(int n, float* a, float* x, float* y) {
-  //     ssymv(&UPLO,&n,&sone,a,&n,x,&INCX,&szero,y,&INCY);
-  //   }
-
-  //   inline static void
-  //   symv(int n, std::complex<double> alpha, std::complex<double>* a, std::complex<double>* x,
-  //        std::complex<double>* y) {
-  //     zsymv(&UPLO,&n,&alpha,a,&n,x,&INCX,&zzero,y,&INCY);
-  //   }
-
-  //   inline static
-  //   void symv(int n, std::complex<double>* a, std::complex<double>* x, std::complex<double>* y) {
-  //     zsymv(&UPLO,&n,&zone,a,&n,x,&INCX,&zzero,y,&INCY);
-  //   }
-
-  //   inline static void
-  //   symv(int n, std::complex<float> alpha, std::complex<float>* a, std::complex<float>* x,
-  //        std::complex<float>* y) {
-  //     csymv(&UPLO,&n,&alpha,a,&n,x,&INCX,&czero,y,&INCY);
-  //   }
-
-  //   inline static
-  //   void symv(int n, std::complex<float>* a, std::complex<float>* x, std::complex<float>* y) {
-  //     csymv(&UPLO,&n,&cone,a,&n,x,&INCX,&czero,y,&INCY);
-  //   }
 
   template<typename T>
   inline static T dot(int n, const T* restrict a, const T* restrict b)
@@ -1002,27 +745,27 @@ struct LAPACK
            IWORK, LIWORK, INFO);
   }
 
-  void static getrf(const int& n, const int& m, double* a, const int& n0, int* piv, int& st)
+  static void getrf(const int& n, const int& m, double* a, const int& n0, int* piv, int& st)
   {
     dgetrf(n, m, a, n0, piv, st);
   }
 
-  void static getrf(const int& n, const int& m, float* a, const int& n0, int* piv, int& st)
+  static void getrf(const int& n, const int& m, float* a, const int& n0, int* piv, int& st)
   {
     sgetrf(n, m, a, n0, piv, st);
   }
 
-  void static getrf(const int& n, const int& m, std::complex<double>* a, const int& n0, int* piv, int& st)
+  static void getrf(const int& n, const int& m, std::complex<double>* a, const int& n0, int* piv, int& st)
   {
     zgetrf(n, m, a, n0, piv, st);
   }
 
-  void static getrf(const int& n, const int& m, std::complex<float>* a, const int& n0, int* piv, int& st)
+  static void getrf(const int& n, const int& m, std::complex<float>* a, const int& n0, int* piv, int& st)
   {
     cgetrf(n, m, a, n0, piv, st);
   }
 
-  void static getri(int n,
+  static void getri(int n,
                     float* restrict a,
                     int n0,
                     int const* restrict piv,
@@ -1033,7 +776,7 @@ struct LAPACK
     sgetri(n, a, n0, piv, work, n1, status);
   }
 
-  void static getri(int n,
+  static void getri(int n,
                     double* restrict a,
                     int n0,
                     int const* restrict piv,
@@ -1044,7 +787,7 @@ struct LAPACK
     dgetri(n, a, n0, piv, work, n1, status);
   }
 
-  void static getri(int n,
+  static void getri(int n,
                     std::complex<float>* restrict a,
                     int n0,
                     int const* restrict piv,
@@ -1055,7 +798,7 @@ struct LAPACK
     cgetri(n, a, n0, piv, work, n1, status);
   }
 
-  void static getri(int n,
+  static void getri(int n,
                     std::complex<double>* restrict a,
                     int n0,
                     int const* restrict piv,
@@ -1066,7 +809,7 @@ struct LAPACK
     zgetri(n, a, n0, piv, work, n1, status);
   }
 
-  void static geqrf(int M,
+  static void geqrf(int M,
                     int N,
                     std::complex<double>* A,
                     const int LDA,
@@ -1078,12 +821,12 @@ struct LAPACK
     zgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static geqrf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+  static void geqrf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
     dgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static geqrf(int M,
+  static void geqrf(int M,
                     int N,
                     std::complex<float>* A,
                     const int LDA,
@@ -1095,12 +838,12 @@ struct LAPACK
     cgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static geqrf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
+  static void geqrf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
   {
     sgeqrf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gelqf(int M,
+  static void gelqf(int M,
                     int N,
                     std::complex<double>* A,
                     const int LDA,
@@ -1112,12 +855,12 @@ struct LAPACK
     zgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gelqf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+  static void gelqf(int M, int N, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
     dgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gelqf(int M,
+  static void gelqf(int M,
                     int N,
                     std::complex<float>* A,
                     const int LDA,
@@ -1129,12 +872,12 @@ struct LAPACK
     cgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gelqf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
+  static void gelqf(int M, int N, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
   {
     sgelqf(M, N, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gqr(int M,
+  static void gqr(int M,
                   int N,
                   int K,
                   std::complex<double>* A,
@@ -1147,12 +890,12 @@ struct LAPACK
     zungqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gqr(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+  static void gqr(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
     dorgqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gqr(int M,
+  static void gqr(int M,
                   int N,
                   int K,
                   std::complex<float>* A,
@@ -1165,12 +908,12 @@ struct LAPACK
     cungqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static gqr(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
+  static void gqr(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int LWORK, int& INFO)
   {
     sorgqr(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static glq(int M,
+  static void glq(int M,
                   int N,
                   int K,
                   std::complex<double>* A,
@@ -1183,12 +926,12 @@ struct LAPACK
     zunglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static glq(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
+  static void glq(int M, int N, int K, double* A, const int LDA, double* TAU, double* WORK, int LWORK, int& INFO)
   {
     dorglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static glq(int M,
+  static void glq(int M,
                   int N,
                   int K,
                   std::complex<float>* A,
@@ -1201,27 +944,27 @@ struct LAPACK
     cunglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static glq(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int const LWORK, int& INFO)
+  static void glq(int M, int N, int K, float* A, const int LDA, float* TAU, float* WORK, int const LWORK, int& INFO)
   {
     sorglq(M, N, K, A, LDA, TAU, WORK, LWORK, INFO);
   }
 
-  void static potrf(const char& UPLO, const int& N, float* A, const int& LDA, int& INFO)
+  static void potrf(const char& UPLO, const int& N, float* A, const int& LDA, int& INFO)
   {
     spotrf(UPLO, N, A, LDA, INFO);
   }
 
-  void static potrf(const char& UPLO, const int& N, double* A, const int& LDA, int& INFO)
+  static void potrf(const char& UPLO, const int& N, double* A, const int& LDA, int& INFO)
   {
     dpotrf(UPLO, N, A, LDA, INFO);
   }
 
-  void static potrf(const char& UPLO, const int& N, std::complex<float>* A, const int& LDA, int& INFO)
+  static void potrf(const char& UPLO, const int& N, std::complex<float>* A, const int& LDA, int& INFO)
   {
     cpotrf(UPLO, N, A, LDA, INFO);
   }
 
-  void static potrf(const char& UPLO, const int& N, std::complex<double>* A, const int& LDA, int& INFO)
+  static void potrf(const char& UPLO, const int& N, std::complex<double>* A, const int& LDA, int& INFO)
   {
     zpotrf(UPLO, N, A, LDA, INFO);
   }

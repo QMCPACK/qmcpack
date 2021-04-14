@@ -28,9 +28,9 @@ are given in the referenced sections.
    (:ref:`buildqe`).
 
 #. Run the cmake configure step and build with make
-   (:ref:`cmake` and :ref:`cmakequick`). Examples for
-   common systems are given in
-   :ref:`installexamples`.
+   (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
+   tests for Quantum ESPRESSO or PYSCF, be sure to specify QE_BIN or ensure that the python modules are available when cmake is
+   run.
 
 #. Run the tests to verify QMCPACK
    (:ref:`testing`).
@@ -326,7 +326,7 @@ the path to the source directory.
 
   ::
 
-    QE_BIN                    Location of Quantum Espresso binaries including pw2qmcpack.x
+    QE_BIN                    Location of Quantum ESPRESSO binaries including pw2qmcpack.x
     QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
     QMC_INCLUDE               Add extra include paths
     QMC_EXTRA_LIBS            Add extra link libraries
@@ -377,18 +377,22 @@ the path to the source directory.
                            e.g. "-n", "-np", etc.
     MPIEXEC_PREFLAGS       Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
 
-- LLVM/Clang Developer Options
+- Sanitizers Developer Options
 
   ::
 
-    LLVM_SANITIZE_ADDRES  link with the Clang address sanitizer library
-    LLVM_SANITIZE_MEMORY  link with the Clang memory sanitizer library
+    ENABLE_SANITIZER  link with the GNU or Clang sanitizer library for asan, ubsan, tsan or msan (default=none)
+    
 
-`Clang address sanitizer library <https://clang.llvm.org/docs/AddressSanitizer.html>`_
+`Clang address sanitizer library asan <https://clang.llvm.org/docs/AddressSanitizer.html>`_
 
-`Clang memory sanitizer library <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+`Clang address sanitizer library ubsan <https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html>`_
 
-See :ref:`LLVM-Sanitizer-Libraries` for more information.
+`Clang thread sanitizer library tsan <https://clang.llvm.org/docs/ThreadSanitizer.html>`_
+
+`Clang thread sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
+
+See :ref:`Sanitizer-Libraries` for more information.
 
 Notes for OpenMP target offload to accelerators (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -885,9 +889,9 @@ For ease of reproducibility we provide build scripts for Summit.
   ./config/build_olcf_summit.sh
   ls bin
 
-Building Quantum Espresso
+Building Quantum ESPRESSO
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-We provide a build script for the v6.4.1 release of Quantum Espresso (QE).
+We provide a build script for the v6.4.1 release of Quantum ESPRESSO (QE).
 The following can be used to build a CPU version of QE on Summit,
 placing the script in the external\_codes/quantum\_espresso directory.
 
@@ -1282,10 +1286,6 @@ options and different versions of the application. A full list can be displayed 
                                                     converter.
     qe [on]                 True, False             Install with patched Quantum
                                                     Espresso 6.4.0
-    soa [on]                True, False             Build with Structure-of-Array
-                                                    instead of Array-of-Structure
-                                                    code. Only for CPU codeand
-                                                    only in mixed precision
     timers [off]            True, False             Build with support for timers
 
   Installation Phases:
@@ -1626,7 +1626,7 @@ See :ref:`unit-testing` for more details about unit tests.
 
 .. _integtestqe:
 
-Integration tests with Quantum Espresso
+Integration tests with Quantum ESPRESSO
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As described in :ref:`buildqe`, it is possible to test entire
@@ -1634,9 +1634,9 @@ workflows of trial wavefunction generation, conversion, and eventual
 QMC calculation. A patched QE must be installed so that the
 pw2qmcpack converter is available.
 
-By adding ``-D QE_BIN=your_QE_binary_path`` in the CMake command line when building your QMCPACK,
-tests named with the "qe-" prefix will be included in the test set of your build.
-You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
+By adding ``-D QE_BIN=your_QE_binary_path`` in the CMake command line when building your QMCPACK, tests named with the "qe-"
+prefix will be included in the test set of your build. If CMake finds pw2qmcpack.x and pw.x in the same location on the PATH,
+these tests will also be activated. You can test the whole ``pw > pw2qmcpack > qmcpack`` workflow by
 
 ::
 

@@ -53,22 +53,22 @@ VMCLinearOpt::VMCLinearOpt(MCWalkerConfiguration& w,
   DumpConfig = false;
   //default is 10
   nWarmupSteps = 10;
-  m_param.add(UseDrift, "useDrift", "string");
-  m_param.add(UseDrift, "usedrift", "string");
-  m_param.add(UseDrift, "use_drift", "string");
-  m_param.add(nTargetSamples, "targetWalkers", "int");
-  m_param.add(nTargetSamples, "targetwalkers", "int");
-  m_param.add(nTargetSamples, "target_walkers", "int");
-  //     m_param.add(beta_errorbars,"beta_error","double");
-  //     m_param.add(alpha_errorbars,"alpha_error","double");
-  m_param.add(w_beta, "beta", "double");
-  m_param.add(w_alpha, "alpha", "double");
-  //     m_param.add(logepsilon,"logepsilon","double");
-  //     m_param.add(logoffset,"logoffset","double");
-  m_param.add(printderivs, "printderivs", "string");
-  m_param.add(GEVtype, "GEVMethod", "string");
-  //     m_param.add(myRNWarmupSteps,"rnwarmupsteps","int");
-  //     m_param.add(myRNWarmupSteps,"cswarmupsteps","int");
+  m_param.add(UseDrift, "useDrift");
+  m_param.add(UseDrift, "usedrift");
+  m_param.add(UseDrift, "use_drift");
+  m_param.add(nTargetSamples, "targetWalkers");
+  m_param.add(nTargetSamples, "targetwalkers");
+  m_param.add(nTargetSamples, "target_walkers");
+  //     m_param.add(beta_errorbars,"beta_error");
+  //     m_param.add(alpha_errorbars,"alpha_error");
+  m_param.add(w_beta, "beta");
+  m_param.add(w_alpha, "alpha");
+  //     m_param.add(logepsilon,"logepsilon");
+  //     m_param.add(logoffset,"logoffset");
+  m_param.add(printderivs, "printderivs");
+  m_param.add(GEVtype, "GEVMethod");
+  //     m_param.add(myRNWarmupSteps,"rnwarmupsteps");
+  //     m_param.add(myRNWarmupSteps,"cswarmupsteps");
 }
 
 bool VMCLinearOpt::run()
@@ -106,7 +106,7 @@ bool VMCLinearOpt::run()
       //rest the collectables and keep adding
       wClones[ip]->resetCollectables();
       //rest the collectables and keep adding
-      MCWalkerConfiguration::iterator wit(W.begin() + wPerNode[ip]), wit_end(W.begin() + wPerNode[ip + 1]);
+      MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       for (int step = 0; step < nSteps; ++step)
       {
         Movers[ip]->advanceWalkers(wit, wit_end, false);
@@ -161,9 +161,9 @@ bool VMCLinearOpt::run()
 //     {
 //       int ip=omp_get_thread_num();
 //       if (qmc_driver_mode[QMC_UPDATE_MODE])
-//         CSMovers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//         CSMovers[ip]->initWalkersForPbyP(W.begin()+wPerRank[ip],W.begin()+wPerRank[ip+1]);
 //       else
-//         CSMovers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//         CSMovers[ip]->initWalkers(W.begin()+wPerRank[ip],W.begin()+wPerRank[ip+1]);
 //     }
 //     //resetting containers
 //     clearCSEstimators();
@@ -497,9 +497,9 @@ void VMCLinearOpt::resetRun()
     traceClones.resize(NumThreads, 0);
     Rng.resize(NumThreads, 0);
     int nwtot = (W.getActiveWalkers() / NumThreads) * NumThreads;
-    FairDivideLow(nwtot, NumThreads, wPerNode);
+    FairDivideLow(nwtot, NumThreads, wPerRank);
     app_log() << "  Initial partition of walkers ";
-    copy(wPerNode.begin(), wPerNode.end(), std::ostream_iterator<int>(app_log(), " "));
+    copy(wPerRank.begin(), wPerRank.end(), std::ostream_iterator<int>(app_log(), " "));
     app_log() << std::endl;
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
@@ -581,13 +581,13 @@ void VMCLinearOpt::resetRun()
     Movers[ip]->resetRun(branchEngine.get(), estimatorClones[ip], traceClones[ip], DriftModifier);
     //       CSMovers[ip]->resetRun(branchEngine.get(),estimatorClones[ip]);
     if (qmc_driver_mode[QMC_UPDATE_MODE])
-      Movers[ip]->initWalkersForPbyP(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+      Movers[ip]->initWalkersForPbyP(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     else
-      Movers[ip]->initWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1]);
+      Movers[ip]->initWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1]);
     //       if (UseDrift != "rn")
     //       {
     for (int prestep = 0; prestep < nWarmupSteps; ++prestep)
-      Movers[ip]->advanceWalkers(W.begin() + wPerNode[ip], W.begin() + wPerNode[ip + 1], false);
+      Movers[ip]->advanceWalkers(W.begin() + wPerRank[ip], W.begin() + wPerRank[ip + 1], false);
 #pragma omp critical
     {
       wClones[ip]->clearEnsemble();
@@ -609,7 +609,7 @@ void VMCLinearOpt::resetRun()
   //           n_w=0;
   //           for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
   //           {
-  //             Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+  //             Movers[ip]->advanceWalkers(W.begin()+wPerRank[ip],W.begin()+wPerRank[ip+1],true);
   // #pragma omp single
   //             {
   //               MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
@@ -633,7 +633,7 @@ void VMCLinearOpt::resetRun()
   //         }
   //
   //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-  //           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
+  //           Movers[ip]->advanceWalkers(W.begin()+wPerRank[ip],W.begin()+wPerRank[ip+1],false);
   //
   // #pragma omp critical
   //         {

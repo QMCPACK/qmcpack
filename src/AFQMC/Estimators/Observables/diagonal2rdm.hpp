@@ -75,7 +75,7 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(hdf_walker_output, "walker_output", "std::string");
+      m_param.add(hdf_walker_output, "walker_output");
       m_param.put(cur);
     }
 

@@ -154,15 +154,13 @@ struct SplineSetReader : public BsplineReaderBase
     typename splineset_t::BCType xyz_bc[3];
     bool havePsig = set_grid(bspline->HalfG, xyz_grid, xyz_bc);
     if (!havePsig)
-    {
-      APP_ABORT("SplineSetReader needs psi_g. Set precision=\"double\".");
-    }
+      myComm->barrier_and_abort("SplineSetReader needs psi_g. Set precision=\"double\".");
     bspline->create_spline(xyz_grid, xyz_bc);
-    //    int TwistNum = mybuilder->TwistNum;
+
     std::ostringstream oo;
     oo << bandgroup.myName << ".g" << MeshSize[0] << "x" << MeshSize[1] << "x" << MeshSize[2] << ".h5";
-    std::string splinefile = oo.str(); //bandgroup.myName+".h5";
-    //=make_spline_filename(mybuilder->H5FileName,mybuilder->TileMatrix,spin,TwistNum,bandgroup.GroupID,MeshSize);
+
+    const std::string splinefile(oo.str());
     bool root       = (myComm->rank() == 0);
     int foundspline = 0;
     Timer now;
@@ -305,15 +303,21 @@ struct SplineSetReader : public BsplineReaderBase
         int ti        = cur_bands[iorb_h5].TwistIndex;
         std::string s = psi_g_path(ti, spin, cur_bands[iorb_h5].BandIndex);
         if (!h5f.readEntry(cG, s))
-          APP_ABORT("SplineSetReader Failed to read band(s) from h5!\n");
+        {
+          std::ostringstream msg;
+          msg << "SplineSetReader Failed to read band(s) from h5 file. "
+              << "Attemped dataset " << s << " with " << cG.size() << " complex numbers." << std::endl;
+          throw std::runtime_error(msg.str());
+        }
         double total_norm = compute_norm(cG);
         if ((checkNorm) && (std::abs(total_norm - 1.0) > PW_COEFF_NORM_TOLERANCE))
         {
-          std::cerr << "The orbital " << iorb_h5 << " has a wrong norm " << total_norm
-                    << ", computed from plane wave coefficients!" << std::endl
-                    << "This may indicate a problem with the HDF5 library versions used "
-                    << "during wavefunction conversion or read." << std::endl;
-          APP_ABORT("SplineSetReader Wrong orbital norm!");
+          std::ostringstream msg;
+          msg << "SplineSetReader The orbital " << iorb_h5 << " has a wrong norm " << total_norm
+              << ", computed from plane wave coefficients!" << std::endl
+              << "This may indicate a problem with the HDF5 library versions used "
+              << "during wavefunction conversion or read." << std::endl;
+          throw std::runtime_error(msg.str());
         }
         fft_spline(cG, ti);
         bspline->set_spline(spline_r, spline_i, cur_bands[iorb_h5].TwistIndex, iorb, 0);
@@ -337,7 +341,7 @@ struct SplineSetReader : public BsplineReaderBase
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
     //not used by may be enabled later
-    APP_ABORT("SplineSetReaderP initialize_spline_psi_r implementation not finished.");
+    myComm->barrier_and_abort("SplineSetReaderP initialize_spline_psi_r implementation not finished.");
     int nx = MeshSize[0];
     int ny = MeshSize[1];
     int nz = MeshSize[2];

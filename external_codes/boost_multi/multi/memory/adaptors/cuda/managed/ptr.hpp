@@ -1,5 +1,5 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXXX $CXXFLAGS $0 -o $0x `pkg-config --cflags --libs cudart-11.0`&&$0x&&rm $0x;exit
+$CXXX $CXXFLAGS $0 -o $0.$X `pkg-config --cflags --libs cudart-11.0`&&$0.$X&&rm $0.$X;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -14,6 +14,8 @@ $CXXX $CXXFLAGS $0 -o $0x `pkg-config --cflags --libs cudart-11.0`&&$0x&&rm $0x;
 #include "../../cuda/ptr.hpp"
 
 #include "../../../../detail/memory.hpp"
+
+#include<cuda_runtime.h> // cudaDeviceSynchronize
 
 #ifndef _DISABLE_CUDA_SLOW
 #ifdef NDEBUG
@@ -72,6 +74,7 @@ public:
 	friend ptr to_address(ptr const& p){return p;}
 	void operator*() const = delete;
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
+	friend raw_pointer raw_pointer_cast(ptr const& self){return self.rp_;}
 };
 
 template<typename RawPtr>
@@ -86,7 +89,7 @@ private:
 	ptr(ptr<void const> const& p) : rp_{const_cast<void*>(p.rp_)}{}
 	template<class TT> friend ptr<TT> const_pointer_cast(ptr<TT const> const&);
 	template<class, class> friend struct ptr;
-	template<class> friend class allocator;
+	template<class TT, class DP> friend class allocator;
 public:
 	template<class Other> ptr(ptr<Other> const& p) : rp_{p.rp_}{}
 	explicit ptr(raw_pointer rp) : rp_{rp}{}
@@ -105,9 +108,10 @@ public:
 	explicit operator raw_pointer&()&{return rp_;}
 	friend ptr to_address(ptr const& p){return p;}
 	void operator*() = delete;
+	friend raw_pointer raw_pointer_cast(ptr const& self){return self.rp_;}
 };
 
-template<class T> class allocator;
+template<class T, class PrefetchDevice = std::integral_constant<int, -99> > class allocator;
 
 template<typename T, typename RawPtr>
 struct ptr : cuda::ptr<T, RawPtr>{
@@ -115,7 +119,7 @@ struct ptr : cuda::ptr<T, RawPtr>{
 //	raw_pointer rp_;
 protected:
 	friend struct cuda::ptr<T, RawPtr>; // to allow automatic conversions
-	template<class TT> friend class allocator;
+	template<class TT, class DP> friend class allocator;
 	template<typename, typename> friend struct ptr;
 //	template<class TT, typename = typename std::enable_if<not std::is_const<TT>{}>::type> 
 //	ptr(ptr<TT const> const& p) : rp_{const_cast<T*>(p.impl_)}{}
@@ -127,6 +131,7 @@ public:
 	/*explicit(false)*/ constexpr ptr(ptr<Other> const& o) : cuda::ptr<T, RawPtr>{static_cast<raw_pointer>(o.rp_)}{}
 	template<class Other, typename = std::enable_if_t<not std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{}>, typename = decltype(static_cast<raw_pointer>(std::declval<ptr<Other>>().rp_))>
 	explicit/*(true)*/ constexpr ptr(ptr<Other> const& o, void** = 0) : cuda::ptr<T, RawPtr>{static_cast<raw_pointer>(o.rp_)}{}
+	explicit constexpr ptr(void* vp) : cuda::ptr<T, RawPtr>{static_cast<raw_pointer>(vp)}{}
 //	template<class Other, typename = std::enable_if_t<std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{}>>
 //	ptr(ptr<Other> const& o) HD : rp_{static_cast<raw_pointer>(o.rp_)}{}
 //	template<class Other, typename = std::enable_if_t<not std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{}>>
@@ -166,7 +171,10 @@ public:
 	using reference = typename std::pointer_traits<raw_pointer>::element_type&;//ref<element_type>;
 //	[[SLOW]] 
 //	[[deprecated]] 
-	constexpr reference operator*() const{return *(this->rp_);}
+	constexpr reference operator*() const{
+//		cudaDeviceSynchronize();
+		return *(this->rp_);
+	}
 	constexpr reference operator[](difference_type n){return *((*this)+n);}
 	friend inline ptr to_address(ptr const& p){return p;}
 	constexpr typename ptr::difference_type operator-(ptr const& other) const{return (this->rp_)-other.rp_;}
@@ -202,7 +210,7 @@ template<class T, class S> const boost::serialization::array_wrapper<T> make_arr
 
 #undef SLOW
 
-#if not __INCLUDE_LEVEL__ // def _TEST_MULTI_MEMORY_ADAPTORS_CUDA_MANAGED_PTR
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #include "../../cuda/managed/clib.hpp" // cuda::malloc
 #include "../../cuda/managed/malloc.hpp"
@@ -302,6 +310,9 @@ int main(){
 	//	cuda::ptr<double> pp = p;
 //		std::reinterpret_pointer_cast<double*>(pp);
 	//	cuda::managed::ptr<double> ppp{pp};
+	}
+	{
+		static_assert(std::is_convertible<cuda::managed::ptr<double>, double*>{});
 	}
 	{
 		auto p = static_cast<cuda::managed::ptr<T>>(cuda::managed::malloc(n*sizeof(T)));

@@ -443,23 +443,6 @@ def reduce_tilematrix(tiling):
 
 
 
-def tile_magnetization(mag,tilevec,mag_order,mag_prim):
-    # jtk mark current
-    #  implement true magnetic tiling based on the magnetic order
-    #  Structure needs a function magnetic_period which takes magnetic order
-    #   and translates it into a magnetic period tuple
-    #  magnetic_period should divide evenly into the tiling vector
-    #  the magnetic unit cell is self.tile(magnetic_period)
-    #  re-representing the folded cell as the magnetic primitive cell
-    #   requires different axes, often with a non-diagonal tiling matrix
-    #  if magnetic primitive is requested, a small tiling vector should first be used
-    #   (ie 221,212,122,222 periods all involve a 211 prim tiling w/ a simple reshaping/reassignment of the cell axes
-    #  Structure should have a function providing labels to each magnetic species
-    #mag = array(int(round( tilevec.prod() ))*list(mag),dtype=object)
-    return mag
-#end def tile_magnetization
-
-
 def rotate_plane(plane,angle,points,units='degrees'):
     if units=='degrees':
         angle *= pi/180
@@ -797,8 +780,6 @@ class Structure(Sobj):
                  rescale           = True,
                  dim               = 3,
                  magnetization     = None,
-                 magnetic_order    = None,
-                 magnetic_prim     = True,
                  operations        = None,
                  background_charge = 0,
                  frozen            = None,
@@ -845,9 +826,6 @@ class Structure(Sobj):
         if kshift is None:
             kshift = 0,0,0
         #end if
-        if mag is None:
-            mag = len(elem)*[None]
-        #end if
         self.scale    = 1.
         self.units    = units
         self.dim      = dim
@@ -855,9 +833,9 @@ class Structure(Sobj):
         self.axes     = array(axes,dtype=float)
         self.set_bconds(bconds)
         self.set_elem(elem)
-        self.pos      = array(pos,dtype=float)
-        self.frozen   = None
-        self.mag      = array(mag,dtype=object)
+        self.set_pos(pos)
+        self.set_mag(mag)
+        self.set_frozen(frozen)
         self.kpoints  = empty((0,dim))            
         self.kweights = empty((0,))         
         self.background_charge = background_charge
@@ -870,22 +848,14 @@ class Structure(Sobj):
         if posu is not None:
             self.pos_to_cartesian()
         #end if
-        if frozen is not None:
-            self.frozen = array(frozen,dtype=bool)
-            if self.frozen.shape!=self.pos.shape:
-                self.error('frozen directions must have the same shape as positions\n  positions shape: {0}\n  frozen directions shape: {1}'.format(self.pos.shape,self.frozen.shape))
-            #end if
+        if magnetization is not None:
+            self.magnetize(magnetization)
         #end if
-        self.magnetize(magnetization)
         if use_prim is not None and use_prim is not False:
             self.become_primitive(source=use_prim,add_kpath=add_kpath)
         #end if
         if tiling is not None:
-            self.tile(tiling,
-                      in_place = True,
-                      magnetic_order = magnetic_order,
-                      magnetic_prim  = magnetic_prim
-                      )
+            self.tile(tiling,in_place=True)
         #end if
         if kpoints is not None:
             self.add_kpoints(kpoints,kweights)
@@ -917,8 +887,20 @@ class Structure(Sobj):
             kaxes = 2*pi*inv(self.axes).T
             abs_diff = abs(self.kaxes-kaxes).sum()
             if abs_diff>tol:
-                msg += 'direct and reciprocal space axes are not consistent\naxes present:\n{0}\nkaxes present:\n{1}\nconsistent kaxes:\n{2}\nabsolute difference: {3}\n'.format(self.axes,self.kaxes,kaxes,abs_diff)
+                msg += 'Direct and reciprocal space axes are not consistent.\naxes present:\n{0}\nkaxes present:\n{1}\nConsistent kaxes:\n{2}\nAbsolute difference: {3}\n'.format(self.axes,self.kaxes,kaxes,abs_diff)
             #end if
+        #end if
+        N = len(self.elem)
+        D = self.dim
+        pshape = (N,D)
+        if self.pos.shape!=pshape:
+            msg += 'pos is not the right shape\npos shape: {}\nCorrect shape: {}\n'.format(self.pos.shape,pshape)
+        #end if
+        if self.mag is not None and len(self.mag)!=N:
+            msg += 'mag does not have the right length\nmag length: {}\nCorrect length: {}\n'.format(self.mag,N)
+        #end if
+        if self.frozen is not None and self.frozen.shape!=pshape:
+            msg += 'frozen is not the right shape\nfrozen shape: {}\nCorrect shape: {}\n'.format(self.frozen.shape,pshape)
         #end if
         consistent = len(msg)==0
         if not consistent and exit:
@@ -949,7 +931,34 @@ class Structure(Sobj):
     
     def set_pos(self,pos):
         self.pos = array(pos,dtype=float)
+        if len(self.pos)!=len(self.elem):
+            self.error('Atomic positions must have same length as elem.\nelem length: {}\nAtomic positions length: {}\n'.format(len(self.elem),len(self.pos)))
+        #end if
     #end def set_pos
+
+
+    def set_mag(self,mag=None):
+        if mag is None:
+            self.mag = None
+        else:
+            self.mag = np.array(mag,dtype=object)
+            if len(self.mag)!=len(self.elem):
+                self.error('Magnetic moments must have same length as elem.\nelem length: {}\nMagnetic moments length: {}\n'.format(len(self.elem),len(self.mag)))
+            #end if
+        #end if
+    #end def set_mag
+
+
+    def set_frozen(self,frozen=None):
+        if frozen is None:
+            self.frozen = None
+        else:
+            self.frozen = np.array(frozen,dtype=bool)
+            if self.frozen.shape!=self.pos.shape:
+                self.error('Frozen directions must have the same shape as positions.\nPositions shape: {0}\nFrozen directions shape: {1}'.format(self.pos.shape,self.frozen.shape))
+            #end if
+        #end if
+    #end def set_frozen
 
 
     def size(self):
@@ -1554,7 +1563,7 @@ class Structure(Sobj):
         Arbitrary rotation of the structure.
         Parameters
         ----------
-        r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3)` or `str`
+        r  : `array_like, float, shape (3,3)` or `array_like, float, shape (3,)` or `str`
             If a 3x3 matrix, then code executes rotation consistent with this matrix -- 
             it is assumed that the matrix acts on a column-major vector (eg, v'=Rv)
             If a three-dimensional array, then the operation of the function depends
@@ -1609,6 +1618,7 @@ class Structure(Sobj):
                     theta = float(rp)
                 else:
                     theta = float(rp)*np.pi/180.0
+                #end if
                 c = np.cos(theta)
                 s = np.sin(theta)
             else:
@@ -1629,6 +1639,7 @@ class Structure(Sobj):
                 else:
                     s = np.dot(np.cross(r,rp),np.cross(r,rp))/np.linalg.norm(r)/np.linalg.norm(rp)/np.linalg.norm(np.cross(r,rp)) 
                     r = np.cross(r,rp)/np.linalg.norm(np.cross(r,rp))
+                #end if
             #end if
             # make R from r,theta
             R = [[     c+r[0]**2.0*(1.0-c), r[0]*r[1]*(1.0-c)-r[2]*s, r[0]*r[2]*(1.0-c)+r[1]*s],
@@ -1640,6 +1651,7 @@ class Structure(Sobj):
         R = array(R,dtype=float)
         if passive:
             R = R.T
+        #end if
         if check:
             if not np.allclose(dot(R,R.T),identity(len(R))):
                 self.error('the function, rotate, must be given an orthogonal matrix')
@@ -1656,10 +1668,10 @@ class Structure(Sobj):
 
         Parameters
         ----------
-        skew  : `array_like, float, shape (3,3)`
-            Transform the structure using the matrix skew. It is assumed that
-            skew is in column-major form, i.e., it transforms a vector v as
-            v' = Tv
+        A  : `array_like, float, shape (3,3)`
+            Transform the structure using the matrix A. It is assumed that
+            A is in column-major form, i.e., it transforms a vector v as
+            v' = Av
         """
         A = A.T
         axinv  = inv(self.axes)
@@ -1898,7 +1910,7 @@ class Structure(Sobj):
             return
         #end if
         if identifiers is None:
-            indicies = arange(len(self.pos),dtype=int)
+            indices = arange(len(self.pos),dtype=int)
         else:
             indices = self.locate(identifiers,radii,exterior)
         #end if
@@ -1935,13 +1947,14 @@ class Structure(Sobj):
 
     def is_frozen(self):
         if self.frozen is None:
-            return np.ones((len(self.pos),),dtype=bool)
+            return np.zeros((len(self.pos),),dtype=bool)
         else:
             return self.frozen.sum(1)>0
         #end if
     #end def is_frozen
 
 
+    # test needed
     def magnetize(self,identifiers=None,magnetization='',**mags):
         magsin = None
         if isinstance(identifiers,obj):
@@ -1992,6 +2005,20 @@ class Structure(Sobj):
             self.error('magnetization list and list selected atoms differ in length\n  length of magnetization list: {0}\n  number of atoms selected: {1}\n  magnetization list: {2}\n  atom indices selected: {3}\n  atoms selected: {4}'.format(len(magnetization),len(indices),magnetization,indices,self.elem[indices]))
         #end if
     #end def magnetize
+
+
+    def is_magnetic(self,tol=1e-8):
+        magnetic = False
+        if self.mag is not None:
+            for m in self.mag:
+                if m is not None and abs(m)>tol:
+                    magnetic = True
+                    break
+                #end if
+            #end for
+        #end if
+        return magnetic
+    #end def is_magnetic
 
 
     # test needed
@@ -3342,8 +3369,6 @@ class Structure(Sobj):
 
     def tile(self,*td,**kwargs):
         in_place           = kwargs.pop('in_place',False)
-        magnetic_order     = kwargs.pop('magnetic_order',None)
-        magnetic_primitive = kwargs.pop('magnetic_primitive',True)
         check              = kwargs.pop('check',False)
 
         dim = self.dim
@@ -3379,20 +3404,29 @@ class Structure(Sobj):
         axes = dot(tilematrix,self.axes)
 
         center   = axes.sum(0)/2
-        mag      = tile_magnetization(self.mag,tilevector,magnetic_order,magnetic_primitive)
         kaxes    = dot(inv(tilematrix.T),self.kaxes)
         kpoints  = array(self.kpoints)
         kweights = array(self.kweights)
+        mag      = None
+        frozen   = None
+        if self.mag is not None:
+            mag = ncells*list(self.mag)
+        #end if
+        if self.frozen is not None:
+            frozen = ncells*list(self.frozen)
+        #end if
 
         ts = self.copy()
-        ts.center  = center
+        ts.center   = center
         ts.set_elem(elem)
-        ts.axes    = axes
-        ts.pos     = pos
-        ts.mag     = mag
-        ts.kaxes   = kaxes
-        ts.kpoints = kpoints
-        ts.kweights= kweights
+        ts.axes     = axes
+        ts.pos      = pos
+        ts.mag      = mag
+        ts.kaxes    = kaxes
+        ts.kpoints  = kpoints
+        ts.kweights = kweights
+        ts.set_mag(mag)
+        ts.set_frozen(frozen)
         ts.background_charge = ncells*self.background_charge
 
         ts.recenter()
@@ -3704,8 +3738,8 @@ class Structure(Sobj):
 
 
     def tilematrix(self,small=None,tol=1e-6,status=False):
-        if small==None:
-            if self.folded_structure!=None:
+        if small is None:
+            if self.folded_structure is not None:
                 small = self.folded_structure
             else:
                 return identity(self.dim,dtype=int)
@@ -3750,6 +3784,9 @@ class Structure(Sobj):
         else:
             self.error('primitive source "{0}" is not implemented\nplease contact a developer'.format(source))
         #end if
+        if prim.units!=self.units:
+            prim.change_units(self.units)
+        #end if
         return res
     #end def primitive
 
@@ -3760,9 +3797,12 @@ class Structure(Sobj):
     #end def become_primitive
             
 
-    def add_kpoints(self,kpoints,kweights=None,unique=False,recenter=True):
+    def add_kpoints(self,kpoints,kweights=None,unique=False,recenter=True,cell_unit=False):
         if kweights is None:
             kweights = ones((len(kpoints),))
+        #end if
+        if cell_unit:
+            kpoints = np.dot(array(kpoints),self.kaxes)
         #end if
         self.kpoints  = append(self.kpoints,kpoints,axis=0)
         self.kweights = append(self.kweights,kweights)
@@ -4600,6 +4640,8 @@ class Structure(Sobj):
         if format is None:
             self.error('file format must be provided')
         #end if
+        self.mag    = None
+        self.frozen = None
         format = format.lower()
         if format=='xyz':
             self.read_xyz(filepath)
@@ -5104,6 +5146,7 @@ class Structure(Sobj):
         self.error('structure objects do not currently support magnetic moments')
     #end def get_magnetic_moments
 
+
     # direct spglib interface
     def spglib_cell(self):
         lattice   = self.axes.copy()
@@ -5144,6 +5187,41 @@ class Structure(Sobj):
         #end for
         return ds
     #end def symmetry_data
+
+
+    def bravais_lattice_name(self,symm_data=None):
+        if symm_data is None:
+            symm_data = self.symmetry_data()
+        #end if
+        sg   = symm_data.number
+        name = symm_data.international
+        if not isinstance(sg,int) or sg<1 or sg>230:
+            self.error('Invalid space group from spglib: {}'.format(sg))
+        #end if
+        if not isinstance(name,str):
+            self.error('Invalid space group name from spglib: {}'.format(name))
+        #end if
+        bv = None
+        if sg>=1 and sg<=2:
+            bv = 'triclinic_'+name[0]
+        elif sg>=3 and sg<=15:
+            bv = 'monoclinic_'+name[0]
+        elif sg>=16 and sg<=74:
+            bv = 'orthorhombic_'+name[0]
+        elif sg>=75 and sg<=142:
+            bv = 'tetragonal_'+name[0]
+        elif sg>=143 and sg<=167:
+            bv = 'trigonal_'+name[0]
+        elif sg>=168 and sg<=194:
+            bv = 'hexagonal_'+name[0]
+        elif sg>=195 and sg<=230:
+            bv = 'cubic_'+name[0]
+        #end if
+        if bv is None:
+            self.error('Bravais lattice could not be determined.\nSpace group number and name: {} {}'.format(sg,name))
+        #end if
+        return bv
+    #end def bravais_lattice_name
 
 
     # test needed
@@ -5260,6 +5338,152 @@ class Structure(Sobj):
 
         return equiv_indices
     #end def equivalent_atoms
+
+
+    # operations to support restricted cases for RMG code
+
+    # supported rmg lattices
+    rmg_lattices = obj(
+        orthorhombic_P = 'Orthorhombic Primitive',
+        tetragonal_P   = 'Tetragonal Primitive',
+        hexagonal_P    = 'Hexagonal Primitive',
+        cubic_P        = 'Cubic Primitive',
+        cubic_I        = 'Cubic Body Centered',
+        cubic_F        = 'Cubic Face Centered',
+        )
+
+    def rmg_lattice(self,allow_tile=False,all_results=False,ret_bravais=False,exit=False,warn=False):
+        # output variables
+        rmg_lattice = None
+        tmatrix     = None
+
+        rmg_lattices = Structure.rmg_lattices
+
+        # represent current bravais lattice
+        s = Structure(
+            units = str(self.units),
+            axes  = self.axes.copy(),
+            elem  = ['H'],
+            pos   = [[0,0,0]],
+            )
+
+        # get standard primitive cell based on bravais lattice
+        sp = s.primitive()
+
+        # get current bravais lattice name
+        d   = sp.symmetry_data()
+        bv  = sp.bravais_lattice_name(d)
+        bvp = bv.rsplit('_',1)[0]+'_P' 
+        if bv in rmg_lattices:
+            rmg_lattice = bv
+        #end if
+
+        # attempt to get a valid cell by tiling if current one is not valid
+        if rmg_lattice is None and bvp in rmg_lattices and allow_tile:
+            spt = Structure(
+                units = self.units,
+                axes  = d.std_lattice,
+                )
+            tmatrix,valid_by_tiling = spt.tilematrix(sp,status=True)
+            if not valid_by_tiling:
+                tmatrix = None
+            else:
+                # apply tiling matrix
+                st = sp.copy().tile(tmatrix)
+                # update lattice type
+                rmg_lattice,bv = st.rmg_lattice(ret_bravais=True)
+            #end if
+        #end if
+
+        if rmg_lattice is None and (exit or warn):
+            msg = 'Bravais lattice is not supported by the RMG code.\nCell bravais lattice: {}\nLattices supported by RMG: {}'.format(bv,list(sorted(rmg_lattices.keys())))
+            if exit:
+                self.error(msg)
+            elif warn:
+                self.warn(msg)
+            #end if
+        #end if
+
+        if all_results:
+            return rmg_lattice,tmatrix,s,sp,bv
+        elif allow_tile:
+            return rmg_lattice,tmatrix
+        elif ret_bravais:
+            return rmg_lattice,bv
+        else:
+            return rmg_lattice
+        #end if
+    #end def rmg_lattice
+
+
+    def rmg_transform(self,allow_tile=False,allow_general=False,all_results=False):
+        rmg_lattice,tmatrix,s,sp,bv = self.rmg_lattice(
+            allow_tile  = allow_tile,
+            exit        = not allow_general,
+            all_results = True,
+            )
+        if rmg_lattice is None and allow_general:
+            s_trans    = self.copy()
+            rmg_inputs = obj()
+            R          = None
+            tmatrix    = None
+        else:
+            s_trans = self.copy()
+            R = np.dot(np.linalg.inv(s.axes),sp.axes)
+            s_trans.matrix_transform(R.T)
+            if tmatrix is not None:
+                s_trans = s_trans.tile(tmatrix)
+            #end if
+            if s_trans.units=='A':
+                rmg_units = 'Angstrom'
+            elif s_trans.units=='B':
+                rmg_units = 'Bohr'
+            else:
+                self.error('Unrecognized length units in structure "{}"'.format(s_trans.units))
+            #end if
+            bl_type = self.rmg_lattices[rmg_lattice]
+            axes = s_trans.axes
+            if bl_type=='Cubic Primitive':
+                a = axes[0,0]
+                b = a
+                c = a
+            elif bl_type=='Tetragonal Primitive':
+                a = axes[0,0]
+                b = a
+                c = axes[2,2]
+            elif bl_type=='Orthorhombic Primitive':
+                a = axes[0,0]
+                b = axes[1,1]
+                c = axes[2,2]
+            elif bl_type=='Cubic Body Centered':
+                a = np.linalg.norm(axes[0])*2/np.sqrt(3.)
+                b = a
+                c = a
+            elif bl_type=='Cubic Face Centered':
+                a = np.linalg.norm(axes[0])*2/np.sqrt(2.)
+                b = a
+                c = a
+            elif bl_type=='Hexagonal Primitive':
+                a = np.linalg.norm(axes[0])
+                b = a
+                c = np.linalg.norm(axes[2])
+            else:
+                self.error('Unrecognized RMG bravais_lattice_type "{}"'.format(bl_type))
+            #end if
+            rmg_inputs = obj(
+                bravais_lattice_type = bl_type,
+                a_length             = a,
+                b_length             = b,
+                c_length             = c,
+                length_units         = rmg_units,
+                )
+        #end if
+        if not all_results:
+            return s_trans,rmg_inputs
+        else:
+            return s_trans,rmg_inputs,R,tmatrix,bv
+        #end if
+    #end def rmg_transform
 
 #end class Structure
 Structure.set_operations()
@@ -6268,10 +6492,9 @@ class Crystal(Structure):
                  angular_units  = 'degrees',
                  kpoints        = None,
                  kgrid          = None,
+                 mag            = None,
                  frozen         = None,
                  magnetization  = None,
-                 magnetic_order = None,
-                 magnetic_prim  = True,
                  kshift         = (0,0,0),
                  permute        = None,
                  operations     = None,
@@ -6300,9 +6523,8 @@ class Crystal(Structure):
             units          = units         ,
             angular_units  = angular_units ,
             frozen         = frozen        ,
+            mag            = mag           ,
             magnetization  = magnetization ,
-            magnetic_order = magnetic_order,
-            magnetic_prim  = magnetic_prim ,
             kpoints        = kpoints       ,
             kgrid          = kgrid         ,
             kshift         = kshift        ,
@@ -6573,9 +6795,8 @@ class Crystal(Structure):
             center         = axes.sum(0)/2,
             units          = units,
             frozen         = frozen,
+            mag            = mag,
             magnetization  = magnetization,
-            magnetic_order = magnetic_order,
-            magnetic_prim  = magnetic_prim,
             tiling         = tiling,
             kpoints        = kpoints,
             kgrid          = kgrid,
@@ -6876,8 +7097,7 @@ def generate_crystal_structure(
     units          = None,
     angular_units  = 'degrees',
     magnetization  = None,
-    magnetic_order = None,
-    magnetic_prim  = True,
+    mag            = None,
     kpoints        = None,
     kweights       = None,
     kgrid          = None,
@@ -6927,10 +7147,9 @@ def generate_crystal_structure(
             elem           = elem,
             pos            = pos,
             units          = units,
+            mag            = mag,
             frozen         = frozen,
             magnetization  = magnetization,
-            magnetic_order = magnetic_order,
-            magnetic_prim  = magnetic_prim,
             tiling         = tiling,
             kpoints        = kpoints,
             kgrid          = kgrid,
@@ -6994,9 +7213,8 @@ def generate_crystal_structure(
         units          = units         ,
         angular_units  = angular_units ,
         frozen         = frozen        ,
+        mag            = mag           ,
         magnetization  = magnetization ,
-        magnetic_order = magnetic_order,
-        magnetic_prim  = magnetic_prim ,
         kpoints        = kpoints       ,
         kgrid          = kgrid         ,
         kshift         = kshift        ,

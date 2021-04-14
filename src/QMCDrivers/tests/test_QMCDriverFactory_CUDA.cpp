@@ -20,6 +20,10 @@
 
 #include "catch.hpp"
 
+#include <iostream>
+#include <stdio.h>
+#include <string>
+#include <sstream>
 #include "Utilities/RandomGenerator.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -28,11 +32,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
-#include <iostream>
-#include <stdio.h>
-#include <string>
-#include <sstream>
-
+#include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -42,7 +42,8 @@ TEST_CASE("QMCDriverFactory create VMC_CUDA Driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  QMCDriverFactory driver_factory;
+  ProjectData test_project;
+  QMCDriverFactory driver_factory(test_project);
   // clang-format off
   const char* driver_xml = R"(
   <qmc method="vmc" move="pbyp" gpu="yes">

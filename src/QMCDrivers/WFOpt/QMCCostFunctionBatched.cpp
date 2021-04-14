@@ -123,7 +123,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
         for (int pm = 0; pm < NumOptimizables; pm++)
         {
           EDtotals_w[pm] += weight * (HDsaved[pm] + 2.0 * Dsaved[pm] * delta_l);
-          URV[pm]        += 2.0 * (eloc_new * HDsaved[pm] - curAvg * HD_avg[pm]);
+          URV[pm] += 2.0 * (eloc_new * HDsaved[pm] - curAvg * HD_avg[pm]);
           if (ltz)
             EDtotals[pm] += weight * (2.0 * Dsaved[pm] * (delE - delE_bar) + ddelE * HDsaved[pm]);
           else
@@ -244,7 +244,7 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
 /** evaluate everything before optimization */
 void QMCCostFunctionBatched::checkConfigurations()
 {
-  ScopedTimer tmp_timer(&check_config_timer_);
+  ScopedTimer tmp_timer(check_config_timer_);
 
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
@@ -314,9 +314,12 @@ void QMCCostFunctionBatched::checkConfigurations()
 
       int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
 
-      auto wf_list = opt_data.get_wf_list(curr_crowd_size);
-      auto p_list  = opt_data.get_p_list(curr_crowd_size);
-      auto h_list  = opt_data.get_h_list(curr_crowd_size);
+      auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
+      auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
+      auto h_list_no_leader  = opt_data.get_h_list(curr_crowd_size);
+      const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
+      const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
+      const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
 
       auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
       auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, curr_crowd_size);
@@ -324,7 +327,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       // Load samples into the crowd data
       for (int ib = 0; ib < curr_crowd_size; ib++)
       {
-        samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
+        samples.loadSample(p_list[ib], base_sample_index + ib);
 
         // Set the RNG used in QMCHamiltonian.  This is used to offset the grid
         // during spherical integration in the non-local pseudopotential.
@@ -337,17 +340,17 @@ void QMCCostFunctionBatched::checkConfigurations()
         // differently for each configuration.  Make sure the same initialization is
         // performed in correlatedSampling.
         *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
-        h_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
+        h_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
       }
 
       // Compute distance tables.
-      ParticleSet::flex_update(p_list);
+      ParticleSet::mw_update(p_list);
 
       // Log psi and prepare for difference the log psi
       opt_data.zero_log_psi();
 
-      TrialWaveFunction::flex_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
-                                                    opt_data.get_log_psi_opt(), ref_dLogPsi, ref_d2LogPsi);
+      TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
+                                                  opt_data.get_log_psi_opt(), ref_dLogPsi, ref_d2LogPsi);
 
       if (needGrads)
       {
@@ -355,12 +358,11 @@ void QMCCostFunctionBatched::checkConfigurations()
         int nparam = optVars.size();
         RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
         RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
-        TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array,
-                                                             dhpsioverpsi_array);
+        TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
 
 
-        auto energy_list = QMCHamiltonian::flex_evaluateValueAndDerivatives(h_list, p_list, optVars, dlogpsi_array,
-                                                                            dhpsioverpsi_array, compute_nlpp);
+        auto energy_list = QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, p_list, optVars, dlogpsi_array,
+                                                                          dhpsioverpsi_array, compute_nlpp);
 
         for (int ib = 0; ib < curr_crowd_size; ib++)
         {
@@ -384,11 +386,11 @@ void QMCCostFunctionBatched::checkConfigurations()
           RecordsOnNode[is][ENERGY_NEW]   = etmp;
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
           RecordsOnNode[is][REWEIGHT]     = 1.0;
-          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
 
           if (includeNonlocalH != "no")
           {
-            OperatorBase* nlpp = h_list[ib].get().getHamiltonian(includeNonlocalH);
+            OperatorBase* nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
             RecordsOnNode[is][ENERGY_FIXED] -= nlpp->Value;
           }
         }
@@ -396,7 +398,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       else
       {
         // Energy
-        auto energy_list = QMCHamiltonian::flex_evaluate(h_list, p_list);
+        auto energy_list = QMCHamiltonian::mw_evaluate(h_list, p_list);
 
         for (int ib = 0; ib < curr_crowd_size; ib++)
         {
@@ -407,7 +409,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
           RecordsOnNode[is][ENERGY_NEW]   = etmp;
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
-          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].get().getLocalPotential();
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
           RecordsOnNode[is][REWEIGHT]     = 1.0;
         }
       }
@@ -491,7 +493,7 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
 
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
-  ScopedTimer tmp_timer(&corr_sampling_timer_);
+  ScopedTimer tmp_timer(corr_sampling_timer_);
 
   {
     //    synchronize the random number generator with the node
@@ -514,131 +516,134 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   FairDivide(numSamples, opt_num_crowds_, samples_per_crowd);
 
   // lambda to execute on each crowd
-  auto evalOptCorrelated =
-      [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds, const std::vector<int>& samples_per_crowd,
-         int crowd_size, std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
-         Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords,
-         const SampleStack& samples, const opt_variables_type& optVars, bool compute_all_from_scratch,
-         Return_rt vmc_or_dmc, bool needGrad, bool compute_nlpp) {
-        CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
+  auto evalOptCorrelated = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
+                              const std::vector<int>& samples_per_crowd, int crowd_size,
+                              std::vector<ParticleGradient_t*>& gradPsi, std::vector<ParticleLaplacian_t*>& lapPsi,
+                              Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
+                              Matrix<Return_rt>& HDerivRecords, const SampleStack& samples,
+                              const opt_variables_type& optVars, bool compute_all_from_scratch, Return_rt vmc_or_dmc,
+                              bool needGrad, bool compute_nlpp) {
+    CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
 
-        int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
+    int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
 
-        int num_batches;
-        int final_batch_size;
-        compute_batch_parameters(local_samples, crowd_size, num_batches, final_batch_size);
+    int num_batches;
+    int final_batch_size;
+    compute_batch_parameters(local_samples, crowd_size, num_batches, final_batch_size);
 
-        for (int inb = 0; inb < num_batches; inb++)
+    for (int inb = 0; inb < num_batches; inb++)
+    {
+      int curr_crowd_size = crowd_size;
+      if (inb == num_batches - 1)
+      {
+        curr_crowd_size = final_batch_size;
+      }
+
+      int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
+
+      auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
+      auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
+      auto h0_list_no_leader = opt_data.get_h0_list(curr_crowd_size);
+      const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
+      const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
+      const RefVectorWithLeader<QMCHamiltonian> h0_list(h0_list_no_leader[0], h0_list_no_leader);
+
+      // Load this batch of samples into the crowd data
+      for (int ib = 0; ib < curr_crowd_size; ib++)
+      {
+        samples.loadSample(p_list[ib], base_sample_index + ib);
+        // Copy the saved RNG state
+        *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
+        h0_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
+      }
+
+      // Update distance tables, etc for the loaded sample positions
+      ParticleSet::mw_update(p_list, true);
+
+      // Evaluate difference in log psi
+
+      std::vector<std::unique_ptr<ParticleSet::ParticleGradient_t>> dummyG_ptr_list;
+      std::vector<std::unique_ptr<ParticleSet::ParticleLaplacian_t>> dummyL_ptr_list;
+      RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
+      RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
+      if (compute_all_from_scratch)
+      {
+        int nptcl = gradPsi[0]->size();
+        dummyG_ptr_list.reserve(curr_crowd_size);
+        dummyL_ptr_list.reserve(curr_crowd_size);
+        for (int i = 0; i < curr_crowd_size; i++)
         {
-          int curr_crowd_size = crowd_size;
-          if (inb == num_batches - 1)
+          dummyG_ptr_list.emplace_back(std::make_unique<ParticleGradient_t>(nptcl));
+          dummyL_ptr_list.emplace_back(std::make_unique<ParticleLaplacian_t>(nptcl));
+        }
+        dummyG_list = convertUPtrToRefVector(dummyG_ptr_list);
+        dummyL_list = convertUPtrToRefVector(dummyL_ptr_list);
+      }
+      opt_data.zero_log_psi();
+
+      TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, opt_data.get_log_psi_opt(), dummyG_list, dummyL_list,
+                                             compute_all_from_scratch);
+
+      Return_rt inv_n_samples = 1.0 / samples.getNumSamples();
+
+      for (int ib = 0; ib < curr_crowd_size; ib++)
+      {
+        int is = base_sample_index + ib;
+        wf_list[ib].G += *gradPsi[is];
+        wf_list[ib].L += *lapPsi[is];
+        // This is needed to get the KE correct in QMCHamiltonian::mw_evaluate below
+        p_list[ib].G += *gradPsi[is];
+        p_list[ib].L += *lapPsi[is];
+        Return_rt weight            = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
+        RecordsOnNode[is][REWEIGHT] = weight;
+        // move to opt_data
+        opt_data.get_wgt() += inv_n_samples * weight;
+        opt_data.get_wgt2() += inv_n_samples * weight * weight;
+      }
+
+      if (needGrad)
+      {
+        // Parameter derivatives
+        int nparam = optVars.size();
+        RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
+        RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
+
+        TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
+
+
+        // Energy
+        auto energy_list = QMCHamiltonian::mw_evaluateValueAndDerivatives(h0_list, p_list, optVars, dlogpsi_array,
+                                                                          dhpsioverpsi_array, compute_nlpp);
+
+        for (int ib = 0; ib < curr_crowd_size; ib++)
+        {
+          int is                        = base_sample_index + ib;
+          auto etmp                     = energy_list[ib];
+          RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
+          for (int j = 0; j < nparam; j++)
           {
-            curr_crowd_size = final_batch_size;
-          }
-
-          int base_sample_index = inb * crowd_size + samples_per_crowd[crowd_id];
-
-          auto wf_list = opt_data.get_wf_list(curr_crowd_size);
-          auto p_list  = opt_data.get_p_list(curr_crowd_size);
-          auto h0_list = opt_data.get_h0_list(curr_crowd_size);
-
-          // Load this batch of samples into the crowd data
-          for (int ib = 0; ib < curr_crowd_size; ib++)
-          {
-            samples.loadSample(p_list[ib].get().R, base_sample_index + ib);
-            // Copy the saved RNG state
-            *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
-            h0_list[ib].get().setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
-          }
-
-          // Update distance tables, etc for the loaded sample positions
-          ParticleSet::flex_update(p_list, true);
-
-          // Evaluate difference in log psi
-
-          std::vector<std::unique_ptr<ParticleSet::ParticleGradient_t>> dummyG_ptr_list;
-          std::vector<std::unique_ptr<ParticleSet::ParticleLaplacian_t>> dummyL_ptr_list;
-          RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
-          RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
-          if (compute_all_from_scratch)
-          {
-            int nptcl = gradPsi[0]->size();
-            dummyG_ptr_list.reserve(curr_crowd_size);
-            dummyL_ptr_list.reserve(curr_crowd_size);
-            for (int i = 0; i < curr_crowd_size; i++)
+            if (optVars.recompute(j))
             {
-              dummyG_ptr_list.emplace_back(std::make_unique<ParticleGradient_t>(nptcl));
-              dummyL_ptr_list.emplace_back(std::make_unique<ParticleLaplacian_t>(nptcl));
-            }
-            dummyG_list = convertUPtrToRefVector(dummyG_ptr_list);
-            dummyL_list = convertUPtrToRefVector(dummyL_ptr_list);
-          }
-          opt_data.zero_log_psi();
-
-          TrialWaveFunction::flex_evaluateDeltaLog(wf_list, p_list, opt_data.get_log_psi_opt(), dummyG_list,
-                                                   dummyL_list, compute_all_from_scratch);
-
-          Return_rt inv_n_samples = 1.0 / samples.getNumSamples();
-
-          for (int ib = 0; ib < curr_crowd_size; ib++)
-          {
-            int is = base_sample_index + ib;
-            wf_list[ib].get().G += *gradPsi[is];
-            wf_list[ib].get().L += *lapPsi[is];
-            // This is needed to get the KE correct in QMCHamiltonian::flex_evaluate below
-            p_list[ib].get().G += *gradPsi[is];
-            p_list[ib].get().L += *lapPsi[is];
-            Return_rt weight = vmc_or_dmc * (opt_data.get_log_psi_opt()[ib] - RecordsOnNode[is][LOGPSI_FREE]);
-            RecordsOnNode[is][REWEIGHT] = weight;
-            // move to opt_data
-            opt_data.get_wgt()  += inv_n_samples * weight;
-            opt_data.get_wgt2() += inv_n_samples * weight * weight;
-          }
-
-          if (needGrad)
-          {
-            // Parameter derivatives
-            int nparam = optVars.size();
-            RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
-            RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
-
-            TrialWaveFunction::flex_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array,
-                                                                 dhpsioverpsi_array);
-
-
-            // Energy
-            auto energy_list = QMCHamiltonian::flex_evaluateValueAndDerivatives(h0_list, p_list, optVars, dlogpsi_array,
-                                                                                dhpsioverpsi_array, compute_nlpp);
-
-            for (int ib = 0; ib < curr_crowd_size; ib++)
-            {
-              int is                        = base_sample_index + ib;
-              auto etmp                     = energy_list[ib];
-              RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
-              for (int j = 0; j < nparam; j++)
-              {
-                if (optVars.recompute(j))
-                {
-                  DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
-                  HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
-                }
-              }
-            }
-          }
-          else
-          {
-            // Just energy needed if no gradients
-            auto energy_list = QMCHamiltonian::flex_evaluate(h0_list, p_list);
-            for (int ib = 0; ib < curr_crowd_size; ib++)
-            {
-              int is                        = base_sample_index + ib;
-              auto etmp                     = energy_list[ib];
-              RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
+              DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
+              HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
             }
           }
         }
-      };
+      }
+      else
+      {
+        // Just energy needed if no gradients
+        auto energy_list = QMCHamiltonian::mw_evaluate(h0_list, p_list);
+        for (int ib = 0; ib < curr_crowd_size; ib++)
+        {
+          int is                        = base_sample_index + ib;
+          auto etmp                     = energy_list[ib];
+          RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
+        }
+      }
+    }
+  };
 
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds_, evalOptCorrelated, opt_eval_, samples_per_crowd, opt_batch_size_, dLogPsi, d2LogPsi,
@@ -647,7 +652,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   // Sum weights over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
-    wgt_tot  += opt_eval_[i]->get_wgt();
+    wgt_tot += opt_eval_[i]->get_wgt();
     wgt_tot2 += opt_eval_[i]->get_wgt2();
   }
 
@@ -691,14 +696,14 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       //      Return_t weight=saved[REWEIGHT]*wgt_tot;
       Return_rt eloc_new = saved[ENERGY_NEW];
       Return_rt delE     = std::pow(std::abs(eloc_new - EtargetEff), PowerE);
-      SumValue[SUM_E_BARE]    += eloc_new;
-      SumValue[SUM_ESQ_BARE]  += eloc_new * eloc_new;
+      SumValue[SUM_E_BARE] += eloc_new;
+      SumValue[SUM_ESQ_BARE] += eloc_new * eloc_new;
       SumValue[SUM_ABSE_BARE] += delE;
-      SumValue[SUM_E_WGT]     += eloc_new * saved[REWEIGHT];
-      SumValue[SUM_ESQ_WGT]   += eloc_new * eloc_new * saved[REWEIGHT];
-      SumValue[SUM_ABSE_WGT]  += delE * saved[REWEIGHT];
-      SumValue[SUM_WGT]       += saved[REWEIGHT];
-      SumValue[SUM_WGTSQ]     += saved[REWEIGHT] * saved[REWEIGHT];
+      SumValue[SUM_E_WGT] += eloc_new * saved[REWEIGHT];
+      SumValue[SUM_ESQ_WGT] += eloc_new * eloc_new * saved[REWEIGHT];
+      SumValue[SUM_ABSE_WGT] += delE * saved[REWEIGHT];
+      SumValue[SUM_WGT] += saved[REWEIGHT];
+      SumValue[SUM_WGTSQ] += saved[REWEIGHT] * saved[REWEIGHT];
     }
   }
   //collect everything
@@ -716,7 +721,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
                                                                                          Matrix<Return_rt>& Right)
 {
-  ScopedTimer tmp_timer(&fill_timer_);
+  ScopedTimer tmp_timer(fill_timer_);
 
   RealType b1, b2;
   if (GEVType == "H2")

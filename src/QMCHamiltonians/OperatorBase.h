@@ -44,6 +44,7 @@ class MCWalkerConfiguration;
 class DistanceTableData;
 class TrialWaveFunction;
 class QMCHamiltonian;
+class ResourceCollection;
 
 struct NonLocalData : public QMCTraits
 {
@@ -252,13 +253,14 @@ struct OperatorBase : public QMCTraits
    */
   virtual Return_t evaluateDeterministic(ParticleSet& P);
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluate(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list);
+  virtual void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+                           const RefVectorWithLeader<ParticleSet>& P_list) const;
 
-  virtual void mw_evaluateWithParameterDerivatives(const RefVector<OperatorBase>& O_list,
-                                                   const RefVector<ParticleSet>& P_list,
+  virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& O_list,
+                                                   const RefVectorWithLeader<ParticleSet>& P_list,
                                                    const opt_variables_type& optvars,
                                                    RecordArray<ValueType>& dlogpsi,
-                                                   RecordArray<ValueType>& dhpsioverpsi);
+                                                   RecordArray<ValueType>& dhpsioverpsi) const;
 
 
   virtual Return_t rejectedMove(ParticleSet& P) { return 0; }
@@ -269,7 +271,8 @@ struct OperatorBase : public QMCTraits
   virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
 
   /** Evaluate the contribution of this component of multiple walkers */
-  virtual void mw_evaluateWithToperator(const RefVector<OperatorBase>& O_list, const RefVector<ParticleSet>& P_list)
+  virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+                                        const RefVectorWithLeader<ParticleSet>& P_list) const
   {
     mw_evaluate(O_list, P_list);
   }
@@ -320,6 +323,18 @@ struct OperatorBase : public QMCTraits
 
   /** write about the class */
   virtual bool get(std::ostream& os) const = 0;
+
+  /** initialize a shared resource and hand it to a collection
+   */
+  virtual void createResource(ResourceCollection& collection) const {}
+
+  /** acquire a shared resource from a collection
+   */
+  virtual void acquireResource(ResourceCollection& collection) {}
+
+  /** return a shared resource to a collection
+   */
+  virtual void releaseResource(ResourceCollection& collection) {}
 
   virtual OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
 

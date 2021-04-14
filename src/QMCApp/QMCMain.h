@@ -23,7 +23,6 @@
 #include "QMCApp/QMCMainState.h"
 #include "QMCApp/QMCAppBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-#include "QMCDrivers/SFNBranch.h"
 
 namespace qmcplusplus
 {
@@ -53,8 +52,6 @@ private:
   std::unique_ptr<QMCDriverInterface> last_driver;
   /// last branch engine used by legacy drivers
   std::unique_ptr<SimpleFixedNodeBranch> last_branch_engine_legacy_driver;
-  /// last branch engine used by new unified drivers
-  std::unique_ptr<SFNBranch> last_branch_engine_new_unified_driver;
 
   ///xml mcwalkerset elements for output
   std::vector<xmlNodePtr> m_walkerset;

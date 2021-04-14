@@ -18,8 +18,10 @@
 #define GRID_H
 
 #include "IO.h"
-using namespace IO;
+
 #include "Blitz.h"
+
+using IO::IOSectionClass;
 
 //Ken's Grid Class
 
@@ -63,6 +65,7 @@ public:
   virtual int ReverseMap(double r)             = 0;
   virtual void Write(IOSectionClass& out)      = 0;
   virtual void Read(IOSectionClass& inSection) = 0;
+  virtual ~Grid(){}
 };
 
 
@@ -162,7 +165,7 @@ public:
           lo = i;
         done = (hi - lo) < 2;
       }
-      return min(lo, NumPoints - 2);
+      return std::min(lo, NumPoints - 2);
     }
   }
 

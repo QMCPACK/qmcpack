@@ -19,8 +19,6 @@
 
 #include "blitz/array.h"
 
-using namespace blitz;
-
 class BasisClass
 {
 public:

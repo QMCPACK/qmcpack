@@ -1617,7 +1617,7 @@ class PwscfInput(SimulationInput):
         self.atomic_positions.specifier = 'bohr'
         self.atomic_positions.positions = s.pos.copy()
         self.atomic_positions.atoms     = list(s.elem)
-        if s.frozen!=None:
+        if s.frozen is not None:
             frozen = s.frozen
             if 'relax_directions' in self.atomic_positions:
                 relax_directions = self.atomic_positions.relax_directions

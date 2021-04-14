@@ -32,19 +32,17 @@
 
 namespace qmcplusplus
 {
-QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
-                                                   TrialWaveFunction& psi,
-                                                   QMCHamiltonian& h,
+QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(const ProjectData& project_data,
+                                                   MCWalkerConfiguration& w,
                                                    QMCDriverInput&& qmcdriver_input,
                                                    VMCDriverInput&& vmcdriver_input,
                                                    MCPopulation&& population,
                                                    SampleStack& samples,
                                                    Communicate* comm,
                                                    const std::string& QMC_driver_type)
-    : QMCDriverNew(std::move(qmcdriver_input),
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
                    std::move(population),
-                   psi,
-                   h,
                    "QMCLinearOptimizeBatched::",
                    comm,
                    "QMCLinearOptimizeBatched"),
@@ -66,7 +64,7 @@ QMCLinearOptimizeBatched::QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
   //     //set the optimization flag
   qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
-  m_param.add(param_tol, "alloweddifference", "double");
+  m_param.add(param_tol, "alloweddifference");
   //Set parameters for line minimization:
 }
 
@@ -166,8 +164,6 @@ void QMCLinearOptimizeBatched::generateSamples()
   app_log() << "<optimization-report>" << std::endl;
   t1.restart();
   //     W.reset();
-  branch_engine_->flush(0);
-  branch_engine_->reset();
   samples_.resetSampleCount();
   population_.set_variational_parameters(optTarget->getOptVariables());
 

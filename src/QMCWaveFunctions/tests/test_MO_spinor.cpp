@@ -81,7 +81,7 @@ void test_lcao_spinor()
 
   xmlNodePtr root = doc.getRoot();
 
-  xmlNodePtr bnode   = xmlFirstElementChild(root);
+  xmlNodePtr bnode = xmlFirstElementChild(root);
   LCAOSpinorBuilder bb(elec_, ions_, c, bnode);
 
   // only pick up the last sposet
@@ -125,9 +125,14 @@ void test_lcao_spinor()
 
   //temporary arrays for holding the laplacians of the up and down channels respectively.
   SPOSet::ValueVector_t d2psi_work;
+
+  //temporary arrays for holding spin gradient
+  SPOSet::ValueVector_t dspsi_work;
+
   psi_work.resize(OrbitalSetSize);
   dpsi_work.resize(OrbitalSetSize);
   d2psi_work.resize(OrbitalSetSize);
+  dspsi_work.resize(OrbitalSetSize);
 
   //We worked hard to generate nice reference data above.  Let's generate a test for evaluateV
   //and evaluateVGL by perturbing the electronic configuration by dR, and then make
@@ -164,21 +169,21 @@ void test_lcao_spinor()
     psi_work   = 0.0;
     dpsi_work  = 0.0;
     d2psi_work = 0.0;
+    dspsi_work = 0.0;
 
     elec_.makeMove(iat, -dR[iat], false);
-    spo->evaluateVGL(elec_, iat, psi_work, dpsi_work, d2psi_work);
+    spo->evaluateVGL_spin(elec_, iat, psi_work, dpsi_work, d2psi_work, dspsi_work);
 
     REQUIRE(psi_work[0] == ComplexApprox(val).epsilon(eps));
     REQUIRE(dpsi_work[0][0] == ComplexApprox(vdx).epsilon(eps));
     REQUIRE(dpsi_work[0][1] == ComplexApprox(vdy).epsilon(eps));
     REQUIRE(dpsi_work[0][2] == ComplexApprox(vdz).epsilon(eps));
     REQUIRE(d2psi_work[0] == ComplexApprox(vlp).epsilon(eps));
+    REQUIRE(dspsi_work[0] == ComplexApprox(vds).epsilon(eps));
     elec_.rejectMove(iat);
   }
 
   //Now we test evaluateSpin:
-  SPOSet::ValueVector_t dspsi_work;
-  dspsi_work.resize(OrbitalSetSize);
 
   for (unsigned int iat = 0; iat < 1; iat++)
   {
@@ -259,7 +264,7 @@ void test_lcao_spinor_excited()
 
   xmlNodePtr root = doc.getRoot();
 
-  xmlNodePtr bnode   = xmlFirstElementChild(root);
+  xmlNodePtr bnode = xmlFirstElementChild(root);
   LCAOSpinorBuilder bb(elec_, ions_, c, bnode);
 
   // only pick up the last sposet
@@ -305,9 +310,14 @@ void test_lcao_spinor_excited()
 
   //temporary arrays for holding the laplacians of the up and down channels respectively.
   SPOSet::ValueVector_t d2psi_work;
+
+  //temporary arrays for holding spin gradient
+  SPOSet::ValueVector_t dspsi_work;
+
   psi_work.resize(OrbitalSetSize);
   dpsi_work.resize(OrbitalSetSize);
   d2psi_work.resize(OrbitalSetSize);
+  dspsi_work.resize(OrbitalSetSize);
 
   //We worked hard to generate nice reference data above.  Let's generate a test for evaluateV
   //and evaluateVGL by perturbing the electronic configuration by dR, and then make
@@ -344,22 +354,21 @@ void test_lcao_spinor_excited()
     psi_work   = 0.0;
     dpsi_work  = 0.0;
     d2psi_work = 0.0;
+    dspsi_work = 0.0;
 
     elec_.makeMove(iat, -dR[iat], false);
-    spo->evaluateVGL(elec_, iat, psi_work, dpsi_work, d2psi_work);
+    spo->evaluateVGL_spin(elec_, iat, psi_work, dpsi_work, d2psi_work, dspsi_work);
 
     REQUIRE(psi_work[0] == ComplexApprox(val).epsilon(eps));
     REQUIRE(dpsi_work[0][0] == ComplexApprox(vdx).epsilon(eps));
     REQUIRE(dpsi_work[0][1] == ComplexApprox(vdy).epsilon(eps));
     REQUIRE(dpsi_work[0][2] == ComplexApprox(vdz).epsilon(eps));
     REQUIRE(d2psi_work[0] == ComplexApprox(vlp).epsilon(eps));
+    REQUIRE(dspsi_work[0] == ComplexApprox(vds).epsilon(eps));
     elec_.rejectMove(iat);
   }
 
   //Now we test evaluateSpin:
-  SPOSet::ValueVector_t dspsi_work;
-  dspsi_work.resize(OrbitalSetSize);
-
   for (unsigned int iat = 0; iat < 1; iat++)
   {
     psi_work   = 0.0;

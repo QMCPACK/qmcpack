@@ -59,6 +59,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
       RealType tauovermass = Tau * MassInvS[ig];
       RealType oneover2tau = 0.5 / (tauovermass);
       RealType sqrttau     = std::sqrt(tauovermass);
+      Psi.prepareGroup(W, ig);
       for (int iat = W.first(ig); iat < W.last(ig); ++iat)
       {
         PosType dr;
@@ -74,6 +75,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         if (!W.makeMoveAndCheck(iat, dr))
         {
           ++nReject;
+          W.accept_rejectMove(iat, false);
           continue;
         }
 
@@ -91,19 +93,20 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         else
           prob = std::norm(Psi.calcRatio(W, iat));
 
+        bool is_accepted = false;
         if (prob >= std::numeric_limits<RealType>::epsilon() && RandomGen() < prob)
         {
-          moved = true;
+          is_accepted = true;
+          moved       = true;
           ++nAccept;
           Psi.acceptMove(W, iat, true);
-          W.acceptMove(iat, true);
         }
         else
         {
           ++nReject;
-          W.rejectMove(iat);
           Psi.rejectMove(iat);
         }
+        W.accept_rejectMove(iat, is_accepted);
       }
     }
     Psi.completeUpdates();
@@ -112,6 +115,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   movepbyp_timer_.stop();
   buffer_timer_.start();
   RealType logpsi = Psi.updateBuffer(W, w_buffer, recompute);
+  assert(checkLogAndGL(W, Psi));
   W.saveWalker(thisWalker);
   buffer_timer_.stop();
   // end PbyP moves

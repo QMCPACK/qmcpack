@@ -48,6 +48,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   }
   if (!is_active)
   {
+    ref.update();
     update_source(ref);
 
     ewaldref::RealMat A;
@@ -314,8 +315,6 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
       rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut, myGridforce);
     }
   }
-
-  P.update();
 }
 
 

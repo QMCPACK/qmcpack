@@ -256,8 +256,9 @@ void test_hyperslab()
   }
   dump.push("WalkerSet");
 
-  hyperslab_proxy<Matrix, 2> hslab(Data, std::array<int, 2>{nwtot, nprop}, std::array<int, 2>{nwalk, nprop},
-                                   std::array<int, 2>{rank * nwalk, 0});
+  hyperslab_proxy<Matrix, 2> hslab(Data, std::array<size_t, 2>{static_cast<size_t>(nwtot), static_cast<size_t>(nprop)},
+                                   std::array<size_t, 2>{static_cast<size_t>(nwalk), static_cast<size_t>(nprop)},
+                                   std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0});
   dump.write(hslab, "Walkers");
   dump.close();
   world.barrier();
@@ -273,8 +274,10 @@ void test_hyperslab()
 
     Matrix DataIn({nwalk, nprop});
 
-    hyperslab_proxy<Matrix, 2> hslab(DataIn, std::array<int, 2>{nwtot, nprop}, std::array<int, 2>{nwalk, nprop},
-                                     std::array<int, 2>{rank * nwalk, 0});
+    hyperslab_proxy<Matrix, 2> hslab(DataIn,
+                                     std::array<size_t, 2>{static_cast<size_t>(nwtot), static_cast<size_t>(nprop)},
+                                     std::array<size_t, 2>{static_cast<size_t>(nwalk), static_cast<size_t>(nprop)},
+                                     std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0});
     read.read(hslab, "Walkers");
     read.close();
 
@@ -319,8 +322,12 @@ void test_double_hyperslab()
   dump.push("WalkerSet");
 
   //double_hyperslab_proxy<Matrix,2> hslab(Data,
-  hyperslab_proxy<Matrix, 2> hslab(Data, std::array<int, 2>{nwtot, nprop_to_safe},
-                                   std::array<int, 2>{nwalk, nprop_to_safe}, std::array<int, 2>{rank * nwalk, 0}); //,
+  hyperslab_proxy<Matrix, 2> hslab(Data,
+                                   std::array<size_t, 2>{static_cast<size_t>(nwtot),
+                                                         static_cast<size_t>(nprop_to_safe)},
+                                   std::array<size_t, 2>{static_cast<size_t>(nwalk),
+                                                         static_cast<size_t>(nprop_to_safe)},
+                                   std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0}); //,
 
   //                                  std::array<int,2>{nwalk,nprop},
   //                                  std::array<int,2>{nwalk,nprop_to_safe},
@@ -342,8 +349,12 @@ void test_double_hyperslab()
     Matrix DataIn({nwalk, nprop_to_safe});
 
     //double_hyperslab_proxy<Matrix,2> hslab(DataIn,
-    hyperslab_proxy<Matrix, 2> hslab(DataIn, std::array<int, 2>{nwtot, nprop_to_safe},
-                                     std::array<int, 2>{nwalk, nprop_to_safe}, std::array<int, 2>{rank * nwalk, 0}); //,
+    hyperslab_proxy<Matrix, 2> hslab(DataIn,
+                                     std::array<size_t, 2>{static_cast<size_t>(nwtot),
+                                                           static_cast<size_t>(nprop_to_safe)},
+                                     std::array<size_t, 2>{static_cast<size_t>(nwalk),
+                                                           static_cast<size_t>(nprop_to_safe)},
+                                     std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0}); //,
     //                                  std::array<int,2>{nwalk,nprop},
     //                                  std::array<int,2>{nwalk,nprop_to_safe},
     //                                  std::array<int,2>{0,0});

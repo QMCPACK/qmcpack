@@ -36,11 +36,9 @@ void OperatorEstBase::collect(const RefVector<OperatorEstBase>& type_erased_oper
   for (OperatorEstBase& crowd_oeb : type_erased_operator_estimators)
   {
     std::transform(data_->begin(), data_->end(), crowd_oeb.get_data()->begin(), data_->begin(), std::plus<>{});
-    // For debugging purposes
     walkers_weight_ += crowd_oeb.walkers_weight_;
-    crowd_oeb.walkers_weight_ = 0;
+    crowd_oeb.zero();
   }
-  std::cout << "spindens walkers weight: " << walkers_weight_ << '\n';
 }
 
 void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
@@ -48,6 +46,35 @@ void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
   auto& data = *data_;
   for (QMCT::RealType& elem : data)
     elem *= invTotWgt;
+}
+
+void OperatorEstBase::write()
+{
+  if (h5desc_.size() == 0)
+    return;
+  // We have to do this to deal with the legacy design that Observables using
+  // collectables in mixed precision were accumulated in float but always written
+  // to hdf5 in double.
+#ifdef MIXED_PRECISION
+    std::vector<QMCT::FullPrecRealType> expanded_data(data_->size(), 0.0);
+    std::copy_n(data_->begin(), data_->size(), expanded_data.begin());
+    assert(data_->size() > 0);
+    // auto total = std::accumulate(data_->begin(), data_->end(), 0.0);
+    // std::cout << "data size: " << data_->size() << " : " << total << '\n';
+    for (auto& h5d : h5desc_)
+      h5d->write(expanded_data.data(), nullptr);
+#else
+    for (auto& h5d : h5desc_)
+      h5d->write(data_->data(), nullptr);
+#endif
+}
+
+void OperatorEstBase::zero()
+{
+  if (data_locality_ == DataLocality::rank || data_locality_ == DataLocality::crowd)
+    std::fill(data_->begin(), data_->end(), 0.0);
+  else
+    data_->clear();
   walkers_weight_ = 0;
 }
 

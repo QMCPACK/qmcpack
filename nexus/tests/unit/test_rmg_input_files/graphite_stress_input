@@ -1,0 +1,87 @@
+# Description of run.
+description="graphite"
+localize_projectors="false"
+localize_localpp="false"
+wavefunction_grid="24 24 64"
+
+test_energy="-22.98280508"
+
+
+
+occupations_type = "Fixed"
+
+# number of unoccupied states
+unoccupied_states_per_kpoint="16"
+#kohn_sham_mg_levels = "2"
+
+# Units for bravais_lattice_type and atoms
+#crds_units=
+#"Bohr"
+#"Angstrom"
+
+bravais_lattice_type="Hexagonal Primitive"
+
+
+# Lattice constants 
+a_length="4.64117"
+b_length="4.64117"
+c_length="12.653685887999998"
+
+alpha="0.0"
+beta="0.0"
+gamma="0.0"
+
+verbose="true"
+kpoint_is_shift = "1 1 1 "
+kpoint_mesh = "4 4 2 "
+kpoint_distribution = "1"
+
+
+#force_grad_order = "0"
+potential_grid_refinement = "2"
+
+
+stress="true"
+cell_relax="true"
+cell_movable="1  1  0  1  1  0  0 0 1"
+start_mode="LCAO Start"
+#start_mode="Random Start"
+#start_mode="Restart From File"
+
+#calculation_mode="Quench Electrons"
+calculation_mode="Relax Structure"
+
+kohn_sham_solver="davidson"
+subdiag_driver="lapack"
+#charge_mixing_type = "Broyden"
+charge_mixing_type = "Pulay"
+charge_density_mixing = "0.1"
+kohn_sham_mucycles = "3"
+max_scf_steps="20"
+max_md_steps = "10"
+potential_acceleration_constant_step="1.0"
+write_data_period="50"
+
+# Criterion used to judge SCF convergency 
+energy_convergence_criterion="1.0e-9"
+#rms_convergence_criterion = "1.0e-10"
+
+#atomic_coordinate_type="Absolute"
+atomic_coordinate_type="Cell Relative"
+
+# List  atomic symbol, coordinates, and movable flag (1 == movable) 
+# symbol and coordinates are required, moveable is optional, default is 1
+atoms = "
+ C     0.166666666667     0.166666666667      0.2500000  
+ C     0.5                0.833333333333      0.2500000  
+ C     0.166666666667     0.166666666667      0.75
+ C     0.833333333333     0.5                 0.7500000
+"
+#pseudopotential="
+#C  C.pbe-mt_fhi.UPF
+#C C.pbe-rrkjus.UPF
+#"
+pseudo_dir = "/home/luw/Pseudopotentials_collect"
+
+#exchange_correlation_type = "LDA"
+#exchange_correlation_type = "vdw-df"

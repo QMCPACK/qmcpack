@@ -1,4 +1,4 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 $CXXX $CXXFLAGS $0 -o $0x -lcudart -lboost_unit_test_framework -lboost_timer&&$0x&&rm $0x;exit
 #endif
 // © Alfredo A. Correa 2019-2020
@@ -17,15 +17,11 @@ namespace boost{
 namespace multi{
 namespace memory{
 namespace cuda{
-
 #if __cpp_nontype_template_parameter_auto>=201606
-template<auto CudaFunction>
-auto call_static(std::string name = ""){
-	return [=](auto... args)->decltype(CublasFunction(args...), void()){
-		std::cerr << "calling function " << name << std::endl;
-		Cuda::error s = CudaFunction(args...);
-		if( s != Cuda::error::success ) throw std::system_error{make_error_code(s), "cannot call cuda function "};
-	};
+template<auto CudaFunction, class... Args>
+void call(Args&&... args){
+	auto s = static_cast<Cuda::error>(CudaFunction(args...));
+	if( s != Cuda::error::success ) throw std::system_error{make_error_code(s), "cannot call cuda function "};
 }
 #endif
 template<class T, T CudaFunction>
@@ -58,27 +54,23 @@ namespace memcpy_{
 
 template<typename Dest, typename Src, typename = decltype(memcpy_::type(Dest{}, Src{}))>
 Dest memcpy(Dest dest, Src src, std::size_t byte_count){
-	cudaError_t const s = cudaMemcpy(
-		static_cast<void*>(dest), static_cast<void const*>(src), 
-		byte_count, static_cast<cudaMemcpyKind>(memcpy_::type(dest, src))
-	); assert(s == cudaSuccess); (void)s;
+	cuda::call<cudaMemcpy>(static_cast<void*>(dest), static_cast<void const*>(src), byte_count, static_cast<cudaMemcpyKind>(memcpy_::type(dest, src)));
 	return dest;
 }
 
 ptr<void> memset(ptr<void> dest, int ch, std::size_t byte_count){
-	/*[[maybe_unused]]*/ cudaError_t s = cudaMemset(static_cast<void*>(dest), ch, byte_count); assert(s == cudaSuccess); (void)s;
+	cuda::call<cudaMemset>(static_cast<void*>(dest), ch, byte_count);
 	return dest;
 }
 
 template<class VoidPDst = void*, class VoidPCSrc = void const*>
 auto memcpy2D(VoidPDst dst, std::size_t dpitch, VoidPCSrc src, std::size_t spitch, std::size_t width, std::size_t height)
-->std::decay_t<
-  decltype(cudaMemcpy2D(static_cast<void*>(dst), dpitch, static_cast<void const*>(src), spitch, width, height, static_cast<cudaMemcpyKind>(memcpy_::type(dst, src))), dst)>{
-	return cudaMemcpy2D(static_cast<void*>(dst), dpitch, static_cast<void const*>(src), spitch, width, height, static_cast<cudaMemcpyKind>(memcpy_::type(dst, src))), dst;}
+->decltype(cuda::call<cudaMemcpy2D>(static_cast<void*>(dst), dpitch, static_cast<void const*>(src), spitch, width, height, static_cast<cudaMemcpyKind>(memcpy_::type(dst, src)))){
+	return cuda::call<cudaMemcpy2D>(static_cast<void*>(dst), dpitch, static_cast<void const*>(src), spitch, width, height, static_cast<cudaMemcpyKind>(memcpy_::type(dst, src)));}
 
 }}}}
 
-#if not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUDA cstring"
 #define BOOST_TEST_DYN_LINK

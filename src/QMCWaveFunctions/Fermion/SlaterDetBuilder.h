@@ -43,7 +43,11 @@ public:
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SlaterDetBuilder(Communicate* comm, SPOSetBuilderFactory& factory, ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+  SlaterDetBuilder(Communicate* comm,
+                   SPOSetBuilderFactory& factory,
+                   ParticleSet& els,
+                   TrialWaveFunction& psi,
+                   PtclPoolType& psets);
 
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
@@ -74,57 +78,88 @@ private:
 
   bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
 
-  bool createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur);
+  bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
+                     std::vector<std::vector<size_t>>& C2node,
+                     std::vector<ValueType>& C,
+                     std::vector<ValueType>& CSFcoeff,
+                     std::vector<size_t>& DetsPerCSF,
+                     std::vector<RealType>& CSFexpansion,
+                     bool& usingCSF,
+                     opt_variables_type& myVars,
+                     bool& Optimizable,
+                     bool& CI_Optimizable,
+                     xmlNodePtr cur);
+
 
   bool readDetList(xmlNodePtr cur,
-                   std::vector<ci_configuration>& uniqueConfg_up,
-                   std::vector<ci_configuration>& uniqueConfg_dn,
-                   std::vector<size_t>& C2node_up,
-                   std::vector<size_t>& C2node_dn,
+                   std::vector<std::vector<ci_configuration>>& uniqueConfgs,
+                   std::vector<std::vector<size_t>>& C2nodes,
                    std::vector<std::string>& CItags,
                    std::vector<ValueType>& coeff,
                    bool& optimizeCI,
-                   int nels_up,
-                   int nels_dn,
+                   std::vector<int>& nptcls,
                    std::vector<ValueType>& CSFcoeff,
                    std::vector<size_t>& DetsPerCSF,
                    std::vector<RealType>& CSFexpansion,
                    bool& usingCSF);
 
-
   bool readDetListH5(xmlNodePtr cur,
-                     std::vector<ci_configuration>& uniqueConfg_up,
-                     std::vector<ci_configuration>& uniqueConfg_dn,
-                     std::vector<size_t>& C2node_up,
-                     std::vector<size_t>& C2node_dn,
+                     std::vector<std::vector<ci_configuration>>& uniqueConfgs,
+                     std::vector<std::vector<size_t>>& C2nodes,
                      std::vector<std::string>& CItags,
                      std::vector<ValueType>& coeff,
                      bool& optimizeCI,
-                     int nels_up,
-                     int nels_dn);
+                     std::vector<int>& nptcls);
 
   // clang-format off
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
                             (std::is_floating_point<VT>::value), int> = 0>
-  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets,int ext_level)
   {
-    hin.read(ci_coeff, "Coeff");
+    ///Determinant coeffs are stored in Coeff for the ground state and Coeff_N 
+    ///for the Nth excited state. 
+    ///The Ground State is always stored in Coeff 
+    ///Backward compatibility is insured
+    std::string extVar;
+    if (ext_level==0)
+       extVar="Coeff";
+    else
+       extVar="Coeff_"+std::to_string(ext_level);
+
+    if (!hin.readEntry(ci_coeff,extVar))
+       APP_ABORT("Could not read CI coefficients from HDF5");
+      
   }
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
                             (std::is_same<VT, std::complex<typename VT::value_type>>::value), int> = 0>
-  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets)
+  void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets,int ext_level)
   {
+    std::string extVar;
     std::vector<double> CIcoeff_real;
     std::vector<double> CIcoeff_imag;
     CIcoeff_imag.resize(n_dets);
     CIcoeff_real.resize(n_dets);
+    fill(CIcoeff_imag.begin(), CIcoeff_imag.end(), 0.0);
+    ///Determinant coeffs are stored in Coeff_N where N is Nth excited state. 
+    ///The Ground State is always stored in Coeff. 
+    ///Backward compatibility is insured
 
-    hin.read(CIcoeff_real, "Coeff");
-    if (!hin.readEntry(CIcoeff_imag, "Coeff_imag"))
-      app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
+    std::string ext_var;
+    if (ext_level==0)
+      extVar="Coeff";
+    else
+      extVar="Coeff_"+std::to_string(ext_level);
+    
 
+    if(!hin.readEntry(CIcoeff_real, extVar))
+       APP_ABORT("Could not read CI coefficients from HDF5")
+
+    extVar=extVar+"_imag";
+    if(!hin.readEntry(CIcoeff_imag, extVar))
+       app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
+         
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
   }

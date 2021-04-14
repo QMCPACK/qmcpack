@@ -242,12 +242,12 @@ bool
 FileParserClass::FindToken(std::string token)
 {
   assert (Infile.is_open());
-  char compare[token.size()+1];
+  std::string compare(token.size(), '\0');
   Pos = Infile.tellg();
   bool found = false;
   while (!found) {
     Infile.seekg(Pos, std::ios_base::beg);
-    Infile.get(compare, (std::streamsize)token.size()+1, '\0');
+    Infile.get(&compare[0], (std::streamsize)token.size()+1, '\0');
     if (token == compare) {
       Pos += token.size();
       Infile.seekg(Pos, std::ios_base::beg);

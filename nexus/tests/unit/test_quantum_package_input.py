@@ -1,6 +1,6 @@
 
 import testing
-from testing import value_eq,object_eq,text_eq
+from testing import value_eq,object_eq,text_eq,check_object_eq
 
 
 def format_value(v):
@@ -169,7 +169,7 @@ def generate_serial_references():
         'structure/kaxes' : np.array([]),
         'structure/kpoints' : np.array([]),
         'structure/kweights' : np.array([]),
-        'structure/mag' : np.array([]),
+        'structure/mag' : None,
         'structure/pos' : np.array([
             [0.0, 0.0, 0.0],
             [0.0, 0.75716, 0.58626],
@@ -200,7 +200,7 @@ def generate_serial_references():
         'structure/kaxes' : np.array([]),
         'structure/kpoints' : np.array([]),
         'structure/kweights' : np.array([]),
-        'structure/mag' : np.array([]),
+        'structure/mag' : None,
         'structure/pos' : np.array([
             [0.0, 0.0, 0.0],
             [1.2074, 0.0, 0.0]]),

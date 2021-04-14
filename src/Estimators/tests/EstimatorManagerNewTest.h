@@ -46,6 +46,8 @@ public:
    * only used by test_manager_mpi.cpp so implemented there.  
    */
   std::vector<QMCT::RealType> generateGoodOperatorData(int num_ranks);
+  /// test add and get estimator
+  bool testAddGetEstimator();
   
   bool testMakeBlockAverages();
   void testReduceOperatorEstimators();

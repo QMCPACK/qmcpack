@@ -501,8 +501,8 @@ Tp Overlap(const MatA& hermA,
            const MatB& B,
            Tp LogOverlapFactor,
            Mat&& T1,
-           IBuffer& IWORK,
-           Buffer& WORK,
+           IBuffer&& IWORK,
+           Buffer&& WORK,
            bool herm = true)
 {
   int NMO = (herm ? hermA.size(1) : hermA.size(0));
@@ -763,8 +763,8 @@ Tp Overlap(const MatA& hermA,
            const MatB& B,
            Tp LogOverlapFactor,
            Mat&& T1,
-           IBuffer& IWORK,
-           Buffer& WORK,
+           IBuffer&& IWORK,
+           Buffer&& WORK,
            communicator& comm,
            bool herm = true)
 {

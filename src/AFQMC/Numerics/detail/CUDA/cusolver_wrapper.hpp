@@ -485,10 +485,10 @@ inline cusolverStatus_t cusolver_gqr_strided(cusolverDnHandle_t handle,
         cusolverDnZungqr(handle, m, n, k, reinterpret_cast<cuDoubleComplex*>(A) + i * Astride, lda,
                          reinterpret_cast<cuDoubleComplex const*>(tau) + i * tstride,
                          reinterpret_cast<cuDoubleComplex*>(work) + i * lwork, lwork, devInfo + i);
-    qmc_cuda::cusolver_check(sucess, "cusolver_gqr_strided");
+    qmc_cuda::cusolver_check(sucess, "cusolver_gqr_strided_status");
   }
-  qmc_cuda::cuda_check(cudaDeviceSynchronize(), "cusolver_gqr_strided");
-  qmc_cuda::cuda_check(cudaGetLastError(), "cusolver_gqr_strided");
+  qmc_cuda::cuda_check(cudaDeviceSynchronize(), "cusolver_gqr_strided_sync");
+  qmc_cuda::cuda_check(cudaGetLastError(), "cusolver_gqr_strided_error");
   qmc_cuda::cusolver_check(cusolverDnSetStream(handle, s0), "cusolverDnSetStream");
 
   return CUSOLVER_STATUS_SUCCESS;

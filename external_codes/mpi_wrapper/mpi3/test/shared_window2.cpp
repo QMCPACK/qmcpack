@@ -4,6 +4,7 @@ mpic++ -O3 -std=c++14 -Wfatal-errors $0 -o $0x.x && time mpirun -n 4 $0x.x $@ &&
 
 #include "../../mpi3/environment.hpp"
 #include "../../mpi3/shared_window.hpp"
+#include "../../mpi3/shm/allocator.hpp"
 
 #include<iostream>
 
@@ -11,28 +12,29 @@ using std::cout;
 using std::endl;
 
 namespace mpi3 = boost::mpi3;
+namespace shm = mpi3::shm;
 
 int main(int, char*[]){
 	mpi3::environment env;
 	auto world = env.world();
 	mpi3::shared_communicator node = world.split_shared();
 
-	std::vector<double, mpi3::intranode::allocator<double>> v(100, node);
+	std::vector<double, shm::allocator<double>> v(100, node);
 	
 	cout << "v = " << v[32] << std::endl;
 	return 0;
 
 	cout<<" rank:  " <<world.rank() <<endl;
 
-	mpi3::intranode::allocator<double>   A1(node);
-	mpi3::intranode::allocator<float>    A2(node);
-	mpi3::intranode::allocator<int>      A3(node);
-	mpi3::intranode::allocator<unsigned> A4(node);
-	mpi3::intranode::allocator<double>   A5(node);
-	mpi3::intranode::allocator<float>    A6(node);
-	mpi3::intranode::allocator<int>      A7(node);
-	mpi3::intranode::allocator<unsigned> A8(node);
-	mpi3::intranode::allocator<double>   A9(node);
+	shm::allocator<double>   A1(node);
+	shm::allocator<float>    A2(node);
+	shm::allocator<int>      A3(node);
+	shm::allocator<unsigned> A4(node);
+	shm::allocator<double>   A5(node);
+	shm::allocator<float>    A6(node);
+	shm::allocator<int>      A7(node);
+	shm::allocator<unsigned> A8(node);
+	shm::allocator<double>   A9(node);
 
 	auto data1 = A1.allocate(80);
 	auto data2 = A2.allocate(80);

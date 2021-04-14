@@ -1,5 +1,6 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXXX $CXXFLAGS $0 -o $0x &&$0x&&rm $0x;exit
+echo $X
+$CXXX $CXXFLAGS $0 -o $0.$X &&$0.$X&&rm $0.$X;exit
 #endif
 // © Alfredo A. Correa 2019-2020
 
@@ -11,29 +12,19 @@ $CXXX $CXXFLAGS $0 -o $0x &&$0x&&rm $0x;exit
 #endif
 
 #ifndef NODISCARD
-#if (__has_cpp_attribute(nodiscard)) && (__cplusplus>=201703L)
-	#if (__has_cpp_attribute(nodiscard)>=201907) && (__cplusplus>=201703L)
-		#if defined(__clang__) and (__cplusplus < 202002L)
-			#define nodiscard_(MsG) nodiscard
-		#else
-			#define nodiscard_(MsG) nodiscard(MsG)
-		#endif
-	#else
-		#define nodiscard_(MsG) nodiscard
-	#endif
-	#define NODISCARD(MsG) [[nodiscard_(MsG)]]
-#elif __has_cpp_attribute(gnu::warn_unused_result)
 #if defined(__NVCC__)
 	#define NODISCARD(MsG)
+#elif (__has_cpp_attribute(nodiscard) and (__cplusplus>=201703L))
+	#if (__has_cpp_attribute(nodiscard)>=201907) and (__cplusplus>201703L)
+		#define NODISCARD(MsG) [[nodiscard(MsG)]]
+	#else
+		#define NODISCARD(MsG) [[nodiscard]]
+	#endif
+#elif __has_cpp_attribute(gnu::warn_unused_result)
+	#define NODISCARD(MsG) [[gnu::warn_unused_result]]
 #else
-	#define nodiscard_(MsG) gnu::warn_unused_result
-	#define NODISCARD(MsG) [[nodiscard_(MsG)]]
-#endif
-#else
-	#define nodiscard_(MsG)
 	#define NODISCARD(MsG)
 #endif
-
 #endif
 
 #ifndef NODISCARD_CLASS
@@ -48,7 +39,7 @@ $CXXX $CXXFLAGS $0 -o $0x &&$0x&&rm $0x;exit
 	#endif
 #endif
 
-#if not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #include "../config/MAYBE_UNUSED.hpp"
 

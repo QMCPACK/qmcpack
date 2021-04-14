@@ -168,24 +168,12 @@ git clone https://github.com/spack/spack.git
 cd $HOME/apps/spack
 # For reproducibility, use a specific version of Spack
 # Prefer to use tagged releases https://github.com/spack/spack/releases
-#git checkout 0c63c94103acae33c4f3adfe7b90d2ea1165ce46
-#Author: Dennis Klein <dennis.klein.github@gmail.com>
-#Date:   Fri Jul 24 19:00:55 2020 +0200
+git checkout 08054ffce73dc9aeb1dabe7a3abfdb446653cc4f
+#commit 08054ffce73dc9aeb1dabe7a3abfdb446653cc4f (HEAD -> develop, origin/develop, origin/HEAD)
+#Author: Andrew W Elble <aweits@rit.edu>
+#Date:   Mon Feb 22 14:02:10 2021 -0500
 #
-#    Relax architecture compatibility check (#15972)
-#
-#    * Relax architecture compatibility check
-#    * Add test coverage for the spack.abi module
-#cp -p var/spack/repos/builtin/packages/gcc/package.py var/spack/repos/builtin/packages/gcc/package.py_orig
-#git checkout 5f9de810ff14455ac6b433398b965d2cf6b4a70f -- var/spack/repos/builtin/packages/gcc/package.py
-#ls -l var/spack/repos/builtin/packages/gcc/package.py*
-
-#git checkout v0.16.0 #Works? FAIL 18 Nov.
-#git checkout e0ae60edc4ee7dafc5ab99d756d9c63624c281d5 # Works 1 Nov
-#git checkout a5faf7d27a3ef1afca28e5d2348130f580be898d # Works 20 Oct
-#git checkout 9eb87d1026819875dec8bb7fa00252576fd62006 # Works 23 Sep. 
-#git checkout v0.15.4 #works 13 Aug
-#git checkout v0.15.0 #works
+#    py-torch: ensure libtorch_global_deps is linked with the c++ library (#21860)
 
 echo --- Git version and last log entry
 git log -1
@@ -220,29 +208,26 @@ echo --- End listings
 
 
 echo --- START `date`
-echo --- diffutils iconv dependency workaround
-cp ${SPACK_ROOT}/var/spack/repos/builtin/packages/diffutils/package.py  ${SPACK_ROOT}/var/spack/repos/builtin/packages/diffutils/package.py_orig
-sed 's/.*depends_on.*iconv.*//g' ${SPACK_ROOT}/var/spack/repos/builtin/packages/diffutils/package.py_orig >  ${SPACK_ROOT}/var/spack/repos/builtin/packages/diffutils/package.py
-#echo --- Debug
-#spack install gcc@10.2.0
-#spack load gcc@10.2.0
-#spack compiler find
-#spack install cmake%gcc@10.2.0
-#spack load cmake%gcc@10.2.0
-#exit
-echo --- Convenience
-spack install git
+echo --- SPACK HACK: diffutils iconv dependency workaround
+sed -i 's/.*depends_on.*iconv.*//g' ${SPACK_ROOT}/var/spack/repos/builtin/packages/diffutils/package.py
+echo --- SPACK HACK: Add new util-linux-uuid
+sed -i "16 a \    version('2.36.1', sha256='37de03dbb98cdeffdf9e754122b0aca2a9bbdc19769f6570dfcb6f123643bf53')" ${SPACK_ROOT}/var/spack/repos/builtin/packages/util-linux-uuid/package.py
+echo --- SPACK HACK: https for gcc git
+sed -i 's/git:/https:/g' ${SPACK_ROOT}/var/spack/repos/builtin/packages/gcc/package.py
 echo --- gcc@${gcc_vnew}
 spack install gcc@${gcc_vnew}
 echo --- load gcc@${gcc_vnew}
 spack load gcc@${gcc_vnew}
 module list
 spack compiler find
+echo --- Convenience
+spack install git
 echo --- gcc@${gcc_vnew} consumers
 spack install cmake@${cmake_vnew}
 spack install libxml2@${libxml2_v}%gcc@${gcc_vnew}
 #spack install boost@${boost_vnew}%gcc@${gcc_vnew}
 spack install boost@${boost_vnew}
+spack install util-linux-uuid%gcc@${gcc_vnew}
 spack install python@${python_version}%gcc@${gcc_vnew} # Needed by libflame, good safety measure
 spack load python@${python_version}%gcc@${gcc_vnew}
 spack install openmpi@${ompi_vnew}%gcc@${gcc_vnew} ^libxml2@${libxml2_v}%gcc@${gcc_vnew}
@@ -265,6 +250,7 @@ spack install cmake@${cmake_vold} # Some old cmakes do not bootstrap with old gc
 spack install --no-checksum libxml2@${libxml2_v}%gcc@${gcc_vold}
 spack install boost@${boost_vold}%gcc@${gcc_vold}
 #spack install boost@${boost_vold}
+spack install util-linux-uuid%gcc@${gcc_vold}
 spack install python@${python_version}%gcc@${gcc_vold}
 spack load python@${python_version}%gcc@${gcc_vold}
 #spack install --no-checksum libxml2@${libxml2_v}%gcc@${gcc_vold}
@@ -324,7 +310,8 @@ echo --- BLAS+LAPACK
 #spack install openblas%gcc@${gcc_vnew} threads=openmp
 #spack install openblas%gcc@${gcc_vold} threads=openmp
 spack install openblas threads=openmp
-
+echo --- CUDA
+spack install cuda # Will be used by llvm@main+cuda
 echo --- Modules installed so far
 spack find
 echo --- Python setup for NEXUS `date`
@@ -332,7 +319,7 @@ echo --- New python modules
 #spack install py-numpy^blis%gcc@${gcc_vnew} # will pull in libflame (problems 2020-03-27)
 spack load gcc@${gcc_vnew}
 spack load python@${python_version}%gcc@${gcc_vnew} 
-spack install py-numpy%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew} # Will pull in OpenBLAS
+#spack install py-numpy%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew} # Will pull in OpenBLAS
 spack install py-scipy%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
 #spack install py-mpi4py%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew} ^openmpi@${ompi_vnew}%gcc@${gcc_vnew} ^libxml2@${libxml2_v}%gcc@${gcc_vnew} 
 spack install py-setuptools%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
@@ -341,7 +328,7 @@ spack install py-h5py%gcc@${gcc_vnew}  -mpi ^python@${python_version}%gcc@${gcc_
 spack install py-pandas%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
 spack install py-lxml%gcc@${gcc_vnew}  
 spack install py-matplotlib%gcc@${gcc_vnew} ^python@${python_version}%gcc@${gcc_vnew}
-spack activate py-numpy%gcc@${gcc_vnew} 
+#spack activate py-numpy%gcc@${gcc_vnew} 
 spack activate py-scipy%gcc@${gcc_vnew} 
 spack activate py-h5py%gcc@${gcc_vnew} 
 spack activate py-pandas%gcc@${gcc_vnew} 
@@ -354,7 +341,7 @@ echo --- Old python modules
 spack load gcc@${gcc_vold}
 spack load python@${python_version}%gcc@${gcc_vold}
 spack install py-numpy%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} # Will pull in OpenBLAS
-#SKIP#BADspack install py-scipy%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} # Will pull in py-pybind11 and cmake which won't bootstrap 20201223
+#spack install py-scipy%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} # Will pull in py-pybind11 and cmake which won't bootstrap 20201223
 #SKIPspack install py-setuptools%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold}
 #SKIP#BAD gives dupe python spack install py-mpi4py%gcc@${gcc_vold} ^python@${python_version}%gcc@${gcc_vold} ^openmpi@${ompi_vold}%gcc@${gcc_vold} ^libxml2@${libxml2_v}%gcc@${gcc_vold}
 #SKIPspack install py-mpi4py%gcc@${gcc_vold} ^openmpi@${ompi_vold}%gcc@${gcc_vold} ^py-setuptools%gcc@${gcc_vold}  ^python@${python_version}%gcc@${gcc_vold}
@@ -377,14 +364,13 @@ spack unload gcc@${gcc_vold}
 echo --- PGI setup reminder
 echo "To configure the PGI compilers with one of the newly installed C++ libraries:"
 echo "spack load gcc@${gcc_vpgi} # For example"
-echo "cd /opt/pgi/linux86-64/19.10/bin"
-echo "sudo ./makelocalrc -x /opt/pgi/linux86-64/19.10/ -gcc `which gcc` -gpp `which g++` -g77 `which gfortran`"
+echo "cd /opt/nvidia/hpc_sdk/Linux_x86_64/20.9/compilers/bin"
+echo "sudo ./makelocalrc -x /opt/nvidia/hpc_sdk/Linux_x86_64/20.9/compilers/ -gcc \`which gcc\` -gpp \`which g++\` -g77 \`which gfortran\`"
 echo "gcc_vpgi is set to" ${gcc_vpgi}
-# sudo ./makelocalrc -x /opt/nvidia/hpc_sdk/Linux_x86_64/20.9/compilers/ -gcc `which gcc` -gpp `which g++` -g77 `which gfortran`
 
 # Bug avoidance 20200902
 if [ -e /usr/lib/aomp/bin/clang ]; then
     echo --- AOMP Bug workaround
-    echo Change permissions back on AOMP Clang install detected, e.g. sudo chmod og+rx /usr/lib/aomp
+    echo Change permissions back on AOMP Clang install. e.g. sudo chmod og+rx /usr/lib/aomp
 fi
 echo --- FINISH setup script `date`

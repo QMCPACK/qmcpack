@@ -16,7 +16,9 @@
 #ifndef OHMMS_OHMMSPARAMETER_H
 #define OHMMS_OHMMSPARAMETER_H
 
+#include <stdexcept>
 #include "OhmmsData/OhmmsElementBase.h"
+#include "Host/OutputManager.h"
 
 /** generic class for parameter xmlNode
  *
@@ -24,14 +26,13 @@
  *value is the content of an xmlNode. The definition confirms docbook::parameter
  *\htmlonly
  Usage is:
- &lt;parameter name="<b>aname</b>" condition="<b>unit</b>"&gt; <b>value</b> &lt;/parameter&gt;
+ &lt;parameter name="<b>aname</b>" &gt; <b>value</b> &lt;/parameter&gt;
  <br>
   Example is:
- &lt;parameter name="temperature" condition="K"&gt; 200 &lt;/parameter&gt;
+ &lt;parameter name="temperature" &gt; 200 &lt;/parameter&gt;
  <br>
  <ul>
  <li> <b>name</b> is the name of the parameter.
- <li> <b>condition</b> is the unit of the parameter: default = none for dimensionless values
  <li> <b>value</b> is the content of the parameter of type T.
  </ul>
  <ul> Two kinds of template parameter T are valid:
@@ -42,52 +43,112 @@
 
  \endhtmlonly
  */
+
+enum class TagStatus
+{
+  OPTIONAL,   // there is a default value
+  REQUIRED,   // no default value, input required.
+  DEPRECATED, // deprecated input tag. Input becomes optional
+  DELETED,    // deleted input tag. Hard stop if detected.
+  UNSUPPORTED // not supported input tags due to incompatible changes. Hard stop if detected.
+};
+
+inline void checkTagStatus(const std::string& tagname, TagStatus status)
+{
+  if (status == TagStatus::DELETED)
+  {
+    std::ostringstream msg;
+    msg << "Input tag \"" << tagname << "\" has been deleted. Please remove it from the input file!" << std::endl;
+    throw std::runtime_error(msg.str());
+  }
+  else if (status == TagStatus::UNSUPPORTED)
+  {
+    std::ostringstream msg;
+    msg << "Input tag \"" << tagname << "\" is not supported. Please remove it from the input file!" << std::endl;
+    throw std::runtime_error(msg.str());
+  }
+  else if (status == TagStatus::DEPRECATED)
+    qmcplusplus::app_warning() << "Input tag \"" << tagname
+                               << "\" has been deprecated and will be deleted in the next release!" << std::endl;
+}
+
+
 template<class T>
 class OhmmsParameter : public OhmmsElementBase
 {
   //@{
   ///reference to a value of type T
   T& ref_;
-  ///the unit of this object
-  std::string unit_;
+  ///valid candidate values, if not empty, the first one is the default.
+  std::vector<T> candidate_values_;
   ///pointer to the corresponding xmlNode
   xmlNodePtr node_;
+  /// The status of the tag
+  TagStatus tag_staus_;
   //@}
 
+  void checkValues()
+  {
+    if (!candidate_values_.empty() &&
+        std::find(candidate_values_.begin(), candidate_values_.end(), ref_) == candidate_values_.end())
+    {
+      std::ostringstream msg;
+      msg << "Input tag \"" << myName << "\" value \"" << ref_ << "\" is not valid. Candidate values are : ";
+      for (const auto& value : candidate_values_)
+        msg << " \"" << value << "\"";
+      msg << std::endl;
+      throw std::runtime_error(msg.str());
+    }
+  }
+
 public:
-  /*!\fn OhmmsParameter(T& a, const char* aname, const char* uname)
+  /*!\fn OhmmsParameter(...) constructor
    *\param a the value to be referenced
    *\param aname the name of this object
-   *\param uname the unit
+   *\param candidate_values candidate values to be checked against, the first element is the default value. It can be left empty for backward compatibility or unbounded input.
+   *\param status Tag status, See TagStatus enum.
    */
-  OhmmsParameter(T& a, const char* aname, const char* uname = "none")
-      : OhmmsElementBase(aname), ref_(a), unit_(uname), node_(NULL)
+  OhmmsParameter(T& a,
+                 const std::string& aname,
+                 std::vector<T>&& candidate_values = {},
+                 TagStatus status                  = TagStatus::OPTIONAL)
+      : OhmmsElementBase(aname.c_str()),
+        ref_(a),
+        candidate_values_(std::move(candidate_values)),
+        node_(NULL),
+        tag_staus_(status)
   {
-    tolower(unit_);
+    // set default value
+    if (status != TagStatus::REQUIRED && !candidate_values_.empty())
+      ref_ = candidate_values_[0];
   }
 
   ///print to an std::ostream
   inline bool get(std::ostream& os) const
   {
-    os << "<parameter name=\"" << myName << "\" condition=\"" << unit_ << "\">" << ref_ << "</parameter>" << std::endl;
+    os << "<parameter name=\"" << myName << "\">" << ref_ << "</parameter>" << std::endl;
     return true;
   }
 
-  /*!inline bool put(xmlNodePtr cur)
+  /*!inline bool put(xmlNodePtr cur), used by ParameterSet
    *\param cur the current xmlNode whose content is assigned to ref_
    */
   inline bool put(xmlNodePtr cur)
   {
+    checkTagStatus(myName, tag_staus_);
     node_ = cur;
     putContent(ref_, cur);
+    checkValues();
     return true;
   }
 
 
-  ///read from std::istream
+  ///read from std::istream, used by OhmmsAttributeSet
   inline bool put(std::istream& is)
   {
+    checkTagStatus(myName, tag_staus_);
     is >> ref_;
+    checkValues();
     return true;
   }
 
@@ -103,7 +164,6 @@ public:
     {
       node_ = xmlNewChild(parent, parent->ns, (const xmlChar*)"parameter", NULL);
       xmlNewProp(node_, (const xmlChar*)"name", (const xmlChar*)(myName.c_str()));
-      xmlNewProp(node_, (const xmlChar*)"condition", (const xmlChar*)(unit_.c_str()));
       getContent(ref_, node_);
     }
     return true;
@@ -124,22 +184,33 @@ class OhmmsParameter<bool> : public OhmmsElementBase
   //@{
   ///reference to a value of type T
   bool& ref_;
-  ///the unit of this object
-  std::string unit_;
+  ///valid candidate values, if not empty, the first one is the default.
+  std::vector<bool> candidate_values_;
   ///pointer to the corresponding xmlNode
   xmlNodePtr node_;
+  /// The status of the tag
+  TagStatus tag_staus_;
   //@}
 
 public:
   /*!\fn OhmmsParameter(bool& a, const char* aname, const char* uname)
    *\param a the boolean to be referenced.
    *\param aname the name of this object
-   *\param uname the unit
+   *\param candidate_values valid input values
    */
-  OhmmsParameter(bool& a, const char* aname, const char* uname = "none")
-      : OhmmsElementBase(aname), ref_(a), unit_(uname), node_(NULL)
+  OhmmsParameter(bool& a,
+                 const std::string& aname,
+                 std::vector<bool>&& candidate_values = {},
+                 TagStatus status                     = TagStatus::OPTIONAL)
+      : OhmmsElementBase(aname.c_str()),
+        ref_(a),
+        candidate_values_(std::move(candidate_values)),
+        node_(NULL),
+        tag_staus_(status)
   {
-    tolower(unit_);
+    // set default value.
+    if (!candidate_values_.empty())
+      ref_ = candidate_values_[0];
   }
 
   ///print to an std::ostream
@@ -157,7 +228,8 @@ public:
    */
   inline bool put(xmlNodePtr cur)
   {
-    node_          = cur;
+    checkTagStatus(myName, tag_staus_);
+    node_ = cur;
     const XMLNodeString ac(cur);
     if (!ac.empty())
     {
@@ -178,6 +250,7 @@ public:
   ///read from std::istream
   inline bool put(std::istream& is)
   {
+    checkTagStatus(myName, tag_staus_);
     std::string yes;
     is >> yes;
     if (yes == "yes" || yes == "true" || yes == "1")
@@ -199,7 +272,6 @@ public:
     {
       node_ = xmlNewChild(parent, parent->ns, (const xmlChar*)"parameter", NULL);
       xmlNewProp(node_, (const xmlChar*)"name", (const xmlChar*)(myName.c_str()));
-      xmlNewProp(node_, (const xmlChar*)"condition", (const xmlChar*)(unit_.c_str()));
       getContent(ref_, node_);
     }
     return true;

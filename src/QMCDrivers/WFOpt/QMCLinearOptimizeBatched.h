@@ -53,9 +53,8 @@ class QMCLinearOptimizeBatched : public QMCDriverNew
 {
 public:
   ///Constructor.
-  QMCLinearOptimizeBatched(MCWalkerConfiguration& w,
-                           TrialWaveFunction& psi,
-                           QMCHamiltonian& h,
+  QMCLinearOptimizeBatched(const ProjectData& project_data,
+                           MCWalkerConfiguration& w,
                            QMCDriverInput&& qmcdriver_input,
                            VMCDriverInput&& vmcdriver_input,
                            MCPopulation&& population,

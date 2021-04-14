@@ -39,34 +39,36 @@ auto base_aux(A&& a)
 using core::herk;
 
 template<class AA, class BB, class A2D, class C2D, class = typename A2D::element_ptr, std::enable_if_t<is_complex_array<C2D>{}, int> =0>
-auto herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
-->decltype(herk('\0', '\0', c.size(), a.size(), alpha, base_aux(a), stride(a.rotated()), beta, base_aux(c), stride(c)), std::forward<C2D>(c))
+C2D&& herk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
+//->decltype(herk('\0', '\0', c.size(), a.size(), &alpha, base_aux(a), stride(a.rotated()), &beta, base_aux(c), stride(c)), std::forward<C2D>(c))
 {
 	assert( a.size() == c.size() );
 	assert( c.size() == rotated(c).size() );
 	if(c.size()==0) return std::forward<C2D>(c);
-	if(is_conjugated<C2D>{}){herk(flip(c_side), alpha, a, beta, hermitized(c)); return std::forward<C2D>(c);}
+	if constexpr(is_conjugated<C2D>{}){herk(flip(c_side), alpha, a, beta, hermitized(c)); return std::forward<C2D>(c);}
 	{
 		auto base_a = base_aux(a);
 		auto base_c = base_aux(c); //  static_assert( not is_conjugated<C2D>{}, "!" );
-		if(is_conjugated<A2D>{}){
+		if constexpr(is_conjugated<A2D>{}){
+		//	auto& ctxt = *blas::default_context_of(underlying(a.base()));
 			// if you get an error here might be due to lack of inclusion of a header file with the backend appropriate for your type of iterator
-				 if(stride(a)==1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(c));
+				 if(stride(a)==1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(c));
 			else if(stride(a)==1 and stride(c)==1){
-				if(size(a)==1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(c));
+				if(size(a)==1)                     herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(c));
 				else assert(0);
 			}
-			else if(stride(a)!=1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'C', size(c), size(rotated(a)), alpha, base_a, stride(        a ), beta, base_c, stride(rotated(c)));
-			else if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), alpha, base_a, stride(        a ), beta, base_c, stride(        c ));
+			else if(stride(a)!=1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(rotated(c)));
+			else if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(        c ));
 			else assert(0);
 		}else{
-				 if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), alpha, base_a, stride(        a ), beta, base_c, stride(c));
+		//	auto& ctxt = *blas::default_context_of(           a.base() );
+			;;;; if(stride(a)!=1 and stride(c)!=1) herk(c_side==filling::upper?'L':'U', 'C', size(c), size(rotated(a)), &alpha, base_a, stride(        a ), &beta, base_c, stride(c));
 			else if(stride(a)!=1 and stride(c)==1){
-				if(size(a)==1) herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(rotated(c)));
+				if(size(a)==1)                     herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(rotated(c)));
 				else assert(0);
 			}
 			else if(stride(a)==1 and stride(c)!=1) assert(0);//case not implemented, herk(c_side==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base(c), stride(c)); 
-			else if(stride(a)==1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'N', size(c), size(rotated(a)), alpha, base_a, stride(rotated(a)), beta, base_c, stride(rotated(c)));
+			else if(stride(a)==1 and stride(c)==1) herk(c_side==filling::upper?'U':'L', 'N', size(c), size(rotated(a)), &alpha, base_a, stride(rotated(a)), &beta, base_c, stride(rotated(c)));
 			else assert(0);
 		}
 	}
@@ -170,9 +172,6 @@ template<class M> decltype(auto) print(M const& C){
 	}
 	return cout << std::endl;
 }
-
-using complex = std::complex<double>; 
-constexpr complex I(0, 1);
 
 BOOST_AUTO_TEST_CASE(inq_case){
 	using namespace multi::blas;

@@ -197,6 +197,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/MultiSlaterDeterminantWithBackflow.cpp
   SPOSetBuilderFactory.cpp
   TrialWaveFunction.cpp
+  TWFdispatcher.cpp
   WaveFunctionFactory.cpp
   )
 
@@ -225,5 +226,6 @@ IF(QMC_CUDA OR ENABLE_CUDA)
   TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda)
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
+TARGET_INCLUDE_DIRECTORIES(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcparticle platform_device)
 TARGET_LINK_LIBRARIES(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Math::scalar_vector_functions)

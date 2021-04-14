@@ -49,7 +49,7 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string spo_prec("double");
   std::string truncate("no");
   std::string hybrid_rep("no");
-  ScopedTimer spo_timer_scope(timer_manager.createTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
+  ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
 
   {
     OhmmsAttributeSet a;

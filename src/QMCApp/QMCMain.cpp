@@ -30,6 +30,7 @@
 #include "Platforms/Host/OutputManager.h"
 #include "Utilities/Timer.h"
 #include "Utilities/TimerManager.h"
+#include "Utilities/RunTimeManager.h"
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/InitMolecularSystem.h"
 #include "QMCDrivers/QMCDriver.h"
@@ -86,7 +87,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << NodeComm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(QMC_CUDA) || defined(ENABLE_ROCM)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM)
       << "\n  Accelerators per node     = " << num_accelerators
 #endif
       << std::endl;
@@ -169,7 +170,7 @@ bool QMCMain::execute()
   if (simulationType == "afqmc")
   {
     NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
-    ScopedTimer t2_scope(t2);
+    ScopedTimer t2_scope(*t2);
     app_log() << std::endl
               << "/*************************************************\n"
               << " ********  This is an AFQMC calculation   ********\n"
@@ -208,10 +209,8 @@ bool QMCMain::execute()
   //validate the input file
   bool success = validateXML();
   if (!success)
-  {
-    ERRORMSG("Input document does not contain valid objects")
-    return false;
-  }
+    myComm->barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
+
   //initialize all the instances of distance tables and evaluate them
   ptclPool->reset();
   infoSummary.flush();
@@ -235,6 +234,8 @@ bool QMCMain::execute()
   qmc_common.qmc_counter = 0;
   for (int qa = 0; qa < m_qmcaction.size(); qa++)
   {
+    if (run_time_manager.isStopNeeded())
+      break;
     xmlNodePtr cur = m_qmcaction[qa].first;
     std::string cname((const char*)cur->name);
     if (cname == "qmc" || cname == "optimize")
@@ -280,7 +281,7 @@ bool QMCMain::execute()
     HDFVersion cur_version;
     v_str << cur_version[0] << " " << cur_version[1];
     xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
-    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot());
+    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
@@ -313,6 +314,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   app_log() << "Loop execution max-interations = " << niter << std::endl;
   for (int iter = 0; iter < niter; iter++)
   {
+    if (run_time_manager.isStopNeeded())
+      break;
     xmlNodePtr tcur = cur->children;
     while (tcur != NULL)
     {
@@ -450,13 +453,10 @@ bool QMCMain::validateXML()
           popDocument();
         }
         else
-          myComm->abort();
+          myComm->barrier_and_abort("Invalid XML document");
       }
       else
-      {
-        app_error() << "tag \"include\" must include an \"href\" attribute." << std::endl;
-        myComm->abort();
-      }
+        myComm->barrier_and_abort("tag \"include\" must include an \"href\" attribute.");
     }
     else if (cname == "qmcsystem")
     {
@@ -483,21 +483,16 @@ bool QMCMain::validateXML()
       lastInputNode = cur;
     cur = cur->next;
   }
+
   if (ptclPool->empty())
-  {
-    ERRORMSG("Illegal input. Missing particleset ")
-    return false;
-  }
+    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");
+
   if (psiPool->empty())
-  {
-    ERRORMSG("Illegal input. Missing wavefunction. ")
-    return false;
-  }
+    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");
+
   if (hamPool->empty())
-  {
-    ERRORMSG("Illegal input. Missing hamiltonian. ")
-    return false;
-  }
+    myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
+
   //randomize any particleset with random="yes" && random_source="ion0"
   ptclPool->randomize();
 
@@ -566,14 +561,13 @@ bool QMCMain::processPWH(xmlNodePtr cur)
 bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
 {
   std::unique_ptr<QMCDriverInterface> qmc_driver;
-  std::string prev_config_file = last_driver ? last_driver->get_root_name() : "";
-  bool append_run              = false;
+  bool append_run = false;
 
   if (reuse && last_driver)
     qmc_driver = std::move(last_driver);
   else
   {
-    QMCDriverFactory driver_factory;
+    QMCDriverFactory driver_factory(myProject);
     QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
 
     qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
@@ -588,15 +582,12 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
       qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
     }
 
-    if (last_branch_engine_new_unified_driver)
-      qmc_driver->setNewBranchEngine(std::move(last_branch_engine_new_unified_driver));
-
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if (!FirstQMC && !append_run)
       myProject.advance();
 
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), prev_config_file, append_run);
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), "", append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.
@@ -613,8 +604,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     qmc_driver->run();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
     // transfer the states of a driver before its destruction
-    last_branch_engine_legacy_driver      = qmc_driver->getBranchEngine();
-    last_branch_engine_new_unified_driver = qmc_driver->getNewBranchEngine();
+    last_branch_engine_legacy_driver = qmc_driver->getBranchEngine();
     // save the driver in a driver loop
     if (reuse)
       last_driver = std::move(qmc_driver);

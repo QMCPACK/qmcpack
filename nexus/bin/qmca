@@ -26,6 +26,10 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+
     generic = import_nexus_module('generic')
     obj = generic.obj
     del generic
@@ -46,6 +50,7 @@ try:
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
+    from versions import nexus_version
     from generic import obj
     from developer import DevBase,unavailable
     from unit_converter import convert
@@ -432,7 +437,11 @@ class DatAnalyzer(QBase):
                 #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
 
                 # efficiency based on total work and error bar
-                stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                if (e > 0.0):
+                    stats.Efficiency = obj(mean=1.0/(e**2*wt),var=0.0,error=0.0,kappa=1.0)
+                else:
+                    stats.Efficiency = obj(mean=0.0,var=0.0,error=0.0,kappa=1.0)
+                #end if
                 data.Efficiency  = 0*example
             #end if
         #end if
@@ -826,7 +835,7 @@ QMCA examples:
 
     def read_command_line(self):
         usage = '''usage: %prog [options] [file(s)]'''
-        parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
+        parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
         self.parser = parser
         # available option letters: c, f, g, k, l, m, y, z
         parser.add_option('-v','--verbose',dest='verbose',

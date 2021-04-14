@@ -104,7 +104,7 @@ public:
       if (cname == "symmetryclass")
       {
         ParameterSet aAttrib;
-        aAttrib.add(symname, "name", "string");
+        aAttrib.add(symname, "name");
         aAttrib.put(kids);
       }
       kids = kids->next;

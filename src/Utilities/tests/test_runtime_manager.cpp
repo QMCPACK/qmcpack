@@ -54,25 +54,25 @@ TEST_CASE("test_loop_control", "[utilities]")
   LoopTimer<FakeCPUClock> loop;
   int max_cpu_secs = 9;
   RunTimeManager<FakeCPUClock> rm; // fake clock = 1
-  RunTimeControl<FakeCPUClock> rc(rm, max_cpu_secs);
+  RunTimeControl<FakeCPUClock> rc(rm, max_cpu_secs, "dummy", false);
   rc.runtime_padding(1.0);
-  bool enough_time = rc.enough_time_for_next_iteration(loop); // fake clock = 2
-  REQUIRE(enough_time);
-  loop.start();                                          // fake clock = 3
-  loop.stop();                                           // fake clock = 4
-  enough_time = rc.enough_time_for_next_iteration(loop); // fake clock = 5
-      // estimated time with margin and padding =  1.0 sec/it * 1.1 + 1.0 (pad) = 2.1
-      // remaining = 9 - 4.0 = 5.0  enough time for another loop.
-  REQUIRE(enough_time);
+  REQUIRE(!rc.checkStop(loop)); // fake clock = 2
 
-  loop.start();                                          // fake clock = 6
-  loop.stop();                                           // fake clock = 7
-  enough_time = rc.enough_time_for_next_iteration(loop); // fake clock = 8
-      // estimated time with margin and padding = 1.0 sec/it * 1.1 + 1.0 = 2.1
-      // remaining = 9 - 8.0 = 1.0  not enough time for another loop
-  REQUIRE(!enough_time);
+  loop.start(); // fake clock = 3
+  loop.stop();  // fake clock = 4
+  // fake clock = 5
+  // estimated time with margin and padding =  1.0 sec/it * 1.1 + 1.0 (pad) = 2.1
+  // remaining = 9 - 4.0 = 5.0  enough time for another loop.
+  REQUIRE(!rc.checkStop(loop));
 
-  std::string msg = rc.time_limit_message("QMC", 2);
+  loop.start(); // fake clock = 6
+  loop.stop();  // fake clock = 7
+  // fake clock = 8
+  // estimated time with margin and padding = 1.0 sec/it * 1.1 + 1.0 = 2.1
+  // remaining = 9 - 8.0 = 1.0  not enough time for another loop
+  REQUIRE(rc.checkStop(loop));
+
+  std::string msg = rc.generateStopMessage("QMC", 2);
   REQUIRE(msg.size() > 0);
 }
 

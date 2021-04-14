@@ -14,11 +14,14 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/EstimatorManagerCrowd.h"
-#include "Utilities/RandomGenerator.h"
+#include "RandomGenerator.h"
+#include "MultiWalkerDispatchers.h"
+#include "DriverWalkerTypes.h"
 
 namespace qmcplusplus
 {
-
+// forward declaration
+class ResourceCollection;
 
 /** Driver synchronized step context
  * 
@@ -39,8 +42,11 @@ public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** This is the data structure for walkers within a crowd
    */
-  Crowd(EstimatorManagerNew& emb) : estimator_manager_crowd_(emb) {}
+  Crowd(EstimatorManagerNew& emb,
+        const DriverWalkerResourceCollection& driverwalker_res,
+        const MultiWalkerDispatchers& dispatchers);
 
+  ~Crowd();
   /** Because so many vectors allocate them upfront.
    *
    *  could be premature optimization
@@ -53,8 +59,6 @@ public:
   EstimatorManagerCrowd& get_estimator_manager_crowd() { return estimator_manager_crowd_; }
   void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
 
-  void loadWalkers();
-
   /** Clears all walker vectors
    *
    *  Unless you are _redistributing_ walkers to crowds don't
@@ -63,12 +67,12 @@ public:
    *  That is legacy "reset" pattern is considered deprecated
    */
   void clearWalkers();
-  
-  void accumulate(int global_walkers)
+
+  void accumulate()
   {
     if (this->size() == 0)
       return;
-    estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_);
+    estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_);
   }
 
   void setRNGForHamiltonian(RandomGenerator_t& rng);
@@ -80,12 +84,15 @@ public:
   auto beginElectrons() { return walker_elecs_.begin(); }
   auto endElectrons() { return walker_elecs_.end(); }
 
-  RefVector<MCPWalker>& get_walkers() { return mcp_walkers_; }
-  std::vector<std::reference_wrapper<ParticleSet>>& get_walker_elecs() { return walker_elecs_; }
-  std::vector<std::reference_wrapper<TrialWaveFunction>>& get_walker_twfs() { return walker_twfs_; }
-  std::vector<std::reference_wrapper<QMCHamiltonian>>& get_walker_hamiltonians() { return walker_hamiltonians_; }
+  const RefVector<MCPWalker>& get_walkers() const { return mcp_walkers_; }
+  const RefVector<ParticleSet>& get_walker_elecs() const { return walker_elecs_; }
+  const RefVector<TrialWaveFunction>& get_walker_twfs() const { return walker_twfs_; }
+  const RefVector<QMCHamiltonian>& get_walker_hamiltonians() const { return walker_hamiltonians_; }
 
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
+
+  DriverWalkerResourceCollection& getSharedResource() { return driverwalker_resource_collection_; }
+
   int size() const { return mcp_walkers_.size(); }
 
   void incReject() { ++n_reject_; }
@@ -94,6 +101,9 @@ public:
   unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
   unsigned long get_accept() { return n_accept_; }
   unsigned long get_reject() { return n_reject_; }
+
+  const MultiWalkerDispatchers& dispatchers_;
+
 private:
   /** @name Walker Vectors
    *
@@ -106,7 +116,9 @@ private:
   RefVector<TrialWaveFunction> walker_twfs_;
   RefVector<QMCHamiltonian> walker_hamiltonians_;
   /** }@ */
-  
+
+  DriverWalkerResourceCollection driverwalker_resource_collection_;
+
   EstimatorManagerCrowd estimator_manager_crowd_;
 
   /** @name Step State
@@ -114,10 +126,11 @@ private:
    *  Should be per walker? 
    *  @{
    */
-  unsigned long n_reject_ = 0;
-  unsigned long n_accept_ = 0;
+  unsigned long n_reject_          = 0;
+  unsigned long n_accept_          = 0;
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
 };
+
 } // namespace qmcplusplus
 #endif

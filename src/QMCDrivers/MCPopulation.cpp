@@ -15,6 +15,7 @@
 #include "Configuration.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/CommOperators.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
@@ -79,7 +80,6 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
   // This pattern is begging for a micro benchmark, is this really better
   // than the simpler walkers_.pushback;
   walkers_.resize(num_walkers_plus_reserve);
-  walker_weights_.resize(num_walkers_plus_reserve, 1.0);
   walker_elec_particle_sets_.resize(num_walkers_plus_reserve);
   walker_trial_wavefunctions_.resize(num_walkers_plus_reserve);
   walker_hamiltonians_.resize(num_walkers_plus_reserve);
@@ -98,13 +98,9 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     walkers_[iw]->DataSet.allocate();
 
     if (iw < walker_configs_ref_.WalkerList.size())
-    {
       *walkers_[iw]       = *walker_configs_ref_[iw];
-      walker_weights_[iw] = walker_configs_ref_[iw]->Weight;
-    }
 
     walker_elec_particle_sets_[iw] = std::make_unique<ParticleSet>(*elec_particle_set_);
-#pragma omp critical
     walker_trial_wavefunctions_[iw].reset(trial_wf_->makeClone(*walker_elec_particle_sets_[iw]));
     walker_hamiltonians_[iw].reset(
         hamiltonian_->makeClone(*walker_elec_particle_sets_[iw], *walker_trial_wavefunctions_[iw]));
@@ -254,16 +250,32 @@ void MCPopulation::killWalker(MCPWalker& walker)
   throw std::runtime_error("Attempt to kill nonexistent walker in MCPopulation!");
 }
 
-void MCPopulation::syncWalkersPerNode(Communicate* comm)
+void MCPopulation::syncWalkersPerRank(Communicate* comm)
 {
-  std::vector<IndexType> num_local_walkers_per_node(comm->size(), 0);
+  std::vector<IndexType> num_local_walkers_per_rank(comm->size(), 0);
 
-  num_local_walkers_per_node[comm->rank()] = num_local_walkers_;
-  comm->allreduce(num_local_walkers_per_node);
+  num_local_walkers_per_rank[comm->rank()] = num_local_walkers_;
+  comm->allreduce(num_local_walkers_per_rank);
 
-  num_global_walkers_ = std::accumulate(num_local_walkers_per_node.begin(), num_local_walkers_per_node.end(), 0);
+  num_global_walkers_ = std::accumulate(num_local_walkers_per_rank.begin(), num_local_walkers_per_rank.end(), 0);
 }
 
+void MCPopulation::measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const
+{
+  std::vector<FullPrecRealType> weight_energy_variance(3, 0.0);
+  for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
+  {
+    auto w = walkers_[iw]->Weight;
+    auto e = walker_hamiltonians_[iw]->getLocalEnergy();
+    weight_energy_variance[0] += w;
+    weight_energy_variance[1] += w * e;
+    weight_energy_variance[2] += w * e * e;
+  }
+
+  comm.allreduce(weight_energy_variance);
+  ener = weight_energy_variance[1] / weight_energy_variance[0];
+  variance = weight_energy_variance[2] / weight_energy_variance[0] - ener * ener;
+}
 
 void MCPopulation::set_variational_parameters(const opt_variables_type& active)
 {
@@ -304,12 +316,7 @@ void MCPopulation::saveWalkerConfigurations()
 {
   walker_configs_ref_.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
-  {
     walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
-    // FIXME: if is just a temporal safeguard.
-    if (iw < walker_weights_.size())
-      walker_configs_ref_[iw]->Weight = walker_weights_[iw];
-  }
 }
 
 

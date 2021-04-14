@@ -131,7 +131,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   if (hasNonLocalPot)
   {
 #ifdef QMC_CUDA
-    NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces);
+    NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces, use_DLA == "yes");
 #else
     NonLocalECPotential* apot = new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
 #endif
@@ -211,12 +211,14 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       std::string href("none");
       std::string ionName("none");
       std::string format("xml");
+      int nrule = -1;
       //RealType rc(2.0);//use 2 Bohr
       OhmmsAttributeSet hAttrib;
       hAttrib.add(href, "href");
       hAttrib.add(ionName, "elementType");
       hAttrib.add(ionName, "symbol");
       hAttrib.add(format, "format");
+      hAttrib.add(nrule, "nrule");
       //hAttrib.add(rc,"cutoff");
       hAttrib.put(cur);
       SpeciesSet& ion_species(IonConfig.getSpeciesSet());
@@ -230,7 +232,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
 
-        ECPComponentBuilder ecp(ionName, myComm);
+        ECPComponentBuilder ecp(ionName, myComm, nrule);
         if (format == "xml")
         {
           if (href == "none")

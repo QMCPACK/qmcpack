@@ -1,5 +1,5 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXXX $CXXFLAGS $0 -o $0x -lcudart -lboost_unit_test_framework&&$0x&&rm $0x;exit
+$CXXX $CXXFLAGS $0 -o $0.$X `pkg-config --cflags --libs cudart-11.0` -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #endif
 
 #ifndef BOOST_MULTI_MEMORY_ADAPTORS_CUDA_PTR_HPP
@@ -107,7 +107,7 @@ template<typename T, typename RawPtr>
 struct ptr{
 	using raw_pointer = RawPtr;
 	using default_allocator_type = typename cuda::allocator<std::decay_t<T>>;
-	raw_pointer rp_;
+	raw_pointer rp_ = {};
 protected:
 	using raw_pointer_traits = typename std::pointer_traits<raw_pointer>;
 	template<class TT> friend class allocator;
@@ -298,7 +298,7 @@ public:
 
 	struct skeleton_t{
 		char buff[sizeof(T)]; T* p_;
-		[[SLOW]] 
+		SLOW
 		skeleton_t(T* p) /*HD*/ : p_{p}{
 			#if __CUDA_ARCH__
 			#else
@@ -342,6 +342,12 @@ private:
 		return *this;
 	}
 public:
+	template<class TT, std::enable_if_t<std::is_trivially_assignable<T&, TT>{}, int> =0>
+	[[deprecated]]
+	ref&& operator=(ref<TT> const& other) &&{
+		cudaError_t s = cudaMemcpy(pimpl_.rp_, other.pimpl_.rp_, sizeof(T), cudaMemcpyDeviceToDevice); assert(s==cudaSuccess); (void)s;
+		return std::move(*this);
+	}
 #if __CUDA__
 #ifdef __NVCC__
   #ifndef __CUDA_ARCH__
@@ -369,11 +375,10 @@ public:
 	__device__ ref&& operator=(TT&& t) &&{*pimpl_.rp_ = std::forward<TT>(t); return std::move(*this);}
 #endif
 #else
-	template<class TT>
-	[[deprecated("because it implies slow memory access, suround code with CUDA_SLOW")]]
-	auto operator=(TT&& t) && 
-	->decltype(*pimpl_.rp_ = std::forward<TT>(t), std::move(*this)){	//	assert(0);
-		static_assert(std::is_trivially_assignable<T&, TT&&>{}, "!");
+	template<class TT, class=std::enable_if_t<std::is_trivially_assignable<T&, TT>{}> >
+	SLOW
+	ref&& operator=(TT const& t) &&{
+		static_assert(std::is_trivially_assignable<T&, TT&>{});
 		cudaError_t s=cudaMemcpy(pimpl_.rp_, std::addressof(t), sizeof(T), cudaMemcpyHostToDevice);assert(s==cudaSuccess);(void)s;
 		return std::move(*this);
 	}	
@@ -393,7 +398,7 @@ public:
 		return *reinterpret_cast<T*>(&ret);
 	}
 #else
-	[[SLOW]] operator T()&&{
+	SLOW operator T()&&{
 		char buff[sizeof(T)];
 		cudaError_t s = cudaMemcpy(buff, pimpl_.rp_, sizeof(T), cudaMemcpyDeviceToHost);
 		switch(s){
@@ -404,7 +409,7 @@ public:
 		}
 		return std::move(reinterpret_cast<T&>(buff));
 	}
-	[[SLOW]] operator T() const&{
+	SLOW operator T() const&{
 		char buff[sizeof(T)];
 		cudaError_t s = cudaMemcpy(buff, pimpl_.rp_, sizeof(T), cudaMemcpyDeviceToHost);
 		switch(s){
@@ -420,7 +425,8 @@ public:
 #if __CUDA_ARCH__
 	operator T()&& __device__{return *(pimpl_.rp_);}
 #else
-	[[SLOW]] operator T()&& __host__{
+	SLOW 
+	operator T()&& __host__{
 		char buff[sizeof(T)];
 		{cudaError_t s = cudaMemcpy(buff, pimpl_.rp_, sizeof(T), cudaMemcpyDeviceToHost); assert(s == cudaSuccess); (void)s;}
 		return std::move(reinterpret_cast<T&>(buff));
@@ -441,7 +447,8 @@ public:
 #if __CUDA_ARCH__
 	operator T() const& __device__{return *(pimpl_.rp_);}
 #else
-	[[SLOW]] operator T() const& __host__{
+	SLOW
+	operator T() const& __host__{
 		char buff[sizeof(T)];
 		{
 			auto e = static_cast<Cuda::error>(cudaMemcpy(buff, pimpl_.rp_, sizeof(T), cudaMemcpyDeviceToHost));
@@ -508,8 +515,8 @@ public:
 	}
 #endif
 
-	friend decltype(auto) raw_reference_cast(ref&& r){return *raw_pointer_cast(&r);}
-	friend auto raw_value_cast(ref&& r){return std::move(r).operator T();}
+	friend __host__ __device__ decltype(auto) raw_reference_cast(ref&& r){return *raw_pointer_cast(&r);}
+	friend __host__ __device__ auto raw_value_cast(ref&& r){return std::move(r).operator T();}
 	auto raw_value_cast()&&{return std::move(*this).operator T();}
 
 	template<class Other, typename = std::enable_if_t<not is_ref<Other>{}> > 
@@ -522,7 +529,7 @@ public:
 #endif
 	}
 	template<class Other, typename = std::enable_if_t<not std::is_same<T, Other>{}> >
-	[[SLOW]]
+	SLOW
 	bool operator==(ref<Other>&& other)&&{
 //#pragma message ("Warning goes here")
 		char buff1[sizeof(T)];
@@ -535,7 +542,8 @@ public:
 		return reinterpret_cast<T const&>(buff1)==reinterpret_cast<Other const&>(buff2);
 	}
 #if 1
-	[[SLOW]] bool operator==(ref const& other) &&{
+	SLOW
+	bool operator==(ref const& other) &&{
 		char buff1[sizeof(T)];
 		{/*[[maybe_unused]]*/ cudaError_t s1 = cudaMemcpy(buff1, pimpl_.rp_, sizeof(T), cudaMemcpyDeviceToHost); assert(s1 == cudaSuccess); (void)s1;}
 		char buff2[sizeof(T)];
@@ -651,6 +659,7 @@ CUDA_SLOW(
 		BOOST_REQUIRE( CUDA_SLOW( *p == 99. ) );
 		BOOST_REQUIRE( *p != 11. );
 		cuda::free(p);
+		
 		cuda::ptr<T> P = nullptr; 
 		BOOST_REQUIRE( P == nullptr );
 		ptr<void> pv = p; (void)pv;
@@ -663,6 +672,7 @@ CUDA_SLOW(
 BOOST_AUTO_TEST_CASE(ptr_conversion){
 	cuda::ptr<double> p = nullptr;
 	cuda::ptr<double const> pc = p; (void)pc;
+	static_assert(not std::is_convertible<cuda::ptr<double>, double*>{});
 }
 
 template<class T> struct Complex_{T real; T imag;};

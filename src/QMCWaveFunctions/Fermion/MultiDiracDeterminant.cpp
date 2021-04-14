@@ -102,7 +102,7 @@ void out1(int n, std::string str = "NULL") {}
 //{ std::cout <<"MDD: " <<str <<"  " <<n << std::endl; std::cout.flush(); }
 
 
-void MultiDiracDeterminant::evaluateForWalkerMove(ParticleSet& P, bool fromScratch)
+void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fromScratch)
 {
   evalWTimer.start();
   if (fromScratch)
@@ -303,17 +303,17 @@ void MultiDiracDeterminant::restore(int iat)
 // this has been fixed
 MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
     : WaveFunctionComponent(s),
-      UpdateTimer(*timer_manager.createTimer(ClassName + "update")),
-      RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
-      InverseTimer(*timer_manager.createTimer(ClassName + "inverse")),
-      buildTableTimer(*timer_manager.createTimer(ClassName + "buildTable")),
-      readMatTimer(*timer_manager.createTimer(ClassName + "readMat")),
-      evalWTimer(*timer_manager.createTimer(ClassName + "evalW")),
-      evalOrbTimer(*timer_manager.createTimer(ClassName + "evalOrb")),
-      evalOrb1Timer(*timer_manager.createTimer(ClassName + "evalOrbGrad")),
-      readMatGradTimer(*timer_manager.createTimer(ClassName + "readMatGrad")),
-      buildTableGradTimer(*timer_manager.createTimer(ClassName + "buildTableGrad")),
-      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "ExtraStuff")),
+      UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
+      RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
+      InverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
+      buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
+      readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
+      evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
+      evalOrbTimer(*timer_manager.createTimer(ClassName + "::evalOrb")),
+      evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
+      readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
+      buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
+      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
       NP(0),
       FirstIndex(s.FirstIndex),
       ciConfigList(nullptr)
@@ -348,17 +348,17 @@ WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) cons
  */
 MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first)
     : WaveFunctionComponent("MultiDiracDeterminant"),
-      UpdateTimer(*timer_manager.createTimer(ClassName + "update")),
-      RatioTimer(*timer_manager.createTimer(ClassName + "ratio")),
-      InverseTimer(*timer_manager.createTimer(ClassName + "inverse")),
-      buildTableTimer(*timer_manager.createTimer(ClassName + "buildTable")),
-      readMatTimer(*timer_manager.createTimer(ClassName + "readMat")),
-      evalWTimer(*timer_manager.createTimer(ClassName + "evalW")),
-      evalOrbTimer(*timer_manager.createTimer(ClassName + "evalOrb")),
-      evalOrb1Timer(*timer_manager.createTimer(ClassName + "evalOrbGrad")),
-      readMatGradTimer(*timer_manager.createTimer(ClassName + "readMatGrad")),
-      buildTableGradTimer(*timer_manager.createTimer(ClassName + "buildTableGrad")),
-      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "ExtraStuff")),
+      UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
+      RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
+      InverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
+      buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
+      readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
+      evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
+      evalOrbTimer(*timer_manager.createTimer(ClassName + "::evalOrb")),
+      evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
+      readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
+      buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
+      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
       NP(0),
       FirstIndex(first),
       Phi(std::move(spos)),

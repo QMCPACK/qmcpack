@@ -25,21 +25,20 @@
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
+#include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
-QMCOptimizeBatched::QMCOptimizeBatched(MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi,
-                                       QMCHamiltonian& h,
+QMCOptimizeBatched::QMCOptimizeBatched(const ProjectData& project_data,
+                                       MCWalkerConfiguration& w,
                                        QMCDriverInput&& qmcdriver_input,
                                        VMCDriverInput&& vmcdriver_input,
                                        MCPopulation&& population,
                                        SampleStack& samples,
                                        Communicate* comm)
-    : QMCDriverNew(std::move(qmcdriver_input),
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
                    std::move(population),
-                   psi,
-                   h,
                    "QMCOptimizeBatched::",
                    comm,
                    "QMCOptimizeBatched"),
@@ -97,7 +96,9 @@ bool QMCOptimizeBatched::run()
   app_log() << "</opt>" << std::endl;
   app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
   app_log() << "  <log>" << std::endl;
-  optTarget->setTargetEnergy(branch_engine_->getEref());
+  // FIXME: Ye to Mark: branch_engine_ of QMCOptimizeBatched doesn't hold anything.
+  // Hopefully this was not affecting anything.
+  //optTarget->setTargetEnergy(branch_engine_->getEref());
   t1.restart();
   bool success = optSolver->optimize(optTarget.get());
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
@@ -117,8 +118,6 @@ void QMCOptimizeBatched::generateSamples()
   app_log() << "<optimization-report>" << std::endl;
 
   t1.restart();
-  branch_engine_->flush(0);
-  branch_engine_->reset();
 
   samples_.resetSampleCount();
   population_.set_variational_parameters(optTarget->getOptVariables());
@@ -147,11 +146,18 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
   int pid          = OHMMS::Controller->rank();
 
   int crowd_size     = 1;
-  int num_opt_crowds = 1;
+  int opt_num_crowds = 0;
   ParameterSet param_set;
-  param_set.add(crowd_size, "opt_crowd_size", "int");
-  param_set.add(num_opt_crowds, "opt_num_crowds", "int");
+  param_set.add(crowd_size, "opt_crowd_size");
+  param_set.add(opt_num_crowds, "opt_num_crowds");
   param_set.put(q);
+
+  // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
+  checkNumCrowdsLTNumThreads(opt_num_crowds);
+  if (opt_num_crowds == 0)
+    opt_num_crowds = Concurrency::maxCapacity<>();
+
+  app_log() << " Number of crowds for optimizer: " << opt_num_crowds << std::endl;
 
   while (cur != NULL)
   {
@@ -178,10 +184,11 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
   {
     QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
     VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
-    vmcEngine = new VMCBatched(std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
+    vmcEngine = new VMCBatched(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
-                                            population_.get_golden_electrons(), &Psi, &H),
-                               Psi, H, samples_, myComm);
+                                            population_.get_golden_electrons(), &population_.get_golden_twf(),
+                                            &population_.get_golden_hamiltonian()),
+                               samples_, myComm);
 
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     bool AppendRun = false;
@@ -214,7 +221,9 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
     optSolver->put(optNode);
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, num_opt_crowds, crowd_size, myComm);
+  optTarget =
+      std::make_unique<QMCCostFunctionBatched>(W, population_.get_golden_twf(), population_.get_golden_hamiltonian(),
+                                               samples_, opt_num_crowds, crowd_size, myComm);
   optTarget->setStream(&app_log());
   success = optTarget->put(q);
 

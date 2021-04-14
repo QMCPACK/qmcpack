@@ -90,7 +90,7 @@ public:
    *contribution of the determinant to G(radient) and L(aplacian)
    *for local energy calculations.
    */
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
@@ -174,7 +174,7 @@ public:
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
 
-  void evaluateLogAndStore(ParticleSet& P);
+  void evaluateLogAndStore(const ParticleSet& P);
 };
 } // namespace qmcplusplus
 #endif

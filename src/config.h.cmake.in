@@ -68,6 +68,9 @@
 /* Define the full precision: double, long double */
 #cmakedefine OHMMS_PRECISION_FULL @OHMMS_PRECISION_FULL@
 
+/* Define Cache/SIMD alignment in bytes */
+#cmakedefine QMC_SIMD_ALIGNMENT @QMC_SIMD_ALIGNMENT@
+
 /* Define to 1 if precision is mixed, only for the CPU code */
 #cmakedefine MIXED_PRECISION @MIXED_PRECISION@
 
@@ -151,9 +154,6 @@
 
 /* Fully remove trace manager and associated features */
 #cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
-
-/* Use SOA version of AA distance table */
-#cmakedefine ENABLE_SOA @ENABLE_SOA@
 
 /* Fixed Size Walker Properties */
 #cmakedefine WALKER_MAX_PROPERTIES @WALKER_MAX_PROPERTIES@

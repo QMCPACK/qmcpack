@@ -22,6 +22,7 @@ SET(HAMSRCS
   ACForce.cpp
   OperatorBase.cpp
   QMCHamiltonian.cpp
+  Hdispatcher.cpp
   CoulombPBCAA.cpp
   CoulombPBCAB.cpp
   NonLocalTOperator.cpp
@@ -113,6 +114,9 @@ ENDIF(QMC_CUDA)
 
 USE_FAKE_RNG(qmcham_unit)
 TARGET_LINK_LIBRARIES(qmcham_unit PUBLIC qmcfakerng)
+
+TARGET_INCLUDE_DIRECTORIES(qmcham PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+TARGET_INCLUDE_DIRECTORIES(qmcham_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 TARGET_LINK_LIBRARIES(qmcham PUBLIC qmcwfs)
 TARGET_LINK_LIBRARIES(qmcham_unit PUBLIC qmcwfs)

@@ -54,17 +54,17 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
       outputDeltaVsError(false),
       checkSlaterDet(true)
 {
-  m_param.add(checkRatio, "ratio", "string");
-  m_param.add(checkClone, "clone", "string");
-  m_param.add(checkHamPbyP, "hamiltonianpbyp", "string");
-  m_param.add(sourceName, "source", "string");
-  m_param.add(wftricks, "orbitalutility", "string");
-  m_param.add(checkEloc, "printEloc", "string");
-  m_param.add(checkBasic, "basic", "string");
-  m_param.add(checkRatioV, "virtual_move", "string");
-  m_param.add(deltaParam, "delta", "none");
-  m_param.add(toleranceParam, "tolerance", "none");
-  m_param.add(checkSlaterDetOption, "sd", "string");
+  m_param.add(checkRatio, "ratio");
+  m_param.add(checkClone, "clone");
+  m_param.add(checkHamPbyP, "hamiltonianpbyp");
+  m_param.add(sourceName, "source");
+  m_param.add(wftricks, "orbitalutility");
+  m_param.add(checkEloc, "printEloc");
+  m_param.add(checkBasic, "basic");
+  m_param.add(checkRatioV, "virtual_move");
+  m_param.add(deltaParam, "delta");
+  m_param.add(toleranceParam, "tolerance");
+  m_param.add(checkSlaterDetOption, "sd");
 
   deltaR.resize(w.getTotalNum());
   makeGaussRandom(deltaR);
@@ -2048,8 +2048,8 @@ void WaveFunctionTester::runwftricks()
   std::string doRotate("yes");
   std::string sClass("C2V");
   ParameterSet aAttrib;
-  aAttrib.add(doProj, "projection", "string");
-  aAttrib.add(doRotate, "rotate", "string");
+  aAttrib.add(doProj, "projection");
+  aAttrib.add(doRotate, "rotate");
   aAttrib.put(myNode);
   while (kids != NULL)
   {
@@ -2267,7 +2267,7 @@ void WaveFunctionTester::runNodePlot()
   xmlNodePtr kids = myNode->children;
   std::string doEnergy("no");
   ParameterSet aAttrib;
-  aAttrib.add(doEnergy, "energy", "string");
+  aAttrib.add(doEnergy, "energy");
   aAttrib.put(myNode);
   std::vector<int> Grid;
   while (kids != NULL)
@@ -2434,9 +2434,9 @@ FiniteDiffErrData::FiniteDiffErrData() : particleIndex(0), gradientComponentInde
 bool FiniteDiffErrData::put(xmlNodePtr q)
 {
   ParameterSet param;
-  param.add(outputFile, "file", "string");
-  param.add(particleIndex, "particle_index", "none");
-  param.add(gradientComponentIndex, "gradient_index", "none");
+  param.add(outputFile, "file");
+  param.add(particleIndex, "particle_index");
+  param.add(gradientComponentIndex, "gradient_index");
   bool s = param.put(q);
   return s;
 }

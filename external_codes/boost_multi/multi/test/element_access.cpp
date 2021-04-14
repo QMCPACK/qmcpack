@@ -1,31 +1,26 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXX $0 -o $0x -DMULTI_ACCESS_NDEBUG -lboost_unit_test_framework&&$0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2018-2020
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+// © Alfredo A. Correa 2018-2021
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi element access"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
-#include <boost/test/execution_monitor.hpp>  // for boost::execution_exception
+//#include <boost/test/execution_monitor.hpp>  // for boost::execution_exception
 
 #include "../array.hpp"
-
-#if defined( __cpp_lib_apply) and __cpp_lib_apply>=201603
-#include<tuple> // apply
-#else
-#include<experimental/tuple>
-#endif
 
 namespace multi = boost::multi;
 
 template<class T> void what(T&&) = delete;
 
-BOOST_AUTO_TEST_CASE(verify_assert){
+BOOST_AUTO_TEST_CASE(empty_intersection){
 	multi::array<double, 1> arr(10);
-//	arr[10];
-//	BOOST_CHECK_THROW( arr[10],
-//		boost::execution_exception
-//	);
+	multi::array<double, 1> arr2;
+
+	auto const is = intersection(arr.extension(), arr2.extension());
+	BOOST_REQUIRE( arr(is).is_empty() );
+	arr2(is) = arr(is);
+	
+	BOOST_REQUIRE( arr2(is) == arr(is) );
 }
 
 BOOST_AUTO_TEST_CASE(multi_tests_element_access_with_tuple){
@@ -35,13 +30,17 @@ BOOST_AUTO_TEST_CASE(multi_tests_element_access_with_tuple){
 	BOOST_REQUIRE( m[p[0]][p[1]] == m(1, 2) );
 	BOOST_REQUIRE( &m(p[0], p[1]) == &m[p[0]][p[1]] );
 
+#if 0
 	using std::
 #if not defined(__cpp_lib_apply) or not(__cpp_lib_apply>=201603)
 		experimental::
 #endif
 		apply;
 	BOOST_REQUIRE( &m[p[0]][p[1]] == &apply(m, p) );
+#endif
 
+	BOOST_REQUIRE( &m[p[0]][p[1]] == &m(p[0], p[1]) );
+	BOOST_REQUIRE( &m(p[0], p[1]) == &m.apply(p) );
 }
 
 BOOST_AUTO_TEST_CASE(multi_tests_extension_with_tuple){
@@ -86,7 +85,7 @@ BOOST_AUTO_TEST_CASE(multi_test_non_constness_reference){
 	BOOST_REQUIRE( m({0, 3}, 1).dimensionality == 1 );
 	BOOST_REQUIRE( size(m.sliced(0, 3)) == 3 );
 
-	BOOST_REQUIRE( size(m.range({0, 3}).rotated().paren(1l).unrotated()) == 3 );
+	BOOST_REQUIRE( size(m.range({0, 3}).rotated().paren(1L).unrotated()) == 3 );
 	BOOST_REQUIRE( size(m(multi::index_range{0, 3}, 1)) == 3 );
 
 //	BOOST_REQUIRE( size(m({0, 3}, 1)) == 3 );
@@ -130,5 +129,51 @@ BOOST_AUTO_TEST_CASE(multi_test_stencil){
 
 }
 
-#endif
+BOOST_AUTO_TEST_CASE(multi_extension_intersection){
+	multi::array<double, 1> A = {{2., 2., 2.}};
+	multi::array<double, 1> B = {{3., 3., 3., 3.}};
 
+	BOOST_REQUIRE( intersection( extension(A), extension(B) ).size() == 3 );
+	for(auto i : intersection( extension(A), extension(B) ) ){
+		B[i] += A[i];
+	}
+
+	BOOST_REQUIRE( B[2] == 5. );
+	BOOST_REQUIRE( B[3] == 3. );
+}
+
+BOOST_AUTO_TEST_CASE(multi_extensions_intersection){
+	multi::array<double, 2> A = {{2., 2., 2.}, {2., 2., 2.}};
+	multi::array<double, 2> B = {{3., 3., 3., 3.}, {3., 3., 3., 3.}, {3., 3., 3., 3.}} ;
+
+	BOOST_REQUIRE( extensions(A).num_elements() ==  6 );
+	BOOST_REQUIRE( extensions(B).num_elements() == 12 );
+	
+	auto is = intersection( extensions(A), extensions(B) );
+	BOOST_REQUIRE( is.num_elements() == 6 );
+
+	multi::array<double, 2> C(is);
+	C(std::get<0>(is), std::get<1>(is)) = A;
+	BOOST_REQUIRE( C == A );
+}
+
+BOOST_AUTO_TEST_CASE(multi_extensions_intersection_2){
+	multi::array<double, 2> A({80, 20}, 4.);
+	multi::array<double, 2> B({30, 70}, 8.);
+
+	BOOST_REQUIRE( extensions(A).num_elements() == 80*20 );
+	BOOST_REQUIRE( extensions(B).num_elements() == 30*70 );
+	
+	auto is = intersection( extensions(A), extensions(B) );
+	BOOST_REQUIRE( is.num_elements() == 30*20 );
+
+	multi::array<double, 2> C(is);
+	C(std::get<0>(is), std::get<1>(is)) = A(std::get<0>(is), std::get<1>(is));
+	BOOST_REQUIRE( C[16][17] == 4. );
+	
+	C(std::get<0>(is), std::get<1>(is)) = B(std::get<0>(is), std::get<1>(is));
+	BOOST_REQUIRE( C[16][17] == 8. );
+}
+
+
+#endif

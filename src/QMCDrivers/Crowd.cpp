@@ -12,6 +12,14 @@
 
 namespace qmcplusplus
 {
+Crowd::Crowd(EstimatorManagerNew& emb,
+             const DriverWalkerResourceCollection& driverwalker_res,
+             const MultiWalkerDispatchers& dispatchers)
+    : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
+{}
+
+Crowd::~Crowd() = default;
+
 void Crowd::clearWalkers()
 {
   // We're clearing the refs to the objects not the referred to objects.
@@ -38,12 +46,6 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
   walker_hamiltonians_.push_back(hamiltonian);
 };
 
-void Crowd::loadWalkers()
-{
-  for (int i = 0; i < mcp_walkers_.size(); ++i)
-    walker_elecs_[i].get().loadWalker(mcp_walkers_[i], true);
-}
-
 void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 {
   for (QMCHamiltonian& ham : walker_hamiltonians_)
@@ -52,8 +54,6 @@ void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 
 void Crowd::startBlock(int num_steps)
 {
-  if (this->size() == 0)
-    return;
   n_accept_ = 0;
   n_reject_ = 0;
   // VMCBatched does no nonlocal moves
@@ -63,8 +63,6 @@ void Crowd::startBlock(int num_steps)
 
 void Crowd::stopBlock()
 {
-  if (this->size() == 0)
-    return;
   estimator_manager_crowd_.stopBlock();
 }
 

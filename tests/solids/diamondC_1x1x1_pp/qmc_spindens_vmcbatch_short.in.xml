@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det_qmc_dens_short" series="0">
+   <project id="qmc_spindens_short" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="71"/>
@@ -83,9 +83,9 @@
    </qmcsystem>
    <qmc method="vmc_batch" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <estimator name="SpinDensityNew" type="spindensity_new" report="yes" save_memory="yes">
+     <estimator name="SpinDensityNew" type="spindensity_new" report="yes" save_memory="no">
        <parameter name="grid">
-         200 200 200
+         10 10 10
        </parameter>
        <parameter name="center">
          0.0 0.0 0.0
@@ -96,9 +96,9 @@
                   3.37316115        0.00000000        3.37316115
        </parameter>
      </estimator>
-      <parameter name="walkers"             >    4            </parameter>
+      <parameter name="walkers"             >    2            </parameter>
       <parameter name="blocks"              >    1000         </parameter>
-      <parameter name="steps"               >    20           </parameter>
+      <parameter name="steps"               >    8           </parameter>
       <parameter name="timestep"            >    0.3          </parameter>
       <parameter name="warmupSteps"         >    100          </parameter>
    </qmc>

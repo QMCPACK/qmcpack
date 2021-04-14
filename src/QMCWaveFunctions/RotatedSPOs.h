@@ -208,9 +208,9 @@ public:
 
   //  void setBasisSet(basis_type* bs);
 
-  int getBasisSetSize() { return Phi->getBasisSetSize(); }
+  int getBasisSetSize() const override { return Phi->getBasisSetSize(); }
 
-  void checkObject() { Phi->checkObject(); }
+  void checkObject() const override { Phi->checkObject(); }
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override
   {

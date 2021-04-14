@@ -51,22 +51,23 @@ public:
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     IndexType recalculate_properties_period;
-    IndexType step;
-    int block;
-    bool recomputing_blocks;
+    IndexType step            = -1;
+    bool is_recomputing_block = false;
 
-    StateForThread(QMCDriverInput& qmci, VMCDriverInput& vmci, DriftModifierBase& drift_mod, MCPopulation& pop)
+    StateForThread(const QMCDriverInput& qmci,
+                   const VMCDriverInput& vmci,
+                   DriftModifierBase& drift_mod,
+                   MCPopulation& pop)
         : qmcdrv_input(qmci), vmcdrv_input(vmci), drift_modifier(drift_mod), population(pop)
     {}
   };
 
 public:
   /// Constructor.
-  VMCBatched(QMCDriverInput&& qmcdriver_input,
+  VMCBatched(const ProjectData& project_data,
+             QMCDriverInput&& qmcdriver_input,
              VMCDriverInput&& input,
              MCPopulation&& pop,
-             TrialWaveFunction& psi,
-             QMCHamiltonian& h,
              SampleStack& samples_,
              Communicate* comm);
 
@@ -109,7 +110,7 @@ public:
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
-  VMCDriverInput vmcdriver_input_;
+  const VMCDriverInput vmcdriver_input_;
   QMCRunType getRunType() { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;
@@ -123,9 +124,9 @@ private:
   SampleStack& samples_;
   /// Sample collection flag
   bool collect_samples_;
-  /** function to calculate samples per node
+  /** function to calculate samples per MPI rank
    */
-  static int compute_samples_per_node(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers);
+  static int compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers);
 
   friend class qmcplusplus::testing::VMCBatchedTest;
 };

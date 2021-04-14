@@ -48,7 +48,7 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   std::unique_ptr<L2RadialPotential> pp_L2;
   std::map<std::string, int> angMon;
 
-  ECPComponentBuilder(const std::string& aname, Communicate* c);
+  ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule = -1);
 
   bool parse(const std::string& fname, xmlNodePtr cur);
   bool put(xmlNodePtr cur);

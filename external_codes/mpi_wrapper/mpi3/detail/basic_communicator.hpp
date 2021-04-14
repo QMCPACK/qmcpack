@@ -1,6 +1,8 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -g -std=c++14 `#-Wfatal-errors` -D_TEST_MPI3_DETAIL_BASIC_COMMUNICATOR $0x.cpp -o $0x.x && time mpirun -np 1 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
+#if COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+mpic++ -x c++ $0 -o $0x&&mpirun -n 1 $0x&&rm $0x;exit
 #endif
+// © Alfredo A. Correa 2018-2020
+
 #ifndef MPI3_DETAIL_BASIC_COMMUNICATOR_HPP
 #define MPI3_DETAIL_BASIC_COMMUNICATOR_HPP
 #define OMPI_SKIP_MPICXX 1 // workaround for https://github.com/open-mpi/ompi/issues/5157
@@ -29,7 +31,14 @@ protected:
 	basic_communicator(MPI_Comm impl) noexcept : impl_(impl){}
 public:
 	basic_communicator() noexcept = default; //: impl_(MPI_COMM_NULL){}
-	basic_communicator(basic_communicator const& other){
+	[[deprecated("communicators are not values, they are not copiable, only duplicable; they cannot be elements of std::vector")]] 
+	basic_communicator(basic_communicator const& other){// = delete;/*{
+		if(MPI_COMM_NULL != other.impl_){
+			int s = MPI_Comm_dup(other.impl_, &impl_);
+			if(s != MPI_SUCCESS) throw std::runtime_error("cannot duplicate communicator");
+		}
+	}
+	basic_communicator(basic_communicator& other){
 		if(MPI_COMM_NULL != other.impl_){
 			int s = MPI_Comm_dup(other.impl_, &impl_);
 			if(s != MPI_SUCCESS) throw std::runtime_error("cannot duplicate communicator");
@@ -330,7 +339,7 @@ public:
 
 }}}
 
-#ifdef _TEST_MPI3_DETAIL_BASIC_COMMUNICATOR
+#if not __INCLUDE_LEVEL__ // def _TEST_MPI3_DETAIL_BASIC_COMMUNICATOR
 
 #include "../../mpi3/version.hpp"
 
@@ -339,7 +348,7 @@ int main(int argc, char* argv[]){
     int rank, nprocs;
 
     MPI_Init(&argc,&argv);
-    MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
     MPI_Finalize();
     return 0; 
 }

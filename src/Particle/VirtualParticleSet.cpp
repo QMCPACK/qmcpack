@@ -56,36 +56,30 @@ void VirtualParticleSet::makeMoves(int jel,
   update();
 }
 
-void VirtualParticleSet::flex_makeMoves(const RefVector<VirtualParticleSet>& vp_list,
+void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                                         const RefVector<const std::vector<PosType>>& deltaV_list,
                                         const RefVector<const NLPPJob<RealType>>& joblist,
                                         bool sphere)
 {
-  if (vp_list.size() > 1)
+  RefVectorWithLeader<ParticleSet> p_list(vp_list.getLeader());
+  p_list.reserve(vp_list.size());
+
+  for (int iw = 0; iw < vp_list.size(); iw++)
   {
-    RefVector<ParticleSet> p_list;
-    p_list.reserve(vp_list.size());
+    VirtualParticleSet& vp(vp_list[iw]);
+    const std::vector<PosType>& deltaV(deltaV_list[iw]);
+    const NLPPJob<RealType>& job(joblist[iw]);
 
-    for (int iw = 0; iw < vp_list.size(); iw++)
-    {
-      VirtualParticleSet& vp(vp_list[iw]);
-      const std::vector<PosType>& deltaV(deltaV_list[iw]);
-      const NLPPJob<RealType>& job(joblist[iw]);
-
-      vp.onSphere      = sphere;
-      vp.refPtcl       = job.electron_id;
-      vp.refSourcePtcl = job.ion_id;
-      assert(vp.R.size() == deltaV.size());
-      for (size_t ivp = 0; ivp < vp.R.size(); ivp++)
-        vp.R[ivp] = job.elec_pos + deltaV[ivp];
-      p_list.push_back(vp);
-    }
-
-    ParticleSet::flex_update(p_list);
+    vp.onSphere      = sphere;
+    vp.refPtcl       = job.electron_id;
+    vp.refSourcePtcl = job.ion_id;
+    assert(vp.R.size() == deltaV.size());
+    for (size_t ivp = 0; ivp < vp.R.size(); ivp++)
+      vp.R[ivp] = job.elec_pos + deltaV[ivp];
+    p_list.push_back(vp);
   }
-  else if (vp_list.size() == 1)
-    vp_list[0].get().makeMoves(joblist[0].get().electron_id, joblist[0].get().electron_id, deltaV_list[0].get(), sphere,
-                               joblist[0].get().ion_id);
+
+  mw_update(p_list);
 }
 
 } // namespace qmcplusplus
