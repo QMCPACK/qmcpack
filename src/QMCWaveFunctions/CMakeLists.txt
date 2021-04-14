@@ -237,7 +237,7 @@ IF(ENABLE_CUDA)
     detail/CUDA/cuBLAS_LU.cu
     )
   CUDA_ADD_LIBRARY(qmcwfs_direct_inversion_cuda "${DIRECT_INVERSION_SRCS}")
-  TARGET_LINK_LIBRARIES(qmcwfs_direct_inversion_cuda PUBLIC platform_cuda)
+  TARGET_LINK_LIBRARIES(qmcwfs_direct_inversion_cuda PUBLIC platform_device)
   # CUDA_ADD_LIBRARY is from deprecated FindCuda and ignores TARGET_INCLUDE_DIRECTORIES so
   # headers in this target contain full relative path from project root.
   TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcwfs_direct_inversion_cuda)
