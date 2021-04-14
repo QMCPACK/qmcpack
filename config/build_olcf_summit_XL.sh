@@ -26,10 +26,13 @@ export BOOST_ROOT=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914
 TYPE=Release
 Compiler=XL
 
+source_folder=..
+
 for name in offload_real_MP offload_real # offload_cplx offload_cplx_MP
 do
 
-CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D ENABLE_MASS=1 -D MASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16'"
+CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D ENABLE_CUDA=1 -D CUDA_ARCH=sm_70 -D ENABLE_MASS=1 -D MASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16;--smpiargs=off'"
+
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D QMC_COMPLEX=1"
 fi
@@ -53,8 +56,8 @@ if [ ! -f CMakeCache.txt ] ; then
 cmake $CMAKE_FLAGS -D CMAKE_C_COMPILER=mpixlc -D CMAKE_CXX_COMPILER=mpixlC -D CMAKE_C_FLAGS=-qarch=pwr9 \
   -D CMAKE_CXX_FLAGS="-qarch=pwr9 -qxflag=disable__cplusplusOverride -isystem /sw/summit/gcc/6.4.0/include/c++/6.4.0/powerpc64le-none-linux-gnu -qgcc_cpp_stdinc=/sw/summit/gcc/6.4.0/include/c++/6.4.0" \
   -D CMAKE_CXX_STANDARD_LIBRARIES=/sw/summit/gcc/6.4.0/lib64/libstdc++.a \
-  -D BLAS_essl_LIBRARY=$OLCF_ESSL_ROOT/lib64/libessl.so ..
-cmake ..
+  -D BLAS_essl_LIBRARY=$OLCF_ESSL_ROOT/lib64/libessl.so $source_folder
+cmake .
 fi
 make -j24
 cd ..
