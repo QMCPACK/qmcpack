@@ -1580,7 +1580,7 @@ Number of grid points
 
 class GaussianPP(SemilocalPP):
     requires_format = True
-    formats = SemilocalPP.formats + 'gaussian gamess crystal'.split()
+    formats = SemilocalPP.formats + 'gaussian gamess crystal numhf'.split()
 
     @staticmethod
     def process_float(s):
@@ -1691,6 +1691,27 @@ class GaussianPP(SemilocalPP):
                 channels[l] = c[0:len(c)-len(loc)]
             #end for
             channels = [loc] + channels
+        elif format=='numhf':
+            name = None
+            i=0
+            Zval,lmax = lines[i].split(); i+=1;
+            Zval = int(Zval)
+            lmax = int(lmax)-1
+            element = self.element
+            Zcore = int(pt[element].atomic_number)-Zval
+            ns =  [int(n) for n in lines[i].split()]; i+= 1;
+            while i<len(lines):
+                for n in ns:
+                    terms = []
+                    for j in range(n):
+                        rpow,expon,coeff = lines[i].split(); i+=1
+                        terms.append((float(coeff),int(rpow),float(expon)))
+                    #end for
+                    channels.append(terms)
+                #end for
+            #end while
+            # Bring local channel to front
+            channels.insert(0,channels.pop())
         else:
             self.error('ability to read file format {0} has not been implemented'.format(format))
         #end if

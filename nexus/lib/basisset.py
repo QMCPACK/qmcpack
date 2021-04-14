@@ -261,6 +261,19 @@ def process_gaussian_text(text,format,pp=True,basis=True,preserve_spacing=False)
         if len(basis_lines)==0:
             basis_lines = None
         #end if
+    elif format=='numhf':
+        rawlines = text.splitlines()
+        pp_lines = []
+        basis_lines = None
+        foundpp = False
+        for line in rawlines:
+            if not foundpp:
+                foundpp = len(line.split())==2
+            #end if
+            if foundpp:
+                pp_lines.append(line)
+            #end if
+        #end for
     else:
         error('{0} format is unknown'.format(format),'process_gaussian_text')
     #end if
