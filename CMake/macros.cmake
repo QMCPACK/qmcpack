@@ -19,25 +19,16 @@ INCLUDE("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 
 # Function to copy a directory
 FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
-    EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
+    file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
 ENDFUNCTION()
 
 # Create symlinks for a list of files.
-# This uses file(CREATE_LINK ...) when available.
-# Remove function once CMake 3.14 or later is required.
 FUNCTION( SYMLINK_LIST_OF_FILES FILENAMES DST_DIR)
-    IF(${CMAKE_VERSION} VERSION_LESS "3.14")
-        FOREACH(F IN LISTS FILENAMES)
-            EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
-        ENDFOREACH()
-    ELSE()
-        FOREACH(F IN LISTS FILENAMES)
-            get_filename_component(NAME_ONLY ${F} NAME)
-            file(CREATE_LINK ${F} "${DST_DIR}/${NAME_ONLY}" SYMBOLIC)
-        ENDFOREACH()
-    ENDIF()
+    FOREACH(F IN LISTS FILENAMES)
+        get_filename_component(NAME_ONLY ${F} NAME)
+        file(CREATE_LINK ${F} "${DST_DIR}/${NAME_ONLY}" SYMBOLIC)
+    ENDFOREACH()
 ENDFUNCTION()
-
 
 # Function to copy a directory using symlinks for the files to save storage space.
 # Subdirectories are ignored.
@@ -81,9 +72,9 @@ ENDFUNCTION()
 # Symlink or copy an individual file
 FUNCTION(MAYBE_SYMLINK SRC_DIR DST_DIR)
   IF (QMC_SYMLINK_TEST_FILES)
-    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink "${SRC_DIR}" "${DST_DIR}")
+    file(CREATE_LINK ${SRC_DIR} ${DST_DIR} SYMBOLIC)
   ELSE()
-    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${SRC_DIR}" "${DST_DIR}")
+    file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
   ENDIF()
 ENDFUNCTION()
 
