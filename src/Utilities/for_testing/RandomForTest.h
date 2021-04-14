@@ -19,7 +19,6 @@ namespace qmcplusplus
 {
 namespace testing
 {
-
 template<typename REAL>
 class RandomForTest
 {
