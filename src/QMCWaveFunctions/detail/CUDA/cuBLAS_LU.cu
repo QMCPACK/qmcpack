@@ -65,10 +65,10 @@ __global__ void computeLogDet_kernel(const int n,
                                      const int* const pivots,
                                      cuDoubleComplex* logdets)
 {
-  const int iw                = blockIdx.x;
-  const int block_num         = blockIdx.y;
-  const T* lu_iw = mat_lus[iw];
-  const int* pivots_iw        = pivots + iw * n;
+  const int iw         = blockIdx.x;
+  const int block_num  = blockIdx.y;
+  const T* lu_iw       = mat_lus[iw];
+  const int* pivots_iw = pivots + iw * n;
   __shared__ cuDoubleComplex logdet_vals[COLBS];
   logdet_vals[threadIdx.x].x = 0.0;
   logdet_vals[threadIdx.x].y = 0.0;
@@ -157,16 +157,16 @@ void computeGetrf_batched(cublasHandle_t& h_cublas,
   cudaErrorCheck(cudaMemcpyAsync(host_infos, infos, sizeof(int) * batch_size, cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying cuBLAS::getrf_batched infos from device");
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
-  
-  for(int iw = 0; iw < batch_size; ++iw)
+
+  for (int iw = 0; iw < batch_size; ++iw)
   {
-      if (*(host_infos + iw) != 0) {
-        std::ostringstream err_msg;
-        err_msg << "cuBLAS::getrf_batched failed with return code " << *(host_infos + iw);
-        throw std::runtime_error(err_msg.str());
+    if (*(host_infos + iw) != 0)
+    {
+      std::ostringstream err_msg;
+      err_msg << "cuBLAS::getrf_batched failed with return code " << *(host_infos + iw);
+      throw std::runtime_error(err_msg.str());
     }
   }
-
 }
 
 template<typename T>
@@ -183,7 +183,7 @@ void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
                                      std::complex<double>* log_dets,
                                      const int batch_size)
 {
-  computeGetrf_batched(h_cublas, hstream, n ,lda, Ms, pivots, host_infos, infos, batch_size);
+  computeGetrf_batched(h_cublas, hstream, n, lda, Ms, pivots, host_infos, infos, batch_size);
   cudaErrorCheck(computeLogDet_batched_impl(hstream, n, lda, Ms, pivots, log_dets, batch_size),
                  "failed to calculate log determinant values in computeLogDet_batched_impl");
   cublasErrorCheck(cuBLAS::getri_batched(h_cublas, n, Ms, lda, pivots, Cs, lda, infos, batch_size),
@@ -215,7 +215,7 @@ template void computeGetrf_batched<double>(cublasHandle_t& h_cublas,
                                            const int batch_size);
 
 template void computeGetrf_batched<std::complex<double>>(cublasHandle_t& h_cublas,
-                                           cudaStream_t& hstream,
+                                                         cudaStream_t& hstream,
                                                          const int n,
                                                          const int lda,
                                                          std::complex<double>* Ms[],
@@ -242,12 +242,12 @@ template void computeLogDet_batched<double>(cudaStream_t& hstream,
                                             const int batch_size);
 
 template void computeLogDet_batched<float>(cudaStream_t& hstream,
-                                            const int n,
-                                            const int lda,
-                                            float** LU_mat,
-                                            const int* pivots,
-                                            std::complex<double>* log_dets,
-                                            const int batch_size);
+                                           const int n,
+                                           const int lda,
+                                           float** LU_mat,
+                                           const int* pivots,
+                                           std::complex<double>* log_dets,
+                                           const int batch_size);
 
 } // namespace cuBLAS_LU
 } // namespace qmcplusplus

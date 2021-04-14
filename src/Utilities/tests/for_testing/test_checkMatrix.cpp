@@ -22,7 +22,6 @@
  */
 namespace qmcplusplus
 {
-
 // When linking containers does cause asan failure this should return
 // TEST_CASE("checkMatrix_OhmmsMatrix_real", "[utilities][for_testing]")
 // {
@@ -76,7 +75,7 @@ namespace qmcplusplus
 // }
 
 using testing::MatrixAccessor;
-  
+
 TEST_CASE("checkMatrix_real", "[utilities][for_testing]")
 {
   // clang-format off
@@ -99,23 +98,23 @@ TEST_CASE("checkMatrix_real", "[utilities][for_testing]")
                             0.0, 0.0, 0.0, 0.0};
   MatrixAccessor<double> c_mat(c_vec.data(), 4, 4);
   // clang-format on
- 
+
   check_matrix_result = checkMatrix(a_mat, c_mat);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
-  b_vec[0] = 1.0;
-  b_vec[5] = 3.6;
-  check_matrix_result = checkMatrix(a_mat, b_mat, true);
+  b_vec[0]                   = 1.0;
+  b_vec[5]                   = 3.6;
+  check_matrix_result        = checkMatrix(a_mat, b_mat, true);
   std::string::size_type pos = 0;
-  int lines = 0;
-  while(true)
-    {
-     pos = check_matrix_result.result_message.find("\n",pos);
-     if (pos == std::string::npos)
-       break;
-     ++pos;
-     ++lines;     
-    }
+  int lines                  = 0;
+  while (true)
+  {
+    pos = check_matrix_result.result_message.find("\n", pos);
+    if (pos == std::string::npos)
+      break;
+    ++pos;
+    ++lines;
+  }
   CHECK(lines == 2);
   REQUIRE(check_matrix_result.result == false);
 }

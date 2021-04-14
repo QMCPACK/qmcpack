@@ -26,7 +26,6 @@ namespace qmcplusplus
 {
 namespace cuBLAS_LU
 {
-
 /** Takes PsiM in column major layout and uses LU factorization to compute the log determinant and invPsiM.
  *  This is the call the QMCPACK should use.
  *

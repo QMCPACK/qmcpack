@@ -30,15 +30,18 @@ class MatrixAccessor
 {
 public:
   using value_type = T;
-  
-  MatrixAccessor(const T* data, size_t m, size_t n, MA_ori ori = MA_ori::ROW)
-    : m_(m), n_(n), data_(data), ori_(ori)
-  {
-    
-  };
 
-  T operator()(size_t i, size_t j) const {
-    if(ori_ == MA_ori::ROW)
+  MatrixAccessor(const T* data, size_t m, size_t n, MA_ori ori = MA_ori::ROW)
+      : m_(m),
+        n_(n),
+        data_(data),
+        ori_(ori){
+
+        };
+
+  T operator()(size_t i, size_t j) const
+  {
+    if (ori_ == MA_ori::ROW)
       return data_[i * n_ + j];
     else
       return data_[i + j * m_];
@@ -46,7 +49,7 @@ public:
 
   size_t rows() { return m_; }
   size_t cols() { return n_; }
-  
+
 private:
   size_t m_;
   size_t n_;

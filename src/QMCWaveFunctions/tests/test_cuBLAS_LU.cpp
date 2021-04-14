@@ -88,7 +88,7 @@ TEST_CASE("cuBLAS_LU::computeLogDet", "[wavefunction][CUDA]")
   cudaCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1));
   std::complex<double>* dev_log_values;
   cudaCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1));
-  CUDAfill_n(dev_log_values, batch_size, {0,0});
+  CUDAfill_n(dev_log_values, batch_size, {0, 0});
 
   void* vp_pivots;
   cudaCheck(cudaMallocHost(&vp_pivots, sizeof(int) * 4));
@@ -127,7 +127,7 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
   auto cuda_handles = std::make_unique<testing::CUDAHandles>();
   int n             = 4;
   int lda           = 4;
-  int batch_size = 1;
+  int batch_size    = 1;
   auto& hstream     = cuda_handles->hstream;
 
   void* vp_lu = nullptr;
@@ -216,13 +216,13 @@ TEST_CASE("cuBLAS_LU::computeLogDet_float", "[wavefunction][CUDA]")
   cudaCheck(cudaMallocHost(&vp_lu, sizeof(float) * 16));
   // This is from numpy which did the LU factorization using float128
   float* lu = new (vp_lu) float[16]{7., 0.28571429, 0.71428571, 0.71428571,  5., 3.57142857, 0.12, -0.44,
-                                      6., 6.28571429, -1.04,      -0.46153846, 6., 5.28571429, 3.08, 7.46153846};  
+                                    6., 6.28571429, -1.04,      -0.46153846, 6., 5.28571429, 3.08, 7.46153846};
   float* dev_lu;
   cudaCheck(cudaMalloc((void**)&dev_lu, sizeof(float) * 16));
   void* vp_lus;
   cudaCheck(cudaMallocHost(&vp_lus, sizeof(float**)));
   float** lus = new (vp_lus) float* [batch_size] { nullptr };
-  lus[0]       = dev_lu;
+  lus[0]      = dev_lu;
   float** dev_lus;
   cudaCheck(cudaMalloc((void**)&dev_lus, sizeof(float**)));
 
@@ -230,7 +230,7 @@ TEST_CASE("cuBLAS_LU::computeLogDet_float", "[wavefunction][CUDA]")
   cudaCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1));
   std::complex<double>* dev_log_values;
   cudaCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1));
-  CUDAfill_n(dev_log_values, batch_size, {0,0});
+  CUDAfill_n(dev_log_values, batch_size, {0, 0});
 
   void* vp_pivots;
   cudaCheck(cudaMallocHost(&vp_pivots, sizeof(int) * 4));
@@ -591,8 +591,8 @@ TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
   cudaErrorCheck(cudaMalloc((void**)&devM, sizeof(double) * 16), "cudaMalloc failed");
   void* vp_Ms;
   cudaErrorCheck(cudaMallocHost(&vp_Ms, sizeof(double*)), "cudaMallocHost failed");
-  double** Ms = new (vp_Ms) double*[1] {nullptr};
-  Ms[0] = devM;
+  double** Ms = new (vp_Ms) double* [1] { nullptr };
+  Ms[0]       = devM;
   double** devMs;
   cudaErrorCheck(cudaMalloc((void**)&devMs, sizeof(double*)), "cudaMalloc failed");
 
@@ -605,8 +605,8 @@ TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
 
   void* vp_invMs;
   cudaErrorCheck(cudaMallocHost(&vp_invMs, sizeof(double*)), "cudaMallocHost failed");
-  double** invMs = new (vp_invMs) double*[1] {nullptr};
-  invMs[0] = dev_invM;
+  double** invMs = new (vp_invMs) double* [1] { nullptr };
+  invMs[0]       = dev_invM;
   double** dev_invMs;
   cudaErrorCheck(cudaMalloc((void**)&dev_invMs, sizeof(double*)), "cudaMalloc failed");
 
@@ -662,7 +662,7 @@ TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
   cudaCheck(cudaFreeHost(vp_pivots));
   cudaCheck(cudaFree(dev_infos));
   cudaCheck(cudaFreeHost(vp_infos));
-  
+
   testing::MatrixAccessor<double> invA_mat(invA, 4, 4);
   testing::MatrixAccessor<double> invM_mat(invM, 4, 4);
 
