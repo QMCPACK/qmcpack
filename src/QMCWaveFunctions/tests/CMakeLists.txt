@@ -63,7 +63,7 @@ SET(JASTROW_SRC test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomi
 SET(DETERMINANT_SRC FakeSPO.cpp test_DiracDeterminantBatched.cpp test_dirac_det.cpp
                     test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
                     test_multi_slater_determinant.cpp)
-		  
+	  
 FOREACH(CATEGORY trialwf sposet jastrow determinant)
   SET(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   SET(UTEST_NAME deterministic-unit_${UTEST_EXE})
