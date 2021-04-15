@@ -19,7 +19,7 @@ INCLUDE("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 
 # Function to copy a directory
 FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
-    file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
+    EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
 ENDFUNCTION()
 
 # Create symlinks for a list of files.
