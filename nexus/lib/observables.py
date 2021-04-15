@@ -1210,7 +1210,7 @@ class Density(ObservableWithComponents):
     #end def change_density_units
 
 
-    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,single=False,interp_kwargs=None,comps_return=False):
+    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,single=False,interp_kwargs=None,comps_return=False,species=None):
         
         vlog('Computing radial density',time=True)
         vlog('Current memory:',n=1,mem=True)
@@ -1224,10 +1224,11 @@ class Density(ObservableWithComponents):
         #end if
         vlog('Finding equivalent atomic sites',n=1,time=True)
         equiv_atoms = s.equivalent_atoms()
-        species = None
         species_rmax = obj()
         if isinstance(rmax,float):
-            species = list(equiv_atoms.keys())
+            if species is None:
+                species = list(equiv_atoms.keys())
+            #end if
             for s in species:
                 species_rmax[s] = rmax
             #end for

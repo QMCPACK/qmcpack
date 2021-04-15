@@ -120,7 +120,6 @@ ENDIF()
 
 INCLUDE_DIRECTORIES("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 
-
   ####################################
   # create libqmcutil
   ####################################
