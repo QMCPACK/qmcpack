@@ -33,8 +33,8 @@ inline bool file_exists(const std::string& name)
 
 int main(int argc, char* argv[])
 {
-  int rank = 0, world_size = 1;
 #ifdef HAVE_MPI
+  int rank = 0, world_size = 1;
   int provided;
   MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &provided);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);

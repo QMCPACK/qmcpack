@@ -1110,10 +1110,10 @@ void EshdfFile::writeQboxElectrons(const XmlNode& qboxSample)
   outfile_.push("electrons");
   if (kpts.size() > 1)
   {
-    std::cerr << "Warning: Due to limitations of the current tool, extreme care" << std::endl;
-    std::cerr << "is required if tiling to a supercell from qbox calculations with" << std::endl;
-    std::cerr << "multiple k-points.  Specifically spo eigenvalues are not properly" << std::endl;
-    std::cerr << "included, so improper choice of orbitals may result." << std::endl;
+    std::cout << "Warning: Due to limitations of the current tool, extreme care" << std::endl;
+    std::cout << "is required if tiling to a supercell from qbox calculations with" << std::endl;
+    std::cout << "multiple k-points.  Specifically spo eigenvalues are not properly" << std::endl;
+    std::cout << "included, so improper choice of orbitals may result." << std::endl;
   }
   const int int_kpts_sz = static_cast<int>(kpts.size());
   outfile_.write(int_kpts_sz, "number_of_kpoints");
