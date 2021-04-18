@@ -1384,7 +1384,7 @@ class Simulation(NexusCore):
             command = ('\n'+command).replace('\n','\n  '+pad)
             run_command = command
         #end if
-        if self.job is None:
+        if self.job is None or self.job.env is None:
             env = os.environ.copy()
         else:
             env = job.env
