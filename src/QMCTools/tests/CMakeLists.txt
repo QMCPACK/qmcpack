@@ -32,3 +32,10 @@ ENDIF()
 ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
+# Minimal test for qmc-check-affinity. Check for "OpenMP" in output, no errorcodes.
+IF ( HAVE_MPI )
+  ADD_TEST( NAME check-affinity_runs COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${qmcpack_BINARY_DIR}/bin/qmc-check-affinity )
+ELSE()
+  ADD_TEST(NAME check-affinity_runs COMMAND "${qmcpack_BINARY_DIR}/bin/qmc-check-affinity" "${qmcpack_BINARY_DIR}/bin")
+ENDIF()
+SET_TESTS_PROPERTIES(check-affinity_runs PROPERTIES TIMEOUT 120 LABELS "deterministic" PASS_REGULAR_EXPRESSION "OpenMP")
