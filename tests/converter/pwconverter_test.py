@@ -27,8 +27,9 @@ def run_test(cpw4q_exe, h5diff_exe, gold_file, conv_inp):
     if len(stderr.strip()) != 0:
         print ("Stderr not empty ")
         print (stderr)
-        sup = stderr.decode("utf-8").find("Sanitizer")
-        if sup >= 0:
+        san = stderr.decode("utf-8").find("Sanitizer")
+        sup = stderr.decode("utf-8").find("Suppressions")
+        if sup >= 0 or san >= 0 :
             print("Ignoring sanitizer suppressions")
             okay = True
         else:
