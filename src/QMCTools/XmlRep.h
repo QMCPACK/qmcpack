@@ -165,7 +165,9 @@ public:
   {
     isSelfClosing_ = false;
     valueDeferred_ = false;
+    valInline_     = false;
   }
+
   XmlNode(std::istream* stream, int start = 0, bool deferValue = false);
   XmlNode(const XmlStream& xstream, std::istream* const stream, int start, bool deferValue = false);
   XmlNode(const XmlNode& c);
