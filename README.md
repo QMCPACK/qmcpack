@@ -23,7 +23,7 @@ particular emphasis is placed on code quality and reproducibility.
 # Prerequisites
 
  * C++ 14 and C99 capable compilers. 
- * CMake v3.10.0 or later, build utility, http://www.cmake.org
+ * CMake v3.14.0 or later, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library. Use platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
  * HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
@@ -41,14 +41,14 @@ encouraged for highest performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 10.2.0, 8.3.0
+  * GCC 10.3.0, 8.3.0
   * Clang/LLVM 11.0.1
   * Intel 19.1.1.217 configured to use C++ library from GCC 8.3.0 
   * PGI/NVIDIA HPC SDK 20.9 configured to use C++ library from GCC 8.3.0
 * Boost 1.75.0, 1.68.0
 * HDF5 1.12.0, 1.8.19
 * FFTW 3.3.8, 3.3.4
-* CMake 3.19.5, 3.13.2
+* CMake 3.20.0, 3.14.0
 * MPI
   * OpenMPI 4.1.0, 3.1.6
   * Intel MPI 19.1.1.217
