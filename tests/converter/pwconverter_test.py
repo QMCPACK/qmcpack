@@ -24,11 +24,15 @@ def run_test(cpw4q_exe, h5diff_exe, gold_file, conv_inp):
         print ("Return code from conversion nonzero: ", ret)
         okay = False
     
-    # Don't check stderr until asan clean due to asan error output     
-    #if len(stderr.strip()) != 0:
-    #    print ("Stderr not empty ")
-    #    print (stderr)
-    #    okay = False
+    if len(stderr.strip()) != 0:
+        print ("Stderr not empty ")
+        print (stderr)
+        sup = stderr.decode("utf-8").find("Suppressions")
+        if sup:
+            print("Ignoring sanitizer suppressions")
+            okay = True
+        else:
+            okay = False
         
     if not os.path.exists(gold_file):
         print ("Gold file missing")
