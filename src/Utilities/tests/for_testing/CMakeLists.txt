@@ -13,7 +13,7 @@ SET(TEST_NAME utilities_for_testing)
 SET(UTEST_EXE test_${TEST_NAME})
 SET(UTEST_NAME deterministic-unit_test_${TEST_NAME})
 
-ADD_EXECUTABLE(${UTEST_EXE} test_checkMatrix.cpp)
+ADD_EXECUTABLE(${UTEST_EXE} test_checkMatrix.cpp test_RandomForTest.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main_no_mpi utilities_for_test containers)
 target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 

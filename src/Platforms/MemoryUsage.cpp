@@ -17,6 +17,7 @@
 #include "Host/sysutil.h"
 #include "OMPTarget/OMPallocator.hpp"
 #ifdef ENABLE_CUDA
+#include "DualAllocator.hpp"
 #include "CUDA/CUDAallocator.hpp"
 #include "CUDA/CUDAruntime.h"
 #endif
@@ -43,6 +44,8 @@ void print_mem(const std::string& title, std::ostream& log)
 #ifdef ENABLE_OFFLOAD
   log << "Device memory allocated via OpenMP offload : " << std::setw(7) << (getOMPdeviceMemAllocated() >> 20) << " MiB"
       << std::endl;
+#elif ENABLE_CUDA
+  log << "Device memory allocatied via Dual allocator : " << std::setw(7) << (getDualDeviceMemAllocated() >> 20) << " MiB" << std::endl;
 #endif
   log << line_separator << std::endl;
 }

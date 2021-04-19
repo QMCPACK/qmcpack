@@ -83,6 +83,32 @@ void computeGetri_batched(cublasHandle_t& h_cublas,
                           int* infos,
                           const int batch_size);
 
+extern template void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
+                                     cudaStream_t& hstream,
+                                     const int n,
+                                     const int lda,
+                                     double* Ms[],
+                                     double* Cs[],
+                                     double* LU_diags,
+                                     int* pivots,
+                                     int* host_infos,
+                                     int* infos,
+                                     std::complex<double>* log_dets,
+                                     const int batch_size);
+
+extern template void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
+                                     cudaStream_t& hstream,
+                                     const int n,
+                                     const int lda,
+                                     std::complex<double>* Ms[],
+                                     std::complex<double>* Cs[],
+                                     std::complex<double>* LU_diags,
+                                     int* pivots,
+                                     int* host_infos,
+                                     int* infos,
+                                     std::complex<double>* log_dets,
+                                     const int batch_size);
+
 } // namespace cuBLAS_LU
 } // namespace qmcplusplus
 #endif

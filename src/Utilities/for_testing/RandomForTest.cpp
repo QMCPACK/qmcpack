@@ -40,6 +40,22 @@ void RandomForTest<REAL>::makeRngReals(std::vector<REAL>& rngReals)
     rng_real = rng();
 }
 
+template<typename REAL>
+void RandomForTest<REAL>::generateRngReals(REAL* rng_reals, size_t count)
+{
+  for (size_t ir = 0; ir < count; ++ir)
+  {
+    *rng_reals = rng();
+    ++rng_reals;
+  }
+}
+
+template<typename REAL>
+REAL RandomForTest<REAL>::operator()()
+{
+  return rng();
+}
+
 template class RandomForTest<double>;
 template class RandomForTest<float>;
 } // namespace testing

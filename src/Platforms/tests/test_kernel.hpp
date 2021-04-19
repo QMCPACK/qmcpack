@@ -9,31 +9,30 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_RANDOMFORTEST_H
-#define QMCPLUSPLUS_RANDOMFORTEST_H
+#ifndef QMCPLUSPLUS_TEST_KERNELS_HPP
+#define QMCPLUSPLUS_TEST_KERNELS_HPP
 
-#include <vector>
-#include "Utilities/StdRandom.h"
+#include <cuda_runtime_api.h>
 
 namespace qmcplusplus
 {
 namespace testing
 {
-template<typename REAL>
-class RandomForTest
-{
-public:
-  RandomForTest();
-  std::vector<REAL> getRealRandoms(int ncount);
-  void makeRngReals(std::vector<REAL>& rng_reals);
-  void generateRngReals(REAL* rng_reals, size_t number);
-  REAL operator()();
-private:
-  StdRandom<REAL> rng;
-};
 
-extern template class RandomForTest<double>;
-extern template class RandomForTest<float>;
+template<typename T>
+cudaError_t checkValueCUDA(cudaStream_t hstream, T* device_value_ptr, T value, bool& result);
+
+/** just an arbitrary struct for testing */
+struct DualStruct
+{
+  int index;
+  double value;
+};
+cudaError_t checkDualStruct(cudaStream_t hstream, DualStruct* device_struct_ptr, DualStruct dual_struct, bool& result);
+  
+extern template cudaError_t checkValueCUDA(cudaStream_t hstream, double* device_value_ptr, double value, bool& result);
+
 } // namespace testing
 } // namespace qmcplusplus
+
 #endif

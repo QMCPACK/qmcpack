@@ -515,40 +515,78 @@ struct LAPACK
     zheev(jobz, uplo, n, a, lda, w, work, lwork, rwork, info);
   }
 
-  inline static void gesvd(char* jobu,
-                           char* jobvt,
-                           int* m,
-                           int* n,
+  inline static void gesvd(const char& jobu,
+                           const char& jobvt,
+                           const int& m,
+                           const int& n,
                            float* a,
-                           int* lda,
+                           const int& lda,
                            float* s,
                            float* u,
-                           int* ldu,
+                           const int& ldu,
                            float* vt,
-                           int* ldvt,
+                           const int& ldvt,
                            float* work,
-                           int* lwork,
-                           int* info)
+                           const int& lwork,
+                           int& info)
   {
     sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
   }
 
-  inline static void gesvd(char* jobu,
-                           char* jobvt,
-                           int* m,
-                           int* n,
+  inline static void gesvd(const char& jobu,
+                           const char& jobvt,
+                           const int& m,
+                           const int& n,
                            double* a,
-                           int* lda,
+                           const int& lda,
                            double* s,
                            double* u,
-                           int* ldu,
+                           const int& ldu,
                            double* vt,
-                           int* ldvt,
+                           const int& ldvt,
                            double* work,
-                           int* lwork,
-                           int* info)
+                           const int& lwork,
+                           int& info)
   {
     dgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info);
+  }
+
+  inline static void gesvd(const char& jobu,
+                           const char& jobvt,
+                           const int& m,
+                           const int& n,
+                           std::complex<float>* a,
+                           const int& lda,
+                           float* s,
+                           std::complex<float>* u,
+                           const int& ldu,
+                           std::complex<float>* vt,
+                           const int& ldvt,
+                           std::complex<float>* work,
+                           const int& lwork,
+                           float* rwork,
+                           int& info)
+  {
+    cgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
+  }
+
+  inline static void gesvd(const char& jobu,
+                           const char& jobvt,
+                           const int& m,
+                           const int& n,
+                           std::complex<double>* a,
+                           const int& lda,
+                           double* s,
+                           std::complex<double>* u,
+                           const int& ldu,
+                           std::complex<double>* vt,
+                           const int& ldvt,
+                           std::complex<double>* work,
+                           const int& lwork,
+                           double* rwork,
+                           int& info)
+  {
+    zgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info);
   }
 
   inline static void geev(char* jobvl,
