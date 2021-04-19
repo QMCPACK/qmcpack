@@ -156,7 +156,6 @@ class DiracMatrixComputeCUDA : public Resource
     cublasErrorCheck(cublasSetPointerMode(h_cublas, previous_pointer_mode), "cublasSetPointerMode failed");    
   }
 
-
   /** Calculates the actual inv and log determinant on accelerator
    *
    *  \param[in]      h_cublas    cublas handle, hstream handle is retrieved from it.			
@@ -303,6 +302,7 @@ public:
                                    log_values.size() * sizeof(std::complex<TREAL>), cudaMemcpyHostToDevice,
                                    cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
+
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, a_mats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
     mw_computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);

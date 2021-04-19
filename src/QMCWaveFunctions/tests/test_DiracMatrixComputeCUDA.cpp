@@ -43,7 +43,6 @@ using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 template<typename T>
 using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
-
 TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
 {
   OffloadPinnedMatrix<double> mat_a;
@@ -86,7 +85,6 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
   DiracMatrixComputeCUDA<double> dmcc(cuda_handles->hstream);
 
   dmcc.invert_transpose(*cuda_handles, mat_a, inv_mat_a, log_values);
-
 
   OffloadPinnedMatrix<double> mat_b;
   mat_b.resize(4, 4);
