@@ -81,6 +81,12 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
 
 /** allocator for CUDA device memory
  * @tparm T data type
+ *
+ *  using this with something other than Ohmms containers?
+ *   -- use caution --
+ *  it does not provide all the allocator_traits specialization and methods for an
+ *  std::allocator that some std containers expect.
+ *  This can result in unexpected behavior at runtime or if you are lucky compilation errors.
  */
 template<typename T>
 struct CUDAAllocator
@@ -113,6 +119,18 @@ struct CUDAAllocator
     cudaErrorCheck(cudaFree(p), "Deallocation failed in CUDAAllocator!");
     CUDAallocator_device_mem_allocated -= n * sizeof(T);
   }
+
+  /** Don't do anything on construct, we can't touch this memory directly.
+   *
+   *  This is needed to use this allocator with std::vector in c++14
+   *  In c++20 this should parhaps be removed.  By then std::vector does something
+   *  better? It's somewhat unclear.
+   *
+   */
+  template< class U, class... Args >
+  void construct(U* p, Args&&... args)
+  {}
+    
 };
 
 template<class T1, class T2>
@@ -133,6 +151,7 @@ struct allocator_traits<CUDAAllocator<T>>
   static const bool is_dual_space = false;
   static void fill_n(T* ptr, size_t n, const T& value) { CUDAfill_n(ptr, n, value); }
 };
+
 
 /** allocator for CUDA host pinned memory
  * @tparm T data type
@@ -194,6 +213,7 @@ struct CUDALockedPageAllocator : public ULPHA
   template<class U, class V>
   CUDALockedPageAllocator(const CUDALockedPageAllocator<U, V>&)
   {}
+
   template<class U, class V>
   struct rebind
   {
