@@ -44,7 +44,7 @@ SET_TESTS_PROPERTIES(check-affinity_runs PROPERTIES TIMEOUT 120 LABELS "determin
 IF ( HAVE_MPI )
   ADD_TEST( NAME get-supercell_verbose COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${qmcpack_BINARY_DIR}/bin/qmc-get-supercell --ptvs 1 0 0 0 1 0 0 0 1 --target 8 --maxentry 4 --verbose)
 ELSE()
-  ADD_TEST(NAME get-supercell_verbose COMMAND "${qmcpack_BINARY_DIR}/bin/qmc-get-supercell" --ptvs 1 0 0 0 1 0 0 0 1 --target 8 --maxentry 4 verbose)
+  ADD_TEST(NAME get-supercell_verbose COMMAND "${qmcpack_BINARY_DIR}/bin/qmc-get-supercell" --ptvs 1 0 0 0 1 0 0 0 1 --target 8 --maxentry 4 --verbose)
 ENDIF()
 SET_TESTS_PROPERTIES(get-supercell_verbose PROPERTIES TIMEOUT 120 LABELS "deterministic" PASS_REGULAR_EXPRESSION "radius = 1")
 IF ( HAVE_MPI )
