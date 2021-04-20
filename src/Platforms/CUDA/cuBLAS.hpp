@@ -19,14 +19,12 @@
 #include <string>
 #include <stdexcept>
 #include "CUDATypeMapping.hpp"
+#include "type_traits/type_manipulation.hpp"
 
 #define cublasErrorCheck(ans, cause)                \
   {                                                 \
     cublasAssert((ans), cause, __FILE__, __LINE__); \
   }
-
-template<typename CT>
-using constPtrnonconstArr = std::add_pointer<typename std::remove_const<typename std::remove_pointer<CT>::type>::type>;
 
 /// prints cuBLAS error messages. Always use cublasErrorCheck macro.
 inline void cublasAssert(cublasStatus_t code, const std::string& cause, const char* file, int line, bool abort = true)
@@ -191,9 +189,14 @@ inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
                                    int ldc,
                                    int batchCount)
 {
-  auto non_const_A = const_cast<std::add_pointer<typename std::remove_const<typename std::remove_pointer<decltype(A)>::type>::type>::type>(A);
-  auto non_const_B = const_cast<std::add_pointer<typename std::remove_const<typename std::remove_pointer<decltype(B)>::type>::type>::type>(B);
-  auto non_const_C = const_cast<std::add_pointer<typename std::remove_const<typename std::remove_pointer<decltype(C)>::type>::type>::type>(C);
+  // This is necessary to not break the complex CUDA type mapping semantics while
+  // dealing with the const cuComplex * A[] style API of cuBLAS
+  // C++ makes you jump through some hoops to remove the bottom const on a double pointer.
+  // see typetraits/type_manipulation.hpp
+  auto non_const_A = const_cast<BottomConstRemoved<decltype(A)>::type>(A);
+  auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
+  auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
+
   return cublasCgemmBatched(handle, transa, transb, m, n, k, castCUDAType(alpha), castCUDAType(non_const_A), lda,
                             castCUDAType(non_const_B), ldb, castCUDAType(beta), castCUDAType(non_const_C), ldc, batchCount);
 }
@@ -233,9 +236,9 @@ inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
                                    int ldc,
                                    int batchCount)
 {
-  auto non_const_A = const_cast<std::add_pointer<typename std::remove_const<typename std::remove_pointer<decltype(A)>::type>::type>::type>(A);
-  auto non_const_B = const_cast<std::add_pointer<typename std::remove_const<typename std::remove_pointer<decltype(B)>::type>::type>::type>(B);
-  auto non_const_C = const_cast<std::add_pointer<typename std::remove_const<typename std::remove_pointer<decltype(C)>::type>::type>::type>(C);
+  auto non_const_A = const_cast<BottomConstRemoved<decltype(A)>::type>(A);
+  auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
+  auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
 
   return cublasZgemmBatched(handle, transa, transb, m, n, k, castCUDAType(alpha), castCUDAType(non_const_A),
                             lda, castCUDAType(non_const_B), ldb, castCUDAType(beta), castCUDAType(non_const_C),
