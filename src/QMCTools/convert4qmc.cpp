@@ -16,11 +16,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCTools/CasinoParser.h"
 #include "QMCTools/GaussianFCHKParser.h"
 #include "QMCTools/GamesAsciiParser.h"
 #include "QMCTools/LCAOHDFParser.h"
-#include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
@@ -31,7 +29,7 @@ int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamess|-orbitals] filename " << std::endl;
+    std::cout << "Usage: convert [-gaussian|-gamess|-orbitals] filename " << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number "
@@ -42,7 +40,7 @@ int main(int argc, char** argv)
               << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the format "
               << std::endl;
-    std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.h5 -> HDF5" << std::endl;
+    std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.h5 -> HDF5" << std::endl;
     return 1;
   }
 #ifdef HAVE_MPI
@@ -101,16 +99,6 @@ int main(int argc, char** argv)
       {
         parser  = new LCAOHDFParser(argc, argv);
         h5      = true;
-        in_file = argv[++iargc];
-      }
-      else if (a == "-casino")
-      {
-        parser  = new CasinoParser(argc, argv);
-        in_file = argv[++iargc];
-      }
-      else if (a == "-b")
-      {
-        parser  = new BParser(argc, argv);
         in_file = argv[++iargc];
       }
       else if (a == "-hdf5")
@@ -213,12 +201,7 @@ int main(int argc, char** argv)
     std::string ext = getExtension(in_file);
     if (parser == 0)
     {
-      if (ext == "data")
-      {
-        WARNMSG("Creating CasinoParser")
-        parser = new CasinoParser(argc, argv);
-      }
-      else if (ext == "Fchk")
+      if (ext == "Fchk")
       {
         WARNMSG("Creating GaussianFCHKParser")
         parser = new GaussianFCHKParser(argc, argv);
@@ -227,11 +210,6 @@ int main(int argc, char** argv)
       {
         WARNMSG("Creating LCAOHDFParser")
         parser = new LCAOHDFParser(argc, argv);
-      }
-      else if (ext == "10")
-      {
-        WARNMSG("Creating BParser")
-        parser = new BParser(argc, argv);
       }
       else if (ext == "out")
       {
