@@ -66,7 +66,7 @@ public:
   ~QMCHamiltonian();
 
   ///add an operator
-  void addOperator(OperatorBase* h, const std::string& aname, bool physical = true);
+  void addOperator(OperatorBase& h, const std::string& aname, bool physical = true);
 
   ///record the name-type pair of an operator
   void addOperatorType(const std::string& name, const std::string& type);
