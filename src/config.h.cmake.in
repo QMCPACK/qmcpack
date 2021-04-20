@@ -9,13 +9,13 @@
 #define QMCPLUSPLUS_CONFIGURATION_H
 
 /* define the major version */
-#define QMCPACK_VERSION_MAJOR  @QMCPACK_VERSION_MAJOR@
+#define QMCPACK_VERSION_MAJOR  @qmcpack_VERSION_MAJOR@
 
 /* define the minor version */
-#define QMCPACK_VERSION_MINOR  @QMCPACK_VERSION_MINOR@
+#define QMCPACK_VERSION_MINOR  @qmcpack_VERSION_MINOR@
 
 /* define the patch version */
-#define QMCPACK_VERSION_PATCH  @QMCPACK_VERSION_PATCH@
+#define QMCPACK_VERSION_PATCH  @qmcpack_VERSION_PATCH@
 
 /* define the release version */
 #cmakedefine QMCPACK_RELEASE  @QMCAPCK_RELEASE@
