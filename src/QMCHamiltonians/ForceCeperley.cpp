@@ -141,7 +141,10 @@ bool ForceCeperley::put(xmlNodePtr cur)
   return true;
 }
 
-OperatorBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new ForceCeperley(*this); }
+std::shared_ptr<OperatorBase> ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  return std::make_shared<ForceCeperley>(*this);
+}
 } // namespace qmcplusplus
 
 //  void ForceCeperley::addObservables(PropertySetType& plist) {

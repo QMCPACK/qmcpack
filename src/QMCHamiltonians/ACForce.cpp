@@ -40,15 +40,15 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   delta = 1e-4;
 };
 
-OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   APP_ABORT("ACForce::makeClone(ParticleSet&,TrialWaveFunction&) shouldn't be called");
   return nullptr;
 }
 
-OperatorBase* ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
+std::shared_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
 {
-  OperatorBase* myclone = new ACForce(ions, qp, psi_in, ham_in);
+  std::shared_ptr<OperatorBase> myclone = std::make_shared<ACForce>(ions, qp, psi_in, ham_in);
   return myclone;
 }
 
@@ -77,7 +77,7 @@ bool ACForce::put(xmlNodePtr cur)
 void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in)
 {
   //The following line is modified
-  OperatorBase* myclone = makeClone(qp, psi, ham_in);
+  std::shared_ptr<OperatorBase> myclone = makeClone(qp, psi, ham_in);
   if (myclone)
     ham_in.addOperator(myclone, myName, UpdateMode[PHYSICAL]);
 }

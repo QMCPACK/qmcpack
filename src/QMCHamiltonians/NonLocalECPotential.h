@@ -112,7 +112,7 @@ public:
    */
   void releaseResource(ResourceCollection& collection) override;
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   void addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& pp);
 

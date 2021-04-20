@@ -267,9 +267,9 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // copied.  Would be nice if there were a better way than inspection
   // to ensure all the members are copied/set up/tested.
 
-  OperatorBase* base_force2 = force.makeClone(elec, psi);
-  ForceChiesaPBCAA* force2  = dynamic_cast<ForceChiesaPBCAA*>(base_force2);
-  REQUIRE(force2 != NULL);
+  std::shared_ptr<OperatorBase> base_force2 = force.makeClone(elec, psi);
+  ForceChiesaPBCAA* force2                  = dynamic_cast<ForceChiesaPBCAA*>(base_force2.get());
+  REQUIRE(force2 != nullptr);
 
   check_force_copy(*force2, force);
 }

@@ -41,7 +41,7 @@ public:
   bool put(xmlNodePtr cur);
   bool put(xmlNodePtr cur, ParticleSet& P);
   bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void write_description(std::ostream& os);
 

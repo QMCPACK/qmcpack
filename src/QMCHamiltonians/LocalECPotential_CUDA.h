@@ -43,7 +43,7 @@ struct LocalECPotential_CUDA : public LocalECPotential
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   LocalECPotential_CUDA(ParticleSet& ions, ParticleSet& elns);
 };

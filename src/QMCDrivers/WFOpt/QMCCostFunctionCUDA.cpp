@@ -179,7 +179,7 @@ void QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
     {
       if (includeNonlocalH == "yes")
         includeNonlocalH = "NonLocalECP";
-      OperatorBase* a = H.getHamiltonian(includeNonlocalH);
+      std::shared_ptr<OperatorBase> a = H.getHamiltonian(includeNonlocalH);
       if (a)
       {
         H_KE.addOperator(a, includeNonlocalH);

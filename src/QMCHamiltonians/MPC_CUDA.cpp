@@ -52,10 +52,10 @@ void MPC_CUDA::initBreakup()
   //  app_log() << "    Finished copying MPC spline to GPU memory.\n";
 }
 
-OperatorBase* MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // return new MPC(qp, Ecut);
-  MPC_CUDA* newMPC = new MPC_CUDA(*this);
+  std::shared_ptr<MPC_CUDA> newMPC = std::make_shared<MPC_CUDA>(*this);
   newMPC->resetTargetParticleSet(qp);
   return newMPC;
 }
@@ -130,7 +130,7 @@ void MPC_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalE
 
   for (int iw = 0; iw < nw; iw++)
   {
-    double e                                                = esum[iw] + SumHost[iw] + Vconst;
+    double e                                                    = esum[iw] + SumHost[iw] + Vconst;
     walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = e;
     LocalEnergy[iw] += e;
   }

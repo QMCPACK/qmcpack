@@ -34,7 +34,7 @@ public:
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void addComponent(int groupID, std::unique_ptr<SOECPComponent>&& pp);
 

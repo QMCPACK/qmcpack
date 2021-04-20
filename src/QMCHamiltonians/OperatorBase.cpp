@@ -159,7 +159,7 @@ bool OperatorBase::quantum_domain_valid(quantum_domains qdomain) { return qdomai
 
 void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH)
 {
-  OperatorBase* myclone = makeClone(qp, psi);
+  std::shared_ptr<OperatorBase> myclone = makeClone(qp, psi);
   if (myclone)
     targetH.addOperator(myclone, myName, UpdateMode[PHYSICAL]);
 }

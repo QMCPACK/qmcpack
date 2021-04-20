@@ -37,7 +37,7 @@ public:
   ~StaticStructureFactor() {}
 
   //standard interface
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

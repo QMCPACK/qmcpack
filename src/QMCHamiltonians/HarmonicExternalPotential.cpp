@@ -54,9 +54,9 @@ bool HarmonicExternalPotential::get(std::ostream& os) const
 }
 
 
-OperatorBase* HarmonicExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> HarmonicExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
-  return new HarmonicExternalPotential(*this);
+  return std::make_shared<HarmonicExternalPotential>(*this);
 }
 
 

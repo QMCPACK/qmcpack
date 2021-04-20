@@ -99,7 +99,10 @@ struct ConservedEnergy : public OperatorBase
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new ConservedEnergy; }
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
+  {
+    return std::make_shared<ConservedEnergy>();
+  }
 
 #ifdef QMC_CUDA
   ////////////////////////////////

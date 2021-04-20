@@ -106,9 +106,9 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     if (IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
     {
 #ifdef QMC_CUDA
-      LocalECPotential_CUDA* apot = new LocalECPotential_CUDA(IonConfig, targetPtcl);
+      std::shared_ptr<LocalECPotential_CUDA> apot = std::make_shared<LocalECPotential_CUDA>(IonConfig, targetPtcl);
 #else
-      LocalECPotential* apot = new LocalECPotential(IonConfig, targetPtcl);
+      std::shared_ptr<LocalECPotential> apot = std::make_shared<LocalECPotential>(IonConfig, targetPtcl);
 #endif
       for (int i = 0; i < localPot.size(); i++)
         if (localPot[i])
@@ -120,9 +120,9 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       if (doForces)
         app_log() << "  Will compute forces in CoulombPBCAB.\n" << std::endl;
 #ifdef QMC_CUDA
-      CoulombPBCAB_CUDA* apot = new CoulombPBCAB_CUDA(IonConfig, targetPtcl, doForces);
+      std::shared_ptr<CoulombPBCAB_CUDA> apot = std::make_shared<CoulombPBCAB_CUDA>(IonConfig, targetPtcl, doForces);
 #else
-      CoulombPBCAB* apot     = new CoulombPBCAB(IonConfig, targetPtcl, doForces);
+      std::shared_ptr<CoulombPBCAB> apot     = std::make_shared<CoulombPBCAB>(IonConfig, targetPtcl, doForces);
 #endif
       for (int i = 0; i < localPot.size(); i++)
       {
@@ -135,9 +135,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   if (hasNonLocalPot)
   {
 #ifdef QMC_CUDA
-    NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces, use_DLA == "yes");
+    std::shared_ptr<NonLocalECPotential_CUDA> apot =
+        std::make_shared<NonLocalECPotential_CUDA>(IonConfig, targetPtcl, targetPsi, usePBC, doForces,
+                                                   use_DLA == "yes");
 #else
-    NonLocalECPotential* apot = new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
+    std::shared_ptr<NonLocalECPotential> apot =
+        std::make_shared<NonLocalECPotential>(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
 #endif
     int nknot_max = 0;
     for (int i = 0; i < nonLocalPot.size(); i++)
@@ -169,9 +172,9 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     else
       APP_ABORT("physicalSO must be set to yes/no. Unknown option given\n");
 
-    SOECPotential* apot = new SOECPotential(IonConfig, targetPtcl, targetPsi);
-    int nknot_max       = 0;
-    int sknot_max       = 0;
+    std::shared_ptr<SOECPotential> apot = std::make_shared<SOECPotential>(IonConfig, targetPtcl, targetPsi);
+    int nknot_max                       = 0;
+    int sknot_max                       = 0;
     for (int i = 0; i < soPot.size(); i++)
     {
       if (soPot[i])
@@ -192,7 +195,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if (hasL2Pot)
   {
-    L2Potential* apot = new L2Potential(IonConfig, targetPtcl, targetPsi);
+    std::shared_ptr<L2Potential> apot = std::make_shared<L2Potential>(IonConfig, targetPtcl, targetPsi);
     for (int i = 0; i < L2Pot.size(); i++)
       if (L2Pot[i])
         apot->add(i, std::move(L2Pot[i]));
@@ -373,8 +376,8 @@ void ECPotentialBuilder::useSimpleTableFormat()
           RealType r((*agrid)[j]);
           pp_temp[j] = r * zinv * inFunc.splint(r);
         }
-        pp_temp[ng - 1]          = 1.0;
-        auto app = std::make_unique<RadialPotentialType>(agrid, pp_temp);
+        pp_temp[ng - 1] = 1.0;
+        auto app        = std::make_unique<RadialPotentialType>(agrid, pp_temp);
         app->spline();
         localPot[ig] = std::move(app);
         app_log() << "    LocalECP l=" << angmom << std::endl;
@@ -433,7 +436,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
       }
       //cout << "Spherical grid : " << numsgridpts << " points" << std::endl;
       mynnloc->resize_warrays(numsgridpts, numnonloc, lmax);
-      nonLocalPot[ig]   = std::move(mynnloc);
+      nonLocalPot[ig] = std::move(mynnloc);
     }
   } //species
 }

@@ -461,7 +461,10 @@ struct BareKineticEnergy : public OperatorBase
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new BareKineticEnergy(*this); }
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
+  {
+    return std::make_shared<BareKineticEnergy>(*this);
+  }
 
 #ifdef QMC_CUDA
   ////////////////////////////////

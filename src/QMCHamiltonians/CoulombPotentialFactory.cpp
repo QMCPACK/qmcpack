@@ -57,9 +57,9 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
   renameProperty(a);
   isphysical = (physical == "yes" || physical == "true");
 #ifdef QMC_CUDA
-  MPC_CUDA* mpc = new MPC_CUDA(targetPtcl, cutoff);
+  std::shared_ptr<MPC_CUDA> mpc = std::make_shared<MPC_CUDA>(targetPtcl, cutoff);
 #else
-  MPC* mpc = new MPC(targetPtcl, cutoff);
+  std::shared_ptr<MPC> mpc = std::make_shared<MPC>(targetPtcl, cutoff);
 #endif
   targetH->addOperator(mpc, "MPC", isphysical);
 #else
@@ -112,20 +112,20 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     bool quantum = (sourceInp == targetPtcl.getName());
 #ifdef QMC_CUDA
     if (applyPBC)
-      targetH->addOperator(new CoulombPBCAA_CUDA(*ptclA, quantum, doForces), title, physical);
+      targetH->addOperator(std::make_shared<CoulombPBCAA_CUDA>(*ptclA, quantum, doForces), title, physical);
     else
     {
       if (quantum)
-        targetH->addOperator(new CoulombPotentialAA_CUDA(*ptclA, true), title, physical);
+        targetH->addOperator(std::make_shared<CoulombPotentialAA_CUDA>(*ptclA, true), title, physical);
       else
-        targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum, doForces), title, physical);
+        targetH->addOperator(std::make_shared<CoulombPotential<Return_t>>(*ptclA, quantum, doForces), title, physical);
     }
 #else
     if (applyPBC)
-      targetH->addOperator(new CoulombPBCAA(*ptclA, quantum, doForces), title, physical);
+      targetH->addOperator(std::make_shared<CoulombPBCAA>(*ptclA, quantum, doForces), title, physical);
     else
     {
-      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, quantum, doForces), title, physical);
+      targetH->addOperator(std::make_shared<CoulombPotential<Return_t>>(*ptclA, quantum, doForces), title, physical);
     }
 #endif
   }
@@ -133,14 +133,14 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   {
 #ifdef QMC_CUDA
     if (applyPBC)
-      targetH->addOperator(new CoulombPBCAB_CUDA(*ptclA, targetPtcl), title);
+      targetH->addOperator(std::make_shared<CoulombPBCAB_CUDA>(*ptclA, targetPtcl), title);
     else
-      targetH->addOperator(new CoulombPotentialAB_CUDA(*ptclA, targetPtcl), title);
+      targetH->addOperator(std::make_shared<CoulombPotentialAB_CUDA>(*ptclA, targetPtcl), title);
 #else
     if (applyPBC)
-      targetH->addOperator(new CoulombPBCAB(*ptclA, targetPtcl), title);
+      targetH->addOperator(std::make_shared<CoulombPBCAB>(*ptclA, targetPtcl), title);
     else
-      targetH->addOperator(new CoulombPotential<Return_t>(*ptclA, targetPtcl, true), title);
+      targetH->addOperator(std::make_shared<CoulombPotential<Return_t>>(*ptclA, targetPtcl, true), title);
 #endif
   }
 }
@@ -182,7 +182,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   //bool applyPBC= (PBCType && pbc=="yes");
   if (mode == "bare")
   {
-    BareForce* bareforce = new BareForce(*source, *target);
+    std::shared_ptr<BareForce> bareforce = std::make_shared<BareForce>(*source, *target);
     bareforce->put(cur);
     targetH->addOperator(bareforce, title, false);
   }
@@ -190,13 +190,13 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   {
     if (applyPBC == true)
     {
-      ForceChiesaPBCAA* force_chi = new ForceChiesaPBCAA(*source, *target, true);
+      std::shared_ptr<ForceChiesaPBCAA> force_chi = std::make_shared<ForceChiesaPBCAA>(*source, *target, true);
       force_chi->put(cur);
       targetH->addOperator(force_chi, title, false);
     }
     else
     {
-      ForceCeperley* force_cep = new ForceCeperley(*source, *target);
+      std::shared_ptr<ForceCeperley> force_cep = std::make_shared<ForceCeperley>(*source, *target);
       force_cep->put(cur);
       targetH->addOperator(force_cep, title, false);
     }
@@ -209,16 +209,14 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
     {
       APP_ABORT("Unknown psi \"" + PsiName + "\" for zero-variance force.");
     }
-    TrialWaveFunction& psi = *psi_it->second->getTWF();
-    ACForce* acforce       = new ACForce(*source, *target, psi, *targetH);
+    TrialWaveFunction& psi           = *psi_it->second->getTWF();
+    std::shared_ptr<ACForce> acforce = std::make_shared<ACForce>(*source, *target, psi, *targetH);
     acforce->put(cur);
     targetH->addOperator(acforce, title, false);
   }
   else
   {
     ERRORMSG("Failed to recognize Force mode " << mode);
-    //} else if(mode=="FD") {
-    //  targetH->addOperator(new ForceFiniteDiff(*source, *target), title, false);
   }
 #endif
 }
