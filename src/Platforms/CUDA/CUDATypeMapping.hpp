@@ -63,10 +63,9 @@ using CUDATypeMap =
                                          OnTypesEqual<T, const std::complex<float>*, const cuComplex*>,
                                          OnTypesEqual<T, const std::complex<float>**, const cuComplex**>,
                                          OnTypesEqual<T, const std::complex<double>**, const cuDoubleComplex**>,
+                                         OnTypesEqual<T, const std::complex<float>* const *, const cuComplex* const *>,
+                                         OnTypesEqual<T, const std::complex<double>* const *, const cuDoubleComplex* const *>,
                                          default_type<void>>::type;
-
-// There must be a way to make this a template function. but it's so easy as a macro.
-#define CUDATYPECAST(var) reinterpret_cast<CUDATypeMap<decltype(var)>>(var)
 
 template<typename T>
 CUDATypeMap<T> castCUDAType(T var)
