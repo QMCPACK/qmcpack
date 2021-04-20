@@ -20,7 +20,7 @@ namespace qmcplusplus
 /** template class defines whether the memory allocated by the allocator is host accessible
  */
 template<class Allocator>
-struct allocator_traits
+ struct qmc_allocator_traits
 {
   using value_type = typename Allocator::value_type;
 
@@ -34,13 +34,13 @@ struct allocator_traits
 };
 
 template<class Allocator>
-using IsHostSafe = std::enable_if_t<allocator_traits<Allocator>::is_host_accessible>;
+using IsHostSafe = std::enable_if_t<qmc_allocator_traits<Allocator>::is_host_accessible>;
 
 template<class Allocator>
-using IsNotHostSafe = std::enable_if_t<!allocator_traits<Allocator>::is_host_accessible>;
+using IsNotHostSafe = std::enable_if_t<!qmc_allocator_traits<Allocator>::is_host_accessible>;
 
 template<class Allocator>
-using IsDualSpace = std::enable_if_t<allocator_traits<Allocator>::is_dual_space>;
+using IsDualSpace = std::enable_if_t<qmc_allocator_traits<Allocator>::is_dual_space>;
 } // namespace qmcplusplus
 
 #endif // QMCPLUSPLUS_ACCESS_TRAITS_H

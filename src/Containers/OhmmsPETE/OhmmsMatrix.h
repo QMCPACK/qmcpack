@@ -56,7 +56,7 @@ public:
   Matrix(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
-    if (allocator_traits<Alloc>::is_host_accessible)
+    if (qmc_allocator_traits<Alloc>::is_host_accessible)
       assign(*this, rhs);
   }
 
@@ -125,7 +125,7 @@ public:
   inline This_t& operator=(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
-    if (allocator_traits<Alloc>::is_host_accessible)
+    if (qmc_allocator_traits<Alloc>::is_host_accessible)
       assign(*this, rhs);
     return *this;
   }
@@ -328,7 +328,7 @@ protected:
 template<class T, class Alloc>
 bool operator==(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
 {
-  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
   if (lhs.size() == rhs.size())
   {
     for (int i = 0; i < rhs.size(); i++)
@@ -343,7 +343,7 @@ bool operator==(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
 template<class T, class Alloc>
 bool operator!=(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
 {
-  static_assert(allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
   return !(lhs == rhs);
 }
 

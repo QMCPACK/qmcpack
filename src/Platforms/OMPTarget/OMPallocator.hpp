@@ -84,14 +84,14 @@ private:
 };
 
 template<typename T, class HostAllocator>
-struct allocator_traits<OMPallocator<T, HostAllocator>>
+struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
 {
   static const bool is_host_accessible = true;
   static const bool is_dual_space = true;
 
   static void fill_n(T* ptr, size_t n, const T& value)
   {
-    allocator_traits<HostAllocator>::fill_n(ptr, n, value);
+    qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value);
     //PRAGMA_OFFLOAD("omp target update to(ptr[:n])")
   }
 };

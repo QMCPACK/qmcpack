@@ -19,9 +19,11 @@
 #ifndef QMCPLUSPLUS_CUDA_ALLOCATOR_H
 #define QMCPLUSPLUS_CUDA_ALLOCATOR_H
 
+#include <memory>
 #include <cstdlib>
 #include <stdexcept>
 #include <atomic>
+#include <limits>
 #include <cuda_runtime_api.h>
 #include "config.h"
 #include "cudaError.h"
@@ -30,7 +32,6 @@
 
 namespace qmcplusplus
 {
-
 extern std::atomic<size_t> CUDAallocator_device_mem_allocated;
 
 inline size_t getCUDAdeviceMemAllocated() { return CUDAallocator_device_mem_allocated; }
@@ -79,6 +80,7 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
   return false;
 }
 
+
 /** allocator for CUDA device memory
  * @tparm T data type
  *
@@ -120,17 +122,21 @@ struct CUDAAllocator
     CUDAallocator_device_mem_allocated -= n * sizeof(T);
   }
 
-  /** Don't do anything on construct, we can't touch this memory directly.
+  /** Don't do anything on construct, we don't initialize or otherwise touch device memory at construction.
+   *  std::vector at least wants to call the default initializer on each element using this.
    *
-   *  This is needed to use this allocator with std::vector in c++14
-   *  In c++20 this should parhaps be removed.  By then std::vector does something
-   *  better? It's somewhat unclear.
+   *  The standard is a bit confusing on this point. This is an optional requirement of Allocator from C++11 on.
+   *  Its deprecated for the std::allocator in c++17 and will be removed in c++20.  We are not implementing
+   *  std::allocator.
    *
+   *  Since std::allocator_traits handles the case where no construct method is present in the Allocator.
+   *  But for allocators other than std::allocator the std::allocator_traits will call the Allocators construct
+   *  method.
    */
-  template< class U, class... Args >
-  void construct(U* p, Args&&... args)
+  template<class U, class... Args>
+  static void construct(U* p, Args&&... args)
   {}
-    
+
 };
 
 template<class T1, class T2>
@@ -143,16 +149,57 @@ bool operator!=(const CUDAAllocator<T1>&, const CUDAAllocator<T2>&)
 {
   return false;
 }
-
 template<typename T>
-struct allocator_traits<CUDAAllocator<T>>
+struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 {
   static const bool is_host_accessible = false;
-  static const bool is_dual_space = false;
-  static void fill_n(T* ptr, size_t n, const T& value) { CUDAfill_n(ptr, n, value); }
+  static const bool is_dual_space      = false;
+  static void fill_n(T* ptr, size_t n, const T& value) { qmcplusplus::CUDAfill_n(ptr, n, value); }
 };
+} // namespace qmcplusplus
 
+// /** This is a full specialization of std::allocator_traits for CUDAAllocator.
+//  *  But it supports only a limited set of std::allocator_traits, expect compilation
+//  *  errors if you use fancier containers or fancier operations on simple containers.
+//  */
+// template<typename T>
+// struct std::allocator_traits<qmcplusplus::CUDAAllocator<T>>
+// {
+//   using allocator_type                 = qmcplusplus::CUDAAllocator<T>;
+//   using pointer                        = T*;
+//   using const_pointer                  = const T*;
+//   using const_void_pointer             = typename std::pointer_traits<pointer>::template rebind<const void>;
+//   using value_type                     = T;
+//   using difference_type                = typename std::pointer_traits<pointer>::difference_type;
+//   using size_type                      = typename std::make_unsigned<difference_type>::type;
+//   template<typename U>
+//   using rebind_alloc = typename qmcplusplus::CUDAAllocator<T>::template rebind<U>::other;
 
+//   static pointer allocate(qmcplusplus::CUDAAllocator<T>& alloc, size_type n) { return alloc.allocate(n); }
+//   static pointer allocate(qmcplusplus::CUDAAllocator<T>& alloc, size_type n, const_void_pointer hint)
+//   {
+//     return alloc.allocate(n);
+//   }
+//   static void deallocate(qmcplusplus::CUDAAllocator<T>& alloc, pointer p, size_type n) { alloc.deallocate(p, n); }
+//   /** Don't do anything on construct, we don't initialize or otherwise touch device memory at construction.
+//    *  std::vector at least wants to call the default initializer on each element using this.
+//    *  For c++ 20 a constexpr version needs to be added and once c++17 or earlier support is dropped this method
+//    *  can be dropped.
+//    */
+//   template<class U, class... Args>
+//   static void construct(qmcplusplus::CUDAAllocator<T>& a, U* p, Args&&... args)
+//   {}
+//   template<class U, class... Args>
+//   static void destroy(qmcplusplus::CUDAAllocator<T>& a, U* p)
+//   {}
+//   size_type max_size(const qmcplusplus::CUDAAllocator<T>& alloc) noexcept
+//   {
+//     return std::numeric_limits<size_type>::max();
+//   }
+// };
+
+namespace qmcplusplus
+{
 /** allocator for CUDA host pinned memory
  * @tparm T data type
  */
