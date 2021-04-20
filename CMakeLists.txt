@@ -15,12 +15,9 @@ include(CMakeDependentOption)
 ######################################################################
 # QMCPACK
 ######################################################################
-PROJECT(qmcpack)
-
-SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 11)
-SET(QMCPACK_VERSION_PATCH 9)
-SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
+project(qmcpack
+        VERSION 3.11.9
+        LANGUAGES C CXX)
 
 ######################################################
 # Directory where customize cmake files reside
