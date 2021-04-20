@@ -32,6 +32,7 @@
 #endif
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include <bitset>
+#include <memory> // std::unique_ptr
 
 namespace qmcplusplus
 {
@@ -336,7 +337,9 @@ struct OperatorBase : public QMCTraits
    */
   virtual void releaseResource(ResourceCollection& collection) {}
 
-  virtual OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
+  virtual std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
+
+  //virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
 
   virtual void setRandomGenerator(RandomGenerator_t* rng)
   {

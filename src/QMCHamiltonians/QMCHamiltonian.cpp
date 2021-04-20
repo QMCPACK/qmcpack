@@ -79,10 +79,10 @@ bool QMCHamiltonian::get(std::ostream& os) const
  * @param aname name of h
  * @param physical if true, a physical operator
  */
-void QMCHamiltonian::addOperator(OperatorBase& h, const std::string& aname, bool physical)
+void QMCHamiltonian::addOperator(std::shared_ptr<OperatorBase> h, const std::string& aname, bool physical)
 {
   //change UpdateMode[PHYSICAL] of h so that cloning can be done correctly
-  h.UpdateMode[OperatorBase::PHYSICAL] = physical;
+  h->UpdateMode[OperatorBase::PHYSICAL] = physical;
   if (physical)
   {
     for (int i = 0; i < H.size(); ++i)
@@ -94,8 +94,8 @@ void QMCHamiltonian::addOperator(OperatorBase& h, const std::string& aname, bool
       }
     }
     app_log() << "  QMCHamiltonian::addOperator " << aname << " to H, physical Hamiltonian " << std::endl;
-    h.myName = aname;
-    H.push_back(&h);
+    h->myName = aname;
+    H.push_back(h);
     std::string tname = "Hamiltonian:" + aname;
     my_timers_.push_back(*timer_manager.createTimer(tname, timer_level_fine));
   }
@@ -111,8 +111,8 @@ void QMCHamiltonian::addOperator(OperatorBase& h, const std::string& aname, bool
       }
     }
     app_log() << "  QMCHamiltonian::addOperator " << aname << " to auxH " << std::endl;
-    h.myName = aname;
-    auxH.push_back(&h);
+    h->myName = aname;
+    auxH.push_back(h);
   }
 
   //assign save NLPP if found
@@ -120,7 +120,7 @@ void QMCHamiltonian::addOperator(OperatorBase& h, const std::string& aname, bool
   if (aname == "NonLocalECP")
   {
     if (nlpp_ptr == nullptr)
-      nlpp_ptr = dynamic_cast<NonLocalECPotential*>(&h);
+      nlpp_ptr = dynamic_cast<NonLocalECPotential*>(h.get());
     else
       APP_ABORT("QMCHamiltonian::addOperator nlpp_ptr is supposed to be null. Something went wrong!");
   }
@@ -130,7 +130,7 @@ void QMCHamiltonian::addOperator(OperatorBase& h, const std::string& aname, bool
   if (aname == "L2")
   {
     if (l2_ptr == nullptr)
-      l2_ptr = dynamic_cast<L2Potential*>(&h);
+      l2_ptr = dynamic_cast<L2Potential*>(h.get());
     else
       APP_ABORT("QMCHamiltonian::addOperator l2_ptr is supposed to be null. Something went wrong!");
   }
@@ -877,7 +877,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::getEnsembleAverage()
  *
  * If not found, return 0
  */
-OperatorBase* QMCHamiltonian::getHamiltonian(const std::string& aname)
+std::shared_ptr<OperatorBase> QMCHamiltonian::getHamiltonian(const std::string& aname)
 {
   for (int i = 0; i < H.size(); ++i)
     if (H[i]->myName == aname)

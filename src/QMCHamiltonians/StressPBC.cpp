@@ -334,14 +334,14 @@ bool StressPBC::put(xmlNodePtr cur)
   return true;
 }
 
-OperatorBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  StressPBC* tmp       = new StressPBC(PtclA, qp, psi);
-  tmp->firstTimeStress = firstTimeStress;
-  tmp->stress_IonIon   = stress_IonIon;
-  tmp->stress_ee_const = stress_ee_const;
-  tmp->stress_eI_const = stress_eI_const;
-  tmp->addionion       = addionion;
+  std::shared_ptr<StressPBC> tmp = std::make_shared<StressPBC>(PtclA, qp, psi);
+  tmp->firstTimeStress           = firstTimeStress;
+  tmp->stress_IonIon             = stress_IonIon;
+  tmp->stress_ee_const           = stress_ee_const;
+  tmp->stress_eI_const           = stress_eI_const;
+  tmp->addionion                 = addionion;
   return tmp;
 }
 } // namespace qmcplusplus

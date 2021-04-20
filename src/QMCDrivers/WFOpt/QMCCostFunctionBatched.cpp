@@ -184,7 +184,7 @@ std::unique_ptr<QMCHamiltonian> QMCCostFunctionBatched::extractFixedHamiltonianC
   KE_Ham->addOperator(H.getHamiltonian("Kinetic"), "Kinetic");
   if (includeNonlocalH != "no")
   {
-    OperatorBase* a = H.getHamiltonian(includeNonlocalH);
+    std::shared_ptr<OperatorBase> a = H.getHamiltonian(includeNonlocalH);
     if (a)
     {
       app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
@@ -268,8 +268,8 @@ void QMCCostFunctionBatched::checkConfigurations()
       HDerivRecords_.resize(numSamples, NumOptimizables);
     }
   }
-  OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : H.getHamiltonian(includeNonlocalH);
-  bool compute_nlpp  = useNLPPDeriv && nlpp;
+  std::shared_ptr<OperatorBase> nlpp = (includeNonlocalH == "no") ? nullptr : H.getHamiltonian(includeNonlocalH);
+  bool compute_nlpp                  = useNLPPDeriv && nlpp;
   //set the optimization mode for the trial wavefunction
   Psi.startOptimization();
   //    synchronize the random number generator with the node
@@ -390,7 +390,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
           if (includeNonlocalH != "no")
           {
-            OperatorBase* nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
+            std::shared_ptr<OperatorBase> nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
             RecordsOnNode[is][ENERGY_FIXED] -= nlpp->Value;
           }
         }

@@ -76,7 +76,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
   ClassName = "HamiltonianFactory";
   myName    = hName;
   targetPtcl.set_quantum();
-  targetH->addOperator(new BareKineticEnergy<OHMMS_PRECISION_FULL>(targetPtcl), "Kinetic");
+  targetH->addOperator(std::make_shared<BareKineticEnergy<OHMMS_PRECISION_FULL>>(targetPtcl), "Kinetic");
 }
 
 /** main hamiltonian build function
@@ -168,7 +168,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 #if !defined(QMC_CUDA)
       else if (potType == "skpot")
       {
-        SkPot* hs = new SkPot(targetPtcl);
+        std::shared_ptr<SkPot> hs = std::make_shared<SkPot>(targetPtcl);
         hs->put(cur);
         targetH->addOperator(hs, "SkPot", true);
       }
@@ -190,13 +190,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     {
       if (potType == "harmonic_ext" || potType == "HarmonicExt")
       {
-        HarmonicExternalPotential* hs = new HarmonicExternalPotential(targetPtcl);
+        std::shared_ptr<HarmonicExternalPotential> hs = std::make_shared<HarmonicExternalPotential>(targetPtcl);
         hs->put(cur);
         targetH->addOperator(hs, "HarmonicExt", true);
       }
       if (potType == "grid")
       {
-        GridExternalPotential* hs = new GridExternalPotential(targetPtcl);
+        std::shared_ptr<GridExternalPotential> hs = std::make_shared<GridExternalPotential>(targetPtcl);
         hs->put(cur);
         targetH->addOperator(hs, "Grid", true);
       }
@@ -205,11 +205,11 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     {
       if (potType == "flux")
       {
-        targetH->addOperator(new ConservedEnergy, potName, false);
+        targetH->addOperator(std::make_shared<ConservedEnergy>(), potName, false);
       }
       else if (potType == "specieskinetic")
       {
-        SpeciesKineticEnergy* apot = new SpeciesKineticEnergy(targetPtcl);
+        std::shared_ptr<SpeciesKineticEnergy> apot = std::make_shared<SpeciesKineticEnergy>(targetPtcl);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -238,8 +238,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         local_attrib.add(source_group, "sgroup");
         local_attrib.put(cur);
 
-        LatticeDeviationEstimator* apot =
-            new LatticeDeviationEstimator(*target_particle_set, *source_particle_set, target_group, source_group);
+        std::shared_ptr<LatticeDeviationEstimator> apot =
+            std::make_shared<LatticeDeviationEstimator>(*target_particle_set, *source_particle_set, target_group,
+                                                        source_group);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -249,7 +250,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
       else if (potType == "gofr")
       {
-        PairCorrEstimator* apot = new PairCorrEstimator(targetPtcl, sourceInp);
+        std::shared_ptr<PairCorrEstimator> apot = std::make_shared<PairCorrEstimator>(targetPtcl, sourceInp);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -257,7 +258,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         //          if(PBCType)//only if perioidic
         {
-          DensityEstimator* apot = new DensityEstimator(targetPtcl);
+          std::shared_ptr<DensityEstimator> apot = std::make_shared<DensityEstimator>(targetPtcl);
           apot->put(cur);
           targetH->addOperator(apot, potName, false);
         }
@@ -265,21 +266,22 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if (potType == "spindensity")
       {
         app_log() << "  Adding SpinDensity" << std::endl;
-        SpinDensity* apot = new SpinDensity(targetPtcl);
+        std::shared_ptr<SpinDensity> apot = std::make_shared<SpinDensity>(targetPtcl);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
       else if (potType == "structurefactor")
       {
         app_log() << "  Adding StaticStructureFactor" << std::endl;
-        StaticStructureFactor* apot = new StaticStructureFactor(targetPtcl);
+        std::shared_ptr<StaticStructureFactor> apot = std::make_shared<StaticStructureFactor>(targetPtcl);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
       else if (potType == "orbitalimages")
       {
         app_log() << "  Adding OrbitalImages" << std::endl;
-        OrbitalImages* apot = new OrbitalImages(targetPtcl, ptclPool, myComm, *psi_it->second);
+        std::shared_ptr<OrbitalImages> apot =
+            std::make_shared<OrbitalImages>(targetPtcl, ptclPool, myComm, *psi_it->second);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -287,7 +289,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if (potType == "energydensity" || potType == "EnergyDensity")
       {
         app_log() << "  Adding EnergyDensityEstimator" << std::endl;
-        EnergyDensityEstimator* apot = new EnergyDensityEstimator(ptclPool, defaultKE);
+        std::shared_ptr<EnergyDensityEstimator> apot = std::make_shared<EnergyDensityEstimator>(ptclPool, defaultKE);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -308,7 +310,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
-        DensityMatrices1B* apot = new DensityMatrices1B(targetPtcl, *targetPsi, Pc, *psi_it->second);
+        std::shared_ptr<DensityMatrices1B> apot =
+            std::make_shared<DensityMatrices1B>(targetPtcl, *targetPsi, Pc, *psi_it->second);
         apot->put(cur);
         targetH->addOperator(apot, potName, false);
       }
@@ -318,9 +321,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if (PBCType) //only if perioidic
         {
 #ifdef QMC_CUDA
-          SkEstimator_CUDA* apot = new SkEstimator_CUDA(targetPtcl);
+          std::shared_ptr<SkEstimator_CUDA*> apot = std::make_shared<SkEstimator_CUDA>(targetPtcl);
 #else
-          SkEstimator* apot = new SkEstimator(targetPtcl);
+          std::shared_ptr<SkEstimator> apot = std::make_shared<SkEstimator>(targetPtcl);
 #endif
           apot->put(cur);
           targetH->addOperator(apot, potName, false);
@@ -350,8 +353,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for Chiesa correction.");
         }
-        const TrialWaveFunction& psi = *psi_it->second->getTWF();
-        ChiesaCorrection* chiesa     = new ChiesaCorrection(source, psi);
+        const TrialWaveFunction& psi             = *psi_it->second->getTWF();
+        std::shared_ptr<ChiesaCorrection> chiesa = std::make_shared<ChiesaCorrection>(source, psi);
         targetH->addOperator(chiesa, "KEcorr", false);
       }
       else if (potType == "skall")
@@ -370,7 +373,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 
         if (PBCType)
         {
-          SkAllEstimator* apot = new SkAllEstimator(*source, targetPtcl);
+          std::shared_ptr<SkAllEstimator> apot = std::make_shared<SkAllEstimator>(*source, targetPtcl);
           apot->put(cur);
           targetH->addOperator(apot, potName, false);
           app_log() << "Adding S(k) ALL estimator" << std::endl;
@@ -382,7 +385,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         if (estType == "coulomb")
         {
-          Pressure* BP = new Pressure(targetPtcl);
+          std::shared_ptr<Pressure> BP = std::make_shared<Pressure>(targetPtcl);
           BP->put(cur);
           targetH->addOperator(BP, "Pressure", false);
           int nlen(100);
@@ -404,8 +407,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");
         }
-        TrialWaveFunction* psi = (*psi_it).second->getTWF();
-        MomentumEstimator* ME  = new MomentumEstimator(targetPtcl, *psi);
+        TrialWaveFunction* psi                = (*psi_it).second->getTWF();
+        std::shared_ptr<MomentumEstimator> ME = std::make_shared<MomentumEstimator>(targetPtcl, *psi);
         bool rt(myComm->rank() == 0);
         ME->putSpecial(cur, targetPtcl, rt);
         targetH->addOperator(ME, "MomentumEstimator", false);
@@ -467,7 +470,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if (potType == "ForwardWalking")
       {
         app_log() << "  Adding Forward Walking Operator" << std::endl;
-        ForwardWalking* FW = new ForwardWalking();
+        std::shared_ptr<ForwardWalking> FW = std::make_shared<ForwardWalking>();
         FW->putSpecial(cur, *targetH, targetPtcl);
         targetH->addOperator(FW, "ForwardWalking", false);
         dmc_correction = true;

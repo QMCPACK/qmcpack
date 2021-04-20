@@ -509,11 +509,11 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
 }
 
 
-OperatorBase* CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   if (is_active)
-    return new CoulombPBCAA(qp, is_active, ComputeForces);
+    return std::make_shared<CoulombPBCAA>(qp, is_active, ComputeForces);
   else
-    return new CoulombPBCAA(*this); //nothing needs to be re-evaluated
+    return std::make_shared<CoulombPBCAA>(*this); //nothing needs to be re-evaluated
 }
 } // namespace qmcplusplus

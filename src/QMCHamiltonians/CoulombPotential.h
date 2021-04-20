@@ -377,19 +377,20 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       setParticleSetF(plist, offset);
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override
   {
     if (is_AA)
     {
       if (is_active)
-        return new CoulombPotential(qp, true, ComputeForces);
+        return std::make_shared<CoulombPotential>(qp, true, ComputeForces);
       else
         // Ye Luo April 16th, 2015
         // avoid recomputing ion-ion DistanceTable when reusing ParticleSet
-        return new CoulombPotential(Pa, false, ComputeForces, true);
+        return std::make_shared<CoulombPotential>(Pa, false, ComputeForces, true);
     }
     else
-      return new CoulombPotential(Pa, qp, true);
+      return std::make_shared<CoulombPotential>(Pa, qp, true);
   }
 };
 

@@ -22,9 +22,9 @@ void ChiesaCorrection::resetTargetParticleSet(ParticleSet& P) {}
 bool ChiesaCorrection::put(xmlNodePtr cur) { return true; }
 
 
-OperatorBase* ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return new ChiesaCorrection(qp, psi);
+  return std::make_shared<ChiesaCorrection>(qp, psi);
 }
 
 ChiesaCorrection::Return_t ChiesaCorrection::evaluate(ParticleSet& P) { return Value = psi_ref.KECorrection(); }

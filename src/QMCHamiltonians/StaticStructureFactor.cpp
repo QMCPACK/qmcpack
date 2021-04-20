@@ -44,9 +44,9 @@ void StaticStructureFactor::reset()
 }
 
 
-OperatorBase* StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+std::shared_ptr<OperatorBase> StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
-  return new StaticStructureFactor(*this);
+  return std::make_shared<StaticStructureFactor>(*this);
 }
 
 

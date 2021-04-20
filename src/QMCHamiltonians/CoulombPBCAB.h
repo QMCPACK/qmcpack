@@ -155,7 +155,7 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   ///Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
   void initBreakup(ParticleSet& P);

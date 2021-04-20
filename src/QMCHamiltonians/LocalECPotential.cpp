@@ -217,9 +217,10 @@ LocalECPotential::Return_t LocalECPotential::evaluate_orig(ParticleSet& P)
   return Value;
 }
 
-OperatorBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  LocalECPotential* myclone = new LocalECPotential(IonConfig, qp);
+  std::shared_ptr<LocalECPotential> myclone = std::make_shared<LocalECPotential>(IonConfig, qp);
+
   for (int ig = 0; ig < PPset.size(); ++ig)
     if (PPset[ig])
       myclone->add(ig, std::unique_ptr<RadialPotentialType>(PPset[ig]->makeClone()), gZeff[ig]);

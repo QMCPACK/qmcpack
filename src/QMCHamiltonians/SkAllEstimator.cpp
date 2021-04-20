@@ -341,11 +341,11 @@ bool SkAllEstimator::get(std::ostream& os) const
   return true;
 }
 
-OperatorBase* SkAllEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> SkAllEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  SkAllEstimator* myclone = new SkAllEstimator(*this);
-  myclone->hdf5_out       = hdf5_out;
-  myclone->myIndex        = myIndex;
+  std::shared_ptr<SkAllEstimator> myclone = std::make_shared<SkAllEstimator>(*this);
+  myclone->hdf5_out                       = hdf5_out;
+  myclone->myIndex                        = myIndex;
   return myclone;
 }
 } // namespace qmcplusplus

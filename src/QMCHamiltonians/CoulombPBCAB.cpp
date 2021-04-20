@@ -47,9 +47,10 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
 }
 
-OperatorBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  CoulombPBCAB* myclone    = new CoulombPBCAB(PtclA, qp, ComputeForces);
+  std::shared_ptr<CoulombPBCAB> myclone = std::make_shared<CoulombPBCAB>(PtclA, qp, ComputeForces);
+
   myclone->FirstForceIndex = FirstForceIndex;
   if (myGrid)
     myclone->myGrid = new GridType(*myGrid);

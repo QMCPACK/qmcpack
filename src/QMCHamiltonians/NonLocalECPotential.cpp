@@ -308,11 +308,11 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
                   << std::endl;
     O_leader.mw_res_ = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
     for (int ig = 0; ig < O_leader.PPset.size(); ++ig)
-    if (O_leader.PPset[ig]->getVP())
-    {
-      O_leader.PPset[ig]->getVP()->createResource(O_leader.mw_res_->collection);
-      break;
-    }
+      if (O_leader.PPset[ig]->getVP())
+      {
+        O_leader.PPset[ig]->getVP()->createResource(O_leader.mw_res_->collection);
+        break;
+      }
   }
 
   auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
@@ -621,9 +621,10 @@ void NonLocalECPotential::releaseResource(ResourceCollection& collection)
   collection.takebackResource(std::move(mw_res_));
 }
 
-OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces, use_DLA);
+  std::shared_ptr<NonLocalECPotential> myclone =
+      std::make_shared<NonLocalECPotential>(IonConfig, qp, psi, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
     if (PPset[ig])
       myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));

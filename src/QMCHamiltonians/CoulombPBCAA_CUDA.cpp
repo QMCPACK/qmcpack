@@ -60,13 +60,12 @@ void CoulombPBCAA_CUDA::initBreakup(ParticleSet& P, bool cloning)
 #endif
 }
 
-OperatorBase* CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::shared_ptr<OperatorBase> CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  CoulombPBCAA_CUDA* myclone;
-  if (is_active)
-    myclone = new CoulombPBCAA_CUDA(qp, is_active, true);
-  else
-    myclone = new CoulombPBCAA_CUDA(*this); //nothing needs to be re-evaluated
+  std::shared_ptr<CoulombPBCAA_CUDA> myclone = is_active
+      ? std::make_shared<CoulombPBCAA_CUDA>(qp, is_active, true)
+      : std::make_shared<CoulombPBCAA_CUDA>(*this); //nothing needs to be re-evaluated
+
   myclone->SRSpline = SRSpline;
   return myclone;
 }

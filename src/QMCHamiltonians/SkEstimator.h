@@ -41,7 +41,7 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
 protected:
   ParticleSet* sourcePtcl;

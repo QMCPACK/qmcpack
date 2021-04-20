@@ -31,9 +31,9 @@ private:
   const int d_ei_ID;
 
 public:
-  double Rcut;                    // parameter: radial distance within which estimator is used
-  int m_exp;                      // parameter: exponent in polynomial fit
-  int N_basis;                    // parameter: size of polynomial basis set
+  double Rcut;                   // parameter: radial distance within which estimator is used
+  int m_exp;                     // parameter: exponent in polynomial fit
+  int N_basis;                   // parameter: size of polynomial basis set
   Matrix<FullPrecRealType> Sinv; // terms in fitting polynomial
   Vector<FullPrecRealType> h;    // terms in fitting polynomial
   Vector<FullPrecRealType> c;    // polynomial coefficients
@@ -60,7 +60,7 @@ public:
   void evaluate_IonIon(ParticleSet::ParticlePos_t& forces) const;
 
   void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetF(plist, offset); }
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   bool put(xmlNodePtr cur);
 
