@@ -84,11 +84,14 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
 /** allocator for CUDA device memory
  * @tparm T data type
  *
- *  using this with something other than Ohmms containers?
- *   -- use caution --
- *  it does not provide all the allocator_traits specialization and methods for an
- *  std::allocator that some std containers expect.
- *  This can result in unexpected behavior at runtime or if you are lucky compilation errors.
+ * using this with something other than Ohmms containers?
+ *  -- use caution, write unit tests! --
+ * It's not tested beyond use in some unit tests using std::vector with constant size.
+ * CUDAAllocator appears to meet all the nonoptional requirements of a c++ Allocator.
+ *
+ * Some of the default implementations in std::allocator_traits
+ * of optional Allocator requirements may cause runtime or compilation failures.
+ * They assume there is only one memory space and that the host has access to it.
  */
 template<typename T>
 struct CUDAAllocator
@@ -122,19 +125,32 @@ struct CUDAAllocator
     CUDAallocator_device_mem_allocated -= n * sizeof(T);
   }
 
-  /** Don't do anything on construct, we don't initialize or otherwise touch device memory at construction.
-   *  std::vector at least wants to call the default initializer on each element using this.
+  /** Provide a construct for std::allocator_traits::contruct to call.
+   *  Don't do anything on construct, pointer p is on the device!
    *
-   *  The standard is a bit confusing on this point. This is an optional requirement of Allocator from C++11 on.
-   *  Its deprecated for the std::allocator in c++17 and will be removed in c++20.  We are not implementing
+   *  For example std::vector calls this to default initialize each element. You'll segfault
+   *  if std::allocator_traits::construct tries doing that at p.
+   *
+   *  The standard is a bit confusing on this point. Implementing this is an optional requirement
+   *  of Allocator from C++11 on, its not slated to be removed.
+   *
+   *  Its deprecated for the std::allocator in c++17 and will be removed in c++20.  But we are not implementing
    *  std::allocator.
    *
-   *  Since std::allocator_traits handles the case where no construct method is present in the Allocator.
-   *  But for allocators other than std::allocator the std::allocator_traits will call the Allocators construct
-   *  method.
+   *  STL containers only use Allocators through allocator_traits and std::allocator_traits handles the case
+   *  where no construct method is present in the Allocator.
+   *  But std::allocator_traits will call the Allocators construct method if present.
    */
   template<class U, class... Args>
   static void construct(U* p, Args&&... args)
+  {}
+
+  /** Give std::allocator_traits something to call.
+   *  The default if this isn't present is to call p->~T() which
+   *  we can't do on device memory.
+   */
+  template<class U>
+  static void destroy(U* p)
   {}
 
 };
