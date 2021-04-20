@@ -71,7 +71,7 @@ General use of ``convert4qmc`` can be prompted by running with no options:
 
   Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample
 
-   convert [-gaussian|-casino|-gamess|-orbitals]
+   convert [-gaussian|gamess|-orbitals]
    filename
   [-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]
   [-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]
@@ -81,7 +81,7 @@ General use of ``convert4qmc`` can be prompted by running with no options:
   -threshold 0.01 -TargetState 0 -prefix sample
   When the input format is missing, the  extension of filename is used to determine
   the format
-   *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.h5 -> hdf5 format
+   *.Fchk -> gaussian; *.out -> gamess; *.h5 -> hdf5 format
 
 As an example, to convert a GAMESS calculation using a single determinant, the following use is sufficient:
 
@@ -277,18 +277,16 @@ prefix ``Mysim`` and output files will be
 
 ``convert4qmc`` input type:
 
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | **option name** | **description**                                                            |                     |
-  +=================+============================================================================+=====================+
-  | ``-orbitals``   | Generic HDF5 input file. Mainly automatically generated from QP2, Pyscf and|                     |
-  |                 | all codes  in molden2qmc                                                   | Actively maintained |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-gamess``     | Gamess code                                                                | Maintained          |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-gaussian``   | Gaussian code                                                              | Obsolete/untested   |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
-  | ``-casino``     | Casino code                                                                | Obsolete/untested   |
-  +-----------------+----------------------------------------------------------------------------+---------------------+
+  +-----------------+----------------------------------------------------------------------------+
+  | **option name** | **description**                                                            |
+  +=================+============================================================================+
+  | ``-orbitals``   | Generic HDF5 input file. Mainly automatically generated from QP2, Pyscf and|
+  |                 | all codes  in molden2qmc                                                   |
+  +-----------------+----------------------------------------------------------------------------+
+  | ``-gamess``     | Gamess code                                                                |
+  +-----------------+----------------------------------------------------------------------------+
+  | ``-gaussian``   | Gaussian code                                                              |
+  +-----------------+----------------------------------------------------------------------------+
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
