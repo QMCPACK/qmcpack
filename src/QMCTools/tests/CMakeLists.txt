@@ -70,4 +70,10 @@ ELSE()
 ENDIF()
 SET_TESTS_PROPERTIES(extract-eshdf-kvectors_2x1x1 PROPERTIES TIMEOUT 120 LABELS "deterministic" PASS_REGULAR_EXPRESSION "0   0   0\n0.5   0   0")
 
-
+# Minimal test for convert4qmc. Check for Usage on output if no arguments. Primarily tested through converter tests.
+IF ( HAVE_MPI )
+  ADD_TEST( NAME convert4qmc_usage COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${qmcpack_BINARY_DIR}/bin/convert4qmc )
+ELSE()
+  ADD_TEST(NAME convert4qmc_usage COMMAND "${qmcpack_BINARY_DIR}/bin/convert4qmc")
+ENDIF()
+SET_TESTS_PROPERTIES(convert4qmc_usage PROPERTIES TIMEOUT 120 LABELS "deterministic" PASS_REGULAR_EXPRESSION "Usage:")
