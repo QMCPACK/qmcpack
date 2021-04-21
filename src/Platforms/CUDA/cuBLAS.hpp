@@ -18,11 +18,14 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
+#include "CUDATypeMapping.hpp"
+#include "type_traits/type_manipulation.hpp"
 
 #define cublasErrorCheck(ans, cause)                \
   {                                                 \
     cublasAssert((ans), cause, __FILE__, __LINE__); \
   }
+
 /// prints cuBLAS error messages. Always use cublasErrorCheck macro.
 inline void cublasAssert(cublasStatus_t code, const std::string& cause, const char* file, int line, bool abort = true)
 {
@@ -110,8 +113,8 @@ inline cublasStatus_t gemm(cublasHandle_t& handle,
                            std::complex<float>* C,
                            int ldc)
 {
-  return cublasCgemm(handle, transa, transb, m, n, k, (const cuComplex*)alpha, (const cuComplex*)A, lda,
-                     (const cuComplex*)B, ldb, (const cuComplex*)beta, (cuComplex*)C, ldc);
+  return cublasCgemm(handle, transa, transb, m, n, k, castCUDAType(alpha), castCUDAType(A), lda,
+                     castCUDAType(B), ldb, castCUDAType(beta), castCUDAType(C), ldc);
 }
 
 inline cublasStatus_t gemm(cublasHandle_t& handle,
@@ -147,8 +150,8 @@ inline cublasStatus_t gemm(cublasHandle_t& handle,
                            std::complex<double>* C,
                            int ldc)
 {
-  return cublasZgemm(handle, transa, transb, m, n, k, (const cuDoubleComplex*)alpha, (const cuDoubleComplex*)A, lda,
-                     (const cuDoubleComplex*)B, ldb, (const cuDoubleComplex*)beta, (cuDoubleComplex*)C, ldc);
+  return cublasZgemm(handle, transa, transb, m, n, k, castCUDAType(alpha), castCUDAType(A), lda,
+                     castCUDAType(B), ldb, castCUDAType(beta), castCUDAType(C), ldc);
 }
 
 inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
@@ -186,8 +189,16 @@ inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
                                    int ldc,
                                    int batchCount)
 {
-  return cublasCgemmBatched(handle, transa, transb, m, n, k, (const cuComplex*)alpha, (const cuComplex**)A, lda,
-                            (const cuComplex**)B, ldb, (const cuComplex*)beta, (cuComplex**)C, ldc, batchCount);
+  // This is necessary to not break the complex CUDA type mapping semantics while
+  // dealing with the const cuComplex * A[] style API of cuBLAS
+  // C++ makes you jump through some hoops to remove the bottom const on a double pointer.
+  // see typetraits/type_manipulation.hpp
+  auto non_const_A = const_cast<BottomConstRemoved<decltype(A)>::type>(A);
+  auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
+  auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
+
+  return cublasCgemmBatched(handle, transa, transb, m, n, k, castCUDAType(alpha), castCUDAType(non_const_A), lda,
+                            castCUDAType(non_const_B), ldb, castCUDAType(beta), castCUDAType(non_const_C), ldc, batchCount);
 }
 
 inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
@@ -225,8 +236,12 @@ inline cublasStatus_t gemm_batched(cublasHandle_t& handle,
                                    int ldc,
                                    int batchCount)
 {
-  return cublasZgemmBatched(handle, transa, transb, m, n, k, (const cuDoubleComplex*)alpha, (const cuDoubleComplex**)A,
-                            lda, (const cuDoubleComplex**)B, ldb, (const cuDoubleComplex*)beta, (cuDoubleComplex**)C,
+  auto non_const_A = const_cast<BottomConstRemoved<decltype(A)>::type>(A);
+  auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
+  auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
+
+  return cublasZgemmBatched(handle, transa, transb, m, n, k, castCUDAType(alpha), castCUDAType(non_const_A),
+                            lda, castCUDAType(non_const_B), ldb, castCUDAType(beta), castCUDAType(non_const_C),
                             ldc, batchCount);
 }
 
@@ -260,7 +275,7 @@ inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
                                     int* infoArray,
                                     int batchSize)
 {
-  return cublasCgetrfBatched(handle, n, reinterpret_cast<cuComplex* const*>(A), lda, PivotArray, infoArray, batchSize);
+  return cublasCgetrfBatched(handle, n, castCUDAType(A), lda, PivotArray, infoArray, batchSize);
 }
 
 inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
@@ -271,7 +286,7 @@ inline cublasStatus_t getrf_batched(cublasHandle_t& handle,
                                     int* infoArray,
                                     int batchSize)
 {
-  return cublasZgetrfBatched(handle, n, reinterpret_cast<cuDoubleComplex* const*>(A), lda, PivotArray, infoArray,
+  return cublasZgetrfBatched(handle, n, castCUDAType(A), lda, PivotArray, infoArray,
                              batchSize);
 }
 
@@ -311,8 +326,8 @@ inline cublasStatus_t getri_batched(cublasHandle_t& handle,
                                     int* infoArray,
                                     int batchSize)
 {
-  return cublasCgetriBatched(handle, n, reinterpret_cast<cuComplex* const*>(A), lda, PivotArray,
-                             reinterpret_cast<cuComplex* const*>(C), ldc, infoArray, batchSize);
+  return cublasCgetriBatched(handle, n, castCUDAType(A), lda, PivotArray,
+                             castCUDAType(C), ldc, infoArray, batchSize);
 }
 
 inline cublasStatus_t getri_batched(cublasHandle_t& handle,
@@ -325,8 +340,8 @@ inline cublasStatus_t getri_batched(cublasHandle_t& handle,
                                     int* infoArray,
                                     int batchSize)
 {
-  return cublasZgetriBatched(handle, n, reinterpret_cast<cuDoubleComplex* const*>(A), lda, PivotArray,
-                             reinterpret_cast<cuDoubleComplex* const*>(C), ldc, infoArray, batchSize);
+  return cublasZgetriBatched(handle, n, castCUDAType(A), lda, PivotArray,
+                             castCUDAType(C), ldc, infoArray, batchSize);
 }
 
 }; // namespace cuBLAS
