@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_CUDA_TYPE_MAPPING_HPP
-#define QMCPLUSPLUS_CUBLAS_LU_HPP
+#define QMCPLUSPLUS_CUDA_TYPE_MAPPING_HPP
 
 namespace qmcplusplus
 {
@@ -46,7 +46,7 @@ struct default_type : std::true_type
 
 // This saves us writing specific overloads with reinterpret casts for different std::complex to cuComplex types.
 template<typename T>
-using TypesMapper =
+using CUDATypeMap =
     typename c14disjunction::disjunction<OnTypesEqual<T, float, float>,
                                          OnTypesEqual<T, double, double>,
                                          OnTypesEqual<T, float*, float*>,
@@ -63,10 +63,15 @@ using TypesMapper =
                                          OnTypesEqual<T, const std::complex<float>*, const cuComplex*>,
                                          OnTypesEqual<T, const std::complex<float>**, const cuComplex**>,
                                          OnTypesEqual<T, const std::complex<double>**, const cuDoubleComplex**>,
+                                         OnTypesEqual<T, const std::complex<float>* const *, const cuComplex* const *>,
+                                         OnTypesEqual<T, const std::complex<double>* const *, const cuDoubleComplex* const *>,
                                          default_type<void>>::type;
 
-// There must be a way to make this a template function. but it's so easy as a macro.
-#define CUDATYPECAST(var) reinterpret_cast<TypesMapper<decltype(var)>>(var)
+template<typename T>
+CUDATypeMap<T> castCUDAType(T var)
+{
+  return reinterpret_cast<CUDATypeMap<T>>(var);
+}
 
 } // namespace qmcplusplus
 

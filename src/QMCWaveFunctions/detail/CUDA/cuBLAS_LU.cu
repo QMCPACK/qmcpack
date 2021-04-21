@@ -123,7 +123,7 @@ cudaError_t computeLogDet_batched_impl(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_size, num_col_blocks);
   computeLogDet_kernel<COLBS>
-      <<<dimGrid, dimBlock, 0, hstream>>>(n, lda, CUDATYPECAST(LU_mat), pivots, CUDATYPECAST(logdets));
+      <<<dimGrid, dimBlock, 0, hstream>>>(n, lda, castCUDAType(LU_mat), pivots, castCUDAType(logdets));
   return cudaPeekAtLastError();
 }
 
