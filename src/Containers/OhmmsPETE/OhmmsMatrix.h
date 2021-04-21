@@ -86,7 +86,8 @@ public:
 
   inline void resize(size_type n, size_type m)
   {
-    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Matrix and Alloc data types must agree!");
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value,
+                  "Matrix and Alloc data types must agree!");
     D1      = n;
     D2      = m;
     TotSize = n * m;
@@ -144,9 +145,15 @@ public:
   inline const_pointer data() const { return X.data(); }
 
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline pointer device_data() { return X.device_data(); }
+  inline pointer device_data()
+  {
+    return X.device_data();
+  }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline const_pointer device_data() const { return X.device_data(); }
+  inline const_pointer device_data() const
+  {
+    return X.device_data();
+  }
 
   // returns a const pointer of i-th row
   inline const Type_t* data(size_type i) const { return X.data() + i * D2; }

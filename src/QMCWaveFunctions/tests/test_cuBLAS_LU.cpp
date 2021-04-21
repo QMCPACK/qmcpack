@@ -401,15 +401,18 @@ TEST_CASE("cuBLAS_LU::getrf_batched(batch=2)", "[wavefunction][CUDA]")
                                  cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying Ms to device");
 
-  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, cuda_handles->hstream, n, lda, devMs.data(), dev_pivots.data(), infos.data(),
-                                  dev_infos.data(), batch_size);
+  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, cuda_handles->hstream, n, lda, devMs.data(),
+                                  dev_pivots.data(), infos.data(), dev_infos.data(), batch_size);
 
   // copy back the Ms, infos, pivots
-  cudaErrorCheck(cudaMemcpyAsync(M_vec.data(), devM_vec.data(), sizeof(decltype(M_vec)::value_type) * M_vec.size(), cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(M_vec.data(), devM_vec.data(), sizeof(decltype(M_vec)::value_type) * M_vec.size(),
+                                 cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying invM from device");
-  cudaErrorCheck(cudaMemcpyAsync(M2_vec.data(), devM2_vec.data(), sizeof(decltype(M2_vec)::value_type) * M2_vec.size(), cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(M2_vec.data(), devM2_vec.data(), sizeof(decltype(M2_vec)::value_type) * M2_vec.size(),
+                                 cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying invM from device");
-  cudaErrorCheck(cudaMemcpyAsync(pivots.data(), dev_pivots.data(), sizeof(int) * pivots.size(), cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(pivots.data(), dev_pivots.data(), sizeof(int) * pivots.size(), cudaMemcpyDeviceToHost,
+                                 hstream),
                  "cudaMemcpyAsync failed copying pivots from device");
 
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
@@ -460,7 +463,7 @@ TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
   int n             = 4;
   int lda           = 4;
   auto& hstream     = cuda_handles->hstream;
-  int batch_size = 1;
+  int batch_size    = 1;
 
   // clang-format off
   std::vector<double, CUDAHostAllocator<double>> M_vec{7., 0.28571429, 0.71428571, 0.71428571,
@@ -506,7 +509,7 @@ TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
                            0.24742268,  -0.19587629, 0.19587629,  -0.15463918,
                            -0.29896907, 1.27835052,  -0.77835052, 0.06185567};
   // clang-format on
-  
+
   auto checkArray = [](auto A, auto B, int n) {
     for (int i = 0; i < n; ++i)
     {

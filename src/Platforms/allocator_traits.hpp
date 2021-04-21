@@ -20,17 +20,14 @@ namespace qmcplusplus
 /** template class defines whether the memory allocated by the allocator is host accessible
  */
 template<class Allocator>
- struct qmc_allocator_traits
+struct qmc_allocator_traits
 {
   using value_type = typename Allocator::value_type;
 
   static const bool is_host_accessible = true;
-  static const bool is_dual_space = false;
+  static const bool is_dual_space      = false;
 
-  static void fill_n(value_type* ptr, size_t n, const value_type& value)
-  {
-    std::fill_n(ptr, n, value);
-  }
+  static void fill_n(value_type* ptr, size_t n, const value_type& value) { std::fill_n(ptr, n, value); }
 };
 
 template<class Allocator>

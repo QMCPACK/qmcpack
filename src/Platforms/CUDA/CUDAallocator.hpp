@@ -152,7 +152,6 @@ struct CUDAAllocator
   template<class U>
   static void destroy(U* p)
   {}
-
 };
 
 template<class T1, class T2>
