@@ -254,7 +254,8 @@ struct device_pointer<const void> : base_device_pointer
   using element_type = void;
   using value_type   = void;
   const void* impl_;
-  device_pointer(std::nullptr_t = nullptr) : impl_(nullptr) {}
+  explicit device_pointer(const void* impl) : impl_{impl}{}
+  device_pointer(std::nullptr_t = nullptr) : impl_(nullptr){}
   device_pointer(device_pointer const& other) = default;
   device_pointer& operator=(device_pointer const& other) = default;
   device_pointer& operator                               =(std::nullptr_t)
@@ -274,6 +275,7 @@ struct device_pointer<void> : base_device_pointer
   using value_type   = void;
   void* impl_;
   friend struct memory_resource;
+  explicit device_pointer(void* impl) : impl_{impl}{}
   device_pointer(std::nullptr_t = nullptr) : impl_(nullptr) {}
   device_pointer(device_pointer const& other) = default;
   template<typename Q>
@@ -291,9 +293,6 @@ struct device_pointer<void> : base_device_pointer
   bool operator==(device_pointer const& other) const { return impl_ == other.impl_; }
   bool operator!=(device_pointer const& other) const { return not(*this == other); }
   bool operator<=(device_pointer<T> const& other) const { return impl_ <= other.impl_; }
-
-protected:
-  device_pointer(T* impl__) : impl_(impl__) {}
 };
 
 // this class is not safe, since it allows construction of a gpu_ptr from a raw ptr
