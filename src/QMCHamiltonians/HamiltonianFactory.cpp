@@ -321,7 +321,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if (PBCType) //only if perioidic
         {
 #ifdef QMC_CUDA
-          std::shared_ptr<SkEstimator_CUDA*> apot = std::make_shared<SkEstimator_CUDA>(targetPtcl);
+          std::shared_ptr<SkEstimator_CUDA> apot = std::make_shared<SkEstimator_CUDA>(targetPtcl);
 #else
           std::shared_ptr<SkEstimator> apot = std::make_shared<SkEstimator>(targetPtcl);
 #endif
