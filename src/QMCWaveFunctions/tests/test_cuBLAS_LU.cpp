@@ -13,9 +13,11 @@
 
 #include <memory>
 #include <iostream>
+#include <vector>
 #include "CUDA/cudaError.h"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/CUDAfill.hpp"
+#include "CUDA/CUDAallocator.hpp"
 #include "Utilities/for_testing/MatrixAccessor.hpp"
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "detail/CUDA/cuBLAS_LU.hpp"
@@ -70,58 +72,41 @@ TEST_CASE("cuBLAS_LU::computeLogDet", "[wavefunction][CUDA]")
   int batch_size    = 1;
   auto& hstream     = cuda_handles->hstream;
 
-  // The calls in cuBLAS_LU still care about type
-  // being very careful and clear here.
-  void* vp_lu = nullptr;
-  cudaCheck(cudaMallocHost(&vp_lu, sizeof(double) * 16));
-  // This LU was calculated in numpy from the first M in the getrf test
-  double* lu = new (vp_lu) double[16]{7., 0.28571429, 0.71428571, 0.71428571,  5., 3.57142857, 0.12, -0.44,
-                                      6., 6.28571429, -1.04,      -0.46153846, 6., 5.28571429, 3.08, 7.46153846};
-  double* dev_lu;
-  cudaCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 16));
-  void* vp_lus;
-  cudaCheck(cudaMallocHost(&vp_lus, sizeof(double**)));
-  double** lus = new (vp_lus) double* [1] { nullptr };
-  lus[0]       = dev_lu;
-  double** dev_lus;
-  cudaCheck(cudaMalloc((void**)&dev_lus, sizeof(double**)));
+  // clang-format off
+  std::vector<double, CUDAHostAllocator<double>> lu = {7.,      0.28571429,  0.71428571, 0.71428571,
+                                                       5.,      3.57142857,  0.12,       -0.44,
+                                                       6.,      6.28571429,  -1.04,      -0.46153846,
+                                                       6.,      5.28571429,  3.08,       7.46153846};
+  // clang-format on
+  std::vector<double, CUDAAllocator<double>> dev_lu(16);
 
-  std::complex<double>* log_values;
-  cudaCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1));
-  std::complex<double>* dev_log_values;
-  cudaCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1));
-  CUDAfill_n(dev_log_values, batch_size, {0, 0});
+  std::vector<double*, CUDAHostAllocator<double*>> lus(1, nullptr);
+  lus[0] = dev_lu.data();
+  std::vector<double*, CUDAHostAllocator<double*>> dev_lus(1);
 
-  void* vp_pivots;
-  cudaCheck(cudaMallocHost(&vp_pivots, sizeof(int) * 4));
-  int* pivots = new (vp_pivots) int[4]{3, 3, 4, 4};
-  int* dev_pivots;
-  cudaCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4));
+  using StdComp = std::complex<double>;
+  std::vector<StdComp, CUDAHostAllocator<StdComp>> log_values(batch_size, 0.0);
+  std::vector<StdComp, CUDAAllocator<StdComp>> dev_log_values(batch_size, 0.0);
 
-  // Transfer and run kernel.
-  cudaCheck(cudaMemcpyAsync(dev_lu, lu, sizeof(double) * 16, cudaMemcpyHostToDevice, hstream));
-  cudaCheck(cudaMemcpyAsync(dev_lus, lus, sizeof(double**), cudaMemcpyHostToDevice, hstream));
-  cudaCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream));
+  std::vector<int, CUDAHostAllocator<int>> pivots = {3, 3, 4, 4};
+  std::vector<int, CUDAAllocator<int>> dev_pivots(4);
+
+  // Transfers and launch kernel.
+  cudaCheck(cudaMemcpyAsync(dev_lu.data(), lu.data(), sizeof(decltype(lu)::value_type) * 16, cudaMemcpyHostToDevice,
+                            hstream));
+  cudaCheck(cudaMemcpyAsync(dev_lus.data(), lus.data(), sizeof(double**), cudaMemcpyHostToDevice, hstream));
+  cudaCheck(cudaMemcpyAsync(dev_pivots.data(), pivots.data(), sizeof(int) * 4, cudaMemcpyHostToDevice, hstream));
 
   // The types of the pointers passed here matter
-  cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus, dev_pivots, dev_log_values, batch_size);
+  // Pass the C++ types
+  cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus.data(), dev_pivots.data(),
+                                   dev_log_values.data(), batch_size);
 
-  cudaCheck(
-      cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost, hstream));
+  // Copy back to the log_values
+  cudaCheck(cudaMemcpyAsync(log_values.data(), dev_log_values.data(), sizeof(std::complex<double>) * 1,
+                            cudaMemcpyDeviceToHost, hstream));
   cudaCheck(cudaStreamSynchronize(hstream));
-
-
-  CHECK(*log_values == ComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
-
-  // Free memory
-  cudaCheck(cudaFree(dev_pivots));
-  cudaCheck(cudaFreeHost(vp_pivots));
-  cudaCheck(cudaFree(dev_log_values));
-  cudaCheck(cudaFreeHost(log_values));
-  cudaCheck(cudaFree(dev_lus));
-  cudaCheck(cudaFreeHost(vp_lus));
-  cudaCheck(cudaFree(dev_lu));
-  cudaCheck(cudaFreeHost(lu));
+  CHECK(log_values[0] == ComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
 }
 
 TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
@@ -132,73 +117,52 @@ TEST_CASE("cuBLAS_LU::computeLogDet_complex", "[wavefunction][CUDA]")
   int batch_size    = 1;
   auto& hstream     = cuda_handles->hstream;
 
-  void* vp_lu = nullptr;
-  cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 32), "cudaMallocHost failed");
+  using StdComp = std::complex<double>;
   // clang-format off
-  double* lu   = new (vp_lu) double[32]{8.0,                   0.5,
-                                        0.8793774319066148,    0.07003891050583658,
-                                        0.24980544747081712,   -0.0031128404669260694,
-                                        0.6233463035019455,    -0.026459143968871595,
-                                        2.0,                   0.1,
-                                        6.248249027237354,     0.2719844357976654,
-                                        0.7194170575332381,    -0.01831314754114669,
-                                        0.1212375092639108,    0.02522449751055713,
-                                        6.0,                   -0.2,
-                                        0.7097276264591441,    -0.4443579766536965,
-                                        4.999337315778741,     0.6013141870887196,
-                                        0.26158183940834034,   0.23245112532996867,
-                                        4.0,                   -0.6,
-                                        4.440466926070039,     -1.7525291828793774,
-                                        0.840192589866152,     1.5044529443071093,
-                                        1.0698651110730424,    -0.10853319738453365};
+  std::vector<StdComp,
+              CUDAHostAllocator<StdComp>> lu = {{8.0,                   0.5},
+                                                {0.8793774319066148,    0.07003891050583658},
+                                                {0.24980544747081712,   -0.0031128404669260694},
+                                                {0.6233463035019455,    -0.026459143968871595},
+                                                {2.0,                   0.1},
+                                                {6.248249027237354,     0.2719844357976654},
+                                                {0.7194170575332381,    -0.01831314754114669},
+                                                {0.1212375092639108,    0.02522449751055713},
+                                                {6.0,                   -0.2},
+                                                {0.7097276264591441,    -0.4443579766536965},
+                                                {4.999337315778741,     0.6013141870887196},
+                                                {0.26158183940834034,   0.23245112532996867},
+                                                {4.0,                   -0.6},
+                                                {4.440466926070039,     -1.7525291828793774},
+                                                {0.840192589866152,     1.5044529443071093},
+                                                {1.0698651110730424,    -0.10853319738453365}};
   // clang-format on
-  std::complex<double>* dev_lu;
-  cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 32), "cudaMalloc failed");
-  void* vp_lus;
-  cudaErrorCheck(cudaMallocHost(&vp_lus, sizeof(double**)), "cudaMallocHost failed");
-  std::complex<double>** lus = new (vp_lus) std::complex<double>* [1] { nullptr };
-  lus[0]                     = dev_lu;
-  std::complex<double>** dev_lus;
-  cudaErrorCheck(cudaMalloc((void**)&dev_lus, sizeof(double**)), "cudaMallocHost failed");
+  std::vector<StdComp, CUDAAllocator<StdComp>> dev_lu(lu.size());
+  std::vector<StdComp*, CUDAHostAllocator<StdComp*>> lus(batch_size);
+  lus[0] = dev_lu.data();
+  std::vector<StdComp*, CUDAAllocator<StdComp*>> dev_lus(batch_size);
 
-  std::complex<double>* log_values;
-  cudaErrorCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1), "cudaMallocHost failed");
-  std::complex<double>* dev_log_values;
+  std::vector<StdComp, CUDAHostAllocator<StdComp>> log_values(batch_size);
+  std::vector<StdComp, CUDAAllocator<StdComp>> dev_log_values(batch_size);
 
-  cudaErrorCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1), "cudaMalloc failed");
+  std::vector<int, CUDAHostAllocator<int>> pivots = {3, 4, 3, 4};
+  std::vector<int, CUDAAllocator<int>> dev_pivots(4);
 
-  void* vp_pivots;
-  cudaErrorCheck(cudaMallocHost((void**)&vp_pivots, sizeof(int) * 4), "cudaMallocHost failed");
-  int* pivots = new (vp_pivots) int[4]{3, 4, 3, 4};
-  int* dev_pivots;
-  cudaErrorCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4), "cudaMalloc failed");
-
-  cudaErrorCheck(cudaMemcpyAsync(dev_lu, lu, sizeof(double) * 32, cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(dev_lu.data(), lu.data(), sizeof(double) * 32, cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying log_values to device");
-
-  cudaErrorCheck(cudaMemcpyAsync(dev_lus, lus, sizeof(double*), cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(dev_lus.data(), lus.data(), sizeof(double*), cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying lus to device");
-  cudaErrorCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(dev_pivots.data(), pivots.data(), sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying log_values to device");
 
-  cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus, dev_pivots, dev_log_values, batch_size);
+  cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus.data(), dev_pivots.data(),
+                                   dev_log_values.data(), batch_size);
 
-  cudaErrorCheck(cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost,
-                                 hstream),
+  cudaErrorCheck(cudaMemcpyAsync(log_values.data(), dev_log_values.data(), sizeof(StdComp) * batch_size,
+                                 cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying log_values from device");
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
-
-  CHECK(log_values[0] == ComplexApprox(std::complex<double>{5.603777579195571, -6.1586603331188225}));
-
-  // There are no destructors to call since all the inplace news were on POD arrays.
-  cudaCheck(cudaFree(dev_pivots));
-  cudaCheck(cudaFreeHost(vp_pivots));
-  cudaCheck(cudaFree(dev_log_values));
-  cudaCheck(cudaFreeHost(log_values));
-  cudaCheck(cudaFree(dev_lus));
-  cudaCheck(cudaFreeHost(vp_lus));
-  cudaCheck(cudaFree(dev_lu));
-  cudaCheck(cudaFreeHost(lu));
+  CHECK(log_values[0] == ComplexApprox(StdComp{5.603777579195571, -6.1586603331188225}));
 }
 
 /** while this working is a good test, in production code its likely we want to
@@ -212,58 +176,38 @@ TEST_CASE("cuBLAS_LU::computeLogDet_float", "[wavefunction][CUDA]")
   int batch_size    = 1;
   auto& hstream     = cuda_handles->hstream;
 
-  // The calls in cuBLAS_LU still care about type
-  // being very careful and clear here.
-  void* vp_lu = nullptr;
-  cudaCheck(cudaMallocHost(&vp_lu, sizeof(float) * 16));
-  // This is from numpy which did the LU factorization using float128
-  float* lu = new (vp_lu) float[16]{7., 0.28571429, 0.71428571, 0.71428571,  5., 3.57142857, 0.12, -0.44,
-                                    6., 6.28571429, -1.04,      -0.46153846, 6., 5.28571429, 3.08, 7.46153846};
-  float* dev_lu;
-  cudaCheck(cudaMalloc((void**)&dev_lu, sizeof(float) * 16));
-  void* vp_lus;
-  cudaCheck(cudaMallocHost(&vp_lus, sizeof(float**)));
-  float** lus = new (vp_lus) float* [batch_size] { nullptr };
-  lus[0]      = dev_lu;
-  float** dev_lus;
-  cudaCheck(cudaMalloc((void**)&dev_lus, sizeof(float**)));
+  // clang-format off
+  std::vector<float, CUDAHostAllocator<float>> lu = {7.,      0.28571429,  0.71428571, 0.71428571,
+                                                       5.,      3.57142857,  0.12,       -0.44,
+                                                       6.,      6.28571429,  -1.04,      -0.46153846,
+                                                       6.,      5.28571429,  3.08,       7.46153846};
+  // clang-format on
+  std::vector<float, CUDAAllocator<float>> dev_lu(lu.size());
 
-  std::complex<double>* log_values;
-  cudaCheck(cudaMallocHost((void**)&log_values, sizeof(std::complex<double>) * 1));
-  std::complex<double>* dev_log_values;
-  cudaCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 1));
-  CUDAfill_n(dev_log_values, batch_size, {0, 0});
+  std::vector<float*, CUDAHostAllocator<float*>> lus(batch_size, nullptr);
+  lus[0] = dev_lu.data();
+  std::vector<float*, CUDAAllocator<float*>> dev_lus(batch_size);
 
-  void* vp_pivots;
-  cudaCheck(cudaMallocHost(&vp_pivots, sizeof(int) * 4));
-  int* pivots = new (vp_pivots) int[4]{3, 3, 4, 4};
-  int* dev_pivots;
-  cudaCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4));
+  using StdComp = std::complex<double>;
+  std::vector<StdComp, CUDAHostAllocator<StdComp>> log_values(batch_size, 0.0);
+  std::vector<StdComp, CUDAAllocator<StdComp>> dev_log_values(batch_size, 0.0);
+
+  std::vector<int, CUDAHostAllocator<int>> pivots = {3, 3, 4, 4};
+  std::vector<int, CUDAAllocator<int>> dev_pivots(4);
 
   // Transfer and run kernel.
-  cudaCheck(cudaMemcpyAsync(dev_lu, lu, sizeof(float) * 16, cudaMemcpyHostToDevice, hstream));
-  cudaCheck(cudaMemcpyAsync(dev_lus, lus, sizeof(float**), cudaMemcpyHostToDevice, hstream));
-  cudaCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream));
+  cudaCheck(cudaMemcpyAsync(dev_lu.data(), lu.data(), sizeof(float) * 16, cudaMemcpyHostToDevice, hstream));
+  cudaCheck(cudaMemcpyAsync(dev_lus.data(), lus.data(), sizeof(float**), cudaMemcpyHostToDevice, hstream));
+  cudaCheck(cudaMemcpyAsync(dev_pivots.data(), pivots.data(), sizeof(int) * 4, cudaMemcpyHostToDevice, hstream));
 
   // The types of the pointers passed here matter
-  cuBLAS_LU::computeLogDet_batched(hstream, n, lda, dev_lus, dev_pivots, dev_log_values, batch_size);
+  cuBLAS_LU::computeLogDet_batched(hstream, n, lda, dev_lus.data(), dev_pivots.data(), dev_log_values.data(),
+                                   batch_size);
 
-  cudaCheck(
-      cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 1, cudaMemcpyDeviceToHost, hstream));
+  cudaCheck(cudaMemcpyAsync(log_values.data(), dev_log_values.data(), sizeof(std::complex<double>) * batch_size,
+                            cudaMemcpyDeviceToHost, hstream));
   cudaCheck(cudaStreamSynchronize(hstream));
-
-
-  CHECK(*log_values == ComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
-
-  // Free memory
-  cudaCheck(cudaFree(dev_pivots));
-  cudaCheck(cudaFreeHost(vp_pivots));
-  cudaCheck(cudaFree(dev_log_values));
-  cudaCheck(cudaFreeHost(log_values));
-  cudaCheck(cudaFree(dev_lus));
-  cudaCheck(cudaFreeHost(vp_lus));
-  cudaCheck(cudaFree(dev_lu));
-  cudaCheck(cudaFreeHost(lu));
+  CHECK(log_values[0] == ComplexApprox(std::complex<double>{5.267858159063328, 6.283185307179586}));
 }
 
 TEST_CASE("cuBLAS_LU::computeLogDet(batch=2)", "[wavefunction][CUDA]")
@@ -272,101 +216,79 @@ TEST_CASE("cuBLAS_LU::computeLogDet(batch=2)", "[wavefunction][CUDA]")
   int n             = 4;
   int lda           = 4;
   auto& hstream     = cuda_handles->hstream;
+  int batch_size    = 2;
 
-  void* vp_lu = nullptr;
+  using StdComp = std::complex<double>;
   // clang-format off
-  cudaErrorCheck(cudaMallocHost(&vp_lu, sizeof(double) * 64), "cudaMallocHost failed");
-  double* lu   = new (vp_lu) double[32]{8.0,                   0.5,
-                                        0.8793774319066148,    0.07003891050583658,
-                                        0.24980544747081712,   -0.0031128404669260694,
-                                        0.6233463035019455,    -0.026459143968871595,
-                                        2.0,                   0.1,
-                                        6.248249027237354,     0.2719844357976654,
-                                        0.7194170575332381,    -0.01831314754114669,
-                                        0.1212375092639108,    0.02522449751055713,
-                                        6.0,                   -0.2,
-                                        0.7097276264591441,    -0.4443579766536965,
-                                        4.999337315778741,     0.6013141870887196,
-                                        0.26158183940834034,   0.23245112532996867,
-                                        4.0,                   -0.6,
-                                        4.440466926070039,     -1.7525291828793774,
-                                        0.840192589866152,     1.5044529443071093,
-                                        1.0698651110730424,    -0.10853319738453365};
-  void* vp_lu2 = reinterpret_cast<void*>(lu + 32);
-  double* lu2  = new (vp_lu2) double[32]{8.0, 0.5,
-					 0.8793774319066148, 0.07003891050583658,
-					 0.49883268482490273, -0.01867704280155642,
-					 0.24980544747081712, -0.0031128404669260694,
-					 2.0, 0.1,
-					 6.248249027237354, 0.2719844357976654,
-					 0.800088933543564, -0.004823898651572499,
-					 0.2401906003014191, 0.0025474386841018853,
-					 3.0, -0.2,
-					 3.3478599221789884, -0.23424124513618677,
-					 0.8297816353227319, 1.3593612303468308,
-					 0.6377685195602139, -0.6747848919351336,
-					 4.0, -0.6,
-					 4.440466926070039, -1.7525291828793774,
-					 -1.5284389377713894, 1.6976073494521235,
-					 2.7608934839023482, -1.542084179899335};
+  std::vector<StdComp,
+              CUDAHostAllocator<StdComp>> lu = {{8.0,                   0.5},
+                                             {0.8793774319066148,    0.07003891050583658},
+                                             {0.24980544747081712,   -0.0031128404669260694},
+                                             {0.6233463035019455,    -0.026459143968871595},
+                                             {2.0,                   0.1},
+                                             {6.248249027237354,     0.2719844357976654},
+                                             {0.7194170575332381,    -0.01831314754114669},
+                                             {0.1212375092639108,    0.02522449751055713},
+                                             {6.0,                   -0.2},
+                                             {0.7097276264591441,    -0.4443579766536965},
+                                             {4.999337315778741,     0.6013141870887196},
+                                             {0.26158183940834034,   0.23245112532996867},
+                                             {4.0,                   -0.6},
+                                             {4.440466926070039,     -1.7525291828793774},
+                                             {0.840192589866152,     1.5044529443071093},
+                                             {1.0698651110730424,    -0.10853319738453365}};
+  std::vector<StdComp,
+              CUDAHostAllocator<StdComp>> lu2 = {{8.0, 0.5},
+                                                 {0.8793774319066148, 0.07003891050583658},
+                                                 {0.49883268482490273, -0.01867704280155642},
+                                                 {0.24980544747081712, -0.0031128404669260694},
+                                                 {2.0, 0.1},
+                                                 {6.248249027237354, 0.2719844357976654},
+                                                 {0.800088933543564, -0.004823898651572499},
+                                                 {0.2401906003014191, 0.0025474386841018853},
+                                                 {3.0, -0.2},
+                                                 {3.3478599221789884, -0.23424124513618677},
+                                                 {0.8297816353227319, 1.3593612303468308},
+                                                 {0.6377685195602139, -0.6747848919351336},
+                                                 {4.0, -0.6},
+                                                 {4.440466926070039, -1.7525291828793774},
+                                                 {-1.5284389377713894, 1.6976073494521235},
+                                                 {2.7608934839023482, -1.542084179899335}};
   // clang-format off
-  std::complex<double>* dev_lu;
-  cudaErrorCheck(cudaMalloc((void**)&dev_lu, sizeof(double) * 64), "cudaMalloc failed");
+  std::vector<StdComp,
+              CUDAHostAllocator<StdComp>> dev_lu(lu.size());
+  std::vector<StdComp,
+              CUDAHostAllocator<StdComp>> dev_lu2(lu2.size());
+  
+  std::vector<StdComp*, CUDAHostAllocator<StdComp*>> lus(batch_size);
+  lus[0]                     = dev_lu.data();
+  lus[1]                     = dev_lu2.data();
+  std::vector<StdComp*, CUDAAllocator<StdComp*>> dev_lus(batch_size);
 
-  void* vp_lus;
-  cudaErrorCheck(cudaMallocHost(&vp_lus, sizeof(double**) * 2), "cudaMallocHost failed");
-  std::complex<double>** lus = new (vp_lus) std::complex<double>* [2] { nullptr, nullptr };
-  lus[0]                     = dev_lu;
-  lus[1]                     = dev_lu + 16;
-  std::complex<double>** dev_lus;
-  cudaErrorCheck(cudaMalloc((void**)&dev_lus, sizeof(double*) * 2), "cudaMallocHost failed");
+  std::vector<StdComp, CUDAHostAllocator<StdComp>> log_values(batch_size);
+  std::vector<StdComp, CUDAAllocator<StdComp>> dev_log_values(batch_size);
 
-  void* vp_log_values;
-  cudaErrorCheck(cudaMallocHost(&vp_log_values, sizeof(std::complex<double>) * 2), "cudaMallocHost failed");
-  // For values we expect zeroed as a side effect of a call we should poison them to test.
-  std::complex<double>* log_values =
-      reinterpret_cast<std::complex<double>*>(new (vp_log_values) double[4]{1.0, 1.0, 1.0, 1.0});
+  std::vector<int, CUDAHostAllocator<int>> pivots = {3, 4, 3, 4, 3, 4, 4, 4};
+  std::vector<int, CUDAAllocator<int>> dev_pivots(pivots.size());
 
-  std::complex<double>* dev_log_values;
-  cudaErrorCheck(cudaMalloc((void**)&dev_log_values, sizeof(std::complex<double>) * 2), "cudaMalloc failed");
-
-  void* vp_pivots;
-  cudaErrorCheck(cudaMallocHost((void**)&vp_pivots, sizeof(int) * 8), "cudaMallocHost failed");
-  int* pivots      = new (vp_pivots) int[4]{3, 4, 3, 4};
-  void* vp_pivots2 = (void*)(pivots + 4);
-  int* pivots2     = new (vp_pivots2) int[4]{3, 4, 4, 4};
-
-  int* dev_pivots;
-  cudaErrorCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 8), "cudaMalloc failed");
-
-  cudaErrorCheck(cudaMemcpyAsync(dev_lu, vp_lu, sizeof(double) * 64, cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(dev_lu.data(), lu.data(), sizeof(decltype(lu)::value_type) * lu.size(), cudaMemcpyHostToDevice, hstream),
+                 "cudaMemcpyAsync failed copying log_values to device");
+  cudaErrorCheck(cudaMemcpyAsync(dev_lu2.data(), lu2.data(), sizeof(decltype(lu2)::value_type) * lu2.size(), cudaMemcpyHostToDevice, hstream),
+                 "cudaMemcpyAsync failed copying log_values to device");
+  cudaErrorCheck(cudaMemcpyAsync(dev_lus.data(), lus.data(), sizeof(decltype(lus)::value_type) * lus.size(), cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying log_values to device");
 
-  cudaErrorCheck(cudaMemcpyAsync(dev_lus, lus, sizeof(std::complex<double>*) * 2, cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(dev_pivots.data(), pivots.data(), sizeof(int) * pivots.size(), cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying log_values to device");
 
-  cudaErrorCheck(cudaMemcpyAsync(dev_pivots, vp_pivots, sizeof(int) * 8, cudaMemcpyHostToDevice, hstream),
-                 "cudaMemcpyAsync failed copying log_values to device");
-
-  int batch_size = 2;
-
-  cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus, dev_pivots, dev_log_values, batch_size);
-  cudaErrorCheck(cudaMemcpyAsync(log_values, dev_log_values, sizeof(std::complex<double>) * 2, cudaMemcpyDeviceToHost,
+  cuBLAS_LU::computeLogDet_batched(cuda_handles->hstream, n, lda, dev_lus.data(), dev_pivots.data(), dev_log_values.data(), batch_size);
+  cudaErrorCheck(cudaMemcpyAsync(log_values.data(), dev_log_values.data(), sizeof(std::complex<double>) * 2, cudaMemcpyDeviceToHost,
                                  hstream),
                  "cudaMemcpyAsync failed copying log_values from device");
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
 
   CHECK(log_values[0] == ComplexApprox(std::complex<double>{ 5.603777579195571, -6.1586603331188225 }));
   CHECK(log_values[1] == ComplexApprox(std::complex<double>{ 5.531331998282581, -8.805487075984523  }));
-  cudaCheck(cudaFree(dev_pivots));
-  cudaCheck(cudaFreeHost(vp_pivots));
-  cudaCheck(cudaFree(dev_log_values));
-  cudaCheck(cudaFreeHost(log_values));
-  cudaCheck(cudaFree(dev_lus));
-  cudaCheck(cudaFreeHost(vp_lus));
-  cudaCheck(cudaFree(dev_lu));
-  cudaCheck(cudaFreeHost(lu));
-
 }
 
 
@@ -375,100 +297,72 @@ TEST_CASE("cuBLAS_LU::getrf_batched_complex", "[wavefunction][CUDA]")
   auto cuda_handles = std::make_unique<testing::CUDAHandles>();
   int n             = 4;
   int lda           = 4;
+  int batch_size = 1;
   auto& hstream     = cuda_handles->hstream;
 
-  void* vpM = nullptr;
-  cudaErrorCheck(cudaMallocHost(&vpM, sizeof(double) * 32), "cudaMallocHost failed");
+  using StdComp = std::complex<double>;
+  // clang-format off
+  std::vector<StdComp, CUDAHostAllocator<StdComp>> M = {{2.0, 0.1}, {5.0, 0.1},  {8.0, 0.5},  {7.0, 1.0},
+                                                        {5.0, 0.1}, {2.0, 0.2},  {2.0, 0.1},  {8.0, 0.5},
+                                                        {7.0, 0.2}, {5.0, 1.0},  {6.0, -0.2}, {6.0, -0.2},
+                                                        {5.0, 0.0}, {4.0, -0.1}, {4.0, -0.6}, {8.0, -2.0}};
+  // clang-format on    
+  std::vector<StdComp, CUDAAllocator<StdComp>> devM(M.size());
+  std::vector<StdComp*, CUDAHostAllocator<StdComp*>> Ms(batch_size);
+  std::vector<StdComp*, CUDAAllocator<StdComp*>> devMs(batch_size);
+  Ms[0] = devM.data();
 
-  // this should be read as a column major matrix by cuBLAS
-  double* M = new (vpM) double[32]{
-      2.0, 0.1, 5.0, 0.1, 8.0, 0.5,  7.0, 1.0,  5.0, 0.1, 2.0, 0.2,  2.0, 0.1,  8.0, 0.5,
-      7.0, 0.2, 5.0, 1.0, 6.0, -0.2, 6.0, -0.2, 5.0, 0.0, 4.0, -0.1, 4.0, -0.6, 8.0, -2.0,
-  };
-
-  double* devM;
-  cudaErrorCheck(cudaMalloc((void**)&devM, sizeof(double) * 32), "cudaMalloc failed");
-  std::complex<double>** Ms;
-  cudaErrorCheck(cudaMallocHost((void**)&Ms, sizeof(double*)), "cudaMallocHost failed");
-  Ms = reinterpret_cast<std::complex<double>**>(&devM);
-  std::complex<double>** devMs;
-  cudaErrorCheck(cudaMalloc((void**)&devMs, sizeof(double*)), "cudaMalloc failed");
-
-  void* vp_pivots;
-  cudaErrorCheck(cudaMallocHost((void**)&vp_pivots, sizeof(int) * 4), "cudaMallocHost failed");
-  int* pivots = new (vp_pivots) int[4]{1, 1, 1, 1};
-  int* dev_pivots;
-  cudaErrorCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4), "cudaMalloc failed");
-
-  void* vp_infos;
-  cudaErrorCheck(cudaMallocHost((void**)&vp_infos, sizeof(int) * 4), "cudaMallocHost failed");
-  int* infos = new (vp_infos) int[4]{1, 1, 1, 1};
-  int* dev_infos;
-  cudaErrorCheck(cudaMalloc((void**)&dev_infos, sizeof(int) * 4), "cudaMalloc failed");
-
-  int batch_size = 1;
-
-  cudaErrorCheck(cudaMemcpyAsync(devM, M, sizeof(double) * 32, cudaMemcpyHostToDevice, hstream),
+  std::vector<int, CUDAHostAllocator<int>> pivots = {1, 1, 1, 1};
+  std::vector<int, CUDAAllocator<int>> dev_pivots(pivots.size());
+  
+  std::vector<int, CUDAHostAllocator<int>> infos = {1, 1, 1, 1};
+  std::vector<int, CUDAAllocator<int>> dev_infos(infos.size());
+  
+  cudaErrorCheck(cudaMemcpyAsync(devM.data(), M.data(), sizeof(decltype(devM)::value_type) * devM.size(), cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying M to device");
-  cudaErrorCheck(cudaMemcpyAsync(devMs, Ms, sizeof(double*), cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(devMs.data(), Ms.data(), sizeof(decltype(devMs)::value_type) * devMs.size(), cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying Ms to device");
 
-  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, cuda_handles->hstream,  n, lda, devMs, dev_pivots, infos, dev_infos, batch_size);
+  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, cuda_handles->hstream,  n, lda, devMs.data(), dev_pivots.data(), infos.data(), dev_infos.data(), batch_size);
 
-  cudaErrorCheck(cudaMemcpyAsync(M, devM, sizeof(double) * 32, cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(M.data(), devM.data(), sizeof(decltype(devM)::value_type) * devM.size(), cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying invM from device");
-  cudaErrorCheck(cudaMemcpyAsync(pivots, dev_pivots, sizeof(int) * 4, cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(pivots.data(), dev_pivots.data(), sizeof(int) * pivots.size(), cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying pivots from device");
 
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
 
-  int real_pivot[4]{3, 4, 3, 4};
+  std::vector<int> real_pivot = {3, 4, 3, 4};
 
-  auto checkArray = [](auto* A, auto* B, int n) {
+  auto checkArray = [](auto A, auto B, int n) {
     for (int i = 0; i < n; ++i)
     {
       CHECK(A[i] == B[i]);
     }
   };
-  checkArray(real_pivot, pivots, 4);
-
-  double lu[32]{8.0,
-                0.5,
-                0.8793774319066148,
-                0.07003891050583658,
-                0.24980544747081712,
-                -0.0031128404669260694,
-                0.6233463035019455,
-                -0.026459143968871595,
-                2.0,
-                0.1,
-                6.248249027237354,
-                0.2719844357976654,
-                0.7194170575332381,
-                -0.01831314754114669,
-                0.1212375092639108,
-                0.02522449751055713,
-                6.0,
-                -0.2,
-                0.7097276264591441,
-                -0.4443579766536965,
-                4.999337315778741,
-                0.6013141870887196,
-                0.26158183940834034,
-                0.23245112532996867,
-                4.0,
-                -0.6,
-                4.440466926070039,
-                -1.7525291828793774,
-                0.840192589866152,
-                1.5044529443071093,
-                1.0698651110730424,
-                -0.10853319738453365};
-
+  checkArray(real_pivot.begin(), pivots.begin(), 4);
+  // clang-format off
+  std::vector<StdComp> lu{{8.0,                      0.5},
+                          {0.8793774319066148,       0.07003891050583658},
+                          {0.24980544747081712,      -0.0031128404669260694},
+                          {0.6233463035019455,       -0.026459143968871595},
+                          {2.0,                      0.1},
+                          {6.248249027237354,        0.2719844357976654},
+                          {0.7194170575332381,       -0.01831314754114669},
+                          {0.1212375092639108,       0.02522449751055713},
+                          {6.0,                      -0.2},
+                          {0.7097276264591441,       -0.4443579766536965},
+                          {4.999337315778741,        0.6013141870887196},
+                          {0.26158183940834034,      0.23245112532996867},
+                          {4.0,                      -0.6},
+                          {4.440466926070039,        -1.7525291828793774},
+                          {0.840192589866152,        1.5044529443071093},
+                          {1.0698651110730424,       -0.10853319738453365}};
+  // clang-format on
   // This could actually be any container that supported the concept of
   // access via operator()(i, j) and had <T, ALLOCT> template signature
-  testing::MatrixAccessor<std::complex<double>> lu_mat(reinterpret_cast<std::complex<double>*>(lu), 4, 4);
-  testing::MatrixAccessor<std::complex<double>> M_mat(reinterpret_cast<std::complex<double>*>(M), 4, 4);
+  testing::MatrixAccessor<std::complex<double>> lu_mat(lu.data(), 4, 4);
+  testing::MatrixAccessor<std::complex<double>> M_mat(M.data(), 4, 4);
   auto check_matrix_result = checkMatrix(lu_mat, M_mat);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
@@ -482,58 +376,43 @@ TEST_CASE("cuBLAS_LU::getrf_batched(batch=2)", "[wavefunction][CUDA]")
 
   int batch_size = 2;
 
-  // This is the array of double** with the dev pointer address ie (double*[])
-  double** Ms;
-  cudaErrorCheck(cudaMallocHost((void**)&Ms, sizeof(double*) * 2), "cudaMallocHost failed");
-  double** devMs;
-  cudaErrorCheck(cudaMalloc((void**)&devMs, sizeof(double*) * 2), "cudaMalloc failed");
+  std::vector<double, CUDAHostAllocator<double>> M_vec{2, 5, 7, 5, 5, 2, 5, 4, 8, 2, 6, 4, 7, 8, 6, 8};
+  std::vector<double, CUDAHostAllocator<double>> M2_vec{6, 5, 7, 5, 2, 2, 5, 4, 8, 2, 6, 4, 3, 8, 6, 8};
+  std::vector<double, CUDAAllocator<double>> devM_vec(M_vec.size());
+  std::vector<double, CUDAAllocator<double>> devM2_vec(M2_vec.size());
+  std::vector<double*, CUDAHostAllocator<double*>> Ms{devM_vec.data(), devM2_vec.data()};
+  std::vector<double*, CUDAAllocator<double*>> devMs(Ms.size());
 
-  // These are the M matrices
-  void* vpM = nullptr;
-  cudaErrorCheck(cudaMallocHost(&vpM, sizeof(double) * 16), "cudaMallocHost failed");
-  double* M = new (vpM) double[16]{2, 5, 7, 5, 5, 2, 5, 4, 8, 2, 6, 4, 7, 8, 6, 8};
-  double* devM;
-  cudaErrorCheck(cudaMalloc((void**)&devM, sizeof(double) * 16), "cudaMalloc failed");
-  void* vpM2 = nullptr;
-  cudaErrorCheck(cudaMallocHost(&vpM2, sizeof(double) * 16), "cudaMallocHost failed");
-  double* M2 = new (vpM2) double[16]{6, 5, 7, 5, 2, 2, 5, 4, 8, 2, 6, 4, 3, 8, 6, 8};
-  double* devM2;
-  cudaErrorCheck(cudaMalloc((void**)&devM2, sizeof(double) * 16), "cudaMalloc failed");
+  std::vector<int, CUDAHostAllocator<int>> pivots(8, -1.0);
+  std::vector<int, CUDAAllocator<int>> dev_pivots(pivots.size());
 
-  // Now we get their pointers on the device and store them in the host double*[]
-  *Ms       = devM;
-  *(Ms + 1) = devM2;
-
-  // Now we allocate the pivot and info arrays for both matrices
-  void* vp_pivots;
-  cudaErrorCheck(cudaMallocHost((void**)&vp_pivots, sizeof(int) * 8), "cudaMallocHost failed");
-  int* pivots = new (vp_pivots) int[8]{-1, -1, -1, -1, -1, -1, -1, -1};
-  int* dev_pivots;
-  cudaErrorCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 8), "cudaMalloc failed");
-
-  void* vp_infos;
-  cudaErrorCheck(cudaMallocHost((void**)&vp_infos, sizeof(int) * 8), "cudaMallocHost failed");
-  int* infos = new (vp_infos) int[8]{1, 1, 1, 1, 1, 1, 1, 1};
-  int* dev_infos;
-  cudaErrorCheck(cudaMalloc((void**)&dev_infos, sizeof(int) * 8), "cudaMalloc failed");
+  std::vector<int, CUDAHostAllocator<int>> infos(8, 1.0);
+  std::vector<int, CUDAAllocator<int>> dev_infos(pivots.size());
 
   //Now copy the Ms
-  cudaErrorCheck(cudaMemcpyAsync(devM, M, sizeof(double) * 16, cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(devM_vec.data(), M_vec.data(), sizeof(decltype(M_vec)::value_type) * M_vec.size(),
+                                 cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying M to device");
-  cudaErrorCheck(cudaMemcpyAsync(devM2, M2, sizeof(double) * 16, cudaMemcpyHostToDevice, hstream),
-                 "cudaMemcpyAsync failed copying M to device");
+  cudaErrorCheck(cudaMemcpyAsync(devM2_vec.data(), M2_vec.data(), sizeof(decltype(M2_vec)::value_type) * M2_vec.size(),
+                                 cudaMemcpyHostToDevice, hstream),
+                 "cudaMemcpyAsync failed copying M2 to device");
   // copy the pointer array
-  cudaErrorCheck(cudaMemcpyAsync(devMs, Ms, sizeof(double*) * 2, cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(devMs.data(), Ms.data(), sizeof(decltype(Ms)::value_type) * Ms.size(),
+                                 cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying Ms to device");
 
-  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, cuda_handles->hstream, n, lda, devMs, dev_pivots, infos, dev_infos, batch_size);
+  cuBLAS_LU::computeGetrf_batched(cuda_handles->h_cublas, cuda_handles->hstream, n, lda, devMs.data(),
+                                  dev_pivots.data(), infos.data(), dev_infos.data(), batch_size);
 
   // copy back the Ms, infos, pivots
-  cudaErrorCheck(cudaMemcpyAsync(M, devM, sizeof(double) * 16, cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(M_vec.data(), devM_vec.data(), sizeof(decltype(M_vec)::value_type) * M_vec.size(),
+                                 cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying invM from device");
-  cudaErrorCheck(cudaMemcpyAsync(M2, devM2, sizeof(double) * 16, cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(M2_vec.data(), devM2_vec.data(), sizeof(decltype(M2_vec)::value_type) * M2_vec.size(),
+                                 cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying invM from device");
-  cudaErrorCheck(cudaMemcpyAsync(pivots, dev_pivots, sizeof(int) * 8, cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(pivots.data(), dev_pivots.data(), sizeof(int) * pivots.size(), cudaMemcpyDeviceToHost,
+                                 hstream),
                  "cudaMemcpyAsync failed copying pivots from device");
 
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
@@ -557,18 +436,18 @@ TEST_CASE("cuBLAS_LU::getrf_batched(batch=2)", "[wavefunction][CUDA]")
                           6.0,                  -2.1428571428571423,
                           5.1875,               3.617647058823531};
   // clang-format on
-  int real_pivot[8]{3, 3, 4, 4, 3, 3, 3, 4};
+  std::vector<int> real_pivot{3, 3, 4, 4, 3, 3, 3, 4};
 
-  auto checkArray = [](auto* A, auto* B, int n) {
+  auto checkArray = [](auto A, auto B, int n) {
     for (int i = 0; i < n; ++i)
     {
       CHECK(A[i] == Approx(B[i]));
     }
   };
 
-  testing::MatrixAccessor<double> M_mat(M, 4, 4);
+  testing::MatrixAccessor<double> M_mat(M_vec.data(), 4, 4);
   testing::MatrixAccessor<double> lu_mat(lu.data(), 4, 4);
-  testing::MatrixAccessor<double> M2_mat(M2, 4, 4);
+  testing::MatrixAccessor<double> M2_mat(M2_vec.data(), 4, 4);
   testing::MatrixAccessor<double> lu2_mat(lu2.data(), 4, 4);
 
   checkArray(real_pivot, pivots, 8);
@@ -584,89 +463,62 @@ TEST_CASE("cuBLAS_LU::getri_batched", "[wavefunction][CUDA]")
   int n             = 4;
   int lda           = 4;
   auto& hstream     = cuda_handles->hstream;
+  int batch_size    = 1;
 
-  void* vpM = nullptr;
-  cudaErrorCheck(cudaMallocHost(&vpM, sizeof(double) * 16), "cudaMallocHost failed");
-  double* M = new (vpM) double[16]{7., 0.28571429, 0.71428571, 0.71428571,  5., 3.57142857, 0.12, -0.44,
-                                   6., 6.28571429, -1.04,      -0.46153846, 6., 5.28571429, 3.08, 7.46153846};
-  double* devM;
-  cudaErrorCheck(cudaMalloc((void**)&devM, sizeof(double) * 16), "cudaMalloc failed");
-  void* vp_Ms;
-  cudaErrorCheck(cudaMallocHost(&vp_Ms, sizeof(double*)), "cudaMallocHost failed");
-  double** Ms = new (vp_Ms) double* [1] { nullptr };
-  Ms[0]       = devM;
-  double** devMs;
-  cudaErrorCheck(cudaMalloc((void**)&devMs, sizeof(double*)), "cudaMalloc failed");
+  // clang-format off
+  std::vector<double, CUDAHostAllocator<double>> M_vec{7., 0.28571429, 0.71428571, 0.71428571,
+                                                       5., 3.57142857, 0.12,       -0.44,
+                                                       6., 6.28571429, -1.04,      -0.46153846,
+                                                       6., 5.28571429, 3.08,       7.46153846};
+  std::vector<double, CUDAAllocator<double>> devM_vec(M_vec.size());
 
-  void* vp_invM = nullptr;
-  cudaErrorCheck(cudaMallocHost(&vp_invM, sizeof(double) * 16), "cudaMallocHost failed");
-  double* invM = new (vp_invM) double[16]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  std::vector<double*, CUDAHostAllocator<double*>> Ms{devM_vec.data()};
+  std::vector<double*, CUDAAllocator<double*>> devMs(Ms.size());
 
-  double* dev_invM;
-  cudaErrorCheck(cudaMalloc((void**)&dev_invM, sizeof(double) * 16), "cudaMalloc failed");
+  std::vector<double, CUDAHostAllocator<double>> invM_vec{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  std::vector<double, CUDAHostAllocator<double>> dev_invM_vec(invM_vec.size());
 
-  void* vp_invMs;
-  cudaErrorCheck(cudaMallocHost(&vp_invMs, sizeof(double*)), "cudaMallocHost failed");
-  double** invMs = new (vp_invMs) double* [1] { nullptr };
-  invMs[0]       = dev_invM;
-  double** dev_invMs;
-  cudaErrorCheck(cudaMalloc((void**)&dev_invMs, sizeof(double*)), "cudaMalloc failed");
+  std::vector<double*, CUDAHostAllocator<double*>> invMs{dev_invM_vec.data()};
+  std::vector<double*, CUDAAllocator<double*>> dev_invMs(invMs.size());
 
-  void* vp_pivots;
-  cudaErrorCheck(cudaMallocHost((void**)&vp_pivots, sizeof(int) * 4), "cudaMallocHost failed");
-  int* pivots = new (vp_pivots) int[4]{3, 3, 4, 4};
-  int* dev_pivots;
-  cudaErrorCheck(cudaMalloc((void**)&dev_pivots, sizeof(int) * 4), "cudaMalloc failed");
+  std::vector<int, CUDAHostAllocator<int>> pivots{3, 3, 4, 4};
+  std::vector<int, CUDAAllocator<int>> dev_pivots(pivots.size());
 
-  void* vp_infos;
-  cudaErrorCheck(cudaMallocHost((void**)&vp_infos, sizeof(int) * 4), "cudaMallocHost failed");
-  int* infos = new (vp_infos) int[4]{1, 1, 1, 1};
-  int* dev_infos;
-  cudaErrorCheck(cudaMalloc((void**)&dev_infos, sizeof(int) * 4), "cudaMalloc failed");
+  std::vector<int, CUDAHostAllocator<int>> infos(4, 1.0);
+  std::vector<int, CUDAAllocator<int>> dev_infos(pivots.size());
 
-  int batch_size = 1;
-
-  cudaErrorCheck(cudaMemcpyAsync(devM, M, sizeof(double) * 16, cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(devM_vec.data(), M_vec.data(), sizeof(decltype(M_vec)::value_type) * M_vec.size(), cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying M to device");
-  cudaErrorCheck(cudaMemcpyAsync(devMs, Ms, sizeof(double*), cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(devMs.data(), Ms.data(), sizeof(double*), cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying Ms to device");
-  cudaErrorCheck(cudaMemcpyAsync(dev_invMs, invMs, sizeof(double*), cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(dev_invMs.data(), invMs.data(), sizeof(double*), cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying invMs to device");
-  cudaErrorCheck(cudaMemcpyAsync(dev_pivots, pivots, sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(dev_pivots.data(), pivots.data(), sizeof(int) * 4, cudaMemcpyHostToDevice, hstream),
                  "cudaMemcpyAsync failed copying pivots to device");
-  cuBLAS_LU::computeGetri_batched(cuda_handles->h_cublas, n, lda, devMs, invMs, dev_pivots, dev_infos, batch_size);
+  cuBLAS_LU::computeGetri_batched(cuda_handles->h_cublas, n, lda, devMs.data(), invMs.data(), dev_pivots.data(), dev_infos.data(), batch_size);
 
-  cudaErrorCheck(cudaMemcpyAsync(invM, dev_invM, sizeof(double) * 16, cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(invM_vec.data(), dev_invM_vec.data(), sizeof(double) * 16, cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying invM from device");
-  cudaErrorCheck(cudaMemcpyAsync(infos, dev_infos, sizeof(int) * 4, cudaMemcpyDeviceToHost, hstream),
+  cudaErrorCheck(cudaMemcpyAsync(infos.data(), dev_infos.data(), sizeof(int) * 4, cudaMemcpyDeviceToHost, hstream),
                  "cudaMemcpyAsync failed copying infos from device");
   cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
 
-  double invA[16]{-0.08247423, -0.26804124, 0.26804124, 0.05154639,  0.18556701,  -0.89690722, 0.39690722,  0.13402062,
-                  0.24742268,  -0.19587629, 0.19587629, -0.15463918, -0.29896907, 1.27835052,  -0.77835052, 0.06185567};
+  // clang-format off
+  std::vector<double> invA{-0.08247423, -0.26804124, 0.26804124,  0.05154639,
+                           0.18556701,  -0.89690722, 0.39690722,  0.13402062,
+                           0.24742268,  -0.19587629, 0.19587629,  -0.15463918,
+                           -0.29896907, 1.27835052,  -0.77835052, 0.06185567};
+  // clang-format on
 
-  auto checkArray = [](double* A, double* B, int n) {
+  auto checkArray = [](auto A, auto B, int n) {
     for (int i = 0; i < n; ++i)
     {
       CHECK(A[i] == Approx(B[i]));
     }
   };
 
-  cudaCheck(cudaFree(devM));
-  cudaCheck(cudaFreeHost(vpM));
-  cudaCheck(cudaFree(devMs));
-  cudaCheck(cudaFreeHost(vp_Ms));
-  cudaCheck(cudaFree(dev_invM));
-  cudaCheck(cudaFreeHost(vp_invM));
-  cudaCheck(cudaFree(dev_invMs));
-  cudaCheck(cudaFreeHost(vp_invMs));
-  cudaCheck(cudaFree(dev_pivots));
-  cudaCheck(cudaFreeHost(vp_pivots));
-  cudaCheck(cudaFree(dev_infos));
-  cudaCheck(cudaFreeHost(vp_infos));
-
-  testing::MatrixAccessor<double> invA_mat(invA, 4, 4);
-  testing::MatrixAccessor<double> invM_mat(invM, 4, 4);
+  testing::MatrixAccessor<double> invA_mat(invA.data(), 4, 4);
+  testing::MatrixAccessor<double> invM_mat(invM_vec.data(), 4, 4);
 
   auto check_matrix_result = checkMatrix(invA_mat, invM_mat);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
