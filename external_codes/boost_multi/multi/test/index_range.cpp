@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(multi_range_with_hana_literals){
 #if defined(__cpp_deduction_guides) and __cpp_deduction_guides
 	static_assert(( multi::range{integral_constant<int, 0>{}, integral_constant<int, 5>{}}.size() == integral_constant<int, 5>{} ), "!");
 	static_assert(( size(multi::range{integral_constant<int, 0>{}, integral_constant<int, 5>{}}) == integral_constant<int, 5>{} ), "!");
-	integral_constant<int, 5> five; five = 5;
+//	integral_constant<int, 5> five; five = 5;
 #endif
 }
 

@@ -264,6 +264,10 @@ struct device_pointer<const void> : base_device_pointer
   }
   bool operator==(std::nullptr_t) const { return (impl_ == nullptr); }
   bool operator!=(std::nullptr_t) const { return not operator==(nullptr); }
+
+private:
+  device_pointer(T* impl__) : impl_(impl__) {}
+  template<class> friend struct device_pointer;
 };
 
 template<>
@@ -292,8 +296,9 @@ struct device_pointer<void> : base_device_pointer
   bool operator!=(device_pointer const& other) const { return not(*this == other); }
   bool operator<=(device_pointer<T> const& other) const { return impl_ <= other.impl_; }
 
-protected:
+private:
   device_pointer(T* impl__) : impl_(impl__) {}
+  template<class> friend struct device_pointer;
 };
 
 // this class is not safe, since it allows construction of a gpu_ptr from a raw ptr
@@ -372,7 +377,7 @@ struct device_pointer : base_device_pointer
   }
   T* impl_;
 
-protected:
+private:
   device_pointer(T* impl__) : impl_(impl__) {}
 };
 

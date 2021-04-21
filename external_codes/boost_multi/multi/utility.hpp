@@ -1,12 +1,16 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2018-2020
+// © Alfredo A. Correa 2018-2021
 
 #ifndef MULTI_UTILITY_HPP
 #define MULTI_UTILITY_HPP
 
 #include "detail/layout.hpp"
+
+#if(__cplusplus >= 201703L)
+#include<iterator> // std::size in c++17
+#endif
 
 namespace boost{
 namespace multi{
@@ -313,7 +317,7 @@ constexpr auto base(T* t) noexcept{return t;}
 //inline auto base(std::complex<double>& c){return &c;}
 //inline auto base(std::complex<float>& z){return &z;}
 
-template<class T, std::enable_if_t<std::is_pod<std::decay_t<T>>{}, int> = 0>
+template<class T, std::enable_if_t<std::is_standard_layout<T>{} and std::is_trivial<T>{}, int> = 0>
 auto base(T& t){return &t;}
 
 //template<class T, std::enable_if_t<std::is_pod<std::decay_t<T>>{}, int> = 0>
@@ -470,10 +474,13 @@ constexpr dimensionality_type dimensionality(std::array<T, N> const& /*unused*/)
 template<class T, std::size_t M, std::size_t N> 
 constexpr dimensionality_type dimensionality(std::array<std::array<T, M>, N> const& arr){return 1 + dimensionality(arr[0]);}
 
+#if (__cplusplus < 201703L)
+// this conflicts with std::size in nvcc 11 and c++17
 template<class T, std::size_t N>
 constexpr auto size(std::array<T, N> const& /*arr*/){
 	return multi::size_type{N};
 }
+#endif
 
 template<class T, std::size_t N>
 constexpr auto extensions(std::array<T, N> const& /*arr*/){

@@ -45,6 +45,8 @@ BOOST_AUTO_TEST_CASE(member_array_cast_soa_aos){
 			reference(reference const&) = default;
 			reference(reference&&) = default;
 		public:
+			~reference() noexcept = default;
+		#endif
 			// NOLINTNEXTLINE(cert-oop54-cpp, fuchsia-trailing-return): simulate reference
 			auto operator=(reference const& other) -> reference& { 
 				std::tie(mass, position) = std::tie(other.mass, other.position);
@@ -52,8 +54,6 @@ BOOST_AUTO_TEST_CASE(member_array_cast_soa_aos){
 			}
 			// NOLINTNEXTLINE(fuchsia-trailing-return): simulate reference
 			auto operator=(reference&& other) noexcept -> reference&{operator=(other); return *this;}
-			~reference() noexcept = default;
-		#endif
 			auto operator==(reference const& other){return std::tie(mass, position) == std::tie(other.mass, other.position);}
 			auto operator!=(reference const& other){return std::tie(mass, position) == std::tie(other.mass, other.position);}
 		};

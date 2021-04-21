@@ -8,10 +8,19 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 
 #include "../array.hpp"
 
-#include<complex>
 #include<vector>
 
 namespace multi = boost::multi;
+
+BOOST_AUTO_TEST_CASE(multi_array_clear){
+	multi::array<double, 2> A({10, 10}, 99.);
+	A.clear();
+	BOOST_REQUIRE(A.is_empty());
+	A.reextent({20, 20}, 99.);
+	BOOST_REQUIRE(not A.is_empty());
+	clear(A).reextent({30, 30}, 88.);
+	BOOST_REQUIRE(A[15][15] == 88.);
+}
 
 BOOST_AUTO_TEST_CASE(multi_array_move){
 	std::vector<multi::array<double, 2> > Av(10, multi::array<double, 2>({4, 5}, 99.));

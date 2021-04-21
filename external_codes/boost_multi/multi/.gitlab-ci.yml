@@ -1,5 +1,5 @@
 # -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:4;-*-
-# © Alfredo A. Correa 2020
+# © Alfredo A. Correa 2020-2021
 
 image: debian:testing
 
@@ -14,6 +14,7 @@ g++-latest:
     - cmake ..
     - cmake --build .
     - ctest --output-on-failure
+    - make install
 
 g++-latest-std20:
   stage: test
@@ -38,7 +39,41 @@ g++-current-debug:
     - cmake .. -DCMAKE_BUILD_TYPE=Debug
     - cmake --build . --verbose
     - ctest --output-on-failure
-    
+
+g++-current-asan:
+  stage: test
+  script:
+    - export CXX="g++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - CXXFLAGS="-fsanitize=address" cmake .. -DCMAKE_BUILD_TYPE=Debug
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+g++-current-codecov:
+  stage: test
+  script:
+    - export CXX="g++"
+    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev curl gcovr lcov
+    - ln --symbolic --force . ../multi
+    - $CXX --version
+    - mkdir build && cd build
+    - CXXFLAGS="-ftest-coverage -fprofile-arcs --coverage -fno-inline -fno-inline-small-functions -fno-default-inline"   cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXE_LINKER_FLAGS="-lgcov --coverage" -DCMAKE_BUILD_TYPE=Debug
+    - cmake --build . --verbose
+    - ctest --output-on-failure -T Test -T Coverage
+    - gcovr --xml-pretty --exclude-unreachable-branches --print-summary -o coverage.xml --root ${CI_PROJECT_DIR}
+    - lcov --directory . --capture --output-file coverage.info
+    - lcov --remove coverage.info '/usr/*' --output-file coverage.info 
+    - lcov --list coverage.info
+  coverage: /^\s*lines:\s*\d+.\d+\%/
+  artifacts:
+    name: ${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}
+    expire_in: 2 days
+    reports:
+      cobertura: build/coverage.xml
+
 g++-current-release:
   stage: test
   script:
@@ -153,8 +188,9 @@ clang++-9-asan:
   stage: test
   script:
     - export CXX="clang++-9"
+    - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-9/bin/llvm-symbolizer
     - export CXXFLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev llvm
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 llvm-9 cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev llvm
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
@@ -240,64 +276,64 @@ clang++-11-std17:
     - cmake --build . --verbose -- --quiet --no-print-directory
     - ctest --output-on-failure
     
-icc:
-    image: meteocima/dkr-intel
-    stage: test
-    script:
-      - . /opt/intel/bin/compilervars.sh intel64
-      - export CXX="icpc"
-      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - $CXX -v
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-      - cmake --build . -- --quiet --no-print-directory
-      - export MKL_VERBOSE=1
-      - ctest --output-on-failure
+#icc:
+#    image: meteocima/dkr-intel
+#    stage: test
+#    script:
+#      - . /opt/intel/bin/compilervars.sh intel64
+#      - export CXX="icpc"
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
+#      - ln --symbolic --force . ../multi
+#      - $CXX -v
+#      - mkdir build && cd build
+#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+#      - cmake --build . -- --quiet --no-print-directory
+#      - export MKL_VERBOSE=1
+#      - ctest --output-on-failure
 
-icc-nomkl:
-    image: meteocima/dkr-intel
-    stage: test
-    script:
-      - export CXX="/opt/intel/bin/icpc"
-      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - $CXX -v
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-      - cmake --build . -- --quiet --no-print-directory
-      - export MKL_VERBOSE=1
-      - ctest --output-on-failure
-      
-icc-memcheck:
-    image: meteocima/dkr-intel
-    stage: test
-    script:
-      - . /opt/intel/bin/compilervars.sh intel64
-      - export CXX="icpc"
-      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make valgrind libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - $CXX -v
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DMEMORYCHECK_COMMAND_OPTIONS="--leak-check=full --show-reachable=yes --track-origins=yes --malloc-fill=0xEE --free-fill=0xFF --leak-check-heuristics=none -v --track-fds=yes --error-limit=no --show-below-main=yes --read-var-info=yes --gen-suppressions=all"
-      - cmake --build . -- --quiet --no-print-directory
-      - export MKL_VERBOSE=1
-      - ctest -T memcheck --output-on-failure || (cat Testing/Temporary/MemoryChecker.*.log && exit 0)
+#icc-nomkl:
+#    image: meteocima/dkr-intel
+#    stage: test
+#    script:
+#      - export CXX="/opt/intel/bin/icpc"
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
+#      - ln --symbolic --force . ../multi
+#      - $CXX -v
+#      - mkdir build && cd build
+#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+#      - cmake --build . -- --quiet --no-print-directory
+#      - export MKL_VERBOSE=1
+#      - ctest --output-on-failure
+#      
+#icc-memcheck:
+#    image: meteocima/dkr-intel
+#    stage: test
+#    script:
+#      - . /opt/intel/bin/compilervars.sh intel64
+#      - export CXX="icpc"
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make valgrind libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
+#      - ln --symbolic --force . ../multi
+#      - $CXX -v
+#      - mkdir build && cd build
+#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DMEMORYCHECK_COMMAND_OPTIONS="--leak-check=full --show-reachable=yes --track-origins=yes --malloc-fill=0xEE --free-fill=0xFF --leak-check-heuristics=none -v --track-fds=yes --error-limit=no --show-below-main=yes --read-var-info=yes --gen-suppressions=all"
+#      - cmake --build . -- --quiet --no-print-directory
+#      - export MKL_VERBOSE=1
+#      - ctest -T memcheck --output-on-failure || (cat Testing/Temporary/MemoryChecker.*.log && exit 0)
 
-icc-std17:
-    image: meteocima/dkr-intel
-    stage: test
-    script:
-      - . /opt/intel/bin/compilervars.sh intel64
-      - export CXX="icpc"
-      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - $CXX -v
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-      - cmake --build . -- --quiet --no-print-directory
-      - export MKL_VERBOSE=1
-      - ctest --output-on-failure
+#icc-std17:
+#    image: meteocima/dkr-intel
+#    stage: test
+#    script:
+#      - . /opt/intel/bin/compilervars.sh intel64
+#      - export CXX="icpc"
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
+#      - ln --symbolic --force . ../multi
+#      - $CXX -v
+#      - mkdir build && cd build
+#      - cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+#      - cmake --build . -- --quiet --no-print-directory
+#      - export MKL_VERBOSE=1
+#      - ctest --output-on-failure
 
 cuda-10.0:
     image: vistart/cuda:10.2-ubuntu20.04
@@ -400,7 +436,7 @@ qmcpack-g++:
     - cd qmcpack
     - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
     - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
-    - git subtree add --squash -P external_codes/boost_multi/multi https://gitlab.com/correaa/boost-multi.git $CI_COMMIT_BRANCH
+    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH # e.g. https://gitlab.com/correaa/boost-multi.git
     - cd build
     - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DBUILD_PPCONVERT=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Werror" -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" ..
     - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
@@ -417,7 +453,7 @@ qmcpack-cuda-11.2-compileonly:
       - cd qmcpack
       - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
       - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
-      - git subtree add --squash -P external_codes/boost_multi/multi https://gitlab.com/correaa/boost-multi.git $CI_COMMIT_BRANCH
+      - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH # e.g. https://gitlab.com/correaa/boost-multi.git
       - cd build
       - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DBUILD_PPCONVERT=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 ..
       - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
@@ -426,7 +462,7 @@ qmcpack-cuda-11.2-compileonly:
 inq-g++-latest:
   stage: test
   script:
-    - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ cmake make git ca-certificates
+    - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config cmake make git ca-certificates
     - git clone --recurse-submodules --remote-submodules https://gitlab.com/npneq/inq.git
     - cd inq
     - cd external_libs/multi
@@ -443,7 +479,7 @@ inq-cuda-11.2-compileonly:
     stage: test
     script:
       - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ cmake make git ca-certificates
+      - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config cmake make git ca-certificates
       - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
       - cd inq
       - cd external_libs/multi
@@ -458,7 +494,7 @@ inq-cuda-11.2-compileonly:
       - ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda
       - make silicon
 
-g++-runner:
+g++-codecov-runner:
     stage: test
     tags:
       - intel_compiler
@@ -467,36 +503,40 @@ g++-runner:
       - $CXX --version
       - mkdir build && cd build
       - cmake --version
+      - CXXFLAGS="-ftest-coverage -fprofile-arcs --coverage" cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_EXE_LINKER_FLAGS="-lgcov --coverage"
+      - cmake --build . -j 12
+      - ctest --output-on-failure -T Test -T Coverage #      - gcovr --xml-pretty --exclude-unreachable-branches --print-summary -o coverage.xml --root ${CI_PROJECT_DIR}
+      - lcov --directory . --capture --output-file coverage.info
+      - lcov --remove coverage.info '/usr/*' --output-file coverage.info 
+      - lcov --list coverage.info
+      - bash <(curl -s https://codecov.io/bash) -t 999feb5b-a599-4d02-b9c5-46d977247f3a || echo "Codecov did not collect coverage reports"
+
+icpc-nomkl-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - export CXX="/opt/intel/system_studio_2020/bin/icpc"
+      - $CXX --version
+      - mkdir build && cd build
       - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
       - cmake --build . -j 12
+      - export MKL_VERBOSE=1
       - ctest --output-on-failure
 
-#icpc-nomkl-runner:
-#    stage: test
-#    tags:
-#      - intel_compiler
-#    script:
-#      - export CXX="/opt/intel/system_studio_2020/bin/icpc"
-#      - $CXX --version
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -j 12
-#      - export MKL_VERBOSE=1
-#      - ctest --output-on-failure
-
-#icpc-runner:
-#    stage: test
-#    tags:
-#      - intel_compiler
-#    script:
-#      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
-#      - export CXX="icpc"
-#      - $CXX --version
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -j 12
-#      - export MKL_VERBOSE=1
-#      - ctest --output-on-failure
+icpc-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
+      - export CXX="icpc"
+      - $CXX --version
+      - mkdir build && cd build
+      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+      - cmake --build . -j 12
+      - export MKL_VERBOSE=1
+      - ctest --output-on-failure
 
 #icpc-memcheck-runner:
 #    stage: test

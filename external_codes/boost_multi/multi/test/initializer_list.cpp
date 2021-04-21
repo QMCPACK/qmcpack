@@ -103,8 +103,9 @@ BOOST_AUTO_TEST_CASE(multi_initialize_from_carray_1d){
 	}
 	{
 #if defined(__cpp_deduction_guides)
-		multi::array A = {1.1, 2.2, 3.3}; // warning: ISO C++ forbids compound-literals [-Wpedantic]
-		BOOST_REQUIRE( size(A)==3 and A[1] == 2.2 );
+//		multi::array A = {{1.1, 2.2, 3.3}};
+//		static_assert( decltype(A)::dimensionality == 1 , "!");
+//		BOOST_REQUIRE( size(A)==3 and A[1] == 2.2 );
 #endif
 	}
 	{
@@ -194,6 +195,12 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_2d){
 		};
 		multi::static_array<double, 2> const A(std::begin(staticA), std::end(staticA));
 		BOOST_REQUIRE(( A == multi::array<double, 2>{
+				{ 1.2,  2.4},
+				{11.2, 34.4},
+				{15.2, 32.4}
+			}
+		));
+		BOOST_REQUIRE(not( A != multi::array<double, 2>{
 				{ 1.2,  2.4},
 				{11.2, 34.4},
 				{15.2, 32.4}

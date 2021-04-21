@@ -38,7 +38,7 @@ public:
 	auto operator=(involuted const&) -> involuted& = default; // NOLINT(fuchsia-trailing-return): simulate reference
 	auto operator=(involuted&&     ) noexcept -> involuted& = default; // NOLINT(fuchsia-trailing-return): simulate reference
 #endif
-	auto operator=(decay_type const& other)& -> involuted&{ // NOLINT(fuchsia-trailing-return): simulate reference
+	auto operator=(decay_type const& other) -> involuted&{ // NOLINT(fuchsia-trailing-return): simulate reference
 		r_ = Involution{}(other);
 		return *this;
 	}

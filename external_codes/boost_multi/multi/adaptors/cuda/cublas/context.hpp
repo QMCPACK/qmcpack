@@ -143,6 +143,36 @@ public:
 	void trsm(char side, char ul, char transA, char diag, ssize_t m, ssize_t n, ALPHA alpha, AAP aa, ssize_t lda, BBP bb, ssize_t ldb){
 		sync_call<cublasZtrsm>(cublas::side{side}, cublas::filling{ul}, cublas::operation{transA}, cublas::diagonal{diag}, m, n, (cuDoubleComplex const*)&alpha, (cuDoubleComplex const*)raw_pointer_cast(aa), lda, (cuDoubleComplex*)raw_pointer_cast(bb), ldb);
 	}
+	template<
+		class XXP, class XX = typename std::pointer_traits<XXP>::element_type,
+		class YYP, class YY = typename std::pointer_traits<YYP>::element_type,
+		class RRP, class RR = typename std::pointer_traits<RRP>::element_type,
+		std::enable_if_t<
+			is_d<XX>{} and is_d<YY>{} and is_d<RR>{} and is_assignable<RR&, decltype(XX{}*YY{})>{} and
+			is_convertible_v<XXP, memory::cuda::ptr<XX>> and is_convertible_v<YYP, memory::cuda::ptr<YY>> and is_convertible_v<RRP, RR*>
+		, int> =0
+	>
+	void dot(int n, XXP xx, int incx, YYP yy, int incy, RRP rr){
+		cublasPointerMode_t mode;
+		auto s = cublasGetPointerMode(get(), &mode); assert( s == CUBLAS_STATUS_SUCCESS );
+		assert( mode == CUBLAS_POINTER_MODE_HOST );
+		sync_call<cublasDdot>(n, raw_pointer_cast(xx), incx, raw_pointer_cast(yy), incy, rr);
+	}
+	template<
+		class XXP, class XX = typename std::pointer_traits<XXP>::element_type,
+		class YYP, class YY = typename std::pointer_traits<YYP>::element_type,
+		class RRP, class RR = typename std::pointer_traits<RRP>::element_type,
+		std::enable_if_t<
+			is_z<XX>{} and is_z<YY>{} and is_z<RR>{} and is_assignable<RR&, decltype(XX{}*YY{})>{} and
+			is_convertible_v<XXP, memory::cuda::ptr<XX>> and is_convertible_v<YYP, memory::cuda::ptr<YY>> and is_convertible_v<RRP, RR*>
+		, int> =0
+	>
+	void dotc(int n, XXP xx, int incx, YYP yy, int incy, RRP rr){
+		cublasPointerMode_t mode;
+		auto s = cublasGetPointerMode(get(), &mode); assert( s == CUBLAS_STATUS_SUCCESS );
+		assert( mode == CUBLAS_POINTER_MODE_HOST );
+		sync_call<cublasZdotc>(n, (cuDoubleComplex const*)raw_pointer_cast(xx), incx, (cuDoubleComplex const*)raw_pointer_cast(yy), incy, (cuDoubleComplex*)rr);
+	}
 //	template<class ALPHA, class AAP, class AA = typename pointer_traits<AAP>::element_type, class BETA, class CCP, class CC = typename pointer_traits<CCP>::element_type,
 //		std::enable_if_t<
 //			is_z<AA>{} and is_z<CC>{} and is_d<ALPHA>{} and is_d<BETA>{} and is_assignable<CC&, decltype(ALPHA{}*AA{}*AA{})>{} and

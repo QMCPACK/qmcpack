@@ -210,7 +210,7 @@ struct basic_array_ptr :
 	constexpr bool operator==(basic_array_ptr const& o) const{return base_==o.base_ and layout()==o.layout();}
 	template<class O> constexpr bool operator==(O const& o) const{return base()==o->base() and layout() == o->layout();}
 	template<class O> constexpr bool operator!=(O const& o) const{return not ((*this)==o);}
-	template<class O, std::enable_if_t<not std::is_base_of<basic_array_ptr, O>{}, int> =0> friend constexpr bool operator==(O const& o, basic_array_ptr const& s){return s==o;}
+	template<class O, std::enable_if_t<not std::is_base_of<basic_array_ptr, O>{}, int> =0> friend constexpr bool operator==(O const& o, basic_array_ptr const& s){return s.operator==(o);}
 	template<class O, std::enable_if_t<not std::is_base_of<basic_array_ptr, O>{}, int> =0> friend constexpr bool operator!=(O const& o, basic_array_ptr const& s){return not(o==s);}
 protected:
 	constexpr void increment(){base_ += Ref::nelems();}
@@ -900,11 +900,15 @@ public:
 	friend constexpr void swap(basic_array&& a, basic_array&& b){std::move(a).swap(std::move(b));}
 	template<class Array> constexpr void swap(basic_array const& s, Array&& a){s.swap(a);}
 	template<class Array> constexpr void swap(Array&& a, basic_array const& s){s.swap(a);}
-	template<class Array>//, std::enable_if_t<std::is_same<Array, basic_array>{}, int> =0> 
+	template<class Array>
 	constexpr auto operator==(Array const& o) const&
-	->decltype((this->extension()==o.extension()) and adl_equal(this->begin(), this->end(), adl_begin(o))){
-		return (this->extension()==o.extension()) and adl_equal(this->begin(), this->end(), adl_begin(o));}
-	template<class Array> constexpr bool operator!=(Array const& o) const&{return not((*this)==o);}
+	->decltype(this->extension()==o.extension() and adl_equal(this->begin(), this->end(), adl_begin(o))){
+		return this->extension()==o.extension() and adl_equal(this->begin(), this->end(), adl_begin(o));}
+	template<class Array>
+	constexpr auto operator!=(Array const& o) const&
+	->decltype(not (this->extension()==o.extension() and adl_equal(this->begin(), this->end(), adl_begin(o)))){
+		return not (this->extension()==o.extension() and adl_equal(this->begin(), this->end(), adl_begin(o)));}
+
 	template<class TT, class... As>
 	constexpr bool operator==(basic_array<TT, D, As...> const& o) const&{
 		return (this->extension()==o.extension()) and adl_equal(this->begin(), this->end(), adl_begin(o));		
@@ -1439,10 +1443,10 @@ public:
 	->decltype(adl_copy_n(f, this->size(), std::declval<iterator>()), void()){
 		return adl_copy_n(f, this->size(), std::move(*this).begin()), void();}
 
-	template<typename Array>//, typename = std::enable_if_t<not std::is_base_of<basic_array, Array>{}> >
-	constexpr bool operator==(Array const& o) const&{ // TODO assert extensions are equal?
-		return (this->extension()==extension(o)) and adl_equal(this->begin(), this->end(), adl_begin(o));
-	}
+	template<typename Array>
+	constexpr auto operator==(Array const& o) const& -> bool{
+//	->decltype((this->extension()==extension(o)) and adl_equal(typename basic_array::const_iterator{}, typename basic_array::const_iterator{}, adl_begin(o))){ // TODO assert extensions are equal?
+		return (this->extension()==extension(o)) and adl_equal(this->begin(), this->end(), adl_begin(o));}
 	
 	constexpr bool operator<(basic_array const& o) const&{return lexicographical_compare(*this, o);}//operator< <basic_array const&>(o);}
 	template<class Array> constexpr void swap(Array&& o)&&{assert(this->extension() == o.extension());
