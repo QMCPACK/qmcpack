@@ -9,8 +9,11 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+
 #ifndef QMCPLUSPLUS_CUDA_TYPE_MAPPING_HPP
 #define QMCPLUSPLUS_CUDA_TYPE_MAPPING_HPP
+
+#include <type_traits>
 
 namespace qmcplusplus
 {
