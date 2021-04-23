@@ -21,7 +21,7 @@ ENDIF()
 
 IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-sho-vmc
-    "${CMAKE_SOURCE_DIR}/tests/models/sho"
+    "${qmcpack_SOURCE_DIR}/tests/models/sho"
     m5
     vmc_sho.xml
     1 16
@@ -30,14 +30,14 @@ IF(NOT QMC_CUDA)
   )
   
   SIMPLE_RUN_AND_CHECK(short-sho-grad_lap
-    "${CMAKE_SOURCE_DIR}/tests/models/sho"
+    "${qmcpack_SOURCE_DIR}/tests/models/sho"
     grad_lap.xml
     1 1
     check_grad_lap.py
   )
 
   QMC_RUN_AND_CHECK(short-grid_ext_pot-vmc
-    "${CMAKE_SOURCE_DIR}/tests/models/grid_external_potential"
+    "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
     grid_ext_pot
     vmc_grid_ext_pot.xml
     1 16

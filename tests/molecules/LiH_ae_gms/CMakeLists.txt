@@ -15,7 +15,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LIH_SHORT "eeenergy" "3.488823 0.00086") # e-e energy
   LIST(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   QMC_RUN_AND_CHECK(short-LiH_ae_gms-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
                     vmc_short_noj
                     vmc_short_noj.in.xml
                     1 16
@@ -28,7 +28,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LIH_LONG "eeenergy" "3.488823 0.00027") # e-e energy
   LIST(APPEND LIH_LONG "samples" "96000000 0.0") # samples
   QMC_RUN_AND_CHECK(long-LiH_ae_qp-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
                     vmc_long_noj
                     vmc_long_noj.in.xml
                     1 16
@@ -43,7 +43,7 @@ IF (NOT QMC_CUDA)
   if (add_tests)
     SIMPLE_RUN_AND_CHECK(
       short-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi
-      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
       vmc_noj_edens_vor_short.in.xml
       4 4
       check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_noj_edens_vor_short -r qmc-ref/vmc_noj_edens_vor_short.s000.stat_ref_energydensity.dat
@@ -51,7 +51,7 @@ IF (NOT QMC_CUDA)
 
     SIMPLE_RUN_AND_CHECK(
       long-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi
-      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_gms"
       vmc_noj_edens_vor_long.in.xml
       4 4
       check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_noj_edens_vor_long -r qmc-ref/vmc_noj_edens_vor_long.s000.stat_ref_energydensity.dat

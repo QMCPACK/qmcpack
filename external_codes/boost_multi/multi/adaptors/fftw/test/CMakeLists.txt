@@ -9,7 +9,7 @@
 #]=]
 cmake_minimum_required(VERSION 3.11)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${qmcpack_SOURCE_DIR}/cmake")
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 

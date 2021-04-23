@@ -56,8 +56,8 @@ function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check
 
 endfunction()
 
-RUN_RESTART_AND_CHECK( restart "${CMAKE_SOURCE_DIR}/tests/io/restart" qmc_short 8 2 check.sh false)
-RUN_RESTART_AND_CHECK( restart "${CMAKE_SOURCE_DIR}/tests/io/restart" qmc_short 1 16 check.sh true)
+RUN_RESTART_AND_CHECK( restart "${qmcpack_SOURCE_DIR}/tests/io/restart" qmc_short 8 2 check.sh false)
+RUN_RESTART_AND_CHECK( restart "${qmcpack_SOURCE_DIR}/tests/io/restart" qmc_short 1 16 check.sh true)
 
-RUN_RESTART_AND_CHECK( save_coefs "${CMAKE_SOURCE_DIR}/tests/io/save_coefs" qmc_short 8 2 check.sh false)
-RUN_RESTART_AND_CHECK( save_coefs "${CMAKE_SOURCE_DIR}/tests/io/save_coefs" qmc_short 1 16 check.sh true)
+RUN_RESTART_AND_CHECK( save_coefs "${qmcpack_SOURCE_DIR}/tests/io/save_coefs" qmc_short 8 2 check.sh false)
+RUN_RESTART_AND_CHECK( save_coefs "${qmcpack_SOURCE_DIR}/tests/io/save_coefs" qmc_short 1 16 check.sh true)

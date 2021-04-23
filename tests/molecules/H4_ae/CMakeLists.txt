@@ -8,7 +8,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H4_OPT_SCALARS "totenergy" "-2.140786 0.0009") # total energy
 
   QMC_RUN_AND_CHECK(short-H4-opt-linear
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-linear
                     optm-linear.xml
                     16 1
@@ -17,7 +17,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-H4-opt-linear-rescale
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-linear-rescale
                     optm-linear-rescale.xml
                     4 4
@@ -26,7 +26,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-H4-opt-linear-linemin
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-linear-linemin
                     optm-linear-linemin.xml
                     16 1
@@ -35,7 +35,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-H4-opt-cslinear-quartic
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-cslinear-quartic
                     optm-cslinear-quartic.xml
                     4 4
@@ -44,7 +44,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-H4-opt-cslinear-rescale
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-cslinear-rescale
                     optm-cslinear-rescale.xml
                     16 1
@@ -53,7 +53,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-H4-opt-cslinear-linemin
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-cslinear-linemin
                     optm-cslinear-linemin.xml
                     16 1
@@ -63,7 +63,7 @@ IF (NOT QMC_CUDA)
 
   IF(BUILD_LMYENGINE_INTERFACE)
     QMC_RUN_AND_CHECK(short-H4-opt-adaptive
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4-adaptive
                       optm-adaptive.xml
                       16 1
@@ -72,7 +72,7 @@ IF (NOT QMC_CUDA)
                       )
 
     QMC_RUN_AND_CHECK(short-H4-opt-adaptive
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4-adaptive
                       optm-adaptive.xml
                       1 16
@@ -86,7 +86,7 @@ IF (NOT QMC_CUDA)
     LIST(APPEND H4_ORB_OPT_SCALARS "totenergy" "-2.0889 0.001") # total energy
 
     QMC_RUN_AND_CHECK(short-H4-RHF-orb-opt
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
                       H4_RHF_orb_opt.xml
                       16 1
@@ -95,7 +95,7 @@ IF (NOT QMC_CUDA)
                       TRUE)
 
     QMC_RUN_AND_CHECK(short-H4-orb-opt
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
                       H4_orb_opt.xml
                       16 1
@@ -104,7 +104,7 @@ IF (NOT QMC_CUDA)
                       TRUE)
 
     QMC_RUN_AND_CHECK(short-H4-orb-opt
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
                       H4_orb_opt.xml
                       1 16
@@ -119,7 +119,7 @@ IF (NOT QMC_CUDA)
     LIST(APPEND H4_ORB_OPT_DMC_SCALARS "totenergy" "-2.191461 0.0048") # total energy
 
     QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
                       H4_orb_opt_dmc.xml
                       16 1
@@ -128,7 +128,7 @@ IF (NOT QMC_CUDA)
                       TRUE)
 
     QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
                       H4_orb_opt_dmc.xml
                       1 16
@@ -142,7 +142,7 @@ IF (NOT QMC_CUDA)
     LIST(APPEND H4_CJS_SCALARS "totenergy" "-2.0438 0.0045") # total energy
 
     QMC_RUN_AND_CHECK(short-H4-cjs
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                       H4
                       H4_cjs_vmc.xml
                       16 1
@@ -158,7 +158,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H4_DESCENT_SCALARS "totenergy" "-2.047099 0.005")
 
   QMC_RUN_AND_CHECK(short-H4-descent
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-descent
                     optm-descent.xml
                     16 1
@@ -167,7 +167,7 @@ IF (NOT QMC_CUDA)
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-H4-descent
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-descent
                     optm-descent.xml
                     1 16
@@ -178,7 +178,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H4_TARGET_DESCENT_SCALARS "totenergy" "-2.04604154 0.003")
 
   QMC_RUN_AND_CHECK(short-H4-target-descent
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-target-descent
                     optm-target-descent.xml
                     16 1
@@ -187,7 +187,7 @@ IF (NOT QMC_CUDA)
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-H4-target-descent
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-target-descent
                     optm-target-descent.xml
                     1 16
@@ -198,7 +198,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H4_HYBRID_SCALARS "totenergy" "-2.140736 0.003")
 
   QMC_RUN_AND_CHECK(short-H4-hybrid
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-hybrid
                     optm-hybrid.xml
                     16 1
@@ -207,7 +207,7 @@ IF (NOT QMC_CUDA)
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-H4-hybrid
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-hybrid
                     optm-hybrid.xml
                     1 16
@@ -218,7 +218,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H4_TARGET_HYBRID_SCALARS "totenergy" "-2.13527301 0.003")
 
   QMC_RUN_AND_CHECK(short-H4-target-hybrid
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-target-hybrid
                     optm-target-hybrid.xml
                     16 1
@@ -227,7 +227,7 @@ IF (NOT QMC_CUDA)
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-H4-target-hybrid
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-target-hybrid
                     optm-target-hybrid.xml
                     1 16
@@ -236,7 +236,7 @@ IF (NOT QMC_CUDA)
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-OneShiftOnly
                     optm-OneShiftOnly.xml
                     16 1
@@ -245,7 +245,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
                     H4-OneShiftOnly
                     optm-OneShiftOnly.xml
                     1 16
