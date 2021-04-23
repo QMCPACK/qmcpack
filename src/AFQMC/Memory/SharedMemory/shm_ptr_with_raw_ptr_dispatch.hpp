@@ -59,6 +59,9 @@ struct shm_ptr_with_raw_ptr_dispatch<const void>
   }
   bool operator==(std::nullptr_t) const { return (bool)wSP_; }
   bool operator!=(std::nullptr_t) const { return not operator==(nullptr); }
+private:
+  shm_ptr_with_raw_ptr_dispatch(std::shared_ptr<mpi3::shared_window<char>> wSP) : wSP_{wSP}{}
+  template<class> friend struct shm_ptr_with_raw_ptr_dispatch;
 };
 
 template<>
@@ -121,6 +124,9 @@ struct shm_ptr_with_raw_ptr_dispatch
   T& operator*() const { return *(reinterpret_cast<T*>(wSP_->base(0) + offset)); }
   T& operator[](int idx) const { return (reinterpret_cast<T*>(wSP_->base(0) + offset))[idx]; }
   T* operator->() const { return reinterpret_cast<T*>(wSP_->base(0) + offset); }
+  operator shm_ptr_with_raw_ptr_dispatch<const void>() const{
+      return shm_ptr_with_raw_ptr_dispatch<const void>{wSP_};
+  }
   T* get() const
   {
     if (wSP_ == nullptr)
