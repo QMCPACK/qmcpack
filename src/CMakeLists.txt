@@ -24,8 +24,8 @@ INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
 
 SET(GITREV_BARE_FILE git-rev.h)
 SET(GITREV_BARE_TMP git-rev-tmp.h)
-SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
-SET(GITREV_TMP ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_TMP})
+SET(GITREV_FILE ${qmcpack_BINARY_DIR}/src/${GITREV_BARE_FILE})
+SET(GITREV_TMP ${qmcpack_BINARY_DIR}/src/${GITREV_BARE_TMP})
 
 # Always clean up git-rev-tmp.h file when cmake is run
 EXECUTE_PROCESS(
