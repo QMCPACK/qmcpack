@@ -59,6 +59,8 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/ps
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/Na.BFD.xml" ${UTEST_DIR})
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/so_ecp_test.xml" ${UTEST_DIR})
 
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/C.ccECP.xml" ${UTEST_DIR})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/N.ccECP.xml" ${UTEST_DIR})
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcham)
