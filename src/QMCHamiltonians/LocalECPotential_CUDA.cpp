@@ -123,12 +123,16 @@ void LocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Real
 }
 
 
-std::shared_ptr<OperatorBase> LocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> LocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::shared_ptr<LocalECPotential_CUDA> myclone = std::make_shared<LocalECPotential_CUDA>(IonRef, qp);
+  std::unique_ptr<LocalECPotential_CUDA> myclone = std::make_unique<LocalECPotential_CUDA>(IonRef, qp);
   for (int ig = 0; ig < PPset.size(); ++ig)
+  {
     if (PPset[ig])
+    {
       myclone->add(ig, std::unique_ptr<RadialPotentialType>(PPset[ig]->makeClone()), gZeff[ig]);
+    }
+  }
   return myclone;
 }
 

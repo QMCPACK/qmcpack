@@ -176,10 +176,10 @@ bool DensityEstimator::get(std::ostream& os) const
   return true;
 }
 
-std::shared_ptr<OperatorBase> DensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> DensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //default constructor is sufficient
-  return std::make_shared<DensityEstimator>(*this);
+  return std::make_unique<DensityEstimator>(*this);
 }
 
 void DensityEstimator::resize()

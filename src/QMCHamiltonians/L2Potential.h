@@ -86,7 +86,7 @@ struct L2Potential : public OperatorBase
     return true;
   }
 
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species

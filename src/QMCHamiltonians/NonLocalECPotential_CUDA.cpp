@@ -49,13 +49,17 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
 }
 
 
-std::shared_ptr<OperatorBase> NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::shared_ptr<NonLocalECPotential_CUDA> myclone =
-      std::make_shared<NonLocalECPotential_CUDA>(IonConfig, qp, psi, UsePBC, ComputeForces, use_DLA);
+  std::unique_ptr<NonLocalECPotential_CUDA> myclone =
+      std::make_unique<NonLocalECPotential_CUDA>(IonConfig, qp, psi, UsePBC, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
+  {
     if (PPset[ig])
+    {
       myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));
+    }
+  }
   return myclone;
 }
 

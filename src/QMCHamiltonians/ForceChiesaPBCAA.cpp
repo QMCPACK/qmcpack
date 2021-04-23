@@ -232,9 +232,9 @@ void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collec
   addObservablesF(plist);
 }
 
-std::shared_ptr<OperatorBase> ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::shared_ptr<ForceChiesaPBCAA> tmp = std::make_shared<ForceChiesaPBCAA>(PtclA, qp, false);
+  std::unique_ptr<ForceChiesaPBCAA> tmp = std::make_unique<ForceChiesaPBCAA>(PtclA, qp, false);
   tmp->Rcut                             = Rcut;    // parameter: radial distance within which estimator is used
   tmp->m_exp                            = m_exp;   // parameter: exponent in polynomial fit
   tmp->N_basis                          = N_basis; // parameter: size of polynomial basis set

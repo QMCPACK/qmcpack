@@ -42,9 +42,9 @@ void CoulombPotentialAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   }
 }
 
-std::shared_ptr<OperatorBase> CoulombPotentialAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPotentialAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return std::make_shared<CoulombPotentialAA_CUDA>(qp, true);
+  return std::make_unique<CoulombPotentialAA_CUDA>(qp, true);
 }
 
 
@@ -95,7 +95,7 @@ void CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   }
 }
 
-std::shared_ptr<OperatorBase> CoulombPotentialAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPotentialAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return std::make_shared<CoulombPotentialAB_CUDA>(Pa, qp);
 }

@@ -44,7 +44,7 @@ public:
     return true;
   }
 
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 };
 
 } // namespace qmcplusplus

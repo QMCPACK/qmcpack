@@ -78,7 +78,7 @@ public:
                            bool doForces   = false,
                            bool enable_DLA = false);
 
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
   void addEnergy(MCWalkerConfiguration& W,

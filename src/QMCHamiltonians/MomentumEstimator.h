@@ -33,7 +33,7 @@ public:
   bool putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNode);
   bool put(xmlNodePtr cur) { return false; };
   bool get(std::ostream& os) const;
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
   void setRandomGenerator(RandomGenerator_t* rng);
   //resize the internal data by input k-point list
   void resize(const std::vector<PosType>& kin, const int Min);

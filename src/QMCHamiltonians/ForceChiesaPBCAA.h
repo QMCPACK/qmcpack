@@ -97,7 +97,7 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
   void resetTargetParticleSet(ParticleSet& P);
 
 
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   bool put(xmlNodePtr cur);
 

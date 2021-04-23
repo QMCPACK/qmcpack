@@ -532,13 +532,13 @@ void EnergyDensityEstimator::setParticlePropertyList(PropertySetType& plist, int
 }
 
 
-std::shared_ptr<OperatorBase> EnergyDensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> EnergyDensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   bool write = omp_get_thread_num() == 0;
   if (write)
     app_log() << "EnergyDensityEstimator::makeClone" << std::endl;
 
-  std::shared_ptr<EnergyDensityEstimator> edclone = std::make_shared<EnergyDensityEstimator>(psetpool, defKE);
+  std::unique_ptr<EnergyDensityEstimator> edclone = std::make_unique<EnergyDensityEstimator>(psetpool, defKE);
   edclone->put(input_xml, qp);
   //int thread = omp_get_thread_num();
   //app_log()<<thread<<"make edclone"<< std::endl;

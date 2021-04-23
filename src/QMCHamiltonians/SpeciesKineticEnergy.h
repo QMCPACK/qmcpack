@@ -36,7 +36,7 @@ public:
 
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P) {}                                          // required
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
 
   // allocate multiple columns in scalar.dat
   void addObservables(PropertySetType& plist, BufferType& collectables);

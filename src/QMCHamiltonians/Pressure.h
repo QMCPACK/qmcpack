@@ -129,9 +129,9 @@ struct Pressure : public OperatorBase
     return true;
   }
 
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
   {
-    return std::make_shared<Pressure>(qp);
+    return std::make_unique<Pressure>(qp);
   }
 };
 } // namespace qmcplusplus

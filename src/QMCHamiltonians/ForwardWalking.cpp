@@ -150,10 +150,10 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
   return true;
 }
 
-std::shared_ptr<OperatorBase> ForwardWalking::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ForwardWalking::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //nothing to worry, default copy constructor will do
-  return std::make_shared<ForwardWalking>(*this);
+  return std::make_unique<ForwardWalking>(*this);
 }
 
 void ForwardWalking::addObservables(PropertySetType& plist)

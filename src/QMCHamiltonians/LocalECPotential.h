@@ -91,7 +91,7 @@ struct LocalECPotential : public OperatorBase
     return true;
   }
 
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species

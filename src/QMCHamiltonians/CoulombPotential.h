@@ -382,19 +382,19 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
 
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override
   {
     if (is_AA)
     {
       if (is_active)
-        return std::make_shared<CoulombPotential>(qp, true, ComputeForces);
+        return std::make_unique<CoulombPotential>(qp, true, ComputeForces);
       else
         // Ye Luo April 16th, 2015
         // avoid recomputing ion-ion DistanceTable when reusing ParticleSet
-        return std::make_shared<CoulombPotential>(Pa, false, ComputeForces, true);
+        return std::make_unique<CoulombPotential>(Pa, false, ComputeForces, true);
     }
     else
-      return std::make_shared<CoulombPotential>(Pa, qp, true);
+      return std::make_unique<CoulombPotential>(Pa, qp, true);
   }
 
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)

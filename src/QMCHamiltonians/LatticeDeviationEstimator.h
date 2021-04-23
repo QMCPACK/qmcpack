@@ -59,7 +59,7 @@ public:
 
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P);                                            // required
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
 
 private:
   SpeciesSet& tspecies;       // species table of target particle set

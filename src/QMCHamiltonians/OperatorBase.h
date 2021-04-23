@@ -356,7 +356,7 @@ struct OperatorBase : public QMCTraits
    */
   virtual void releaseResource(ResourceCollection& collection) {}
 
-  virtual std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
+  virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
 
   //virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
 

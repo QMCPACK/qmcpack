@@ -323,10 +323,10 @@ void MPC::initBreakup()
   app_log() << "  === MPC interaction initialized === \n\n";
 }
 
-std::shared_ptr<OperatorBase> MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // return new MPC(qp, Ecut);
-  std::shared_ptr<MPC> newMPC = std::make_shared<MPC>(*this);
+  std::unique_ptr<MPC> newMPC = std::make_unique<MPC>(*this);
   newMPC->resetTargetParticleSet(qp);
   return newMPC;
 }

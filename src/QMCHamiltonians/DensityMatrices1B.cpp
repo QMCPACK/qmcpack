@@ -56,9 +56,9 @@ DensityMatrices1B::~DensityMatrices1B()
 }
 
 
-std::shared_ptr<OperatorBase> DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
-  return std::make_shared<DensityMatrices1B>(*this, P, psi);
+  return std::make_unique<DensityMatrices1B>(*this, P, psi);
 }
 
 

@@ -215,12 +215,12 @@ void LatticeDeviationEstimator::setObservables(PropertySetType& plist)
 
 void LatticeDeviationEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
-std::shared_ptr<OperatorBase> LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // default constructor does not work with threads
   //LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(*this);
-  std::shared_ptr<LatticeDeviationEstimator> myclone =
-      std::make_shared<LatticeDeviationEstimator>(qp, spset, tgroup, sgroup);
+  std::unique_ptr<LatticeDeviationEstimator> myclone =
+      std::make_unique<LatticeDeviationEstimator>(qp, spset, tgroup, sgroup);
   myclone->put(input_xml);
   return myclone;
 }

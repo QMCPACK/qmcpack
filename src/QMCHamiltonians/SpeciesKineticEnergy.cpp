@@ -116,9 +116,9 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
   return Value;
 }
 
-std::shared_ptr<OperatorBase> SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return std::make_shared<SpeciesKineticEnergy>(*this);
+  return std::make_unique<SpeciesKineticEnergy>(*this);
 }
 
 } // namespace qmcplusplus

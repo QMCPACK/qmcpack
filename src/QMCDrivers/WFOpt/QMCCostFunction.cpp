@@ -196,14 +196,14 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
     if (H_KE_Node[ip] == 0)
     {
       H_KE_Node[ip] = new QMCHamiltonian;
-      H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"), "Kinetic");
+      H_KE_Node[ip]->addOperator(std::unique_ptr<OperatorBase>(hClones[ip]->getHamiltonian("Kinetic")), "Kinetic");
       if (includeNonlocalH != "no")
       {
-        std::shared_ptr<OperatorBase> a = hClones[ip]->getHamiltonian(includeNonlocalH);
+        std::unique_ptr<OperatorBase> a(hClones[ip]->getHamiltonian(includeNonlocalH));
         if (a)
         {
           app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-          H_KE_Node[ip]->addOperator(a, includeNonlocalH);
+          H_KE_Node[ip]->addOperator(std::move(a), includeNonlocalH);
         }
         else
           app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
@@ -268,9 +268,8 @@ void QMCCostFunction::checkConfigurations()
         HDerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
       }
     }
-    std::shared_ptr<OperatorBase> nlpp =
-        (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH);
-    bool compute_nlpp = useNLPPDeriv && nlpp;
+    OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH);
+    bool compute_nlpp  = useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
@@ -395,9 +394,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
-    std::shared_ptr<OperatorBase> nlpp =
-        (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
-    bool compute_nlpp = useNLPPDeriv && nlpp;
+    OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
+    bool compute_nlpp  = useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node

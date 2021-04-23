@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
-  
+
 /** A fake Hamiltonian to check the sampling of the trial function.
  *
  * Integrating the expression
@@ -99,9 +99,9 @@ struct ConservedEnergy : public OperatorBase
     return true;
   }
 
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
   {
-    return std::make_shared<ConservedEnergy>();
+    return std::make_unique<ConservedEnergy>();
   }
 
 #ifdef QMC_CUDA

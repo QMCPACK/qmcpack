@@ -334,9 +334,9 @@ bool StressPBC::put(xmlNodePtr cur)
   return true;
 }
 
-std::shared_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::shared_ptr<StressPBC> tmp = std::make_shared<StressPBC>(PtclA, qp, psi);
+  std::unique_ptr<StressPBC> tmp = std::make_unique<StressPBC>(PtclA, qp, psi);
   tmp->firstTimeStress           = firstTimeStress;
   tmp->stress_IonIon             = stress_IonIon;
   tmp->stress_ee_const           = stress_ee_const;

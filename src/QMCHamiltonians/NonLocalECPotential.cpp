@@ -645,10 +645,10 @@ void NonLocalECPotential::releaseResource(ResourceCollection& collection)
   collection.takebackResource(std::move(mw_res_));
 }
 
-std::shared_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::shared_ptr<NonLocalECPotential> myclone =
-      std::make_shared<NonLocalECPotential>(IonConfig, qp, psi, ComputeForces, use_DLA);
+  std::unique_ptr<NonLocalECPotential> myclone =
+      std::make_unique<NonLocalECPotential>(IonConfig, qp, psi, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
     if (PPset[ig])
       myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));

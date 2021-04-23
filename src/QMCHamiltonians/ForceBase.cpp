@@ -143,9 +143,9 @@ BareForce::BareForce(ParticleSet& ions, ParticleSet& elns) : ForceBase(ions, eln
 
 void BareForce::resetTargetParticleSet(ParticleSet& P) {}
 
-std::shared_ptr<OperatorBase> BareForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> BareForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return std::make_shared<BareForce>(*this);
+  return std::make_unique<BareForce>(*this);
 }
 
 void BareForce::addObservables(PropertySetType& plist, BufferType& collectables)

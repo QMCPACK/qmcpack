@@ -30,13 +30,14 @@ OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, 
 }
 
 
-std::shared_ptr<OperatorBase> OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+std::unique_ptr<OperatorBase> OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
   //cloning shouldn't strictly be necessary, but do it right just in case
-  std::shared_ptr<OrbitalImages> clone = std::make_shared<OrbitalImages>(*this);
+  std::unique_ptr<OrbitalImages> clone = std::make_unique<OrbitalImages>(*this);
   clone->Peln                          = &P;
   for (int i = 0; i < sposets.size(); ++i)
   {
+    //FIXME eliminate new
     clone->sposet_indices[i] = new std::vector<int>(*sposet_indices[i]);
     clone->sposets[i]        = sposets[i]->makeClone();
   }

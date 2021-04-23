@@ -161,7 +161,7 @@ public:
   ~DensityMatrices1B();
 
   //standard interface
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

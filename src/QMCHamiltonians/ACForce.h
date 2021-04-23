@@ -39,9 +39,9 @@ struct ACForce : public OperatorBase
 
   /** Cloning **/
   //We don't actually use this makeClone method.  We just put an APP_ABORT here
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
   //Not derived from base class.  But we need it to properly set the Hamiltonian reference.
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
 
   /** Initialization/assignment **/
   void resetTargetParticleSet(ParticleSet& P){};

@@ -52,10 +52,10 @@ void MPC_CUDA::initBreakup()
   //  app_log() << "    Finished copying MPC spline to GPU memory.\n";
 }
 
-std::shared_ptr<OperatorBase> MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // return new MPC(qp, Ecut);
-  std::shared_ptr<MPC_CUDA> newMPC = std::make_shared<MPC_CUDA>(*this);
+  std::unique_ptr<MPC_CUDA> newMPC = std::make_unique<MPC_CUDA>(*this);
   newMPC->resetTargetParticleSet(qp);
   return newMPC;
 }

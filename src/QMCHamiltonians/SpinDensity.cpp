@@ -53,9 +53,9 @@ void SpinDensity::reset()
 }
 
 
-std::shared_ptr<OperatorBase> SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+std::unique_ptr<OperatorBase> SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
-  return std::make_shared<SpinDensity>(*this);
+  return std::make_unique<SpinDensity>(*this);
 }
 
 

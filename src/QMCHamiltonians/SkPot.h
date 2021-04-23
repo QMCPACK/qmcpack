@@ -35,7 +35,7 @@ public:
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   inline void FillFk()
   {

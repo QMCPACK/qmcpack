@@ -221,7 +221,7 @@ public:
   ~OrbitalImages(){};
 
   //standard interface
-  std::shared_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
 
   ///read xml input
   bool put(xmlNodePtr cur);
