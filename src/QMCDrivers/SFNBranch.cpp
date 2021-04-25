@@ -139,7 +139,6 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
   R2Accepted(wc_ensemble_prop.R2Accepted);
   R2Proposed(wc_ensemble_prop.R2Proposed);
   //PopHist(pop_now);
-  vParam[SBVP::EREF] = EnergyHist.mean(); //current mean
   if (BranchMode[B_USETAUEFF])
     vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
 
@@ -147,6 +146,7 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
     EnergyHist(vParam[SBVP::ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAUEFF]);
   else
     EnergyHist(vParam[SBVP::ENOW]);
+  vParam[SBVP::EREF] = EnergyHist.mean(); //current mean
 
   if (BranchMode[B_DMCSTAGE]) // main stage
   {
