@@ -16,6 +16,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "Particle/Reptile.h"
 #include "type_traits/template_types.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -30,7 +31,7 @@ enum
   DUMMYOPT
 };
 
-SFNBranch::SFNBranch(RealType tau, int nideal) : ToDoSteps(0), myNode(NULL)
+SFNBranch::SFNBranch(RealType tau, int nideal) : WarmUpToDoSteps(0), EtrialUpdateToDoSteps(0), myNode(NULL)
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -135,43 +136,50 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
   pop_now -= wc_ensemble_prop.RNSamples;
   //current energy
   vParam[SBVP::ENOW] = wc_ensemble_prop.Energy;
-  VarianceHist(wc_ensemble_prop.Variance);
+
   R2Accepted(wc_ensemble_prop.R2Accepted);
   R2Proposed(wc_ensemble_prop.R2Proposed);
-  //PopHist(pop_now);
   if (BranchMode[B_USETAUEFF])
     vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
 
-  if (BranchMode[B_KILLNODES])
-    EnergyHist(vParam[SBVP::ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAUEFF]);
-  else
-    EnergyHist(vParam[SBVP::ENOW]);
-  vParam[SBVP::EREF] = EnergyHist.mean(); //current mean
-
-  if (BranchMode[B_DMCSTAGE]) // main stage
+  if (BranchMode[B_DMCSTAGE]) // main stage after warmup
   {
+    if (WarmUpToDoSteps != 0)
+      throw UniformCommunicateError("Bug: WarmUpToDoSteps should be 0 after warmup.");
+
+    // assuming ENOW only fluctuates around the mean (EREF) once warmup completes.
+    if (BranchMode[B_KILLNODES])
+      EnergyHist(vParam[SBVP::ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAUEFF]);
+    else
+      EnergyHist(vParam[SBVP::ENOW]);
+    VarianceHist(wc_ensemble_prop.Variance);
+    vParam[SBVP::EREF] = EnergyHist.mean(); //current mean
+
+    // update Etrial based on EREF
     if (BranchMode[B_POPCONTROL])
     {
-      if (ToDoSteps > 0)
-        --ToDoSteps;
-      else
+      --EtrialUpdateToDoSteps;
+      if (EtrialUpdateToDoSteps == 0)
       {
-        vParam[SBVP::ETRIAL] = vParam[SBVP::EREF] + vParam[SBVP::FEEDBACK] * (logN - std::log(pop_now));
-        ToDoSteps            = iParam[B_ENERGYUPDATEINTERVAL] - 1;
+        vParam[SBVP::ETRIAL]  = vParam[SBVP::EREF] + vParam[SBVP::FEEDBACK] * (logN - std::log(pop_now));
+        EtrialUpdateToDoSteps = iParam[B_ENERGYUPDATEINTERVAL];
       }
     }
     else
+    {
+      throw UniformCommunicateError("Bug: FIXME SBVP::EREF should be calculated based on weights");
+      /// FIXME
       vParam[SBVP::ETRIAL] = vParam[SBVP::EREF];
+    }
   }
   else //warmup
   {
-    if (BranchMode[B_USETAUEFF])
-      vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
+    if (WarmUpToDoSteps == 0)
+      throw UniformCommunicateError("Bug: WarmUpToDoSteps should be larger than 0 during warmup.");
+
+    // update Etrial based on ENOW as ENOW is not yet converged in warmup stage
     if (BranchMode[B_POPCONTROL])
     {
-      //RealType emix=((iParam[B_WARMUPSTEPS]-ToDoSteps)<100)?(0.25*vParam[SBVP::EREF]+0.75*vParam[SBVP::ENOW]):vParam[SBVP::EREF];
-      //vParam[SBVP::ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
-      //vParam[SBVP::ETRIAL]=vParam[SBVP::EREF]+Feedback*(logN-std::log(pop_now));
       if (BranchMode[B_KILLNODES])
         vParam[SBVP::ETRIAL] = (0.00 * vParam[SBVP::EREF] + 1.0 * vParam[SBVP::ENOW]) +
             vParam[SBVP::FEEDBACK] * (logN - std::log(pop_now)) -
@@ -180,12 +188,21 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
         vParam[SBVP::ETRIAL] = vParam[SBVP::ENOW] + (logN - std::log(pop_now)) / vParam[SBVP::TAU];
     }
     else
-      vParam[SBVP::ETRIAL] = vParam[SBVP::EREF];
-    --ToDoSteps;
-
-    if (ToDoSteps == 0) //warmup is done
     {
-      vParam[SBVP::SIGMA2] = VarianceHist.mean();
+      throw UniformCommunicateError("Bug: FIXME SBVP::EREF should be calculated based on weights");
+      /// FIXME
+      vParam[SBVP::ETRIAL] = vParam[SBVP::ENOW];
+    }
+
+    --WarmUpToDoSteps;
+    if (WarmUpToDoSteps == 0) //warmup is done
+    {
+      if (EnergyHist.count())
+        throw UniformCommunicateError("Bug: EnergyHist should not have been used during warmup.");
+      if (VarianceHist.count())
+        throw UniformCommunicateError("Bug: VarianceHist should not have been used during warmup.");
+
+      vParam[SBVP::SIGMA2] = wc_ensemble_prop.Variance;
       setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], 10, Nelec);
       app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << std::endl;
       if (BranchMode[B_USETAUEFF])
@@ -194,15 +211,11 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
       else
         app_log() << "\n  TauEff proposed   = " << vParam[SBVP::TAUEFF] * R2Accepted.result() / R2Proposed.result();
       app_log() << "\n  Etrial     = " << vParam[SBVP::ETRIAL] << std::endl;
-      app_log() << " Running average of energy = " << EnergyHist.mean() << std::endl;
+      app_log() << " Population average of energy = " << vParam[SBVP::ENOW] << std::endl;
       app_log() << "                  Variance = " << vParam[SBVP::SIGMA2] << std::endl;
       app_log() << "branch cutoff = " << vParam[SBVP::BRANCHCUTOFF] << " " << vParam[SBVP::BRANCHMAX] << std::endl;
-      ToDoSteps             = iParam[B_ENERGYUPDATEINTERVAL] - 1;
-      iParam[B_WARMUPSTEPS] = 0;
+
       BranchMode.set(B_DMCSTAGE, 1); //set BranchModex to main stage
-      //reset the histogram
-      EnergyHist.clear();
-      EnergyHist(vParam[SBVP::ENOW]);
       if (sParam[MIXDMCOPT] == "yes")
       {
         app_log() << "Switching to DMC with fluctuating populations" << std::endl;
@@ -210,8 +223,6 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
         vParam[SBVP::ETRIAL] = vParam[SBVP::EREF];
         app_log() << "  Etrial     = " << vParam[SBVP::ETRIAL] << std::endl;
       }
-      //This is not necessary
-      //EnergyHist(DMCEnergyHist.mean());
     }
   }
 }
@@ -267,7 +278,8 @@ bool SFNBranch::put(xmlNodePtr cur)
   //save it
   myNode = cur;
   m_param.put(cur);
-  ToDoSteps = iParam[B_WARMUPSTEPS];
+  WarmUpToDoSteps       = iParam[B_WARMUPSTEPS];
+  EtrialUpdateToDoSteps = iParam[B_ENERGYUPDATEINTERVAL];
   return true;
 }
 
