@@ -9,7 +9,7 @@ SET(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
 
 IF (EXISTS ${H5_FULL_PATH})
   #symlink h5 file
-  MAYBE_SYMLINK(${H5_FULL_PATH} ${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp/${H5_FILE})
+  MAYBE_SYMLINK(${H5_FULL_PATH} ${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp/${H5_FILE})
 
 
 #  LocalEnergy           =         -370.7944 +/-           0.0011
@@ -25,7 +25,7 @@ IF (EXISTS ${H5_FULL_PATH})
   LIST(APPEND NIO_A4_E48_SCALARS "samples" "32000 0.0")
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
                     NiO-vmc-short.in.xml
                     1 16
@@ -43,7 +43,7 @@ IF (EXISTS ${H5_FULL_PATH})
   LIST(APPEND NIO_A4_E48_DMC_V3_SCALARS "totenergy" "-371.283912 0.018")
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-dmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc-dmc
                     NiO-vmc-dmc-short.in.xml
                     1 16
@@ -53,7 +53,7 @@ IF (EXISTS ${H5_FULL_PATH})
                     )
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-delayed_update-dmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc-dmc
                     NiO-delayedupdate-vmc-dmc-short.in.xml
                     1 16
@@ -64,7 +64,7 @@ IF (EXISTS ${H5_FULL_PATH})
 
 IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-dmc-TMv1v3_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc-dmc
                     NiO-vmc-dmc-TMv1v3-short.in.xml
                     1 16
@@ -74,7 +74,7 @@ IF(NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-delayed_update-dmc-TMv1v3_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc-dmc
                     NiO-delayedupdate-vmc-dmc-TMv1v3-short.in.xml
                     1 16
@@ -100,7 +100,7 @@ ENDIF()
 
 IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj3
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
                     NiO-j3-vmc-short.in.xml
                     1 16
@@ -111,7 +111,7 @@ IF(NOT QMC_CUDA)
   # Testing batched algorithm in NLPP.
   # Hitting all the routines using VirtualParticleSet.
   QMC_RUN_AND_CHECK(short-NiO_a4_e48-batched_pp-vmc_sdj3
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
                     NiO-j3-batched-vmc-short.in.xml
                     1 16
@@ -129,7 +129,7 @@ IF(NOT QMC_CUDA)
   LIST(APPEND NIO_A4_E48_L2_SCALARS "samples" "128000 0.0")
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj_L2
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-L2-short
                     NiO-L2-short.in.xml
                     16 1
@@ -138,7 +138,7 @@ IF(NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-NiO_a4_e48_pp-vmc_sdj_L2
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-L2-short
                     NiO-L2-short.in.xml
                     4 4
@@ -151,7 +151,7 @@ ENDIF()
 
 
 QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
-                  "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                  "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                   NiO-fcc-S1-vmc
                   NiO-hybridrep-j3-vmc-short.in.xml
                   1 16
@@ -162,7 +162,7 @@ QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
 # Testing batched algorithm in NLPP.
 # Hitting all the routines using VirtualParticleSet.
 QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
-                  "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                  "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                   NiO-fcc-S1-vmc
                   NiO-hybridrep-j3-batched-vmc-short.in.xml
                   1 16
@@ -179,7 +179,7 @@ QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
   LIST(APPEND LONG_NIO_A4_E48_SCALARS "samples" "320000 0.0")
 
   QMC_RUN_AND_CHECK(long-NiO_a4_e48_pp-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
                     NiO-vmc-long.in.xml
                     1 16
@@ -191,7 +191,7 @@ QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
   LIST(APPEND LONG_NIO_A4_E48_J3_SCALARS "samples" "320000 0.0")
 
   QMC_RUN_AND_CHECK(long-NiO_a4_e48_pp-vmc_sdj3
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
                     NiO-j3-vmc-long.in.xml
                     1 16
@@ -205,7 +205,7 @@ IF(NOT QMC_CUDA)
   LIST(APPEND LONG_NIO_A4_E48_L2_SCALARS "samples" "1280000 0.0")
 
   QMC_RUN_AND_CHECK(long-NiO_a4_e48_pp-vmc_sdj_L2
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-L2-long
                     NiO-L2-long.in.xml
                     16 1
@@ -214,7 +214,7 @@ IF(NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(long-NiO_a4_e48_pp-vmc_sdj_L2
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-L2-long
                     NiO-L2-long.in.xml
                     4 4
