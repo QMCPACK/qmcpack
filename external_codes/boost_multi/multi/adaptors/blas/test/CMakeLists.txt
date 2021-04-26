@@ -46,9 +46,9 @@ enable_testing()
 list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure") # needs cmake 3.17
 include(CTest)
 
-configure_file("config.hpp.in" ${qmcpack_BINARY_DIR}/config.hpp)
+configure_file("config.hpp.in" ${CMAKE_BINARY_DIR}/config.hpp)
 
-include_directories(${qmcpack_BINARY_DIR})
+include_directories(${CMAKE_BINARY_DIR})
 
 #file(GLOB TEST_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 set(TEST_SRCS
