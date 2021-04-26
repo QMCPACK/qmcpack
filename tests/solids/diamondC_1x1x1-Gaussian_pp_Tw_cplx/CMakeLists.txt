@@ -14,7 +14,7 @@ LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "localecp" "-5.96961
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "nonlocalecp" "1.168712497974 0.012309208368")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_LONG_SCALARS "ionion" "-12.775667565000 0.020000000000")
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1-Gaussian_pp_Tw_cplx
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
                     vmc_long  
                     vmc_long.in.xml
                     1 16
@@ -34,7 +34,7 @@ LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "localecp" "-5.9696
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "nonlocalecp" "1.168712497974 0.025981779181")
 LIST(APPEND diamondC_1x1x1-Gaussian_pp_Tw_cplx_SHORT_SCALARS "ionion" "-12.775667565000 0.020000000000")
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1-Gaussian_pp_Tw_cplx
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_Tw_cplx"
                     vmc_short 
                     vmc_short.in.xml
                     1 16

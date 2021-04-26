@@ -12,7 +12,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND C4_SD_AE_QP_SHORT "ionion" "56.960598986000 0.001000000000")
 
   QMC_RUN_AND_CHECK(short-C4_sd-ae-qp-vmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
                     qmc_short-SD-C4_AE_Mol_QP
                     qmc_short-SD-C4_AE_Mol_QP.in.xml
                     1 16
@@ -30,7 +30,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND C4_SD_AE_QP_LONG "ionion" "56.960598986000 0.001000000000")
 
   QMC_RUN_AND_CHECK(long-C4_sd-ae-qp-vmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
                     qmc_long-SD-C4_AE_Mol_QP
                     qmc_long-SD-C4_AE_Mol_QP.in.xml
                     1 16
@@ -55,7 +55,7 @@ IF (NOT QMC_CUDA)
 
 
   QMC_RUN_AND_CHECK(short-C4_md-ae-excited-qp-vmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
                     qmc_short-MD-C4_AE_Mol_Excited_QP
                     qmc_short-MD-C4_AE_Mol_Excited_QP.in.xml
                     1 16
@@ -73,7 +73,7 @@ IF (NOT QMC_CUDA)
 
 
   QMC_RUN_AND_CHECK(short-C4_md-ae-ground-qp-vmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
                     qmc_short-MD-C4_AE_Mol_Ground_QP
                     qmc_short-MD-C4_AE_Mol_Ground_QP.in.xml
                     1 16
@@ -92,7 +92,7 @@ IF (NOT QMC_CUDA)
 #  LIST(APPEND DET_C4_SD_AE_QP "ionion" "56.96059899 0.00001")
 #  LIST(APPEND DET_C4_SD_AE_QP "samples" "9 0.0")
 #  QMC_RUN_AND_CHECK(deterministic-C4_sd-ae-qp-vmc
-#                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
+#                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
 #                    det_qmc_short-SD-C4_AE_Mol_QP
 #                    det_qmc_short-SD-C4_AE_Mol_QP.in.xml
 #                    1 1
@@ -108,7 +108,7 @@ IF (NOT QMC_CUDA)
 #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "ionion" "56.96059899 0.00001")
 #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "samples" "9 0.0")
 #  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-ground-qp-vmc
-#                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
+#                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
 #                    det_qmc_short-MD-C4_AE_Mol_Ground_QP
 #                    det_qmc_short-MD-C4_AE_Mol_Ground_QP.in.xml
 #                    1 1
@@ -124,7 +124,7 @@ IF (NOT QMC_CUDA)
 #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "ionion" "56.96059899 0.00001")
 #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "samples" "9 0.0")
 #  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-excited-qp-vmc
-#                    "${CMAKE_SOURCE_DIR}/tests/molecules/C4_ae"
+#                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
 #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP
 #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP.in.xml
 #                    1 1

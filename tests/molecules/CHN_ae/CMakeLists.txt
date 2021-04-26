@@ -16,7 +16,7 @@
   LIST(APPEND CHN_SHORT "eeenergy" "55.2876 0.023") # e-e energy
   LIST(APPEND CHN_SHORT "samples" "160000 0.0") # samples
   QMC_RUN_AND_CHECK(short-chn_ae_cuspCorrection-vmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/CHN_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/CHN_ae"
                     vmc_short
                     vmc_short.in.xml
                     1 16

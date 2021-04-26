@@ -10,7 +10,7 @@ MAYBE_SYMLINK(${TEST_WFN_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/wfn.dat)
 LIST(APPEND DIAMOND_AFQMC_SCALARS_CHOL "EnergyEstim__nume_real" "-10.55201 0.00332")
 
 QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_cholesky"
-                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+                  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
                   qmc_short_chol
                   qmc_short_chol.in.xml
                   16 1
@@ -21,7 +21,7 @@ QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_cholesky"
 LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_CHOL "EnergyEstim__nume_real" "-10.55201 0.00109")
 
 QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_cholesky"
-                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+                  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
                   qmc_long_chol
                   qmc_long_chol.in.xml
                   16 1
@@ -41,7 +41,7 @@ MAYBE_SYMLINK(${TEST_WFN_INPUT} ${CMAKE_CURRENT_BINARY_DIR}/wfn_thc.dat)
 LIST(APPEND DIAMOND_AFQMC_SCALARS_THC "EnergyEstim__nume_real" "-10.33408 0.00432")
 
 QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_thc"
-                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+                  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
                   qmc_short_thc
                   qmc_short_thc.in.xml
                   16 1
@@ -52,7 +52,7 @@ QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_thc"
 LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_THC "EnergyEstim__nume_real" "-10.33408 0.00143")
 
 QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_thc"
-                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+                  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
                   qmc_long_thc
                   qmc_long_thc.in.xml
                   16 1
@@ -73,7 +73,7 @@ QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_thc"
 #LIST(APPEND DIAMOND_AFQMC_SCALARS_UHF "EnergyEstim__nume_real" "-10.55151 0.00312")
 
 #QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_uhf"
-                  #"${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+                  #"${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
                   #qmc_short_uhf
                   #qmc_short_uhf.in.xml
                   #16 1
@@ -84,7 +84,7 @@ QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_thc"
 #LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_UHF "EnergyEstim__nume_real" "-10.55151 0.00103")
 
 #QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_uhf"
-                  #"${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+                  #"${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
                   #qmc_long_uhf
                   #qmc_long_uhf.in.xml
                   #16 1
@@ -103,7 +103,7 @@ QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_thc"
 #LIST(APPEND DIAMOND_AFQMC_SCALARS_PHMSD "EnergyEstim__nume_real" "-10.55085 0.00368")
 #
 #QMC_RUN_AND_CHECK("short-diamondC_afqmc_1x1x1_complex_phmsd"
-#                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+#                  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
 #                  qmc_short_phmsd
 #                  qmc_short_phmsd.in.xml
 #                  16 1
@@ -114,7 +114,7 @@ QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_thc"
 #LIST(APPEND LONG_DIAMOND_AFQMC_SCALARS_PHMSD "EnergyEstim__nume_real" "-10.55085 0.00119")
 #
 #QMC_RUN_AND_CHECK("long-diamondC_afqmc_1x1x1_complex_phmsd"
-#                  "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
+#                  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_afqmc_1x1x1_complex"
 #                  qmc_long_phmsd
 #                  qmc_long_phmsd.in.xml
 #                  16 1

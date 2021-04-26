@@ -207,7 +207,7 @@ MARK_AS_ADVANCED(DEBUG_PER_STEP_ACCEPT_REJECT)
 ######################################################################
 # Standard test
 ######################################################################
-SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
+SET(CMAKE_MODULE_PATH "${qmcpack_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
 
 ######################################################################
