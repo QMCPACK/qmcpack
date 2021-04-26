@@ -1,8 +1,3 @@
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 21.3 AND ENABLE_OMP_TASKLOOP)
-  message(FATAL_ERROR "NVIDIA HPC compilers (>21.3) refuse OpenMP taskloop constructs. "
-                      "Set -DENABLE_OMP_TASKLOOP=OFF to turn off all the use of taskloop.")
-endif()
-
 # Set the std
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -c99")
 

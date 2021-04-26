@@ -182,7 +182,6 @@ OPTION(ENABLE_CUDA "Build with the second generation of GPU support through CUDA
 OPTION(ENABLE_HIP "Build with with GPU support through HIP" OFF)
 OPTION(ENABLE_ROCM "Build with with GPU support through ROCM" OFF)
 OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
-OPTION(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ON)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -448,7 +447,14 @@ math(EXPR alignment_remainder "${QMC_SIMD_ALIGNMENT} % ${default_alignment}")
 if (alignment_remainder)
   message(FATAL_ERROR "QMC_SIMD_ALIGNMENT must be a multiple of ${default_alignment}. Bad cached value is ${QMC_SIMD_ALIGNMENT}")
 endif()
-message(STATUS "Setting QMC_SIMD_ALIGNMENT to ${QMC_SIMD_ALIGNMENT}")
+message(STATUS "QMC_SIMD_ALIGNMENT is set as ${QMC_SIMD_ALIGNMENT}")
+
+#---------------------------------------------------------
+# Determine if OpenMP taskloop works with the CXX compiler
+#---------------------------------------------------------
+include(CMake/TestOpenMPtaskloop.cmake)
+option(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ${OMP_TASKLOOP_OKAY})
+message(STATUS "ENABLE_OMP_TASKLOOP is set as ${ENABLE_OMP_TASKLOOP}")
 
 #---------------------------------------------------------
 # Set up OpenMP offload compile options
