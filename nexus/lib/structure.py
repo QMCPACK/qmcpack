@@ -538,7 +538,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
     axinv  = inv(axes)
     cube   = volume**(1./3)*identity(dim)
     if Tref is None:
-        Tref   = array(around(dot(cube,axinv)),dtype=int)
+        Tref = array(around(dot(cube,axinv)),dtype=int)
     else:
         Tref = np.asarray(Tref)
     #end if
