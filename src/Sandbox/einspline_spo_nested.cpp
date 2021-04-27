@@ -29,12 +29,15 @@ using namespace qmcplusplus;
 
 int main(int argc, char** argv)
 {
-
-  OHMMS::Controller->initialize(argc,argv);
-  if (OHMMS::Controller->rank() != 0) {
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
+  Communicate* myComm = OHMMS::Controller;
+  if (OHMMS::Controller->rank() != 0)
+  {
     outputManager.shutOff();
   }
-  Communicate* mycomm=OHMMS::Controller;
 
   typedef QMCTraits::RealType           RealType;
   typedef ParticleSet::ParticlePos_t    ParticlePos_t;
@@ -44,7 +47,7 @@ int main(int argc, char** argv)
 
   //use the global generator
 
-  bool ionode=(mycomm->rank() == 0);
+  bool ionode=(myComm->rank() == 0);
   int na=4;
   int nb=4;
   int nc=1;
@@ -279,10 +282,10 @@ int main(int argc, char** argv)
   timer_type global_t(t0,vgh_t,val_t,0.0);
   timer_type global_t_1(tInit,tBigClock,0.0,0.0);
 
-  mpi::reduce(*mycomm,global_t);
-  mpi::reduce(*mycomm,global_t_1);
+  mpi::reduce(*myComm,global_t);
+  mpi::reduce(*myComm,global_t_1);
 
-  const int nmpi=mycomm->size();
+  const int nmpi=myComm->size();
   t0=global_t[0]/nmpi;
   vgh_t=global_t[1]/nmpi;
   val_t=global_t[2]/nmpi;

@@ -39,8 +39,11 @@ inline void generate(RNG& rng, T* restrict data, size_t n)
 int main(int argc, char** argv)
 {
 
-  OHMMS::Controller->initialize(argc,argv);
-  Communicate* mycomm=OHMMS::Controller;
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
+  Communicate* myComm = OHMMS::Controller;
 
   typedef QMCTraits::RealType RealType;
   typedef QMCTraits::ValueType ValueType;
@@ -51,7 +54,7 @@ int main(int argc, char** argv)
 #endif
   //use the global generator
 
-  bool ionode=(mycomm->rank() == 0);
+  bool ionode=(myComm->rank() == 0);
   int nels=128;
   int iseed=11;
   int nsteps=100;
@@ -151,8 +154,8 @@ int main(int argc, char** argv)
         err += std::abs(ratio_1-ratio_0);
         if(std::abs(ratio_0)>0.5*random_th())
         {
-          FahyEng.acceptRow(psiM0,iel,psiV);
-          delayedEng.acceptRow(psiM_inv,iel,psiV);
+          FahyEng.acceptRow(psiM0,iel,psiV, ratio_0);
+          delayedEng.acceptRow(psiM_inv,iel,psiV, ratio_1);
         }
       }
       delayedEng.updateInvMat(psiM_inv);
@@ -177,7 +180,7 @@ int main(int argc, char** argv)
           {
             naccepted_loc++;
             clock_mc.restart();
-            delayedEng.acceptRow(psiM_inv, iel, psiV);
+            delayedEng.acceptRow(psiM_inv, iel, psiV, ratio);
             t_accept_loc+=clock_mc.elapsed();
           }
         }
@@ -205,7 +208,7 @@ int main(int argc, char** argv)
           {
             naccepted_loc++;
             clock_mc.restart();
-            FahyEng.acceptRow(psiM_inv, iel, psiV);
+            FahyEng.acceptRow(psiM_inv, iel, psiV, ratio);
             t_accept_loc+=clock_mc.elapsed();
           }
         }
@@ -241,12 +244,12 @@ int main(int argc, char** argv)
     nthreads_nested=omp_get_max_threads();
   }
 
-  if(mycomm->rank()==0)
+  if(myComm->rank()==0)
   { 
     cout << "# determinant " << nels << " rank " << delay << " Total accepted " << naccepted << " /" << nels*nsteps << " " 
       << naccepted/static_cast<double>(nels*nsteps) << " error " << error*omp_fac << endl;
     cout << "# N K MPI OMP-walker OMP-det T_accept T_ratio T_total T_accept/call T_ratio/call T_total/step " << endl;
-    cout << "Det " << nels << " " << delay << " " << mycomm->size() << " " << nthreads << " " << nthreads_nested << " " 
+    cout << "Det " << nels << " " << delay << " " << myComm->size() << " " << nthreads << " " << nthreads_nested << " " 
       << t_accept << " "<< t_ratio  << " " << (t_ratio+t_accept) << " " 
       << t_accept/naccepted << " " << t_ratio/(nsteps*nels)  << " " << (t_ratio+t_accept)/(nsteps/nsubsteps) << endl;
   }

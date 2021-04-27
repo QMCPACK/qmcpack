@@ -27,15 +27,19 @@ using namespace qmcplusplus;
 int main(int argc, char** argv)
 {
 
-  OHMMS::Controller->initialize(argc,argv);
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
+  Communicate* myComm = OHMMS::Controller;
+
   if (OHMMS::Controller->rank()!=0) {
     outputManager.shutOff();
   }
-  Communicate* mycomm=OHMMS::Controller;
 
   //use the global generator
 
-  bool ionode=(mycomm->rank() == 0);
+  bool ionode=(myComm->rank() == 0);
   int nels=8;
   int iseed=11;
   int nsteps=100;

@@ -46,7 +46,7 @@ void setWalkerOffsets(MCWalkerConfiguration& W, Communicate* myComm)
 int main(int argc, char** argv)
 {
 #ifdef HAVE_MPI
-  mpi3::environment env(0, NULL);
+  mpi3::environment env(argc, argv);
   OHMMS::Controller->initialize(env);
 #endif
   Communicate* myComm = OHMMS::Controller;
