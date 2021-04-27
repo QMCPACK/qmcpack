@@ -1,4 +1,4 @@
-# Test that if a C++ compiler supports OpenMP taskloop construct
+# Test if C++ compiler supports OpenMP taskloop construct
 
 try_compile(OMP_TASKLOOP_OKAY ${CMAKE_BINARY_DIR}
             ${PROJECT_CMAKE}/try_compile_sources/check_openmp_taskloop.cpp
