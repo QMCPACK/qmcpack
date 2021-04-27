@@ -230,7 +230,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                             SET( TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_CHECK}" )
                         ENDIF()
                         #MESSAGE("Adding scalar check ${TEST_NAME}")
-                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
+                        SET(CHECK_CMD ${qmcpack_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
                         #MESSAGE("check command = ${CHECK_CMD}")
                         ADD_TEST( NAME ${TEST_NAME}
                             COMMAND ${CHECK_CMD}
@@ -329,7 +329,7 @@ function(QMC_RUN_AND_CHECK_CUSTOM_SCALAR)
         else()
           set( TEST_NAME "${FULL_NAME}-${SCALAR_NAME}" )
         endif()
-        set(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e ${EQUIL} --name ${SCALAR_NAME} --ref-value ${SCALAR_VALUE} --ref-error ${SCALAR_ERROR})
+        set(CHECK_CMD ${qmcpack_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e ${EQUIL} --name ${SCALAR_NAME} --ref-value ${SCALAR_VALUE} --ref-error ${SCALAR_ERROR})
         add_test( NAME ${TEST_NAME}
                   COMMAND ${CHECK_CMD}
                   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"
@@ -365,8 +365,8 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   # set up command to run check, assume check_script is in the same folder as input
   if (EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
     set(check_cmd "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
-  elseif(EXISTS "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
-    set(check_cmd "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
+  elseif(EXISTS "${qmcpack_SOURCE_DIR}/tests/scripts/${check_script}")
+    set(check_cmd "${qmcpack_SOURCE_DIR}/tests/scripts/${check_script}")
   else()
     message(FATAL_ERROR "Check script not found: ${check_script}")
   endif()

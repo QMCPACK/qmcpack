@@ -207,7 +207,7 @@ MARK_AS_ADVANCED(DEBUG_PER_STEP_ACCEPT_REJECT)
 ######################################################################
 # Standard test
 ######################################################################
-SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
+SET(CMAKE_MODULE_PATH "${qmcpack_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
 
 ######################################################################
@@ -447,7 +447,14 @@ math(EXPR alignment_remainder "${QMC_SIMD_ALIGNMENT} % ${default_alignment}")
 if (alignment_remainder)
   message(FATAL_ERROR "QMC_SIMD_ALIGNMENT must be a multiple of ${default_alignment}. Bad cached value is ${QMC_SIMD_ALIGNMENT}")
 endif()
-message(STATUS "Setting QMC_SIMD_ALIGNMENT to ${QMC_SIMD_ALIGNMENT}")
+message(STATUS "QMC_SIMD_ALIGNMENT is set to ${QMC_SIMD_ALIGNMENT}")
+
+#---------------------------------------------------------
+# Determine if OpenMP taskloop works with the CXX compiler
+#---------------------------------------------------------
+include(CMake/TestOpenMPtaskloop.cmake)
+option(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ${OMP_TASKLOOP_OKAY})
+message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 
 #---------------------------------------------------------
 # Set up OpenMP offload compile options

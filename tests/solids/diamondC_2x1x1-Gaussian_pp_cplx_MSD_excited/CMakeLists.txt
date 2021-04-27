@@ -79,7 +79,7 @@ LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "nonlocalec
 LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "ionion" "-25.551327062000 0.000100000000")
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1-Gaussian_pp_cplx_ground_MSD
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"                    
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"                    
                     vmc_short_ground
                     vmc_short_ground_noj.in.xml
                     1 16
@@ -98,7 +98,7 @@ LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_LONG_SCALARS "nonlocalecp
 LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_LONG_SCALARS "ionion" "-25.551327062000 0.000100000000")
       
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1-Gaussian_pp_cplx_ground_MSD
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"                    
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"                    
                     vmc_long_ground_noj
                     vmc_long_ground_noj.in.xml
                     1 16
@@ -118,7 +118,7 @@ LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS "nonlocalec
 LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS "ionion" "-25.551327062000 0.000100000000")
  
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1-Gaussian_pp_cplx_excited_MSD
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"                    
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"                    
                     vmc_long_excited_noj
                     vmc_long_excited_noj.in.xml
                     1 16
@@ -138,7 +138,7 @@ LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "nonlocale
 LIST(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "ionion" "-25.551327062000 0.0000100000000")
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1-Gaussian_pp_cplx_excited_MSD
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"                    
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited"                    
                     vmc_short_excited_noj
                     vmc_short_excited_noj.in.xml
                     1 16

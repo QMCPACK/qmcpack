@@ -9,7 +9,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H2_OPT_SCALARS "totenergy" "-1.124563 0.00084") # total energy
 
   QMC_RUN_AND_CHECK(short-H2-orb-opt
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H2_ae"
                     H2
                     h2_orb_opt.xml
                     16 1
