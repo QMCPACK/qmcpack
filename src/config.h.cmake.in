@@ -44,6 +44,15 @@
   #define PRAGMA_OFFLOAD(x)
 #endif
 
+/* Enable OpenMP taskloop. */
+#cmakedefine ENABLE_OMP_TASKLOOP @ENABLE_OMP_TASKLOOP@
+
+#ifdef ENABLE_OMP_TASKLOOP
+  #define PRAGMA_OMP_TASKLOOP(x) _Pragma(x)
+#else
+  #define PRAGMA_OMP_TASKLOOP(x) _Pragma("omp taskgroup")
+#endif
+
 /* Define to 1 if you have the `blitz' library */
 #cmakedefine HAVE_LIBBLITZ @HAVE_LIBBLITZ@
 
