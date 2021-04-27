@@ -34,7 +34,7 @@ int main(int argc, char** argv)
   mpi3::environment env(argc, argv);
   OHMMS::Controller->initialize(env);
 #endif
-  Communicate* myComm=OHMMS::Controller;
+  Communicate* myComm = OHMMS::Controller;
   if (OHMMS::Controller->rank() != 0)
   {
     outputManager.shutOff();
@@ -128,8 +128,8 @@ int main(int argc, char** argv)
   els.update();
 
   //SoA check symmetry
-  double sym_err     = 0.0;
-  int nn             = 0;
+  double sym_err = 0.0;
+  int nn         = 0;
   for (int iel = 0; iel < nels; ++iel)
     for (int jel = iel + 1; jel < nels; ++jel)
     {
