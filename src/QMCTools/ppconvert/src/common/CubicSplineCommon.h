@@ -141,6 +141,8 @@ public:
   {
     UpToDate = 0;
     NumParams = 0;
+    StartDeriv = 0;
+    EndDeriv = 0;
     grid     = NULL;
   }
 };
