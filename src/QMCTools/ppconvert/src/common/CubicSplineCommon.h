@@ -140,6 +140,7 @@ public:
   CubicSplineCommon()
   {
     UpToDate = 0;
+    NumParams = 0;
     grid     = NULL;
   }
 };
