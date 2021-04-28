@@ -30,12 +30,17 @@ using namespace qmcplusplus;
 
 int main(int argc, char** argv)
 {
-  OHMMS::Controller->initialize(0, NULL);
-  Communicate* mycomm = OHMMS::Controller;
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
+  Communicate* myComm = OHMMS::Controller;
+  if (OHMMS::Controller->rank() != 0)
+  {
+    outputManager.shutOff();
+  }
 
-  //use the global generator
-
-  bool ionode = (mycomm->rank() == 0);
+  bool ionode = (myComm->rank() == 0);
   int na      = 4;
   int nb      = 4;
   int nc      = 1;
@@ -123,8 +128,8 @@ int main(int argc, char** argv)
   els.update();
 
   //SoA check symmetry
-  double sym_err     = 0.0;
-  int nn             = 0;
+  double sym_err = 0.0;
+  int nn         = 0;
   for (int iel = 0; iel < nels; ++iel)
     for (int jel = iel + 1; jel < nels; ++jel)
     {

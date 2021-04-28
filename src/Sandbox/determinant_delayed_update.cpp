@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -32,15 +32,18 @@ template<typename RNG, typename T>
 inline void generate(RNG& rng, T* restrict data, size_t n)
 {
   constexpr T shift(0.5);
-  rng.generate_uniform(data,n);
-  for(int i=0; i<n; ++i) data[i]-=shift;
+  rng.generate_uniform(data, n);
+  for (int i = 0; i < n; ++i)
+    data[i] -= shift;
 }
 
 int main(int argc, char** argv)
 {
-
-  OHMMS::Controller->initialize(argc,argv);
-  Communicate* mycomm=OHMMS::Controller;
+#ifdef HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+#endif
+  Communicate* myComm = OHMMS::Controller;
 
   typedef QMCTraits::RealType RealType;
   typedef QMCTraits::ValueType ValueType;
@@ -51,95 +54,95 @@ int main(int argc, char** argv)
 #endif
   //use the global generator
 
-  bool ionode=(mycomm->rank() == 0);
-  int nels=128;
-  int iseed=11;
-  int nsteps=100;
-  int ncrews=1;
-  int nsubsteps=1;
-  int delay=4;
+  bool ionode   = (myComm->rank() == 0);
+  int nels      = 128;
+  int iseed     = 11;
+  int nsteps    = 100;
+  int ncrews    = 1;
+  int nsubsteps = 1;
+  int delay     = 4;
 
   PrimeNumberSet<uint32_t> myPrimes;
 
-  bool debug=false;
-  char *g_opt_arg;
+  bool debug = false;
+  char* g_opt_arg;
   int opt;
-  while((opt = getopt(argc, argv, "hdn:i:c:k:s:")) != -1)
+  while ((opt = getopt(argc, argv, "hdn:i:c:k:s:")) != -1)
   {
-    switch(opt)
+    switch (opt)
     {
-      case 'h':
-        printf("[-n int=64]\n");
-        return 1;
-      case 'd': //debug
-        debug=true;
-        break;
-      case 'n': //number of MC steps
-        nels=atoi(optarg);
-        break;
-      case 'i': //number of MC steps
-        nsteps=atoi(optarg);
-        break;
-      case 'k': //number of MC steps
-        delay=atoi(optarg);
-        break;
-      case 's'://the number of sub steps for drift/diffusion
-        nsubsteps=atoi(optarg);
-        break;
-      case 'c'://number of crews per team
-        ncrews=atoi(optarg);
-        break;
+    case 'h':
+      printf("[-n int=64]\n");
+      return 1;
+    case 'd': //debug
+      debug = true;
+      break;
+    case 'n': //number of MC steps
+      nels = atoi(optarg);
+      break;
+    case 'i': //number of MC steps
+      nsteps = atoi(optarg);
+      break;
+    case 'k': //number of MC steps
+      delay = atoi(optarg);
+      break;
+    case 's': //the number of sub steps for drift/diffusion
+      nsubsteps = atoi(optarg);
+      break;
+    case 'c': //number of crews per team
+      ncrews = atoi(optarg);
+      break;
     }
   }
 
-  Random.init(0,1,iseed);
+  Random.init(0, 1, iseed);
 
   //turn off output
-  if(omp_get_max_threads()>1)
+  if (omp_get_max_threads() > 1)
   {
     outputManager.pause();
   }
 
   Timer bigClock;
   bigClock.restart();
-  double t_compute=0.0, t_ratio=0.0, t_accept=0.0, error=0.0;
-  int naccepted=0;
-#pragma omp parallel reduction(+:error, naccepted, t_ratio,t_accept,t_compute)
+  double t_compute = 0.0, t_ratio = 0.0, t_accept = 0.0, error = 0.0;
+  int naccepted = 0;
+#pragma omp parallel reduction(+ : error, naccepted, t_ratio, t_accept, t_compute)
   {
     Timer clock, clock_mc;
     clock.restart();
-    double t_compute_loc=0.0, t_ratio_loc=0.0, t_accept_loc=0.0;
+    double t_compute_loc = 0.0, t_ratio_loc = 0.0, t_accept_loc = 0.0;
 
-    const int np=omp_get_num_threads();
-    const int ip=omp_get_thread_num();
+    const int np = omp_get_num_threads();
+    const int ip = omp_get_thread_num();
 
-    const int teamID=ip/ncrews;
-    const int crewID=ip%ncrews;
+    const int teamID = ip / ncrews;
+    const int crewID = ip % ncrews;
 
     RandomGenerator<RealType> random_th(myPrimes[ip]);
 
-    Matrix<ValueType> psiM(nels,nels),psiM_inv(nels,nels);
+    Matrix<ValueType> psiM(nels, nels), psiM_inv(nels, nels);
     Vector<ValueType> psiV(nels), invRow(nels);
 
     DiracMatrix<ValueType> detEng;
     DelayedUpdate<ValueType, QMCTraits::QTFull::ValueType> FahyEng;
     DelayedUpdate<ValueType, QMCTraits::QTFull::ValueType> delayedEng;
 
-    FahyEng.resize(nels,1);
-    delayedEng.resize(nels,delay);
+    FahyEng.resize(nels, 1);
+    delayedEng.resize(nels, delay);
 
-    generate(random_th,psiM.data(),nels*nels);
+    generate(random_th, psiM.data(), nels * nels);
     std::complex<RealType> logdet;
     detEng.invert_transpose(psiM, psiM_inv, logdet);
 
-    if(debug)
+    if (debug)
     {
-      Matrix<ValueType> psiM0(nels,nels);
-      psiM0=psiM_inv;
+      Matrix<ValueType> psiM0(nels, nels);
+      psiM0 = psiM_inv;
 
       ValueType ratio_0, ratio_1;
-      double err=0.0;
-      for(int iel=0; iel<nels; ++iel)
+      double err = 0.0;
+      for (int iel = 0; iel < nels; ++iel)
       {
         clock_mc.restart();
         generate(random_th, psiV.data(), nels);
@@ -148,73 +151,73 @@ int main(int argc, char** argv)
         delayedEng.getInvRow(psiM_inv, iel, invRow);
         ratio_1 = simd::dot(invRow.data(), psiV.data(), invRow.size());
 
-        err += std::abs(ratio_1-ratio_0);
-        if(std::abs(ratio_0)>0.5*random_th())
+        err += std::abs(ratio_1 - ratio_0);
+        if (std::abs(ratio_0) > 0.5 * random_th())
         {
-          FahyEng.acceptRow(psiM0,iel,psiV);
-          delayedEng.acceptRow(psiM_inv,iel,psiV);
+          FahyEng.acceptRow(psiM0, iel, psiV, ratio_0);
+          delayedEng.acceptRow(psiM_inv, iel, psiV, ratio_1);
         }
       }
       delayedEng.updateInvMat(psiM_inv);
       error += err;
     }
 
-    int naccepted_loc=0;
-    if(delay>1)
-    {//use delayed update
+    int naccepted_loc = 0;
+    if (delay > 1)
+    { //use delayed update
       ValueType ratio;
-      for(int mc=0; mc<nsteps; ++mc)
+      for (int mc = 0; mc < nsteps; ++mc)
       {
-        for(int iel=0; iel<nels; ++iel)
+        for (int iel = 0; iel < nels; ++iel)
         {
           generate(random_th, psiV.data(), nels);
           clock_mc.restart();
           delayedEng.getInvRow(psiM_inv, iel, invRow);
           ratio = simd::dot(invRow.data(), psiV.data(), invRow.size());
-          t_ratio_loc+=clock_mc.elapsed();
+          t_ratio_loc += clock_mc.elapsed();
 
-          if(std::abs(ratio)>0.5*random_th())
+          if (std::abs(ratio) > 0.5 * random_th())
           {
             naccepted_loc++;
             clock_mc.restart();
-            delayedEng.acceptRow(psiM_inv, iel, psiV);
-            t_accept_loc+=clock_mc.elapsed();
+            delayedEng.acceptRow(psiM_inv, iel, psiV, ratio);
+            t_accept_loc += clock_mc.elapsed();
           }
         }
-        if(delayedEng.getDelayCount()>0)
+        if (delayedEng.getDelayCount() > 0)
         {
           clock_mc.restart();
           delayedEng.updateInvMat(psiM_inv);
-          t_accept_loc+=clock_mc.elapsed();
+          t_accept_loc += clock_mc.elapsed();
         }
       }
     }
     else
     {
       ValueType ratio;
-      for(int mc=0; mc<nsteps; ++mc)
+      for (int mc = 0; mc < nsteps; ++mc)
       {
-        for(int iel=0; iel<nels; ++iel)
+        for (int iel = 0; iel < nels; ++iel)
         {
           generate(random_th, psiV.data(), nels);
           clock_mc.restart();
           FahyEng.getInvRow(psiM_inv, iel, invRow);
           ratio = simd::dot(invRow.data(), psiV.data(), invRow.size());
-          t_ratio_loc+=clock_mc.elapsed();
-          if(std::abs(ratio)>0.5*random_th())
+          t_ratio_loc += clock_mc.elapsed();
+          if (std::abs(ratio) > 0.5 * random_th())
           {
             naccepted_loc++;
             clock_mc.restart();
-            FahyEng.acceptRow(psiM_inv, iel, psiV);
-            t_accept_loc+=clock_mc.elapsed();
+            FahyEng.acceptRow(psiM_inv, iel, psiV, ratio);
+            t_accept_loc += clock_mc.elapsed();
           }
         }
       }
     }
 
-    naccepted+= naccepted_loc;
-    t_compute+= t_compute_loc;
-    t_ratio  += t_ratio_loc;
+    naccepted += naccepted_loc;
+    t_compute += t_compute_loc;
+    t_ratio += t_ratio_loc;
     t_accept += t_accept_loc;
 
     //using both float/float
@@ -224,31 +227,31 @@ int main(int argc, char** argv)
 
   } //end of omp parallel
 
-  int nthreads=omp_get_max_threads();
-  double omp_fac=1.0/nthreads;
+  int nthreads   = omp_get_max_threads();
+  double omp_fac = 1.0 / nthreads;
 
-  t_compute*=omp_fac;
-  t_ratio  *=omp_fac;
-  t_accept *=omp_fac;
+  t_compute *= omp_fac;
+  t_ratio *= omp_fac;
+  t_accept *= omp_fac;
 
   cout.setf(std::ios::scientific, std::ios::floatfield);
   cout.precision(4);
 
-  int nthreads_nested=1;
+  int nthreads_nested = 1;
 #pragma omp parallel
   {
 #pragma omp master
-    nthreads_nested=omp_get_max_threads();
+    nthreads_nested = omp_get_max_threads();
   }
 
-  if(mycomm->rank()==0)
-  { 
-    cout << "# determinant " << nels << " rank " << delay << " Total accepted " << naccepted << " /" << nels*nsteps << " " 
-      << naccepted/static_cast<double>(nels*nsteps) << " error " << error*omp_fac << endl;
+  if (myComm->rank() == 0)
+  {
+    cout << "# determinant " << nels << " rank " << delay << " Total accepted " << naccepted << " /" << nels * nsteps
+         << " " << naccepted / static_cast<double>(nels * nsteps) << " error " << error * omp_fac << endl;
     cout << "# N K MPI OMP-walker OMP-det T_accept T_ratio T_total T_accept/call T_ratio/call T_total/step " << endl;
-    cout << "Det " << nels << " " << delay << " " << mycomm->size() << " " << nthreads << " " << nthreads_nested << " " 
-      << t_accept << " "<< t_ratio  << " " << (t_ratio+t_accept) << " " 
-      << t_accept/naccepted << " " << t_ratio/(nsteps*nels)  << " " << (t_ratio+t_accept)/(nsteps/nsubsteps) << endl;
+    cout << "Det " << nels << " " << delay << " " << myComm->size() << " " << nthreads << " " << nthreads_nested << " "
+         << t_accept << " " << t_ratio << " " << (t_ratio + t_accept) << " " << t_accept / naccepted << " "
+         << t_ratio / (nsteps * nels) << " " << (t_ratio + t_accept) / (nsteps / nsubsteps) << endl;
   }
   //t_diffusion*=1.0/static_cast<double>(nsteps*nsubsteps*nthreads);
   //t_pseudo   *=1.0/static_cast<double>(nsteps*nthreads);
