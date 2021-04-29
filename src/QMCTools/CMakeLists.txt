@@ -86,7 +86,4 @@ ENDIF()
 INSTALL(TARGETS qmcfinitesize
         RUNTIME DESTINATION bin)
 
-#ppconvert
-if( BUILD_PPCONVERT )
-  SUBDIRS(ppconvert)
-endif( BUILD_PPCONVERT )
+SUBDIRS(ppconvert)

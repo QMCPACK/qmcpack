@@ -103,14 +103,6 @@ inline int sign(int x) { return (x > 0) ? 1 : ((x < 0) ? -1 : 0); }
 
 inline double nint(const double x) { return int(x + 0.5 * sign(x)); }
 
-inline double min(double x, double y) { return (x <= y) ? x : y; }
-
-inline int min(int x, int y) { return (x <= y) ? x : y; }
-
-inline double max(double x, double y) { return (x >= y) ? x : y; }
-
-inline int max(int x, int y) { return (x >= y) ? x : y; }
-
 inline double sqr(double x) { return (x * x); }
 
 inline int sqr(int x) { return (x * x); }
