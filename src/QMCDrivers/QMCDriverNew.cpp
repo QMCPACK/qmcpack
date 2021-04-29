@@ -92,7 +92,7 @@ QMCDriverNew::~QMCDriverNew()
 {
   for (int i = 0; i < Rng.size(); ++i)
     if (Rng[i] != nullptr)
-      RandomNumberControl::Children[i] = Rng[i].release();
+      RandomNumberControl::Children[i].reset(Rng[i].release());
 }
 
 void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
@@ -295,9 +295,7 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
 
   for (int i = 0; i < num_crowds; ++i)
   {
-    Rng[i].reset(RandomNumberControl::Children[i]);
-    // Ye: RandomNumberControl::Children needs to be replaced with unique_ptr and use Rng[i].swap()
-    RandomNumberControl::Children[i] = nullptr;
+    Rng[i].reset(RandomNumberControl::Children[i].release());
     step_contexts_[i]   = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
                                                           population_.get_particle_group_indexes(), *(Rng[i]));
     RngCompatibility[i] = Rng[i].get();
