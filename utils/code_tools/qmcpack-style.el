@@ -24,7 +24,7 @@
 ;;
 ;;  customize C Default Style if you want this style by default.
 ;;
-;;  alternatively add a .dir-locals.el file to qmcpack/src with
+;;  alternatively add a .dir-locals.el file to qmcpack/src
 ;;  by running this elisp and saving the .dir.locals.el buffer that appears
 ;;
 ;;  (let ((default-directory "~/qmcpack/src"))
