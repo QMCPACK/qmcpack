@@ -1,7 +1,7 @@
 # Check compiler version
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.0 )
-MESSAGE(FATAL_ERROR "Requires Intel 19.0 or higher ")
-ENDIF()
+if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.0.0.20190206)
+message(FATAL_ERROR "Requires Intel 19 update 3 (19.0.0.20190206) or higher!")
+endif()
 
 # Set the std
 SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
