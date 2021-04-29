@@ -26,6 +26,8 @@
 ;;  either put in your .emacs or
 ;;  run from *scratch* or by other means after emacs startup
 ;;
+;;  I use this by
+;;  (add-to-list 'load-path "/home/epd/qmcpack/utils/code_tools")
 ;;  (require 'qmcpack-elisp-generators)
 ;;
 ;;  then in your c++ mode buffer
