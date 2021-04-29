@@ -266,6 +266,29 @@ IF (NOT QMC_COMPLEX)
                     0 HEG14GLSJB_SCALARS # VMC
                     )
 
+
+  IF (NOT QMC_MIXED_PRECISION)
+   SIMPLE_RUN_AND_CHECK(
+    deterministic-heg_14_gamma-sjb-opt
+    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
+    det_heg-short-SJB_opt.xml
+    1 1
+    check_opt.py -s 1 -p det_heg_short_SJB -r ./qmc-ref/ref_det_heg_short_SJB.s001.opt.xml
+    )
+
+   LIST(APPEND DET_HEG14GSSJB_SCALARS "totenergy" "-1.06180157 0.000001")
+
+   QMC_RUN_AND_CHECK(deterministic-heg_14_gamma-sjb-opt_vmc
+                    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
+                    det_heg_short_SJB
+                    det_heg-short-SJB_opt.xml
+                    1 1
+                    TRUE
+                    2 DET_HEG14GSSJB_SCALARS # VMC
+                    )
+
+  ENDIF()
+
  ELSE()
     MESSAGE_VERBOSE("Skipping HEG backflow tests because they are not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
