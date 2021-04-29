@@ -88,9 +88,15 @@ The following steps just follow a regular QMCPACK build on any Linux environment
 
       cmake -GNinja \
        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-       -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
+       -DCMAKE_C_COMPILER=mpicc --DCMAKE_CXX_COMPILER=mpicxx \
        -DQMC_COMPLEX=0 \
        ..
+
+* Note: To reproduce the build in the Docker container used by GitHub Actions CI pipeline we provide an optimized build with debug symbols `-DCMAKE_BUILD_TYPE=RelWithDebInfo` , but users can select any other cmake build type(`Release` being default): 
+            
+            - `Debug`
+            - `Release` 
+            - `RelWithDebInfo`    
 
 3. **Build**:
 
