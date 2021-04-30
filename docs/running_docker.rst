@@ -45,28 +45,30 @@ Running Docker Containers
 
    The above will run the container in interactive mode dropping the default `user` to `/home/user` using the `bash` shell.
 
-   `docker run` has a few extra options that can be used to run QMCPACK: 
+   **Run an image (for Development)** `docker run` has a few extra options that can be used to run QMCPACK: 
 
    .. code-block:: bash
     
-      docker run -u root -v <QMCPack Source Directory>:/home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -u root --env USER=`stat -c "%u" .`  -v <QMCPack Source Directory>:/home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
 
 
    Flags used by `docker run` (Note: The flags -i and -t are combined above):
     
-    `-u` : For building we need to run as the root user so that docker has write permissions for the build (e.g. install additional packages).
+    `-u` : For building we need to run as the root user so that docker has write permissions for the build (e.g. install additional packages, allocating shared volume permissions, ect.).
 
     `-v` : Replace `<QMCPack Source Directory>` with the direct path to your QMCPack directory, this maps it to our landing directory and gives docker access to the files
 
     `-i` : Specifies the image to use
 
     `-t` : Allocate a pseudo-tty, allows an instance of bash to pass commands to it
+	
+    `--env` : Adds an environment variable containing the current user's uid for use later
 
    As an example, if extra permissions are needed the container can be run with the `sudo` user (not recommended):
 
    .. code-block:: bash
 
-      docker run -u root -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -u root --env USER=`stat -c "%u" .`  -v path/to/qmcpack:home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
 
 
 Build QMCPACK on Docker
@@ -74,23 +76,34 @@ Build QMCPACK on Docker
 
 The following steps just follow a regular QMCPACK build on any Linux environment
 
-1. **Download**: use `https` as `ssh` requires extra authentication  
+1. **Get QMCPack**: use `https` as `ssh` requires extra authentication  
+
+* Option 1 (fresh build):
 
    .. code-block:: bash
 
       git clone https://github.com/QMCPACK/qmcpack.git
       cd build
 
+* Option 2 (for development):
+
+    .. code-block:: bash
+
+       sudo useradd -u $USER local && sudo -u local bash && exit
+       cd build
+
+    * Note: this gives the non-root docker `user` permissions to read/write to the directory supplied with the `-v` flag of `docker run` in the previous step, and then opens bash as non root `user` 
+
 
 2. **Configure**:
 
    .. code-block:: bash
 
-      cmake -GNinja \
-       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-       -DCMAKE_C_COMPILER=mpicc --DCMAKE_CXX_COMPILER=mpicxx \
-       -DQMC_COMPLEX=0 \
-       ..
+		  cmake -GNinja \
+		   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		   -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx \
+		   -DQMC_COMPLEX=0 \
+		   ..
 
 * Note: To reproduce the build in the Docker container used by GitHub Actions CI pipeline we provide an optimized build with debug symbols `-DCMAKE_BUILD_TYPE=RelWithDebInfo` , but users can select any other cmake build type(`Release` being default): 
             
@@ -114,4 +127,4 @@ The following steps just follow a regular QMCPACK build on any Linux environment
 
 .. caution::
 
-   OpenMPI strongly advises against running as a `root` user, see `docs <https://www.open-mpi.org/doc/v3.1/man1/mpirun.1.php#sect22>`_ 
+   OpenMPI strongly advises against running as a `root` user, see `docs <https://www.open-mpi.org/doc/v3.1/man1/mpirun.1.php#sect22>`_
