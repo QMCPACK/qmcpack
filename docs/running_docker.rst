@@ -49,14 +49,14 @@ Running Docker Containers
 
    .. code-block:: bash
     
-      docker run -u root --env USER=`stat -c "%u" .`  -v <QMCPack Source Directory>:/home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -u root --env USER=`stat -c "%u" .`  -v <QMCPACK Source Directory>:/home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
 
 
    Flags used by `docker run` (Note: The flags -i and -t are combined above):
     
     `-u` : For building we need to run as the root user so that docker has write permissions for the build (e.g. install additional packages, allocating shared volume permissions, ect.).
 
-    `-v` : Replace `<QMCPack Source Directory>` with the direct path to your QMCPack directory, this maps it to our landing directory and gives docker access to the files
+    `-v` : Replace `<QMCPACK Source Directory>` with the direct path to your QMCPACK directory, this maps it to our landing directory and gives docker access to the files
 
     `-i` : Specifies the image to use
 
@@ -68,7 +68,7 @@ Running Docker Containers
 
    .. code-block:: bash
 
-      docker run -u root --env USER=`stat -c "%u" .`  -v path/to/qmcpack:home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -u root --env USER=`stat -c "%u" .`  -v path/to/QMCPACK:home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
 
 
 Build QMCPACK on Docker
@@ -76,7 +76,7 @@ Build QMCPACK on Docker
 
 The following steps just follow a regular QMCPACK build on any Linux environment
 
-1. **Get QMCPack**: use `https` as `ssh` requires extra authentication  
+1. **Get QMCPACK**: use `https` as `ssh` requires extra authentication  
 
 * Option 1 (fresh build):
 
