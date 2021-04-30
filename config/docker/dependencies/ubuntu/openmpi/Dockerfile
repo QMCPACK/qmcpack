@@ -20,7 +20,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     libhdf5-openmpi-dev \
                     hdf5-tools \
                     libfftw3-dev \
-                    libopenblas-dev \
+                    libopenblas-openmp-dev \
                     libxml2-dev \
                     sudo \
                     curl \
