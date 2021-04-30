@@ -7,8 +7,32 @@ Sample qmc run for Slater-Jastrow-Backflow HEG.
 </project>
 <random seed="153"/>
 <include href="heg.ptcl.xml"/>
-<include href="heg.sjb.wfs.xml"/>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+<determinantset type="electron-gas" shell="1" shell2="1" randomize="true">
+<backflow optimize="yes">
+<transformation name="eeB" type="e-e" function="Bspline">
+<correlation cusp="0.0" speciesA="u" speciesB="u" size="2" type="shortrange" init="no">
+<coefficients id="eeuu" type="Array" optimize="yes"> 0.01062989927 0.06173674368 </coefficients>
+</correlation>
+<correlation cusp="0.0" speciesA="u" speciesB="d" size="2" type="shortrange" init="no">
+<coefficients id="eeud" type="Array" optimize="yes">  0.5824836964 0.272210709 </coefficients>
+</correlation>
+</transformation>
+</backflow>
+</determinantset>
+<jastrow name="J2" type="Two-Body" function="Bspline" optimize="yes">
+<correlation speciesA="u" speciesB="u" size="2">
+<coefficients id="uu" type="Array" optimize="no"> 0.8539649773 0.5081210955</coefficients>
+</correlation>
+<correlation speciesA="u" speciesB="d" size="2">
+<coefficients id="ud" type="Array" optimize="no"> 1.668843146 0.6688577517</coefficients>
+</correlation>
+</jastrow>
+</wavefunction>
+</qmcsystem>
 <include href="heg.H.xml"/>
+
 
 <loop max="2">
  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="yes">
