@@ -40,6 +40,7 @@ SET(QMCDRIVERS
   WFOpt/QMCFixedSampleLinearOptimize.cpp
   WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
   WFOpt/OutputMatrix.cpp
+  WFOpt/WFOptDriverInput.cpp
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
   WFOpt/QMCCostFunctionBase.cpp
