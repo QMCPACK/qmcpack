@@ -266,6 +266,48 @@ IF (NOT QMC_COMPLEX)
                     0 HEG14GLSJB_SCALARS # VMC
                     )
 
+  IF (QMC_MIXED_PRECISION)
+   LIST(APPEND DET_HEG14GSSJB_SCALARS "totenergy" "-0.92843602  0.00002")
+   LIST(APPEND DET_HEG14GSSJB_SCALARS "kinetic"  "0.76941696  0.000005")
+   LIST(APPEND DET_HEG14GSSJB_SCALARS "potential"  "-1.69785298 0.00002")
+  ELSE()
+   LIST(APPEND DET_HEG14GSSJB_SCALARS "totenergy" "-0.92845399  0.000001") 
+   LIST(APPEND DET_HEG14GSSJB_SCALARS "kinetic"  "0.76941751  0.000001") 
+   LIST(APPEND DET_HEG14GSSJB_SCALARS "potential"  "-1.69787150 0.000001")
+  ENDIF()
+
+  QMC_RUN_AND_CHECK(deterministic-heg_14_gamma-sjb
+                    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
+                    det_heg_short_SJB
+                    det_heg-short-SJB.xml
+                    1 1
+                    TRUE
+                    0 DET_HEG14GSSJB_SCALARS # VMC
+                    )
+
+
+  IF (NOT QMC_MIXED_PRECISION)
+   SIMPLE_RUN_AND_CHECK(
+    deterministic-heg_14_gamma-sjb-opt
+    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
+    det_heg-short-SJB_opt.xml
+    1 1
+    check_opt.py -s 1 -p det_heg_short_SJB -r ./qmc-ref/ref_det_heg_short_SJB.s001.opt.xml
+    )
+
+   LIST(APPEND DET_HEG14GSSJB_OPT_SCALARS "totenergy" "-0.93078813 0.000001")
+
+   QMC_RUN_AND_CHECK(deterministic-heg_14_gamma-sjb-opt_vmc
+                    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
+                    det_heg_short_SJB
+                    det_heg-short-SJB_opt.xml
+                    1 1
+                    TRUE
+                    2 DET_HEG14GSSJB_OPT_SCALARS # VMC
+                    )
+
+  ENDIF()
+
  ELSE()
     MESSAGE_VERBOSE("Skipping HEG backflow tests because they are not supported by complex build (QMC_COMPLEX=1)")
  ENDIF()
