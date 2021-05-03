@@ -124,10 +124,10 @@ void DensityEstimator::registerCollectables(std::vector<observable_helper>& h5de
   std::vector<int> ng(OHMMS_DIM);
   for (int i = 0; i < OHMMS_DIM; ++i)
     ng[i] = NumGrids[i];
-  observable_helper h5o(myName);
+  h5desc.emplace_back(myName);
+  auto& h5o = h5desc.back();
   h5o.set_dimensions(ng, myIndex);
   h5o.open(gid);
-  h5desc.push_back(h5o);
 }
 
 void DensityEstimator::setObservables(PropertySetType& plist)
