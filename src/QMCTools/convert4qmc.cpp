@@ -19,6 +19,7 @@
 #include "QMCTools/GaussianFCHKParser.h"
 #include "QMCTools/GamesAsciiParser.h"
 #include "QMCTools/LCAOHDFParser.h"
+#include "QMCTools/RMGParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
@@ -101,6 +102,12 @@ int main(int argc, char** argv)
         else if (a == "-orbitals")
         {
           parser  = new LCAOHDFParser(argc, argv);
+          h5      = true;
+          in_file = argv[++iargc];
+        }
+        else if (a == "-rmg")
+        {
+          parser  = new RMGParser(argc, argv);
           h5      = true;
           in_file = argv[++iargc];
         }

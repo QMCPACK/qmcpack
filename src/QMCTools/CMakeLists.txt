@@ -26,6 +26,7 @@ SET(MOSRCS
   GaussianFCHKParser.cpp
   GamesAsciiParser.cpp
   LCAOHDFParser.cpp
+  RMGParser.cpp
 )
 
 # create libmocommon 
