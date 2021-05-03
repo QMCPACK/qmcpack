@@ -14,7 +14,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND FeCO6_GMS_SHORT "totenergy" "-250.43439 0.035") # total energy
   LIST(APPEND FeCO6_GMS_SHORT "samples" "48000 0.0") # samples
   QMC_RUN_AND_CHECK(short-FeCO6_gms-vmc_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
                     vmc_short_noj
                     vmc_short_noj.in.xml
                     1 16
@@ -27,7 +27,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND FeCO6_GMS_LONG "totenergy" "-250.43439 0.012") # total energy
   LIST(APPEND FeCO6_GMS_LONG "samples" "480000 0.0") # samples
   QMC_RUN_AND_CHECK(long-FeCO6_gms-vmc_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
                     vmc_long_noj
                     vmc_long_noj.in.xml
                     1 16

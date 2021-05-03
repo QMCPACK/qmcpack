@@ -3145,6 +3145,83 @@ class Rhea(Supercomputer):
 #end class Rhea
 
 
+## Added 19/03/2021 by A Zen
+class Andes(Supercomputer):
+
+    name = 'andes'
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def post_process_job(self,job):
+        job.run_options.add(
+            N='-N {}'.format(job.nodes),
+            n='-n {}'.format(job.processes),
+            )
+        if job.threads>1:
+            job.run_options.add(
+                c = '-c {}'.format(job.threads),
+                )
+            if 'cpu_bind' not in job.run_options:
+                if job.processes_per_node==self.cores_per_node:
+                    cpu_bind = '--cpu-bind=threads'
+                else:
+                    cpu_bind = '--cpu-bind=cores'
+                #end if
+                job.run_options.add(
+                    cpu_bind = cpu_bind
+                    )
+            #end if
+        #end if
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        #end if
+        base_partition = None
+        max_partition = 384
+        if job.nodes <= 16:
+            max_time = 48
+        elif job.nodes <= 64:
+            max_time = 36
+        else:
+            max_time = 3
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > max_time:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        if job.email is not None:
+            c+='#SBATCH --mail-user {}\n'.format(job.email)
+            c+='#SBATCH --mail-type ALL\n'
+            #c+='#SBATCH --mail-type FAIL\n'
+        #end if
+        c+='\n'
+        c+='cd $SLURM_SUBMIT_DIR\n'
+        c+='\n'
+        c+='echo JobID : $SLURM_JOBID \n'
+        c+='echo Number of nodes requested: $SLURM_JOB_NUM_NODES \n'
+        c+='echo List of nodes assigned to the job: $SLURM_NODELIST \n'
+        c+='\n'
+        return c
+    #end def write_job_header
+#end class Andes
+
+
 class Tomcat3(Supercomputer):
     name             = 'tomcat3'
     requires_account = False
@@ -3214,6 +3291,7 @@ CadesMoab(     156,   2,    18,  128,  100, 'mpirun',     'qsub',   'qstat',    
 CadesSlurm(    156,   2,    18,  128,  100, 'mpirun',   'sbatch',  'squeue', 'scancel')
 Summit(       4608,   2,    21,  512,  100,  'jsrun',     'bsub',   'bjobs',   'bkill')
 Rhea(          512,   2,     8,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 

@@ -23,7 +23,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND DET_CO_L2_STD_DMC_1_1_SCALARS "samples"   "1127.00000000 0.000001")
 
   QMC_RUN_AND_CHECK(deterministic-Co_L2_std-vmc_dmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/Co_L2"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
                     det_dmc_std_diff
                     det_dmc_std_diff.in.xml
                     1 1
@@ -45,7 +45,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND DET_CO_L2_L2_DMC_1_1_SCALARS "samples"   "1144.00000000 0.000001")
 
   QMC_RUN_AND_CHECK(deterministic-Co_L2_L2-vmc_dmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/Co_L2"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
                     det_dmc_L2_diff
                     det_dmc_L2_diff.in.xml
                     1 1

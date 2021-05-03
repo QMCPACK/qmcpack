@@ -13,7 +13,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LI2STOSJS_DMC_SCALARS "variance"  "  0.151118  0.000312") # energy variance
 
   QMC_RUN_AND_CHECK(short-li2_sto-sj_dmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
                     Li2.STO.short
                     Li2.STO.short.in.xml
                     1 16
@@ -23,7 +23,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-li2_sto-sj_dmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
                     Li2.STO.short
                     Li2.STO.short.in.xml
                     4 4
@@ -39,7 +39,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LI2STOSJL_DMC_SCALARS "variance"  "  0.151118  0.000103") # energy variance
 
   QMC_RUN_AND_CHECK(long-li2_sto-sj_dmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
                     Li2.STO.long
                     Li2.STO.long.in.xml
                     1 16

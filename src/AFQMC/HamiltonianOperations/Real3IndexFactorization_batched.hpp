@@ -215,7 +215,7 @@ public:
     size_t cnt(0);
     if (addEJ)
     {
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       mem_needs += nwalk * local_nCV;
 #else
       if (not getKl)
@@ -225,7 +225,7 @@ public:
     if (addEXX)
     {
       mem_needs += nwalk * nel[0] * nel[0] * local_nCV;
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       mem_needs += nwalk * nel[0] * NMO;
 #else
       if (nspin == 2)
@@ -246,7 +246,7 @@ public:
         assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
         assert(KEright->stride(0) == KEright->size(1));
       }
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       if (getKl)
       {
         assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
@@ -299,7 +299,7 @@ public:
       {
         size_t cnt_(cnt);
         sp_pointer ptr(nullptr);
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         ptr = TBuff.origin() + cnt_;
         cnt_ += nwalk * nel[ispin] * NMO;
         for (int n = 0; n < nwalk; ++n)
@@ -366,7 +366,7 @@ public:
       SPRealType scl = (walker_type == CLOSED ? 2.0 : 1.0);
       for (int n = 0; n < nwalk; ++n)
         E[n][2] += 0.5 * static_cast<ComplexType>(scl * scl * ma::dot(Kl[n], Kl[n]));
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       if (getKl)
         copy_n_cast(Klptr, KEleft->num_elements(), make_device_ptr(KEleft->origin()));
 #endif
@@ -390,7 +390,7 @@ public:
   {
     assert(Likn.size(1) == X.size(0));
     assert(Likn.size(0) == v.size(0));
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
     size_t mem_needs = X.num_elements() + v.num_elements();
     set_buffer(mem_needs);
     SpCVector_ref vsp(TBuff.origin(), v.extensions());
@@ -412,7 +412,7 @@ public:
     assert(Likn.size(1) == X.size(0));
     assert(Likn.size(0) == v.size(0));
     assert(X.size(1) == v.size(1));
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
     size_t mem_needs = X.num_elements() + v.num_elements();
     set_buffer(mem_needs);
     SpCMatrix_ref vsp(TBuff.origin(), v.extensions());
@@ -437,7 +437,7 @@ public:
       assert(Lakn.size(0) == G.size(0));
       assert(Lakn.size(1) == v.size(0));
 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       size_t mem_needs = G.num_elements() + v.num_elements();
       set_buffer(mem_needs);
       SpCVector_ref vsp(TBuff.origin(), v.extensions());
@@ -459,7 +459,7 @@ public:
       assert(Likn.size(0) == G.size(0));
       assert(Likn.size(1) == v.size(0));
 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       size_t mem_needs = G.num_elements() + v.num_elements();
       set_buffer(mem_needs);
       SpCVector_ref vsp(TBuff.origin(), v.extensions());
@@ -490,7 +490,7 @@ public:
       assert(Lakn.size(1) == v.size(0));
       assert(G.size(1) == v.size(1));
 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       size_t mem_needs = G.num_elements() + v.num_elements();
       set_buffer(mem_needs);
       SpCMatrix_ref vsp(TBuff.origin(), v.extensions());
@@ -513,7 +513,7 @@ public:
       assert(Likn.size(1) == v.size(0));
       assert(G.size(1) == v.size(1));
 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       size_t mem_needs = G.num_elements() + v.num_elements();
       set_buffer(mem_needs);
       SpCMatrix_ref vsp(TBuff.origin(), v.extensions());

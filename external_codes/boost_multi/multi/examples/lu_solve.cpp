@@ -5,31 +5,21 @@ $CXX -DNDEBUG $0 -o $0x -lboost_timer&&$0x&&rm $0x;exit
 
 #include "../array.hpp"
 
-//#include<algorithm>
-//#include<cmath>
-//#include<iostream>
-
 #include<cmath> // for std::abs
 #include<numeric> // for std::iota
 
-// translated from  https://en.wikipedia.org/wiki/LU_decomposition#C_code_example
-template<class Matrix, class Permutation, class Index>
-auto lup_permute_max_diagonal(Matrix&& LU, Permutation&& P, Index i){
-	auto mi = std::max_element(begin(LU) + i, end(LU), [i](auto const& a, auto const& b){return std::abs(a[i]) < std::abs(b[i]);}) - begin(LU);
-	     swap(LU[i], LU[mi]); 
-	std::swap(P [i], P [mi]);
-	return std::abs(LU[i][i]);
-}
+struct lup{ // LU method for decomposition and solution
 
+// translated from  https://en.wikipedia.org/wiki/LU_decomposition#C_code_example
 template<class Matrix, class Permutation>
-auto lup_decompose(Matrix&& A, Permutation&& P, double tol = std::numeric_limits<double>::epsilon()){
+static auto decompose(Matrix&& A, Permutation&& P, double tol = std::numeric_limits<double>::epsilon()){
 	std::iota(begin(P), end(P), typename std::decay_t<Permutation>::value_type{0});
 	auto const N = std::min(size(A), size(~A));
 	assert( P.size() >= N );
 
 	auto&& ret = A({0, N}, {0, N});
 	for(auto i : extension(ret)){
-		if(lup_permute_max_diagonal(A, P, i) < tol) return A({0, i}, {0, i});
+		if(lup::permute_max_diagonal(A, P, i) < tol) return A({0, i}, {0, i});
 
 		for(auto&& row : A({i + 1, N})){
 			auto&& urow = row({i + 1, N});
@@ -42,8 +32,23 @@ auto lup_decompose(Matrix&& A, Permutation&& P, double tol = std::numeric_limits
 	return std::move(ret);
 }
 
+template<class Matrix, class Permutation, class VectorSol>
+static auto solve(Matrix const& LU, Permutation const& P, VectorSol&& x) -> VectorSol&&{
+	return upper_solve(LU, lower_solve(LU, permute(P, x)));
+}
+
+private:
+
+template<class Matrix, class Permutation, class Index>
+static auto permute_max_diagonal(Matrix&& LU, Permutation&& P, Index i){
+	auto mi = std::max_element(begin(LU) + i, end(LU), [i](auto const& a, auto const& b){return std::abs(a[i]) < std::abs(b[i]);}) - begin(LU);
+	     swap(LU[i], LU[mi]); 
+	std::swap(P [i], P [mi]);
+	return std::abs(LU[i][i]);
+}
+
 template<class Permutation, class Vector>
-auto permute(Permutation const& p, Vector&& data) -> Vector&&{
+static auto permute(Permutation const& p, Vector&& data) -> Vector&&{
 	assert(size(p) <= size(data));
 	using index = typename Permutation::size_type;
 	for(index i = 0; i != size(p); ++i){
@@ -62,7 +67,7 @@ auto permute(Permutation const& p, Vector&& data) -> Vector&&{
 }
 
 template<class LUMatrix, class Vector>
-auto lower_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
+static auto lower_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
 	assert(size(LU) <= size(x));
 	auto const N = size(LU);
 	for(typename LUMatrix::size_type i = 0; i != N; ++i){
@@ -73,7 +78,7 @@ auto lower_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
 }
 
 template<class LUMatrix, class Vector>
-auto upper_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
+static auto upper_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
 	assert(size(LU) <= size(x));
 	auto const N = size(LU);
 	for(typename LUMatrix::size_type i = N - 1; i >= 0; --i){
@@ -83,10 +88,7 @@ auto upper_solve(LUMatrix const& LU, Vector&& x) -> Vector&&{
 	return std::forward<Vector>(x);
 }
 
-template<class Matrix, class Permutation, class VectorSol>
-auto lup_solve(Matrix const& LU, Permutation const& P, VectorSol&& x) -> VectorSol&&{
-	return upper_solve(LU, lower_solve(LU, permute(P, x)));
-}
+};
 
 namespace multi = boost::multi;
 
@@ -100,11 +102,11 @@ int main(){
 	};
 	auto A = Aconst;
 	multi::array<int, 1> P({5}, 0.);
-	auto s = lup_decompose(A, P);
+	lup::decompose(A, P);
 
 	multi::array<double, 1> x = {4.02, 6.19, -8.22, -7.57, -3.03};
 
-	lup_solve(A, P, x);
+	lup::solve(A, P, x);
 	
 	assert( std::abs(x[4] - 0.565756) < 1e-4);
 }

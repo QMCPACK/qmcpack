@@ -293,7 +293,7 @@ public:
       SPRealType scl = (walker_type == CLOSED ? 2.0 : 1.0);
 
       long mem_needs(0);
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       mem_needs = nwalk * nel[0] * NMO;
 #else
       if (nspin > 1)
@@ -305,7 +305,7 @@ public:
       for (int ispin = 0, is0 = 0; ispin < nspin; ispin++)
       {
         sp_pointer ptr(nullptr);
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         ptr = T1.origin();
         for (int n = 0; n < nwalk; ++n)
           copy_n_cast(make_device_ptr(Gc[n].origin()) + is0, nel[ispin] * NMO, ptr + n * nel[ispin] * NMO);
@@ -455,16 +455,8 @@ public:
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
     boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    if ((haj.size(0) == 1) && (walker_type != COLLINEAR))
-    {
-      boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {1, G.size(0)});
-      return vbias(G_, v_, a, c, k);
-    }
-    else
-    {
-      boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(0), 1});
-      return vbias(G_, v_, a, c, k);
-    }
+    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(0), 1});
+    return vbias(G_, v_, a, c, k);
   }
 
   // v(n,w) = sum_ak L(ak,n) G(w,ak)
@@ -581,7 +573,7 @@ public:
 
     // can you find out how much memory is available on the buffer?
     long LBytes = max_memory_MB * 1024L * 1024L / long(sizeof(SPComplexType));
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
     LBytes -= long((3 * nspin + 1) * nwalk * NMO * NMO); // G, Fp, Fm and Gt
 #else
     LBytes -= long((1 + nspin) * nwalk * NMO * NMO); //  G and Gt
@@ -591,7 +583,7 @@ public:
     int nwmax = std::min(std::max(1, Bytes), nwalk);
     assert(nwmax >= 1 && nwmax <= nwmax);
 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
     StaticMatrix Fp_({nwalk, nspin * NMO * NMO},
                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
     StaticMatrix Fm_({nwalk, nspin * NMO * NMO},
@@ -612,7 +604,7 @@ public:
     Carray.reserve(nwalk);
 
     long gsz(0);
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
     gsz = nspin * nwmax * NMO * NMO;
 #else
     if (nspin > 1)
@@ -627,7 +619,7 @@ public:
 
       sp_pointer ptr(nullptr);
       // transpose/cast G
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
       ptr = GBuff.origin();
       for (int ispin = 0, is0 = 0, ip = 0; ispin < nspin; ispin++, is0 += NMO * NMO)
         for (int n = 0; n < nw; ++n, ip += NMO * NMO)
@@ -786,7 +778,7 @@ public:
       nw0 += nw;
     }
 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
     copy_n_cast(Fp_.origin(), Fp_.num_elements(), make_device_ptr(Fp.origin()));
     copy_n_cast(Fm_.origin(), Fm_.num_elements(), make_device_ptr(Fm.origin()));
 #endif

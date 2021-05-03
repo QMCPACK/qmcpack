@@ -33,11 +33,14 @@ export BOOST_ROOT=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914
 TYPE=Release
 Compiler=Clang
 
+source_folder=..
+
 for name in offload_cuda_real offload_cuda_real_MP offload_cuda_cplx offload_cuda_cplx_MP \
             cpu_real cpu_real_MP cpu_cplx cpu_cplx_MP
 do
 
-CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D ENABLE_MASS=1 -D MASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16'"
+CMAKE_FLAGS="-D CMAKE_BUILD_TYPE=$TYPE -D ENABLE_MASS=1 -D MASS_ROOT=/sw/summit/xl/16.1.1-5/xlmass/9.1.1 -D MPIEXEC_EXECUTABLE=`which jsrun` -D MPIEXEC_NUMPROC_FLAG='-n' -D MPIEXEC_PREFLAGS='-c;16;-g;1;-b;packed:16;--smpiargs=off'"
+
 if [[ $name == *"cplx"* ]]; then
   CMAKE_FLAGS="$CMAKE_FLAGS -D QMC_COMPLEX=1"
 fi
@@ -62,8 +65,8 @@ echo "**********************************"
 mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS -D CMAKE_C_COMPILER=mpicc -D CMAKE_CXX_COMPILER=mpicxx ..
-cmake ..
+cmake $CMAKE_FLAGS -D CMAKE_C_COMPILER=mpicc -D CMAKE_CXX_COMPILER=mpicxx $source_folder
+cmake .
 fi
 make -j16
 cd ..

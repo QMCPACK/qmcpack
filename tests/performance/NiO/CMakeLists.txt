@@ -7,14 +7,14 @@
 FUNCTION(ADD_NIO_TEST TEST_NAME PROCS THREADS TEST_DIR TEST_SOURCE_DIR INPUT_FILE H5_FILE ADJUST_INPUT)
   MESSAGE_VERBOSE("Adding test ${TEST_NAME}")
   SET (WDIR "${qmcpack_BINARY_DIR}/tests/performance/NiO/${TEST_DIR}")
-  SET (SDIR "${CMAKE_SOURCE_DIR}/tests/performance/NiO/sample/${TEST_SOURCE_DIR}")
+  SET (SDIR "${qmcpack_SOURCE_DIR}/tests/performance/NiO/sample/${TEST_SOURCE_DIR}")
 
   SET(QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack")
   IF (ENABLE_TIMERS)
     SET(PERF_ARGS "--enable-timers=fine")
   ENDIF()
 
-  SET (PPDIR "${CMAKE_SOURCE_DIR}/tests/performance/NiO")
+  SET (PPDIR "${qmcpack_SOURCE_DIR}/tests/performance/NiO")
 
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory ${SDIR} ${WDIR})
 
@@ -27,7 +27,7 @@ FUNCTION(ADD_NIO_TEST TEST_NAME PROCS THREADS TEST_DIR TEST_SOURCE_DIR INPUT_FIL
   MAYBE_SYMLINK("${QMC_DATA}/NiO/${H5_FILE}" "${WDIR}/../${H5_FILE}")
 
   SEPARATE_ARGUMENTS(ADJUST_INPUT)
-  EXECUTE_PROCESS(COMMAND ${CMAKE_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT} ${TEST_DIR}/${INPUT_FILE}
+  EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT} ${TEST_DIR}/${INPUT_FILE}
                   WORKING_DIRECTORY "${qmcpack_BINARY_DIR}/tests/performance/NiO")
 
   SET(TEST_NAME ${TEST_NAME}-${PROCS}-${THREADS})

@@ -68,7 +68,7 @@ namespace managed{
 			}
 			return ret;
 		}
-		void deallocate(pointer p, size_type){cuda::free(static_cast<managed::ptr<void>>(p));}
+		void deallocate(pointer p, size_type){cuda::managed::free(static_cast<managed::ptr<void>>(p));}
 		template<class P, class... Args>
 		void construct(P p, Args&&... args){
 			::new(p.rp_) T(std::forward<Args>(args)...);

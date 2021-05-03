@@ -12,7 +12,7 @@ IF (NOT QMC_CUDA)
 #  LIST(APPEND LIH_PP_SCALARS "flux" "0.0 0.0025")
 
   QMC_RUN_AND_CHECK(short-LiH_pp-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     vmc_hf_noj
                     vmc_hf_noj.in.xml
                     1 16
@@ -31,7 +31,7 @@ IF (NOT QMC_CUDA)
 #  LIST(APPEND LIH_PP_SCALARS "flux" "-0.0082 0.0051")
 
   QMC_RUN_AND_CHECK(short-LiH_pp-vmc_hf_sdj_xml
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     vmc_hf_sdj_xml
                     vmc_hf_sdj_xml.xml
                     1 16
@@ -40,7 +40,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-LiH_pp-vmc_hf_sdj_xml
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     vmc_hf_sdj_xml
                     vmc_hf_sdj_xml.xml
                     16 1
@@ -49,7 +49,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-LiH_pp-vmc_hf_sdj_xml
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     vmc_hf_sdj_xml
                     vmc_hf_sdj_xml.xml
                     4 4
@@ -63,7 +63,7 @@ IF (NOT QMC_CUDA)
 #
 
   QMC_RUN_AND_CHECK(short-LiH_pp-vmc_hf_sdj_hdf5
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     vmc_hf_sdj_hdf5
                     vmc_hf_sdj_hdf5.xml
                     1 16
@@ -72,7 +72,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-LiH_pp-vmc_hf_sdj_hdf5
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     vmc_hf_sdj_hdf5
                     vmc_hf_sdj_hdf5.xml
                     16 1
@@ -81,7 +81,7 @@ IF (NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-LiH_pp-vmc_hf_sdj_hdf5
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     vmc_hf_sdj_hdf5
                     vmc_hf_sdj_hdf5.xml
                     4 4
@@ -94,7 +94,7 @@ IF (NOT QMC_CUDA)
 #
 
   QMC_RUN_AND_CHECK(short-LiH_pp-vmc_hf_sdj_old_hdf5
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     vmc_hf_sdj_old-hdf5
                     vmc_hf_sdj_old-hdf5.xml
                     1 16
@@ -131,7 +131,7 @@ ELSE()
 ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-LiH_pp-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     det_vmc_hf_noj
                     det_vmc_hf_noj.in.xml
                     1 1
@@ -163,7 +163,7 @@ ELSE()
 ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-LiH_pp-vmc_hf_sdj_xml
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     det_vmc_hf_sdj_xml
                     det_vmc_hf_sdj_xml.xml
                     1 1
@@ -195,7 +195,7 @@ ELSE()
 ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-LiH_pp-vmc_hf_sdj_hdf5
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
                     det_vmc_hf_sdj_hdf5
                     det_vmc_hf_sdj_hdf5.xml
                     1 1
@@ -211,7 +211,7 @@ ENDIF()
   if (add_tests)
     SIMPLE_RUN_AND_CHECK(
       short-LiH_pp-vmc_hf_sdj_estimator_spindensity
-      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       vmc_hf_sdj_spindens_short.in.xml
       4 4
       check_stats.py -s 0 -q spindensity -e 2 -c 8 -p vmc_hf_sdj_spindens_short -r qmc_ref/vmc_hf_sdj_spindens_short.s000.stat_ref_spindensity.dat
@@ -219,7 +219,7 @@ ENDIF()
 
     SIMPLE_RUN_AND_CHECK(
       long-LiH_pp-vmc_hf_sdj_estimator_spindensity
-      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       vmc_hf_sdj_spindens_long.in.xml
       4 4
       check_stats.py -s 0 -q spindensity -e 20 -c 8 -p vmc_hf_sdj_spindens_long -r qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat
@@ -227,7 +227,7 @@ ENDIF()
 
     SIMPLE_RUN_AND_CHECK(
       short-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
-      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       vmc_hf_sdj_edens_vor_short.in.xml
       4 4
       check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_short -r qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat
@@ -235,7 +235,7 @@ ENDIF()
 
     SIMPLE_RUN_AND_CHECK(
       long-LiH_pp-vmc_hf_sdj_estimator_energydensity_voronoi
-      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_pp"
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
       vmc_hf_sdj_edens_vor_long.in.xml
       4 4
       check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_long -r qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat

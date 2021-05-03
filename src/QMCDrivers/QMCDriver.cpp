@@ -69,8 +69,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  RollBackBlocks = 0;
-  m_param.add(RollBackBlocks, "rewind");
   Period4CheckPoint = -1;
   storeConfigs      = 0;
   //m_param.add(storeConfigs,"storeConfigs");

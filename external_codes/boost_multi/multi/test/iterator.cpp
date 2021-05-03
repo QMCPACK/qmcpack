@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(iterator_semantics){
 	cit = it3;
 	BOOST_REQUIRE( cit == it3 );
 
-	BOOST_REQUIRE((begin(A) == multi::array<double, 3>::iterator{rend(A)}));
+	BOOST_REQUIRE(( begin(A) == multi::array<double, 3>::iterator(rend(A)) ));
 
 }
 

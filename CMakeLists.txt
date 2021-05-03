@@ -1,7 +1,7 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.14.0)
 
 # CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
 # and environment variable in search path.
@@ -15,12 +15,9 @@ include(CMakeDependentOption)
 ######################################################################
 # QMCPACK
 ######################################################################
-PROJECT(qmcpack)
-
-SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 10)
-SET(QMCPACK_VERSION_PATCH 9)
-SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
+project(qmcpack
+        VERSION 3.11.9
+        LANGUAGES C CXX)
 
 ######################################################
 # Directory where customize cmake files reside
@@ -191,11 +188,6 @@ OPTION(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 CMAKE_DEPENDENT_OPTION(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
-IF(USE_OBJECT_TARGET)
-   IF(${CMAKE_VERSION} VERSION_LESS "3.14.0")
-     MESSAGE(FATAL_ERROR "USE_OBJECT_TARGET=ON requires cmake 3.14.0 or above!")
-   ENDIF()
-ENDIF()
 IF(ENABLE_CUDA AND QMC_CUDA)
   MESSAGE(FATAL_ERROR "ENABLE_CUDA=1 and QMC_CUDA=1 can not be set together!")
 ENDIF(ENABLE_CUDA AND QMC_CUDA)
@@ -215,7 +207,7 @@ MARK_AS_ADVANCED(DEBUG_PER_STEP_ACCEPT_REJECT)
 ######################################################################
 # Standard test
 ######################################################################
-SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
+SET(CMAKE_MODULE_PATH "${qmcpack_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
 
 ######################################################################
@@ -364,50 +356,49 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     ENDIF()
   ENDIF()
 
-  #------------------------------------
-  # Identify the compiler -- This serves only to deal with case where only C or CXX is set, refactor? 
-  #------------------------------------
-  IF ( CMAKE_C_COMPILER_WORKS OR CMAKE_C_COMPILER_WORKS )
-    IF( (CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR ( CMAKE_C_COMPILER_ID MATCHES "GNU") )
-      SET( COMPILER GNU )
-    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "XL") OR ( CMAKE_C_COMPILER_ID MATCHES "XL") )
-      SET( COMPILER IBM )
-    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "Intel") OR (CMAKE_C_COMPILER_ID MATCHES "Intel") )
-      SET( COMPILER Intel )
-    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "PGI") OR (CMAKE_C_COMPILER_ID MATCHES "PGI") )
-      SET( COMPILER PGI )
-    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "Cray") OR (CMAKE_C_COMPILER_ID MATCHES "Cray") )
-      SET( COMPILER Cray )
-    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_C_COMPILER_ID MATCHES "Clang") )
-      SET( COMPILER Clang )
-    ELSE()
-        SET(USING_DEFAULT TRUE)
-        MESSAGE("${CMAKE_C_COMPILER_ID}")
-        MESSAGE(WARNING "Unknown C/C++ compiler, default flags will be used")
-    ENDIF()
-  ELSE()
-    MESSAGE(WARNING "No compiler identified")
-  ENDIF()
-  MESSAGE(STATUS "Compiler: ${COMPILER}")
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(COMPILER GNU)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "XL")
+    set(COMPILER IBM)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    set(COMPILER Clang)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+    set(COMPILER Intel)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
+    set(COMPILER PGI)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Cray")
+    set(COMPILER Cray)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(COMPILER Clang)
+  else()
+      message("${CMAKE_CXX_COMPILER_ID}")
+      message(WARNING "Unknown C/C++ compiler ${CMAKE_CXX_COMPILER_ID}, default flags will be used")
+  endif()
+  message(STATUS "C++ Compiler is identified by QMCPACK as : ${COMPILER}")
 
   #------------------------------------
   # Include compiler-specific cmake file
   #------------------------------------
-  IF( ${COMPILER} MATCHES "IBM" )
-    INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
-  ELSEIF( ${COMPILER} MATCHES "Intel" )
-    INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
-  ELSEIF( ${COMPILER} MATCHES "GNU" )
-    INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-  ELSEIF( ${COMPILER} MATCHES "Clang" )
-    INCLUDE(${PROJECT_CMAKE}/ClangCompilers.cmake)
-  ELSEIF( ${COMPILER} MATCHES "PGI" )
-    INCLUDE(${PROJECT_CMAKE}/PGICompilers.cmake)
-  ELSE()
-    MESSAGE(WARNING "No default file for compiler (${COMPILER})")
-  ENDIF()
+  if(COMPILER MATCHES "IBM")
+    include(${PROJECT_CMAKE}/IBMCompilers.cmake)
+  elseif(COMPILER MATCHES "Intel")
+    include(${PROJECT_CMAKE}/IntelCompilers.cmake)
+  elseif(COMPILER MATCHES "GNU")
+    include(${PROJECT_CMAKE}/GNUCompilers.cmake)
+  elseif(COMPILER MATCHES "Clang")
+    include(${PROJECT_CMAKE}/ClangCompilers.cmake)
+  elseif(COMPILER MATCHES "PGI")
+    include(${PROJECT_CMAKE}/PGICompilers.cmake)
+  else()
+    message(WARNING "No default file for compiler (${COMPILER})")
+  endif()
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
+
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
+  message(FATAL_ERROR "Mixing C and C++ compilers from different vendors is not permitted. Current "
+                      "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
+endif()
 
 ###############################################
 # Set C++ minimum standard and run basic checks
@@ -456,7 +447,14 @@ math(EXPR alignment_remainder "${QMC_SIMD_ALIGNMENT} % ${default_alignment}")
 if (alignment_remainder)
   message(FATAL_ERROR "QMC_SIMD_ALIGNMENT must be a multiple of ${default_alignment}. Bad cached value is ${QMC_SIMD_ALIGNMENT}")
 endif()
-message(STATUS "Setting QMC_SIMD_ALIGNMENT to ${QMC_SIMD_ALIGNMENT}")
+message(STATUS "QMC_SIMD_ALIGNMENT is set to ${QMC_SIMD_ALIGNMENT}")
+
+#---------------------------------------------------------
+# Determine if OpenMP taskloop works with the CXX compiler
+#---------------------------------------------------------
+include(CMake/TestOpenMPtaskloop.cmake)
+option(ENABLE_OMP_TASKLOOP "Enable OpenMP taskloop" ${OMP_TASKLOOP_OKAY})
+message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 
 #---------------------------------------------------------
 # Set up OpenMP offload compile options

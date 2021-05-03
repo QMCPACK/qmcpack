@@ -25,9 +25,6 @@ SET(MOSRCS
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesAsciiParser.cpp
-  CasinoParser.cpp
-  BParser.cpp
-  BMakeFunc.cpp
   LCAOHDFParser.cpp
 )
 
@@ -89,7 +86,4 @@ ENDIF()
 INSTALL(TARGETS qmcfinitesize
         RUNTIME DESTINATION bin)
 
-#ppconvert
-if( BUILD_PPCONVERT )
-  SUBDIRS(ppconvert)
-endif( BUILD_PPCONVERT )
+SUBDIRS(ppconvert)

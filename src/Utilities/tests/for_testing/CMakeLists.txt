@@ -14,7 +14,7 @@ SET(UTEST_EXE test_${TEST_NAME})
 SET(UTEST_NAME deterministic-unit_test_${TEST_NAME})
 
 ADD_EXECUTABLE(${UTEST_EXE} test_checkMatrix.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main utilities_for_test containers)
+TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main_no_mpi utilities_for_test containers)
 target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

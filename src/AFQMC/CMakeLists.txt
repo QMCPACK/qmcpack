@@ -150,6 +150,10 @@ IF (BUILD_UNIT_TESTS)
       ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol.h5
       ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/wfn_rhf.dat
       )
+  SET(AFQMC_UNIT_TEST_INPUT_REAL_DENSE
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/ham_chol_dense.h5
+      ${qmcpack_SOURCE_DIR}/tests/afqmc/Ne_cc-pvdz/wfn_rhf.dat
+      )
   IF (QMC_COMPLEX)
     IF (ENABLE_CUDA OR ENABLE_HIP)
       SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_SYM})
@@ -160,7 +164,12 @@ IF (BUILD_UNIT_TESTS)
           )
     ENDIF()
   ELSE()
-    SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_REAL})
+    IF (ENABLE_CUDA OR ENABLE_HIP)
+      SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_REAL_DENSE})
+    ELSE()
+      SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_REAL})
+      SET(AFQMC_UNIT_TEST_INPUTS ${AFQMC_UNIT_TEST_INPUT_REAL_DENSE})
+    ENDIF()
   ENDIF()
   SUBDIRS(Matrix/tests)
   SUBDIRS(Numerics/tests)

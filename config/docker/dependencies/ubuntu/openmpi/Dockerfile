@@ -10,6 +10,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get install gcc g++ \ 
                     clang \
                     clang-format \
+                    gcovr \
                     python3 \
                     cmake \
                     ninja-build \
@@ -19,10 +20,11 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     libhdf5-openmpi-dev \
                     hdf5-tools \
                     libfftw3-dev \
-                    libopenblas-dev \
+                    libopenblas-openmp-dev \
                     libxml2-dev \
                     sudo \
                     curl \
+                    rsync \
                     -y
 
 # Python packages for tests
@@ -35,5 +37,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
 # must add a user different from root 
 # to run MPI executables
 RUN useradd -ms /bin/bash user
+RUN adduser user sudo
+
 USER user
 WORKDIR /home/user

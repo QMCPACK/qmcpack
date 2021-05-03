@@ -16,8 +16,11 @@ namespace qmcplusplus
 {
 namespace testing
 {
-template <typename REAL>
-RandomForTest<REAL>::RandomForTest() { rng.init(0, 1, 111); }
+template<typename REAL>
+RandomForTest<REAL>::RandomForTest()
+{
+  rng.init(0, 1, 111);
+}
 
 template<typename REAL>
 std::vector<REAL> RandomForTest<REAL>::getRealRandoms(int ncount)

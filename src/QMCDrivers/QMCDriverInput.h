@@ -49,9 +49,6 @@ protected:
 
   /// if true, batched operations are serialized over walkers
   bool crowd_serialize_walkers_ = false;
-
-  /// number of blocks to be rolled back
-  int RollBackBlocks_ = 0;
   /// period of dumping walker positions and IDs for Forward Walking (steps)
   int store_config_period_ = 0;
   /// period to recalculate the walker properties from scratch.
@@ -98,7 +95,6 @@ protected:
    */
 
 public:
-  int get_RollBackBlocks() const { return RollBackBlocks_; }
   int get_store_config_period() const { return store_config_period_; }
   int get_recalculate_properties_period() const { return recalculate_properties_period_; }
   input::PeriodStride get_config_dump_period() const { return config_dump_period_; }

@@ -1,5 +1,5 @@
 #qmcpack variables
-QMCPACK_VERSION    = @QMCPACK_VERSION@
+QMCPACK_VERSION    = @qmcpack_VERSION@
 # See qmcpack --version for the most up-to-date information about the
 # most recent git commit
 
