@@ -384,6 +384,28 @@ class Qmcpack(Simulation):
             else:
                 self.error('incorporating wavefunction from '+sim.__class__.__name__+' has not been implemented')
             #end if
+        elif result_name=='gc_occupation':
+            from qmcpack_converters import gcta_occupation
+            if not isinstance(sim,Pw2qmcpack):
+                msg = 'grand-canonical occupation require Pw2qmcpack'
+                self.error(msg)
+            #endif
+            # step 1: extract Fermi energy for each spin from nscf
+            if len(sim.dependencies) != 1:
+                msg = 'need scf/nscf calculation for Fermi energy'
+                self.error(msg)
+            #end if
+            nscf = sim.dependencies[1].sim
+            na = nscf.load_analyzer_image()
+            Ef_list = na.fermi_energies
+            # step 2: analyze ESH5 file for states below Fermi energy
+            pa = sim.load_analyzer_image()
+            pa.analyze(Ef_list=Ef_list)
+            # step 3: count the number of up/dn electrons at each supertwist
+            s1 = self.system.structure
+            ntwist = len(s1.kpoints)
+            nelecs_at_twist = gcta_occupation(pa.wfh5, ntwist)
+            self.nelecs_at_twist = nelecs_at_twist
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
         #end if        
