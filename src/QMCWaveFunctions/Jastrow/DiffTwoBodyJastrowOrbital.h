@@ -89,20 +89,14 @@ public:
     }
     else
     {
-      if (NumPtcls == 2)
-      {
-        // a very special case, 1 up + 1 down
-        // uu/dd was prevented by the builder
+      // a very special case, 1 particle of each type (e.g. 1 up + 1 down)
+      // uu/dd/etc. was prevented by the builder
+      if (NumPtcls == NumGroups)
         for (int ig = 0; ig < NumGroups; ++ig)
-          for (int jg = 0; jg < NumGroups; ++jg)
-            F[ig * NumGroups + jg] = j;
-      }
-      else
-      {
-        // generic case
-        F[ia * NumGroups + ib] = j;
-        F[ib * NumGroups + ia] = j;
-      }
+          F[ig * NumGroups + ig] = j;
+      // generic case
+      F[ia * NumGroups + ib] = j;
+      F[ib * NumGroups + ia] = j;
     }
     std::stringstream aname;
     aname << ia << ib;
