@@ -192,8 +192,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
         try:
             fermi_energies = []
             for l in lines:
-                if l.find('Fermi energy')!=-1:
-                    fermi_energies.append( float( l.split('is')[1].split()[0] ) )
+                if l.find('Fermi energ')!=-1:
+                    toks = l.split()[::-1]
+                    assert toks[0] == 'ev'
+                    for tok in toks[1:]:
+                      try:
+                        ef1 = float(tok)
+                        fermi_energies.append(ef1)
+                      except ValueError:
+                        fermi_energies = fermi_energies[::-1]
+                      #end try
+                    #end for
                 #end if
             #end for
             if len(fermi_energies)==0:
