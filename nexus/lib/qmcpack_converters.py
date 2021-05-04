@@ -185,6 +185,103 @@ def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=Fa
 #end def generate_pw2qmcpack_input
 
 
+def import_nexus_module(module_name):
+    import importlib
+    return importlib.import_module(module_name)
+#end def import_nexus_module
+
+
+def read_eshdf_nofk_data(filename, Ef_list):
+    import numpy as np
+    from numpy import array,pi,dot,sqrt,abs,zeros
+    from numpy.linalg import inv,det
+    from unit_converter import convert
+    try:
+      hdfreader = import_nexus_module('hdfreader')
+      read_hdf = hdfreader.read_hdf
+      del hdfreader
+    except:
+      from hdfreader import read_hdf
+    #end try
+
+    def h5int(i):
+        return array(i,dtype=int)[0]
+    #end def h5int
+
+    h        = read_hdf(filename,view=True)
+    gvu      = array(h.electrons.kpoint_0.gvectors)
+    axes     = array(h.supercell.primitive_vectors)
+    kaxes    = 2*pi*inv(axes).T
+    gv       = dot(gvu,kaxes)
+    Ngv      = len(gv[:,0])
+    kmag     = sqrt((gv**2).sum(1))
+    nk       = h5int(h.electrons.number_of_kpoints)
+    ns       = h5int(h.electrons.number_of_spins)
+    if len(Ef_list) != ns:
+      msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
+      return msg
+    occpaths = obj()
+    data     = obj()
+    for k in range(nk):
+        kin_k   = obj()
+        eig_k   = obj()
+        k_k     = obj()
+        nk_k    = obj()
+        nelec_k = zeros((ns,),dtype=float)
+        kp = h.electrons['kpoint_'+str(k)]
+        gvs = dot(array(kp.reduced_k),kaxes)
+        gvk = gv.copy()
+        for d in range(3):
+            gvk[:,d] += gvs[d]
+        #end for
+        kinetic=(gvk**2).sum(1)/2 # Hartree units
+        for s, Ef in zip(range(ns), Ef_list):
+            E_fermi = Ef+1e-8
+            #print ' ',(k,s),(nk,ns)
+            kin_s = []
+            eig_s = []
+            k_s   = gvk
+            nk_s  = 0*kmag
+            nelec_s = 0
+            path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
+            spin = h.get_path(path)
+            eig = convert(array(spin.eigenvalues),'Ha','eV')
+            nst = h5int(spin.number_of_states)
+            for st in range(nst):
+                e = eig[st]
+                if e<E_fermi:
+                    stpath = path+'/state_{0}/psi_g'.format(st)
+                    occpaths.append(stpath)
+                    psi = array(h.get_path(stpath))
+                    nk_orb = (psi**2).sum(1)
+                    kin_orb = (kinetic*nk_orb).sum()
+                    nelec_s += nk_orb.sum()
+                    nk_s += nk_orb
+                    kin_s.append(kin_orb)
+                    eig_s.append(e)
+                #end if
+            #end for
+            data[k,s] = obj(
+                kpoint = array(kp.reduced_k),
+                kin    = array(kin_s),
+                eig    = array(eig_s),
+                k      = k_s,
+                nk     = nk_s,
+                ne     = nelec_s,
+                )
+        #end for
+    #end for
+    res = obj(
+        orbfile  = filename,
+        axes     = axes,
+        kaxes    = kaxes,
+        nkpoints = nk,
+        nspins   = ns,
+        data     = data,
+        )
+    return res
+#end def read_eshdf_nofk_data
+
 
 class Pw2qmcpackAnalyzer(SimulationAnalyzer):
     def __init__(self,arg0):
@@ -199,8 +296,13 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
         #end if
     #end def __init__
 
-    def analyze(self):
-        None
+    def analyze(self, Ef_list=None):
+      if Ef_list is not None:
+        res = read_eshdf_nofk_data(self.h5file, Ef_list)
+        if type(res) is str:
+          self.error(res)
+        else:
+          self.wfh5 = res
     #end def analyze
 
     def get_result(self,result_name):
