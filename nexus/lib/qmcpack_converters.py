@@ -338,11 +338,13 @@ class Pw2qmcpack(Simulation):
     generic_identifier = 'pw2qmcpack'
     application = 'pw2qmcpack.x'
     application_properties = set(['serial'])
-    application_results    = set(['orbitals'])
+    application_results    = set(['orbitals','gc_occupation'])
 
     def check_result(self,result_name,sim):
         calculating_result = False
         if result_name=='orbitals':
+            calculating_result = True
+        elif result_name=='gc_occupation':
             calculating_result = True
         #end if        
         return calculating_result
@@ -367,6 +369,8 @@ class Pw2qmcpack(Simulation):
             result.h5file   = os.path.join(self.locdir,outdir,prefix+'.pwscf.h5')
             result.ptcl_xml = os.path.join(self.locdir,outdir,prefix+'.ptcl.xml')
             result.wfs_xml  = os.path.join(self.locdir,outdir,prefix+'.wfs.xml')
+        elif result_name=='gc_occupation':
+            pass  # defer to Qmcpack.incorporate_result
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if        
