@@ -283,6 +283,27 @@ def read_eshdf_nofk_data(filename, Ef_list):
 #end def read_eshdf_nofk_data
 
 
+def gcta_occupation(wfh5, ntwist):
+  nspin = wfh5.nspins
+  nk = wfh5.nkpoints
+  nprim = nk//ntwist
+  assert nprim*ntwist == nk
+  nelecs_at_twist = []
+  for itwist in range(ntwist):
+    iks = range(itwist, nk, ntwist)
+    # calculate nelec for each spin
+    nelecs = []
+    for ispin in range(nspin):
+      nl = [len(wfh5.data[ik, ispin].eig) for ik in iks]
+      nup = sum(nl)
+      nelecs.append(nup)
+      if nspin == 1:
+        nelecs.append(nup)
+    nelecs_at_twist.append(nelecs)
+  return nelecs_at_twist
+#end gcta_occupation
+
+
 class Pw2qmcpackAnalyzer(SimulationAnalyzer):
     def __init__(self,arg0):
         if isinstance(arg0,Simulation):
