@@ -545,10 +545,10 @@ void DensityMatrices1B::registerCollectables(std::vector<observable_helper>& h5d
   hid_t ngid        = H5Gcreate(dgid, nname.c_str(), 0);
   for (int s = 0; s < nspecies; ++s)
   {
-    observable_helper oh(species_name[s]);
+    h5desc.emplace_back(species_name[s]);
+    auto& oh = h5desc.back();
     oh.set_dimensions(ng, nindex + s * nentries);
     oh.open(ngid);
-    h5desc.push_back(oh);
   }
 
   if (energy_mat)
@@ -557,10 +557,10 @@ void DensityMatrices1B::registerCollectables(std::vector<observable_helper>& h5d
     hid_t egid        = H5Gcreate(dgid, ename.c_str(), 0);
     for (int s = 0; s < nspecies; ++s)
     {
-      observable_helper oh(species_name[s]);
+      h5desc.emplace_back(species_name[s]);
+      auto& oh = h5desc.back();
       oh.set_dimensions(ng, eindex + s * nentries);
       oh.open(egid);
-      h5desc.push_back(oh);
     }
   }
 }

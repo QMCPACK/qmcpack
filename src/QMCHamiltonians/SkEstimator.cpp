@@ -142,10 +142,11 @@ void SkEstimator::registerCollectables(std::vector<observable_helper>& h5desc, h
   if (hdf5_out)
   {
     std::vector<int> ndim(1, NumK);
-    observable_helper h5o(myName);
+    h5desc.emplace_back(myName);
+    auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, myIndex);
     h5o.open(gid);
-    h5desc.push_back(h5o);
+
     hsize_t kdims[2];
     kdims[0]          = NumK;
     kdims[1]          = OHMMS_DIM;

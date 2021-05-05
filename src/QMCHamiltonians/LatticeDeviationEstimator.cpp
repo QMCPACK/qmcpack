@@ -238,12 +238,10 @@ void LatticeDeviationEstimator::registerCollectables(std::vector<observable_help
     }
 
     // open hdf5 entry and resize
-    observable_helper h5o(myName);
+    h5desc.emplace_back(myName);
+    auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, h5_index);
     h5o.open(gid);
-
-    // add to h5 file
-    h5desc.push_back(h5o);
   }
 }
 

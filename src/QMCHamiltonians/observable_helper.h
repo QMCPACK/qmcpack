@@ -25,7 +25,6 @@
 
 namespace qmcplusplus
 {
-
 /** define observable_helper
  *
  * This is a helper class to manage a hdf5 dagroup for each collectable.
@@ -58,6 +57,12 @@ struct observable_helper
 
   ///default constructor
   observable_helper(const std::string& title = "dummy") : data_id(-1), space1_id(-1), group_name(title) {}
+
+  observable_helper(const observable_helper&) = delete;
+  observable_helper& operator=(const observable_helper&) = delete;
+
+  observable_helper(observable_helper&&) = default;
+  observable_helper& operator=(observable_helper&&) = default;
 
   ///close resources
   ~observable_helper()

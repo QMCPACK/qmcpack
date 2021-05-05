@@ -152,7 +152,8 @@ void PairCorrEstimator::registerCollectables(std::vector<observable_helper>& h5l
   int offset = myIndex;
   for (int i = 0; i < gof_r_prefix.size(); ++i)
   {
-    observable_helper h5o(gof_r_prefix[i]);
+    h5list.emplace_back(gof_r_prefix[i]);
+    auto& h5o = h5list.back();
     h5o.set_dimensions(onedim, offset);
     h5o.open(gid);
     h5o.addProperty(const_cast<RealType&>(Delta), "delta");
@@ -160,7 +161,6 @@ void PairCorrEstimator::registerCollectables(std::vector<observable_helper>& h5l
     //       h5o->addProperty(const_cast<std::vector<RealType>&>(norm_factor),"norm_factor");
     //       std::string blob("norm_factor[i]=1/r_m[i]^2 for r_m[i]=(r[i]+r[i+1])/2");
     //       h5o->addProperty(blob,"dictionary");
-    h5list.push_back(h5o);
     offset += NumBins;
   }
 }

@@ -133,14 +133,14 @@ void ReferencePoints::write_description(std::ostream& os, std::string& indent)
 
 void ReferencePoints::save(std::vector<observable_helper>& h5desc, hid_t gid) const
 {
-  observable_helper oh("reference_points");
+  h5desc.emplace_back("reference_points");
+  auto& oh = h5desc.back();
   oh.open(gid);
   std::map<std::string, Point>::const_iterator it;
   for (it = points.begin(); it != points.end(); ++it)
   {
     oh.addProperty(const_cast<Point&>(it->second), it->first);
   }
-  h5desc.push_back(oh);
   return;
 }
 

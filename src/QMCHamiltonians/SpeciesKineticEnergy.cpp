@@ -84,10 +84,10 @@ void SpeciesKineticEnergy::registerCollectables(std::vector<observable_helper>& 
   if (hdf5_out)
   {
     std::vector<int> ndim(1, num_species);
-    observable_helper h5o(myName);
+    h5desc.emplace_back(myName);
+    auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, h5_index);
     h5o.open(gid);
-    h5desc.push_back(h5o);
   }
 }
 

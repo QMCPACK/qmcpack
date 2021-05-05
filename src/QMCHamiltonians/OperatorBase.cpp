@@ -170,11 +170,11 @@ void OperatorBase::registerObservables(std::vector<observable_helper>& h5desc, h
   //exclude collectables
   if (!collect)
   {
-    int loc = h5desc.size();
-    h5desc.push_back(observable_helper(myName));
+    h5desc.emplace_back(myName);
+    auto& oh = h5desc.back();
     std::vector<int> onedim(1, 1);
-    h5desc[loc].set_dimensions(onedim, myIndex);
-    h5desc[loc].open(gid);
+    oh.set_dimensions(onedim, myIndex);
+    oh.open(gid);
   }
 }
 

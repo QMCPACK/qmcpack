@@ -712,7 +712,8 @@ void SpaceGrid::registerCollectables(std::vector<observable_helper>& h5desc, hid
   std::stringstream ss;
   ss << grid_index + cshift;
   std::string name = "spacegrid" + ss.str();
-  observable_helper oh(name);
+  h5desc.emplace_back(name);
+  auto& oh = h5desc.back();
   if (!chempot)
     ng[0] = nvalues_per_domain * ndomains;
   else
@@ -812,7 +813,7 @@ void SpaceGrid::registerCollectables(std::vector<observable_helper>& h5desc, hid
       oh.addProperty(const_cast<iMatrix&>(imat), gmname);
     }
   }
-  h5desc.push_back(oh);
+
   return;
 }
 

@@ -481,7 +481,8 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
 {
   hid_t g = H5Gcreate(gid, myName.c_str(), 0);
-  observable_helper oh("variables");
+  h5desc.emplace_back("variables");
+  auto& oh = h5desc.back();
   oh.open(g);
   oh.addProperty(const_cast<int&>(nparticles), "nparticles");
   int nspacegrids = spacegrids.size();
@@ -492,14 +493,16 @@ void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper>
     oh.addProperty(const_cast<int&>(nions), "nions");
     oh.addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions");
   }
-  h5desc.push_back(oh);
+
+
   ref.save(h5desc, g);
-  oh = observable_helper("outside");
+
+  h5desc.emplace_back("outside");
+  auto& ohOutside = h5desc.back();
   std::vector<int> ng(1);
   ng[0] = (int)nEDValues;
-  oh.set_dimensions(ng, outside_buffer_offset);
-  oh.open(g);
-  h5desc.push_back(oh);
+  ohOutside.set_dimensions(ng, outside_buffer_offset);
+  ohOutside.open(g);
   for (int i = 0; i < spacegrids.size(); i++)
   {
     SpaceGrid& sg = *spacegrids[i];
@@ -507,13 +510,14 @@ void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper>
   }
   if (ion_points)
   {
-    oh = observable_helper("ions");
     std::vector<int> ng2(2);
     ng2[0] = nions;
     ng2[1] = (int)nEDValues;
-    oh.set_dimensions(ng2, ion_buffer_offset);
-    oh.open(g);
-    h5desc.push_back(oh);
+
+    h5desc.emplace_back("ions");
+    auto& ohIons = h5desc.back();
+    ohIons.set_dimensions(ng2, ion_buffer_offset);
+    ohIons.open(g);
   }
 }
 

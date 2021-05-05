@@ -200,10 +200,10 @@ void SpinDensity::registerCollectables(std::vector<observable_helper>& h5desc, h
 
   for (int s = 0; s < nspecies; ++s)
   {
-    observable_helper oh(species_name[s]);
+    h5desc.emplace_back(species_name[s]);
+    auto& oh = h5desc.back();
     oh.set_dimensions(ng, myIndex + s * npoints);
     oh.open(sgid);
-    h5desc.push_back(oh);
   }
 }
 

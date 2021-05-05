@@ -102,12 +102,12 @@ void MomentumEstimator::registerCollectables(std::vector<observable_helper>& h5d
     std::vector<int> ng(1);
     //add nofk
     ng[0] = nofK.size();
-    observable_helper h5o("nofk");
+    h5desc.emplace_back("nofk");
+    auto& h5o = h5desc.back();
     h5o.set_dimensions(ng, myIndex);
     h5o.open(gid);
     h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
-    h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
-    h5desc.push_back(h5o);
+    h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");    
   }
 }
 
