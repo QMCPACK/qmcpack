@@ -81,7 +81,7 @@ FOREACH(CATEGORY trialwf sposet jastrow determinant)
 
   TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions utilities_for_test)
   IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} cuda_test_kernels qmcparticle qmcutil containers platform_omptarget)
+  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcparticle qmcutil containers platform_omptarget)
   ENDIF()
 
   ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
@@ -106,8 +106,7 @@ if (ENABLE_CUDA)
   ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 endif()
 
-# benchmarking increases cost of test compilation so don't build all the tests with it.
-if (ENABLE_CUDA)
+if (ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   SET(UTEST_EXE benchmark_diracmatrixcompute)
   SET(UTEST_NAME deterministic-unit_${UTEST_EXE})
   SET(BENCHMARK_SRC makeRngSpdMatrix.cpp benchmark_DiracMatrixComputeCUDA.cpp)
@@ -119,5 +118,4 @@ if (ENABLE_CUDA)
   TARGET_INCLUDE_DIRECTORIES(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
   ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 endif()
-
 
