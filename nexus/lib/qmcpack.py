@@ -385,17 +385,24 @@ class Qmcpack(Simulation):
                 self.error('incorporating wavefunction from '+sim.__class__.__name__+' has not been implemented')
             #end if
         elif result_name=='gc_occupation':
+            from pwscf import Pwscf
             from qmcpack_converters import gcta_occupation
             if not isinstance(sim,Pw2qmcpack):
                 msg = 'grand-canonical occupation require Pw2qmcpack'
                 self.error(msg)
             #endif
             # step 1: extract Fermi energy for each spin from nscf
-            if len(sim.dependencies) != 1:
-                msg = 'need scf/nscf calculation for Fermi energy'
+            nscf = None
+            npwdep = 0
+            for dep in sim.dependencies:
+                if isinstance(dep.sim,Pwscf):
+                    nscf = dep.sim
+                    npwdep += 1
+            if npwdep != 1:
+                msg = 'need exactly 1 scf/nscf calculation for Fermi energy'
+                msg += '\n found %d' % npwdep
                 self.error(msg)
             #end if
-            nscf = sim.dependencies[1].sim
             na = nscf.load_analyzer_image()
             Ef_list = na.fermi_energies
             # step 2: analyze ESH5 file for states below Fermi energy
