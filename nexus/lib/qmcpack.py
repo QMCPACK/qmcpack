@@ -407,7 +407,10 @@ class Qmcpack(Simulation):
             Ef_list = na.fermi_energies
             # step 2: analyze ESH5 file for states below Fermi energy
             pa = sim.load_analyzer_image()
-            pa.analyze(Ef_list=Ef_list)
+            if 'wfh5' not in pa:
+              pa.analyze(Ef_list=Ef_list)
+              sim.save_analyzer_image(pa)
+            #end if
             # step 3: count the number of up/dn electrons at each supertwist
             s1 = self.system.structure
             ntwist = len(s1.kpoints)
