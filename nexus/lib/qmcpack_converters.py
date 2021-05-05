@@ -191,6 +191,7 @@ def read_eshdf_eig_data(filename, Ef_list):
     from numpy.linalg import inv
     from unit_converter import convert
     from hdfreader import read_hdf
+    from developer import error
 
     def h5int(i):
         return array(i,dtype=int)[0]
@@ -203,7 +204,7 @@ def read_eshdf_eig_data(filename, Ef_list):
     ns       = h5int(h.electrons.number_of_spins)
     if len(Ef_list) != ns:
       msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
-      return msg
+      error(msg)
     data     = obj()
     for k in range(nk):
         kp = h.electrons['kpoint_'+str(k)]
@@ -274,11 +275,8 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
 
     def analyze(self, Ef_list=None):
       if Ef_list is not None:
-        res = read_eshdf_eig_data(self.h5file, Ef_list)
-        if type(res) is str:
-          self.error(res)
-        else:
-          self.wfh5 = res
+        self.wfh5 = read_eshdf_eig_data(self.h5file, Ef_list)
+      #end if
     #end def analyze
 
     def get_result(self,result_name):
