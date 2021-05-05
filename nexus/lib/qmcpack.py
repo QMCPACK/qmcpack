@@ -570,7 +570,17 @@ class Qmcpack(Simulation):
                         dset = qi.get('determinantset')
                         sdet = dset.slaterdeterminant  # hard-code single det
                         spo_size_map = {}
-                        for det, nelec in zip(sdet.determinants, elecs):
+                        for det in sdet.determinants:
+                            nelec = None  # determine from group
+                            group = det.get('group')
+                            if group == 'u':
+                                nelec = nup
+                            elif group == 'd':
+                                nelec = ndn
+                            else:
+                                msg = 'need to count number of "%s"' % group
+                                self.error(msg)
+                            #end if
                             spo_name = det.get('sposet')
                             spo_size_map[spo_name] = nelec
                             det.set(size=nelec)
