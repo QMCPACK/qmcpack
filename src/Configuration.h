@@ -103,7 +103,7 @@ struct PtclOnLatticeTraits
 #ifdef QMC_COMPLEX
 typedef ComplexApprox ValueApprox;
 #else
-typedef Approx ValueApprox;
+  typedef Detail::Approx ValueApprox;
 #endif
 #endif
 

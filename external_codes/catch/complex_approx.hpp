@@ -7,6 +7,7 @@
 // Copy and modify the Approx class to handle complex numbers
 
 namespace Catch {
+namespace Detail {
 class ComplexApprox
 {
     std::complex<double> m_value;
@@ -87,20 +88,22 @@ public:
        return os;
     }
 };
-
+}
+  
 template<>
-struct StringMaker<ComplexApprox> {
-  static std::string convert(ComplexApprox const &value);
+struct StringMaker<Catch::Detail::ComplexApprox> {
+  static std::string convert(Catch::Detail::ComplexApprox const &value);
 };
 
 #ifdef CATCH_IMPL
-std::string StringMaker<ComplexApprox>::convert(ComplexApprox const& value)
+  std::string StringMaker<Catch::Detail::ComplexApprox>::convert(Catch::Detail::ComplexApprox const& value)
 {
   return value.toString();
 }
 #endif
+
 }
 
-using Catch::ComplexApprox;
+using Catch::Detail::ComplexApprox;
 
 #endif
