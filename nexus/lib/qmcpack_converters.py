@@ -185,24 +185,12 @@ def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=Fa
 #end def generate_pw2qmcpack_input
 
 
-def import_nexus_module(module_name):
-    import importlib
-    return importlib.import_module(module_name)
-#end def import_nexus_module
-
-
 def read_eshdf_eig_data(filename, Ef_list):
     import numpy as np
     from numpy import array,pi
     from numpy.linalg import inv
     from unit_converter import convert
-    try:
-        hdfreader = import_nexus_module('hdfreader')
-        read_hdf = hdfreader.read_hdf
-        del hdfreader
-    except:
-        from hdfreader import read_hdf
-    #end try
+    from hdfreader import read_hdf
 
     def h5int(i):
         return array(i,dtype=int)[0]
