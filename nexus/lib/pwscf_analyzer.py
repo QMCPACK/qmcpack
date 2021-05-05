@@ -201,6 +201,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         fermi_energies.append(ef1)
                       except ValueError:
                         fermi_energies = fermi_energies[::-1]
+                        break
                       #end try
                     #end for
                 #end if
