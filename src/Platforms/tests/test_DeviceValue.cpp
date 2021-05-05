@@ -22,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 #ifdef ENABLE_OFFLOAD
   template<typename T>
   using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;

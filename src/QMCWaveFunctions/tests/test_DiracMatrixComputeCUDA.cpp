@@ -86,6 +86,7 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
 
   dmcc.invert_transpose(*cuda_handles, mat_a, inv_mat_a, log_values);
 
+
   OffloadPinnedMatrix<double> mat_b;
   mat_b.resize(4, 4);
   double invA[16]{-0.08247423, -0.26804124, 0.26804124, 0.05154639,  0.18556701,  -0.89690722, 0.39690722,  0.13402062,
