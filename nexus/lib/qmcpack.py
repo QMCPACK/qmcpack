@@ -566,26 +566,24 @@ class Qmcpack(Simulation):
                         ndn = elecs[1]
                         qi.get('u').set(size=nup)
                         qi.get('d').set(size=ndn)
-                        # step 2: resize orbital sets
+                        # step 2: resize determinants
+                        dset = qi.get('determinantset')
+                        sdet = dset.slaterdeterminant  # hard-code single det
+                        spo_size_map = {}
+                        for det, nelec in zip(sdet.determinants, elecs):
+                            spo_name = det.get('sposet')
+                            spo_size_map[spo_name] = nelec
+                            det.set(size=nelec)
+                        #end for
+                        # step 3: resize orbital sets
                         sb = qi.get('sposet_builder')
                         bb = sb.bspline  # hard-code for Bspline orbs
                         assert itwist == bb.twistnum
                         sposets = bb.sposets
-                        if len(sposets) == 1:  # RHF/ROHF
-                            norb = max(nup, ndn)
-                            sposets[list(sposets.keys())[0]].set(size=norb)
-                        else:  # UHF
-                            for spo in sposets:
-                                ispin = spo.get('spindataset')
-                                nelec = elecs[ispin]
-                                spo.set(size=nelec)
-                            #end for
-                        #end if
-                        # step 3: resize determinants
-                        dset = qi.get('determinantset')
-                        sdet = dset.slaterdeterminant  # hard-code single det
-                        for det, nelec in zip(sdet.determinants, elecs):
-                            det.set(size=nelec)
+                        for spo in sposets:
+                            if spo.name in spo_size_map:
+                                spo.set(size=spo_size_map[spo.name])
+                            #end if
                         #end for
                     #end for
                 #end if
