@@ -31,6 +31,7 @@ struct DualStruct
 cudaError_t checkDualStruct(cudaStream_t hstream, DualStruct* device_struct_ptr, DualStruct dual_struct, bool& result);
   
 extern template cudaError_t checkValueCUDA(cudaStream_t hstream, double* device_value_ptr, double value, bool& result);
+extern template cudaError_t checkValueCUDA(cudaStream_t hstream, float* device_value_ptr, float value, bool& result);
 
 } // namespace testing
 } // namespace qmcplusplus

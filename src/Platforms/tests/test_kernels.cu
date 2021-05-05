@@ -9,7 +9,14 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "test_kernel.hpp"
+/** \file
+ *  This files is for kernels for testing and debug that check the values on the device
+ *  this is useful for cublas calls where you can't just use cuda-gdb to see this.
+ *  Also it allows unit testing dual memory space data objects.
+ *  \todo expand for other dual data objects.
+ */
+
+#include "test_kernels.hpp"
 #include "CUDA/CUDAallocator.hpp"
 
 namespace qmcplusplus
@@ -25,6 +32,8 @@ __global__ void checkValue_kernel(T* device_value_ptr, const T value, bool* resu
     *result = false;
 }
 
+/** This call is to test the device side of DeviceValue
+ */
 template<typename T>
 cudaError_t checkValueCUDA(cudaStream_t hstream, T* device_value_ptr, T value, bool& result)
 {

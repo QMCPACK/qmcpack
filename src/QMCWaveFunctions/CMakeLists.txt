@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2021 Jeongnim Kim and QMCPACK developers.
 #//
 #// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 #//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -14,6 +14,7 @@
 #//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 #//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+#//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//
 #// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -225,7 +226,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
     TARGET_INCLUDE_DIRECTORIES(qmcwfs_cuda PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
     TARGET_LINK_LIBRARIES(qmcwfs_cuda PUBLIC qmcparticle platform_device)
   ENDIF()
-  TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda)
+  TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda cuda_test_kernels)
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
 TARGET_INCLUDE_DIRECTORIES(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

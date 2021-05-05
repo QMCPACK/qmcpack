@@ -18,7 +18,7 @@
 #include "DualAllocator.hpp"
 #endif
 #include "DeviceValue.hpp"
-#include "test_kernel.hpp"
+#include "test_kernels.hpp"
 
 namespace qmcplusplus
 {

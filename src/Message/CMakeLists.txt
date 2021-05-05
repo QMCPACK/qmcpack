@@ -2,9 +2,10 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2020 QMCPACK developers.
+#// Copyright (c) 2021 QMCPACK developers.
 #//
 #// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+#//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -29,3 +30,7 @@ ENDIF()
 ADD_LIBRARY(catch_main catch_main.cpp)
 TARGET_INCLUDE_DIRECTORIES(catch_main PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
 TARGET_LINK_LIBRARIES(catch_main message)
+
+ADD_LIBRARY(catch_benchmark_main catch_benchmark_main.cpp)
+TARGET_INCLUDE_DIRECTORIES(catch_benchmark_main PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
+TARGET_LINK_LIBRARIES(catch_benchmark_main message)
