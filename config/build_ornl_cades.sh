@@ -57,7 +57,7 @@ cd build_cades_cpu_comp_skylake
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 16
 cd ..
-ln -sf ./build_cades_cpu_comp_skylake/bin/qmcpack ./qmcpack_cades_cpu_comp_skylake
+ln -sf ./build_cades_cpu_comp_skylake/bin/qmcpack_complex ./qmcpack_cades_cpu_comp_skylake
 
 CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc \
              -DCMAKE_CXX_COMPILER=mpicxx"
@@ -82,4 +82,4 @@ cd build_cades_cpu_comp
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 16
 cd ..
-ln -sf ./build_cades_cpu_comp/bin/qmcpack ./qmcpack_cades_cpu_comp
+ln -sf ./build_cades_cpu_comp/bin/qmcpack_complex ./qmcpack_cades_cpu_comp
