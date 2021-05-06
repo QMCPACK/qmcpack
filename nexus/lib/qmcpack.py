@@ -384,6 +384,38 @@ class Qmcpack(Simulation):
             else:
                 self.error('incorporating wavefunction from '+sim.__class__.__name__+' has not been implemented')
             #end if
+        elif result_name=='gc_occupation':
+            from pwscf import Pwscf
+            from qmcpack_converters import gcta_occupation
+            if not isinstance(sim,Pw2qmcpack):
+                msg = 'grand-canonical occupation require Pw2qmcpack'
+                self.error(msg)
+            #endif
+            # step 1: extract Fermi energy for each spin from nscf
+            nscf = None
+            npwdep = 0
+            for dep in sim.dependencies:
+                if isinstance(dep.sim,Pwscf):
+                    nscf = dep.sim
+                    npwdep += 1
+            if npwdep != 1:
+                msg = 'need exactly 1 scf/nscf calculation for Fermi energy'
+                msg += '\n found %d' % npwdep
+                self.error(msg)
+            #end if
+            na = nscf.load_analyzer_image()
+            Ef_list = na.fermi_energies
+            # step 2: analyze ESH5 file for states below Fermi energy
+            pa = sim.load_analyzer_image()
+            if 'wfh5' not in pa:
+              pa.analyze(Ef_list=Ef_list)
+              sim.save_analyzer_image(pa)
+            #end if
+            # step 3: count the number of up/dn electrons at each supertwist
+            s1 = self.system.structure
+            ntwist = len(s1.kpoints)
+            nelecs_at_twist = gcta_occupation(pa.wfh5, ntwist)
+            self.nelecs_at_twist = nelecs_at_twist
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
         #end if        
@@ -525,6 +557,46 @@ class Qmcpack(Simulation):
                         fobj.close()
                     #end if
                 #end for
+                grand_canonical_twist_average = 'nelecs_at_twist' in self
+                if grand_canonical_twist_average:
+                    for itwist, qi in enumerate(input.inputs):
+                        elecs = self.nelecs_at_twist[itwist]
+                        # step 1: resize particlesets
+                        nup = elecs[0]
+                        ndn = elecs[1]
+                        qi.get('u').set(size=nup)
+                        qi.get('d').set(size=ndn)
+                        # step 2: resize determinants
+                        dset = qi.get('determinantset')
+                        sdet = dset.slaterdeterminant  # hard-code single det
+                        spo_size_map = {}
+                        for det in sdet.determinants:
+                            nelec = None  # determine from group
+                            group = det.get('group')
+                            if group == 'u':
+                                nelec = nup
+                            elif group == 'd':
+                                nelec = ndn
+                            else:
+                                msg = 'need to count number of "%s"' % group
+                                self.error(msg)
+                            #end if
+                            spo_name = det.get('sposet')
+                            spo_size_map[spo_name] = nelec
+                            det.set(size=nelec)
+                        #end for
+                        # step 3: resize orbital sets
+                        sb = qi.get('sposet_builder')
+                        bb = sb.bspline  # hard-code for Bspline orbs
+                        assert itwist == bb.twistnum
+                        sposets = bb.sposets
+                        for spo in sposets:
+                            if spo.name in spo_size_map:
+                                spo.set(size=spo_size_map[spo.name])
+                            #end if
+                        #end for
+                    #end for
+                #end if
             #end if
         #end if
     #end def write_prep
