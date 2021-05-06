@@ -38,6 +38,10 @@ TARGET_LINK_LIBRARIES(qmc PUBLIC qmcdriver)
 ####################################
 ADD_EXECUTABLE(qmcpack qmcapp.cpp)
 
+IF(QMC_COMPLEX)
+  SET_TARGET_PROPERTIES(qmcpack PROPERTIES OUTPUT_NAME "qmcpack_complex")
+ENDIF(QMC_COMPLEX)
+
 # Clean up git-rev-tmp.h after the build is finished
 ADD_CUSTOM_COMMAND(TARGET qmcpack
                    POST_BUILD
