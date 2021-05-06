@@ -37,13 +37,13 @@ struct observable_helper
   ///this can be handled by template argument
   //enum {type_id=H5T_NATIVE_DOUBLE};
   ///starting index
-  hsize_t lower_bound;
+  hsize_t lower_bound = 0;
   ///id of this observable
-  hid_t data_id;
+  hid_t data_id = -1;
   ///dataspace for value
-  hid_t space1_id;
+  hid_t space1_id = -1;
   ///id of the value dataset
-  hid_t value1_id;
+  hid_t value1_id = -1;
   ///my dimensions
   std::vector<hsize_t> mydims;
   ///maximum dimensions
@@ -54,23 +54,53 @@ struct observable_helper
   std::vector<hsize_t> offsets;
   ///name of this observable
   std::string group_name;
+  ///true: hdf5 handlers are valid via open, false: otherwise
+  bool isopened;
 
   ///default constructor
-  observable_helper(const std::string& title = "dummy") : data_id(-1), space1_id(-1), group_name(title) {}
+  observable_helper(const std::string& title = "dummy")
+      : data_id(-1), space1_id(-1), value1_id(-1), group_name(title), isopened(false)
+  {}
 
   observable_helper(const observable_helper&) = delete;
   observable_helper& operator=(const observable_helper&) = delete;
 
-  observable_helper(observable_helper&&) = default;
-  observable_helper& operator=(observable_helper&&) = default;
+  /**
+   * Move constructor. Must properly transfer ownership of resources. Doing copies as these are "cheap" elements
+   * @param in input object to be moved to this
+   */
+  observable_helper(observable_helper&& in) noexcept
+      : lower_bound(in.lower_bound),
+        data_id(in.data_id),
+        space1_id(in.space1_id),
+        value1_id(in.value1_id),
+        mydims(in.mydims),
+        maxdims(in.maxdims),
+        curdims(in.curdims),
+        offsets(in.offsets),
+        group_name(in.group_name),
+        isopened(in.isopened)
+  {
+    in.isopened = false;
+  }
+
+  observable_helper& operator=(observable_helper&& in)
+  {
+    if (this != &in)
+    {
+      *this       = std::move(in);
+      in.isopened = false;
+    }
+    return *this;
+  }
 
   ///close resources
   ~observable_helper()
   {
-    if (space1_id > -1)
-      H5Sclose(space1_id);
-    if (data_id > -1)
-      H5Gclose(data_id);
+    if (isopened)
+    {
+      close();
+    }
   }
 
   /** set the shape of this observable
@@ -113,6 +143,25 @@ struct observable_helper
       herr_t ret     = H5Dwrite(value1_id, H5T_NATIVE_DOUBLE, memspace, space1_id, H5P_DEFAULT, &zeros[0]);
       H5Sclose(memspace);
       H5Pclose(p);
+    }
+    isopened = true;
+  }
+
+  void close()
+  {
+    if (isopened)
+    {
+      if (space1_id > -1)
+      {
+        H5Sclose(space1_id);
+        space1_id = -1;
+      }
+      if (data_id > -1)
+      {
+        H5Gclose(data_id);
+        data_id = -1;
+      }
+      isopened = false;
     }
   }
 
