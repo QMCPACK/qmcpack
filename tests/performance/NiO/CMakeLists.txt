@@ -8,8 +8,7 @@ FUNCTION(ADD_NIO_TEST TEST_NAME PROCS THREADS TEST_DIR TEST_SOURCE_DIR INPUT_FIL
   MESSAGE_VERBOSE("Adding test ${TEST_NAME}")
   SET (WDIR "${qmcpack_BINARY_DIR}/tests/performance/NiO/${TEST_DIR}")
   SET (SDIR "${qmcpack_SOURCE_DIR}/tests/performance/NiO/sample/${TEST_SOURCE_DIR}")
-
-  SET(QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack")
+  SET ( QMC_APP $<TARGET_FILE:qmcpack> )
   IF (ENABLE_TIMERS)
     SET(PERF_ARGS "--enable-timers=fine")
   ENDIF()

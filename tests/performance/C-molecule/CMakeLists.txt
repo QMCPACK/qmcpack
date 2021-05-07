@@ -11,7 +11,7 @@ IF (NOT QMC_CUDA)
     SET (WDIR "${qmcpack_BINARY_DIR}/tests/performance/C-molecule/${TEST_DIR}")
     SET (SDIR "${qmcpack_SOURCE_DIR}/tests/performance/C-molecule/sample/${TEST_SOURCE_DIR}")
 
-    SET(QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack")
+    SET ( QMC_APP $<TARGET_FILE:qmcpack> )
     IF (ENABLE_TIMERS)
       SET(PERF_ARGS "--enable-timers=fine")
     ENDIF()
