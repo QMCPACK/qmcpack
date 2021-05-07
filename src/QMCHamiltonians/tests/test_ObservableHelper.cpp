@@ -38,7 +38,7 @@ TEST_CASE("ObservableHelper::ObservableHelper(const std::string&)", "[hamiltonia
 
 TEST_CASE("ObservableHelper::ObservableHelper(ObservableHelper&&)", "[hamiltonian]")
 {
-  hid_t hFile = H5Fcreate("tmp_ObservableHelper.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t hFile = H5Fcreate("tmp_ObservableHelper1.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
   ObservableHelper ohIn("u");
   ohIn.open(hFile);
@@ -65,6 +65,34 @@ TEST_CASE("ObservableHelper::set_dimensions", "[hamiltonian]")
   CHECK(oh.maxdims == std::vector<hsize_t>{H5S_UNLIMITED, 10, 10});
   CHECK(oh.offsets == std::vector<hsize_t>{0, 0, 0});
   CHECK(oh.lower_bound == 1);
+}
+
+TEST_CASE("ObservableHelper::ObservableHelper()", "[hamiltonian]")
+{
+  hid_t hFile = H5Fcreate("tmp_ObservableHelper2.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+  ObservableHelper oh("u");
+  oh.open(hFile);
+  std::vector<int> dims = {10, 10};
+  float propertyFloat   = 10.f;
+  oh.addProperty(propertyFloat, "propertyFloat");
+
+  Tensor<float, OHMMS_DIM> propertyTensor;
+  oh.addProperty(propertyTensor, "propertyTensor");
+
+  Matrix<float> propertyMatrix;
+  oh.addProperty(propertyMatrix, "propertyMatrix");
+
+  TinyVector<float, OHMMS_DIM> propertyTinyVector;
+  oh.addProperty(propertyTensor, "propertyTinyVector");
+
+  std::vector<float> propertyVector;
+  oh.addProperty(propertyVector, "propertyVector");
+
+  std::vector<TinyVector<float, OHMMS_DIM>> propertyVectorTinyVector;
+  oh.addProperty(propertyVectorTinyVector, "propertyVectorTinyVector");
+
+  H5Fclose(hFile);
 }
 
 } // namespace qmcplusplus
