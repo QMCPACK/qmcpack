@@ -16,7 +16,7 @@ IF (EXISTS ${H5_FULL_PATH})
   LIST(APPEND NIO_AFM_SCALARS "Eloc" "-379.2037 0.0282")
 
   QMC_RUN_AND_CHECK(long-NiO_afm-afqmc
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_afqmc"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
                     qmc_long_afm
                     qmc_long_afm.in.xml
                     16 1
@@ -31,7 +31,7 @@ IF (EXISTS ${H5_FULL_PATH})
   LIST(APPEND NIO_NM_SCALARS "Eloc" "-379.2024 0.0192")
 
   QMC_RUN_AND_CHECK(long-NiO_nm-afqmc
-                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_afqmc"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/NiO_afqmc"
                     qmc_long_nm
                     qmc_long_nm.in.xml
                     16 1

@@ -88,8 +88,8 @@ typedef FakeRandom RandomGenerator_t;
 namespace qmcplusplus
 {
 template<class T>
-using RandomGenerator = BoostRandom<T>;
-typedef BoostRandom<OHMMS_PRECISION_FULL> RandomGenerator_t;
+using RandomGenerator   = BoostRandom<T>;
+using RandomGenerator_t = BoostRandom<OHMMS_PRECISION_FULL>;
 } // namespace qmcplusplus
 #else
 
@@ -101,16 +101,15 @@ typedef BoostRandom<OHMMS_PRECISION_FULL> RandomGenerator_t;
 
 namespace qmcplusplus
 {
-
 class RNGThreadSafe : public RandomGenerator_t
 {
 public:
   inline RandomGenerator_t::result_type rand()
   {
     result_type result;
-    // This should be a named section but at least clang 9 doesn't seem to support
-    // and warns of extra tokens.
-    #pragma omp critical
+// This should be a named section but at least clang 9 doesn't seem to support
+// and warns of extra tokens.
+#pragma omp critical
     {
       result = RandomGenerator_t::rand();
     }
@@ -119,27 +118,30 @@ public:
 
   /** return a random number [0,1)
    */
-  inline RandomGenerator_t::result_type operator()() { result_type result;
-    #pragma omp critical
+  inline RandomGenerator_t::result_type operator()()
+  {
+    result_type result;
+#pragma omp critical
     {
       result = RandomGenerator_t::rand();
     }
-    return result;}
+    return result;
+  }
 
   /** generate a series of random numbers */
   template<typename T1>
   inline void generate_uniform(T1* restrict d, int n)
   {
-    #pragma omp critical
+#pragma omp critical
     {
-    for (int i = 0; i < n; ++i)
-      d[i] = RandomGenerator_t::rand();
+      for (int i = 0; i < n; ++i)
+        d[i] = RandomGenerator_t::rand();
     }
   }
 };
 
 extern RNGThreadSafe Random;
 
-}
+} // namespace qmcplusplus
 
 #endif

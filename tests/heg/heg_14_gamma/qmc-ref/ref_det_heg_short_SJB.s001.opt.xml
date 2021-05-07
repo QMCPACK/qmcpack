@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+<determinantset type="electron-gas" shell="1" shell2="1" randomize="true">
+<backflow optimize="yes">
+<transformation name="eeB" type="e-e" function="Bspline">
+<correlation cusp="0.0" speciesA="u" speciesB="u" size="2" type="shortrange" init="no">
+<coefficients id="eeuu" type="Array" optimize="yes"> -0.2980932131 0.09450732415</coefficients>
+</correlation>
+<correlation cusp="0.0" speciesA="u" speciesB="d" size="2" type="shortrange" init="no">
+<coefficients id="eeud" type="Array" optimize="yes"> 0.6479432273 0.09608016613</coefficients>
+</correlation>
+</transformation>
+</backflow>
+</determinantset>
+<jastrow name="J2" type="Two-Body" function="Bspline" optimize="yes">
+<correlation speciesA="u" speciesB="u" size="2">
+<coefficients id="uu" type="Array" optimize="no"> 0.8539649773 0.5081210955</coefficients>
+</correlation>
+<correlation speciesA="u" speciesB="d" size="2">
+<coefficients id="ud" type="Array" optimize="no"> 1.668843146 0.6688577517</coefficients>
+</correlation>
+</jastrow>
+</wavefunction>
+</qmcsystem>

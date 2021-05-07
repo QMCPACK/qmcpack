@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(test_utility_1d){
 	using multi::size;
 //	BOOST_REQUIRE( multi::size(varr) == size(marr) );
 //	BOOST_REQUIRE( size(Marr) == size(marr) );
-	BOOST_REQUIRE( size(carr) == size(marr) );
+	BOOST_REQUIRE( static_cast<std::ptrdiff_t>(size(carr)) == size(marr) );
 	BOOST_REQUIRE( static_cast<multi::size_type>(size(aarr)) == size(marr) );
 
 	BOOST_REQUIRE( carr[7] == marr[7] );
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(test_utility_2d){
 //	boost::multi_array_ref<double, 2> Marr(&carr[0][0], boost::extents[3][10]);
 
 	using multi::size;
-	BOOST_REQUIRE( size(carr) == size(marr) );
+	BOOST_REQUIRE( static_cast<std::ptrdiff_t>(size(carr)) == size(marr) );
  //	BOOST_REQUIRE( size(Marr) == size(marr) );
 
 	BOOST_REQUIRE( carr[1][7] == marr[1][7] );

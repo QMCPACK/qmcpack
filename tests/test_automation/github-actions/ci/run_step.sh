@@ -92,8 +92,8 @@ case "$1" in
     # Enable ASAN_OPTION=suppression=suppresion_file
     if [[ "${GH_JOBNAME}" =~ (asan) ]]
     then
-      echo "Enabling LSAN suppression file config/sanitizers/lsan.supp"
-      export LSAN_OPTIONS=suppression=${GITHUB_WORKSPACE}/config/sanitizers/lsan.supp	
+      echo "Enabling LSAN suppressions file config/sanitizers/lsan.supp"
+      export LSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/config/sanitizers/lsan.supp	
     fi
     
     # Run only deterministic tests (reasonable for CI)

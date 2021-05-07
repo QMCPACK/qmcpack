@@ -23,6 +23,8 @@ jobs:
         jobname: [
           gcc-openmpi-real-coverage,
           gcc-openmpi-complex-coverage,
+          clang-openmpi-real-asan,
+          clang-openmpi-complex-asan,
           clang-openmpi-real-ubsan
         ]
         include:
@@ -36,6 +38,16 @@ jobs:
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
             options: -u 1001
             
+        - jobname: clang-openmpi-real-asan
+          container: 
+            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+            options: -u 1001
+            
+        - jobname: clang-openmpi-complex-asan
+          container: 
+            image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+            options: -u 1001
+        
         - jobname: clang-openmpi-real-ubsan
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
@@ -59,7 +71,7 @@ jobs:
       run: tests/test_automation/github-actions/ci/run_step.sh coverage
     
     - name: Upload Coverage
-      if: contains(matrix.jobname, 'coverage')
+      if: contains(matrix.jobname, 'coverage') && github.repository_owner == 'QMCPACK'
       uses: codecov/codecov-action@v1
       with:
         file:  ../qmcpack-build/coverage.xml

@@ -12,7 +12,7 @@ LIST(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "potential" "-16.046649978685 0.0662544
 LIST(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "eeenergy" "3.379729221478 0.003550933783")
 LIST(APPEND LiH_ae_MSD_NOJ_SHORT_SCALARS "ionion" "0.995380119260 0.001000000000")
   QMC_RUN_AND_CHECK(short-LiH_ae-vmc_msdj_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
                     vmc_short_noj 
                     vmc_short_noj.in.xml
                     1 16
@@ -32,7 +32,7 @@ LIST(APPEND LiH_ae_MSD_SHORT_SCALARS "potential" "-16.187601706300 0.03581185052
 LIST(APPEND LiH_ae_MSD_SHORT_SCALARS "eeenergy" "3.262235428602 0.002235254233")
 LIST(APPEND LiH_ae_MSD_SHORT_SCALARS "ionion" "0.995380119260 0.001000000000")
   QMC_RUN_AND_CHECK(short-LiH_ae-vmc_msdj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
                     vmc_short
                     vmc_short.in.xml
                     1 16
@@ -52,7 +52,7 @@ LIST(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "potential" "-16.164291946667 0.0448
 LIST(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "eeenergy" "3.346222009202 0.002397327879")
 LIST(APPEND LiH_ae_MSD_OPT_CI_SHORT_SCALARS "ionion" "0.995380119260 0.001000000000")
   QMC_RUN_AND_CHECK(short-LiH_ae-vmc_msdj_optCI
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
                     vmc_short_opt_CI
                     vmc_short_opt_CI.in.xml
                     1 16
@@ -74,7 +74,7 @@ LIST(APPEND LiH_ae_MSD_SCALARS "potential" "-16.187601706300 0.015063626138")
 LIST(APPEND LiH_ae_MSD_SCALARS "eeenergy" "3.262235428602 0.000802865851")
 LIST(APPEND LiH_ae_MSD_SCALARS "ionion" "0.995380119260 0.001000000000")
   QMC_RUN_AND_CHECK(long-LiH_ae-vmc_msdj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
                     vmc_long
                     vmc_long.in.xml
                     1 16
@@ -94,7 +94,7 @@ LIST(APPEND LiH_ae_MSD_NOJ_SCALARS "potential" "-16.046649978685 0.014554358540"
 LIST(APPEND LiH_ae_MSD_NOJ_SCALARS "eeenergy" "3.379729221478 0.000841913994")
 LIST(APPEND LiH_ae_MSD_NOJ_SCALARS "ionion" "0.995380119260 0.001000000000")
   QMC_RUN_AND_CHECK(long-LiH_ae-vmc_msdj_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
                     vmc_long_noj 
                     vmc_long_noj.in.xml
                     1 16
@@ -112,7 +112,7 @@ LIST(APPEND LiH_ae_MSD_OPT_CI_SCALARS "potential" "-16.164291946667 0.0128036404
 LIST(APPEND LiH_ae_MSD_OPT_CI_SCALARS "eeenergy" "3.346222009202 0.000692976585")
 LIST(APPEND LiH_ae_MSD_OPT_CI_SCALARS "ionion" "0.995380119260 0.001000000000")
   QMC_RUN_AND_CHECK(long-LiH_ae-vmc_msdj_optCI
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
                     vmc_long_opt_CI
                     vmc_long_opt_CI.in.xml
                     1 16

@@ -99,7 +99,9 @@ BOOST_AUTO_TEST_CASE(one_base_2D_ref){
 	BOOST_REQUIRE( sizes(Ar) == sizes(Ar2) );
 	BOOST_REQUIRE( &Ar2[1][1] == &A[0][0] );
 	BOOST_REQUIRE( &Ar2[2][4] == &A[1][3] );
-	
+
+	BOOST_REQUIRE( Ar2.extensions() != Ar.extensions() );
+	BOOST_REQUIRE( not(Ar2 == Ar) );
 	BOOST_REQUIRE( Ar2 != Ar );
 	BOOST_REQUIRE( extensions(Ar2.reindexed(0, 0)) == extensions(Ar) );
 	BOOST_REQUIRE( Ar2.reindexed(0, 0) == Ar );

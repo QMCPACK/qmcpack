@@ -19,9 +19,11 @@
 #ifndef QMCPLUSPLUS_CUDA_ALLOCATOR_H
 #define QMCPLUSPLUS_CUDA_ALLOCATOR_H
 
+#include <memory>
 #include <cstdlib>
 #include <stdexcept>
 #include <atomic>
+#include <limits>
 #include <cuda_runtime_api.h>
 #include "config.h"
 #include "cudaError.h"
@@ -30,7 +32,6 @@
 
 namespace qmcplusplus
 {
-
 extern std::atomic<size_t> CUDAallocator_device_mem_allocated;
 
 inline size_t getCUDAdeviceMemAllocated() { return CUDAallocator_device_mem_allocated; }
@@ -79,8 +80,18 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
   return false;
 }
 
+
 /** allocator for CUDA device memory
  * @tparm T data type
+ *
+ * using this with something other than Ohmms containers?
+ *  -- use caution, write unit tests! --
+ * It's not tested beyond use in some unit tests using std::vector with constant size.
+ * CUDAAllocator appears to meet all the nonoptional requirements of a c++ Allocator.
+ *
+ * Some of the default implementations in std::allocator_traits
+ * of optional Allocator requirements may cause runtime or compilation failures.
+ * They assume there is only one memory space and that the host has access to it.
  */
 template<typename T>
 struct CUDAAllocator
@@ -113,6 +124,34 @@ struct CUDAAllocator
     cudaErrorCheck(cudaFree(p), "Deallocation failed in CUDAAllocator!");
     CUDAallocator_device_mem_allocated -= n * sizeof(T);
   }
+
+  /** Provide a construct for std::allocator_traits::contruct to call.
+   *  Don't do anything on construct, pointer p is on the device!
+   *
+   *  For example std::vector calls this to default initialize each element. You'll segfault
+   *  if std::allocator_traits::construct tries doing that at p.
+   *
+   *  The standard is a bit confusing on this point. Implementing this is an optional requirement
+   *  of Allocator from C++11 on, its not slated to be removed.
+   *
+   *  Its deprecated for the std::allocator in c++17 and will be removed in c++20.  But we are not implementing
+   *  std::allocator.
+   *
+   *  STL containers only use Allocators through allocator_traits and std::allocator_traits handles the case
+   *  where no construct method is present in the Allocator.
+   *  But std::allocator_traits will call the Allocators construct method if present.
+   */
+  template<class U, class... Args>
+  static void construct(U* p, Args&&... args)
+  {}
+
+  /** Give std::allocator_traits something to call.
+   *  The default if this isn't present is to call p->~T() which
+   *  we can't do on device memory.
+   */
+  template<class U>
+  static void destroy(U* p)
+  {}
 };
 
 template<class T1, class T2>
@@ -125,13 +164,13 @@ bool operator!=(const CUDAAllocator<T1>&, const CUDAAllocator<T2>&)
 {
   return false;
 }
-
 template<typename T>
-struct allocator_traits<CUDAAllocator<T>>
+
+struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 {
   static const bool is_host_accessible = false;
-  static const bool is_dual_space = false;
-  static void fill_n(T* ptr, size_t n, const T& value) { CUDAfill_n(ptr, n, value); }
+  static const bool is_dual_space      = false;
+  static void fill_n(T* ptr, size_t n, const T& value) { qmcplusplus::CUDAfill_n(ptr, n, value); }
 };
 
 /** allocator for CUDA host pinned memory
@@ -194,6 +233,7 @@ struct CUDALockedPageAllocator : public ULPHA
   template<class U, class V>
   CUDALockedPageAllocator(const CUDALockedPageAllocator<U, V>&)
   {}
+
   template<class U, class V>
   struct rebind
   {

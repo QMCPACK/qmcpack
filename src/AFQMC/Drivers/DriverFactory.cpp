@@ -117,7 +117,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   int block0     = 0;
   double Eshift  = 0.0;
 
-  auto rng = RandomNumberControl::Children[0];
+  std::unique_ptr<RandomGenerator_t>& rng = RandomNumberControl::Children.front();
 
   app_log() << "\n****************************************************\n"
             << "****************************************************\n"
@@ -213,7 +213,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
     LocalTGBufferManager local_buffer(TGwfn.TG_local(), buffer_size * 1024uL * 1024uL);
 
   // walker set and type
-  WalkerSet& wset          = WSetFac.getWalkerSet(TGHandler.getTG(1), wset_name, rng);
+  WalkerSet& wset          = WSetFac.getWalkerSet(TGHandler.getTG(1), wset_name, rng.get());
   WALKER_TYPES walker_type = wset.getWalkerType();
 
   if (not WfnFac.is_constructed(wfn_name))
@@ -229,7 +229,7 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
   Wavefunction& wfn0 = WfnFac.getWavefunction(TGprop, TGwfn, wfn_name, walker_type, nullptr, cutvn, nWalkers);
 
   // propagator
-  Propagator& prop0 = PropFac.getPropagator(TGprop, prop_name, wfn0, rng);
+  Propagator& prop0 = PropFac.getPropagator(TGprop, prop_name, wfn0, rng.get());
   bool hybrid       = prop0.hybrid_propagation();
 
   // resize walker set

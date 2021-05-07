@@ -203,6 +203,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
 
 IF(ENABLE_CUDA)
   SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
+      detail/CUDA/cuBLAS_LU.cu
       detail/CUDA/delayed_update_helper.cu
       detail/CUDA/matrix_update_helper.cu
       )
@@ -229,3 +230,15 @@ ENDIF(QMC_CUDA OR ENABLE_CUDA)
 TARGET_INCLUDE_DIRECTORIES(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcparticle platform_device)
 TARGET_LINK_LIBRARIES(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Math::scalar_vector_functions)
+
+# do not merge with qmcwfs target unless all qmcwfs unit tests pass santitizers.
+IF(ENABLE_CUDA)
+  SET(DIRECT_INVERSION_SRCS
+    detail/CUDA/cuBLAS_LU.cu
+    )
+  CUDA_ADD_LIBRARY(qmcwfs_direct_inversion_cuda "${DIRECT_INVERSION_SRCS}")
+  TARGET_LINK_LIBRARIES(qmcwfs_direct_inversion_cuda PUBLIC platform_device)
+  # CUDA_ADD_LIBRARY is from deprecated FindCuda and ignores TARGET_INCLUDE_DIRECTORIES so
+  # headers in this target contain full relative path from project root.
+  TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcwfs_direct_inversion_cuda)
+ENDIF(ENABLE_CUDA)

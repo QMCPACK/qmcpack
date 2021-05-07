@@ -594,7 +594,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGrad(ParticleSet& P, in
   {
     std::vector<GradType> grad_components(Z.size(), GradType(0.0));
     std::vector<PsiValueType> ratio_components(Z.size(), 0.0);
-#pragma omp taskloop default(shared)
+    PRAGMA_OMP_TASKLOOP("omp taskloop default(shared)")
     for (int i = 0; i < Z.size(); ++i)
     {
       ScopedTimer z_timer(WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
@@ -659,7 +659,7 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
   {
     std::vector<std::vector<PsiValueType>> ratios_components(num_wfc, std::vector<PsiValueType>(wf_list.size()));
     std::vector<std::vector<GradType>> grads_components(num_wfc, std::vector<GradType>(wf_list.size()));
-#pragma omp taskloop default(shared)
+    PRAGMA_OMP_TASKLOOP("omp taskloop default(shared)")
     for (int i = 0; i < num_wfc; ++i)
     {
       ScopedTimer z_timer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
@@ -726,7 +726,7 @@ void TrialWaveFunction::rejectMove(int iat)
 void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   ScopedTimer local_timer(TWF_timers_[ACCEPT_TIMER]);
-#pragma omp taskloop default(shared) if (use_tasking_)
+  PRAGMA_OMP_TASKLOOP("omp taskloop default(shared) if (use_tasking_)")
   for (int i = 0; i < Z.size(); i++)
   {
     ScopedTimer z_timer(WFC_timers_[ACCEPT_TIMER + TIMER_SKIP * i]);
@@ -757,7 +757,7 @@ void TrialWaveFunction::mw_accept_rejectMove(const RefVectorWithLeader<TrialWave
       wf_list[iw].PhaseValue = 0;
     }
 
-#pragma omp taskloop default(shared) if (wf_leader.use_tasking_)
+  PRAGMA_OMP_TASKLOOP("omp taskloop default(shared) if (wf_leader.use_tasking_)")
   for (int i = 0; i < num_wfc; i++)
   {
     ScopedTimer z_timer(wf_leader.WFC_timers_[ACCEPT_TIMER + TIMER_SKIP * i]);

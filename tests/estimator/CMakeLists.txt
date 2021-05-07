@@ -26,7 +26,7 @@ CHECK_PYTHON_REQS(skinetic_python_reqs estimator-skinetic add_test)
 
 if (add_test)
   SIMPLE_RUN_AND_CHECK(estimator-skinetic
-    "${CMAKE_SOURCE_DIR}/tests/estimator/skinetic"
+    "${qmcpack_SOURCE_DIR}/tests/estimator/skinetic"
     vmc.xml
     1 16
     skinetic_check.py
@@ -38,7 +38,7 @@ CHECK_PYTHON_REQS(latdev_python_reqs estimator-latdev add_test)
 
 if (add_test)
   SIMPLE_RUN_AND_CHECK(estimator-latdev
-    "${CMAKE_SOURCE_DIR}/tests/estimator/latdev"
+    "${qmcpack_SOURCE_DIR}/tests/estimator/latdev"
     vmc.xml
     1 16
     latdev_check.py
@@ -50,7 +50,7 @@ CHECK_PYTHON_REQS(latdev_python_reqs estimator-latdev-free add_test)
 
 if (add_test)
   SIMPLE_RUN_AND_CHECK(estimator-latdev-free
-    "${CMAKE_SOURCE_DIR}/tests/estimator/latdev/free"
+    "${qmcpack_SOURCE_DIR}/tests/estimator/latdev/free"
     two.xml
     1 16
     flatdev.py
@@ -62,25 +62,25 @@ CHECK_PYTHON_REQS(sofk_python_reqs estimator-sofk add_test)
 
 if (add_test)
   SIMPLE_RUN_AND_CHECK(estimator-sofk_pbyp-properties
-    "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
+    "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
     pbyp_dat-h5.xml
     1 16
     check_properties_h5dat.py dat-h5_pbyp
   )
   SIMPLE_RUN_AND_CHECK(estimator-sofk_pbyp-collectables
-    "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
+    "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
     pbyp_dat-h5.xml
     1 16
     check_collectables_h5dat.py dat-h5_pbyp
   )
   SIMPLE_RUN_AND_CHECK(estimator-sofk_allp-properties
-    "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
+    "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
     allp_dat-h5.xml
     1 16
     check_properties_h5dat.py dat-h5_allp
   )
   SIMPLE_RUN_AND_CHECK(estimator-sofk_allp-collectables
-    "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
+    "${qmcpack_SOURCE_DIR}/tests/estimator/sofk"
     allp_dat-h5.xml
     1 16
     check_collectables_h5dat.py dat-h5_allp

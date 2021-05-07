@@ -50,6 +50,9 @@ ENDIF()
 
 ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+IF( "${ENABLE_SANITIZER}" STREQUAL "asan" ) 
+  SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS noasan)
+ENDIF()
 
 
 IF(NOT QMC_CUDA)
@@ -63,7 +66,7 @@ IF(NOT QMC_CUDA)
   SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
   #this is dependent on the directory creation and sym linking of earlier driver tests
 
-  SET(DRIVER_TEST_SRC SetupPools.cpp test_Crowd.cpp test_MCPopulation.cpp test_ContextForSteps.cpp test_QMCDriverInput.cpp test_QMCDriverNew.cpp test_VMCDriverInput.cpp test_VMCFactoryNew.cpp test_VMCBatched.cpp test_DMCBatched.cpp test_SimpleFixedNodeBranch.cpp test_SFNBranch.cpp test_QMCCostFunctionBatched.cpp)
+  SET(DRIVER_TEST_SRC SetupPools.cpp test_Crowd.cpp test_MCPopulation.cpp test_ContextForSteps.cpp test_QMCDriverInput.cpp test_QMCDriverNew.cpp test_VMCDriverInput.cpp test_VMCFactoryNew.cpp test_VMCBatched.cpp test_DMCBatched.cpp test_SimpleFixedNodeBranch.cpp test_SFNBranch.cpp test_QMCCostFunctionBatched.cpp test_WFOptDriverInput.cpp)
   ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
   USE_FAKE_RNG(${UTEST_EXE})
   TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
@@ -73,6 +76,9 @@ IF(NOT QMC_CUDA)
 
   ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  IF( "${ENABLE_SANITIZER}" STREQUAL "asan" ) 
+    SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS noasan)
+  ENDIF()
 
 
   IF(HAVE_MPI)

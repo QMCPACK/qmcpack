@@ -55,13 +55,11 @@ public:
 	involuted(involuted const&) = delete;
 	involuted(involuted&&) = default; // for C++14
 	constexpr decay_type decay() const&{return f_(r_);}
+	constexpr operator decay_type() &{return f_(r_);}
 	constexpr operator decay_type() const&{return f_(r_);}
 	constexpr operator decay_type() &&{return f_(r_);}
+	constexpr auto operator*(decay_type const& other) const{return f_(r_)*other;}
 	constexpr decltype(auto) operator&()&&{return involuter<decltype(&std::declval<Ref>()), Involution>{&r_, f_};}
-//	template<class DecayType>
-//	auto operator=(DecayType&& other)&&
-//	->decltype(r_=f_(std::forward<DecayType>(other)), *this){
-//		return r_=f_(std::forward<DecayType>(other)), *this;}
 	template<class DecayType>
 	constexpr auto operator=(DecayType&& other)&
 	->decltype(r_=f_(std::forward<DecayType>(other)), *this){
@@ -70,10 +68,6 @@ public:
 	constexpr auto operator=(DecayType&& other)&&
 	->decltype(r_=f_(std::forward<DecayType>(other)), *this){
 		return r_=f_(std::forward<DecayType>(other)), *this;}
-//	template<class OtherRef>
-//	auto operator=(involuted<OtherRef, Involution> const& o)&
-//	->decltype(r_=f_==o.f_?std::forward<decltype(o.r_)>(o.r_):f_(o), *this){
-//		return r_=f_==o.f_?std::forward<decltype(o.r_)>(o.r_):f_(o), *this;}
 	template<class DecayType>
 	constexpr auto operator==(DecayType&& other) const
 	->decltype(this->operator decay_type()==other){
