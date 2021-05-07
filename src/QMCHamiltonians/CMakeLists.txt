@@ -44,6 +44,7 @@ SET(HAMSRCS
   SpeciesKineticEnergy.cpp
   LatticeDeviationEstimator.cpp
   SpaceWarpTransformation.cpp
+  ObservableHelper.cpp
   )
 
 IF(OHMMS_DIM MATCHES 3)
