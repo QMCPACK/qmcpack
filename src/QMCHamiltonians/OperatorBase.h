@@ -305,6 +305,23 @@ struct OperatorBase : public QMCTraits
   {
     return evaluate(P);
   }
+
+  /** evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  
+  * @param P target particle set (electrons)
+  * @param ions source particle set (ions)
+  * @param psi Trial wave function
+  * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
+  * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
+  * @return Contribution of OperatorBase to Local Energy.
+  */
+  virtual Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
+                                         ParticleSet& ions,
+                                         TrialWaveFunction& psi,
+                                         ParticleSet::ParticlePos_t& hf_term,
+                                         ParticleSet::ParticlePos_t& pulay_term)
+  {
+    return evaluateDeterministic(P);
+  }
   /** update data associated with a particleset
    * @param s source particle set
    *
