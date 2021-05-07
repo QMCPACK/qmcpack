@@ -79,7 +79,7 @@ void SpeciesKineticEnergy::addObservables(PropertySetType& plist, BufferType& co
   }
 }
 
-void SpeciesKineticEnergy::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void SpeciesKineticEnergy::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {

@@ -94,7 +94,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-void MomentumEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void MomentumEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {

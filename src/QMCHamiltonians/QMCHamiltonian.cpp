@@ -233,7 +233,7 @@ void QMCHamiltonian::resetObservables(int start, int ncollects)
   numCollectables = ncollects;
 }
 
-void QMCHamiltonian::registerObservables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void QMCHamiltonian::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   for (int i = 0; i < H.size(); ++i)
     H[i]->registerObservables(h5desc, gid);
@@ -241,7 +241,7 @@ void QMCHamiltonian::registerObservables(std::vector<observable_helper>& h5desc,
     auxH[i]->registerObservables(h5desc, gid);
 }
 
-void QMCHamiltonian::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void QMCHamiltonian::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   //The physical operators cannot add to collectables
   for (int i = 0; i < auxH.size(); ++i)

@@ -164,7 +164,7 @@ void OperatorBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCH
     targetH.addOperator(myclone, myName, UpdateMode[PHYSICAL]);
 }
 
-void OperatorBase::registerObservables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   bool collect = UpdateMode.test(COLLECTABLE);
   //exclude collectables

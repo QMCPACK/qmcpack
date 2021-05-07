@@ -268,7 +268,7 @@ void SkAllEstimator::setParticlePropertyList(PropertySetType& plist, int offset)
 }
 
 
-void SkAllEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {

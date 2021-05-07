@@ -12,11 +12,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file observable_helper.h
- *@brief Declaration of observable_helper and other helper class for observables
+/**@file ObservableHelper.h
+ *@brief Declaration of ObservableHelper and other helper class for observables
  */
-#ifndef QMCPLUSPLUS_OBSERVABLE_TRAITS_H
-#define QMCPLUSPLUS_OBSERVABLE_TRAITS_H
+#ifndef QMCPLUSPLUS_OBSERVABLEHELPER_H
+#define QMCPLUSPLUS_OBSERVABLEHELPER_H
 
 #include "OhmmsData/HDFAttribIO.h"
 #include "Numerics/HDFNumericAttrib.h"
@@ -31,8 +31,9 @@ namespace qmcplusplus
  * The data handled by an Estimator should be presented by dense N-dim array in C.
  * /observables/title/value
  */
-struct observable_helper
+class ObservableHelper
 {
+public:
   typedef QMCTraits::FullPrecRealType value_type;
   ///this can be handled by template argument
   //enum {type_id=H5T_NATIVE_DOUBLE};
@@ -58,18 +59,18 @@ struct observable_helper
   bool isopened;
 
   ///default constructor
-  observable_helper(const std::string& title = "dummy")
+  ObservableHelper(const std::string& title = "dummy")
       : data_id(-1), space1_id(-1), value1_id(-1), group_name(title), isopened(false)
   {}
 
-  observable_helper(const observable_helper&) = delete;
-  observable_helper& operator=(const observable_helper&) = delete;
+  ObservableHelper(const ObservableHelper&) = delete;
+  ObservableHelper& operator=(const ObservableHelper&) = delete;
 
   /**
    * Move constructor. Must properly transfer ownership of resources. Doing copies as these are "cheap" elements
    * @param in input object to be moved to this
    */
-  observable_helper(observable_helper&& in) noexcept
+  ObservableHelper(ObservableHelper&& in) noexcept
       : lower_bound(in.lower_bound),
         data_id(in.data_id),
         space1_id(in.space1_id),
@@ -84,7 +85,7 @@ struct observable_helper
     in.isopened = false;
   }
 
-  observable_helper& operator=(observable_helper&& in)
+  ObservableHelper& operator=(ObservableHelper&& in)
   {
     if (this != &in)
     {
@@ -95,7 +96,7 @@ struct observable_helper
   }
 
   ///close resources
-  ~observable_helper()
+  ~ObservableHelper()
   {
     if (isopened)
     {

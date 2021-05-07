@@ -17,7 +17,7 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include "QMCHamiltonians/observable_helper.h"
+#include "QMCHamiltonians/ObservableHelper.h"
 
 namespace qmcplusplus
 {
@@ -74,7 +74,7 @@ public:
       accumulate(**first, wgt);
   }
   void add2Record(RecordListType& record) override;
-  void registerObservables(std::vector<observable_helper>& h5desc, hid_t gid) override;
+  void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) override;
   ScalarEstimatorBase* clone() override;
   /*@}*/
 

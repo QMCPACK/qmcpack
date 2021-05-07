@@ -225,7 +225,7 @@ OperatorBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFun
   return myclone;
 }
 
-void LatticeDeviationEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void LatticeDeviationEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {

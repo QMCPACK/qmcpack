@@ -45,7 +45,7 @@ public:
 
   void InitMatrix();
 
-  void registerObservables(std::vector<observable_helper>& h5list, hid_t gid) const
+  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list, gid);
   }

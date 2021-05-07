@@ -120,7 +120,7 @@ public:
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
 
-  void registerObservables(std::vector<observable_helper>& h5list, hid_t gid) const override;
+  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override;
 
 protected:
   ///random number generator

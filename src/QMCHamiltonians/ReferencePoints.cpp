@@ -131,7 +131,7 @@ void ReferencePoints::write_description(std::ostream& os, std::string& indent)
   return;
 }
 
-void ReferencePoints::save(std::vector<observable_helper>& h5desc, hid_t gid) const
+void ReferencePoints::save(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   h5desc.emplace_back("reference_points");
   auto& oh = h5desc.back();

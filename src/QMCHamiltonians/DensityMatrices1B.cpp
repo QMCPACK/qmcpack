@@ -523,7 +523,7 @@ void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& colle
 }
 
 
-void DensityMatrices1B::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
 #if defined(QMC_COMPLEX)
   std::vector<int> ng(3);

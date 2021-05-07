@@ -653,7 +653,7 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
   }
 }
 
-void NonLocalECPotential::registerObservables(std::vector<observable_helper>& h5list, hid_t gid) const
+void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const
 {
   OperatorBase::registerObservables(h5list, gid);
   if (ComputeForces)

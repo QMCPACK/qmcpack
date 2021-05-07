@@ -44,7 +44,7 @@ public:
   void setObservables(PropertySetType& plist);
 
   // allow h5 output
-  void registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
 
 private:
   ParticleSet& tpset; // reference to target particle set

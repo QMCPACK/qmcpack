@@ -146,7 +146,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-void PairCorrEstimator::registerCollectables(std::vector<observable_helper>& h5list, hid_t gid) const
+void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5list, hid_t gid) const
 {
   std::vector<int> onedim(1, NumBins);
   int offset = myIndex;

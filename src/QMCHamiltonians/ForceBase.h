@@ -71,7 +71,7 @@ struct ForceBase
   ForceBase(ParticleSet& ions, ParticleSet& elns);
   virtual ~ForceBase() {}
 
-  void registerObservablesF(std::vector<observable_helper>& h5list, hid_t gid) const;
+  void registerObservablesF(std::vector<ObservableHelper>& h5list, hid_t gid) const;
 
   void addObservablesF(QMCTraits::PropertySetType& plist);
   void addObservablesStress(QMCTraits::PropertySetType& plist);
@@ -92,7 +92,7 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  void registerObservables(std::vector<observable_helper>& h5list, hid_t gid) const
+  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list, gid);
   }

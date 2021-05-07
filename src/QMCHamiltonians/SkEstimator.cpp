@@ -137,7 +137,7 @@ void SkEstimator::setParticlePropertyList(PropertySetType& plist, int offset)
 }
 
 
-void SkEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   if (hdf5_out)
   {

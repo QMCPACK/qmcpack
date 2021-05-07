@@ -13,7 +13,7 @@
 
 
 #include "CollectablesEstimator.h"
-#include "QMCHamiltonians/observable_helper.h"
+#include "QMCHamiltonians/ObservableHelper.h"
 
 namespace qmcplusplus
 {
@@ -23,7 +23,7 @@ CollectablesEstimator::CollectablesEstimator(QMCHamiltonian& h) : refH(h)
   scalars_saved.resize(h.sizeOfCollectables());
 }
 
-void CollectablesEstimator::registerObservables(std::vector<observable_helper>& h5desc, hid_t gid)
+void CollectablesEstimator::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid)
 {
   int loc = h5desc.size();
   refH.registerCollectables(h5desc, gid);

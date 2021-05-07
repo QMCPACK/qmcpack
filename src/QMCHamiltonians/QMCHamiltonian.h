@@ -125,14 +125,14 @@ public:
    * @param h5desc has observable_helper for each h5 group
    * @param gid h5 group id to which the observable groups are added.
    */
-  void registerObservables(std::vector<observable_helper>& h5desc, hid_t gid) const;
+  void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
   /** register collectables so that their averages can be dumped to hdf5
    * @param h5desc has observable_helper for each h5 group
    * @param gid h5 group id to which the observable groups are added.
    *
    * Add observable_helper information for the data stored in ParticleSet::mcObservables.
    */
-  void registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
   ///retrun the starting index
   inline int startIndex() const { return myIndex; }
   ///return the size of observables

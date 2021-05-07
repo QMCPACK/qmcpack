@@ -218,7 +218,7 @@ private:
   ///estimators of simple scalars
   std::vector<EstimatorType*> Estimators;
   ///convenient descriptors for hdf5
-  std::vector<observable_helper> h5desc;
+  std::vector<ObservableHelper> h5desc;
   /** OperatorEst Observables
    *
    * since the operator estimators are also a close set at compile time

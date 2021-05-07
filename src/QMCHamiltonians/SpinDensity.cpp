@@ -187,7 +187,7 @@ void SpinDensity::addObservables(PropertySetType& plist, BufferType& collectable
 }
 
 
-void SpinDensity::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void SpinDensity::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
 

@@ -118,7 +118,7 @@ void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collec
   //collectables.add(tmp2.begin(),tmp2.end());
 }
 
-void DensityEstimator::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
+void DensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   int loc = h5desc.size();
   std::vector<int> ng(OHMMS_DIM);

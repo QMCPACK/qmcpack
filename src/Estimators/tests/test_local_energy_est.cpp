@@ -84,7 +84,7 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
   (*W.begin())->Properties(WP::LOCALENERGY)    = 1.1;
   (*W.begin())->Properties(WP::LOCALPOTENTIAL) = 1.2;
 
-  std::vector<observable_helper> h5desc;
+  std::vector<ObservableHelper> h5desc;
 
   hid_t h_file = H5Fcreate("tmp_obs.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   le_est.registerObservables(h5desc, h_file);
