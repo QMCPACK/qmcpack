@@ -50,6 +50,8 @@ class DiffTwoBodyJastrowOrbital : public DiffWaveFunctionComponent
   std::map<std::string, FT*> J2Unique;
 
 public:
+  // return for testing
+  std::vector<FT*>& getFvector() { return F; }
   ///constructor
   DiffTwoBodyJastrowOrbital(ParticleSet& p) : NumVars(0), my_table_ID_(p.addTable(p))
   {
