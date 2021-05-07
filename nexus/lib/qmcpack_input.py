@@ -2516,7 +2516,7 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace','target','completed','id','continue']
     elements   = ['estimator']
-    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme','l2_diffusion']
+    parameters = ['walkers','warmupsteps','blocks','steps','timestep','nonlocalmove','nonlocalmoves','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers','sigmabound','energybound','feedback','recordwalkers','fastgrad','popcontrol','branchinterval','usedrift','storeconfigs','en_ref','tau','alpha','gamma','stepsbetweensamples','max_branch','killnode','swap_walkers','swap_trigger','branching_cutoff_scheme','l2_diffusion','maxage']
     write_types = obj(gpu=yesno,nonlocalmoves=yesnostr,reconfiguration=yesno,fastgrad=yesno,completed=yesno,killnode=yesno,swap_walkers=yesno,l2_diffusion=yesno)
 #end class dmc
 
@@ -6053,6 +6053,9 @@ dmc_legacy_defaults = obj(
     timestep_factor         = 0.5,    
     nonlocalmoves           = None,
     branching_cutoff_scheme = None,
+    maxage                  = None,
+    feedback                = None,
+    sigmabound              = None,
     )
 dmc_test_legacy_defaults = obj(
     vmc_warmupsteps = 10,
@@ -6443,6 +6446,9 @@ def generate_legacy_dmc_calculations(
     timestep_factor        ,    
     nonlocalmoves          ,
     branching_cutoff_scheme,
+    maxage                 ,
+    feedback               ,
+    sigmabound             ,
     loc                 = 'generate_dmc_calculations',
     ):
 
@@ -6498,14 +6504,20 @@ def generate_legacy_dmc_calculations(
         tfac *= timestep_factor
     #end for
 
+    optional_dmc_inputs = obj(
+        nonlocalmoves           = nonlocalmoves,
+        branching_cutoff_scheme = branching_cutoff_scheme,
+        maxage                  = maxage    ,
+        feedback                = feedback  ,
+        sigmabound              = sigmabound,
+        )
     for calc in dmc_calcs:
         if isinstance(calc,dmc):
-            if nonlocalmoves is not None:
-                calc.nonlocalmoves = nonlocalmoves
-            #end if
-            if branching_cutoff_scheme is not None:
-                calc.branching_cutoff_scheme = branching_cutoff_scheme
-            #end if
+            for k,v in optional_dmc_inputs.items():
+                if v is not None:
+                    calc[k] = v
+                #end if
+            #end for
         #end if
     #end for
     
