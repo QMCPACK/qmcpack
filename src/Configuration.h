@@ -101,9 +101,9 @@ struct PtclOnLatticeTraits
 //  Check if we are compiling with Catch defined.  Could use other symbols if needed.
 #ifdef TEST_CASE
 #ifdef QMC_COMPLEX
-typedef ComplexApprox ValueApprox;
+  using ValueApprox = Catch::Detail::ComplexApprox;
 #else
-  typedef Detail::Approx ValueApprox;
+  using ValueApprox = Catch::Detail::Approx;
 #endif
 #endif
 
