@@ -23,7 +23,7 @@ Running Docker Containers
 
 1. **Install the Docker engine**: install the latest version of the `Docker <https://www.docker.com/get-started>`_ engine for your system. Please see the documentation for different Linux distros `here <https://docs.docker.com/engine/install/#server>`_. 
 
-   After installation run the following command to verify the Docker engine is properly installed. **Note**: restart your system if necessary. 
+   After installation run the following command to verify the Docker engine is properly installed. **Note**: `restart your system if necessary <https://docs.docker.com/engine/install/linux-postinstall/>`_. 
 
    .. code-block:: bash
    
@@ -48,27 +48,25 @@ Running Docker Containers
    **Run an image (for Development)** `docker run` has a few extra options that can be used to run QMCPACK: 
 
    .. code-block:: bash
-    
-      docker run -u root --env USER=`stat -c "%u" .`  -v <QMCPACK Source Directory>:/home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+
+      docker run -u $(id -u `stat -c "%U" .`):$(id -g `stat -c "%G" .`) -v <QMCPACK Source Directory>:/home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
 
 
    Flags used by `docker run` (Note: The flags -i and -t are combined above):
     
-    `-u` : For building we need to run as the root user so that docker has write permissions for the build (e.g. install additional packages, allocating shared volume permissions, ect.).
+    `-u` : For building we need write permissions, the current arguments will set your container user and group to match your host user and group (e.g. install additional packages, allocating shared volume permissions, ect.).
 
     `-v` : Replace `<QMCPACK Source Directory>` with the direct path to your QMCPACK directory, this maps it to our landing directory and gives docker access to the files
 
     `-i` : Specifies the image to use
 
     `-t` : Allocate a pseudo-tty, allows an instance of bash to pass commands to it
-	
-    `--env` : Adds an environment variable containing the current user's uid for use later
 
    As an example, if extra permissions are needed the container can be run with the `sudo` user (not recommended):
 
    .. code-block:: bash
 
-      docker run -u root --env USER=`stat -c "%u" .`  -v path/to/QMCPACK:home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -u root -v path/to/QMCPACK:home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
 
 
 Build QMCPACK on Docker
@@ -89,10 +87,9 @@ The following steps just follow a regular QMCPACK build on any Linux environment
 
     .. code-block:: bash
 
-       sudo useradd -u $USER local && sudo -u local bash && exit
        cd build
 
-    * Note: this gives the non-root docker `user` permissions to read/write to the directory supplied with the `-v` flag of `docker run` in the previous step, and then opens bash as non root `user` 
+    * Note: this assumes you have mapped your QMCPACK directory as outlined above, else traverse to your source directory, then the build folder inside.
 
 
 2. **Configure**:
