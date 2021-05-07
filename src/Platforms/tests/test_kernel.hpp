@@ -22,6 +22,14 @@ namespace testing
 template<typename T>
 cudaError_t checkValueCUDA(cudaStream_t hstream, T* device_value_ptr, T value, bool& result);
 
+/** just an arbitrary struct for testing */
+struct DualStruct
+{
+  int index;
+  double value;
+};
+cudaError_t checkDualStruct(cudaStream_t hstream, DualStruct* device_struct_ptr, DualStruct dual_struct, bool& result);
+  
 extern template cudaError_t checkValueCUDA(cudaStream_t hstream, double* device_value_ptr, double value, bool& result);
 
 } // namespace testing
