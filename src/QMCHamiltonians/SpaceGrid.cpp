@@ -53,7 +53,7 @@ bool SpaceGrid::put(xmlNodePtr cur, std::map<std::string, Point>& points, bool i
   ga.add(npmin, "min_part");
   ga.add(npmax, "max_part");
   ga.add(ref, "reference");
-  ga.add(periodic,"periodic");
+  ga.add(periodic, "periodic");
   ga.put(cur);
   if (coord == "cartesian")
     coordinate = cartesian;
@@ -146,8 +146,7 @@ bool SpaceGrid::initialize_voronoi(std::map<std::string, Point>& points)
       case (vacuum):
         fill(reference_count.begin(), reference_count.end(), 0.0);
         break;
-      case (neutral):
-      {
+      case (neutral): {
         const std::vector<RealType>& Z = *Zptcl;
         for (int i = 0; i < ndomains; i++)
           reference_count[i] = (int)Z[i] + 1; //+1 is for ion itself
@@ -206,10 +205,10 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
   //loop over spacegrid xml elements
   xmlNodePtr element    = cur->children;
   std::string undefined = "";
-  int iaxis       = 0;
-  int naxes       = 0;
-  bool has_origin = false;
-  origin          = points["zero"];
+  int iaxis             = 0;
+  int naxes             = 0;
+  bool has_origin       = false;
+  origin                = points["zero"];
   // variables for loop
   RealType utol = 1e-5;
   std::string grid;
@@ -518,7 +517,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
     //  app_log()<<"    "<<i<<" "<<interval_centers[d][i]<< std::endl;
   }
   Point du, uc, ubc, rc;
-  RealType vol = 0.0;
+  RealType vol     = 0.0;
   RealType vol_tot = 0.0;
   RealType vscale  = std::abs(det(axes));
   for (int i = 0; i < dimensions[0]; i++)
@@ -704,7 +703,7 @@ int SpaceGrid::allocate_buffer_space(BufferType& buf)
 }
 
 
-void SpaceGrid::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid, int grid_index) const
+void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid, int grid_index) const
 {
   typedef Matrix<int> iMatrix;
   iMatrix imat;
@@ -712,38 +711,39 @@ void SpaceGrid::registerCollectables(std::vector<observable_helper*>& h5desc, hi
   int cshift = 1;
   std::stringstream ss;
   ss << grid_index + cshift;
-  std::string name      = "spacegrid" + ss.str();
-  observable_helper* oh = new observable_helper(name);
+  std::string name = "spacegrid" + ss.str();
+  h5desc.emplace_back(name);
+  auto& oh = h5desc.back();
   if (!chempot)
     ng[0] = nvalues_per_domain * ndomains;
   else
     ng[0] = nvalues_per_domain * npvalues * ndomains;
-  oh->set_dimensions(ng, buffer_offset);
-  oh->open(gid);
+  oh.set_dimensions(ng, buffer_offset);
+  oh.open(gid);
   int coord = (int)coordinate;
-  oh->addProperty(const_cast<int&>(coord), "coordinate");
-  oh->addProperty(const_cast<int&>(ndomains), "ndomains");
-  oh->addProperty(const_cast<int&>(nvalues_per_domain), "nvalues_per_domain");
-  oh->addProperty(const_cast<RealType&>(volume), "volume");
-  oh->addProperty(const_cast<Matrix_t&>(domain_volumes), "domain_volumes");
-  oh->addProperty(const_cast<Matrix_t&>(domain_centers), "domain_centers");
+  oh.addProperty(const_cast<int&>(coord), "coordinate");
+  oh.addProperty(const_cast<int&>(ndomains), "ndomains");
+  oh.addProperty(const_cast<int&>(nvalues_per_domain), "nvalues_per_domain");
+  oh.addProperty(const_cast<RealType&>(volume), "volume");
+  oh.addProperty(const_cast<Matrix_t&>(domain_volumes), "domain_volumes");
+  oh.addProperty(const_cast<Matrix_t&>(domain_centers), "domain_centers");
   if (chempot)
   {
-    oh->addProperty(const_cast<int&>(npmin), "min_part");
-    oh->addProperty(const_cast<int&>(npmax), "max_part");
+    oh.addProperty(const_cast<int&>(npmin), "min_part");
+    oh.addProperty(const_cast<int&>(npmax), "max_part");
     int ref = (int)reference;
-    oh->addProperty(const_cast<int&>(ref), "reference");
+    oh.addProperty(const_cast<int&>(ref), "reference");
     imat.resize(reference_count.size(), 1);
     for (int i = 0; i < reference_count.size(); i++)
       imat(i, 0) = reference_count[i];
-    oh->addProperty(const_cast<iMatrix&>(imat), "reference_count");
+    oh.addProperty(const_cast<iMatrix&>(imat), "reference_count");
   }
   if (coordinate != voronoi)
   {
-    oh->addProperty(const_cast<Point&>(origin), "origin");
-    oh->addProperty(const_cast<Tensor_t&>(axes), "axes");
-    oh->addProperty(const_cast<Tensor_t&>(axinv), "axinv");
-    oh->addProperty(const_cast<Matrix_t&>(domain_uwidths), "domain_uwidths");
+    oh.addProperty(const_cast<Point&>(origin), "origin");
+    oh.addProperty(const_cast<Tensor_t&>(axes), "axes");
+    oh.addProperty(const_cast<Tensor_t&>(axinv), "axinv");
+    oh.addProperty(const_cast<Matrix_t&>(domain_uwidths), "domain_uwidths");
     //add dimensioned quantities
     std::map<std::string, int> axtmap;
     axtmap["x"]     = 0;
@@ -789,7 +789,7 @@ void SpaceGrid::registerCollectables(std::vector<observable_helper*>& h5desc, hi
     {
       for (int d = 0; d < DIM; d++)
         imat(d, 0) = ivar[i][d];
-      oh->addProperty(const_cast<iMatrix&>(imat), iname[i]);
+      oh.addProperty(const_cast<iMatrix&>(imat), iname[i]);
     }
     Matrix_t rmat;
     rmat.resize(DIM, 1);
@@ -797,7 +797,7 @@ void SpaceGrid::registerCollectables(std::vector<observable_helper*>& h5desc, hi
     {
       for (int d = 0; d < DIM; d++)
         rmat(d, 0) = rvar[i][d];
-      oh->addProperty(const_cast<Matrix_t&>(rmat), rname[i]);
+      oh.addProperty(const_cast<Matrix_t&>(rmat), rname[i]);
     }
     for (int d = 0; d < DIM; d++)
     {
@@ -810,10 +810,10 @@ void SpaceGrid::registerCollectables(std::vector<observable_helper*>& h5desc, hi
       }
       int ival           = d + 1;
       std::string gmname = "gmap" + int2string(ival);
-      oh->addProperty(const_cast<iMatrix&>(imat), gmname);
+      oh.addProperty(const_cast<iMatrix&>(imat), gmname);
     }
   }
-  h5desc.push_back(oh);
+
   return;
 }
 
@@ -843,12 +843,12 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
         for (p = 0; p < nparticles; p++)
         {
           particles_outside[p] = false;
-          u = dot(axinv, (R[p] - origin));
-          for (int d=0; d<DIM; ++d)
+          u                    = dot(axinv, (R[p] - origin));
+          for (int d = 0; d < DIM; ++d)
             iu[d] = gmap[d][floor((u[d] - umin[d]) * odu[d])];
           buf_index = buffer_offset;
-          for (int d=0; d<DIM; ++d)
-            buf_index += nvalues*dm[d]*iu[d];
+          for (int d = 0; d < DIM; ++d)
+            buf_index += nvalues * dm[d] * iu[d];
           for (v = 0; v < nvalues; v++, buf_index++)
             buf[buf_index] += values(p, v);
         }
@@ -917,11 +917,11 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
       {
         const auto& dist = dtab.getDistRow(p);
         for (nd = 0; nd < ndomains; nd++)
-              if (dist[nd] < nearcell[p].r)
-              {
-                nearcell[p].r = dist[nd];
-                nearcell[p].i = nd;
-              }
+          if (dist[nd] < nearcell[p].r)
+          {
+            nearcell[p].r = dist[nd];
+            nearcell[p].i = nd;
+          }
       }
       //accumulate values for each dynamic particle
       for (p = 0; p < ndparticles; p++)
