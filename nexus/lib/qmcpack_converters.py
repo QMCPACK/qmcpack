@@ -185,6 +185,80 @@ def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=Fa
 #end def generate_pw2qmcpack_input
 
 
+def read_eshdf_eig_data(filename, Ef_list):
+    import numpy as np
+    from numpy import array,pi
+    from numpy.linalg import inv
+    from unit_converter import convert
+    from hdfreader import read_hdf
+    from developer import error
+
+    def h5int(i):
+        return array(i,dtype=int)[0]
+    #end def h5int
+
+    h        = read_hdf(filename,view=True)
+    axes     = array(h.supercell.primitive_vectors)
+    kaxes    = 2*pi*inv(axes).T
+    nk       = h5int(h.electrons.number_of_kpoints)
+    ns       = h5int(h.electrons.number_of_spins)
+    if len(Ef_list) != ns:
+      msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
+      error(msg)
+    data     = obj()
+    for k in range(nk):
+        kp = h.electrons['kpoint_'+str(k)]
+        for s, Ef in zip(range(ns), Ef_list):
+            E_fermi = Ef+1e-8
+            eig_s = []
+            path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
+            spin = h.get_path(path)
+            eig = convert(array(spin.eigenvalues),'Ha','eV')
+            nst = h5int(spin.number_of_states)
+            for st in range(nst):
+                e = eig[st]
+                if e<E_fermi:
+                    eig_s.append(e)
+                #end if
+            #end for
+            data[k,s] = obj(
+                kpoint = array(kp.reduced_k),
+                eig    = array(eig_s),
+                )
+        #end for
+    #end for
+    res = obj(
+        orbfile  = filename,
+        axes     = axes,
+        kaxes    = kaxes,
+        nkpoints = nk,
+        nspins   = ns,
+        data     = data,
+        )
+    return res
+#end def read_eshdf_eig_data
+
+
+def gcta_occupation(wfh5, ntwist):
+  nspin = wfh5.nspins
+  nk = wfh5.nkpoints
+  nprim = nk//ntwist
+  assert nprim*ntwist == nk
+  nelecs_at_twist = []
+  for itwist in range(ntwist):
+    iks = range(itwist, nk, ntwist)
+    # calculate nelec for each spin
+    nelecs = []
+    for ispin in range(nspin):
+      nl = [len(wfh5.data[ik, ispin].eig) for ik in iks]
+      nup = sum(nl)
+      nelecs.append(nup)
+      if nspin == 1:
+        nelecs.append(nup)
+    nelecs_at_twist.append(nelecs)
+  return nelecs_at_twist
+#end gcta_occupation
+
 
 class Pw2qmcpackAnalyzer(SimulationAnalyzer):
     def __init__(self,arg0):
@@ -199,8 +273,10 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
         #end if
     #end def __init__
 
-    def analyze(self):
-        None
+    def analyze(self, Ef_list=None):
+      if Ef_list is not None:
+        self.wfh5 = read_eshdf_eig_data(self.h5file, Ef_list)
+      #end if
     #end def analyze
 
     def get_result(self,result_name):
@@ -215,11 +291,13 @@ class Pw2qmcpack(Simulation):
     generic_identifier = 'pw2qmcpack'
     application = 'pw2qmcpack.x'
     application_properties = set(['serial'])
-    application_results    = set(['orbitals'])
+    application_results    = set(['orbitals','gc_occupation'])
 
     def check_result(self,result_name,sim):
         calculating_result = False
         if result_name=='orbitals':
+            calculating_result = True
+        elif result_name=='gc_occupation':
             calculating_result = True
         #end if        
         return calculating_result
@@ -244,6 +322,8 @@ class Pw2qmcpack(Simulation):
             result.h5file   = os.path.join(self.locdir,outdir,prefix+'.pwscf.h5')
             result.ptcl_xml = os.path.join(self.locdir,outdir,prefix+'.ptcl.xml')
             result.wfs_xml  = os.path.join(self.locdir,outdir,prefix+'.wfs.xml')
+        elif result_name=='gc_occupation':
+            pass  # defer to Qmcpack.incorporate_result
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if        

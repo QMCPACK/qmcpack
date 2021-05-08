@@ -39,13 +39,12 @@ namespace qmcplusplus
 //initialize the name of the primary estimator
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
     : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), Collectables(0), max4ascii(8), FieldWidth(20)
-{
-}
+{}
 
 EstimatorManagerNew::~EstimatorManagerNew()
 {
   delete_iter(Estimators.begin(), Estimators.end());
-  delete_iter(h5desc.begin(), h5desc.end());
+
   if (Collectables)
     delete Collectables;
 }
@@ -120,7 +119,6 @@ void EstimatorManagerNew::startDriverRun()
     addHeader(*Archive);
     if (h5desc.size())
     {
-      delete_iter(h5desc.begin(), h5desc.end());
       h5desc.clear();
     }
     fname  = my_comm_->getName() + ".stat.h5";
@@ -234,7 +232,7 @@ void EstimatorManagerNew::writeScalarH5()
   {
     for (int o = 0; o < h5desc.size(); ++o)
       // cheating here, remove SquaredAverageCache from API
-      h5desc[o]->write(AverageCache.data(), AverageCache.data());
+      h5desc[o].write(AverageCache.data(), AverageCache.data());
     H5Fflush(h_file->getFileID(), H5F_SCOPE_LOCAL);
   }
 

@@ -146,21 +146,21 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-void PairCorrEstimator::registerCollectables(std::vector<observable_helper*>& h5list, hid_t gid) const
+void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5list, hid_t gid) const
 {
   std::vector<int> onedim(1, NumBins);
   int offset = myIndex;
   for (int i = 0; i < gof_r_prefix.size(); ++i)
   {
-    observable_helper* h5o = new observable_helper(gof_r_prefix[i]);
-    h5o->set_dimensions(onedim, offset);
-    h5o->open(gid);
-    h5o->addProperty(const_cast<RealType&>(Delta), "delta");
-    h5o->addProperty(const_cast<RealType&>(Dmax), "cutoff");
+    h5list.emplace_back(gof_r_prefix[i]);
+    auto& h5o = h5list.back();
+    h5o.set_dimensions(onedim, offset);
+    h5o.open(gid);
+    h5o.addProperty(const_cast<RealType&>(Delta), "delta");
+    h5o.addProperty(const_cast<RealType&>(Dmax), "cutoff");
     //       h5o->addProperty(const_cast<std::vector<RealType>&>(norm_factor),"norm_factor");
     //       std::string blob("norm_factor[i]=1/r_m[i]^2 for r_m[i]=(r[i]+r[i+1])/2");
     //       h5o->addProperty(blob,"dictionary");
-    h5list.push_back(h5o);
     offset += NumBins;
   }
 }
