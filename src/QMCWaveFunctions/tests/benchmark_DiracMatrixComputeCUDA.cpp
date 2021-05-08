@@ -58,7 +58,7 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
 
   for (int im = 0; im < batch_size; ++im)
   {
-    makeRngSpdMatrix(spd_mats[im]);
+    testing::makeRngSpdMatrix(spd_mats[im]);
     for (int i = 0; i < n; ++i)
       for (int j = 0; j < n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
@@ -104,7 +104,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
 
   for (int im = 0; im < batch_size; ++im)
   {
-    makeRngSpdMatrix(spd_mats[im]);
+    testing::makeRngSpdMatrix(spd_mats[im]);
     for (int i = 0; i < n; ++i)
       for (int j = 0; j < n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
@@ -151,7 +151,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunct
 
   for (int im = 0; im < batch_size; ++im)
   {
-    makeRngSpdMatrix(spd_mats[im]);
+    testing::makeRngSpdMatrix(spd_mats[im]);
     for (int i = 0; i < n; ++i)
       for (int j = 0; j < n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
@@ -203,7 +203,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunct
 
   for (int im = 0; im < batch_size; ++im)
   {
-    makeRngSpdMatrix(spd_mats[im]);
+    testing::makeRngSpdMatrix(spd_mats[im]);
     for (int i = 0; i < n; ++i)
       for (int j = 0; j < n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
