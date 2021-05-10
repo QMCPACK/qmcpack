@@ -8,7 +8,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H2OS2_DMCLA_SCALARS "nonlocalecp" "3.7922 0.012") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_la
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
                     H2O
                     short-H2O-LA.xml
                     1 16
@@ -20,7 +20,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.339723 0.012") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_tm0
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
                     H2O
                     short-H2O-TM0.xml
                     1 16
@@ -32,7 +32,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.177908 0.012") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_tm1
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
                     H2O
                     short-H2O-TM1.xml
                     1 16
@@ -44,7 +44,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.174425 0.012") # non local ecp
 
   QMC_RUN_AND_CHECK(short-H2O_dimer_sep_pp-j3_dmc_tm3
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
                     H2O
                     short-H2O-TM3.xml
                     1 16
@@ -57,7 +57,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LONG_H2OS2_DMCLA_SCALARS "nonlocalecp" "3.7922 0.0045") # non local ecp
 
   QMC_RUN_AND_CHECK(long-H2O_dimer_sep_pp-j3_dmc_la
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
                     H2O
                     long-H2O-LA.xml
                     1 16
@@ -69,7 +69,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LONG_H2OS2_DMCTM0_SCALARS "nonlocalecp" "3.339723 0.0045") # non local ecp
 
   QMC_RUN_AND_CHECK(long-H2O_dimer_sep_pp-j3_dmc_tm0
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
                     H2O
                     long-H2O-TM0.xml
                     1 16
@@ -81,7 +81,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LONG_H2OS2_DMCTM1_SCALARS "nonlocalecp" "3.177908 0.0045") # non local ecp
 
   QMC_RUN_AND_CHECK(long-H2O_dimer_sep_pp-j3_dmc_tm1
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
                     H2O
                     long-H2O-TM1.xml
                     1 16
@@ -93,7 +93,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LONG_H2OS2_DMCTM3_SCALARS "nonlocalecp" "3.174425 0.0045") # non local ecp
 
   QMC_RUN_AND_CHECK(long-H2O_dimer_sep_pp-j3_dmc_tm3
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/H2O_dimer_sep_pp"
                     H2O
                     long-H2O-TM3.xml
                     1 16

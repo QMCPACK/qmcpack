@@ -16,7 +16,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LIH_SHORT "eeenergy" "3.488827 0.00085") # e-e energy
   LIST(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   QMC_RUN_AND_CHECK(short-LiH_ae_pyscf-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_pyscf"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_pyscf"
                     vmc_short_noj
                     vmc_short_noj.in.xml
                     1 16
@@ -29,7 +29,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LIH_LONG "eeenergy" "3.488827 0.00029") # e-e energy
   LIST(APPEND LIH_LONG "samples" "96000000 0.0") # samples
   QMC_RUN_AND_CHECK(long-LiH_ae_pyscf-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_ae_pyscf"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_pyscf"
                     vmc_long_noj
                     vmc_long_noj.in.xml
                     1 16

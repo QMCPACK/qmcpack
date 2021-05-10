@@ -1,4 +1,3 @@
-
 # Set the std
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -c99")
 

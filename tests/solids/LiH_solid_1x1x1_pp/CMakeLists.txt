@@ -8,7 +8,7 @@
 #  LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
 
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-gamma
                     hf_vmc_LiH-gamma.xml
                     1 16
@@ -18,7 +18,7 @@
 
 
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-gamma-drift
                     hf_vmc_LiH-gamma-drift.xml
                     1 16
@@ -33,7 +33,7 @@
 #  LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
 
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-x
                     hf_vmc_LiH-x.xml
                     1 16
@@ -42,7 +42,7 @@
                     )
 
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-x-drift
                     hf_vmc_LiH-x-drift.xml
                     1 16
@@ -51,7 +51,7 @@
                     )
 
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-x
                     hf_vmc_LiH-x_hybridrep.xml
                     1 16
@@ -73,7 +73,7 @@
 
 
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-arb
                     hf_vmc_LiH-arb.xml
                     1 16
@@ -83,7 +83,7 @@
 
 
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-arb-drift
                     hf_vmc_LiH-arb-drift.xml
                     1 16
@@ -95,7 +95,7 @@
   LIST(APPEND LIH_MD_GAMMA_SCALARS "totenergy" "-8.489858484145001 0.004")
   IF (QMC_COMPLEX)
     QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
-                      "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                      "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                       md_cc_vmc_LiH-gamma
                       md_cc_vmc_LiH-gamma.xml
                       1 16
@@ -105,7 +105,7 @@
 
   ELSE()
     QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_msdj
-                      "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                      "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                       md_rc_vmc_LiH-gamma
                       md_rc_vmc_LiH-gamma.xml
                       1 16
@@ -119,7 +119,7 @@
 
   LIST(APPEND LIH_GAMMA_DMC_SCALARS "totenergy" "-8.54823 0.004")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmc_short_LiH-gamma
                     hf_vmc_dmc_short_LiH-gamma.xml
                     1 16
@@ -129,7 +129,7 @@
 
   LIST(APPEND LIH_X_DMC_SCALARS "totenergy" "-8.31413 0.004")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-dmc-hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmc_short_LiH-x
                     hf_vmc_dmc_short_LiH-x.xml
                     1 16
@@ -139,7 +139,7 @@
 
   LIST(APPEND LIH_ARB_DMC_SCALARS "totenergy" "-8.45401 0.004")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmc_short_LiH-arb
                     hf_vmc_dmc_short_LiH-arb.xml
                     1 16
@@ -149,7 +149,7 @@
 
   LIST(APPEND LIH_GAMMA_DMCNL_SCALARS "totenergy" "-8.54979 0.004")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmcnl_short_LiH-gamma
                     hf_vmc_dmcnl_short_LiH-gamma.xml
                     1 16
@@ -159,7 +159,7 @@
 
   LIST(APPEND LIH_X_DMCNL_SCALARS "totenergy" "-8.31369 0.004")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmcnl_short_LiH-x
                     hf_vmc_dmcnl_short_LiH-x.xml
                     1 16
@@ -169,7 +169,7 @@
 
   LIST(APPEND LIH_ARB_DMCNL_SCALARS "totenergy" "-8.45174 0.004")
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_dmcnl_short_LiH-arb
                     hf_vmc_dmcnl_short_LiH-arb.xml
                     1 16
@@ -221,7 +221,7 @@ ELSE()
 ENDIF()
 
  QMC_RUN_AND_CHECK(deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
-                   "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                    det_hf_vmc_LiH-gamma
                    det_hf_vmc_LiH-gamma.xml
                    1 1

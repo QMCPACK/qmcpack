@@ -6,7 +6,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND HE_BSPLINE_PARAM jud_3  0.000812 0.000038)
 
   QMC_RUN_AND_CHECK_CUSTOM_SCALAR(BASE_NAME He_param_grad
-                                  BASE_DIR "${CMAKE_SOURCE_DIR}/tests/molecules/He_param"
+                                  BASE_DIR "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
                                   PREFIX He_param_grad.param
                                   INPUT_FILE He_param_grad.xml
                                   PROCS 1

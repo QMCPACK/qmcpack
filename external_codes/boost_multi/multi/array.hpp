@@ -63,7 +63,7 @@ struct static_array :
 	protected array_allocator<Alloc>,
 	public array_ref<T, D, typename std::allocator_traits<typename array_allocator<Alloc>::allocator_type>::pointer>
 {
-private:
+protected:
 	using array_alloc = array_allocator<Alloc>;
 public:	
 	static_assert( std::is_same<typename std::allocator_traits<Alloc>::value_type, typename static_array::element>{}, 
@@ -801,19 +801,43 @@ public:
 		return assign(adl_begin(r), adl_end(r));}
 	array& operator=(std::initializer_list<typename array::value_type> il){assign(il.begin(), il.end()); return *this;}
 
-	void reextent(typename array::extensions_type const& x){
-		if(x == this->extensions()) return;
+	array& reextent(typename array::extensions_type const& x){
+		if(x == this->extensions()) return *this;
+#if 0
 		array tmp(x, this->get_allocator()); // TODO opportunity missed to use hint allocation
 		auto const is = intersection(this->extensions(), x);
 		tmp.apply(is) = this->apply(is);
 		swap(tmp);
+#else
+		auto&& tmp = typename array::ref{this->static_::array_alloc::allocate(typename array::layout_t{x}.num_elements(), this->data_elements()), x};
+		if(not std::is_trivially_default_constructible<typename array::element>{}) adl_alloc_uninitialized_value_construct_n(this->alloc(), tmp.data_elements(), tmp.num_elements());
+		auto const is = intersection(this->extensions(), x);
+		tmp.apply(is) = this->apply(is); // TODO: use (and implement) `.move();`
+		this->destroy();
+		this->deallocate();
+		this->base_ = tmp.base();
+		(*this).array::layout_t::operator=(tmp.layout());
+#endif
+		return *this;
 	}
-	void reextent(typename array::extensions_type const& x, typename array::element const& e){
-		if(x == this->extensions()) return;
+	array& reextent(typename array::extensions_type const& x, typename array::element const& e){
+		if(x == this->extensions()) return *this;
+#if 0
 		array tmp(x, e, this->get_allocator()); // TODO opportunity missed to use hint allocation
 		auto const is = intersection(this->extensions(), x);
 		tmp.apply(is) = this->apply(is);
 		swap(tmp);
+#else // implementation with hint
+		auto&& tmp = typename array::ref{this->static_::array_alloc::allocate(typename array::layout_t{x}.num_elements(), this->data_elements()), x};
+		this->uninitialized_fill_n(tmp.data_elements(), tmp.num_elements(), e);
+		auto const is = intersection(this->extensions(), x);
+		tmp.apply(is) = this->apply(is);
+		this->destroy();
+		this->deallocate();
+		this->base_ = tmp.base(); // TODO: use (and implement) `.move();`
+		(*this).array::layout_t::operator=(tmp.layout());
+#endif
+		return *this;
 	}
 	template<class... Ts> constexpr array&& reindex(Ts... a)&&{array::layout_t::reindex(a...); return std::move(*this);}
 	template<class... Ts> constexpr array&  reindex(Ts... a)& {array::layout_t::reindex(a...); return           *this ;}

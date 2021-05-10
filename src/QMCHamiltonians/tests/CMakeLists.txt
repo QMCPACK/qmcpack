@@ -39,6 +39,7 @@ SET(SRCS test_bare_kinetic.cpp
          test_SkAllEstimator.cpp
          test_QMCHamiltonian.cpp
          test_derivs.cpp
+         test_ObservableHelper.cpp
          )
          
 IF(QMC_CUDA)

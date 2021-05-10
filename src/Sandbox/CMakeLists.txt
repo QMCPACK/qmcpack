@@ -1,9 +1,11 @@
 PROJECT(Sandbox)
 
 # add apps XYZ.cpp, e.g., qmc_particles.cpp
-SET(ESTEST diff_distancetables einspline_spo einspline_spo_nested determinant restart determinant_delayed_update)
+set(ESTEST diff_distancetables einspline_spo einspline_spo_nested determinant restart determinant_delayed_update)
 
-FOREACH(p ${ESTEST})
-  ADD_EXECUTABLE( ${p}  ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} einspline qmcparticle)
-ENDFOREACH(p ${ESTEST})
+foreach(p ${ESTEST})
+  add_executable(${p} ${p}.cpp)
+  target_link_libraries(${p} einspline qmcparticle)
+  add_unit_test(sandbox_${p} 1 3 ${qmcpack_BINARY_DIR}/bin/${p})
+
+endforeach(p ${ESTEST})

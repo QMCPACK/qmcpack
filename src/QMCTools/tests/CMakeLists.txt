@@ -34,9 +34,9 @@ SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 
 # Minimal test for qmc-check-affinity. Check for "OpenMP" in output, no errorcodes.
 IF ( HAVE_MPI )
-  ADD_TEST( NAME check-affinity_runs COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${qmcpack_BINARY_DIR}/bin/qmc-check-affinity )
+  ADD_TEST( NAME check-affinity_runs COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:qmc-check-affinity> )
 ELSE()
-  ADD_TEST(NAME check-affinity_runs COMMAND "${qmcpack_BINARY_DIR}/bin/qmc-check-affinity" "${qmcpack_BINARY_DIR}/bin")
+  ADD_TEST(NAME check-affinity_runs COMMAND $<TARGET_FILE:qmc-check-affinity>)
 ENDIF()
 SET_TESTS_PROPERTIES(check-affinity_runs PROPERTIES
                          TIMEOUT 120 LABELS "deterministic" PASS_REGULAR_EXPRESSION "OpenMP"
@@ -44,16 +44,16 @@ SET_TESTS_PROPERTIES(check-affinity_runs PROPERTIES
 
 # Basic test for qmc-get-supercell. Cubic primitive vectors, request what should optimally be a 2x2x2 tiling
 IF ( HAVE_MPI )
-  ADD_TEST( NAME get-supercell_verbose COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${qmcpack_BINARY_DIR}/bin/qmc-get-supercell --ptvs 1 0 0 0 1 0 0 0 1 --target 8 --maxentry 4 --verbose)
+  ADD_TEST( NAME get-supercell_verbose COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:qmc-get-supercell> --ptvs 1 0 0 0 1 0 0 0 1 --target 8 --maxentry 4 --verbose)
 ELSE()
-  ADD_TEST(NAME get-supercell_verbose COMMAND "${qmcpack_BINARY_DIR}/bin/qmc-get-supercell" --ptvs 1 0 0 0 1 0 0 0 1 --target 8 --maxentry 4 --verbose)
+  ADD_TEST(NAME get-supercell_verbose COMMAND $<TARGET_FILE:qmc-get-supercell> --ptvs 1 0 0 0 1 0 0 0 1 --target 8 --maxentry 4 --verbose)
 ENDIF()
 SET_TESTS_PROPERTIES(get-supercell_verbose PROPERTIES TIMEOUT 120 LABELS "deterministic" PASS_REGULAR_EXPRESSION "radius = 1"
                          PROCESSORS 1 ENVIRONMENT OMP_NUM_THREADS=3 PROCESSOR_AFFINITY TRUE)
 IF ( HAVE_MPI )
-  ADD_TEST( NAME get-supercell_terse COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${qmcpack_BINARY_DIR}/bin/qmc-get-supercell --ptvs 1 0 0 0 1 0 0 0 1 --target 8)
+  ADD_TEST( NAME get-supercell_terse COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:qmc-get-supercell> --ptvs 1 0 0 0 1 0 0 0 1 --target 8)
 ELSE()
-  ADD_TEST(NAME get-supercell_terse COMMAND "${qmcpack_BINARY_DIR}/bin/qmc-get-supercell" --ptvs 1 0 0 0 1 0 0 0 1 --target 8)
+  ADD_TEST(NAME get-supercell_terse COMMAND $<TARGET_FILE:qmc-get-supercell> --ptvs 1 0 0 0 1 0 0 0 1 --target 8)
 ENDIF()
 SET_TESTS_PROPERTIES(get-supercell_terse PROPERTIES TIMEOUT 120 LABELS "deterministic"
                          PASS_REGULAR_EXPRESSION "1   2   0   0   0   2   0   0   0   2   2   0   0   0   2   0   0   0   2"
@@ -63,17 +63,17 @@ SET_TESTS_PROPERTIES(get-supercell_terse PROPERTIES TIMEOUT 120 LABELS "determin
 SET(KTEST_HDF_INPUT1 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 SET(KTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp/pwscf.pwscf.h5)
 IF ( HAVE_MPI )
-  ADD_TEST( NAME extract-eshdf-kvectors_1x1x1 COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${qmcpack_BINARY_DIR}/bin/qmc-extract-eshdf-kvectors ${KTEST_HDF_INPUT1})
+  ADD_TEST( NAME extract-eshdf-kvectors_1x1x1 COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:qmc-extract-eshdf-kvectors> ${KTEST_HDF_INPUT1})
 ELSE()
-  ADD_TEST(NAME extract-eshdf-kvectors_1x1x1 COMMAND "${qmcpack_BINARY_DIR}/bin/qmc-extract-eshdf-kvectors" ${KTEST_HDF_INPUT1})
+  ADD_TEST(NAME extract-eshdf-kvectors_1x1x1 COMMAND $<TARGET_FILE:qmc-extract-eshdf-kvectors> ${KTEST_HDF_INPUT1})
 ENDIF()
 SET_TESTS_PROPERTIES(extract-eshdf-kvectors_1x1x1 PROPERTIES TIMEOUT 120 LABELS "deterministic"
                         PASS_REGULAR_EXPRESSION "0   0   0"
                         PROCESSORS 1 ENVIRONMENT OMP_NUM_THREADS=3 PROCESSOR_AFFINITY TRUE)
 IF ( HAVE_MPI )
-  ADD_TEST( NAME extract-eshdf-kvectors_2x1x1 COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${qmcpack_BINARY_DIR}/bin/qmc-extract-eshdf-kvectors ${KTEST_HDF_INPUT2})
+  ADD_TEST( NAME extract-eshdf-kvectors_2x1x1 COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:qmc-extract-eshdf-kvectors> ${KTEST_HDF_INPUT2})
 ELSE()
-  ADD_TEST(NAME extract-eshdf-kvectors_2x1x1 COMMAND "${qmcpack_BINARY_DIR}/bin/qmc-extract-eshdf-kvectors" ${KTEST_HDF_INPUT2})
+  ADD_TEST(NAME extract-eshdf-kvectors_2x1x1 COMMAND $<TARGET_FILE:qmc-extract-eshdf-kvectors> ${KTEST_HDF_INPUT2})
 ENDIF()
 SET_TESTS_PROPERTIES(extract-eshdf-kvectors_2x1x1 PROPERTIES TIMEOUT 120 LABELS "deterministic"
                         PASS_REGULAR_EXPRESSION "0   0   0\n0.5   0   0"
@@ -81,9 +81,9 @@ SET_TESTS_PROPERTIES(extract-eshdf-kvectors_2x1x1 PROPERTIES TIMEOUT 120 LABELS 
 
 # Minimal test for convert4qmc. Check for Usage on output if no arguments. Primarily tested through converter tests.
 IF ( HAVE_MPI )
-  ADD_TEST( NAME convert4qmc_usage COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${qmcpack_BINARY_DIR}/bin/convert4qmc )
+  ADD_TEST( NAME convert4qmc_usage COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:convert4qmc> )
 ELSE()
-  ADD_TEST(NAME convert4qmc_usage COMMAND "${qmcpack_BINARY_DIR}/bin/convert4qmc")
+  ADD_TEST(NAME convert4qmc_usage COMMAND $<TARGET_FILE:convert4qmc>)
 ENDIF()
 SET_TESTS_PROPERTIES(convert4qmc_usage PROPERTIES TIMEOUT 120 LABELS "deterministic"
                         PASS_REGULAR_EXPRESSION "Usage:"

@@ -1762,6 +1762,7 @@ class simulation(QIxml):
 
 class project(QIxml):
     attributes = ['id','series']
+    parameters = ['maxcpusecs','max_seconds']
     elements   = ['application','host','date','user']
 #end class project
 
@@ -6258,7 +6259,9 @@ def generate_qmcpack_input(**kwargs):
 gen_basic_input_defaults = obj(
     id             = 'qmc',            
     series         = 0,                
-    purpose        = '',               
+    purpose        = '',     
+    maxcpusecs     = None,
+    max_seconds    = None,
     seed           = None,             
     bconds         = None,             
     truncate       = False,            
@@ -6390,6 +6393,12 @@ def generate_basic_input(**kwargs):
         series      = kw.series,
         application = application(),
         )
+    if kw.maxcpusecs is not None:
+        proj.maxcpusecs = kw.maxcpusecs
+    #end if
+    if kw.max_seconds is not None:
+        proj.max_seconds = kw.max_seconds
+    #end if
 
     simcell = generate_simulationcell(
         bconds        = kw.bconds,

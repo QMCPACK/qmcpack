@@ -27,7 +27,7 @@
 
 namespace qmcplusplus
 {
-struct observable_helper;
+class ObservableHelper;
 
 /** Abstract class for an estimator of a scalar operator.
  *
@@ -158,7 +158,7 @@ struct ScalarEstimatorBase
    * @param h5desc descriptor of a data stored in a h5 group
    * @param gid h5 group to which each statistical data will be stored
    */
-  virtual void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) = 0;
+  virtual void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) = 0;
 
   ///clone the object
   virtual ScalarEstimatorBase* clone() = 0;

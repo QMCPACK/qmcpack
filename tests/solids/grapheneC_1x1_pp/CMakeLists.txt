@@ -8,7 +8,7 @@ ELSE()
 ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-grapheneC_1x1_pp-vmc_sdj_z10
-                    "${CMAKE_SOURCE_DIR}/tests/solids/grapheneC_1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/grapheneC_1x1_pp"
                     det_qmc_short_z10
                     det_qmc_short_z10.in.xml
                     1 1
@@ -26,7 +26,7 @@ ELSE()
 ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-grapheneC_1x1_pp-vmc_sdj_z30
-                    "${CMAKE_SOURCE_DIR}/tests/solids/grapheneC_1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/grapheneC_1x1_pp"
                     det_qmc_short_z30
                     det_qmc_short_z30.in.xml
                     1 1

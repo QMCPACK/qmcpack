@@ -26,13 +26,22 @@ def exit_pass(msg=None):
 #end def exit_pass
 
 
-# Open the XML file and return the jud_b value
-def get_jud_b(file):
+# Open the XML file and return coefficient values
+def get_opt_coeff(file):
     tree = ET.parse(file)
     root = tree.getroot()
-    for elem in root.iterfind('wavefunction/jastrow/correlation/'):
-        return [float(i) for i in elem.text.split()]
-#end def get_jud_b
+    j_coeff = []
+    bf_coeff = []
+    for elem in root.findall('wavefunction/jastrow/correlation/'):
+        for i in elem.text.split():
+         j_coeff.append(float(i))
+
+    for elem in root.findall('wavefunction/determinantset/backflow/transformation/correlation/'):
+        for i in elem.text.split():
+         bf_coeff.append(float(i))
+
+    return j_coeff,bf_coeff
+#end def get_opt_coeff
 
 
 passfail = {True:'pass',False:'fail'}
@@ -50,30 +59,51 @@ def run_opt_test(options):
     if not os.path.exists(ref_file):
        exit_fail("Reference not found:" + ref_file)
 
-    output = get_jud_b(prefix_file)
-    reference = get_jud_b(ref_file)
+    j_output, bf_output = get_opt_coeff(prefix_file)
+    j_reference, bf_reference = get_opt_coeff(ref_file)
 
-    if len(output) != len(reference):
-       exit_fail('Number of coefficient in test({0}) does not match with the reference({1})'.format(len(output),len(reference)))
+    if len(j_output) != len(j_reference):
+       exit_fail('Number of coefficient in test({0}) does not match with the reference({1})'.format(len(j_output),len(j_reference)))
 
     success = True
     tolerance = 1e-06
-    deviation = []
+    j_deviation = []
+    bf_deviation = []
    
-    for i in range(len(output)):
-       deviation.append(abs(float(output[i])-float(reference[i])))
-       quant_success = deviation[i] <= tolerance 
+    for i in range(len(j_output)):
+       j_deviation.append(abs(float(j_output[i])-float(j_reference[i])))
+       quant_success = j_deviation[i] <= tolerance 
        if quant_success is False:
            success &= quant_success
        #end if
     #end for
   
     msg='\n  Testing Series: {0}\n'.format(options.series)
-    msg+='   reference coefficients   : {0}\n'.format(reference)
-    msg+='   computed  coefficients   : {0}\n'.format(output)
+    msg+='   reference Jastrow coefficients   : {0}\n'.format(j_reference)
+    msg+='   computed  Jastrow coefficients   : {0}\n'.format(j_output)
     msg+='   pass tolerance           : {0: 12.6f}\n'.format(tolerance) 
-    msg+='   deviation from reference : {0}\n'.format(deviation)
+    msg+='   deviation from reference : {0}\n'.format(j_deviation)
     msg+='   status of this test      :   {0}\n'.format(passfail[success])
+
+    if bf_output or bf_reference:
+      if len(bf_output) != len(bf_reference):
+        exit_fail('Number of coefficient in test({0}) does not match with the reference({1})'.format(len(bf_output),len(bf_reference)))
+      
+      for i in range(len(bf_output)):
+       bf_deviation.append(abs(float(bf_output[i])-float(bf_reference[i])))
+       quant_success = bf_deviation[i] <= tolerance
+       if quant_success is False:
+           success &= quant_success
+       #end if
+      #end for 
+
+      msg+='\n  Testing Series: {0}\n'.format(options.series)
+      msg+='   reference Backflow coefficients   : {0}\n'.format(bf_reference)
+      msg+='   computed  Backflow coefficients   : {0}\n'.format(bf_output)
+      msg+='   pass tolerance           : {0: 12.6f}\n'.format(tolerance)
+      msg+='   deviation from reference : {0}\n'.format(bf_deviation)
+      msg+='   status of this test      :   {0}\n'.format(passfail[success])
+
 
     return success, msg
 
@@ -101,7 +131,6 @@ if __name__ == '__main__':
     parser.add_option('-r','--ref',dest='ref',
                      help='Reference to check output files (default=./qmc-ref/$PREFIX).'
                      )
-
   
     options,files_in = parser.parse_args()
 

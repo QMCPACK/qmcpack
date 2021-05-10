@@ -56,7 +56,7 @@ To build QMCPACK:
 #. Build QMCPACK: ``make`` or ``make -j 16``; use the latter for a faster parallel build on a
    system using, for example, 16 processes.
 
-#. The QMCPACK executable is ``bin/qmcpack``.
+#. The QMCPACK executable is usually ``bin/qmcpack``. If you build the complex version it is ``bin/qmcpack_complex``.
 
 QMCPACK is distributed with examples illustrating different
 capabilities. Most of the examples are designed to run quickly with
