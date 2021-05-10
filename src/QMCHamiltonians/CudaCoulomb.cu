@@ -15,6 +15,13 @@
 
 #include "CudaCoulomb.h"
 
+__device__ inline void sincos_t(float x, float *sin, float *cos) {
+  sincosf(x, sin, cos);
+}
+
+__device__ inline void sincos_t(double x, double *sin, double *cos) {
+  sincos(x, sin, cos);
+}
 
 const int MAX_TEXTURES = 10;
 __constant__ float Acuda[16];
@@ -1089,7 +1096,7 @@ __global__ void eval_rhok_kernel(T** R, int numr, T* kpoints, int numk, T** rhok
       {
         T phase = (k[tid][0] * r[j][0] + k[tid][1] * r[j][1] + k[tid][2] * r[j][2]);
         T s, c;
-        sincos(phase, &s, &c);
+        sincos_t(phase, &s, &c);
         rhok_im[tid] += s;
         rhok_re[tid] += c;
       }
@@ -1139,7 +1146,7 @@ __global__ void eval_rhok_kernel(TR** R, int first, int last, T* kpoints, int nu
       {
         T phase = (k[tid][0] * r[j][0] + k[tid][1] * r[j][1] + k[tid][2] * r[j][2]);
         T s, c;
-        sincos(phase, &s, &c);
+        sincos_t(phase, &s, &c);
         rhok_im[tid] += s;
         rhok_re[tid] += c;
       }
