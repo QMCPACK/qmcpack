@@ -4,10 +4,10 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //		      Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -444,7 +444,7 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
     float const * __restrict__ Linv,
     float* const * vals,
     float* const * grd_lapl,
-    float3 drInv, __restrict__ uint3 dim,
+    float3 drInv, uint3 dim,
     uint3 strides, int N, int row_stride,
     float const * __restrict__ coefs_host,
     int host_Nx_offset,
