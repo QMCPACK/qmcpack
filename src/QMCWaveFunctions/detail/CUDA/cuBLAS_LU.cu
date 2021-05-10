@@ -249,7 +249,7 @@ template void computeLogDet_batched<float>(cudaStream_t& hstream,
                                            std::complex<double>* log_dets,
                                            const int batch_size);
 
-template void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
+template void computeInverseAndDetLog_batched<double>(cublasHandle_t& h_cublas,
                                      cudaStream_t& hstream,
                                      const int n,
                                      const int lda,
@@ -262,7 +262,7 @@ template void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
                                      std::complex<double>* log_dets,
                                      const int batch_size);
 
-template void computeInverseAndDetLog_batched(cublasHandle_t& h_cublas,
+template void computeInverseAndDetLog_batched<std::complex<double>>(cublasHandle_t& h_cublas,
                                      cudaStream_t& hstream,
                                      const int n,
                                      const int lda,

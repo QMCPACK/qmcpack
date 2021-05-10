@@ -32,7 +32,7 @@ void makeRngSpdMatrix(Matrix<T>& mat_spd)
   Matrix<T> mat_a;
   mat_a.resize(n, n);
   testing::RandomForTest<T> rng;
-  rng.generateRngReals(mat_a.data(), mat_a.size());
+  rng.fillBufferRng(mat_a.data(), mat_a.size());
   Matrix<T> mat_a_t(mat_a);
   Matrix<T> mat_c;
   mat_c.resize(n, n);
@@ -71,8 +71,8 @@ void makeRngSpdMatrix(Matrix<T>& mat_spd)
   int n = mat_spd.rows();
   Matrix<T> mat_a;
   mat_a.resize(n, n);
-  testing::RandomForTest<T> rng;
-  rng.generateRngReals(mat_a.data(), mat_a.size());
+  testing::RandomForTest<typename T::value_type> rng;
+  rng.fillBufferRng(mat_a.data(), mat_a.size());
   Matrix<T> mat_a_t(mat_a);
   Matrix<T> mat_c;
   mat_c.resize(n, n);
@@ -106,7 +106,10 @@ void makeRngSpdMatrix(Matrix<T>& mat_spd)
   simd::transpose(mat_u.data(), n, mat_u.cols(), mat_spd.data(), n, n);
 }
 
-extern template void makeRngSpdMatrix<double, true>(Matrix<double>& mat_spd);
-extern template void makeRngSpdMatrix<float, true>(Matrix<float>& mat_spd);
+  extern template void makeRngSpdMatrix<double>(Matrix<double>& mat_spd);
+  extern template void makeRngSpdMatrix<float>(Matrix<float>& mat_spd);
+  extern template void makeRngSpdMatrix<std::complex<double>>(Matrix<std::complex<double>>& mat_spd);
+  extern template void makeRngSpdMatrix<std::complex<float>>(Matrix<std::complex<float>>& mat_spd);
+
 } // namespace testing
 } // namespace qmcplusplus

@@ -9,15 +9,12 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "makeRngSpdMatrix.hpp"
+#include "catch.hpp"
+#include "Utilities/for_testing/RandomForTest.h"
+#include <vector>
 
 namespace qmcplusplus
 {
-namespace testing
-{
-template void makeRngSpdMatrix<double>(Matrix<double>& mat_spd);
-template void makeRngSpdMatrix<float>(Matrix<float>& mat_spd);
-template void makeRngSpdMatrix<std::complex<double>>(Matrix<std::complex<double>>& mat_spd);
-template void makeRngSpdMatrix<std::complex<float>>(Matrix<std::complex<float>>& mat_spd);
-} // namespace testing
-} // namespace qmcplusplus
+  
+}
+

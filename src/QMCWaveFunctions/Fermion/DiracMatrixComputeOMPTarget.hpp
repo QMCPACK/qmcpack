@@ -192,7 +192,7 @@ public:
     //maybe n, lda
     //data_ref_matrix.attachReference(psiM_fp_.data(), n, n);
     //Because inv_a_mat is "aligned" this is unlikely to work.
-    simd::remapCopy(psiM_fp_.data(), n, lda, inv_a_mat.data(), n, ldb);
+    simd::remapCopy(n, n, psiM_fp_.data(), lda, inv_a_mat.data(), ldb);
   }
   
   /** This covers both mixed and Full precision case.
@@ -218,7 +218,7 @@ public:
     computeInvertAndLog(psiM_fp_, n, lda, log_values);
     for (int iw = 0; iw < nw; ++iw)
     {
-      simd::remapCopy(psiM_fp_.data() + nsqr * iw, n, lda, inv_a_mats[iw].get().data(), n, ldb);
+      simd::remapCopy(n, n, psiM_fp_.data() + nsqr * iw, lda, inv_a_mats[iw].get().data(), ldb);
     }
   }
 

@@ -222,10 +222,10 @@ inline void transpose(const T* restrict A, size_t m, size_t lda, TO* restrict B,
      * Blas-like interface
      */
 template<typename T, typename TO>
-inline void remapCopy(const T* restrict A, size_t m, size_t lda, TO* restrict B, size_t n, size_t ldb)
+inline void remapCopy(size_t m, size_t n, const T* restrict A,  size_t lda, TO* restrict B, size_t ldb)
 {
-  for (size_t i = 0; i < n; ++i)
-    for (size_t j = 0; j < m; ++j)
+  for (size_t j = 0; j < m; ++j)
+    for (size_t i = 0; i < n; ++i)
       B[j * ldb + i] = A[j * lda + i];
 }
 

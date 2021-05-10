@@ -90,21 +90,21 @@ class DiracMatrixComputeCUDA : public Resource
    *  This is the prefered interface for calling computeInvertAndLog when the T_FP and TMAT are equal.
    *  On Volta so far little seems to be achieved by having the mats continuous.
    */
-  template<typename TREAL>
+  template<typename TMAT, typename TREAL>
   inline void computeInvertAndLog(cublasHandle_t h_cublas,
-                                  RefVector<OffloadPinnedMatrix<TREAL>>& a_mats,
-                                  RefVector<OffloadPinnedMatrix<TREAL>>& inv_a_mats,
+                                  RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
+                                  RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                   const int n,
                                   const int lda,
                                   OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
     // This is probably dodgy
     int nw = log_values.size();
-    psiM_ptrs_.resize(sizeof(TREAL*) * nw);
-    invM_ptrs_.resize(sizeof(TREAL*) * nw);
+    psiM_ptrs_.resize(sizeof(TMAT*) * nw);
+    invM_ptrs_.resize(sizeof(TMAT*) * nw);
     //temp_mat_.resize(n,lda);
-    Vector<const T_FP*> M_ptr_buffer(reinterpret_cast<const TREAL**>(psiM_ptrs_.data()), nw);
-    Vector<const T_FP*> invM_ptr_buffer(reinterpret_cast<const TREAL**>(invM_ptrs_.data()), nw);
+    Vector<const T_FP*> M_ptr_buffer(reinterpret_cast<const TMAT**>(psiM_ptrs_.data()), nw);
+    Vector<const T_FP*> invM_ptr_buffer(reinterpret_cast<const TMAT**>(invM_ptrs_.data()), nw);
     cudaStream_t hstream;
     cublasErrorCheck(cublasGetStream(h_cublas, &hstream), "cublasGetStream failed!");
     // I think we want to only be using device side pointers how else can we
@@ -120,7 +120,7 @@ class DiracMatrixComputeCUDA : public Resource
       invM_ptr_buffer[iw] = inv_a_mats[iw].get().device_data();
       // We copy a_mat to inv_a_mat on the device so we can transpose it into a_mat on the device
       cudaErrorCheck(cudaMemcpyAsync((void*)(inv_a_mats[iw].get().device_data()), (void*)(a_mats[iw].get().data()),
-                                     a_mats[iw].get().size() * sizeof(TREAL), cudaMemcpyHostToDevice, hstream),
+                                     a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice, hstream),
                      "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM to device");
       // On the device Here we transpose to a_mat;
       cublasErrorCheck(cuBLAS::geam(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, dev_one.getDevicePtr(),
@@ -137,15 +137,15 @@ class DiracMatrixComputeCUDA : public Resource
     cudaErrorCheck(cudaMemcpyAsync(invM_ptrs_.device_data(), invM_ptrs_.data(), invM_ptrs_.size(),
                                    cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync invM_ptrs_ failed!");
-    TREAL** psiM_mw_ptr = reinterpret_cast<TREAL**>(psiM_ptrs_.device_data());
-    TREAL** invM_mw_ptr = reinterpret_cast<TREAL**>(invM_ptrs_.device_data());
+    TMAT** psiM_mw_ptr = reinterpret_cast<TMAT**>(psiM_ptrs_.device_data());
+    TMAT** invM_mw_ptr = reinterpret_cast<TMAT**>(invM_ptrs_.device_data());
     cuBLAS_LU::computeInverseAndDetLog_batched(h_cublas, hstream, n, lda, psiM_mw_ptr, invM_mw_ptr,
                                                LU_diags_fp_.device_data(), pivots_.device_data(), infos_.data(),
                                                infos_.device_data(), log_values.device_data(), nw);
     for (int iw = 0; iw < nw; ++iw)
     {
       cudaErrorCheck(cudaMemcpyAsync(inv_a_mats[iw].get().data(), inv_a_mats[iw].get().device_data(),
-                                     inv_a_mats[iw].get().size() * sizeof(TREAL), cudaMemcpyDeviceToHost, hstream),
+                                     inv_a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyDeviceToHost, hstream),
                      "cudaMemcpyAsync failed copying DiracMatrixBatch::inv_psiM to host");
     }
     cudaErrorCheck(cudaMemcpyAsync(log_values.data(), log_values.device_data(),

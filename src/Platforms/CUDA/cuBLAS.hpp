@@ -114,6 +114,40 @@ inline cublasStatus_t geam(cublasHandle_t& handle,
   return cublasDgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc);
 }
 
+inline cublasStatus_t geam(cublasHandle_t& handle,
+                           cublasOperation_t transa,
+                           cublasOperation_t transb,
+                           int m,
+                           int n,
+                           const std::complex<double>* alpha,
+                           const std::complex<double>* A,
+                           int lda,
+                           const std::complex<double>* beta,
+                           const std::complex<double>* B,
+                           int ldb,
+                           std::complex<double>* C,
+                           int ldc)
+{
+  return cublasZgeam(handle, transa, transb, m, n, castCUDAType(alpha), castCUDAType(A), lda, castCUDAType(beta), castCUDAType(B), ldb, castCUDAType(C), ldc);
+}
+
+inline cublasStatus_t geam(cublasHandle_t& handle,
+                           cublasOperation_t transa,
+                           cublasOperation_t transb,
+                           int m,
+                           int n,
+                           const std::complex<float>* alpha,
+                           const std::complex<float>* A,
+                           int lda,
+                           const std::complex<float>* beta,
+                           const std::complex<float>* B,
+                           int ldb,
+                           std::complex<float>* C,
+                           int ldc)
+{
+  return cublasCgeam(handle, transa, transb, m, n, castCUDAType(alpha), castCUDAType(A), lda, castCUDAType(beta), castCUDAType(B), ldb, castCUDAType(C), ldc);
+}
+  
 inline cublasStatus_t gemm(cublasHandle_t& handle,
                            const cublasOperation_t transa,
                            const cublasOperation_t transb,
