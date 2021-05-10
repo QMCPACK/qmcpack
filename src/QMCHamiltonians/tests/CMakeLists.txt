@@ -62,6 +62,11 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/ps
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/C.ccECP.xml" ${UTEST_DIR})
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/N.ccECP.xml" ${UTEST_DIR})
 
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/cn.wfnoj.xml" ${UTEST_DIR})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/cn.wfj.xml" ${UTEST_DIR})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/cn.msd-wfnoj.xml" ${UTEST_DIR})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/cn.msd-wfj.xml" ${UTEST_DIR})
+
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcham)
 IF(USE_OBJECT_TARGET)
