@@ -315,10 +315,10 @@ struct OperatorBase : public QMCTraits
   * @return Contribution of OperatorBase to Local Energy.
   */
   virtual Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
-                                         ParticleSet& ions,
-                                         TrialWaveFunction& psi,
-                                         ParticleSet::ParticlePos_t& hf_term,
-                                         ParticleSet::ParticlePos_t& pulay_term)
+                                                      ParticleSet& ions,
+                                                      TrialWaveFunction& psi,
+                                                      ParticleSet::ParticlePos_t& hf_term,
+                                                      ParticleSet::ParticlePos_t& pulay_term)
   {
     return evaluateDeterministic(P);
   }

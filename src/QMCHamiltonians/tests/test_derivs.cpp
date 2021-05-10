@@ -20,8 +20,6 @@
 #include "ParticleIO/XMLParticleIO.h"
 namespace qmcplusplus
 {
-
-
 void create_CN_particlesets(ParticleSet& elec, ParticleSet& ions)
 {
   const char* particles = "<tmp> \
@@ -85,17 +83,16 @@ void create_CN_particlesets(ParticleSet& elec, ParticleSet& ions)
 
   XMLParticleParser parse_electrons(elec, tmat);
   parse_electrons.put(part2);
-  
+
   elec.addTable(elec);
   elec.addTable(ions);
   elec.update();
-
 }
 
 TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
 {
-  app_log()<<"====Ion Derivative Test: Single Slater No Jastrow====\n";
-  using RealType  = QMCTraits::RealType;
+  app_log() << "====Ion Derivative Test: Single Slater No Jastrow====\n";
+  using RealType = QMCTraits::RealType;
 
   Communicate* c;
   c = OHMMS::Controller;
@@ -103,7 +100,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   ParticleSet ions;
   ParticleSet elec;
 
-  create_CN_particlesets(elec,ions); 
+  create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
@@ -144,7 +141,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
 
   TrialWaveFunction* psi = wff.getTWF();
   REQUIRE(psi != nullptr);
- 
+
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.4233853149e+01,0.0000000000e+00)
   //HamTest   Total -1.617071104264908143e+01
@@ -154,30 +151,37 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.384955836167661225e+01
 
-  
-  RealType logpsi= psi->evaluateLog(elec); 
-  REQUIRE( logpsi == Approx(-14.233853149));
-  
+
+  RealType logpsi = psi->evaluateLog(elec);
+  REQUIRE(logpsi == Approx(-14.233853149));
+
   QMCHamiltonian* ham = hf.getH();
 
   RealType eloc = ham->evaluateDeterministic(elec);
-  enum observ_id { KINETIC=0, ELECELEC, IONION, LOCALECP, NONLOCALECP};
-  REQUIRE(eloc                            == Approx(-1.6170527168e+01));
-  REQUIRE(ham->getObservable(ELECELEC)    == Approx( 1.9015560571e+01));
-  REQUIRE(ham->getObservable(IONION)      == Approx( 9.6214045316e+00));
-  REQUIRE(ham->getObservable(LOCALECP)    == Approx(-6.7839428299e+01));
-  REQUIRE(ham->getObservable(KINETIC)     == Approx( 9.1821937928e+00));
-  REQUIRE(ham->getObservable(NONLOCALECP) == Approx( 1.3849558361e+01));
-  
+  enum observ_id
+  {
+    KINETIC = 0,
+    ELECELEC,
+    IONION,
+    LOCALECP,
+    NONLOCALECP
+  };
+  REQUIRE(eloc == Approx(-1.6170527168e+01));
+  REQUIRE(ham->getObservable(ELECELEC) == Approx(1.9015560571e+01));
+  REQUIRE(ham->getObservable(IONION) == Approx(9.6214045316e+00));
+  REQUIRE(ham->getObservable(LOCALECP) == Approx(-6.7839428299e+01));
+  REQUIRE(ham->getObservable(KINETIC) == Approx(9.1821937928e+00));
+  REQUIRE(ham->getObservable(NONLOCALECP) == Approx(1.3849558361e+01));
+
   for (int i = 0; i < ham->sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham->getObservableName(i) << " " << ham->getObservable(i) << std::endl;
 
-  //Now for the derivative tests 
+  //Now for the derivative tests
   ParticleSet::ParticleGradient_t wfgradraw;
   ParticleSet::ParticlePos_t hf_term;
   ParticleSet::ParticlePos_t pulay_term;
   ParticleSet::ParticlePos_t wf_grad;
- 
+
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
   hf_term.resize(Nions);
@@ -186,48 +190,49 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
-  convert(wfgradraw[0], wf_grad[0]); 
-  convert(wfgradraw[1], wf_grad[1]); 
+  convert(wfgradraw[0], wf_grad[0]);
+  convert(wfgradraw[1], wf_grad[1]);
 
   //Reference from finite differences on this configuration.
-  REQUIRE( wf_grad[0][0] == Approx(-1.9044650674260308));
-  REQUIRE( wf_grad[0][1] == Approx(2.1257764985627148)); 
-  REQUIRE( wf_grad[0][2] == Approx(7.0556319963444016)); 
-  REQUIRE( wf_grad[1][0] == Approx(1.4233346821157509)); 
-  REQUIRE( wf_grad[1][1] == Approx(-0.1446706081154048)); 
-  REQUIRE( wf_grad[1][2] == Approx(0.1440176276013005)); 
+  REQUIRE(wf_grad[0][0] == Approx(-1.9044650674260308));
+  REQUIRE(wf_grad[0][1] == Approx(2.1257764985627148));
+  REQUIRE(wf_grad[0][2] == Approx(7.0556319963444016));
+  REQUIRE(wf_grad[1][0] == Approx(1.4233346821157509));
+  REQUIRE(wf_grad[1][1] == Approx(-0.1446706081154048));
+  REQUIRE(wf_grad[1][2] == Approx(0.1440176276013005));
 
   //Kinetic Force
-  hf_term=0.0;
-  pulay_term=0.0;
+  hf_term    = 0.0;
+  pulay_term = 0.0;
   (ham->getHamiltonian(KINETIC))->evaluateWithIonDerivs(elec, ions, *psi, hf_term, pulay_term);
-  REQUIRE( hf_term[0][0]+pulay_term[0][0] == Approx(1.0852823603357820));
-  REQUIRE( hf_term[0][1]+pulay_term[0][1] == Approx(24.2154119471038562));
-  REQUIRE( hf_term[0][2]+pulay_term[0][2] == Approx(111.8849364775797852));
-  REQUIRE( hf_term[1][0]+pulay_term[1][0] == Approx(2.1572063443997536));
-  REQUIRE( hf_term[1][1]+pulay_term[1][1] == Approx(-3.3743242489947529));
-  REQUIRE( hf_term[1][2]+pulay_term[1][2] == Approx(7.5625192454964454));
+  REQUIRE(hf_term[0][0] + pulay_term[0][0] == Approx(1.0852823603357820));
+  REQUIRE(hf_term[0][1] + pulay_term[0][1] == Approx(24.2154119471038562));
+  REQUIRE(hf_term[0][2] + pulay_term[0][2] == Approx(111.8849364775797852));
+  REQUIRE(hf_term[1][0] + pulay_term[1][0] == Approx(2.1572063443997536));
+  REQUIRE(hf_term[1][1] + pulay_term[1][1] == Approx(-3.3743242489947529));
+  REQUIRE(hf_term[1][2] + pulay_term[1][2] == Approx(7.5625192454964454));
 
   //NLPP Force
-  hf_term=0.0;
-  pulay_term=0.0;
-  double val=(ham->getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
-  
-  //MP fails the first REQUIRE with 24.22544.  Just bypass the checks in those builds.  
-  #if !defined(MIXED_PRECISION)
-  REQUIRE( hf_term[0][0]+pulay_term[0][0] == Approx(24.2239540340527491));
-  REQUIRE( hf_term[0][1]+pulay_term[0][1] == Approx(-41.9981344310649263));
-  REQUIRE( hf_term[0][2]+pulay_term[0][2] == Approx(-98.9123955744908159));
-  REQUIRE( hf_term[1][0]+pulay_term[1][0] == Approx(2.5105943834091704));
-  REQUIRE( hf_term[1][1]+pulay_term[1][1] == Approx(1.1345766918857692));
-  REQUIRE( hf_term[1][2]+pulay_term[1][2] == Approx(-5.2293234395150989));
-  #endif
+  hf_term    = 0.0;
+  pulay_term = 0.0;
+  double val =
+      (ham->getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+
+//MP fails the first REQUIRE with 24.22544.  Just bypass the checks in those builds.
+#if !defined(MIXED_PRECISION)
+  REQUIRE(hf_term[0][0] + pulay_term[0][0] == Approx(24.2239540340527491));
+  REQUIRE(hf_term[0][1] + pulay_term[0][1] == Approx(-41.9981344310649263));
+  REQUIRE(hf_term[0][2] + pulay_term[0][2] == Approx(-98.9123955744908159));
+  REQUIRE(hf_term[1][0] + pulay_term[1][0] == Approx(2.5105943834091704));
+  REQUIRE(hf_term[1][1] + pulay_term[1][1] == Approx(1.1345766918857692));
+  REQUIRE(hf_term[1][2] + pulay_term[1][2] == Approx(-5.2293234395150989));
+#endif
 }
 
 TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
-  app_log()<<"====Ion Derivative Test: Single Slater+Jastrow====\n";
-  using RealType  = QMCTraits::RealType;
+  app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
+  using RealType = QMCTraits::RealType;
 
   Communicate* c;
   c = OHMMS::Controller;
@@ -235,7 +240,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   ParticleSet ions;
   ParticleSet elec;
 
-  create_CN_particlesets(elec,ions); 
+  create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
@@ -276,39 +281,46 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 
   TrialWaveFunction* psi = wff.getTWF();
   REQUIRE(psi != nullptr);
- 
+
   //Output of WFTester Eloc test for this ion/electron configuration.
-//  Logpsi: (-8.945509461103977600e+00,0.000000000000000000e+00)
-//  HamTest   Total -1.779268125690864721e+01
-//  HamTest Kinetic 7.673240415372170276e+00
-//  HamTest ElecElec 1.901556057075800865e+01
-//  HamTest IonIon 9.621404531608845900e+00
-//  HamTest LocalECP -6.783942829945100073e+01
-//  HamTest NonLocalECP 1.373654152480333224e+01
-  
-  RealType logpsi= psi->evaluateLog(elec); 
-  REQUIRE( logpsi == Approx(-8.9455094611e+00));
-  
+  //  Logpsi: (-8.945509461103977600e+00,0.000000000000000000e+00)
+  //  HamTest   Total -1.779268125690864721e+01
+  //  HamTest Kinetic 7.673240415372170276e+00
+  //  HamTest ElecElec 1.901556057075800865e+01
+  //  HamTest IonIon 9.621404531608845900e+00
+  //  HamTest LocalECP -6.783942829945100073e+01
+  //  HamTest NonLocalECP 1.373654152480333224e+01
+
+  RealType logpsi = psi->evaluateLog(elec);
+  REQUIRE(logpsi == Approx(-8.9455094611e+00));
+
   QMCHamiltonian* ham = hf.getH();
 
   RealType eloc = ham->evaluateDeterministic(elec);
-  enum observ_id { KINETIC=0, ELECELEC, IONION, LOCALECP, NONLOCALECP};
-  REQUIRE(eloc                            == Approx(-1.77926812569e+01));
-  REQUIRE(ham->getObservable(ELECELEC)    == Approx( 1.9015560571e+01));
-  REQUIRE(ham->getObservable(IONION)      == Approx( 9.6214045316e+00));
-  REQUIRE(ham->getObservable(LOCALECP)    == Approx(-6.7839428299e+01));
-  REQUIRE(ham->getObservable(KINETIC)     == Approx( 7.6732404154e+00));
-  REQUIRE(ham->getObservable(NONLOCALECP) == Approx( 1.37365415248e+01));
-  
+  enum observ_id
+  {
+    KINETIC = 0,
+    ELECELEC,
+    IONION,
+    LOCALECP,
+    NONLOCALECP
+  };
+  REQUIRE(eloc == Approx(-1.77926812569e+01));
+  REQUIRE(ham->getObservable(ELECELEC) == Approx(1.9015560571e+01));
+  REQUIRE(ham->getObservable(IONION) == Approx(9.6214045316e+00));
+  REQUIRE(ham->getObservable(LOCALECP) == Approx(-6.7839428299e+01));
+  REQUIRE(ham->getObservable(KINETIC) == Approx(7.6732404154e+00));
+  REQUIRE(ham->getObservable(NONLOCALECP) == Approx(1.37365415248e+01));
+
   for (int i = 0; i < ham->sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham->getObservableName(i) << " " << ham->getObservable(i) << std::endl;
 
-  //Now for the derivative tests 
+  //Now for the derivative tests
   ParticleSet::ParticleGradient_t wfgradraw;
   ParticleSet::ParticlePos_t hf_term;
   ParticleSet::ParticlePos_t pulay_term;
   ParticleSet::ParticlePos_t wf_grad;
- 
+
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
   hf_term.resize(Nions);
@@ -317,47 +329,48 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
-  convert(wfgradraw[0], wf_grad[0]); 
-  convert(wfgradraw[1], wf_grad[1]); 
+  convert(wfgradraw[0], wf_grad[0]);
+  convert(wfgradraw[1], wf_grad[1]);
 
   //Reference from finite differences on this configuration.
-  REQUIRE( wf_grad[0][0] == Approx(-1.8996878390353797));
-  REQUIRE( wf_grad[0][1] == Approx( 2.3247646590007776)); 
-  REQUIRE( wf_grad[0][2] == Approx( 7.9587196049502031)); 
-  REQUIRE( wf_grad[1][0] == Approx( 1.8093817104158914)); 
-  REQUIRE( wf_grad[1][1] == Approx(-0.0966225639942308)); 
-  REQUIRE( wf_grad[1][2] == Approx(-1.5197874544625731)); 
+  REQUIRE(wf_grad[0][0] == Approx(-1.8996878390353797));
+  REQUIRE(wf_grad[0][1] == Approx(2.3247646590007776));
+  REQUIRE(wf_grad[0][2] == Approx(7.9587196049502031));
+  REQUIRE(wf_grad[1][0] == Approx(1.8093817104158914));
+  REQUIRE(wf_grad[1][1] == Approx(-0.0966225639942308));
+  REQUIRE(wf_grad[1][2] == Approx(-1.5197874544625731));
 
   //Kinetic Force
-  hf_term=0.0;
-  pulay_term=0.0;
+  hf_term    = 0.0;
+  pulay_term = 0.0;
   (ham->getHamiltonian(KINETIC))->evaluateWithIonDerivs(elec, ions, *psi, hf_term, pulay_term);
-  REQUIRE( hf_term[0][0]+pulay_term[0][0] == Approx(  -3.3359153349010735));
-  REQUIRE( hf_term[0][1]+pulay_term[0][1] == Approx(  30.0487085581835309));
-  REQUIRE( hf_term[0][2]+pulay_term[0][2] == Approx( 126.5885230360197369));
-  REQUIRE( hf_term[1][0]+pulay_term[1][0] == Approx(   2.7271604366774223));
-  REQUIRE( hf_term[1][1]+pulay_term[1][1] == Approx(  -3.5321234918228579));
-  REQUIRE( hf_term[1][2]+pulay_term[1][2] == Approx(   5.8844148870917925));
+  REQUIRE(hf_term[0][0] + pulay_term[0][0] == Approx(-3.3359153349010735));
+  REQUIRE(hf_term[0][1] + pulay_term[0][1] == Approx(30.0487085581835309));
+  REQUIRE(hf_term[0][2] + pulay_term[0][2] == Approx(126.5885230360197369));
+  REQUIRE(hf_term[1][0] + pulay_term[1][0] == Approx(2.7271604366774223));
+  REQUIRE(hf_term[1][1] + pulay_term[1][1] == Approx(-3.5321234918228579));
+  REQUIRE(hf_term[1][2] + pulay_term[1][2] == Approx(5.8844148870917925));
 
   //NLPP Force
-  hf_term=0.0;
-  pulay_term=0.0;
-  double val=(ham->getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
-  //MP fails the first REQUIRE with 27.15313.  Just bypass the checks in those builds.  
-  #if !defined(MIXED_PRECISION)
-  REQUIRE( hf_term[0][0]+pulay_term[0][0] == Approx(  27.1517161490208956));
-  REQUIRE( hf_term[0][1]+pulay_term[0][1] == Approx( -42.8268964286715459));
-  REQUIRE( hf_term[0][2]+pulay_term[0][2] == Approx(-101.5046844660360961));
-  REQUIRE( hf_term[1][0]+pulay_term[1][0] == Approx(   2.2255825024686260));
-  REQUIRE( hf_term[1][1]+pulay_term[1][1] == Approx(   1.1362118534918864));
-  REQUIRE( hf_term[1][2]+pulay_term[1][2] == Approx(  -4.5825638607333019));
-  #endif
+  hf_term    = 0.0;
+  pulay_term = 0.0;
+  double val =
+      (ham->getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
+//MP fails the first REQUIRE with 27.15313.  Just bypass the checks in those builds.
+#if !defined(MIXED_PRECISION)
+  REQUIRE(hf_term[0][0] + pulay_term[0][0] == Approx(27.1517161490208956));
+  REQUIRE(hf_term[0][1] + pulay_term[0][1] == Approx(-42.8268964286715459));
+  REQUIRE(hf_term[0][2] + pulay_term[0][2] == Approx(-101.5046844660360961));
+  REQUIRE(hf_term[1][0] + pulay_term[1][0] == Approx(2.2255825024686260));
+  REQUIRE(hf_term[1][1] + pulay_term[1][1] == Approx(1.1362118534918864));
+  REQUIRE(hf_term[1][2] + pulay_term[1][2] == Approx(-4.5825638607333019));
+#endif
 }
 
 TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
 {
-  app_log()<<"====Ion Derivative Test: Multislater No Jastrow====\n";
-  using RealType  = QMCTraits::RealType;
+  app_log() << "====Ion Derivative Test: Multislater No Jastrow====\n";
+  using RealType = QMCTraits::RealType;
 
   Communicate* c;
   c = OHMMS::Controller;
@@ -365,7 +378,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   ParticleSet ions;
   ParticleSet elec;
 
-  create_CN_particlesets(elec,ions); 
+  create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
@@ -406,7 +419,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
 
   TrialWaveFunction* psi = wff.getTWF();
   REQUIRE(psi != nullptr);
- 
+
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.411499619826623686e+01,0.000000000000000000e+00)
   //HamTest   Total -1.597690575658561407e+01
@@ -415,30 +428,37 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //HamTest IonIon 9.621404531608845900e+00
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.269054876473223636e+01
- 
-  RealType logpsi= psi->evaluateLog(elec); 
-  REQUIRE( logpsi == Approx(-1.41149961982e+01));
-  
+
+  RealType logpsi = psi->evaluateLog(elec);
+  REQUIRE(logpsi == Approx(-1.41149961982e+01));
+
   QMCHamiltonian* ham = hf.getH();
 
   RealType eloc = ham->evaluateDeterministic(elec);
-  enum observ_id { KINETIC=0, ELECELEC, IONION, LOCALECP, NONLOCALECP};
-  REQUIRE(eloc                            == Approx(-1.59769057565e+01));
-  REQUIRE(ham->getObservable(ELECELEC)    == Approx( 1.90155605707e+01));
-  REQUIRE(ham->getObservable(IONION)      == Approx( 9.62140453161e+00));
-  REQUIRE(ham->getObservable(LOCALECP)    == Approx(-6.78394282995e+01));
-  REQUIRE(ham->getObservable(KINETIC)     == Approx( 1.05350086757e+01));
-  REQUIRE(ham->getObservable(NONLOCALECP) == Approx( 1.26905487647e+01));
-  
+  enum observ_id
+  {
+    KINETIC = 0,
+    ELECELEC,
+    IONION,
+    LOCALECP,
+    NONLOCALECP
+  };
+  REQUIRE(eloc == Approx(-1.59769057565e+01));
+  REQUIRE(ham->getObservable(ELECELEC) == Approx(1.90155605707e+01));
+  REQUIRE(ham->getObservable(IONION) == Approx(9.62140453161e+00));
+  REQUIRE(ham->getObservable(LOCALECP) == Approx(-6.78394282995e+01));
+  REQUIRE(ham->getObservable(KINETIC) == Approx(1.05350086757e+01));
+  REQUIRE(ham->getObservable(NONLOCALECP) == Approx(1.26905487647e+01));
+
   for (int i = 0; i < ham->sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham->getObservableName(i) << " " << ham->getObservable(i) << std::endl;
 
-  //Now for the derivative tests 
+  //Now for the derivative tests
   ParticleSet::ParticleGradient_t wfgradraw;
   ParticleSet::ParticlePos_t hf_term;
   ParticleSet::ParticlePos_t pulay_term;
   ParticleSet::ParticlePos_t wf_grad;
- 
+
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
   hf_term.resize(Nions);
@@ -447,12 +467,12 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
-  convert(wfgradraw[0], wf_grad[0]); 
-  convert(wfgradraw[1], wf_grad[1]); 
+  convert(wfgradraw[0], wf_grad[0]);
+  convert(wfgradraw[1], wf_grad[1]);
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Reference from finite differences on this configuration.
-/*  REQUIRE( wf_grad[0][0] == Approx(-1.7045200053189544));
+  /*  REQUIRE( wf_grad[0][0] == Approx(-1.7045200053189544));
   REQUIRE( wf_grad[0][1] == Approx( 2.6980932676501368)); 
   REQUIRE( wf_grad[0][2] == Approx( 6.5358393587011667)); 
   REQUIRE( wf_grad[1][0] == Approx( 1.6322817486980055)); 
@@ -462,7 +482,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Kinetic Force
-/*  hf_term=0.0;
+  /*  hf_term=0.0;
   pulay_term=0.0;
   (ham->getHamiltonian(KINETIC))->evaluateWithIonDerivs(elec, ions, *psi, hf_term, pulay_term);
   REQUIRE( hf_term[0][0]+pulay_term[0][0] == Approx( 7.4631825180304636));
@@ -474,7 +494,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //NLPP Force
-/*  hf_term=0.0;
+  /*  hf_term=0.0;
   pulay_term=0.0;
   double val=(ham->getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
   REQUIRE( hf_term[0][0]+pulay_term[0][0] == Approx( 18.9414437404167302));
@@ -483,13 +503,12 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   REQUIRE( hf_term[1][0]+pulay_term[1][0] == Approx( 1.2122162598160457));
   REQUIRE( hf_term[1][1]+pulay_term[1][1] == Approx(-0.6163169101291999));
   REQUIRE( hf_term[1][2]+pulay_term[1][2] == Approx(-3.2996553033015625)); */
-
 }
 
 TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
 {
-  app_log()<<"====Ion Derivative Test: Multislater+Jastrow====\n";
-  using RealType  = QMCTraits::RealType;
+  app_log() << "====Ion Derivative Test: Multislater+Jastrow====\n";
+  using RealType = QMCTraits::RealType;
 
   Communicate* c;
   c = OHMMS::Controller;
@@ -497,7 +516,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   ParticleSet ions;
   ParticleSet elec;
 
-  create_CN_particlesets(elec,ions); 
+  create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
@@ -538,7 +557,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
 
   TrialWaveFunction* psi = wff.getTWF();
   REQUIRE(psi != nullptr);
- 
+
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-8.693299948465634586e+00,0.000000000000000000e+00)
   //HamTest   Total -1.752111246795173116e+01
@@ -548,30 +567,37 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   //HamTest LocalECP -6.783942829945100073e+01
   //HamTest NonLocalECP 1.249362906275283969e+01
 
- 
-  RealType logpsi= psi->evaluateLog(elec); 
-  REQUIRE( logpsi == Approx(-8.69329994846e+00));
-  
+
+  RealType logpsi = psi->evaluateLog(elec);
+  REQUIRE(logpsi == Approx(-8.69329994846e+00));
+
   QMCHamiltonian* ham = hf.getH();
 
   RealType eloc = ham->evaluateDeterministic(elec);
-  enum observ_id { KINETIC=0, ELECELEC, IONION, LOCALECP, NONLOCALECP};
-  REQUIRE(eloc                            == Approx(-1.75211124679e+01));
-  REQUIRE(ham->getObservable(ELECELEC)    == Approx( 1.90155605707e+01));
-  REQUIRE(ham->getObservable(IONION)      == Approx( 9.62140453161e+00));
-  REQUIRE(ham->getObservable(LOCALECP)    == Approx(-6.78394282995e+01));
-  REQUIRE(ham->getObservable(KINETIC)     == Approx( 9.18772166638e+00));
-  REQUIRE(ham->getObservable(NONLOCALECP) == Approx( 1.24936290628e+01));
-  
+  enum observ_id
+  {
+    KINETIC = 0,
+    ELECELEC,
+    IONION,
+    LOCALECP,
+    NONLOCALECP
+  };
+  REQUIRE(eloc == Approx(-1.75211124679e+01));
+  REQUIRE(ham->getObservable(ELECELEC) == Approx(1.90155605707e+01));
+  REQUIRE(ham->getObservable(IONION) == Approx(9.62140453161e+00));
+  REQUIRE(ham->getObservable(LOCALECP) == Approx(-6.78394282995e+01));
+  REQUIRE(ham->getObservable(KINETIC) == Approx(9.18772166638e+00));
+  REQUIRE(ham->getObservable(NONLOCALECP) == Approx(1.24936290628e+01));
+
   for (int i = 0; i < ham->sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham->getObservableName(i) << " " << ham->getObservable(i) << std::endl;
 
-  //Now for the derivative tests 
+  //Now for the derivative tests
   ParticleSet::ParticleGradient_t wfgradraw;
   ParticleSet::ParticlePos_t hf_term;
   ParticleSet::ParticlePos_t pulay_term;
   ParticleSet::ParticlePos_t wf_grad;
- 
+
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
   hf_term.resize(Nions);
@@ -580,12 +606,12 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   wfgradraw[0] = psi->evalGradSource(elec, ions, 0); //On the C atom.
   wfgradraw[1] = psi->evalGradSource(elec, ions, 1); //On the N atom.
 
-  convert(wfgradraw[0], wf_grad[0]); 
-  convert(wfgradraw[1], wf_grad[1]); 
+  convert(wfgradraw[0], wf_grad[0]);
+  convert(wfgradraw[1], wf_grad[1]);
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Reference from finite differences on this configuration.
-/*  REQUIRE( wf_grad[0][0] == Approx(-1.7052805961093040));
+  /*  REQUIRE( wf_grad[0][0] == Approx(-1.7052805961093040));
   REQUIRE( wf_grad[0][1] == Approx( 2.8914116872336133)); 
   REQUIRE( wf_grad[0][2] == Approx( 7.3963610874194776)); 
   REQUIRE( wf_grad[1][0] == Approx( 2.0450537814298286)); 
@@ -594,7 +620,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Kinetic Force
-/*  hf_term=0.0;
+  /*  hf_term=0.0;
   pulay_term=0.0;
   (ham->getHamiltonian(KINETIC))->evaluateWithIonDerivs(elec, ions, *psi, hf_term, pulay_term);
   REQUIRE( hf_term[0][0]+pulay_term[0][0] == Approx(  4.1783687883878429));
@@ -606,7 +632,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //NLPP Force
-/*  hf_term=0.0;
+  /*  hf_term=0.0;
   pulay_term=0.0;
   double val=(ham->getHamiltonian(NONLOCALECP))->evaluateWithIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term);
   REQUIRE( hf_term[0][0]+pulay_term[0][0] == Approx( 21.6829856774403140));
@@ -615,7 +641,6 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   REQUIRE( hf_term[1][0]+pulay_term[1][0] == Approx(  0.9915030925178313));
   REQUIRE( hf_term[1][1]+pulay_term[1][1] == Approx( -0.6012127592214256));
   REQUIRE( hf_term[1][2]+pulay_term[1][2] == Approx( -2.7937129314814508)); */
-
 }
 
 } // namespace qmcplusplus

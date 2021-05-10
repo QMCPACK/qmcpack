@@ -76,7 +76,7 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   nknot    = sgridxyz_m.size();
 
   //Now we inititalize the quadrature grid rrotsgrid_m to the unrotated grid.
-  rrotsgrid_m=sgridxyz_m;
+  rrotsgrid_m = sgridxyz_m;
 
   //This is just to check
   //for(int nl=1; nl<nlpp_m.size(); nl++) nlpp_m[nl]->setGridManager(false);
@@ -278,10 +278,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
-  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.  
-  //We check this by seeing if |r|^2 = 1 to machine precision.  
+  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
+  //We check this by seeing if |r|^2 = 1 to machine precision.
   for (int j = 0; j < nknot; j++)
-    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j],rrotsgrid_m[j])) -1) < std::numeric_limits<RealType>::epsilon());
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < std::numeric_limits<RealType>::epsilon());
 
 
   for (int j = 0; j < nknot; j++)
@@ -415,10 +415,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   constexpr RealType czero(0);
   constexpr RealType cone(1);
 
-  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.  
-  //We check this by seeing if |r|^2 = 1 to machine precision.  
+  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
+  //We check this by seeing if |r|^2 = 1 to machine precision.
   for (int j = 0; j < nknot; j++)
-    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j],rrotsgrid_m[j])) -1) < std::numeric_limits<RealType>::epsilon());
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) < std::numeric_limits<RealType>::epsilon());
 
   for (int j = 0; j < nknot; j++)
     deltaV[j] = r * rrotsgrid_m[j] - dr;

@@ -62,10 +62,10 @@ public:
                                  ParticleSet::ParticlePos_t& pulay_terms) override;
 
   Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                              ParticleSet& ions,
+                                              TrialWaveFunction& psi,
+                                              ParticleSet::ParticlePos_t& hf_terms,
+                                              ParticleSet::ParticlePos_t& pulay_terms) override;
 
 
   /** set non local moves options
@@ -191,11 +191,11 @@ private:
                               bool Tmove);
 
   void evalIonDerivsImpl(ParticleSet& P,
-                                 ParticleSet& ions,
-                                 TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms,
-                                 bool keepGrid = false);
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos_t& hf_terms,
+                         ParticleSet::ParticlePos_t& pulay_terms,
+                         bool keepGrid = false);
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set
