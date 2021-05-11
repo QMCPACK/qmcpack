@@ -129,6 +129,10 @@ public:
 
   void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override;
 
+  /** Set the flag whether to compute forces or not.
+   * @param val The boolean value for computing forces
+   */ 
+  inline void setComputeForces(bool val){ComputeForces=val;}
 protected:
   ///random number generator
   RandomGenerator_t* myRNG;
