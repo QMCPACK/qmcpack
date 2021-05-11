@@ -44,8 +44,6 @@ void print_mem(const std::string& title, std::ostream& log)
 #ifdef ENABLE_OFFLOAD
   log << "Device memory allocated via OpenMP offload : " << std::setw(7) << (getOMPdeviceMemAllocated() >> 20) << " MiB"
       << std::endl;
-#elif ENABLE_CUDA
-  log << "Device memory allocatied via Dual allocator : " << std::setw(7) << (getDualDeviceMemAllocated() >> 20) << " MiB" << std::endl;
 #endif
   log << line_separator << std::endl;
 }
