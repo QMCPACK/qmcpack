@@ -22,8 +22,6 @@ ENDIF()
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 if (ENABLE_CUDA)
-  CUDA_ADD_LIBRARY(cuda_test_kernels test_kernel.cu)
-  TARGET_LINK_LIBRARIES(cuda_test_kernels PUBLIC platform_device)
   SET(UTEST_EXE test_DeviceValue)
   SET(UTEST_NAME deterministic-unit_${UTEST_EXE})
   ADD_EXECUTABLE(${UTEST_EXE} test_DeviceValue.cpp )

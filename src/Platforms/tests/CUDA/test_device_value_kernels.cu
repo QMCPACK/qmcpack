@@ -16,6 +16,9 @@ namespace qmcplusplus
 {
 namespace testing
 {
+
+/** checking an on device pointer's value against a passed value
+ */
 template<typename T>
 __global__ void checkValue_kernel(T* device_value_ptr, const T value, bool* result)
 {
@@ -25,6 +28,8 @@ __global__ void checkValue_kernel(T* device_value_ptr, const T value, bool* resu
     *result = false;
 }
 
+/** checking an on device pointer's value against a passed value
+ */
 template<typename T>
 cudaError_t checkValueCUDA(cudaStream_t hstream, T* device_value_ptr, T value, bool& result)
 {
@@ -53,6 +58,8 @@ __global__ void checkDualStruct_kernel(DualStruct* device_struct_ptr, const Dual
     *result = false;
 }
 
+/** check a particular test structure at device pointer against passed  by value struct
+ */  
 cudaError_t checkDualStruct(cudaStream_t hstream, DualStruct* device_struct_ptr, DualStruct dual_struct, bool& result)
 {
   CUDAAllocator<bool> bool_allocator;

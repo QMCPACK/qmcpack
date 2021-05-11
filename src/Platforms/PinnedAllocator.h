@@ -23,7 +23,7 @@ namespace qmcplusplus
 {
 
 template<typename T>
-#if ENABLE_CUDA
+#ifdef ENABLE_CUDA
 using PinnedAllocator = CUDALockedPageAllocator<T>;
 #else
 using PinnedAllocator = std::allocator<T>;
