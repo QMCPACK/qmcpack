@@ -211,12 +211,12 @@ inline void transpose(const T* restrict A, size_t m, size_t lda, TO* restrict B,
       B[i * ldb + j] = A[j * lda + i];
 }
 
-/** copy of A(m,n) to B(n,m) 
+/** copy of A(m,n) to B(m,n) 
      * @param A starting address, A(m,lda)
      * @param m number of A rows
      * @param lda stride of A's row
-     * @param B starting address B(n,ldb)
-     * @param n number of B rows
+     * @param B starting address B(m,ldb)
+     * @param m number of B rows
      * @param ldb stride of B's row
      *
      * Blas-like interface
