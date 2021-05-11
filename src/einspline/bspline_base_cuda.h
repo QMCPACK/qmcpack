@@ -9,7 +9,7 @@
 
 #include <cuda.h>
 
-#if CUDA_VERSION < 3000 /* 3.0 */
+#if defined(CUDA_VERSION) && (CUDA_VERSION < 3000) /* 3.0 */
 typedef struct
 {
   double x,y,z;
