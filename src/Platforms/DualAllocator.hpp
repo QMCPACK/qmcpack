@@ -28,12 +28,14 @@ extern std::atomic<size_t> dual_device_mem_allocated;
 inline size_t getDualDeviceMemAllocated() { return dual_device_mem_allocated; }
 
 /** Generalizes the DualMemorySpace allocator
- *  Has the same level of functionality as OMPallocator
- *  which is less than you might expect from an Allocator.
- *  dealing with multiple allocations without deallocation greatly
- *  complicates the simple handling of the device_ptr_
+ *  This provides a limited alternative to OMPallocator for testing/benchmarking
+ *  without dependence of OMPTarget/ offload.
+ *  It does not provide an alternative to OMPtarget transfer semantics so many production
+ *  objects will not be functional if it is used as the allocator for the data objects they depend
+ *  on.
+ *  If you use DualAllocator at this time you need to handle data transfer yourself.
  *
- *  \todo the #omp target magic really belongs in a "device" allocator like CUDAAllocator
+ *  \todo the OMPTarget allocation can be a "device" allocator comparable to CUDAAllocator
  *  Then OMPallocator can be replaced by a DualAllocator<T, OffloadAllocator<T>, PinnedAllocator<T>>
  */
 template<typename T, class DeviceAllocator, class HostAllocator = std::allocator<T>>

@@ -9,7 +9,7 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "test_kernel.hpp"
+#include "test_device_value_kernels.hpp"
 #include "CUDA/CUDAallocator.hpp"
 
 namespace qmcplusplus

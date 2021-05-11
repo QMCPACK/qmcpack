@@ -18,7 +18,7 @@
 #include "DualAllocator.hpp"
 #endif
 #include "DeviceValue.hpp"
-#include "test_kernel.hpp"
+#include "CUDA/test_device_value_kernels.hpp"
 
 namespace qmcplusplus
 {
