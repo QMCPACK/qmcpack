@@ -344,18 +344,11 @@ TEST_CASE("DiffTwoBodyJastrowOrbital Jastrow three particles of three types", "[
   j2b.myVars.resetIndex();
   jorb.addFunc(0, 2, &j2b);
 
-  // currently opposite spions won't be set to be equivalent
+  // currently opposite spins won't be set to be equivalent
   // setting u,p doesn't set d,p
   jorb.addFunc(1, 2, &j2b);
 
-  opt_variables_type global_active;
-  global_active.insertFrom(j2a.myVars);
-  global_active.insertFrom(j2b.myVars);
-  global_active.resetIndex();
-
-  jorb.checkOutVariables(global_active);
-
-  std::vector<FakeJastrow*>& F = jorb.getFvector();
+  std::vector<FakeJastrow*>& F = jorb.getPairFunctions();
   for (size_t i = 0; i < F.size(); ++i)
     CHECK(F[i] != nullptr);
 }
