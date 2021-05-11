@@ -24,7 +24,7 @@ struct CUDALinearAlgebraHandles : public Resource
   cudaStream_t hstream;
   cublasHandle_t h_cublas;
 
-  CUDALinearAlgebraHandles() : Resource("MatrixDelayedUpdateCUDA")
+  CUDALinearAlgebraHandles() : Resource("CUDALinearAlgebraHandles")
   {
     cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
     cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");

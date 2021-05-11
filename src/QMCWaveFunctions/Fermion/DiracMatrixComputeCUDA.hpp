@@ -91,7 +91,7 @@ class DiracMatrixComputeCUDA : public Resource
    *  On Volta so far little seems to be achieved by having the mats continuous.
    */
   template<typename TMAT, typename TREAL>
-  inline void computeInvertAndLog(cublasHandle_t h_cublas,
+  inline void mw_computeInvertAndLog(cublasHandle_t h_cublas,
                                   RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
                                   RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
                                   const int n,
@@ -168,7 +168,7 @@ class DiracMatrixComputeCUDA : public Resource
    *
    */
   template<typename TREAL>
-  inline void computeInvertAndLog(cublasHandle_t h_cublas,
+  inline void mw_computeInvertAndLog(cublasHandle_t h_cublas,
                                   OffloadPinnedVector<TREAL>& psi_Ms,
                                   OffloadPinnedVector<TREAL>& inv_Ms,
                                   const int n,
@@ -265,7 +265,7 @@ public:
     cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size() * sizeof(T_FP),
                                    cudaMemcpyHostToDevice, cuda_handles.hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
-    computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
+    mw_computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
     OffloadPinnedMatrix<T_FP> data_ref_matrix;
 
     data_ref_matrix.attachReference(invM_fp_.data(), n, n);
@@ -305,7 +305,7 @@ public:
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, a_mats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
-    computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
+    mw_computeInvertAndLog(cuda_handles.h_cublas, psiM_fp_, invM_fp_, n, lda, log_values);
     for (int iw = 0; iw < a_mats.size(); ++iw)
     {
       OffloadPinnedMatrix<T_FP> data_ref_matrix;
@@ -336,7 +336,7 @@ public:
     const int lda      = a_mats[0].get().cols();
     const int ldb      = inv_a_mats[0].get().cols();
     size_t nsqr        = n * n;
-    computeInvertAndLog(cuda_handles.h_cublas, a_mats, inv_a_mats, n, lda, log_values);
+    mw_computeInvertAndLog(cuda_handles.h_cublas, a_mats, inv_a_mats, n, lda, log_values);
   }
 };
 
