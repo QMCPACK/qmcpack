@@ -320,7 +320,9 @@ struct OperatorBase : public QMCTraits
                                                       ParticleSet::ParticlePos_t& hf_term,
                                                       ParticleSet::ParticlePos_t& pulay_term)
   {
-    return evaluateDeterministic(P);
+    //If there's no stochastic component, defaults to above defined evaluateWithIonDerivs.
+    //If not otherwise specified, this defaults to evaluate().  
+    return evaluateWithIonDerivs(P,ions,psi,hf_term,pulay_term);
   }
   /** update data associated with a particleset
    * @param s source particle set
