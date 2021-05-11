@@ -15,8 +15,8 @@
 #//
 #// File created by: John R. Gergely,  University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 SET(HAMSRCS
   HamiltonianPool.cpp
   ACForce.cpp
@@ -84,7 +84,7 @@ IF(OHMMS_DIM MATCHES 3)
 
   IF(QMC_CUDA)
     SET(HAMSRCS_CUDA
-      CudaCoulomb.cu 
+      CudaCoulomb.cu
       NLPP.cu
     )
     SET(HAMSRCS ${HAMSRCS}
@@ -108,7 +108,11 @@ ELSE()
   ADD_LIBRARY(qmcham_unit ${HAMSRCS})
 ENDIF()
 IF(QMC_CUDA)
-  CUDA_ADD_LIBRARY(qmcham_cuda ${HAMSRCS_CUDA})
+  IF(NOT QMC_CUDA2HIP)
+    CUDA_ADD_LIBRARY(qmcham_cuda ${HAMSRCS_CUDA})
+  ELSE()
+    HIP_ADD_LIBRARY(qmcham_cuda ${HAMSRCS_CUDA})
+  ENDIF(NOT QMC_CUDA2HIP)
   TARGET_LINK_LIBRARIES(qmcham PRIVATE qmcham_cuda)
   TARGET_LINK_LIBRARIES(qmcham_unit PRIVATE qmcham_cuda)
 ENDIF(QMC_CUDA)

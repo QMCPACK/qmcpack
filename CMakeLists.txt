@@ -80,7 +80,7 @@ IF( NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS )
     MESSAGE( STATUS "Unable to import PySCF python module. PySCF tests will not be run." )
   ELSE()
     MESSAGE( STATUS "Successfully imported PySCF python module." )
-  ENDIF() 
+  ENDIF()
 ENDIF()
 
 ######################################################################
@@ -723,35 +723,56 @@ ENDIF()
 #-------------------------------------------------------------------
 SET(HAVE_CUDA 0)
 IF(QMC_CUDA OR ENABLE_CUDA)
-  # FindCUDA default CUDA_PROPAGATE_HOST_FLAGS to ON but we prefer OFF
-  # It happened -ffast-math from host caused numerical issue in CUDA kernels.
-  OPTION(CUDA_PROPAGATE_HOST_FLAGS "Propagate C/CXX_FLAGS and friends to the host compiler via -Xcompile" OFF)
-  FIND_PACKAGE(CUDA REQUIRED)
-  SET(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
-  #set(CUDA_NVCC_FLAGS
-  #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
-  if(CUDA_NVCC_FLAGS MATCHES "arch")
-    # User defined NVCC flags
-    MESSAGE(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
-  else(CUDA_NVCC_FLAGS MATCHES "arch")
-    # Automatically set the default NVCC flags
-    SET(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
-    if (QMC_COMPLEX)
-      SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
-    endif()
-    if ( CMAKE_BUILD_TYPE STREQUAL "DEBUG" )
-      SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
-    else()
-      # Temporarily disable fast_math because it causes multiple test failures
-      # SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3;-use_fast_math")
-      SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3")
-    ENDIF()
-    SET( CUDA_ARCH sm_70 CACHE STRING "CUDA architecture sm_XX")
-    SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
-  endif(CUDA_NVCC_FLAGS MATCHES "arch")
-  INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
-  SET(HAVE_CUDA 1)
-  MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
+  IF(NOT QMC_CUDA2HIP)
+    # FindCUDA default CUDA_PROPAGATE_HOST_FLAGS to ON but we prefer OFF
+    # It happened -ffast-math from host caused numerical issue in CUDA kernels.
+    OPTION(CUDA_PROPAGATE_HOST_FLAGS "Propagate C/CXX_FLAGS and friends to the host compiler via -Xcompile" OFF)
+    FIND_PACKAGE(CUDA REQUIRED)
+    SET(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
+    #set(CUDA_NVCC_FLAGS
+    #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
+    if(CUDA_NVCC_FLAGS MATCHES "arch")
+      # User defined NVCC flags
+      MESSAGE(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
+    else(CUDA_NVCC_FLAGS MATCHES "arch")
+      # Automatically set the default NVCC flags
+      SET(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN;-std=c++14")
+      if (QMC_COMPLEX)
+        SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
+      endif()
+      if ( CMAKE_BUILD_TYPE STREQUAL "DEBUG" )
+        SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
+      else()
+        # Temporarily disable fast_math because it causes multiple test failures
+        # SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3;-use_fast_math")
+        SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3")
+      ENDIF()
+      SET( CUDA_ARCH sm_70 CACHE STRING "CUDA architecture sm_XX")
+      SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
+    endif(CUDA_NVCC_FLAGS MATCHES "arch")
+    INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
+    SET(HAVE_CUDA 1)
+    MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
+  ELSE()
+    SET(CMAKE_MODULE_PATH "/opt/rocm/hip/cmake;${CMAKE_MODULE_PATH}")
+    SET(CMAKE_MODULE_PATH "$ENV{ROCM_PATH}/hip/cmake;${CMAKE_MODULE_PATH}")
+    FIND_PACKAGE(HIP REQUIRED)
+    INCLUDE_DIRECTORIES("/opt/rocm/include")
+    INCLUDE_DIRECTORIES("$ENV{ROCM_PATH}/include")
+    ADD_DEFINITIONS(-D__HIP_PLATFORM_HCC__=)
+    # hipblas
+    LINK_DIRECTORIES("/opt/rocm/hipblas/lib")
+    LINK_DIRECTORIES("$ENV{ROCM_PATH}/hipblas/lib")
+    INCLUDE_DIRECTORIES("/opt/rocm/hipblas/include")
+    INCLUDE_DIRECTORIES("$ENV{ROCM_PATH}/hipblas/include")
+    LINK_LIBRARIES(hipblas)
+    # architecture flags
+    SET(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} --amdgpu-target=gfx906,gfx908")
+    SET(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} --gpu-max-threads-per-block=256")
+    # warning suppression
+    SET(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} -Wno-deprecated-declarations")
+    SET(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} -Wno-unused-command-line-argument")
+  ENDIF(NOT QMC_CUDA2HIP)
 ELSE(QMC_CUDA OR ENABLE_CUDA)
   MESSAGE(STATUS "CUDA disabled")
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
@@ -884,7 +905,7 @@ IF( NOT "${ENABLE_SANITIZER}" STREQUAL "none")
   IF( NOT ${COMPILER} MATCHES "GNU" AND NOT ${COMPILER} MATCHES "Clang")
     MESSAGE(FATAL_ERROR "-DENABLE_SANITIZER=${ENABLE_SANITIZER} only works with GNU or Clang compilers")
   ENDIF()
-  
+
   IF( "${ENABLE_SANITIZER}" STREQUAL "asan" )
     SET(CMAKE_CXX_FLAGS_SAN "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer"
         CACHE STRING "AddressSanitizer C++ compiler builds." FORCE)
@@ -898,9 +919,9 @@ IF( NOT "${ENABLE_SANITIZER}" STREQUAL "none")
     SET(CMAKE_CXX_FLAGS_SAN "-fsanitize=thread"
         CACHE STRING "ThreadSanitizer C++ compiler builds." FORCE)
   ENDIF()
-  
+
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SAN}")
-  
+
 ENDIF()
 
 ############################################################

@@ -4,12 +4,12 @@
 #//
 #// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 #//
-#// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+#// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 #//		       Anouar Benali, benali@anl.gov, Argonne National Laboratory
 #//		       Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
-#// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
-#////////////////////////////////////////////////////////////////////////////////////// 
+#// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+#//////////////////////////////////////////////////////////////////////////////////////
 
 set(SRCS )
 
@@ -39,7 +39,11 @@ IF(QMC_CUDA)
     multi_bspline_create_cuda.cu
     bspline_create_cuda.cu
     )
-  CUDA_ADD_LIBRARY(einspline ${SRCS})
+  IF(NOT QMC_CUDA2HIP)
+    CUDA_ADD_LIBRARY(einspline ${SRCS})
+  ELSE()
+    HIP_ADD_LIBRARY(einspline ${SRCS})
+  ENDIF(NOT QMC_CUDA2HIP)
   TARGET_LINK_LIBRARIES(einspline PRIVATE platform_device)
 ELSE(QMC_CUDA)
   ADD_LIBRARY(einspline ${SRCS})

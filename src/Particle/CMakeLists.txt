@@ -72,7 +72,11 @@ TARGET_LINK_LIBRARIES(qmcparticle PRIVATE Math::BLAS_LAPACK Math::scalar_vector_
 TARGET_LINK_LIBRARIES(qmcparticle PUBLIC qmcutil platform_device)
 
 IF(QMC_CUDA)
-  CUDA_ADD_LIBRARY(qmcparticle_cuda accept_kernel.cu)
+  IF(NOT QMC_CUDA2HIP)
+    CUDA_ADD_LIBRARY(qmcparticle_cuda accept_kernel.cu)
+  ELSE()
+    HIP_ADD_LIBRARY(qmcparticle_cuda accept_kernel.cu)
+  ENDIF(NOT QMC_CUDA2HIP)
   TARGET_LINK_LIBRARIES(qmcparticle_cuda PRIVATE platform_device)
   TARGET_LINK_LIBRARIES(qmcparticle PRIVATE qmcparticle_cuda)
 ENDIF(QMC_CUDA)
