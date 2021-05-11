@@ -25,9 +25,13 @@
 #include <cstdlib>
 #include <cstdio>
 #include <algorithm>
-
 #ifdef QMC_CUDA
+#ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include <cuda2hip.h>
+#endif
 #include "gpu_misc.h"
 #endif
 

@@ -7,7 +7,13 @@
 #ifndef BSPLINE_BASE_CUDA_H
 #define BSPLINE_BASE_CUDA_H
 
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda.h>
+#else
+#include <hip/hip_runtime.h>
+#include <cuda2hip.h>
+#endif
 
 #if defined(CUDA_VERSION) && (CUDA_VERSION < 3000) /* 3.0 */
 typedef struct

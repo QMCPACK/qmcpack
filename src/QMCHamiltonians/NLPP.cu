@@ -10,6 +10,10 @@
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include "config.h"
+#ifdef QMC_CUDA2HIP
+#include <hip/hip_runtime.h>
+#endif
 
 template<typename T, int BS>
 __device__ T min_dist_all(T x, T y, T z, T L[3][3], T Linv[3][3], T images[27][3])

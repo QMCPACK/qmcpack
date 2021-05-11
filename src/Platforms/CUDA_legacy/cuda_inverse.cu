@@ -36,9 +36,17 @@
 #include <vector>
 #include <iostream>
 #include <complex>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda.h>
 #include <cublas_v2.h>
 #include <cuComplex.h>
+#else
+#include <hip/hip_runtime.h>
+#include <hipblas.h>
+#include <hip/hip_complex.h>
+#include <cuda2hip.h>
+#endif
 
 #define CONVERT_BS 256
 #define INVERSE_BS 16

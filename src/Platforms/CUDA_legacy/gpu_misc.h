@@ -17,11 +17,17 @@
 
 #include <cstdlib>
 #include <cstdio>
-
-#include <cuda_runtime_api.h>
 #include <vector>
 
+#include "config.h"
+#ifndef QMC_CUDA2HIP
+#include <cuda_runtime_api.h>
 #include <cublas_v2.h>
+#else
+#include <hip/hip_runtime.h>
+#include <hipblas.h>
+#include <cuda2hip.h>
+#endif
 
 namespace gpu
 {
