@@ -287,4 +287,70 @@ TEST_CASE("DiffTwoBodyJastrowOrbital other variables", "[wavefunction]")
   CHECK(dlogpsi2[1] == ValueApprox(-2.0));
 }
 
+// Reproduce 3137.  If the number of particle types equals the number of particles
+// the two body jastrow is not constructed correctly (except in the case of two
+// particles).
+TEST_CASE("DiffTwoBodyJastrowOrbital Jastrow three particles of three types", "[wavefunction]")
+{
+  ParticleSet ions;
+  ParticleSet elec;
+
+  ions.setName("ion");
+  ions.create(1);
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+
+  elec.setName("elec");
+  std::vector<int> udp(3);
+  udp[0] = 1;
+  udp[1] = 1;
+  udp[2] = 1;
+  elec.create(udp);
+  elec.R[0][0] = -0.28;
+  elec.R[0][1] = 0.0225;
+  elec.R[0][2] = -2.709;
+  elec.R[1][0] = -1.08389;
+  elec.R[1][1] = 1.9679;
+  elec.R[1][2] = -0.0128914;
+  elec.R[2][0] = -2.08389;
+  elec.R[2][1] = 0.9679;
+  elec.R[2][2] = 0.0128914;
+
+
+  DiffTwoBodyJastrowOrbital<FakeJastrow> jorb(elec);
+
+  // 0 uu  (0,0)
+  // 1 ud  (0,1)
+  // 2 up  (0,2)
+  // 3 du  (1,0)
+  // 4 dd  (1,1)
+  // 5 dp  (1,2)
+  // 6 pu  (2,0)
+  // 7 pd  (2,1)
+  // 8 pp  (2,2)
+
+  FakeJastrow j2a;
+  j2a.myVars.insert("opt1", 1.0);
+  j2a.name = "j2a";
+  // update num_active_vars
+  j2a.myVars.resetIndex();
+  jorb.addFunc(0, 1, &j2a);
+
+  FakeJastrow j2b;
+  j2b.myVars.insert("opt2", 2.0);
+  j2b.name = "j2b";
+  // update num_active_vars
+  j2b.myVars.resetIndex();
+  jorb.addFunc(0, 2, &j2b);
+
+  // currently opposite spins won't be set to be equivalent
+  // setting u,p doesn't set d,p
+  jorb.addFunc(1, 2, &j2b);
+
+  auto& F = jorb.getPairFunctions();
+  for (size_t i = 0; i < F.size(); ++i)
+    CHECK(F[i] != nullptr);
+}
+
 } // namespace qmcplusplus
