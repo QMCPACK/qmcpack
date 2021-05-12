@@ -58,6 +58,7 @@ SET(JASTROW_SRCS
   Jastrow/RadialJastrowBuilder.cpp
   Jastrow/CountingJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
+  Jastrow/J2OrbitalSoA.cpp
   LatticeGaussianProduct.cpp
   LatticeGaussianProductBuilder.cpp
   Fermion/SPOSetProxy.cpp
