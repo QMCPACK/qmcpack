@@ -25,7 +25,8 @@ jobs:
           gcc-openmpi-complex-coverage,
           clang-openmpi-real-asan,
           clang-openmpi-complex-asan,
-          clang-openmpi-real-ubsan
+          clang-openmpi-real-ubsan,
+          clang-latest-openmp-offload-build
         ]
         include:
         - jobname: gcc-openmpi-real-coverage
@@ -52,6 +53,11 @@ jobs:
           container: 
             image: williamfgc/qmcpack-ci:ubuntu20-openmpi
             options: -u 1001
+        
+        - jobname: clang-latest-openmp-offload-build
+          container: 
+            image: williamfgc/qmcpack-ci:ubuntu20-clang-latest
+            options: -u 1001
 
     steps:
     - name: Checkout Action
@@ -64,6 +70,7 @@ jobs:
       run: tests/test_automation/github-actions/ci/run_step.sh build
 
     - name: Test
+      if:  "!contains(matrix.jobname, 'build')"
       run: tests/test_automation/github-actions/ci/run_step.sh test
     
     - name: Coverage

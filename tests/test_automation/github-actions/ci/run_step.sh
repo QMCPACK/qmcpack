@@ -61,6 +61,13 @@ case "$1" in
                       -DQMC_COMPLEX=$IS_COMPLEX \
                       ${GITHUB_WORKSPACE}
       ;;
+      *"offload-build"*)
+        echo 'Configure for building OpenMP offload with clang on x86_64'
+        cmake -GNinja -DCMAKE_C_COMPILER=clang-12 -DCMAKE_CXX_COMPILER=clang++-12 \
+                      -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
+                      -DUSE_OBJECT_TARGET=ON -DQMC_MPI=0 \
+                      ${GITHUB_WORKSPACE}
+      
       # Configure with default compilers
       *)
         echo 'Configure for default system compilers and options'
