@@ -26,8 +26,10 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     -y
 
 # add the latest clang development
-RUN bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"           
-RUN apt-get install clang-tools-12
+RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key| apt-key add - &&\
+    apt-add-repository 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main'
+RUN apt-get update -y &&\     
+    apt-get install clang-12 clang-tools-12 -y
 
 # must add a user different from root 
 # to run MPI executables
