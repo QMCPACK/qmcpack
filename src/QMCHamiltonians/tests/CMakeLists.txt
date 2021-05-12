@@ -38,6 +38,7 @@ SET(SRCS test_bare_kinetic.cpp
          test_PairCorrEstimator.cpp
          test_SkAllEstimator.cpp
          test_QMCHamiltonian.cpp
+         test_ion_derivs.cpp
          test_ObservableHelper.cpp
          )
          
@@ -47,18 +48,19 @@ IF(QMC_CUDA)
 )
 ENDIF()
 
-SET(FILES_TO_COPY Na2.structure.xml)
-
-FOREACH(fname ${FILES_TO_COPY})
-  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
-ENDFOREACH()
-
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.txt" ${UTEST_DIR})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/C.BFD.xml" ${UTEST_DIR})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/Na.BFD.xml" ${UTEST_DIR})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/so_ecp_test.xml" ${UTEST_DIR})
 
+foreach(fname Na2.structure.xml simple.txt)
+  file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/${fname} ${UTEST_DIR}/${fname} SYMBOLIC)
+endforeach()
+
+foreach(fname cn.wfnoj.xml cn.wfj.xml cn.msd-wfnoj.xml cn.msd-wfj.xml)
+  file(CREATE_LINK ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/${fname} ${UTEST_DIR}/${fname} SYMBOLIC)
+endforeach()
+
+foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml)
+  file(CREATE_LINK ${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname} ${UTEST_DIR}/${fname} SYMBOLIC)
+endforeach()
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcham)
