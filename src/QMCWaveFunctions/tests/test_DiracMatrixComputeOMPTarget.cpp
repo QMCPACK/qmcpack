@@ -108,7 +108,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
 
 TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wavefunction][fermion]")
 {
-  int n = 1024;
+  int n = 64;
 
   DiracMatrixComputeOMPTarget<double> dmc_omp;
 
