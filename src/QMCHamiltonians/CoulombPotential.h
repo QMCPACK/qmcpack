@@ -16,15 +16,19 @@
 
 #ifndef QMCPLUSPLUS_COULOMBPOTENTIAL_H
 #define QMCPLUSPLUS_COULOMBPOTENTIAL_H
-#include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
-#include "Particle/DistanceTableData.h"
+#include "ParticleSet.h"
+#include "WalkerSetRef.h"
+#include "DistanceTableData.h"
+#include "MCWalkerConfiguration.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include <numeric>
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /** CoulombPotential
  * @tparam T type of the elementary data
  *
@@ -390,6 +394,29 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     }
     else
       return new CoulombPotential(Pa, qp, true);
+  }
+
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+  {
+    auto& walkers = W.WalkerList;
+    if (is_active)
+    {
+      for (int iw = 0; iw < W.getActiveWalkers(); iw++)
+      {
+        W.loadWalker(*walkers[iw], false);
+        W.update();
+        Value = evaluate(W);
+        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
+        LocalEnergy[iw] += Value;
+      }
+    }
+    else
+      // assuminig the same results for all the walkers when the set is not active
+      for (int iw = 0; iw < LocalEnergy.size(); iw++)
+      {
+        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
+        LocalEnergy[iw] += Value;
+      }
   }
 };
 

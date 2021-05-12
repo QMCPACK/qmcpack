@@ -386,11 +386,13 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   }
 }
 
-NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
-                                                                         ParticleSet& ions,
-                                                                         TrialWaveFunction& psi,
-                                                                         ParticleSet::ParticlePos_t& hf_terms,
-                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+
+void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
+                                            ParticleSet& ions,
+                                            TrialWaveFunction& psi,
+                                            ParticleSet::ParticlePos_t& hf_terms,
+                                            ParticleSet::ParticlePos_t& pulay_terms,
+                                            bool keepGrid)
 {
   //We're going to ignore psi and use the internal Psi.
   //
@@ -402,10 +404,12 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
   PulayTerm = 0;
 
   Value = 0.0;
-
-  for (int ipp = 0; ipp < PPset.size(); ipp++)
-    if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
+  if (!keepGrid)
+  {
+    for (int ipp = 0; ipp < PPset.size(); ipp++)
+      if (PPset[ipp])
+        PPset[ipp]->randomize_grid(*myRNG);
+  }
   //loop over all the ions
   const auto& myTable = P.getDistTable(myTableIndex);
   // clear all the electron and ion neighbor lists
@@ -437,6 +441,26 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
 
   hf_terms -= forces;
   pulay_terms -= PulayTerm;
+}
+
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
+                                                                         ParticleSet& ions,
+                                                                         TrialWaveFunction& psi,
+                                                                         ParticleSet::ParticlePos_t& hf_terms,
+                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+{
+  evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms);
+  return Value;
+}
+
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivsDeterministic(
+    ParticleSet& P,
+    ParticleSet& ions,
+    TrialWaveFunction& psi,
+    ParticleSet::ParticlePos_t& hf_terms,
+    ParticleSet::ParticlePos_t& pulay_terms)
+{
+  evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms, true);
   return Value;
 }
 
