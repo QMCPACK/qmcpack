@@ -2244,8 +2244,8 @@ void WaveFunctionTester::runwftricks()
       int lwork = 8 * Nrotated;
       std::vector<double> work(lwork, 0);
       int info(0);
-      dgesvd(&JOBU, &JOBVT, &vdim, &vdim, orthoProjs.data(), &vdim, Sigma.data(), U.data(), &vdim, VT.data(), &vdim,
-             &(work[0]), &lwork, &info);
+      LAPACK::gesvd(JOBU, JOBVT, vdim, vdim, orthoProjs.data(), vdim, Sigma.data(), U.data(), vdim, VT.data(), vdim,
+             &(work[0]), lwork, info);
       app_log() << "Printing Rotation Matrix" << std::endl;
       for (int n = 0; n < vdim; n++)
       {
