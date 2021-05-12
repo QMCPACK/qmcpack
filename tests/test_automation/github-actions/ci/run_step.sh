@@ -67,7 +67,7 @@ case "$1" in
                       -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
                       -DUSE_OBJECT_TARGET=ON -DQMC_MPI=0 \
                       ${GITHUB_WORKSPACE}
-      
+      ;;
       # Configure with default compilers
       *)
         echo 'Configure for default system compilers and options'
