@@ -145,7 +145,7 @@ TEST_CASE("DiracMatrixComputeCUDA_different_batch_sizes", "[wavefunction][fermio
 
 TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefunction][fermion]")
 {
-  int n = 256;
+  int n = 64;
   auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
 
   DiracMatrixComputeCUDA<std::complex<double>> dmcc(cuda_handles->hstream);;
@@ -199,7 +199,7 @@ TEST_CASE("DiracMatrixComputeCUDA_complex_determinants_against_legacy", "[wavefu
 
 TEST_CASE("DiracMatrixComputeCUDA_large_determinants_against_legacy", "[wavefunction][fermion]")
 {
-  int n = 256;
+  int n = 64;
   auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
 
   DiracMatrixComputeCUDA<double> dmcc(cuda_handles->hstream);;
