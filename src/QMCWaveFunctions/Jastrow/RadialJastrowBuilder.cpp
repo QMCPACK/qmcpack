@@ -264,7 +264,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 
   // Ye: actually don't know what uk.dat is used for
   if (targetPtcl.Lattice.SuperCellEnum)
-    computeJ2uk(J2->F);
+    computeJ2uk(J2->getPairFunctions());
 
   return J2;
 }

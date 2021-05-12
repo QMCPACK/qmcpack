@@ -25,7 +25,7 @@ template<typename FT>
 void J2OrbitalSoA<FT>::checkInVariables(opt_variables_type& active)
 {
   myVars.clear();
-  typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+  auto it(J2Unique.begin()), it_end(J2Unique.end());
   while (it != it_end)
   {
     (*it).second->checkInVariables(active);
@@ -39,7 +39,7 @@ void J2OrbitalSoA<FT>::checkOutVariables(const opt_variables_type& active)
 {
   myVars.getIndex(active);
   Optimizable = myVars.is_optimizable();
-  typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+  auto it(J2Unique.begin()), it_end(J2Unique.end());
   while (it != it_end)
   {
     (*it).second->checkOutVariables(active);
@@ -54,7 +54,7 @@ void J2OrbitalSoA<FT>::resetParameters(const opt_variables_type& active)
 {
   if (!Optimizable)
     return;
-  typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+  auto it(J2Unique.begin()), it_end(J2Unique.end());
   while (it != it_end)
   {
     (*it).second->resetParameters(active);
@@ -73,7 +73,7 @@ void J2OrbitalSoA<FT>::resetParameters(const opt_variables_type& active)
 template<typename FT>
 void J2OrbitalSoA<FT>::reportStatus(std::ostream& os)
 {
-  typename std::map<std::string, FT*>::iterator it(J2Unique.begin()), it_end(J2Unique.end());
+  auto it(J2Unique.begin()), it_end(J2Unique.end());
   while (it != it_end)
   {
     (*it).second->myVars.print(os);
@@ -170,15 +170,7 @@ J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p, int 
 }
 
 template<typename FT>
-J2OrbitalSoA<FT>::~J2OrbitalSoA()
-{
-  auto it = J2Unique.begin();
-  while (it != J2Unique.end())
-  {
-    delete ((*it).second);
-    ++it;
-  }
-} //need to clean up J2Unique
+J2OrbitalSoA<FT>::~J2OrbitalSoA() = default;
 
 template<typename FT>
 void J2OrbitalSoA<FT>::init(ParticleSet& p)
@@ -230,7 +222,7 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
   }
   std::stringstream aname;
   aname << ia << ib;
-  J2Unique[aname.str()] = j;
+  J2Unique[aname.str()] = std::unique_ptr<FT>(j);
 }
 
 template<typename FT>

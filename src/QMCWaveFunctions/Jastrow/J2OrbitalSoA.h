@@ -122,10 +122,6 @@ public:
   using DisplRow        = DistanceTableData::DisplRow;
   using gContainer_type = VectorSoaContainer<valT, OHMMS_DIM>;
 
-  // Ye: leaving this public is bad but currently used by unit tests.
-  ///Container for \f$F[ig*NumGroups+jg]\f$.
-  std::vector<FT*> F;
-
 protected:
   ///number of particles
   size_t N;
@@ -149,7 +145,9 @@ protected:
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
   ///Uniquue J2 set for cleanup
-  std::map<std::string, FT*> J2Unique;
+  std::map<std::string, std::unique_ptr<FT>> J2Unique;
+  ///Container for \f$F[ig*NumGroups+jg]\f$. treat every pointer as a reference.
+  std::vector<FT*> F;
   /// e-e table ID
   const int my_table_ID_;
   // helper for compute J2 Chiesa KE correction
@@ -237,6 +235,8 @@ public:
   inline RealType ChiesaKEcorrection() { return KEcorr = j2_ke_corr_helper.computeKEcorr(); }
 
   inline RealType KECorrection() { return KEcorr; }
+
+  const std::vector<FT*>& getPairFunctions() const { return F; }
 };
 
 } // namespace qmcplusplus
