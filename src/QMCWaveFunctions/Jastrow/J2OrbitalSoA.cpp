@@ -196,6 +196,8 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
 template<typename FT>
 void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
 {
+  assert(ia < NumGroups);
+  assert(ib < NumGroups);
   if (ia == ib)
   {
     if (ia == 0) //first time, assign everything
