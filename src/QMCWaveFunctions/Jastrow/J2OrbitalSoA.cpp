@@ -160,7 +160,7 @@ typename J2OrbitalSoA<FT>::posT J2OrbitalSoA<FT>::accumulateG(const valT* restri
 }
 
 template<typename FT>
-J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p, int tid)
+J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p)
     : WaveFunctionComponent("J2OrbitalSoA", obj_name), my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
@@ -228,7 +228,7 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
 template<typename FT>
 WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 {
-  J2OrbitalSoA<FT>* j2copy = new J2OrbitalSoA<FT>(myName, tqp, -1);
+  J2OrbitalSoA<FT>* j2copy = new J2OrbitalSoA<FT>(myName, tqp);
   if (dPsi)
     j2copy->dPsi = dPsi->makeClone(tqp);
   std::map<const FT*, FT*> fcmap;

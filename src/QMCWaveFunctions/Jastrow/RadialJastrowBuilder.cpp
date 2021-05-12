@@ -156,8 +156,7 @@ WaveFunctionComponent* RadialJastrowBuilder::createJ2(xmlNodePtr cur)
   XMLAttrString input_name(cur, "name");
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  int taskid = is_manager() ? getGroupID() : -1;
-  auto* J2   = new J2OrbitalType(j2name, targetPtcl, taskid);
+  auto* J2   = new J2OrbitalType(j2name, targetPtcl);
   auto* dJ2  = new DiffJ2OrbitalType(targetPtcl);
 
   std::string init_mode("0");
@@ -324,7 +323,7 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
 template<>
 WaveFunctionComponent* RadialJastrowBuilder::createJ2<RPAFunctor>(xmlNodePtr cur)
 {
-  RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl, is_manager());
+  RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl);
   rpajastrow->put(cur);
   return rpajastrow;
 }

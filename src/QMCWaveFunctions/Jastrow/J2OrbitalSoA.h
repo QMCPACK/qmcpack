@@ -154,7 +154,7 @@ protected:
   J2KECorrection<RealType, FT> j2_ke_corr_helper;
 
 public:
-  J2OrbitalSoA(const std::string& obj_name, ParticleSet& p, int tid);
+  J2OrbitalSoA(const std::string& obj_name, ParticleSet& p);
   J2OrbitalSoA(const J2OrbitalSoA& rhs) = delete;
   ~J2OrbitalSoA();
 

@@ -31,8 +31,8 @@
 
 namespace qmcplusplus
 {
-RPAJastrow::RPAJastrow(ParticleSet& target, bool is_manager)
-    : WaveFunctionComponent("RPAJastrow"), IsManager(is_manager), targetPtcl(target)
+RPAJastrow::RPAJastrow(ParticleSet& target)
+    : WaveFunctionComponent("RPAJastrow"), targetPtcl(target)
 {
   Optimizable = true;
 }
@@ -190,7 +190,7 @@ void RPAJastrow::makeShortRange()
   nfunc = new FuncType;
   SRA   = new ShortRangePartAdapter<RealType>(myHandler);
   SRA->setRmax(Rcut);
-  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl, IsManager);
+  J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl);
   size_t nparam                              = 12;  // number of Bspline parameters
   size_t npts                                = 100; // number of 1D grid points for basis functions
   RealType cusp                              = SRA->df(0);
@@ -338,7 +338,7 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
                                          tpq);
   }
 
-  RPAJastrow* myClone = new RPAJastrow(tpq, IsManager);
+  RPAJastrow* myClone = new RPAJastrow(tpq);
   myClone->Rcut       = Rcut;
   myClone->Kc         = Kc;
   myClone->setHandler(tempHandler);

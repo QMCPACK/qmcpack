@@ -152,8 +152,8 @@ public:
 
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (pset, is_master),
-  TwoBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& pset, int tid)
-      : J2OrbitalSoA<FT>(obj_name, pset, tid),
+  TwoBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& pset)
+      : J2OrbitalSoA<FT>(obj_name, pset),
         PtclRef(pset),
         L(obj_name + "L"),
         Linv(obj_name + "Linv"),
