@@ -35,7 +35,7 @@ struct RPAJastrow : public WaveFunctionComponent
   typedef BsplineFunctor<RealType> FuncType;
   typedef LinearGrid<RealType> GridType;
 
-  RPAJastrow(ParticleSet& target, bool is_manager);
+  RPAJastrow(ParticleSet& target);
 
   ~RPAJastrow();
 
@@ -88,7 +88,6 @@ struct RPAJastrow : public WaveFunctionComponent
   WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
 
 private:
-  bool IsManager;
   bool IgnoreSpin;
   bool DropLongRange;
   bool DropShortRange;
