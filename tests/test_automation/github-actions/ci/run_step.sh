@@ -103,6 +103,13 @@ case "$1" in
       export LSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/config/sanitizers/lsan.supp	
     fi
     
+    # Enable libomptarget.so
+    if [[ "${GH_JOBNAME}" =~ (clang-latest) ]]
+    then
+       echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH"
+       export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
+    fi
+    
     # Run only deterministic tests (reasonable for CI)
     ctest --output-on-failure -L deterministic
     ;;
