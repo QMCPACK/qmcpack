@@ -51,7 +51,8 @@ class DiffTwoBodyJastrowOrbital : public DiffWaveFunctionComponent
 
 public:
   // return for testing
-  std::vector<FT*>& getPairFunctions() { return F; }
+  const std::vector<FT*>& getPairFunctions() const { return F; }
+
   ///constructor
   DiffTwoBodyJastrowOrbital(ParticleSet& p) : NumVars(0), my_table_ID_(p.addTable(p))
   {

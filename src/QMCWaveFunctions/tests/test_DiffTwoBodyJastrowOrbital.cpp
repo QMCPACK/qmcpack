@@ -348,7 +348,7 @@ TEST_CASE("DiffTwoBodyJastrowOrbital Jastrow three particles of three types", "[
   // setting u,p doesn't set d,p
   jorb.addFunc(1, 2, &j2b);
 
-  std::vector<FakeJastrow*>& F = jorb.getPairFunctions();
+  auto& F = jorb.getPairFunctions();
   for (size_t i = 0; i < F.size(); ++i)
     CHECK(F[i] != nullptr);
 }
