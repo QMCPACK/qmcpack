@@ -217,6 +217,9 @@ struct PadeFunctor : public OptimizableFunctorBase
       myVars.insert(ID_A, A, Opt_A, optimize::LOGLINEAR_P);
     if (Opt_B)
       myVars.insert(ID_B, B0, Opt_B, optimize::OTHER_P);
+    int left_pad_space = 5;
+    app_log() << std::endl;
+    myVars.print(app_log(), left_pad_space, true);
     return true;
   }
 

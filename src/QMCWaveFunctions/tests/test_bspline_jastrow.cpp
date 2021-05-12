@@ -173,7 +173,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
                      {11.40, 0, 0, 0}};
 
 
-  BsplineFunctor<RealType>* bf = j2->F[0];
+  BsplineFunctor<RealType>* bf = j2->getPairFunctions()[0];
 
   for (int i = 0; i < N; i++)
   {

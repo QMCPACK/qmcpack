@@ -74,7 +74,7 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
     SpinDensityNew& crowd_sdn = dynamic_cast<SpinDensityNew&>(*(uptr_crowd_sdn));
 
     std::vector<QMCT::RealType> rng_reals(nwalkers * QMCT::DIM * 2);
-    rft.makeRngReals(rng_reals);
+    rft.fillVecRng(rng_reals);
     auto it_rng_reals = rng_reals.begin();
     for (int iw = 0; iw < nwalkers; ++iw)
     {
