@@ -1415,7 +1415,7 @@ https://spack.readthedocs.io/en/latest/chain.html.
 
 Instructions for DOE supercomputing facilities that support Spack directly will be forthcoming.
 
-Installing Quantum-Espresso with Spack
+Installing Quantum-ESPRESSO with Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 More information about the QE Spack package can be obtained directly
@@ -1431,7 +1431,7 @@ Spack installation command that needs to be invoked:
 
 ::
 
-  your-laptop> spack install quantum-espresso+qmcpack~patch@6.4.1%gcc hdf5=parallel
+  your-laptop> spack install quantum-espresso+qmcpack~patch@6.7%gcc hdf5=parallel
 
 The ``~`` decorator means deactivate the ``patch``
 variant. This refers not to the QMCPACK patch, but to the upstream
@@ -1447,7 +1447,7 @@ is non-intuitive for Spack newcomers:
 
 ::
 
-  your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.4.1%gcc hdf5=serial
+  your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.7%gcc hdf5=serial
 
 QE Spack package is well tested with GCC and Intel compilers, but will not work
 with the PGI compiler or in a cross-compile environment.
