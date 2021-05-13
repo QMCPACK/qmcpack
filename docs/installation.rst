@@ -1080,17 +1080,24 @@ supercomputer. The other frequently encountered challenge is that the
 compiler configuration is nonintuitive.  This is especially the case
 with the Intel compiler. If you encounter any difficulties, we
 recommend testing the Spack compiler configuration on a simpler
-packages, e.g. HDF5.
+package, e.g. HDF5.
 
-Here are some additional limitations of the QMCPACK Spack package that
-will be resolved in future releases:
+Here are some additional limitations that new users should be aware
+of:
 
-- CUDA support in Spack still has some limitations.  It will
-  catch only some compiler-CUDA conflicts.
+* CUDA support in Spack still has some limitations.  It will
+  not catch the most recent compiler-CUDA conflicts.
 
-- The Intel compiler must find a recent and compatible GCC
+* The Intel compiler must find a recent and compatible GCC
   compiler in its path or one must be explicity set with the
-  ``-gcc-name`` and ``-gxx-name`` flags.
+  ``-gcc-name`` and ``-gxx-name`` flags in your ``compilers.yaml``.
+
+* Cross-compilation is non-intuitive. If the host OS and target OS are the same,
+  but only the processors differ, you will just need to add the ``target=<target CPU>``.
+  However, if the host OS is different from the target OS and you will need to add
+  ``os=<target OS>``. If both the OS and CPU differ between host and target, you will
+  need to set the ``arch=<platform string>``. For more information, see:
+  https://spack.readthedocs.io/en/latest/basic_usage.html?highlight=cross%20compilation#architecture-specifiers
 
 Setting up the Spack environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
