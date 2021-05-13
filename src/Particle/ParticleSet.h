@@ -337,9 +337,6 @@ public:
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
 
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
-  bool makeMoveAllParticlesWithSpins(const Walker_t& awalker, const ParticlePos_t& deltaR, 
-                                    const ParticleScalar_t& deltaS, const std::vector<RealType>& dt,
-                                    RealType spinMass);
 
   /** move all the particles including the drift
    *

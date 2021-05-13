@@ -76,8 +76,14 @@ void SOVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     }
     else
     {
-      if (W.makeMoveAllParticlesWithSpins(thisWalker, deltaR, deltaS, SqrtTauOverMass,spinMass))
-      {                                       // W.R += dR*dt; W.DistTables,SK are updated; W.G,L are now stale
+      if (W.makeMoveAllParticles(thisWalker, deltaR, SqrtTauOverMass))
+      {   
+        //Assume that since the spatial move is fine, the spin move will be. 
+        //Compute that now.  
+        for(int iat=0; iat<deltaR.size(); ++iat)
+          W.spins[iat]=thisWalker.spins[iat]+invSqrtSpinMass*SqrtTauOverMass[iat]*deltaS[iat];
+    
+                                              // W.R += dR*dt; W.DistTables,SK are updated; W.G,L are now stale
         RealType logpsi = Psi.evaluateLog(W); // update W.G,L at changed W.R; update Psi.LogValue,PhaseValue
         RealType g      = std::exp(2.0 * (logpsi - logpsi_old));
         if (RandomGen() <= g)
