@@ -759,7 +759,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
     FIND_PACKAGE(HIP REQUIRED)
     INCLUDE_DIRECTORIES("/opt/rocm/include")
     INCLUDE_DIRECTORIES("$ENV{ROCM_PATH}/include")
-    ADD_DEFINITIONS(-D__HIP_PLATFORM_HCC__=)
+    ADD_DEFINITIONS(-D__HIP_PLATFORM_AMD__=)
     # hipblas
     LINK_DIRECTORIES("/opt/rocm/lib")
     LINK_DIRECTORIES("$ENV{ROCM_PATH}/lib")
@@ -770,6 +770,7 @@ IF(QMC_CUDA OR ENABLE_CUDA)
     LINK_LIBRARIES(amdhip64 hipblas)
     # architecture flags
     SET(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} -fPIC")
+    SET(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} -fopenmp")
     SET(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} --amdgpu-target=gfx906,gfx908")
     SET(HIP_HIPCC_FLAGS "${HIP_HIPCC_FLAGS} --gpu-max-threads-per-block=256")
     # warning suppression
