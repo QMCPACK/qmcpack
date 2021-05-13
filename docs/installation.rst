@@ -1246,10 +1246,12 @@ options and different versions of the application. A full list can be displayed 
     ecp  ecp-apps
 
   Preferred version:
-    3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
+    3.10.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.10.0
 
   Safe versions:
     develop  [git] https://github.com/QMCPACK/qmcpack.git
+    3.10.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.10.0
+    3.9.2      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.2
     3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
     3.9.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.0
     3.8.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.8.0
@@ -1264,36 +1266,36 @@ options and different versions of the application. A full list can be displayed 
 
   Variants:
     Name [Default]          Allowed values          Description
+    ====================    ====================    =============================
 
-
-    build_type [Release]    Debug, Release,         The build type to build
-                            RelWithDebInfo
-    afqmc [off]             True, False             Install with AFQMC support.
+    afqmc [off]             on, off                 Install with AFQMC support.
                                                     NOTE that if used in
                                                     combination with CUDA, only
                                                     AFQMC will have CUDA.
-    complex [off]           True, False             Build the complex (general
+    build_type [Release]    Debug, Release,         The build type to build
+                            RelWithDebInfo
+    complex [off]           on, off                 Build the complex (general
                                                     twist/k-point) version
-    cuda [off]              True, False             Build with CUDA
+    cuda [off]              on, off                 Build with CUDA
     cuda_arch [none]        none, 53, 20, 62,       CUDA architecture
                             60, 61, 50, 75, 70,
                             72, 32, 52, 30, 35
-    da [off]                True, False             Install with support for basic
+    da [off]                on, off                 Install with support for basic
                                                     data analysis tools
-    gui [off]               True, False             Install with Matplotlib (long
+    gui [off]               on, off                 Install with Matplotlib (long
                                                     installation time)
-    mixed [off]             True, False             Build the mixed precision
+    mixed [off]             on, off                 Build the mixed precision
                                                     (mixture of single and double
                                                     precision) version for gpu and
                                                     cpu
-    mpi [on]                True, False             Build with MPI support
-    phdf5 [on]              True, False             Build with parallel collective
+    mpi [on]                on, off                 Build with MPI support
+    phdf5 [on]              on, off                 Build with parallel collective
                                                     I/O
-    ppconvert [off]         True, False             Install with pseudopotential
+    ppconvert [off]         on, off                 Install with pseudopotential
                                                     converter.
-    qe [on]                 True, False             Install with patched Quantum
+    qe [on]                 on, off                 Install with patched Quantum
                                                     Espresso 6.4.0
-    timers [off]            True, False             Build with support for timers
+    timers [off]            on, off                 Build with support for timers
 
   Installation Phases:
     cmake    build    install
