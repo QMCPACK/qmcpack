@@ -664,8 +664,9 @@ typename DiracDeterminantBatched<DET_ENGINE>::GradType DiracDeterminantBatched<D
   {
     resizeScratchObjectsForIonDerivs();
     Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
-    // FIXME due padding of psiMinv
-    g = simd::dot(psiMinv.data(), grad_source_psiM.data(), psiMinv.size());
+    // psiMinv.cols() can be different from NumOrbitals
+    for (int i = 0; i < psiMinv.rows(); i++)
+      g += simd::dot(psiMinv[i], grad_source_psiM[i], NumOrbitals);
   }
 
   return g;

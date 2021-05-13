@@ -189,14 +189,14 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
 #endif
 }
 
-void MultiDiracDeterminant::evaluateDetsForPtclMove(ParticleSet& P, int iat)
+void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl)
 {
   UpdateMode = ORB_PBYP_RATIO;
   RatioTimer.start();
   evalOrbTimer.start();
   Phi->evaluateValue(P, iat, psiV);
   evalOrbTimer.stop();
-  WorkingIndex = iat - FirstIndex;
+  WorkingIndex = (refPtcl < 0 ? iat : refPtcl) - FirstIndex;
   if (NumPtcls == 1)
   {
     std::vector<ci_configuration2>::iterator it(ciConfigList->begin());
@@ -245,7 +245,7 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(ParticleSet& P, int iat)
   RatioTimer.stop();
 }
 
-void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat)
+void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
   evalOrb1Timer.start();
