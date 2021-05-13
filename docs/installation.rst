@@ -1246,11 +1246,12 @@ options and different versions of the application. A full list can be displayed 
     ecp  ecp-apps
 
   Preferred version:
-    3.10.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.10.0
+    3.11.0     [git] https://github.com/QMCPACK/qmcpack.git at tag v3.11.0
 
   Safe versions:
-    develop  [git] https://github.com/QMCPACK/qmcpack.git
-    3.10.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.10.0
+    develop    [git] https://github.com/QMCPACK/qmcpack.git
+    3.11.0     [git] https://github.com/QMCPACK/qmcpack.git at tag v3.11.0
+    3.10.0     [git] https://github.com/QMCPACK/qmcpack.git at tag v3.10.0
     3.9.2      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.2
     3.9.1      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.1
     3.9.0      [git] https://github.com/QMCPACK/qmcpack.git at tag v3.9.0
