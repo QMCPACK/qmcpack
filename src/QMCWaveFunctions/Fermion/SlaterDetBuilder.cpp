@@ -216,19 +216,9 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         spoAttrib.add(spoNames[0], "spo_up");
         spoAttrib.add(spoNames[1], "spo_dn");
       }
-      spoAttrib.add(fastAlg, "Fast", {"", "yes", "no"}, TagStatus::DEPRECATED);
-      spoAttrib.add(msd_algorithm, "algorithm", {"", "precomputed_table_method", "table_method", "all_determinants"});
+      spoAttrib.add(fastAlg, "Fast", {"", "yes", "no"}, TagStatus::DELETED);
+      spoAttrib.add(msd_algorithm, "algorithm", {"precomputed_table_method", "table_method", "all_determinants"});
       spoAttrib.put(cur);
-
-      if (msd_algorithm.empty())
-      {
-        if (fastAlg.empty())
-          msd_algorithm = "precomputed_table_method";
-        else if (fastAlg == "yes")
-          msd_algorithm = "table_method";
-        else
-          msd_algorithm = "all_determinants";
-      }
 
       //new format
       std::vector<std::unique_ptr<SPOSet>> spo_clones;
