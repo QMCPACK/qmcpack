@@ -1133,7 +1133,7 @@ to add one:
 
   your-laptop> spack compiler add <path-to-compiler>
 
-The Intel compiler, and other commerical compilers like PGI, typically
+The Intel ("classic") compiler and other commerical compilers may
 require extra environment variables to work properly. If you have an
 module environment set-up by your system administrators, it is
 recommended that you set the module name in
