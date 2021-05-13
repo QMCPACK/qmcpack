@@ -278,7 +278,7 @@ public:
 
   /** return the position of the active particle
    *
-   * activePtcl=-1 is used to flag non-physical moves
+   * activePtcl=-1 is used to flag non-physical move
    */
   inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
   inline const Scalar_t& activeSpin(int iat) const { return (activePtcl == iat) ? activeSpinVal : spins[iat]; }
@@ -337,6 +337,10 @@ public:
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
 
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
+  bool makeMoveAllParticlesWithSpins(const Walker_t& awalker, const ParticlePos_t& deltaR, 
+                                    const ParticleScalar_t& deltaS, const std::vector<RealType>& dt,
+                                    RealType spinMass);
+
   /** move all the particles including the drift
    *
    * Otherwise, everything is the same as makeMove for a walker

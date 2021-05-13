@@ -588,6 +588,45 @@ bool ParticleSet::makeMoveAllParticles(const Walker_t& awalker,
   return true;
 }
 
+bool ParticleSet::makeMoveAllParticlesWithSpins(const Walker_t& awalker,
+                                       const ParticlePos_t& deltaR,
+                                       const ParticleScalar_t& deltaS,
+                                       const std::vector<RealType>& dt,
+                                       const RealType spinMass)
+{
+  activePtcl = -1;
+  RealType invSqrtSpinMass=1.0/std::sqrt(spinMass);
+  if (Lattice.explicitly_defined)
+  {
+    for (int iat = 0; iat < deltaR.size(); ++iat)
+    {
+      SingleParticlePos_t displ(dt[iat] * deltaR[iat]);
+      if (Lattice.outOfBound(Lattice.toUnit(displ)))
+        return false;
+      SingleParticlePos_t newpos(awalker.R[iat] + displ);
+      if (!Lattice.isValid(Lattice.toUnit(newpos)))
+        return false;
+      R[iat] = newpos;
+      spins[iat]=awalker.spins[iat]+invSqrtSpinMass*dt[iat]*deltaS[iat];
+    }
+  }
+  else
+  {
+    for (int iat = 0; iat < deltaR.size(); ++iat)
+    {  
+      R[iat] = awalker.R[iat] + dt[iat] * deltaR[iat];
+      spins[iat]=awalker.spins[iat]+invSqrtSpinMass*dt[iat]*deltaS[iat];
+    }
+  }
+  coordinates_->setAllParticlePos(R);
+  for (int i = 0; i < DistTables.size(); i++)
+    DistTables[i]->evaluate(*this);
+  if (SK)
+    SK->UpdateAllPart(*this);
+  //every move is valid
+  return true;
+}
+
 /** move a walker by dt*deltaR + drift
  * @param awalker initial walker configuration
  * @param drift drift vector
