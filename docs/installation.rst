@@ -1413,8 +1413,6 @@ facility. Additionally, Spack packages compiled by the facility can be
 reused by chaining Spack installations
 https://spack.readthedocs.io/en/latest/chain.html.
 
-Instructions for DOE supercomputing facilities that support Spack directly will be forthcoming.
-
 Installing Quantum-ESPRESSO with Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
