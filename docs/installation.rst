@@ -1341,9 +1341,9 @@ installation process, for example:
 
   your-laptop> spack install --test=root qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
 
-will run the unit and short tests. The current behavior of the QMCPACK
+will run the unit and deterministic tests. The current behavior of the QMCPACK
 Spack package is to complete the install as long as all the unit tests
-pass. If the short tests fail, a warning is issued at the command prompt.
+pass. If the deterministic tests fail, a warning is issued at the command prompt.
 
 For CUDA, you will need to specify and extra ``cuda_arch``
 parameter otherwise, it will default to ``cuda_arch=61``.
