@@ -21,7 +21,10 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-SOVMCUpdateAll::SOVMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+SOVMCUpdateAll::SOVMCUpdateAll(MCWalkerConfiguration& w,
+                               TrialWaveFunction& psi,
+                               QMCHamiltonian& h,
+                               RandomGenerator_t& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   UpdatePbyP = false;
@@ -47,7 +50,7 @@ void SOVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
       false); // W.R,G,L = thisWalker.R,G,L; false indicates W.DistTables & SK are not updated in this call. W.DistTables,SK are now stale.
   RealType logpsi_old = thisWalker.Properties(WP::LOGPSI);
 
-  RealType invSqrtSpinMass = 1.0/std::sqrt(spinMass);
+  RealType invSqrtSpinMass = 1.0 / std::sqrt(spinMass);
 
   for (int iter = 0; iter < nSubSteps; ++iter)
   { // make a few Monte-Carlo steps to decorrelate samples without calculating observables
@@ -61,20 +64,21 @@ void SOVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     else
     {
       if (W.makeMoveAllParticles(thisWalker, deltaR, SqrtTauOverMass))
-      {   
-        //Assume that since the spatial move is fine, the spin move will be. 
-        //Compute that now.  
-        for(int iat=0; iat<deltaR.size(); ++iat)
-          W.spins[iat]=thisWalker.spins[iat]+invSqrtSpinMass*SqrtTauOverMass[iat]*deltaS[iat];
-    
-                                              // W.R += dR*dt; W.DistTables,SK are updated; W.G,L are now stale
+      {
+        //Assume that since the spatial move is fine, the spin move will be.
+        //Compute that now.
+        for (int iat = 0; iat < deltaR.size(); ++iat)
+          W.spins[iat] = thisWalker.spins[iat] + invSqrtSpinMass * SqrtTauOverMass[iat] * deltaS[iat];
+
+        // W.R += dR*dt; W.DistTables,SK are updated; W.G,L are now stale
         RealType logpsi = Psi.evaluateLog(W); // update W.G,L at changed W.R; update Psi.LogValue,PhaseValue
         RealType g      = std::exp(2.0 * (logpsi - logpsi_old));
         if (RandomGen() <= g)
         {                        // move is accepted; logpsi_old and R_old are stale
           logpsi_old   = logpsi; // update logpsi_old
           thisWalker.R = W.R;    // update R_old; side effect: thisWalker.G,L,DistTables,SK,Properties are now stale
-          thisWalker.spins = W.spins;    // update R_old; side effect: thisWalker.G,L,DistTables,SK,Properties are now stale
+          thisWalker.spins =
+              W.spins; // update R_old; side effect: thisWalker.G,L,DistTables,SK,Properties are now stale
           ++nAccept;
           updated = true;
         }
@@ -98,9 +102,10 @@ void SOVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
   RealType eloc = H.evaluate(
       W); // calculate local energy; W.SK must be up-to-date if Coulomb interaction is used with periodic boundary. W.SK is used to calculate the long-range part of the Coulomb potential.
   W.saveWalker(thisWalker);
-  thisWalker.resetProperty(logpsi_old, Psi.getPhase(), eloc); // update thisWalker::Properties[WP::LOGPSI,WP::SIGN,WP::LOCALENERGY]
-  H.auxHevaluate(W, thisWalker);                              // update auxiliary observables, i.e. fill H::Observables
-  H.saveProperty(thisWalker.getPropertyBase());               // copy H::Observables to thisWalker::Properties
+  thisWalker.resetProperty(logpsi_old, Psi.getPhase(),
+                           eloc);               // update thisWalker::Properties[WP::LOGPSI,WP::SIGN,WP::LOCALENERGY]
+  H.auxHevaluate(W, thisWalker);                // update auxiliary observables, i.e. fill H::Observables
+  H.saveProperty(thisWalker.getPropertyBase()); // copy H::Observables to thisWalker::Properties
 }
 
 } // namespace qmcplusplus
