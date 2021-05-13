@@ -220,4 +220,98 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   delete doc;
 }
+
+TEST_CASE("SOVMC-alle", "[drivers][vmc]")
+{
+  Communicate* c;
+  c = OHMMS::Controller;
+  c->setName("test");
+  ParticleSet ions;
+  MCWalkerConfiguration elec;
+
+  ions.setName("ion");
+  ions.create(1);
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+
+  elec.setName("elec");
+  std::vector<int> agroup(1);
+  agroup[0] = 1;
+  elec.create(agroup);
+  elec.R[0][0]  = 1.0;
+  elec.R[0][1]  = 0.0;
+  elec.R[0][2]  = 0.0;
+  elec.spins[0] = 0.0;
+  elec.createWalkers(1);
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  elec.addTable(ions);
+  elec.update();
+
+  CloneManager::clear_for_unit_tests();
+
+  TrialWaveFunction psi;
+  ConstantOrbital* orb = new ConstantOrbital;
+  psi.addComponent(orb);
+  psi.registerData(elec, elec.WalkerList[0]->DataSet);
+  elec.WalkerList[0]->DataSet.allocate();
+
+  FakeRandom rg;
+
+  QMCHamiltonian h;
+  h.addOperator(new BareKineticEnergy<double>(elec), "Kinetic");
+  h.addObservables(elec); // get double free error on 'h.Observables' w/o this
+
+  elec.resetWalkerProperty(); // get memory corruption w/o this
+
+  VMC vmc_omp(elec, psi, h, c, false);
+
+  const char* vmc_input = "<qmc method=\"vmc\" move=\"alle\"> \
+   <parameter name=\"substeps\">1</parameter> \
+   <parameter name=\"steps\">1</parameter> \
+   <parameter name=\"blocks\">1</parameter> \
+   <parameter name=\"timestep\">0.1</parameter> \
+   <parameter name=\"usedrift\">no</parameter> \
+   <parameter name=\"SpinMoves\">yes</parameter> \
+   <parameter name=\"SpinMass\">0.25</parameter> \
+  </qmc> \
+  ";
+  Libxml2Document* doc  = new Libxml2Document;
+  bool okay             = doc->parseFromString(vmc_input);
+  REQUIRE(okay);
+  xmlNodePtr root = doc->getRoot();
+
+  vmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'
+
+  vmc_omp.run();
+
+  // With the constant wavefunction, no moves should be rejected
+  double ar = vmc_omp.acceptRatio();
+  REQUIRE(ar == Approx(1.0));
+
+  // Each electron moved sqrt(tau)*gaussian_rng()
+  //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
+  //  Values from diffuse.py for moving one step
+
+  REQUIRE(elec.R[0][0] == Approx(0.627670258894097));
+  REQUIRE(elec.R[0][1] == Approx(0.0));
+  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
+
+  REQUIRE(elec.spins[0] == Approx(-0.74465948215809097));
+
+  //Now we're going to test that the step updated the walker variables.
+  REQUIRE(elec.WalkerList[0]->R[0][0] == Approx(elec.R[0][0]));
+  REQUIRE(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
+  REQUIRE(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
+  REQUIRE(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
+
+  delete doc;
+}
 } // namespace qmcplusplus
