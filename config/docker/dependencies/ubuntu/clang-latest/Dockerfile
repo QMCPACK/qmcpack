@@ -8,16 +8,12 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
 # Dependencies
 RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get install gcc g++ \ 
-                    clang \
-                    clang-format \
-                    gcovr \
                     python3 \
                     cmake \
                     ninja-build \
                     libboost-all-dev \
                     git \
-                    libopenmpi-dev \
-                    libhdf5-openmpi-dev \
+                    libhdf5-serial-dev \
                     hdf5-tools \
                     libfftw3-dev \
                     libopenblas-openmp-dev \
@@ -29,12 +25,11 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     software-properties-common \
                     -y
 
-# Python packages for tests
-RUN export DEBIAN_FRONTEND=noninteractive &&\
-    apt-get install python3-numpy \
-                    python3-h5py \
-                    python3-pandas \
-                    -y
+# add the latest clang development
+RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key| apt-key add - &&\
+    apt-add-repository 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main'
+RUN apt-get update -y &&\     
+    apt-get install clang-12 clang-tools-12 -y
 
 # must add a user different from root 
 # to run MPI executables
