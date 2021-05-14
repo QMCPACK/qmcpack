@@ -48,20 +48,13 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   ions.setName("ion");
   ions.create(1);
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
+  ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");
-  std::vector<int> agroup(1);
-  agroup[0] = 2;
+  std::vector<int> agroup(1, 2);
   elec.create(agroup);
-  elec.R[0][0] = 1.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 1.0;
+  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 0.0, 1.0};
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -77,8 +70,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi;
-  ConstantOrbital* orb = new ConstantOrbital;
-  psi.addComponent(orb);
+  psi.addComponent(new ConstantOrbital);
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -100,10 +92,10 @@ TEST_CASE("VMC", "[drivers][vmc]")
    <parameter name=\"usedrift\">no</parameter> \
   </qmc> \
   ";
-  Libxml2Document* doc  = new Libxml2Document;
-  bool okay             = doc->parseFromString(vmc_input);
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(vmc_input);
   REQUIRE(okay);
-  xmlNodePtr root = doc->getRoot();
+  xmlNodePtr root = doc.getRoot();
 
   vmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'
 
@@ -124,7 +116,6 @@ TEST_CASE("VMC", "[drivers][vmc]")
   REQUIRE(elec.R[1][0] == Approx(0.0));
   REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
   REQUIRE(elec.R[1][2] == Approx(1.0));
-  delete doc;
 }
 
 TEST_CASE("SOVMC", "[drivers][vmc]")
@@ -137,17 +128,12 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   ions.setName("ion");
   ions.create(1);
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
+  ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");
-  std::vector<int> agroup(1);
-  agroup[0] = 1;
+  std::vector<int> agroup(1, 1);
   elec.create(agroup);
-  elec.R[0][0]  = 1.0;
-  elec.R[0][1]  = 0.0;
-  elec.R[0][2]  = 0.0;
+  elec.R[0] = {1.0, 0.0, 0.0};
   elec.spins[0] = 0.0;
   elec.createWalkers(1);
 
@@ -164,8 +150,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi;
-  ConstantOrbital* orb = new ConstantOrbital;
-  psi.addComponent(orb);
+  psi.addComponent(new ConstantOrbital);
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -189,10 +174,10 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
    <parameter name=\"SpinMass\">0.25</parameter> \
   </qmc> \
   ";
-  Libxml2Document* doc  = new Libxml2Document;
-  bool okay             = doc->parseFromString(vmc_input);
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(vmc_input);
   REQUIRE(okay);
-  xmlNodePtr root = doc->getRoot();
+  xmlNodePtr root = doc.getRoot();
 
   vmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'
 
@@ -217,8 +202,6 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   REQUIRE(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
   REQUIRE(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
   REQUIRE(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
-
-  delete doc;
 }
 
 TEST_CASE("SOVMC-alle", "[drivers][vmc]")
@@ -231,17 +214,12 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 
   ions.setName("ion");
   ions.create(1);
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
+  ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");
-  std::vector<int> agroup(1);
-  agroup[0] = 1;
+  std::vector<int> agroup(1, 1);
   elec.create(agroup);
-  elec.R[0][0]  = 1.0;
-  elec.R[0][1]  = 0.0;
-  elec.R[0][2]  = 0.0;
+  elec.R[0] = {1.0, 0.0, 0.0};
   elec.spins[0] = 0.0;
   elec.createWalkers(1);
 
@@ -258,8 +236,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi;
-  ConstantOrbital* orb = new ConstantOrbital;
-  psi.addComponent(orb);
+  psi.addComponent(new ConstantOrbital);
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
@@ -283,10 +260,10 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
    <parameter name=\"SpinMass\">0.25</parameter> \
   </qmc> \
   ";
-  Libxml2Document* doc  = new Libxml2Document;
-  bool okay             = doc->parseFromString(vmc_input);
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(vmc_input);
   REQUIRE(okay);
-  xmlNodePtr root = doc->getRoot();
+  xmlNodePtr root = doc.getRoot();
 
   vmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'
 
@@ -311,7 +288,5 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   REQUIRE(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
   REQUIRE(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
   REQUIRE(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
-
-  delete doc;
 }
 } // namespace qmcplusplus
