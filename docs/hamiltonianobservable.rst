@@ -435,7 +435,7 @@ attributes:
 
 .. code-block::
   :caption: QMCPXML element for pseudopotential of single ionic species.
-  :name: Listing 21
+  :name: Listing 21b
 
     <pseudo elementType="Li" href="Li.xml"/>
 
