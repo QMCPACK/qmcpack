@@ -625,13 +625,14 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       }
       else
       { //usingDETS
-        ValueType q0 = 0.0;
-        std::vector<ValueType> v(Dets.size());
         for (size_t i = 1; i < C->size(); i++)
         {
           int kk = myVars->where(i - 1);
           if (kk < 0)
             continue;
+
+          ValueType q0 = 0.0;
+          std::vector<ValueType> v(Dets.size());
           for (size_t id = 0; id < Dets.size(); id++)
           {
             GradMatrix_t& grads_spin = Dets[id]->grads;

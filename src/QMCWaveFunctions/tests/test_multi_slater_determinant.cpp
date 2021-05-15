@@ -60,6 +60,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
   int massIdx                = tspecies.addAttribute("mass");
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
+  // Necessary to set mass
+  elec_.resetGroups();
 
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
@@ -80,11 +82,11 @@ void test_LiH_msd(const std::string& spo_xml_string,
   REQUIRE(spo_ptr != nullptr);
   REQUIRE(spo_ptr->getOrbitalSetSize() == check_spo_size);
   REQUIRE(spo_ptr->getBasisSetSize() == check_basisset_size);
-
   ions_.update();
   elec_.update();
 
   auto& twf(*wf_factory.getTWF());
+  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
   std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
@@ -113,6 +115,27 @@ void test_LiH_msd(const std::string& spo_xml_string,
   ratio = twf.calcRatio(elec_, 1);
   std::cout << "twf.calcRatio ratio " << ratio << std::endl;
   REQUIRE(ratio == ValueApprox(1.374307585));
+
+
+  opt_variables_type active;
+  twf.checkInVariables(active);
+
+  int nparam = active.size_of_active();
+  REQUIRE(nparam == 1486);
+
+  using ValueType = QMCTraits::ValueType;
+  std::vector<ValueType> dlogpsi(nparam);
+  std::vector<ValueType> dhpsioverpsi(nparam);
+  twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
+
+  // Numbers not validated
+  REQUIRE(dlogpsi[0] == ValueApprox(0.006449058893092842));
+  REQUIRE(dlogpsi[1] == ValueApprox(-0.01365690177395768));
+  REQUIRE(dlogpsi[nparam - 1] == ValueApprox(0.1641910574099575));
+
+  REQUIRE(dhpsioverpsi[0] == ValueApprox(0.2207480131794138));
+  REQUIRE(dhpsioverpsi[1] == ValueApprox(0.009316665149067847));
+  REQUIRE(dhpsioverpsi[nparam - 1] == ValueApprox(0.982665984797896));
 }
 
 TEST_CASE("LiH multi Slater dets", "[wavefunction]")
