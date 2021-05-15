@@ -637,7 +637,7 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatiosAlltoOne(ParticleSet& P,
     Phi->evaluateValue(P, -1, psiV_host_view);
   }
   for (int i = 0; i < psiMinv.rows(); i++)
-    ratios[FirstIndex+i] = simd::dot(psiMinv[i], psiV.data(), NumOrbitals);
+    ratios[FirstIndex + i] = simd::dot(psiMinv[i], psiV.data(), NumOrbitals);
 }
 
 

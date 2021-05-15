@@ -238,7 +238,7 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   const int WorkingIndex = iat - FirstIndex;
-  assert(WorkingIndex>=0 && WorkingIndex < LastIndex-FirstIndex);
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   switch (UpdateMode)
   {
   case ORB_PBYP_RATIO:
@@ -279,7 +279,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
 void MultiDiracDeterminant::restore(int iat)
 {
   const int WorkingIndex = iat - FirstIndex;
-  assert(WorkingIndex>=0 && WorkingIndex < LastIndex-FirstIndex);
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   psiMinv_temp = psiMinv;
   for (int i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);

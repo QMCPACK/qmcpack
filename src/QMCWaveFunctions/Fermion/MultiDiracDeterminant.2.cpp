@@ -197,7 +197,7 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
   Phi->evaluateValue(P, iat, psiV);
   evalOrbTimer.stop();
   const int WorkingIndex = (refPtcl < 0 ? iat : refPtcl) - FirstIndex;
-  assert(WorkingIndex>=0 && WorkingIndex < LastIndex-FirstIndex);
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   if (NumPtcls == 1)
   {
     std::vector<ci_configuration2>::iterator it(ciConfigList->begin());
@@ -253,7 +253,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
   Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   evalOrb1Timer.stop();
   const int WorkingIndex = iat - FirstIndex;
-  assert(WorkingIndex>=0 && WorkingIndex < LastIndex-FirstIndex);
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   if (NumPtcls == 1)
   {
     std::vector<ci_configuration2>::iterator it(ciConfigList->begin());
@@ -330,7 +330,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
 void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
 {
   const int WorkingIndex = iat - FirstIndex;
-  assert(WorkingIndex>=0 && WorkingIndex < LastIndex-FirstIndex);
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
 
   const auto& confgList = *ciConfigList;
   auto it               = confgList[0].occup.begin(); //just to avoid using the type
@@ -386,7 +386,7 @@ void MultiDiracDeterminant::evaluateAllForPtclMove(const ParticleSet& P, int iat
   UpdateMode = ORB_PBYP_ALL;
   Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   const int WorkingIndex = iat - FirstIndex;
-  assert(WorkingIndex>=0 && WorkingIndex < LastIndex-FirstIndex);
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   if (NumPtcls == 1)
   {
     std::vector<ci_configuration2>::const_iterator it(ciConfigList->begin());
