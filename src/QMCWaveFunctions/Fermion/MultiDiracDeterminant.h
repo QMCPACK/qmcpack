@@ -410,8 +410,6 @@ public:
   int FirstIndex;
   ///index of the last particle with respect to the particle set
   int LastIndex;
-  ///index of the particle (or row)
-  int WorkingIndex;
   ///a set of single-particle orbitals used to fill in the  values of the matrix
   std::unique_ptr<SPOSet> Phi;
   /// number of determinants handled by this object
