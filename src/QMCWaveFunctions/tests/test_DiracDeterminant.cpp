@@ -136,10 +136,10 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   newpos2[0] = newpos - elec.R[1];
   newpos2[1] = PosType(0.2, 0.5, 0.3) - elec.R[1];
   VP.makeMoves(1, elec.R[1], newpos2);
-  ddb.evaluateRatios(VP, ratios);
+  ddb.evaluateRatios(VP, ratios2);
 
-  CHECK(std::real(ratios[0]) == Approx(0.4880285278));
-  CHECK(std::real(ratios[1]) == Approx(0.9308456444));
+  CHECK(std::real(ratios2[0]) == Approx(0.4880285278));
+  CHECK(std::real(ratios2[1]) == Approx(0.9308456444));
 
   //test acceptMove
   elec.makeMove(1, newpos - elec.R[1]);

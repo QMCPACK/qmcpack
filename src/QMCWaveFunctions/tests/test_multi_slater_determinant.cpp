@@ -26,10 +26,14 @@ using std::string;
 
 namespace qmcplusplus
 {
+using PosType   = ParticleSet::PosType;
+using ValueType = ParticleSet::ValueType;
+
 void test_LiH_msd(const std::string& spo_xml_string,
                   const std::string& check_sponame,
                   int check_spo_size,
-                  int check_basisset_size)
+                  int check_basisset_size,
+                  int test_batched)
 {
   Communicate* c;
   c = OHMMS::Controller;
@@ -78,8 +82,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
 
   SPOSet* spo_ptr(wf_factory.getSPOSet(check_sponame));
   REQUIRE(spo_ptr != nullptr);
-  REQUIRE(spo_ptr->getOrbitalSetSize() == check_spo_size);
-  REQUIRE(spo_ptr->getBasisSetSize() == check_basisset_size);
+  CHECK(spo_ptr->getOrbitalSetSize() == check_spo_size);
+  CHECK(spo_ptr->getBasisSetSize() == check_basisset_size);
 
   ions_.update();
   elec_.update();
@@ -89,30 +93,70 @@ void test_LiH_msd(const std::string& spo_xml_string,
 
   std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
             << std::endl;
-  REQUIRE(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
-          LogComplexApprox(std::complex<double>(-7.646027846242066, 3.141592653589793)));
+  CHECK(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
+        LogComplexApprox(std::complex<double>(-7.646027846242066, 3.141592653589793)));
 
   twf.prepareGroup(elec_, 0);
   auto grad_old = twf.evalGrad(elec_, 1);
   std::cout << "twf.evalGrad grad_old " << std::setprecision(16) << grad_old << std::endl;
-  REQUIRE(grad_old[0] == ValueApprox(0.1204183219));
-  REQUIRE(grad_old[1] == ValueApprox(0.120821033));
-  REQUIRE(grad_old[2] == ValueApprox(2.05904174));
+  CHECK(grad_old[0] == ValueApprox(0.1204183219));
+  CHECK(grad_old[1] == ValueApprox(0.120821033));
+  CHECK(grad_old[2] == ValueApprox(2.05904174));
 
-  ParticleSet::PosType delta(0.1, 0.1, 0.2);
+  PosType delta(0.1, 0.1, 0.2);
   elec_.makeMove(1, delta);
 
   ParticleSet::GradType grad_new;
   auto ratio = twf.calcRatioGrad(elec_, 1, grad_new);
   std::cout << "twf.calcRatioGrad ratio " << ratio << " grad_new " << grad_new << std::endl;
-  REQUIRE(ratio == ValueApprox(1.374307585));
-  REQUIRE(grad_new[0] == ValueApprox(0.05732804333));
-  REQUIRE(grad_new[1] == ValueApprox(0.05747775029));
-  REQUIRE(grad_new[2] == ValueApprox(1.126889742));
+  CHECK(ratio == ValueApprox(1.374307585));
+  CHECK(grad_new[0] == ValueApprox(0.05732804333));
+  CHECK(grad_new[1] == ValueApprox(0.05747775029));
+  CHECK(grad_new[2] == ValueApprox(1.126889742));
 
   ratio = twf.calcRatio(elec_, 1);
   std::cout << "twf.calcRatio ratio " << ratio << std::endl;
-  REQUIRE(ratio == ValueApprox(1.374307585));
+  CHECK(ratio == ValueApprox(1.374307585));
+
+  if (test_batched)
+  {
+    // set virtutal particle position
+    PosType newpos(0.3, 0.2, 0.5);
+
+    //elec_.makeVirtualMoves(newpos);
+    //std::vector<ValueType> ratios(elec_.getTotalNum());
+    //twf.evaluateRatiosAlltoOne(elec_, ratios);
+
+    //CHECK(std::real(ratios[0]) == Approx());
+    //CHECK(std::real(ratios[1]) == Approx());
+    //CHECK(std::real(ratios[2]) == Approx());
+
+    elec_.makeMove(0, newpos - elec_.R[0]);
+    ValueType ratio_0 = twf.calcRatio(elec_, 0);
+    elec_.rejectMove(0);
+
+    CHECK(std::real(ratio_0) == Approx(2.350046921));
+
+    VirtualParticleSet VP(elec_, 2);
+    std::vector<PosType> newpos2(2);
+    std::vector<ValueType> ratios2(2);
+    newpos2[0] = newpos - elec_.R[1];
+    newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
+    VP.makeMoves(1, elec_.R[1], newpos2);
+    twf.evaluateRatios(VP, ratios2);
+
+    CHECK(std::real(ratios2[0]) == Approx(-0.8544310407));
+    CHECK(std::real(ratios2[1]) == Approx(-1.0830708458));
+
+    //test acceptMove
+    elec_.makeMove(1, newpos - elec_.R[1]);
+    ValueType ratio_1 = twf.calcRatio(elec_, 1);
+    twf.acceptMove(elec_, 1);
+    elec_.acceptMove(1);
+
+    CHECK(std::real(ratio_1) == Approx(-0.8544310407));
+    CHECK(twf.getLogPsi() == Approx(-7.6460278462));
+  }
 }
 
 TEST_CASE("LiH multi Slater dets", "[wavefunction]")
@@ -141,7 +185,7 @@ TEST_CASE("LiH multi Slater dets", "[wavefunction]")
     </determinantset> \
 </wavefunction> \
 ";
-  test_LiH_msd(spo_xml_string1, "spo-up", 85, 105);
+  test_LiH_msd(spo_xml_string1, "spo-up", 85, 105, true);
 
   app_log() << "-----------------------------------------------------------------" << std::endl;
   app_log() << "LiH_msd using the traditional slow method with all the determinants" << std::endl;
@@ -167,7 +211,7 @@ TEST_CASE("LiH multi Slater dets", "[wavefunction]")
     </determinantset> \
 </wavefunction> \
 ";
-  test_LiH_msd(spo_xml_string1_slow, "spo-up", 85, 105);
+  test_LiH_msd(spo_xml_string1_slow, "spo-up", 85, 105, false);
 
   app_log() << "-----------------------------------------------------------------" << std::endl;
   app_log() << "LiH_msd using the table method with new optimization" << std::endl;
@@ -193,6 +237,6 @@ TEST_CASE("LiH multi Slater dets", "[wavefunction]")
     </determinantset> \
 </wavefunction> \
 ";
-  test_LiH_msd(spo_xml_string1_new, "spo-up", 85, 105);
+  test_LiH_msd(spo_xml_string1_new, "spo-up", 85, 105, true);
 }
 } // namespace qmcplusplus
