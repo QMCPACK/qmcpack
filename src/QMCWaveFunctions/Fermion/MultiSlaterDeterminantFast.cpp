@@ -335,7 +335,6 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_pr
   const int det_id = getDetID(iat);
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-
   const ValueType* restrict detValues0 = Dets[det_id]->new_detValues.data(); //always new
   const size_t* restrict det0          = (*C2node)[det_id].data();
   const ValueType* restrict cptr       = C->data();
@@ -370,6 +369,42 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
 
   curRatio = psiNew / psiCurrent;
   return curRatio;
+}
+
+void MultiSlaterDeterminantFast::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+{
+  BackFlowStopper("Fast MSD+BF: evaluateRatios\n");
+  ScopedTimer local_timer(RatioTimer);
+
+  const int det_id = getDetID(VP.refPtcl);
+
+  for (size_t iat = 0; iat < VP.getTotalNum(); ++iat)
+  {
+    Dets[det_id]->evaluateDetsForPtclMove(VP, iat, VP.refPtcl);
+    const ValueType* restrict detValues0 = Dets[det_id]->new_detValues.data();
+
+    PsiValueType psiNew(0);
+    if (use_pre_computing_)
+      for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
+        psiNew += detValues0[i] * C_otherDs[det_id][i];
+    else
+    {
+      const size_t* restrict det0    = (*C2node)[det_id].data();
+      const ValueType* restrict cptr = C->data();
+      const size_t nc                = C->size();
+
+      for (size_t i = 0; i < nc; ++i)
+      {
+        ValueType t = cptr[i];
+        for (size_t id = 0; id < Dets.size(); id++)
+          if (id != det_id)
+            t *= Dets[id]->detValues[(*C2node)[id][i]];
+        t *= detValues0[det0[i]];
+        psiNew += t;
+      }
+    }
+    ratios[iat] = psiNew / psiCurrent;
+  }
 }
 
 void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)

@@ -327,7 +327,7 @@ attributes:
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``format``:math:`^r`        | text         | xml/table             | table                  | Select file format                               |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
-  | ``algorithm``:math:`^o`     | text         | batched/default       | default                | Choose NLPP algorithm                            |
+  | ``algorithm``:math:`^o`     | text         | batched/non-batched   | depends                | Choose NLPP algorithm                            |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``DLA``:math:`^o`           | text         | yes/no                | no                     | Use determinant localization approximation       |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
@@ -359,14 +359,17 @@ Additional information:
    These elements specify individual file names and formats (both the
    FSAtom XML and CASINO tabular data formats are supported).
 
--  **algorithm** The default algorithm evaluates the ratios of
+-  **algorithm** The default value is ``batched`` when OpenMP offload
+   is enabled and``non-batched`` otherwise.
+   The ``non-batched`` algorithm evaluates the ratios of
    wavefunction components together for each quadrature point and then
-   one point after another. The batched algorithm evaluates the ratios
+   one point after another. The ``batched`` algorithm evaluates the ratios
    of quadrature points together for each wavefunction component and
    then one component after another. Internally, it uses
    ``VirtualParticleSet`` for quadrature points. Hybrid orbital
    representation has an extra optimization enabled when using the
-   batched algorithm.
+   batched algorithm. When OpenMP offload build is enabled, the default
+   value is ``batched``. Otherwise, ``non-batched`` is the default.
 
 -  **DLA** Determinant localization approximation
    (DLA) :cite:`Zen2019DLA` uses only the fermionic part of

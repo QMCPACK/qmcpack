@@ -212,7 +212,12 @@ public:
   /// return  for testing
   auto& getPsiMinv() const { return psiMinv; }
 
-  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_engine_
+  /** inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$ memory view
+   * Actual memory is owned by det_engine_
+   * Only NumOrbitals x NumOrbitals subblock has meaningful data
+   * The number of rows is equal to NumOrbitals
+   * The number of columns in each row is padded to a multiple of QMC_SIMD_ALIGNMENT
+   */
   ValueMatrix_t psiMinv;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
