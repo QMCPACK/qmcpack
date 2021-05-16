@@ -39,9 +39,7 @@ SET(HAM_SRCS test_bare_kinetic.cpp
 IF(QMC_CUDA)
   SET(COULOMB_SRCS ${COULOMB_SRCS} test_coulomb_CUDA.cpp)
 ELSE()
-  IF(NOT ENABLE_OFFLOAD)
-    SET(FORCE_SRCS ${FORCE_SRCS} test_ion_derivs.cpp)
-  ENDIF()
+  SET(FORCE_SRCS ${FORCE_SRCS} test_ion_derivs.cpp)
 ENDIF()
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
