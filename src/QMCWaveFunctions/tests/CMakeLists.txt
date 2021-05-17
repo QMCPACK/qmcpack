@@ -51,19 +51,28 @@ IF (NOT QMC_CUDA)
   ENDIF()
 ENDIF()
 
-SET(TRIALWF_SRC test_wf.cpp test_TrialWaveFunction.cpp test_wavefunction_factory.cpp
+SET(TRIALWF_SRC test_TrialWaveFunction.cpp test_wavefunction_factory.cpp
                 test_TrialWaveFunction_diamondC_2x1x1.cpp test_TrialWaveFunction_He.cpp
                 test_wavefunction_pool.cpp test_example_he.cpp test_lattice_gaussian.cpp)
 SET(SPOSET_SRC test_spo_collection_input_spline.cpp test_spo_collection_input_LCAO_xml.cpp
                test_spo_collection_input_MSD_LCAO_h5.cpp test_einset.cpp
                test_einset_spinor.cpp test_hybridrep.cpp test_pw.cpp ${MO_SRCS})
 SET(JASTROW_SRC test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomial_eeI_jastrow.cpp
-                test_rpa_jastrow.cpp test_user_jastrow.cpp test_kspace_jastrow.cpp
+                test_rpa_jastrow.cpp test_user_jastrow.cpp test_kspace_jastrow.cpp test_pade_jastrow.cpp
                 test_short_range_cusp_jastrow.cpp test_DiffTwoBodyJastrowOrbital.cpp)
-SET(DETERMINANT_SRC FakeSPO.cpp test_DiracDeterminantBatched.cpp test_dirac_det.cpp
+SET(DETERMINANT_SRC FakeSPO.cpp makeRngSpdMatrix.cpp test_DiracDeterminantBatched.cpp test_DiracDeterminantBatched.cpp
                     test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
                     test_multi_slater_determinant.cpp)
-	  
+
+IF(ENABLE_CUDA)
+  SET(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp)
+ENDIF(ENABLE_CUDA)
+IF(ENABLE_OFFLOAD)
+  SET(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
+ENDIF(ENABLE_OFFLOAD)
+
+
+
 FOREACH(CATEGORY trialwf sposet jastrow determinant)
   SET(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   SET(UTEST_NAME deterministic-unit_${UTEST_EXE})

@@ -234,7 +234,7 @@ void SpinDensityNew::registerOperatorEstimator(hid_t gid)
 
   for (int s = 0; s < species_.size(); ++s)
   {
-    h5desc_.emplace_back(std::make_unique<observable_helper>(species_.speciesName[s]));
+    h5desc_.emplace_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
     auto& oh = h5desc_.back();
     oh->set_dimensions(ng, 0);
     oh->open(sgid);

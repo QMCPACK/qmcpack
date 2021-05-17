@@ -173,7 +173,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
                      {11.40, 0, 0, 0}};
 
 
-  BsplineFunctor<RealType>* bf = j2->F[0];
+  BsplineFunctor<RealType>* bf = j2->getPairFunctions()[0];
 
   for (int i = 0; i < N; i++)
   {
@@ -237,10 +237,10 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   newpos2[0] = newpos - elec_.R[1];
   newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
   VP.makeMoves(1, elec_.R[1], newpos2);
-  j2->evaluateRatios(VP, ratios);
+  j2->evaluateRatios(VP, ratios2);
 
-  REQUIRE(std::real(ratios[0]) == Approx(0.9871985577));
-  REQUIRE(std::real(ratios[1]) == Approx(0.9989268241));
+  REQUIRE(std::real(ratios2[0]) == Approx(0.9871985577));
+  REQUIRE(std::real(ratios2[1]) == Approx(0.9989268241));
 
   //test acceptMove
   elec_.makeMove(1, newpos - elec_.R[1]);

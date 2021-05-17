@@ -132,8 +132,8 @@ struct LRBreakup
     int LWORK  = 10 * std::max(3 * std::min(N, M) + std::max(M, N), 5 * std::min(M, N));
     std::vector<mRealType> WORK(LWORK);
     int INFO;
-    LAPACK::gesvd(&JOBU, &JOBVT, &M, &N, Atrans.data(), &LDA, &S[0], U.data(), &LDU, V.data(), &LDVT, &WORK[0], &LWORK,
-                  &INFO);
+    LAPACK::gesvd(JOBU, JOBVT, M, N, Atrans.data(), LDA, &S[0], U.data(), LDU, V.data(), LDVT, &WORK[0], LWORK,
+                  INFO);
     assert(INFO == 0);
     int ur = U.rows();
     int uc = U.cols();
@@ -258,8 +258,8 @@ struct LRBreakup
     int LWORK  = 10 * std::max(3 * std::min(N, M) + std::max(M, N), 5 * std::min(M, N));
     std::vector<mRealType> WORK(LWORK);
     int INFO;
-    LAPACK::gesvd(&JOBU, &JOBVT, &M, &N, Atrans.data(), &LDA, &S[0], U.data(), &LDU, V.data(), &LDVT, &WORK[0], &LWORK,
-                  &INFO);
+    LAPACK::gesvd(JOBU, JOBVT, M, N, Atrans.data(), LDA, &S[0], U.data(), LDU, V.data(), LDVT, &WORK[0], LWORK,
+                  INFO);
     assert(INFO == 0);
     int ur = U.rows();
     int uc = U.cols();
@@ -508,8 +508,8 @@ typename LRBreakup<BreakupBasis>::mRealType LRBreakup<BreakupBasis>::DoBreakup(m
   int LWORK  = 10 * std::max(3 * std::min(n, m) + std::max(m, n), 5 * std::min(m, n));
   std::vector<mRealType> WORK(LWORK);
   int INFO;
-  LAPACK::gesvd(&JOBU, &JOBVT, &m, &n, Atrans.data(), &LDA, &S[0], U.data(), &LDU, V.data(), &LDVT, &WORK[0], &LWORK,
-                &INFO);
+  LAPACK::gesvd(JOBU, JOBVT, m, n, Atrans.data(), LDA, &S[0], U.data(), LDU, V.data(), LDVT, &WORK[0], LWORK,
+                INFO);
   assert(INFO == 0);
   int ur = U.rows();
   int uc = U.cols();
@@ -678,8 +678,8 @@ typename LRBreakup<BreakupBasis>::mRealType LRBreakup<BreakupBasis>::DoGradBreak
   int LWORK  = 10 * std::max(3 * std::min(n, m) + std::max(m, n), 5 * std::min(m, n));
   std::vector<mRealType> WORK(LWORK);
   int INFO;
-  LAPACK::gesvd(&JOBU, &JOBVT, &m, &n, Atrans.data(), &LDA, &S[0], U.data(), &LDU, V.data(), &LDVT, &WORK[0], &LWORK,
-                &INFO);
+  LAPACK::gesvd(JOBU, JOBVT, m, n, Atrans.data(), LDA, &S[0], U.data(), LDU, V.data(), LDVT, &WORK[0], LWORK,
+                INFO);
   assert(INFO == 0);
   int ur = U.rows();
   int uc = U.cols();
@@ -848,8 +848,8 @@ typename LRBreakup<BreakupBasis>::mRealType LRBreakup<BreakupBasis>::DoStrainBre
   int LWORK  = 10 * std::max(3 * std::min(n, m) + std::max(m, n), 5 * std::min(m, n));
   std::vector<mRealType> WORK(LWORK);
   int INFO;
-  LAPACK::gesvd(&JOBU, &JOBVT, &m, &n, Atrans.data(), &LDA, &S[0], U.data(), &LDU, V.data(), &LDVT, &WORK[0], &LWORK,
-                &INFO);
+  LAPACK::gesvd(JOBU, JOBVT, m, n, Atrans.data(), LDA, &S[0], U.data(), LDU, V.data(), LDVT, &WORK[0], LWORK,
+                INFO);
   assert(INFO == 0);
   int ur = U.rows();
   int uc = U.cols();
@@ -1090,16 +1090,16 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(mRealType* chisqrlist,
   int LWORK  = 10 * std::max(3 * std::min(n, m) + std::max(m, n), 5 * std::min(m, n));
   std::vector<mRealType> WORK(LWORK);
   int INFO;
-  LAPACK::gesvd(&JOBU, &JOBVT, &m, &n, A_trans.data(), &LDA, &S[0], U.data(), &LDU, V.data(), &LDVT, &WORK[0], &LWORK,
-                &INFO);
+  LAPACK::gesvd(JOBU, JOBVT, m, n, A_trans.data(), LDA, &S[0], U.data(), LDU, V.data(), LDVT, &WORK[0], LWORK,
+                INFO);
   assert(INFO == 0);
 
-  LAPACK::gesvd(&JOBU, &JOBVT, &m, &n, Af_trans.data(), &LDA, &Sf[0], Uf.data(), &LDU, Vf.data(), &LDVT, &WORK[0],
-                &LWORK, &INFO);
+  LAPACK::gesvd(JOBU, JOBVT, m, n, Af_trans.data(), LDA, &Sf[0], Uf.data(), LDU, Vf.data(), LDVT, &WORK[0],
+                LWORK, INFO);
   assert(INFO == 0);
 
-  LAPACK::gesvd(&JOBU, &JOBVT, &m, &n, As_trans.data(), &LDA, &Ss[0], Us.data(), &LDU, Vs.data(), &LDVT, &WORK[0],
-                &LWORK, &INFO);
+  LAPACK::gesvd(JOBU, JOBVT, m, n, As_trans.data(), LDA, &Ss[0], Us.data(), LDU, Vs.data(), LDVT, &WORK[0],
+                LWORK, INFO);
   assert(INFO == 0);
 
   int ur = U.rows();

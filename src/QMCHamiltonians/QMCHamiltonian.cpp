@@ -233,7 +233,7 @@ void QMCHamiltonian::resetObservables(int start, int ncollects)
   numCollectables = ncollects;
 }
 
-void QMCHamiltonian::registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void QMCHamiltonian::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   for (int i = 0; i < H.size(); ++i)
     H[i]->registerObservables(h5desc, gid);
@@ -241,7 +241,7 @@ void QMCHamiltonian::registerObservables(std::vector<observable_helper*>& h5desc
     auxH[i]->registerObservables(h5desc, gid);
 }
 
-void QMCHamiltonian::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void QMCHamiltonian::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   //The physical operators cannot add to collectables
   for (int i = 0; i < auxH.size(); ++i)
@@ -854,6 +854,28 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& 
 
   for (int i = 0; i < H.size(); ++i)
     localEnergy += H[i]->evaluateWithIonDerivs(P, ions, psi, hf_term, pulay_terms);
+
+  for (int iat = 0; iat < ions.getTotalNum(); iat++)
+  {
+    wfgradraw_[iat] = psi.evalGradSource(P, ions, iat);
+    convert(wfgradraw_[iat], wf_grad[iat]);
+  }
+  return localEnergy;
+}
+
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(ParticleSet& P,
+                                                                   ParticleSet& ions,
+                                                                   TrialWaveFunction& psi,
+                                                                   ParticleSet::ParticlePos_t& hf_term,
+                                                                   ParticleSet::ParticlePos_t& pulay_terms,
+                                                                   ParticleSet::ParticlePos_t& wf_grad)
+{
+  ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
+  wfgradraw_           = 0.0;
+  RealType localEnergy = 0.0;
+
+  for (int i = 0; i < H.size(); ++i)
+    localEnergy += H[i]->evaluateWithIonDerivsDeterministic(P, ions, psi, hf_term, pulay_terms);
 
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
   {

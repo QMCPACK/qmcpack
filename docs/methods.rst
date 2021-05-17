@@ -1361,7 +1361,7 @@ where :math:`N` is the current population.
       The v1 and v3 algorithms are size-consistent and are important advances over the previous v0 non-size-consistent algorithm. We highly recommend investigating the importance of size-consistency.
 
 
--  ``scaleweight``: This is the scaling weight per Umrigar/Nightengale.
+-  ``scaleweight``: This is the scaling weight per Umrigar/Nightingale.
    CUDA only.
 
 -  ``MaxAge``: Set the weight of a walker to min(currentweight,0.5)
@@ -1544,7 +1544,7 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
 
 .. code-block::
   :caption: The following is an example of a minimal DMC section using the ``dmc_batch`` driver
-  :name: Listing 48
+  :name: Listing 48b
 
   <qmc method="dmc_batch" move="pbyp" target="e">
     <parameter name="walkers_per_rank">256</parameter>

@@ -61,6 +61,13 @@ public:
                                  ParticleSet::ParticlePos_t& hf_terms,
                                  ParticleSet::ParticlePos_t& pulay_terms) override;
 
+  Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
+                                              ParticleSet& ions,
+                                              TrialWaveFunction& psi,
+                                              ParticleSet::ParticlePos_t& hf_terms,
+                                              ParticleSet::ParticlePos_t& pulay_terms) override;
+
+
   /** set non local moves options
    * @param cur the xml input
    */
@@ -120,8 +127,12 @@ public:
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
 
-  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const override;
+  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override;
 
+  /** Set the flag whether to compute forces or not.
+   * @param val The boolean value for computing forces
+   */ 
+  inline void setComputeForces(bool val) override {ComputeForces=val;}
 protected:
   ///random number generator
   RandomGenerator_t* myRNG;
@@ -183,6 +194,12 @@ private:
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               bool Tmove);
 
+  void evalIonDerivsImpl(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos_t& hf_terms,
+                         ParticleSet::ParticlePos_t& pulay_terms,
+                         bool keepGrid = false);
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set

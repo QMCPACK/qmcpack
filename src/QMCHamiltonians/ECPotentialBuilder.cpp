@@ -62,24 +62,28 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     soPot.resize(ng);
     L2Pot.resize(ng);
   }
-  std::string ecpFormat("table");
-  std::string NLPP_algo(omp_get_nested() ? "batched" : "default");
-#ifdef ENABLE_OFFLOAD
-  NLPP_algo = "batched"; // set "batched" as the default
-#endif
-  std::string use_DLA("no");
-  std::string pbc("yes");
-  std::string forces("no");
-  std::string physicalSO("no");
+  std::string ecpFormat;
+  std::string NLPP_algo;
+  std::string use_DLA;
+  std::string pbc;
+  std::string forces;
+  std::string physicalSO;
 
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(ecpFormat, "format");
-  pAttrib.add(NLPP_algo, "algorithm");
-  pAttrib.add(use_DLA, "DLA");
-  pAttrib.add(pbc, "pbc");
-  pAttrib.add(forces, "forces");
-  pAttrib.add(physicalSO, "physicalSO");
+  pAttrib.add(ecpFormat, "format", {"table", "xml"});
+  pAttrib.add(NLPP_algo, "algorithm", {"", "batched", "non-batched"});
+  pAttrib.add(use_DLA, "DLA", {"no", "yes"});
+  pAttrib.add(pbc, "pbc", {"yes", "no"});
+  pAttrib.add(forces, "forces", {"no", "yes"});
+  pAttrib.add(physicalSO, "physicalSO", {"no", "yes"});
   pAttrib.put(cur);
+
+  if (NLPP_algo.empty())
+#ifdef ENABLE_OFFLOAD
+    NLPP_algo = "batched";
+#else
+    NLPP_algo = omp_get_nested() ? "batched" : "non-batched";
+#endif
 
   bool doForces = (forces == "yes") || (forces == "true");
   if (use_DLA == "yes")

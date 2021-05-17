@@ -1271,14 +1271,14 @@ Next, make some room in the ``stat.h5`` file by overriding the registerCollectab
 ::
 
   // In SpeciesKineticEnergy.cpp
-  void SpeciesKineticEnergy::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+  void SpeciesKineticEnergy::registerCollectables(std::vector<observable_helper>& h5desc, hid_t gid) const
   {
     if (hdf5_out)
     {
       std::vector<int> ndim(1,num_species);
-      observable_helper* h5o=new observable_helper(myName);
-      h5o->set_dimensions(ndim,h5_index);
-      h5o->open(gid);
+      observable_helper h5o(myName);
+      h5o.set_dimensions(ndim,h5_index);
+      h5o.open(gid);
       h5desc.push_back(h5o);
     }
   }

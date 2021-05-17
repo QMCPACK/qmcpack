@@ -79,20 +79,14 @@ void TwoBodyJastrowOrbitalBspline<FT>::addFunc(int ia, int ib, FT* j)
   }
   else
   {
-    if (PtclRef.R.size() == 2)
-    {
-      // a very special case, 1 up + 1 down
-      // uu/dd was prevented by the builder
+    // a very special case, 1 particle of each type (e.g. 1 up + 1 down)
+    // uu/dd/etc. was prevented by the builder
+    if (PtclRef.R.size() == this->NumGroups)
       for (int ig = 0; ig < this->NumGroups; ++ig)
-        for (int jg = 0; jg < this->NumGroups; ++jg)
-          GPUSplines[ig * this->NumGroups + jg] = newSpline;
-    }
-    else
-    {
-      // generic case
-      GPUSplines[ia * this->NumGroups + ib] = newSpline;
-      GPUSplines[ib * this->NumGroups + ia] = newSpline;
-    }
+        GPUSplines[ig * this->NumGroups + ig] = newSpline;
+    // generic case
+    GPUSplines[ia * this->NumGroups + ib] = newSpline;
+    GPUSplines[ib * this->NumGroups + ia] = newSpline;
   }
 }
 

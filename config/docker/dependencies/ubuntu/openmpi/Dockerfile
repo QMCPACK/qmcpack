@@ -25,6 +25,8 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     sudo \
                     curl \
                     rsync \
+                    wget \
+                    software-properties-common \
                     -y
 
 # Python packages for tests
@@ -33,11 +35,13 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     python3-h5py \
                     python3-pandas \
                     -y
-                
+
 # must add a user different from root 
 # to run MPI executables
 RUN useradd -ms /bin/bash user
+# allow in sudoers to install packages
 RUN adduser user sudo
+RUN echo "user:user" | chpasswd
 
 USER user
 WORKDIR /home/user

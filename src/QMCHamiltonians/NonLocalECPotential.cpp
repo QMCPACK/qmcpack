@@ -308,11 +308,11 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
                   << std::endl;
     O_leader.mw_res_ = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
     for (int ig = 0; ig < O_leader.PPset.size(); ++ig)
-    if (O_leader.PPset[ig]->getVP())
-    {
-      O_leader.PPset[ig]->getVP()->createResource(O_leader.mw_res_->collection);
-      break;
-    }
+      if (O_leader.PPset[ig]->getVP())
+      {
+        O_leader.PPset[ig]->getVP()->createResource(O_leader.mw_res_->collection);
+        break;
+      }
   }
 
   auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
@@ -386,11 +386,13 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   }
 }
 
-NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
-                                                                         ParticleSet& ions,
-                                                                         TrialWaveFunction& psi,
-                                                                         ParticleSet::ParticlePos_t& hf_terms,
-                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+
+void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
+                                            ParticleSet& ions,
+                                            TrialWaveFunction& psi,
+                                            ParticleSet::ParticlePos_t& hf_terms,
+                                            ParticleSet::ParticlePos_t& pulay_terms,
+                                            bool keepGrid)
 {
   //We're going to ignore psi and use the internal Psi.
   //
@@ -402,10 +404,12 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
   PulayTerm = 0;
 
   Value = 0.0;
-
-  for (int ipp = 0; ipp < PPset.size(); ipp++)
-    if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
+  if (!keepGrid)
+  {
+    for (int ipp = 0; ipp < PPset.size(); ipp++)
+      if (PPset[ipp])
+        PPset[ipp]->randomize_grid(*myRNG);
+  }
   //loop over all the ions
   const auto& myTable = P.getDistTable(myTableIndex);
   // clear all the electron and ion neighbor lists
@@ -437,6 +441,26 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
 
   hf_terms -= forces;
   pulay_terms -= PulayTerm;
+}
+
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
+                                                                         ParticleSet& ions,
+                                                                         TrialWaveFunction& psi,
+                                                                         ParticleSet::ParticlePos_t& hf_terms,
+                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+{
+  evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms);
+  return Value;
+}
+
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivsDeterministic(
+    ParticleSet& P,
+    ParticleSet& ions,
+    TrialWaveFunction& psi,
+    ParticleSet::ParticlePos_t& hf_terms,
+    ParticleSet::ParticlePos_t& pulay_terms)
+{
+  evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms, true);
   return Value;
 }
 
@@ -653,22 +677,18 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
   }
 }
 
-void NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
+void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const
 {
   OperatorBase::registerObservables(h5list, gid);
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
-    ndim[0]                 = Nnuc;
-    ndim[1]                 = OHMMS_DIM;
-    observable_helper* h5o1 = new observable_helper("FNL");
-    h5o1->set_dimensions(ndim, FirstForceIndex);
-    h5o1->open(gid);
-    h5list.push_back(h5o1);
-    //    observable_helper* h5o2 = new observable_helper("FNL_Pulay");
-    //    h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
-    //    h5o2->open(gid);
-    //    h5list.push_back(h5o2);
+    ndim[0] = Nnuc;
+    ndim[1] = OHMMS_DIM;
+    h5list.emplace_back("FNL");
+    auto& h5o1 = h5list.back();
+    h5o1.set_dimensions(ndim, FirstForceIndex);
+    h5o1.open(gid);
   }
 }
 

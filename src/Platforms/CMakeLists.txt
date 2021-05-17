@@ -17,7 +17,8 @@ SET(HOST_SRCS
 )
 
 SET(DEVICE_SRCS
-    MemoryUsage.cpp
+  MemoryUsage.cpp
+  DualAllocator.cpp
 )
 
 ADD_LIBRARY(platform_host ${HOST_SRCS})
