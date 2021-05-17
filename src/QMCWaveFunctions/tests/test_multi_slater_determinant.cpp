@@ -134,13 +134,13 @@ void test_LiH_msd(const std::string& spo_xml_string,
   twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 
   // Numbers not validated
-  REQUIRE(dlogpsi[0] == ValueApprox(0.006449058893092842));
-  REQUIRE(dlogpsi[1] == ValueApprox(-0.01365690177395768));
-  REQUIRE(dlogpsi[nparam - 1] == ValueApprox(0.1641910574099575));
+  CHECK(dlogpsi[0] == ValueApprox(0.006449058893092842));
+  CHECK(dlogpsi[1] == ValueApprox(-0.01365690177395768));
+  CHECK(dlogpsi[nparam - 1] == ValueApprox(0.1641910574099575));
 
-  REQUIRE(dhpsioverpsi[0] == ValueApprox(0.2207480131794138));
-  REQUIRE(dhpsioverpsi[1] == ValueApprox(0.009316665149067847));
-  REQUIRE(dhpsioverpsi[nparam - 1] == ValueApprox(0.982665984797896));
+  CHECK(dhpsioverpsi[0] == ValueApprox(0.2207480131794138));
+  CHECK(dhpsioverpsi[1] == ValueApprox(0.009316665149067847));
+  CHECK(dhpsioverpsi[nparam - 1] == ValueApprox(0.982665984797896));
 
   if (test_batched)
   {
