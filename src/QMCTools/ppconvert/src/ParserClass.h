@@ -60,7 +60,7 @@ public:
   bool NextLine();
   void SavePos();
   void RestorePos();
-  inline void Reset();
+  void Reset();
 
   MemParserClass()
   {
