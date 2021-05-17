@@ -6,7 +6,7 @@ function(run_tests)
 endfunction()
 
 if(NOT DEFINED ENV{TESTS_ARGUMENTS})
-  set(TESTS_ARGUMENTS "-R unit")
+  set(TESTS_ARGUMENTS "-L unit")
 else()
   set(TESTS_ARGUMENTS $ENV{TESTS_ARGUMENTS})
 endif()
