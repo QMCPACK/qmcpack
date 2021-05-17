@@ -120,7 +120,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
          <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\"> \
+         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
            <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
            <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
          </pairpot> \
@@ -307,7 +307,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
          <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\"> \
+         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
            <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
            <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
          </pairpot> \
@@ -492,7 +492,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
          <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\"> \
+         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
            <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
            <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
          </pairpot> \
@@ -647,7 +647,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
          <pairpot type=\"coulomb\" name=\"IonIon\" source=\"ion0\" target=\"ion0\"/> \
-         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\"> \
+         <pairpot name=\"PseudoPot\" type=\"pseudo\" source=\"ion0\" wavefunction=\"psi0\" format=\"xml\" algorithm=\"non-batched\"> \
            <pseudo elementType=\"C\" href=\"C.ccECP.xml\"/> \
            <pseudo elementType=\"N\" href=\"N.ccECP.xml\"/> \
          </pairpot> \

@@ -36,6 +36,7 @@ namespace qmcplusplus
 using RealType     = QMCTraits::RealType;
 using ValueType    = QMCTraits::ValueType;
 using ComplexType  = QMCTraits::ComplexType;
+using PosType      = QMCTraits::PosType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
 using PsiValueType = QMCTraits::QTFull::ValueType;
 
@@ -93,7 +94,6 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 
   check_matrix(ddb.psiM, b);
 
-
   ParticleSet::GradType grad;
   PsiValueType det_ratio  = ddb.ratioGrad(elec, 0, grad);
   PsiValueType det_ratio1 = 0.178276269185;
@@ -112,6 +112,43 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
   b(2, 2) = 0.9105960265;
 
   check_matrix(ddb.psiM, b);
+
+  // set virtutal particle position
+  PosType newpos(0.3, 0.2, 0.5);
+
+  elec.makeVirtualMoves(newpos);
+  std::vector<ValueType> ratios(elec.getTotalNum());
+  ddb.evaluateRatiosAlltoOne(elec, ratios);
+
+  CHECK(std::real(ratios[0]) == Approx(1.2070809985));
+  CHECK(std::real(ratios[1]) == Approx(0.2498726439));
+  CHECK(std::real(ratios[2]) == Approx(-1.3145695364));
+
+  elec.makeMove(0, newpos - elec.R[0]);
+  PsiValueType ratio_0 = ddb.ratio(elec, 0);
+  elec.rejectMove(0);
+
+  CHECK(std::real(ratio_0) == Approx(-0.5343861437));
+
+  VirtualParticleSet VP(elec, 2);
+  std::vector<PosType> newpos2(2);
+  std::vector<ValueType> ratios2(2);
+  newpos2[0] = newpos - elec.R[1];
+  newpos2[1] = PosType(0.2, 0.5, 0.3) - elec.R[1];
+  VP.makeMoves(1, elec.R[1], newpos2);
+  ddb.evaluateRatios(VP, ratios2);
+
+  CHECK(std::real(ratios2[0]) == Approx(0.4880285278));
+  CHECK(std::real(ratios2[1]) == Approx(0.9308456444));
+
+  //test acceptMove
+  elec.makeMove(1, newpos - elec.R[1]);
+  PsiValueType ratio_1 = ddb.ratio(elec, 1);
+  ddb.acceptMove(elec, 1);
+  elec.acceptMove(1);
+
+  CHECK(std::real(ratio_1) == Approx(0.9308456444));
+  CHECK(std::real(ddb.LogValue) == Approx(1.9891064655));
 }
 
 //#define DUMP_INFO

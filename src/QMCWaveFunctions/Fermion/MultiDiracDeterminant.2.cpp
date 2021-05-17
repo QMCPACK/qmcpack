@@ -189,14 +189,15 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
 #endif
 }
 
-void MultiDiracDeterminant::evaluateDetsForPtclMove(ParticleSet& P, int iat)
+void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl)
 {
   UpdateMode = ORB_PBYP_RATIO;
   RatioTimer.start();
   evalOrbTimer.start();
   Phi->evaluateValue(P, iat, psiV);
   evalOrbTimer.stop();
-  WorkingIndex = iat - FirstIndex;
+  const int WorkingIndex = (refPtcl < 0 ? iat : refPtcl) - FirstIndex;
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   if (NumPtcls == 1)
   {
     std::vector<ci_configuration2>::iterator it(ciConfigList->begin());
@@ -245,13 +246,14 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(ParticleSet& P, int iat)
   RatioTimer.stop();
 }
 
-void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat)
+void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
   evalOrb1Timer.start();
   Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
   evalOrb1Timer.stop();
-  WorkingIndex = iat - FirstIndex;
+  const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   if (NumPtcls == 1)
   {
     std::vector<ci_configuration2>::iterator it(ciConfigList->begin());
@@ -327,7 +329,8 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int 
 
 void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
 {
-  WorkingIndex = iat - FirstIndex;
+  const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
 
   const auto& confgList = *ciConfigList;
   auto it               = confgList[0].occup.begin(); //just to avoid using the type
@@ -382,7 +385,8 @@ void MultiDiracDeterminant::evaluateAllForPtclMove(const ParticleSet& P, int iat
 {
   UpdateMode = ORB_PBYP_ALL;
   Phi->evaluateVGL(P, iat, psiV, dpsiV, d2psiV);
-  WorkingIndex = iat - FirstIndex;
+  const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   if (NumPtcls == 1)
   {
     std::vector<ci_configuration2>::const_iterator it(ciConfigList->begin());
