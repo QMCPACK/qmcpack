@@ -20,6 +20,7 @@
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "QMCDrivers/VMC/SOVMCUpdatePbyP.h"
+#include "QMCDrivers/VMC/SOVMCUpdateAll.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
@@ -187,7 +188,7 @@ void VMC::resetRun()
         }
         else
         {
-          APP_ABORT("Spin moves only implemented with PbyP moves\n");
+          Movers[ip] = new SOVMCUpdateAll(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
         }
       }
       else
