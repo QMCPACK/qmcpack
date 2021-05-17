@@ -7,8 +7,8 @@ EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/O.
 add_test(NAME ${THISTESTNAME}
   COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/O_test.sh $<TARGET_FILE:ppconvert>
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
-
-SET_TESTS_PROPERTIES(${THISTESTNAME} PROPERTIES LABELS "deterministic")
+# Add label when asan clean
+#SET_TESTS_PROPERTIES(${THISTESTNAME} PROPERTIES LABELS "deterministic")
 
 find_program(HAVE_NUMDIFF numdiff)
 IF (HAVE_NUMDIFF)
@@ -16,5 +16,7 @@ IF (HAVE_NUMDIFF)
     COMMAND numdiff -a 0.001 ${CMAKE_CURRENT_BINARY_DIR}/O.BFD.xml ${PROJECT_SOURCE_DIR}/../../tests/solids/monoO_1x1x1_pp/O.BFD.xml
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
   SET_TESTS_PROPERTIES( ppconvert_o_diff
-    PROPERTIES DEPENDS ppconvert_runs LABELS "deterministic")
+    PROPERTIES DEPENDS ppconvert_runs)
+    # Add label when asan clean
+    # LABELS "deterministic")
 ENDIF (HAVE_NUMDIFF)
