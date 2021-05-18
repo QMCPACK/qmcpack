@@ -64,6 +64,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
   int massIdx                = tspecies.addAttribute("mass");
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
+  // Necessary to set mass
+  elec_.resetGroups();
 
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
@@ -89,6 +91,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   elec_.update();
 
   auto& twf(*wf_factory.getTWF());
+  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
   std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
@@ -117,6 +120,27 @@ void test_LiH_msd(const std::string& spo_xml_string,
   ratio = twf.calcRatio(elec_, 1);
   std::cout << "twf.calcRatio ratio " << ratio << std::endl;
   CHECK(ratio == ValueApprox(1.374307585));
+
+
+  opt_variables_type active;
+  twf.checkInVariables(active);
+
+  int nparam = active.size_of_active();
+  REQUIRE(nparam == 1486);
+
+  using ValueType = QMCTraits::ValueType;
+  std::vector<ValueType> dlogpsi(nparam);
+  std::vector<ValueType> dhpsioverpsi(nparam);
+  twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
+
+  // Numbers not validated
+  CHECK(dlogpsi[0] == ValueApprox(0.006449058893092842));
+  CHECK(dlogpsi[1] == ValueApprox(-0.01365690177395768));
+  CHECK(dlogpsi[nparam - 1] == ValueApprox(0.1641910574099575));
+
+  CHECK(dhpsioverpsi[0] == ValueApprox(0.2207480131794138));
+  CHECK(dhpsioverpsi[1] == ValueApprox(0.009316665149067847));
+  CHECK(dhpsioverpsi[nparam - 1] == ValueApprox(0.982665984797896));
 
   if (test_batched)
   {
