@@ -681,8 +681,8 @@ production, a platform-optimized BLAS should be used.
 
 ::
 
-  apt-get cmake g++ openmpi-bin libopenmpi-dev libboost-dev
-  apt-get libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
+  sudo apt-get install cmake g++ openmpi-bin libopenmpi-dev libboost-dev
+  sudo apt-get install libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
   export CXX=mpiCC
   cd build
   cmake ..
