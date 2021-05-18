@@ -141,13 +141,13 @@ public:
   }
 
   void evaluateDerivativesWF(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           const MultiDiracDeterminant& pseudo_dn,
-                           const PsiValueType& psiCurrent,
-                           const std::vector<ValueType>& Coeff,
-                           const std::vector<size_t>& C2node_up,
-                           const std::vector<size_t>& C2node_dn)
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi,
+                             const MultiDiracDeterminant& pseudo_dn,
+                             const PsiValueType& psiCurrent,
+                             const std::vector<ValueType>& Coeff,
+                             const std::vector<size_t>& C2node_up,
+                             const std::vector<size_t>& C2node_dn)
   {
     if (!Optimizable)
       return;
@@ -159,21 +159,8 @@ public:
     const ValueMatrix_t& Minv_up      = psiMinv;
     const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
 
-    Phi->evaluateDerivativesWF(P,
-                                optvars, 
-                                dlogpsi, 
-                                psiCurrent, 
-                                Coeff, 
-                                C2node_up, 
-                                C2node_dn, 
-                                detValues_up,
-                                detValues_dn, 
-                                M_up, 
-                                M_dn, 
-                                Minv_up, 
-                                Minv_dn, 
-                                *detData, 
-                                lookup_tbl);
+    Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn,
+                               M_up, M_dn, Minv_up, Minv_dn, *detData, lookup_tbl);
   }
 
 
@@ -220,7 +207,9 @@ public:
     return PsiValueType();
   }
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
@@ -392,9 +381,11 @@ public:
 
   /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
   void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
+  void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
 
   /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
   void evaluateGrads(ParticleSet& P, int iat);
+  void evaluateGradsWithSpin(ParticleSet& P, int iat);
 
   void evaluateAllForPtclMove(const ParticleSet& P, int iat);
   // full evaluation of all the structures from scratch, used in evaluateLog for example
@@ -427,6 +418,7 @@ public:
   ValueVector_t detValues, new_detValues;
   GradMatrix_t grads, new_grads;
   ValueMatrix_t lapls, new_lapls;
+  ValueMatrix_t spingrads, new_spingrads;
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
@@ -437,12 +429,14 @@ public:
   ValueMatrix_t dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
   ValueMatrix_t d2psiM, d2psiM_temp;
+  ValueMatrix_t dspin_psiM, dspin_spinM_temp;
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV, psiV_temp;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
   ValueVector_t workV1, workV2;
+  ValueVector_t dspin_psiV;
 
   ValueMatrix_t dotProducts;
 

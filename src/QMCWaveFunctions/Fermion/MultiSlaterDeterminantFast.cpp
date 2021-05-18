@@ -240,6 +240,34 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   return psi;
 }
 
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin_impl(ParticleSet& P,
+                                                                                      int iat,
+                                                                                      bool newpos,
+                                                                                      GradType& g_at,
+                                                                                      ComplexType& sg_at)
+{
+  const int det_id = getDetID(iat);
+
+  if (newpos)
+    Dets[det_id]->evaluateDetsAndGradsForPtclMoveWithSpin(P, iat);
+  else
+    Dets[det_id]->evaluateGradsWithSpin(P, iat);
+
+  const GradMatrix_t& grads            = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
+  const ValueType* restrict detValues0 = (newpos) ? Dets[det_id]->new_detValues.data() : Dets[det_id]->detValues.data();
+  const ValueMatrix_t& spingrads       = (newpos) ? Dets[det_id]->new_spingrads : Dets[det_id]->spingrads;
+  const size_t noffset                 = Dets[det_id]->FirstIndex;
+
+  PsiValueType psi(0);
+  for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
+  {
+    psi += detValues0[i] * C_otherDs[det_id][i];
+    g_at += C_otherDs[det_id][i] * grads(i, iat - noffset);
+    sg_at += C_otherDs[det_id][i] * spingrads(i, iat - noffset);
+  }
+  return psi;
+}
+
 WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no_precompute(ParticleSet& P,
                                                                                             int iat,
                                                                                             bool newpos,
@@ -275,6 +303,44 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no
   return psi;
 }
 
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin_impl_no_precompute(ParticleSet& P,
+                                                                                                    int iat,
+                                                                                                    bool newpos,
+                                                                                                    GradType& g_at,
+                                                                                                    ComplexType& sg_at)
+{
+  const int det_id = getDetID(iat);
+
+  if (newpos)
+    Dets[det_id]->evaluateDetsAndGradsForPtclMoveWithSpin(P, iat);
+  else
+    Dets[det_id]->evaluateGradsWithSpin(P, iat);
+
+  const GradMatrix_t& grads            = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
+  const ValueType* restrict detValues0 = (newpos) ? Dets[det_id]->new_detValues.data() : Dets[det_id]->detValues.data();
+  const ValueMatrix_t& spingrads       = (newpos) ? Dets[det_id]->new_spingrads : Dets[det_id]->spingrads;
+  const size_t* restrict det0          = (*C2node)[det_id].data();
+  const ValueType* restrict cptr       = C->data();
+  const size_t nc                      = C->size();
+  const size_t noffset                 = Dets[det_id]->FirstIndex;
+  PsiValueType psi(0);
+  for (size_t i = 0; i < nc; ++i)
+  {
+    const size_t d0 = det0[i];
+    //const size_t d1=det1[i];
+    //psi +=  cptr[i]*detValues0[d0]        * detValues1[d1];
+    //g_at += cptr[i]*grads(d0,iat-noffset) * detValues1[d1];
+    ValueType t = cptr[i];
+    for (size_t id = 0; id < Dets.size(); id++)
+      if (id != det_id)
+        t *= Dets[id]->detValues[(*C2node)[id][i]];
+    psi += t * detValues0[d0];
+    g_at += t * grads(d0, iat - noffset);
+    sg_at += t * spingrads(d0, iat - noffset);
+  }
+  return psi;
+}
+
 WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
 {
   BackFlowStopper("Fast MSD+BF: evalGrad\n");
@@ -289,6 +355,27 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet
     psi = evalGrad_impl_no_precompute(P, iat, false, grad_iat);
 
   grad_iat *= (PsiValueType(1.0) / psi);
+  return grad_iat;
+}
+
+WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGradWithSpin(ParticleSet& P,
+                                                                             int iat,
+                                                                             ComplexType& spingrad)
+{
+  BackFlowStopper("Fast MSD+BF: evalGrad\n");
+
+  ScopedTimer local_timer(EvalGradTimer);
+
+  GradType grad_iat;
+  PsiValueType psi;
+  ComplexType spingrad_iat;
+  if (use_pre_computing_)
+    psi = evalGradWithSpin_impl(P, iat, false, grad_iat, spingrad_iat);
+  else
+    psi = evalGradWithSpin_impl_no_precompute(P, iat, false, grad_iat, spingrad_iat);
+
+  grad_iat *= (PsiValueType(1.0) / psi);
+  spingrad += spingrad_iat / psi;
   return grad_iat;
 }
 
@@ -307,6 +394,30 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
     psiNew = evalGrad_impl_no_precompute(P, iat, true, dummy);
 
   grad_iat += static_cast<ValueType>(PsiValueType(1.0) / psiNew) * dummy;
+  curRatio = psiNew / psiCurrent;
+  return curRatio;
+}
+
+WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGradWithSpin(ParticleSet& P,
+                                                                                  int iat,
+                                                                                  GradType& grad_iat,
+                                                                                  ComplexType& spingrad_iat)
+{
+  BackFlowStopper("Fast MSD+BF: ratioGrad\n");
+
+  ScopedTimer local_timer(RatioGradTimer);
+  UpdateMode = ORB_PBYP_PARTIAL;
+
+  GradType dummy;
+  ComplexType spindummy;
+  PsiValueType psiNew;
+  if (use_pre_computing_)
+    psiNew = evalGradWithSpin_impl(P, iat, true, dummy, spindummy);
+  else
+    psiNew = evalGradWithSpin_impl_no_precompute(P, iat, true, dummy, spindummy);
+
+  grad_iat += static_cast<ValueType>(PsiValueType(1.0) / psiNew) * dummy;
+  spingrad_iat += static_cast<ValueType>(PsiValueType(1.0) / psiNew) * spindummy;
   curRatio = psiNew / psiCurrent;
   return curRatio;
 }

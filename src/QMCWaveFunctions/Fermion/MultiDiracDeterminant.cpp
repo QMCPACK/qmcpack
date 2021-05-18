@@ -106,7 +106,9 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
 {
   evalWTimer.start();
   if (fromScratch)
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+  {
+    Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM, dspin_psiM);
+  }
   if (NumPtcls == 1)
   {
     //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminant is potentially dangerous. Fix later");
@@ -115,12 +117,14 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     ValueVector_t::iterator det(detValues.begin());
     ValueMatrix_t::iterator lap(lapls.begin());
     GradMatrix_t::iterator grad(grads.begin());
+    ValueMatrix_t::iterator spingrad(spingrads.begin());
     while (it != last)
     {
-      int orb   = (it++)->occup[0];
-      *(det++)  = psiM(0, orb);
-      *(lap++)  = d2psiM(0, orb);
-      *(grad++) = dpsiM(0, orb);
+      int orb       = (it++)->occup[0];
+      *(det++)      = psiM(0, orb);
+      *(lap++)      = d2psiM(0, orb);
+      *(grad++)     = dpsiM(0, orb);
+      *(spingrad++) = dspin_psiM(0, orb);
     }
   }
   else
@@ -155,15 +159,18 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     {
       it = confgList[ReferenceDeterminant].occup.begin();
       GradType gradRatio;
-      ValueType ratioLapl = 0.0;
+      ValueType ratioLapl     = 0.0;
+      ValueType spingradRatio = 0.0;
       for (size_t i = 0; i < NumPtcls; i++)
       {
         gradRatio += psiMinv(i, iat) * dpsiM(iat, *it);
         ratioLapl += psiMinv(i, iat) * d2psiM(iat, *it);
+        spingradRatio += psiMinv(i, iat) * dspin_psiM(iat, *it);
         it++;
       }
-      grads(ReferenceDeterminant, iat) = det0 * gradRatio;
-      lapls(ReferenceDeterminant, iat) = det0 * ratioLapl;
+      grads(ReferenceDeterminant, iat)     = det0 * gradRatio;
+      lapls(ReferenceDeterminant, iat)     = det0 * ratioLapl;
+      spingrads(ReferenceDeterminant, iat) = det0 * spingradRatio;
       for (size_t idim = 0; idim < OHMMS_DIM; idim++)
       {
         dpsiMinv = psiMinv;
@@ -187,6 +194,16 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
         TpsiM(i, iat) = d2psiM(iat, i);
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, lapls, dpsiMinv, TpsiM, dotProducts, *detData,
                                          *uniquePairs, *DetSigns);
+
+      dpsiMinv = psiMinv;
+      it       = confgList[ReferenceDeterminant].occup.begin();
+      for (size_t i = 0; i < NumPtcls; i++)
+        psiV_temp[i] = dspin_psiM(iat, *(it++));
+      InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, spingradRatio);
+      for (size_t i = 0; i < NumOrbitals; i++)
+        TpsiM(i, iat) = dspin_psiM(iat, i);
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, spingrads, dpsiMinv, TpsiM, dotProducts, *detData,
+                                         *uniquePairs, *DetSigns);
       // restore matrix
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = psiM(iat, i);
@@ -209,6 +226,8 @@ MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(Particle
   buf.put(detValues.first_address(), detValues.last_address());
   buf.put(FirstAddressOfGrads, LastAddressOfGrads);
   buf.put(lapls.first_address(), lapls.last_address());
+  buf.put(dspin_psiM.first_address(), dspin_psiM.last_address());
+  buf.put(spingrads.first_address(), spingrads.last_address());
   return 1.0;
 }
 
@@ -221,6 +240,8 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(detValues.first_address(), detValues.last_address());
   buf.get(FirstAddressOfGrads, LastAddressOfGrads);
   buf.get(lapls.first_address(), lapls.last_address());
+  buf.get(dspin_psiM.first_address(), dspin_psiM.last_address());
+  buf.get(spingrads.first_address(), spingrads.last_address());
   // only used with ORB_PBYP_ALL,
   //psiM_temp = psiM;
   //dpsiM_temp = dpsiM;
@@ -259,6 +280,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
+    std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
   default:
     psiMinv = psiMinv_temp;
@@ -267,9 +289,11 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(new_detValues.begin(), new_detValues.end(), detValues.begin());
     std::copy(new_grads.begin(), new_grads.end(), grads.begin());
     std::copy(new_lapls.begin(), new_lapls.end(), lapls.begin());
+    std::copy(new_spingrads.begin(), new_spingrads.end(), spingrads.begin());
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
+    std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
   }
 }
@@ -425,6 +449,8 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(detValues.first_address(), detValues.last_address());
   buf.add(FirstAddressOfGrads, LastAddressOfGrads);
   buf.add(lapls.first_address(), lapls.last_address());
+  buf.add(dspin_psiM.first_address(), dspin_psiM.last_address());
+  buf.add(spingrads.first_address(), spingrads.last_address());
 }
 
 
@@ -455,9 +481,11 @@ void MultiDiracDeterminant::resize(int nel, int morb)
   psiV.resize(NumOrbitals);
   dpsiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
+  dspin_psiV.resize(NumOrbitals);
   psiM.resize(nel, morb);
   dpsiM.resize(nel, morb);
   d2psiM.resize(nel, morb);
+  dspin_psiM.resize(nel, morb);
   //psiM_temp.resize(nel,morb);
   //dpsiM_temp.resize(nel,morb);
   //d2psiM_temp.resize(nel,morb);
@@ -476,6 +504,8 @@ void MultiDiracDeterminant::resize(int nel, int morb)
   new_grads.resize(NumDets, nel);
   lapls.resize(NumDets, nel);
   new_lapls.resize(NumDets, nel);
+  spingrads.resize(NumDets, nel);
+  new_spingrads.resize(NumDets, nel);
   dotProducts.resize(morb, morb);
 
   //if(ciConfigList==nullptr)

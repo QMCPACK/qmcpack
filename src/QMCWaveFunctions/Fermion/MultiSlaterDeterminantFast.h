@@ -110,11 +110,19 @@ public:
   void prepareGroup(ParticleSet& P, int ig) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
   PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  PsiValueType evalGradWithSpin_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at, ComplexType& sg_at);
   PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  PsiValueType evalGradWithSpin_impl_no_precompute(ParticleSet& P,
+                                                   int iat,
+                                                   bool newpos,
+                                                   GradType& g_at,
+                                                   ComplexType& sg_at);
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
   PsiValueType ratio_impl(ParticleSet& P, int iat);
   PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
 

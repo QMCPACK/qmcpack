@@ -91,6 +91,14 @@ public:
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             ValueMatrix_t& d2logdet) override;
+
+  void evaluate_notranspose_spin(const ParticleSet& P,
+                                 int first,
+                                 int last,
+                                 ValueMatrix_t& logdet,
+                                 GradMatrix_t& dlogdet,
+                                 ValueMatrix_t& d2logdet,
+                                 ValueMatrix_t& dspinlogdet) override;
   /** Evaluate the values, spin gradients, and spin laplacians of single particle spinors corresponding to electron iat.
    *  @param P current particle set.
    *  @param iat electron index.

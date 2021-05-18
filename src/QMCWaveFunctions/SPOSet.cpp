@@ -112,6 +112,17 @@ void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMa
   APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
 }
 
+void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
+                                       int first,
+                                       int last,
+                                       ValueMatrix_t& logdet,
+                                       GradMatrix_t& dlogdet,
+                                       ValueMatrix_t& d2logdet,
+                                       ValueMatrix_t& dspinlogdet)
+{
+  evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
+}
+
 void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
                                      const RefVectorWithLeader<ParticleSet>& P_list,
                                      int first,

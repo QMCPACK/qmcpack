@@ -170,6 +170,52 @@ void SpinorSet::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
+void SpinorSet::evaluate_notranspose_spin(const ParticleSet& P,
+                                          int first,
+                                          int last,
+                                          ValueMatrix_t& logdet,
+                                          GradMatrix_t& dlogdet,
+                                          ValueMatrix_t& d2logdet,
+                                          ValueMatrix_t& dspinlogdet)
+{
+  IndexType nelec = P.getTotalNum();
+
+  logpsi_work_up.resize(nelec, OrbitalSetSize);
+  logpsi_work_down.resize(nelec, OrbitalSetSize);
+
+  dlogpsi_work_up.resize(nelec, OrbitalSetSize);
+  dlogpsi_work_down.resize(nelec, OrbitalSetSize);
+
+  d2logpsi_work_up.resize(nelec, OrbitalSetSize);
+  d2logpsi_work_down.resize(nelec, OrbitalSetSize);
+
+  spo_up->evaluate_notranspose(P, first, last, logpsi_work_up, dlogpsi_work_up, d2logpsi_work_up);
+  spo_dn->evaluate_notranspose(P, first, last, logpsi_work_down, dlogpsi_work_down, d2logpsi_work_down);
+
+
+  for (int iat = 0; iat < nelec; iat++)
+  {
+    ParticleSet::Scalar_t s = P.activeSpin(iat);
+
+    RealType coss(0.0), sins(0.0);
+
+    coss = std::cos(s);
+    sins = std::sin(s);
+
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
+    ValueType eye(0, 1.0);
+
+    for (int no = 0; no < OrbitalSetSize; no++)
+    {
+      logdet(iat, no)      = eis * logpsi_work_up(iat, no) + emis * logpsi_work_down(iat, no);
+      dlogdet(iat, no)     = eis * dlogpsi_work_up(iat, no) + emis * dlogpsi_work_down(iat, no);
+      d2logdet(iat, no)    = eis * d2logpsi_work_up(iat, no) + emis * d2logpsi_work_down(iat, no);
+      dspinlogdet(iat, no) = eye * (eis * logpsi_work_up(iat, no) - emis * logpsi_work_down(iat, no));
+    }
+  }
+}
+
 
 void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector_t& psi, ValueVector_t& dpsi)
 {
