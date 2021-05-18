@@ -117,19 +117,15 @@ private:
                             (std::is_floating_point<VT>::value), int> = 0>
   void readCoeffs(hdf_archive& hin, std::vector<VT>& ci_coeff, size_t n_dets,int ext_level)
   {
-    ///Determinant coeffs are stored in Coeff for the ground state and Coeff_N 
-    ///for the Nth excited state. 
-    ///The Ground State is always stored in Coeff 
-    ///Backward compatibility is insured
+    ///Some converters store determinant coeffs in Coeff for the ground state
+    ///and some store it in Coeff_0.  The Nth excited state in is in Coeff_N.
     std::string extVar;
-    if (ext_level==0)
-       extVar="Coeff";
-    else
-       extVar="Coeff_"+std::to_string(ext_level);
+    extVar="Coeff_"+std::to_string(ext_level);
 
     if (!hin.readEntry(ci_coeff,extVar))
-       APP_ABORT("Could not read CI coefficients from HDF5");
-      
+      if (ext_level != 0 || !hin.readEntry(ci_coeff,"Coeff"))
+          APP_ABORT("Could not read CI coefficients from HDF5");
+
   }
   template<typename VT,
            std::enable_if_t<(std::is_same<VT, ValueType>::value) &&
@@ -142,24 +138,21 @@ private:
     CIcoeff_imag.resize(n_dets);
     CIcoeff_real.resize(n_dets);
     fill(CIcoeff_imag.begin(), CIcoeff_imag.end(), 0.0);
-    ///Determinant coeffs are stored in Coeff_N where N is Nth excited state. 
-    ///The Ground State is always stored in Coeff. 
-    ///Backward compatibility is insured
+    ///Determinant coeffs are stored in Coeff_N where N is Nth excited state.
+    ///The Ground State is stored in Coeff or Coeff_0.
 
     std::string ext_var;
-    if (ext_level==0)
-      extVar="Coeff";
-    else
-      extVar="Coeff_"+std::to_string(ext_level);
-    
+    extVar="Coeff_"+std::to_string(ext_level);
+
 
     if(!hin.readEntry(CIcoeff_real, extVar))
-       APP_ABORT("Could not read CI coefficients from HDF5")
+      if (ext_level != 0 || !hin.readEntry(CIcoeff_real, "Coeff"))
+        APP_ABORT("Could not read CI coefficients from HDF5")
 
     extVar=extVar+"_imag";
     if(!hin.readEntry(CIcoeff_imag, extVar))
        app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
-         
+ 
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
   }
