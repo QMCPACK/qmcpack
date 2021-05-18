@@ -53,15 +53,6 @@
   #define PRAGMA_OMP_TASKLOOP(x) _Pragma("omp taskgroup")
 #endif
 
-/* Define to 1 if you have the `blitz' library */
-#cmakedefine HAVE_LIBBLITZ @HAVE_LIBBLITZ@
-
-/* Define to 1 if you have libxml++ */
-#cmakedefine HAVE_LIBXMLPP @HAVE_LIBXMLPP@
-
-/* Define to 1 if you have gsl */
-#cmakedefine HAVE_LIBGSL @HAVE_LIBGSL@
-
 /* Define to 1 if you have MPI library */
 #cmakedefine HAVE_MPI @HAVE_MPI@
 

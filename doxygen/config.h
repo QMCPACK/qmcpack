@@ -47,20 +47,11 @@
 /* Define to 1 if you have the `sprng' library (-lsprng). */
 /* #undef HAVE_LIBSPRNG */
 
-/* Define to 1 if you have the `blitz' library */
-/* #undef HAVE_LIBBLITZ */
-
 /* Define to 1 if you have libxml2 */
 #define HAVE_LIBXML2 1
 
 /* Define to 1 if you have fftw */
 #define HAVE_LIBFFTW 1
-
-/* Define to 1 if you have libxml++ */
-/* #undef HAVE_LIBXMLPP */
-
-/* Define to 1 if you have gsl */
-/* #undef HAVE_LIBGSL */
 
 /* Define to 1 if you have MPI library */
 /* #undef HAVE_MPI */

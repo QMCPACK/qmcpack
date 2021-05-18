@@ -15,9 +15,6 @@
 #ifndef QMCPLUSPLUS_RANDOMSEQUENCEGENERATOR_H
 #define QMCPLUSPLUS_RANDOMSEQUENCEGENERATOR_H
 #include <algorithm>
-#if defined(HAVE_LIBBLITZ)
-#include <blitz/array.h>
-#endif
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "ParticleBase/ParticleAttrib.h"
 #include "Utilities/RandomGenerator.h"
@@ -80,15 +77,6 @@ inline void assignUniformRand(T* restrict a, unsigned n, RG& rng)
   for (int i = 0; i < n; i++)
     a[i] = rng();
 }
-
-#if defined(HAVE_LIBBLITZ)
-///specialized functions: stick to overloading
-template<typename T, unsigned D>
-inline void makeGaussRandom(blitz::Array<TinyVector<T, D>, 2>& a)
-{
-  assignGaussRand(&(a(0, 0)[0]), a.size() * D, Random);
-}
-#endif
 
 template<typename T, unsigned D>
 inline void makeGaussRandom(std::vector<TinyVector<T, D>>& a)

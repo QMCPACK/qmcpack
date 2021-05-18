@@ -278,10 +278,6 @@ SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 #FindXYZ.cmake will set the values if successful
 ######################################################################
 SET(HAVE_EINSPLINE 1) # to be removed
-SET(HAVE_LIBXMLPP 0)
-SET(HAVE_LIBBLITZ 0)
-SET(HAVE_LIBGSL 0)
-SET(MAC_VECLIB 0)
 
 ######################################################
 # Git information (see src/CMakeLists.txt for the
@@ -292,7 +288,6 @@ FIND_PACKAGE(Git)
 IF (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   SET(IS_GIT_PROJECT 1)
 ENDIF()
-
 
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options
