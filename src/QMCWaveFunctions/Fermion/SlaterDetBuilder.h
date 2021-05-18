@@ -151,7 +151,8 @@ private:
 
     extVar=extVar+"_imag";
     if(!hin.readEntry(CIcoeff_imag, extVar))
-       app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
+      if (ext_level != 0 || !hin.readEntry(CIcoeff_imag, "Coeff_imag"))
+        app_log() << "Coeff_imag not found in h5. Set to zero." << std::endl;
  
     for (size_t i = 0; i < n_dets; i++)
       ci_coeff[i] = VT(CIcoeff_real[i], CIcoeff_imag[i]);
