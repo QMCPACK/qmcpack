@@ -97,32 +97,11 @@
 /* Define if posix_memalign function exists */
 #cmakedefine HAVE_POSIX_MEMALIGN @HAVE_POSIX_MEMALIGN@
 
-/* Define if dlfcn.h exists */
-#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
-
-/* Define if inttypes.h exists */
-#cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
-
-/* Define if memory.h exists */
-#cmakedefine HAVE_MEMORY_H @HAVE_MEMORY_H@
-
 /* Define if pmmintrin.h exists */
 #cmakedefine HAVE_PMMINTRIN_H @HAVE_PMMINTRIN_H@
 
 /* Define if emmintrin.h exists */
 #cmakedefine HAVE_EMMINTRIN_H @HAVE_EMMINTRIN_H@
-
-/* Define if sys/stat.h exists */
-#cmakedefine HAVE_SYS_STAT_H @HAVE_SYS_STAT_H@
-
-/* Define if sys/time.h exists */
-#cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
-
-/* Define if sys/types.h exists */
-#cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TYPES_H@
-
-/* Define if unistd.h exists */
-#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
 #endif /* HAVE_EINSPLINE_EXT */
 

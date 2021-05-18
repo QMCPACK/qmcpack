@@ -121,32 +121,11 @@
 /* Define if sqrt function exists */
 #define HAVE_SQRT 1
 
-/* Define if dlfcn.h exists */
-#define HAVE_DLFCN_H 1
-
-/* Define if inttypes.h exists */
-#define HAVE_INTTYPES_H 1
-
-/* Define if memory.h exists */
-#define HAVE_MEMORY_H 1
-
 /* Define if pmmintrin.h exists */
 #define HAVE_PMMINTRIN_H 1
 
 /* Define if emmintrin.h exists */
 #define HAVE_EMMINTRIN_H 1
-
-/* Define if sys/stat.h exists */
-#define HAVE_SYS_STAT_H 1
-
-/* Define if sys/time.h exists */
-#define HAVE_SYS_TIME_H 1
-
-/* Define if sys/types.h exists */
-#define HAVE_SYS_TYPES_H 1
-
-/* Define if unistd.h exists */
-#define HAVE_UNISTD_H 1
 
 /* Define if mmx support exists */
 /* #undef HAVE_MMX */

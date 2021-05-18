@@ -220,14 +220,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 
-CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
-CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
-CHECK_INCLUDE_FILE(memory.h HAVE_MEMORY_H)
-CHECK_INCLUDE_FILE(sys/stat.h HAVE_SYS_STAT_H)
-CHECK_INCLUDE_FILE(sys/time.h HAVE_SYS_TIME_H)
-CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
-CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
-
 ######################################################################
 # Build options
 # QMC_BUILD_STATIC build static/dynamic  libraries
