@@ -7,7 +7,7 @@
 #ifndef MULTI_NUBSPLINE_STRUCTS_STD_H
 #define MULTI_NUBSPLINE_STRUCTS_STD_H
 
-#include <inttypes.h>
+#include <stdint.h>
 #include "bspline_base.h"
 #include "nubasis.h"
 
