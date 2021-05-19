@@ -383,9 +383,19 @@ public:
 
   void setDetInfo(int ref, std::vector<ci_configuration2>* list);
 
-  void evaluateDetsForPtclMove(ParticleSet& P, int iat);
-  void evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat);
+  /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
+   *@param P particle set which provides the positions
+   *@param iat the index of the moved electron
+   *@param refPtcl if given, the id of the reference particle in virtual moves
+   */
+  void evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl = -1);
+
+  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
+  void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
+
+  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
   void evaluateGrads(ParticleSet& P, int iat);
+
   void evaluateAllForPtclMove(const ParticleSet& P, int iat);
   // full evaluation of all the structures from scratch, used in evaluateLog for example
   void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
@@ -400,8 +410,6 @@ public:
   int FirstIndex;
   ///index of the last particle with respect to the particle set
   int LastIndex;
-  ///index of the particle (or row)
-  int WorkingIndex;
   ///a set of single-particle orbitals used to fill in the  values of the matrix
   std::unique_ptr<SPOSet> Phi;
   /// number of determinants handled by this object

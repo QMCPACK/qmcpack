@@ -11,9 +11,12 @@
 #// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(SRCS )
 
-SET(SRCS ${SRCS}
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
+SET(SRCS
   bspline_create.c
   bspline_data.c
   multi_bspline_create.c

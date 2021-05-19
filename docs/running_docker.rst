@@ -16,6 +16,7 @@ Currently available containers have pre-installed QMCPACK dependencies, see the 
 
 - `Linux containers <https://hub.docker.com/r/williamfgc/qmcpack-ci/tags>`_ 
    - williamfgc/qmcpack-ci:ubuntu20-openmpi: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu/openmpi/Dockerfile>`_
+   - williamfgc/qmcpack-ci:ubuntu20-clang-latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu/clang-latest/Dockerfile>`_
 
 
 Running Docker Containers

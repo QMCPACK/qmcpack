@@ -13,7 +13,7 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
-#include <inttypes.h>
+#include <stdint.h>
 
 int posix_memalign(void **memptr, size_t alignment, size_t size);
 

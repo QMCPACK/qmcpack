@@ -8,9 +8,6 @@ IF ( CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0 AND QMC_CXX_STANDARD EQUAL 
   MESSAGE(FATAL_ERROR "Avoid Clang 11.0.0 which cannot compile AFQMC properly with C++17!")
 ENDIF()
 
-# Set the std
-SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -std=c99")
-
 # Enable OpenMP
 IF(QMC_OMP)
   SET(ENABLE_OPENMP 1)
@@ -69,6 +66,7 @@ SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fomit-fr
 SET( CMAKE_C_FLAGS_DEBUG     "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer -fstandalone-debug" )
 SET( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fstandalone-debug" )
 
+#--------------------------------------
 # Special architectural flags
 #--------------------------------------
 # case arch

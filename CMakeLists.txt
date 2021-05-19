@@ -220,14 +220,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 
-CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
-CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
-CHECK_INCLUDE_FILE(memory.h HAVE_MEMORY_H)
-CHECK_INCLUDE_FILE(sys/stat.h HAVE_SYS_STAT_H)
-CHECK_INCLUDE_FILE(sys/time.h HAVE_SYS_TIME_H)
-CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
-CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
-
 ######################################################################
 # Build options
 # QMC_BUILD_STATIC build static/dynamic  libraries
@@ -286,10 +278,6 @@ SET(INSTALL_NEXUS 1 CACHE BOOL "Install Nexus alongside QMCPACK")
 #FindXYZ.cmake will set the values if successful
 ######################################################################
 SET(HAVE_EINSPLINE 1) # to be removed
-SET(HAVE_LIBXMLPP 0)
-SET(HAVE_LIBBLITZ 0)
-SET(HAVE_LIBGSL 0)
-SET(MAC_VECLIB 0)
 
 ######################################################
 # Git information (see src/CMakeLists.txt for the
@@ -300,7 +288,6 @@ FIND_PACKAGE(Git)
 IF (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   SET(IS_GIT_PROJECT 1)
 ENDIF()
-
 
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options

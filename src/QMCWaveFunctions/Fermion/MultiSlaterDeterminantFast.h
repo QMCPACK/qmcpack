@@ -118,6 +118,8 @@ public:
   PsiValueType ratio_impl(ParticleSet& P, int iat);
   PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
 
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     // the base class routine may probably work, just never tested.

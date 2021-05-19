@@ -119,7 +119,7 @@ ENDIF()
                     det_short_vmc_dmc
                     det_short_vmc_dmc.in.xml
                     1 1
-                    ${SUCCESS_STATUS_OFFLOAD}
+                    TRUE
                     0 det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS #VMC
                     1 det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS #DMC
                     )

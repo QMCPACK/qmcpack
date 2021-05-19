@@ -21,7 +21,6 @@
 #include "Utilities/for_testing/checkMatrix.hpp"
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/PinnedAllocator.h"
-#include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
 
 // Legacy CPU inversion for temporary testing
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
@@ -47,7 +46,6 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
   log_values.resize(1);
   OffloadPinnedMatrix<double> inv_mat_a;
   inv_mat_a.resize(4, 4);
-  auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
   DiracMatrixComputeOMPTarget<double> dmc_omp;
 
   dmc_omp.invert_transpose(mat_a, inv_mat_a, log_values[0]);
@@ -110,8 +108,7 @@ TEST_CASE("DiracMatrixComputeOMPTarget_different_batch_sizes", "[wavefunction][f
 
 TEST_CASE("DiracMatrixComputeOMPTarget_large_determinants_against_legacy", "[wavefunction][fermion]")
 {
-  int n = 1024;
-  auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
+  int n = 64;
 
   DiracMatrixComputeOMPTarget<double> dmc_omp;
 

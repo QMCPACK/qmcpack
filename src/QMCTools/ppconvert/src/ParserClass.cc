@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <fstream>
 #include <iostream>
-#include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <cassert>
