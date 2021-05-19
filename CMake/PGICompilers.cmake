@@ -1,6 +1,3 @@
-# Set the std
-SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -c99")
-
 # Enable OpenMP
 # If just -mp is specified, OMP_NUM_THREADS must be set in order to run in parallel
 # Specifying 'allcores' will run on all cores if OMP_NUM_THREADS is not set (which seems
