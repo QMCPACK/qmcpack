@@ -3,9 +3,6 @@ IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0 )
 MESSAGE(FATAL_ERROR "Requires gcc 7.0 or higher ")
 ENDIF()
 
-# Set the std
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
-
 # Enable OpenMP
 IF(QMC_OMP)
   SET(ENABLE_OPENMP 1)

@@ -37,14 +37,8 @@
 /* Compile with CUDA extensions */
 /* #undef HAVE_CUDA */
 
-/* Define to 1 if you have the <dlfcn.h> header file. */
-#define HAVE_DLFCN_H 1
-
 /* Define to 1 if you have the `floor' function. */
 #define HAVE_FLOOR 1
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the `gle' library (-lgle). */
 /* #undef HAVE_LIBGLE */
@@ -54,9 +48,6 @@
 
 /* Define to 1 if you have the `m' library (-lm). */
 #define HAVE_LIBM 1
-
-/* Define to 1 if you have the <memory.h> header file. */
-#define HAVE_MEMORY_H 1
 
 /* Define if OpenMP is enabled */
 #define HAVE_OPENMP 1
@@ -84,18 +75,6 @@
 
 /* Define to 1 if you have the `strtol' function. */
 #define HAVE_STRTOL 1
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#define HAVE_SYS_STAT_H 1
-
-/* Define to 1 if you have the <sys/time.h> header file. */
-#define HAVE_SYS_TIME_H 1
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#define HAVE_SYS_TYPES_H 1
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H 1
 
 /* Define to 1 if the system has the type `_Bool'. */
 #define HAVE__BOOL 1
