@@ -96,7 +96,7 @@ struct StringMaker<Catch::Detail::ComplexApprox> {
 };
 
 #ifdef CATCH_IMPL
-  std::string StringMaker<Catch::Detail::ComplexApprox>::convert(Catch::Detail::ComplexApprox const& value)
+std::string StringMaker<Catch::Detail::ComplexApprox>::convert(Catch::Detail::ComplexApprox const& value)
 {
   return value.toString();
 }
