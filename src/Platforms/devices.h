@@ -27,7 +27,7 @@
 #include <nvml.h>
 #else
 #include <hip/hip_runtime.h>
-#include <cuda2hip.h>
+#include "Platforms/ROCm/cuda2hip.h"
 #endif
 #include <unistd.h>
 #include "CUDA_legacy/gpu_misc.h"

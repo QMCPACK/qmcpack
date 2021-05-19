@@ -7,7 +7,7 @@
 #include <cublas_v2.h>
 #else
 #include <hipblas.h>
-#include <cuda2hip.h>
+#include "Platforms/ROCm/cuda2hip.h"
 #endif
 
 //////////////////////////////

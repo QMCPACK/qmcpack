@@ -12,7 +12,7 @@
 #include <cuda.h>
 #else
 #include <hip/hip_runtime.h>
-#include <cuda2hip.h>
+#include "Platforms/ROCm/cuda2hip.h"
 #endif
 
 #if defined(CUDA_VERSION) && (CUDA_VERSION < 3000) /* 3.0 */

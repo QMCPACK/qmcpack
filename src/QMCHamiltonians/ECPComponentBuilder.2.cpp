@@ -24,7 +24,7 @@
 #include <cuda_runtime_api.h>
 #else
 #include <hip/hip_runtime.h>
-#include <cuda2hip.h>
+#include "Platforms/ROCm/cuda2hip.h"
 #endif
 #endif
 

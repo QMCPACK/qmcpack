@@ -13,7 +13,8 @@
 #else
 #include <hipblas.h>
 #include <hip/hip_complex.h>
-#include <cuda2hip.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#include "Platforms/ROCm/hipBLAS.hpp"
 #endif
 #include <thrust/complex.h>
 
