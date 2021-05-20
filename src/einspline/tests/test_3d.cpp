@@ -106,6 +106,7 @@ TEST_CASE("double_3d_periodic","[einspline]")
   set_multi_UBspline_3d_d(m, 0, data);
 
   eval_multi_UBspline_3d_d(m, delta, delta, delta, &val);
+  destroy_Bspline(m);
   REQUIRE(val == Approx(data[N*N + N + 1]));
 
 
@@ -124,6 +125,7 @@ TEST_CASE("double_3d_periodic","[einspline]")
   float grads[3];
   float hess[9];
   eval_multi_UBspline_3d_s_vgh(ms, 0.1, 0.2, 0.0, &fval, grads, hess);
+  destroy_Bspline(ms);
 
   // See miniqmc-python/splines/test_3d.py for values
   REQUIRE(grads[0] == Approx(5.11104213833));

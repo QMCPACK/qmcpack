@@ -109,6 +109,7 @@ TEST_CASE("double_1d_multi", "[einspline]")
   double val;
   eval_multi_UBspline_1d_d(s, 1.0, &val);
   REQUIRE(val == Approx(2.0));
+  destroy_Bspline(s);
 }
 
 TEST_CASE("double_1d_periodic", "[einspline]")
