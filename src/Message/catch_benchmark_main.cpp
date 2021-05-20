@@ -11,13 +11,10 @@
 
 /** \file
  *  \brief enables benchmarking functionality in catch, which has compilation cost.
- *  don't use this main for unit tests in general
- *  outside of the CATCH_CONFIG_ENABLE_BENCHMARKING this is indentical to catch_main.cpp
+ *  The only significant difference is the inclusion of catch_benchmark_main.hpp
  */
-
 #define CATCH_CONFIG_RUNNER
 #include "catch_benchmark_main.hpp"
-
 #include "Message/Communicate.h"
 
 // Replacement unit test main function to ensure that MPI is finalized once
