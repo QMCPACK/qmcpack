@@ -16,8 +16,7 @@
  */
 
 #define CATCH_CONFIG_RUNNER
-#define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include "catch.hpp"
+#include "catch_benchmark_main.hpp"
 
 #include "Message/Communicate.h"
 

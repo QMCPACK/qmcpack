@@ -32,6 +32,7 @@ TARGET_LINK_LIBRARIES(catch_main message)
 
 IF(BUILD_MICRO_BENCHMARKS)
 ADD_LIBRARY(catch_benchmark_main catch_benchmark_main.cpp)
+TARGET_INCLUDE_DIRECTORIES(catch_benchmark_main PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 TARGET_INCLUDE_DIRECTORIES(catch_benchmark_main PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
 TARGET_LINK_LIBRARIES(catch_benchmark_main message)
 ENDIF(BUILD_MICRO_BENCHMARKS)

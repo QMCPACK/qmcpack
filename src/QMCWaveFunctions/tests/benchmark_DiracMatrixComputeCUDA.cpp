@@ -9,9 +9,14 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#define CATCH_CONFIG_ENABLE_BENCHMARKING
 
-#include <catch.hpp>
+/** \file
+ *  This implements micro benchmarking on DiracMatrixComputeCUDA.hpp
+ *  Currently it also benchmarks the same size matrix's and batch sizes
+ *  using the Legacy DiracMatrix serially.
+ */
+
+#include "catch_benchmark_main.hpp"
 #include <algorithm>
 #include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
