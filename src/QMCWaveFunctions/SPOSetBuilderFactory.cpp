@@ -41,7 +41,6 @@
 
 namespace qmcplusplus
 {
-
 SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 {
   int nfound  = 0;
@@ -123,8 +122,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   aAttrib.add(cuspInfo, "cuspInfo");
   aAttrib.add(MOH5Ref, "href");
 
-  std::cout << "IS SPINOR: " << targetPtcl.IsSpinor << std::endl;
-
   if (rootNode != NULL)
     aAttrib.put(rootNode);
 
@@ -189,7 +186,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   }
   else if (type == "molecularorbital" || type == "mo")
   {
-      std::cout << "HERE " << std::endl;
     ParticleSet* ions = 0;
     //initialize with the source tag
     PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
