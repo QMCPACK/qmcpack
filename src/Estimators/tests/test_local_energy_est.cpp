@@ -69,6 +69,7 @@ TEST_CASE("LocalEnergy", "[estimators]")
   REQUIRE(le_est.scalars[0].mean() == Approx(1.1));
   REQUIRE(le_est.scalars[1].mean() == le_est.scalars[0].mean2());
   REQUIRE(le_est.scalars[2].mean() == Approx(1.2));
+  delete le_est2;
 }
 
 TEST_CASE("LocalEnergy with hdf5", "[estimators]")
