@@ -17,8 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 #include <stdio.h>
 #include <string>
@@ -71,6 +70,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.spins[0] = 0.0;
   elec_.spins[1] = 0.2;
   elec_.spins[2] = 0.4;
+  elec_.IsSpinor = true;
 
   // O2 test example from pwscf non-collinear calculation.
   elec_.Lattice.R(0, 0) = 5.10509515;
@@ -97,7 +97,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
 
   const char* particles = "<tmp> \
-   <sposet_builder name=\"A\" type=\"spinorbspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\"> \
+   <sposet_builder name=\"A\" type=\"einspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\"> \
      <sposet name=\"myspo\" size=\"3\"> \
        <occupation mode=\"ground\"/> \
      </sposet> \
@@ -113,8 +113,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSpinorSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
+  SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
+  SPOSetBuilder* builder = fac.createSPOSetBuilder(ein1);
+
+  std::unique_ptr<SPOSet> spo(builder->createSPOSet(ein1));
   REQUIRE(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());

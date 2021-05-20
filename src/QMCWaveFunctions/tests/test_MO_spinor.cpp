@@ -17,7 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "Particle/DistanceTableData.h"
-#include "QMCWaveFunctions/LCAO/LCAOSpinorBuilder.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
 {
@@ -53,6 +53,7 @@ void test_lcao_spinor()
   elec_.R[0][1]  = -0.3;
   elec_.R[0][2]  = 1.7;
   elec_.spins[0] = 0.6;
+  elec_.IsSpinor = true;
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -68,7 +69,7 @@ void test_lcao_spinor()
   ptcl.addParticleSet(std::move(ions_uptr));
 
   const char* particles = "<tmp> \
-   <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
+   <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
      <basisset transform=\"yes\"/> \
      <sposet name=\"myspo\" size=\"1\"/> \
    </sposet_builder> \
@@ -82,13 +83,14 @@ void test_lcao_spinor()
   xmlNodePtr root = doc.getRoot();
 
   xmlNodePtr bnode = xmlFirstElementChild(root);
-  LCAOSpinorBuilder bb(elec_, ions_, c, bnode);
+  SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
+  SPOSetBuilder* bb = fac.createSPOSetBuilder(bnode);
 
   // only pick up the last sposet
   std::unique_ptr<SPOSet> spo;
   processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
-      spo.reset(bb.createSPOSetFromXML(element));
+      spo.reset(bb->createSPOSet(element));
   });
   REQUIRE(spo);
 
@@ -232,6 +234,7 @@ void test_lcao_spinor_excited()
   elec_.R[0][1]  = -0.3;
   elec_.R[0][2]  = 1.7;
   elec_.spins[0] = 0.6;
+  elec_.IsSpinor = true;
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -247,7 +250,7 @@ void test_lcao_spinor_excited()
   ptcl.addParticleSet(std::move(ions_uptr));
 
   const char* particles = "<tmp> \
-   <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
+   <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
      <basisset name=\"myset\" transform=\"yes\"/> \
      <sposet name=\"myspo\" basisset=\"myset\" size=\"1\"> \
        <occupation mode=\"excited\"> \
@@ -265,13 +268,14 @@ void test_lcao_spinor_excited()
   xmlNodePtr root = doc.getRoot();
 
   xmlNodePtr bnode = xmlFirstElementChild(root);
-  LCAOSpinorBuilder bb(elec_, ions_, c, bnode);
+  SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
+  SPOSetBuilder* bb = fac.createSPOSetBuilder(bnode);
 
   // only pick up the last sposet
   std::unique_ptr<SPOSet> spo;
   processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
-      spo.reset(bb.createSPOSetFromXML(element));
+      spo.reset(bb->createSPOSet(element));
   });
   REQUIRE(spo);
 
