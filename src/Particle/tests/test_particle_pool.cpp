@@ -91,7 +91,7 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
     0.1 0.2 0.3 \
   </attrib> \
 </particleset> \
-<particleset name=\"elec\" random=\"yes\" randomsrc=\"ion0\"> \
+<particleset name=\"elec\" random=\"yes\" randomsrc=\"ion0\" spinor=\"yes\"> \
    <group name=\"u\" size=\"4\"> \
       <parameter name=\"charge\">-1</parameter> \
    </group> \
@@ -110,11 +110,14 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
 
   ParticleSet* ions = pp.getParticleSet("ion0");
   REQUIRE(ions != NULL);
+  REQUIRE(!ions->IsSpinor);
 
   ParticleSet* elec = pp.getParticleSet("elec");
   REQUIRE(ions != NULL);
+  REQUIRE(elec->IsSpinor);
   REQUIRE(elec->R.size() == 4);
   REQUIRE(elec->spins.size() == 4);
+
 
   // should do something
   pp.randomize();

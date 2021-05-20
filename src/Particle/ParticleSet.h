@@ -104,6 +104,8 @@ public:
   bool SameMass;
   ///threa id
   Index_t ThreadID;
+  ///true is a dynamic spin calculation
+  bool IsSpinor;
   /** the index of the active particle during particle-by-particle moves
    *
    * when a single particle move is proposed, the particle id is assigned to activePtcl
