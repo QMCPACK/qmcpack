@@ -40,6 +40,8 @@ public:
    */
   void setOrbitalSetSize(int norbs) override;
 
+  int getBasisSetSize() const override;
+
 
   /** evaluate the values of this spinor set
    * @param P current ParticleSet
