@@ -29,6 +29,13 @@ ENDIF()
 ADD_LIBRARY(catch_main catch_main.cpp)
 TARGET_INCLUDE_DIRECTORIES(catch_main PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
 TARGET_LINK_LIBRARIES(catch_main message)
+IF(HAVE_MPI)
+  SET_TARGET_PROPERTIES(catch_main PROPERTIES COMPILE_DEFINITIONS "HAVE_MPI")
+ENDIF()
+
+add_library(catch_main_no_mpi catch_main.cpp)
+TARGET_INCLUDE_DIRECTORIES(catch_main_no_mpi PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
+
 
 IF(BUILD_MICRO_BENCHMARKS)
 ADD_LIBRARY(catch_benchmark_main catch_benchmark_main.cpp)
