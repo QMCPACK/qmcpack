@@ -20,3 +20,7 @@ tests/solids/NiO_a4_e48_pp/NiO-fcc-supertwist111-supershift000-S1.h5
 
 # Visual Studio code settings
 .vscode/
+
+# Doxygen
+doxygen/output/
+doxygen/qmcpack_all.tag
