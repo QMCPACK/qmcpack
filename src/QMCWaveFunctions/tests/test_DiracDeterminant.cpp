@@ -460,9 +460,10 @@ TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")
   elec_.R[2][1] = 0.2;
   elec_.R[2][2] = 0.3;
 
-  elec_.spins[0] = 0.0;
-  elec_.spins[1] = 0.2;
-  elec_.spins[2] = 0.4;
+  elec_.spins[0]   = 0.0;
+  elec_.spins[1]   = 0.2;
+  elec_.spins[2]   = 0.4;
+  elec_.is_spinor_ = true;
 
   // O2 test example from pwscf non-collinear calculation.
   elec_.Lattice.R(0, 0) = 5.10509515;
