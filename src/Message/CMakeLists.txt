@@ -36,10 +36,11 @@ ENDIF()
 add_library(catch_main_no_mpi catch_main.cpp)
 TARGET_INCLUDE_DIRECTORIES(catch_main_no_mpi PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
 
-
 IF(BUILD_MICRO_BENCHMARKS)
-ADD_LIBRARY(catch_benchmark_main catch_benchmark_main.cpp)
-TARGET_INCLUDE_DIRECTORIES(catch_benchmark_main PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+ADD_LIBRARY(catch_benchmark_main catch_main.cpp)
+SET_TARGET_PROPERTIES(catch_benchmark_main PROPERTIES
+                      COMPILE_DEFINITIONS "CATCH_CONFIG_ENABLE_BENCHMARKING"
+                      INTERFACE_COMPILE_DEFINITIONS "CATCH_CONFIG_ENABLE_BENCHMARKING")
 TARGET_INCLUDE_DIRECTORIES(catch_benchmark_main PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
 TARGET_LINK_LIBRARIES(catch_benchmark_main message)
-ENDIF(BUILD_MICRO_BENCHMARKS)
+ENDIF()
