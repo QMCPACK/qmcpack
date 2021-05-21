@@ -141,13 +141,13 @@ public:
   }
 
   void evaluateDerivativesWF(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           const MultiDiracDeterminant& pseudo_dn,
-                           const PsiValueType& psiCurrent,
-                           const std::vector<ValueType>& Coeff,
-                           const std::vector<size_t>& C2node_up,
-                           const std::vector<size_t>& C2node_dn)
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi,
+                             const MultiDiracDeterminant& pseudo_dn,
+                             const PsiValueType& psiCurrent,
+                             const std::vector<ValueType>& Coeff,
+                             const std::vector<size_t>& C2node_up,
+                             const std::vector<size_t>& C2node_dn)
   {
     if (!Optimizable)
       return;
@@ -159,21 +159,8 @@ public:
     const ValueMatrix_t& Minv_up      = psiMinv;
     const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
 
-    Phi->evaluateDerivativesWF(P,
-                                optvars, 
-                                dlogpsi, 
-                                psiCurrent, 
-                                Coeff, 
-                                C2node_up, 
-                                C2node_dn, 
-                                detValues_up,
-                                detValues_dn, 
-                                M_up, 
-                                M_dn, 
-                                Minv_up, 
-                                Minv_dn, 
-                                *detData, 
-                                lookup_tbl);
+    Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn,
+                               M_up, M_dn, Minv_up, Minv_dn, *detData, lookup_tbl);
   }
 
 
@@ -220,7 +207,9 @@ public:
     return PsiValueType();
   }
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
