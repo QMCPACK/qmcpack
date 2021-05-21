@@ -156,7 +156,7 @@ void VMC::resetRun()
   app_log() << std::endl;
 
   bool movers_created = false;
-  bool spinors = false;
+  bool spinors        = false;
   if (Movers.empty())
   {
     movers_created = true;

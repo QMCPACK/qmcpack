@@ -117,7 +117,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 
   m_param.add(nTargetPopulation, "samples");
 
-  SpinMass  = 1.0;
+  SpinMass = 1.0;
   m_param.add(SpinMass, "SpinMass");
 
   Tau = 0.1;

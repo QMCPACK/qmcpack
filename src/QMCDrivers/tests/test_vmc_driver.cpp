@@ -133,7 +133,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   elec.setName("elec");
   std::vector<int> agroup(1, 1);
   elec.create(agroup);
-  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.R[0]     = {1.0, 0.0, 0.0};
   elec.spins[0] = 0.0;
   elec.IsSpinor = true;
   elec.createWalkers(1);
@@ -219,7 +219,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   elec.setName("elec");
   std::vector<int> agroup(1, 1);
   elec.create(agroup);
-  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.R[0]     = {1.0, 0.0, 0.0};
   elec.spins[0] = 0.0;
   elec.IsSpinor = true;
   elec.createWalkers(1);
