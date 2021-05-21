@@ -180,7 +180,7 @@ void VMC::resetRun()
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip]);
-      if (wClones[ip]->IsSpinor)
+      if (W.IsSpinor)
       {
         spinors = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])

@@ -157,7 +157,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   std::string randomR("no");
   std::string randomsrc;
   std::string useGPU;
-  std::string spinor("no");
+  std::string spinor;
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
@@ -165,7 +165,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   pAttrib.add(randomR, "random");
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
-  pAttrib.add(spinor, "spinor");
+  pAttrib.add(spinor, "spinor", {"no", "yes"});
 #if defined(ENABLE_OFFLOAD)
   pAttrib.add(useGPU, "gpu", {"yes", "no"});
 #endif
@@ -208,8 +208,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       randomize_nodes.push_back(anode);
     }
     pTemp->setName(id);
-    if (spinor == "yes")
-      pTemp->IsSpinor = true;
+    pTemp->IsSpinor = spinor == "yes";
     app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
     app_summary() << std::endl;
     return success;

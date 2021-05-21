@@ -125,7 +125,7 @@ void DMC::resetUpdateEngines()
       Rng[ip] = new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      if (wClones[ip]->IsSpinor)
+      if (W.IsSpinor)
       {
         spinor = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
