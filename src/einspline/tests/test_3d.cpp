@@ -44,20 +44,20 @@ TEST_CASE("double_3d_natural","[einspline]")
   BCtype_d bc;
   bc.lCode = NATURAL;
   bc.rCode = NATURAL;
-  UBspline_3d_d* s = create_UBspline_3d_d(grid, grid, grid, bc, bc, bc, data);
+  auto s   = std::unique_ptr<UBspline_3d_d, void (*)(void*)>{create_UBspline_3d_d(grid, grid, grid, bc, bc, bc, data),
+                                                           destroy_Bspline};
 
   REQUIRE(s);
 
   double val;
-  eval_UBspline_3d_d(s, 1.0, 1.0, 1.0, &val);
+  eval_UBspline_3d_d(s.get(), 1.0, 1.0, 1.0, &val);
   REQUIRE(val == Approx(2.0));
   
   //This puts the value right below the limit
   double pos=10.0-5*std::numeric_limits<double>::epsilon();
-  eval_UBspline_3d_d(s, pos, pos, pos, &val);
+  eval_UBspline_3d_d(s.get(), pos, pos, pos, &val);
   REQUIRE(val == Approx(9.0));
 
-  destroy_Bspline(s);
 }
 
 TEST_CASE("double_3d_periodic","[einspline]")
