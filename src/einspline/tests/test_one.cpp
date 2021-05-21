@@ -178,7 +178,7 @@ TEST_CASE("multi_cuda_wrapper", "[einspline]")
   BCtype_s xBC;
   xBC.lCode = NATURAL;
   xBC.rCode = NATURAL;
-  auto s    = std::unique_ptr<multi_USspline_1d_s, void (*)(void*)>{create_multi_UBspline_1d_s(x_grid, xBC, 1),
+  auto s    = std::unique_ptr<multi_UBspline_1d_s, void (*)(void*)>{create_multi_UBspline_1d_s(x_grid, xBC, 1),
                                                                  destroy_Bspline};
   REQUIRE(s);
   set_multi_UBspline_1d_s(s.get(), 0, data);
