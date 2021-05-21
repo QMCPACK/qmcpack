@@ -110,11 +110,11 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
 
   ParticleSet* ions = pp.getParticleSet("ion0");
   REQUIRE(ions != NULL);
-  REQUIRE(!ions->IsSpinor);
+  REQUIRE(!ions->is_spinor_);
 
   ParticleSet* elec = pp.getParticleSet("elec");
   REQUIRE(ions != NULL);
-  REQUIRE(elec->IsSpinor);
+  REQUIRE(elec->is_spinor_);
   REQUIRE(elec->R.size() == 4);
   REQUIRE(elec->spins.size() == 4);
 

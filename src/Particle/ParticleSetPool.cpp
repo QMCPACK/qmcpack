@@ -208,7 +208,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       randomize_nodes.push_back(anode);
     }
     pTemp->setName(id);
-    pTemp->IsSpinor = spinor == "yes";
+    pTemp->is_spinor_ = spinor == "yes";
     app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
     app_summary() << std::endl;
     return success;
