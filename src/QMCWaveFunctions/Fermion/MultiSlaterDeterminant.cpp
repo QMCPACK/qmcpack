@@ -56,10 +56,12 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl,
 WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
   typedef DiracDeterminant<> SingleDet_t;
-  auto spo_up_C = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()), FirstIndex_up, LastIndex_up);
-  auto spo_dn_C = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()), FirstIndex_dn, LastIndex_dn);
-  spo_up_C->occup               = spo_up->occup;
-  spo_dn_C->occup               = spo_dn->occup;
+  auto spo_up_C   = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_up->refPhi->makeClone()),
+                                                      FirstIndex_up, LastIndex_up);
+  auto spo_dn_C   = std::make_unique<SPOSetProxyForMSD>(std::unique_ptr<SPOSet>(spo_dn->refPhi->makeClone()),
+                                                      FirstIndex_dn, LastIndex_dn);
+  spo_up_C->occup = spo_up->occup;
+  spo_dn_C->occup = spo_dn->occup;
   MultiSlaterDeterminant* clone = new MultiSlaterDeterminant(tqp, std::move(spo_up_C), std::move(spo_dn_C));
   clone->C2node_up              = C2node_up;
   clone->C2node_dn              = C2node_dn;
