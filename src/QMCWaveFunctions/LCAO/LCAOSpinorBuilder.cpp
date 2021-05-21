@@ -47,8 +47,10 @@ SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (optimize == "yes")
     app_log() << "  SPOSet " << spo_name << " is optimizable\n";
 
-  std::unique_ptr<LCAOrbitalSet> upspo = std::make_unique<LCAOrbitalSet>(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
-  std::unique_ptr<LCAOrbitalSet> dnspo = std::make_unique<LCAOrbitalSet>(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
+  std::unique_ptr<LCAOrbitalSet> upspo =
+      std::make_unique<LCAOrbitalSet>(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
+  std::unique_ptr<LCAOrbitalSet> dnspo =
+      std::make_unique<LCAOrbitalSet>(std::unique_ptr<BasisSet_t>(myBasisSet->makeClone()), optimize == "yes");
 
   loadMO(*upspo, *dnspo, cur);
 
