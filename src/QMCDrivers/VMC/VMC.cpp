@@ -156,6 +156,7 @@ void VMC::resetRun()
   app_log() << std::endl;
 
   bool movers_created = false;
+  bool spinors = false;
   if (Movers.empty())
   {
     movers_created = true;
@@ -179,9 +180,9 @@ void VMC::resetRun()
       Rng[ip] = new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
 #endif
       hClones[ip]->setRandomGenerator(Rng[ip]);
-
-      if (SpinMoves == "yes")
+      if (wClones[ip]->IsSpinor)
       {
+        spinors = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
           Movers[ip] = new SOVMCUpdatePbyP(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
@@ -239,7 +240,7 @@ void VMC::resetRun()
       Movers[i]->UseDrift = false;
   }
 
-  if (SpinMoves == "yes")
+  if (spinors)
   {
     app_log() << "  Spins treated as dynamic variable with SpinMass: " << SpinMass << std::endl;
     for (int i = 0; i < Movers.size(); i++)
@@ -391,7 +392,6 @@ bool VMC::put(xmlNodePtr q)
   app_log() << "  target samples = " << nTargetPopulation << std::endl;
   app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
   app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
-  app_log() << "  SpinMoves      = " << SpinMoves << std::endl;
 
   m_param.get(app_log());
 

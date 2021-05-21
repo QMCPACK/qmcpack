@@ -564,6 +564,7 @@ public:
     spins            = ptclin.spins;
     ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
+    IsSpinor         = ptclin.IsSpinor;
     if (ptclin.SubPtcl.size())
     {
       SubPtcl.resize(ptclin.SubPtcl.size());

@@ -150,6 +150,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   elec.R[0][1]  = 0.0;
   elec.R[0][2]  = 0.0;
   elec.spins[0] = 0.0;
+  elec.IsSpinor = true;
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -185,7 +186,6 @@ TEST_CASE("SODMC", "[drivers][dmc]")
    <parameter name=\"steps\">1</parameter> \
    <parameter name=\"blocks\">1</parameter> \
    <parameter name=\"timestep\">0.1</parameter> \
-   <parameter name=\"SpinMoves\">yes</parameter> \
    <parameter name=\"SpinMass\">0.25</parameter> \
   </qmc> \
   ";
