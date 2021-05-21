@@ -85,7 +85,9 @@ public:
   ///set BF pointers
   virtual void setBF(BackflowTransformation* BFTrans) {}
 
-  virtual ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  virtual ValueType evaluate(const ParticleSet& P,
+                             ParticleSet::ParticleGradient_t& G,
+                             ParticleSet::ParticleLaplacian_t& L);
 
   virtual LogValueType evaluateLog(const ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
