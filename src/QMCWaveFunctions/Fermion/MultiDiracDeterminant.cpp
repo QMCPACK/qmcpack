@@ -42,10 +42,8 @@ void MultiDiracDeterminant::set(int first, int nel)
 void MultiDiracDeterminant::set(int first, int nel, int norb)
 {
   FirstIndex = first;
-  DetCalculator.resize(nel);
   resize(nel, norb);
-  // mmorales; remove later
-  //    testDets();
+  createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *DetSigns);
 }
 
 void MultiDiracDeterminant::createDetData(ci_configuration2& ref,
@@ -317,14 +315,12 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
       NP(0),
-      FirstIndex(s.FirstIndex),
-      ciConfigList(nullptr)
+      FirstIndex(s.FirstIndex)
 {
-  IsCloned = true;
-
   ReferenceDeterminant = s.ReferenceDeterminant;
   ciConfigList         = s.ciConfigList;
   NumDets              = s.NumDets;
+
   detData              = s.detData;
   uniquePairs          = s.uniquePairs;
   DetSigns             = s.DetSigns;
@@ -332,8 +328,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
 
   registerTimers();
   Phi.reset(s.Phi->makeClone());
-  this->resize(s.NumPtcls, s.NumOrbitals);
-  this->DetCalculator.resize(s.NumPtcls);
+  resize(s.NumPtcls, s.NumOrbitals);
 }
 
 SPOSetPtr MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
@@ -364,17 +359,14 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int
       NP(0),
       FirstIndex(first),
       Phi(std::move(spos)),
-      ciConfigList(nullptr),
       ReferenceDeterminant(0)
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
-  IsCloned = false;
-
-  ciConfigList = new std::vector<ci_configuration2>;
-  detData      = new std::vector<int>;
-  uniquePairs  = new std::vector<std::pair<int, int>>;
-  DetSigns     = new std::vector<RealType>;
+  ciConfigList = std::make_shared<std::vector<ci_configuration2>>();
+  detData      = std::make_shared<std::vector<int>>();
+  uniquePairs  = std::make_shared<std::vector<std::pair<int, int>>>();
+  DetSigns     = std::make_shared<std::vector<RealType>>();
 
   registerTimers();
 }
@@ -388,7 +380,6 @@ MultiDiracDeterminant& MultiDiracDeterminant::operator=(const MultiDiracDetermin
     return *this;
 
   NP                   = 0;
-  IsCloned             = true;
   ReferenceDeterminant = s.ReferenceDeterminant;
   ciConfigList         = s.ciConfigList;
   NumDets              = s.NumDets;
@@ -399,7 +390,6 @@ MultiDiracDeterminant& MultiDiracDeterminant::operator=(const MultiDiracDetermin
   DetSigns    = s.DetSigns;
 
   resize(s.NumPtcls, s.NumOrbitals);
-  this->DetCalculator.resize(s.NumPtcls);
 
   return *this;
 }
@@ -427,13 +417,6 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(lapls.first_address(), lapls.last_address());
 }
 
-
-void MultiDiracDeterminant::setDetInfo(int ref, std::vector<ci_configuration2>* list)
-{
-  ReferenceDeterminant = ref;
-  ciConfigList         = list;
-  NumDets              = list->size();
-}
 
 ///reset the size: with the number of particles and number of orbtials
 /// morb is the total number of orbitals, including virtual
@@ -477,13 +460,7 @@ void MultiDiracDeterminant::resize(int nel, int morb)
   lapls.resize(NumDets, nel);
   new_lapls.resize(NumDets, nel);
   dotProducts.resize(morb, morb);
-
-  //if(ciConfigList==nullptr)
-  //{
-  //  APP_ABORT("ciConfigList was not properly initialized.\n");
-  //}
-  if (!IsCloned)
-    createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *DetSigns);
+  DetCalculator.resize(nel);
 }
 
 void MultiDiracDeterminant::registerTimers()

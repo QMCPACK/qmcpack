@@ -370,8 +370,6 @@ public:
       }
   */
 
-  void setDetInfo(int ref, std::vector<ci_configuration2>* list);
-
   /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
    *@param P particle set which provides the positions
    *@param iat the index of the moved electron
@@ -403,10 +401,8 @@ public:
   std::unique_ptr<SPOSet> Phi;
   /// number of determinants handled by this object
   int NumDets;
-  ///bool to cleanup
-  bool IsCloned;
   ///use shared_ptr
-  std::vector<ci_configuration2>* ciConfigList;
+  std::shared_ptr<std::vector<ci_configuration2>> ciConfigList;
   // the reference determinant never changes, so there is no need to store it.
   // if its value is zero, then use a data from backup, but always use this one
   // by default
@@ -452,9 +448,9 @@ public:
    *     -i1,i2,...,in : occupied orbital to be replaced (these must be numbers from 0:Nptcl-1)
    *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything)
    */
-  std::vector<int>* detData;
-  std::vector<std::pair<int, int>>* uniquePairs;
-  std::vector<RealType>* DetSigns;
+  std::shared_ptr<std::vector<int>> detData;
+  std::shared_ptr<std::vector<std::pair<int, int>>> uniquePairs;
+  std::shared_ptr<std::vector<RealType>> DetSigns;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 };
 
