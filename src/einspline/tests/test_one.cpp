@@ -38,26 +38,26 @@ TEST_CASE("double_1d_natural", "[einspline]")
   BCtype_d xBC;
   xBC.lCode = NATURAL;
   xBC.rCode = NATURAL;
-  UBspline_1d_d* s = create_UBspline_1d_d(x_grid, xBC, data.data());
+  auto s =
+      std::unique_ptr<UBspline_1d_d, void (*)(void*)>{create_UBspline_1d_d(x_grid, xBC, data.data()), destroy_Bspline};
 
   REQUIRE(s);
 
   double val;
 
-  eval_UBspline_1d_d(s, 1.0, &val);
+  eval_UBspline_1d_d(s.get(), 1.0, &val);
   REQUIRE(val == Approx(2.0));
 
-  eval_UBspline_1d_d(s, 9.9999999, &val);
+  eval_UBspline_1d_d(s.get(), 9.9999999, &val);
   REQUIRE(val == Approx(3.0));
 
   // This should assert
-  // eval_UBspline_1d_d(s, 10.0, &val);
+  // eval_UBspline_1d_d(s.get(), 10.0, &val);
   // REQUIRE(val == Approx(3.0));
 
-  eval_UBspline_1d_d(s, 5.5, &val);
+  eval_UBspline_1d_d(s.get(), 5.5, &val);
   REQUIRE(val == Approx(2.5));
 
-  destroy_Bspline(s);
 
   // three point case
   x_grid.start = 1.0;
@@ -69,21 +69,18 @@ TEST_CASE("double_1d_natural", "[einspline]")
 
   xBC.lCode = NATURAL;
   xBC.rCode = NATURAL;
-  s = create_UBspline_1d_d(x_grid, xBC, data.data());
+  s.reset(create_UBspline_1d_d(x_grid, xBC, data.data()));
 
   REQUIRE(s);
 
-  eval_UBspline_1d_d(s, 1.0, &val);
+  eval_UBspline_1d_d(s.get(), 1.0, &val);
   REQUIRE(val == Approx(2.0));
 
-  eval_UBspline_1d_d(s, 9.9999999, &val);
+  eval_UBspline_1d_d(s.get(), 9.9999999, &val);
   REQUIRE(val == Approx(3.0));
 
-  eval_UBspline_1d_d(s, 5.5, &val);
+  eval_UBspline_1d_d(s.get(), 5.5, &val);
   REQUIRE(val == Approx(2.7));
-
-  destroy_Bspline(s);
-
 }
 
 
@@ -101,15 +98,15 @@ TEST_CASE("double_1d_multi", "[einspline]")
   BCtype_d xBC;
   xBC.lCode = NATURAL;
   xBC.rCode = NATURAL;
-  multi_UBspline_1d_d* s = create_multi_UBspline_1d_d(x_grid, xBC, 1);
+  auto s    = std::unique_ptr<multi_UBspline_1d_d, void (*)(void*)>{create_multi_UBspline_1d_d(x_grid, xBC, 1),
+                                                                 destroy_Bspline};
   REQUIRE(s);
 
-  set_multi_UBspline_1d_d(s, 0, data);
+  set_multi_UBspline_1d_d(s.get(), 0, data);
 
   double val;
-  eval_multi_UBspline_1d_d(s, 1.0, &val);
+  eval_multi_UBspline_1d_d(s.get(), 1.0, &val);
   REQUIRE(val == Approx(2.0));
-  destroy_Bspline(s);
 }
 
 TEST_CASE("double_1d_periodic", "[einspline]")
@@ -134,15 +131,15 @@ TEST_CASE("double_1d_periodic", "[einspline]")
   bc.lCode = PERIODIC;
   bc.rCode = PERIODIC;
 
-  UBspline_1d_d* s = create_UBspline_1d_d(x_grid, bc, data);
+  auto s = std::unique_ptr<UBspline_1d_d, void (*)(void*)>{create_UBspline_1d_d(x_grid, bc, data), destroy_Bspline};
 
   REQUIRE(s);
 
   double val;
-  eval_UBspline_1d_d(s, 0.0, &val);
+  eval_UBspline_1d_d(s.get(), 0.0, &val);
   REQUIRE(val == Approx(0.0));
 
-  eval_UBspline_1d_d(s, delta, &val);
+  eval_UBspline_1d_d(s.get(), delta, &val);
   REQUIRE(val == Approx(data[1]));
 
   double micro_delta = delta / 4.0;
@@ -153,16 +150,14 @@ TEST_CASE("double_1d_periodic", "[einspline]")
     double x = micro_delta * i;
     micro_data[i] = sin(tpi*x);
   }
-  eval_UBspline_1d_d(s, micro_delta * 3, &val);
+  eval_UBspline_1d_d(s.get(), micro_delta * 3, &val);
   REQUIRE(val == Approx(micro_data[3]).epsilon(0.001));
 
-  eval_UBspline_1d_d(s, micro_delta * 17, &val);
+  eval_UBspline_1d_d(s.get(), micro_delta * 17, &val);
   REQUIRE(val == Approx(micro_data[17]).epsilon(0.001));
 
-  eval_UBspline_1d_d(s, micro_delta * 31, &val);
+  eval_UBspline_1d_d(s.get(), micro_delta * 31, &val);
   REQUIRE(val == Approx(micro_data[31]).epsilon(0.001));
-
-  destroy_Bspline(s);
 }
 
 #ifdef QMC_CUDA
@@ -183,23 +178,24 @@ TEST_CASE("multi_cuda_wrapper", "[einspline]")
   BCtype_s xBC;
   xBC.lCode = NATURAL;
   xBC.rCode = NATURAL;
-  multi_UBspline_1d_s* s = create_multi_UBspline_1d_s(x_grid, xBC, 1);
+  auto s    = std::unique_ptr<multi_USspline_1d_s, void (*)(void*)>{create_multi_UBspline_1d_s(x_grid, xBC, 1),
+                                                                 destroy_Bspline};
   REQUIRE(s);
-  set_multi_UBspline_1d_s(s, 0, data);
+  set_multi_UBspline_1d_s(s.get(), 0, data);
 
   float pos[1];
   pos[0] = 0.0;
 
   // Check the CPU value
   float cpu_val[1];
-  eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
+  eval_multi_UBspline_1d_s(s.get(), pos[0], cpu_val);
   REQUIRE(cpu_val[0] == 2.0);
 
   //this would assert in debug and is an illegal value for pos[0]
   //pos[0] = 11.0;
   pos[0] = 9.99999999;
   // Check the CPU value
-  eval_multi_UBspline_1d_s(s, pos[0], cpu_val);
+  eval_multi_UBspline_1d_s(s.get(), pos[0], cpu_val);
   //std::cout << std::setprecision(24) << cpu_val[0] << " == " << 3.0000f << '\n';
   //With power 9/ clang 8  3.0000f is 3 but cpu_val[0] = 3.0000002384185791015625
   REQUIRE(cpu_val[0] == Approx(3.0000f).epsilon(0.00000025));
@@ -207,11 +203,11 @@ TEST_CASE("multi_cuda_wrapper", "[einspline]")
   // Check the GPU value
   pos[0] = 0.0;
   float vals_output[1];
-  test_multi(s, pos, vals_output);
+  test_multi(s.get(), pos, vals_output);
   REQUIRE(vals_output[0] == 2.0);
 
   pos[0] = 9.99999999;
-  test_multi(s, pos, vals_output);
+  test_multi(s.get(), pos, vals_output);
   REQUIRE(vals_output[0] == 3.0);
 }
 
