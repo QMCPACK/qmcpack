@@ -86,46 +86,48 @@ TEST_CASE("double_3d_periodic","[einspline]")
   bc.lCode = PERIODIC;
   bc.rCode = PERIODIC;
 
-  UBspline_3d_d* s = create_UBspline_3d_d(grid, grid, grid, bc, bc, bc, data);
+  auto s = std::unique_ptr<UBspline_3d_d, void (*)(void*)>{create_UBspline_3d_d(grid, grid, grid, bc, bc, bc, data),
+                                                           destroy_Bspline};
   REQUIRE(s);
 
   double val;
-  eval_UBspline_3d_d(s, 0.0, 0.0, 0.0, &val);
+  eval_UBspline_3d_d(s.get(), 0.0, 0.0, 0.0, &val);
   REQUIRE(val == Approx(0.0));
 
   double pos=0.99999999;
-  eval_UBspline_3d_d(s, pos, pos, pos, &val);
+  eval_UBspline_3d_d(s.get(), pos, pos, pos, &val);
   REQUIRE(val == Approx(0.0));
 
-  eval_UBspline_3d_d(s, delta, delta, delta, &val);
+  eval_UBspline_3d_d(s.get(), delta, delta, delta, &val);
   REQUIRE(val == Approx(data[N*N + N + 1]));
 
-  multi_UBspline_3d_d* m = create_multi_UBspline_3d_d(grid, grid, grid, bc, bc, bc, 1);
+  auto m =
+      std::unique_ptr<multi_UBspline_3d_d, void (*)(void*)>{create_multi_UBspline_3d_d(grid, grid, grid, bc, bc, bc, 1),
+                                                            destroy_Bspline};
   REQUIRE(m);
 
-  set_multi_UBspline_3d_d(m, 0, data);
+  set_multi_UBspline_3d_d(m.get(), 0, data);
 
-  eval_multi_UBspline_3d_d(m, delta, delta, delta, &val);
-  destroy_Bspline(m);
+  eval_multi_UBspline_3d_d(m.get(), delta, delta, delta, &val);
   REQUIRE(val == Approx(data[N*N + N + 1]));
-
 
   BCtype_s bc_s;
   bc_s.lCode = PERIODIC;
   bc_s.rCode = PERIODIC;
 
-  multi_UBspline_3d_s* ms = create_multi_UBspline_3d_s(grid, grid, grid, bc_s, bc_s, bc_s, 1);
+  auto ms = std::unique_ptr<multi_UBspline_3d_s, void (*)(void*)>{create_multi_UBspline_3d_s(grid, grid, grid, bc_s,
+                                                                                             bc_s, bc_s, 1),
+                                                                  destroy_Bspline};
   REQUIRE(ms);
-  set_multi_UBspline_3d_s_d(ms, 0, data);
+  set_multi_UBspline_3d_s_d(ms.get(), 0, data);
 
   float fval;
-  eval_multi_UBspline_3d_s(ms, delta, delta, delta, &fval);
+  eval_multi_UBspline_3d_s(ms.get(), delta, delta, delta, &fval);
   REQUIRE(fval == Approx(data[N*N + N + 1]));
 
   float grads[3];
   float hess[9];
-  eval_multi_UBspline_3d_s_vgh(ms, 0.1, 0.2, 0.0, &fval, grads, hess);
-  destroy_Bspline(ms);
+  eval_multi_UBspline_3d_s_vgh(ms.get(), 0.1, 0.2, 0.0, &fval, grads, hess);
 
   // See miniqmc-python/splines/test_3d.py for values
   REQUIRE(grads[0] == Approx(5.11104213833));
