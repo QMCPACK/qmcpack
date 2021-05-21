@@ -594,10 +594,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
 
   for (int grp = 0; grp < nGroups; grp++)
   {
-    // you should choose the det with highest weight for reference
-    Dets[grp]->ReferenceDeterminant      = 0; // for now
-    Dets[grp]->NumDets                   = uniqueConfgs[grp].size();
-    std::vector<ci_configuration2>& list = *Dets[grp]->ciConfigList;
+    std::vector<ci_configuration2>& list = Dets[grp]->getCIConfigList();
     list.resize(uniqueConfgs[grp].size());
     for (int i = 0; i < list.size(); i++)
     {
@@ -612,7 +609,8 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
                   << grp << ", problems with ci configuration list. \n");
       }
     }
-    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], Dets[grp]->Phi->getOrbitalSetSize());
+    // you should choose the det with highest weight for reference. for now choosing 0
+    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], 0);
   }
 
   if (CSFcoeff.size() == 1)

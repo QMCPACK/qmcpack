@@ -69,7 +69,7 @@ public:
    */
   MultiDiracDeterminant(const MultiDiracDeterminant& s);
 
-  MultiDiracDeterminant& operator=(const MultiDiracDeterminant& s);
+  MultiDiracDeterminant& operator=(const MultiDiracDeterminant& s) = delete;
 
   /** return a clone of Phi
    */
@@ -77,18 +77,14 @@ public:
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
-  inline IndexType rows() const { return NumPtcls; }
-
-  inline IndexType cols() const { return NumOrbitals; }
-
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
-   *@param norb total number of orbitals (including unoccupied)
+   *@param ref_det_id id of the reference determinant
+   *
+   * Note: ciConfigList should have been populated when calling this function
    */
-  void set(int first, int nel, int norb);
-
-  void set(int first, int nel);
+  void set(int first, int nel, int ref_det_id);
 
   void setBF(BackflowTransformation* bf) {}
 
@@ -166,9 +162,6 @@ public:
 
   inline void reportStatus(std::ostream& os) {}
 
-  ///reset the size: with the number of particles and number of orbtials
-  virtual void resize(int nel, int morb);
-
   void registerData(ParticleSet& P, WFBufferType& buf);
 
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
@@ -228,7 +221,7 @@ public:
 
   // create necessary structures used in the evaluation of the determinants
   // this works with confgList, which shouldn't change during a simulation
-  void createDetData(ci_configuration2& ref,
+  void createDetData(const ci_configuration2& ref,
                      std::vector<int>& data,
                      std::vector<std::pair<int, int>>& pairs,
                      std::vector<RealType>& sign);
@@ -387,20 +380,33 @@ public:
   // full evaluation of all the structures from scratch, used in evaluateLog for example
   void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
 
+  // accessors
+  inline int getNumDets() const { return ciConfigList->size(); }
+  inline int getNumPtcls() const { return NumPtcls; }
+  inline int getFirstIndex() const { return FirstIndex; }
+  inline std::vector<ci_configuration2>& getCIConfigList() { return *ciConfigList; }
+
+  /// store determinants (old and new). FIXME: move to private
+  ValueVector_t detValues, new_detValues;
+  GradMatrix_t grads, new_grads;
+  ValueMatrix_t lapls, new_lapls;
+
+private:
+  ///reset the size: with the number of particles
+  void resize(int nel);
+
+  ///a set of single-particle orbitals used to fill in the  values of the matrix
+  const std::unique_ptr<SPOSet> Phi;
+  ///number of single-particle orbitals which belong to this Dirac determinant
+  const int NumOrbitals;
   ///total number of particles
   int NP;
-  ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
   ///index of the first particle with respect to the particle set
   int FirstIndex;
   ///index of the last particle with respect to the particle set
   int LastIndex;
-  ///a set of single-particle orbitals used to fill in the  values of the matrix
-  std::unique_ptr<SPOSet> Phi;
-  /// number of determinants handled by this object
-  int NumDets;
   ///use shared_ptr
   std::shared_ptr<std::vector<ci_configuration2>> ciConfigList;
   // the reference determinant never changes, so there is no need to store it.
@@ -408,20 +414,15 @@ public:
   // by default
   int ReferenceDeterminant;
 
-  /// store determinants (old and new)
-  ValueVector_t detValues, new_detValues;
-  GradMatrix_t grads, new_grads;
-  ValueMatrix_t lapls, new_lapls;
-
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
-  ValueMatrix_t psiM, psiM_temp, TpsiM, psiMinv, psiMinv_temp;
+  ValueMatrix_t psiM, TpsiM, psiMinv, psiMinv_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t dpsiM, dpsiM_temp;
+  GradMatrix_t dpsiM;
   // temporaty storage
   ValueMatrix_t dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-  ValueMatrix_t d2psiM, d2psiM_temp;
+  ValueMatrix_t d2psiM;
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV, psiV_temp;

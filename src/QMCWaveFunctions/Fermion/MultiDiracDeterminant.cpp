@@ -30,23 +30,18 @@
 
 namespace qmcplusplus
 {
-/** set the index of the first particle in the determinant and reset the size of the determinant
- *@param first index of first particle
- *@param nel number of particles in the determinant
- */
-void MultiDiracDeterminant::set(int first, int nel)
+void MultiDiracDeterminant::set(int first, int nel, int ref_det_id)
 {
-  APP_ABORT(ClassName + "set(int first, int nel) is disabled. \n");
-}
+  assert(ciConfigList);
+  assert(ciConfigList->size() > 0);
 
-void MultiDiracDeterminant::set(int first, int nel, int norb)
-{
-  FirstIndex = first;
-  resize(nel, norb);
+  FirstIndex           = first;
+  ReferenceDeterminant = ref_det_id;
+  resize(nel);
   createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *DetSigns);
 }
 
-void MultiDiracDeterminant::createDetData(ci_configuration2& ref,
+void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
                                           std::vector<int>& data,
                                           std::vector<std::pair<int, int>>& pairs,
                                           std::vector<RealType>& sign)
@@ -220,9 +215,6 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(FirstAddressOfGrads, LastAddressOfGrads);
   buf.get(lapls.first_address(), lapls.last_address());
   // only used with ORB_PBYP_ALL,
-  //psiM_temp = psiM;
-  //dpsiM_temp = dpsiM;
-  //d2psiM_temp = d2psiM;
   psiMinv_temp = psiMinv;
   int n1       = psiM.extent(0);
   int n2       = psiM.extent(1);
@@ -314,21 +306,20 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
+      Phi(s.Phi->makeClone()),
+      NumOrbitals(Phi->getOrbitalSetSize()),
       NP(0),
-      FirstIndex(s.FirstIndex)
+      FirstIndex(s.FirstIndex),
+      ciConfigList(s.ciConfigList),
+      ReferenceDeterminant(s.ReferenceDeterminant),
+      detData(s.detData),
+      uniquePairs(s.uniquePairs),
+      DetSigns(s.DetSigns)
 {
-  ReferenceDeterminant = s.ReferenceDeterminant;
-  ciConfigList         = s.ciConfigList;
-  NumDets              = s.NumDets;
-
-  detData              = s.detData;
-  uniquePairs          = s.uniquePairs;
-  DetSigns             = s.DetSigns;
-  Optimizable          = s.Optimizable;
+  Optimizable = s.Optimizable;
 
   registerTimers();
-  Phi.reset(s.Phi->makeClone());
-  resize(s.NumPtcls, s.NumOrbitals);
+  resize(s.NumPtcls);
 }
 
 SPOSetPtr MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
@@ -356,9 +347,10 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
+      Phi(std::move(spos)),
+      NumOrbitals(Phi->getOrbitalSetSize()),
       NP(0),
       FirstIndex(first),
-      Phi(std::move(spos)),
       ReferenceDeterminant(0)
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
@@ -372,27 +364,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int
 }
 
 ///default destructor
-MultiDiracDeterminant::~MultiDiracDeterminant() {}
-
-MultiDiracDeterminant& MultiDiracDeterminant::operator=(const MultiDiracDeterminant& s)
-{
-  if (this == &s)
-    return *this;
-
-  NP                   = 0;
-  ReferenceDeterminant = s.ReferenceDeterminant;
-  ciConfigList         = s.ciConfigList;
-  NumDets              = s.NumDets;
-
-  detData     = s.detData;
-  uniquePairs = s.uniquePairs;
-  FirstIndex  = s.FirstIndex;
-  DetSigns    = s.DetSigns;
-
-  resize(s.NumPtcls, s.NumOrbitals);
-
-  return *this;
-}
+MultiDiracDeterminant::~MultiDiracDeterminant() = default;
 
 void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
@@ -402,7 +374,7 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
     //int norb = cols();
     NP                  = P.getTotalNum();
     FirstAddressOfGrads = &(grads(0, 0)[0]);
-    LastAddressOfGrads  = FirstAddressOfGrads + NumPtcls * DIM * NumDets;
+    LastAddressOfGrads  = FirstAddressOfGrads + NumPtcls * DIM * getNumDets();
     FirstAddressOfdpsiM = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
     LastAddressOfdpsiM  = FirstAddressOfdpsiM + NumPtcls * NumOrbitals * DIM;
   }
@@ -420,31 +392,25 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 
 ///reset the size: with the number of particles and number of orbtials
 /// morb is the total number of orbitals, including virtual
-void MultiDiracDeterminant::resize(int nel, int morb)
+void MultiDiracDeterminant::resize(int nel)
 {
-  if (nel <= 0 || morb <= 0)
+  if (nel <= 0)
   {
     APP_ABORT(" ERROR: MultiDiracDeterminant::resize arguments equal to zero. \n");
   }
-  if (NumDets == 0 || NumDets != ciConfigList->size())
-  {
-    APP_ABORT(" ERROR: MultiDiracDeterminant::resize problems with NumDets. \n");
-  }
 
-  NumPtcls    = nel;
-  NumOrbitals = morb;
-  LastIndex   = FirstIndex + nel;
+  const int NumDets = getNumDets();
+
+  NumPtcls  = nel;
+  LastIndex = FirstIndex + nel;
   psiV_temp.resize(nel);
   psiV.resize(NumOrbitals);
   dpsiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
-  psiM.resize(nel, morb);
-  dpsiM.resize(nel, morb);
-  d2psiM.resize(nel, morb);
-  //psiM_temp.resize(nel,morb);
-  //dpsiM_temp.resize(nel,morb);
-  //d2psiM_temp.resize(nel,morb);
-  TpsiM.resize(morb, nel);
+  psiM.resize(nel, NumOrbitals);
+  dpsiM.resize(nel, NumOrbitals);
+  d2psiM.resize(nel, NumOrbitals);
+  TpsiM.resize(NumOrbitals, nel);
   psiMinv.resize(nel, nel);
   dpsiMinv.resize(nel, nel);
   psiMinv_temp.resize(nel, nel);
@@ -459,7 +425,7 @@ void MultiDiracDeterminant::resize(int nel, int morb)
   new_grads.resize(NumDets, nel);
   lapls.resize(NumDets, nel);
   new_lapls.resize(NumDets, nel);
-  dotProducts.resize(morb, morb);
+  dotProducts.resize(NumOrbitals, NumOrbitals);
   DetCalculator.resize(nel);
 }
 
