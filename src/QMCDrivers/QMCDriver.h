@@ -331,8 +331,7 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///turn on spin moves
-  std::string SpinMoves;
+  ///spin mass for spinor calcs
   RealType SpinMass;
 
   bool putQMCInfo(xmlNodePtr cur);

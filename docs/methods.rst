@@ -151,8 +151,6 @@ Variational Monte Carlo
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``spinMoves``                  | text         | yes,no                  | no          | Whether or not to sample the electron spins   |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
@@ -228,12 +226,8 @@ Additional information:
   recompute) by default when not using mixed precision. Recomputing
   introduces a performance penalty dependent on system size.
 
-- ``spinMoves`` Determines whether or not the spin variables are sampled following
-  :cite:`Melton2016-1` and :cite:`Melton2016-2`. If a relativistic calculation is desired using pseudopotentials,
-  spin variable sampling is required.
-
-- ``spinMass`` If spin sampling is on using ``spinMoves`` == yes, the spin mass determines the rate
-  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`.
+- ``spinMass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
+  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 An example VMC section for a simple VMC run:
 
@@ -1189,8 +1183,6 @@ parameters:
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``spinMoves``                  | text         | yes,no                  | no          | Whether or not to sample the electron spins   |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
@@ -1280,12 +1272,9 @@ Additional information:
    elapsed, the program will finalize the simulation even if all blocks
    are not completed.
 
--  ``spinMoves`` Determines whether or not the spin variables are sampled following :cite:`Melton2016-1` 
-   and :cite:`Melton2016-2`. If a relativistic calculation is desired using pseudopotentials, spin variable sampling is required.
-
--  ``spinMass`` If spin sampling is on using ``spinMoves`` == yes, the spin mass determines the rate 
+-  ``spinMass`` This is an optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input, the spin mass determines the rate 
    of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}` where 
-   :math:`\tau` is the normal spatial timestep and :math:`\mu_s` is the value of the spin mass.
+   :math:`\tau` is the normal spatial timestep and :math:`\mu_s` is the value of the spin mass. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 
 -  ``energyUpdateInterval``: The default is to update the trial energy
