@@ -16,7 +16,8 @@
  *  using the Legacy DiracMatrix serially.
  */
 
-#include "catch_benchmark_main.hpp"
+#include "catch.hpp"
+
 #include <algorithm>
 #include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
