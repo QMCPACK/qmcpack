@@ -199,6 +199,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   SPOSetBuilderFactory.cpp
   TrialWaveFunction.cpp
   TWFdispatcher.cpp
+  TWFPrototype.cpp
   WaveFunctionFactory.cpp
   )
 
