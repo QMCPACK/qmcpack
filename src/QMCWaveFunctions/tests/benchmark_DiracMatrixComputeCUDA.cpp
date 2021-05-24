@@ -51,7 +51,7 @@ template<typename T>
 using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
 
-TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "[wavefunction][fermion][benchmark]")
+TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "[wavefunction][fermion][.benchmark]")
 {
   size_t n       = 1024;
   int batch_size = 4;
@@ -144,7 +144,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
   };
 }
 
-TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunction][fermion][benchmark]")
+TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunction][fermion][.benchmark]")
 {
   size_t n       = 256;
   int batch_size = 10;
@@ -196,7 +196,7 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunct
   };
 }
 
-TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunction][fermion][benchmark]")
+TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunction][fermion][.benchmark]")
 {
   size_t n       = 1024;
   int batch_size = 4;
