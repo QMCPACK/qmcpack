@@ -63,7 +63,7 @@ SET(JASTROW_SRC test_bspline_jastrow.cpp test_counting_jastrow.cpp test_polynomi
                 test_rpa_jastrow.cpp test_user_jastrow.cpp test_kspace_jastrow.cpp test_pade_jastrow.cpp
                 test_short_range_cusp_jastrow.cpp test_DiffTwoBodyJastrowOrbital.cpp)
 SET(DETERMINANT_SRC FakeSPO.cpp makeRngSpdMatrix.cpp test_DiracDeterminantBatched.cpp test_DiracDeterminantBatched.cpp
-                    test_multi_dirac_determinant.cpp test_dirac_matrix.cpp
+                    test_multi_dirac_determinant.cpp test_dirac_matrix.cpp test_ci_configuration.cpp
                     test_multi_slater_determinant.cpp)
 
 IF(ENABLE_CUDA)

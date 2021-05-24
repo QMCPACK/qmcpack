@@ -41,7 +41,6 @@
 
 namespace qmcplusplus
 {
-
 SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 {
   int nfound  = 0;
@@ -164,23 +163,26 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     bb = new SHOSetBuilder(targetPtcl, myComm);
   }
 #if OHMMS_DIM == 3
-  else if (type == "spinorbspline")
-  {
-#ifdef QMC_COMPLEX
-    app_log() << "Einspline Spinor Set\n";
-    bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
-#else
-    PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
-#endif
-  }
   else if (type.find("spline") < type.size())
   {
-#if defined(HAVE_EINSPLINE)
-    PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
-    bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+    if (targetPtcl.is_spinor_)
+    {
+#ifdef QMC_COMPLEX
+      app_log() << "Einspline Spinor Set\n";
+      bb = new EinsplineSpinorSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
 #else
-    PRE.error("Einspline is missing for B-spline orbitals", true);
+      PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  Rebuild with this option");
 #endif
+    }
+    else
+    {
+#if defined(HAVE_EINSPLINE)
+      PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
+      bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
+#else
+      PRE.error("Einspline is missing for B-spline orbitals", true);
+#endif
+    }
   }
   else if (type == "molecularorbital" || type == "mo")
   {
@@ -191,22 +193,14 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
       PRE.error("Missing basisset/@source.", true);
     else
       ions = (*pit).second;
-    bb = new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
-  }
-  else if (type == "molecularspinor")
-  {
+    if (targetPtcl.is_spinor_)
 #ifdef QMC_COMPLEX
-    ParticleSet* ions = 0;
-    //initialize with the source tag
-    PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
-    if (pit == ptclPool.end())
-      PRE.error("Missing basisset/@source.", true);
-    else
-      ions = (*pit).second;
-    bb = new LCAOSpinorBuilder(targetPtcl, *ions, myComm, rootNode);
+      bb = new LCAOSpinorBuilder(targetPtcl, *ions, myComm, rootNode);
 #else
-    PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild with this option");
+      PRE.error("Use of lcao spinors requires QMC_COMPLEX=1.  Rebuild with this option");
 #endif
+    else
+      bb = new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
   }
 #endif //OHMMS_DIM==3
   PRE.flush();

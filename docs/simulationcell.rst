@@ -160,17 +160,19 @@ Input specification
 
 Attribute:
 
-  +----------------------------------------+----------+----------------------+---------+------------------------------+
-  | Name                                   | Datatype | Values               | Default | Description                  |
-  +========================================+==========+======================+=========+==============================+
-  | ``name/id``                            | Text     | *Any*                | e       | Name of particle set         |
-  +----------------------------------------+----------+----------------------+---------+------------------------------+
-  | ``size``:math:`^o`                     | Integer  | *Any*                | 0       | Number of particles in set   |
-  +----------------------------------------+----------+----------------------+---------+------------------------------+
-  | ``random``\ :math:`^o`                 | Text     | Yes/no               | No      | Randomize starting positions |
-  +----------------------------------------+----------+----------------------+---------+------------------------------+
-  | ``randomsrc``/``randomsrc``:math:`^o`  | Text     | ``particleset.name`` | *None*  | Particle set to randomize    |
-  +----------------------------------------+----------+----------------------+---------+------------------------------+
+  +----------------------------------------+----------+----------------------+---------+-------------------------------+
+  | Name                                   | Datatype | Values               | Default | Description                   |
+  +========================================+==========+======================+=========+===============================+
+  | ``name/id``                            | Text     | *Any*                | e       | Name of particle set          |
+  +----------------------------------------+----------+----------------------+---------+-------------------------------+
+  | ``size``:math:`^o`                     | Integer  | *Any*                | 0       | Number of particles in set    |
+  +----------------------------------------+----------+----------------------+---------+-------------------------------+
+  | ``random``\ :math:`^o`                 | Text     | Yes/no               | No      | Randomize starting positions  |
+  +----------------------------------------+----------+----------------------+---------+-------------------------------+
+  | ``randomsrc``/``randomsrc``:math:`^o`  | Text     | ``particleset.name`` | *None*  | Particle set to randomize     |
+  +----------------------------------------+----------+----------------------+---------+-------------------------------+
+  | ``spinor``:math:`^o`                   | Text     | Yes/no               | No      | particleset treated as spinor |
+  +----------------------------------------+----------+----------------------+---------+-------------------------------+
 
 Detailed attribute description
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -250,6 +252,11 @@ Optional particleset attributes
 -  | ``randomsrc``/``random_source``
    | Specify source particle set around which to randomize the initial
      positions of this particle set.
+
+-  | ``spinor``
+   | Sets an internal flag that the particleset (usually for electrons) is
+     a spinor object. This is used in the wavefunction builders and QMC drivers
+     to determiane if spin sampling will be used
 
 Required name attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^

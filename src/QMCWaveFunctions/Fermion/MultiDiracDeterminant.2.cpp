@@ -114,7 +114,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
 {
   const ValueType det0 = ratios(ref, iat)[dx];
   BuildDotProductsAndCalculateRatios_impl(ref, det0, WorkSpace.data(), psiinv, psi, dotProducts, data, pairs, sign);
-  for (size_t count = 0; count < NumDets; ++count)
+  for (size_t count = 0; count < getNumDets(); ++count)
     ratios(count, iat)[dx] = WorkSpace[count];
 #if 0
     ValueType det0 = ratios(ref,iat)[dx];
@@ -160,7 +160,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
   const ValueType det0 = ratios(ref, iat);
   BuildDotProductsAndCalculateRatios_impl(ref, det0, WorkSpace.data(), psiinv, psi, dotProducts, data, pairs, sign);
   //splatt
-  for (size_t count = 0; count < NumDets; ++count)
+  for (size_t count = 0; count < getNumDets(); ++count)
     ratios(count, iat) = WorkSpace[count];
 #if 0
     ValueType det0 = ratios(ref,iat);

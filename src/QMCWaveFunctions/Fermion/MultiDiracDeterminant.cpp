@@ -30,25 +30,18 @@
 
 namespace qmcplusplus
 {
-/** set the index of the first particle in the determinant and reset the size of the determinant
- *@param first index of first particle
- *@param nel number of particles in the determinant
- */
-void MultiDiracDeterminant::set(int first, int nel)
+void MultiDiracDeterminant::set(int first, int nel, int ref_det_id)
 {
-  APP_ABORT(ClassName + "set(int first, int nel) is disabled. \n");
+  assert(ciConfigList);
+  assert(ciConfigList->size() > 0);
+
+  FirstIndex           = first;
+  ReferenceDeterminant = ref_det_id;
+  resize(nel);
+  createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *DetSigns);
 }
 
-void MultiDiracDeterminant::set(int first, int nel, int norb)
-{
-  FirstIndex = first;
-  DetCalculator.resize(nel);
-  resize(nel, norb);
-  // mmorales; remove later
-  //    testDets();
-}
-
-void MultiDiracDeterminant::createDetData(ci_configuration2& ref,
+void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
                                           std::vector<int>& data,
                                           std::vector<std::pair<int, int>>& pairs,
                                           std::vector<RealType>& sign)
@@ -350,9 +343,6 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     buf.get(spingrads.first_address(), spingrads.last_address());
   }
   // only used with ORB_PBYP_ALL,
-  //psiM_temp = psiM;
-  //dpsiM_temp = dpsiM;
-  //d2psiM_temp = d2psiM;
   psiMinv_temp = psiMinv;
   int n1       = psiM.extent(0);
   int n2       = psiM.extent(1);
@@ -447,24 +437,20 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
+      Phi(s.Phi->makeClone()),
+      NumOrbitals(Phi->getOrbitalSetSize()),
       NP(0),
       FirstIndex(s.FirstIndex),
-      ciConfigList(nullptr)
+      ciConfigList(s.ciConfigList),
+      ReferenceDeterminant(s.ReferenceDeterminant),
+      detData(s.detData),
+      uniquePairs(s.uniquePairs),
+      DetSigns(s.DetSigns)
 {
-  IsCloned = true;
-
-  ReferenceDeterminant = s.ReferenceDeterminant;
-  ciConfigList         = s.ciConfigList;
-  NumDets              = s.NumDets;
-  detData              = s.detData;
-  uniquePairs          = s.uniquePairs;
-  DetSigns             = s.DetSigns;
-  Optimizable          = s.Optimizable;
+  Optimizable = s.Optimizable;
 
   registerTimers();
-  Phi.reset(s.Phi->makeClone());
-  this->resize(s.NumPtcls, s.NumOrbitals);
-  this->DetCalculator.resize(s.NumPtcls);
+  resize(s.NumPtcls);
 }
 
 SPOSetPtr MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
@@ -492,48 +478,24 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
+      Phi(std::move(spos)),
+      NumOrbitals(Phi->getOrbitalSetSize()),
       NP(0),
       FirstIndex(first),
-      Phi(std::move(spos)),
-      ciConfigList(nullptr),
       ReferenceDeterminant(0)
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
-  IsCloned = false;
-
-  ciConfigList = new std::vector<ci_configuration2>;
-  detData      = new std::vector<int>;
-  uniquePairs  = new std::vector<std::pair<int, int>>;
-  DetSigns     = new std::vector<RealType>;
+  ciConfigList = std::make_shared<std::vector<ci_configuration2>>();
+  detData      = std::make_shared<std::vector<int>>();
+  uniquePairs  = std::make_shared<std::vector<std::pair<int, int>>>();
+  DetSigns     = std::make_shared<std::vector<RealType>>();
 
   registerTimers();
 }
 
 ///default destructor
-MultiDiracDeterminant::~MultiDiracDeterminant() {}
-
-MultiDiracDeterminant& MultiDiracDeterminant::operator=(const MultiDiracDeterminant& s)
-{
-  if (this == &s)
-    return *this;
-
-  NP                   = 0;
-  IsCloned             = true;
-  ReferenceDeterminant = s.ReferenceDeterminant;
-  ciConfigList         = s.ciConfigList;
-  NumDets              = s.NumDets;
-
-  detData     = s.detData;
-  uniquePairs = s.uniquePairs;
-  FirstIndex  = s.FirstIndex;
-  DetSigns    = s.DetSigns;
-
-  resize(s.NumPtcls, s.NumOrbitals);
-  this->DetCalculator.resize(s.NumPtcls);
-
-  return *this;
-}
+MultiDiracDeterminant::~MultiDiracDeterminant() = default;
 
 void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
@@ -543,7 +505,7 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
     //int norb = cols();
     NP                  = P.getTotalNum();
     FirstAddressOfGrads = &(grads(0, 0)[0]);
-    LastAddressOfGrads  = FirstAddressOfGrads + NumPtcls * DIM * NumDets;
+    LastAddressOfGrads  = FirstAddressOfGrads + NumPtcls * DIM * getNumDets();
     FirstAddressOfdpsiM = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
     LastAddressOfdpsiM  = FirstAddressOfdpsiM + NumPtcls * NumOrbitals * DIM;
   }
@@ -564,29 +526,19 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 
-void MultiDiracDeterminant::setDetInfo(int ref, std::vector<ci_configuration2>* list)
-{
-  ReferenceDeterminant = ref;
-  ciConfigList         = list;
-  NumDets              = list->size();
-}
-
 ///reset the size: with the number of particles and number of orbtials
 /// morb is the total number of orbitals, including virtual
-void MultiDiracDeterminant::resize(int nel, int morb)
+void MultiDiracDeterminant::resize(int nel)
 {
-  if (nel <= 0 || morb <= 0)
+  if (nel <= 0)
   {
     APP_ABORT(" ERROR: MultiDiracDeterminant::resize arguments equal to zero. \n");
   }
-  if (NumDets == 0 || NumDets != ciConfigList->size())
-  {
-    APP_ABORT(" ERROR: MultiDiracDeterminant::resize problems with NumDets. \n");
-  }
 
-  NumPtcls    = nel;
-  NumOrbitals = morb;
-  LastIndex   = FirstIndex + nel;
+  const int NumDets = getNumDets();
+
+  NumPtcls  = nel;
+  LastIndex = FirstIndex + nel;
   psiV_temp.resize(nel);
   psiV.resize(NumOrbitals);
   dpsiV.resize(NumOrbitals);
@@ -617,13 +569,7 @@ void MultiDiracDeterminant::resize(int nel, int morb)
   spingrads.resize(NumDets, nel);
   new_spingrads.resize(NumDets, nel);
   dotProducts.resize(morb, morb);
-
-  //if(ciConfigList==nullptr)
-  //{
-  //  APP_ABORT("ciConfigList was not properly initialized.\n");
-  //}
-  if (!IsCloned)
-    createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *DetSigns);
+  DetCalculator.resize(nel);
 }
 
 void MultiDiracDeterminant::registerTimers()

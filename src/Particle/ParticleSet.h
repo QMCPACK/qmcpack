@@ -104,6 +104,8 @@ public:
   bool SameMass;
   ///threa id
   Index_t ThreadID;
+  ///true is a dynamic spin calculation
+  bool is_spinor_;
   /** the index of the active particle during particle-by-particle moves
    *
    * when a single particle move is proposed, the particle id is assigned to activePtcl
@@ -562,6 +564,7 @@ public:
     spins            = ptclin.spins;
     ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
+    is_spinor_       = ptclin.is_spinor_;
     if (ptclin.SubPtcl.size())
     {
       SubPtcl.resize(ptclin.SubPtcl.size());

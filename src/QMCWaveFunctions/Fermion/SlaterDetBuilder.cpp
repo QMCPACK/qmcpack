@@ -594,10 +594,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
 
   for (int grp = 0; grp < nGroups; grp++)
   {
-    // you should choose the det with highest weight for reference
-    Dets[grp]->ReferenceDeterminant      = 0; // for now
-    Dets[grp]->NumDets                   = uniqueConfgs[grp].size();
-    std::vector<ci_configuration2>& list = *Dets[grp]->ciConfigList;
+    std::vector<ci_configuration2>& list = Dets[grp]->getCIConfigList();
     list.resize(uniqueConfgs[grp].size());
     for (int i = 0; i < list.size(); i++)
     {
@@ -612,7 +609,8 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
                   << grp << ", problems with ci configuration list. \n");
       }
     }
-    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], Dets[grp]->Phi->getOrbitalSetSize());
+    // you should choose the det with highest weight for reference. for now choosing 0
+    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], 0);
   }
 
   if (CSFcoeff.size() == 1)
@@ -725,9 +723,11 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
   multiSD->C2node_up = C2nodes[0];
   multiSD->C2node_dn = C2nodes[1];
   multiSD->resize(uniqueConfgs[0].size(), uniqueConfgs[1].size());
+  // alpha dets
   {
     auto& spo = multiSD->spo_up;
     spo->occup.resize(uniqueConfgs[0].size(), multiSD->nels_up);
+    multiSD->dets_up.reserve(uniqueConfgs[0].size());
     for (int i = 0; i < uniqueConfgs[0].size(); i++)
     {
       int nq               = 0;
@@ -749,12 +749,14 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), 0);
       }
       adet->set(multiSD->FirstIndex_up, multiSD->nels_up);
-      multiSD->dets_up.push_back(adet);
+      multiSD->dets_up.emplace_back(adet);
     }
   }
+  // beta dets
   {
     auto& spo = multiSD->spo_dn;
     spo->occup.resize(uniqueConfgs[1].size(), multiSD->nels_dn);
+    multiSD->dets_dn.reserve(uniqueConfgs[1].size());
     for (int i = 0; i < uniqueConfgs[1].size(); i++)
     {
       int nq               = 0;
@@ -776,7 +778,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), 0);
       }
       adet->set(multiSD->FirstIndex_dn, multiSD->nels_dn);
-      multiSD->dets_dn.push_back(adet);
+      multiSD->dets_dn.emplace_back(adet);
     }
   }
   if (multiSD->CSFcoeff.size() == 1 || multiSD->C.size() == 1)
