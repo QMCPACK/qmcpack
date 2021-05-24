@@ -548,14 +548,14 @@ void MultiDiracDeterminant::resize(int nel)
   dpsiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
   dspin_psiV.resize(NumOrbitals);
-  psiM.resize(nel, morb);
-  dpsiM.resize(nel, morb);
-  d2psiM.resize(nel, morb);
-  dspin_psiM.resize(nel, morb);
+  psiM.resize(nel, NumOrbitals);
+  dpsiM.resize(nel, NumOrbitals);
+  d2psiM.resize(nel, NumOrbitals);
+  dspin_psiM.resize(nel, NumOrbitals);
   //psiM_temp.resize(nel,morb);
   //dpsiM_temp.resize(nel,morb);
   //d2psiM_temp.resize(nel,morb);
-  TpsiM.resize(morb, nel);
+  TpsiM.resize(NumOrbitals, nel);
   psiMinv.resize(nel, nel);
   dpsiMinv.resize(nel, nel);
   psiMinv_temp.resize(nel, nel);
@@ -572,7 +572,7 @@ void MultiDiracDeterminant::resize(int nel)
   new_lapls.resize(NumDets, nel);
   spingrads.resize(NumDets, nel);
   new_spingrads.resize(NumDets, nel);
-  dotProducts.resize(morb, morb);
+  dotProducts.resize(NumOrbitals, NumOrbitals);
   DetCalculator.resize(nel);
 }
 

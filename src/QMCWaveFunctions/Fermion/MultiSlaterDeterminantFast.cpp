@@ -256,10 +256,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   const GradMatrix_t& grads            = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
   const ValueType* restrict detValues0 = (newpos) ? Dets[det_id]->new_detValues.data() : Dets[det_id]->detValues.data();
   const ValueMatrix_t& spingrads       = (newpos) ? Dets[det_id]->new_spingrads : Dets[det_id]->spingrads;
-  const size_t noffset                 = Dets[det_id]->FirstIndex;
+  const size_t noffset                 = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
-  for (size_t i = 0; i < Dets[det_id]->NumDets; i++)
+  for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
   {
     psi += detValues0[i] * C_otherDs[det_id][i];
     g_at += C_otherDs[det_id][i] * grads(i, iat - noffset);
@@ -322,7 +322,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   const size_t* restrict det0          = (*C2node)[det_id].data();
   const ValueType* restrict cptr       = C->data();
   const size_t nc                      = C->size();
-  const size_t noffset                 = Dets[det_id]->FirstIndex;
+  const size_t noffset                 = Dets[det_id]->getFirstIndex();
   PsiValueType psi(0);
   for (size_t i = 0; i < nc; ++i)
   {

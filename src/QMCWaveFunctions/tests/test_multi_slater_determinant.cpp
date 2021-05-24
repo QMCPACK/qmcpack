@@ -297,6 +297,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
   elec_.spins[2] = 5.392168887;
   elec_.spins[3] = 5.33941214;
   elec_.spins[4] = 3.127416326;
+  elec_.is_spinor_ = true;
 
   SpeciesSet& tspecies     = elec_.getSpeciesSet();
   int upIdx                = tspecies.addSpecies("u");
@@ -369,7 +370,7 @@ TEST_CASE("Bi-spinor multi Slater dets", "[wavefunction]")
   app_log() << "Bi using the table method no precomputation" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
+    <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
         <sposet name=\"myspo\" size=\"8\"> \
             <occupation mode=\"ground\"/> \
         </sposet> \
@@ -392,7 +393,7 @@ TEST_CASE("Bi-spinor multi Slater dets", "[wavefunction]")
   app_log() << "Bi using the table method with new optimization" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
   const char* spo_xml_string1_new = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_builder name=\"spinorbuilder\" type=\"molecularspinor\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
+    <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
         <sposet name=\"myspo\" size=\"8\"> \
             <occupation mode=\"ground\"/> \
         </sposet> \
