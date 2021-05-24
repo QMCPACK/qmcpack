@@ -333,7 +333,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
-  //Reference values from 
+  //Reference values from QWalk with SOC
 
   std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
             << std::endl;
