@@ -226,8 +226,11 @@ MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(Particle
   buf.put(detValues.first_address(), detValues.last_address());
   buf.put(FirstAddressOfGrads, LastAddressOfGrads);
   buf.put(lapls.first_address(), lapls.last_address());
-  buf.put(dspin_psiM.first_address(), dspin_psiM.last_address());
-  buf.put(spingrads.first_address(), spingrads.last_address());
+  if (P.is_spinor_)
+  {
+    buf.put(dspin_psiM.first_address(), dspin_psiM.last_address());
+    buf.put(spingrads.first_address(), spingrads.last_address());
+  }
   return 1.0;
 }
 
@@ -240,8 +243,11 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(detValues.first_address(), detValues.last_address());
   buf.get(FirstAddressOfGrads, LastAddressOfGrads);
   buf.get(lapls.first_address(), lapls.last_address());
-  buf.get(dspin_psiM.first_address(), dspin_psiM.last_address());
-  buf.get(spingrads.first_address(), spingrads.last_address());
+  if (P.is_spinor_)
+  {
+    buf.get(dspin_psiM.first_address(), dspin_psiM.last_address());
+    buf.get(spingrads.first_address(), spingrads.last_address());
+  }
   // only used with ORB_PBYP_ALL,
   //psiM_temp = psiM;
   //dpsiM_temp = dpsiM;
@@ -449,8 +455,11 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(detValues.first_address(), detValues.last_address());
   buf.add(FirstAddressOfGrads, LastAddressOfGrads);
   buf.add(lapls.first_address(), lapls.last_address());
-  buf.add(dspin_psiM.first_address(), dspin_psiM.last_address());
-  buf.add(spingrads.first_address(), spingrads.last_address());
+  if (P.is_spinor_)
+  {
+    buf.add(dspin_psiM.first_address(), dspin_psiM.last_address());
+    buf.add(spingrads.first_address(), spingrads.last_address());
+  }
 }
 
 
