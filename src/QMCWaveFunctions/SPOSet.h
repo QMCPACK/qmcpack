@@ -337,6 +337,18 @@ public:
                                     GradMatrix_t& dlogdet,
                                     ValueMatrix_t& d2logdet) = 0;
 
+  /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles, including the spin gradient
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param logdet determinant matrix to be inverted
+   * @param dlogdet gradients
+   * @param d2logdet laplacians
+   * @param dspinlogdet, spin gradients
+   *
+   * default implementation will abort for all SPOSets except SpinorSet
+   *
+   */
   virtual void evaluate_notranspose_spin(const ParticleSet& P,
                                          int first,
                                          int last,

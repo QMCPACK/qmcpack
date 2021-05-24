@@ -372,10 +372,12 @@ public:
 
   /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
   void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
+  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
   void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
 
   /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
   void evaluateGrads(ParticleSet& P, int iat);
+  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
   void evaluateGradsWithSpin(ParticleSet& P, int iat);
 
   void evaluateAllForPtclMove(const ParticleSet& P, int iat);
