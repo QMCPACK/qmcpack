@@ -296,7 +296,8 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
 
     ValueType* restrict detValues0 =
         (newpos) ? det.Dets[det_id]->new_detValues.data() : det.Dets[det_id]->detValues.data();
-    PRAGMA_OFFLOAD("omp target enter data map(to : detValues0[:ndets])") //transfer content to device
+    // allocate device memory and transfer content to device
+    PRAGMA_OFFLOAD("omp target enter data map(to : detValues0[:ndets])")
     det_value_ptr_list[iw] = getOffloadDevicePtr(detValues0);
     //Put C_otherDs in host
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
@@ -345,7 +346,7 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
     auto& det = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
     ValueType* restrict detValues0 =
         (newpos) ? det.Dets[det_id]->new_detValues.data() : det.Dets[det_id]->detValues.data();
-    PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])") //transfer content to device
+    PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])") //free memory on device
   }
 }
 
@@ -578,7 +579,8 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
     det.UpdateMode = ORB_PBYP_RATIO;
 
     ValueType* restrict detValues0 = det.Dets[det_id]->new_detValues.data(); //always new
-    PRAGMA_OFFLOAD("omp target enter data map(to : detValues0[:ndets])")     //transfer content to device
+    // allocate device memory and transfer content to device
+    PRAGMA_OFFLOAD("omp target enter data map(to : detValues0[:ndets])")
     det_value_ptr_list[iw] = getOffloadDevicePtr(detValues0);
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
   }
@@ -607,7 +609,7 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
     ratios[iw] = det.curRatio = psi_list[iw] / det.psiCurrent;
 
     ValueType* restrict detValues0 = det.Dets[det_id]->new_detValues.data(); //always new
-    PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])")  //transfer content to device
+    PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])")  //free memory on device.
   }
 }
 

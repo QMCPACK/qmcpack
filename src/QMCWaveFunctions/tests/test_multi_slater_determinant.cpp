@@ -304,6 +304,9 @@ TEST_CASE("LiH multi Slater dets all_determinants", "[wavefunction]")
     </determinantset> \
 </wavefunction> \
 ";
+  /* NOTE: test_batched_api is set false because of unexpected failures.
+     all_determinants should pass all the existing tests. There are likely bugs.
+   */
   test_LiH_msd(spo_xml_string1_slow, "spo-up", 85, 105, false, false);
 }
 
