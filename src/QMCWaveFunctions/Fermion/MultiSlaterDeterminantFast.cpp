@@ -407,6 +407,11 @@ void MultiSlaterDeterminantFast::mw_evalGrad(const RefVectorWithLeader<WaveFunct
                                              std::vector<GradType>& grad_now) const
 {
   BackFlowStopper("Fast MSD+BF: mw_evalGrad");
+  if (!use_pre_computing_)
+  {
+    WaveFunctionComponent::mw_evalGrad(WFC_list, P_list, iat, grad_now);
+    return;
+  }
 
   const int nw = WFC_list.size();
 
@@ -443,6 +448,11 @@ void MultiSlaterDeterminantFast::mw_ratioGrad(const RefVectorWithLeader<WaveFunc
                                               std::vector<GradType>& grad_new) const
 {
   BackFlowStopper("Fast MSD+BF: mw_ratioGrad");
+  if (!use_pre_computing_)
+  {
+    WaveFunctionComponent::mw_ratioGrad(WFC_list, P_list, iat, ratios, grad_new);
+    return;
+  }
 
   auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDeterminantFast>();
   auto& det_value_ptr_list = det_leader.det_value_ptr_list;
@@ -455,10 +465,7 @@ void MultiSlaterDeterminantFast::mw_ratioGrad(const RefVectorWithLeader<WaveFunc
   std::vector<GradType> dummy;
   dummy.resize(nw);
 
-  if (use_pre_computing_)
-    mw_evalGrad_impl(WFC_list, P_list, iat, true, dummy, psi_list);
-  else
-    throw std::runtime_error("mw_evalGrad_impl no implementation for algorithm=\"table_method\"");
+  mw_evalGrad_impl(WFC_list, P_list, iat, true, dummy, psi_list);
 
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -536,6 +543,11 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
                                               std::vector<PsiValueType>& ratios) const
 {
   BackFlowStopper("Fast MSD+BF: mw_calcRatio");
+  if (!use_pre_computing_)
+  {
+    WaveFunctionComponent::mw_calcRatio(WFC_list, P_list, iat, ratios);
+    return;
+  }
 
   const int det_id = getDetID(iat);
 
