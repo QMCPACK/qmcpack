@@ -120,7 +120,7 @@ void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
                                        ValueMatrix_t& d2logdet,
                                        ValueMatrix_t& dspinlogdet)
 {
-  evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
+  APP_ABORT("Need specialization of " + className + "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
 }
 
 void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,

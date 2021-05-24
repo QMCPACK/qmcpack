@@ -390,6 +390,8 @@ public:
   void evaluateAllForPtclMove(const ParticleSet& P, int iat);
   // full evaluation of all the structures from scratch, used in evaluateLog for example
   void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
+  // full evaluation of all the structures from scratch, used in evaluateLog for example. Includes spin gradients for spin moves
+  void evaluateForWalkerMoveWithSpin(const ParticleSet& P, bool fromScratch = true);
 
   ///total number of particles
   int NP;
@@ -429,7 +431,7 @@ public:
   ValueMatrix_t dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
   ValueMatrix_t d2psiM, d2psiM_temp;
-  ValueMatrix_t dspin_psiM, dspin_spinM_temp;
+  ValueMatrix_t dspin_psiM;
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV, psiV_temp;
