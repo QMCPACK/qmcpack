@@ -197,7 +197,12 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evaluate(const P
 {
   ScopedTimer local_timer(EvaluateTimer);
   for (size_t id = 0; id < Dets.size(); id++)
-    Dets[id]->evaluateForWalkerMove(P);
+  {
+    if (P.is_spinor_)
+      Dets[id]->evaluateForWalkerMoveWithSpin(P);
+    else
+      Dets[id]->evaluateForWalkerMove(P);
+  }
 
   psiCurrent = evaluate_vgl_impl(P, myG, myL);
 
@@ -375,7 +380,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGradWithSpin(Par
     psi = evalGradWithSpin_impl_no_precompute(P, iat, false, grad_iat, spingrad_iat);
 
   grad_iat *= (PsiValueType(1.0) / psi);
-  spingrad += spingrad_iat / psi;
+  spingrad += spingrad_iat / static_cast<ComplexType>(psi);
   return grad_iat;
 }
 

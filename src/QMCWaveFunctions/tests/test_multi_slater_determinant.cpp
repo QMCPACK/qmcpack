@@ -341,7 +341,8 @@ void test_Bi_msd(const std::string& spo_xml_string,
         LogComplexApprox(std::complex<double>(-10.0084091, 1.153302116)));
 
   twf.prepareGroup(elec_, 0);
-  auto grad_old = twf.evalGrad(elec_, 1);
+  ParticleSet::ComplexType spingrad_old;
+  auto grad_old = twf.evalGradWithSpin(elec_, 1, spingrad_old);
   std::cout << "twf.evalGrad grad_old " << std::setprecision(16) << grad_old << std::endl;
   CHECK(grad_old[0] == ComplexApprox(ValueType(0.2037139, -0.0468526)).epsilon(1e-4));
   CHECK(grad_old[1] == ComplexApprox(ValueType(-0.2452648, 0.0711994)).epsilon(1e-4));
@@ -352,7 +353,8 @@ void test_Bi_msd(const std::string& spo_xml_string,
   elec_.makeMoveWithSpin(0, delta, ds);
 
   ParticleSet::GradType grad_new;
-  auto ratio = twf.calcRatioGrad(elec_, 0, grad_new);
+  ParticleSet::ComplexType spingrad_new;
+  auto ratio = twf.calcRatioGradWithSpin(elec_, 0, grad_new, spingrad_new);
   std::cout << "twf.calcRatioGrad ratio " << ratio << " grad_new " << grad_new << std::endl;
   CHECK(ValueType(std::abs(ratio)) == ValueApprox(0.650438041).epsilon(1e-4));
   CHECK(grad_new[0] == ComplexApprox(ValueType(-0.947982, -0.1390323)).epsilon(1e-4));
