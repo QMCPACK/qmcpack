@@ -337,7 +337,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
     //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
     auto it(confgList[ReferenceDeterminant].occup.begin());
     GradType ratioGradRef;
-    ValueType ratioSpinGradRef;
+    ValueType ratioSpinGradRef = 0.0;
     for (size_t i = 0; i < NumPtcls; i++)
     {
       psiV_temp[i] = psiV[*it];
@@ -370,6 +370,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_grads, dpsiMinv, TpsiM, dotProducts,
                                          *detData, *uniquePairs, *DetSigns, idim);
     }
+    //Now compute the spin gradient, same procedure as normal gradient components above
     ExtraStuffTimer.start();
     dpsiMinv = psiMinv;
     it       = confgList[ReferenceDeterminant].occup.begin();
@@ -381,6 +382,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
     ExtraStuffTimer.stop();
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_spingrads, dpsiMinv, TpsiM, dotProducts,
                                        *detData, *uniquePairs, *DetSigns);
+
     // check comment above
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
@@ -475,6 +477,8 @@ void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, grads, dpsiMinv, TpsiM, dotProducts,
                                          *detData, *uniquePairs, *DetSigns, idim);
     }
+
+    //Now compute the spin gradient, same procedure as normal gradient components above
     dpsiMinv          = psiMinv;
     it                = confgList[ReferenceDeterminant].occup.begin();
     ValueType ratioSG = 0.0;
@@ -490,6 +494,7 @@ void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
       TpsiM(i, WorkingIndex) = dspin_psiM(WorkingIndex, i);
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, spingrads, dpsiMinv, TpsiM, dotProducts,
                                        *detData, *uniquePairs, *DetSigns);
+
     // check comment above
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);

@@ -195,9 +195,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
 {
   evalWTimer.start();
   if (fromScratch)
-  {
     Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM, dspin_psiM);
-  }
   if (NumPtcls == 1)
   {
     //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminant is potentially dangerous. Fix later");
