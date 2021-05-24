@@ -377,7 +377,8 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
-    std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
+    if (P.is_spinor_)
+      std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
   default:
     psiMinv = psiMinv_temp;
@@ -386,11 +387,14 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(new_detValues.begin(), new_detValues.end(), detValues.begin());
     std::copy(new_grads.begin(), new_grads.end(), grads.begin());
     std::copy(new_lapls.begin(), new_lapls.end(), lapls.begin());
-    std::copy(new_spingrads.begin(), new_spingrads.end(), spingrads.begin());
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
-    std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
+    if (P.is_spinor_)
+    {
+      std::copy(new_spingrads.begin(), new_spingrads.end(), spingrads.begin());
+      std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
+    }
     break;
   }
 }
