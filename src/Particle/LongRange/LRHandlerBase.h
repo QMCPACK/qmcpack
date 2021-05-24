@@ -69,10 +69,10 @@ struct LRHandlerBase
   //return k cutoff
   inline mRealType get_kc() const { return LR_kc; }
 
-  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
+  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
    * @param kshell degeneracies of the vectors
-   * @param rk1 starting address of \f$\rho^1_{{\bf k}\f$
-   * @param rk2 starting address of \f$\rho^2_{{\bf k}\f$
+   * @param rk1 starting address of \f$\rho^1_{{\bf k}}\f$
+   * @param rk2 starting address of \f$\rho^2_{{\bf k}}\f$
    *
    * Valid for the strictly ordered k and \f$F_{k}\f$.
    */
@@ -169,11 +169,11 @@ struct LRHandlerBase
     return vk;
   }
 
-  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
-   * and \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
+  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
+   * and \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
    * @param kshell degeneracies of the vectors
-   * @param rk1 starting address of \f$\rho^1_{{\bf k}\f$
-   * @param rk2 starting address of \f$\rho^2_{{\bf k}\f$
+   * @param rk1 starting address of \f$\rho^1_{{\bf k}}\f$
+   * @param rk2 starting address of \f$\rho^2_{{\bf k}}\f$
    *
    * Valid for the strictly ordered k and \f$F_{k}\f$.
    */
