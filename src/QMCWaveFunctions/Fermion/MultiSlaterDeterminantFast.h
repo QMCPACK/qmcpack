@@ -221,7 +221,11 @@ private:
     return id;
   }
 
+  /** an implementation shared by evalGrad and ratioGrad. Use precomputed data
+   * @param newpos to distinguish evalGrad(false) ratioGrad(true)
+   */
   PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  /// multi walker version of evalGrad_impl
   static void mw_evalGrad_impl(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                                const RefVectorWithLeader<ParticleSet>& P_list,
                                int iat,
@@ -229,9 +233,14 @@ private:
                                std::vector<GradType>& grad_now,
                                std::vector<PsiValueType>& psi_list);
 
+  /** an implementation shared by evalGrad and ratioGrad. No use of precomputed data
+   * @param newpos to distinguish evalGrad(false) ratioGrad(true)
+   */
   PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
 
+  // an implementation of ratio. Use precomputed data
   PsiValueType ratio_impl(ParticleSet& P, int iat);
+  // an implementation of ratio. No use of precomputed data
   PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
 
   /** precompute C_otherDs for a given particle group

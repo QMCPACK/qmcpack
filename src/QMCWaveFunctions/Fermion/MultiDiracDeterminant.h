@@ -369,18 +369,21 @@ public:
    *@param refPtcl if given, the id of the reference particle in virtual moves
    */
   void evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl = -1);
+  /// multi walker version of evaluateDetsForPtclMove
   void static mw_evaluateDetsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                          const RefVectorWithLeader<ParticleSet>& P_list,
                                          int iat);
 
   /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
   void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
+  /// multi walker version of mw_evaluateDetsAndGradsForPtclMove
   void static mw_evaluateDetsAndGradsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                                  const RefVectorWithLeader<ParticleSet>& P_list,
                                                  int iat);
 
   /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
   void evaluateGrads(ParticleSet& P, int iat);
+  /// multi walker version of mw_evaluateGrads
   void static mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                const RefVectorWithLeader<ParticleSet>& P_list,
                                int iat);
