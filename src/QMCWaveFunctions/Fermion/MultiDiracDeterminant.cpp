@@ -305,7 +305,8 @@ MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(Particle
                                                                         WFBufferType& buf,
                                                                         bool fromscratch)
 {
-  if (P.is_spinor_)
+  assert(P.is_spinor_ == is_spinor_);
+  if (is_spinor_)
     evaluateForWalkerMoveWithSpin(P, (fromscratch || UpdateMode == ORB_PBYP_RATIO));
   else
     evaluateForWalkerMove(P, (fromscratch || UpdateMode == ORB_PBYP_RATIO));
@@ -316,7 +317,7 @@ MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(Particle
   buf.put(detValues.first_address(), detValues.last_address());
   buf.put(FirstAddressOfGrads, LastAddressOfGrads);
   buf.put(lapls.first_address(), lapls.last_address());
-  if (P.is_spinor_)
+  if (is_spinor_)
   {
     buf.put(dspin_psiM.first_address(), dspin_psiM.last_address());
     buf.put(spingrads.first_address(), spingrads.last_address());
@@ -326,6 +327,7 @@ MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(Particle
 
 void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
+  assert(P.is_spinor_ == is_spinor_);
   buf.get(psiM.first_address(), psiM.last_address());
   buf.get(FirstAddressOfdpsiM, LastAddressOfdpsiM);
   buf.get(d2psiM.first_address(), d2psiM.last_address());
@@ -333,7 +335,7 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(detValues.first_address(), detValues.last_address());
   buf.get(FirstAddressOfGrads, LastAddressOfGrads);
   buf.get(lapls.first_address(), lapls.last_address());
-  if (P.is_spinor_)
+  if (is_spinor_)
   {
     buf.get(dspin_psiM.first_address(), dspin_psiM.last_address());
     buf.get(spingrads.first_address(), spingrads.last_address());
@@ -353,6 +355,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
 {
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
+  assert(P.is_spinor_ == is_spinor_);
   switch (UpdateMode)
   {
   case ORB_PBYP_RATIO:
@@ -373,7 +376,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
-    if (P.is_spinor_)
+    if (is_spinor_)
       std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
   default:
@@ -386,7 +389,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
-    if (P.is_spinor_)
+    if (is_spinor_)
     {
       std::copy(new_spingrads.begin(), new_spingrads.end(), spingrads.begin());
       std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
@@ -467,7 +470,7 @@ WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) cons
  *@param first index of the first particle
  *@param spinor flag to determinane if spin arrays need to be resized and used
  */
-MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first, bool spinor)
+MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor)
     : WaveFunctionComponent("MultiDiracDeterminant"),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
@@ -483,7 +486,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int
       Phi(std::move(spos)),
       NumOrbitals(Phi->getOrbitalSetSize()),
       NP(0),
-      FirstIndex(first),
+      FirstIndex(-1),
       ReferenceDeterminant(0),
       is_spinor_(spinor)
 {
@@ -502,6 +505,7 @@ MultiDiracDeterminant::~MultiDiracDeterminant() = default;
 
 void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
+  assert(P.is_spinor_ == is_spinor_);
   if (NP == 0)
   //first time, allocate once
   {
@@ -512,7 +516,7 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
     FirstAddressOfdpsiM = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
     LastAddressOfdpsiM  = FirstAddressOfdpsiM + NumPtcls * NumOrbitals * DIM;
   }
-  if (P.is_spinor_)
+  if (is_spinor_)
     evaluateForWalkerMoveWithSpin(P, true);
   else
     evaluateForWalkerMove(P, true);
@@ -524,7 +528,7 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(detValues.first_address(), detValues.last_address());
   buf.add(FirstAddressOfGrads, LastAddressOfGrads);
   buf.add(lapls.first_address(), lapls.last_address());
-  if (P.is_spinor_)
+  if (is_spinor_)
   {
     buf.add(dspin_psiM.first_address(), dspin_psiM.last_address());
     buf.add(spingrads.first_address(), spingrads.last_address());

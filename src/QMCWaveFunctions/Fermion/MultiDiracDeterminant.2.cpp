@@ -307,6 +307,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
 
 void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat)
 {
+  assert(P.is_spinor_ == is_spinor_);
   UpdateMode = ORB_PBYP_PARTIAL;
   evalOrb1Timer.start();
   Phi->evaluateVGL_spin(P, iat, psiV, dpsiV, d2psiV, dspin_psiV);
@@ -437,6 +438,7 @@ void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
 
 void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
 {
+  assert(P.is_spinor_ == is_spinor_);
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
 
