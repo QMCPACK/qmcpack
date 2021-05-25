@@ -245,11 +245,12 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           APP_ABORT("Backflow is not implemented with the table method.");
         }
 
+        bool spinor = targetPtcl.is_spinor_;
         std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
         for (int grp = 0; grp < nGroups; grp++)
         {
           app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
-          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), grp));
+          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), grp, spinor));
         }
 
         if (msd_algorithm == "precomputed_table_method")

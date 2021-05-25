@@ -56,7 +56,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first = 0);
+  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first = 0, bool spinor = false);
 
   ///default destructor
   ~MultiDiracDeterminant();
@@ -421,6 +421,8 @@ private:
   // if its value is zero, then use a data from backup, but always use this one
   // by default
   int ReferenceDeterminant;
+  // flag to determine if spin arrays need to be resized and used. Set by ParticleSet::is_spinor_ in SlaterDetBuilder
+  const bool is_spinor_;
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
@@ -433,7 +435,6 @@ private:
   ValueMatrix_t d2psiM;
   /* dspin_psiM(i,j) \f$= \partial_{s_i} \psi_j({\bf r}_i,s_i)\f$ where \f$s_i\f$s is the spin variable
    * This is only resized if a spinor calculation is used
-   *
    */
   ValueMatrix_t dspin_psiM;
 

@@ -99,9 +99,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
 {
   evalWTimer.start();
   if (fromScratch)
-  {
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-  }
   if (NumPtcls == 1)
   {
     //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminant is potentially dangerous. Fix later");
@@ -445,6 +443,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       FirstIndex(s.FirstIndex),
       ciConfigList(s.ciConfigList),
       ReferenceDeterminant(s.ReferenceDeterminant),
+      is_spinor_(s.is_spinor_),
       detData(s.detData),
       uniquePairs(s.uniquePairs),
       DetSigns(s.DetSigns)
@@ -466,8 +465,9 @@ WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) cons
 /** constructor
  *@param spos the single-particle orbital set
  *@param first index of the first particle
+ *@param spinor flag to determinane if spin arrays need to be resized and used
  */
-MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first)
+MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first, bool spinor)
     : WaveFunctionComponent("MultiDiracDeterminant"),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
@@ -484,7 +484,8 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int
       NumOrbitals(Phi->getOrbitalSetSize()),
       NP(0),
       FirstIndex(first),
-      ReferenceDeterminant(0)
+      ReferenceDeterminant(0),
+      is_spinor_(spinor)
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
@@ -548,11 +549,9 @@ void MultiDiracDeterminant::resize(int nel)
   psiV.resize(NumOrbitals);
   dpsiV.resize(NumOrbitals);
   d2psiV.resize(NumOrbitals);
-  dspin_psiV.resize(NumOrbitals);
   psiM.resize(nel, NumOrbitals);
   dpsiM.resize(nel, NumOrbitals);
   d2psiM.resize(nel, NumOrbitals);
-  dspin_psiM.resize(nel, NumOrbitals);
   TpsiM.resize(NumOrbitals, nel);
   psiMinv.resize(nel, nel);
   dpsiMinv.resize(nel, nel);
@@ -568,10 +567,16 @@ void MultiDiracDeterminant::resize(int nel)
   new_grads.resize(NumDets, nel);
   lapls.resize(NumDets, nel);
   new_lapls.resize(NumDets, nel);
-  spingrads.resize(NumDets, nel);
-  new_spingrads.resize(NumDets, nel);
   dotProducts.resize(NumOrbitals, NumOrbitals);
   DetCalculator.resize(nel);
+
+  if (is_spinor_)
+  {
+    dspin_psiV.resize(NumOrbitals);
+    dspin_psiM.resize(nel, NumOrbitals);
+    spingrads.resize(NumDets, nel);
+    new_spingrads.resize(NumDets, nel);
+  }
 }
 
 void MultiDiracDeterminant::registerTimers()
