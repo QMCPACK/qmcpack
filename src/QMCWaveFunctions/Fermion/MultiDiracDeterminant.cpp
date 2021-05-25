@@ -431,6 +431,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
     : WaveFunctionComponent(s),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
+      MWRatioTimer(*timer_manager.createTimer(ClassName + "::mwratio")),
       InverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
       buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
       readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
@@ -439,7 +440,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
-      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
+      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::RefDetInvUpdate")),
       Phi(s.Phi->makeClone()),
       NumOrbitals(Phi->getOrbitalSetSize()),
       NP(0),
@@ -474,6 +475,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
     : WaveFunctionComponent("MultiDiracDeterminant"),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
+      MWRatioTimer(*timer_manager.createTimer(ClassName + "::mwratio")),
       InverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
       buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
       readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
@@ -482,7 +484,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
-      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
+      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::RefDetInvUpdate")),
       Phi(std::move(spos)),
       NumOrbitals(Phi->getOrbitalSetSize()),
       NP(0),
@@ -587,6 +589,7 @@ void MultiDiracDeterminant::registerTimers()
 {
   UpdateTimer.reset();
   RatioTimer.reset();
+  MWRatioTimer.reset();
   InverseTimer.reset();
   buildTableTimer.reset();
   readMatTimer.reset();
