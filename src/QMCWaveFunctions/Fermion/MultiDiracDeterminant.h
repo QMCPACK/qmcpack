@@ -396,6 +396,7 @@ public:
   ValueVector_t detValues, new_detValues;
   GradMatrix_t grads, new_grads;
   ValueMatrix_t lapls, new_lapls;
+  // additional storage for spin derivatives. Only resized if the calculation uses spinors
   ValueMatrix_t spingrads, new_spingrads;
 
 private:
@@ -430,6 +431,10 @@ private:
   ValueMatrix_t dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
   ValueMatrix_t d2psiM;
+  /* dspin_psiM(i,j) \f$= \partial_{s_i} \psi_j({\bf r}_i,s_i)\f$ where \f$s_i\f$s is the spin variable
+   * This is only resized if a spinor calculation is used
+   *
+   */
   ValueMatrix_t dspin_psiM;
 
   /// value of single-particle orbital for particle-by-particle update
@@ -437,6 +442,7 @@ private:
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
   ValueVector_t workV1, workV2;
+  //spin  derivative of single-particle orbitals. Only resized if a spinor calculation
   ValueVector_t dspin_psiV;
 
   ValueMatrix_t dotProducts;

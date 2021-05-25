@@ -367,7 +367,7 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGradWithSpin(Par
                                                                              int iat,
                                                                              ComplexType& spingrad)
 {
-  BackFlowStopper("Fast MSD+BF: evalGrad\n");
+  BackFlowStopper("Fast MSD+BF: evalGrad");
 
   ScopedTimer local_timer(EvalGradTimer);
 
@@ -408,7 +408,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGradWithSpi
                                                                                   GradType& grad_iat,
                                                                                   ComplexType& spingrad_iat)
 {
-  BackFlowStopper("Fast MSD+BF: ratioGrad\n");
+  BackFlowStopper("Fast MSD+BF: ratioGrad");
 
   ScopedTimer local_timer(RatioGradTimer);
   UpdateMode = ORB_PBYP_PARTIAL;
