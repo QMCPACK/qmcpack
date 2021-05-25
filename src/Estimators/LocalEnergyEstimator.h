@@ -75,7 +75,7 @@ public:
   }
   void add2Record(RecordListType& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) override;
-  ScalarEstimatorBase* clone() override;
+  LocalEnergyEstimator* clone() override;
   /*@}*/
 
   inline void accumulate(const RefVector<MCPWalker>& walkers) override

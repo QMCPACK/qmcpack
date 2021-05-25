@@ -133,8 +133,9 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   elec.setName("elec");
   std::vector<int> agroup(1, 1);
   elec.create(agroup);
-  elec.R[0] = {1.0, 0.0, 0.0};
-  elec.spins[0] = 0.0;
+  elec.R[0]       = {1.0, 0.0, 0.0};
+  elec.spins[0]   = 0.0;
+  elec.is_spinor_ = true;
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -170,7 +171,6 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
    <parameter name=\"blocks\">1</parameter> \
    <parameter name=\"timestep\">0.1</parameter> \
    <parameter name=\"usedrift\">no</parameter> \
-   <parameter name=\"SpinMoves\">yes</parameter> \
    <parameter name=\"SpinMass\">0.25</parameter> \
   </qmc> \
   ";
@@ -219,8 +219,9 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   elec.setName("elec");
   std::vector<int> agroup(1, 1);
   elec.create(agroup);
-  elec.R[0] = {1.0, 0.0, 0.0};
-  elec.spins[0] = 0.0;
+  elec.R[0]       = {1.0, 0.0, 0.0};
+  elec.spins[0]   = 0.0;
+  elec.is_spinor_ = true;
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -256,7 +257,6 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
    <parameter name=\"blocks\">1</parameter> \
    <parameter name=\"timestep\">0.1</parameter> \
    <parameter name=\"usedrift\">no</parameter> \
-   <parameter name=\"SpinMoves\">yes</parameter> \
    <parameter name=\"SpinMass\">0.25</parameter> \
   </qmc> \
   ";

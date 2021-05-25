@@ -52,17 +52,15 @@ WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleS
   }
   for (int i = 0; i < dets_up.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne =
-        (DiracDeterminantWithBackflow*)dets_up[i]->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_up));
-    dclne->BFTrans = tr;
-    clone->dets_up.push_back(dclne);
+    clone->dets_up.emplace_back(dets_up[i]->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_up)));
+    auto& dclne = dynamic_cast<DiracDeterminantWithBackflow&>(*clone->dets_up.back());
+    dclne.BFTrans = tr;
   }
   for (int i = 0; i < dets_dn.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne =
-        (DiracDeterminantWithBackflow*)dets_dn[i]->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_dn));
-    dclne->BFTrans = tr;
-    clone->dets_dn.push_back(dclne);
+    clone->dets_dn.emplace_back(dets_dn[i]->makeCopy(std::static_pointer_cast<SPOSet>(clone->spo_dn)));
+    auto& dclne = dynamic_cast<DiracDeterminantWithBackflow&>(*clone->dets_dn.back());
+    dclne.BFTrans = tr;
   }
   clone->Optimizable = Optimizable;
   clone->C           = C;

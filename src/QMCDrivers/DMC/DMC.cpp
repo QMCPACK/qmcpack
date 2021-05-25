@@ -70,6 +70,7 @@ void DMC::resetUpdateEngines()
               "reconfiguration to \"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.")
   makeClones(W, Psi, H);
   Timer init_timer;
+  bool spinor = false;
   if (Movers.empty())
   {
     W.loadEnsemble(wClones);
@@ -108,8 +109,6 @@ void DMC::resetUpdateEngines()
         o << "\n  Walkers are killed when a node crossing is detected";
       else
         o << "\n  DMC moves are rejected when a node crossing is detected";
-      if (SpinMoves == "yes")
-        o << "\n  Spins treated as dynamic variable with SpinMass: " << SpinMass;
       app_log() << o.str() << std::endl;
     }
 #pragma omp parallel for
@@ -126,8 +125,9 @@ void DMC::resetUpdateEngines()
       Rng[ip] = new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      if (SpinMoves == "yes")
+      if (W.is_spinor_)
       {
+        spinor = true;
         if (qmc_driver_mode[QMC_UPDATE_MODE])
         {
           Movers[ip] = new SODMCUpdatePbyPWithRejectionFast(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip]);
@@ -177,6 +177,10 @@ void DMC::resetUpdateEngines()
     }
   }
 #endif
+
+  if (spinor)
+    app_log() << "   Spins treated as dynamic variable with SpinMass: " << SpinMass << std::endl;
+
   branchEngine->checkParameters(W);
   int mxage = mover_MaxAge;
   if (fixW)

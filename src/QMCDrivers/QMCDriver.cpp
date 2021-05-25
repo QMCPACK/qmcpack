@@ -117,9 +117,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 
   m_param.add(nTargetPopulation, "samples");
 
-  SpinMoves = "no";
-  SpinMass  = 1.0;
-  m_param.add(SpinMoves, "SpinMoves");
+  SpinMass = 1.0;
   m_param.add(SpinMass, "SpinMass");
 
   Tau = 0.1;
@@ -519,14 +517,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //reset CurrentStep to zero if qmc/@continue='no'
   if (!AppendRun)
     CurrentStep = 0;
-
-  tolower(SpinMoves);
-  if (SpinMoves != "yes" && SpinMoves != "no")
-    myComm->barrier_and_abort("SpinMoves must be yes/no!\n");
-#if defined(QMC_CUDA)
-  if (SpinMoves == "yes")
-    myComm->barrier_and_abort("Spin moves are not supported in legacy CUDA build.");
-#endif
 
   //if walkers are initialized via <mcwalkerset/>, use the existing one
   if (qmc_common.qmc_counter || qmc_common.is_restart)
