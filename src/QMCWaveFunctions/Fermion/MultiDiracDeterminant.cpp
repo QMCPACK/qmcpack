@@ -511,7 +511,10 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
     FirstAddressOfdpsiM = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
     LastAddressOfdpsiM  = FirstAddressOfdpsiM + NumPtcls * NumOrbitals * DIM;
   }
-  evaluateForWalkerMove(P, true);
+  if (P.is_spinor_)
+    evaluateForWalkerMoveWithSpin(P, true);
+  else
+    evaluateForWalkerMove(P, true);
   //add the data:
   buf.add(psiM.first_address(), psiM.last_address());
   buf.add(FirstAddressOfdpsiM, LastAddressOfdpsiM);
@@ -550,9 +553,6 @@ void MultiDiracDeterminant::resize(int nel)
   dpsiM.resize(nel, NumOrbitals);
   d2psiM.resize(nel, NumOrbitals);
   dspin_psiM.resize(nel, NumOrbitals);
-  //psiM_temp.resize(nel,morb);
-  //dpsiM_temp.resize(nel,morb);
-  //d2psiM_temp.resize(nel,morb);
   TpsiM.resize(NumOrbitals, nel);
   psiMinv.resize(nel, nel);
   dpsiMinv.resize(nel, nel);
