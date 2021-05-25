@@ -50,7 +50,8 @@ using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 template<typename T>
 using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
-
+/** This and other [.benchmark] benchmarks only run if "[benchmark]" is explicitly passed as tag to test.
+ */
 TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "[wavefunction][fermion][.benchmark]")
 {
   size_t n       = 1024;
@@ -97,6 +98,8 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
   };
 }
 
+/** This test will run by default.
+ */
 TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][fermion][benchmark]")
 {
   size_t n       = 256;
@@ -144,6 +147,8 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
   };
 }
 
+/** Only runs if [benchmark] tag is passed.
+ */
 TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunction][fermion][.benchmark]")
 {
   size_t n       = 256;
@@ -196,6 +201,8 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunct
   };
 }
 
+/** Only runs if [benchmark] tag is passed.
+ */
 TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunction][fermion][.benchmark]")
 {
   size_t n       = 1024;

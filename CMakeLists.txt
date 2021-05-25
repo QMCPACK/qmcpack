@@ -227,7 +227,7 @@ CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 OPTION(BUILD_UNIT_TESTS "Build unit tests" ON)
-OPTION(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" OFF)
+OPTION(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
 OPTION(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatible with CUDA build! Disabling LMY engine")
