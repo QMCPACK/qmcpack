@@ -24,20 +24,12 @@ namespace qmcplusplus
 template<typename T, IsComplex<T> = true>
 bool approxEquality(T val_a, T val_b)
 {
-  // T zero_epsilon = 1.0E-12;
-  // // fix for catch scaling issue
-  // if (((0.0 - val_b) < zero_epsilon) && ((0.0 - val_a) < zero_epsilon))
-  //   return true;
   return val_a == ComplexApprox(val_b);
 }
 
 template<typename T, IsReal<T> = true>
 bool approxEquality(T val_a, T val_b)
 {
-  T zero_epsilon = 1.0E-12;
-  // fix for catch scaling issue
-  if (((0.0 - val_b) < zero_epsilon) && ((0.0 - val_a) < zero_epsilon))
-    return true;
   return val_a == Approx(val_b);
 }
 
@@ -90,6 +82,5 @@ extern template bool approxEquality<float>(float val_a, float val_b);
 extern template bool approxEquality<std::complex<float>>(std::complex<float> val_a, std::complex<float> val_b);
 extern template bool approxEquality<double>(double val_a, double val_b);
 extern template bool approxEquality<std::complex<double>>(std::complex<double> val_a, std::complex<double> val_b);
-
 } // namespace qmcplusplus
 #endif

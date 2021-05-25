@@ -13,7 +13,7 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
-#ifdef HAVE_MPI
+#ifdef CATCH_MAIN_HAVE_MPI
 #include "Message/Communicate.h"
 #endif
 
@@ -25,7 +25,7 @@ std::string UTEST_HAMIL, UTEST_WFN;
 
 int main(int argc, char* argv[])
 {
-#ifdef HAVE_MPI
+#ifdef CATCH_MAIN_HAVE_MPI
   mpi3::environment env(argc, argv);
   OHMMS::Controller->initialize(env);
 #endif
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
   int parser_err = session.applyCommandLine(argc, argv);
   // Run the tests.
   int result = session.run(argc, argv);
-#ifdef HAVE_MPI
+#ifdef CATCH_MAIN_HAVE_MPI
   OHMMS::Controller->finalize();
 #endif
   if (parser_err != 0)

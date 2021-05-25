@@ -55,7 +55,7 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   eye(2, 2) = 1.0;
 
   CheckMatrixResult check_matrix_result = checkMatrix(m_invT, eye);
-  CHECKED_IF(check_matrix_result.result == false) { FAIL(check_matrix_result.result_message); }
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
 TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
