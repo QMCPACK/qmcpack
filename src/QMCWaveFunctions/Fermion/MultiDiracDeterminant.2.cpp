@@ -392,6 +392,91 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
   }
 }
 
+void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat)
+{
+  assert(P.is_spinor_ == is_spinor_);
+  UpdateMode = ORB_PBYP_PARTIAL;
+  evalOrb1Timer.start();
+  Phi->evaluateVGL_spin(P, iat, psiV, dpsiV, d2psiV, dspin_psiV);
+  evalOrb1Timer.stop();
+  const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
+  if (NumPtcls == 1)
+  {
+    std::vector<ci_configuration2>::iterator it(ciConfigList->begin());
+    std::vector<ci_configuration2>::iterator last(ciConfigList->end());
+    ValueVector_t::iterator det(new_detValues.begin());
+    GradMatrix_t::iterator grad(new_grads.begin());
+    ValueMatrix_t::iterator spingrad(new_spingrads.begin());
+    while (it != last)
+    {
+      size_t orb    = (it++)->occup[0];
+      *(det++)      = psiV[orb];
+      *(grad++)     = dpsiV[orb];
+      *(spingrad++) = dspin_psiV[orb];
+    }
+  }
+  else
+  {
+    ExtraStuffTimer.start();
+    //mmorales: check comment above
+    psiMinv_temp          = psiMinv;
+    const auto& confgList = *ciConfigList;
+    //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
+    auto it(confgList[ReferenceDeterminant].occup.begin());
+    GradType ratioGradRef;
+    ValueType ratioSpinGradRef = 0.0;
+    for (size_t i = 0; i < NumPtcls; i++)
+    {
+      psiV_temp[i] = psiV[*it];
+      ratioGradRef += psiMinv_temp(i, WorkingIndex) * dpsiV[*it];
+      ratioSpinGradRef += psiMinv_temp(i, WorkingIndex) * dspin_psiV[*it];
+      it++;
+    }
+    ValueType ratioRef                                = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
+    new_grads(ReferenceDeterminant, WorkingIndex)     = ratioGradRef * detValues[ReferenceDeterminant];
+    new_spingrads(ReferenceDeterminant, WorkingIndex) = ratioSpinGradRef * detValues[ReferenceDeterminant];
+    new_detValues[ReferenceDeterminant]               = ratioRef * detValues[ReferenceDeterminant];
+    InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, ratioRef);
+    for (size_t i = 0; i < NumOrbitals; i++)
+      TpsiM(i, WorkingIndex) = psiV[i];
+    ExtraStuffTimer.stop();
+    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_detValues, psiMinv_temp, TpsiM,
+                                       dotProducts, *detData, *uniquePairs, *DetSigns);
+    for (size_t idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      ExtraStuffTimer.start();
+      //dpsiMinv = psiMinv_temp;
+      dpsiMinv = psiMinv;
+      it       = confgList[ReferenceDeterminant].occup.begin();
+      for (size_t i = 0; i < NumPtcls; i++)
+        psiV_temp[i] = dpsiV[*(it++)][idim];
+      InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioGradRef[idim]);
+      for (size_t i = 0; i < NumOrbitals; i++)
+        TpsiM(i, WorkingIndex) = dpsiV[i][idim];
+      ExtraStuffTimer.stop();
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_grads, dpsiMinv, TpsiM, dotProducts,
+                                         *detData, *uniquePairs, *DetSigns, idim);
+    }
+    //Now compute the spin gradient, same procedure as normal gradient components above
+    ExtraStuffTimer.start();
+    dpsiMinv = psiMinv;
+    it       = confgList[ReferenceDeterminant].occup.begin();
+    for (size_t i = 0; i < NumPtcls; i++)
+      psiV_temp[i] = dspin_psiV[*(it++)];
+    InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioSpinGradRef);
+    for (size_t i = 0; i < NumOrbitals; i++)
+      TpsiM(i, WorkingIndex) = dspin_psiV[i];
+    ExtraStuffTimer.stop();
+    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_spingrads, dpsiMinv, TpsiM, dotProducts,
+                                       *detData, *uniquePairs, *DetSigns);
+
+    // check comment above
+    for (int i = 0; i < NumOrbitals; i++)
+      TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  }
+}
+
 void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
     const RefVectorWithLeader<ParticleSet>& P_list,
@@ -515,6 +600,73 @@ void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, grads, dpsiMinv, TpsiM, dotProducts,
                                          *detData, *uniquePairs, *DetSigns, idim);
     }
+    // check comment above
+    for (size_t i = 0; i < NumOrbitals; i++)
+      TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  }
+}
+
+void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
+{
+  assert(P.is_spinor_ == is_spinor_);
+  const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
+
+  const auto& confgList = *ciConfigList;
+  auto it               = confgList[0].occup.begin(); //just to avoid using the type
+  //std::vector<size_t>::iterator it;
+  if (NumPtcls == 1)
+  {
+    std::vector<ci_configuration2>::const_iterator it(confgList.begin());
+    std::vector<ci_configuration2>::const_iterator last(confgList.end());
+    GradMatrix_t::iterator grad(grads.begin());
+    ValueMatrix_t::iterator spingrad(spingrads.begin());
+    while (it != last)
+    {
+      size_t orb    = (it++)->occup[0];
+      *(grad++)     = dpsiM(0, orb);
+      *(spingrad++) = dspin_psiM(0, orb);
+    }
+  }
+  else
+  {
+    for (size_t idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      //dpsiMinv = psiMinv_temp;
+      dpsiMinv         = psiMinv;
+      it               = confgList[ReferenceDeterminant].occup.begin();
+      ValueType ratioG = 0.0;
+      for (size_t i = 0; i < NumPtcls; i++)
+      {
+        psiV_temp[i] = dpsiM(WorkingIndex, *it)[idim];
+        ratioG += psiMinv(i, WorkingIndex) * dpsiM(WorkingIndex, *it)[idim];
+        it++;
+      }
+      grads(ReferenceDeterminant, WorkingIndex)[idim] = ratioG * detValues[ReferenceDeterminant];
+      InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioG);
+      for (size_t i = 0; i < NumOrbitals; i++)
+        TpsiM(i, WorkingIndex) = dpsiM(WorkingIndex, i)[idim];
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, grads, dpsiMinv, TpsiM, dotProducts,
+                                         *detData, *uniquePairs, *DetSigns, idim);
+    }
+
+    //Now compute the spin gradient, same procedure as normal gradient components above
+    dpsiMinv          = psiMinv;
+    it                = confgList[ReferenceDeterminant].occup.begin();
+    ValueType ratioSG = 0.0;
+    for (size_t i = 0; i < NumPtcls; i++)
+    {
+      psiV_temp[i] = dspin_psiM(WorkingIndex, *it);
+      ratioSG += psiMinv(i, WorkingIndex) * dspin_psiM(WorkingIndex, *it);
+      it++;
+    }
+    spingrads(ReferenceDeterminant, WorkingIndex) = ratioSG * detValues[ReferenceDeterminant];
+    InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioSG);
+    for (size_t i = 0; i < NumOrbitals; i++)
+      TpsiM(i, WorkingIndex) = dspin_psiM(WorkingIndex, i);
+    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, spingrads, dpsiMinv, TpsiM, dotProducts,
+                                       *detData, *uniquePairs, *DetSigns);
+
     // check comment above
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);

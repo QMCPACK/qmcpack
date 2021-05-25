@@ -116,6 +116,8 @@ public:
   void prepareGroup(ParticleSet& P, int ig) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
+  //evalGrad, but returns the spin gradient as well
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
   void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                    const RefVectorWithLeader<ParticleSet>& P_list,
                    int iat,
@@ -135,6 +137,8 @@ public:
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  //ratioGradWithSpin, but includes tthe spin gradient info
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
@@ -237,6 +241,15 @@ private:
    * @param newpos to distinguish evalGrad(false) ratioGrad(true)
    */
   PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+
+  //implemtation for evalGradWithSpin
+  PsiValueType evalGradWithSpin_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at, ComplexType& sg_at);
+  //implemtation for evalGradWithSpin with no precomputation
+  PsiValueType evalGradWithSpin_impl_no_precompute(ParticleSet& P,
+                                                   int iat,
+                                                   bool newpos,
+                                                   GradType& g_at,
+                                                   ComplexType& sg_at);
 
   // an implementation of ratio. Use precomputed data
   PsiValueType ratio_impl(ParticleSet& P, int iat);

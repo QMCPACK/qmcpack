@@ -56,7 +56,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first = 0);
+  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor);
 
   ///default destructor
   ~MultiDiracDeterminant();
@@ -380,6 +380,9 @@ public:
   void static mw_evaluateDetsAndGradsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                                  const RefVectorWithLeader<ParticleSet>& P_list,
                                                  int iat);
+  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
+  void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
+
 
   /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
   void evaluateGrads(ParticleSet& P, int iat);
@@ -387,10 +390,14 @@ public:
   void static mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                const RefVectorWithLeader<ParticleSet>& P_list,
                                int iat);
+  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
+  void evaluateGradsWithSpin(ParticleSet& P, int iat);
 
   void evaluateAllForPtclMove(const ParticleSet& P, int iat);
   // full evaluation of all the structures from scratch, used in evaluateLog for example
   void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
+  // full evaluation of all the structures from scratch, used in evaluateLog for example. Includes spin gradients for spin moves
+  void evaluateForWalkerMoveWithSpin(const ParticleSet& P, bool fromScratch = true);
 
   // accessors
   inline int getNumDets() const { return ciConfigList->size(); }
@@ -402,6 +409,8 @@ public:
   ValueVector_t detValues, new_detValues;
   GradMatrix_t grads, new_grads;
   ValueMatrix_t lapls, new_lapls;
+  // additional storage for spin derivatives. Only resized if the calculation uses spinors
+  ValueMatrix_t spingrads, new_spingrads;
 
 private:
   ///reset the size: with the number of particles
@@ -425,6 +434,8 @@ private:
   // if its value is zero, then use a data from backup, but always use this one
   // by default
   int ReferenceDeterminant;
+  // flag to determine if spin arrays need to be resized and used. Set by ParticleSet::is_spinor_ in SlaterDetBuilder
+  const bool is_spinor_;
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
@@ -435,12 +446,18 @@ private:
   ValueMatrix_t dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
   ValueMatrix_t d2psiM;
+  /* dspin_psiM(i,j) \f$= \partial_{s_i} \psi_j({\bf r}_i,s_i)\f$ where \f$s_i\f$s is the spin variable
+   * This is only resized if a spinor calculation is used
+   */
+  ValueMatrix_t dspin_psiM;
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV, psiV_temp;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
   ValueVector_t workV1, workV2;
+  //spin  derivative of single-particle orbitals. Only resized if a spinor calculation
+  ValueVector_t dspin_psiV;
 
   ValueMatrix_t dotProducts;
 
