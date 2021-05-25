@@ -69,7 +69,7 @@ public:
    */
   MultiDiracDeterminant(const MultiDiracDeterminant& s);
 
-  MultiDiracDeterminant& operator=(const MultiDiracDeterminant& s);
+  MultiDiracDeterminant& operator=(const MultiDiracDeterminant& s) = delete;
 
   /** return a clone of Phi
    */
@@ -77,18 +77,14 @@ public:
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
-  inline IndexType rows() const { return NumPtcls; }
-
-  inline IndexType cols() const { return NumOrbitals; }
-
   /** set the index of the first particle in the determinant and reset the size of the determinant
    *@param first index of first particle
    *@param nel number of particles in the determinant
-   *@param norb total number of orbitals (including unoccupied)
+   *@param ref_det_id id of the reference determinant
+   *
+   * Note: ciConfigList should have been populated when calling this function
    */
-  void set(int first, int nel, int norb);
-
-  void set(int first, int nel);
+  void set(int first, int nel, int ref_det_id);
 
   void setBF(BackflowTransformation* bf) {}
 
@@ -141,13 +137,13 @@ public:
   }
 
   void evaluateDerivativesWF(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           const MultiDiracDeterminant& pseudo_dn,
-                           const PsiValueType& psiCurrent,
-                           const std::vector<ValueType>& Coeff,
-                           const std::vector<size_t>& C2node_up,
-                           const std::vector<size_t>& C2node_dn)
+                             const opt_variables_type& optvars,
+                             std::vector<ValueType>& dlogpsi,
+                             const MultiDiracDeterminant& pseudo_dn,
+                             const PsiValueType& psiCurrent,
+                             const std::vector<ValueType>& Coeff,
+                             const std::vector<size_t>& C2node_up,
+                             const std::vector<size_t>& C2node_dn)
   {
     if (!Optimizable)
       return;
@@ -159,28 +155,12 @@ public:
     const ValueMatrix_t& Minv_up      = psiMinv;
     const ValueMatrix_t& Minv_dn      = pseudo_dn.psiMinv;
 
-    Phi->evaluateDerivativesWF(P,
-                                optvars, 
-                                dlogpsi, 
-                                psiCurrent, 
-                                Coeff, 
-                                C2node_up, 
-                                C2node_dn, 
-                                detValues_up,
-                                detValues_dn, 
-                                M_up, 
-                                M_dn, 
-                                Minv_up, 
-                                Minv_dn, 
-                                *detData, 
-                                lookup_tbl);
+    Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn,
+                               M_up, M_dn, Minv_up, Minv_dn, *detData, lookup_tbl);
   }
 
 
   inline void reportStatus(std::ostream& os) {}
-
-  ///reset the size: with the number of particles and number of orbtials
-  virtual void resize(int nel, int morb);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
@@ -220,7 +200,9 @@ public:
     return PsiValueType();
   }
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L)
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
@@ -239,7 +221,7 @@ public:
 
   // create necessary structures used in the evaluation of the determinants
   // this works with confgList, which shouldn't change during a simulation
-  void createDetData(ci_configuration2& ref,
+  void createDetData(const ci_configuration2& ref,
                      std::vector<int>& data,
                      std::vector<std::pair<int, int>>& pairs,
                      std::vector<RealType>& sign);
@@ -381,8 +363,6 @@ public:
       }
   */
 
-  void setDetInfo(int ref, std::vector<ci_configuration2>* list);
-
   /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
    *@param P particle set which provides the positions
    *@param iat the index of the moved electron
@@ -400,43 +380,49 @@ public:
   // full evaluation of all the structures from scratch, used in evaluateLog for example
   void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
 
+  // accessors
+  inline int getNumDets() const { return ciConfigList->size(); }
+  inline int getNumPtcls() const { return NumPtcls; }
+  inline int getFirstIndex() const { return FirstIndex; }
+  inline std::vector<ci_configuration2>& getCIConfigList() { return *ciConfigList; }
+
+  /// store determinants (old and new). FIXME: move to private
+  ValueVector_t detValues, new_detValues;
+  GradMatrix_t grads, new_grads;
+  ValueMatrix_t lapls, new_lapls;
+
+private:
+  ///reset the size: with the number of particles
+  void resize(int nel);
+
+  ///a set of single-particle orbitals used to fill in the  values of the matrix
+  const std::unique_ptr<SPOSet> Phi;
+  ///number of single-particle orbitals which belong to this Dirac determinant
+  const int NumOrbitals;
   ///total number of particles
   int NP;
-  ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
   ///index of the first particle with respect to the particle set
   int FirstIndex;
   ///index of the last particle with respect to the particle set
   int LastIndex;
-  ///a set of single-particle orbitals used to fill in the  values of the matrix
-  std::unique_ptr<SPOSet> Phi;
-  /// number of determinants handled by this object
-  int NumDets;
-  ///bool to cleanup
-  bool IsCloned;
   ///use shared_ptr
-  std::vector<ci_configuration2>* ciConfigList;
+  std::shared_ptr<std::vector<ci_configuration2>> ciConfigList;
   // the reference determinant never changes, so there is no need to store it.
   // if its value is zero, then use a data from backup, but always use this one
   // by default
   int ReferenceDeterminant;
 
-  /// store determinants (old and new)
-  ValueVector_t detValues, new_detValues;
-  GradMatrix_t grads, new_grads;
-  ValueMatrix_t lapls, new_lapls;
-
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
-  ValueMatrix_t psiM, psiM_temp, TpsiM, psiMinv, psiMinv_temp;
+  ValueMatrix_t psiM, TpsiM, psiMinv, psiMinv_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t dpsiM, dpsiM_temp;
+  GradMatrix_t dpsiM;
   // temporaty storage
   ValueMatrix_t dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-  ValueMatrix_t d2psiM, d2psiM_temp;
+  ValueMatrix_t d2psiM;
 
   /// value of single-particle orbital for particle-by-particle update
   ValueVector_t psiV, psiV_temp;
@@ -463,9 +449,9 @@ public:
    *     -i1,i2,...,in : occupied orbital to be replaced (these must be numbers from 0:Nptcl-1)
    *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything)
    */
-  std::vector<int>* detData;
-  std::vector<std::pair<int, int>>* uniquePairs;
-  std::vector<RealType>* DetSigns;
+  std::shared_ptr<std::vector<int>> detData;
+  std::shared_ptr<std::vector<std::pair<int, int>>> uniquePairs;
+  std::shared_ptr<std::vector<RealType>> DetSigns;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 };
 
