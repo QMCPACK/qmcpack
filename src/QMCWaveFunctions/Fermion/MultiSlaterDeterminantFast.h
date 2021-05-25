@@ -20,6 +20,8 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OMPallocator.hpp"
 
 namespace qmcplusplus
 {
@@ -51,8 +53,12 @@ class MultiSlaterDeterminantFast : public WaveFunctionComponent
 {
 public:
   void registerTimers();
-  NewTimer &RatioTimer, &EvalGradTimer, &RatioGradTimer, &PrepareGroupTimer, &UpdateTimer;
-  NewTimer &AccRejTimer, &EvaluateTimer;
+  NewTimer &RatioTimer, &MWRatioTimer, &OffloadRatioTimer, &OffloadGradTimer;
+  NewTimer &EvalGradTimer, &MWEvalGradTimer, &RatioGradTimer, &MWRatioGradTimer;
+  NewTimer &PrepareGroupTimer, &UpdateTimer, &AccRejTimer, &EvaluateTimer;
+
+  template<typename DT>
+  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   typedef SPOSet* SPOSetPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
@@ -83,7 +89,7 @@ public:
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
-  void BackFlowStopper(const std::string& func_name)
+  void BackFlowStopper(const std::string& func_name) const
   {
     if (usingBF)
       throw std::runtime_error(func_name + " not implemented!\n");
@@ -110,13 +116,25 @@ public:
   void prepareGroup(ParticleSet& P, int ig) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
-  PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
-  PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+                   const RefVectorWithLeader<ParticleSet>& P_list,
+                   int iat,
+                   std::vector<GradType>& grad_now) const override;
+
+
+  void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+                    const RefVectorWithLeader<ParticleSet>& P_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios,
+                    std::vector<GradType>& grad_new) const override;
+
+  void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+                    const RefVectorWithLeader<ParticleSet>& P_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios) const override;
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
-  PsiValueType ratio_impl(ParticleSet& P, int iat);
-  PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
 
@@ -166,7 +184,10 @@ public:
   /// CI coefficients
   std::shared_ptr<std::vector<ValueType>> C;
   /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
-  std::vector<std::vector<ValueType>> C_otherDs;
+  std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
+  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
+  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> C_otherDs_ptr_list;
+  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> det_value_ptr_list;
 
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
@@ -199,6 +220,28 @@ private:
       id++;
     return id;
   }
+
+  /** an implementation shared by evalGrad and ratioGrad. Use precomputed data
+   * @param newpos to distinguish evalGrad(false) ratioGrad(true)
+   */
+  PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  /// multi walker version of evalGrad_impl
+  static void mw_evalGrad_impl(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list,
+                               int iat,
+                               bool newpos,
+                               std::vector<GradType>& grad_now,
+                               std::vector<PsiValueType>& psi_list);
+
+  /** an implementation shared by evalGrad and ratioGrad. No use of precomputed data
+   * @param newpos to distinguish evalGrad(false) ratioGrad(true)
+   */
+  PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+
+  // an implementation of ratio. Use precomputed data
+  PsiValueType ratio_impl(ParticleSet& P, int iat);
+  // an implementation of ratio. No use of precomputed data
+  PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
 
   /** precompute C_otherDs for a given particle group
    * @param P a particle set
