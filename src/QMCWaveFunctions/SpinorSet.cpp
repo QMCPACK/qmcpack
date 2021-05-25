@@ -22,7 +22,7 @@ void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&&
   IndexType spo_size_down = dn->getOrbitalSetSize();
 
   if (spo_size_up != spo_size_down)
-    APP_ABORT("SpinorSet::set_spos(...):  up and down SPO components have different sizes.");
+    throw std::runtime_error("SpinorSet::set_spos(...):  up and down SPO components have different sizes.");
 
   setOrbitalSetSize(spo_size_up);
 
@@ -43,8 +43,7 @@ int SpinorSet::getBasisSetSize() const
 {
   IndexType basis_up = spo_up->getBasisSetSize();
   IndexType basis_dn = spo_dn->getBasisSetSize();
-  if (basis_up != basis_dn)
-    APP_ABORT("SpinorSet::getBasisSetSize(): up and down basis size not equal.");
+  assert(basis_up == basis_dn);
   return basis_up;
 }
 
