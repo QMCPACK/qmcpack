@@ -48,7 +48,7 @@ TEST_CASE("LocalEnergy", "[estimators]")
   QMCHamiltonian H;
   LocalEnergyEstimator le_est(H, false);
 
-  std::unique_ptr<LocalEnergyEstimator> le_est2{dynamic_cast<LocalEnergyEstimator*>(le_est.clone())};
+  std::unique_ptr<LocalEnergyEstimator> le_est2{le_est.clone()};
   REQUIRE(le_est2 != nullptr);
   REQUIRE(le_est2.get() != &le_est);
 

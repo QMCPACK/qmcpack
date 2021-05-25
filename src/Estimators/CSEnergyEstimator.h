@@ -82,7 +82,7 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
    */
   void add2Record(RecordNamedProperty<RealType>& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override;
-  ScalarEstimatorBase* clone() override;
+  CSEnergyEstimator* clone() override;
 
   void evaluateDiff();
 };
