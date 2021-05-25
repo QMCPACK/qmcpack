@@ -45,7 +45,7 @@ CSEnergyEstimator::CSEnergyEstimator(QMCHamiltonian& h, int hcopy)
   scalars_saved.resize(scalars.size());
 }
 
-ScalarEstimatorBase* CSEnergyEstimator::clone() { return new CSEnergyEstimator(*this); }
+CSEnergyEstimator* CSEnergyEstimator::clone() { return new CSEnergyEstimator(*this); }
 
 /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    *@param record storage of scalar records (name,value)

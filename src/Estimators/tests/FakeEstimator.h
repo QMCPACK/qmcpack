@@ -25,7 +25,7 @@ class FakeEstimator : public ScalarEstimatorBase
 
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override {}
 
-  ScalarEstimatorBase* clone() override { return new FakeEstimator; }
+  FakeEstimator* clone() override { return new FakeEstimator; }
 };
 
 } // namespace qmcplusplus

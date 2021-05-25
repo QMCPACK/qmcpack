@@ -25,7 +25,7 @@ RMCLocalEnergyEstimator::RMCLocalEnergyEstimator(QMCHamiltonian& h, int nobs) : 
   scalars_saved.resize(2 * SizeOfHamiltonians + RMCSpecificTerms);
 }
 
-ScalarEstimatorBase* RMCLocalEnergyEstimator::clone() { return new RMCLocalEnergyEstimator(*this); }
+RMCLocalEnergyEstimator* RMCLocalEnergyEstimator::clone() { return new RMCLocalEnergyEstimator(*this); }
 
 /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
  * @param record storage of scalar records (name,value)
