@@ -143,7 +143,7 @@ public:
 
   void add2Record(RecordListType& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override {}
-  ScalarEstimatorBase* clone() override;
+  RMCLocalEnergyEstimator* clone() override;
   /*@}*/
 };
 } // namespace qmcplusplus

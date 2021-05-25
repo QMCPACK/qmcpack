@@ -65,7 +65,7 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
     clear();
   }
 
-  ScalarEstimatorBase* clone() override { return new LocalEnergyOnlyEstimator(); }
+  LocalEnergyOnlyEstimator* clone() override { return new LocalEnergyOnlyEstimator(); }
 };
 } // namespace qmcplusplus
 #endif
