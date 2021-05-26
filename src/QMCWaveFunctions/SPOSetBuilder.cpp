@@ -124,8 +124,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   sposet->checkObject();
   // builder owns created sposets
   sposets.push_back(std::move(sposet));
-  SPOSet* retval = sposets.back().get();
-  return retval;
+  return sposets.back().get();
 }
 
 } // namespace qmcplusplus
