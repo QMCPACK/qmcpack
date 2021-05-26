@@ -47,13 +47,13 @@ SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
   SPOSet* spo = nullptr;
   for (auto it = spo_builders.begin(); it != spo_builders.end(); ++it)
   {
-    std::vector<SPOSet*>& sposets = it->second->sposets;
+    auto& sposets = it->second->sposets;
     for (int i = 0; i < sposets.size(); ++i)
     {
-      SPOSet* sposet = sposets[i];
+      auto& sposet = sposets[i];
       if (sposet->getName() == name)
       {
-        spo = sposet;
+        spo = sposet.get();
         nfound++;
       }
     }
@@ -77,7 +77,7 @@ void SPOSetBuilderFactory::write_spo_builders(const std::string& pad) const
   for (auto it = spo_builders.begin(); it != spo_builders.end(); ++it)
   {
     const std::string& type       = it->first;
-    std::vector<SPOSet*>& sposets = it->second->sposets;
+    auto& sposets                 = it->second->sposets;
     app_log() << pad << "sposets for SPOSetBuilder of type " << type << std::endl;
     for (int i = 0; i < sposets.size(); ++i)
     {

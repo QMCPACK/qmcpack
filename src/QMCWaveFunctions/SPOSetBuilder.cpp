@@ -70,11 +70,11 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   // process general sposet construction requests
   //   and preserve legacy interface
-  SPOSet* sposet = 0;
+  std::unique_ptr<SPOSet> sposet = nullptr;
   if (legacy && input_info.legacy_request)
-    sposet = createSPOSetFromXML(cur);
+    sposet.reset(createSPOSetFromXML(cur));
   else
-    sposet = createSPOSet(cur, input_info);
+    sposet.reset(createSPOSet(cur, input_info));
 
   if (!sposet)
     APP_ABORT("SPOSetBuilder::createSPOSet sposet creation failed");
@@ -86,7 +86,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     abort();
 #else
     // create sposet with rotation
-    auto* rot_spo   = new RotatedSPOs(sposet);
+    auto rot_spo    = std::make_unique<RotatedSPOs>(sposet.get());
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while (tcur != NULL)
     {
@@ -109,7 +109,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
       sposet->setName(spo_object_name + "_before_rotation");
 
     // overwrite sposet
-    sposet = rot_spo;
+    sposet = std::move(rot_spo);
 #endif
   }
 
@@ -123,9 +123,9 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   sposet->checkObject();
   // builder owns created sposets
-  sposets.push_back(sposet);
-
-  return sposet;
+  sposets.push_back(std::move(sposet));
+  SPOSet* retval = sposets.back().get();
+  return retval;
 }
 
 } // namespace qmcplusplus

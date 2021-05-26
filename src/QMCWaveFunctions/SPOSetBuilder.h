@@ -21,6 +21,7 @@
 #ifndef QMCPLUSPLUS_SPOSET_BUILDER_H
 #define QMCPLUSPLUS_SPOSET_BUILDER_H
 
+#include <memory>
 #include <vector>
 #include <string>
 #include "Message/MPIObjectBase.h"
@@ -57,7 +58,7 @@ public:
   std::vector<SPOSetInfo*> states;
 
   /// list of all sposets created by this builder
-  std::vector<SPOSet*> sposets;
+  std::vector<std::unique_ptr<SPOSet>> sposets;
 
   SPOSetBuilder(const std::string& SPO_type_name_in, Communicate* comm);
   virtual ~SPOSetBuilder() {}
