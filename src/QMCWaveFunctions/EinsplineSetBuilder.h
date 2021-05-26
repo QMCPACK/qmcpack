@@ -129,7 +129,7 @@ public:
 
   /**  Helper vector for sorting bands
    */
-  std::vector<std::vector<BandInfo>*> FullBands;
+  std::vector<std::unique_ptr<std::vector<BandInfo>>> FullBands;
 
   /// reader to use BsplineReaderBase
   BsplineReaderBase* MixedSplineReader;

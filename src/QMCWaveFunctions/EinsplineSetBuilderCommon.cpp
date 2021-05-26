@@ -69,7 +69,7 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Co
   states.resize(p.groups());
 
   //create vectors with nullptr
-  FullBands.resize(p.groups(), 0);
+  FullBands.resize(p.groups());
 }
 
 template<typename T>

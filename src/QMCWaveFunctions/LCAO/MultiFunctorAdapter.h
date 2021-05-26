@@ -107,7 +107,7 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
   ///orbitals to build
   COT* m_orbitals;
   ///temporary
-  RadialOrbital_t* m_multiset;
+  std::unique_ptr<RadialOrbital_t> m_multiset;
 
   ///constructor
   RadialOrbitalSetBuilder(Communicate* comm) : MPIObjectBase(comm), Normalized(true), m_multiset(nullptr) {}
@@ -128,7 +128,7 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
   bool addRadialOrbital(xmlNodePtr cur, const std::string& rad_type, const QuantumNumberType& nlms)
   {
     if (m_multiset == nullptr)
-      m_multiset = new RadialOrbital_t;
+      m_multiset = std::make_unique<RadialOrbital_t>();
 
     auto radorb = std::make_unique<single_type>(nlms[q_l], Normalized);
     radorb->putBasisGroup(cur);
@@ -141,7 +141,7 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
   bool addRadialOrbitalH5(hdf_archive& hin, const std::string& rad_type, const QuantumNumberType& nlms)
   {
     if (m_multiset == nullptr)
-      m_multiset = new RadialOrbital_t;
+      m_multiset = std::make_unique<RadialOrbital_t>();
 
     auto radorb = std::make_unique<single_type>(nlms[q_l], Normalized);
     radorb->putBasisGroupH5(hin);

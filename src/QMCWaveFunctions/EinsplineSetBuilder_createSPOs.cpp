@@ -248,8 +248,8 @@ SPOSet* EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     return OrbitalSet;
   }
 
-  if (FullBands[spinSet] == 0)
-    FullBands[spinSet] = new std::vector<BandInfo>;
+  if (!FullBands[spinSet])
+    FullBands[spinSet] = std::make_unique<std::vector<BandInfo>>();
 
   // Ensure the first SPO set must be spinSet==0
   // to correctly initialize key data of EinsplineSetBuilder
