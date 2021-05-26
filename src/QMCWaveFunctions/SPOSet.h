@@ -30,7 +30,6 @@
 
 namespace qmcplusplus
 {
-
 class ResourceCollection;
 
 /** base class for Single-particle orbital sets
@@ -246,8 +245,7 @@ public:
                                 ValueVector_t& psi,
                                 GradVector_t& dpsi,
                                 ValueVector_t& d2psi,
-                                ValueVector_t& dspin
-                                );
+                                ValueVector_t& dspin);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
@@ -338,6 +336,26 @@ public:
                                     ValueMatrix_t& logdet,
                                     GradMatrix_t& dlogdet,
                                     ValueMatrix_t& d2logdet) = 0;
+
+  /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles, including the spin gradient
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param logdet determinant matrix to be inverted
+   * @param dlogdet gradients
+   * @param d2logdet laplacians
+   * @param dspinlogdet, spin gradients
+   *
+   * default implementation will abort for all SPOSets except SpinorSet
+   *
+   */
+  virtual void evaluate_notranspose_spin(const ParticleSet& P,
+                                         int first,
+                                         int last,
+                                         ValueMatrix_t& logdet,
+                                         GradMatrix_t& dlogdet,
+                                         ValueMatrix_t& d2logdet,
+                                         ValueMatrix_t& dspinlogdet);
 
   virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
                                        const RefVectorWithLeader<ParticleSet>& P_list,
