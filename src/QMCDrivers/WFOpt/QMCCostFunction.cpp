@@ -166,9 +166,8 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
     //         if ((CSWeight/wgtinv) < MinNumWalkers)
     if (NumWalkersEff < MinNumWalkers * NumSamples)
     {
-      ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
+      WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
                                                                           << MinNumWalkers * NumSamples)
-      //ERRORMSG("Going to stop now.")
       IsValid = false;
     }
   }
