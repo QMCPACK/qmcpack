@@ -46,7 +46,7 @@ struct SoaAtomicBasisSet
   ///spherical harmonics
   SH Ylm;
   ///radial orbitals
-  ROT* MultiRnl;
+  std::unique_ptr<ROT> MultiRnl;
   ///index of the corresponding real Spherical Harmonic with quantum numbers \f$ (l,m) \f$
   aligned_vector<int> LM;
   /**index of the corresponding radial orbital with quantum numbers \f$ (n,l) \f$ */
@@ -61,14 +61,26 @@ struct SoaAtomicBasisSet
   ///the constructor
   explicit SoaAtomicBasisSet(int lmax, bool addsignforM = false) : Ylm(lmax, addsignforM) {}
 
-  SoaAtomicBasisSet(const SoaAtomicBasisSet& in) = default;
+  SoaAtomicBasisSet(const SoaAtomicBasisSet& in)
+      : BasisSetSize(in.BasisSetSize),
+        PBCImages(in.PBCImages),
+        SuperTwist(in.SuperTwist),
+        periodic_image_phase_factors(in.periodic_image_phase_factors),
+        Rmax(in.Rmax),
+        Ylm(in.Ylm),
+        MultiRnl(in.MultiRnl->makeClone()),
+        LM(in.LM),
+        NL(in.NL),
+        RnlID(in.RnlID),
+        tempS(in.tempS)
+  {}
 
   ~SoaAtomicBasisSet() {} //cleanup
 
   SoaAtomicBasisSet<ROT, SH>* makeClone() const
   {
     SoaAtomicBasisSet<ROT, SH>* myclone = new SoaAtomicBasisSet<ROT, SH>(*this);
-    myclone->MultiRnl                   = MultiRnl->makeClone();
+    myclone->MultiRnl.reset(MultiRnl->makeClone());
     return myclone;
   }
 
