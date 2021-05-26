@@ -75,7 +75,7 @@ struct SoaAtomicBasisSet
         tempS(in.tempS)
   {}
 
-  ~SoaAtomicBasisSet() {} //cleanup
+  ~SoaAtomicBasisSet() = default;
 
   SoaAtomicBasisSet<ROT, SH>* makeClone() const
   {

@@ -48,9 +48,8 @@ SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
   for (auto it = spo_builders.begin(); it != spo_builders.end(); ++it)
   {
     auto& sposets = it->second->sposets;
-    for (int i = 0; i < sposets.size(); ++i)
+    for (auto& sposet : sposets)
     {
-      auto& sposet = sposets[i];
       if (sposet->getName() == name)
       {
         spo = sposet.get();
