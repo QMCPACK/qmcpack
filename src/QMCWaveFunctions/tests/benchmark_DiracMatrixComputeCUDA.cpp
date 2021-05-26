@@ -34,15 +34,14 @@
 // Legacy CPU inversion for temporary testing
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 
-
 namespace qmcplusplus
 {
 #ifdef ENABLE_OFFLOAD
-  template<typename T>
-  using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
+template<typename T>
+using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
 #elif ENABLE_CUDA
-  template<typename T>
-  using OffloadPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+template<typename T>
+using OffloadPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
 #endif
 
 template<typename T>
@@ -50,49 +49,74 @@ using OffloadPinnedMatrix = Matrix<T, OffloadPinnedAllocator<T>>;
 template<typename T>
 using OffloadPinnedVector = Vector<T, OffloadPinnedAllocator<T>>;
 
+// Mechanism to pretty print benchmark names.
+struct DiracComputeBenchmarkParameters;
+std::ostream& operator<<(std::ostream& out, const DiracComputeBenchmarkParameters& dcbmp);
+struct DiracComputeBenchmarkParameters
+{
+  std::string name;
+  size_t n;
+  int batch_size;
+  std::string str()
+  {
+    std::stringstream stream;
+    stream << *this;
+    return stream.str();
+  }
+};
+
+std::ostream& operator<<(std::ostream& out, const DiracComputeBenchmarkParameters& dcbmp)
+{
+  out << dcbmp.name << " n=" << dcbmp.n << " batch=" << dcbmp.batch_size;
+  return out;
+}
+
 /** This and other [.benchmark] benchmarks only run if "[benchmark]" is explicitly passed as tag to test.
  */
 TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "[wavefunction][fermion][.benchmark]")
 {
-  size_t n       = 1024;
-  int batch_size = 4;
+  DiracComputeBenchmarkParameters params;
+  params.name = "Batched CUDA";
+  params.n       = 1024;
+  params.batch_size = 4;
 
   auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
   DiracMatrixComputeCUDA<double> dmcc(cuda_handles->hstream);
 
-  std::vector<Matrix<double>> spd_mats(batch_size, {n, n});
-  std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(batch_size, {n, n});
+  std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
+  std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(params.batch_size, {params.n, params.n});
 
-  for (int im = 0; im < batch_size; ++im)
+  for (int im = 0; im < params.batch_size; ++im)
   {
     testing::makeRngSpdMatrix(spd_mats[im]);
-    for (int i = 0; i < n; ++i)
-      for (int j = 0; j < n; ++j)
+    for (int i = 0; i < params.n; ++i)
+      for (int j = 0; j < params.n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
   }
 
-  OffloadPinnedVector<std::complex<double>> log_values(batch_size);
-  std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(batch_size, {n, n});
+  OffloadPinnedVector<std::complex<double>> log_values(params.batch_size);
+  std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(params.batch_size, {params.n, params.n});
 
   auto a_mats = makeRefVector<decltype(pinned_spd_mats)::value_type>(pinned_spd_mats);
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats =
       makeRefVector<decltype(pinned_inv_mats)::value_type>(pinned_inv_mats);
-
-  std::vector<bool> compute_mask(batch_size, true);
-  BENCHMARK_ADVANCED("CUDA 4x1024")(Catch::Benchmark::Chronometer meter)
+  
+  std::vector<bool> compute_mask(params.batch_size, true);
+  BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
     meter.measure([&] { dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, compute_mask); });
   };
 
   DiracMatrix<double> dmat;
-  std::vector<Matrix<double>> inv_mats_test(batch_size, {n, n});
+  std::vector<Matrix<double>> inv_mats_test(params.batch_size, {params.n, params.n});
   ;
-  std::vector<std::complex<double>> log_values_test(batch_size);
+  std::vector<std::complex<double>> log_values_test(params.batch_size);
 
-  BENCHMARK_ADVANCED("LEGACY 10x256")(Catch::Benchmark::Chronometer meter)
+  params.name = "legacy CPU";
+  BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
     meter.measure([&] {
-      for (int im = 0; im < batch_size; ++im)
+      for (int im = 0; im < params.batch_size; ++im)
         dmat.invert_transpose(spd_mats[im], inv_mats_test[im], log_values_test[im]);
     });
   };
@@ -102,46 +126,49 @@ TEST_CASE("DiracMatrixComputeCUDA_large_determinants_benchmark_legacy_1024_4", "
  */
 TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][fermion][benchmark]")
 {
-  size_t n       = 256;
-  int batch_size = 10;
+  DiracComputeBenchmarkParameters params;
+  params.name = "Batched CUDA";
+  params.n       = 256;
+  params.batch_size = 10;
 
   auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
   DiracMatrixComputeCUDA<double> dmcc(cuda_handles->hstream);
 
-  std::vector<Matrix<double>> spd_mats(batch_size, {n, n});
-  std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(batch_size, {n, n});
+  std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
+  std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(params.batch_size, {params.n, params.n});
 
-  for (int im = 0; im < batch_size; ++im)
+  for (int im = 0; im < params.batch_size; ++im)
   {
     testing::makeRngSpdMatrix(spd_mats[im]);
-    for (int i = 0; i < n; ++i)
-      for (int j = 0; j < n; ++j)
+    for (int i = 0; i < params.n; ++i)
+      for (int j = 0; j < params.n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
   }
 
-  OffloadPinnedVector<std::complex<double>> log_values(batch_size);
-  std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(batch_size, {n, n});
+  OffloadPinnedVector<std::complex<double>> log_values(params.batch_size);
+  std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(params.batch_size, {params.n, params.n});
 
   auto a_mats = makeRefVector<decltype(pinned_spd_mats)::value_type>(pinned_spd_mats);
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats =
       makeRefVector<decltype(pinned_inv_mats)::value_type>(pinned_inv_mats);
 
-  std::vector<bool> compute_mask(batch_size, true);
-  BENCHMARK_ADVANCED("CUDA 10x256")(Catch::Benchmark::Chronometer meter)
+  std::vector<bool> compute_mask(params.batch_size, true);
+  BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
     meter.measure([&] { dmcc.mw_invertTranspose(*cuda_handles, a_mats, inv_a_mats, log_values, compute_mask); });
   };
 
 
   DiracMatrix<double> dmat;
-  std::vector<Matrix<double>> inv_mats_test(batch_size, {n, n});
+  std::vector<Matrix<double>> inv_mats_test(params.batch_size, {params.n, params.n});
   ;
-  std::vector<std::complex<double>> log_values_test(batch_size);
+  std::vector<std::complex<double>> log_values_test(params.batch_size);
 
-  BENCHMARK_ADVANCED("LEGACY 10x256")(Catch::Benchmark::Chronometer meter)
+  params.name = "legacy CPU";
+  BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
     meter.measure([&] {
-      for (int im = 0; im < batch_size; ++im)
+      for (int im = 0; im < params.batch_size; ++im)
         dmat.invert_transpose(spd_mats[im], inv_mats_test[im], log_values_test[im]);
     });
   };
@@ -151,51 +178,54 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDA_vs_legacy_256_10", "[wavefunction][f
  */
 TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunction][fermion][.benchmark]")
 {
-  size_t n       = 256;
-  int batch_size = 10;
+  DiracComputeBenchmarkParameters params;
+  params.name = "Forced Serial Batched CUDA";
+  params.n       = 256;
+  params.batch_size = 10;
 
   auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
   DiracMatrixComputeCUDA<double> dmcc(cuda_handles->hstream);
 
-  std::vector<Matrix<double>> spd_mats(batch_size, {n, n});
-  std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(batch_size, {n, n});
+  std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
+  std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(params.batch_size, {params.n, params.n});
 
-  for (int im = 0; im < batch_size; ++im)
+  for (int im = 0; im < params.batch_size; ++im)
   {
     testing::makeRngSpdMatrix(spd_mats[im]);
-    for (int i = 0; i < n; ++i)
-      for (int j = 0; j < n; ++j)
+    for (int i = 0; i < params.n; ++i)
+      for (int j = 0; j < params.n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
   }
 
-  std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(batch_size, {n, n});
-  std::vector<OffloadPinnedVector<std::complex<double>>> log_values(batch_size);
-  for(auto& log_value : log_values)
-    log_value.resize(1,{0,0});
-  
+  std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(params.batch_size, {params.n, params.n});
+  std::vector<OffloadPinnedVector<std::complex<double>>> log_values(params.batch_size);
+  for (auto& log_value : log_values)
+    log_value.resize(1, {0, 0});
+
   auto a_mats = makeRefVector<decltype(pinned_spd_mats)::value_type>(pinned_spd_mats);
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats =
       makeRefVector<decltype(pinned_inv_mats)::value_type>(pinned_inv_mats);
-
-  std::vector<bool> compute_mask(batch_size, true);
-  BENCHMARK_ADVANCED("CUDA 10x256")(Catch::Benchmark::Chronometer meter)
+  
+  std::vector<bool> compute_mask(params.batch_size, true);
+  BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
     meter.measure([&] {
-      for (int im = 0; im < batch_size; ++im)
+      for (int im = 0; im < params.batch_size; ++im)
         dmcc.invert_transpose(*cuda_handles, pinned_spd_mats[im], pinned_inv_mats[im], log_values[im]);
     });
   };
 
 
   DiracMatrix<double> dmat;
-  std::vector<Matrix<double>> inv_mats_test(batch_size, {n, n});
+  std::vector<Matrix<double>> inv_mats_test(params.batch_size, {params.n, params.n});
   ;
-  std::vector<std::complex<double>> log_values_test(batch_size);
+  std::vector<std::complex<double>> log_values_test(params.batch_size);
 
-  BENCHMARK_ADVANCED("LEGACY 10x256")(Catch::Benchmark::Chronometer meter)
+  params.name = "legacy CPU";
+  BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
     meter.measure([&] {
-      for (int im = 0; im < batch_size; ++im)
+      for (int im = 0; im < params.batch_size; ++im)
         dmat.invert_transpose(spd_mats[im], inv_mats_test[im], log_values_test[im]);
     });
   };
@@ -205,51 +235,55 @@ TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_256_10", "[wavefunct
  */
 TEST_CASE("benchmark_DiracMatrixComputeCUDASingle_vs_legacy_1024_4", "[wavefunction][fermion][.benchmark]")
 {
-  size_t n       = 1024;
-  int batch_size = 4;
+  DiracComputeBenchmarkParameters params;
+  params.name = "Forced Serial Batched CUDA";
+  params.n       = 1024;
+  params.batch_size = 4;
 
   auto cuda_handles = std::make_unique<CUDALinearAlgebraHandles>();
   DiracMatrixComputeCUDA<double> dmcc(cuda_handles->hstream);
 
-  std::vector<Matrix<double>> spd_mats(batch_size, {n, n});
-  std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(batch_size, {n, n});
+  std::vector<Matrix<double>> spd_mats(params.batch_size, {params.n, params.n});
+  std::vector<OffloadPinnedMatrix<double>> pinned_spd_mats(params.batch_size, {params.n, params.n});
 
-  for (int im = 0; im < batch_size; ++im)
+  for (int im = 0; im < params.batch_size; ++im)
   {
     testing::makeRngSpdMatrix(spd_mats[im]);
-    for (int i = 0; i < n; ++i)
-      for (int j = 0; j < n; ++j)
+    for (int i = 0; i < params.n; ++i)
+      for (int j = 0; j < params.n; ++j)
         pinned_spd_mats[im](i, j) = spd_mats[im](i, j);
   }
 
-  std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(batch_size, {n, n});
-  std::vector<OffloadPinnedVector<std::complex<double>>> log_values(batch_size);
-  for(auto& log_value : log_values)
-    log_value.resize(1,{0,0});
-  
+  std::vector<OffloadPinnedMatrix<double>> pinned_inv_mats(params.batch_size, {params.n, params.n});
+  std::vector<OffloadPinnedVector<std::complex<double>>> log_values(params.batch_size);
+  for (auto& log_value : log_values)
+    log_value.resize(1, {0, 0});
+
   auto a_mats = makeRefVector<decltype(pinned_spd_mats)::value_type>(pinned_spd_mats);
   RefVector<OffloadPinnedMatrix<double>> inv_a_mats =
       makeRefVector<decltype(pinned_inv_mats)::value_type>(pinned_inv_mats);
 
-  std::vector<bool> compute_mask(batch_size, true);
-  BENCHMARK_ADVANCED("CUDA 10x256")(Catch::Benchmark::Chronometer meter)
+  std::vector<bool> compute_mask(params.batch_size, true);
+  BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
     meter.measure([&] {
-      for (int im = 0; im < batch_size; ++im)
+      for (int im = 0; im < params.batch_size; ++im)
         dmcc.invert_transpose(*cuda_handles, pinned_spd_mats[im], pinned_inv_mats[im], log_values[im]);
     });
   };
 
 
   DiracMatrix<double> dmat;
-  std::vector<Matrix<double>> inv_mats_test(batch_size, {n, n});
+  std::vector<Matrix<double>> inv_mats_test(params.batch_size, {params.n, params.n});
   ;
-  std::vector<std::complex<double>> log_values_test(batch_size);
+  std::vector<std::complex<double>> log_values_test(params.batch_size);
 
-  BENCHMARK_ADVANCED("LEGACY 10x256")(Catch::Benchmark::Chronometer meter)
+  params.name = "legacy CPU";
+
+  BENCHMARK_ADVANCED(params.str())(Catch::Benchmark::Chronometer meter)
   {
     meter.measure([&] {
-      for (int im = 0; im < batch_size; ++im)
+      for (int im = 0; im < params.batch_size; ++im)
         dmat.invert_transpose(spd_mats[im], inv_mats_test[im], log_values_test[im]);
     });
   };
