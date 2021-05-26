@@ -14,39 +14,38 @@
 
 namespace qmcplusplus
 {
-
 using FullPrecRealType = HamiltonianRef::FullPrecRealType;
 
-  void HamiltonianRef::addOperator(OperatorBase& op) { Hrefs_.emplace_back(op); }
+void HamiltonianRef::addOperator(OperatorBase& op) { Hrefs_.emplace_back(op); }
 
-  FullPrecRealType HamiltonianRef::evaluateValueAndDerivatives(ParticleSet& P,
-                                               const opt_variables_type& optvars,
-                                               std::vector<ValueType>& dlogpsi,
-                                               std::vector<ValueType>& dhpsioverpsi,
-                                               bool compute_deriv)
-  {
-    FullPrecRealType LocalEnergy = Hrefs_[0].get().evaluate(P);
-    if (compute_deriv)
-      for (int i = 1; i < Hrefs_.size(); ++i)
-        LocalEnergy += Hrefs_[i].get().evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
-    else
-      for (int i = 1; i < Hrefs_.size(); ++i)
-        LocalEnergy += Hrefs_[i].get().evaluate(P);
-    return LocalEnergy;
-  }
+FullPrecRealType HamiltonianRef::evaluateValueAndDerivatives(ParticleSet& P,
+                                                             const opt_variables_type& optvars,
+                                                             std::vector<ValueType>& dlogpsi,
+                                                             std::vector<ValueType>& dhpsioverpsi,
+                                                             bool compute_deriv)
+{
+  FullPrecRealType LocalEnergy = Hrefs_[0].get().evaluate(P);
+  if (compute_deriv)
+    for (int i = 1; i < Hrefs_.size(); ++i)
+      LocalEnergy += Hrefs_[i].get().evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  else
+    for (int i = 1; i < Hrefs_.size(); ++i)
+      LocalEnergy += Hrefs_[i].get().evaluate(P);
+  return LocalEnergy;
+}
 
-  /// the same evaluate as QMCHamiltonian
-  FullPrecRealType HamiltonianRef::evaluate(ParticleSet& P)
+/// the same evaluate as QMCHamiltonian
+FullPrecRealType HamiltonianRef::evaluate(ParticleSet& P)
+{
+  FullPrecRealType LocalEnergy = 0.0;
+  for (int i = 0; i < Hrefs_.size(); ++i)
   {
-    FullPrecRealType LocalEnergy = 0.0;
-    for (int i = 0; i < Hrefs_.size(); ++i)
-    {
-      const auto LocalEnergyComponent = Hrefs_[i].get().evaluate(P);
-      if (std::isnan(LocalEnergyComponent))
-        APP_ABORT("QMCHamiltonian::evaluate component " + Hrefs_[i].get().myName + " returns NaN\n");
-      LocalEnergy += LocalEnergyComponent;
-    }
-    return LocalEnergy;
+    const auto LocalEnergyComponent = Hrefs_[i].get().evaluate(P);
+    if (std::isnan(LocalEnergyComponent))
+      APP_ABORT("QMCHamiltonian::evaluate component " + Hrefs_[i].get().myName + " returns NaN\n");
+    LocalEnergy += LocalEnergyComponent;
   }
+  return LocalEnergy;
+}
 
 } // namespace qmcplusplus

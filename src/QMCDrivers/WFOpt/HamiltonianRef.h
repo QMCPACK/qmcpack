@@ -23,7 +23,7 @@ class HamiltonianRef
 {
 public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  using ValueType = OperatorBase::ValueType;
+  using ValueType        = OperatorBase::ValueType;
 
   /// record operator reference
   void addOperator(OperatorBase& op);
