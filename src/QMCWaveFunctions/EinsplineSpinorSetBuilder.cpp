@@ -38,11 +38,10 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   //There have to be two "spin states"...  one for the up channel and one for the down channel.
   // We force this for spinors and manually resize states and FullBands.
-  delete_iter(states.begin(), states.end());
   states.clear();
-  states.resize(2, 0);
+  states.resize(2);
 
-  FullBands.resize(2, 0);
+  FullBands.resize(2);
 
   SPOSet* UpOrbitalSet;
   std::string sourceName;
@@ -141,10 +140,10 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   if (FullBands[spinSet] == 0)
-    FullBands[spinSet] = new std::vector<BandInfo>;
+    FullBands[spinSet] = std::make_unique<std::vector<BandInfo>>();
 
   if (FullBands[spinSet2] == 0)
-    FullBands[spinSet2] = new std::vector<BandInfo>;
+    FullBands[spinSet2] = std::make_unique<std::vector<BandInfo>>();
 
   //This is to skip checks on ion-ID's, spin types, etc.  If we've made it here, we assume we know better
   //than Einspline on what the data means...
