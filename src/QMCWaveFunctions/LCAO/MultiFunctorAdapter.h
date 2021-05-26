@@ -154,10 +154,7 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
 
   void finalize()
   {
-    if (m_multiset)
-    {
-      m_orbitals->MultiRnl.reset(m_multiset->makeClone());
-    }
+    m_orbitals->MultiRnl.reset(m_multiset->makeClone());
     m_orbitals->setRmax(m_multiset->rmax()); //set Rmax
   }
 };
