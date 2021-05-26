@@ -14,6 +14,9 @@
 #define QMCPLUSPLUS_HAMILTONIANREF_H
 
 #include <OperatorBase.h>
+#ifdef QMC_CUDA
+class MCWalkerConfiguration;
+#endif
 
 namespace qmcplusplus
 {
@@ -23,7 +26,9 @@ class HamiltonianRef
 {
 public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using Walker_t         = OperatorBase::Walker_t;
   using ValueType        = OperatorBase::ValueType;
+  using RealType         = OperatorBase::RealType;
 
   /// record operator reference
   void addOperator(OperatorBase& op);
@@ -37,6 +42,15 @@ public:
 
   /// the same evaluate as QMCHamiltonian
   FullPrecRealType evaluate(ParticleSet& P);
+
+#ifdef QMC_CUDA
+  /// the same evaluate as QMCHamiltonian
+  void evaluate(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+#endif
+
+  int addObservables(ParticleSet& P);
+
+  int size() const { return Hrefs_.size(); }
 
 private:
   /// collected references

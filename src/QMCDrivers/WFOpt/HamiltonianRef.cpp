@@ -11,6 +11,9 @@
 
 
 #include "HamiltonianRef.h"
+#ifdef QMC_CUDA
+#include "Particle/MCWalkerConfiguration.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -47,5 +50,44 @@ FullPrecRealType HamiltonianRef::evaluate(ParticleSet& P)
   }
   return LocalEnergy;
 }
+
+int HamiltonianRef::addObservables(ParticleSet& P)
+{
+  OperatorBase::PropertySetType Observables;
+  //ParticleSet::mcObservables (large data, e.g. density) are accumulated while evaluations
+  P.Collectables.clear();
+  P.Collectables.rewind();
+  for (int i = 0; i < Hrefs_.size(); ++i)
+    Hrefs_[i].get().addObservables(Observables, P.Collectables);
+  int last_obs;
+  int myIndex = P.PropertyList.add(Observables.Names[0]);
+  for (int i = 1; i < Observables.size(); ++i)
+    last_obs = P.PropertyList.add(Observables.Names[i]);
+  P.Collectables.size();
+  app_log() << "\n  QMCHamiltonian::add2WalkerProperty added"
+            << "\n    " << Observables.size() << " to P::PropertyList "
+            << "\n    " << P.Collectables.size() << " to P::Collectables "
+            << "\n    starting Index of the observables in P::PropertyList = " << myIndex << std::endl;
+  return Observables.size();
+}
+
+#ifdef QMC_CUDA
+void HamiltonianRef::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& energyVector)
+{
+  using WP = WalkerProperties::Indexes;
+  std::vector<Walker_t*>& walkers = W.WalkerList;
+  const int nw                    = walkers.size();
+  std::vector<FullPrecRealType> LocalEnergyVector(nw, 0.0);
+  for (int i = 0; i < Hrefs_.size(); ++i)
+    Hrefs_[i].get().addEnergy(W, LocalEnergyVector);
+  for (int iw = 0; iw < walkers.size(); iw++)
+  {
+    walkers[iw]->getPropertyBase()[WP::LOCALENERGY] = LocalEnergyVector[iw];
+    walkers[iw]->getPropertyBase()[WP::LOCALPOTENTIAL] =
+        LocalEnergyVector[iw] - walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES];
+    energyVector[iw] = LocalEnergyVector[iw];
+  }
+}
+#endif
 
 } // namespace qmcplusplus
