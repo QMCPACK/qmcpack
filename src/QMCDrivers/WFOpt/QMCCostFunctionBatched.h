@@ -60,8 +60,8 @@ public:
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
 
 protected:
-  std::unique_ptr<QMCHamiltonian> H_KE_Node;
-  std::unique_ptr<QMCHamiltonian> extractFixedHamiltonianComponents();
+  /// H components used in correlated sampling. It can be KE or KE+NLPP
+  std::vector<std::string> H_KE_node_names_;
 
   Matrix<Return_rt> RecordsOnNode_;
 

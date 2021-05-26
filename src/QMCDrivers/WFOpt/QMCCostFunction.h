@@ -18,6 +18,7 @@
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "HamiltonianRef.h"
 
 namespace qmcplusplus
 {
@@ -50,7 +51,7 @@ public:
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
 
 protected:
-  std::vector<QMCHamiltonian*> H_KE_Node;
+  std::vector<std::unique_ptr<HamiltonianRef>> H_KE_Node;
   std::vector<Matrix<Return_rt>*> RecordsOnNode;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
