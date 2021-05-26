@@ -55,7 +55,7 @@ public:
   bool legacy;
 
   /// state info of all possible states available in the basis
-  std::vector<SPOSetInfo*> states;
+  std::vector<std::unique_ptr<SPOSetInfo>> states;
 
   /// list of all sposets created by this builder
   std::vector<std::unique_ptr<SPOSet>> sposets;

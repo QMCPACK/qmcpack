@@ -33,7 +33,7 @@ void SPOSetBuilder::reserve_states(int nsets)
   int sets_needed = nsets - states.size();
   if (sets_needed > 0)
     for (int s = 0; s < sets_needed; ++s)
-      states.push_back(new SPOSetInfo());
+      states.push_back(std::make_unique<SPOSetInfo>());
 }
 
 

@@ -117,8 +117,8 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   if (spo2band[spin].empty())
   {
     spo2band[spin].reserve(fullband.size());
-    if (mybuilder->states[spin] == 0)
-      mybuilder->states[spin] = new SPOSetInfo;
+    if (!mybuilder->states[spin])
+      mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
     initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }
@@ -142,8 +142,8 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInp
   if (spo2band[spin].empty())
   {
     spo2band[spin].reserve(fullband.size());
-    if (mybuilder->states[spin] == 0)
-      mybuilder->states[spin] = new SPOSetInfo;
+    if (!mybuilder->states[spin])
+      mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
     initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }
