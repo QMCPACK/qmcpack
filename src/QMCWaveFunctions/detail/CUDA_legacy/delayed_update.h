@@ -2,8 +2,8 @@
 #define DELAYED_UPDATE_H
 
 #include "config.h"
-#ifndef QMC_CUDA2HIP
 #include <complex>
+#ifndef QMC_CUDA2HIP
 #include <cublas_v2.h>
 #else
 #include <hipblas.h>
