@@ -45,7 +45,7 @@ struct SplineSetReader : public BsplineReaderBase
   double rotate_phase_r, rotate_phase_i;
   UBspline_3d_d* spline_r;
   UBspline_3d_d* spline_i;
-  std::unique_ptr<splineset_t> bspline;
+  splineset_t* bspline;
   fftw_plan FFTplan;
 
   SplineSetReader(EinsplineSetBuilder* e)
@@ -136,7 +136,7 @@ struct SplineSetReader : public BsplineReaderBase
     ReportEngine PRE("SplineSetReader", "create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
     //double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
-    bspline.reset(new splineset_t);
+    bspline = new splineset_t;
     app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
     if (bspline->is_complex)
       app_log() << "  Using complex einspline table" << std::endl;
@@ -147,7 +147,7 @@ struct SplineSetReader : public BsplineReaderBase
     this->initialize_hybridrep_atomic_centers();
 
     //baseclass handles twists
-    check_twists(bspline.get(), bandgroup);
+    check_twists(bspline, bandgroup);
 
     Ugrid xyz_grid[3];
 
@@ -246,7 +246,8 @@ struct SplineSetReader : public BsplineReaderBase
     }
 
     clear();
-    return bspline.get();
+    mybuilder->sposets.push_back(std::unique_ptr<SPOSet>{bspline});
+    return bspline;
   }
 
   /** fft and spline cG
