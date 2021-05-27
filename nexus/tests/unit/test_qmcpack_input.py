@@ -366,6 +366,7 @@ def generate_serial_references():
 
 
     # reference for generate
+    #   legacy driver
     ref = ref.copy()
     ref['simulation/qmcsystem/simulationcell/bconds'] = tuple('ppp')
     for k in list(ref.keys()):
@@ -381,7 +382,44 @@ def generate_serial_references():
 
     serial_references['VO2_M1_afm.in.xml gen'] = ref
 
+    #   batched driver
+    ref = ref.copy()
+    for k in list(ref.keys()):
+        if 'estimator' in k or 'calculations' in k or 'MPC' in k:
+            del ref[k]
+        #end if
+    #end for
+    ref['simulation/calculations/0/blocks'] = 70
+    ref['simulation/calculations/0/method'] = 'vmc_batch'
+    ref['simulation/calculations/0/move'] = 'pbyp'
+    ref['simulation/calculations/0/steps'] = 5
+    ref['simulation/calculations/0/substeps'] = 2
+    ref['simulation/calculations/0/timestep'] = 0.3
+    ref['simulation/calculations/0/usedrift'] = False
+    ref['simulation/calculations/0/walkers_per_rank'] = 64
+    ref['simulation/calculations/0/warmupsteps'] = 20
+    ref['simulation/calculations/1/blocks'] = 80
+    ref['simulation/calculations/1/method'] = 'dmc_batch'
+    ref['simulation/calculations/1/move'] = 'pbyp'
+    ref['simulation/calculations/1/nonlocalmoves'] = 'yes'
+    ref['simulation/calculations/1/steps'] = 5
+    ref['simulation/calculations/1/timestep'] = 0.02
+    ref['simulation/calculations/1/walkers_per_rank'] = 64
+    ref['simulation/calculations/1/warmupsteps'] = 2
+    ref['simulation/calculations/2/blocks'] = 600
+    ref['simulation/calculations/2/method'] = 'dmc_batch'
+    ref['simulation/calculations/2/move'] = 'pbyp'
+    ref['simulation/calculations/2/nonlocalmoves'] = 'yes'
+    ref['simulation/calculations/2/steps'] = 5
+    ref['simulation/calculations/2/timestep'] = 0.005
+    ref['simulation/calculations/2/walkers_per_rank'] = 64
+    ref['simulation/calculations/2/warmupsteps'] = 10
 
+
+    serial_references['VO2_M1_afm.in.xml batched gen'] = ref
+
+
+    # references for afqmc
     ref = {
         'simulation/afqmcinfo/naea' : 5,
         'simulation/afqmcinfo/naeb' : 5,
@@ -1239,6 +1277,7 @@ def test_generate():
 
     #system.structure.order_by_species()
 
+    # legacy drivers
     qi = generate_qmcpack_input(
         input_type      = 'basic',
         system          = system,
@@ -1274,6 +1313,45 @@ def test_generate():
     qi.pluralize()
 
     check_vs_serial_reference(qi,'VO2_M1_afm.in.xml gen')
+
+
+    # batched drivers
+    qi = generate_qmcpack_input(
+        input_type       = 'basic',
+        system           = system,
+        randomsrc        = False,
+        pseudos          = ['V.opt.xml','O.opt.xml'],
+        spin_polarized   = True,
+        twistnum         = 0,
+        orbitals_h5      = '../scf/pwscf_output/pwscf.pwscf.h5',
+        estimators       = [],
+        corrections      = [],
+        qmc              = 'dmc',
+        driver           = 'batched',
+        walkers_per_rank = 64,
+        # vmc inputs
+        vmc_warmupsteps  = 20,
+        vmc_blocks       = 70,
+        vmc_steps        = 5,
+        vmc_substeps     = 2,
+        vmc_timestep     = 0.3,
+        # dmc inputs
+        eq_dmc           = True,
+        eq_warmupsteps   = 2,
+        eq_blocks        = 80,
+        eq_steps         =  5,
+        eq_timestep      = 0.02,
+        # dmc inputs     
+        warmupsteps      = 10,
+        blocks           = 600,
+        steps            =  5,
+        timestep         = 0.005,
+        nonlocalmoves    = 'yes',
+        )
+    
+    qi.pluralize()
+
+    check_vs_serial_reference(qi,'VO2_M1_afm.in.xml batched gen')
 
 
     # test afqmc
