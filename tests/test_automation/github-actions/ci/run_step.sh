@@ -25,8 +25,8 @@ case "$1" in
       *"asan"*)
         echo 'Configure for address sanitizer asan including lsan (leaks)'
         CC=clang CXX=clang++ \
-        cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
-                      -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZER=asan \
+        cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZER=asan \
+                      -DQMC_MPI=0 \
                       -DQMC_COMPLEX=$IS_COMPLEX \
                       ${GITHUB_WORKSPACE}
       ;;
@@ -96,15 +96,15 @@ case "$1" in
       export OMPI_MCA_hwloc_base_binding_policy=none
     fi 
     
+    # Run only deterministic tests (reasonable for CI) by default
+    TEST_LABEL=deterministic
+    
     # Enable ASAN_OPTION=suppression=suppresion_file
     if [[ "${GH_JOBNAME}" =~ (asan) ]]
     then
-      echo "Enabling LSAN suppressions file config/sanitizers/lsan.supp"
-      export LSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/config/sanitizers/lsan.supp	
+      TEST_LABEL=unit -LE noasan	
     fi
     
-    # Run only deterministic tests (reasonable for CI) by default
-    TEST_LABEL=deterministic
     if [[ "${GH_JOBNAME}" =~ (clang-latest-openmp-offload) ]]
     then
        echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
