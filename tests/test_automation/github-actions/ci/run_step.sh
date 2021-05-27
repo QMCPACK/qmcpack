@@ -97,12 +97,12 @@ case "$1" in
     fi 
     
     # Run only deterministic tests (reasonable for CI) by default
-    TEST_LABEL=deterministic
+    TEST_LABEL="-L deterministic"
     
     # Enable ASAN_OPTION=suppression=suppresion_file
     if [[ "${GH_JOBNAME}" =~ (asan) ]]
     then
-      TEST_LABEL=unit -LE noasan	
+      TEST_LABEL="-L unit -LE noasan"
     fi
     
     if [[ "${GH_JOBNAME}" =~ (clang-latest-openmp-offload) ]]
@@ -110,10 +110,10 @@ case "$1" in
        echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
        export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
        # Run only unit tests (reasonable for CI using openmp-offload)
-       TEST_LABEL=unit
+       TEST_LABEL="-L unit"
     fi
     
-    ctest --output-on-failure -L $TEST_LABEL
+    ctest --output-on-failure $TEST_LABEL
     ;;
   
   # Generate coverage reports
