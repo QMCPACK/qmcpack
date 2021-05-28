@@ -43,7 +43,7 @@ public:
   ~SpinDensity() {}
 
   //standard interface
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

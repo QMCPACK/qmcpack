@@ -106,7 +106,7 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   void initBreakup(ParticleSet& P);
 

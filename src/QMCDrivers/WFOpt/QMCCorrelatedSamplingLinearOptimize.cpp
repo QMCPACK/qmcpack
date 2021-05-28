@@ -326,11 +326,11 @@ bool QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
   if (vmcEngine == 0)
   {
 #if defined(QMC_CUDA)
-    vmcEngine = std::make_unique<VMCcuda>(W, Psi, H, myComm, false);
+    vmcEngine   = std::make_unique<VMCcuda>(W, Psi, H, myComm, false);
     vmcCSEngine = dynamic_cast<VMCcuda*>(vmcEngine.get());
     vmcCSEngine->setOpt(true);
 #else
-    vmcEngine = std::make_unique<VMCLinearOpt>(W, Psi, H, myComm);
+    vmcEngine   = std::make_unique<VMCLinearOpt>(W, Psi, H, myComm);
     vmcCSEngine = dynamic_cast<VMCLinearOpt*>(vmcEngine.get());
 #endif
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');

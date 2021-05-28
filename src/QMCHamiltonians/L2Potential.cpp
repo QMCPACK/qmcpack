@@ -106,17 +106,17 @@ void L2Potential::evaluateDK(ParticleSet& P, int iel, TensorType& D, PosType& K)
     L2RadialPotential* ppot = PP[iat];
     if (ppot == nullptr)
       continue;
-    RealType r  = d_table.getTempDists()[iat];
+    RealType r = d_table.getTempDists()[iat];
     if (r < ppot->rcut)
     {
-      PosType  rv = -1*d_table.getTempDispls()[iat];
+      PosType rv   = -1 * d_table.getTempDispls()[iat];
       RealType vL2 = ppot->evaluate(r);
-      K += 2*rv*vL2;
+      K += 2 * rv * vL2;
       for (int i = 0; i < DIM; ++i)
-        D(i,i) += 2*vL2*r*r;
+        D(i, i) += 2 * vL2 * r * r;
       for (int i = 0; i < DIM; ++i)
         for (int j = 0; j < DIM; ++j)
-          D(i,j) -= 2*vL2*rv[i]*rv[j];
+          D(i, j) -= 2 * vL2 * rv[i] * rv[j];
     }
   }
 }
@@ -134,27 +134,31 @@ void L2Potential::evaluateD(ParticleSet& P, int iel, TensorType& D)
     L2RadialPotential* ppot = PP[iat];
     if (ppot == nullptr)
       continue;
-    RealType r  = d_table.getTempDists()[iat];
+    RealType r = d_table.getTempDists()[iat];
     if (r < ppot->rcut)
     {
-      PosType  rv = d_table.getTempDispls()[iat];
+      PosType rv   = d_table.getTempDispls()[iat];
       RealType vL2 = ppot->evaluate(r);
       for (int i = 0; i < DIM; ++i)
-        D(i,i) += 2*vL2*r*r;
+        D(i, i) += 2 * vL2 * r * r;
       for (int i = 0; i < DIM; ++i)
         for (int j = 0; j < DIM; ++j)
-          D(i,j) -= 2*vL2*rv[i]*rv[j];
+          D(i, j) -= 2 * vL2 * rv[i] * rv[j];
     }
   }
 }
 
 
-OperatorBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  L2Potential* myclone = new L2Potential(IonConfig, qp, psi);
+  std::unique_ptr<L2Potential> myclone = std::make_unique<L2Potential>(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)
+  {
     if (PPset[ig])
+    {
       myclone->add(ig, std::unique_ptr<L2RadialPotential>(PPset[ig]->makeClone()));
+    }
+  }
   return myclone;
 }
 

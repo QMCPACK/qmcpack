@@ -32,7 +32,8 @@ namespace qmcplusplus
 class MPC : public OperatorBase
 {
 protected:
-  UBspline_3d_d *VlongSpline, *DensitySpline;
+  std::shared_ptr<UBspline_3d_d> VlongSpline;
+  //std::shared_ptr<UBspline_3d_d> DensitySpline;
   double Vconst;
   void compute_g_G(double& g_0_N, std::vector<double>& g_G_N, int N);
   void init_gvecs();
@@ -90,7 +91,7 @@ public:
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   void initBreakup();
 };

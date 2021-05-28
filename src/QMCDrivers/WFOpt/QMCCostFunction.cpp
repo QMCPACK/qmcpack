@@ -36,7 +36,6 @@ QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& ps
 /** Clean up the vector */
 QMCCostFunction::~QMCCostFunction()
 {
-  delete_iter(H_KE_Node.begin(), H_KE_Node.end());
   delete_iter(RngSaved.begin(), RngSaved.end());
   delete_iter(RecordsOnNode.begin(), RecordsOnNode.end());
   delete_iter(DerivRecords.begin(), DerivRecords.end());
@@ -181,7 +180,7 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
   {
     app_log() << "  QMCCostFunction is created with " << NumThreads << " threads." << std::endl;
     //make H_KE_Node
-    H_KE_Node.resize(NumThreads, 0);
+    H_KE_Node.resize(NumThreads);
     RecordsOnNode.resize(NumThreads, 0);
     DerivRecords.resize(NumThreads, 0);
     HDerivRecords.resize(NumThreads, 0);
@@ -194,15 +193,15 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
   {
     if (H_KE_Node[ip] == 0)
     {
-      H_KE_Node[ip] = new QMCHamiltonian;
-      H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"), "Kinetic");
+      H_KE_Node[ip] = std::make_unique<HamiltonianRef>();
+      H_KE_Node[ip]->addOperator(*hClones[ip]->getHamiltonian("Kinetic"));
       if (includeNonlocalH != "no")
       {
-        OperatorBase* a = hClones[ip]->getHamiltonian(includeNonlocalH);
+        OperatorBase* a(hClones[ip]->getHamiltonian(includeNonlocalH));
         if (a)
         {
           app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-          H_KE_Node[ip]->addOperator(a, includeNonlocalH);
+          H_KE_Node[ip]->addOperator(*a);
         }
         else
           app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
@@ -267,7 +266,7 @@ void QMCCostFunction::checkConfigurations()
         HDerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
       }
     }
-    OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH);
+    OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH);
     bool compute_nlpp  = useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();
@@ -393,7 +392,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
-    OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
+    OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
     bool compute_nlpp  = useNLPPDeriv && nlpp;
     //set the optimization mode for the trial wavefunction
     psiClones[ip]->startOptimization();

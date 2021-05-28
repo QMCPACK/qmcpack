@@ -285,8 +285,6 @@ protected:
   std::map<std::string, std::pair<xmlNodePtr, std::string>> attribNodes;
   ///string for the file root
   std::string RootName;
-  ///Hamiltonians that depend on the optimization: KE
-  QMCHamiltonian H_KE;
 
   ///Random number generators
   std::vector<RandomGenerator_t*> RngSaved, MoverRng;
