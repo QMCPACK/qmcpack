@@ -18,7 +18,13 @@ if len(sys.argv)<2:
 
 for filepath in sys.argv[1:]:
     path,filename = os.path.split(filepath)
-    filename = filename.replace('.gms','').replace('.gamess','')+'.xml'
+    if '.' in filename:
+        fn,ext = filename.rsplit('.',1)
+        if ext in ('gms','gamess'):
+            filename = fn
+        #end if
+    #end if
+    filename += '.xml'
     pp = GaussianPP(filepath,format='gamess')
     pp.write(os.path.join(path,filename),format='qmcpack')
 #end for
