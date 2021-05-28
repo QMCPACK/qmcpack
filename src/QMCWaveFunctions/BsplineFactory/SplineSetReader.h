@@ -131,7 +131,7 @@ struct SplineSetReader : public BsplineReaderBase
     *target = (multi_UBspline_3d_d*)bspline->SplineInst->getSplinePtr();
   }
 
-  SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup)
+  std::unique_ptr<SPOSet> create_spline_set(int spin, const BandInfoGroup& bandgroup)
   {
     ReportEngine PRE("SplineSetReader", "create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
@@ -246,8 +246,7 @@ struct SplineSetReader : public BsplineReaderBase
     }
 
     clear();
-    mybuilder->sposets.push_back(std::unique_ptr<SPOSet>{bspline});
-    return bspline;
+    return std::unique_ptr<SPOSet>{bspline};
   }
 
   /** fft and spline cG

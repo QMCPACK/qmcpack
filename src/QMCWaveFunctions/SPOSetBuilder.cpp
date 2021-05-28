@@ -37,7 +37,7 @@ void SPOSetBuilder::reserve_states(int nsets)
 }
 
 
-SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   APP_ABORT("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
   return 0;
@@ -72,9 +72,9 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   //   and preserve legacy interface
   std::unique_ptr<SPOSet> sposet = nullptr;
   if (legacy && input_info.legacy_request)
-    sposet.reset(createSPOSetFromXML(cur));
+    sposet = createSPOSetFromXML(cur);
   else
-    sposet.reset(createSPOSet(cur, input_info));
+    sposet = createSPOSet(cur, input_info);
 
   if (!sposet)
     APP_ABORT("SPOSetBuilder::createSPOSet sposet creation failed");

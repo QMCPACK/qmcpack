@@ -28,7 +28,7 @@
 
 namespace qmcplusplus
 {
-SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   int numOrbs = 0;
   int sortBands(1);
@@ -136,7 +136,7 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
               << "cloning EinsplineSet object.\n";
-    return iter->second->makeClone();
+    return std::unique_ptr<SPOSet>{iter->second->makeClone()};
   }
 
   if (FullBands[spinSet] == 0)
@@ -204,9 +204,8 @@ SPOSet* EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::unique_ptr<SPOSet> bspline_zd_d(MixedSplineReader->create_spline_set(spinSet2, spo_cur));
 
   //register with spin set and we're off to the races.
-  SpinorSet* spinor_set = new SpinorSet();
+  auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(bspline_zd_u), std::move(bspline_zd_d));
   return spinor_set;
-  // return nullptr;
 };
 } // namespace qmcplusplus

@@ -107,7 +107,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  SPOSet* spo = einSet.createSPOSetFromXML(ein1);
+  auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
@@ -310,7 +310,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  SPOSet* spo = einSet.createSPOSetFromXML(ein1);
+  auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
   // for vgl

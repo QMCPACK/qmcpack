@@ -77,10 +77,10 @@ public:
 
 protected:
   /// create an sposet from xml (legacy)
-  virtual SPOSet* createSPOSetFromXML(xmlNodePtr cur) = 0;
+  virtual std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) = 0;
 
   /// create an sposet from a general xml request
-  virtual SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
+  virtual std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
 
   /// type name of the SPO objects built by this builder.
   const std::string SPO_type_name;

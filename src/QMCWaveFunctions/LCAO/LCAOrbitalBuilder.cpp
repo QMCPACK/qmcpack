@@ -451,7 +451,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
 }
 
 
-SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), id, cusp_file(""), optimize("no");
@@ -519,7 +519,7 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
 
-  return lcos;
+  return std::unique_ptr<SPOSet>{lcos};
 }
 
 

@@ -99,7 +99,7 @@ void BsplineReaderBase::setCommon(xmlNodePtr cur)
   saveSplineCoefs = saveCoefs == "yes";
 }
 
-SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
+std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
 {
   int ns(0);
   OhmmsAttributeSet a;
@@ -132,7 +132,7 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   return create_spline_set(spin, vals);
 }
 
-SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   if (spo2band.empty())
     spo2band.resize(mybuilder->states.size());
