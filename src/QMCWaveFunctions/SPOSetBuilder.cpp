@@ -70,7 +70,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   // process general sposet construction requests
   //   and preserve legacy interface
-  std::unique_ptr<SPOSet> sposet = nullptr;
+  std::unique_ptr<SPOSet> sposet;
   if (legacy && input_info.legacy_request)
     sposet = createSPOSetFromXML(cur);
   else

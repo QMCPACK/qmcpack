@@ -350,12 +350,12 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
       {
         AOBasisBuilder<ao_type> any(elementType, myComm);
         any.put(cur);
-        ao_type* aoBasis = any.createAOSet(cur);
+        auto aoBasis = any.createAOSet(cur);
         if (aoBasis)
         {
           //add the new atomic basis to the basis set
           int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
-          mBasisSet->add(activeCenter, std::unique_ptr<ao_type>{aoBasis});
+          mBasisSet->add(activeCenter, std::move(aoBasis));
         }
         ao_built_centers.push_back(elementType);
       }
@@ -426,12 +426,12 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
     {
       AOBasisBuilder<ao_type> any(elementType, myComm);
       any.putH5(hin);
-      ao_type* aoBasis = any.createAOSetH5(hin);
+      auto aoBasis = any.createAOSetH5(hin);
       if (aoBasis)
       {
         //add the new atomic basis to the basis set
         int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
-        mBasisSet->add(activeCenter, std::unique_ptr<ao_type>{aoBasis->makeClone()});
+        mBasisSet->add(activeCenter, std::move(aoBasis));
       }
       ao_built_centers.push_back(elementType);
     }
