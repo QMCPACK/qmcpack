@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 
 import sys,os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../nexus/lib'))
+#sys.path.append(os.path.join(os.path.dirname(__file__), '../nexus/lib'))
+nexus_lib = os.path.join(os.path.dirname(__file__), '../nexus/lib')
+sys.path.append(nexus_lib)
+try:
+    from pseudopotential import GaussianPP
+except:
+    print('Nexus must be installed to run this script.\nExpected Nexus library at {}'.format(nexus_lib))
+    sys.exit(1)
+#end try
 
 executable_name = sys.argv[0]
 if len(sys.argv)<2:
