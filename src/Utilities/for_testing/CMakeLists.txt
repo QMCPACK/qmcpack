@@ -13,6 +13,3 @@ SET(test_utilities_src
 add_library(utilities_for_test ${test_utilities_src})
 target_include_directories(utilities_for_test PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(utilities_for_test PRIVATE "${PROJECT_SOURCE_DIR}/external_codes/catch")
-
-add_library(catch_main_no_mpi catch_main_no_mpi.cpp)
-TARGET_INCLUDE_DIRECTORIES(catch_main_no_mpi PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")

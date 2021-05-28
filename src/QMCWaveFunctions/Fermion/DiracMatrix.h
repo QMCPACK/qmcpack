@@ -89,17 +89,6 @@ inline int Xgetri(int n,
   return status;
 }
 
-
-template<typename TIN, typename TOUT>
-inline void TansposeSquare(const TIN* restrict in, TOUT* restrict out, size_t n, size_t lda)
-{
-#pragma omp simd
-  for (size_t i = 0; i < n; ++i)
-    for (size_t j = 0; j < n; ++j)
-      out[i * lda + j] = in[i + j * lda];
-}
-
-
 template<typename T, typename T_FP>
 inline void computeLogDet(const T* restrict diag, int n, const int* restrict pivot, std::complex<T_FP>& logdet)
 {
@@ -130,7 +119,14 @@ class DiracMatrix
     Lwork = -1;
     T_FP tmp;
     real_type_fp lw;
-    Xgetri(lda, invMat_ptr, lda, m_pivot.data(), &tmp, Lwork);
+    int status = Xgetri(lda, invMat_ptr, lda, m_pivot.data(), &tmp, Lwork);
+    if (status != 0)
+    {
+      std::ostringstream msg;
+      msg << "Xgetri failed with error " << status << std::endl;
+      throw std::runtime_error(msg.str());
+    }
+        
     convert(tmp, lw);
     Lwork = static_cast<int>(lw);
     m_work.resize(Lwork);
