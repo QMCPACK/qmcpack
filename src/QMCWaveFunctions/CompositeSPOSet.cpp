@@ -236,7 +236,7 @@ std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr c
     if (spo)
       spo_now->add(spo);
   }
-  return (spo_now->size()) ? std::unique_ptr<SPOSet>{spo_now.release()} : nullptr;
+  return (spo_now->size()) ? std::unique_ptr<SPOSet>{std::move(spo_now)} : nullptr;
 }
 
 std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input)

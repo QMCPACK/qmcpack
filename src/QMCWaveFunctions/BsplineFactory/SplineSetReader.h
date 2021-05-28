@@ -49,7 +49,7 @@ struct SplineSetReader : public BsplineReaderBase
   fftw_plan FFTplan;
 
   SplineSetReader(EinsplineSetBuilder* e)
-      : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL), bspline(nullptr), FFTplan(NULL)
+      : BsplineReaderBase(e), spline_r(nullptr), spline_i(nullptr), bspline(nullptr), FFTplan(nullptr)
   {}
 
   ~SplineSetReader() { clear(); }
@@ -58,9 +58,9 @@ struct SplineSetReader : public BsplineReaderBase
   {
     einspline::destroy(spline_r);
     einspline::destroy(spline_i);
-    if (FFTplan != NULL)
+    if (FFTplan != nullptr)
       fftw_destroy_plan(FFTplan);
-    FFTplan = NULL;
+    FFTplan = nullptr;
   }
 
   // set info for Hybrid
