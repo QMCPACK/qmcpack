@@ -23,6 +23,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     rsync \
                     wget \
                     software-properties-common \
+                    vim \
                     -y
 
 # add the latest clang development

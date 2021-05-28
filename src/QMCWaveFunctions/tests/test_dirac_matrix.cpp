@@ -30,7 +30,8 @@ namespace qmcplusplus
 using RealType     = QMCTraits::RealType;
 using ValueType    = QMCTraits::ValueType;
 using LogValueType = std::complex<QMCTraits::QTFull::RealType>;
-
+using LogComplexApprox = Catch::Detail::LogComplexApprox;
+  
 TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
 {
   DiracMatrix<ValueType> dm;
@@ -53,7 +54,7 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   eye(1, 1) = 1.0;
   eye(2, 2) = 1.0;
 
-  auto check_matrix_result = checkMatrix(m_invT, eye);
+  CheckMatrixResult check_matrix_result = checkMatrix(m_invT, eye);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
