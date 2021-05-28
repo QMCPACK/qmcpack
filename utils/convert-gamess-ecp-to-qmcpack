@@ -16,7 +16,6 @@ if len(sys.argv)<2:
     sys.exit(2)
 #end if
 
-from pseudopotential import GaussianPP
 for filepath in sys.argv[1:]:
     path,filename = os.path.split(filepath)
     filename = filename.replace('.gms','').replace('.gamess','')+'.xml'
