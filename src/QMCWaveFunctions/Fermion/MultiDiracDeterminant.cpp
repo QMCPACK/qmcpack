@@ -100,24 +100,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
   evalWTimer.start();
   if (fromScratch)
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-  if (NumPtcls == 1)
-  {
-    //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminant is potentially dangerous. Fix later");
-    std::vector<ci_configuration2>::const_iterator it(ciConfigList->begin());
-    std::vector<ci_configuration2>::const_iterator last(ciConfigList->end());
-    ValueVector_t::iterator det(detValues.begin());
-    ValueMatrix_t::iterator lap(lapls.begin());
-    GradMatrix_t::iterator grad(grads.begin());
-    while (it != last)
-    {
-      int orb   = (it++)->occup[0];
-      *(det++)  = psiM(0, orb);
-      *(lap++)  = d2psiM(0, orb);
-      *(grad++) = dpsiM(0, orb);
-    }
-  }
-  else
-  {
+
     InverseTimer.start();
 
     const auto& confgList = *ciConfigList;
@@ -130,19 +113,18 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
         psiMinv(j, i) = psiM(j, *it);
       it++;
     }
+
     for (size_t i = 0; i < NumPtcls; i++)
-    {
       for (size_t j = 0; j < NumOrbitals; j++)
         TpsiM(j, i) = psiM(i, j);
-    }
 
     std::complex<RealType> logValueRef;
     InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
+    log_value_ref_det_ = logValueRef;
     InverseTimer.stop();
     const RealType detsign          = (*DetSigns)[ReferenceDeterminant];
-    const ValueType det0            = LogToValue<ValueType>::convert(logValueRef);
-    detValues[ReferenceDeterminant] = det0;
-    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, 0, detValues, psiMinv, TpsiM, dotProducts, *detData,
+    ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
+    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, 0, ratios_to_ref_, psiMinv, TpsiM, dotProducts, *detData,
                                        *uniquePairs, *DetSigns);
     for (size_t iat = 0; iat < NumPtcls; iat++)
     {
@@ -155,8 +137,8 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
         ratioLapl += psiMinv(i, iat) * d2psiM(iat, *it);
         it++;
       }
-      grads(ReferenceDeterminant, iat) = det0 * gradRatio;
-      lapls(ReferenceDeterminant, iat) = det0 * ratioLapl;
+      grads(ReferenceDeterminant, iat) = gradRatio;
+      lapls(ReferenceDeterminant, iat) = ratioLapl;
       for (size_t idim = 0; idim < OHMMS_DIM; idim++)
       {
         dpsiMinv = psiMinv;
@@ -184,7 +166,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = psiM(iat, i);
     }
-  } // NumPtcls==1
+
   psiMinv_temp = psiMinv;
   evalWTimer.stop();
 }
@@ -356,6 +338,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   assert(P.is_spinor_ == is_spinor_);
+  log_value_ref_det_ += convertValueToLog(curRatio);
   switch (UpdateMode)
   {
   case ORB_PBYP_RATIO:
@@ -363,13 +346,13 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
     std::copy(psiV.begin(), psiV.end(), psiM[iat - FirstIndex]);
-    std::copy(new_detValues.begin(), new_detValues.end(), detValues.begin());
+    std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
-    std::copy(new_detValues.begin(), new_detValues.end(), detValues.begin());
+    std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     // no use saving these
     //        for(int i=0; i<NumDets; i++)
     //          grads(i,WorkingIndex) = new_grads(i,WorkingIndex);
@@ -383,7 +366,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     psiMinv = psiMinv_temp;
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
-    std::copy(new_detValues.begin(), new_detValues.end(), detValues.begin());
+    std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     std::copy(new_grads.begin(), new_grads.end(), grads.begin());
     std::copy(new_lapls.begin(), new_lapls.end(), lapls.begin());
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
@@ -569,6 +552,8 @@ void MultiDiracDeterminant::resize(int nel)
   workV2.resize(nel);
   detValues.resize(NumDets);
   new_detValues.resize(NumDets);
+  ratios_to_ref_.resize(NumDets);
+  new_ratios_to_ref_.resize(NumDets);
   grads.resize(NumDets, nel);
   new_grads.resize(NumDets, nel);
   lapls.resize(NumDets, nel);

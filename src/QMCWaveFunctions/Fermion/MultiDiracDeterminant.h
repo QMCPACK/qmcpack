@@ -405,6 +405,11 @@ public:
   inline int getFirstIndex() const { return FirstIndex; }
   inline std::vector<ci_configuration2>& getCIConfigList() { return *ciConfigList; }
 
+  const ValueVector_t& getRatiosToRefDet() const { return  ratios_to_ref_; }
+  const ValueVector_t& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
+  ValueType getRefDetRatio() const { return curRatio; }
+  LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
+
   /// store determinants (old and new). FIXME: move to private
   ValueVector_t detValues, new_detValues;
   GradMatrix_t grads, new_grads;
@@ -439,7 +444,9 @@ private:
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
-  ValueMatrix_t psiM, TpsiM, psiMinv, psiMinv_temp;
+  ValueMatrix_t psiM, TpsiM;
+  /// inverse Dirac determinant matrix of the reference det
+  ValueMatrix_t psiMinv, psiMinv_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
   GradMatrix_t dpsiM;
   // temporaty storage
@@ -464,11 +471,18 @@ private:
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
 
-  ValueType curRatio;
   ValueType* FirstAddressOfGrads;
   ValueType* LastAddressOfGrads;
   ValueType* FirstAddressOfdpsiM;
   ValueType* LastAddressOfdpsiM;
+
+  /// determinant ratios with respect to the reference determinant
+  ValueVector_t ratios_to_ref_;
+  /// new determinant ratios with respect to the updated reference determinant upon a proposed move
+  ValueVector_t new_ratios_to_ref_;
+  /// new value of the reference determinant over the old value upon a proposed move
+  ValueType curRatio;
+  LogValueType log_value_ref_det_;
 
   /* mmorales:
    *  i decided to stored the excitation information of all determinants in the following

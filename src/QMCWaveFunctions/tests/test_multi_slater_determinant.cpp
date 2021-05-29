@@ -184,7 +184,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
     elec_.acceptMove(1);
 
     CHECK(std::real(ratio_1) == Approx(-0.8544310407));
-    CHECK(twf.getLogPsi() == Approx(-7.6460278462));
+    CHECK(twf.getLogPsi() == Approx(-7.8033473273));
   }
 
   // testing batched interfaces

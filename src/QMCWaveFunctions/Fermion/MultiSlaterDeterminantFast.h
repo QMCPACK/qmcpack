@@ -103,11 +103,9 @@ public:
       Dets[id]->setBF(bf);
   }
 
-  PsiValueType evaluate_vgl_impl(const ParticleSet& P,
+  LogValueType evaluate_vgl_impl(const ParticleSet& P,
                                  ParticleSet::ParticleGradient_t& g_tmp,
                                  ParticleSet::ParticleLaplacian_t& l_tmp);
-
-  PsiValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
@@ -168,8 +166,6 @@ public:
 
   void resize(int, int);
   void initialize();
-
-  void testMSD(ParticleSet& P, int iat);
 
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
@@ -266,6 +262,11 @@ private:
   std::vector<int> Last;
   ///use pre-compute (fast) algorithm
   const bool use_pre_computing_;
+
+  /// current psi over ref single det
+  PsiValueType psi_ratio_to_ref_det_;
+  /// new psi over new ref single det when one particle is moved
+  PsiValueType new_psi_ratio_to_new_ref_det_;
 };
 
 } // namespace qmcplusplus
