@@ -239,11 +239,9 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     //  //  return simd::dot(Minv.cols(), Minv.data() + colchanged, Minv.cols(), newv.data(), 1);
     //  //  }
     //  //
-    auto ratioRef = DetRatioByColumn(det.psiMinv_temp, det.psiV_temp, WorkingIndex);
-    //  ValueType ratioRef =simd::dot( etRatioByColumn(det.psiMinv_temp, det.psiV_temp, WorkingIndex);
-    det.curRatio                                     = ratioRef;
+    det.curRatio = DetRatioByColumn(det.psiMinv_temp, det.psiV_temp, WorkingIndex);
     det.new_ratios_to_ref_[det.ReferenceDeterminant] = ValueType(1);
-    InverseUpdateByColumn(det.psiMinv_temp, det.psiV_temp, det.workV1, det.workV2, WorkingIndex, ratioRef);
+    InverseUpdateByColumn(det.psiMinv_temp, det.psiV_temp, det.workV1, det.workV2, WorkingIndex, det.curRatio);
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       det.TpsiM(i, WorkingIndex) = det.psiV[i];
     det.ExtraStuffTimer.stop();
@@ -317,7 +315,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
     it++;
   }
   curRatio                                      = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
-  new_grads(ReferenceDeterminant, WorkingIndex) = ratioGradRef;
+  new_grads(ReferenceDeterminant, WorkingIndex) = ratioGradRef / curRatio;
   new_ratios_to_ref_[ReferenceDeterminant]      = 1.0;
   InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, curRatio);
   for (size_t i = 0; i < NumOrbitals; i++)
@@ -370,8 +368,8 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
     it++;
   }
   curRatio                                          = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
-  new_grads(ReferenceDeterminant, WorkingIndex)     = ratioGradRef;
-  new_spingrads(ReferenceDeterminant, WorkingIndex) = ratioSpinGradRef;
+  new_grads(ReferenceDeterminant, WorkingIndex)     = ratioGradRef / curRatio;
+  new_spingrads(ReferenceDeterminant, WorkingIndex) = ratioSpinGradRef / curRatio;
   new_ratios_to_ref_[ReferenceDeterminant]          = 1.0;
   InverseUpdateByColumn(psiMinv_temp, psiV_temp, workV1, workV2, WorkingIndex, curRatio);
   for (size_t i = 0; i < NumOrbitals; i++)
@@ -443,10 +441,10 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
       ratioGradRef += det.psiMinv_temp(i, WorkingIndex) * det.dpsiV[*it];
       it++;
     }
-    ValueType ratioRef = DetRatioByColumn(det.psiMinv_temp, det.psiV_temp, WorkingIndex);
-    det.new_grads(det.ReferenceDeterminant, WorkingIndex) = ratioGradRef;
+    det.curRatio = DetRatioByColumn(det.psiMinv_temp, det.psiV_temp, WorkingIndex);
+    det.new_grads(det.ReferenceDeterminant, WorkingIndex) = ratioGradRef / det.curRatio;
     det.new_ratios_to_ref_[det.ReferenceDeterminant]      = ValueType(1);
-    InverseUpdateByColumn(det.psiMinv_temp, det.psiV_temp, det.workV1, det.workV2, WorkingIndex, ratioRef);
+    InverseUpdateByColumn(det.psiMinv_temp, det.psiV_temp, det.workV1, det.workV2, WorkingIndex, det.curRatio);
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       det.TpsiM(i, WorkingIndex) = det.psiV[i];
     det.ExtraStuffTimer.stop();

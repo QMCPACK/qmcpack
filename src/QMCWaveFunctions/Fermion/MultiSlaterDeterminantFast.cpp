@@ -469,7 +469,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
 
   const int det_id = getDetID(iat);
   curRatio         = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
-  grad_iat += dummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio());
+  grad_iat += dummy;
   return curRatio;
 }
 
@@ -492,8 +492,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGradWithSpi
 
   const int det_id = getDetID(iat);
   curRatio         = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
-  grad_iat += dummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio());
-  spingrad_iat += spindummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio());
+  grad_iat += dummy;
+  spingrad_iat += spindummy;
   return curRatio;
 }
 
@@ -528,7 +528,7 @@ void MultiSlaterDeterminantFast::mw_ratioGrad(const RefVectorWithLeader<WaveFunc
   {
     auto& det                         = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
     det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
-    grad_new[iw] += dummy[iw] * static_cast<ValueType>(PsiValueType(1.0) / det.Dets[det_id]->getRefDetRatio());
+    grad_new[iw] += dummy[iw];
     ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
   }
 }
