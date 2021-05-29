@@ -276,6 +276,7 @@ MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(Particle
   buf.put(FirstAddressOfdpsiM, LastAddressOfdpsiM);
   buf.put(d2psiM.first_address(), d2psiM.last_address());
   buf.put(psiMinv.first_address(), psiMinv.last_address());
+  buf.put(log_value_ref_det_);
   buf.put(ratios_to_ref_.first_address(), ratios_to_ref_.last_address());
   buf.put(FirstAddressOfGrads, LastAddressOfGrads);
   buf.put(lapls.first_address(), lapls.last_address());
@@ -294,6 +295,7 @@ void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(FirstAddressOfdpsiM, LastAddressOfdpsiM);
   buf.get(d2psiM.first_address(), d2psiM.last_address());
   buf.get(psiMinv.first_address(), psiMinv.last_address());
+  buf.get(log_value_ref_det_);
   buf.get(ratios_to_ref_.first_address(), ratios_to_ref_.last_address());
   buf.get(FirstAddressOfGrads, LastAddressOfGrads);
   buf.get(lapls.first_address(), lapls.last_address());
@@ -319,6 +321,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   assert(P.is_spinor_ == is_spinor_);
   log_value_ref_det_ += convertValueToLog(curRatio);
+  curRatio = ValueType(1);
   switch (UpdateMode)
   {
   case ORB_PBYP_RATIO:
@@ -370,6 +373,7 @@ void MultiDiracDeterminant::restore(int iat)
   psiMinv_temp = psiMinv;
   for (int i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  curRatio = ValueType(1);
   /*
       switch(UpdateMode)
       {
@@ -490,6 +494,7 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(FirstAddressOfdpsiM, LastAddressOfdpsiM);
   buf.add(d2psiM.first_address(), d2psiM.last_address());
   buf.add(psiMinv.first_address(), psiMinv.last_address());
+  buf.add(log_value_ref_det_);
   buf.add(ratios_to_ref_.first_address(), ratios_to_ref_.last_address());
   buf.add(FirstAddressOfGrads, LastAddressOfGrads);
   buf.add(lapls.first_address(), lapls.last_address());

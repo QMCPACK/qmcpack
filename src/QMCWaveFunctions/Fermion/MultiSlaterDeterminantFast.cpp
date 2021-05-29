@@ -735,6 +735,7 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->registerData(P, buf);
 
+  buf.add(LogValue);
   buf.add(psi_ratio_to_ref_det_);
 }
 
@@ -748,12 +749,13 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(Par
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->updateBuffer(P, buf, fromscratch);
 
-  psi_ratio_to_ref_det_ = evaluate_vgl_impl(P, myG, myL);
+  LogValue = evaluate_vgl_impl(P, myG, myL);
 
   P.G += myG;
   for (int i = 0; i < P.L.size(); i++)
     P.L[i] += myL[i] - dot(myG[i], myG[i]);
 
+  buf.put(LogValue);
   buf.put(psi_ratio_to_ref_det_);
 
   return LogValue = convertValueToLog(psi_ratio_to_ref_det_);
@@ -765,6 +767,7 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->copyFromBuffer(P, buf);
 
+  buf.get(LogValue);
   buf.get(psi_ratio_to_ref_det_);
 }
 
