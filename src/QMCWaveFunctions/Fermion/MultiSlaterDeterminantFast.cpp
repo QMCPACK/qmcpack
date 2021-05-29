@@ -206,7 +206,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
   const GradMatrix_t& grads            = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
-  const ValueType* restrict detValues0 = (newpos) ? Dets[det_id]->new_detValues.data() : Dets[det_id]->detValues.data();
+  const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
   const ValueMatrix_t& spingrads       = (newpos) ? Dets[det_id]->new_spingrads : Dets[det_id]->spingrads;
   const size_t noffset                 = Dets[det_id]->getFirstIndex();
 
@@ -217,6 +217,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
     g_at += C_otherDs[det_id][i] * grads(i, iat - noffset);
     sg_at += C_otherDs[det_id][i] * spingrads(i, iat - noffset);
   }
+  g_at *= PsiValueType(1.0) / psi;
+  sg_at *= PsiValueType(1.0) / psi;
   return psi;
 }
 
@@ -374,7 +376,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
   const GradMatrix_t& grads            = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
-  const ValueType* restrict detValues0 = (newpos) ? Dets[det_id]->new_detValues.data() : Dets[det_id]->detValues.data();
+  const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
   const ValueMatrix_t& spingrads       = (newpos) ? Dets[det_id]->new_spingrads : Dets[det_id]->spingrads;
   const size_t* restrict det0          = (*C2node)[det_id].data();
   const ValueType* restrict cptr       = C->data();
@@ -390,11 +392,13 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
     ValueType t = cptr[i];
     for (size_t id = 0; id < Dets.size(); id++)
       if (id != det_id)
-        t *= Dets[id]->detValues[(*C2node)[id][i]];
+        t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
     psi += t * detValues0[d0];
     g_at += t * grads(d0, iat - noffset);
     sg_at += t * spingrads(d0, iat - noffset);
   }
+  g_at *= PsiValueType(1.0) / psi;
+  sg_at *= PsiValueType(1.0) / psi;
   return psi;
 }
 
@@ -422,15 +426,12 @@ WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGradWithSpin(Par
   ScopedTimer local_timer(EvalGradTimer);
 
   GradType grad_iat;
-  PsiValueType psi;
   ComplexType spingrad_iat;
   if (use_pre_computing_)
-    psi = evalGradWithSpin_impl(P, iat, false, grad_iat, spingrad_iat);
+    evalGradWithSpin_impl(P, iat, false, grad_iat, spingrad_iat);
   else
-    psi = evalGradWithSpin_impl_no_precompute(P, iat, false, grad_iat, spingrad_iat);
+    evalGradWithSpin_impl_no_precompute(P, iat, false, grad_iat, spingrad_iat);
 
-  grad_iat *= (PsiValueType(1.0) / psi);
-  spingrad += spingrad_iat / static_cast<ComplexType>(psi);
   return grad_iat;
 }
 
@@ -484,15 +485,15 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGradWithSpi
 
   GradType dummy;
   ComplexType spindummy;
-  PsiValueType psiNew;
   if (use_pre_computing_)
-    psiNew = evalGradWithSpin_impl(P, iat, true, dummy, spindummy);
+    new_psi_ratio_to_new_ref_det_ = evalGradWithSpin_impl(P, iat, true, dummy, spindummy);
   else
-    psiNew = evalGradWithSpin_impl_no_precompute(P, iat, true, dummy, spindummy);
+    new_psi_ratio_to_new_ref_det_ = evalGradWithSpin_impl_no_precompute(P, iat, true, dummy, spindummy);
 
-  grad_iat += static_cast<ValueType>(PsiValueType(1.0) / psiNew) * dummy;
-  spingrad_iat += static_cast<ValueType>(PsiValueType(1.0) / psiNew) * spindummy;
-  curRatio = psiNew / psi_ratio_to_ref_det_;
+  const int det_id = getDetID(iat);
+  curRatio = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
+  grad_iat += dummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio()) ;
+  spingrad_iat += spindummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio()) ;
   return curRatio;
 }
 

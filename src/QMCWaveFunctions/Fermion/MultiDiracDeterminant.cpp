@@ -176,26 +176,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
   evalWTimer.start();
   if (fromScratch)
     Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM, dspin_psiM);
-  if (NumPtcls == 1)
-  {
-    //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminant is potentially dangerous. Fix later");
-    std::vector<ci_configuration2>::const_iterator it(ciConfigList->begin());
-    std::vector<ci_configuration2>::const_iterator last(ciConfigList->end());
-    ValueVector_t::iterator det(detValues.begin());
-    ValueMatrix_t::iterator lap(lapls.begin());
-    GradMatrix_t::iterator grad(grads.begin());
-    ValueMatrix_t::iterator spingrad(spingrads.begin());
-    while (it != last)
-    {
-      int orb       = (it++)->occup[0];
-      *(det++)      = psiM(0, orb);
-      *(lap++)      = d2psiM(0, orb);
-      *(grad++)     = dpsiM(0, orb);
-      *(spingrad++) = dspin_psiM(0, orb);
-    }
-  }
-  else
-  {
+
     InverseTimer.start();
 
     const auto& confgList = *ciConfigList;
@@ -216,11 +197,11 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
 
     std::complex<RealType> logValueRef;
     InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
+    log_value_ref_det_ = logValueRef;
     InverseTimer.stop();
     const RealType detsign          = (*DetSigns)[ReferenceDeterminant];
-    const ValueType det0            = LogToValue<ValueType>::convert(logValueRef);
-    detValues[ReferenceDeterminant] = det0;
-    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, 0, detValues, psiMinv, TpsiM, dotProducts, *detData,
+    ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
+    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, 0, ratios_to_ref_, psiMinv, TpsiM, dotProducts, *detData,
                                        *uniquePairs, *DetSigns);
     for (size_t iat = 0; iat < NumPtcls; iat++)
     {
@@ -235,9 +216,9 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
         spingradRatio += psiMinv(i, iat) * dspin_psiM(iat, *it);
         it++;
       }
-      grads(ReferenceDeterminant, iat)     = det0 * gradRatio;
-      lapls(ReferenceDeterminant, iat)     = det0 * ratioLapl;
-      spingrads(ReferenceDeterminant, iat) = det0 * spingradRatio;
+      grads(ReferenceDeterminant, iat)     = gradRatio;
+      lapls(ReferenceDeterminant, iat)     = ratioLapl;
+      spingrads(ReferenceDeterminant, iat) = spingradRatio;
       for (size_t idim = 0; idim < OHMMS_DIM; idim++)
       {
         dpsiMinv = psiMinv;
@@ -277,7 +258,6 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = psiM(iat, i);
     }
-  } // NumPtcls==1
   psiMinv_temp = psiMinv;
   evalWTimer.stop();
 }
