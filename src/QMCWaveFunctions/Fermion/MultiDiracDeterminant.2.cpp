@@ -418,7 +418,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   const int nw                      = det_list.size();
   MultiDiracDeterminant& det_leader = det_list.getLeader();
 
-  det_leader.UpdateMode = ORB_PBYP_RATIO;
+  det_leader.UpdateMode = ORB_PBYP_PARTIAL;
   //det_leader.evalOrb1Timer.start();
   //mw_evaluateVGL(P_list[iw], iat, psiV_list, dpsiV_list, d2psiV_list);
   //det_leader.evalOrb1Timer.stop();
@@ -426,6 +426,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
+    det.UpdateMode = ORB_PBYP_PARTIAL;
     det.evalOrb1Timer.start();
     det.Phi->evaluateVGL(P_list[iw], iat, det.psiV, det.dpsiV, det.d2psiV);
     det.evalOrb1Timer.stop();
@@ -557,12 +558,9 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   const int nw                      = det_list.size();
   MultiDiracDeterminant& det_leader = det_list.getLeader();
 
-  det_leader.UpdateMode = ORB_PBYP_RATIO;
-
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
-    det.UpdateMode             = ORB_PBYP_RATIO;
     const int WorkingIndex     = iat - det.FirstIndex;
     const auto& confgList      = *det.ciConfigList;
 

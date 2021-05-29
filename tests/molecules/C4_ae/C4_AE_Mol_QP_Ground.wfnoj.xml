@@ -11,7 +11,7 @@
         <coefficient size="92" spindataset="0"/>
       </sposet>
       <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
-        <detlist size="211" type="DETS" nca="0" ncb="0" nea="12" neb="12" nstates="92" cutoff="1e-20"  href="C4_AE_Mol_QP.h5" algorithm="table_method" />
+        <detlist size="211" type="DETS" nca="0" ncb="0" nea="12" neb="12" nstates="92" cutoff="1e-20"  href="C4_AE_Mol_QP.h5"/>
       </multideterminant>
     </determinantset>
   </wavefunction>

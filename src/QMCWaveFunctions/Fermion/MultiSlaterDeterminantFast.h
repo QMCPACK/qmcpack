@@ -116,11 +116,11 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override;
   //evalGrad, but returns the spin gradient as well
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
+
   void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                    const RefVectorWithLeader<ParticleSet>& P_list,
                    int iat,
                    std::vector<GradType>& grad_now) const override;
-
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
