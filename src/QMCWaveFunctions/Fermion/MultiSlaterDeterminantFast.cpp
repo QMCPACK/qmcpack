@@ -320,9 +320,9 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
         (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().data() : det.Dets[det_id]->getRatiosToRefDet().data();
     PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])") //free memory on device
 
-    grad_now[iw][0] = grad_now_list[iw * 3 + 0] / psi_list[iw];
-    grad_now[iw][1] = grad_now_list[iw * 3 + 1] / psi_list[iw];
-    grad_now[iw][2] = grad_now_list[iw * 3 + 2] / psi_list[iw];
+    grad_now[iw][0] = static_cast<PsiValueType>(grad_now_list[iw * 3 + 0]) / psi_list[iw];
+    grad_now[iw][1] = static_cast<PsiValueType>(grad_now_list[iw * 3 + 1]) / psi_list[iw];
+    grad_now[iw][2] = static_cast<PsiValueType>(grad_now_list[iw * 3 + 2]) / psi_list[iw];
   }
 }
 

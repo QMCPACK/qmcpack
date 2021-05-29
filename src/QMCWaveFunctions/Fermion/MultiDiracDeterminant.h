@@ -406,7 +406,7 @@ public:
 
   const ValueVector_t& getRatiosToRefDet() const { return ratios_to_ref_; }
   const ValueVector_t& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
-  ValueType getRefDetRatio() const { return curRatio; }
+  PsiValueType getRefDetRatio() const { return curRatio; }
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
 
   /// store determinants (old and new). FIXME: move to private
