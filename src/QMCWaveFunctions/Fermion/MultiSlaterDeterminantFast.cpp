@@ -117,8 +117,8 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::evaluate_vgl_imp
 {
   const ValueType czero(0);
   psi_ratio_to_ref_det_ = czero;
-  g_tmp            = czero;
-  l_tmp            = czero;
+  g_tmp                 = czero;
+  l_tmp                 = czero;
 
   for (size_t ig = 0; ig < Dets.size(); ig++)
     precomputeC_otherDs(P, ig);
@@ -205,10 +205,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   else
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
-  const GradMatrix_t& grads            = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
+  const GradMatrix_t& grads       = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
   const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const ValueMatrix_t& spingrads       = (newpos) ? Dets[det_id]->new_spingrads : Dets[det_id]->spingrads;
-  const size_t noffset                 = Dets[det_id]->getFirstIndex();
+  const ValueMatrix_t& spingrads  = (newpos) ? Dets[det_id]->new_spingrads : Dets[det_id]->spingrads;
+  const size_t noffset            = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
   for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
@@ -338,12 +338,12 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no
   else
     Dets[det_id]->evaluateGrads(P, iat);
 
-  const GradMatrix_t& grads            = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
+  const GradMatrix_t& grads       = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
   const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const size_t* restrict det0          = (*C2node)[det_id].data();
-  const ValueType* restrict cptr       = C->data();
-  const size_t nc                      = C->size();
-  const size_t noffset                 = Dets[det_id]->getFirstIndex();
+  const size_t* restrict det0     = (*C2node)[det_id].data();
+  const ValueType* restrict cptr  = C->data();
+  const size_t nc                 = C->size();
+  const size_t noffset            = Dets[det_id]->getFirstIndex();
   PsiValueType psi(0);
   for (size_t i = 0; i < nc; ++i)
   {
@@ -375,13 +375,13 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   else
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
-  const GradMatrix_t& grads            = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
+  const GradMatrix_t& grads       = (newpos) ? Dets[det_id]->new_grads : Dets[det_id]->grads;
   const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const ValueMatrix_t& spingrads       = (newpos) ? Dets[det_id]->new_spingrads : Dets[det_id]->spingrads;
-  const size_t* restrict det0          = (*C2node)[det_id].data();
-  const ValueType* restrict cptr       = C->data();
-  const size_t nc                      = C->size();
-  const size_t noffset                 = Dets[det_id]->getFirstIndex();
+  const ValueMatrix_t& spingrads  = (newpos) ? Dets[det_id]->new_spingrads : Dets[det_id]->spingrads;
+  const size_t* restrict det0     = (*C2node)[det_id].data();
+  const ValueType* restrict cptr  = C->data();
+  const size_t nc                 = C->size();
+  const size_t noffset            = Dets[det_id]->getFirstIndex();
   PsiValueType psi(0);
   for (size_t i = 0; i < nc; ++i)
   {
@@ -468,8 +468,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGrad(Partic
     new_psi_ratio_to_new_ref_det_ = evalGrad_impl_no_precompute(P, iat, true, dummy);
 
   const int det_id = getDetID(iat);
-  curRatio = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
-  grad_iat += dummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio()) ;
+  curRatio         = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
+  grad_iat += dummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio());
   return curRatio;
 }
 
@@ -491,9 +491,9 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratioGradWithSpi
     new_psi_ratio_to_new_ref_det_ = evalGradWithSpin_impl_no_precompute(P, iat, true, dummy, spindummy);
 
   const int det_id = getDetID(iat);
-  curRatio = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
-  grad_iat += dummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio()) ;
-  spingrad_iat += spindummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio()) ;
+  curRatio         = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
+  grad_iat += dummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio());
+  spingrad_iat += spindummy * static_cast<ValueType>(PsiValueType(1.0) / Dets[det_id]->getRefDetRatio());
   return curRatio;
 }
 
@@ -526,7 +526,7 @@ void MultiSlaterDeterminantFast::mw_ratioGrad(const RefVectorWithLeader<WaveFunc
   const int det_id = getDetID(iat);
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& det = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
+    auto& det                         = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
     det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
     grad_new[iw] += dummy[iw] * static_cast<ValueType>(PsiValueType(1.0) / det.Dets[det_id]->getRefDetRatio());
     ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
@@ -559,9 +559,9 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio_impl_no_pr
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
   const ValueVector_t& detValues0 = Dets[det_id]->getNewRatiosToRefDet(); //always new
-  const size_t* restrict det0          = (*C2node)[det_id].data();
-  const ValueType* restrict cptr       = C->data();
-  const size_t nc                      = C->size();
+  const size_t* restrict det0     = (*C2node)[det_id].data();
+  const ValueType* restrict cptr  = C->data();
+  const size_t nc                 = C->size();
 
   PsiValueType psi = 0;
   for (size_t i = 0; i < nc; ++i)
@@ -590,7 +590,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::ratio(ParticleSe
     new_psi_ratio_to_new_ref_det_ = ratio_impl_no_precompute(P, iat);
 
   const int det_id = getDetID(iat);
-  curRatio = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
+  curRatio         = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
   return curRatio;
 }
 
@@ -659,12 +659,12 @@ void MultiSlaterDeterminantFast::mw_calcRatio(const RefVectorWithLeader<WaveFunc
   OffloadRatioTimer.stop();
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& det  = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
+    auto& det                         = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
     det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
     ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
 
     const ValueType* restrict detValues0 = det.Dets[det_id]->getNewRatiosToRefDet().data(); //always new
-    PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])")  //free memory on device.
+    PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])")                 //free memory on device.
   }
 }
 
@@ -940,7 +940,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
                 if (id == other_id)
                   continue;
                 const ValueVector_t& detValues_otherspin = Dets[other_id]->getRatiosToRefDet();
-                size_t otherspinC                  = (*C2node)[other_id][cnt];
+                size_t otherspinC                        = (*C2node)[other_id][cnt];
                 tmp *= detValues_otherspin[otherspinC];
               }
               q0 += tmp * laplSum[id][spinC];
@@ -999,10 +999,10 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
   }
   else
   {
-    Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1], static_cast<ValueType>(psi_ratio_to_ref_det_), *C,
-                                 (*C2node)[0], (*C2node)[1]);
-    Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0], static_cast<ValueType>(psi_ratio_to_ref_det_), *C,
-                                 (*C2node)[1], (*C2node)[0]);
+    Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[1],
+                                 static_cast<ValueType>(psi_ratio_to_ref_det_), *C, (*C2node)[0], (*C2node)[1]);
+    Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets[0],
+                                 static_cast<ValueType>(psi_ratio_to_ref_det_), *C, (*C2node)[1], (*C2node)[0]);
   }
   //for (size_t id = 0; id < Dets.size(); id++)
   //  Dets[id]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, *Dets, static_cast<ValueType>(psi_ratio_to_ref_det_), *C, *C2node, id);
@@ -1084,8 +1084,10 @@ void MultiSlaterDeterminantFast::evaluateDerivativesWF(ParticleSet& P,
   else
   {
     // FIXME this needs to be fixed by SPF to separate evaluateDerivatives and evaluateDerivativesWF for orbital rotation matrix
-    Dets[0]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[1], psi_ratio_to_ref_det_, *C, (*C2node)[0], (*C2node)[1]);
-    Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psi_ratio_to_ref_det_, *C, (*C2node)[1], (*C2node)[0]);
+    Dets[0]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[1], psi_ratio_to_ref_det_, *C, (*C2node)[0],
+                                   (*C2node)[1]);
+    Dets[1]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets[0], psi_ratio_to_ref_det_, *C, (*C2node)[1],
+                                   (*C2node)[0]);
     // for (size_t id = 0; id < Dets.size(); id++)
     //   Dets[id]->evaluateDerivativesWF(P, optvars, dlogpsi, *Dets, psi_ratio_to_ref_det_, *C, *C2node, id);
   }

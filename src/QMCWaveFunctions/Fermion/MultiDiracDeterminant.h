@@ -113,8 +113,8 @@ public:
     if (!Optimizable)
       return;
 
-    const ValueVector_t& detValues_up = detValues;
-    const ValueVector_t& detValues_dn = pseudo_dn.detValues;
+    const ValueVector_t& detValues_up = getRatiosToRefDet();
+    const ValueVector_t& detValues_dn = pseudo_dn.getRatiosToRefDet();
     const GradMatrix_t& grads_up      = grads;
     const GradMatrix_t& grads_dn      = pseudo_dn.grads;
     const ValueMatrix_t& lapls_up     = lapls;
@@ -148,8 +148,8 @@ public:
     if (!Optimizable)
       return;
 
-    const ValueVector_t& detValues_up = detValues;
-    const ValueVector_t& detValues_dn = pseudo_dn.detValues;
+    const ValueVector_t& detValues_up = getRatiosToRefDet();
+    const ValueVector_t& detValues_dn = pseudo_dn.getRatiosToRefDet();
     const ValueMatrix_t& M_up         = psiM;
     const ValueMatrix_t& M_dn         = pseudo_dn.psiM;
     const ValueMatrix_t& Minv_up      = psiMinv;
@@ -393,7 +393,6 @@ public:
   /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
   void evaluateGradsWithSpin(ParticleSet& P, int iat);
 
-  void evaluateAllForPtclMove(const ParticleSet& P, int iat);
   // full evaluation of all the structures from scratch, used in evaluateLog for example
   void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
   // full evaluation of all the structures from scratch, used in evaluateLog for example. Includes spin gradients for spin moves
@@ -405,13 +404,12 @@ public:
   inline int getFirstIndex() const { return FirstIndex; }
   inline std::vector<ci_configuration2>& getCIConfigList() { return *ciConfigList; }
 
-  const ValueVector_t& getRatiosToRefDet() const { return  ratios_to_ref_; }
+  const ValueVector_t& getRatiosToRefDet() const { return ratios_to_ref_; }
   const ValueVector_t& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
   ValueType getRefDetRatio() const { return curRatio; }
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
 
   /// store determinants (old and new). FIXME: move to private
-  ValueVector_t detValues, new_detValues;
   GradMatrix_t grads, new_grads;
   ValueMatrix_t lapls, new_lapls;
   // additional storage for spin derivatives. Only resized if the calculation uses spinors

@@ -172,7 +172,6 @@ public:
   size_t ActiveSpin;
   bool usingCSF;
   PsiValueType curRatio;
-  PsiValueType psiCurrent;
 
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
   std::map<std::string, size_t> SPOSetID;
