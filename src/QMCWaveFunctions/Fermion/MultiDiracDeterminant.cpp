@@ -336,9 +336,6 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
-    // no use saving these
-    //        for(int i=0; i<NumDets; i++)
-    //          grads(i,WorkingIndex) = new_grads(i,WorkingIndex);
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
@@ -410,7 +407,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::RefDetInvUpdate")),
       Phi(s.Phi->makeClone()),
       NumOrbitals(Phi->getOrbitalSetSize()),
-      NP(0),
       FirstIndex(s.FirstIndex),
       ciConfigList(s.ciConfigList),
       ReferenceDeterminant(s.ReferenceDeterminant),
@@ -454,7 +450,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::RefDetInvUpdate")),
       Phi(std::move(spos)),
       NumOrbitals(Phi->getOrbitalSetSize()),
-      NP(0),
       FirstIndex(-1),
       ReferenceDeterminant(0),
       is_spinor_(spinor)
@@ -475,20 +470,13 @@ MultiDiracDeterminant::~MultiDiracDeterminant() = default;
 void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
   assert(P.is_spinor_ == is_spinor_);
-  if (NP == 0)
-  //first time, allocate once
-  {
-    //int norb = cols();
-    NP                  = P.getTotalNum();
-    FirstAddressOfGrads = &(grads(0, 0)[0]);
-    LastAddressOfGrads  = FirstAddressOfGrads + NumPtcls * DIM * getNumDets();
-    FirstAddressOfdpsiM = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
-    LastAddressOfdpsiM  = FirstAddressOfdpsiM + NumPtcls * NumOrbitals * DIM;
-  }
-  if (is_spinor_)
-    evaluateForWalkerMoveWithSpin(P, true);
-  else
-    evaluateForWalkerMove(P, true);
+
+  //extra pointers
+  FirstAddressOfGrads = &(grads(0, 0)[0]);
+  LastAddressOfGrads  = FirstAddressOfGrads + NumPtcls * DIM * getNumDets();
+  FirstAddressOfdpsiM = &(dpsiM(0, 0)[0]);
+  LastAddressOfdpsiM  = FirstAddressOfdpsiM + NumPtcls * NumOrbitals * DIM;
+
   //add the data:
   buf.add(psiM.first_address(), psiM.last_address());
   buf.add(FirstAddressOfdpsiM, LastAddressOfdpsiM);

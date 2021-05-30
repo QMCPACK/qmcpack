@@ -423,8 +423,6 @@ private:
   const std::unique_ptr<SPOSet> Phi;
   ///number of single-particle orbitals which belong to this Dirac determinant
   const int NumOrbitals;
-  ///total number of particles
-  int NP;
   ///number of particles which belong to this Dirac determinant
   int NumPtcls;
   ///index of the first particle with respect to the particle set
@@ -480,6 +478,7 @@ private:
   ValueVector_t new_ratios_to_ref_;
   /// new value of the reference determinant over the old value upon a proposed move
   ValueType curRatio;
+  /// log value of the reference determinant
   LogValueType log_value_ref_det_;
 
   /* mmorales:
