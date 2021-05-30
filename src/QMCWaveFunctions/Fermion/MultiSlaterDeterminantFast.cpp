@@ -349,9 +349,6 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no
   for (size_t i = 0; i < nc; ++i)
   {
     const size_t d0 = det0[i];
-    //const size_t d1=det1[i];
-    //psi +=  cptr[i]*detValues0[d0]        * detValues1[d1];
-    //g_at += cptr[i]*grads(d0,iat-noffset) * detValues1[d1];
     ValueType t = cptr[i];
     for (size_t id = 0; id < Dets.size(); id++)
       if (id != det_id)
@@ -387,9 +384,6 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   for (size_t i = 0; i < nc; ++i)
   {
     const size_t d0 = det0[i];
-    //const size_t d1=det1[i];
-    //psi +=  cptr[i]*detValues0[d0]        * detValues1[d1];
-    //g_at += cptr[i]*grads(d0,iat-noffset) * detValues1[d1];
     ValueType t = cptr[i];
     for (size_t id = 0; id < Dets.size(); id++)
       if (id != det_id)

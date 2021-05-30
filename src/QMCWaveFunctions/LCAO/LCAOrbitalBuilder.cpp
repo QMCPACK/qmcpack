@@ -474,57 +474,48 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     app_log() << "  SPOSet " << spo_name << " is optimizable\n";
 
   LCAOrbitalSet* lcos = nullptr;
-#if !defined(QMC_COMPLEX)
-  LCAOrbitalSetWithCorrection* lcwc = nullptr;
   if (doCuspCorrection)
   {
+#if defined(QMC_COMPLEX)
+    myComm->barrier_and_abort("LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
+#else
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = lcwc = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, std::unique_ptr<BasisSet_t>(myBasisSet),
+    lcos = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, std::unique_ptr<BasisSet_t>(myBasisSet),
                                                   optimize == "yes");
+#endif
   }
   else
     lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet), optimize == "yes");
-#else
-  lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet), optimize == "yes");
-#endif
   loadMO(*lcos, cur);
 
 #if !defined(QMC_COMPLEX)
   if (doCuspCorrection)
   {
-    int num_centers = sourcePtcl.getTotalNum();
+    const int num_centers = sourcePtcl.getTotalNum();
+    auto& lcwc = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
 
     // Sometimes sposet attribute is 'name' and sometimes it is 'id'
     if (id == "")
       id = spo_name;
 
-    int orbital_set_size = lcos->getOrbitalSetSize();
+    const int orbital_set_size = lcos->getOrbitalSetSize();
     Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
     bool valid = false;
     if (myComm->rank() == 0)
-    {
       valid = readCuspInfo(cusp_file, id, orbital_set_size, info);
-    }
+
 #ifdef HAVE_MPI
     myComm->comm.broadcast_value(valid);
     if (valid)
-    {
       for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
-      {
         for (int center_idx = 0; center_idx < num_centers; center_idx++)
-        {
           broadcastCuspInfo(info(center_idx, orb_idx), *myComm, 0);
-        }
-      }
-    }
 #endif
     if (!valid)
-    {
-      generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, *lcwc, id, *myComm);
-    }
+      generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, lcwc, id, *myComm);
 
-    applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, *lcwc, id);
+    applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, lcwc, id);
   }
 #endif
 
