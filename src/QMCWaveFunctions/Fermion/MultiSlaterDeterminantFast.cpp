@@ -177,7 +177,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl(Pa
   else
     Dets[det_id]->evaluateGrads(P, iat);
 
-  const auto& grads       = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
+  const auto& grads               = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
   const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
   const size_t noffset            = Dets[det_id]->getFirstIndex();
 
@@ -205,7 +205,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   else
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
-  const auto& grads       = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
+  const auto& grads               = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
   const ValueVector_t& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
   const ValueMatrix_t& spingrads  = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
   const size_t noffset            = Dets[det_id]->getFirstIndex();
@@ -261,7 +261,7 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
     auto& det = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);
 
     const size_t noffset = det.Dets[det_id]->getFirstIndex();
-    const auto& grads  = (newpos) ? det.Dets[det_id]->getNewGrads() : det.Dets[det_id]->getGrads();
+    const auto& grads    = (newpos) ? det.Dets[det_id]->getNewGrads() : det.Dets[det_id]->getGrads();
 
     for (size_t i = 0; i < ndets; i++)
     {
@@ -305,8 +305,8 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
         grad_local_y += C_otherDs_ptr_list_ptr[iw][i] * Grads_copy_ptr[(3 * iw + 1) * ndets + i];
         grad_local_z += C_otherDs_ptr_list_ptr[iw][i] * Grads_copy_ptr[(3 * iw + 2) * ndets + i];
       }
-      auto psi_inv = static_cast<ValueType>(PsiValueType(1.0) / psi_local);
-      psi_list_ptr[iw] = psi_local;
+      auto psi_inv                  = static_cast<ValueType>(PsiValueType(1.0) / psi_local);
+      psi_list_ptr[iw]              = psi_local;
       grad_now_list_ptr[iw * 3 + 0] = grad_local_x * psi_inv;
       grad_now_list_ptr[iw * 3 + 1] = grad_local_y * psi_inv;
       grad_now_list_ptr[iw * 3 + 2] = grad_local_z * psi_inv;
@@ -339,17 +339,17 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGrad_impl_no
   else
     Dets[det_id]->evaluateGrads(P, iat);
 
-  const auto& grads       = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const auto& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const size_t* restrict det0     = (*C2node)[det_id].data();
-  const ValueType* restrict cptr  = C->data();
-  const size_t nc                 = C->size();
-  const size_t noffset            = Dets[det_id]->getFirstIndex();
+  const auto& grads              = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
+  const auto& detValues0         = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const size_t* restrict det0    = (*C2node)[det_id].data();
+  const ValueType* restrict cptr = C->data();
+  const size_t nc                = C->size();
+  const size_t noffset           = Dets[det_id]->getFirstIndex();
   PsiValueType psi(0);
   for (size_t i = 0; i < nc; ++i)
   {
     const size_t d0 = det0[i];
-    ValueType t = cptr[i];
+    ValueType t     = cptr[i];
     for (size_t id = 0; id < Dets.size(); id++)
       if (id != det_id)
         t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
@@ -373,18 +373,18 @@ WaveFunctionComponent::PsiValueType MultiSlaterDeterminantFast::evalGradWithSpin
   else
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
-  const auto& grads       = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const auto& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const auto& spingrads  = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
-  const size_t* restrict det0     = (*C2node)[det_id].data();
-  const ValueType* restrict cptr  = C->data();
-  const size_t nc                 = C->size();
-  const size_t noffset            = Dets[det_id]->getFirstIndex();
+  const auto& grads              = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
+  const auto& detValues0         = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const auto& spingrads          = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
+  const size_t* restrict det0    = (*C2node)[det_id].data();
+  const ValueType* restrict cptr = C->data();
+  const size_t nc                = C->size();
+  const size_t noffset           = Dets[det_id]->getFirstIndex();
   PsiValueType psi(0);
   for (size_t i = 0; i < nc; ++i)
   {
     const size_t d0 = det0[i];
-    ValueType t = cptr[i];
+    ValueType t     = cptr[i];
     for (size_t id = 0; id < Dets.size(); id++)
       if (id != det_id)
         t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
@@ -931,8 +931,8 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
             for (size_t id = 0; id < Dets.size(); id++)
             {
               const auto& grads_spin = Dets[id]->getGrads();
-              size_t spinC             = (*C2node)[id][cnt];
-              ValueType tmp            = CSFexpansion_p[cnt] * psiinv;
+              size_t spinC           = (*C2node)[id][cnt];
+              ValueType tmp          = CSFexpansion_p[cnt] * psiinv;
               for (size_t other_id = 0; other_id < Dets.size(); other_id++)
               {
                 if (id == other_id)
@@ -967,8 +967,8 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           for (size_t id = 0; id < Dets.size(); id++)
           {
             const auto& grads_spin = Dets[id]->getGrads();
-            size_t spinC             = (*C2node)[id][i];
-            ValueType tmp            = psiinv;
+            size_t spinC           = (*C2node)[id][i];
+            ValueType tmp          = psiinv;
             for (size_t other_id = 0; other_id < Dets.size(); other_id++)
             {
               if (id == other_id)
