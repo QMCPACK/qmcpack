@@ -734,7 +734,6 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(psi_ratio_to_ref_det_);
 }
 
-// FIX FIX FIX
 WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P,
                                                                              WFBufferType& buf,
                                                                              bool fromscratch)
@@ -753,7 +752,7 @@ WaveFunctionComponent::LogValueType MultiSlaterDeterminantFast::updateBuffer(Par
   buf.put(LogValue);
   buf.put(psi_ratio_to_ref_det_);
 
-  return LogValue = convertValueToLog(psi_ratio_to_ref_det_);
+  return LogValue;
 }
 
 void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
