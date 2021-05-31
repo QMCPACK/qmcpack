@@ -305,19 +305,19 @@ void MultiSlaterDeterminantFast::mw_evalGrad_impl(const RefVectorWithLeader<Wave
         grad_local_y += C_otherDs_ptr_list_ptr[iw][i] * Grads_copy_ptr[(3 * iw + 1) * ndets + i];
         grad_local_z += C_otherDs_ptr_list_ptr[iw][i] * Grads_copy_ptr[(3 * iw + 2) * ndets + i];
       }
-      auto psi_inv                  = static_cast<ValueType>(PsiValueType(1.0) / psi_local);
       psi_list_ptr[iw]              = psi_local;
-      grad_now_list_ptr[iw * 3 + 0] = grad_local_x * psi_inv;
-      grad_now_list_ptr[iw * 3 + 1] = grad_local_y * psi_inv;
-      grad_now_list_ptr[iw * 3 + 2] = grad_local_z * psi_inv;
+      grad_now_list_ptr[iw * 3 + 0] = grad_local_x;
+      grad_now_list_ptr[iw * 3 + 1] = grad_local_y;
+      grad_now_list_ptr[iw * 3 + 2] = grad_local_z;
     }
   }
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    grad_now[iw][0] = grad_now_list[iw * 3 + 0];
-    grad_now[iw][1] = grad_now_list[iw * 3 + 1];
-    grad_now[iw][2] = grad_now_list[iw * 3 + 2];
+    auto psi_inv = static_cast<ValueType>(PsiValueType(1.0) / psi_list[iw]);
+    grad_now[iw][0] = grad_now_list[iw * 3 + 0] * psi_inv;
+    grad_now[iw][1] = grad_now_list[iw * 3 + 1] * psi_inv;
+    grad_now[iw][2] = grad_now_list[iw * 3 + 2] * psi_inv;
 
     //Free Memory
     auto& det = WFC_list.getCastedElement<MultiSlaterDeterminantFast>(iw);

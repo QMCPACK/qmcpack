@@ -375,13 +375,13 @@ void test_Bi_msd(const std::string& spo_xml_string,
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
-  ions_.create({1});
+  ions_.create(std::vector<int>{1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int LiIdx            = ispecies.addSpecies("Bi");
 
   elec_.setName("elec");
-  elec_.create({5});
+  elec_.create(std::vector<int>{5});
   elec_.R[0] = {1.592992772, -2.241313928, -0.7315193518};
   elec_.R[1] = {0.07621077199, 0.8497557547, 1.604678718};
   elec_.R[2] = {2.077473445, 0.680621113, -0.5251243321};
