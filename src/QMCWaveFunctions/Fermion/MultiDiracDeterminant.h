@@ -405,14 +405,15 @@ public:
 
   const ValueVector_t& getRatiosToRefDet() const { return ratios_to_ref_; }
   const ValueVector_t& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
+  const GradMatrix_t& getGrads() const { return grads; }
+  const GradMatrix_t& getNewGrads() const { return new_grads; }
+  const ValueMatrix_t& getLapls() const { return lapls; }
+  const ValueMatrix_t& getNewLapls() const { return new_lapls; }
+  const ValueMatrix_t& getSpinGrads() const { return spingrads; }
+  const ValueMatrix_t& getNewSpinGrads() const { return new_spingrads; }
+
   PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
-
-  /// store determinants (old and new). FIXME: move to private
-  GradMatrix_t grads, new_grads;
-  ValueMatrix_t lapls, new_lapls;
-  // additional storage for spin derivatives. Only resized if the calculation uses spinors
-  ValueMatrix_t spingrads, new_spingrads;
 
 private:
   ///reset the size: with the number of particles
@@ -479,6 +480,13 @@ private:
   ValueType curRatio;
   /// log value of the reference determinant
   LogValueType log_value_ref_det_;
+  /// store determinant grads (old and new)
+  GradMatrix_t grads, new_grads;
+  /// store determinant lapls (old and new)
+  ValueMatrix_t lapls, new_lapls;
+  // additional storage for spin derivatives. Only resized if the calculation uses spinors
+  ValueMatrix_t spingrads, new_spingrads;
+
 
   /* mmorales:
    *  i decided to stored the excitation information of all determinants in the following
