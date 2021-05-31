@@ -62,7 +62,6 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
 }
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
-                                                               int iat,
                                                                ValueVector_t& ratios,
                                                                const ValueMatrix_t& psiinv,
                                                                const ValueMatrix_t& psi,
@@ -245,7 +244,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       det.TpsiM(i, WorkingIndex) = det.psiV[i];
     det.ExtraStuffTimer.stop();
-    det.BuildDotProductsAndCalculateRatios(det.ReferenceDeterminant, WorkingIndex, det.new_ratios_to_ref_,
+    det.BuildDotProductsAndCalculateRatios(det.ReferenceDeterminant, det.new_ratios_to_ref_,
                                            det.psiMinv_temp, det.TpsiM, det.dotProducts, *det.detData, *det.uniquePairs,
                                            *det.DetSigns);
 
@@ -284,7 +283,7 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_ratios_to_ref_, psiMinv_temp, TpsiM,
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, new_ratios_to_ref_, psiMinv_temp, TpsiM,
                                      dotProducts, *detData, *uniquePairs, *DetSigns);
   // check comment above
   for (size_t i = 0; i < NumOrbitals; i++)
@@ -321,7 +320,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_ratios_to_ref_, psiMinv_temp, TpsiM,
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, new_ratios_to_ref_, psiMinv_temp, TpsiM,
                                      dotProducts, *detData, *uniquePairs, *DetSigns);
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
@@ -375,7 +374,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, WorkingIndex, new_ratios_to_ref_, psiMinv_temp, TpsiM,
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, new_ratios_to_ref_, psiMinv_temp, TpsiM,
                                      dotProducts, *detData, *uniquePairs, *DetSigns);
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
@@ -449,7 +448,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       det.TpsiM(i, WorkingIndex) = det.psiV[i];
     det.ExtraStuffTimer.stop();
-    det.BuildDotProductsAndCalculateRatios(det.ReferenceDeterminant, WorkingIndex, det.new_ratios_to_ref_,
+    det.BuildDotProductsAndCalculateRatios(det.ReferenceDeterminant, det.new_ratios_to_ref_,
                                            det.psiMinv_temp, det.TpsiM, det.dotProducts, *det.detData, *det.uniquePairs,
                                            *det.DetSigns);
     for (size_t idim = 0; idim < OHMMS_DIM; idim++)

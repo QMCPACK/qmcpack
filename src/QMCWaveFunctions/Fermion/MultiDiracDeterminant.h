@@ -303,7 +303,6 @@ public:
                                                const std::vector<RealType>& sign);
 
   void BuildDotProductsAndCalculateRatios(int ref,
-                                          int iat,
                                           ValueVector_t& ratios,
                                           const ValueMatrix_t& psiinv,
                                           const ValueMatrix_t& psi,
