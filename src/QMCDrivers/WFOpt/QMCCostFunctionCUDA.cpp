@@ -174,7 +174,7 @@ void QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
   app_log() << "    number of walkers before load " << W.getActiveWalkers() << std::endl;
   if (H_KE.size() == 0)
   {
-    H_KE.addOperator(H.getHamiltonian("Kinetic"), "Kinetic");
+    H_KE.addOperator(*H.getHamiltonian("Kinetic"));
     if (includeNonlocalH != "no")
     {
       if (includeNonlocalH == "yes")
@@ -182,7 +182,7 @@ void QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
       OperatorBase* a = H.getHamiltonian(includeNonlocalH);
       if (a)
       {
-        H_KE.addOperator(a, includeNonlocalH);
+        H_KE.addOperator(*a);
       }
     }
     H_KE.addObservables(W);

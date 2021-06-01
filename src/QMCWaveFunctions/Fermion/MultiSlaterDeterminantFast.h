@@ -103,11 +103,9 @@ public:
       Dets[id]->setBF(bf);
   }
 
-  PsiValueType evaluate_vgl_impl(const ParticleSet& P,
+  LogValueType evaluate_vgl_impl(const ParticleSet& P,
                                  ParticleSet::ParticleGradient_t& g_tmp,
                                  ParticleSet::ParticleLaplacian_t& l_tmp);
-
-  PsiValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
@@ -118,11 +116,11 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override;
   //evalGrad, but returns the spin gradient as well
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
+
   void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                    const RefVectorWithLeader<ParticleSet>& P_list,
                    int iat,
                    std::vector<GradType>& grad_now) const override;
-
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
@@ -169,14 +167,11 @@ public:
   void resize(int, int);
   void initialize();
 
-  void testMSD(ParticleSet& P, int iat);
-
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
   size_t ActiveSpin;
   bool usingCSF;
   PsiValueType curRatio;
-  PsiValueType psiCurrent;
 
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
   std::map<std::string, size_t> SPOSetID;
@@ -266,6 +261,11 @@ private:
   std::vector<int> Last;
   ///use pre-compute (fast) algorithm
   const bool use_pre_computing_;
+
+  /// current psi over ref single det
+  PsiValueType psi_ratio_to_ref_det_;
+  /// new psi over new ref single det when one particle is moved
+  PsiValueType new_psi_ratio_to_new_ref_det_;
 };
 
 } // namespace qmcplusplus

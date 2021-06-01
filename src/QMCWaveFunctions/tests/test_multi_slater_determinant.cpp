@@ -103,6 +103,11 @@ void test_LiH_msd(const std::string& spo_xml_string,
             << std::endl;
   CHECK(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
         LogComplexApprox(std::complex<double>(-7.646027846242066, 3.141592653589793)));
+  CHECK(elec_.G[0][0] == ValueApprox(-2.181896934));
+  CHECK(elec_.G[1][1] == ValueApprox(0.120821033));
+  CHECK(elec_.G[2][2] == ValueApprox(1.2765987657));
+  CHECK(elec_.L[0] == ValueApprox(-15.460736911));
+  CHECK(elec_.L[3] == ValueApprox(-0.328013327566));
 
   twf.prepareGroup(elec_, 0);
   auto grad_old = twf.evalGrad(elec_, 1);
@@ -177,14 +182,30 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(std::real(ratios2[0]) == Approx(-0.8544310407));
     CHECK(std::real(ratios2[1]) == Approx(-1.0830708458));
 
-    //test acceptMove
+  }
+
+  //test acceptMove
+  {
+    PosType newpos(0.3, 0.2, 0.5);
     elec_.makeMove(1, newpos - elec_.R[1]);
     ValueType ratio_1 = twf.calcRatio(elec_, 1);
     twf.acceptMove(elec_, 1);
     elec_.acceptMove(1);
 
     CHECK(std::real(ratio_1) == Approx(-0.8544310407));
-    CHECK(twf.getLogPsi() == Approx(-7.6460278462));
+    CHECK(twf.getLogPsi() == Approx(-7.8033473273));
+
+    twf.evaluateLog(elec_);
+
+    std::cout << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
+              << std::endl;
+    CHECK(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
+          LogComplexApprox(std::complex<double>(-7.803347327300154, 0.0)));
+    CHECK(elec_.G[0][0] == ValueApprox(1.63020975849953));
+    CHECK(elec_.G[1][1] == ValueApprox(-1.795375999646262));
+    CHECK(elec_.G[2][2] == ValueApprox(1.215768958589418));
+    CHECK(elec_.L[0] == ValueApprox(-21.84021387509693));
+    CHECK(elec_.L[3] == ValueApprox(-1.332448295858972));
   }
 
   // testing batched interfaces
@@ -354,13 +375,13 @@ void test_Bi_msd(const std::string& spo_xml_string,
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
-  ions_.create({1});
+  ions_.create(std::vector<int>{1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int LiIdx            = ispecies.addSpecies("Bi");
 
   elec_.setName("elec");
-  elec_.create({5});
+  elec_.create(std::vector<int>{5});
   elec_.R[0] = {1.592992772, -2.241313928, -0.7315193518};
   elec_.R[1] = {0.07621077199, 0.8497557547, 1.604678718};
   elec_.R[2] = {2.077473445, 0.680621113, -0.5251243321};

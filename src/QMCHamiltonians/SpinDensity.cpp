@@ -53,7 +53,10 @@ void SpinDensity::reset()
 }
 
 
-OperatorBase* SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction& Psi) { return new SpinDensity(*this); }
+std::unique_ptr<OperatorBase> SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+{
+  return std::make_unique<SpinDensity>(*this);
+}
 
 
 bool SpinDensity::put(xmlNodePtr cur)
