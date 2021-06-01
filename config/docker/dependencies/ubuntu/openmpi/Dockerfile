@@ -18,6 +18,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     git \
                     libopenmpi-dev \
                     libhdf5-openmpi-dev \
+                    libhdf5-serial-dev \
                     hdf5-tools \
                     libfftw3-dev \
                     libopenblas-openmp-dev \
@@ -27,6 +28,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
                     rsync \
                     wget \
                     software-properties-common \
+                    vim \
                     -y
 
 # Python packages for tests

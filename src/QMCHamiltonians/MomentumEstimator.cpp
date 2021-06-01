@@ -421,9 +421,9 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 
 bool MomentumEstimator::get(std::ostream& os) const { return true; }
 
-OperatorBase* MomentumEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> MomentumEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  MomentumEstimator* myclone = new MomentumEstimator(qp, psi);
+  std::unique_ptr<MomentumEstimator> myclone = std::make_unique<MomentumEstimator>(qp, psi);
   myclone->resize(kPoints, M);
   myclone->myIndex   = myIndex;
   myclone->norm_nofK = norm_nofK;

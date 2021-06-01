@@ -32,8 +32,3 @@ ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main ${CUDATESTLIB} einspline qmcutil)
 
 ADD_UNIT_TEST( ${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-
-# temporary label until asan leaks are resolved
-IF( "${ENABLE_SANITIZER}" STREQUAL "asan" )
-  SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS noasan)
-ENDIF()

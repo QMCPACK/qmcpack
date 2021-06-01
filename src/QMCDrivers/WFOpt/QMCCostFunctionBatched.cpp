@@ -170,41 +170,32 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     IsValid = true;
     if (NumWalkersEff < MinNumWalkers * NumSamples)
     {
-      ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
+      WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
                                                                           << MinNumWalkers * NumSamples)
-      //ERRORMSG("Going to stop now.")
       IsValid = false;
     }
   }
 }
 
-std::unique_ptr<QMCHamiltonian> QMCCostFunctionBatched::extractFixedHamiltonianComponents()
-{
-  auto KE_Ham = std::make_unique<QMCHamiltonian>();
-  KE_Ham->addOperator(H.getHamiltonian("Kinetic"), "Kinetic");
-  if (includeNonlocalH != "no")
-  {
-    OperatorBase* a = H.getHamiltonian(includeNonlocalH);
-    if (a)
-    {
-      app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-      KE_Ham->addOperator(a, includeNonlocalH);
-    }
-    else
-      app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-  }
-  return KE_Ham;
-}
-
-
 void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 {
   app_log() << "  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
   outputManager.pause();
+
+  if (H_KE_node_names_.size() == 0)
   {
-    if (H_KE_Node == nullptr)
+    H_KE_node_names_.reserve(2);
+    H_KE_node_names_.emplace_back("Kinetic");
+    if (includeNonlocalH != "no")
     {
-      H_KE_Node = extractFixedHamiltonianComponents();
+      OperatorBase* a(H.getHamiltonian(includeNonlocalH));
+      if (a)
+      {
+        app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
+        H_KE_node_names_.emplace_back(includeNonlocalH);
+      }
+      else
+        app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
     }
   }
   outputManager.resume();
@@ -268,7 +259,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       HDerivRecords_.resize(numSamples, NumOptimizables);
     }
   }
-  OperatorBase* nlpp = (includeNonlocalH == "no") ? 0 : H.getHamiltonian(includeNonlocalH);
+  OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : H.getHamiltonian(includeNonlocalH);
   bool compute_nlpp  = useNLPPDeriv && nlpp;
   //set the optimization mode for the trial wavefunction
   Psi.startOptimization();
@@ -281,9 +272,7 @@ void QMCCostFunctionBatched::checkConfigurations()
   outputManager.pause();
   opt_eval_.resize(opt_num_crowds_);
   for (int i = 0; i < opt_num_crowds_; i++)
-  {
-    opt_eval_[i] = std::make_unique<CostFunctionCrowdData>(opt_batch_size_, W, Psi, H, *H_KE_Node, *MoverRng[0]);
-  }
+    opt_eval_[i] = std::make_unique<CostFunctionCrowdData>(opt_batch_size_, W, Psi, H, H_KE_node_names_, *MoverRng[0]);
   outputManager.resume();
 
 

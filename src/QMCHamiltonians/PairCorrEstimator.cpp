@@ -316,10 +316,10 @@ bool PairCorrEstimator::get(std::ostream& os) const
   return true;
 }
 
-OperatorBase* PairCorrEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> PairCorrEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //default constructor is sufficient
-  return new PairCorrEstimator(*this);
+  return std::make_unique<PairCorrEstimator>(*this);
 }
 
 void PairCorrEstimator::resize(int nbins)
