@@ -503,7 +503,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSet
   int norb = input_info.max_index();
   H5OrbSet aset(H5FileName, spinSet, norb);
 
-  std::unique_ptr<SPOSet> bspline_zd = MixedSplineReader->create_spline_set(spinSet, cur, input_info);
+  auto bspline_zd = MixedSplineReader->create_spline_set(spinSet, cur, input_info);
   //APP_ABORT_TRACE(__FILE__,__LINE__,"DONE");
   if (bspline_zd)
     SPOSetMap[aset] = bspline_zd.get();
