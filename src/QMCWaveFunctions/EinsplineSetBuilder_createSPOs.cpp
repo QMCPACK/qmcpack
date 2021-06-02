@@ -109,7 +109,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   update_token(__FILE__, __LINE__, "createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
-  std::unique_ptr<SPOSet> OrbitalSet;
+  SPOSet *OrbitalSet = nullptr;
   int numOrbs = 0;
   int sortBands(1);
   int spinSet      = 0;
@@ -243,12 +243,12 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     app_warning() << "!!!!!!! Deprecated input style: implict sharing one SPOSet for spin-up and spin-down electrions "
                      "has been deprecated. Create a single SPO set outside determinantset instead."
                   << "Use sposet_collection to construct an explict sposet for explicit sharing." << std::endl;
-    OrbitalSet.reset(iter->second->makeClone());
+    OrbitalSet = iter->second->makeClone();
     OrbitalSet->setName("");
-    return OrbitalSet;
+    return std::unique_ptr<SPOSet>(OrbitalSet);
   }
 
-  if (!FullBands[spinSet])
+  if (FullBands[spinSet] == 0)
     FullBands[spinSet] = std::make_unique<std::vector<BandInfo>>();
 
   // Ensure the first SPO set must be spinSet==0
@@ -334,10 +334,10 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs        = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
-  auto bspline_zd    = MixedSplineReader->create_spline_set(spinSet, spo_cur);
+  auto bspline_zd = MixedSplineReader->create_spline_set(spinSet, spo_cur);
   if (!bspline_zd)
     APP_ABORT_TRACE(__FILE__, __LINE__, "Failed to create SPOSet*");
-  OrbitalSet = std::move(bspline_zd);
+  OrbitalSet = bspline_zd.release();
 #if defined(MIXED_PRECISION)
   if (use_einspline_set_extended == "yes")
   {
@@ -349,32 +349,32 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (use_einspline_set_extended == "yes")
 #endif
   {
-    std::unique_ptr<EinsplineSet> new_OrbitalSet;
+    EinsplineSet* new_OrbitalSet;
     if (UseRealOrbitals)
     {
-      std::unique_ptr<EinsplineSetExtended<double>> temp_OrbitalSet;
+      EinsplineSetExtended<double>* temp_OrbitalSet;
 #if defined(QMC_CUDA)
       if (AtomicOrbitals.size() > 0)
-        temp_OrbitalSet = std::unique_ptr<EinsplineSetExtended<double>>{std::make_unique<EinsplineSetHybrid<double>>()};
+        temp_OrbitalSet = new EinsplineSetHybrid<double>;
       else
 #endif
-        temp_OrbitalSet = std::make_unique<EinsplineSetExtended<double>>();
+        temp_OrbitalSet = new EinsplineSetExtended<double>;
       MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       //set the flags for anti periodic boundary conditions
-      temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet*>(OrbitalSet.get())->getHalfG();
-      new_OrbitalSet         = std::move(temp_OrbitalSet);
+      temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet*>(OrbitalSet)->getHalfG();
+      new_OrbitalSet         = temp_OrbitalSet;
     }
     else
     {
-      std::unique_ptr<EinsplineSetExtended<std::complex<double>>> temp_OrbitalSet;
+      EinsplineSetExtended<std::complex<double>>* temp_OrbitalSet;
 #if defined(QMC_CUDA)
       if (AtomicOrbitals.size() > 0)
-        temp_OrbitalSet =  std::unique_ptr<EinsplineSetExtended<std::complex<double>>>{std::make_unique<EinsplineSetHybrid<std::complex<double>>>()};
+        temp_OrbitalSet = new EinsplineSetHybrid<std::complex<double>>;
       else
 #endif
-        temp_OrbitalSet =  std::make_unique<EinsplineSetExtended<std::complex<double>>>();
+        temp_OrbitalSet = new EinsplineSetExtended<std::complex<double>>;
       MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
@@ -385,11 +385,11 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         temp_OrbitalSet->MakeTwoCopies[iorb] = (num < (numOrbs - 1)) && (*FullBands[spinSet])[iorb].MakeTwoCopies;
         num += temp_OrbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
       }
-      new_OrbitalSet = std::move(temp_OrbitalSet);
+      new_OrbitalSet = temp_OrbitalSet;
     }
     //set the internal parameters
-    setTiling(new_OrbitalSet.get(), numOrbs);
-    OrbitalSet = std::move(new_OrbitalSet);
+    setTiling(new_OrbitalSet, numOrbs);
+    OrbitalSet = new_OrbitalSet;
   }
 #endif
   app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
@@ -473,8 +473,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
   OrbitalSet->finalizeConstruction();
-  SPOSetMap[aset] = OrbitalSet.get();
-  return OrbitalSet;
+  SPOSetMap[aset] = OrbitalSet;
+  return std::unique_ptr<SPOSet>(OrbitalSet);
 }
 
 std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
