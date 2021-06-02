@@ -52,7 +52,7 @@ struct SplineSetReader : public BsplineReaderBase
       : BsplineReaderBase(e), spline_r(nullptr), spline_i(nullptr), bspline(nullptr), FFTplan(nullptr)
   {}
 
-  ~SplineSetReader() { clear(); }
+  ~SplineSetReader() override { clear(); }
 
   void clear()
   {
