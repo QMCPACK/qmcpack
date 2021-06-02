@@ -109,7 +109,6 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   update_token(__FILE__, __LINE__, "createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
-  SPOSet *OrbitalSet = nullptr;
   int numOrbs = 0;
   int sortBands(1);
   int spinSet      = 0;
@@ -243,9 +242,9 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     app_warning() << "!!!!!!! Deprecated input style: implict sharing one SPOSet for spin-up and spin-down electrions "
                      "has been deprecated. Create a single SPO set outside determinantset instead."
                   << "Use sposet_collection to construct an explict sposet for explicit sharing." << std::endl;
-    OrbitalSet = iter->second->makeClone();
+    auto OrbitalSet = std::unique_ptr<SPOSet>(iter->second->makeClone());
     OrbitalSet->setName("");
-    return std::unique_ptr<SPOSet>(OrbitalSet);
+    return OrbitalSet;
   }
 
   if (FullBands[spinSet] == 0)
@@ -337,7 +336,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   auto bspline_zd = MixedSplineReader->create_spline_set(spinSet, spo_cur);
   if (!bspline_zd)
     APP_ABORT_TRACE(__FILE__, __LINE__, "Failed to create SPOSet*");
-  OrbitalSet = bspline_zd.release();
+  auto OrbitalSet = bspline_zd.release();
 #if defined(MIXED_PRECISION)
   if (use_einspline_set_extended == "yes")
   {
