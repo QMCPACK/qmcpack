@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2021 Jeongnim Kim and QMCPACK developers.
 #//
 #// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 #//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -14,6 +14,7 @@
 #//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 #//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+#//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//
 #// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -58,6 +59,7 @@ SET(JASTROW_SRCS
   Jastrow/RadialJastrowBuilder.cpp
   Jastrow/CountingJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
+  Jastrow/J2OrbitalSoA.cpp
   LatticeGaussianProduct.cpp
   LatticeGaussianProductBuilder.cpp
   Fermion/SPOSetProxy.cpp
@@ -197,11 +199,13 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/MultiSlaterDeterminantWithBackflow.cpp
   SPOSetBuilderFactory.cpp
   TrialWaveFunction.cpp
+  TWFdispatcher.cpp
   WaveFunctionFactory.cpp
   )
 
 IF(ENABLE_CUDA)
   SET(WFSSRCS_CUDA ${WFSSRCS_CUDA}
+      detail/CUDA/cuBLAS_LU.cu
       detail/CUDA/delayed_update_helper.cu
       detail/CUDA/matrix_update_helper.cu
       )
@@ -225,5 +229,18 @@ IF(QMC_CUDA OR ENABLE_CUDA)
   TARGET_LINK_LIBRARIES(qmcwfs PRIVATE qmcwfs_cuda)
 ENDIF(QMC_CUDA OR ENABLE_CUDA)
 
+TARGET_INCLUDE_DIRECTORIES(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcparticle platform_device)
 TARGET_LINK_LIBRARIES(qmcwfs PRIVATE einspline Math::BLAS_LAPACK Math::FFTW3 Math::scalar_vector_functions)
+
+# do not merge with qmcwfs target unless all qmcwfs unit tests pass santitizers.
+IF(ENABLE_CUDA)
+  SET(DIRECT_INVERSION_SRCS
+    detail/CUDA/cuBLAS_LU.cu
+    )
+  CUDA_ADD_LIBRARY(qmcwfs_direct_inversion_cuda "${DIRECT_INVERSION_SRCS}")
+  TARGET_LINK_LIBRARIES(qmcwfs_direct_inversion_cuda PUBLIC platform_device)
+  # CUDA_ADD_LIBRARY is from deprecated FindCuda and ignores TARGET_INCLUDE_DIRECTORIES so
+  # headers in this target contain full relative path from project root.
+  TARGET_LINK_LIBRARIES(qmcwfs PUBLIC qmcwfs_direct_inversion_cuda)
+ENDIF(ENABLE_CUDA)

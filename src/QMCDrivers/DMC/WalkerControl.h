@@ -20,18 +20,18 @@
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCDrivers/WalkerElementsRef.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RandomGenerator.h"
 
-// #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
-
-//#include <boost/archive/binary_oarchive.hpp>
-
 namespace qmcplusplus
 {
+namespace testing
+{
+class UnifiedDriverWalkerControlMPITest;
+}
+
 /** Class for controlling the walkers for DMC simulations.
  * w and w/o MPI. Fixed and dynamic population in one place.
  */
@@ -98,12 +98,12 @@ private:
    *
    *  populates the minus and plus vectors they contain 1 copy of a partition index 
    *  for each adjustment in population to the context.
-   *  \param[in] num_per_node as if all walkers were copied out to multiplicity
+   *  \param[in] num_per_rank as if all walkers were copied out to multiplicity
    *  \param[out] fair_offset running population count at each partition boundary
    *  \param[out] minus list of partition indexes one occurance for each walker removed
    *  \param[out] plus list of partition indexes one occurance for each walker added
    */
-  static void determineNewWalkerPopulation(const std::vector<int>& num_per_node,
+  static void determineNewWalkerPopulation(const std::vector<int>& num_per_rank,
                                            std::vector<int>& fair_offset,
                                            std::vector<int>& minus,
                                            std::vector<int>& plus);
@@ -142,8 +142,6 @@ private:
 
   ///random number generator
   RandomGenerator_t& rng_;
-  /// TWF resource collection
-  std::unique_ptr<ResourceCollection> twfs_shared_resource_;
   ///if true, use fixed population
   bool use_fixed_pop_;
   ///minimum number of walkers
@@ -154,8 +152,8 @@ private:
   IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
-  ///number of walkers on each node after branching before load balancing
-  std::vector<int> num_per_node_;
+  ///number of walkers on each MPI rank after branching before load balancing
+  std::vector<int> num_per_rank_;
   ///offset of the particle index for a fair distribution
   std::vector<int> fair_offset_;
   ///filename for dmc.dat
@@ -172,12 +170,16 @@ private:
   std::vector<FullPrecRealType> curData;
   ///Use non-blocking isend/irecv
   bool use_nonblocking_;
+  ///disable branching for debugging
+  bool debug_disable_branching_;
   ///ensemble properties
   MCDataType<FullPrecRealType> ensemble_property_;
   ///timers
   TimerList_t my_timers_;
   ///Number of walkers sent during the exchange
   IndexType saved_num_walkers_sent_;
+
+  friend testing::UnifiedDriverWalkerControlMPITest;
 };
 
 } // namespace qmcplusplus

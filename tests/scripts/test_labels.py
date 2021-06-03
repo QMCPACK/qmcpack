@@ -477,15 +477,14 @@ def check_positive_label_sets(positive_label_sets):
 
 # extract test name and build flags from args
 try:
-    full_test,qmc_cuda,enable_soa,qmc_complex,qmc_mixed = sys.argv[1:]
+    full_test,qmc_cuda,qmc_complex,qmc_mixed = sys.argv[1:]
     qmc_cuda    = qmc_cuda=='1'
-    enable_soa  = enable_soa=='1'
     qmc_complex = qmc_complex=='1'
     qmc_mixed   = qmc_mixed=='1'
     cpu   = not qmc_cuda
     gpu   = qmc_cuda
-    aos   = not enable_soa
-    soa   = enable_soa
+    aos   = False
+    soa   = True
     real  = not qmc_complex
     comp  = qmc_complex
     full  = not qmc_mixed

@@ -1,13 +1,14 @@
 #if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0x.x -lboost_serialization && time mpirun -np 4 $0x.x $@ && rm -f $0x.x; exit
+mpic++ $0 -o $0x -lboost_serialization&&mpirun -n 4 $0x&&rm $0x;exit
 #endif
-// (C) Copyright 2018 Alfredo A. Correa
+// © Alfredo A. Correa 2018-2020
+
 #define OMPI_SKIP_MPICXX 1  // https://github.com/open-mpi/ompi/issues/5157
+
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
 #include "../../mpi3/process.hpp"
 #include "../../mpi3/shm/allocator.hpp"
-#include "../../mpi3/mutex.hpp"
 
 #include<random>
 #include<thread> //sleep_for
@@ -15,78 +16,82 @@ mpic++ -O3 -std=c++14 -Wall -Wextra -Wpedantic `#-Wfatal-errors` $0 -o $0x.x -lb
 
 #include "../../../boost/multi/array.hpp"
 
-namespace boost{
-namespace multi{
-
-template<class It1, class Size, class T>
-auto copy_n(
-	It1 first, Size n,
-	array_iterator<T, 1, boost::mpi3::intranode::array_ptr<T>> d_first
-){
-	base(d_first).wSP_->fence();
-	if(mpi3::group(*base(d_first).wSP_).root()) std::copy_n(first, n, d_first);
-	base(d_first).wSP_->fence();
-	return d_first + n;
-}
-
-template<class RandomAccessIt1, class T>
-auto copy(
-	RandomAccessIt1 first, RandomAccessIt1 second, 
-	array_iterator<T, 1, boost::mpi3::intranode::array_ptr<T>> d_first
-){
-	using std::distance;
-	return copy_n(first, distance(first, second), d_first);
-}
-
-}}
-
-
 namespace mpi3 = boost::mpi3;
 namespace multi = boost::multi;
 
 using std::cout;
 
+namespace boost{
+namespace mpi3{
+namespace shm{
+
+template<class T, boost::multi::dimensionality_type D>
+using array = multi::array<T, D, mpi3::shm::allocator<T>>;
+
+}}}
+
+template<class T> using shm_vector = multi::array<T, 1, mpi3::shm::allocator<double>>;
+
 int mpi3::main(int, char*[], mpi3::communicator world){
 
 	mpi3::shared_communicator node = world.split_shared();
+{ 
+	multi::array<double, 1, mpi3::shm::allocator<double>> V(100, 99., &node);
+	assert( V[13] == 99. );
 
+	multi::array<double, 1, mpi3::shm::allocator<double>> W(100, 88., &node);
+	assert( W[13] == 88. );
+	W = V;
+	assert( V[13] == 99. );
+}
 {
-	multi::array<double, 2, mpi3::shm::allocator<double> > A({5, 5}, 1, node);
-	multi::array<double, 2, mpi3::shm::allocator<double> > B({5, 5}, 2, node);
+	shm_vector<double> V(200, 99., &node);
+	assert( V.size() == size(V) );
+	assert( size(V) == 200 );
+
+	cout << V[10] << std::endl;
+
+	double x = 10.0 * V[10];
+	node.barrier();
+	assert( x == 10.*99. );
+}
+{
+	auto const V = [&]{
+		shm_vector<double> V(1000, 0., &node);
+		if(node.root()) std::iota(V.begin(), V.end(), 10.);
+		node.barrier();
+		return V;
+	}();
+	std::cout
+		<< "accumulation result in rank "<< node.rank() 
+		<<' '<< std::accumulate(V.begin(), V.begin() + node.rank(), 0.) << std::endl
+	;
+	node.barrier();
+}
+{
+	multi::array<double, 2, mpi3::shm::allocator<double>> A({5, 5}, 1.); // implicitly uses self communicator
+	multi::array<double, 2, mpi3::shm::allocator<double>> B({5, 5}, 2.);
 
 	assert( A[1][2] == 1 );
 	assert( B[2][1] == 2 );
 	
-	B = A; // uses copy_n(shm::ptr, shm::ptr, shm::ptr) as optimization
+	B = A;
 
 	assert( B[2][1] == 1 );
 	assert( B[3][1] == 1 );
 }
 {
-	multi::array<double, 2, mpi3::shm::allocator<double> > A({5, 5}, 1, node);
-	multi::array<double, 2, mpi3::shm::allocator<double> > B({50, 25}, 2, node);
+	mpi3::shm::array<double, 2> A({5, 5}, 1., &node);
+	mpi3::shm::array<double, 2> B({5, 5}, 2., &node);
 
 	assert( A[1][2] == 1 );
-	assert( B[2][1] == 2 );
-	
-	B = A; // uses uninitialized_copy_n(shm::ptr, shm::ptr, shm::ptr) as optimization
+	assert( B[1][2] == 2 );
 
-	assert( B[2][1] == 1 );
-	assert( B[3][1] == 1 );
-}
-{
-	multi::array<double, 2, mpi3::shm::allocator<double> > A({5, 5}, 1, node);
-	multi::array<double, 2, mpi3::shm::allocator<double> > B({5, 5}, 2, node);
+	B() = A();
 
 	assert( A[1][2] == 1 );
-	assert( B[2][1] == 2 );
-
-	B[2] = A.rotated()[1]; // uses copy(multi::it, multi::it, multi::it)
-
-	assert( B[2][1] == 1 );
-	assert( B[3][1] == 2 );
+	assert( B[1][2] == 1 );
 }
-
 	return 0;
 }
 

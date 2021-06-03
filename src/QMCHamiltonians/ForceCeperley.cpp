@@ -129,9 +129,9 @@ bool ForceCeperley::put(xmlNodePtr cur)
   app_log() << "addionion=" << addionion << std::endl;
   app_log() << "FirstTime= " << FirstTime << std::endl;
   ParameterSet fcep_param_set;
-  fcep_param_set.add(Rcut, "rcut", "real");
-  fcep_param_set.add(N_basis, "nbasis", "int");
-  fcep_param_set.add(m_exp, "weight_exp", "int");
+  fcep_param_set.add(Rcut, "rcut");
+  fcep_param_set.add(N_basis, "nbasis");
+  fcep_param_set.add(m_exp, "weight_exp");
   fcep_param_set.put(cur);
   app_log() << "    ForceCeperley Parameters" << std::endl;
   app_log() << "        ForceCeperley::Rcut=" << Rcut << std::endl;
@@ -141,7 +141,10 @@ bool ForceCeperley::put(xmlNodePtr cur)
   return true;
 }
 
-OperatorBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new ForceCeperley(*this); }
+std::unique_ptr<OperatorBase> ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  return std::make_unique<ForceCeperley>(*this);
+}
 } // namespace qmcplusplus
 
 //  void ForceCeperley::addObservables(PropertySetType& plist) {

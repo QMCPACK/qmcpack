@@ -22,6 +22,14 @@ FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
     EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
 ENDFUNCTION()
 
+# Create symlinks for a list of files.
+FUNCTION( SYMLINK_LIST_OF_FILES FILENAMES DST_DIR)
+    FOREACH(F IN LISTS FILENAMES)
+        get_filename_component(NAME_ONLY ${F} NAME)
+        file(CREATE_LINK ${F} "${DST_DIR}/${NAME_ONLY}" SYMBOLIC)
+    ENDFOREACH()
+ENDFUNCTION()
+
 # Function to copy a directory using symlinks for the files to save storage space.
 # Subdirectories are ignored.
 # SRC_DIR must be an absolute path
@@ -31,10 +39,7 @@ FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
     FILE(MAKE_DIRECTORY "${DST_DIR}")
     # Find all the files but not subdirectories
     FILE(GLOB FILE_ONLY_NAMES LIST_DIRECTORIES TRUE "${SRC_DIR}/*")
-    FOREACH(F IN LISTS FILE_ONLY_NAMES)
-      #MESSAGE("Creating symlink from  ${F} to directory ${DST_DIR}")
-      EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
-    ENDFOREACH()
+    SYMLINK_LIST_OF_FILES("${FILE_ONLY_NAMES}" "${DST_DIR}")
 ENDFUNCTION()
 
 # Copy selected files only. h5, pseudopotentials, wavefunction, structure and the used one input file are copied.
@@ -47,15 +52,12 @@ FUNCTION( COPY_DIRECTORY_USING_SYMLINK_LIMITED SRC_DIR DST_DIR ${ARGN})
         "${SRC_DIR}/*.ccECP.xml"
         "${SRC_DIR}/*.py" "${SRC_DIR}/*.sh" "${SRC_DIR}/*.restart.xml"
         "${SRC_DIR}/Li.xml" "${SRC_DIR}/H.xml" "${SRC_DIR}/*.L2_test.xml" "${SRC_DIR}/*.opt_L2.xml"
-        "${SRC_DIR}/*.wfnoj.xml" "${SRC_DIR}/*.wfj.xml" "${SRC_DIR}/*.wfs*.xml"
+        "${SRC_DIR}/*.wfnoj.xml" "${SRC_DIR}/*.wfj*.xml" "${SRC_DIR}/*.wfs*.xml"
         "${SRC_DIR}/*.wfn*.xml" "${SRC_DIR}/*.cuspInfo.xml" "${SRC_DIR}/*.H*.xml"
         "${SRC_DIR}/*.structure.xml" "${SRC_DIR}/*ptcl.xml")
-    FOREACH(F IN LISTS FILE_FOLDER_NAMES)
-      EXECUTE_PROCESS( COMMAND ln -sf "${F}" "." WORKING_DIRECTORY ${DST_DIR})
-    ENDFOREACH()
-    FOREACH(F IN LISTS ARGN)
-      EXECUTE_PROCESS( COMMAND ln -sf "${SRC_DIR}/${F}" "." WORKING_DIRECTORY ${DST_DIR})
-    ENDFOREACH()
+    SYMLINK_LIST_OF_FILES("${FILE_FOLDER_NAMES}" "${DST_DIR}")
+    list(TRANSFORM ARGN PREPEND "${SRC_DIR}/")
+    SYMLINK_LIST_OF_FILES("${ARGN}" "${DST_DIR}")
 ENDFUNCTION()
 
 # Control copy vs. symlink with top-level variable
@@ -70,9 +72,9 @@ ENDFUNCTION()
 # Symlink or copy an individual file
 FUNCTION(MAYBE_SYMLINK SRC_DIR DST_DIR)
   IF (QMC_SYMLINK_TEST_FILES)
-    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink "${SRC_DIR}" "${DST_DIR}")
+    file(CREATE_LINK ${SRC_DIR} ${DST_DIR} SYMBOLIC)
   ELSE()
-    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${SRC_DIR}" "${DST_DIR}")
+    file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
   ENDIF()
 ENDFUNCTION()
 
@@ -91,22 +93,26 @@ ENDMACRO()
 #  Note that TEST_ADDED is an output variable
 FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LABELS ${ARGN} )
     MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
-    SET( QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack" )
+    SET ( QMC_APP $<TARGET_FILE:qmcpack> )
     SET( TEST_ADDED_TEMP FALSE )
     IF ( HAVE_MPI )
         IF ( ${TOT_PROCS} GREATER ${TEST_MAX_PROCS} )
             MESSAGE_VERBOSE("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
         ELSE()
-            ADD_TEST( ${TESTNAME} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN} )
-            SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}"
-                PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
+            ADD_TEST( NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN} )
+            SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES
+                FAIL_REGULAR_EXPRESSION "ERROR"
+                PASS_REGULAR_EXPRESSION "QMCPACK execution completed successfully"
+	              PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( TEST_ADDED_TEMP TRUE )
         ENDIF()
     ELSE()
         IF ( ( ${PROCS} STREQUAL "1" ) )
-            ADD_TEST( ${TESTNAME} ${QMC_APP} ${ARGN} )
-            SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}"
+            ADD_TEST( NAME ${TESTNAME} COMMAND ${QMC_APP} ${ARGN} )
+            SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES
+                FAIL_REGULAR_EXPRESSION "ERROR"
+                PASS_REGULAR_EXPRESSION "QMCPACK execution completed successfully"
                 PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( TEST_ADDED_TEMP TRUE )
@@ -114,6 +120,11 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
             MESSAGE_VERBOSE("Disabling test ${TESTNAME} (building without MPI)")
         ENDIF()
     ENDIF()
+
+    if (TEST_ADDED_TEMP AND (QMC_CUDA OR ENABLE_CUDA OR ENABLE_OFFLOAD))
+      set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
+    endif()
+
     SET(TEST_LABELS_TEMP "")
     IF ( TEST_ADDED_TEMP )
        ADD_TEST_LABELS( ${TESTNAME} TEST_LABELS_TEMP )
@@ -221,7 +232,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                             SET( TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_CHECK}" )
                         ENDIF()
                         #MESSAGE("Adding scalar check ${TEST_NAME}")
-                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
+                        SET(CHECK_CMD ${qmcpack_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
                         #MESSAGE("check command = ${CHECK_CMD}")
                         ADD_TEST( NAME ${TEST_NAME}
                             COMMAND ${CHECK_CMD}
@@ -320,7 +331,7 @@ function(QMC_RUN_AND_CHECK_CUSTOM_SCALAR)
         else()
           set( TEST_NAME "${FULL_NAME}-${SCALAR_NAME}" )
         endif()
-        set(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e ${EQUIL} --name ${SCALAR_NAME} --ref-value ${SCALAR_VALUE} --ref-error ${SCALAR_ERROR})
+        set(CHECK_CMD ${qmcpack_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e ${EQUIL} --name ${SCALAR_NAME} --ref-value ${SCALAR_VALUE} --ref-error ${SCALAR_ERROR})
         add_test( NAME ${TEST_NAME}
                   COMMAND ${CHECK_CMD}
                   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"
@@ -356,8 +367,8 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   # set up command to run check, assume check_script is in the same folder as input
   if (EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
     set(check_cmd "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
-  elseif(EXISTS "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
-    set(check_cmd "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
+  elseif(EXISTS "${qmcpack_SOURCE_DIR}/tests/scripts/${check_script}")
+    set(check_cmd "${qmcpack_SOURCE_DIR}/tests/scripts/${check_script}")
   else()
     message(FATAL_ERROR "Check script not found: ${check_script}")
   endif()

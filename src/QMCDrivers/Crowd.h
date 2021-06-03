@@ -15,6 +15,8 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/EstimatorManagerCrowd.h"
 #include "RandomGenerator.h"
+#include "MultiWalkerDispatchers.h"
+#include "DriverWalkerTypes.h"
 
 namespace qmcplusplus
 {
@@ -40,7 +42,9 @@ public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   /** This is the data structure for walkers within a crowd
    */
-  Crowd(EstimatorManagerNew& emb);
+  Crowd(EstimatorManagerNew& emb,
+        const DriverWalkerResourceCollection& driverwalker_res,
+        const MultiWalkerDispatchers& dispatchers);
 
   ~Crowd();
   /** Because so many vectors allocate them upfront.
@@ -55,8 +59,6 @@ public:
   EstimatorManagerCrowd& get_estimator_manager_crowd() { return estimator_manager_crowd_; }
   void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
 
-  void loadWalkers();
-
   /** Clears all walker vectors
    *
    *  Unless you are _redistributing_ walkers to crowds don't
@@ -66,26 +68,14 @@ public:
    */
   void clearWalkers();
 
-  void accumulate(int global_walkers)
+  void accumulate()
   {
     if (this->size() == 0)
       return;
-    estimator_manager_crowd_.accumulate(global_walkers, mcp_walkers_, walker_elecs_);
+    estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_);
   }
 
   void setRNGForHamiltonian(RandomGenerator_t& rng);
-
-  /** initialize crowd-owned resources shared by walkers in the crowd
-   */
-  void initializeResources(const ResourceCollection& twf_resource);
-  /** lend crowd-owned resources to the crowd leader walker
-   * Note: use RAII CrowdResourceLock whenever possible
-   */
-  void lendResources(size_t receiver);
-  /** take back crowd-owned resources from the crowd leader walker
-   * Note: use RAII CrowdResourceLock whenever possible
-   */
-  void takebackResources(size_t receiver);
 
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
@@ -101,7 +91,7 @@ public:
 
   const EstimatorManagerCrowd& get_estimator_manager_crowd() const { return estimator_manager_crowd_; }
 
-  ResourceCollection& getTWFSharedResource() { return *twfs_shared_resource_; }
+  DriverWalkerResourceCollection& getSharedResource() { return driverwalker_resource_collection_; }
 
   int size() const { return mcp_walkers_.size(); }
 
@@ -111,6 +101,8 @@ public:
   unsigned long get_nonlocal_accept() { return n_nonlocal_accept_; }
   unsigned long get_accept() { return n_accept_; }
   unsigned long get_reject() { return n_reject_; }
+
+  const MultiWalkerDispatchers& dispatchers_;
 
 private:
   /** @name Walker Vectors
@@ -125,9 +117,9 @@ private:
   RefVector<QMCHamiltonian> walker_hamiltonians_;
   /** }@ */
 
-  EstimatorManagerCrowd estimator_manager_crowd_;
+  DriverWalkerResourceCollection driverwalker_resource_collection_;
 
-  std::unique_ptr<ResourceCollection> twfs_shared_resource_;
+  EstimatorManagerCrowd estimator_manager_crowd_;
 
   /** @name Step State
    * 
@@ -138,26 +130,6 @@ private:
   unsigned long n_accept_          = 0;
   unsigned long n_nonlocal_accept_ = 0;
   /** @} */
-};
-
-/** Lock for a crowd lending and taking back shared resource to its consumer objects.
- */
-class CrowdResourceLock
-{
-public:
-  CrowdResourceLock(Crowd& locked_crowd, size_t receiver = 0) : locked_crowd_(locked_crowd), receiver_(receiver)
-  {
-    locked_crowd_.lendResources(receiver_);
-  }
-
-  ~CrowdResourceLock() { locked_crowd_.takebackResources(receiver_); }
-
-  CrowdResourceLock(const CrowdResourceLock&) = delete;
-  CrowdResourceLock(CrowdResourceLock&&)      = delete;
-
-private:
-  Crowd& locked_crowd_;
-  const size_t receiver_;
 };
 
 } // namespace qmcplusplus

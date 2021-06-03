@@ -25,23 +25,21 @@
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
+#include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
 {
 QMCOptimizeBatched::QMCOptimizeBatched(const ProjectData& project_data,
                                        MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi,
-                                       QMCHamiltonian& h,
                                        QMCDriverInput&& qmcdriver_input,
                                        VMCDriverInput&& vmcdriver_input,
+                                       WFOptDriverInput&& wfoptdriver_input,
                                        MCPopulation&& population,
                                        SampleStack& samples,
                                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    std::move(population),
-                   psi,
-                   h,
                    "QMCOptimizeBatched::",
                    comm,
                    "QMCOptimizeBatched"),
@@ -52,6 +50,7 @@ QMCOptimizeBatched::QMCOptimizeBatched(const ProjectData& project_data,
       wfNode(NULL),
       optNode(NULL),
       vmcdriver_input_(vmcdriver_input),
+      wfoptdriver_input_(wfoptdriver_input),
       samples_(samples),
       W(w)
 {
@@ -138,43 +137,15 @@ void QMCOptimizeBatched::generateSamples()
  */
 void QMCOptimizeBatched::process(xmlNodePtr q)
 {
-  std::string vmcMove("pbyp");
-  std::string useGPU("no");
-  OhmmsAttributeSet oAttrib;
-  oAttrib.add(vmcMove, "move");
-  oAttrib.add(useGPU, "gpu");
-  oAttrib.put(q);
-  xmlNodePtr qsave = q;
-  xmlNodePtr cur   = qsave->children;
-  int pid          = OHMMS::Controller->rank();
+  int crowd_size     = wfoptdriver_input_.get_opt_crowd_size();
+  int opt_num_crowds = wfoptdriver_input_.get_opt_num_crowds();
+  // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
+  checkNumCrowdsLTNumThreads(opt_num_crowds);
+  if (opt_num_crowds == 0)
+    opt_num_crowds = Concurrency::maxCapacity<>();
 
-  int crowd_size     = 1;
-  int num_opt_crowds = 1;
-  ParameterSet param_set;
-  param_set.add(crowd_size, "opt_crowd_size", "int");
-  param_set.add(num_opt_crowds, "opt_num_crowds", "int");
-  param_set.put(q);
+  app_log() << " Number of crowds for optimizer: " << opt_num_crowds << std::endl;
 
-  while (cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    if (cname == "mcwalkerset")
-    {
-      mcwalkerNodePtr.push_back(cur);
-    }
-    else if (cname.find("optimize") < cname.size())
-    {
-      const XMLAttrString att(cur, "method");
-      if (!att.empty())
-        optmethod = att;
-      optNode = cur;
-    }
-    cur = cur->next;
-  }
-  //no walkers exist, add 10
-  //if (W.getActiveWalkers() == 0)
-  //  addWalkers(omp_get_max_threads());
-  //NumOfVMCWalkers = W.getActiveWalkers();
   //create VMC engine
   if (vmcEngine == 0)
   {
@@ -182,16 +153,19 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
     VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
     vmcEngine = new VMCBatched(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
-                                            population_.get_golden_electrons(), &Psi, &H),
-                               Psi, H, samples_, myComm);
+                                            population_.get_golden_electrons(), &population_.get_golden_twf(),
+                                            &population_.get_golden_hamiltonian()),
+                               samples_, myComm);
 
-    vmcEngine->setUpdateMode(vmcMove[0] == 'p');
+    app_log() << " VMC update mode: " << qmcdriver_input_.get_update_mode() << std::endl;
+    vmcEngine->setUpdateMode(qmcdriver_input_.get_update_mode()[0] == 'p');
     bool AppendRun = false;
     vmcEngine->setStatus(get_root_name(), h5_file_root_, AppendRun);
-    vmcEngine->process(qsave);
+    vmcEngine->process(q);
     vmcEngine->enable_sample_collection();
   }
-  if (optSolver == 0)
+
+  if (optSolver == nullptr)
   {
     if (optmethod == "anneal")
     {
@@ -210,13 +184,14 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
     } //set the stream
     optSolver->setOstream(&app_log());
   }
-  if (optNode == NULL)
-    optSolver->put(qsave);
-  else
-    optSolver->put(optNode);
+
+  optSolver->put(wfoptdriver_input_.get_opt_xml_node());
+
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, num_opt_crowds, crowd_size, myComm);
+  optTarget =
+      std::make_unique<QMCCostFunctionBatched>(W, population_.get_golden_twf(), population_.get_golden_hamiltonian(),
+                                               samples_, opt_num_crowds, crowd_size, myComm);
   optTarget->setStream(&app_log());
   success = optTarget->put(q);
 

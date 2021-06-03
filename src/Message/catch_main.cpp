@@ -13,7 +13,9 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
+#ifdef CATCH_MAIN_HAVE_MPI
 #include "Message/Communicate.h"
+#endif
 
 // Replacement unit test main function to ensure that MPI is finalized once
 // (and only once) at the end of the unit test.
@@ -23,7 +25,7 @@ std::string UTEST_HAMIL, UTEST_WFN;
 
 int main(int argc, char* argv[])
 {
-#ifdef HAVE_MPI
+#ifdef CATCH_MAIN_HAVE_MPI
   mpi3::environment env(argc, argv);
   OHMMS::Controller->initialize(env);
 #endif
@@ -38,7 +40,9 @@ int main(int argc, char* argv[])
   int parser_err = session.applyCommandLine(argc, argv);
   // Run the tests.
   int result = session.run(argc, argv);
+#ifdef CATCH_MAIN_HAVE_MPI
   OHMMS::Controller->finalize();
+#endif
   if (parser_err != 0)
   {
     return parser_err;

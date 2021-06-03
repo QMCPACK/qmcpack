@@ -44,9 +44,9 @@ void StaticStructureFactor::reset()
 }
 
 
-OperatorBase* StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+std::unique_ptr<OperatorBase> StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
 {
-  return new StaticStructureFactor(*this);
+  return std::make_unique<StaticStructureFactor>(*this);
 }
 
 
@@ -107,22 +107,23 @@ void StaticStructureFactor::addObservables(PropertySetType& plist, BufferType& c
 }
 
 
-void StaticStructureFactor::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const
+void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t sgid            = H5Gcreate(gid, myName.c_str(), 0);
-  observable_helper* oh = new observable_helper("kpoints");
-  oh->open(sgid); // add to SkAll hdf group
-  oh->addProperty(const_cast<std::vector<PosType>&>(Pinit.SK->KLists.kpts_cart), "value");
-  h5desc.push_back(oh);
+  hid_t sgid = H5Gcreate(gid, myName.c_str(), 0);
+  h5desc.emplace_back("kpoints");
+  auto& oh = h5desc.back();
+  oh.open(sgid); // add to SkAll hdf group
+  oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.SK->KLists.kpts_cart), "value");
+
   std::vector<int> ng(2);
   ng[0] = 2;
   ng[1] = nkpoints;
   for (int s = 0; s < nspecies; ++s)
   {
-    observable_helper* oh = new observable_helper(species_name[s]);
-    oh->set_dimensions(ng, myIndex + s * 2 * nkpoints);
-    oh->open(sgid);
-    h5desc.push_back(oh);
+    h5desc.emplace_back(species_name[s]);
+    auto& ohSpeciesName = h5desc.back();
+    ohSpeciesName.set_dimensions(ng, myIndex + s * 2 * nkpoints);
+    ohSpeciesName.open(sgid);
   }
 }
 

@@ -30,23 +30,22 @@
 // forward declaration
 namespace optimize
 {
-  struct VariableSet;
+struct VariableSet;
 }
 
 namespace qmcplusplus
 {
-
 // forward declaration
 class QMCHamiltonian;
 class MCPopulation
 {
 public:
-  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using WFBuffer         = MCPWalker::WFBuffer_t;
-  using RealType         = QMCTraits::RealType;
-  using Properties       = MCPWalker::PropertyContainer_t;
-  using IndexType        = QMCTraits::IndexType;
-  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using MCPWalker          = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using WFBuffer           = MCPWalker::WFBuffer_t;
+  using RealType           = QMCTraits::RealType;
+  using Properties         = MCPWalker::PropertyContainer_t;
+  using IndexType          = QMCTraits::IndexType;
+  using FullPrecRealType   = QMCTraits::FullPrecRealType;
   using opt_variables_type = optimize::VariableSet;
 
 private:
@@ -73,9 +72,6 @@ private:
   std::vector<RealType> ptclgrp_inv_mass_;
   ///1/Mass per particle
   std::vector<RealType> ptcl_inv_mass_;
-  size_t size_dataset_;
-  // walker weights
-  std::vector<FullPrecRealType> walker_weights_;
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
@@ -142,7 +138,7 @@ public:
    *  void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
    */
   template<typename WTTV>
-  void distributeWalkers(WTTV& walker_consumers)
+  void redistributeWalkers(WTTV& walker_consumers)
   {
     // The type returned here is dependent on the integral type that the walker_consumers
     // use to return there size.
@@ -151,7 +147,7 @@ public:
     auto walker_index = 0;
     for (int i = 0; i < walker_consumers.size(); ++i)
     {
-      walker_consumers[i]->initializeResources(trial_wf_->getResource());
+      walker_consumers[i]->clearWalkers();
       for (int j = 0; j < walkers_per_crowd[i]; ++j)
       {
         walker_consumers[i]->addWalker(*walkers_[walker_index], *walker_elec_particle_sets_[walker_index],
@@ -161,7 +157,7 @@ public:
     }
   }
 
-  void syncWalkersPerNode(Communicate* comm);
+  void syncWalkersPerRank(Communicate* comm);
   void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
 
   /**@ingroup Accessors
@@ -188,9 +184,14 @@ public:
   //const Properties& get_properties() const { return properties_; }
   const SpeciesSet& get_species_set() const { return species_set_; }
   const ParticleSet& get_ions() const { return ions_; }
+
+  // accessor to the gold copy
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
   ParticleSet* get_golden_electrons() { return elec_particle_set_; }
   const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }
+  TrialWaveFunction& get_golden_twf() { return *trial_wf_; }
+  // TODO: the fact this is needed is sad remove need for its existence.
+  QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
 
   void set_num_global_walkers(IndexType num_global_walkers) { num_global_walkers_ = num_global_walkers; }
   void set_num_local_walkers(IndexType num_local_walkers) { num_local_walkers_ = num_local_walkers; }
@@ -237,8 +238,6 @@ public:
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
 
-  // TODO: the fact this is needed is sad remove need for its existence.
-  QMCHamiltonian& get_golden_hamiltonian() { return *hamiltonian_; }
   /** }@ */
 
 

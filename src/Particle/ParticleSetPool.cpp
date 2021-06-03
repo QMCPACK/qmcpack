@@ -31,8 +31,7 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
-    : MPIObjectBase(c), TileMatrix(0)
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), TileMatrix(0)
 {
   TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";
@@ -157,7 +156,8 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   std::string role("none");
   std::string randomR("no");
   std::string randomsrc;
-  std::string useGPU("no");
+  std::string useGPU;
+  std::string spinor;
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
@@ -165,8 +165,9 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   pAttrib.add(randomR, "random");
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
+  pAttrib.add(spinor, "spinor", {"no", "yes"});
 #if defined(ENABLE_OFFLOAD)
-  pAttrib.add(useGPU, "gpu");
+  pAttrib.add(useGPU, "gpu", {"yes", "no"});
 #endif
   pAttrib.put(cur);
   //backward compatibility
@@ -178,7 +179,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     app_summary() << std::endl;
     app_summary() << " Particle Set" << std::endl;
     app_summary() << " ------------" << std::endl;
-    app_summary() << "  Name: " << id << std::endl;
+    app_summary() << "  Name: " << id << "   Offload : " << useGPU << std::endl;
     app_summary() << std::endl;
 
     // select OpenMP offload implementation in ParticleSet.
@@ -207,6 +208,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       randomize_nodes.push_back(anode);
     }
     pTemp->setName(id);
+    pTemp->is_spinor_ = spinor == "yes";
     app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
     app_summary() << std::endl;
     return success;

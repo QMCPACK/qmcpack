@@ -97,7 +97,7 @@ EstimatorManagerBase::~EstimatorManagerBase()
 {
   delete_iter(Estimators.begin(), Estimators.end());
   delete_iter(RemoteData.begin(), RemoteData.end());
-  delete_iter(h5desc.begin(), h5desc.end());
+
   if (Collectables)
     delete Collectables;
 }
@@ -174,8 +174,6 @@ void EstimatorManagerBase::addHeader(std::ostream& o)
 
 void EstimatorManagerBase::start(int blocks, bool record)
 {
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->setNumberOfBlocks(blocks);
   reset();
   RecordCount = 0;
   energyAccumulator.clear();
@@ -217,7 +215,6 @@ void EstimatorManagerBase::start(int blocks, bool record)
     addHeader(*Archive);
     if (h5desc.size())
     {
-      delete_iter(h5desc.begin(), h5desc.end());
       h5desc.clear();
     }
     fname  = myComm->getName() + ".stat.h5";
@@ -364,7 +361,7 @@ void EstimatorManagerBase::collectBlockAverages()
       *Archive << std::setw(FieldWidth) << PropertyCache[j];
     *Archive << std::endl;
     for (int o = 0; o < h5desc.size(); ++o)
-      h5desc[o]->write(AverageCache.data(), SquaredAverageCache.data());
+      h5desc[o].write(AverageCache.data(), SquaredAverageCache.data());
     H5Fflush(h_file, H5F_SCOPE_LOCAL);
   }
   RecordCount++;

@@ -12,7 +12,7 @@
 #  LIST(APPEND BCC_H_SCALARS "flux" "0.0 0.03")
 
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short
                     qmc_short.in.xml
                     1 16
@@ -28,7 +28,7 @@
   LIST(APPEND BCC_H_DMC_SCALARS "kinetic"    "0.1767  0.0035")
   LIST(APPEND BCC_H_DMC_SCALARS "eeenergy"  "-0.77985 0.00069")
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-dmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_vmc_dmc
                     qmc_short_vmc_dmc.in.xml
                     1 16
@@ -40,7 +40,7 @@ IF (NOT QMC_CUDA)
 
 # Check VMCUpdateAll driver using all-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_vmc_all_nodrift
                     qmc_short_vmc_all_nodrift.in.xml
                     1 16
@@ -50,7 +50,7 @@ IF (NOT QMC_CUDA)
 
 # Check VMCUpdateAllWithDrift driver using all-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc-all_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_vmc_all
                     qmc_short_vmc_all.in.xml
                     1 16
@@ -60,7 +60,7 @@ IF (NOT QMC_CUDA)
 
 # Check DMCUpdateAllWithRejection driver using all-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-dmc-all_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_vmc_dmc_all
                     qmc_short_vmc_dmc_all.in.xml
                     1 16
@@ -81,7 +81,7 @@ IF (NOT QMC_CUDA)
 
 # Check CSVMCUpdatePbyP driver using particle-by-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_csvmc_pbyp_nodrift
                     qmc_short_csvmc_pbyp_nodrift.in.xml
                     16 1
@@ -91,7 +91,7 @@ IF (NOT QMC_CUDA)
 
 # Check CSVMCUpdatePbyPWithDrift driver using all-particle updates
 #  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-csvmc-pbyp_sdj
-#                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+#                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
 #                    qmc_short_csvmc_pbyp
 #                    qmc_short_csvmc_pbyp.in.xml
 #                    16 1
@@ -101,7 +101,7 @@ IF (NOT QMC_CUDA)
 
 # Check CSVMCUpdateAll driver using all-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_csvmc_all_nodrift
                     qmc_short_csvmc_all_nodrift.in.xml
                     16 1
@@ -111,7 +111,7 @@ IF (NOT QMC_CUDA)
 
 # Check CSVMCUpdateAllWithDrift driver using all-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-csvmc-all_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_csvmc_all
                     qmc_short_csvmc_all.in.xml
                     16 1
@@ -123,7 +123,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
   #check RMC on 16 cores.  1 MPI
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-rmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_vmc_rmc
                     qmc_short_vmc_rmc.in.xml
                     1 16
@@ -132,7 +132,7 @@ IF (NOT QMC_CUDA)
                     )
   #check RMC on 4 cores, 4 mpi
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-rmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_vmc_rmc
                     qmc_short_vmc_rmc.in.xml
                     4 4
@@ -142,7 +142,7 @@ IF (NOT QMC_CUDA)
 
   # Check CPU time limit
   CPU_LIMIT_RUN("bccH_1x1x1_ae-rmc-1-1"
-              "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+              "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
               1 1
               120
               qmc_cpu_limit_rmc.xml)
@@ -159,7 +159,7 @@ ENDIF()
 # No GPU implementation. Would be fast if implemented
 IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_pw
                     qmc_short_pw.in.xml
                     1 16
@@ -178,7 +178,7 @@ ENDIF()
   LIST(APPEND LONG_BCC_H_SCALARS "samples" "921600000 0.0")
 
   QMC_RUN_AND_CHECK(long-bccH_1x1x1_ae-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_long
                     qmc_long.in.xml
                     1 16
@@ -191,7 +191,7 @@ ENDIF()
 # qmc_long_vmc_dmc  series 1   -1.841204 +/- 0.000285
   LIST(APPEND LONG_BCC_H_DMC_SCALARS "totenergy" "-1.841204 0.000285")
   QMC_RUN_AND_CHECK(long-bccH_1x1x1_ae-dmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_long_vmc_dmc
                     qmc_long_vmc_dmc.in.xml
                     1 16
@@ -208,7 +208,7 @@ IF(NOT QMC_CUDA)
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "eeenergy_mixed" "-0.77991 0.00016")
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "eeenergy_pure" "-0.78335 0.00019")
   QMC_RUN_AND_CHECK(long-bccH_1x1x1_ae-rmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_long_vmc_rmc
                     qmc_long_vmc_rmc.in.xml
                     1 16

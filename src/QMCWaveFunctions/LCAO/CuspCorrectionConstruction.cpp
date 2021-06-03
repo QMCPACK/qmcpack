@@ -28,8 +28,8 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 {
   typedef QMCTraits::RealType RealType;
 
-  NewTimer* cuspApplyTimer =
-      timer_manager.createTimer("CuspCorrectionConstruction::applyCuspCorrection", timer_level_medium);
+  NewTimer& cuspApplyTimer =
+      *timer_manager.createTimer("CuspCorrectionConstruction::applyCuspCorrection", timer_level_medium);
 
   ScopedTimer cuspApplyTimerWrapper(cuspApplyTimer);
 
@@ -190,10 +190,11 @@ void generateCuspInfo(int orbital_set_size,
 {
   typedef QMCTraits::RealType RealType;
 
-  NewTimer* cuspCreateTimer =
-      timer_manager.createTimer("CuspCorrectionConstruction::createCuspParameters", timer_level_medium);
-  NewTimer* splitPhiEtaTimer = timer_manager.createTimer("CuspCorrectionConstruction::splitPhiEta", timer_level_fine);
-  NewTimer* computeTimer = timer_manager.createTimer("CuspCorrectionConstruction::computeCorrection", timer_level_fine);
+  NewTimer& cuspCreateTimer =
+      *timer_manager.createTimer("CuspCorrectionConstruction::createCuspParameters", timer_level_medium);
+  NewTimer& splitPhiEtaTimer = *timer_manager.createTimer("CuspCorrectionConstruction::splitPhiEta", timer_level_fine);
+  NewTimer& computeTimer =
+      *timer_manager.createTimer("CuspCorrectionConstruction::computeCorrection", timer_level_fine);
 
   ScopedTimer createCuspTimerWrapper(cuspCreateTimer);
 
@@ -227,22 +228,24 @@ void generateCuspInfo(int orbital_set_size,
       ParticleSet localTargetPtcl(targetPtcl);
       ParticleSet localSourcePtcl(sourcePtcl);
 
-      LCAOrbitalSet local_phi(std::unique_ptr<LCAOrbitalSet::basis_type>(phi.myBasisSet->makeClone()), phi.isOptimizable());
+      LCAOrbitalSet local_phi(std::unique_ptr<LCAOrbitalSet::basis_type>(phi.myBasisSet->makeClone()),
+                              phi.isOptimizable());
       local_phi.setOrbitalSetSize(phi.getOrbitalSetSize());
 
-      LCAOrbitalSet local_eta(std::unique_ptr<LCAOrbitalSet::basis_type>(eta.myBasisSet->makeClone()), eta.isOptimizable());
+      LCAOrbitalSet local_eta(std::unique_ptr<LCAOrbitalSet::basis_type>(eta.myBasisSet->makeClone()),
+                              eta.isOptimizable());
       local_eta.setOrbitalSetSize(eta.getOrbitalSetSize());
 
 #pragma omp critical
       app_log() << "   Working on MO: " << mo_idx << " Center: " << center_idx << std::endl;
 
-      splitPhiEtaTimer->start();
+      {
+        ScopedTimer local_timer(splitPhiEtaTimer);
 
-      *(local_eta.C) = *(lcwc.C);
-      *(local_phi.C) = *(lcwc.C);
-      splitPhiEta(center_idx, corrCenter, local_phi, local_eta);
-
-      splitPhiEtaTimer->stop();
+        *(local_eta.C) = *(lcwc.C);
+        *(local_phi.C) = *(lcwc.C);
+        splitPhiEta(center_idx, corrCenter, local_phi, local_eta);
+      }
 
       bool corrO = false;
       auto& cref(*(local_phi.C));
@@ -282,9 +285,10 @@ void generateCuspInfo(int orbital_set_size,
         RealType eta0 = etaMO.phi(0.0);
         ValueVector_t ELorig(npts);
         CuspCorrection cusp(info(center_idx, mo_idx));
-        computeTimer->start();
-        minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
-        computeTimer->stop();
+        {
+          ScopedTimer local_timer(computeTimer);
+          minimizeForRc(cusp, phiMO, Z, rc, Rc_max, eta0, pos, ELcurr, ELideal);
+        }
         // Update shared object.  Each iteration accesses a different element and
         // this is an array (no bookkeeping data to update), so no synchronization
         // is necessary.

@@ -26,6 +26,7 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
+#include "QMCDrivers/WFOpt/WFOptDriverInput.h"
 
 
 namespace qmcplusplus
@@ -48,10 +49,9 @@ public:
   ///Constructor.
   QMCOptimizeBatched(const ProjectData& project_data,
                      MCWalkerConfiguration& w,
-                     TrialWaveFunction& psi,
-                     QMCHamiltonian& h,
                      QMCDriverInput&& qmcdriver_input,
                      VMCDriverInput&& vmcdriver_input,
+                     WFOptDriverInput&& wfoptdriver_input,
                      MCPopulation&& population,
                      SampleStack& samples,
                      Communicate* comm);
@@ -100,6 +100,8 @@ private:
 
   /// VMC-specific driver input
   VMCDriverInput vmcdriver_input_;
+
+  WFOptDriverInput wfoptdriver_input_;
 
   /// Samples to use in optimizer
   SampleStack& samples_;

@@ -18,6 +18,7 @@
 #include "CPU/SIMD/simd.hpp"
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 
 namespace qmcplusplus
 {
@@ -37,16 +38,11 @@ struct ci_configuration2
   inline bool operator==(const ci_configuration2& c) const
   {
     if (occup.size() != c.occup.size())
-    {
-      APP_ABORT("ci_configuration2::operator==() - ci_configuration2s are not compatible.");
-    }
+      throw std::runtime_error("ci_configuration2::operator==() - ci_configuration2s are not compatible.");
+
     for (int i = 0; i < occup.size(); i++)
-    {
       if (occup[i] != c.occup[i])
-      {
         return false;
-      }
-    }
     return true;
   }
 
@@ -57,15 +53,12 @@ struct ci_configuration2
   size_t calculateNumOfExcitations(const ci_configuration2& c) const
   {
     if (occup.size() != c.occup.size())
-    {
-      APP_ABORT("ci_configuration2::operator==() - ci_configuration2s are not compatible.");
-    }
+      throw std::runtime_error("ci_configuration2::operator==() - ci_configuration2s are not compatible.");
+
     size_t n = 0;
     for (size_t i = 0; i < occup.size(); i++)
-    {
       if (std::find(c.occup.begin(), c.occup.end(), occup[i]) == c.occup.end())
         n++;
-    }
     return n;
   }
 
@@ -86,30 +79,27 @@ struct ci_configuration2
                               std::vector<size_t>& uno) const
   {
     if (occup.size() != c.occup.size())
-    {
-      APP_ABORT("ci_configuration2::operator==() - ci_configuration2s are not compatible.");
-    }
+      throw std::runtime_error("ci_configuration2::operator==() - ci_configuration2s are not compatible.");
+
     n = 0;
     for (size_t i = 0; i < occup.size(); i++)
-    {
       if (std::find(c.occup.begin(), c.occup.end(), occup[i]) == c.occup.end())
       {
         pos[n]   = i;
         ocp[n++] = occup[i];
       }
-    }
+
     if (n == 0)
       return 1.0;
+
     size_t cnt = 0;
     for (size_t i = 0; i < c.occup.size(); i++)
-    {
       if (std::find(occup.begin(), occup.end(), c.occup[i]) == occup.end())
         uno[cnt++] = c.occup[i];
-    }
+
     if (cnt != n)
-    {
-      APP_ABORT(" Error #1 in ci_configuration2::calculateExcitations() \n");
-    }
+      throw std::runtime_error(" Error #1 in ci_configuration2::calculateExcitations() \n");
+
     double res = 1.0;
     // this is needed because ci coefficients are given wrt standard ordering,
     // but by defining the determinant through excitations from a reference might change
@@ -118,9 +108,9 @@ struct ci_configuration2
     auto ref0(occup);
     for (size_t i = 0; i < n; i++)
       ref0[pos[i]] = uno[i];
+
     for (size_t i = 0; i < ref0.size(); i++)
       for (size_t k = i + 1; k < ref0.size(); k++)
-      {
         if (ref0[i] > ref0[k])
         {
           size_t q = ref0[i];
@@ -129,10 +119,8 @@ struct ci_configuration2
           res *= -1.0;
         }
         else if (ref0[i] == ref0[k])
-        {
-          APP_ABORT(" Error #2 in ci_configuration2::calculateExcitations() \n");
-        }
-      }
+          throw std::runtime_error(" Error #2 in ci_configuration2::calculateExcitations() \n");
+
     return res;
   }
 };

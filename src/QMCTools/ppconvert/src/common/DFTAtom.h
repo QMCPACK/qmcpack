@@ -39,7 +39,7 @@ public:
   /// This function calculates the charge density, hartree and exchange
   /// potentials and places them in pot.
   void UpdateVHXC();
-  void CalcEnergies(double& kinetic, double& potential, double& hartree, double& XC);
+  void CalcEnergies(double& kinetic, double& potential, double& hartree, double& XC){assert(0&&"unimplemented");}
   void Solve();
   void SolveInit();
   double SolveIter();

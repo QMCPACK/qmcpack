@@ -22,7 +22,6 @@
 
 namespace IO
 {
-using namespace blitz;
 template<typename T, int RANK>
 class IOVarASCII;
 
@@ -61,14 +60,14 @@ public:
        SliceCheck<T8>::isSlice + SliceCheck<T9>::isSlice + SliceCheck<T10>::isSlice);
 
   typedef IOVarASCII<T, rank> SliceType;
-  typedef blitz::Array<T, rank> T_slice;
+  typedef Array<T, rank> T_slice;
 };
 
 template<typename T, int RANK>
 class IOVarASCII : public IOVarBase
 {
 public:
-  blitz::Array<T, RANK> ArrayValue;
+  Array<T, RANK> ArrayValue;
   template<typename T0,
            typename T1,
            typename T2,
@@ -96,12 +95,18 @@ public:
   IODataType GetType();
   IOFileType GetFileType();
 
-  void Print(ofstream& out);
+  void Print(std::ofstream& out);
 
   int GetExtent(int dim);
   void Resize(int n);
 
-  bool VarRead(blitz::Array<T, RANK>& val);
+  bool VarRead(Array<T, RANK>& val);
+  template<class TT>
+  bool VarRead(Array<TT, 1>& val){
+  	assert(0);
+	return false;
+  }
+ 
   template<typename T0,
            typename T1,
            typename T2,
@@ -126,7 +131,7 @@ public:
                T8 s9,
                T10 s10);
 
-  bool VarWrite(const blitz::Array<T, RANK>& val);
+  bool VarWrite(const Array<T, RANK>& val);
   template<typename T0,
            typename T1,
            typename T2,
@@ -158,7 +163,7 @@ public:
     ArrayValue.reference(var.ArrayValue);
   }
 
-  IOVarASCII(std::string name, const blitz::Array<T, RANK>& val)
+  IOVarASCII(std::string name, const Array<T, RANK>& val)
   {
     Name = name;
     ArrayValue.resize(val.shape());
@@ -340,13 +345,15 @@ inline int IOVarASCII<T, RANK>::GetExtent(int dim)
 template<typename T, int RANK>
 inline void IOVarASCII<T, RANK>::Resize(int n)
 {
-  TinyVector<int, RANK> dims = ArrayValue.shape();
-  dims[0]                    = n;
+//  TinyVector<int, RANK> 
+  auto dims = ArrayValue.shape();
+  std::get<0>(dims) = n;
+//  dims[0]                    = n;
   ArrayValue.resizeAndPreserve(dims);
 }
 
 template<typename T, int RANK>
-bool IOVarASCII<T, RANK>::VarRead(blitz::Array<T, RANK>& val)
+bool IOVarASCII<T, RANK>::VarRead(Array<T, RANK>& val)
 {
   val.resize(ArrayValue.shape());
   val = ArrayValue;
@@ -385,7 +392,7 @@ inline bool IOVarASCII<T, RANK>::VarRead(
 }
 
 template<typename T, int RANK>
-bool IOVarASCII<T, RANK>::VarWrite(const blitz::Array<T, RANK>& val)
+bool IOVarASCII<T, RANK>::VarWrite(const Array<T, RANK>& val)
 {
   bool mustReshape = false;
   for (int i = 0; i < RANK; i++)
@@ -450,7 +457,7 @@ typename ASCIISliceMaker<T, RANK, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::
 }
 
 template<class T, int RANK>
-void IOVarASCII<T, RANK>::Print(ofstream& out)
+void IOVarASCII<T, RANK>::Print(std::ofstream& out)
 {
   T a;
   if (GetRank() == 0)

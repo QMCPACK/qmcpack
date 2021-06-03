@@ -18,7 +18,7 @@
 #include "Particle/ParticleSet.h"
 #include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"
-#include "QMCHamiltonians/observable_helper.h"
+#include "QMCHamiltonians/ObservableHelper.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/DataLocality.h"
 #include <bitset>
@@ -63,7 +63,7 @@ public:
    *  Depending on data locality the accumlation of the result may be different from
    *  the single thread write directly into the OperatorEstimator data.
    */
-  virtual void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) = 0;
+  virtual void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *
@@ -111,7 +111,7 @@ protected:
   QMCT::FullPrecRealType walkers_weight_;
 
   // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator  
-  UPtrVector<observable_helper> h5desc_;
+  UPtrVector<ObservableHelper> h5desc_;
 
   /** create the typed data block for the Operator.
    *

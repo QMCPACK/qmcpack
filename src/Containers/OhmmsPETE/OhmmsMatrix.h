@@ -56,7 +56,7 @@ public:
   Matrix(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
-    if (allocator_traits<Alloc>::is_host_accessible)
+    if (qmc_allocator_traits<Alloc>::is_host_accessible)
       assign(*this, rhs);
   }
 
@@ -86,7 +86,8 @@ public:
 
   inline void resize(size_type n, size_type m)
   {
-    static_assert(std::is_same<value_type, typename Alloc::value_type>::value, "Matrix and Alloc data types must agree!");
+    static_assert(std::is_same<value_type, typename Alloc::value_type>::value,
+                  "Matrix and Alloc data types must agree!");
     D1      = n;
     D2      = m;
     TotSize = n * m;
@@ -125,7 +126,7 @@ public:
   inline This_t& operator=(const This_t& rhs)
   {
     resize(rhs.D1, rhs.D2);
-    if (allocator_traits<Alloc>::is_host_accessible)
+    if (qmc_allocator_traits<Alloc>::is_host_accessible)
       assign(*this, rhs);
     return *this;
   }
@@ -142,6 +143,17 @@ public:
 
   // returns a pointer of i-th row
   inline const_pointer data() const { return X.data(); }
+
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  inline pointer device_data()
+  {
+    return X.device_data();
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  inline const_pointer device_data() const
+  {
+    return X.device_data();
+  }
 
   // returns a const pointer of i-th row
   inline const Type_t* data(size_type i) const { return X.data() + i * D2; }
@@ -319,6 +331,29 @@ protected:
   size_type TotSize;
   Container_t X;
 };
+
+template<class T, class Alloc>
+bool operator==(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
+{
+  static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  if (lhs.size() == rhs.size())
+  {
+    for (int i = 0; i < rhs.size(); i++)
+      if (lhs(i) != rhs(i))
+        return false;
+    return true;
+  }
+  else
+    return false;
+}
+
+template<class T, class Alloc>
+bool operator!=(const Matrix<T, Alloc>& lhs, const Matrix<T, Alloc>& rhs)
+{
+  static_assert(qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  return !(lhs == rhs);
+}
+
 
 // I/O
 template<class T, typename Alloc>

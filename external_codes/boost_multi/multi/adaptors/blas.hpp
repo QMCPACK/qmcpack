@@ -36,10 +36,9 @@ $CXXX $CXXFLAGS $0 -o $0x `pkg-config --libs blas` -lboost_unit_test_framework&&
 #include<algorithm> // transform
 
 namespace multi = boost::multi;
-using complex = std::complex<double>; complex const I{0, 1};
 
 BOOST_AUTO_TEST_CASE(multi_blas_herk_complex){
-
+	using complex = std::complex<double>; complex const I{0, 1};
 	using multi::blas::herk;
 	{
 		multi::array<complex, 2> const A = {
@@ -54,10 +53,9 @@ BOOST_AUTO_TEST_CASE(multi_blas_herk_complex){
 	}
 }
 
-using T = std::complex<double>;
-
 BOOST_AUTO_TEST_CASE(multi_blas_asum_complex){
-	multi::array<T, 1> arr(1000, 0.);
+	using complex = std::complex<double>;
+	multi::array<complex, 1> arr(1000, 0.);
 //	std::iota(begin(arr), end(arr), -700.);
 //	std::transform(cbegin(arr), cend(arr), begin(arr), [](auto&& a){return sqrt(a);});
 	{
@@ -68,7 +66,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_asum_complex){
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_nrm2_complex){
-	multi::array<T, 1> arr(1000, 0.);
+	multi::array<complex, 1> arr(1000, 0.);
 //	std::iota(begin(arr), end(arr), -700.);
 //	std::transform(cbegin(arr), cend(arr), begin(arr), [](auto&& a){return sqrt(a);});
 	{

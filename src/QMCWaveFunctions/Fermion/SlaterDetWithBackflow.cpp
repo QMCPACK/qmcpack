@@ -36,7 +36,7 @@ void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<V
     Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
-SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
+SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(const ParticleSet& P,
                                                                        ParticleSet::ParticleGradient_t& G,
                                                                        ParticleSet::ParticleLaplacian_t& L)
 {

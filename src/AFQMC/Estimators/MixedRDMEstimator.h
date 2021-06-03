@@ -41,7 +41,7 @@ public:
     {
       ParameterSet m_param;
       std::string restore_paths;
-      m_param.add(block_size, "block_size", "int");
+      m_param.add(block_size, "block_size");
       m_param.put(cur);
     }
 

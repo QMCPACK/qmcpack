@@ -10,7 +10,7 @@
 #  LIST(APPEND DIAMOND2_SCALARS "flux" "0.0 0.7")
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short.in.xml
                     1 16
@@ -20,7 +20,7 @@
 IF(NOT QMC_CUDA)
   # 16 batches of 1 walker each
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short_vmcbatch.in.xml
                     1 16
@@ -30,7 +30,7 @@ IF(NOT QMC_CUDA)
 
   # 4 batches of 4 walkers
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch-4b_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short_vmcbatch_4b.in.xml
                     1 4
@@ -40,7 +40,7 @@ IF(NOT QMC_CUDA)
 
   # 4 batches of 4 walkers with asynchronous WF computation
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch-4b-asynctwf_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short_vmcbatch_4b_asynctwf.in.xml
                     1 4
@@ -49,7 +49,7 @@ IF(NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch-4b_sdbatch_jas
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short_sdbatch_vmcbatch_4b.in.xml
                     1 4
@@ -58,7 +58,7 @@ IF(NOT QMC_CUDA)
                     )
 ENDIF()
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-delayed_update-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short_delayedupdate.in.xml
                     1 16
@@ -67,7 +67,7 @@ ENDIF()
                     )
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short_hybridrep.in.xml
                     1 16
@@ -78,7 +78,7 @@ ENDIF()
 # Reference DMC run in qmc-ref "-21.844975 0.001113"
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_vmc_dmc
                     qmc_short_vmc_dmc.in.xml
                     1 16
@@ -89,7 +89,7 @@ ENDIF()
   # 1 rank 4 threads 16 walkers (4 crowds of 4 walkers)
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_4r_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_vmc_dmc_4r
                     qmc_short_vmc_dmc_4r.in.xml
                     1 4
@@ -101,7 +101,7 @@ ENDIF()
 IF(NOT QMC_CUDA)
   #16 batches of 16 walkers in one rank
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_vmcbatch_dmcbatch
                     qmc_short_vmcbatch_dmcbatch.in.xml
                     1 16
@@ -111,7 +111,7 @@ IF(NOT QMC_CUDA)
 
   #4 batches of 16 walkers in one rank, batched slater det
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_dmcbatch-4b_sdbatch_jas
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_sdbatch_vmcbatch_dmcbatch
                     qmc_short_sdbatch_vmcbatch_dmcbatch.in.xml
                     1 4
@@ -121,7 +121,7 @@ IF(NOT QMC_CUDA)
 
   # 4 batches of 16 walkers over 4 ranks
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_4r_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_vmcbatch_dmcbatch_4r
                     qmc_short_vmcbatch_dmcbatch_4r.in.xml
                     4 4
@@ -132,7 +132,7 @@ ENDIF()
 
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc-reconf_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_vmc_dmc
                     qmc_short_vmc_dmc_reconf.in.xml
                     1 16
@@ -140,7 +140,19 @@ ENDIF()
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
-# Exicted state
+# Reference DMC run as qmc-ref -21.858821 +/- 0.001207 with 2500 blocks
+  LIST(APPEND DIAMOND2_DMC_DLA_SCALARS "totenergy" "-21.858821 0.012")
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc-dla_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_vmc_dmc_dla
+                    qmc_short_vmc_dmc_dla.in.xml
+                    1 16
+                    TRUE
+                    1 DIAMOND2_DMC_DLA_SCALARS # DMC
+                    )
+
+
+# Excited state
 
   LIST(APPEND DIAMOND2_EXCITED_SCALARS "totenergy" "-21.117471 0.007937")
   LIST(APPEND DIAMOND2_EXCITED_SCALARS "kinetic"    "20.070595 0.043211")
@@ -152,7 +164,7 @@ ENDIF()
   LIST(APPEND DIAMOND2_EXCITED_SCALARS "samples" "32000 0.0")
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmc_sdj_excited
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_excited
                     qmc_short_excited.in.xml
                     1 16
@@ -163,7 +175,7 @@ ENDIF()
   LIST(APPEND DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.359004 0.012291")
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_sdj_excited
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short_vmc_dmc_excited
                     qmc_short_vmc_dmc_excited.in.xml
                     1 16
@@ -180,7 +192,7 @@ ENDIF()
   LIST(APPEND LONG_DIAMOND2_SCALARS "flux" "0.0 0.05")
 
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_long
                     qmc_long.in.xml
                     1 16
@@ -191,7 +203,7 @@ ENDIF()
 # Reference DMC run in qmc-ref "-21.844975 0.001113"
   LIST(APPEND LONG_DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.002879")
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_long_vmc_dmc
                     qmc_long_vmc_dmc.in.xml
                     1 16
@@ -200,12 +212,23 @@ ENDIF()
                     )
 
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc-reconf_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_long_vmc_dmc
                     qmc_long_vmc_dmc_reconf.in.xml
                     1 16
                     TRUE
                     1 LONG_DIAMOND2_DMC_SCALARS # DMC
+                    )
+
+# Reference DMC run as qmc-ref -21.858821 +/- 0.001207 with 2500 blocks
+  LIST(APPEND LONG_DIAMOND2_DMC_DLA_SCALARS "totenergy" "-21.858821 0.0038")
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc-dla_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long_vmc_dmc_dla
+                    qmc_long_vmc_dmc_dla.in.xml
+                    1 16
+                    TRUE
+                    1 LONG_DIAMOND2_DMC_DLA_SCALARS # DMC
                     )
 
 # Excited state
@@ -214,7 +237,7 @@ ENDIF()
   LIST(APPEND LONG_DIAMOND2_EXCITED_SCALARS "flux" "-0.042346 0.075078")
 
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-vmc_sdj_excited
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_long_excited
                     qmc_long_excited.in.xml
                     1 16
@@ -224,7 +247,7 @@ ENDIF()
 
   LIST(APPEND LONG_DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.359004 0.004056")
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc_sdj_excited
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_long_vmc_dmc_excited
                     qmc_long_vmc_dmc_excited.in.xml
                     1 16
@@ -288,7 +311,7 @@ IF(NOT QMC_CUDA)
   ENDIF()
 
 #  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch_sdj
-#                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+#                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
 #                    det_qmc_short
 #                    det_qmc_short_vmcbatch.in.xml
 #                    1 1
@@ -299,7 +322,7 @@ IF(NOT QMC_CUDA)
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short
                     det_qmc_short.in.xml
                     1 1
@@ -354,7 +377,7 @@ IF(NOT QMC_CUDA)
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmc_sdj_excited
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short_excited
                     det_qmc_short_excited.in.xml
                     1 1
@@ -396,7 +419,7 @@ IF(NOT QMC_CUDA)
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "nonlocalecp" "1.72101007 0.000001")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-12.47274689 0.000001")
-  ELSE()  
+  ELSE()
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "totenergy" "-20.94387935 0.000001")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "kinetic" "16.53547309 0.000001")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "potential" "-37.47935243 0.000001")
@@ -407,10 +430,10 @@ IF(NOT QMC_CUDA)
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
    LIST(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-12.48031692 0.000001")
   ENDIF()
- ENDIF()  
+ ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-delayed_update-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short
                     det_qmc_short_delayedupdate.in.xml
                     1 1
@@ -462,7 +485,7 @@ IF(NOT QMC_CUDA)
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-dmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short_vmc_dmc
                     det_qmc_short_vmc_dmc.in.xml
                     1 1
@@ -513,7 +536,7 @@ IF(NOT QMC_CUDA)
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-dmc_sdj_excited
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short_vmc_dmc_excited
                     det_qmc_short_vmc_dmc_excited.in.xml
                     1 1
@@ -615,7 +638,7 @@ IF(NOT QMC_CUDA)
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-mwalkers_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short_vmcbatch_mwalkers
                     det_qmc_short_vmcbatch_mwalkers.in.xml
                     1 1
@@ -625,7 +648,7 @@ IF(NOT QMC_CUDA)
                     )
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-mwalkers_sdbatch_jas
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short_sdbatch_vmcbatch_mwalkers
                     det_qmc_short_sdbatch_vmcbatch_mwalkers.in.xml
                     1 1
@@ -634,7 +657,614 @@ IF(NOT QMC_CUDA)
                     1 DET_DIAMOND2_VMC_BATCH_MWALKERS2_SCALARS # VMC cycle 2
                    )
 
-# CUDA references  
+
+ IF(QMC_MIXED_PRECISION)
+  IF(QMC_COMPLEX)
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "totenergy" "-21.75695352 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "kinetic" "21.58412194 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "potential" "-43.34107537 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "eeenergy" "-4.93051914 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "localecp" "-14.55016309 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "nonlocalecp" "1.69094030 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "flux" "14.56015197 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "totenergy" "-21.40819399 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "kinetic" "21.75835414 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "potential" "-43.16654810 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "eeenergy" "-5.31127989 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "localecp" "-13.83088578 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "nonlocalecp" "1.52695101 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "flux" "1.55142989 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "samples" "144 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "totenergy" "-21.76355918 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "kinetic" "24.31653559 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "potential" "-46.08009462 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "eeenergy" "-5.15140370 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "localecp" "-17.32746386 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "nonlocalecp" "1.95010638 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "flux" "-15.81523996 0.001")
+  ELSE()
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "totenergy" "-21.76487128 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "kinetic" "20.67891363 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "potential" "-42.44378484 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "eeenergy" "-4.97687774 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "localecp" "-13.97216887 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "nonlocalecp" "2.05659522 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "flux" "22.16100872 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "totenergy" "-21.34835919 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "kinetic" "22.16238919 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "potential" "-43.51074829 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "eeenergy" "-5.07821053 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "localecp" "-14.40620204 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "nonlocalecp" "1.52499772 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "flux" "1.35192553 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "totenergy" "-21.72500894 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "kinetic" "24.02746675 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "potential" "-45.75247577 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "eeenergy" "-5.05948524 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "localecp" "-16.92160668 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "nonlocalecp" "1.77994960 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "flux" "-15.34938772 0.001")
+  ENDIF()
+ ELSE()
+  IF(QMC_COMPLEX)
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "totenergy" "-21.77970598 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "kinetic" "22.07862416 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "potential" "-43.85833014 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "eeenergy" "-4.98351398 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "localecp" "-14.61422806 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "nonlocalecp" "1.29073910 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "flux" "-10.01746831 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "totenergy" "-21.64880981 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "kinetic" "21.77217213 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "potential" "-43.42098194 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "eeenergy" "-4.73027440 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "localecp" "-14.29275394 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "nonlocalecp" "1.15337360 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "flux" "-1.54466089 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "samples" "144 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "totenergy" "-21.45587606 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "kinetic" "20.81022717 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "potential" "-42.26610323 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "eeenergy" "-4.20981722 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "localecp" "-12.61049505 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "nonlocalecp" "0.10553624 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "flux" "-4.19778396 0.000001")
+  ELSE()
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "totenergy" "-21.77684587 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "kinetic" "22.08147768 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "potential" "-43.85832356 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "eeenergy" "-4.98351398 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "localecp" "-14.61422806 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "nonlocalecp" "1.29074568 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "flux" "-10.02287436 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "samples" "144 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "totenergy" "-21.64788214 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "kinetic" "21.77346471 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "potential" "-43.42134685 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "eeenergy" "-4.73021029 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "localecp" "-14.29312925 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "nonlocalecp" "1.15331988 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "flux" "-1.54298684 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "totenergy" "-21.45991354 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "kinetic" "20.80700067 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "potential" "-42.26691421 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "eeenergy" "-4.20986831 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "localecp" "-12.61110393 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "nonlocalecp" "0.10538522 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "flux" "-4.18809634 0.00001")
+  ENDIF()
+ ENDIF()
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers.in.xml
+                    1 4
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers-serialized_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers_serialized
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers_serialized.in.xml
+                    1 4
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
+                    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
+                    1 4
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS # DMC
+                    )
+
+
+ IF(QMC_MIXED_PRECISION)
+  IF(QMC_COMPLEX)
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "totenergy" "-21.58341272 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "kinetic" "19.37229488 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "potential" "-40.95570760 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "eeenergy" "-5.29734575 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "localecp" "-11.85045674 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "nonlocalecp" "1.74342834 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "flux" "-6.02205066 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "totenergy" "-21.76467747 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "kinetic" "19.49291275 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "potential" "-41.25759022 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "eeenergy" "-5.74480542 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "localecp" "-11.45744019 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "nonlocalecp" "1.49598884 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "flux" "-1.28278001 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "totenergy" "-22.22433395 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "kinetic" "19.10457607 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "potential" "-41.32891006 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "eeenergy" "-5.53681243 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "localecp" "-12.48670659 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "nonlocalecp" "2.24594241 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "flux" "-6.00048904 0.001")
+  ELSE()
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "totenergy" "-21.58530618 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "kinetic" "19.37039175 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "potential" "-40.95569793 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "eeenergy" "-5.29734575 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "localecp" "-11.85045674 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "nonlocalecp" "1.74343801 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "flux" "-6.01896369 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "totenergy" "-21.76315171 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "kinetic" "19.49451168 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "potential" "-41.25766339 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "eeenergy" "-5.74484542 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "localecp" "-11.45746322 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "nonlocalecp" "1.49597869 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "flux" "-1.29073155 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "totenergy" "-22.22611131 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "kinetic" "19.10316757 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "potential" "-41.32927901 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "eeenergy" "-5.53677170 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "ionion" "-25.55133345 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "localecp" "-12.48674850 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "nonlocalecp" "2.24557464 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "flux" "-5.99726842 0.001")
+  ENDIF()
+ ELSE()
+  IF(QMC_COMPLEX)
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "totenergy" "-21.69113073 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "kinetic" "19.62048294 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "potential" "-41.31161367 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "eeenergy" "-5.78662718 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "localecp" "-12.25902950 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "nonlocalecp" "2.28537020 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "flux" "-2.60864883 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "totenergy" "-21.76398145 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "kinetic" "20.42744622 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "potential" "-42.19142767 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "eeenergy" "-5.74796574 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "localecp" "-12.53877422 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "nonlocalecp" "1.64663949 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "flux" "-6.56613667 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "samples" "144 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "totenergy" "-21.96323690 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "kinetic" "19.86538294 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "potential" "-41.82861984 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "eeenergy" "-5.92974250 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "localecp" "-12.66622927 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "nonlocalecp" "2.31867912 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "flux" "-5.04750235 0.000001")
+  ELSE()
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "totenergy" "-21.69329544 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "kinetic" "19.61830510 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "potential" "-41.31160054 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "eeenergy" "-5.78662718 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "localecp" "-12.25902950 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "nonlocalecp" "2.28538333 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "flux" "-2.60446436 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "samples" "144.0000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "totenergy" "-21.76448475 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "kinetic" "20.42746547 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "potential" "-42.19195022 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "eeenergy" "-5.74793018 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "localecp" "-12.53946292 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "nonlocalecp" "1.64677007 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "flux" "-6.56446708 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "totenergy" "-21.96321405 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "kinetic" "19.86642474 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "potential" "-41.82963879 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "eeenergy" "-5.92973716 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "localecp" "-12.66715052 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "nonlocalecp" "2.31857608 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "flux" "-5.04914162 0.00001")
+  ENDIF()
+ ENDIF()
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers.in.xml
+                    1 16
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
+                    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
+                    1 16
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS # DMC
+                    )
+
+ IF(QMC_MIXED_PRECISION)
+  IF(QMC_COMPLEX)
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "totenergy" "-21.58019753 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "kinetic" "19.06962113 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "potential" "-40.64981855 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "eeenergy" "-4.95910877 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "localecp" "-11.60386802 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "nonlocalecp" "1.46449188 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "flux" "9.88474603 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "totenergy" "-21.41726768 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "kinetic" "21.53688965 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "potential" "-42.95415737 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "eeenergy" "-5.02230991 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "localecp" "-13.10442235 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "nonlocalecp" "0.72390852 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "flux" "-12.59165665 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "totenergy" "-21.58100325 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "kinetic" "21.97625898 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "potential" "-43.55726217 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "eeenergy" "-5.25263408 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp" "-14.40418877 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp" "1.65089413 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "flux" "-10.97538990 0.001")
+  ELSE()
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "totenergy" "-21.58034154 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "kinetic" "19.06945306 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "potential" "-40.64979462 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "eeenergy" "-4.95910877 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "localecp" "-11.60386802 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "nonlocalecp" "1.46451581 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "flux" "9.88054883 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "totenergy" "-21.41383354 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "kinetic" "21.54062110 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "potential" "-42.95445468 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "eeenergy" "-5.02235546 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "localecp" "-13.10432010 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "nonlocalecp" "0.72355452 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "flux" "-12.59721251 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "totenergy" "-21.57967929 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "kinetic" "21.97767070 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "potential" "-43.55734994 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "eeenergy" "-5.25255007 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp" "-14.40431020 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp" "1.65084377 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "flux" "-10.97712288 0.001")
+  ENDIF()
+ ELSE()
+  IF(QMC_COMPLEX)
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "totenergy" "-21.65280108 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "kinetic" "19.03441381 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "potential" "-40.68721489 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "eeenergy" "-5.28791536 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "ionion" "-25.55132706 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "localecp" "-11.38769047 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "nonlocalecp" "1.53971801 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "flux" "-10.19903930 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "totenergy" "-21.57285892 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "kinetic" "21.98319329 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "potential" "-43.55605221 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "eeenergy" "-4.55367707 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "ionion" "-25.55132706 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "localecp" "-14.68276787 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "nonlocalecp" "1.23171979 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "flux" "-7.10804334 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "samples" "144 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "totenergy" "-21.52166382 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "kinetic" "19.23592476 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "potential" "-40.75758858 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "eeenergy" "-5.38158923 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp" "-11.78892407 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp" "1.96425191 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "flux" "0.28132980 0.000001")
+  ELSE()
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "totenergy" "-21.65196333 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "kinetic" "19.03525227 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "potential" "-40.68721560 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "eeenergy" "-5.28791536 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "ionion" "-25.55132706 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "localecp" "-11.38769047 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "nonlocalecp" "1.53971730 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "flux" "-10.20067791 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "totenergy" "-21.56976165 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "kinetic" "21.98663172 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "potential" "-43.55639337 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "eeenergy" "-4.55372868 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "ionion" "-25.55132706 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "localecp" "-14.68286398 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "nonlocalecp" "1.23152635 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "flux" "-7.11570289 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "totenergy" "-21.52110513 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "kinetic" "19.23678572 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "potential" "-40.75789085 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "eeenergy" "-5.38153225 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp" "-11.78962964 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp" "1.96459823 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "flux" "0.28095754 0.00001")
+  ENDIF()
+ ENDIF()
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers.in.xml
+                    2 2
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
+                    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
+                    2 2
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS # DMC
+                    )
+
+
+ IF(QMC_MIXED_PRECISION)
+  IF(QMC_COMPLEX)
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "totenergy" "-21.71827114 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "kinetic" "20.19340480 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "potential" "-41.91167602 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "eeenergy" "-4.94686188 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "localecp" "-13.34477165 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "nonlocalecp" "1.93129114 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "flux" "-10.14767210 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "totenergy" "-21.98993631 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "kinetic" "21.53819515 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "potential" "-43.52813136 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "eeenergy" "-5.77073014 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "localecp" "-13.96799663 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "nonlocalecp" "1.76192905 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "flux" "2.38005678 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "totenergy" "-21.98443887 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "kinetic" "21.24965809 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "potential" "-43.23409691 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "eeenergy" "-5.54241465 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "localecp" "-14.52283021 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "nonlocalecp" "2.38248141 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "flux" "0.18637741 0.001")
+  ELSE()
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "totenergy" "-21.71738267 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "kinetic" "20.19428493 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "potential" "-41.91166755 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "eeenergy" "-4.94686188 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "localecp" "-13.34477165 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "nonlocalecp" "1.93129961 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "flux" "-10.14942551 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "totenergy" "-21.99092404 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "kinetic" "21.53710746 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "potential" "-43.52803147 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "eeenergy" "-5.77057594 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "localecp" "-13.96787348 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "nonlocalecp" "1.76175159 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "flux" "2.38866285 0.001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "totenergy" "-21.98218308 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "kinetic" "21.25165864 0.0005")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "potential" "-43.23384181 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "eeenergy" "-5.54248445 0.00003")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "ionion" "-25.55133363 0.000002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "localecp" "-14.52254631 0.0002")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "nonlocalecp" "2.38252241 0.0001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "flux" "0.17778549 0.001")
+  ENDIF()
+ ELSE()
+  IF(QMC_COMPLEX)
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "totenergy" "-21.68083037 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "kinetic" "20.16256817 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "potential" "-41.84339855 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "eeenergy" "-4.90964385 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "ionion" "-25.55132706 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "localecp" "-13.25550100 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "nonlocalecp" "1.87307337 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "flux" "-8.99093561 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "totenergy" "-21.81825958 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "kinetic" "19.42117537 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "potential" "-41.23943495 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "eeenergy" "-5.43148508 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "ionion" "-25.55132706 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "localecp" "-11.91172090 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "nonlocalecp" "1.65509810 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "flux" "1.80616014 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "totenergy" "-21.89208131 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "kinetic" "18.94622832 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "potential" "-40.83830963 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "eeenergy" "-5.29808044 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "localecp" "-12.58588514 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "nonlocalecp" "2.59698314 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "flux" "-0.63233432 0.000001")
+  ELSE()
+# VMC without drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "totenergy" "-21.67973611 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "kinetic" "20.16365667 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "potential" "-41.84339279 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "eeenergy" "-4.90964385 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "ionion" "-25.55132706 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "localecp" "-13.25550100 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "nonlocalecp" "1.87307913 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "flux" "-8.99299657 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "samples" "144.00000000 0.0")
+# VMC with drift
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "totenergy" "-21.81914511 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "kinetic" "19.42053111 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "potential" "-41.23967622 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "eeenergy" "-5.43133155 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "ionion" "-25.55132706 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "localecp" "-11.91199362 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "nonlocalecp" "1.65497602 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "flux" "1.81290367 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "samples" "144.00000000 0.0")
+# DMC
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "totenergy" "-21.89336143 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "kinetic" "18.94521744 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "potential" "-40.83857887 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "eeenergy" "-5.29804220 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "ionion" "-25.55132719 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "localecp" "-12.58642065 0.000001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "nonlocalecp" "2.59721117 0.00001")
+   LIST(APPEND DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "flux" "-0.63113857 0.00001")
+  ENDIF()
+ ENDIF()
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers
+                    det_qmc_short_vmcbatch_dmcbatch_mwalkers.in.xml
+                    2 3
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch-mwalkers_sdbatch_sdj
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers
+                    det_qmc_short_sdbatch_vmcbatch_dmcbatch_mwalkers.in.xml
+                    2 3
+                    TRUE
+                    0 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS # VMC without drift
+                    1 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS # VMC with drift
+                    2 DET_DIAMOND2_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
+                    )
+
+
+# CUDA references
 ELSE()
  # VMC runs
  IF(QMC_MIXED_PRECISION)
@@ -684,7 +1314,7 @@ ELSE()
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short
                     det_qmc_short.in.xml
                     1 1
@@ -739,7 +1369,7 @@ ELSE()
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-vmc_sdj_excited
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short_excited
                     det_qmc_short_excited.in.xml
                     1 1
@@ -795,7 +1425,7 @@ ELSE()
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-delayed_update-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short
                     det_qmc_short_delayedupdate.in.xml
                     1 1
@@ -847,7 +1477,7 @@ ELSE()
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-dmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short_vmc_dmc
                     det_qmc_short_vmc_dmc.in.xml
                     1 1
@@ -898,7 +1528,7 @@ ELSE()
  ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_2x1x1_pp-dmc_sdj_excited
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     det_qmc_short_vmc_dmc_excited
                     det_qmc_short_vmc_dmc_excited.in.xml
                     1 1

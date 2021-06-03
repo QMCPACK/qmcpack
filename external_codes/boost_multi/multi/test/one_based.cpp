@@ -1,10 +1,8 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
-#endif
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
 // © Alfredo Correa 2019-2020
 
 #define BOOST_TEST_DYN_LINK 
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi one based"
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi one-based"
 #include<boost/test/unit_test.hpp>
 
 #include<iostream>
@@ -31,6 +29,9 @@ BOOST_AUTO_TEST_CASE(one_based_1D){
 
 	auto Af1 = multi::array<double, 1>(10, 0.).reindex(1);
 
+	BOOST_REQUIRE( size(Af1) == 10 );
+	BOOST_REQUIRE( Af1[10] == 0. );
+
 	multi::array<double, 1> B({{0, 10}}, 0.);
 	B[0] = 1.;
 	B[1] = 2.;
@@ -44,7 +45,6 @@ BOOST_AUTO_TEST_CASE(one_based_1D){
 }
 
 BOOST_AUTO_TEST_CASE(one_based_2D){
-
 	multi::array<double, 2> Af({{1, 1 + 10}, {1, 1 + 20}}, 0.);
 	Af[1][1] = 1.;
 	Af[2][2] = 2.;
@@ -60,13 +60,16 @@ BOOST_AUTO_TEST_CASE(one_based_2D){
 	BOOST_REQUIRE( extension(Af).finish() == 11 );
 
 	auto Af1 = multi::array<double, 2>({10, 10}, 0.).reindex(1, 1);
+	
+	BOOST_REQUIRE( size(Af1) == 10 );
+	BOOST_REQUIRE( Af1[10][10] == 0. );
 
 	multi::array<double, 2> B({{0, 10}, {0, 20}}, 0.);
 	B[0][0] = 1.;
 	B[1][1] = 2.;
 	B[2][2] = 3.;
 	B[9][19] = 99.;
-	
+
 	BOOST_REQUIRE( size(B) == 10 );
 	BOOST_REQUIRE( B != Af );
 	BOOST_REQUIRE( std::equal(begin(Af.reindexed(0, 0)), end(Af.reindexed(0, 0)), begin(B)) );
@@ -75,19 +78,19 @@ BOOST_AUTO_TEST_CASE(one_based_2D){
 	
 	BOOST_REQUIRE( Af.reindexed(0, 0) == B );
 
-	B = Af;
-	BOOST_REQUIRE( B[1][1] = 1. );
-	BOOST_REQUIRE( B[10][20] == 99. );
-	BOOST_REQUIRE( B == Af );
+//	B = Af; // TODO implement assignment for 1-based arrays
+//	BOOST_REQUIRE( B[1][1] = 1. );
+//	BOOST_REQUIRE( B[10][20] == 99. );
+//	BOOST_REQUIRE( B == Af );
 }
 
 BOOST_AUTO_TEST_CASE(one_base_2D_ref){
 	
-	double A[3][5] = {
+	std::array<std::array<double, 5>, 3> A = {{
 		{ 1.,  2.,  3.,  4.,  5.},
 		{ 6.,  7.,  8.,  9., 10.},
 		{11., 12., 13., 14., 15.}
-	};
+	}};
 	
 	multi::array_ref<double, 2> const& Ar = *multi::array_ptr<double, 2>(&A[0][0], {3, 5});
 	BOOST_REQUIRE( &Ar[1][3] == &A[1][3] );
@@ -96,7 +99,9 @@ BOOST_AUTO_TEST_CASE(one_base_2D_ref){
 	BOOST_REQUIRE( sizes(Ar) == sizes(Ar2) );
 	BOOST_REQUIRE( &Ar2[1][1] == &A[0][0] );
 	BOOST_REQUIRE( &Ar2[2][4] == &A[1][3] );
-	
+
+	BOOST_REQUIRE( Ar2.extensions() != Ar.extensions() );
+	BOOST_REQUIRE( not(Ar2 == Ar) );
 	BOOST_REQUIRE( Ar2 != Ar );
 	BOOST_REQUIRE( extensions(Ar2.reindexed(0, 0)) == extensions(Ar) );
 	BOOST_REQUIRE( Ar2.reindexed(0, 0) == Ar );

@@ -1,6 +1,4 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
-#endif
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi rotate"
 #define BOOST_TEST_DYN_LINK
@@ -55,15 +53,19 @@ BOOST_AUTO_TEST_CASE(multi_rotate_4d_op){
 
 BOOST_AUTO_TEST_CASE(multi_rotate){
 {
-	double a[4][5] {
-		{ 0,  1,  2,  3,  4}, 
-		{ 5,  6,  7,  8,  9}, 
-		{10, 11, 12, 13, 14}, 
-		{15, 16, 17, 18, 19}
+	std::array<std::array<double, 5>, 4> a = {
+		{
+			{ 0,  1,  2,  3,  4}, 
+			{ 5,  6,  7,  8,  9}, 
+			{10, 11, 12, 13, 14}, 
+			{15, 16, 17, 18, 19}
+		}
 	};
-	double b[4][5];
+	std::array<std::array<double, 5>, 4> b = {};
+
 	multi::array_ref<double, 2> A(&a[0][0], {4, 5});
 	multi::array_ref<double, 2> B(&b[0][0], {4, 5});
+
 	rotated(B) = rotated(A);
 	BOOST_REQUIRE( B[1][1] == 6  );
 	BOOST_REQUIRE( B[2][1] == 11 );

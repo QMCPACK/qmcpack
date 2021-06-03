@@ -53,9 +53,9 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
   std::string sub("yes");
   std::string printP1eV("no");
   ParameterSet m_param;
-  m_param.add(sub, "substractMF", "std::string");
-  m_param.add(printP1eV, "printP1eigval", "std::string");
-  m_param.add(vbias_bound, "vbias_bound", "double");
+  m_param.add(sub, "substractMF");
+  m_param.add(printP1eV, "printP1eigval");
+  m_param.add(vbias_bound, "vbias_bound");
   m_param.put(cur);
 
   bool substractMF = true;
@@ -96,7 +96,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
               << std::endl;
 
   // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n)
-  auto H1(wfn.getOneBodyPropagatorMatrix(TG, vMF_));
+  auto H1(wfn.getHamiltonianOperations()->getOneBodyPropagatorMatrix(TG, vMF_));
   // assemble H1(i,j) = h(i,j) + vn0(i,j) + sum_n vMF[n]*Spvn(i,j,n)
 
   if (TG.getNGroupsPerTG() == 1)

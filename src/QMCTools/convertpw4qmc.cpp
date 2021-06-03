@@ -33,6 +33,14 @@ inline bool file_exists(const std::string& name)
 
 int main(int argc, char* argv[])
 {
+#ifdef HAVE_MPI
+  int rank = 0, world_size = 1;
+  int provided;
+  MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &provided);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+#endif
+
   vector<string> vecParams;
   convertToVecStrings(argc, argv, vecParams);
   string fname;
@@ -71,7 +79,7 @@ int main(int argc, char* argv[])
   {
     // may be good to test different versions of espresso to see
     // if this changes at all
-    cerr << "xml file comes from quantum espresso" << endl;
+    cout << "xml file comes from quantum espresso" << endl;
     EshdfFile outFile(ofname);
     outFile.writeQEBoilerPlate(inFile);
     outFile.writeQESupercell(inFile);
@@ -80,7 +88,7 @@ int main(int argc, char* argv[])
   }
   else if (name == "fpmd:sample")
   {
-    cerr << "xml file comes from qbox" << endl;
+    cout << "xml file comes from qbox" << endl;
     EshdfFile outFile(ofname);
     outFile.writeQboxBoilerPlate(inFile);
     outFile.writeQboxSupercell(inFile);
@@ -93,6 +101,8 @@ int main(int argc, char* argv[])
     return (1);
   }
 
-
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return 0;
 }

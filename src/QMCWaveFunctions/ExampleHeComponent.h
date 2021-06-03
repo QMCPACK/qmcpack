@@ -42,7 +42,7 @@ public:
 
   void reportStatus(std::ostream& os) override {}
 
-  LogValueType evaluateLog(ParticleSet& P,
+  LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 

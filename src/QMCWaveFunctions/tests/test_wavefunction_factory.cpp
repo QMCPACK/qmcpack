@@ -24,16 +24,11 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   auto qp = std::make_unique<ParticleSet>();
-  std::vector<int> agroup(1);
-  agroup[0] = 2;
+  std::vector<int> agroup(2, 1);
   qp->setName("e");
   qp->create(agroup);
-  qp->R[0][0] = 1.0;
-  qp->R[0][1] = 2.0;
-  qp->R[0][2] = 3.0;
-  qp->R[1][0] = 0.0;
-  qp->R[1][1] = 1.1;
-  qp->R[1][2] = 2.2;
+  qp->R[0] = {1.0, 2.0, 3.0};
+  qp->R[1] = {0.0, 1.1, 2.2};
 
   SpeciesSet& tspecies       = qp->getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");

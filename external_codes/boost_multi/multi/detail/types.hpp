@@ -54,11 +54,11 @@ struct repeat<T, 0, TT>{
 };
 
 template<class T, std::size_t N>
-auto array_size_impl(const std::array<T, N>&) 
+constexpr auto array_size_impl(const std::array<T, N>&) 
     -> std::integral_constant<std::size_t, N>;
 
 template<class... T>
-auto array_size_impl(const std::tuple<T...>&) 
+constexpr auto array_size_impl(const std::tuple<T...>&) 
     -> std::integral_constant<std::size_t, std::tuple_size<std::tuple<T...>>{}>;
 
 template<class Array>
@@ -66,11 +66,11 @@ using array_size = decltype(array_size_impl(std::declval<const Array&>()));
 
 template<class Array>
 constexpr auto static_size() -> decltype(array_size<Array>::value){
-    return array_size<Array>::value;
+	return array_size<Array>::value;
 }
 template<class Array>
 constexpr auto static_size(Array const&) -> decltype(static_size<Array>()){
-    return static_size<Array>();
+	return static_size<Array>();
 }
 
 //TODO consolidate with tuple_tail defined somewhere else
@@ -78,19 +78,20 @@ template<class Tuple>
 constexpr auto head(Tuple&& t)
 ->decltype(std::get<0>(std::forward<Tuple>(t))){
 	return std::get<0>(std::forward<Tuple>(t));}
+
 template<typename Tuple, std::size_t... Ns>
 constexpr auto tail_impl(std::index_sequence<Ns...> , Tuple&& t){
 	return std::make_tuple(std::get<Ns+1u>(std::forward<Tuple>(t))...);
 }
 template<class Tuple>
 constexpr auto tail(Tuple const& t)
-->decltype(tail_impl(std::make_index_sequence<(static_size<Tuple>())-1>(), t)){
-	return tail_impl(std::make_index_sequence<(static_size<Tuple>())-1>(), t);}
+//->decltype(tail_impl(std::make_index_sequence<(static_size<Tuple>())-1>(), t)){
+{	return tail_impl(std::make_index_sequence<(static_size<Tuple>())-1>(), t);}
 //->decltype(tail_impl(std::make_index_sequence<(std::tuple_size<Tuple>{})-1>(), t)){
 //	return tail_impl(std::make_index_sequence<(std::tuple_size<Tuple>{})-1>(), t);}
 
 template<typename T, std::size_t N>
-std::array<T, N-1> tail(std::array<T, N> const& a){
+constexpr std::array<T, N-1> tail(std::array<T, N> const& a){
 	std::array<T, N-1> ret;
 	std::copy(a.begin() + 1, a.end(), ret.begin());
 	return ret;
@@ -112,27 +113,15 @@ template<dimensionality_type D> using index_extensions = typename detail::repeat
 //template<dimensionality_type D> using iextensions = index_extensions<D>;
 
 template<dimensionality_type D> 
-struct iextensions : detail::repeat<index_extension, D>::type{
-	static constexpr dimensionality_type dimensionality = D;
+struct iextensions :       detail::repeat<index_extension, D>::type{
 	using base_ = typename detail::repeat<index_extension, D>::type;
+	static constexpr dimensionality_type dimensionality = D;
 	using base_::base_;
-//	template<class... Args, typename = std::enable_if_t<sizeof...(Args)==D>>
-//	iextensions(Args... args) : detail::repeat<index_extension, D>::type{args...}{}
-	iextensions() = default;
-	template<class T>
-	iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
-	iextensions(std::array<iextension, static_cast<std::size_t>(D)> const& arr) : iextensions(arr, std::make_index_sequence<static_cast<std::size_t>(D)>{}){}//detail::repeat<index_extension, D>::type{as_tuple(arr)}{}
-	base_ const& base() const{return *this;}
-	friend decltype(auto) base(iextensions const& s){return s.base();}
-private:
-//	template<std::size_t... Ns> bool bool_aux(std::index_sequence<Ns...>) const{return (not std::get<0>(*this).empty() and tail(*this));}
-public:
-//	explicit operator bool() const{return bool_aux(std::make_index_sequence<D>());}
-//	bool is_empty() const{return bool_aux(std::make_index_sequence<D>());}
-//	bool empty() const{return is_empty();}
+	constexpr base_ const& base() const{return *this;}
+	friend constexpr decltype(auto) base(iextensions const& s){return s.base();}
 private:
 	template <class T, size_t... Is> 
-	iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr, std::index_sequence<Is...>) : iextensions{arr[Is]...}{}
+	constexpr iextensions(std::array<T, static_cast<std::size_t>(D)> const& arr, std::index_sequence<Is...>) : iextensions{arr[Is]...}{}
 };
 
 #if defined(__cpp_deduction_guides) and __cpp_deduction_guides >= 201703
@@ -140,7 +129,7 @@ template<class... Args> iextensions(Args...) -> iextensions<sizeof...(Args)>;
 #endif
 
 template<dimensionality_type D, class Tuple>
-auto contains(index_extensions<D> const& ie, Tuple const& tp){
+constexpr auto contains(index_extensions<D> const& ie, Tuple const& tp){
 //	using detail::head;
 //	using detail::tail;
 	return contains(head(ie), head(tp)) and contains(tail(ie), tail(tp));

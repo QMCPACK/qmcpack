@@ -9,11 +9,14 @@
 
 #include "Crowd.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
-Crowd::Crowd(EstimatorManagerNew& emb) : estimator_manager_crowd_(emb) {}
+Crowd::Crowd(EstimatorManagerNew& emb,
+             const DriverWalkerResourceCollection& driverwalker_res,
+             const MultiWalkerDispatchers& dispatchers)
+    : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
+{}
 
 Crowd::~Crowd() = default;
 
@@ -43,56 +46,14 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
   walker_hamiltonians_.push_back(hamiltonian);
 };
 
-void Crowd::loadWalkers()
-{
-  for (int i = 0; i < mcp_walkers_.size(); ++i)
-    walker_elecs_[i].get().loadWalker(mcp_walkers_[i], true);
-}
-
 void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
 {
   for (QMCHamiltonian& ham : walker_hamiltonians_)
     ham.setRandomGenerator(&rng);
 }
 
-void Crowd::initializeResources(const ResourceCollection& twf_resource)
-{
-  if (!twfs_shared_resource_)
-    twfs_shared_resource_ = std::make_unique<ResourceCollection>(twf_resource);
-}
-
-void Crowd::lendResources(size_t receiver)
-{
-  if (walker_twfs_.size() > 0)
-  {
-    if (twfs_shared_resource_->is_lent())
-      throw std::runtime_error("Crowd::lendResources resources are out already!");
-    if (receiver >= walker_twfs_.size())
-      throw std::runtime_error("Crowd::takebackResources receiver out of bound!");
-    twfs_shared_resource_->lock();
-    twfs_shared_resource_->rewind();
-    walker_twfs_[receiver].get().acquireResource(*twfs_shared_resource_);
-  }
-}
-
-void Crowd::takebackResources(size_t receiver)
-{
-  if (walker_twfs_.size() > 0)
-  {
-    if (!twfs_shared_resource_->is_lent())
-      throw std::runtime_error("Crowd::takebackResources resources was not lent out!");
-    if (receiver >= walker_twfs_.size())
-      throw std::runtime_error("Crowd::takebackResources receiver out of bound!");
-    twfs_shared_resource_->rewind();
-    walker_twfs_[receiver].get().releaseResource(*twfs_shared_resource_);
-    twfs_shared_resource_->unlock();
-  }
-}
-
 void Crowd::startBlock(int num_steps)
 {
-  if (this->size() == 0)
-    return;
   n_accept_ = 0;
   n_reject_ = 0;
   // VMCBatched does no nonlocal moves
@@ -102,8 +63,6 @@ void Crowd::startBlock(int num_steps)
 
 void Crowd::stopBlock()
 {
-  if (this->size() == 0)
-    return;
   estimator_manager_crowd_.stopBlock();
 }
 

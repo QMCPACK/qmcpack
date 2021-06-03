@@ -76,7 +76,7 @@ struct Pressure : public OperatorBase
   //       attrib.add(RPAPCorr,"etype" );
   //       attrib.add(RPAPfunc,"functor" );
   //       attrib.put(cur);
-  //       nattrib.add(RPAKCut,"kc","double");
+  //       nattrib.add(RPAKCut,"kc");
   //       nattrib.put(cur);
 
   //       if (RPAPCorr=="ZB"){
@@ -129,7 +129,10 @@ struct Pressure : public OperatorBase
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new Pressure(qp); }
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
+  {
+    return std::make_unique<Pressure>(qp);
+  }
 };
 } // namespace qmcplusplus
 #endif

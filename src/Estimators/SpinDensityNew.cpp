@@ -73,7 +73,7 @@ std::vector<int> SpinDensityNew::getSpeciesSize(SpeciesSet& species)
 
 size_t SpinDensityNew::getFullDataSize() { return species_.size() * derived_parameters_.npoints; }
 
-OperatorEstBase* SpinDensityNew::clone()
+SpinDensityNew* SpinDensityNew::clone()
 {
   std::cout << "SpinDensity clone called\n";
   return new SpinDensityNew(*this);
@@ -120,7 +120,7 @@ void SpinDensityNew::startBlock(int steps)
  *  I tried for readable and not doing the optimizers job.
  *  The offsets into bare data are already bad enough.
  */
-void SpinDensityNew::accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets)
+void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
 {
   auto& dp_ = derived_parameters_;
   for (int iw = 0; iw < walkers.size(); ++iw)
@@ -234,7 +234,7 @@ void SpinDensityNew::registerOperatorEstimator(hid_t gid)
 
   for (int s = 0; s < species_.size(); ++s)
   {
-    h5desc_.emplace_back(std::make_unique<observable_helper>(species_.speciesName[s]));
+    h5desc_.emplace_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
     auto& oh = h5desc_.back();
     oh->set_dimensions(ng, 0);
     oh->open(sgid);

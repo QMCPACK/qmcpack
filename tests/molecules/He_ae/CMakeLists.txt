@@ -7,7 +7,7 @@ ELSEIF (QMC_CUDA)
 ELSE()
   SIMPLE_RUN_AND_CHECK(
     deterministic-He_ae-opt
-    "${CMAKE_SOURCE_DIR}/tests/molecules/He_ae"
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
     det_He_opt.xml
     1 1
     check_opt.py -s 1 -p det_He_opt -r reference.det_He_opt.s001.opt.xml
@@ -16,7 +16,7 @@ ELSE()
  LIST(APPEND He_VMC_SCALARS "totenergy" "-3.25291030 0.000001")
 
    QMC_RUN_AND_CHECK(deterministic-He_ae-opt_vmc
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/He_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
                     det_He_opt
                     det_He_opt.xml
                     1 1
@@ -30,14 +30,14 @@ ELSE()
 
   SIMPLE_RUN_AND_CHECK(
     deterministic-He_ae-opt-batch
-    "${CMAKE_SOURCE_DIR}/tests/molecules/He_ae"
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
     det_He_opt_batch.xml
     1 1
     check_opt.py -s 1 -p det_He_opt_batch -r reference.det_He_opt.s001.opt.xml
     )
 
    QMC_RUN_AND_CHECK(deterministic-He_ae-opt_vmc-batch
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/He_ae"
+                    "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
                     det_He_opt_batch
                     det_He_opt_batch.xml
                     1 1

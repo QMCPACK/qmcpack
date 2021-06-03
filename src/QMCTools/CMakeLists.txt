@@ -25,9 +25,6 @@ SET(MOSRCS
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesAsciiParser.cpp
-  CasinoParser.cpp
-  BParser.cpp
-  BMakeFunc.cpp
   LCAOHDFParser.cpp
 )
 
@@ -41,7 +38,7 @@ FOREACH(p ${QTOOLS})
   ADD_EXECUTABLE(${p} ${p}.cpp)
   TARGET_LINK_LIBRARIES(${p} mocommon)
   IF(USE_OBJECT_TARGET)
-    TARGET_LINK_LIBRARIES(${p} qmcparticle qmcutil containers)
+    TARGET_LINK_LIBRARIES(${p} qmcparticle qmcutil containers platform_omptarget)
   ENDIF()
 
   INSTALL(TARGETS ${p}
@@ -82,14 +79,11 @@ TARGET_LINK_LIBRARIES(fstool PUBLIC qmc qmcparticle qmcwfs)
 ADD_EXECUTABLE(qmcfinitesize qmcfinitesize.cpp)
 TARGET_LINK_LIBRARIES(qmcfinitesize fstool)
 IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(qmcfinitesize qmcparticle qmcutil containers)
+  TARGET_LINK_LIBRARIES(qmcfinitesize qmcparticle qmcutil containers platform_omptarget)
 ENDIF()
 
 
 INSTALL(TARGETS qmcfinitesize
         RUNTIME DESTINATION bin)
 
-#ppconvert
-if( BUILD_PPCONVERT )
-  SUBDIRS(ppconvert)
-endif( BUILD_PPCONVERT )
+SUBDIRS(ppconvert)

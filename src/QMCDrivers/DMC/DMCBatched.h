@@ -51,7 +51,7 @@ public:
     const MCPopulation& population;
     SFNBranch& branch_engine;
     IndexType recalculate_properties_period;
-    IndexType step = -1;
+    IndexType step            = -1;
     bool is_recomputing_block = false;
     StateForThread(const QMCDriverInput& qmci,
                    const DMCDriverInput& dmci,
@@ -66,7 +66,10 @@ public:
   {
   public:
     NewTimer& tmove_timer;
-    DMCTimers(const std::string& prefix) : tmove_timer(*timer_manager.createTimer(prefix + "Tmove", timer_level_medium))
+    NewTimer& step_begin_recompute_timer;
+    DMCTimers(const std::string& prefix)
+        : tmove_timer(*timer_manager.createTimer(prefix + "Tmove", timer_level_medium)),
+          step_begin_recompute_timer(*timer_manager.createTimer(prefix + "Step_begin_recompute", timer_level_medium))
     {}
   };
 
@@ -75,8 +78,6 @@ public:
              QMCDriverInput&& qmcdriver_input,
              DMCDriverInput&& input,
              MCPopulation&& pop,
-             TrialWaveFunction& psi,
-             QMCHamiltonian& h,
              Communicate* comm);
 
   /// Copy Constructor (disabled)

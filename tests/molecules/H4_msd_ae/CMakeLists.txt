@@ -9,11 +9,11 @@ IF (NOT QMC_CUDA)
     LIST(APPEND H4_MSD_ORB_OPT_SCALARS "totenergy" "-2.160310 0.000810") # total energy
 
     QMC_RUN_AND_CHECK(short-H4-msd-orb-opt
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_msd_ae"
+                      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_msd_ae"
                       H4
                       H4_msd_orb_opt.xml
                       16 1
-                      ${MP_SUCCESS}
+                      ${SUCCESS_STATUS_MP}
                       4 H4_MSD_ORB_OPT_SCALARS # OPT step 4
                       )
  ELSE()

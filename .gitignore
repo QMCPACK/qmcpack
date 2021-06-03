@@ -10,3 +10,17 @@ qmcpack_manual.pdf
 /build_*/
 docs/_build
 nexus/tests/unit/*output
+tests/solids/NiO_a4_e48_pp/NiO-fcc-supertwist111-supershift000-S1.h5
+
+# Eclipse IDE
+.cproject
+.project
+.settings/
+.pydevproject
+
+# Visual Studio code settings
+.vscode/
+
+# Doxygen
+doxygen/output/
+doxygen/qmcpack_all.tag

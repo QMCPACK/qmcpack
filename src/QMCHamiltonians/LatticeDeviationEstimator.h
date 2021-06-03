@@ -54,12 +54,12 @@ public:
   //void setParticlePropertyList(PropertySetType& plist, int offset); // is this method ever used?
 
   // make room in hdf5 observable registry
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
   //void addObservables(PropertySetType& plist, BufferType& collectables); // also used for multiple scalars
 
   // pure virtual functions require overrider
-  void resetTargetParticleSet(ParticleSet& P);                            // required
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  void resetTargetParticleSet(ParticleSet& P);                                            // required
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
 
 private:
   SpeciesSet& tspecies;       // species table of target particle set
@@ -74,7 +74,7 @@ private:
   xmlNodePtr input_xml;       // original xml
   // distance table ID
   const int myTableID_;
-};                            // LatticeDeviationEstimator
+}; // LatticeDeviationEstimator
 
 } // namespace qmcplusplus
 #endif

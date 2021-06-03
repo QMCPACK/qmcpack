@@ -139,6 +139,23 @@ inline std::string create_test_hdf(const std::string& wfn_file, const std::strin
   return wfn_base + "_" + ham_base + ".h5";
 }
 
+inline bool remove_file(const std::string& file_name)
+{
+  bool success=false;
+  std::ifstream ifile;
+  ifile.open(file_name);
+  if (ifile)
+  {
+    if (std::remove(file_name.c_str()) == 0)
+    {
+      success = true;
+    }
+  } else { // no file to remove
+    success = true;
+  }
+  return success;
+}
+
 inline bool check_hamil_wfn_for_utest(const std::string& test_name, std::string& wfn_file, std::string& hamil_file)
 {
   if (not file_exists(wfn_file) || not file_exists(hamil_file))

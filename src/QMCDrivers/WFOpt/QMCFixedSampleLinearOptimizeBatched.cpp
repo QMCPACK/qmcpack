@@ -25,6 +25,7 @@
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
+#include "Concurrency/Info.hpp"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include <cassert>
@@ -45,8 +46,6 @@ using MatrixOperators::product;
 
 QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                                                          MCWalkerConfiguration& w,
-                                                                         TrialWaveFunction& psi,
-                                                                         QMCHamiltonian& h,
                                                                          QMCDriverInput&& qmcdriver_input,
                                                                          VMCDriverInput&& vmcdriver_input,
                                                                          MCPopulation&& population,
@@ -54,8 +53,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
                                                                          Communicate* comm)
     : QMCLinearOptimizeBatched(project_data,
                                w,
-                               psi,
-                               h,
                                std::move(qmcdriver_input),
                                std::move(vmcdriver_input),
                                std::move(population),
@@ -98,7 +95,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       block_second(false),
       block_third(false),
       crowd_size_(1),
-      opt_num_crowds_(1),
+      opt_num_crowds_(0),
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
       current_optimizer_type_(OptimizerType::NONE),
@@ -110,28 +107,28 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
   //set the optimization flag
   qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
-  m_param.add(Max_iterations, "max_its", "int");
-  m_param.add(nstabilizers, "nstabilizers", "int");
-  m_param.add(stabilizerScale, "stabilizerscale", "double");
-  m_param.add(bigChange, "bigchange", "double");
-  m_param.add(MinMethod, "MinMethod", "string");
-  m_param.add(exp0, "exp0", "double");
-  m_param.add(targetExcitedStr, "targetExcited", "string");
-  m_param.add(block_lmStr, "block_lm", "string");
-  m_param.add(nblocks, "nblocks", "int");
-  m_param.add(nolds, "nolds", "int");
-  m_param.add(nkept, "nkept", "int");
-  m_param.add(nsamp_comp, "nsamp_comp", "int");
-  m_param.add(omega_shift, "omega", "double");
-  m_param.add(max_relative_cost_change, "max_relative_cost_change", "double");
-  m_param.add(max_param_change, "max_param_change", "double");
-  m_param.add(shift_i_input, "shift_i", "double");
-  m_param.add(shift_s_input, "shift_s", "double");
-  m_param.add(num_shifts, "num_shifts", "int");
-  m_param.add(cost_increase_tol, "cost_increase_tol", "double");
-  m_param.add(target_shift_i, "target_shift_i", "double");
-  m_param.add(crowd_size_, "opt_crowd_size", "int");
-  m_param.add(opt_num_crowds_, "opt_num_crowds", "int");
+  m_param.add(Max_iterations, "max_its");
+  m_param.add(nstabilizers, "nstabilizers");
+  m_param.add(stabilizerScale, "stabilizerscale");
+  m_param.add(bigChange, "bigchange");
+  m_param.add(MinMethod, "MinMethod");
+  m_param.add(exp0, "exp0");
+  m_param.add(targetExcitedStr, "targetExcited");
+  m_param.add(block_lmStr, "block_lm");
+  m_param.add(nblocks, "nblocks");
+  m_param.add(nolds, "nolds");
+  m_param.add(nkept, "nkept");
+  m_param.add(nsamp_comp, "nsamp_comp");
+  m_param.add(omega_shift, "omega");
+  m_param.add(max_relative_cost_change, "max_relative_cost_change");
+  m_param.add(max_param_change, "max_param_change");
+  m_param.add(shift_i_input, "shift_i");
+  m_param.add(shift_s_input, "shift_s");
+  m_param.add(num_shifts, "num_shifts");
+  m_param.add(cost_increase_tol, "cost_increase_tol");
+  m_param.add(target_shift_i, "target_shift_i");
+  m_param.add(crowd_size_, "opt_crowd_size");
+  m_param.add(opt_num_crowds_, "opt_num_crowds");
 
 
 #ifdef HAVE_LMY_ENGINE
@@ -175,17 +172,17 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
 
 
   //   stale parameters
-  //   m_param.add(eigCG,"eigcg","int");
-  //   m_param.add(TotalCGSteps,"cgsteps","int");
-  //   m_param.add(w_beta,"beta","double");
+  //   m_param.add(eigCG,"eigcg");
+  //   m_param.add(TotalCGSteps,"cgsteps");
+  //   m_param.add(w_beta,"beta");
   //   quadstep=-1.0;
-  //   m_param.add(quadstep,"quadstep","double");
-  //   m_param.add(stepsize,"stepsize","double");
-  //   m_param.add(exp1,"exp1","double");
-  //   m_param.add(GEVtype,"GEVMethod","string");
-  //   m_param.add(GEVSplit,"GEVSplit","string");
-  //   m_param.add(StabilizerMethod,"StabilizerMethod","string");
-  //   m_param.add(LambdaMax,"LambdaMax","double");
+  //   m_param.add(quadstep,"quadstep");
+  //   m_param.add(stepsize,"stepsize");
+  //   m_param.add(exp1,"exp1");
+  //   m_param.add(GEVtype,"GEVMethod");
+  //   m_param.add(GEVSplit,"GEVSplit");
+  //   m_param.add(StabilizerMethod,"StabilizerMethod");
+  //   m_param.add(LambdaMax,"LambdaMax");
   //Set parameters for line minimization:
 }
 
@@ -476,8 +473,8 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
-  m_param.add(OutputMatrices, "output_matrices", "string");
-  m_param.add(FreezeParameters, "freeze_parameters", "string");
+  m_param.add(OutputMatrices, "output_matrices");
+  m_param.add(FreezeParameters, "freeze_parameters");
 
   oAttrib.put(q);
   m_param.put(q);
@@ -601,8 +598,9 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine =
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                    MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
-                                                population_.get_golden_electrons(), &Psi, &H),
-                                   Psi, H, samples_, myComm);
+                                                population_.get_golden_electrons(), &population_.get_golden_twf(),
+                                                &population_.get_golden_hamiltonian()),
+                                   samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 
@@ -613,9 +611,18 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   vmcEngine->enable_sample_collection();
 
+  // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
+  checkNumCrowdsLTNumThreads(opt_num_crowds_);
+  if (opt_num_crowds_ == 0)
+    opt_num_crowds_ = Concurrency::maxCapacity<>();
+
+  app_log() << " Number of crowds for optimizer: " << opt_num_crowds_ << std::endl;
+
   bool success = true;
   //allways reset optTarget
-  optTarget = std::make_unique<QMCCostFunctionBatched>(W, Psi, H, samples_, opt_num_crowds_, crowd_size_, myComm);
+  optTarget =
+      std::make_unique<QMCCostFunctionBatched>(W, population_.get_golden_twf(), population_.get_golden_hamiltonian(),
+                                               samples_, opt_num_crowds_, crowd_size_, myComm);
   optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;

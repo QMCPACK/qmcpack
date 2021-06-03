@@ -101,7 +101,7 @@ void malloc(void** devPtr, size_t size, const std::string& message)
   cudaError_t status = cudaMalloc(devPtr, size);
   if (status != cudaSuccess)
   {
-    std::cerr << " Error allocating " << size * 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
+    std::cerr << " Error allocating " << size / 1024.0 / 1024.0 << " MBs on GPU." << std::endl;
     if (message != "")
     {
       std::cerr << " Error from: " << message << std::endl;

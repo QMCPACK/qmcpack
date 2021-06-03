@@ -271,20 +271,20 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
 }
 
 template<typename T, int COLBS>
-__global__ void add_delay_list_save_y_VGL_kernel(int* const delay_list[],
-                                                 const int rowchanged,
-                                                 const int delay_count,
-                                                 T* const binv[],
-                                                 const int binv_lda,
-                                                 const T* const ratio_inv,
-                                                 const T* const phi_in[],
-                                                 const T* const dphi_in[],
-                                                 const T* const d2phi_in[],
-                                                 T* const phi_out[],
-                                                 T* const dphi_out[],
-                                                 T* const d2phi_out[],
-                                                 const int norb,
-                                                 const int n_accepted)
+__global__ void add_delay_list_save_sigma_VGL_kernel(int* const delay_list[],
+                                                     const int rowchanged,
+                                                     const int delay_count,
+                                                     T* const binv[],
+                                                     const int binv_lda,
+                                                     const T* const ratio_inv,
+                                                     const T* const phi_in[],
+                                                     const T* const dphi_in[],
+                                                     const T* const d2phi_in[],
+                                                     T* const phi_out[],
+                                                     T* const dphi_out[],
+                                                     T* const d2phi_out[],
+                                                     const int norb,
+                                                     const int n_accepted)
 {
   const int tid = threadIdx.x;
   const int iw  = blockIdx.x;
@@ -360,22 +360,22 @@ __global__ void add_delay_list_save_y_VGL_kernel(int* const delay_list[],
   }
 }
 
-cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
-                                              int* const delay_list[],
-                                              const int rowchanged,
-                                              const int delay_count,
-                                              float* const binv[],
-                                              const int binv_lda,
-                                              const float* const ratio_inv,
-                                              const float* const phi_in[],
-                                              const float* const dphi_in[],
-                                              const float* const d2phi_in[],
-                                              float* const phi_out[],
-                                              float* const dphi_out[],
-                                              float* const d2phi_out[],
-                                              const int norb,
-                                              const int n_accepted,
-                                              const int batch_count)
+cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
+                                                  int* const delay_list[],
+                                                  const int rowchanged,
+                                                  const int delay_count,
+                                                  float* const binv[],
+                                                  const int binv_lda,
+                                                  const float* const ratio_inv,
+                                                  const float* const phi_in[],
+                                                  const float* const dphi_in[],
+                                                  const float* const d2phi_in[],
+                                                  float* const phi_out[],
+                                                  float* const dphi_out[],
+                                                  float* const d2phi_out[],
+                                                  const int norb,
+                                                  const int n_accepted,
+                                                  const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -383,28 +383,28 @@ cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  add_delay_list_save_y_VGL_kernel<float, COLBS>
+  add_delay_list_save_sigma_VGL_kernel<float, COLBS>
       <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_in,
                                           dphi_in, d2phi_in, phi_out, dphi_out, d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
-                                              int* const delay_list[],
-                                              const int rowchanged,
-                                              const int delay_count,
-                                              double* const binv[],
-                                              const int binv_lda,
-                                              const double* const ratio_inv,
-                                              const double* const phi_in[],
-                                              const double* const dphi_in[],
-                                              const double* const d2phi_in[],
-                                              double* const phi_out[],
-                                              double* const dphi_out[],
-                                              double* const d2phi_out[],
-                                              const int norb,
-                                              const int n_accepted,
-                                              const int batch_count)
+cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
+                                                  int* const delay_list[],
+                                                  const int rowchanged,
+                                                  const int delay_count,
+                                                  double* const binv[],
+                                                  const int binv_lda,
+                                                  const double* const ratio_inv,
+                                                  const double* const phi_in[],
+                                                  const double* const dphi_in[],
+                                                  const double* const d2phi_in[],
+                                                  double* const phi_out[],
+                                                  double* const dphi_out[],
+                                                  double* const d2phi_out[],
+                                                  const int norb,
+                                                  const int n_accepted,
+                                                  const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -412,28 +412,28 @@ cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  add_delay_list_save_y_VGL_kernel<double, COLBS>
+  add_delay_list_save_sigma_VGL_kernel<double, COLBS>
       <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_in,
                                           dphi_in, d2phi_in, phi_out, dphi_out, d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
-                                              int* const delay_list[],
-                                              const int rowchanged,
-                                              const int delay_count,
-                                              std::complex<float>* const binv[],
-                                              const int binv_lda,
-                                              const std::complex<float>* const ratio_inv,
-                                              const std::complex<float>* const phi_in[],
-                                              const std::complex<float>* const dphi_in[],
-                                              const std::complex<float>* const d2phi_in[],
-                                              std::complex<float>* const phi_out[],
-                                              std::complex<float>* const dphi_out[],
-                                              std::complex<float>* const d2phi_out[],
-                                              const int norb,
-                                              const int n_accepted,
-                                              const int batch_count)
+cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
+                                                  int* const delay_list[],
+                                                  const int rowchanged,
+                                                  const int delay_count,
+                                                  std::complex<float>* const binv[],
+                                                  const int binv_lda,
+                                                  const std::complex<float>* const ratio_inv,
+                                                  const std::complex<float>* const phi_in[],
+                                                  const std::complex<float>* const dphi_in[],
+                                                  const std::complex<float>* const d2phi_in[],
+                                                  std::complex<float>* const phi_out[],
+                                                  std::complex<float>* const dphi_out[],
+                                                  std::complex<float>* const d2phi_out[],
+                                                  const int norb,
+                                                  const int n_accepted,
+                                                  const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -441,29 +441,33 @@ cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  add_delay_list_save_y_VGL_kernel<thrust::complex<float>, COLBS>
-      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, (thrust::complex<float>**)binv, binv_lda, (const thrust::complex<float>*)ratio_inv,
-                                          (const thrust::complex<float>**)phi_in, (const thrust::complex<float>**)dphi_in, (const thrust::complex<float>**)d2phi_in,
-                                          (thrust::complex<float>**)phi_out, (thrust::complex<float>**)dphi_out, (thrust::complex<float>**)d2phi_out, norb, n_accepted);
+  add_delay_list_save_sigma_VGL_kernel<thrust::complex<float>, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, (thrust::complex<float>**)binv, binv_lda,
+                                          (const thrust::complex<float>*)ratio_inv,
+                                          (const thrust::complex<float>**)phi_in,
+                                          (const thrust::complex<float>**)dphi_in,
+                                          (const thrust::complex<float>**)d2phi_in, (thrust::complex<float>**)phi_out,
+                                          (thrust::complex<float>**)dphi_out, (thrust::complex<float>**)d2phi_out, norb,
+                                          n_accepted);
   return cudaPeekAtLastError();
 }
 
-cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
-                                              int* const delay_list[],
-                                              const int rowchanged,
-                                              const int delay_count,
-                                              std::complex<double>* const binv[],
-                                              const int binv_lda,
-                                              const std::complex<double>* const ratio_inv,
-                                              const std::complex<double>* const phi_in[],
-                                              const std::complex<double>* const dphi_in[],
-                                              const std::complex<double>* const d2phi_in[],
-                                              std::complex<double>* const phi_out[],
-                                              std::complex<double>* const dphi_out[],
-                                              std::complex<double>* const d2phi_out[],
-                                              const int norb,
-                                              const int n_accepted,
-                                              const int batch_count)
+cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
+                                                  int* const delay_list[],
+                                                  const int rowchanged,
+                                                  const int delay_count,
+                                                  std::complex<double>* const binv[],
+                                                  const int binv_lda,
+                                                  const std::complex<double>* const ratio_inv,
+                                                  const std::complex<double>* const phi_in[],
+                                                  const std::complex<double>* const dphi_in[],
+                                                  const std::complex<double>* const d2phi_in[],
+                                                  std::complex<double>* const phi_out[],
+                                                  std::complex<double>* const dphi_out[],
+                                                  std::complex<double>* const d2phi_out[],
+                                                  const int norb,
+                                                  const int n_accepted,
+                                                  const int batch_count)
 {
   if (batch_count == 0)
     return cudaSuccess;
@@ -471,10 +475,14 @@ cudaError_t add_delay_list_save_y_VGL_batched(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  add_delay_list_save_y_VGL_kernel<thrust::complex<double>, COLBS>
-      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, (thrust::complex<double>**)binv, binv_lda, (const thrust::complex<double>*)ratio_inv,
-                                          (const thrust::complex<double>**)phi_in, (const thrust::complex<double>**)dphi_in, (const thrust::complex<double>**)d2phi_in,
-                                          (thrust::complex<double>**)phi_out, (thrust::complex<double>**)dphi_out, (thrust::complex<double>**)d2phi_out, norb, n_accepted);
+  add_delay_list_save_sigma_VGL_kernel<thrust::complex<double>, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, (thrust::complex<double>**)binv,
+                                          binv_lda, (const thrust::complex<double>*)ratio_inv,
+                                          (const thrust::complex<double>**)phi_in,
+                                          (const thrust::complex<double>**)dphi_in,
+                                          (const thrust::complex<double>**)d2phi_in, (thrust::complex<double>**)phi_out,
+                                          (thrust::complex<double>**)dphi_out, (thrust::complex<double>**)d2phi_out,
+                                          norb, n_accepted);
   return cudaPeekAtLastError();
 }
 

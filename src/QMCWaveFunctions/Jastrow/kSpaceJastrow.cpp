@@ -361,7 +361,7 @@ void kSpaceJastrow::setCoefficients(std::vector<RealType>& oneBodyCoefs, std::ve
 //                  Evaluation functions                     //
 ///////////////////////////////////////////////////////////////
 
-kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(ParticleSet& P,
+kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(const ParticleSet& P,
                                                        ParticleSet::ParticleGradient_t& G,
                                                        ParticleSet::ParticleLaplacian_t& L)
 {

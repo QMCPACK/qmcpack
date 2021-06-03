@@ -58,7 +58,8 @@ protected:
 
 public:
   BsplineSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false)
-      : SPOSet(use_OMP_offload, ion_deriv, optimizable), is_complex(false), MyIndex(0), first_spo(0), last_spo(0) {}
+      : SPOSet(use_OMP_offload, ion_deriv, optimizable), is_complex(false), MyIndex(0), first_spo(0), last_spo(0)
+  {}
 
   auto& getHalfG() const { return HalfG; }
 
@@ -100,14 +101,18 @@ public:
 
   // propagate SPOSet virtual functions
   using SPOSet::evaluateDetRatios;
-  using SPOSet::mw_evaluateDetRatios;
   using SPOSet::evaluateValue;
   using SPOSet::evaluateVGH;
   using SPOSet::evaluateVGHGH;
   using SPOSet::evaluateVGL;
   using SPOSet::finalizeConstruction;
+  using SPOSet::mw_evaluateDetRatios;
   using SPOSet::mw_evaluateVGL;
   using SPOSet::mw_evaluateVGLandDetRatioGrads;
+
+  using SPOSet::createResource;
+  using SPOSet::acquireResource;
+  using SPOSet::releaseResource;
 
   virtual SPOSet* makeClone() const override = 0;
 
@@ -133,14 +138,15 @@ public:
     }
   }
 
-  virtual void mw_evaluate_notranspose(const RefVector<SPOSet>& spo_list,
-                                       const RefVector<ParticleSet>& P_list,
+  virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
+                                       const RefVectorWithLeader<ParticleSet>& P_list,
                                        int first,
                                        int last,
                                        const RefVector<ValueMatrix_t>& logdet_list,
                                        const RefVector<GradMatrix_t>& dlogdet_list,
-                                       const RefVector<ValueMatrix_t>& d2logdet_list) override
+                                       const RefVector<ValueMatrix_t>& d2logdet_list) const override
   {
+    assert(this == &spo_list.getLeader());
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
 

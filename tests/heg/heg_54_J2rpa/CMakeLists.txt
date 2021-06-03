@@ -15,12 +15,12 @@ IF (NOT QMC_CUDA)
   LIST(APPEND HEG54J2RPA_SCALARS "totenergy" "-4.209725  0.02") # total energy
 
   QMC_RUN_AND_CHECK(developer-heg_54_J2rpa
-                    "${CMAKE_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
+                    "${qmcpack_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
                     HEG.rs5.rpa
                     heg.rpa.rs5.xml
                     16 1
                     TRUE
-                    0 HEG54J2RPA_SCALARS
+                    1 HEG54J2RPA_SCALARS
                     )
 
 ELSE()

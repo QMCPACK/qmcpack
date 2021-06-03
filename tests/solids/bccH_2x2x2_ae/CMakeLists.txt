@@ -1,21 +1,21 @@
 
 IF (NOT MIXED_PRECISION)
   SIMPLE_RUN_AND_CHECK(short-bccH_2x2x2_ae-grad_lap
-    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
+    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     grad_lap.xml
     1 1
     check_grad_lap.py
   )
 
   SIMPLE_RUN_AND_CHECK(short-bccH_2x2x2_ae-deriv
-    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
+    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     deriv.xml
     1 1
     check_deriv.py
   )
 
   SIMPLE_RUN_AND_CHECK(short-bccH_2x2x2_ae-gamma-deriv
-    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
+    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     gamma_deriv.xml
     1 1
     check_deriv.py

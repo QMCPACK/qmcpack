@@ -17,6 +17,7 @@ SET(PARTICLE
   InitMolecularSystem.cpp
   ParticleSetPool.cpp
   ParticleSet.cpp
+  PSdispatcher.cpp
   VirtualParticleSet.cpp
   ParticleSet.BC.cpp
   DynamicCoordinatesBuilder.cpp
@@ -37,6 +38,7 @@ SET(PARTICLE
 
 IF(ENABLE_OFFLOAD)
   SET(PARTICLE ${PARTICLE}
+    createDistanceTableAAOMPTarget.cpp
     createDistanceTableABOMPTarget.cpp
     )
 ENDIF(ENABLE_OFFLOAD)

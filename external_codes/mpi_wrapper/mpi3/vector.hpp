@@ -1,5 +1,5 @@
-#if COMPILATION_INSTRUCTIONS
-(echo "#include\""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 `#-Wfatal-errors` -D_TEST_BOOST_MPI3_VECTOR $0x.cpp -o $0x.x -lboost_timer && time mpirun -np 1 $0x.x $@ && rm -f $0x.cpp; exit
+#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
+mpic++ -O3 -D_TEST_BOOST_MPI3_VECTOR -xc++ $0 -o $0x -lboost_timer&&mpirun -np 1 $0x&&rm $0x;exit
 #endif
 #ifndef BOOST_MPI3_VECTOR_HPP
 #define BOOST_MPI3_VECTOR_HPP

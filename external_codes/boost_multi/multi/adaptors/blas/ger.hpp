@@ -137,7 +137,6 @@ BOOST_AUTO_TEST_CASE(multi_blas_ger){
 	//	a = {{2., 3.}, {1., 4.}, {1., 0.}}; GER[1, {1., 2., 5.}, {-2., 1.}, a]; Print[a] : {{0., 4.}, {-3., 6.}, {-9., 5.}}
 	//	assert( A[1][1] == 6. );
 	}
-	return;
 	{
 		multi::array<double, 2> A = {
 			{0., 0.},
@@ -157,14 +156,15 @@ BOOST_AUTO_TEST_CASE(multi_blas_ger){
 //		assert( A[1][2] == 1. );
 	}
 	{
-		multi::array<double, 2> A = {
-			{2., 3., 6., 8.},
-			{4., 1., 6., 8.},
-			{0., 1., 6., 8.}
-		};
-		assert( A[1][2] == 6. );
-		multi::array<double, 1> const x = { 0., 1., 0.};
-		multi::array<double, 1> const y = { 0., 0., 1., 0.};
+//		multi::array<double, 2> A = {
+//			{2., 3., 6., 8.},
+//			{4., 1., 6., 8.},
+//			{0., 1., 6., 8.}
+//		};
+//		assert( A[1][2] == 6. );
+//		multi::array<double, 1> const x = { 0., 1., 0.};
+//		multi::array<double, 1> const y = { 0., 0., 1., 0.};
+		
 	//	multi::blas::ger(0., x, y, rotated(A)); // 
 
 	//	a = {{2., 3.}, {1., 4.}, {1., 0.}}; GER[1, {1., 2., 5.}, {-2., 1.}, a]; Print[a] : {{0., 4.}, {-3., 6.}, {-9., 5.}}

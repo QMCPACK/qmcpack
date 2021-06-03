@@ -174,12 +174,12 @@ public:
     std::string excited_file("");
     int i_ = -1, a_ = -1;
     ParameterSet m_param;
-    m_param.add(number_of_references, "number_of_references", "int");
-    m_param.add(number_of_references, "nrefs", "int");
-    m_param.add(excited_file, "excited", "std::string");
+    m_param.add(number_of_references, "number_of_references");
+    m_param.add(number_of_references, "nrefs");
+    m_param.add(excited_file, "excited");
     // generalize this to multi-particle excitations, how do I read a list of integers???
-    m_param.add(i_, "i", "int");
-    m_param.add(a_, "a", "int");
+    m_param.add(i_, "i");
+    m_param.add(a_, "a");
     m_param.put(cur);
 
     if (excited_file != "" && i_ >= 0 && a_ >= 0)
@@ -242,11 +242,6 @@ public:
   template<class Vec>
   void vMF(Vec&& v);
 
-  CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, CVector const& vMF)
-  {
-    return HamOp.getOneBodyPropagatorMatrix(TG, vMF);
-  }
-
   SlaterDetOperations* getSlaterDetOperations() { return std::addressof(SDetOp); }
   HamiltonianOperations* getHamiltonianOperations() { return std::addressof(HamOp); }
 
@@ -265,9 +260,10 @@ public:
       assert(G.size(0) == v.size(1));
       assert(G.size(1) == size_of_G_for_vbias());
       HamOp.vbias(G(G.extension(0), {0, long(OrbMats[0].size(0) * NMO)}), std::forward<MatA>(v), scl * a, 0.0);
-      if (walker_type == COLLINEAR)
-        HamOp.vbias(G(G.extension(0), {long(OrbMats[0].size(0) * NMO), G.size(1)}), std::forward<MatA>(v), scl * a,
-                    1.0);
+      if (walker_type == COLLINEAR) {
+        APP_ABORT(" Error in PHMSD::vbias: transposed_G_for_vbias_ should be false. \n");
+        HamOp.vbias(G(G.extension(0), {long(OrbMats[0].size(0) * NMO), G.size(1)}),                                       std::forward<MatA>(v), scl * a, 1.0);
+      }
     }
     else
     {

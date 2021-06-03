@@ -20,6 +20,8 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Utilities/TimerManager.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#include "Platforms/PinnedAllocator.h"
+#include "OMPTarget/OMPallocator.hpp"
 
 namespace qmcplusplus
 {
@@ -51,14 +53,19 @@ class MultiSlaterDeterminantFast : public WaveFunctionComponent
 {
 public:
   void registerTimers();
-  NewTimer &RatioTimer, &RatioGradTimer, &RatioAllTimer, &UpdateTimer, &EvaluateTimer;
-  NewTimer &Ratio1Timer, &Ratio1GradTimer, &Ratio1AllTimer, &AccRejTimer;
+  NewTimer &RatioTimer, &MWRatioTimer, &OffloadRatioTimer, &OffloadGradTimer;
+  NewTimer &EvalGradTimer, &MWEvalGradTimer, &RatioGradTimer, &MWRatioGradTimer;
+  NewTimer &PrepareGroupTimer, &UpdateTimer, &AccRejTimer, &EvaluateTimer;
+
+  template<typename DT>
+  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   typedef SPOSet* SPOSetPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t GradVector_t;
   typedef OrbitalSetTraits<ValueType>::HessMatrix_t HessMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::HessType HessType;
   typedef Array<HessType, 3> HessArray_t;
   typedef TinyVector<HessType, OHMMS_DIM> GGGType;
@@ -68,7 +75,9 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminant* up, MultiDiracDeterminant* dn);
+  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,
+                             std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
+                             bool use_pre_computing);
 
   ///destructor
   ~MultiSlaterDeterminantFast();
@@ -80,37 +89,62 @@ public:
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
-
+  void BackFlowStopper(const std::string& func_name) const
+  {
+    if (usingBF)
+      throw std::runtime_error(func_name + " not implemented!\n");
+  }
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
   {
     usingBF = true;
     BFTrans = bf;
-    Dets[0]->setBF(bf);
-    Dets[1]->setBF(bf);
+    for (size_t id = 0; id < Dets.size(); id++)
+      Dets[id]->setBF(bf);
   }
 
-  PsiValueType evaluate_vgl_impl(ParticleSet& P,
+  LogValueType evaluate_vgl_impl(const ParticleSet& P,
                                  ParticleSet::ParticleGradient_t& g_tmp,
                                  ParticleSet::ParticleLaplacian_t& l_tmp);
 
-  PsiValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
-
-  LogValueType evaluateLog(ParticleSet& P,
+  LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
+  void prepareGroup(ParticleSet& P, int ig) override;
+
   GradType evalGrad(ParticleSet& P, int iat) override;
-  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
-  PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  //evalGrad, but returns the spin gradient as well
+  GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
+
+  void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+                   const RefVectorWithLeader<ParticleSet>& P_list,
+                   int iat,
+                   std::vector<GradType>& grad_now) const override;
+
+  void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+                    const RefVectorWithLeader<ParticleSet>& P_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios,
+                    std::vector<GradType>& grad_new) const override;
+
+  void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+                    const RefVectorWithLeader<ParticleSet>& P_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios) const override;
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
-  PsiValueType ratio_impl(ParticleSet& P, int iat);
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
+  //ratioGradWithSpin, but includes tthe spin gradient info
+  PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
+
+  void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override;
+
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     // the base class routine may probably work, just never tested.
     // it can also be highly optimized with a specialized implementation.
-    APP_ABORT(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
+    throw std::runtime_error(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
   }
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
@@ -133,42 +167,39 @@ public:
   void resize(int, int);
   void initialize();
 
-  void testMSD(ParticleSet& P, int iat);
-
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
-  size_t NP;
-  size_t nels_up, nels_dn;
-  size_t FirstIndex_up;
-  size_t FirstIndex_dn;
   size_t ActiveSpin;
   bool usingCSF;
-  bool IsCloned;
   PsiValueType curRatio;
-  PsiValueType psiCurrent;
 
-  // assume Dets[0]: up, Dets[1]:down
-  std::vector<MultiDiracDeterminant*> Dets;
+  std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
   std::map<std::string, size_t> SPOSetID;
 
-  // map determinant in linear combination to unique det list
-  std::vector<size_t>* C2node_up;
-  std::vector<size_t>* C2node_dn;
-  std::vector<ValueType>* C;
+  /** map determinant in linear combination to unique det list
+   * map global det id to unique det id. [spin, global det id] = unique det id
+   */
+  std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
+  /// CI coefficients
+  std::shared_ptr<std::vector<ValueType>> C;
+  /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
+  std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
+  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
+  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> C_otherDs_ptr_list;
+  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> det_value_ptr_list;
 
   ParticleSet::ParticleGradient_t myG, myG_temp;
   ParticleSet::ParticleLaplacian_t myL, myL_temp;
-  ValueVector_t laplSum_up;
-  ValueVector_t laplSum_dn;
+  std::vector<ValueVector_t> laplSum;
 
   //optimizable variable is shared with the clones
-  opt_variables_type* myVars;
+  std::shared_ptr<opt_variables_type> myVars;
   // coefficients of csfs, these are only used during optm
-  std::vector<ValueType>* CSFcoeff;
+  std::shared_ptr<std::vector<ValueType>> CSFcoeff;
   // number of dets per csf
-  std::vector<size_t>* DetsPerCSF;
+  std::shared_ptr<std::vector<size_t>> DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
-  std::vector<RealType>* CSFexpansion;
+  std::shared_ptr<std::vector<RealType>> CSFexpansion;
 
   // transformation
   BackflowTransformation* BFTrans;
@@ -176,9 +207,65 @@ public:
 
   // temporary storage for evaluateDerivatives
   ParticleSet::ParticleGradient_t gmPG;
-  Matrix<RealType> dpsia_up, dLa_up;
-  Matrix<RealType> dpsia_dn, dLa_dn;
-  Array<GradType, OHMMS_DIM> dGa_up, dGa_dn;
+  std::vector<Matrix<RealType>> dpsia, dLa;
+  std::vector<Array<GradType, OHMMS_DIM>> dGa;
+
+private:
+  //get Det ID. It should be consistent with particle group id within the particle set.
+  inline int getDetID(const int iat) const
+  {
+    int id = 0;
+    while (iat > Last[id])
+      id++;
+    return id;
+  }
+
+  /** an implementation shared by evalGrad and ratioGrad. Use precomputed data
+   * @param newpos to distinguish evalGrad(false) ratioGrad(true)
+   */
+  PsiValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+  /// multi walker version of evalGrad_impl
+  static void mw_evalGrad_impl(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list,
+                               int iat,
+                               bool newpos,
+                               std::vector<GradType>& grad_now,
+                               std::vector<PsiValueType>& psi_list);
+
+  /** an implementation shared by evalGrad and ratioGrad. No use of precomputed data
+   * @param newpos to distinguish evalGrad(false) ratioGrad(true)
+   */
+  PsiValueType evalGrad_impl_no_precompute(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+
+  //implemtation for evalGradWithSpin
+  PsiValueType evalGradWithSpin_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at, ComplexType& sg_at);
+  //implemtation for evalGradWithSpin with no precomputation
+  PsiValueType evalGradWithSpin_impl_no_precompute(ParticleSet& P,
+                                                   int iat,
+                                                   bool newpos,
+                                                   GradType& g_at,
+                                                   ComplexType& sg_at);
+
+  // an implementation of ratio. Use precomputed data
+  PsiValueType ratio_impl(ParticleSet& P, int iat);
+  // an implementation of ratio. No use of precomputed data
+  PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
+
+  /** precompute C_otherDs for a given particle group
+   * @param P a particle set
+   * @param ig group id
+   */
+  void precomputeC_otherDs(const ParticleSet& P, int ig);
+
+  ///the last particle of each group
+  std::vector<int> Last;
+  ///use pre-compute (fast) algorithm
+  const bool use_pre_computing_;
+
+  /// current psi over ref single det
+  PsiValueType psi_ratio_to_ref_det_;
+  /// new psi over new ref single det when one particle is moved
+  PsiValueType new_psi_ratio_to_new_ref_det_;
 };
 
 } // namespace qmcplusplus

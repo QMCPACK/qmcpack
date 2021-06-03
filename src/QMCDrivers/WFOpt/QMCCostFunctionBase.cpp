@@ -180,14 +180,13 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   if (NumWalkersEff < NumSamples * MinNumWalkers)
   //    if (NumWalkersEff < MinNumWalkers)
   {
-    ERRORMSG("CostFunction-> Number of Effective Walkers is too small! "
+    WARNMSG("CostFunction-> Number of Effective Walkers is too small! "
              << std::endl
              << "  Number of effective walkers (samples) / total number of samples = "
              << (1.0 * NumWalkersEff) / NumSamples << std::endl
              << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
              << "  If this message appears frequently. You might have to be cautious. " << std::endl
              << "  Find info about parameter \"minwalkers\" in the user manual!");
-    // ERRORMSG("Going to stop now.")
     IsValid = false;
   }
   return CostValue;
@@ -330,15 +329,15 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv("no");
   ParameterSet m_param;
-  m_param.add(writeXmlPerStep, "dumpXML", "string");
-  m_param.add(MinNumWalkers, "minwalkers", "scalar");
-  m_param.add(MaxWeight, "maxWeight", "scalar");
-  m_param.add(includeNonlocalH, "nonlocalpp", "string");
-  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", "string");
-  m_param.add(w_beta, "beta", "double");
-  m_param.add(GEVType, "GEVMethod", "string");
-  m_param.add(targetExcitedStr, "targetExcited", "string");
-  m_param.add(omega_shift, "omega", "double");
+  m_param.add(writeXmlPerStep, "dumpXML");
+  m_param.add(MinNumWalkers, "minwalkers");
+  m_param.add(MaxWeight, "maxWeight");
+  m_param.add(includeNonlocalH, "nonlocalpp");
+  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv");
+  m_param.add(w_beta, "beta");
+  m_param.add(GEVType, "GEVMethod");
+  m_param.add(targetExcitedStr, "targetExcited");
+  m_param.add(omega_shift, "omega");
   m_param.put(q);
 
   tolower(targetExcitedStr);

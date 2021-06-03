@@ -34,7 +34,7 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0           = pos[0];
     const T y0           = pos[1];
@@ -45,7 +45,7 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
     T* restrict dx       = temp_dr.data(0);
     T* restrict dy       = temp_dr.data(1);
     T* restrict dz       = temp_dr.data(2);
-#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz)
+#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz: QMC_SIMD_ALIGNMENT)
     for (int iat = first; iat < last; ++iat)
     {
       dx[iat]     = px[iat] - x0;
@@ -60,9 +60,8 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -76,14 +75,10 @@ struct DTD_BConds<T, 3, SUPERCELL_OPEN + SOA_OFFSET>
     T* restrict dy = temp_dr + padded_size;
     T* restrict dz = temp_dr + padded_size * 2;
 
-#pragma omp parallel for simd aligned(temp_r, px, py, pz, dx, dy, dz)
-    for (int iat = first; iat < last; ++iat)
-    {
-      dx[iat]     = px[iat] - x0;
-      dy[iat]     = py[iat] - y0;
-      dz[iat]     = pz[iat] - z0;
-      temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
-    }
+    dx[iat]     = px[iat] - x0;
+    dy[iat]     = py[iat] - y0;
+    dz[iat]     = pz[iat] - z0;
+    temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
   }
 };
 
@@ -112,7 +107,7 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0           = pos[0];
     const T y0           = pos[1];
@@ -123,7 +118,7 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
     T* restrict dx       = temp_dr.data(0);
     T* restrict dy       = temp_dr.data(1);
     T* restrict dz       = temp_dr.data(2);
-#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz)
+#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz: QMC_SIMD_ALIGNMENT)
     for (int iat = first; iat < last; ++iat)
     {
       const T x   = (px[iat] - x0) * Linv0;
@@ -141,9 +136,8 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -157,17 +151,13 @@ struct DTD_BConds<T, 3, PPPO + SOA_OFFSET>
     T* restrict dy = temp_dr + padded_size;
     T* restrict dz = temp_dr + padded_size * 2;
 
-#pragma omp parallel for simd aligned(temp_r, px, py, pz, dx, dy, dz)
-    for (int iat = first; iat < last; ++iat)
-    {
-      const T x   = (px[iat] - x0) * Linv0;
-      const T y   = (py[iat] - y0) * Linv1;
-      const T z   = (pz[iat] - z0) * Linv2;
-      dx[iat]     = L0 * (x - round(x));
-      dy[iat]     = L1 * (y - round(y));
-      dz[iat]     = L2 * (z - round(z));
-      temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
-    }
+    const T x   = (px[iat] - x0) * Linv0;
+    const T y   = (py[iat] - y0) * Linv1;
+    const T z   = (pz[iat] - z0) * Linv2;
+    dx[iat]     = L0 * (x - round(x));
+    dy[iat]     = L1 * (y - round(y));
+    dz[iat]     = L2 * (z - round(z));
+    temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
   }
 };
 
@@ -208,7 +198,7 @@ struct DTD_BConds<T, 3, PPPS + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -222,7 +212,7 @@ struct DTD_BConds<T, 3, PPPS + SOA_OFFSET>
     T* restrict dy = temp_dr.data(1);
     T* restrict dz = temp_dr.data(2);
 
-#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz)
+#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz: QMC_SIMD_ALIGNMENT)
     for (int iat = first; iat < last; ++iat)
     {
       T displ_0 = px[iat] - x0;
@@ -252,9 +242,8 @@ struct DTD_BConds<T, 3, PPPS + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -268,29 +257,25 @@ struct DTD_BConds<T, 3, PPPS + SOA_OFFSET>
     T* restrict dy = temp_dr + padded_size;
     T* restrict dz = temp_dr + padded_size * 2;
 
-#pragma omp parallel for simd aligned(temp_r, px, py, pz, dx, dy, dz)
-    for (int iat = first; iat < last; ++iat)
-    {
-      T displ_0 = px[iat] - x0;
-      T displ_1 = py[iat] - y0;
-      T displ_2 = pz[iat] - z0;
+    T displ_0 = px[iat] - x0;
+    T displ_1 = py[iat] - y0;
+    T displ_2 = pz[iat] - z0;
 
-      T ar_0 = displ_0 * g00 + displ_1 * g10 + displ_2 * g20;
-      T ar_1 = displ_0 * g01 + displ_1 * g11 + displ_2 * g21;
-      T ar_2 = displ_0 * g02 + displ_1 * g12 + displ_2 * g22;
+    T ar_0 = displ_0 * g00 + displ_1 * g10 + displ_2 * g20;
+    T ar_1 = displ_0 * g01 + displ_1 * g11 + displ_2 * g21;
+    T ar_2 = displ_0 * g02 + displ_1 * g12 + displ_2 * g22;
 
-      //put them in the box
-      ar_0 -= round(ar_0);
-      ar_1 -= round(ar_1);
-      ar_2 -= round(ar_2);
+    //put them in the box
+    ar_0 -= round(ar_0);
+    ar_1 -= round(ar_1);
+    ar_2 -= round(ar_2);
 
-      //unit2cart
-      dx[iat] = ar_0 * r00 + ar_1 * r10 + ar_2 * r20;
-      dy[iat] = ar_0 * r01 + ar_1 * r11 + ar_2 * r21;
-      dz[iat] = ar_0 * r02 + ar_1 * r12 + ar_2 * r22;
+    //unit2cart
+    dx[iat] = ar_0 * r00 + ar_1 * r10 + ar_2 * r20;
+    dy[iat] = ar_0 * r01 + ar_1 * r11 + ar_2 * r21;
+    dz[iat] = ar_0 * r02 + ar_1 * r12 + ar_2 * r22;
 
-      temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
-    }
+    temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
   }
 };
 
@@ -366,7 +351,7 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -386,7 +371,7 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
 
     constexpr T minusone(-1);
     constexpr T one(1);
-#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz)
+#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz: QMC_SIMD_ALIGNMENT)
     for (int iat = first; iat < last; ++iat)
     {
       const T flip    = iat < flip_ind ? one : minusone;
@@ -427,9 +412,8 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -449,40 +433,37 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
 
     constexpr T minusone(-1);
     constexpr T one(1);
-#pragma omp parallel for simd aligned(temp_r, px, py, pz, dx, dy, dz)
-    for (int iat = first; iat < last; ++iat)
-    {
-      const T flip    = iat < flip_ind ? one : minusone;
-      const T displ_0 = (px[iat] - x0) * flip;
-      const T displ_1 = (py[iat] - y0) * flip;
-      const T displ_2 = (pz[iat] - z0) * flip;
 
-      const T ar_0 = -std::floor(displ_0 * g00 + displ_1 * g10 + displ_2 * g20);
-      const T ar_1 = -std::floor(displ_0 * g01 + displ_1 * g11 + displ_2 * g21);
-      const T ar_2 = -std::floor(displ_0 * g02 + displ_1 * g12 + displ_2 * g22);
+    const T flip    = iat < flip_ind ? one : minusone;
+    const T displ_0 = (px[iat] - x0) * flip;
+    const T displ_1 = (py[iat] - y0) * flip;
+    const T displ_2 = (pz[iat] - z0) * flip;
 
-      const T delx = displ_0 + ar_0 * r00 + ar_1 * r10 + ar_2 * r20;
-      const T dely = displ_1 + ar_0 * r01 + ar_1 * r11 + ar_2 * r21;
-      const T delz = displ_2 + ar_0 * r02 + ar_1 * r12 + ar_2 * r22;
+    const T ar_0 = -std::floor(displ_0 * g00 + displ_1 * g10 + displ_2 * g20);
+    const T ar_1 = -std::floor(displ_0 * g01 + displ_1 * g11 + displ_2 * g21);
+    const T ar_2 = -std::floor(displ_0 * g02 + displ_1 * g12 + displ_2 * g22);
 
-      T rmin = delx * delx + dely * dely + delz * delz;
-      int ic = 0;
+    const T delx = displ_0 + ar_0 * r00 + ar_1 * r10 + ar_2 * r20;
+    const T dely = displ_1 + ar_0 * r01 + ar_1 * r11 + ar_2 * r21;
+    const T delz = displ_2 + ar_0 * r02 + ar_1 * r12 + ar_2 * r22;
+
+    T rmin = delx * delx + dely * dely + delz * delz;
+    int ic = 0;
 #pragma unroll(7)
-      for (int c = 1; c < 8; ++c)
-      {
-        const T x  = delx + cellx[c];
-        const T y  = dely + celly[c];
-        const T z  = delz + cellz[c];
-        const T r2 = x * x + y * y + z * z;
-        ic         = (r2 < rmin) ? c : ic;
-        rmin       = (r2 < rmin) ? r2 : rmin;
-      }
-
-      temp_r[iat] = std::sqrt(rmin);
-      dx[iat]     = flip * (delx + cellx[ic]);
-      dy[iat]     = flip * (dely + celly[ic]);
-      dz[iat]     = flip * (delz + cellz[ic]);
+    for (int c = 1; c < 8; ++c)
+    {
+      const T x  = delx + cellx[c];
+      const T y  = dely + celly[c];
+      const T z  = delz + cellz[c];
+      const T r2 = x * x + y * y + z * z;
+      ic         = (r2 < rmin) ? c : ic;
+      rmin       = (r2 < rmin) ? r2 : rmin;
     }
+
+    temp_r[iat] = std::sqrt(rmin);
+    dx[iat]     = flip * (delx + cellx[ic]);
+    dy[iat]     = flip * (dely + celly[ic]);
+    dz[iat]     = flip * (delz + cellz[ic]);
   }
 };
 
@@ -530,7 +511,7 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -549,7 +530,7 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
 
     constexpr T minusone(-1);
     constexpr T one(1);
-#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz)
+#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz: QMC_SIMD_ALIGNMENT)
     for (int iat = first; iat < last; ++iat)
     {
       const T flip    = iat < flip_ind ? one : minusone;
@@ -587,9 +568,8 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -608,37 +588,34 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
 
     constexpr T minusone(-1);
     constexpr T one(1);
-#pragma omp parallel for simd aligned(temp_r, px, py, pz, dx, dy, dz)
-    for (int iat = first; iat < last; ++iat)
-    {
-      const T flip    = iat < flip_ind ? one : minusone;
-      const T displ_0 = (px[iat] - x0) * flip;
-      const T displ_1 = (py[iat] - y0) * flip;
-      const T delz    = pz[iat] - z0;
 
-      const T ar_0 = -std::floor(displ_0 * g00 + displ_1 * g10);
-      const T ar_1 = -std::floor(displ_0 * g01 + displ_1 * g11);
+    const T flip    = iat < flip_ind ? one : minusone;
+    const T displ_0 = (px[iat] - x0) * flip;
+    const T displ_1 = (py[iat] - y0) * flip;
+    const T delz    = pz[iat] - z0;
 
-      const T delx = displ_0 + ar_0 * r00 + ar_1 * r10;
-      const T dely = displ_1 + ar_0 * r01 + ar_1 * r11;
+    const T ar_0 = -std::floor(displ_0 * g00 + displ_1 * g10);
+    const T ar_1 = -std::floor(displ_0 * g01 + displ_1 * g11);
 
-      T rmin = delx * delx + dely * dely;
-      int ic = 0;
+    const T delx = displ_0 + ar_0 * r00 + ar_1 * r10;
+    const T dely = displ_1 + ar_0 * r01 + ar_1 * r11;
+
+    T rmin = delx * delx + dely * dely;
+    int ic = 0;
 #pragma unroll(3)
-      for (int c = 1; c < 4; ++c)
-      {
-        const T x  = delx + cellx[c];
-        const T y  = dely + celly[c];
-        const T r2 = x * x + y * y;
-        ic         = (r2 < rmin) ? c : ic;
-        rmin       = (r2 < rmin) ? r2 : rmin;
-      }
-
-      temp_r[iat] = std::sqrt(rmin + delz * delz);
-      dx[iat]     = flip * (delx + cellx[ic]);
-      dy[iat]     = flip * (dely + celly[ic]);
-      dz[iat]     = delz;
+    for (int c = 1; c < 4; ++c)
+    {
+      const T x  = delx + cellx[c];
+      const T y  = dely + celly[c];
+      const T r2 = x * x + y * y;
+      ic         = (r2 < rmin) ? c : ic;
+      rmin       = (r2 < rmin) ? r2 : rmin;
     }
+
+    temp_r[iat] = std::sqrt(rmin + delz * delz);
+    dx[iat]     = flip * (delx + cellx[ic]);
+    dy[iat]     = flip * (dely + celly[ic]);
+    dz[iat]     = delz;
   }
 };
 
@@ -660,7 +637,7 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0           = pos[0];
     const T y0           = pos[1];
@@ -672,7 +649,7 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
     T* restrict dy       = temp_dr.data(1);
     T* restrict dz       = temp_dr.data(2);
 
-#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz)
+#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz: QMC_SIMD_ALIGNMENT)
     for (int iat = first; iat < last; ++iat)
     {
       T x         = (px[iat] - x0) * Linv0;
@@ -689,9 +666,8 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -705,16 +681,12 @@ struct DTD_BConds<T, 3, PPNO + SOA_OFFSET>
     T* restrict dy = temp_dr + padded_size;
     T* restrict dz = temp_dr + padded_size * 2;
 
-#pragma omp parallel for simd aligned(temp_r, px, py, pz, dx, dy, dz)
-    for (int iat = first; iat < last; ++iat)
-    {
-      T x         = (px[iat] - x0) * Linv0;
-      dx[iat]     = L0 * (x - round(x));
-      T y         = (py[iat] - y0) * Linv1;
-      dy[iat]     = L1 * (y - round(y));
-      dz[iat]     = pz[iat] - z0;
-      temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
-    }
+    T x         = (px[iat] - x0) * Linv0;
+    dx[iat]     = L0 * (x - round(x));
+    T y         = (py[iat] - y0) * Linv1;
+    dy[iat]     = L1 * (y - round(y));
+    dz[iat]     = pz[iat] - z0;
+    temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
   }
 };
 
@@ -743,7 +715,7 @@ struct DTD_BConds<T, 3, PPNS + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -757,7 +729,7 @@ struct DTD_BConds<T, 3, PPNS + SOA_OFFSET>
     T* restrict dy = temp_dr.data(1);
     T* restrict dz = temp_dr.data(2);
 
-#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz)
+#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz: QMC_SIMD_ALIGNMENT)
     for (int iat = first; iat < last; ++iat)
     {
       T displ_0 = px[iat] - x0;
@@ -784,9 +756,8 @@ struct DTD_BConds<T, 3, PPNS + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -800,26 +771,22 @@ struct DTD_BConds<T, 3, PPNS + SOA_OFFSET>
     T* restrict dy = temp_dr + padded_size;
     T* restrict dz = temp_dr + padded_size * 2;
 
-#pragma omp parallel for simd aligned(temp_r, px, py, pz, dx, dy, dz)
-    for (int iat = first; iat < last; ++iat)
-    {
-      T displ_0 = px[iat] - x0;
-      T displ_1 = py[iat] - y0;
+    T displ_0 = px[iat] - x0;
+    T displ_1 = py[iat] - y0;
 
-      T ar_0 = displ_0 * g00 + displ_1 * g10;
-      T ar_1 = displ_0 * g01 + displ_1 * g11;
+    T ar_0 = displ_0 * g00 + displ_1 * g10;
+    T ar_1 = displ_0 * g01 + displ_1 * g11;
 
-      //put them in the box
-      ar_0 -= round(ar_0);
-      ar_1 -= round(ar_1);
+    //put them in the box
+    ar_0 -= round(ar_0);
+    ar_1 -= round(ar_1);
 
-      //unit2cart
-      dx[iat] = ar_0 * r00 + ar_1 * r10;
-      dy[iat] = ar_0 * r01 + ar_1 * r11;
-      dz[iat] = pz[iat] - z0;
+    //unit2cart
+    dx[iat] = ar_0 * r00 + ar_1 * r10;
+    dy[iat] = ar_0 * r01 + ar_1 * r11;
+    dz[iat] = pz[iat] - z0;
 
-      temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
-    }
+    temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
   }
 };
 
@@ -839,7 +806,7 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -853,7 +820,7 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
     T* restrict dy = temp_dr.data(1);
     T* restrict dz = temp_dr.data(2);
 
-#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz)
+#pragma omp simd aligned(temp_r, px, py, pz, dx, dy, dz: QMC_SIMD_ALIGNMENT)
     for (int iat = first; iat < last; ++iat)
     {
       T x         = (px[iat] - x0) * Linv0;
@@ -869,9 +836,8 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     const T x0 = pos[0];
     const T y0 = pos[1];
@@ -885,15 +851,11 @@ struct DTD_BConds<T, 3, SUPERCELL_WIRE + SOA_OFFSET>
     T* restrict dy = temp_dr + padded_size;
     T* restrict dz = temp_dr + padded_size * 2;
 
-#pragma omp parallel for simd aligned(temp_r, px, py, pz, dx, dy, dz)
-    for (int iat = first; iat < last; ++iat)
-    {
-      T x         = (px[iat] - x0) * Linv0;
-      dx[iat]     = L0 * (x - round(x));
-      dy[iat]     = py[iat] - y0;
-      dz[iat]     = pz[iat] - z0;
-      temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
-    }
+    T x         = (px[iat] - x0) * Linv0;
+    dx[iat]     = L0 * (x - round(x));
+    dy[iat]     = py[iat] - y0;
+    dz[iat]     = pz[iat] - z0;
+    temp_r[iat] = std::sqrt(dx[iat] * dx[iat] + dy[iat] * dy[iat] + dz[iat] * dz[iat]);
   }
 };
 
@@ -955,7 +917,7 @@ struct DTD_BConds<T, 3, PPPX + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     APP_ABORT("DTD_BConds<T,3,PPPX> not implemented");
   }
@@ -965,9 +927,8 @@ struct DTD_BConds<T, 3, PPPX + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     //APP_ABORT("DTD_BConds<T, 3, PPPX + SOA_OFFSET>::computeDistancesOffload not implemented");
   }
@@ -1018,7 +979,7 @@ struct DTD_BConds<T, 3, PPNX + SOA_OFFSET>
                         DISPLSOA& temp_dr,
                         int first,
                         int last,
-                        int flip_ind = 0)
+                        int flip_ind = 0) const
   {
     APP_ABORT("DTD_BConds<T,3,PPNX> not implemented");
   }
@@ -1028,9 +989,8 @@ struct DTD_BConds<T, 3, PPNX + SOA_OFFSET>
                                T* restrict temp_r,
                                T* restrict temp_dr,
                                int padded_size,
-                               int first,
-                               int last,
-                               int flip_ind = 0)
+                               int iat,
+                               int flip_ind = 0) const
   {
     //APP_ABORT("DTD_BConds<T, 3, PPNX + SOA_OFFSET>::computeDistancesOffload not implemented");
   }

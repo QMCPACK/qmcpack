@@ -14,7 +14,7 @@
 
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_gaussian_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
                     qmc_short
                     qmc_short.in.xml
                     1 16
@@ -31,7 +31,7 @@
   LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.495941 0.0017")
   LIST(APPEND LONG_DIAMOND_SCALARS "samples" "160000 0.0")
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_gaussian_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
                     qmc_long
                     qmc_long.in.xml
                     1 16
@@ -43,7 +43,7 @@
   LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-10.532497 0.006127")
 
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-dmc_gaussian_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
                     qmc_long_vmc_dmc
                     qmc_long_vmc_dmc.in.xml
                     1 16
@@ -74,7 +74,7 @@
 
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1_pp-vmc_gaussian_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
+                    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp"
                     det_qmc_short
                     det_qmc_short.in.xml
                     1 1

@@ -85,8 +85,8 @@ TEST_CASE("DMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  BareKineticEnergy<double>* p_bke = new BareKineticEnergy<double>(elec);
-  h.addOperator(p_bke, "Kinetic");
+  std::unique_ptr<BareKineticEnergy<double>> p_bke = std::make_unique<BareKineticEnergy<double>>(elec);
+  h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -125,7 +125,6 @@ TEST_CASE("DMC", "[drivers][dmc]")
   REQUIRE(elec.R[1][2] == Approx(1.0));
 
   delete doc;
-  delete p_bke;
 }
 
 TEST_CASE("SODMC", "[drivers][dmc]")
@@ -146,10 +145,11 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   std::vector<int> agroup(1);
   agroup[0] = 1;
   elec.create(agroup);
-  elec.R[0][0]  = 1.0;
-  elec.R[0][1]  = 0.0;
-  elec.R[0][2]  = 0.0;
-  elec.spins[0] = 0.0;
+  elec.R[0][0]    = 1.0;
+  elec.R[0][1]    = 0.0;
+  elec.R[0][2]    = 0.0;
+  elec.spins[0]   = 0.0;
+  elec.is_spinor_ = true;
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -173,8 +173,8 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  BareKineticEnergy<double>* p_bke = new BareKineticEnergy<double>(elec);
-  h.addOperator(p_bke, "Kinetic");
+  std::unique_ptr<BareKineticEnergy<double>> p_bke = std::make_unique<BareKineticEnergy<double>>(elec);
+  h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -185,7 +185,6 @@ TEST_CASE("SODMC", "[drivers][dmc]")
    <parameter name=\"steps\">1</parameter> \
    <parameter name=\"blocks\">1</parameter> \
    <parameter name=\"timestep\">0.1</parameter> \
-   <parameter name=\"SpinMoves\">yes</parameter> \
    <parameter name=\"SpinMass\">0.25</parameter> \
   </qmc> \
   ";
@@ -213,6 +212,5 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   REQUIRE(elec.spins[0] == Approx(-0.74465948215809097));
 
   delete doc;
-  delete p_bke;
 }
 } // namespace qmcplusplus

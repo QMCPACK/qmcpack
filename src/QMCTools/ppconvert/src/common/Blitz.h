@@ -6,6 +6,7 @@
 //
 // File developed by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Alfredo A. Correa, correaa@llnl.gov, Lawrence Livermore National Laboratory
 //
 // File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,22 +15,127 @@
 #ifndef MYBLITZ_H
 #define MYBLITZ_H
 
+#include <algorithm> // transform
+#include <array>
 #include <complex>
+#include <numeric> // inner_product
 
 #include <string.h>
-#include "blitz/array.h"
-#include "blitz/tinyvec-et.h"
 
-using namespace blitz;
+#include <multi/array.hpp>
+
+template<class T, std::size_t N, class base_type = std::array<T, N>> 
+struct TinyVector : base_type{
+	TinyVector(T d = T(0)){base_type::fill(d);}
+	T const& operator()(std::size_t n) const{return base_type::operator[](n);}
+	T&       operator()(std::size_t n)      {return base_type::operator[](n);}
+	template<class Scalar>
+	friend TinyVector& operator*=(TinyVector& v, Scalar s){std::transform(v.begin(), v.end(), v.begin(), [&s](auto e){return e*s;}); return v;}
+};
+
+template<class T, std::size_t N1, std::size_t N2, class base_type = std::array<std::array<T, N2>, N1>> 
+struct TinyMatrix : base_type{
+	TinyMatrix& operator=(T t){
+		std::array<T, N2> val; val.fill(t);
+		base_type::fill(val);
+		return *this;
+	}
+	T const& operator()(std::size_t i, std::size_t j) const{return base_type::operator[](i)[j];}
+	T&       operator()(std::size_t i, std::size_t j)      {return base_type::operator[](i)[j];}
+	friend std::ostream& operator<<(std::ostream& os, TinyMatrix const& self){
+		for(auto i = 0; i != N1; ++i){
+			for(auto j = 0; j != N2; ++j) os<< self(i, j) <<',';
+			os<<'\n';
+		}
+		return os;
+	}
+};
+
+template<class T, int D, class base_type = boost::multi::array<T, D>> // needs to be *int* for matching template parameters in functions
+struct Array : base_type{
+	using base_type::base_type;
+	Array& operator=(T t){base_type::operator=(t); return *this;}
+	Array(int rs, int cs) : base_type({rs, cs}){}
+	std::ptrdiff_t extent(int d) const{
+		switch(d){
+			case 0: return std::get<0>(base_type::sizes());
+			case 1: return std::get<1>(base_type::sizes());
+		}
+		assert(false);
+		return 0;
+	}
+	auto rows() const{return std::get<0>(base_type::sizes());}
+	auto cols() const{return std::get<1>(base_type::sizes());}
+	void resize(int rs, int cs){
+		base_type::reextent({rs, cs});
+	}
+	using sizes_type = decltype(std::declval<base_type const&>().sizes());
+	sizes_type shape() const{return base_type::sizes();}
+	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
+	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
+	template<class... Ints>
+	void resize(Ints... ns){base_type::reextent(std::make_tuple(ns...));}
+	typename base_type::element_ptr       data()      {return base_type::data_elements();}
+	typename base_type::element_const_ptr data() const{return base_type::data_elements();}
+};
+
+template<class T, class base_type>
+struct Array<T, 1, base_type> : base_type{
+	using base_type::base_type;
+	Array& operator=(T t){std::fill(base_type::begin(), base_type::end(), t); return *this;}
+	friend Array operator-(Array const& a, Array const& b){
+		assert(a.size() == b.size());
+		Array ret(a.size());
+		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a - b;});
+		return ret;
+	}
+	friend Array operator+(Array const& a, Array const& b){
+		assert(a.extensions() == b.extensions());
+		Array ret(a.extensions());
+		std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b){return a + b;});
+		return ret;
+	}
+	auto rows() const{return base_type::size();}
+	using sizes_type = decltype(std::declval<base_type const&>().sizes());
+	sizes_type shape() const{return base_type::sizes();}
+	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
+	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
+	std::ptrdiff_t extent(int d) const{
+		switch(d){
+			case 0: return std::get<0>(base_type::sizes());
+		}
+		assert(false);
+		return 0;
+	}
+	template<class... Ints>
+	void resize(Ints... ns){base_type::reextent(std::make_tuple(ns...));}
+	friend Array operator*(T const& t, Array const& a){
+		Array ret(a.extensions());
+		std::transform(a.begin(), a.end(), ret.begin(), [&](auto const& e){return t*e;});
+		return ret;
+	}
+	typename base_type::element_ptr       data()      {return base_type::data_elements();}
+	typename base_type::element_const_ptr data() const{return base_type::data_elements();}
+};
+
+struct Range : boost::multi::index_range{
+	using boost::multi::index_range::index_range;
+	static auto all(){return boost::multi::all;}
+};
+
+class nilArraySection{};
+
+template<class... Args> class SliceInfo{};
+
+constexpr class neverDeleteData_t{} neverDeleteData;
+
 typedef double scalar;
 
-// #define NDIM 3
-
-using namespace blitz;
 typedef TinyVector<scalar, 1> Vec1;
 typedef TinyVector<scalar, 2> Vec2;
 typedef TinyVector<scalar, 3> Vec3;
 typedef TinyVector<scalar, 4> Vec4;
+
 typedef TinyMatrix<scalar, 2, 2> Mat2;
 typedef TinyMatrix<scalar, 3, 3> Mat3;
 typedef TinyVector<std::complex<double>, 3> cVec3;
@@ -46,7 +152,6 @@ typedef TinyMatrix<std::complex<double>, 3, 3> cMat3;
 /* #define isinf(x) __isinfd(x) */
 /* #endif */
 
-// using blitz::Array;
 template<class T, int size>
 inline TinyVector<T, size> operator-(TinyVector<T, size> v)
 {
@@ -328,16 +433,15 @@ inline cVec3 operator*(const cMat3& A, const cVec3& x)
   return Ax;
 }
 
-inline double distSqrd(Vec2 a, Vec2 b) { return dot(a - b, a - b); }
-
-inline double distSqrd(Vec3 a, Vec3 b) { return dot(a - b, a - b); }
-
+inline double distSqrd(Vec2 a, Vec2 b) { 
+	return std::inner_product(a.begin(), a.end(), b.begin(), 0., std::plus<>{}, [](auto ae, auto be){return (ae - be)*(ae - be);});
+}
 
 template<class T>
 class SymmArray
 {
 private:
-  blitz::Array<T, 1> A;
+  Array<T, 1> A;
   int N;
   inline int index(int row, int col) const
   {
@@ -371,13 +475,13 @@ public:
 };
 
 
-inline void Vec2Array(blitz::Array<Vec2, 1>& vec, blitz::Array<double, 1>& array)
+inline void Vec2Array(Array<Vec2, 1>& vec, Array<double, 1>& array)
 {
   assert(array.extent(0) == (2 * vec.size()));
   memcpy(array.data(), vec.data(), array.size() * sizeof(double));
 }
 
-inline void Vec2Array(blitz::Array<Vec3, 1>& vec, blitz::Array<double, 1>& array)
+inline void Vec2Array(Array<Vec3, 1>& vec, Array<double, 1>& array)
 {
   assert(array.extent(0) == (3 * vec.size()));
   for (int i = 0; i < vec.size(); i++)
@@ -390,27 +494,27 @@ inline void Vec2Array(blitz::Array<Vec3, 1>& vec, blitz::Array<double, 1>& array
   // 	 array.size()*sizeof(double));
 }
 
-inline void Array2Vec(blitz::Array<double, 1>& array, blitz::Array<Vec2, 1>& vec)
+inline void Array2Vec(Array<double, 1>& array, Array<Vec2, 1>& vec)
 {
   assert(array.extent(0) == (2 * vec.size()));
   memcpy(vec.data(), array.data(), array.size() * sizeof(double));
 }
 
-inline void Array2Vec(blitz::Array<double, 1>& array, blitz::Array<Vec3, 1>& vec)
+inline void Array2Vec(Array<double, 1>& array, Array<Vec3, 1>& vec)
 {
   assert(array.extent(0) == (3 * vec.size()));
   memcpy(vec.data(), array.data(), array.size() * sizeof(double));
 }
 
 
-inline void Vec2Array(blitz::Array<Vec2, 1>& vec, blitz::Array<double, 2>& array)
+inline void Vec2Array(Array<Vec2, 1>& vec, Array<double, 2>& array)
 {
   assert(array.extent(0) == vec.size());
   assert(array.extent(1) == 2);
   memcpy(array.data(), vec.data(), array.size() * sizeof(double));
 }
 
-inline void Vec2Array(blitz::Array<Vec3, 1>& vec, blitz::Array<double, 2>& array)
+inline void Vec2Array(Array<Vec3, 1>& vec, Array<double, 2>& array)
 {
   assert(array.extent(0) == vec.size());
   assert(array.extent(1) == 3);
@@ -425,31 +529,31 @@ inline void Vec2Array(blitz::Array<Vec3, 1>& vec, blitz::Array<double, 2>& array
 }
 
 
-inline void Array2Vec(blitz::Array<double, 2>& array, blitz::Array<Vec2, 1>& vec)
+inline void Array2Vec(Array<double, 2>& array, Array<Vec2, 1>& vec)
 {
   assert(array.extent(0) == vec.size());
   assert(array.extent(1) == 2);
   memcpy(vec.data(), array.data(), array.size() * sizeof(double));
 }
 
-inline void Array2Vec(blitz::Array<double, 2>& array, blitz::Array<Vec3, 1>& vec)
+inline void Array2Vec(Array<double, 2>& array, Array<Vec3, 1>& vec)
 {
   assert(array.extent(0) == vec.size());
   assert(array.extent(1) == 3);
   memcpy(vec.data(), array.data(), array.size() * sizeof(double));
 }
 
-inline blitz::Array<Vec3, 1> operator+(const blitz::Array<Vec3, 1>& array, Vec3 vec)
+inline Array<Vec3, 1> operator+(const Array<Vec3, 1>& array, Vec3 vec)
 {
-  blitz::Array<Vec3, 1> result(array.size());
+  Array<Vec3, 1> result(array.size());
   for (int i = 0; i < array.size(); i++)
     result(i) = vec + array(i);
   return result;
 }
 
-inline blitz::Array<Vec3, 1> operator+(Vec3 vec, const blitz::Array<Vec3, 1>& array)
+inline Array<Vec3, 1> operator+(Vec3 vec, const Array<Vec3, 1>& array)
 {
-  blitz::Array<Vec3, 1> result(array.size());
+  Array<Vec3, 1> result(array.size());
   for (int i = 0; i < array.size(); i++)
     result(i) = vec + array(i);
   return result;
@@ -472,7 +576,7 @@ inline bool operator!=(const TinyVector<T, N>& a, const TinyVector<T, N>& b)
 
 
 template<typename T1, typename T2>
-inline void copy(const blitz::Array<T1, 3>& src, blitz::Array<T2, 3>& dest)
+inline void copy(const Array<T1, 3>& src, Array<T2, 3>& dest)
 {
   assert(src.shape() == dest.shape());
   for (int ix = 0; ix < src.extent(0); ix++)

@@ -147,12 +147,12 @@ device_ptr<T> make_device_ptr(T* p)
   print_stacktrace;
   throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
 }
-template<class T>
-device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p)
-{
-  print_stacktrace;
-  throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
-}
+//template<class T>
+//device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p)
+//{
+//  print_stacktrace;
+//  throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
+//}
 template<class T>
 device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p)
 {
@@ -192,12 +192,12 @@ device_ptr<T> make_device_ptr(T* p)
 {
   return p;
 }
-template<class T>
-device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p)
-{ //return device_ptr<T>{to_address(p)}; }
-  print_stacktrace;
-  throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");
-}
+//template<class T>
+//device_ptr<T> make_device_ptr(boost::mpi3::intranode::array_ptr<T> p) = delete;
+//{ //return device_ptr<T>{to_address(p)}; }*/
+//  print_stacktrace;*/
+//  throw std::runtime_error(" Invalid pointer conversion: device_pointer<T> to T*.");*/
+//}
 template<class T>
 device_ptr<T> make_device_ptr(shm::shm_ptr_with_raw_ptr_dispatch<T> p)
 {
@@ -422,15 +422,15 @@ public:
 
     std::string sR("yes");
     ParameterSet m_param;
-    m_param.add(NMO_FULL, "NMO_FULL", "int");
-    m_param.add(NMO_FULL, "NMO", "int");
-    m_param.add(NAEA, "NAEA", "int");
-    m_param.add(NAEB, "NAEB", "int");
-    m_param.add(NCA, "NCA", "int");
-    m_param.add(NCB, "NCB", "int");
-    m_param.add(NETOT, "NETOT", "int");
-    m_param.add(MS2, "MS2", "int");
-    m_param.add(sR, "spinRestricted", "string");
+    m_param.add(NMO_FULL, "NMO_FULL");
+    m_param.add(NMO_FULL, "NMO");
+    m_param.add(NAEA, "NAEA");
+    m_param.add(NAEB, "NAEB");
+    m_param.add(NCA, "NCA");
+    m_param.add(NCB, "NCB");
+    m_param.add(NETOT, "NETOT");
+    m_param.add(MS2, "MS2");
+    m_param.add(sR, "spinRestricted");
     m_param.put(cur);
 
     spinRestricted = false;

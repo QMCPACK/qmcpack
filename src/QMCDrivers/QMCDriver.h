@@ -214,8 +214,6 @@ protected:
    * using MyCounter++ as in RQMC.
    */
   int MyCounter;
-  ///the number of blocks to be rolled back
-  int RollBackBlocks;
   ///the number to delay updates by
   int kDelay;
   /** period of dumping walker configurations and everything else for restart
@@ -283,7 +281,7 @@ protected:
   RealType Tau;
 
   ///maximum cpu in secs
-  RealType MaxCPUSecs;
+  int MaxCPUSecs;
 
   ///Time-step factor \f$ 1/(2\tau)\f$
   RealType m_oneover2tau;
@@ -333,8 +331,7 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///turn on spin moves
-  std::string SpinMoves;
+  ///spin mass for spinor calcs
   RealType SpinMass;
 
   bool putQMCInfo(xmlNodePtr cur);

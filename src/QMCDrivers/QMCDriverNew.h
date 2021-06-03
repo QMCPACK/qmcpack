@@ -38,6 +38,8 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/ContextForSteps.h"
 #include "OhmmsApp/ProjectData.h"
+#include "MultiWalkerDispatchers.h"
+#include "DriverWalkerTypes.h"
 
 class Communicate;
 
@@ -115,8 +117,6 @@ public:
   QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
                MCPopulation&& population,
-               TrialWaveFunction& psi,
-               QMCHamiltonian& h,
                const std::string timer_prefix,
                Communicate* comm,
                const std::string& QMC_driver_type,
@@ -174,22 +174,11 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  /** add QMCHamiltonian/TrialWaveFunction pair for multiple
-   * @param h QMCHamiltonian
-   * @param psi TrialWaveFunction
-   *
-   * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
-   * for energy difference evaluations.
-   */
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override;
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override{};
 
   void createRngsStepContexts(int num_crowds);
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
-
-  int addObservable(const std::string& aname);
-
-  RealType getObservable(int i);
 
   ///set global offsets of the walkers
   void setWalkerOffsets();
@@ -346,10 +335,6 @@ protected:
   ///counter for number of moves /rejected
   IndexType nReject;
 
-
-  ///maximum cpu in secs
-  RealType MaxCPUSecs;
-
   ///Time-step factor \f$ 1/(2\tau)\f$
   RealType m_oneover2tau;
   ///Time-step factor \f$ \sqrt{\tau}\f$
@@ -360,15 +345,20 @@ protected:
   ///root of all the output files
   std::string root_name_;
 
-
-  ///the entire (or on node) walker population
+  /** the entire (on node) walker population
+   * it serves VMCBatch and DMCBatch right now but will be polymorphic
+   */
   MCPopulation population_;
 
-  ///trial function
-  TrialWaveFunction& Psi;
+  /** the golden multi walker shared resource
+   * serves ParticleSet TrialWaveFunction right now but actually should be based on MCPopulation.
+   * per crowd resources are copied from this gold instance
+   * it should be activated when dispatchers don't serialize walkers
+   */
+  struct DriverWalkerResourceCollection golden_resource_;
 
-  ///Hamiltonian
-  QMCHamiltonian& H;
+  /// multi walker dispatchers
+  const MultiWalkerDispatchers dispatchers_;
 
   /** Observables manager
    *  Has very problematic owner ship and life cycle.
@@ -383,12 +373,6 @@ protected:
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
   std::vector<std::unique_ptr<ContextForSteps>> step_contexts_;
-
-  ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
-
-  ///a list of QMCHamiltonians for multiple method
-  std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
   std::vector<std::unique_ptr<RandomGenerator_t>> Rng;

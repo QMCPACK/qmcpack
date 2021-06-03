@@ -98,7 +98,7 @@ public:
     if (cur != NULL)
     {
       ParameterSet m_param;
-      m_param.add(orb_file, "orbitals", "std::string");
+      m_param.add(orb_file, "orbitals");
       m_param.put(cur);
     }
 

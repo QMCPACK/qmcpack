@@ -55,32 +55,32 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
   std::string ramp_eta_str("no");
 
   ParameterSet m_param;
-  m_param.add(excited, "targetExcited", "string");
-  m_param.add(omega_, "omega", "double");
+  m_param.add(excited, "targetExcited");
+  m_param.add(omega_, "omega");
   // Type of descent method being used
-  m_param.add(flavor_, "flavor", "string");
+  m_param.add(flavor_, "flavor");
   // Step size inputs for different parameter types
-  m_param.add(tjf_2body_eta_, "TJF_2Body_eta", "double");
-  m_param.add(tjf_1body_eta_, "TJF_1Body_eta", "double");
-  m_param.add(f_eta_, "F_eta", "double");
-  m_param.add(ci_eta_, "CI_eta", "double");
-  m_param.add(gauss_eta_, "Gauss_eta", "double");
-  m_param.add(orb_eta_, "Orb_eta", "double");
+  m_param.add(tjf_2body_eta_, "TJF_2Body_eta");
+  m_param.add(tjf_1body_eta_, "TJF_1Body_eta");
+  m_param.add(f_eta_, "F_eta");
+  m_param.add(ci_eta_, "CI_eta");
+  m_param.add(gauss_eta_, "Gauss_eta");
+  m_param.add(orb_eta_, "Orb_eta");
   // Whether to gradually ramp up step sizes and over how many steps
-  m_param.add(ramp_eta_str, "Ramp_eta", "string");
-  m_param.add(ramp_num_, "Ramp_num", "int");
+  m_param.add(ramp_eta_str, "Ramp_eta");
+  m_param.add(ramp_num_, "Ramp_num");
   // If using descent as part of hybrid method, how many parameter difference
   // vectors to store
-  m_param.add(store_num_, "Stored_Vectors", "int");
-  m_param.add(print_deriv_, "print_derivs", "string");
+  m_param.add(store_num_, "Stored_Vectors");
+  m_param.add(print_deriv_, "print_derivs");
 
   // When to start storing samples for a final average and when to start
   // computing it
-  m_param.add(collection_step_, "collection_step", "int");
-  m_param.add(compute_step_, "compute_step", "int");
+  m_param.add(collection_step_, "collection_step");
+  m_param.add(compute_step_, "compute_step");
 
-  app_log() << "Omega from input file: " << omega_ << std::endl;
-  app_log() << "Current collection step: " << collection_step_ << std::endl;
+  //app_log() << "Omega from input file: " << omega_ << std::endl;
+  //app_log() << "Current collection step: " << collection_step_ << std::endl;
   // Use -1 as a default value when you don't collect history. Would want to
   // collect only during the descent finalization section
   if (collection_step_ != -1)
@@ -102,6 +102,37 @@ bool DescentEngine::processXML(const xmlNodePtr cur)
 void DescentEngine::prepareStorage(const int num_replicas, const int num_optimizables)
 {
   lderivs_.resize(num_optimizables);
+
+  //Resize the history vectors for the current iteration for the number of threads present
+  replica_vg_history_.resize(num_replicas);
+  replica_w_history_.resize(num_replicas);
+  replica_lev_history_.resize(num_replicas);
+
+  if(engine_target_excited_)
+  {
+    replica_tnv_history_.resize(num_replicas);
+    replica_tdv_history_.resize(num_replicas);
+  
+  }
+  
+ 
+  //Also resize the history vectors for descent finalization if necessary
+  if (final_descent_num_ > collection_step_ && collect_count_)
+  {
+  replica_final_vg_history_.resize(num_replicas);
+  replica_final_w_history_.resize(num_replicas);
+  replica_final_lev_history_.resize(num_replicas);
+  
+  
+
+    if(engine_target_excited_)
+    {
+        replica_final_tnv_history_.resize(num_replicas);
+        replica_final_tdv_history_.resize(num_replicas);
+    
+    }
+  }
+
 
   // Ground state case
   if (!engine_target_excited_)
@@ -186,23 +217,24 @@ void DescentEngine::takeSample(const int replica_id,
                                ValueType vgs_samp,
                                ValueType weight_samp)
 {
-  const size_t num_optimizables = der_rat_samp.size() - 1;
+
+    const size_t num_optimizables = der_rat_samp.size() - 1;
 
   ValueType etmp = static_cast<ValueType>(le_der_samp.at(0));
 
 
   // Store a history of samples for the current iteration
-  lev_history_.push_back(etmp * vgs_samp);
-  vg_history_.push_back(vgs_samp);
-  w_history_.push_back(static_cast<ValueType>(1.0));
+  replica_lev_history_[replica_id].push_back(etmp * vgs_samp);
+  replica_vg_history_[replica_id].push_back(vgs_samp);
+  replica_w_history_[replica_id].push_back(static_cast<ValueType>(1.0));
 
   // If on descent finalizing section and past the collection step, store each
   // local energy for this iteration
   if (final_descent_num_ > collection_step_ && collect_count_)
   {
-    final_lev_history_.push_back(etmp * vgs_samp);
-    final_vg_history_.push_back(vgs_samp);
-    final_w_history_.push_back(1.0);
+    replica_final_lev_history_[replica_id].push_back(etmp * vgs_samp);
+    replica_final_vg_history_[replica_id].push_back(vgs_samp);
+    replica_final_w_history_[replica_id].push_back(1.0);
   }
 
   // Ground State Case
@@ -223,14 +255,15 @@ void DescentEngine::takeSample(const int replica_id,
     n = (omega_ - etmp) * vgs_samp;
     d = (omega_ * omega_ - static_cast<ValueType>(2) * omega_ * etmp + etmp * etmp) * vgs_samp;
 
+    replica_tnv_history_[replica_id].push_back(n);
+    replica_tdv_history_[replica_id].push_back(d);
+
     if (final_descent_num_ > collection_step_ && collect_count_)
     {
-      final_tnv_history_.push_back(n);
-      final_tdv_history_.push_back(d);
+      replica_final_tnv_history_[replica_id].push_back(n);
+      replica_final_tdv_history_[replica_id].push_back(d);
     }
 
-    tnv_history_.push_back(n);
-    tdv_history_.push_back(d);
 
     for (int i = 0; i < num_optimizables; i++)
     {
@@ -257,6 +290,59 @@ void DescentEngine::takeSample(const int replica_id,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescentEngine::sample_finish()
 {
+
+  //After a potentially multithreaded section, cocatenate the replica history vectors
+  int num_threads = replica_vg_history_.size();
+  for(int i =0; i< num_threads; i++)
+  {
+    vg_history_.insert(vg_history_.end(), replica_vg_history_[i].begin(),replica_vg_history_[i].end());
+    w_history_.insert(w_history_.end(), replica_w_history_[i].begin(),replica_w_history_[i].end());
+    lev_history_.insert(lev_history_.end(),replica_lev_history_[i].begin(),replica_lev_history_[i].end());
+  
+    //Clear the individual thread history vectors for the next iteration after their values have been collected
+    replica_vg_history_[i].clear();
+    replica_w_history_[i].clear();
+    replica_lev_history_[i].clear();
+
+
+    if(engine_target_excited_)
+    {
+        
+        tnv_history_.insert(tnv_history_.end(), replica_tnv_history_[i].begin(),replica_tnv_history_[i].end());
+        tdv_history_.insert(tdv_history_.end(), replica_tdv_history_[i].begin(),replica_tdv_history_[i].end());
+   
+       replica_tnv_history_[i].clear();
+      replica_tdv_history_[i].clear(); 
+    }
+  }
+
+  //Do the same for finalization histories if necessary
+  if (final_descent_num_ > collection_step_ && collect_count_)
+  {
+     for(int i =0; i< num_threads; i++)
+     {
+        final_vg_history_.insert(final_vg_history_.end(), replica_final_vg_history_[i].begin(),replica_final_vg_history_[i].end());
+        final_w_history_.insert(final_w_history_.end(), replica_final_w_history_[i].begin(),replica_final_w_history_[i].end());
+        final_lev_history_.insert(final_lev_history_.end(),replica_final_lev_history_[i].begin(),replica_final_lev_history_[i].end());
+
+     replica_final_vg_history_[i].clear();
+     replica_final_w_history_[i].clear();
+     replica_final_lev_history_[i].clear();
+
+
+        if(engine_target_excited_)
+        {
+            
+            final_tnv_history_.insert(final_tnv_history_.end(), replica_final_tnv_history_[i].begin(),replica_final_tnv_history_[i].end());
+            final_tdv_history_.insert(final_tdv_history_.end(), replica_final_tdv_history_[i].begin(),replica_final_tdv_history_[i].end());
+ 
+            replica_final_tnv_history_[i].clear();
+            replica_final_tdv_history_[i].clear();       
+        }
+     }  
+  }
+
+
   int numSamples = lev_history_.size();
 
   //Compute average energy and variance for this iteration

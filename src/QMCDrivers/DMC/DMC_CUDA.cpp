@@ -51,9 +51,9 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w,
   RootName = "dmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  //m_param.add(myWarmupSteps,"warmupSteps","int");
-  //m_param.add(nTargetSamples,"targetWalkers","int");
-  m_param.add(ScaleWeight, "scaleweight", "string");
+  //m_param.add(myWarmupSteps,"warmupSteps");
+  //m_param.add(nTargetSamples,"targetWalkers");
+  m_param.add(ScaleWeight, "scaleweight");
 
   H.setRandomGenerator(&Random);
 }
@@ -108,8 +108,8 @@ bool DMCcuda::run()
     W[iw]->Weight = 1.0;
 
   LoopTimer<> dmc_loop;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
-  bool enough_time_for_next_iteration = true;
+  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
+
   do
   {
     dmc_loop.start();
@@ -323,14 +323,20 @@ bool DMCcuda::run()
     ++block;
     recordBlock(block);
     dmc_loop.stop();
-    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(dmc_loop);
+
+    bool stop_requested = false;
     // Rank 0 decides whether the time limit was reached
-    myComm->bcast(enough_time_for_next_iteration);
-    if (!enough_time_for_next_iteration)
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(dmc_loop);
+    myComm->bcast(stop_requested);
+    if (stop_requested)
     {
-      app_log() << runtimeControl.time_limit_message("DMC", block);
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("DMC_CUDA", block);
+      run_time_manager.markStop();
+      break;
     }
-  } while (block < nBlocks && enough_time_for_next_iteration);
+  } while (block < nBlocks);
 #ifdef USE_NVTX_API
   nvtxRangePop();
 #endif
@@ -413,11 +419,11 @@ bool DMCcuda::put(xmlNodePtr q)
 
   BranchInterval = -1;
   ParameterSet p;
-  p.add(BranchInterval, "branchInterval", "string");
-  p.add(BranchInterval, "branchinterval", "string");
-  p.add(BranchInterval, "substeps", "int");
-  p.add(BranchInterval, "subSteps", "int");
-  p.add(BranchInterval, "sub_steps", "int");
+  p.add(BranchInterval, "branchInterval");
+  p.add(BranchInterval, "branchinterval");
+  p.add(BranchInterval, "substeps");
+  p.add(BranchInterval, "subSteps");
+  p.add(BranchInterval, "sub_steps");
   p.put(q);
   return true;
 }

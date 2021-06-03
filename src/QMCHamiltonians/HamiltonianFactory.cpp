@@ -76,7 +76,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
   ClassName = "HamiltonianFactory";
   myName    = hName;
   targetPtcl.set_quantum();
-  targetH->addOperator(new BareKineticEnergy<OHMMS_PRECISION_FULL>(targetPtcl), "Kinetic");
+  targetH->addOperator(std::make_unique<BareKineticEnergy<OHMMS_PRECISION_FULL>>(targetPtcl), "Kinetic");
 }
 
 /** main hamiltonian build function
@@ -168,9 +168,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 #if !defined(QMC_CUDA)
       else if (potType == "skpot")
       {
-        SkPot* hs = new SkPot(targetPtcl);
+        std::unique_ptr<SkPot> hs = std::make_unique<SkPot>(targetPtcl);
         hs->put(cur);
-        targetH->addOperator(hs, "SkPot", true);
+        targetH->addOperator(std::move(hs), "SkPot", true);
       }
 #endif
 #if OHMMS_DIM == 3
@@ -190,28 +190,28 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     {
       if (potType == "harmonic_ext" || potType == "HarmonicExt")
       {
-        HarmonicExternalPotential* hs = new HarmonicExternalPotential(targetPtcl);
+        std::unique_ptr<HarmonicExternalPotential> hs = std::make_unique<HarmonicExternalPotential>(targetPtcl);
         hs->put(cur);
-        targetH->addOperator(hs, "HarmonicExt", true);
+        targetH->addOperator(std::move(hs), "HarmonicExt", true);
       }
       if (potType == "grid")
       {
-        GridExternalPotential* hs = new GridExternalPotential(targetPtcl);
+        std::unique_ptr<GridExternalPotential> hs = std::make_unique<GridExternalPotential>(targetPtcl);
         hs->put(cur);
-        targetH->addOperator(hs, "Grid", true);
+        targetH->addOperator(std::move(hs), "Grid", true);
       }
     }
     else if (cname == "estimator")
     {
       if (potType == "flux")
       {
-        targetH->addOperator(new ConservedEnergy, potName, false);
+        targetH->addOperator(std::make_unique<ConservedEnergy>(), potName, false);
       }
       else if (potType == "specieskinetic")
       {
-        SpeciesKineticEnergy* apot = new SpeciesKineticEnergy(targetPtcl);
+        std::unique_ptr<SpeciesKineticEnergy> apot = std::make_unique<SpeciesKineticEnergy>(targetPtcl);
         apot->put(cur);
-        targetH->addOperator(apot, potName, false);
+        targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "latticedeviation")
       {
@@ -238,10 +238,11 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         local_attrib.add(source_group, "sgroup");
         local_attrib.put(cur);
 
-        LatticeDeviationEstimator* apot =
-            new LatticeDeviationEstimator(*target_particle_set, *source_particle_set, target_group, source_group);
+        std::unique_ptr<LatticeDeviationEstimator> apot =
+            std::make_unique<LatticeDeviationEstimator>(*target_particle_set, *source_particle_set, target_group,
+                                                        source_group);
         apot->put(cur);
-        targetH->addOperator(apot, potName, false);
+        targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "Force")
       {
@@ -249,47 +250,48 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
       else if (potType == "gofr")
       {
-        PairCorrEstimator* apot = new PairCorrEstimator(targetPtcl, sourceInp);
+        std::unique_ptr<PairCorrEstimator> apot = std::make_unique<PairCorrEstimator>(targetPtcl, sourceInp);
         apot->put(cur);
-        targetH->addOperator(apot, potName, false);
+        targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "density")
       {
         //          if(PBCType)//only if perioidic
         {
-          DensityEstimator* apot = new DensityEstimator(targetPtcl);
+          std::unique_ptr<DensityEstimator> apot = std::make_unique<DensityEstimator>(targetPtcl);
           apot->put(cur);
-          targetH->addOperator(apot, potName, false);
+          targetH->addOperator(std::move(apot), potName, false);
         }
       }
       else if (potType == "spindensity")
       {
         app_log() << "  Adding SpinDensity" << std::endl;
-        SpinDensity* apot = new SpinDensity(targetPtcl);
+        std::unique_ptr<SpinDensity> apot = std::make_unique<SpinDensity>(targetPtcl);
         apot->put(cur);
-        targetH->addOperator(apot, potName, false);
+        targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "structurefactor")
       {
         app_log() << "  Adding StaticStructureFactor" << std::endl;
-        StaticStructureFactor* apot = new StaticStructureFactor(targetPtcl);
+        std::unique_ptr<StaticStructureFactor> apot = std::make_unique<StaticStructureFactor>(targetPtcl);
         apot->put(cur);
-        targetH->addOperator(apot, potName, false);
+        targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "orbitalimages")
       {
         app_log() << "  Adding OrbitalImages" << std::endl;
-        OrbitalImages* apot = new OrbitalImages(targetPtcl, ptclPool, myComm, *psi_it->second);
+        std::unique_ptr<OrbitalImages> apot =
+            std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, *psi_it->second);
         apot->put(cur);
-        targetH->addOperator(apot, potName, false);
+        targetH->addOperator(std::move(apot), potName, false);
       }
 #if !defined(REMOVE_TRACEMANAGER)
       else if (potType == "energydensity" || potType == "EnergyDensity")
       {
         app_log() << "  Adding EnergyDensityEstimator" << std::endl;
-        EnergyDensityEstimator* apot = new EnergyDensityEstimator(ptclPool, defaultKE);
+        std::unique_ptr<EnergyDensityEstimator> apot = std::make_unique<EnergyDensityEstimator>(ptclPool, defaultKE);
         apot->put(cur);
-        targetH->addOperator(apot, potName, false);
+        targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "dm1b")
       {
@@ -308,9 +310,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
-        DensityMatrices1B* apot = new DensityMatrices1B(targetPtcl, *targetPsi, Pc, *psi_it->second);
+        std::unique_ptr<DensityMatrices1B> apot =
+            std::make_unique<DensityMatrices1B>(targetPtcl, *targetPsi, Pc, *psi_it->second);
         apot->put(cur);
-        targetH->addOperator(apot, potName, false);
+        targetH->addOperator(std::move(apot), potName, false);
       }
 #endif
       else if (potType == "sk")
@@ -318,12 +321,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if (PBCType) //only if perioidic
         {
 #ifdef QMC_CUDA
-          SkEstimator_CUDA* apot = new SkEstimator_CUDA(targetPtcl);
+          std::unique_ptr<SkEstimator_CUDA> apot = std::make_unique<SkEstimator_CUDA>(targetPtcl);
 #else
-          SkEstimator* apot = new SkEstimator(targetPtcl);
+          std::unique_ptr<SkEstimator> apot = std::make_unique<SkEstimator>(targetPtcl);
 #endif
           apot->put(cur);
-          targetH->addOperator(apot, potName, false);
+          targetH->addOperator(std::move(apot), potName, false);
           app_log() << "Adding S(k) estimator" << std::endl;
 #if defined(USE_REAL_STRUCT_FACTOR)
           app_log() << "S(k) estimator using Real S(k)" << std::endl;
@@ -350,9 +353,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for Chiesa correction.");
         }
-        const TrialWaveFunction& psi = *psi_it->second->getTWF();
-        ChiesaCorrection* chiesa     = new ChiesaCorrection(source, psi);
-        targetH->addOperator(chiesa, "KEcorr", false);
+        const TrialWaveFunction& psi             = *psi_it->second->getTWF();
+        std::unique_ptr<ChiesaCorrection> chiesa = std::make_unique<ChiesaCorrection>(source, psi);
+        targetH->addOperator(std::move(chiesa), "KEcorr", false);
       }
       else if (potType == "skall")
       {
@@ -370,9 +373,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 
         if (PBCType)
         {
-          SkAllEstimator* apot = new SkAllEstimator(*source, targetPtcl);
+          std::unique_ptr<SkAllEstimator> apot = std::make_unique<SkAllEstimator>(*source, targetPtcl);
           apot->put(cur);
-          targetH->addOperator(apot, potName, false);
+          targetH->addOperator(std::move(apot), potName, false);
           app_log() << "Adding S(k) ALL estimator" << std::endl;
         }
       }
@@ -382,9 +385,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         if (estType == "coulomb")
         {
-          Pressure* BP = new Pressure(targetPtcl);
+          std::unique_ptr<Pressure> BP = std::make_unique<Pressure>(targetPtcl);
           BP->put(cur);
-          targetH->addOperator(BP, "Pressure", false);
+          targetH->addOperator(std::move(BP), "Pressure", false);
           int nlen(100);
           attrib.add(nlen, "truncateSum");
           attrib.put(cur);
@@ -404,11 +407,11 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");
         }
-        TrialWaveFunction* psi = (*psi_it).second->getTWF();
-        MomentumEstimator* ME  = new MomentumEstimator(targetPtcl, *psi);
+        TrialWaveFunction* psi                = (*psi_it).second->getTWF();
+        std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl, *psi);
         bool rt(myComm->rank() == 0);
         ME->putSpecial(cur, targetPtcl, rt);
-        targetH->addOperator(ME, "MomentumEstimator", false);
+        targetH->addOperator(std::move(ME), "MomentumEstimator", false);
       }
     }
     else if (cname == "Kinetic")
@@ -467,9 +470,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if (potType == "ForwardWalking")
       {
         app_log() << "  Adding Forward Walking Operator" << std::endl;
-        ForwardWalking* FW = new ForwardWalking();
+        std::unique_ptr<ForwardWalking> FW = std::make_unique<ForwardWalking>();
         FW->putSpecial(cur, *targetH, targetPtcl);
-        targetH->addOperator(FW, "ForwardWalking", false);
+        targetH->addOperator(std::move(FW), "ForwardWalking", false);
         dmc_correction = true;
       }
     }

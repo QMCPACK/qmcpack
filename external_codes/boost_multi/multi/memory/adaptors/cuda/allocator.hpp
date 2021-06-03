@@ -42,8 +42,9 @@ long allocation_counter::bytes_deallocated = 0;
 
 template<class T=void> 
 class allocator : protected allocation_counter{
+	static_assert(std::is_same<T, std::decay_t<T>>{}, 
+		"allocated type should be a value type, not a reference or decorated type");
 public:
-	static_assert( std::is_same<T, std::decay_t<T>>{}, "!" );
 	using value_type = T;
 	using pointer = ptr<T>;
 	using const_pointer = ptr<T const>;
@@ -178,7 +179,7 @@ public:
 
 }
 
-#if not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi memory allocator"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>

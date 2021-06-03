@@ -18,15 +18,17 @@ VMCDriverInput::VMCDriverInput(bool use_drift) : use_drift_(use_drift) {}
 void VMCDriverInput::readXML(xmlNodePtr node)
 {
   ParameterSet parameter_set_;
-  std::string use_drift("yes");
-  parameter_set_.add(use_drift, "usedrift", "string");
-  parameter_set_.add(use_drift, "use_drift", "string");
-  parameter_set_.add(samples_, "samples", "int");
-  parameter_set_.add(samples_per_thread_, "samplesperthread", "int");
-  parameter_set_.add(steps_between_samples_, "stepsbetweensamples", "int");
+  std::string use_drift;
+  parameter_set_.add(use_drift, "usedrift", {"yes", "no"});
+  parameter_set_.add(use_drift, "use_drift", {"yes", "no"});
+  parameter_set_.add(samples_, "samples");
   parameter_set_.put(node);
-  if (use_drift == "no")
-    use_drift_ = false;
+
+  use_drift_ = use_drift == "yes";
+  if (use_drift_)
+    app_log() << "  Random walking with drift" << std::endl;
+  else
+    app_log() << "  Random walking without drift" << std::endl;
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const VMCDriverInput& vmci) { return o_stream; }

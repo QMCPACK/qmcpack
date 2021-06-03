@@ -48,6 +48,10 @@ try:
     #  (The executable should still work even if Nexus is not installed)
     find_nexus_modules()
 
+    versions = import_nexus_module('versions')
+    nexus_version = versions.nexus_version
+    del versions
+
     generic = import_nexus_module('generic')
     obj   = generic.obj
     log   = generic.log
@@ -69,6 +73,7 @@ try:
     del numerics
 except:
     # Failing path-based imports, import installed Nexus modules.
+    from versions import nexus_version
     from generic import obj,log,warn,error
     from developer import DevBase
     from numerics import jackknife,jackknife_aux
@@ -298,7 +303,7 @@ def parse_list(opt,name,dtype,len1=False):
 def timestep_fit():
     # read command line inputs
     usage = '''usage: %prog ts [options] [scalar files]'''
-    parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
+    parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
 
     parser.add_option('-f','--fit',dest='fit_function',
                           default='linear',

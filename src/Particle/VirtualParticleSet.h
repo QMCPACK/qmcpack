@@ -65,10 +65,20 @@ public:
                  bool sphere = false,
                  int iat     = -1);
 
-  static void flex_makeMoves(const RefVector<VirtualParticleSet>& vp_list,
-                             const RefVector<const std::vector<PosType>>& deltaV_list,
-                             const RefVector<const NLPPJob<RealType>>& joblist,
-                             bool sphere);
+  static void mw_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
+                           const RefVector<const std::vector<PosType>>& deltaV_list,
+                           const RefVector<const NLPPJob<RealType>>& joblist,
+                           bool sphere);
+
+  static RefVectorWithLeader<ParticleSet> RefVectorWithLeaderParticleSet(
+      const RefVectorWithLeader<VirtualParticleSet>& vp_list)
+  {
+    RefVectorWithLeader<ParticleSet> ref_list(vp_list.getLeader());
+    ref_list.reserve(ref_list.size());
+    for (VirtualParticleSet& vp : vp_list)
+      ref_list.push_back(vp);
+    return ref_list;
+  }
 };
 } // namespace qmcplusplus
 #endif

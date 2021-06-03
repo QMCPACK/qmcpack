@@ -42,9 +42,9 @@ void CoulombPotentialAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   }
 }
 
-OperatorBase* CoulombPotentialAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPotentialAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return new CoulombPotentialAA_CUDA(qp, true);
+  return std::make_unique<CoulombPotentialAA_CUDA>(qp, true);
 }
 
 
@@ -95,9 +95,9 @@ void CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   }
 }
 
-OperatorBase* CoulombPotentialAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPotentialAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return new CoulombPotentialAB_CUDA(Pa, qp);
+  return std::make_unique<CoulombPotentialAB_CUDA>(Pa, qp);
 }
 
 } // namespace qmcplusplus

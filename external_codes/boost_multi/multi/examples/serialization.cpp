@@ -19,7 +19,7 @@ $CXX $0 -o $0x -lboost_unit_test_framework -lstdc++fs -lboost_serialization -lbo
 #include<boost/serialization/binary_object.hpp>
 #include<boost/serialization/complex.hpp>
 
-#include "../tests/../array.hpp"
+#include "../array.hpp"
 
 //#include "../adaptors/cuda.hpp"
 
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 			std::ofstream ofs{"serialization-small-double2D.xml"}; assert(ofs);
 			boost::archive::xml_oarchive{ofs} << BOOST_SERIALIZATION_NVP(d2D);
 		}();
-		std::cerr<<"size "<< (fs::file_size(name)/1e6) <<"MB\n";
+		std::cerr<<"size "<< double(fs::file_size(name))/1e6 <<"MB\n";
 		fs::remove("serialization-small-double2D.xml");
 	}
 	{
@@ -163,19 +163,15 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 			std::ofstream ofs{"serialization-double.xml"}; assert(ofs);
 			boost::archive::xml_oarchive{ofs} << BOOST_SERIALIZATION_NVP(d2D);
 		}();
-		std::cerr<<"size "<< (fs::file_size("serialization-double.xml")/1e6) <<"MB\n";
+		std::cerr<<"size "<< double(fs::file_size("serialization-double.xml"))/1e6 <<"MB\n";
 		fs::remove("serialization-double.xml");
 	}
 
 	using complex = std::complex<float>;
 
-	auto const d2D = []{
-		multi::array<complex, 2> d2D({10000, 1000});
+	auto const d2D = []{multi::array<complex, 2> _({10000, 1000});
 		auto gen = [d = std::uniform_real_distribution<double>{-1, 1}, e = std::mt19937{std::random_device{}()}]() mutable{return std::complex<double>{d(e), d(e)};};
-		std::for_each(
-			begin(d2D), end(d2D), [&](auto&& r){std::generate(begin(r), end(r), gen);}
-		);
-		return d2D;
+		std::for_each(begin(_), end(_), [&](auto&& r){std::generate(begin(r), end(r), gen);}); return _;
 	}();
 	auto size = sizeof(double)*d2D.num_elements();
 	using std::cerr;
@@ -187,15 +183,15 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 			boost::archive::binary_oarchive{ofs} << d2D;
 			return *w;
 		}();
-		cerr<<"size  "<< (file_size(file)/1e6) <<"MB\n";
-		cerr<<"speed "<< (size/1e6)/count <<"MB/s\n";
+		cerr<<"size  "<< double(file_size(file))/1e6 <<"MB\n";
+		cerr<<"speed "<< double(size)/1e6/count <<"MB/s\n";
 		std::decay_t<decltype(d2D)> d2D_cpy;
 		auto count_load = [&, w=watch("binary load")]{
 			std::ifstream ifs{file}; assert(ifs);
 			boost::archive::binary_iarchive{ifs} >> d2D_cpy;
 			return *w;
 		}();
-		std::cerr<<"load speed " << (file_size(file)/1e6)/count_load <<"MB/s\n";
+		std::cerr<<"load speed "<< double(file_size(file))/1e6/count_load <<"MB/s\n";
 		BOOST_REQUIRE( d2D == d2D_cpy );
 		fs::remove(file);
 	}
@@ -208,16 +204,16 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 			boost::archive::xml_oarchive{ofs} << BOOST_SERIALIZATION_NVP(d2D);
 			return *w;
 		}();
-		cout<<"data size "<< size/1e6 << "MB\n";
-		cout<<"file size "<< (file_size(file)/1e6) <<"MB\n";
-		cout<<"save speed "<< size/1e6/count <<"MB/s"<< std::endl;
+		cout<<"data size "<< double(size)/1e6 << "MB\n";
+		cout<<"file size "<< double(file_size(file))/1e6 <<"MB\n";
+		cout<<"save speed "<< double(size)/1e6/count <<"MB/s"<< std::endl;
 		multi::array<complex, 2> d2D_cpy;
 		auto count2 = [&, w = watch("xml load base64")]{
 			std::ifstream ifs{file}; assert(ifs);
 			boost::archive::xml_iarchive{ifs} >> BOOST_SERIALIZATION_NVP(d2D_cpy);
 			return *w;
 		}();
-		cout<<"load speed "<< size/1e6/count2 <<"MB/s"<< std::endl;
+		cout<<"load speed "<< double(size)/1e6/count2 <<"MB/s"<< std::endl;
 		BOOST_REQUIRE( d2D_cpy == d2D );
 		fs::remove(file);
 	}
@@ -237,7 +233,7 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 			std::ofstream ofs{"serialization.txt"}; assert(ofs);
 			boost::archive::text_oarchive{ofs} << d2D;
 		}();
-		std::cerr<<"size "<< (fs::file_size("serialization.txt")/1e6) <<"MB\n";
+		std::cerr<<"size "<< double(fs::file_size("serialization.txt"))/1e6 <<"MB\n";
 		fs::remove("serialization.txt");
 	}
 	{
@@ -268,7 +264,7 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 				boost::archive::binary_oarchive{f} << d2D;
 			}
 		}();
-		std::cerr<<"size "<< (fs::file_size("serialization.bin.gz")/1e6) <<"MB\n";
+		std::cerr<<"size "<< double(fs::file_size("serialization.bin.gz"))/1e6 <<"MB\n";
 		fs::remove("serialization.bin.gz");
 	}
 	{
@@ -281,7 +277,7 @@ BOOST_AUTO_TEST_CASE(multi_serialization_static_small){
 				boost::archive::xml_oarchive{f} << BOOST_SERIALIZATION_NVP(d2D);
 			}
 		}();
-		std::cerr<<"size "<< (fs::file_size("serialization.xml.gz")/1e6) <<"MB\n";
+		std::cerr<<"size "<< double(fs::file_size("serialization.xml.gz"))/1e6 <<"MB\n";
 		fs::remove("serialization.xml.gz");
 	}
 	{

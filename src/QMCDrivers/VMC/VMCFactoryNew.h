@@ -39,8 +39,6 @@ public:
 
   QMCDriverInterface* create(const ProjectData& project_data,
                              MCPopulation&& pop,
-                             TrialWaveFunction& psi,
-                             QMCHamiltonian& h,
                              SampleStack& samples,
                              Communicate* comm);
 };

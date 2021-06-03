@@ -61,7 +61,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
   //     //set the optimization flag
   qmc_driver_mode.set(QMC_OPTIMIZE, 1);
   //read to use vmc output (just in case)
-  m_param.add(param_tol, "alloweddifference", "double");
+  m_param.add(param_tol, "alloweddifference");
   //Set parameters for line minimization:
 }
 
@@ -78,7 +78,7 @@ void QMCLinearOptimize::start()
 {
   {
     //generate samples
-    ScopedTimer local(&generate_samples_timer_);
+    ScopedTimer local(generate_samples_timer_);
     generateSamples();
     //store active number of walkers
     NumOfVMCWalkers = W.getActiveWalkers();
@@ -92,7 +92,7 @@ void QMCLinearOptimize::start()
   app_log() << "   Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
   {
     //get configuration from the previous run
-    ScopedTimer local(&initialize_timer_);
+    ScopedTimer local(initialize_timer_);
     Timer t2;
     optTarget->getConfigurations(h5FileRoot);
     optTarget->setRng(vmcEngine->getRng());
@@ -121,7 +121,7 @@ void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineO
 
   {
     //generate samples
-    ScopedTimer local(&generate_samples_timer_);
+    ScopedTimer local(generate_samples_timer_);
     generateSamples();
     //store active number of walkers
     NumOfVMCWalkers = W.getActiveWalkers();
@@ -136,7 +136,7 @@ void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineO
   app_log() << "     Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
   {
     // get configuration from the previous run
-    ScopedTimer local(&initialize_timer_);
+    ScopedTimer local(initialize_timer_);
     Timer t2;
     optTarget->getConfigurations(h5FileRoot);
     optTarget->setRng(vmcEngine->getRng());

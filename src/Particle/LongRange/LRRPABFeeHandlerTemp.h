@@ -132,10 +132,10 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
     //       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
   }
 
-  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
+  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
    * @param kshell degeneracies of the vectors
-   * @param rk1 starting address of \f$\rho^1_{{\bf k}\f$
-   * @param rk2 starting address of \f$\rho^2_{{\bf k}\f$
+   * @param rk1 starting address of \f$\rho^1_{{\bf k}}\f$
+   * @param rk2 starting address of \f$\rho^2_{{\bf k}}\f$
    *
    * Valid for the strictly ordered k and \f$F_{k}\f$.
    */

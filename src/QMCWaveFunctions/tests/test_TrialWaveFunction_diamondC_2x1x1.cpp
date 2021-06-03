@@ -235,11 +235,11 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
-  RefVector<ParticleSet> p_ref_list{elec_, elec_clone};
-  RefVector<TrialWaveFunction> wf_ref_list{psi, *psi_clone};
+  RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
+  RefVectorWithLeader<TrialWaveFunction> wf_ref_list(psi, {psi, *psi_clone});
 
-  elec_.flex_update(p_ref_list);
-  psi.flex_evaluateLog(wf_ref_list, p_ref_list);
+  ParticleSet::mw_update(p_ref_list);
+  TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
   std::cout << "before YYY [0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi() << " "
             << WF_list[0]->getPhase() << std::endl;
   std::cout << "before YYY [1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi() << " "
@@ -265,7 +265,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::cout << "evalGrad " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2]
             << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
 
-  psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
+  TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 
 #if defined(QMC_COMPLEX)
   REQUIRE(grad_old[0][0] == ComplexApprox(ValueType(713.71203320653, 0.020838031926441)).epsilon(8e-5));
@@ -284,12 +284,12 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
   PosType delta_sign_changed(0.1, 0.1, -0.2);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_sign_changed);
-  p_ref_list[1].get().makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[0].makeMove(moved_elec_id, delta_sign_changed);
+  p_ref_list[1].makeMove(moved_elec_id, delta_sign_changed);
 
-  ValueType r_0 = wf_ref_list[0].get().calcRatio(p_ref_list[0].get(), moved_elec_id);
+  ValueType r_0 = wf_ref_list[0].calcRatio(p_ref_list[0], moved_elec_id);
   GradType grad_temp;
-  ValueType r_1 = wf_ref_list[1].get().calcRatioGrad(p_ref_list[1].get(), moved_elec_id, grad_temp);
+  ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
   std::cout << "calcRatio calcRatioGrad " << std::setprecision(14) << r_0 << " " << r_1 << " " << grad_temp[0] << " "
             << grad_temp[1] << " " << grad_temp[2] << std::endl;
 #if defined(QMC_COMPLEX)
@@ -307,11 +307,11 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
   PosType delta_zero(0, 0, 0);
-  p_ref_list[0].get().makeMove(moved_elec_id, delta_zero);
-  p_ref_list[1].get().makeMove(moved_elec_id, delta);
+  p_ref_list[0].makeMove(moved_elec_id, delta_zero);
+  p_ref_list[1].makeMove(moved_elec_id, delta);
 
   std::vector<PsiValueType> ratios(2);
-  psi.flex_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
+  TrialWaveFunction::mw_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
   std::cout << "mixed move calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 
 #if defined(QMC_COMPLEX)
@@ -339,7 +339,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
 
-  psi.flex_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
+  TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
   std::cout << "flex_calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
             << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
             << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
@@ -364,7 +364,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #endif
 
   std::vector<bool> isAccepted(2, true);
-  psi.flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted, true);
+  TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted, true);
   std::cout << "flex_acceptMove WF_list[0] getLogPsi getPhase " << std::setprecision(16) << WF_list[0]->getLogPsi()
             << " " << WF_list[0]->getPhase() << std::endl;
   std::cout << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << WF_list[1]->getLogPsi()
@@ -381,13 +381,10 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
           LogComplexApprox(std::complex<RealType>(-8.013162503965223, 6.283185307179586)));
 #endif
 
-  RefVector<ParticleSet> elec_accept_list;
-  for (int iw = 0; iw < isAccepted.size(); iw++)
-    elec_accept_list.push_back(p_ref_list[iw]);
-  ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id);
+  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id, isAccepted, false);
 
   const int moved_elec_id_next = 1;
-  psi.flex_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
+  TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
   std::cout << "evalGrad next electron " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " "
             << grad_old[0][2] << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
 #if defined(MIXED_PRECISION)
@@ -427,8 +424,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   std::vector<PosType> displ(2);
   displ[0] = displ[1] = {0.1, 0.2, 0.3};
 
-  ParticleSet::flex_makeMove(p_ref_list, moved_elec_id_next, displ);
-  TrialWaveFunction::flex_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id_next, ratios, grad_new);
+  ParticleSet::mw_makeMove(p_ref_list, moved_elec_id_next, displ);
+  TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id_next, ratios, grad_new);
   std::cout << "ratioGrad next electron " << std::setprecision(14) << grad_new[0][0] << " " << grad_new[0][1] << " "
             << grad_new[0][2] << " " << grad_new[1][0] << " " << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
 #if defined(QMC_COMPLEX)
@@ -449,19 +446,11 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 
   isAccepted[0] = true;
   isAccepted[1] = false;
-  TrialWaveFunction::flex_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
+  TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id_next, isAccepted, true);
 
-  elec_accept_list.clear();
-  RefVector<ParticleSet> elec_reject_list;
-  for (int iw = 0; iw < isAccepted.size(); iw++)
-    if (isAccepted[iw])
-      elec_accept_list.push_back(p_ref_list[iw]);
-    else
-      elec_reject_list.push_back(p_ref_list[iw]);
-  ParticleSet::flex_acceptMove(elec_accept_list, moved_elec_id_next);
-  ParticleSet::flex_rejectMove(elec_reject_list, moved_elec_id_next);
-  TrialWaveFunction::flex_completeUpdates(wf_ref_list);
-  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, false);
+  ParticleSet::mw_accept_rejectMove(p_ref_list, moved_elec_id_next, isAccepted, false);
+  TrialWaveFunction::mw_completeUpdates(wf_ref_list);
+  TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
 
   std::cout << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
             << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
@@ -478,12 +467,12 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   REQUIRE(det_up->getPsiMinv()[1][1] == Approx(45.51992500251).epsilon(1e-4));
 #endif
   std::vector<LogValueType> log_values(wf_ref_list.size());
-  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, false);
+  TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
   for (int iw = 0; iw < log_values.size(); iw++)
-    log_values[iw] = {wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()};
-  TrialWaveFunction::flex_evaluateGL(wf_ref_list, p_ref_list, true);
+    log_values[iw] = {wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()};
+  TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
-    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].get().getLogPsi(), wf_ref_list[iw].get().getPhase()});
+    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
 
 #endif
 }

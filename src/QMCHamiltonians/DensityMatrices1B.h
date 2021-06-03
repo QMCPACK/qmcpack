@@ -161,7 +161,7 @@ public:
   ~DensityMatrices1B();
 
   //standard interface
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 
@@ -171,7 +171,7 @@ public:
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
 
   //should be empty for Collectables interface
   void resetTargetParticleSet(ParticleSet& P) {}

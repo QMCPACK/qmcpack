@@ -12,14 +12,15 @@ FUNCTION(ADD_CONVERTER_TEST test_name)
         STRING(REPLACE ";" " " EXE_NAME "${EXE_NAME}")
     ENDIF()
     ADD_TEST(NAME converter_${test_name} COMMAND "${CMAKE_CURRENT_BINARY_DIR}/converter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
-    SET_TESTS_PROPERTIES(converter_${test_name} PROPERTIES TIMEOUT 120 LABELS "converter")
+    SET_TESTS_PROPERTIES(converter_${test_name} PROPERTIES TIMEOUT 120 LABELS "converter;deterministic")
 ENDFUNCTION()
 
 FUNCTION(ADD_PWCONVERTER_TEST test_name)
     EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
     SET(EXE_NAME "${qmcpack_BINARY_DIR}/bin/convertpw4qmc")
     ADD_TEST(NAME converter_${test_name} COMMAND "${CMAKE_CURRENT_BINARY_DIR}/pwconverter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
-    SET_TESTS_PROPERTIES(converter_${test_name} PROPERTIES TIMEOUT 120 LABELS "converter")
+    SET_TESTS_PROPERTIES(converter_${test_name} PROPERTIES TIMEOUT 120 LABELS "converter;deterministic"
+                         PASS_REGULAR_EXPRESSION "  pass")
 ENDFUNCTION()
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/converter_test.py" "${CMAKE_CURRENT_BINARY_DIR}")

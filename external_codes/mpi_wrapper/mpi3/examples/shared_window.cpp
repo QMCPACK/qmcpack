@@ -1,5 +1,5 @@
 #if COMPILATION_INSTRUCTIONS
-mpicxx -O3 -std=c++14 -Wfatal-errors -Wall $0 -o $0x.x && time mpirun -np 10 $0x.x $@ && rm -f $0x.x; exit
+mpic++ -O3 -std=c++14 -Wfatal-errors -Wall $0 -o $0x.x && time mpirun -n 4 $0x.x $@ && rm -f $0x.x; exit
 #endif
 
 #include "alf/boost/mpi3/main.hpp"
@@ -8,7 +8,7 @@ mpicxx -O3 -std=c++14 -Wfatal-errors -Wall $0 -o $0x.x && time mpirun -np 10 $0x
 namespace mpi3 = boost::mpi3;
 using std::cout;
 
-int mpi3::main(int argc, char *argv[], mpi3::communicator& world){
+int mpi3::main(int argc, char *argv[], mpi3::communicator world){
 	int rank = world.rank();
 	int size = world.size();
 

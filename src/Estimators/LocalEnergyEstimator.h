@@ -17,7 +17,7 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCDrivers/WalkerProperties.h"
-#include "QMCHamiltonians/observable_helper.h"
+#include "QMCHamiltonians/ObservableHelper.h"
 
 namespace qmcplusplus
 {
@@ -65,22 +65,24 @@ public:
   }
 
   /*@{*/
-  inline void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt)
+  inline void accumulate(const MCWalkerConfiguration& W,
+                         WalkerIterator first,
+                         WalkerIterator last,
+                         RealType wgt) override
   {
     for (; first != last; ++first)
       accumulate(**first, wgt);
   }
-  void add2Record(RecordListType& record);
-  void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid);
-  ScalarEstimatorBase* clone();
+  void add2Record(RecordListType& record) override;
+  void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) override;
+  LocalEnergyEstimator* clone() override;
   /*@}*/
 
-  inline void accumulate(const int global_walkers, RefVector<MCPWalker>& walkers, RealType wgt)
+  inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
-    for (MCPWalker& walker: walkers)
-      accumulate(walker, wgt);
+    for (MCPWalker& walker : walkers)
+      accumulate(walker, 1.0);
   }
-
 };
 } // namespace qmcplusplus
 #endif

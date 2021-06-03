@@ -29,6 +29,9 @@
 #if CUSPARSE_VER_MAJOR < 11
 #include "AFQMC/Numerics/detail/CUDA/cusparse_wrapper_deprecated.hpp"
 #endif
+#if CUSPARSE_VERSION >= 11400
+#define CUSPARSE_CSRMV_ALG1 CUSPARSE_SPMV_CSR_ALG1
+#endif
 
 #include "multi/array.hpp"
 
