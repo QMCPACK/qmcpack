@@ -23,6 +23,13 @@ ADD_DEFINITIONS( -Drestrict=__restrict__ )
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} ")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__forceinline=inline")
 
+# Suppress compile warnings
+# 177 variable "XX" was declared but never referenced
+# 550 variable "XX" was set but never used
+# 612 overloaded virtual function "AA" is only partially overridden in class "BB"
+# 998 function "AA" is hidden by "BB" -- virtual function override intended?
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} --display_error_number --diag_suppress 177 --diag_suppress 550")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --display_error_number --diag_suppress 177 --diag_suppress 550 --diag_suppress 612 --diag_suppress 998")
 
 # Set extra optimization specific flags
 SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -fast" )
