@@ -185,8 +185,8 @@ struct BsplineReaderBase
                            std::vector<int>& band2spo);
 
   /** export the MultiSpline to the old class EinsplineSetExtended for the GPU calculation*/
-  virtual void export_MultiSpline(multi_UBspline_3d_z** target) = 0;
-  virtual void export_MultiSpline(multi_UBspline_3d_d** target) = 0;
+  virtual std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble() = 0;
+  virtual std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble() = 0;
 };
 
 } // namespace qmcplusplus
