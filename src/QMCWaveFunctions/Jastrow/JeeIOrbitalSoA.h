@@ -138,9 +138,9 @@ public:
           typename std::map<const FT*, FT*>::iterator fit = fcmap.find(F(iG, eG1, eG2));
           if (fit == fcmap.end())
           {
-            std::unique_ptr<FT> fc = std::make_unique<FT>(*F(iG, eG1, eG2));
+            auto fc                = std::make_unique<FT>(*F(iG, eG1, eG2));
             fcmap[F(iG, eG1, eG2)] = fc.get();
-            eeIcopy->addFunc(iG, eG1, eG2, fc);
+            eeIcopy->addFunc(iG, eG1, eG2, std::move(fc));
           }
         }
     // Ye: I don't like the following memory allocated by default.
@@ -197,25 +197,24 @@ public:
 
   void initUnique()
   {
-    typename std::map<std::string, std::unique_ptr<FT>>::iterator it(J3Unique.begin()), it_end(J3Unique.end());
     du_dalpha.resize(J3Unique.size());
     dgrad_dalpha.resize(J3Unique.size());
     dhess_dalpha.resize(J3Unique.size());
     int ifunc = 0;
-    while (it != it_end)
+
+    for (auto& j3UniquePair : J3Unique)
     {
-      J3UniqueIndex[it->second.get()] = ifunc;
-      FT& functor                     = *(it->second);
-      int numParams                   = functor.getNumParameters();
+      auto functorPtr           = j3UniquePair.second.get();
+      J3UniqueIndex[functorPtr] = ifunc;
+      const int numParams       = functorPtr->getNumParameters();
       du_dalpha[ifunc].resize(numParams);
       dgrad_dalpha[ifunc].resize(numParams);
       dhess_dalpha[ifunc].resize(numParams);
-      ++it;
       ifunc++;
     }
   }
 
-  void addFunc(int iSpecies, int eSpecies1, int eSpecies2, std::unique_ptr<FT>& j)
+  void addFunc(int iSpecies, int eSpecies1, int eSpecies2, std::unique_ptr<FT> j)
   {
     if (eSpecies1 == eSpecies2)
     {
