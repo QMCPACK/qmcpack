@@ -134,12 +134,12 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   SPOSetBuilder* bb = 0;
 
   //check if builder can be reused
-  std::map<std::string, SPOSetBuilder*>::iterator bbit = spo_builders.find(name);
+  const auto bbit = spo_builders.find(name);
   if (bbit != spo_builders.end())
   {
     app_log() << "Reuse SPOSetBuilder \"" << name << "\" type " << type_in << std::endl;
     app_log().flush();
-    bb                  = (*bbit).second;
+    bb                  = (*bbit).second.get();
     return last_builder = bb;
   }
 
@@ -212,7 +212,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   else
   {
     app_log() << "  Created SPOSet builder named '" << name << "' of type " << type << std::endl;
-    spo_builders[name] = bb; //use name, if missing type is used
+    spo_builders[name] = std::unique_ptr<SPOSetBuilder>(bb); //use name, if missing type is used
   }
   last_builder = bb;
 
@@ -233,7 +233,7 @@ SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   if (type == "")
     bb = last_builder;
   else if (spo_builders.find(type) != spo_builders.end())
-    bb = spo_builders[type];
+    bb = spo_builders[type].get();
 
   if (bb)
   {
