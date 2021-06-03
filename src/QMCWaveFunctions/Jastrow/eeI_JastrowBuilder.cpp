@@ -22,6 +22,13 @@
 
 namespace qmcplusplus
 {
+eeI_JastrowBuilder::eeI_JastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
+    : WaveFunctionComponentBuilder(comm, target), sourcePtcl(&source)
+{
+  ClassName = "eeI_JastroBuilder";
+}
+
+
 template<typename J3type>
 bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
 {
@@ -45,13 +52,13 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
       rAttrib.add(eI_cusp, "icusp");
       rAttrib.put(kids);
       typedef typename J3type::FuncType FT;
-      FT* functor        = new FT(ee_cusp, eI_cusp);
-      functor->iSpecies  = iSpecies;
-      functor->eSpecies1 = eSpecies1;
-      functor->eSpecies2 = eSpecies2;
-      int iNum           = iSet.findSpecies(iSpecies);
-      int eNum1          = eSet.findSpecies(eSpecies1);
-      int eNum2          = eSet.findSpecies(eSpecies2);
+      std::unique_ptr<FT> functor = std::make_unique<FT>(ee_cusp, eI_cusp);
+      functor->iSpecies           = iSpecies;
+      functor->eSpecies1          = eSpecies1;
+      functor->eSpecies2          = eSpecies2;
+      int iNum                    = iSet.findSpecies(iSpecies);
+      int eNum1                   = eSet.findSpecies(eSpecies1);
+      int eNum2                   = eSet.findSpecies(eSpecies2);
       if (iNum == iSet.size())
       {
         APP_ABORT("ion species " + iSpecies + " requested for Jastrow " + jname + " does not exist in ParticleSet " +
