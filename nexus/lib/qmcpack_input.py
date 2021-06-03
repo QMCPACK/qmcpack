@@ -1939,7 +1939,7 @@ class radfunc(QIxml):
 #end class radfunc
 
 class slaterdeterminant(QIxml):
-    attributes = ['optimize']
+    attributes = ['optimize','delay_rank']
     elements   = ['determinant']
     write_types = obj(optimize=yesno)
 #end class slaterdeterminant
@@ -4677,6 +4677,7 @@ def generate_determinantset(up             = 'u',
                             spo_up         = 'spo_u',
                             spo_down       = 'spo_d',
                             spin_polarized = False,
+                            delay_rank     = None,
                             system         = None
                             ):
     if system is None:
@@ -4710,6 +4711,9 @@ def generate_determinantset(up             = 'u',
                 )
             )
         )
+    if delay_rank is not None:
+        dset.slaterdeterminant.delay_rank = delay_rank
+    #end if
     return dset
 #end def generate_determinantset
 
@@ -4724,6 +4728,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 source         = 'ion0',
                                 href           = 'MISSING.h5',
                                 excitation     = None,
+                                delay_rank     = None,
                                 system         = None
                                 ):
     if system is None:
@@ -4760,9 +4765,9 @@ def generate_determinantset_old(type           = 'bspline',
                 )
             )
         )
-    if twist!=None:
+    if twist is not None:
         dset.twistnum = system.structure.select_twist(twist)
-    elif twistnum!=None:
+    elif twistnum is not None:
         dset.twistnum = twistnum
     elif len(system.structure.kpoints)==1:
         dset.twistnum = 0
@@ -4775,6 +4780,9 @@ def generate_determinantset_old(type           = 'bspline',
         else:
             dset.hybridrep = yesno_dict[hybridrep]
         #end if
+    #end if
+    if delay_rank is not None:
+        dset.slaterdeterminant.delay_rank = delay_rank
     #end if
     if excitation is not None:
         format_failed = False
@@ -6823,6 +6831,7 @@ gen_basic_input_defaults = obj(
     system         = 'missing',        
     pseudos        = None,
     dla            = None,
+    delay_rank     = None,
     jastrows       = 'generateJ12',    
     interactions   = 'all',            
     corrections    = 'default',        
@@ -7002,6 +7011,7 @@ def generate_basic_input(**kwargs):
 
         dset = generate_determinantset(
             spin_polarized = kw.spin_polarized,
+            delay_rank     = kw.delay_rank,
             system         = kw.system,
             )
     elif kw.det_format=='old':
@@ -7018,6 +7028,7 @@ def generate_basic_input(**kwargs):
             href           = kw.orbitals_h5,
             spin_polarized = kw.spin_polarized,
             excitation     = kw.excitation,
+            delay_rank     = kw.delay_rank,
             system         = kw.system,
             )
     else:
