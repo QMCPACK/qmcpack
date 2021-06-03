@@ -104,6 +104,8 @@ public:
   bool SameMass;
   ///threa id
   Index_t ThreadID;
+  ///true is a dynamic spin calculation
+  bool is_spinor_;
   /** the index of the active particle during particle-by-particle moves
    *
    * when a single particle move is proposed, the particle id is assigned to activePtcl
@@ -278,7 +280,7 @@ public:
 
   /** return the position of the active particle
    *
-   * activePtcl=-1 is used to flag non-physical moves
+   * activePtcl=-1 is used to flag non-physical move
    */
   inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
   inline const Scalar_t& activeSpin(int iat) const { return (activePtcl == iat) ? activeSpinVal : spins[iat]; }
@@ -337,6 +339,7 @@ public:
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
 
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
+
   /** move all the particles including the drift
    *
    * Otherwise, everything is the same as makeMove for a walker
@@ -561,6 +564,7 @@ public:
     spins            = ptclin.spins;
     ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
+    is_spinor_       = ptclin.is_spinor_;
     if (ptclin.SubPtcl.size())
     {
       SubPtcl.resize(ptclin.SubPtcl.size());

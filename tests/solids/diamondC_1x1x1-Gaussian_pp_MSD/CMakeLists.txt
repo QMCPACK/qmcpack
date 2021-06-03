@@ -101,10 +101,10 @@ ENDIF()
 
   QMC_RUN_AND_CHECK(deterministic-diamondC_1x1x1-Gaussian_pp_MSD
                     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_MSD"
-                    det_short_vmc_dmc
-                    det_short_vmc_dmc.in.xml
+                    det_vmc_dmc
+                    det_vmc_dmc.in.xml
                     1 1
-                    ${SUCCESS_STATUS_OFFLOAD}
+                    TRUE
                     0 det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS #VMC
                     1 det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS #DMC
                     )

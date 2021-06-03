@@ -180,14 +180,13 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   if (NumWalkersEff < NumSamples * MinNumWalkers)
   //    if (NumWalkersEff < MinNumWalkers)
   {
-    ERRORMSG("CostFunction-> Number of Effective Walkers is too small! "
+    WARNMSG("CostFunction-> Number of Effective Walkers is too small! "
              << std::endl
              << "  Number of effective walkers (samples) / total number of samples = "
              << (1.0 * NumWalkersEff) / NumSamples << std::endl
              << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
              << "  If this message appears frequently. You might have to be cautious. " << std::endl
              << "  Find info about parameter \"minwalkers\" in the user manual!");
-    // ERRORMSG("Going to stop now.")
     IsValid = false;
   }
   return CostValue;

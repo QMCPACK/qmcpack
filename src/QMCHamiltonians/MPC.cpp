@@ -30,18 +30,12 @@ namespace qmcplusplus
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
 MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : VlongSpline(0), DensitySpline(0), Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
+    : Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
 {
   initBreakup();
 }
 
-MPC::~MPC()
-{
-  if (VlongSpline)
-    destroy_Bspline(VlongSpline);
-  if (DensitySpline)
-    destroy_Bspline(DensitySpline);
-}
+MPC::~MPC() = default;
 
 void MPC::init_gvecs()
 {
@@ -281,7 +275,7 @@ void MPC::init_spline()
   bc0.lCode = bc0.rCode = PERIODIC;
   bc1.lCode = bc1.rCode = PERIODIC;
   bc2.lCode = bc2.rCode = PERIODIC;
-  VlongSpline           = create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data());
+  VlongSpline = std::shared_ptr<UBspline_3d_d>(create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data()), destroy_Bspline);
   //     grid0.num = PtclRef->Density_r.size(0);
   //     grid1.num = PtclRef->Density_r.size(1);
   //     grid2.num = PtclRef->Density_r.size(2);
@@ -323,10 +317,10 @@ void MPC::initBreakup()
   app_log() << "  === MPC interaction initialized === \n\n";
 }
 
-OperatorBase* MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   // return new MPC(qp, Ecut);
-  MPC* newMPC = new MPC(*this);
+  std::unique_ptr<MPC> newMPC = std::make_unique<MPC>(*this);
   newMPC->resetTargetParticleSet(qp);
   return newMPC;
 }
@@ -358,7 +352,7 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
     PosType u = P.Lattice.toUnit(P.R[i]);
     for (int j = 0; j < OHMMS_DIM; j++)
       u[j] -= std::floor(u[j]);
-    eval_UBspline_3d_d(VlongSpline, u[0], u[1], u[2], &val);
+    eval_UBspline_3d_d(VlongSpline.get(), u[0], u[1], u[2], &val);
     LR += val;
   }
   return LR;

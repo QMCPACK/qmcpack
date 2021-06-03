@@ -50,7 +50,7 @@ struct GridExternalPotential : public OperatorBase
   //standard interface functions
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  OperatorBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
 
   //functions for physical (hamiltonian component) estimator
   Return_t evaluate(ParticleSet& P);

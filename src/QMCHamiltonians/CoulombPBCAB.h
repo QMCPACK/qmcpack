@@ -128,34 +128,34 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
 
   ~CoulombPBCAB();
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities();
-  virtual void checkout_particle_quantities(TraceManager& tm);
+  virtual void contribute_particle_quantities() override;
+  virtual void checkout_particle_quantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  virtual void delete_particle_quantities();
+  virtual void delete_particle_quantities() override;
 #endif
 
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms);
+                                 ParticleSet::ParticlePos_t& pulay_terms) override;
 
   /** Do nothing */
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "CoulombPBCAB potential source: " << PtclA.getName();
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   ///Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
   void initBreakup(ParticleSet& P);
@@ -173,16 +173,16 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///Adds a local pseudopotential channel "ppot" to all source species of type "groupID".
   void add(int groupID, std::unique_ptr<RadFunctorType>&& ppot);
 
-  void addObservables(PropertySetType& plist, BufferType& collectables);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
-  void setObservables(PropertySetType& plist)
+  void setObservables(PropertySetType& plist) override
   {
     OperatorBase::setObservables(plist);
     if (ComputeForces)
       setObservablesF(plist);
   }
 
-  void setParticlePropertyList(PropertySetType& plist, int offset)
+  void setParticlePropertyList(PropertySetType& plist, int offset) override
   {
     OperatorBase::setParticlePropertyList(plist, offset);
     if (ComputeForces)

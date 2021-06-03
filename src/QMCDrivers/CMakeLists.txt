@@ -44,6 +44,7 @@ SET(QMCDRIVERS
   Optimizers/DescentEngine.cpp
   Optimizers/HybridEngine.cpp
   WFOpt/QMCCostFunctionBase.cpp
+  WFOpt/HamiltonianRef.cpp
   WFOpt/CostFunctionCrowdData.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
@@ -59,6 +60,7 @@ SET(QMCDRIVERS
   VMC/VMCFactoryNew.cpp
   VMC/VMCDriverInput.cpp
   VMC/SOVMCUpdatePbyP.cpp
+  VMC/SOVMCUpdateAll.cpp
   DMC/DMC.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyPFast.cpp

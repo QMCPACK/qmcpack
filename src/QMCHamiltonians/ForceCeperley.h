@@ -60,7 +60,7 @@ public:
   void evaluate_IonIon(ParticleSet::ParticlePos_t& forces) const;
 
   void setParticlePropertyList(PropertySetType& plist, int offset) { setParticleSetF(plist, offset); }
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   bool put(xmlNodePtr cur);
 

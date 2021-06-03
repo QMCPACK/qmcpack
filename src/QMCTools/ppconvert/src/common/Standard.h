@@ -42,33 +42,6 @@ double StringToDouble(const std::string& s);
 std::string UpperCase(const std::string& s);
 std::string LowerCase(const std::string& s);
 
-#ifdef __PGI // PG compiler bug
-inline bool getline(std::istream& is, std::string& s)
-{
-  s = "";
-  char c;
-  while (is.get(c))
-  {
-    if (c == '\n')
-      return true;
-    s += c;
-  }
-  return false;
-}
-inline bool getline(ifstream& is, std::string& s)
-{
-  s = "";
-  char c;
-  while (is.get(c))
-  {
-    if (c == '\n')
-      return true;
-    s += c;
-  }
-  return false;
-}
-#endif
-
 ////////// redefine std::cout to write to a file //////////////
 // #ifndef NO_COUT
 // #define std::cout COUT

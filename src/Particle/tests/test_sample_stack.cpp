@@ -31,9 +31,11 @@ TEST_CASE("SampleStack", "[particle]")
   samples.setTotalNum(total_num);
 
   // reserve storage
-  samples.setMaxSamples(8);
+  int nranks = 2;
+  samples.setMaxSamples(8, nranks);
   REQUIRE(samples.getMaxSamples() == 8);
   REQUIRE(samples.getNumSamples() == 0);
+  REQUIRE(samples.getGlobalNumSamples() == 16);
 
   // increase storage
   samples.setMaxSamples(10);

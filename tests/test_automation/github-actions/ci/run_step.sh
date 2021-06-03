@@ -25,8 +25,8 @@ case "$1" in
       *"asan"*)
         echo 'Configure for address sanitizer asan including lsan (leaks)'
         CC=clang CXX=clang++ \
-        cmake -GNinja -DMPI_C_COMPILER=mpicc -DMPI_CXX_COMPILER=mpicxx \
-                      -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZER=asan \
+        cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZER=asan \
+                      -DQMC_MPI=0 \
                       -DQMC_COMPLEX=$IS_COMPLEX \
                       ${GITHUB_WORKSPACE}
       ;;
@@ -61,6 +61,13 @@ case "$1" in
                       -DQMC_COMPLEX=$IS_COMPLEX \
                       ${GITHUB_WORKSPACE}
       ;;
+      *"clang-latest-openmp-offload"*)
+        echo 'Configure for building OpenMP offload with clang-12 on x86_64'
+        cmake -GNinja -DCMAKE_C_COMPILER=clang-12 -DCMAKE_CXX_COMPILER=clang++-12 \
+                      -DENABLE_OFFLOAD=ON -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
+                      -DUSE_OBJECT_TARGET=ON -DQMC_MPI=0 \
+                      ${GITHUB_WORKSPACE}
+      ;;
       # Configure with default compilers
       *)
         echo 'Configure for default system compilers and options'
@@ -89,15 +96,24 @@ case "$1" in
       export OMPI_MCA_hwloc_base_binding_policy=none
     fi 
     
+    # Run only deterministic tests (reasonable for CI) by default
+    TEST_LABEL="-L deterministic"
+    
     # Enable ASAN_OPTION=suppression=suppresion_file
     if [[ "${GH_JOBNAME}" =~ (asan) ]]
     then
-      echo "Enabling LSAN suppressions file config/sanitizers/lsan.supp"
-      export LSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/config/sanitizers/lsan.supp	
+      TEST_LABEL="-L unit -LE noasan"
     fi
     
-    # Run only deterministic tests (reasonable for CI)
-    ctest --output-on-failure -L deterministic
+    if [[ "${GH_JOBNAME}" =~ (clang-latest-openmp-offload) ]]
+    then
+       echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
+       export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
+       # Run only unit tests (reasonable for CI using openmp-offload)
+       TEST_LABEL="-L unit"
+    fi
+    
+    ctest --output-on-failure $TEST_LABEL
     ;;
   
   # Generate coverage reports

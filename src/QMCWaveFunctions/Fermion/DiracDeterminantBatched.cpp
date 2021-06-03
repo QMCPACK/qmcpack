@@ -636,8 +636,8 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatiosAlltoOne(ParticleSet& P,
     ScopedTimer local_timer(SPOVTimer);
     Phi->evaluateValue(P, -1, psiV_host_view);
   }
-  //FIXME due to padding in psiMinv
-  MatrixOperators::product(psiMinv, psiV.data(), &ratios[FirstIndex]);
+  for (int i = 0; i < psiMinv.rows(); i++)
+    ratios[FirstIndex + i] = simd::dot(psiMinv[i], psiV.data(), NumOrbitals);
 }
 
 
@@ -664,8 +664,9 @@ typename DiracDeterminantBatched<DET_ENGINE>::GradType DiracDeterminantBatched<D
   {
     resizeScratchObjectsForIonDerivs();
     Phi->evaluateGradSource(P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
-    // FIXME due padding of psiMinv
-    g = simd::dot(psiMinv.data(), grad_source_psiM.data(), psiMinv.size());
+    // psiMinv columns have padding but grad_source_psiM ones don't
+    for (int i = 0; i < psiMinv.rows(); i++)
+      g += simd::dot(psiMinv[i], grad_source_psiM[i], NumOrbitals);
   }
 
   return g;
