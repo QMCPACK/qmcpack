@@ -333,10 +333,9 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs        = bcastSortBands(spinSet, NumDistinctOrbitals, myComm->rank() == 0);
-  auto bspline_zd = MixedSplineReader->create_spline_set(spinSet, spo_cur);
-  if (!bspline_zd)
+  auto OrbitalSet = MixedSplineReader->create_spline_set(spinSet, spo_cur);
+  if (!OrbitalSet)
     APP_ABORT_TRACE(__FILE__, __LINE__, "Failed to create SPOSet*");
-  auto OrbitalSet = bspline_zd.release();
 #if defined(MIXED_PRECISION)
   if (use_einspline_set_extended == "yes")
   {
@@ -362,7 +361,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       //set the flags for anti periodic boundary conditions
-      temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet*>(OrbitalSet)->getHalfG();
+      temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet&>(*OrbitalSet).getHalfG();
       new_OrbitalSet         = temp_OrbitalSet;
     }
     else
@@ -388,7 +387,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     }
     //set the internal parameters
     setTiling(new_OrbitalSet, numOrbs);
-    OrbitalSet = new_OrbitalSet;
+    OrbitalSet.reset(new_OrbitalSet);
   }
 #endif
   app_log() << "Time spent in creating B-spline SPOs " << mytimer.elapsed() << "sec" << std::endl;
@@ -472,8 +471,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
   OrbitalSet->finalizeConstruction();
-  SPOSetMap[aset] = OrbitalSet;
-  return std::unique_ptr<SPOSet>(OrbitalSet);
+  SPOSetMap[aset] = OrbitalSet.get();
+  return OrbitalSet;
 }
 
 std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
