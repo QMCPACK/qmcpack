@@ -86,7 +86,8 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     abort();
 #else
     // create sposet with rotation
-    auto rot_spo    = std::make_unique<RotatedSPOs>(sposet.get());
+    auto& sposet_ref = *sposet;
+    auto rot_spo    = std::make_unique<RotatedSPOs>(std::move(sposet));
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while (tcur != NULL)
     {
@@ -100,13 +101,13 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     }
 
     // pass sposet name and rename sposet before rotation
-    if (!sposet->getName().empty())
+    if (!sposet_ref.getName().empty())
     {
-      rot_spo->setName(sposet->getName());
-      sposet->setName(sposet->getName() + "_before_rotation");
+      rot_spo->setName(sposet_ref.getName());
+      sposet_ref.setName(sposet_ref.getName() + "_before_rotation");
     }
-    if (sposet->getName().empty())
-      sposet->setName(spo_object_name + "_before_rotation");
+    if (sposet_ref.getName().empty())
+      sposet_ref.setName(spo_object_name + "_before_rotation");
 
     // overwrite sposet
     sposet = std::move(rot_spo);
