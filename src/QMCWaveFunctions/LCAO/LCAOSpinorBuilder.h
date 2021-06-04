@@ -40,7 +40,7 @@ public:
    * calls LCAOSpinorBuilder::loadMO to build up and down from the H5 file
    * registers up and down into a SpinorSet and returns
    */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur);
 
 private:
   /** load the up and down MO sets

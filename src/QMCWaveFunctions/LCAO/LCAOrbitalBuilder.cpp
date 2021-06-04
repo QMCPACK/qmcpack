@@ -350,12 +350,12 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSet(xmlNodePtr cur)
       {
         AOBasisBuilder<ao_type> any(elementType, myComm);
         any.put(cur);
-        ao_type* aoBasis = any.createAOSet(cur);
+        auto aoBasis = any.createAOSet(cur);
         if (aoBasis)
         {
           //add the new atomic basis to the basis set
           int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
-          mBasisSet->add(activeCenter, aoBasis);
+          mBasisSet->add(activeCenter, std::move(aoBasis));
         }
         ao_built_centers.push_back(elementType);
       }
@@ -426,12 +426,12 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
     {
       AOBasisBuilder<ao_type> any(elementType, myComm);
       any.putH5(hin);
-      ao_type* aoBasis = any.createAOSetH5(hin);
+      auto aoBasis = any.createAOSetH5(hin);
       if (aoBasis)
       {
         //add the new atomic basis to the basis set
         int activeCenter = sourcePtcl.getSpeciesSet().findSpecies(elementType);
-        mBasisSet->add(activeCenter, aoBasis);
+        mBasisSet->add(activeCenter, std::move(aoBasis));
       }
       ao_built_centers.push_back(elementType);
     }
@@ -451,7 +451,7 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
 }
 
 
-SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), id, cusp_file(""), optimize("no");
@@ -464,28 +464,27 @@ SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   spoAttrib.add(basisset_name, "basisset");
   spoAttrib.put(cur);
 
-  BasisSet_t* myBasisSet = nullptr;
+  std::unique_ptr<BasisSet_t> myBasisSet;
   if (basisset_map_.find(basisset_name) == basisset_map_.end())
     myComm->barrier_and_abort("basisset \"" + basisset_name + "\" cannot be found\n");
   else
-    myBasisSet = basisset_map_[basisset_name]->makeClone();
+    myBasisSet.reset(basisset_map_[basisset_name]->makeClone());
 
   if (optimize == "yes")
     app_log() << "  SPOSet " << spo_name << " is optimizable\n";
 
-  LCAOrbitalSet* lcos = nullptr;
+  std::unique_ptr<LCAOrbitalSet> lcos;
   if (doCuspCorrection)
   {
 #if defined(QMC_COMPLEX)
     myComm->barrier_and_abort("LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, std::unique_ptr<BasisSet_t>(myBasisSet),
-                                                  optimize == "yes");
+    lcos = std::make_unique<LCAOrbitalSetWithCorrection>(sourcePtcl, targetPtcl, std::move(myBasisSet), optimize == "yes");
 #endif
   }
   else
-    lcos = new LCAOrbitalSet(std::unique_ptr<BasisSet_t>(myBasisSet), optimize == "yes");
+    lcos = std::make_unique<LCAOrbitalSet>(std::move(myBasisSet), optimize == "yes");
   loadMO(*lcos, cur);
 
 #if !defined(QMC_COMPLEX)

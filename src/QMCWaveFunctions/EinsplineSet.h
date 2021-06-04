@@ -331,7 +331,7 @@ public:
   template<typename GT, typename BCT>
   void allocate(GT& xyz_g, BCT& xyz_bc, int nv)
   {
-    SplineType* dummy = 0;
+    SplineType* dummy = nullptr;
     MultiSpline       = einspline::create(dummy, xyz_g, xyz_bc, nv);
   }
 

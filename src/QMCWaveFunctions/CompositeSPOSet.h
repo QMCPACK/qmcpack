@@ -96,9 +96,9 @@ struct CompositeSPOSetBuilder : public SPOSetBuilder
   CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory) : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory) {}
 
   //SPOSetBuilder interface
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur);
 
-  SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
+  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
 
   /// reference to the sposet_builder_factory
   const SPOSetBuilderFactory& sposet_builder_factory_;

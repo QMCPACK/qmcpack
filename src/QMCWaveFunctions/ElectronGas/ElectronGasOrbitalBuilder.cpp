@@ -169,7 +169,7 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, 
   ClassName = "ElectronGasSPOBuilder";
 }
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   int nc = 0;
   int ns = 0;
@@ -190,7 +190,7 @@ SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
     APP_ABORT("ElectronGasOrbitalBuilder::put");
   }
   egGrid.createGrid(nc, (ns - 1) / 2);
-  return new RealEGOSet(egGrid.kpt, egGrid.mk2);
+  return std::make_unique<RealEGOSet>(egGrid.kpt, egGrid.mk2);
 }
 
 } // namespace qmcplusplus

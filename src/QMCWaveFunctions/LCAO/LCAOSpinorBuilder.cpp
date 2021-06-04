@@ -27,7 +27,7 @@ LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Commun
     myComm->barrier_and_abort("LCAOSpinorBuilder only works with href");
 }
 
-SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), optimize("no");
@@ -55,9 +55,8 @@ SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
   loadMO(*upspo, *dnspo, cur);
 
   //create spinor and register up/dn
-  SpinorSet* spinor_set = new SpinorSet();
+  auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(upspo), std::move(dnspo));
-
   return spinor_set;
 }
 

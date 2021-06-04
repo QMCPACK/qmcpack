@@ -65,12 +65,11 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Co
   MyToken = 0;
 
   //invalidate states by the basis class
-  delete_iter(states.begin(), states.end());
   states.clear();
-  states.resize(p.groups(), 0);
+  states.resize(p.groups());
 
   //create vectors with nullptr
-  FullBands.resize(p.groups(), 0);
+  FullBands.resize(p.groups());
 }
 
 template<typename T>

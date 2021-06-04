@@ -116,7 +116,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
   SPOSetBuilder* builder = fac.createSPOSetBuilder(ein1);
 
-  std::unique_ptr<SPOSet> spo(builder->createSPOSet(ein1));
+  SPOSet* spo = builder->createSPOSet(ein1);
   REQUIRE(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
