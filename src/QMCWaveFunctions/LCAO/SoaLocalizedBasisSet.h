@@ -94,18 +94,16 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
         SuperTwist(a.SuperTwist),
         BasisOffset(a.BasisOffset)
   {
+    LOBasisSet.reserve(a.LOBasisSet.size());
     for (auto& elem : a.LOBasisSet)
-    {
-      LOBasisSet.push_back(std::unique_ptr<COT>(elem->makeClone()));
-    }
+      LOBasisSet.push_back(std::make_unique<COT>(*elem));
   }
 
   /** makeClone */
   //SoaLocalizedBasisSet<COT>* makeClone() const
   BaseType* makeClone() const
   {
-    SoaLocalizedBasisSet<COT, ORBT>* myclone = new SoaLocalizedBasisSet<COT, ORBT>(*this);
-    return myclone;
+    return new SoaLocalizedBasisSet<COT, ORBT>(*this);
   }
   /** set Number of periodic Images to evaluate the orbitals. 
       Set to 0 for non-PBC, and set manually in the input.

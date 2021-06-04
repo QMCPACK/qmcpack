@@ -77,13 +77,6 @@ struct SoaAtomicBasisSet
 
   ~SoaAtomicBasisSet() = default;
 
-  SoaAtomicBasisSet<ROT, SH>* makeClone() const
-  {
-    SoaAtomicBasisSet<ROT, SH>* myclone = new SoaAtomicBasisSet<ROT, SH>(*this);
-    myclone->MultiRnl.reset(MultiRnl->makeClone());
-    return myclone;
-  }
-
   void checkInVariables(opt_variables_type& active)
   {
     //for(size_t nl=0; nl<Rnl.size(); nl++)
