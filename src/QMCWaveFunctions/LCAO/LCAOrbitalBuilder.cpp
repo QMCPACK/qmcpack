@@ -18,7 +18,6 @@
 #include "LCAOrbitalBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "QMCWaveFunctions/LCAO/NGFunctor.h"
 #include "QMCWaveFunctions/LCAO/MultiQuinticSpline1D.h"
 #include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
 #include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
