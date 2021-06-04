@@ -19,6 +19,8 @@
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/RandomGenerator.h"
+#include "QMCWaveFunctions/TWFPrototype.h"
+
 namespace qmcplusplus
 {
 void create_CN_particlesets(ParticleSet& elec, ParticleSet& ions)
@@ -275,6 +277,69 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   REQUIRE(dot(pulay_term[1],pulay_term[1]) != Approx(0));
   REQUIRE(dot(wf_grad[1],wf_grad[1]) != Approx(0));
  
+}
+
+TEST_CASE("Eloc_Derivatives:proto_sd_wj","[hamiltonian]")
+{
+  app_log() <<"=====Ion Derivative Test:  Prototype Single Slater+Jastrow======\n";
+  using RealType = QMCTraits::RealType;
+  
+  Communicate* c;
+  c= OHMMS::Controller;
+
+  ParticleSet ions;
+  ParticleSet elec;
+
+  create_CN_particlesets(elec,ions);
+    
+  Libxml2Document doc2;
+  bool okay = doc2.parse("cn.wfnoj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root2 = doc2.getRoot();
+
+  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+  particle_set_map["e"]    = &elec;
+  particle_set_map["ion0"] = &ions;
+
+  SPOSetBuilderFactory bf(c, elec, particle_set_map);
+
+  OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
+  REQUIRE(MO_base.size() == 1);
+
+//    if (transform)
+//    {
+//      // input file is set to transform GTO's to numerical orbitals by default
+//    }
+//    else
+//    {
+//      // use direct evaluation of GTO's
+//      xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
+//      xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
+//    }
+
+  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
+  REQUIRE(bb != NULL);
+
+  OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
+  app_log()<<" slater_base_size = "<<slater_base.size()<<std::endl;
+  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+
+    
+  SPOSet::ValueVector_t values;
+  SPOSet::GradVector_t dpsi;
+  SPOSet::ValueVector_t d2psi;
+  values.resize(9);
+  dpsi.resize(9);
+  d2psi.resize(9);
+
+  sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
+
+  app_log()<<" DOOPY ========+> \n";
+  for (int p=0; p<9; p++)
+  {
+    app_log()<<values[p]<<" "<<dpsi[p]<<" "<<d2psi[p]<<std::endl;
+  }
+  
 }
 
 TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
