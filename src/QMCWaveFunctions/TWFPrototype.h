@@ -16,16 +16,25 @@
 #ifndef QMCPLUSPLUS_TWFPROTOTYPE_H
 #define QMCPLUSPLUS_TWFPROTOTYPE_H
 
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/SPOSet.h"
+
 namespace qmcplusplus
 {
 
 class TWFPrototype
 {
   public:
+    using ValueMatrix_t = SPOSet::ValueMatrix_t;
+
     TWFPrototype();
   private:
   
-  
+  std::vector<SPOSet*> spos;
+  //std::vector<IndexType> groups;
+  std::vector<ValueMatrix_t> psiM;
+  std::vector<ValueMatrix_t> psiMinv;
+  std::vector<WaveFunctionComponent*> J;  
 
 };
 
