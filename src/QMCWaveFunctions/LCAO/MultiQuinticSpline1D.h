@@ -14,7 +14,7 @@
 
 
 /** @file
- *  Assume that Coeffs.D1 and the LogLightGrid
+ *  Assume that coeffs.D1 and the LogLightGrid
  *   r_values.size() are equal
  *  Therefore r must be < r_max
  */
@@ -87,15 +87,13 @@ class MultiQuinticSpline1D
 public:
   using RealType = T;
   using GridType = OneDimGridBase<T>;
-  typedef Matrix<T, aligned_allocator<T>> coeff_type;
+  using CoeffType = Matrix<T, aligned_allocator<T>>;
 
 private:
   ///number of splines
   size_t num_splines_;
   ///order of spline
   size_t spline_order;
-  ///default is false
-  bool own_spline;
   ///maximum radius
   T r_max;
 
@@ -104,22 +102,15 @@ private:
 
   /** Need to use shared_ptr
    *
-   * Coeffs[6*spline_points][num_splines+padding]
+   * coeffs[6*spline_points][num_splines+padding]
    */
-  coeff_type* Coeffs;
+  std::shared_ptr<CoeffType> coeffs;
   aligned_vector<T> first_deriv;
 
 public:
-  MultiQuinticSpline1D() : own_spline(false), Coeffs(nullptr) {}
+  MultiQuinticSpline1D() = default;
 
   MultiQuinticSpline1D(const MultiQuinticSpline1D& in) = default;
-
-  MultiQuinticSpline1D<T>* makeClone() const
-  {
-    MultiQuinticSpline1D<T>* myclone = new MultiQuinticSpline1D<T>(*this);
-    myclone->own_spline              = false;
-    return myclone;
-  }
 
   inline T rmax() const { return myGrid.upper_bound; }
 
@@ -128,7 +119,7 @@ public:
     if (r < myGrid.lower_bound)
     {
       const T dr          = r - myGrid.lower_bound;
-      const T* restrict a = (*Coeffs)[0];
+      const T* restrict a = (*coeffs)[0];
       for (size_t i = 0; i < num_splines_; ++i)
         u[i] = a[i] + first_deriv[i] * dr;
     }
@@ -137,14 +128,14 @@ public:
       int loc;
       const auto cL       = myGrid.getCLForQuintic(r, loc);
       const size_t offset = loc * 6;
-      //Coeffs is an OhmmsMatrix and [] is a row access operator
+      //coeffs is an OhmmsMatrix and [] is a row access operator
       //returning a pointer to 'row' which is normal type pointer []
-      const T* restrict a = (*Coeffs)[offset + 0];
-      const T* restrict b = (*Coeffs)[offset + 1];
-      const T* restrict c = (*Coeffs)[offset + 2];
-      const T* restrict d = (*Coeffs)[offset + 3];
-      const T* restrict e = (*Coeffs)[offset + 4];
-      const T* restrict f = (*Coeffs)[offset + 5];
+      const T* restrict a = (*coeffs)[offset + 0];
+      const T* restrict b = (*coeffs)[offset + 1];
+      const T* restrict c = (*coeffs)[offset + 2];
+      const T* restrict d = (*coeffs)[offset + 3];
+      const T* restrict e = (*coeffs)[offset + 4];
+      const T* restrict f = (*coeffs)[offset + 5];
       for (size_t i = 0; i < num_splines_; ++i)
         u[i] = a[i] + cL * (b[i] + cL * (c[i] + cL * (d[i] + cL * (e[i] + cL * f[i]))));
     }
@@ -155,7 +146,7 @@ public:
     if (r < myGrid.lower_bound)
     {
       const T dr          = r - myGrid.lower_bound;
-      const T* restrict a = (*Coeffs)[0];
+      const T* restrict a = (*coeffs)[0];
       for (size_t i = 0; i < num_splines_; ++i)
       {
         u[i]   = a[i] + first_deriv[i] * dr;
@@ -177,12 +168,12 @@ public:
       constexpr T c12(12);
       constexpr T c20(20);
 
-      const T* restrict a = (*Coeffs)[offset + 0];
-      const T* restrict b = (*Coeffs)[offset + 1];
-      const T* restrict c = (*Coeffs)[offset + 2];
-      const T* restrict d = (*Coeffs)[offset + 3];
-      const T* restrict e = (*Coeffs)[offset + 4];
-      const T* restrict f = (*Coeffs)[offset + 5];
+      const T* restrict a = (*coeffs)[offset + 0];
+      const T* restrict b = (*coeffs)[offset + 1];
+      const T* restrict c = (*coeffs)[offset + 2];
+      const T* restrict d = (*coeffs)[offset + 3];
+      const T* restrict e = (*coeffs)[offset + 4];
+      const T* restrict f = (*coeffs)[offset + 5];
 
       for (size_t i = 0; i < num_splines_; ++i)
       {
@@ -199,7 +190,7 @@ public:
     if (r < myGrid.lower_bound)
     {
       const T dr          = r - myGrid.lower_bound;
-      const T* restrict a = (*Coeffs)[0];
+      const T* restrict a = (*coeffs)[0];
       for (size_t i = 0; i < num_splines_; ++i)
       {
         u[i]   = a[i] + first_deriv[i] * dr;
@@ -224,12 +215,12 @@ public:
       constexpr T c24(24);
       constexpr T c60(60);
 
-      const T* restrict a = (*Coeffs)[offset + 0];
-      const T* restrict b = (*Coeffs)[offset + 1];
-      const T* restrict c = (*Coeffs)[offset + 2];
-      const T* restrict d = (*Coeffs)[offset + 3];
-      const T* restrict e = (*Coeffs)[offset + 4];
-      const T* restrict f = (*Coeffs)[offset + 5];
+      const T* restrict a = (*coeffs)[offset + 0];
+      const T* restrict b = (*coeffs)[offset + 1];
+      const T* restrict c = (*coeffs)[offset + 2];
+      const T* restrict d = (*coeffs)[offset + 3];
+      const T* restrict e = (*coeffs)[offset + 4];
+      const T* restrict f = (*coeffs)[offset + 5];
 
       for (size_t i = 0; i < num_splines_; ++i)
       {
@@ -253,14 +244,13 @@ public:
   {
     myGrid.set(agrid.rmin(), agrid.rmax(), agrid.size());
     r_max = myGrid.upper_bound;
-    if (Coeffs == nullptr && !own_spline)
-    {
-      spline_order = order;
-      num_splines_ = norbs;
-      Coeffs       = new coeff_type(((order + 1) * agrid.size()), getAlignedSize<T>(norbs));
-      first_deriv.resize(num_splines_);
-      own_spline = true;
-    }
+    if (coeffs)
+      throw std::runtime_error("MultiQuinticSpline1D::initialize cannot reinitialize coeffs.");
+
+    spline_order = order;
+    num_splines_ = norbs;
+    coeffs       = std::make_shared<CoeffType>((order + 1) * agrid.size(), getAlignedSize<T>(norbs));
+    first_deriv.resize(num_splines_);
   }
 
   template<typename T1>
@@ -275,8 +265,8 @@ public:
       const T1* restrict D    = in.D.data();
       const T1* restrict E    = in.E.data();
       const T1* restrict F    = in.F.data();
-      T* restrict out         = Coeffs->data();
-      const size_t ncols      = Coeffs->cols();
+      T* restrict out         = coeffs->data();
+      const size_t ncols      = coeffs->cols();
       const size_t num_points = in.size();
       for (size_t i = 0; i < num_points; ++i)
       {

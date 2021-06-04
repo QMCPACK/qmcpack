@@ -68,14 +68,12 @@ struct SoaAtomicBasisSet
         periodic_image_phase_factors(in.periodic_image_phase_factors),
         Rmax(in.Rmax),
         Ylm(in.Ylm),
-        MultiRnl(in.MultiRnl->makeClone()),
+        MultiRnl(std::make_unique<ROT>(*in.MultiRnl)),
         LM(in.LM),
         NL(in.NL),
         RnlID(in.RnlID),
         tempS(in.tempS)
   {}
-
-  ~SoaAtomicBasisSet() = default;
 
   void checkInVariables(opt_variables_type& active)
   {

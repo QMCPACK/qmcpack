@@ -30,27 +30,15 @@ struct MultiFunctorAdapter
 {
   using RealType = typename FN::real_type;
   using GridType = LogGridLight<RealType>;
-  typedef FN single_type;
+  using single_type = FN;
   aligned_vector<std::unique_ptr<single_type>> Rnl;
-
-
-  MultiFunctorAdapter<FN>* makeClone() const
-  {
-    MultiFunctorAdapter<FN>* clone = new MultiFunctorAdapter<FN>(*this);
-    return clone;
-  }
 
   MultiFunctorAdapter() = default;
   MultiFunctorAdapter(const MultiFunctorAdapter& other)
   {
+    Rnl.reserve(other.Rnl.size());
     for (size_t i = 0; i < other.Rnl.size(); ++i)
-    {
       Rnl.push_back(std::make_unique<single_type>(*other.Rnl[i]));
-    }
-  }
-
-  ~MultiFunctorAdapter()
-  {
   }
 
   inline RealType rmax() const
@@ -154,8 +142,8 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
 
   void finalize()
   {
-    m_orbitals->MultiRnl.reset(m_multiset->makeClone());
     m_orbitals->setRmax(m_multiset->rmax()); //set Rmax
+    m_orbitals->MultiRnl = std::move(m_multiset);
   }
 };
 } // namespace qmcplusplus
