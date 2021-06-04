@@ -534,7 +534,7 @@ struct HybridRepSetReader : public SplineSetReader<SA>
         {
           auto& mycenter = centers[mygroup[idx]];
           aligned_vector<double> splineData_r(spline_npoints);
-          UBspline_1d_d* atomic_spline_r;
+          UBspline_1d_d* atomic_spline_r = nullptr;
           for (size_t ip = 0; ip < spline_npoints; ip++)
             splineData_r[ip] = all_vals[idx][ip][lm];
           atomic_spline_r = einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(),
@@ -547,7 +547,7 @@ struct HybridRepSetReader : public SplineSetReader<SA>
           else
           {
             aligned_vector<double> splineData_i(spline_npoints);
-            UBspline_1d_d* atomic_spline_i;
+            UBspline_1d_d* atomic_spline_i = nullptr;
             for (size_t ip = 0; ip < spline_npoints; ip++)
               splineData_i[ip] = all_vals[idx][ip][lm + lm_tot];
             atomic_spline_i = einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints,

@@ -31,20 +31,26 @@ struct MultiFunctorAdapter
   using RealType = typename FN::real_type;
   using GridType = LogGridLight<RealType>;
   typedef FN single_type;
-  aligned_vector<single_type*> Rnl;
+  aligned_vector<std::unique_ptr<single_type>> Rnl;
+
 
   MultiFunctorAdapter<FN>* makeClone() const
   {
     MultiFunctorAdapter<FN>* clone = new MultiFunctorAdapter<FN>(*this);
-    for (size_t i = 0; i < Rnl.size(); ++i)
-      clone->Rnl[i] = new single_type(*Rnl[i]);
     return clone;
+  }
+
+  MultiFunctorAdapter() = default;
+  MultiFunctorAdapter(const MultiFunctorAdapter& other)
+  {
+    for (size_t i = 0; i < other.Rnl.size(); ++i)
+    {
+      Rnl.push_back(std::make_unique<single_type>(*other.Rnl[i]));
+    }
   }
 
   ~MultiFunctorAdapter()
   {
-    for (size_t i = 0; i < Rnl.size(); ++i)
-      delete Rnl[i];
   }
 
   inline RealType rmax() const
@@ -101,7 +107,7 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
   ///orbitals to build
   COT* m_orbitals;
   ///temporary
-  RadialOrbital_t* m_multiset;
+  std::unique_ptr<RadialOrbital_t> m_multiset;
 
   ///constructor
   RadialOrbitalSetBuilder(Communicate* comm) : MPIObjectBase(comm), Normalized(true), m_multiset(nullptr) {}
@@ -122,33 +128,33 @@ struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> :
   bool addRadialOrbital(xmlNodePtr cur, const std::string& rad_type, const QuantumNumberType& nlms)
   {
     if (m_multiset == nullptr)
-      m_multiset = new RadialOrbital_t;
+      m_multiset = std::make_unique<RadialOrbital_t>();
 
-    single_type* radorb = new single_type(nlms[q_l], Normalized);
+    auto radorb = std::make_unique<single_type>(nlms[q_l], Normalized);
     radorb->putBasisGroup(cur);
 
     m_orbitals->RnlID.push_back(nlms);
-    m_multiset->Rnl.push_back(radorb);
+    m_multiset->Rnl.push_back(std::move(radorb));
     return true;
   }
 
   bool addRadialOrbitalH5(hdf_archive& hin, const std::string& rad_type, const QuantumNumberType& nlms)
   {
     if (m_multiset == nullptr)
-      m_multiset = new RadialOrbital_t;
+      m_multiset = std::make_unique<RadialOrbital_t>();
 
-    single_type* radorb = new single_type(nlms[q_l], Normalized);
+    auto radorb = std::make_unique<single_type>(nlms[q_l], Normalized);
     radorb->putBasisGroupH5(hin);
 
     m_orbitals->RnlID.push_back(nlms);
-    m_multiset->Rnl.push_back(radorb);
+    m_multiset->Rnl.push_back(std::move(radorb));
 
     return true;
   }
 
   void finalize()
   {
-    m_orbitals->MultiRnl = m_multiset;
+    m_orbitals->MultiRnl.reset(m_multiset->makeClone());
     m_orbitals->setRmax(m_multiset->rmax()); //set Rmax
   }
 };

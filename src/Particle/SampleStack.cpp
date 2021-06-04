@@ -20,11 +20,13 @@ namespace qmcplusplus
 SampleStack::SampleStack() : total_num_(0), max_samples_(10), current_sample_count_(0) {}
 
 /** allocate the SampleStack
- * @param n number of samples per thread
+ * @param n number of samples per rank
+ * @param num_ranks number of ranks. Used to set global number of samples.
  */
-void SampleStack::setMaxSamples(int n)
+void SampleStack::setMaxSamples(int n, int num_ranks)
 {
-  max_samples_ = n;
+  max_samples_        = n;
+  global_num_samples_ = n * num_ranks;
   //do not add anything
   if (n == 0)
     return;

@@ -129,8 +129,8 @@ public:
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
-  SPOSet* createSPOSetFromIndices(indices_t& indices);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromIndices(indices_t& indices);
 };
 } // namespace qmcplusplus
 #endif

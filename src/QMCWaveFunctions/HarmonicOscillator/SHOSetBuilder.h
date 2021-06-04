@@ -46,9 +46,9 @@ struct SHOSetBuilder : public SPOSetBuilder
   void reset();
 
   //SPOSetBuilder interface
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur);
 
-  SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
+  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
 
   //local functions
   void update_basis_states(int smax);

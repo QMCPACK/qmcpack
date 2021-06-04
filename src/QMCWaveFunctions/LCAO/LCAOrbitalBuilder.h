@@ -40,7 +40,7 @@ public:
      */
   LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate* comm, xmlNodePtr cur);
   ~LCAOrbitalBuilder();
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur);
 
 protected:
   ///target ParticleSet

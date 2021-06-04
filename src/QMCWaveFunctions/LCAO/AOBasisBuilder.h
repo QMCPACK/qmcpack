@@ -70,8 +70,8 @@ public:
 
   SPOSet* createSPOSetFromXML(xmlNodePtr cur) { return 0; }
 
-  COT* createAOSet(xmlNodePtr cur);
-  COT* createAOSetH5(hdf_archive& hin);
+  std::unique_ptr<COT> createAOSet(xmlNodePtr cur);
+  std::unique_ptr<COT> createAOSetH5(hdf_archive& hin);
 
   int expandYlm(COT* aos, std::vector<int>& all_nl, int expandlm = DONOT_EXPAND);
 };
@@ -231,7 +231,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
 
 
 template<typename COT>
-COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
+std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
 {
   ReportEngine PRE("AtomicBasisBuilder", "createAOSet(xmlNodePtr)");
   app_log() << "  AO BasisSet for " << elementType << "\n";
@@ -294,11 +294,11 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   }
   //create a new set of atomic orbitals sharing a center with (Lmax, num)
   //if(addsignforM) the basis function has (-1)^m sqrt(2)Re(Ylm)
-  COT* aos = new COT(Lmax, addsignforM);
+  auto aos = std::make_unique<COT>(Lmax, addsignforM);
   aos->LM.resize(num);
   aos->NL.resize(num);
   //Now, add distinct Radial Orbitals and (l,m) channels
-  radFuncBuilder.setOrbitalSet(aos, elementType); //assign radial orbitals for the new center
+  radFuncBuilder.setOrbitalSet(aos.get(), elementType); //assign radial orbitals for the new center
   radFuncBuilder.addGrid(gptr, basisType);        //assign a radial grid for the new center
   std::vector<xmlNodePtr>::iterator it(radGroup.begin());
   std::vector<xmlNodePtr>::iterator it_end(radGroup.end());
@@ -343,7 +343,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
     ++it;
   }
 
-  if (expandYlm(aos, all_nl, expandlm) != num)
+  if (expandYlm(aos.get(), all_nl, expandlm) != num)
     myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   //aos->Rmax can be set small
@@ -357,7 +357,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
 
 
 template<typename COT>
-COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
+std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
 {
   ReportEngine PRE("AOBasisBuilder:", "createAOSetH5(std::string)");
   app_log() << "  AO BasisSet for " << elementType << "\n";
@@ -425,11 +425,11 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
       num++;
   }
 
-  COT* aos = new COT(Lmax, addsignforM);
+  auto aos = std::make_unique<COT>(Lmax, addsignforM);
   aos->LM.resize(num);
   aos->NL.resize(num);
   //Now, add distinct Radial Orbitals and (l,m) channels
-  radFuncBuilder.setOrbitalSet(aos, elementType); //assign radial orbitals for the new center
+  radFuncBuilder.setOrbitalSet(aos.get(), elementType); //assign radial orbitals for the new center
   radFuncBuilder.addGridH5(hin);                  //assign a radial grid for the new center
   std::vector<int> all_nl;
   for (int i = 0; i < numbasisgroups; i++)
@@ -465,7 +465,7 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
       hin.pop();
   }
 
-  if (expandYlm(aos, all_nl, expandlm) != num)
+  if (expandYlm(aos.get(), all_nl, expandlm) != num)
     myComm->barrier_and_abort("expandYlm doesn't match the number of basis.");
   radFuncBuilder.finalize();
   //aos->Rmax can be set small

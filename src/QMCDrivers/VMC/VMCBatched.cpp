@@ -390,7 +390,7 @@ bool VMCBatched::run()
 void VMCBatched::enable_sample_collection()
 {
   int samples = compute_samples_per_rank(qmcdriver_input_, population_.get_num_local_walkers());
-  samples_.setMaxSamples(samples);
+  samples_.setMaxSamples(samples, population_.get_num_ranks());
   collect_samples_ = true;
 
   int total_samples = samples * population_.get_num_ranks();

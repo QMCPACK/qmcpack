@@ -171,7 +171,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     if (NumWalkersEff < MinNumWalkers * NumSamples)
     {
       WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
-                                                                          << MinNumWalkers * NumSamples)
+                                                                         << MinNumWalkers * NumSamples)
       IsValid = false;
     }
   }
@@ -495,7 +495,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   Return_rt wgt_tot       = 0.0;
   Return_rt wgt_tot2      = 0.0;
   int numSamples          = samples_.getNumSamples();
-  Return_rt inv_n_samples = 1.0 / numSamples;
+  Return_rt inv_n_samples = 1.0 / samples_.getGlobalNumSamples();
 
   bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
   bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
@@ -574,7 +574,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, opt_data.get_log_psi_opt(), dummyG_list, dummyL_list,
                                              compute_all_from_scratch);
 
-      Return_rt inv_n_samples = 1.0 / samples.getNumSamples();
+      Return_rt inv_n_samples = 1.0 / samples.getGlobalNumSamples();
 
       for (int ib = 0; ib < curr_crowd_size; ib++)
       {

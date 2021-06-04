@@ -35,7 +35,7 @@ SUBDIRS(CPU)
 TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cpu)
 
 SUBDIRS(OMPTarget)
-TARGET_LINK_LIBRARIES(platform_device PRIVATE platform_omptarget)
+TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_omptarget)
 
 IF(QMC_CUDA)
   SUBDIRS(CUDA_legacy)
