@@ -85,8 +85,8 @@ TEST_CASE("DMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  BareKineticEnergy<double>* p_bke = new BareKineticEnergy<double>(elec);
-  h.addOperator(p_bke, "Kinetic");
+  std::unique_ptr<BareKineticEnergy<double>> p_bke = std::make_unique<BareKineticEnergy<double>>(elec);
+  h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -125,7 +125,6 @@ TEST_CASE("DMC", "[drivers][dmc]")
   REQUIRE(elec.R[1][2] == Approx(1.0));
 
   delete doc;
-  delete p_bke;
 }
 
 TEST_CASE("SODMC", "[drivers][dmc]")
@@ -174,8 +173,8 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  BareKineticEnergy<double>* p_bke = new BareKineticEnergy<double>(elec);
-  h.addOperator(p_bke, "Kinetic");
+  std::unique_ptr<BareKineticEnergy<double>> p_bke = std::make_unique<BareKineticEnergy<double>>(elec);
+  h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -213,6 +212,5 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   REQUIRE(elec.spins[0] == Approx(-0.74465948215809097));
 
   delete doc;
-  delete p_bke;
 }
 } // namespace qmcplusplus

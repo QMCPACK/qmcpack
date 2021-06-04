@@ -178,11 +178,11 @@ bool SkEstimator::put(xmlNodePtr cur)
 
 bool SkEstimator::get(std::ostream& os) const { return true; }
 
-OperatorBase* SkEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> SkEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  SkEstimator* myclone = new SkEstimator(*this);
-  myclone->hdf5_out    = hdf5_out;
-  myclone->myIndex     = myIndex;
+  std::unique_ptr<SkEstimator> myclone = std::make_unique<SkEstimator>(*this);
+  myclone->hdf5_out                    = hdf5_out;
+  myclone->myIndex                     = myIndex;
   return myclone;
 }
 } // namespace qmcplusplus

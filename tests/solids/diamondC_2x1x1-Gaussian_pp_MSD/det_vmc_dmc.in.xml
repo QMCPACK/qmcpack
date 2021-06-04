@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="det_short_vmc_dmc" series="0"/>
-  <random seed="11"/>
+  <project id="det_vmc_dmc" series="0"/>
+  <random seed="715"/>
   <include href="C_diamond-twist.structure.xml"/>
   <include href="C_diamond-twist.wfj.xml"/>
   <hamiltonian name="h0" type="generic" target="e">

@@ -54,7 +54,7 @@ private:
 void write_spo_builders(const std::string& pad = "") const;
 
   ///set of basis set builders resolved by type
-  std::map<std::string, SPOSetBuilder*> spo_builders;
+  std::map<std::string, std::unique_ptr<SPOSetBuilder>> spo_builders;
 
   ///store the last builder, use if type not provided
   SPOSetBuilder* last_builder;

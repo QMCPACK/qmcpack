@@ -100,91 +100,164 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
   evalWTimer.start();
   if (fromScratch)
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-  if (NumPtcls == 1)
+
+  InverseTimer.start();
+
+  const auto& confgList = *ciConfigList;
+
+  //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
+  auto it(confgList[ReferenceDeterminant].occup.begin());
+  for (size_t i = 0; i < NumPtcls; i++)
   {
-    //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminant is potentially dangerous. Fix later");
-    std::vector<ci_configuration2>::const_iterator it(ciConfigList->begin());
-    std::vector<ci_configuration2>::const_iterator last(ciConfigList->end());
-    ValueVector_t::iterator det(detValues.begin());
-    ValueMatrix_t::iterator lap(lapls.begin());
-    GradMatrix_t::iterator grad(grads.begin());
-    while (it != last)
-    {
-      int orb   = (it++)->occup[0];
-      *(det++)  = psiM(0, orb);
-      *(lap++)  = d2psiM(0, orb);
-      *(grad++) = dpsiM(0, orb);
-    }
+    for (size_t j = 0; j < NumPtcls; j++)
+      psiMinv(j, i) = psiM(j, *it);
+    it++;
   }
-  else
+
+  for (size_t i = 0; i < NumPtcls; i++)
+    for (size_t j = 0; j < NumOrbitals; j++)
+      TpsiM(j, i) = psiM(i, j);
+
+  std::complex<RealType> logValueRef;
+  InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
+  log_value_ref_det_ = logValueRef;
+  InverseTimer.stop();
+  const RealType detsign               = (*DetSigns)[ReferenceDeterminant];
+  ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, ratios_to_ref_, psiMinv, TpsiM, dotProducts, *detData,
+                                     *uniquePairs, *DetSigns);
+  for (size_t iat = 0; iat < NumPtcls; iat++)
   {
-    InverseTimer.start();
-
-    const auto& confgList = *ciConfigList;
-
-    //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
-    auto it(confgList[ReferenceDeterminant].occup.begin());
+    it = confgList[ReferenceDeterminant].occup.begin();
+    GradType gradRatio;
+    ValueType ratioLapl = 0.0;
     for (size_t i = 0; i < NumPtcls; i++)
     {
-      for (size_t j = 0; j < NumPtcls; j++)
-        psiMinv(j, i) = psiM(j, *it);
+      gradRatio += psiMinv(i, iat) * dpsiM(iat, *it);
+      ratioLapl += psiMinv(i, iat) * d2psiM(iat, *it);
       it++;
     }
-    for (size_t i = 0; i < NumPtcls; i++)
+    grads(ReferenceDeterminant, iat) = gradRatio;
+    lapls(ReferenceDeterminant, iat) = ratioLapl;
+    for (size_t idim = 0; idim < OHMMS_DIM; idim++)
     {
-      for (size_t j = 0; j < NumOrbitals; j++)
-        TpsiM(j, i) = psiM(i, j);
-    }
-
-    std::complex<RealType> logValueRef;
-    InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
-    InverseTimer.stop();
-    const RealType detsign          = (*DetSigns)[ReferenceDeterminant];
-    const ValueType det0            = LogToValue<ValueType>::convert(logValueRef);
-    detValues[ReferenceDeterminant] = det0;
-    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, 0, detValues, psiMinv, TpsiM, dotProducts, *detData,
-                                       *uniquePairs, *DetSigns);
-    for (size_t iat = 0; iat < NumPtcls; iat++)
-    {
-      it = confgList[ReferenceDeterminant].occup.begin();
-      GradType gradRatio;
-      ValueType ratioLapl = 0.0;
-      for (size_t i = 0; i < NumPtcls; i++)
-      {
-        gradRatio += psiMinv(i, iat) * dpsiM(iat, *it);
-        ratioLapl += psiMinv(i, iat) * d2psiM(iat, *it);
-        it++;
-      }
-      grads(ReferenceDeterminant, iat) = det0 * gradRatio;
-      lapls(ReferenceDeterminant, iat) = det0 * ratioLapl;
-      for (size_t idim = 0; idim < OHMMS_DIM; idim++)
-      {
-        dpsiMinv = psiMinv;
-        it       = confgList[ReferenceDeterminant].occup.begin();
-        for (size_t i = 0; i < NumPtcls; i++)
-          psiV_temp[i] = dpsiM(iat, *(it++))[idim];
-        InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, gradRatio[idim]);
-        //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
-        for (size_t i = 0; i < NumOrbitals; i++)
-          TpsiM(i, iat) = dpsiM(iat, i)[idim];
-        BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, grads, dpsiMinv, TpsiM, dotProducts, *detData,
-                                           *uniquePairs, *DetSigns, idim);
-      }
       dpsiMinv = psiMinv;
       it       = confgList[ReferenceDeterminant].occup.begin();
       for (size_t i = 0; i < NumPtcls; i++)
-        psiV_temp[i] = d2psiM(iat, *(it++));
-      InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, ratioLapl);
-      //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
+        psiV_temp[i] = dpsiM(iat, *(it++))[idim];
+      InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, gradRatio[idim]);
+      //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
       for (size_t i = 0; i < NumOrbitals; i++)
-        TpsiM(i, iat) = d2psiM(iat, i);
-      BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, lapls, dpsiMinv, TpsiM, dotProducts, *detData,
-                                         *uniquePairs, *DetSigns);
-      // restore matrix
-      for (size_t i = 0; i < NumOrbitals; i++)
-        TpsiM(i, iat) = psiM(iat, i);
+        TpsiM(i, iat) = dpsiM(iat, i)[idim];
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, grads, dpsiMinv, TpsiM, dotProducts, *detData,
+                                         *uniquePairs, *DetSigns, idim);
     }
-  } // NumPtcls==1
+    dpsiMinv = psiMinv;
+    it       = confgList[ReferenceDeterminant].occup.begin();
+    for (size_t i = 0; i < NumPtcls; i++)
+      psiV_temp[i] = d2psiM(iat, *(it++));
+    InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, ratioLapl);
+    //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
+    for (size_t i = 0; i < NumOrbitals; i++)
+      TpsiM(i, iat) = d2psiM(iat, i);
+    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, lapls, dpsiMinv, TpsiM, dotProducts, *detData,
+                                       *uniquePairs, *DetSigns);
+    // restore matrix
+    for (size_t i = 0; i < NumOrbitals; i++)
+      TpsiM(i, iat) = psiM(iat, i);
+  }
+
+  psiMinv_temp = psiMinv;
+  evalWTimer.stop();
+}
+
+void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, bool fromScratch)
+{
+  evalWTimer.start();
+  if (fromScratch)
+    Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM, dspin_psiM);
+
+  InverseTimer.start();
+
+  const auto& confgList = *ciConfigList;
+
+  //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
+  auto it(confgList[ReferenceDeterminant].occup.begin());
+  for (size_t i = 0; i < NumPtcls; i++)
+  {
+    for (size_t j = 0; j < NumPtcls; j++)
+      psiMinv(j, i) = psiM(j, *it);
+    it++;
+  }
+  for (size_t i = 0; i < NumPtcls; i++)
+  {
+    for (size_t j = 0; j < NumOrbitals; j++)
+      TpsiM(j, i) = psiM(i, j);
+  }
+
+  std::complex<RealType> logValueRef;
+  InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
+  log_value_ref_det_ = logValueRef;
+  InverseTimer.stop();
+  const RealType detsign               = (*DetSigns)[ReferenceDeterminant];
+  ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, ratios_to_ref_, psiMinv, TpsiM, dotProducts, *detData,
+                                     *uniquePairs, *DetSigns);
+  for (size_t iat = 0; iat < NumPtcls; iat++)
+  {
+    it = confgList[ReferenceDeterminant].occup.begin();
+    GradType gradRatio;
+    ValueType ratioLapl     = 0.0;
+    ValueType spingradRatio = 0.0;
+    for (size_t i = 0; i < NumPtcls; i++)
+    {
+      gradRatio += psiMinv(i, iat) * dpsiM(iat, *it);
+      ratioLapl += psiMinv(i, iat) * d2psiM(iat, *it);
+      spingradRatio += psiMinv(i, iat) * dspin_psiM(iat, *it);
+      it++;
+    }
+    grads(ReferenceDeterminant, iat)     = gradRatio;
+    lapls(ReferenceDeterminant, iat)     = ratioLapl;
+    spingrads(ReferenceDeterminant, iat) = spingradRatio;
+    for (size_t idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      dpsiMinv = psiMinv;
+      it       = confgList[ReferenceDeterminant].occup.begin();
+      for (size_t i = 0; i < NumPtcls; i++)
+        psiV_temp[i] = dpsiM(iat, *(it++))[idim];
+      InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, gradRatio[idim]);
+      //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
+      for (size_t i = 0; i < NumOrbitals; i++)
+        TpsiM(i, iat) = dpsiM(iat, i)[idim];
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, grads, dpsiMinv, TpsiM, dotProducts, *detData,
+                                         *uniquePairs, *DetSigns, idim);
+    }
+    dpsiMinv = psiMinv;
+    it       = confgList[ReferenceDeterminant].occup.begin();
+    for (size_t i = 0; i < NumPtcls; i++)
+      psiV_temp[i] = d2psiM(iat, *(it++));
+    InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, ratioLapl);
+    //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
+    for (size_t i = 0; i < NumOrbitals; i++)
+      TpsiM(i, iat) = d2psiM(iat, i);
+    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, lapls, dpsiMinv, TpsiM, dotProducts, *detData,
+                                       *uniquePairs, *DetSigns);
+
+    //Adding the spin gradient
+    dpsiMinv = psiMinv;
+    it       = confgList[ReferenceDeterminant].occup.begin();
+    for (size_t i = 0; i < NumPtcls; i++)
+      psiV_temp[i] = dspin_psiM(iat, *(it++));
+    InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, spingradRatio);
+    for (size_t i = 0; i < NumOrbitals; i++)
+      TpsiM(i, iat) = dspin_psiM(iat, i);
+    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, spingrads, dpsiMinv, TpsiM, dotProducts, *detData,
+                                       *uniquePairs, *DetSigns);
+
+    // restore matrix
+    for (size_t i = 0; i < NumOrbitals; i++)
+      TpsiM(i, iat) = psiM(iat, i);
+  }
   psiMinv_temp = psiMinv;
   evalWTimer.stop();
 }
@@ -194,26 +267,43 @@ MultiDiracDeterminant::LogValueType MultiDiracDeterminant::updateBuffer(Particle
                                                                         WFBufferType& buf,
                                                                         bool fromscratch)
 {
-  evaluateForWalkerMove(P, (fromscratch || UpdateMode == ORB_PBYP_RATIO));
+  assert(P.is_spinor_ == is_spinor_);
+  if (is_spinor_)
+    evaluateForWalkerMoveWithSpin(P, (fromscratch || UpdateMode == ORB_PBYP_RATIO));
+  else
+    evaluateForWalkerMove(P, (fromscratch || UpdateMode == ORB_PBYP_RATIO));
   buf.put(psiM.first_address(), psiM.last_address());
   buf.put(FirstAddressOfdpsiM, LastAddressOfdpsiM);
   buf.put(d2psiM.first_address(), d2psiM.last_address());
   buf.put(psiMinv.first_address(), psiMinv.last_address());
-  buf.put(detValues.first_address(), detValues.last_address());
+  buf.put(log_value_ref_det_);
+  buf.put(ratios_to_ref_.first_address(), ratios_to_ref_.last_address());
   buf.put(FirstAddressOfGrads, LastAddressOfGrads);
   buf.put(lapls.first_address(), lapls.last_address());
+  if (is_spinor_)
+  {
+    buf.put(dspin_psiM.first_address(), dspin_psiM.last_address());
+    buf.put(spingrads.first_address(), spingrads.last_address());
+  }
   return 1.0;
 }
 
 void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
+  assert(P.is_spinor_ == is_spinor_);
   buf.get(psiM.first_address(), psiM.last_address());
   buf.get(FirstAddressOfdpsiM, LastAddressOfdpsiM);
   buf.get(d2psiM.first_address(), d2psiM.last_address());
   buf.get(psiMinv.first_address(), psiMinv.last_address());
-  buf.get(detValues.first_address(), detValues.last_address());
+  buf.get(log_value_ref_det_);
+  buf.get(ratios_to_ref_.first_address(), ratios_to_ref_.last_address());
   buf.get(FirstAddressOfGrads, LastAddressOfGrads);
   buf.get(lapls.first_address(), lapls.last_address());
+  if (is_spinor_)
+  {
+    buf.get(dspin_psiM.first_address(), dspin_psiM.last_address());
+    buf.get(spingrads.first_address(), spingrads.last_address());
+  }
   // only used with ORB_PBYP_ALL,
   psiMinv_temp = psiMinv;
   int n1       = psiM.extent(0);
@@ -229,6 +319,9 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
 {
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
+  assert(P.is_spinor_ == is_spinor_);
+  log_value_ref_det_ += convertValueToLog(curRatio);
+  curRatio = ValueType(1);
   switch (UpdateMode)
   {
   case ORB_PBYP_RATIO:
@@ -236,30 +329,34 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
     std::copy(psiV.begin(), psiV.end(), psiM[iat - FirstIndex]);
-    std::copy(new_detValues.begin(), new_detValues.end(), detValues.begin());
+    std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
-    std::copy(new_detValues.begin(), new_detValues.end(), detValues.begin());
-    // no use saving these
-    //        for(int i=0; i<NumDets; i++)
-    //          grads(i,WorkingIndex) = new_grads(i,WorkingIndex);
+    std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
+    if (is_spinor_)
+      std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
   default:
     psiMinv = psiMinv_temp;
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
-    std::copy(new_detValues.begin(), new_detValues.end(), detValues.begin());
+    std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     std::copy(new_grads.begin(), new_grads.end(), grads.begin());
     std::copy(new_lapls.begin(), new_lapls.end(), lapls.begin());
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
+    if (is_spinor_)
+    {
+      std::copy(new_spingrads.begin(), new_spingrads.end(), spingrads.begin());
+      std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
+    }
     break;
   }
 }
@@ -273,6 +370,7 @@ void MultiDiracDeterminant::restore(int iat)
   psiMinv_temp = psiMinv;
   for (int i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  curRatio = ValueType(1);
   /*
       switch(UpdateMode)
       {
@@ -297,6 +395,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
     : WaveFunctionComponent(s),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
+      MWRatioTimer(*timer_manager.createTimer(ClassName + "::mwratio")),
       InverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
       buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
       readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
@@ -305,13 +404,13 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
-      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
+      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::RefDetInvUpdate")),
       Phi(s.Phi->makeClone()),
       NumOrbitals(Phi->getOrbitalSetSize()),
-      NP(0),
       FirstIndex(s.FirstIndex),
       ciConfigList(s.ciConfigList),
       ReferenceDeterminant(s.ReferenceDeterminant),
+      is_spinor_(s.is_spinor_),
       detData(s.detData),
       uniquePairs(s.uniquePairs),
       DetSigns(s.DetSigns)
@@ -333,11 +432,13 @@ WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) cons
 /** constructor
  *@param spos the single-particle orbital set
  *@param first index of the first particle
+ *@param spinor flag to determinane if spin arrays need to be resized and used
  */
-MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int first)
+MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor)
     : WaveFunctionComponent("MultiDiracDeterminant"),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
+      MWRatioTimer(*timer_manager.createTimer(ClassName + "::mwratio")),
       InverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
       buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
       readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
@@ -346,12 +447,12 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, int
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
-      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::ExtraStuff")),
+      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::RefDetInvUpdate")),
       Phi(std::move(spos)),
       NumOrbitals(Phi->getOrbitalSetSize()),
-      NP(0),
-      FirstIndex(first),
-      ReferenceDeterminant(0)
+      FirstIndex(-1),
+      ReferenceDeterminant(0),
+      is_spinor_(spinor)
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
@@ -368,25 +469,28 @@ MultiDiracDeterminant::~MultiDiracDeterminant() = default;
 
 void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  if (NP == 0)
-  //first time, allocate once
-  {
-    //int norb = cols();
-    NP                  = P.getTotalNum();
-    FirstAddressOfGrads = &(grads(0, 0)[0]);
-    LastAddressOfGrads  = FirstAddressOfGrads + NumPtcls * DIM * getNumDets();
-    FirstAddressOfdpsiM = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
-    LastAddressOfdpsiM  = FirstAddressOfdpsiM + NumPtcls * NumOrbitals * DIM;
-  }
-  evaluateForWalkerMove(P, true);
+  assert(P.is_spinor_ == is_spinor_);
+
+  //extra pointers
+  FirstAddressOfGrads = &(grads(0, 0)[0]);
+  LastAddressOfGrads  = FirstAddressOfGrads + NumPtcls * DIM * getNumDets();
+  FirstAddressOfdpsiM = &(dpsiM(0, 0)[0]);
+  LastAddressOfdpsiM  = FirstAddressOfdpsiM + NumPtcls * NumOrbitals * DIM;
+
   //add the data:
   buf.add(psiM.first_address(), psiM.last_address());
   buf.add(FirstAddressOfdpsiM, LastAddressOfdpsiM);
   buf.add(d2psiM.first_address(), d2psiM.last_address());
   buf.add(psiMinv.first_address(), psiMinv.last_address());
-  buf.add(detValues.first_address(), detValues.last_address());
+  buf.add(log_value_ref_det_);
+  buf.add(ratios_to_ref_.first_address(), ratios_to_ref_.last_address());
   buf.add(FirstAddressOfGrads, LastAddressOfGrads);
   buf.add(lapls.first_address(), lapls.last_address());
+  if (is_spinor_)
+  {
+    buf.add(dspin_psiM.first_address(), dspin_psiM.last_address());
+    buf.add(spingrads.first_address(), spingrads.last_address());
+  }
 }
 
 
@@ -419,20 +523,29 @@ void MultiDiracDeterminant::resize(int nel)
   Pivot.resize(nel);
   workV1.resize(nel);
   workV2.resize(nel);
-  detValues.resize(NumDets);
-  new_detValues.resize(NumDets);
+  ratios_to_ref_.resize(NumDets);
+  new_ratios_to_ref_.resize(NumDets);
   grads.resize(NumDets, nel);
   new_grads.resize(NumDets, nel);
   lapls.resize(NumDets, nel);
   new_lapls.resize(NumDets, nel);
   dotProducts.resize(NumOrbitals, NumOrbitals);
   DetCalculator.resize(nel);
+
+  if (is_spinor_)
+  {
+    dspin_psiV.resize(NumOrbitals);
+    dspin_psiM.resize(nel, NumOrbitals);
+    spingrads.resize(NumDets, nel);
+    new_spingrads.resize(NumDets, nel);
+  }
 }
 
 void MultiDiracDeterminant::registerTimers()
 {
   UpdateTimer.reset();
   RatioTimer.reset();
+  MWRatioTimer.reset();
   InverseTimer.reset();
   buildTableTimer.reset();
   readMatTimer.reset();

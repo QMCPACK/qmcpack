@@ -16,7 +16,9 @@
 #include <complex>
 #include "config.h"
 
+#if !defined(OPENMP_NO_COMPLEX) && !defined(OPENMP_NO_UDR)
 PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<float>: omp_out += omp_in)")
 PRAGMA_OFFLOAD("omp declare reduction(+: std::complex<double>: omp_out += omp_in)")
+#endif
 
 #endif // QMCPLUSPLUS_OMPREDUCTION_H

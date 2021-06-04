@@ -84,9 +84,9 @@ struct SPOSetInputInfo
 
   inline RealType max_energy() { return highest_energy; }
 
-  indices_t& get_indices(const std::vector<SPOSetInfo*>& states_vec);
+  indices_t& get_indices(const std::vector<std::unique_ptr<SPOSetInfo>>& states_vec);
 
-  inline indices_t& get_indices(xmlNodePtr cur, const std::vector<SPOSetInfo*>& states_vec)
+  inline indices_t& get_indices(xmlNodePtr cur, const std::vector<std::unique_ptr<SPOSetInfo>>& states_vec)
   {
     put(cur);
     return get_indices(states_vec);

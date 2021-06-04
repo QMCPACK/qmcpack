@@ -137,7 +137,7 @@ void QMCOptimizeBatched::generateSamples()
  */
 void QMCOptimizeBatched::process(xmlNodePtr q)
 {
-  int crowd_size = wfoptdriver_input_.get_opt_crowd_size();
+  int crowd_size     = wfoptdriver_input_.get_opt_crowd_size();
   int opt_num_crowds = wfoptdriver_input_.get_opt_num_crowds();
   // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
   checkNumCrowdsLTNumThreads(opt_num_crowds);

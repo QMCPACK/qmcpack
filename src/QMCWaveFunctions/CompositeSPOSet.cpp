@@ -220,26 +220,26 @@ void CompositeSPOSet::evaluate_notranspose(const ParticleSet& P,
 }
 
 
-SPOSet* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   std::vector<std::string> spolist;
   putContent(spolist, cur);
   if (spolist.empty())
   {
-    return 0;
+    return nullptr;
   }
 
-  CompositeSPOSet* spo_now = new CompositeSPOSet;
+  auto spo_now = std::make_unique<CompositeSPOSet>();
   for (int i = 0; i < spolist.size(); ++i)
   {
     SPOSet* spo = sposet_builder_factory_.getSPOSet(spolist[i]);
     if (spo)
       spo_now->add(spo);
   }
-  return (spo_now->size()) ? spo_now : 0;
+  return (spo_now->size()) ? std::unique_ptr<SPOSet>{std::move(spo_now)} : nullptr;
 }
 
-SPOSet* CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input)
+std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input)
 {
   return createSPOSetFromXML(cur);
 }

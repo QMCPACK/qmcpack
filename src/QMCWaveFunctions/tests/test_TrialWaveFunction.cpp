@@ -104,7 +104,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   xmlNodePtr ein1     = xmlFirstElementChild(spo_root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  SPOSet* spo = einSet.createSPOSetFromXML(ein1);
+  auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != nullptr);
 
   auto* det_up = new DiracDet(std::unique_ptr<SPOSet>(spo->makeClone()));

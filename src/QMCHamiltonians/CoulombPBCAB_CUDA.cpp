@@ -231,11 +231,13 @@ void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
 }
 
 
-OperatorBase* CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  CoulombPBCAB_CUDA* myclone = new CoulombPBCAB_CUDA(PtclA, qp, true);
+  std::unique_ptr<CoulombPBCAB_CUDA> myclone = std::make_unique<CoulombPBCAB_CUDA>(PtclA, qp, true);
   if (myGrid)
+  {
     myclone->myGrid = new GridType(*myGrid);
+  }
   for (int ig = 0; ig < Vspec.size(); ++ig)
   {
     if (Vspec[ig])

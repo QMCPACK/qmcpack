@@ -44,7 +44,7 @@ Running Docker Containers
 
       docker run -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
 
-   The above will run the container in interactive mode dropping the default `user` to `/home/user` using the `bash` shell.
+   The above will run the container in interactive mode dropping the default `user` to `/home/user` using the `bash` shell. If `sudo` access is needed (e.g. install a package `sudo apt-get install emacs`) the password for the default `user` is also `user`.
 
    **Run an image (for Development)** `docker run` has a few extra options that can be used to run QMCPACK: 
 

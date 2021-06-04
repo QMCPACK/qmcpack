@@ -87,10 +87,10 @@ void test_lcao_spinor()
   SPOSetBuilder* bb = fac.createSPOSetBuilder(bnode);
 
   // only pick up the last sposet
-  std::unique_ptr<SPOSet> spo;
+  SPOSet* spo = nullptr;
   processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
-      spo.reset(bb->createSPOSet(element));
+      spo = bb->createSPOSet(element);
   });
   REQUIRE(spo);
 
@@ -272,10 +272,10 @@ void test_lcao_spinor_excited()
   SPOSetBuilder* bb = fac.createSPOSetBuilder(bnode);
 
   // only pick up the last sposet
-  std::unique_ptr<SPOSet> spo;
+  SPOSet* spo = nullptr;
   processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
-      spo.reset(bb->createSPOSet(element));
+      spo = bb->createSPOSet(element);
   });
   REQUIRE(spo);
 

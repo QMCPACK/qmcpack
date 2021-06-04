@@ -18,9 +18,9 @@
 
 namespace qmcplusplus
 {
-RotatedSPOs::RotatedSPOs(SPOSet* spos)
+RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos)
     : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true),
-      Phi(spos),
+      Phi(std::move(spos)),
       params_supplied(false),
       nel_major_(0)
 {
@@ -1038,7 +1038,7 @@ void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
 
 SPOSet* RotatedSPOs::makeClone() const
 {
-  RotatedSPOs* myclone = new RotatedSPOs(Phi->makeClone());
+  RotatedSPOs* myclone = new RotatedSPOs(std::unique_ptr<SPOSet>(Phi->makeClone()));
 
   myclone->params          = this->params;
   myclone->params_supplied = this->params_supplied;

@@ -238,7 +238,6 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
     for (size_t i = 0; i < p_list.size(); i++)
     {
       NonLocalECPComponent& component(ecp_component_list[i]);
-      auto* VP = component.VP;
       ParticleSet& W(p_list[i]);
       TrialWaveFunction& psi(psi_list[i]);
       const NLPPJob<RealType>& job = joblist[i];

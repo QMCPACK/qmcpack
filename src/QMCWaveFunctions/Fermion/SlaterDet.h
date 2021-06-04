@@ -261,19 +261,19 @@ public:
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
-  void recompute(MCWalkerConfiguration& W, bool firstTime)
+  void recompute(MCWalkerConfiguration& W, bool firstTime) override
   {
     for (int id = 0; id < Dets.size(); id++)
       Dets[id]->recompute(W, firstTime);
   }
 
-  void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, int kblocksize = 1)
+  void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, int kblocksize = 1) override
   {
     for (int id = 0; id < Dets.size(); id++)
       Dets[id]->reserve(pool, kblocksize);
   }
 
-  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi)
+  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override
   {
     for (int id = 0; id < Dets.size(); id++)
       Dets[id]->addLog(W, logPsi);
@@ -283,7 +283,7 @@ public:
              int iat,
              std::vector<ValueType>& psi_ratios,
              std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl)
+             std::vector<ValueType>& lapl) override
   {
     Dets[getDetID(iat)]->ratio(W, iat, psi_ratios, grad, lapl);
   }
@@ -295,7 +295,7 @@ public:
                      int iat,
                      int k,
                      int kd,
-                     int nw)
+                     int nw) override
   {
     Dets[getDetID(iat)]->det_lookahead(W, psi_ratios, grad, lapl, iat, k, kd, nw);
   }
@@ -303,7 +303,7 @@ public:
                  int iat,
                  std::vector<ValueType>& psi_ratios,
                  std::vector<GradType>& grad,
-                 std::vector<ValueType>& lapl)
+                 std::vector<ValueType>& lapl) override
   {
     Dets[getDetID(iat)]->calcRatio(W, iat, psi_ratios, grad, lapl);
   }
@@ -313,7 +313,7 @@ public:
                 int k,
                 std::vector<ValueType>& psi_ratios,
                 std::vector<GradType>& grad,
-                std::vector<ValueType>& lapl)
+                std::vector<ValueType>& lapl) override
   {
     Dets[getDetID(iat)]->addRatio(W, iat, k, psi_ratios, grad, lapl);
   }
@@ -323,26 +323,26 @@ public:
              std::vector<PosType>& rNew,
              std::vector<ValueType>& psi_ratios,
              std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl);
+             std::vector<ValueType>& lapl) override;
 
-  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad)
+  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override
   {
     Dets[getDetID(iat)]->calcGradient(W, iat, k, grad);
   }
 
-  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad)
+  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override
   {
     Dets[getDetID(iat)]->addGradient(W, iat, grad);
   }
 
-  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k)
+  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k) override
   {
     Dets[getDetID(iat)]->update(W, walkers, iat, acc, k);
   }
 
-  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList);
+  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList) override;
 
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl)
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override
   {
     for (int id = 0; id < Dets.size(); id++)
       Dets[id]->gradLapl(W, grads, lapl);
@@ -351,7 +351,7 @@ public:
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios)
+                std::vector<ValueType>& psi_ratios) override
   {
     for (int id = 0; id < Dets.size(); id++)
       Dets[id]->NLratios(W, jobList, quadPoints, psi_ratios);

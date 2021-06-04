@@ -66,7 +66,7 @@ public:
   ~QMCHamiltonian();
 
   ///add an operator
-  void addOperator(OperatorBase* h, const std::string& aname, bool physical = true);
+  void addOperator(std::unique_ptr<OperatorBase>&& h, const std::string& aname, bool physical = true);
 
   ///record the name-type pair of an operator
   void addOperatorType(const std::string& name, const std::string& type);
@@ -90,7 +90,7 @@ public:
    * @param i index of the OperatorBase
    * @return H[i]
    */
-  OperatorBase* getHamiltonian(int i) { return H[i]; }
+  OperatorBase* getHamiltonian(int i) { return H[i].get(); }
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///initialize trace data
@@ -446,13 +446,13 @@ private:
   ///getName is in the way
   const std::string myName;
   ///vector of Hamiltonians
-  std::vector<OperatorBase*> H;
+  std::vector<std::unique_ptr<OperatorBase>> H;
   ///pointer to NonLocalECP
   NonLocalECPotential* nlpp_ptr;
   ///pointer to L2Potential
   L2Potential* l2_ptr;
   ///vector of Hamiltonians
-  std::vector<OperatorBase*> auxH;
+  std::vector<std::unique_ptr<OperatorBase>> auxH;
   /// Total timer for H evaluation
   NewTimer& ham_timer_;
   /// timers for H components

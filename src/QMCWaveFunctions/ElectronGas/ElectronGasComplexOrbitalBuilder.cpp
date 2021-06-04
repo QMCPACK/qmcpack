@@ -89,7 +89,7 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, 
   ClassName = "ElectronGasSPOBuilder";
 }
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc = 0;
@@ -119,16 +119,14 @@ SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
     APP_ABORT("ElectronGasSPOBuilder::put");
   }
   egGrid.createGrid(nc, ns, twist);
-  EGOSet* spo = new EGOSet(egGrid.kpt, egGrid.mk2, egGrid.deg);
-  return spo;
+  return std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2, egGrid.deg);
 }
 
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
+std::unique_ptr<SPOSet> ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
 {
   egGrid.createGrid(indices);
-  EGOSet* spo = new EGOSet(egGrid.kpt, egGrid.mk2, egGrid.deg);
-  return spo;
+  return std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2, egGrid.deg);
 }
 
 

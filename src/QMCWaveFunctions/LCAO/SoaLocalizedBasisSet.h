@@ -22,6 +22,8 @@
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "Particle/DistanceTableData.h"
 
+#include <memory>
+
 namespace qmcplusplus
 {
 /** A localized basis set derived from SoaBasisSetBase<ORBT>
@@ -66,7 +68,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    *
    * size of LOBasisSet = number  of unique centers
    */
-  aligned_vector<COT*> LOBasisSet;
+  aligned_vector<std::unique_ptr<COT>> LOBasisSet;
 
   /** constructor
    * @param ions ionic system
@@ -77,22 +79,31 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
   {
     NumCenters = ions.getTotalNum();
     NumTargets = els.getTotalNum();
-    LOBasisSet.resize(ions.getSpeciesSet().getTotalNum(), 0);
+    LOBasisSet.resize(ions.getSpeciesSet().getTotalNum());
     BasisOffset.resize(NumCenters + 1);
     BasisSetSize = 0;
   }
 
   /** copy constructor */
-  SoaLocalizedBasisSet(const SoaLocalizedBasisSet& a) = default;
+  SoaLocalizedBasisSet(const SoaLocalizedBasisSet& a)
+      : SoaBasisSetBase<ORBT>(a),
+        NumCenters(a.NumCenters),
+        NumTargets(a.NumTargets),
+        ions_(a.ions_),
+        myTableIndex(a.myTableIndex),
+        SuperTwist(a.SuperTwist),
+        BasisOffset(a.BasisOffset)
+  {
+    LOBasisSet.reserve(a.LOBasisSet.size());
+    for (auto& elem : a.LOBasisSet)
+      LOBasisSet.push_back(std::make_unique<COT>(*elem));
+  }
 
   /** makeClone */
   //SoaLocalizedBasisSet<COT>* makeClone() const
   BaseType* makeClone() const
   {
-    SoaLocalizedBasisSet<COT, ORBT>* myclone = new SoaLocalizedBasisSet<COT, ORBT>(*this);
-    for (int i = 0; i < LOBasisSet.size(); ++i)
-      myclone->LOBasisSet[i] = LOBasisSet[i]->makeClone();
-    return myclone;
+    return new SoaLocalizedBasisSet<COT, ORBT>(*this);
   }
   /** set Number of periodic Images to evaluate the orbitals. 
       Set to 0 for non-PBC, and set manually in the input.
@@ -337,7 +348,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    * @param icenter the index of the center
    * @param aos a set of Centered Atomic Orbitals
    */
-  void add(int icenter, COT* aos) { LOBasisSet[icenter] = aos; }
+  void add(int icenter, std::unique_ptr<COT> aos) { LOBasisSet[icenter] = std::move(aos); }
 };
 } // namespace qmcplusplus
 #endif

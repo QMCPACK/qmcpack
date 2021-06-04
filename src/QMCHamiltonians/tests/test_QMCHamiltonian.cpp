@@ -35,8 +35,8 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
   TrialWaveFunction twf;
 
   std::vector<QMCHamiltonian> hamiltonians;
-  hamiltonians.emplace_back(*(hamiltonian_pool.getPrimary()));
-  hamiltonians.emplace_back(*(hamiltonian_pool.getPrimary()));
+  //hamiltonians.emplace_back(*(hamiltonian_pool.getPrimary()));
+  //hamiltonians.emplace_back(*(hamiltonian_pool.getPrimary()));
 
   std::vector<ParticleSet> elecs;
   elecs.emplace_back(*(particle_pool.getParticleSet("e")));

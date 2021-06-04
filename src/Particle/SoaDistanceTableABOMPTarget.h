@@ -254,9 +254,9 @@ public:
     const size_t total_targets = count_targets;
 
     const int N_sources_padded = getAlignedSize<T>(N_sources);
-    const int stride_size      = N_sources_padded * (D + 1);
 
 #ifndef NDEBUG
+    const int stride_size = N_sources_padded * (D + 1);
     count_targets = 0;
     for (size_t iw = 0; iw < dt_list.size(); iw++)
     {

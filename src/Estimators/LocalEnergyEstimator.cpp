@@ -25,7 +25,7 @@ LocalEnergyEstimator::LocalEnergyEstimator(QMCHamiltonian& h, bool use_hdf5) : U
   scalars_saved.resize(SizeOfHamiltonians + LE_MAX);
 }
 
-ScalarEstimatorBase* LocalEnergyEstimator::clone() { return new LocalEnergyEstimator(*this); }
+LocalEnergyEstimator* LocalEnergyEstimator::clone() { return new LocalEnergyEstimator(*this); }
 
 void LocalEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid)
 {
