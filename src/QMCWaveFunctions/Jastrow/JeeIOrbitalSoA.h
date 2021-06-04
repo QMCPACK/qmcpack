@@ -133,9 +133,9 @@ public:
       for (int eG1 = 0; eG1 < eGroups; eG1++)
         for (int eG2 = 0; eG2 < eGroups; eG2++)
         {
-          if (F(iG, eG1, eG2) == 0)
+          if (F(iG, eG1, eG2) == nullptr)
             continue;
-          typename std::map<const FT*, FT*>::iterator fit = fcmap.find(F(iG, eG1, eG2));
+          auto fit = fcmap.find(F(iG, eG1, eG2));
           if (fit == fcmap.end())
           {
             auto fc                = std::make_unique<FT>(*F(iG, eG1, eG2));
@@ -359,9 +359,7 @@ public:
       return;
 
     for (auto& ftPair : J3Unique)
-    {
       ftPair.second->resetParameters(active);
-    }
 
     for (int i = 0; i < myVars.size(); ++i)
     {
@@ -375,9 +373,7 @@ public:
   void reportStatus(std::ostream& os)
   {
     for (auto& ftPair : J3Unique)
-    {
       ftPair.second->myVars.print(os);
-    }
   }
 
   void build_compact_list(const ParticleSet& P)
