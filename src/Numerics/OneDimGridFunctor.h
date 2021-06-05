@@ -47,59 +47,24 @@ struct OneDimGridFunctor
   typedef OneDimGridFunctor<Td, Tg, CTd, CTg> this_type;
 
   /** constructor
-   *@param gt a radial grid
+   *@param gt a radial grid. The pointer is treated as a reference
    */
-  OneDimGridFunctor(grid_type* gt = 0) : GridManager(true), OwnGrid(false), m_grid(gt)
+  OneDimGridFunctor(const grid_type* gt = 0) : m_grid(gt ? gt->makeClone() : nullptr)
   {
     if (m_grid)
       resize(m_grid->size());
-    //FirstAddress.resize(3,0);
   }
 
-  /** virtual destructor */
-  inline virtual ~OneDimGridFunctor()
+  OneDimGridFunctor(const OneDimGridFunctor& a)
   {
-    if (OwnGrid && m_grid)
-      delete m_grid;
-  }
-
-  /////copy constructor
-  //OneDimGridFunctor(const this_type& a): GridManager(true), m_grid(a.m_grid){
-  //  if(m_grid) resize(m_grid->size());
-  //  FirstAddress.resize(3,0);
-  //}
-
-
-  OneDimGridFunctor<Td, Tg, CTd, CTg>(const OneDimGridFunctor<Td, Tg, CTd, CTg>& a)
-  {
-    GridManager = a.GridManager;
-    OwnGrid     = true;
-    m_grid      = a.m_grid->makeClone();
+    if (a.m_grid)
+      m_grid.reset(a.m_grid->makeClone());
     Y           = a.Y;
     dY          = a.dY;
     d2Y         = a.d2Y;
     m_Y.resize(a.m_Y.size());
     m_Y      = a.m_Y;
     NumNodes = a.NumNodes;
-  }
-
-  /// assignment operator
-  const this_type& operator=(const this_type& a)
-  {
-    //This object does not manage the grid
-    GridManager = false;
-    OwnGrid     = false;
-    m_grid      = a.m_grid;
-    m_Y         = a.m_Y;
-    //m_Y2 = a.m_Y2;
-    return *this;
-  }
-
-  template<class T1>
-  const this_type& operator=(const T1& x)
-  {
-    Y = x;
-    return *this;
   }
 
   template<typename TT>
@@ -124,8 +89,6 @@ struct OneDimGridFunctor
   inline const grid_type& grid() const { return *m_grid; }
   ///assign a radial grid
   inline grid_type& grid() { return *m_grid; }
-  ///set the status of GridManager
-  inline void setGridManager(bool willmanage) { GridManager = willmanage; }
 
   /**returns a value
    * @param i grid index
@@ -223,12 +186,8 @@ struct OneDimGridFunctor
     return splint(r, du, d2u);
   }
 
-  ///true, if this object manages the grid
-  bool GridManager;
-  ///true, if owns the grid to clean up
-  bool OwnGrid;
   ///pointer to the radial grid
-  grid_type* m_grid;
+  std::unique_ptr<grid_type> m_grid;
 
   ///store the value of the function
   value_type Y;

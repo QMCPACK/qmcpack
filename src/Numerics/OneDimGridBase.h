@@ -53,7 +53,7 @@ struct OneDimGridBase
 
   virtual OneDimGridBase<T, CT>* makeClone() const = 0;
 
-  virtual ~OneDimGridBase() {}
+  virtual ~OneDimGridBase() = default;
 
   inline int getGridTag() const { return GridTag; }
 
