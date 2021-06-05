@@ -108,18 +108,13 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
   PRE.echo(cur);
   if (sph == "spherical")
     addsignforM = 1; //include (-1)^m
+
   if (Morder == "gaussian")
-  {
     expandlm = GAUSSIAN_EXPAND;
-  }
   else if (Morder == "natural")
-  {
     expandlm = NATURAL_EXPAND;
-  }
   else if (Morder == "no")
-  {
     expandlm = DONOT_EXPAND;
-  }
   else if (Morder == "pyscf")
   {
     expandlm    = MOD_NATURAL_EXPAND;
@@ -141,9 +136,7 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
     expandlm    = DIRAC_CARTESIAN_EXPAND;
     addsignforM = 0;
     if (sph != "cartesian")
-    {
       myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
-    }
   }
 
   // Numerical basis is a special case
@@ -181,18 +174,13 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
             << "\" expM=\"" << addsignforM << "\" />" << std::endl;
   if (sph == "spherical")
     addsignforM = 1; //include (-1)^m
+
   if (Morder == "gaussian")
-  {
     expandlm = GAUSSIAN_EXPAND;
-  }
   else if (Morder == "natural")
-  {
     expandlm = NATURAL_EXPAND;
-  }
   else if (Morder == "no")
-  {
     expandlm = DONOT_EXPAND;
-  }
   else if (Morder == "pyscf")
   {
     expandlm    = MOD_NATURAL_EXPAND;
@@ -214,9 +202,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
     expandlm    = DIRAC_CARTESIAN_EXPAND;
     addsignforM = 0;
     if (sph != "cartesian")
-    {
       myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
-    }
   }
 
   return true;
@@ -228,6 +214,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
 {
   ReportEngine PRE("AtomicBasisBuilder", "createAOSet(xmlNodePtr)");
   app_log() << "  AO BasisSet for " << elementType << "\n";
+
   if (expandlm != CARTESIAN_EXPAND)
   {
     if (addsignforM)
@@ -235,6 +222,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
     else
       app_log() << "   Spherical Harmonics  DO NOT contain (-1)^m factor" << std::endl;
   }
+
   switch (expandlm)
   {
   case (GAUSSIAN_EXPAND):
@@ -255,6 +243,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   default:
     app_log() << "   Angular momentum m is explicitly given." << std::endl;
   }
+
   QuantumNumberType nlms;
   std::string rnl;
   int Lmax(0); //maxmimum angular momentum of this center
@@ -365,6 +354,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
     else
       app_log() << "   Spherical Harmonics  DO NOT contain (-1)^m factor" << std::endl;
   }
+
   switch (expandlm)
   {
   case (GAUSSIAN_EXPAND):

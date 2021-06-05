@@ -90,6 +90,7 @@ IF(OHMMS_DIM MATCHES 3)
       LCAO/LCAOrbitalSet.cpp
       LCAO/LCAOrbitalBuilder.cpp
       LCAO/SoaSphericalTensor.cpp
+      LCAO/MultiQuinticSpline1D.cpp
       )
   IF(QMC_COMPLEX)
     SET(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOSpinorBuilder.cpp)

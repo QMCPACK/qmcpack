@@ -10,10 +10,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "SoaSphericalTensor.h"
+#include "MultiQuinticSpline1D.h"
 
 namespace qmcplusplus
 {
-template struct SoaSphericalTensor<float>;
-template struct SoaSphericalTensor<double>;
+template class MultiQuinticSpline1D<float>;
+template class MultiQuinticSpline1D<double>;
 } // namespace qmcplusplus
