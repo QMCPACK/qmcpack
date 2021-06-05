@@ -830,11 +830,17 @@ int AOBasisBuilder<COT>::expandYlm(COT* aos, std::vector<int>& all_nl, int expan
   return num;
 }
 
-template class AOBasisBuilder<SoaAtomicBasisSet<MultiQuinticSpline1D<QMCTraits::RealType>, SoaCartesianTensor<QMCTraits::RealType>>>;
-template class AOBasisBuilder<SoaAtomicBasisSet<MultiQuinticSpline1D<QMCTraits::RealType>, SoaSphericalTensor<QMCTraits::RealType>>>;
-template class AOBasisBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<QMCTraits::RealType>>, SoaCartesianTensor<QMCTraits::RealType>>>;
-template class AOBasisBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<QMCTraits::RealType>>, SoaSphericalTensor<QMCTraits::RealType>>>;
-template class AOBasisBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<QMCTraits::RealType>>, SoaCartesianTensor<QMCTraits::RealType>>>;
-template class AOBasisBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<QMCTraits::RealType>>, SoaSphericalTensor<QMCTraits::RealType>>>;
+template class AOBasisBuilder<
+    SoaAtomicBasisSet<MultiQuinticSpline1D<QMCTraits::RealType>, SoaCartesianTensor<QMCTraits::RealType>>>;
+template class AOBasisBuilder<
+    SoaAtomicBasisSet<MultiQuinticSpline1D<QMCTraits::RealType>, SoaSphericalTensor<QMCTraits::RealType>>>;
+template class AOBasisBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<QMCTraits::RealType>>,
+                                                SoaCartesianTensor<QMCTraits::RealType>>>;
+template class AOBasisBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<QMCTraits::RealType>>,
+                                                SoaSphericalTensor<QMCTraits::RealType>>>;
+template class AOBasisBuilder<
+    SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<QMCTraits::RealType>>, SoaCartesianTensor<QMCTraits::RealType>>>;
+template class AOBasisBuilder<
+    SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<QMCTraits::RealType>>, SoaSphericalTensor<QMCTraits::RealType>>>;
 
 } // namespace qmcplusplus

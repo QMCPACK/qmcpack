@@ -35,12 +35,12 @@ namespace qmcplusplus
 template<class COT, typename ORBT>
 struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 {
-  using RealType = typename COT::RealType;
-  using BaseType = SoaBasisSetBase<ORBT>;
-  using vgl_type = typename BaseType::vgl_type;
-  using vgh_type = typename BaseType::vgh_type;
+  using RealType   = typename COT::RealType;
+  using BaseType   = SoaBasisSetBase<ORBT>;
+  using vgl_type   = typename BaseType::vgl_type;
+  using vgh_type   = typename BaseType::vgh_type;
   using vghgh_type = typename BaseType::vghgh_type;
-  using PosType = typename ParticleSet::PosType;
+  using PosType    = typename ParticleSet::PosType;
 
   using BaseType::BasisSetSize;
 
