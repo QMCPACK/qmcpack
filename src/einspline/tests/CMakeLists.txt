@@ -20,7 +20,11 @@ SET(SRCS test_one.cpp test_3d.cpp)
 IF(QMC_CUDA)
   SET(SRCS ${SRCS}
       test_cuda.cu)
-  CUDA_ADD_LIBRARY(cudatests test_cuda.cu)
+  IF(NOT QMC_CUDA2HIP)
+    CUDA_ADD_LIBRARY(cudatests test_cuda.cu)
+  ELSE()
+    HIP_ADD_LIBRARY(cudatests test_cuda.cu)
+  ENDIF(NOT QMC_CUDA2HIP)
   SET(CUDATESTLIB cudatests)
 ENDIF()
 

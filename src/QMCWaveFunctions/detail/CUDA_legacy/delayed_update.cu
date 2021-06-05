@@ -5,9 +5,17 @@
 #include <vector>
 #include <iostream>
 #include <complex>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda.h>
 #include <cublas_v2.h>
 #include <cuComplex.h>
+#else
+#include <hipblas.h>
+#include <hip/hip_complex.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#include "Platforms/ROCm/hipBLAS.hpp"
+#endif
 #include <thrust/complex.h>
 
 #define BLOCKSIZE 256

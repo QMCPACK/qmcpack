@@ -16,6 +16,10 @@ SET(CUDA_LEGACY_SRCS
   gpu_misc.cpp
 )
 
-CUDA_ADD_LIBRARY(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
-CUDA_ADD_CUBLAS_TO_TARGET(platform_cuda_legacy)
+IF(NOT QMC_CUDA2HIP)
+  CUDA_ADD_LIBRARY(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
+  CUDA_ADD_CUBLAS_TO_TARGET(platform_cuda_legacy)
+ELSE()
+  HIP_ADD_LIBRARY(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
+ENDIF(NOT QMC_CUDA2HIP)
 TARGET_LINK_LIBRARIES(platform_cuda_legacy PRIVATE ${CUDA_LIBRARIES})

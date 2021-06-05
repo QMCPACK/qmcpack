@@ -1,9 +1,14 @@
 #ifndef DELAYED_UPDATE_H
 #define DELAYED_UPDATE_H
 
+#include "config.h"
 #include <complex>
+#ifndef QMC_CUDA2HIP
 #include <cublas_v2.h>
-
+#else
+#include <hipblas.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
 
 //////////////////////////////
 // Single / mixed precision //
