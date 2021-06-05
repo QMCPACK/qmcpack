@@ -18,6 +18,8 @@
 #define QMCPLUSPLUS_MULTIEINSPLINE_1D_HPP
 
 #include "spline2/MultiBsplineEval_helper.hpp"
+#include "spline/einspline_engine.hpp"
+#include "spline/einspline_util.hpp"
 
 namespace qmcplusplus
 {

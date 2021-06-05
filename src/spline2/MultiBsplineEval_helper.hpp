@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include "bspline_traits.hpp"
 #include "spline2/MultiBsplineData.hpp"
 
 namespace spline2
