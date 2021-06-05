@@ -57,13 +57,14 @@ public:
     AOs.add_spline(mo_idx, radial_spline);
   }
 
-  inline void evaluate(const T r, T* restrict vals)
+  inline void evaluate(const T r, T* restrict vals) const
   {
     //assume output vars are zero'd
     if (r >= r_max_)
       return;
 
     size_t nr = AOs.getNumSplines();
+    //FIXME ad-hoc allocation for performance
     std::vector<T> phi(nr);
 
     AOs.evaluate(r, phi.data());
@@ -78,13 +79,14 @@ public:
                            T* restrict du_x,
                            T* restrict du_y,
                            T* restrict du_z,
-                           T* restrict d2u)
+                           T* restrict d2u) const
   {
     //assume output vars are zero'd
     if (r >= r_max_)
       return;
 
     size_t nr = AOs.getNumSplines();
+    //FIXME ad-hoc allocation for performance
     std::vector<T> phi(nr);
     std::vector<T> dphi(nr);
     std::vector<T> d2phi(nr);
@@ -136,8 +138,9 @@ struct SoaCuspCorrection
   /** container of the unique pointers to the Atomic Orbitals
    *
    * size of LOBasisSet = number of centers (atoms)
+   * should use unique_ptr once COT is fixed for better performance
    */
-  aligned_vector<COT*> LOBasisSet;
+  std::vector<std::shared_ptr<const COT>> LOBasisSet;
 
   Matrix<RealType> myVGL;
 
@@ -149,7 +152,7 @@ struct SoaCuspCorrection
   {
     NumCenters = ions.getTotalNum();
     NumTargets = els.getTotalNum();
-    LOBasisSet.resize(NumCenters, 0);
+    LOBasisSet.resize(NumCenters);
   }
 
   /** copy constructor */
@@ -308,7 +311,7 @@ struct SoaCuspCorrection
    * @param icenter the index of the center
    * @param aos a set of Centered Atomic Orbitals
    */
-  void add(int icenter, COT* aos) { LOBasisSet[icenter] = aos; }
+  void add(int icenter, std::unique_ptr<COT> aos) { LOBasisSet[icenter].reset(aos.release()); }
   void addVGL(const ParticleSet& P, int iat, VGLVector_t& vgl) { evaluateVGL(P, iat, vgl); }
   void addV(const ParticleSet& P, int iat, ValueType* restrict vals) { evaluateV(P, iat, vals); }
   void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix_t& vals, GradMatrix_t& dpsi, ValueMatrix_t& d2psi)

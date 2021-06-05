@@ -100,10 +100,7 @@ private:
   ///will be the real grid
   LogGridLight<T> myGrid;
 
-  /** Need to use shared_ptr
-   *
-   * coeffs[6*spline_points][num_splines+padding]
-   */
+  ///coeffs[6*spline_points][num_splines+padding]
   std::shared_ptr<CoeffType> coeffs;
   aligned_vector<T> first_deriv;
 
@@ -114,7 +111,7 @@ public:
 
   inline T rmax() const { return myGrid.upper_bound; }
 
-  inline void evaluate(T r, T* restrict u)
+  inline void evaluate(T r, T* restrict u) const
   {
     if (r < myGrid.lower_bound)
     {
@@ -141,7 +138,7 @@ public:
     }
   }
 
-  inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u)
+  inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u) const
   {
     if (r < myGrid.lower_bound)
     {
@@ -185,7 +182,7 @@ public:
   }
 
   /** compute upto 3rd derivatives */
-  inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u, T* restrict d3u)
+  inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u, T* restrict d3u) const
   {
     if (r < myGrid.lower_bound)
     {

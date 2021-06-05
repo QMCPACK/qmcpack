@@ -62,13 +62,13 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    *
    * the number of basis states for center J is BasisOffset[J+1]-Basis[J]
    */
-  aligned_vector<size_t> BasisOffset;
+  std::vector<size_t> BasisOffset;
 
   /** container of the unique pointers to the Atomic Orbitals
    *
    * size of LOBasisSet = number  of unique centers
    */
-  aligned_vector<std::unique_ptr<COT>> LOBasisSet;
+  std::vector<std::unique_ptr<COT>> LOBasisSet;
 
   /** constructor
    * @param ions ionic system
