@@ -9,23 +9,32 @@
 #// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 # Also includes tests for code OhmmsApp directory
 
-SET(SRC_DIR qmcapp)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRC_DIR qmcapp)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-ADD_EXECUTABLE(${UTEST_EXE} test_project_data.cpp test_rng_control.cpp)
+add_executable(${UTEST_EXE} test_project_data.cpp test_rng_control.cpp)
 
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmc)
-IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators qmcdriver qmcham qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget)
-  IF(BUILD_AFQMC)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} afqmc)
-  ENDIF(BUILD_AFQMC)
-ENDIF()
+target_link_libraries(${UTEST_EXE} catch_main qmc)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(
+    ${UTEST_EXE}
+    qmcestimators
+    qmcdriver
+    qmcham
+    qmcwfs
+    qmcparticle
+    qmcutil
+    containers
+    platform_device
+    platform_omptarget)
+  if(BUILD_AFQMC)
+    target_link_libraries(${UTEST_EXE} afqmc)
+  endif(BUILD_AFQMC)
+endif()
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

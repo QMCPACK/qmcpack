@@ -9,39 +9,42 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(SRC_DIR afqmc_wfn_factory)
-SET(UTEST_EXE test_${SRC_DIR})
+set(SRC_DIR afqmc_wfn_factory)
+set(UTEST_EXE test_${SRC_DIR})
 
-SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/afqmc/Wavefunctions)
+set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/afqmc/Wavefunctions)
 
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 
-ADD_EXECUTABLE(${UTEST_EXE} test_wfn_factory.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main afqmc)
-LIST(LENGTH AFQMC_UNIT_TEST_INPUTS NUM_PAIRS)
-MATH(EXPR ENDP "${NUM_PAIRS}-1")
-FOREACH(I RANGE 0 ${ENDP} 2)
-    LIST(GET AFQMC_UNIT_TEST_INPUTS ${I} HAMIL_FILE)
-    MATH(EXPR J "${I}+1")
-    LIST(GET AFQMC_UNIT_TEST_INPUTS ${J} WFN_FILE)
-    GET_FILENAME_COMPONENT(HAMIL ${HAMIL_FILE} NAME_WE)
-    GET_FILENAME_COMPONENT(WFN ${WFN_FILE} NAME_WE)
-    SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_${HAMIL}_${WFN})
-    ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
-                  "--hamil ${HAMIL_FILE}" "--wfn ${WFN_FILE}")
-    SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-    SET_PROPERTY(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
-ENDFOREACH()
-IF(NOT QMC_COMPLEX)
-  SET(UTEST_EXE test_afqmc_phmsd)
-  ADD_EXECUTABLE(${UTEST_EXE} test_phmsd.cpp)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main afqmc)
-  SET(UTEST_NAME deterministic-unit_test_afqmc_phmsd)
-  ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
-                "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5 "
-                "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5")
-  SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-  SET_PROPERTY(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
-ENDIF()
+add_executable(${UTEST_EXE} test_wfn_factory.cpp)
+target_link_libraries(${UTEST_EXE} catch_main afqmc)
+list(LENGTH AFQMC_UNIT_TEST_INPUTS NUM_PAIRS)
+math(EXPR ENDP "${NUM_PAIRS}-1")
+foreach(I RANGE 0 ${ENDP} 2)
+  list(GET AFQMC_UNIT_TEST_INPUTS ${I} HAMIL_FILE)
+  math(EXPR J "${I}+1")
+  list(GET AFQMC_UNIT_TEST_INPUTS ${J} WFN_FILE)
+  get_filename_component(HAMIL ${HAMIL_FILE} NAME_WE)
+  get_filename_component(WFN ${WFN_FILE} NAME_WE)
+  set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_${HAMIL}_${WFN})
+  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}" "--hamil ${HAMIL_FILE}" "--wfn ${WFN_FILE}")
+  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  set_property(
+    TEST ${UTEST_NAME}
+    APPEND
+    PROPERTY LABELS "afqmc")
+endforeach()
+if(NOT QMC_COMPLEX)
+  set(UTEST_EXE test_afqmc_phmsd)
+  add_executable(${UTEST_EXE} test_phmsd.cpp)
+  target_link_libraries(${UTEST_EXE} catch_main afqmc)
+  set(UTEST_NAME deterministic-unit_test_afqmc_phmsd)
+  add_unit_test(
+    ${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
+    "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5 "
+    "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5")
+  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")
+endif()

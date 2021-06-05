@@ -9,42 +9,34 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(HOST_SRCS Host/sysutil.cpp Host/InfoStream.cpp Host/OutputManager.cpp)
 
-SET(HOST_SRCS
-    Host/sysutil.cpp
-    Host/InfoStream.cpp
-    Host/OutputManager.cpp
-)
+set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp)
 
-SET(DEVICE_SRCS
-  MemoryUsage.cpp
-  DualAllocator.cpp
-)
+add_library(platform_host ${HOST_SRCS})
 
-ADD_LIBRARY(platform_host ${HOST_SRCS})
+if(USE_OBJECT_TARGET)
+  add_library(platform_device OBJECT ${DEVICE_SRCS})
+else(USE_OBJECT_TARGET)
+  add_library(platform_device ${DEVICE_SRCS})
+endif(USE_OBJECT_TARGET)
 
-IF(USE_OBJECT_TARGET)
-  ADD_LIBRARY(platform_device OBJECT ${DEVICE_SRCS})
-ELSE(USE_OBJECT_TARGET)
-  ADD_LIBRARY(platform_device ${DEVICE_SRCS})
-ENDIF(USE_OBJECT_TARGET)
-
-TARGET_INCLUDE_DIRECTORIES(platform_device PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(platform_device PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(CPU)
-TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cpu)
+target_link_libraries(platform_device PUBLIC platform_cpu)
 
 add_subdirectory(OMPTarget)
-TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_omptarget)
+target_link_libraries(platform_device PUBLIC platform_omptarget)
 
-IF(QMC_CUDA)
+if(QMC_CUDA)
   add_subdirectory(CUDA_legacy)
-  TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda_legacy)
-ENDIF(QMC_CUDA)
+  target_link_libraries(platform_device PUBLIC platform_cuda_legacy)
+endif(QMC_CUDA)
 
-IF(ENABLE_CUDA)
+if(ENABLE_CUDA)
   add_subdirectory(CUDA)
-  TARGET_LINK_LIBRARIES(platform_device PUBLIC platform_cuda)
-ENDIF(ENABLE_CUDA)
+  target_link_libraries(platform_device PUBLIC platform_cuda)
+endif(ENABLE_CUDA)
 
 add_subdirectory(tests)

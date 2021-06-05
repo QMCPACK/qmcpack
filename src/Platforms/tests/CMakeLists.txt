@@ -9,12 +9,11 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
-IF (BUILD_UNIT_TESTS)
-  IF(ENABLE_CUDA)
+if(BUILD_UNIT_TESTS)
+  if(ENABLE_CUDA)
     add_subdirectory(CUDA)
-  ENDIF()
+  endif()
 
   add_subdirectory(OMPTarget)
   add_subdirectory(CPU)
-ENDIF()
+endif()

@@ -1,5 +1,3 @@
-
-
 #
 # Solids
 #
@@ -19,15 +17,16 @@ add_subdirectory("hcpBe_1x1x1_pp")
 add_subdirectory("monoO_1x1x1_pp")
 add_subdirectory("NiO_a4_e48_pp")
 add_subdirectory("grapheneC_1x1_pp")
-IF (QMC_COMPLEX)
-   add_subdirectory("diamondC_1x1x1-Gaussian_pp_Tw_cplx")
-   add_subdirectory("diamondC_2x1x1-Gaussian_pp_cplx")
-   add_subdirectory("diamondC_2x1x1-Gaussian_pp_cplx_MSD")
-   add_subdirectory("diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited")
-   add_subdirectory("diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD")
-   add_subdirectory("Al-1x1x1-Gaussian_pp_ShiftedTwist")
-ENDIF()
-IF (BUILD_AFQMC AND QMC_COMPLEX AND NOT ENABLE_CUDA)
-   add_subdirectory("diamondC_afqmc_1x1x1_complex")
-ENDIF()
-
+if(QMC_COMPLEX)
+  add_subdirectory("diamondC_1x1x1-Gaussian_pp_Tw_cplx")
+  add_subdirectory("diamondC_2x1x1-Gaussian_pp_cplx")
+  add_subdirectory("diamondC_2x1x1-Gaussian_pp_cplx_MSD")
+  add_subdirectory("diamondC_2x1x1-Gaussian_pp_cplx_MSD_excited")
+  add_subdirectory("diamondC_1x1x1-Gaussian_pp_Tw_cplx_MSD")
+  add_subdirectory("Al-1x1x1-Gaussian_pp_ShiftedTwist")
+endif()
+if(BUILD_AFQMC
+   AND QMC_COMPLEX
+   AND NOT ENABLE_CUDA)
+  add_subdirectory("diamondC_afqmc_1x1x1_complex")
+endif()

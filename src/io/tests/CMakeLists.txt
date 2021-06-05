@@ -9,8 +9,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
-IF(BUILD_UNIT_TESTS)
+if(BUILD_UNIT_TESTS)
   add_subdirectory(hdf)
   add_subdirectory(OhmmsData)
-ENDIF()
+endif()
