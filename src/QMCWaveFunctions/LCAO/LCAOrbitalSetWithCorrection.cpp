@@ -11,7 +11,6 @@
 
 
 #include "LCAOrbitalSetWithCorrection.h"
-#include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
 {
@@ -65,9 +64,7 @@ void LCAOrbitalSetWithCorrection::evaluate_notranspose(const ParticleSet& P,
 {
   LCAOrbitalSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   for (size_t i = 0, iat = first; iat < last; i++, iat++)
-  {
     cusp.add_vgl(P, iat, i, logdet, dlogdet, d2logdet);
-  }
 }
 
 void LCAOrbitalSetWithCorrection::evaluate_notranspose(const ParticleSet& P,

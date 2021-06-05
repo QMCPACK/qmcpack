@@ -390,7 +390,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
 
   // Test the makeClone method
-  SPOSet* sposet_clone = sposet->makeClone();
+  std::unique_ptr<SPOSet> sposet_clone(sposet->makeClone());
 
   sposet_clone->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
 

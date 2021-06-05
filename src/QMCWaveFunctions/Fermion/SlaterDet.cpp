@@ -36,10 +36,7 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl, const std::string& class_name) : W
 }
 
 ///destructor
-SlaterDet::~SlaterDet()
-{
-  ///clean up SPOSet
-}
+SlaterDet::~SlaterDet() = default;
 
 ///add a new DiracDeterminant to the list of determinants
 void SlaterDet::add(Determinant_t* det, int ispin)

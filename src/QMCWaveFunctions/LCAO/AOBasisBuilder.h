@@ -21,7 +21,7 @@
 #include "Message/MPIObjectBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
+#include "RadialOrbitalSetBuilder.h"
 #include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
@@ -46,15 +46,13 @@ public:
   };
 
 private:
-  //builder for a set of radial functors for this atom
-  RadialOrbitalSetBuilder<COT> radFuncBuilder;
-
   bool addsignforM;
   int expandlm;
   std::string Morder;
   std::string sph;
   std::string basisType;
   std::string elementType;
+  std::string Normalized;
 
   ///map for the radial orbitals
   std::map<std::string, int> RnlID;
@@ -79,13 +77,13 @@ public:
 template<typename COT>
 AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName, Communicate* comm)
     : MPIObjectBase(comm),
-      radFuncBuilder(comm),
       addsignforM(false),
       expandlm(GAUSSIAN_EXPAND),
       Morder("gaussian"),
       sph("default"),
       basisType("Numerical"),
-      elementType(eName)
+      elementType(eName),
+      Normalized("yes")
 {
   // mmorales: for "Cartesian Gaussian", m is an integer that maps
   //           the component to Gamess notation, see Numerics/CartesianTensor.h
@@ -99,7 +97,6 @@ template<class COT>
 bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
 {
   ReportEngine PRE("AtomicBasisBuilder", "put(xmlNodePtr)");
-  std::string Normalized("yes");
   //Register valid attributes attributes
   OhmmsAttributeSet aAttrib;
   aAttrib.add(basisType, "type");
@@ -149,8 +146,6 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
     }
   }
 
-  radFuncBuilder.Normalized = (Normalized == "yes");
-
   // Numerical basis is a special case
   if (basisType == "Numerical")
     myComm->barrier_and_abort("Purely numerical atomic orbitals are not supported any longer.");
@@ -162,7 +157,7 @@ template<class COT>
 bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
 {
   ReportEngine PRE("AtomicBasisBuilder", "putH5(hin)");
-  std::string CenterID, basisName, Normalized("yes");
+  std::string CenterID, basisName;
 
   if (myComm->rank() == 0)
   {
@@ -223,8 +218,6 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive& hin)
       myComm->barrier_and_abort(" Error: expandYlm='Dirac' only compatible with angular='cartesian'. Aborting\n");
     }
   }
-
-  radFuncBuilder.Normalized = (Normalized == "yes");
 
   return true;
 }
@@ -292,14 +285,17 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
     }
     cur1 = cur1->next;
   }
+
   //create a new set of atomic orbitals sharing a center with (Lmax, num)
   //if(addsignforM) the basis function has (-1)^m sqrt(2)Re(Ylm)
   auto aos = std::make_unique<COT>(Lmax, addsignforM);
   aos->LM.resize(num);
   aos->NL.resize(num);
+
   //Now, add distinct Radial Orbitals and (l,m) channels
-  radFuncBuilder.setOrbitalSet(aos.get(), elementType); //assign radial orbitals for the new center
-  radFuncBuilder.addGrid(gptr, basisType);        //assign a radial grid for the new center
+  RadialOrbitalSetBuilder<COT> radFuncBuilder(myComm, *aos);
+  radFuncBuilder.Normalized = (Normalized == "yes");
+  radFuncBuilder.addGrid(gptr, basisType); //assign a radial grid for the new center
   std::vector<xmlNodePtr>::iterator it(radGroup.begin());
   std::vector<xmlNodePtr>::iterator it_end(radGroup.end());
   std::vector<int> all_nl;
@@ -425,12 +421,16 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
       num++;
   }
 
+  //create a new set of atomic orbitals sharing a center with (Lmax, num)
+  //if(addsignforM) the basis function has (-1)^m sqrt(2)Re(Ylm)
   auto aos = std::make_unique<COT>(Lmax, addsignforM);
   aos->LM.resize(num);
   aos->NL.resize(num);
+
   //Now, add distinct Radial Orbitals and (l,m) channels
-  radFuncBuilder.setOrbitalSet(aos.get(), elementType); //assign radial orbitals for the new center
-  radFuncBuilder.addGridH5(hin);                  //assign a radial grid for the new center
+  RadialOrbitalSetBuilder<COT> radFuncBuilder(myComm, *aos);
+  radFuncBuilder.Normalized = (Normalized == "yes");
+  radFuncBuilder.addGridH5(hin); //assign a radial grid for the new center
   std::vector<int> all_nl;
   for (int i = 0; i < numbasisgroups; i++)
   {

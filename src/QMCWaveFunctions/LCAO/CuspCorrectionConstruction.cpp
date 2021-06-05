@@ -12,6 +12,7 @@
 
 
 #include "CuspCorrectionConstruction.h"
+#include "SoaCuspCorrectionBasisSet.h"
 #include "Message/Communicate.h"
 #include "Utilities/FairDivide.h"
 
@@ -43,7 +44,7 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
   std::vector<bool> corrCenter(num_centers, "true");
 
   //What's this grid's lifespan?  Why on the heap?
-  LogGrid<RealType>* radial_grid = new LogGrid<RealType>;
+  auto radial_grid = std::make_unique<LogGrid<RealType>>();
   radial_grid->set(0.000001, 100.0, 1001);
 
 
@@ -65,7 +66,7 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
     // loop over MO index - cot must be an array (of len MO size)
     //   the loop is inside cot - in the multiqunitic
-    SoaCuspCorrection::COT* cot = new CuspCorrectionAtomicBasis<RealType>();
+    auto cot = std::make_unique<CuspCorrectionAtomicBasis<RealType>>();
     cot->initializeRadialSet(*radial_grid, orbital_set_size);
     //How is this useful?
     // cot->ID.resize(orbital_set_size);
@@ -76,7 +77,7 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
     for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++)
     {
       computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, xgrid, rad_orb, info(ic, mo_idx));
-      OneDimQuinticSpline<RealType> radial_spline(radial_grid, rad_orb);
+      OneDimQuinticSpline<RealType> radial_spline(radial_grid.get(), rad_orb);
       RealType yprime_i = (rad_orb[1] - rad_orb[0]) / (radial_grid->r(1) - radial_grid->r(0));
       radial_spline.spline(0, yprime_i, rad_orb.size() - 1, 0.0);
       cot->addSpline(mo_idx, radial_spline);
@@ -107,7 +108,7 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
         out.close();
       }
     }
-    lcwc.cusp.add(ic, cot);
+    lcwc.cusp.add(ic, std::move(cot));
   }
   removeSTypeOrbitals(corrCenter, lcwc);
 }

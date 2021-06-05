@@ -62,13 +62,13 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
    *
    * the number of basis states for center J is BasisOffset[J+1]-Basis[J]
    */
-  aligned_vector<size_t> BasisOffset;
+  std::vector<size_t> BasisOffset;
 
   /** container of the unique pointers to the Atomic Orbitals
    *
    * size of LOBasisSet = number  of unique centers
    */
-  aligned_vector<std::unique_ptr<COT>> LOBasisSet;
+  std::vector<std::unique_ptr<COT>> LOBasisSet;
 
   /** constructor
    * @param ions ionic system
@@ -101,10 +101,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
   /** makeClone */
   //SoaLocalizedBasisSet<COT>* makeClone() const
-  BaseType* makeClone() const
-  {
-    return new SoaLocalizedBasisSet<COT, ORBT>(*this);
-  }
+  BaseType* makeClone() const { return new SoaLocalizedBasisSet<COT, ORBT>(*this); }
   /** set Number of periodic Images to evaluate the orbitals. 
       Set to 0 for non-PBC, and set manually in the input.
       Passes the pre-computed phase factor for evaluation of complex wavefunction. If WF is real Phase_factor is real and equals 1 if gamma or -1 if non-Gamma.  
