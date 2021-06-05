@@ -10,13 +10,13 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-SUBDIRS(hdf)
-SUBDIRS(OhmmsData)
+add_subdirectory(hdf)
+add_subdirectory(OhmmsData)
 
 ADD_LIBRARY(qmcio INTERFACE)
 TARGET_INCLUDE_DIRECTORIES(qmcio INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 TARGET_LINK_LIBRARIES(qmcio INTERFACE qmcio_hdf qmcio_xml)
 
 IF(BUILD_UNIT_TESTS)
-  SUBDIRS(tests)
+  add_subdirectory(tests)
 ENDIF()

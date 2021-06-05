@@ -86,4 +86,4 @@ ENDIF()
 INSTALL(TARGETS qmcfinitesize
         RUNTIME DESTINATION bin)
 
-SUBDIRS(ppconvert)
+add_subdirectory(ppconvert)

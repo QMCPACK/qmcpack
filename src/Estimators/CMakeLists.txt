@@ -40,7 +40,7 @@ TARGET_INCLUDE_DIRECTORIES(qmcestimators_unit PUBLIC "${CMAKE_CURRENT_SOURCE_DIR
 TARGET_LINK_LIBRARIES(qmcestimators PUBLIC containers qmcham qmcparticle qmcutil)
 TARGET_LINK_LIBRARIES(qmcestimators_unit PUBLIC containers qmcham_unit qmcparticle qmcutil)
 
-SUBDIRS(tests)
+add_subdirectory(tests)
 
 # TARGET_LINK_LIBRARIES(qmcest PUBLIC qmcham)
 # TARGET_LINK_LIBRARIES(qmcdriver_unit PUBLIC qmcham_unit)

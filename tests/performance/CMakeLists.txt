@@ -9,5 +9,7 @@ ELSE()
 ENDIF()
 
 # includes 
-SUBDIRS(NiO C-graphite C-molecule)
+add_subdirectory(NiO)
+add_subdirectory(C-graphite)
+add_subdirectory(C-molecule)
 

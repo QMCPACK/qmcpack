@@ -12,9 +12,9 @@
 
 IF (BUILD_UNIT_TESTS)
   IF(ENABLE_CUDA)
-    SUBDIRS(CUDA)
+    add_subdirectory(CUDA)
   ENDIF()
 
-  SUBDIRS(OMPTarget)
-  SUBDIRS(CPU)
+  add_subdirectory(OMPTarget)
+  add_subdirectory(CPU)
 ENDIF()

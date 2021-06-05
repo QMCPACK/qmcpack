@@ -11,6 +11,6 @@
 
 
 IF(BUILD_UNIT_TESTS)
-  SUBDIRS(hdf)
-  SUBDIRS(OhmmsData)
+  add_subdirectory(hdf)
+  add_subdirectory(OhmmsData)
 ENDIF()
