@@ -57,7 +57,7 @@ template<typename T, typename FnIn>
 struct A2NTransformer : TransformerBase<T>
 {
   using grid_type = typename TransformerBase<T>::grid_type;
-  using FnOut = typename TransformerBase<T>::FnOut;
+  using FnOut     = typename TransformerBase<T>::FnOut;
 
   std::unique_ptr<FnIn> m_ref; //candidate for unique_ptr
   A2NTransformer(std::unique_ptr<FnIn> in) : m_ref(std::move(in)) {}
@@ -92,9 +92,9 @@ public:
   //And the value_type of 'Psi(r)' this is safe for now
   //I think COT::gridtype needs to go to a template<typename RT, typename VT>
   //For this all to become 'correct'.
-  using RealType = typename COT::RealType;
+  using RealType          = typename COT::RealType;
   using RadialOrbitalType = typename COT::RadialOrbital_t;
-  using GridType = typename COT::GridType;
+  using GridType          = typename COT::GridType;
 
 
   ///true, if the RadialOrbitalType is normalized
@@ -155,11 +155,7 @@ private:
 
 template<typename COT>
 RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(Communicate* comm, COT& aos, int radial_grid_size)
-    : MPIObjectBase(comm),
-      Normalized(true),
-      m_orbitals(aos),
-      radial_grid_size_(radial_grid_size),
-      m_rcut(-1.0)
+    : MPIObjectBase(comm), Normalized(true), m_orbitals(aos), radial_grid_size_(radial_grid_size), m_rcut(-1.0)
 {}
 
 template<typename COT>
@@ -295,7 +291,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
 {
   int L          = m_nlms[1];
   using gto_type = GaussianCombo<OHMMS_PRECISION_FULL>;
-  auto gset = std::make_unique<gto_type>(L, Normalized);
+  auto gset      = std::make_unique<gto_type>(L, Normalized);
   gset->putBasisGroup(cur);
   //Warning::Magic Number for max rmax of gaussians
   RealType r0 = find_cutoff(*gset, 100.);
@@ -310,7 +306,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive& hin)
 {
   int L          = m_nlms[1];
   using gto_type = GaussianCombo<OHMMS_PRECISION_FULL>;
-  auto gset = std::make_unique<gto_type>(L, Normalized);
+  auto gset      = std::make_unique<gto_type>(L, Normalized);
   gset->putBasisGroupH5(hin);
   //at least gamess derived xml seems to provide the max its grid goes to
   //So in priniciple this 100 should be coming in from input
@@ -345,7 +341,7 @@ void RadialOrbitalSetBuilder<COT>::finalize()
   // FIXME: should not hard-coded, probably should be input grid
   grid_prec->set(1.e-6, m_rcut_safe, 1001);
 
-  auto& multiset = m_orbitals.MultiRnl;
+  auto& multiset  = m_orbitals.MultiRnl;
   const int norbs = radTemp.size();
   multiset.initialize(*grid_prec, norbs);
 
@@ -360,7 +356,7 @@ template<typename COT>
 void RadialOrbitalSetBuilder<COT>::addSlater(xmlNodePtr cur)
 {
   using sto_type = SlaterCombo<OHMMS_PRECISION_FULL>;
-  auto gset = std::make_unique<sto_type>(m_nlms[1], Normalized);
+  auto gset      = std::make_unique<sto_type>(m_nlms[1], Normalized);
 
   gset->putBasisGroup(cur);
 

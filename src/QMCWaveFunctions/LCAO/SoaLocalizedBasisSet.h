@@ -101,10 +101,7 @@ struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 
   /** makeClone */
   //SoaLocalizedBasisSet<COT>* makeClone() const
-  BaseType* makeClone() const
-  {
-    return new SoaLocalizedBasisSet<COT, ORBT>(*this);
-  }
+  BaseType* makeClone() const { return new SoaLocalizedBasisSet<COT, ORBT>(*this); }
   /** set Number of periodic Images to evaluate the orbitals. 
       Set to 0 for non-PBC, and set manually in the input.
       Passes the pre-computed phase factor for evaluation of complex wavefunction. If WF is real Phase_factor is real and equals 1 if gamma or -1 if non-Gamma.  

@@ -85,8 +85,8 @@ template<typename T>
 class MultiQuinticSpline1D
 {
 public:
-  using RealType = T;
-  using GridType = OneDimGridBase<T>;
+  using RealType  = T;
+  using GridType  = OneDimGridBase<T>;
   using CoeffType = Matrix<T, aligned_allocator<T>>;
 
 private:

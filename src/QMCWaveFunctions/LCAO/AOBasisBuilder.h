@@ -295,7 +295,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   //Now, add distinct Radial Orbitals and (l,m) channels
   RadialOrbitalSetBuilder<COT> radFuncBuilder(myComm, *aos);
   radFuncBuilder.Normalized = (Normalized == "yes");
-  radFuncBuilder.addGrid(gptr, basisType);        //assign a radial grid for the new center
+  radFuncBuilder.addGrid(gptr, basisType); //assign a radial grid for the new center
   std::vector<xmlNodePtr>::iterator it(radGroup.begin());
   std::vector<xmlNodePtr>::iterator it_end(radGroup.end());
   std::vector<int> all_nl;
@@ -430,7 +430,7 @@ std::unique_ptr<COT> AOBasisBuilder<COT>::createAOSetH5(hdf_archive& hin)
   //Now, add distinct Radial Orbitals and (l,m) channels
   RadialOrbitalSetBuilder<COT> radFuncBuilder(myComm, *aos);
   radFuncBuilder.Normalized = (Normalized == "yes");
-  radFuncBuilder.addGridH5(hin);                  //assign a radial grid for the new center
+  radFuncBuilder.addGridH5(hin); //assign a radial grid for the new center
   std::vector<int> all_nl;
   for (int i = 0; i < numbasisgroups; i++)
   {

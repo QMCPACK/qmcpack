@@ -476,10 +476,12 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
 #if defined(QMC_COMPLEX)
-    myComm->barrier_and_abort("LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
+    myComm->barrier_and_abort(
+        "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos = std::make_unique<LCAOrbitalSetWithCorrection>(sourcePtcl, targetPtcl, std::move(myBasisSet), optimize == "yes");
+    lcos =
+        std::make_unique<LCAOrbitalSetWithCorrection>(sourcePtcl, targetPtcl, std::move(myBasisSet), optimize == "yes");
 #endif
   }
   else
@@ -490,7 +492,7 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (doCuspCorrection)
   {
     const int num_centers = sourcePtcl.getTotalNum();
-    auto& lcwc = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
+    auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
 
     // Sometimes sposet attribute is 'name' and sometimes it is 'id'
     if (id == "")
