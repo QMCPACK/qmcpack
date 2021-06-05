@@ -94,14 +94,14 @@ public:
   //I think COT::gridtype needs to go to a template<typename RT, typename VT>
   //For this all to become 'correct'.
   using RealType = typename COT::RealType;
-  typedef typename COT::RadialOrbital_t RadialOrbitalType;
+  using RadialOrbitalType = typename COT::RadialOrbital_t;
   using GridType = typename COT::GridType;
 
 
   ///true, if the RadialOrbitalType is normalized
   bool Normalized;
-  ///the radial orbitals
-  COT* m_orbitals;
+  ///the atomic orbitals
+  COT& m_orbitals;
   ///input grid in case transform is needed
   GridType* input_grid;
   ///the quantum number of this node
@@ -109,12 +109,10 @@ public:
 
   ///constructor
   RadialOrbitalSetBuilder(Communicate* comm,
+                          COT& aos,
                           int radial_grid_size = 1001); //radial_grid_size is 1001 just magic?
   ///destructor: cleanup gtoTemp, stoTemp
   ~RadialOrbitalSetBuilder();
-
-  ///assign a CenteredOrbitalType to work on
-  void setOrbitalSet(COT* oset, const std::string& acenter);
 
   ///add a grid
   bool addGrid(xmlNodePtr cur, const std::string& rad_type);
@@ -162,10 +160,10 @@ private:
 };
 
 template<typename COT>
-RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(Communicate* comm, int radial_grid_size)
+RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(Communicate* comm, COT& aos, int radial_grid_size)
     : MPIObjectBase(comm),
       Normalized(true),
-      m_orbitals(nullptr),
+      m_orbitals(aos),
       input_grid(nullptr),
       radial_grid_size_(radial_grid_size),
       m_rcut(-1.0)
@@ -179,19 +177,8 @@ RadialOrbitalSetBuilder<COT>::~RadialOrbitalSetBuilder()
 }
 
 template<typename COT>
-void RadialOrbitalSetBuilder<COT>::setOrbitalSet(COT* oset, const std::string& acenter)
-{
-  m_orbitals = oset;
-}
-
-template<typename COT>
 bool RadialOrbitalSetBuilder<COT>::addGrid(xmlNodePtr cur, const std::string& rad_type)
 {
-  if (!m_orbitals)
-  {
-    APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
-  }
-
   if (rad_type == "Numerical")
   {
     hin.push("grid");
@@ -201,7 +188,7 @@ bool RadialOrbitalSetBuilder<COT>::addGrid(xmlNodePtr cur, const std::string& ra
   else
   {
     GridType* agrid = OneDimGridFactory::createGrid(cur);
-    m_orbitals->Grids.push_back(agrid);
+    m_orbitals.Grids.push_back(agrid);
   }
 
   //set zero to use std::max
@@ -213,11 +200,6 @@ bool RadialOrbitalSetBuilder<COT>::addGrid(xmlNodePtr cur, const std::string& ra
 template<typename COT>
 bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
 {
-  if (!m_orbitals)
-  {
-    APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
-  }
-
   app_log() << "   Grid is created by the input paremters in h5" << std::endl;
 
   std::string gridtype;
@@ -259,7 +241,7 @@ bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
     app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
     input_grid = new LogGrid<RealType>;
     input_grid->set(ri, rf, npts);
-    m_orbitals->Grids.push_back(input_grid);
+    m_orbitals.Grids.push_back(input_grid);
     input_grid = 0;
   }
   else if (gridtype == "linear")
@@ -267,7 +249,7 @@ bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
     app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
     input_grid = new LinearGrid<RealType>;
     input_grid->set(ri, rf, npts);
-    m_orbitals->Grids.push_back(input_grid);
+    m_orbitals.Grids.push_back(input_grid);
     input_grid = 0;
   }
   //set zero to use std::max
@@ -286,11 +268,6 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbital(xmlNodePtr cur,
                                                     const std::string& m_infunctype,
                                                     const QuantumNumberType& nlms)
 {
-  if (!m_orbitals)
-  {
-    ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
-    return false;
-  }
   std::string radtype(m_infunctype);
   std::string dsname("0");
   OhmmsAttributeSet aAttrib;
@@ -319,11 +296,6 @@ bool RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive& hin,
                                                       const std::string& radtype_atomicBasisSet,
                                                       const QuantumNumberType& nlms)
 {
-  if (!m_orbitals)
-  {
-    ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
-    return false;
-  }
   std::string dsname("0");
   std::string radtype(radtype_atomicBasisSet);
   if (myComm->rank() == 0)
@@ -361,7 +333,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
   RealType r0 = find_cutoff(*gset, 100.);
   m_rcut_safe = std::max(m_rcut_safe, r0);
   radTemp.push_back(new A2NTransformer<RealType, gto_type>(gset));
-  m_orbitals->RnlID.push_back(m_nlms);
+  m_orbitals.RnlID.push_back(m_nlms);
 }
 
 
@@ -380,7 +352,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive& hin)
   RealType r0 = find_cutoff(*gset, 100.);
   m_rcut_safe = 6 * std::max(m_rcut_safe, r0);
   radTemp.push_back(new A2NTransformer<RealType, gto_type>(gset));
-  m_orbitals->RnlID.push_back(m_nlms);
+  m_orbitals.RnlID.push_back(m_nlms);
 }
 
 
@@ -397,26 +369,23 @@ void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive& hin)
 template<typename COT>
 void RadialOrbitalSetBuilder<COT>::finalize()
 {
-  MultiQuinticSpline1D<RealType>* multiset = new MultiQuinticSpline1D<RealType>;
-  int norbs                                = radTemp.size();
-
   // This is a temporary grid used in conversion, at the full precision of the calculation
   // to reduce error. It doesn't need to be on the heap but this is the result of a
   // series of design decisions requiring a base class pointer here.
-  OneDimGridBase<OHMMS_PRECISION_FULL>* grid_prec;
-  grid_prec = new LogGrid<OHMMS_PRECISION_FULL>;
+  std::unique_ptr<OneDimGridBase<OHMMS_PRECISION_FULL>> grid_prec;
+  grid_prec = std::make_unique<LogGrid<OHMMS_PRECISION_FULL>>();
+  // FIXME: should not hard-coded
   grid_prec->set(1.e-6, m_rcut_safe, 1001);
+
+  auto multiset = &m_orbitals.MultiRnl;
+  const int norbs = radTemp.size();
   multiset->initialize(*grid_prec, norbs);
 
   for (int ib = 0; ib < norbs; ++ib)
-    radTemp[ib]->convert(grid_prec, multiset, ib, 5);
-
-  m_orbitals->MultiRnl.reset(multiset);
+    radTemp[ib]->convert(grid_prec.get(), multiset, ib, 5);
 
   app_log() << "  Setting cutoff radius " << m_rcut_safe << std::endl << std::endl;
-  m_orbitals->setRmax(static_cast<RealType>(m_rcut_safe));
-
-  delete grid_prec;
+  m_orbitals.setRmax(static_cast<RealType>(m_rcut_safe));
 }
 
 template<typename COT>
@@ -430,7 +399,7 @@ void RadialOrbitalSetBuilder<COT>::addSlater(xmlNodePtr cur)
   //need a find_cutoff for STO's, but this was previously in finalize and wiping out GTO's m_rcut_safe
   m_rcut_safe = std::max(m_rcut_safe, static_cast<RealType>(100));
   radTemp.push_back(new A2NTransformer<RealType, sto_type>(gset));
-  m_orbitals->RnlID.push_back(m_nlms);
+  m_orbitals.RnlID.push_back(m_nlms);
 }
 
 

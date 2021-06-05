@@ -46,7 +46,7 @@ struct SoaAtomicBasisSet
   ///spherical harmonics
   SH Ylm;
   ///radial orbitals
-  std::unique_ptr<ROT> MultiRnl;
+  ROT MultiRnl;
   ///index of the corresponding real Spherical Harmonic with quantum numbers \f$ (l,m) \f$
   aligned_vector<int> LM;
   /**index of the corresponding radial orbital with quantum numbers \f$ (n,l) \f$ */
@@ -60,20 +60,6 @@ struct SoaAtomicBasisSet
   std::vector<GridType*> Grids;
   ///the constructor
   explicit SoaAtomicBasisSet(int lmax, bool addsignforM = false) : Ylm(lmax, addsignforM) {}
-
-  SoaAtomicBasisSet(const SoaAtomicBasisSet& in)
-      : BasisSetSize(in.BasisSetSize),
-        PBCImages(in.PBCImages),
-        SuperTwist(in.SuperTwist),
-        periodic_image_phase_factors(in.periodic_image_phase_factors),
-        Rmax(in.Rmax),
-        Ylm(in.Ylm),
-        MultiRnl(std::make_unique<ROT>(*in.MultiRnl)),
-        LM(in.LM),
-        NL(in.NL),
-        RnlID(in.RnlID),
-        tempS(in.tempS)
-  {}
 
   void checkInVariables(opt_variables_type& active)
   {
@@ -127,7 +113,7 @@ struct SoaAtomicBasisSet
   template<typename T>
   inline void setRmax(T rmax)
   {
-    Rmax = (rmax > 0) ? rmax : MultiRnl->rmax();
+    Rmax = (rmax > 0) ? rmax : MultiRnl.rmax();
   }
 
   ///set the current offset
@@ -222,7 +208,7 @@ struct SoaAtomicBasisSet
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];
           Ylm.evaluateVGL(x, y, z);
 
-          MultiRnl->evaluate(r_new, phi, dphi, d2phi);
+          MultiRnl.evaluate(r_new, phi, dphi, d2phi);
 
           const T rinv = cone / r_new;
 
@@ -334,7 +320,7 @@ struct SoaAtomicBasisSet
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];
           Ylm.evaluateVGH(x, y, z);
 
-          MultiRnl->evaluate(r_new, phi, dphi, d2phi);
+          MultiRnl.evaluate(r_new, phi, dphi, d2phi);
 
           const T rinv = cone / r_new;
 
@@ -505,7 +491,7 @@ struct SoaAtomicBasisSet
           const T x = -dr_new[0], y = -dr_new[1], z = -dr_new[2];
           Ylm.evaluateVGHGH(x, y, z);
 
-          MultiRnl->evaluate(r_new, phi, dphi, d2phi, d3phi);
+          MultiRnl.evaluate(r_new, phi, dphi, d2phi, d3phi);
 
           const T rinv = cone / r_new;
           const T xu = x * rinv, yu = y * rinv, zu = z * rinv;
@@ -661,7 +647,7 @@ struct SoaAtomicBasisSet
             continue;
 
           Ylm.evaluateV(-dr_new[0], -dr_new[1], -dr_new[2], ylm_v);
-          MultiRnl->evaluate(r_new, phi_r);
+          MultiRnl.evaluate(r_new, phi_r);
           ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
           const ValueType Phase = periodic_image_phase_factors[iter] * correctphase;
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
