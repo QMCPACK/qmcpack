@@ -21,7 +21,7 @@
 #include "Message/MPIObjectBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/LCAO/RadialOrbitalSetBuilder.h"
+#include "RadialOrbitalSetBuilder.h"
 #include "hdf/hdf_archive.h"
 
 namespace qmcplusplus

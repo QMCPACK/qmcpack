@@ -95,6 +95,7 @@ IF(OHMMS_DIM MATCHES 3)
       LCAO/CuspCorrection.cpp
       LCAO/LCAOrbitalSetWithCorrection.cpp
       LCAO/CuspCorrectionConstruction.cpp
+      LCAO/SoaCuspCorrection.cpp
       )
   ENDIF(QMC_COMPLEX)
 

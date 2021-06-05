@@ -12,6 +12,7 @@
 
 
 #include "CuspCorrectionConstruction.h"
+#include "SoaCuspCorrectionBasisSet.h"
 #include "Message/Communicate.h"
 #include "Utilities/FairDivide.h"
 
