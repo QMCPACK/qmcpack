@@ -16,6 +16,8 @@
 #include "Configuration.h"
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/GaussianBasisSet.h"
+#include "Message/MPIObjectBase.h"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -82,6 +84,9 @@ struct MultiFunctorAdapter
     }
   }
 };
+
+template<typename COT>
+class RadialOrbitalSetBuilder;
 
 template<typename FN, typename SH>
 struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> : public MPIObjectBase
