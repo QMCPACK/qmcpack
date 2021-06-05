@@ -18,8 +18,8 @@
 #//
 #// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
 #//////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 SET(WFBASE_SRCS
   WaveFunctionPool.cpp
   WaveFunctionComponent.cpp
@@ -194,7 +194,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/MultiSlaterDeterminantFast.cpp
   Fermion/MultiDiracDeterminant.cpp
   Fermion/MultiDiracDeterminant.2.cpp
-  Fermion/BackflowBuilder.cpp 
+  Fermion/BackflowBuilder.cpp
   Fermion/DiracDeterminantWithBackflow.cpp
   Fermion/SlaterDetWithBackflow.cpp
   Fermion/MultiSlaterDeterminantWithBackflow.cpp
@@ -222,7 +222,11 @@ ELSE(USE_OBJECT_TARGET)
 ENDIF(USE_OBJECT_TARGET)
 
 IF(QMC_CUDA OR ENABLE_CUDA)
-  CUDA_ADD_LIBRARY(qmcwfs_cuda ${WFSSRCS_CUDA})
+  IF(NOT QMC_CUDA2HIP)
+    CUDA_ADD_LIBRARY(qmcwfs_cuda ${WFSSRCS_CUDA})
+  ELSE()
+    HIP_ADD_LIBRARY(qmcwfs_cuda ${WFSSRCS_CUDA})
+  ENDIF(NOT QMC_CUDA2HIP)
   IF(QMC_CUDA)
     TARGET_INCLUDE_DIRECTORIES(qmcwfs_cuda PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
     TARGET_LINK_LIBRARIES(qmcwfs_cuda PUBLIC qmcparticle platform_device)
