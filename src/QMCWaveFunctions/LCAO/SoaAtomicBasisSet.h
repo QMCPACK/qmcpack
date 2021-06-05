@@ -56,8 +56,6 @@ struct SoaAtomicBasisSet
   ///temporary storage
   VectorSoaContainer<RealType, 4> tempS;
 
-  ///set of grids : keep this until completion
-  std::vector<GridType*> Grids;
   ///the constructor
   explicit SoaAtomicBasisSet(int lmax, bool addsignforM = false) : Ylm(lmax, addsignforM) {}
 
