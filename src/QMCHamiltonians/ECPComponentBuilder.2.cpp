@@ -20,7 +20,12 @@
 #include "Utilities/SimpleParser.h"
 //#include "Utilities/IteratorUtility.h"
 #ifdef QMC_CUDA
+#ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
 #endif
 
 namespace qmcplusplus

@@ -17,7 +17,9 @@
 
 #include "einspline/multi_bspline.h"
 #include "einspline/multi_bspline_create_cuda.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda.h>
+#endif
 
 // type traits for cuda variable types
 template<typename T>

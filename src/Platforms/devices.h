@@ -22,10 +22,15 @@
 #include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
+#include <nvml.h>
+#else
+#include <hip/hip_runtime.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
 #include <unistd.h>
 #include "CUDA_legacy/gpu_misc.h"
-#include <nvml.h>
 
 #define MAX_GPU_SPLINE_SIZE_MB 81920
 
