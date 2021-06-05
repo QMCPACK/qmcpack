@@ -41,6 +41,9 @@ public:
    */
   WaveFunctionFactory(const std::string& psiName, ParticleSet& qp, PtclPoolType& pset, Communicate* c, bool tasking = false);
 
+  ///destructor
+  ~WaveFunctionFactory();
+
   ///read from xmlNode
   bool put(xmlNodePtr cur);
   ///get xmlNode
