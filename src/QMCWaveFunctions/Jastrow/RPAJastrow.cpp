@@ -188,18 +188,18 @@ void RPAJastrow::makeShortRange()
   Rcut          = myHandler->get_rc() - tiny;
   //create numerical functor of type BsplineFunctor<RealType>.
   nfunc = new FuncType;
-  SRA   = new ShortRangePartAdapter<RealType>(myHandler);
-  SRA->setRmax(Rcut);
+  ShortRangePartAdapter<RealType> SRA(myHandler);
+  SRA.setRmax(Rcut);
   J2OrbitalSoA<BsplineFunctor<RealType>>* j2 = new J2OrbitalSoA<BsplineFunctor<RealType>>("RPA", targetPtcl);
   size_t nparam                              = 12;  // number of Bspline parameters
   size_t npts                                = 100; // number of 1D grid points for basis functions
-  RealType cusp                              = SRA->df(0);
+  RealType cusp                              = SRA.df(0);
   RealType delta                             = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)
   {
     X[i] = i * delta;
-    Y[i] = SRA->evaluate(X[i]);
+    Y[i] = SRA.evaluate(X[i]);
   }
   X[npts]              = npts * delta;
   Y[npts]              = 0.0;
@@ -209,7 +209,7 @@ void RPAJastrow::makeShortRange()
   for (size_t i = 0; i < npts; ++i)
   {
     X[i] = i * delta;
-    Y[i] = SRA->evaluate(X[i]);
+    Y[i] = SRA.evaluate(X[i]);
   }
   j2->addFunc(0, 0, nfunc);
   ShortRangeRPA = j2;
