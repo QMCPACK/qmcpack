@@ -37,7 +37,29 @@ standard trial wavefunction for an electronic structure problem
 
 where :math:`\textit{A}(\vec{r})`
 is one of the antisymmetric functions: (1) slater determinant, (2) multislater determinant, or (3) pfaffian and :math:`\textit{J}_k`
-is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetric functions are built from a set of single particle orbitals ``(sposet)``. QMCPACK implements four different types of ``sposet``, described in the following section. Each ``sposet`` is designed for a different type of calculation, so their definition and generation varies accordingly.
+is any of the Jastrow functions (described in :ref:`jastrow`).  The antisymmetric functions are built from a set of single particle orbitals (SPO) ``(sposet)``. QMCPACK implements four different types of ``sposet``, described in the following section. Each ``sposet`` is designed for a different type of calculation, so their definition and generation varies accordingly.
+
+.. code-block::
+   :caption: wavefunction XML element skeleton.
+   :name: wavefunction.skeleton.xml
+
+   <wavefunction>
+     <sposet_collection ...>
+       <sposet ...>
+         ...
+       </sposet>
+     </sposet_collection>
+     <determinantset>
+       <slaterdeterminant ...>
+         ...
+       </slaterdeterminant>
+       <backflow>
+         ...
+       </backflow>
+     </determinantset>
+     <jastrow ...>
+     </jastrow>
+   </wavefunction>
 
 .. _singleparticle:
 
@@ -96,35 +118,32 @@ The input xml block for the spline SPOs is given in :ref:`Listing 2 <Listing 2>`
 :numref:`table3`.
 
 .. code-block::
-  :caption: Determinant set XML element.
+  :caption: Spline SPO XML element.
   :name: Listing 2
 
-  <determinantset type="bspline" source="i" href="pwscf.h5"
+  <sposet_collection type="bspline" source="i" href="pwscf.h5"
                   tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
                   twist="0  0  0" precision="double">
-    <slaterdeterminant>
-      <determinant id="updet" size="208">
-        <occupation mode="ground" spindataset="0">
-        </occupation>
-      </determinant>
-      <determinant id="downdet" size="208">
-        <occupation mode="ground" spindataset="0">
-        </occupation>
-      </determinant>
-    </slaterdeterminant>
-  </determinantset>
+    <sposet name="spo-up" size="208">
+      <occupation mode="ground" spindataset="0"/>
+    </sposet>
+    <!-- spin polarized case needs two sposets /-->
+    <sposet name="spo-dn" size="208">
+      <occupation mode="ground" spindataset="1"/>
+    </sposet>
+  </sposet_collection>
 
 
-``determinantset`` element:
+``sposet_collection`` element:
 
 .. _table3:
 .. table::
 
-  +-----------------+-----------------------+
-  | Parent elements | ``wavefunction``      |
-  +-----------------+-----------------------+
-  | Child elements  | ``slaterdeterminant`` |
-  +-----------------+-----------------------+
+  +-----------------+------------------+
+  | Parent elements | ``wavefunction`` |
+  +-----------------+------------------+
+  | Child elements  | ``sposet``       |
+  +-----------------+------------------+
 
 attribute:
 
@@ -246,31 +265,32 @@ A list of options for ``determinantset`` associated with this ``sposet`` is give
    :caption: Basic input block for a single determinant trial wavefunction using a ``sposet`` expanded on an atom-centered basis set.
    :name: Listing 3
 
-    <wavefunction id="psi0" target="e">
-      <determinantset>
-        <basisset>
-          ...
-        </basisset>
-        <slaterdeterminant>
-          ...
-        </slaterdeterminant>
-      </determinantset>
-    </wavefunction>
+   <sposet_collection type="MolecularOrbital" source="ion0" cuspCorrection="no">
+     <basisset name="LCAOBSet" transform="yes">
+       ...
+     </basisset>
+     <sposet name="spo" basisset="LCAOBSet" size="1">
+       <occupation mode="ground"/>
+       <coefficient size="1" id="updetC">
+         1.00000000000000e+00
+       </coefficient>
+     </sposet>
+   </sposet_collection>
 
 
 The definition of the set of atom-centered basis functions is given by the ``basisset`` block, and the ``sposet`` is defined within ``slaterdeterminant``. The ``basisset`` input block is composed from a collection of ``atomicBasisSet`` input blocks, one for each atomic species in the simulation where basis functions are centered. The general structure for ``basisset`` and ``atomicBasisSet`` are given in :ref:`Listing 4 <Listing 4>`, and the corresponding lists of options are given in
 :numref:`table5` and :numref:`table6`.
 
-``determinantset`` element:
+``sposet_collection`` element:
 
 .. _table4:
 .. table::
 
-  +-----------------+--------------------------------------------------------------------------+
-  | Parent elements | ``wavefunction``                                                         |
-  +-----------------+--------------------------------------------------------------------------+
-  | Child elements  | ``basisset`` , ``slaterdeterminant`` , ``sposet`` , ``multideterminant`` |
-  +-----------------+--------------------------------------------------------------------------+
+  +-----------------+---------------------------+
+  | Parent elements | ``wavefunction``          |
+  +-----------------+---------------------------+
+  | Child elements  | ``basisset`` , ``sposet`` |
+  +-----------------+---------------------------+
 
 Attribute:
 
@@ -518,11 +538,11 @@ To enable hybrid orbital representation, the input XML needs to see the tag ``hy
   :caption: Hybrid orbital representation input example.
   :name: Listing 6
 
-  <determinantset type="bspline" source="i" href="pwscf.h5"
+  <sposet_collection type="bspline" source="i" href="pwscf.h5"
                 tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
                 twist="0  0  0" precision="single" hybridrep="yes">
     ...
-  </determinantset>
+  </sposet_collection>
 
 Second, the information describing the atomic regions is required in the particle set, shown in :ref:`Listing 7 <Listing 7>`.
 
@@ -595,40 +615,38 @@ proper pair interaction in the Hamiltonian section.
   :caption: 2D Fermi liquid example: particle specification
   :name: Listing 8
 
-  <qmcsystem>
   <simulationcell name="global">
-  <parameter name="rs" pol="0" condition="74">6.5</parameter>
-  <parameter name="bconds">p p p</parameter>
-  <parameter name="LR_dim_cutoff">15</parameter>
+    <parameter name="rs" pol="0" condition="74">6.5</parameter>
+    <parameter name="bconds">p p p</parameter>
+    <parameter name="LR_dim_cutoff">15</parameter>
   </simulationcell>
   <particleset name="e" random="yes">
-  <group name="u" size="37">
-  <parameter name="charge">-1</parameter>
-  <parameter name="mass">1</parameter>
-  </group>
-  <group name="d" size="37">
-  <parameter name="charge">-1</parameter>
-  <parameter name="mass">1</parameter>
-  </group>
+    <group name="u" size="37">
+      <parameter name="charge">-1</parameter>
+      <parameter name="mass">1</parameter>
+    </group>
+    <group name="d" size="37">
+      <parameter name="charge">-1</parameter>
+      <parameter name="mass">1</parameter>
+    </group>
   </particleset>
-  </qmcsystem>
 
 .. code-block::
   :caption: 2D Fermi liquid example (Slater Jastrow wavefunction)
   :name: Listing 9
 
-  <qmcsystem>
-    <wavefunction name="psi0" target="e">
-      <determinantset type="electron-gas" shell="7" shell2="7" randomize="true">
-    </determinantset>
-      <jastrow name="J2" type="Two-Body" function="Bspline" print="no">
-        <correlation speciesA="u" speciesB="u" size="8" cusp="0">
-          <coefficients id="uu" type="Array" optimize="yes">
-        </correlation>
-        <correlation speciesA="u" speciesB="d" size="8" cusp="0">
-          <coefficients id="ud" type="Array" optimize="yes">
-        </correlation>
-      </jastrow>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="electron-gas" shell="7" shell2="7" randomize="true">
+  </determinantset>
+  <jastrow name="J2" type="Two-Body" function="Bspline" print="no">
+    <correlation speciesA="u" speciesB="u" size="8" cusp="0">
+      <coefficients id="uu" type="Array" optimize="yes">
+    </correlation>
+    <correlation speciesA="u" speciesB="d" size="8" cusp="0">
+      <coefficients id="ud" type="Array" optimize="yes">
+    </correlation>
+  </jastrow>
+  </wavefunction>
 
 .. _singledeterminant:
 
@@ -665,19 +683,20 @@ Attribute:
 .. centered:: Table 2 Options for the ``slaterdeterminant`` xml-block.
 
 .. code-block::
-      :caption: Slaterdeterminant set XML element.
-      :name: Listing 1
+   :caption: Slaterdeterminant set XML element.
+   :name: Listing 1
 
-      <slaterdeterminant delay_rank="32">
-         <determinant id="updet" size="208">
-           <occupation mode="ground" spindataset="0">
-           </occupation>
-         </determinant>
-         <determinant id="downdet" size="208">
-           <occupation mode="ground" spindataset="0">
-           </occupation>
-         </determinant>
-       </slaterdeterminant>
+   <sposet_collection ...>
+     <sposet name="spo" size="8">
+       ...
+     </sposet>
+   </sposet_collection>
+   <determinantset>
+     <slaterdeterminant delay_rank="32">
+       <determinant sposet="spo"/>
+       <determinant sposet="spo"/>
+     </slaterdeterminant>
+   </determinantset>
 
 
 Additional information:
@@ -699,6 +718,21 @@ Additional information:
 
 Multideterminant wavefunctions
 ------------------------------
+
+.. code-block::
+   :caption: multideterminant set XML element.
+   :name: multideterminant.xml
+
+   <sposet_collection ...>
+     <sposet name="spo" size="85">
+       ...
+     </sposet>
+   </sposet_collection>
+   <determinantset>
+     <multideterminant optimize="yes" spo_up="spo" spo_dn="spo">
+       <detlist size="1487" type="DETS" nca="0" ncb="0" nea="2" neb="2" nstates="85" cutoff="1e-20" href="LiH.orbs.h5">
+     </multideterminant>
+   </determinantset>
 
 Multiple schemes to generate a multideterminant wavefunction are
 possible, from CASSF to full CI or selected CI. The QMCPACK converter can
