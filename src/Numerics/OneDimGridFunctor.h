@@ -16,6 +16,7 @@
 #ifndef QMCPLUSPLUS_GRID_FUNCTOR_H
 #define QMCPLUSPLUS_GRID_FUNCTOR_H
 
+#include <memory>
 #include "Numerics/OneDimGridBase.h"
 #include "Optimize/VarList.h"
 

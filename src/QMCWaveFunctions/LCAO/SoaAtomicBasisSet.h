@@ -85,7 +85,9 @@ struct SoaAtomicBasisSet
     return BasisSetSize;
   }
 
-  /// Set the number of periodic image for the evaluation of the orbitals and the phase factor. In the case of Non-PBC, PBCImages=(1,1,1), SuperTwist(0,0,0) and the PhaseFactor=1.
+  /** Set the number of periodic image for the evaluation of the orbitals and the phase factor.
+   * In the case of Non-PBC, PBCImages=(1,1,1), SuperTwist(0,0,0) and the PhaseFactor=1.
+   */
   void setPBCParams(const TinyVector<int, 3>& pbc_images,
                     const TinyVector<double, 3> supertwist,
                     const std::vector<QMCTraits::ValueType>& PeriodicImagePhaseFactors)
@@ -97,10 +99,10 @@ struct SoaAtomicBasisSet
 
 
   /** implement a BasisSetBase virtual function
-       *
-       * Set Rmax and BasisSetSize
-       * @todo Should be able to overwrite Rmax to be much smaller than the maximum grid
-       */
+   *
+   * Set Rmax and BasisSetSize
+   * @todo Should be able to overwrite Rmax to be much smaller than the maximum grid
+   */
   inline void setBasisSetSize(int n)
   {
     BasisSetSize = LM.size();
@@ -127,8 +129,7 @@ struct SoaAtomicBasisSet
   }
 
   /** evaluate VGL
-  */
-
+   */
   template<typename LAT, typename T, typename PosType, typename VGL>
   inline void evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset, VGL& vgl, PosType Tv)
   {

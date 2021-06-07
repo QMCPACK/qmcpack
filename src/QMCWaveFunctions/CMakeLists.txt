@@ -86,7 +86,14 @@ IF(OHMMS_DIM MATCHES 3)
     Jastrow/CountingJastrowBuilder.cpp
     )
 
-  SET(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOrbitalSet.cpp LCAO/LCAOrbitalBuilder.cpp)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+      LCAO/LCAOrbitalSet.cpp
+      LCAO/LCAOrbitalBuilder.cpp
+      LCAO/SoaSphericalTensor.cpp
+      LCAO/MultiQuinticSpline1D.cpp
+      LCAO/AOBasisBuilder.cpp
+      LCAO/SoaLocalizedBasisSet.cpp
+      )
   IF(QMC_COMPLEX)
     SET(FERMION_SRCS ${FERMION_SRCS} LCAO/LCAOSpinorBuilder.cpp)
   ELSE(QMC_COMPLEX)
@@ -136,6 +143,7 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSetBuilder_createSPOs.cpp
       BsplineFactory/createComplexDouble.cpp
       BsplineFactory/createComplexSingle.cpp
+      BsplineFactory/HybridRepCenterOrbitals.cpp
       BandInfo.cpp
       BsplineFactory/BsplineReaderBase.cpp
       )

@@ -18,9 +18,11 @@
 #define QMCPLUSPLUS_HYBRIDREP_CENTER_ORBITALS_H
 
 #include "Particle/DistanceTableData.h"
+#include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
 #include "spline2/MultiBspline1D.hpp"
 #include "Numerics/SmoothFunctions.hpp"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -138,7 +140,7 @@ public:
   bool read_splines(hdf_archive& h5f)
   {
     einspline_engine<AtomicSplineType> bigtable(SplineInst->getSplinePtr());
-    int lmax_in, spline_npoints_in;
+    int lmax_in = 0, spline_npoints_in = 0;
     ST spline_radius_in;
     if (!h5f.readEntry(lmax_in, "l_max") || lmax_in != lmax)
       return false;
@@ -709,5 +711,9 @@ public:
   friend class HybridRepSetReader;
 };
 
+extern template class AtomicOrbitals<float>;
+extern template class AtomicOrbitals<double>;
+extern template class HybridRepCenterOrbitals<float>;
+extern template class HybridRepCenterOrbitals<double>;
 } // namespace qmcplusplus
 #endif
