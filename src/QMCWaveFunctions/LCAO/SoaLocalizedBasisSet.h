@@ -33,8 +33,9 @@ namespace qmcplusplus
  * The template parameter ORBT denotes the orbital value return type
  */
 template<class COT, typename ORBT>
-struct SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
+class SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 {
+public:
   using RealType   = typename COT::RealType;
   using BaseType   = SoaBasisSetBase<ORBT>;
   using vgl_type   = typename BaseType::vgl_type;
