@@ -26,7 +26,6 @@
 
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimQuinticSpline.h"
-#include "Numerics/SplineSolvers.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 
@@ -281,5 +280,7 @@ public:
   void setNumSplines(int num_splines) { num_splines_ = num_splines; }
 };
 
+extern template class MultiQuinticSpline1D<float>;
+extern template class MultiQuinticSpline1D<double>;
 } // namespace qmcplusplus
 #endif

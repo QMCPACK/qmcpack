@@ -29,6 +29,7 @@
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Numerics/OneDimGridFactory.h"
 #include "Message/MPIObjectBase.h"
+#include "MultiQuinticSpline1D.h"
 
 
 namespace qmcplusplus
