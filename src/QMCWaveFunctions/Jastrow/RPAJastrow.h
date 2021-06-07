@@ -110,8 +110,6 @@ private:
   ///numerical function owned by ShortRangeRPA
   FuncType* nfunc;
   GridType* myGrid;
-  ///adaptor function to initialize nfunc
-  ShortRangePartAdapter<RealType>* SRA;
   ParticleSet& targetPtcl;
   ///A list of WaveFunctionComponent*
   std::vector<WaveFunctionComponent*> Psi;
