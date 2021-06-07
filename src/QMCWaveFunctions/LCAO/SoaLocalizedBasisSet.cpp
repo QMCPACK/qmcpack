@@ -274,22 +274,22 @@ void SoaLocalizedBasisSet<COT, ORBT>::add(int icenter, std::unique_ptr<COT> aos)
   LOBasisSet[icenter] = std::move(aos);
 }
 
-template class SoaLocalizedBasisSet<
+template struct SoaLocalizedBasisSet<
     SoaAtomicBasisSet<MultiQuinticSpline1D<QMCTraits::RealType>, SoaCartesianTensor<QMCTraits::RealType>>,
     QMCTraits::ValueType>;
-template class SoaLocalizedBasisSet<
+template struct SoaLocalizedBasisSet<
     SoaAtomicBasisSet<MultiQuinticSpline1D<QMCTraits::RealType>, SoaSphericalTensor<QMCTraits::RealType>>,
     QMCTraits::ValueType>;
-template class SoaLocalizedBasisSet<
+template struct SoaLocalizedBasisSet<
     SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<QMCTraits::RealType>>, SoaCartesianTensor<QMCTraits::RealType>>,
     QMCTraits::ValueType>;
-template class SoaLocalizedBasisSet<
+template struct SoaLocalizedBasisSet<
     SoaAtomicBasisSet<MultiFunctorAdapter<GaussianCombo<QMCTraits::RealType>>, SoaSphericalTensor<QMCTraits::RealType>>,
     QMCTraits::ValueType>;
-template class SoaLocalizedBasisSet<
+template struct SoaLocalizedBasisSet<
     SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<QMCTraits::RealType>>, SoaCartesianTensor<QMCTraits::RealType>>,
     QMCTraits::ValueType>;
-template class SoaLocalizedBasisSet<
+template struct SoaLocalizedBasisSet<
     SoaAtomicBasisSet<MultiFunctorAdapter<SlaterCombo<QMCTraits::RealType>>, SoaSphericalTensor<QMCTraits::RealType>>,
     QMCTraits::ValueType>;
 } // namespace qmcplusplus

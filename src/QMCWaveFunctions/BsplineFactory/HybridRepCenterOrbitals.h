@@ -708,7 +708,7 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend class HybridRepSetReader;
+  friend struct HybridRepSetReader;
 };
 
 extern template class AtomicOrbitals<float>;
