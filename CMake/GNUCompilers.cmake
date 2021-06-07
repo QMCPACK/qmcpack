@@ -100,10 +100,8 @@ file(
 try_compile(PASS_GLIBC ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx
             CMAKE_FLAGS "${CMAKE_CXX_FLAGS}")
 if(NOT PASS_GLIBC)
-  message(
-    FATAL_ERROR
-      "Your system and GNU compiler are using glibc 2.22 or 2.23 which contains a buggy libmvec. This results in crashes. Workaround needed. Alternatively upgrade or use another compiler."
-  )
+  message(FATAL_ERROR "Your system and GNU compiler are using glibc 2.22 or 2.23 which contains a buggy libmvec."
+                      "This results in crashes. Workaround needed. Alternatively upgrade or use another compiler.")
 endif()
 
 # Add static flags if necessary
