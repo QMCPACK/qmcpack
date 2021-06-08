@@ -17,12 +17,13 @@
 #define QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
 
 #include "Particle/ParticleSet.h"
+#include <limits>
+#include <bitset>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include <limits>
-#include <bitset>
+#include "DTModes.h"
 
 namespace qmcplusplus
 {
@@ -77,11 +78,8 @@ protected:
   DisplRow temp_dr_;
   /*@}*/
 
-  /** whether full table needs to be ready at anytime or not
-   * Optimization can be implemented during forward PbyP move when the full table is not needed all the time.
-   * DT consumers should know if full table is needed or not and request via addTable.
-   */
-  bool need_full_table_;
+  ///operation modes defined by DTModes
+  DTModes modes_;
 
   /** set to particle id after move() with prepare_old = true. -1 means not prepared.
    * It is intended only for safety checks, not for codepath selection.
@@ -97,7 +95,7 @@ public:
       : Origin(&source),
         N_sources(source.getTotalNum()),
         N_targets(target.getTotalNum()),
-        need_full_table_(false),
+        modes_(DTModes::ALL_OFF),
         old_prepared_elec_id(-1),
         name_(source.getName() + "_" + target.getName())
   {}
@@ -105,11 +103,11 @@ public:
   ///virutal destructor
   virtual ~DistanceTableData() = default;
 
-  ///get need_full_table_
-  inline bool getFullTableNeeds() const { return need_full_table_; }
+  ///get modes
+  inline DTModes getModes() const { return modes_; }
 
-  ///set need_full_table_
-  inline void setFullTableNeeds(bool is_needed) { need_full_table_ = is_needed; }
+  ///set modes
+  inline void setModes(DTModes modes) { modes_ = modes; }
 
   ///return the name of table
   inline const std::string& getName() const { return name_; }

@@ -88,7 +88,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
                                            0, N_sources);
     // If the full table is not ready all the time, overwrite the current value.
     // If this step is missing, DT values can be undefined in case a move is rejected.
-    if (!need_full_table_ && prepare_old)
+    if (!(modes_ & DTModes::NEED_FULL_TABLE_ANYTIME) && prepare_old)
       DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->getCoordinates().getAllParticlePos(),
                                              distances_[iat].data(), displacements_[iat], 0, N_sources);
   }

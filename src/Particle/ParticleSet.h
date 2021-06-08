@@ -29,6 +29,7 @@
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+#include "DTModes.h"
 
 namespace qmcplusplus
 {
@@ -225,11 +226,11 @@ public:
 
   /** add a distance table
    * @param psrc source particle set
-   * @param need_full_table if true, DT is fully computed in loadWalker() and maintained up-to-date during p-by-p moving
+   * @param modes bitmask DistanceTableData::DTModes
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, bool need_full_table = false);
+  int addTable(const ParticleSet& psrc, DTModes modes = DTModes::ALL_OFF);
 
   /** get a distance table by table_ID
    */
