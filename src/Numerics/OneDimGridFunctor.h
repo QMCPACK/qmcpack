@@ -68,6 +68,8 @@ struct OneDimGridFunctor
     NumNodes = a.NumNodes;
   }
 
+  virtual ~OneDimGridFunctor() = default;
+
   template<typename TT>
   inline void resetParameters(const TT& active)
   {}

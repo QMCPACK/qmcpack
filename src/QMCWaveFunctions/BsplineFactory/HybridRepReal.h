@@ -218,7 +218,7 @@ public:
   }
 
   template<class BSPLINESPO>
-  friend struct HybridRepSetReader;
+  friend class HybridRepSetReader;
   template<class BSPLINESPO>
   friend struct SplineSetReader;
   friend struct BsplineReaderBase;
