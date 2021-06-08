@@ -9,24 +9,24 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR} )
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(SRC_DIR io_hdf5)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRC_DIR io_hdf5)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 # Directory where input file is copied to, and working directory for unit test
-SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/io/hdf)
+set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/io/hdf)
 
-SET(UTEST_SRC test_hdf_archive.cpp  test_hdf_parallel.cpp test_hdf_reshape.cpp test_hdf_hyperslab.cpp)
-IF(BUILD_AFQMC)
-  SET(UTEST_SRC ${UTEST_SRC} test_hdf_multiarray.cpp)
-ENDIF(BUILD_AFQMC)
+set(UTEST_SRC test_hdf_archive.cpp test_hdf_parallel.cpp test_hdf_reshape.cpp test_hdf_hyperslab.cpp)
+if(BUILD_AFQMC)
+  set(UTEST_SRC ${UTEST_SRC} test_hdf_multiarray.cpp)
+endif(BUILD_AFQMC)
 
-ADD_EXECUTABLE(${UTEST_EXE} ${UTEST_SRC})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcio)
+add_executable(${UTEST_EXE} ${UTEST_SRC})
+target_link_libraries(${UTEST_EXE} catch_main qmcio)
 
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})

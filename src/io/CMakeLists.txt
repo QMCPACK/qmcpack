@@ -9,14 +9,13 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+add_subdirectory(hdf)
+add_subdirectory(OhmmsData)
 
-SUBDIRS(hdf)
-SUBDIRS(OhmmsData)
+add_library(qmcio INTERFACE)
+target_include_directories(qmcio INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(qmcio INTERFACE qmcio_hdf qmcio_xml)
 
-ADD_LIBRARY(qmcio INTERFACE)
-TARGET_INCLUDE_DIRECTORIES(qmcio INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-TARGET_LINK_LIBRARIES(qmcio INTERFACE qmcio_hdf qmcio_xml)
-
-IF(BUILD_UNIT_TESTS)
-  SUBDIRS(tests)
-ENDIF()
+if(BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()

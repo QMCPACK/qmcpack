@@ -9,21 +9,21 @@
 #//
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
-    
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(SRC_DIR type_traits)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/type_traits)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+set(SRC_DIR type_traits)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/type_traits)
 
-SET(TEST_SRCS test_qmctypes.cpp test_template_types.cpp)
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+
+set(TEST_SRCS test_qmctypes.cpp test_template_types.cpp)
 if(QMC_CUDA)
-  SET(TEST_SRCS test_cuda_types.cpp)
+  set(TEST_SRCS test_cuda_types.cpp)
 endif(QMC_CUDA)
-ADD_EXECUTABLE(${UTEST_EXE} ${TEST_SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main containers)
+add_executable(${UTEST_EXE} ${TEST_SRCS})
+target_link_libraries(${UTEST_EXE} catch_main containers)
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
