@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_SOA_SPHERICAL_CARTESIAN_TENSOR_H
 
 #include <stdexcept>
+#include <limits>
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "OhmmsPETE/Tensor.h"
 
