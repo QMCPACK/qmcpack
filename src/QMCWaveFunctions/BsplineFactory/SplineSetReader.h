@@ -71,7 +71,7 @@ struct SplineSetReader : public BsplineReaderBase
   /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
    *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
    */
-  std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble()
+  std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble() override
   {
     Ugrid xyz_grid[3];
     BCtype_d xyz_bc_d[3];
@@ -104,7 +104,7 @@ struct SplineSetReader : public BsplineReaderBase
   /** for exporting data from multi_UBspline_3d_d to multi_UBspline_3d_z
    *  This is only used by the legacy EinsplineSet class. To be deleted together with EinsplineSet.
    */
-  std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble()
+  std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble() override
   {
     Ugrid xyz_grid[3];
     BCtype_d xyz_bc[3];
@@ -127,7 +127,7 @@ struct SplineSetReader : public BsplineReaderBase
     return target;
   }
 
-  std::unique_ptr<SPOSet> create_spline_set(int spin, const BandInfoGroup& bandgroup)
+  std::unique_ptr<SPOSet> create_spline_set(int spin, const BandInfoGroup& bandgroup) override
   {
     ReportEngine PRE("SplineSetReader", "create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;

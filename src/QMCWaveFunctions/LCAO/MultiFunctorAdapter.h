@@ -89,8 +89,9 @@ template<typename COT>
 class RadialOrbitalSetBuilder;
 
 template<typename FN, typename SH>
-struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> : public MPIObjectBase
+class RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH>> : public MPIObjectBase
 {
+public:
   typedef SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH> COT;
   typedef MultiFunctorAdapter<FN> RadialOrbital_t;
   typedef typename RadialOrbital_t::single_type single_type;

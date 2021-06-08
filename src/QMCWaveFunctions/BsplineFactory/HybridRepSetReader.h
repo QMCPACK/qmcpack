@@ -138,8 +138,9 @@ struct Gvectors
 /** General HybridRepSetReader to handle any unitcell
  */
 template<typename SA>
-struct HybridRepSetReader : public SplineSetReader<SA>
+class HybridRepSetReader : public SplineSetReader<SA>
 {
+public:
   typedef SplineSetReader<SA> BaseReader;
 
   using BaseReader::bspline;
