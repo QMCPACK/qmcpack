@@ -9,26 +9,24 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(SRC_DIR einspline)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRC_DIR einspline)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRCS test_one.cpp test_3d.cpp)
+if(QMC_CUDA)
+  set(SRCS ${SRCS} test_cuda.cu)
+  if(NOT QMC_CUDA2HIP)
+    cuda_add_library(cudatests test_cuda.cu)
+  else()
+    hip_add_library(cudatests test_cuda.cu)
+  endif(NOT QMC_CUDA2HIP)
+  set(CUDATESTLIB cudatests)
+endif()
 
-SET(SRCS test_one.cpp test_3d.cpp)
-IF(QMC_CUDA)
-  SET(SRCS ${SRCS}
-      test_cuda.cu)
-  IF(NOT QMC_CUDA2HIP)
-    CUDA_ADD_LIBRARY(cudatests test_cuda.cu)
-  ELSE()
-    HIP_ADD_LIBRARY(cudatests test_cuda.cu)
-  ENDIF(NOT QMC_CUDA2HIP)
-  SET(CUDATESTLIB cudatests)
-ENDIF()
+add_executable(${UTEST_EXE} ${SRCS})
+target_link_libraries(${UTEST_EXE} catch_main ${CUDATESTLIB} einspline qmcutil)
 
-ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main ${CUDATESTLIB} einspline qmcutil)
-
-ADD_UNIT_TEST( ${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

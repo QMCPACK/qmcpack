@@ -9,18 +9,18 @@
 #// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
-SET(SRC_DIR Concurrency)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+set(SRC_DIR Concurrency)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRCS test_ParallelExecutorOPENMP.cpp)
+set(SRCS test_ParallelExecutorOPENMP.cpp)
 
-IF(QMC_EXP_THREADING)
-  SET(SRCS ${SRCS} test_ParallelExecutorSTD.cpp)
-ENDIF(QMC_EXP_THREADING)
-ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
+if(QMC_EXP_THREADING)
+  set(SRCS ${SRCS} test_ParallelExecutorSTD.cpp)
+endif(QMC_EXP_THREADING)
+add_executable(${UTEST_EXE} ${SRCS})
 
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main)
+target_link_libraries(${UTEST_EXE} catch_main)
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

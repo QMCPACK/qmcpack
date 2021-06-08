@@ -9,17 +9,12 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CUDA_LEGACY_SRCS cuda_inverse.cu gpu_vector.cpp gpu_misc.cpp)
 
-SET(CUDA_LEGACY_SRCS
-  cuda_inverse.cu
-  gpu_vector.cpp
-  gpu_misc.cpp
-)
-
-IF(NOT QMC_CUDA2HIP)
-  CUDA_ADD_LIBRARY(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
-  CUDA_ADD_CUBLAS_TO_TARGET(platform_cuda_legacy)
-ELSE()
-  HIP_ADD_LIBRARY(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
-ENDIF(NOT QMC_CUDA2HIP)
-TARGET_LINK_LIBRARIES(platform_cuda_legacy PRIVATE ${CUDA_LIBRARIES})
+if(NOT QMC_CUDA2HIP)
+  cuda_add_library(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
+  cuda_add_cublas_to_target(platform_cuda_legacy)
+else()
+  hip_add_library(platform_cuda_legacy ${CUDA_LEGACY_SRCS})
+endif(NOT QMC_CUDA2HIP)
+target_link_libraries(platform_cuda_legacy PRIVATE ${CUDA_LIBRARIES})
