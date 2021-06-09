@@ -310,7 +310,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     REQUIRE(d2psiM[iat][0] == ComplexApprox(d2psiM_ref[iat][0]));
     REQUIRE(d2psiM[iat][1] == ComplexApprox(d2psiM_ref[iat][1]));
-    REQUIRE(d2psiM[iat][2] == ComplexApprox(d2psiM_ref[iat][2]));
+    REQUIRE(d2psiM[iat][2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(3e-5));
   }
 
   //Now we're going to test evaluateValue and evaluateVGL:
@@ -404,7 +404,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     REQUIRE(d2psi_work[0] == ComplexApprox(d2psiM_ref[iat][0]));
     REQUIRE(d2psi_work[1] == ComplexApprox(d2psiM_ref[iat][1]));
-    REQUIRE(d2psi_work[2] == ComplexApprox(d2psiM_ref[iat][2]));
+    REQUIRE(d2psi_work[2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(3e-5));
 
     REQUIRE(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]));
     REQUIRE(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]));
