@@ -811,14 +811,11 @@ if(QMC_CUDA OR ENABLE_CUDA)
     set(HAVE_CUDA 1)
     message("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
   else()
-    if(NOT DEFINED ROCM_ROOT)
-      set(ROCM_ROOT "/opt/rocm")
-    endif()
+    set(ROCM_ROOT "/opt/rocm" CACHE PATH "Root directory of ROCM")
+    message(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
     list(APPEND CMAKE_MODULE_PATH ${ROCM_ROOT}/hip/cmake)
     find_package(HIP REQUIRED)
     find_package(hipblas REQUIRED)
-    link_libraries(amdhip64 roc::hipblas)
-    add_definitions(-D__HIP_PLATFORM_AMD__)
     # architecture flags
     set(HIP_ARCH
         "gfx906,gfx908"
