@@ -9,6 +9,14 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+
+# Too much burden has been put on platform_device. It will be deprecated.
+# We will move to functionality based targets
+# platform_runtime handles device management, memory management
+# add_library(platform_runtime INTERFACE)
+# platform_lapack handles BLAS/LAPACK
+# add_library(platform_lapack INTERFACE)
+
 set(HOST_SRCS Host/sysutil.cpp Host/InfoStream.cpp Host/OutputManager.cpp)
 
 set(DEVICE_SRCS MemoryUsage.cpp DualAllocator.cpp)
