@@ -22,10 +22,7 @@ endif()
 
 add_library(catch_main catch_main.cpp)
 target_include_directories(catch_main PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
-# This plus using the definition of the catch_benchmark_main as INTERFACE target
-# would allow just building catch main once for benchmarking and mpi enabled testing
-# But it causes a segv on power9 with clang12 and on alcf-gnu-mkl18
-# target_compile_definitions(catch_main PRIVATE "CATCH_CONFIG_ENABLE_BENCHMARKING")
+target_compile_definitions(catch_main PUBLIC "CATCH_CONFIG_ENABLE_BENCHMARKING")
 target_link_libraries(catch_main message)
 if(HAVE_MPI)
   target_compile_definitions(catch_main PRIVATE "CATCH_MAIN_HAVE_MPI")
@@ -33,15 +30,3 @@ endif()
 
 add_library(catch_main_no_mpi catch_main.cpp)
 target_include_directories(catch_main_no_mpi PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
-
-# add_library(catch_benchmark_main INTERFACE)
-# target_compile_definitions(catch_benchmark_main INTERFACE "CATCH_CONFIG_ENABLE_BENCHMARKING")
-# target_link_libraries(catch_benchmark_main INTERFACE catch_main)
-
-add_library(catch_benchmark_main catch_main.cpp)
-target_compile_definitions(catch_benchmark_main PUBLIC "CATCH_CONFIG_ENABLE_BENCHMARKING")
-target_link_libraries(catch_benchmark_main message)
-if(HAVE_MPI)
-  target_compile_definitions(catch_benchmark_main PRIVATE "CATCH_MAIN_HAVE_MPI")
-endif()
-target_include_directories(catch_benchmark_main PUBLIC "${PROJECT_SOURCE_DIR}/external_codes/catch")
