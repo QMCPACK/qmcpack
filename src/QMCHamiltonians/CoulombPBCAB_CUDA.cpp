@@ -89,9 +89,9 @@ void CoulombPBCAB_CUDA::initBreakup(ParticleSet& P)
 
 void CoulombPBCAB_CUDA::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 {
-  RadFunctorType* savefunc = Vspec[groupID];
+  RadFunctorType* savefunc = Vspec[groupID].get();
   CoulombPBCAB::add(groupID, std::move(ppot));
-  RadFunctorType* rfunc = Vspec[groupID];
+  RadFunctorType* rfunc = Vspec[groupID].get();
   if (rfunc != savefunc)
   {
     // Setup CUDA spline
@@ -242,13 +242,13 @@ std::unique_ptr<OperatorBase> CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, Tria
   {
     if (Vspec[ig])
     {
-      RadFunctorType* apot = Vspec[ig]->makeClone();
-      myclone->Vspec[ig]   = apot;
+      auto apot = std::unique_ptr<RadFunctorType>{Vspec[ig]->makeClone()};
       for (int iat = 0; iat < PtclA.getTotalNum(); ++iat)
       {
         if (PtclA.GroupID[iat] == ig)
-          myclone->Vat[iat] = apot;
+          myclone->Vat[iat] = apot.get();
       }
+      myclone->Vspec[ig] = std::move(apot);
     }
     myclone->V0Spline      = V0Spline;
     myclone->SRSplines[ig] = SRSplines[ig];
