@@ -158,6 +158,8 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<R
   int nw                          = walkers.size();
   if (CurrentNumWalkers < nw)
     resizeCUDA(nw);
+  std::vector<RealType> vrad;
+  std::vector<RealType> lpol;
   // Loop over the ionic species
   std::vector<RealType> esum(walkers.size(), 0.0);
   for (int sp = 0; sp < NumIonGroups; sp++)
@@ -278,8 +280,10 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<R
       }
 #endif
       RatioList.resize(QuadPosList.size());
-      std::vector<RealType> vrad(pp.nchannel);
-      std::vector<RealType> lpol(pp.lmax + 1);
+      if (vrad.size()<pp.nchannel)
+        vrad.resize(pp.nchannel);
+      if (lpol.size()<pp.lmax + 1)
+        lpol.resize(pp.lmax + 1);
       if (use_DLA)
         Psi.NLratios(W, JobList, QuadPosList, RatioList, TrialWaveFunction::ComputeType::FERMIONIC);
       else
@@ -341,6 +345,8 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
   int nw                          = walkers.size();
   if (CurrentNumWalkers < nw)
     resizeCUDA(nw);
+  std::vector<RealType> vrad;
+  std::vector<RealType> lpol;
   // Loop over the ionic species
   std::vector<RealType> esum(walkers.size(), 0.0);
   for (int sp = 0; sp < NumIonGroups; sp++)
@@ -395,8 +401,10 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
         }
       }
       RatioList.resize(QuadPosList.size());
-      std::vector<RealType> vrad(pp.nchannel);
-      std::vector<RealType> lpol(pp.lmax + 1);
+      if (vrad.size() < pp.nchannel)
+        vrad.resize(pp.nchannel);
+      if (lpol.size() < pp.lmax +1)
+        lpol.resize(pp.lmax + 1);
       if (use_DLA)
         Psi.NLratios(W, JobList, QuadPosList, RatioList, TrialWaveFunction::ComputeType::FERMIONIC);
       else
