@@ -45,43 +45,7 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
 
 std::unique_ptr<OperatorBase> CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<CoulombPBCAB> myclone = std::make_unique<CoulombPBCAB>(PtclA, qp, ComputeForces);
-
-  myclone->FirstForceIndex = FirstForceIndex;
-  for (int ig = 0; ig < Vspec.size(); ++ig)
-  {
-    if (Vspec[ig])
-    {
-      auto apot = std::unique_ptr<RadFunctorType>{Vspec[ig]->makeClone()};
-      for (int iat = 0; iat < PtclA.getTotalNum(); ++iat)
-      {
-        if (PtclA.GroupID[iat] == ig)
-          myclone->Vat[iat] = apot.get();
-      }
-      myclone->Vspec[ig] = std::move(apot);
-    }
-  }
-  //If forces exist, force arrays will have been allocated.  Iterate over one
-  //such array to clone.
-  for (int ig = 0; ig < fVspec.size(); ig++)
-  {
-    if (fVspec[ig])
-    {
-      auto apot  = std::unique_ptr<RadFunctorType>{fVspec[ig]->makeClone()};
-      auto dapot = std::unique_ptr<RadFunctorType>{fdVspec[ig]->makeClone()};
-      for (int iat = 0; iat < PtclA.getTotalNum(); ++iat)
-      {
-        if (PtclA.GroupID[iat] == ig)
-        {
-          myclone->fVat[iat]  = apot.get();
-          myclone->fdVat[iat] = dapot.get();
-        }
-      }
-      myclone->fVspec[ig]  = std::move(apot);
-      myclone->fdVspec[ig] = std::move(dapot);
-    }
-  }
-  return myclone;
+  return std::make_unique<CoulombPBCAB>(*this);
 }
 
 CoulombPBCAB::~CoulombPBCAB() = default;

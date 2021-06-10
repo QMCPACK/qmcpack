@@ -504,12 +504,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   return res;
 }
 
-
 std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<CoulombPBCAA> myClone = is_active
-      ? std::make_unique<CoulombPBCAA>(qp, is_active, ComputeForces)
-      : std::make_unique<CoulombPBCAA>(*this); //nothing needs to be re-evaluated
-  return myClone;
+  return std::make_unique<CoulombPBCAA>(*this);
 }
 } // namespace qmcplusplus
