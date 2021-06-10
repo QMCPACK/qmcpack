@@ -278,8 +278,8 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<R
       }
 #endif
       RatioList.resize(QuadPosList.size());
-      RealType vrad[pp.nchannel];
-      RealType lpol[pp.lmax + 1];
+      std::vector<RealType> vrad(pp.nchannel);
+      std::vector<RealType> lpol(pp.lmax + 1);
       if (use_DLA)
         Psi.NLratios(W, JobList, QuadPosList, RatioList, TrialWaveFunction::ComputeType::FERMIONIC);
       else
@@ -395,8 +395,8 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
         }
       }
       RatioList.resize(QuadPosList.size());
-      RealType vrad[pp.nchannel];
-      RealType lpol[pp.lmax + 1];
+      std::vector<RealType> vrad(pp.nchannel);
+      std::vector<RealType> lpol(pp.lmax + 1);
       if (use_DLA)
         Psi.NLratios(W, JobList, QuadPosList, RatioList, TrialWaveFunction::ComputeType::FERMIONIC);
       else

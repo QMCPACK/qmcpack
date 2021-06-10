@@ -192,7 +192,7 @@ if(NOT QMC_CUDA)
         TRUE)
 
     else()
-      message(
+      message_verbose(
         "Skipping H4_ae adaptive optimizer tests because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)"
       )
     endif(BUILD_LMYENGINE_INTERFACE)

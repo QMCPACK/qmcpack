@@ -24,5 +24,5 @@ if(NOT QMC_CUDA)
     HEG54J2RPA_SCALARS)
 
 else()
-  message("Skipping HEG J2 RPA test because they are not supported by CUDA build (QMC_CUDA=1)")
+  message_verbose("Skipping HEG J2 RPA test because they are not supported by CUDA build (QMC_CUDA=1)")
 endif()

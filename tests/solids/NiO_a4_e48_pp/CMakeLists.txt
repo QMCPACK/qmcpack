@@ -101,7 +101,7 @@ else()
         NIO_A4_E48_DMC_V3_SCALARS # DMC Tmove v3
       )
     else()
-      message("Skipping NiO_a4_e48 Tmove v1/v3 tests on GPU")
+      message_verbose("Skipping NiO_a4_e48 Tmove v1/v3 tests on GPU")
     endif()
 
     #  LocalEnergy           =        -370.88498 +/-          0.00088
@@ -144,7 +144,7 @@ else()
       )
 
     else()
-      message("Skipping NiO_a4_e48 J3 tests on GPU")
+      message_verbose("Skipping NiO_a4_e48 J3 tests for CUDA build (QMC_CUDA=1)")
     endif()
 
     if(NOT QMC_CUDA)
@@ -175,9 +175,10 @@ else()
         NIO_A4_E48_L2_SCALARS # VMC
       )
     else()
-      message("Skipping NiO_a4_e48 L2 tests on GPU")
+      message_verbose("Skipping NiO_a4_e48 L2 tests for CUDA build (QMC_CUDA=1)")
     endif()
 
+    # Hybridrep is not implemented in legacy CUDA but should be error trapped. J3 also not implemented.    
     qmc_run_and_check(
       short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
@@ -185,7 +186,7 @@ else()
       NiO-hybridrep-j3-vmc-short.in.xml
       1
       16
-      TRUE
+      ${SUCCESS_STATUS_CUDA}
       1
       NIO_A4_E48_J3_SCALARS # VMC
     )
@@ -199,7 +200,7 @@ else()
       NiO-hybridrep-j3-batched-vmc-short.in.xml
       1
       16
-      TRUE
+      ${SUCCESS_STATUS_CUDA}
       1
       NIO_A4_E48_J3_SCALARS # VMC
     )
@@ -266,11 +267,11 @@ else()
         LONG_NIO_A4_E48_L2_SCALARS # VMC
       )
     else()
-      message("Skipping NiO_a4_e48 L2 tests on GPU")
+      message_verbose("Skipping NiO_a4_e48 L2 tests on GPU")
     endif()
 
   else()
-    message("NiO_a4_e48_pp not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
+    message_verbose("NiO_a4_e48_pp not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
   endif()
 
 endif()
