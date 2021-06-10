@@ -154,7 +154,7 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   set(BENCHMARK_SRC makeRngSpdMatrix.cpp benchmark_DiracMatrixComputeCUDA.cpp)
   add_executable(${UTEST_EXE} ${BENCHMARK_SRC})
-  target_link_libraries(${UTEST_EXE} catch_benchmark_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions
+  target_link_libraries(${UTEST_EXE} catch_main qmcwfs Math::BLAS_LAPACK Math::scalar_vector_functions
                         utilities_for_test)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcutil qmcparticle containers platform_omptarget)
