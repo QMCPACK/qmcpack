@@ -130,7 +130,10 @@ struct LRHandlerBase
     return 0.0;
   }
 
-  inline mRealType evaluate(const std::vector<int>& kshell, int iat, const pComplexType* restrict rk2, ParticleSet& P) const
+  inline mRealType evaluate(const std::vector<int>& kshell,
+                            int iat,
+                            const pComplexType* restrict rk2,
+                            ParticleSet& P) const
   {
     mRealType vk = 0.0;
 #if !defined(USE_REAL_STRUCT_FACTOR)

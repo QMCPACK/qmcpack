@@ -125,7 +125,8 @@ public:
   }
 
   //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k, pRealType kmag) const override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k,
+                                                            pRealType kmag) const override
   {
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
 
@@ -144,7 +145,8 @@ public:
   }
 
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r, pRealType rmag) const override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r,
+                                                            pRealType rmag) const override
   {
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
 

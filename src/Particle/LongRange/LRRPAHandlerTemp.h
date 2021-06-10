@@ -73,7 +73,10 @@ struct LRRPAHandlerTemp : public LRHandlerBase
     fillFk(ref.SK->KLists);
   }
 
-  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new LRRPAHandlerTemp<Func, BreakupBasis>(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override
+  {
+    return new LRRPAHandlerTemp<Func, BreakupBasis>(*this, ref);
+  }
 
   void initBreakup(ParticleSet& ref) override
   {
