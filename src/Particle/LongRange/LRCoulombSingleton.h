@@ -67,7 +67,9 @@ struct LRCoulombSingleton
    * The spline function is the short-range term after breaking up
    * \f$r V_{S} = r \times (V(r)-V_{L})\f$
    */
-  static std::unique_ptr<RadFunctorType> createSpline4RbyVs(LRHandlerType* aLR, mRealType rcut, GridType* agrid = 0);
+  static std::unique_ptr<RadFunctorType> createSpline4RbyVs(LRHandlerType* aLR,
+                                                            mRealType rcut,
+                                                            const GridType* agrid = nullptr);
   /** create a linear spline of the derivative of short-range potential
    * @param aLR LRHandler
    * @param rcut cutoff radius
@@ -79,7 +81,7 @@ struct LRCoulombSingleton
    */
   static std::unique_ptr<RadFunctorType> createSpline4RbyVsDeriv(LRHandlerType* aLR,
                                                                  mRealType rcut,
-                                                                 GridType* agrid = 0);
+                                                                 const GridType* agrid = nullptr);
 };
 
 } // namespace qmcplusplus

@@ -18,12 +18,10 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
 {
   // For now I'm going to try to refactor away the clone pattern only at the manager level.
   // i.e. not continue into the scalar_estimators and collectables
-  for (int i = 0; i < em.Estimators.size(); i++)
-    scalar_estimators_.push_back(std::unique_ptr<EstimatorType>{em.Estimators[i]->clone()});
-  for (UPtr<OperatorEstBase>& upeb : em.operator_ests_)
-  {
+  for (const auto& est : em.Estimators)
+    scalar_estimators_.emplace_back(est->clone());
+  for (const auto& upeb : em.operator_ests_)
     operator_ests_.emplace_back(upeb->clone());
-  }
 }
 
 void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets)
@@ -46,7 +44,7 @@ void EstimatorManagerCrowd::startBlock(int steps)
   for (auto& uope : operator_ests_)
     uope->startBlock(steps);
   block_num_samples_ = 0.0;
-  block_weight_ = 0.0;
+  block_weight_      = 0.0;
 }
 
 void EstimatorManagerCrowd::stopBlock()
