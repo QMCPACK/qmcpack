@@ -25,9 +25,9 @@ namespace qmcplusplus
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     : ForceBase(ref, ref),
       myGrid(0),
-      rVs(0),
+      rVs(),
       myGridforce(0),
-      rVsforce(0),
+      rVsforce(),
       is_active(active),
       FirstTime(true),
       myConst(0.0),
@@ -101,7 +101,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   app_log() << "\n    e-e Madelung Const. =" << MC0 << "\n    Vtot     =" << Value << std::endl;
 }
 
-CoulombPBCAA::~CoulombPBCAA() {}
+CoulombPBCAA::~CoulombPBCAA() = default;
 
 void CoulombPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {

@@ -43,8 +43,6 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
 
 EstimatorManagerNew::~EstimatorManagerNew()
 {
-  delete_iter(Estimators.begin(), Estimators.end());
-
   if (Collectables)
     delete Collectables;
 }
@@ -325,9 +323,9 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
 {
   std::map<std::string, int>::iterator it = EstimatorMap.find(a);
   if (it == EstimatorMap.end())
-    return 0;
+    return nullptr;
   else
-    return Estimators[(*it).second];
+    return Estimators[(*it).second].get();
 }
 
 bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur)
@@ -348,7 +346,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
       if ((est_name == MainEstimatorName) || (est_name == "elocal"))
       {
         max4ascii = H.sizeOfObservables() + 3;
-        add(new LocalEnergyEstimator(H, use_hdf5 == "yes"), MainEstimatorName);
+        add(std::make_unique<LocalEnergyEstimator>(H, use_hdf5 == "yes"), MainEstimatorName);
       }
       else if (est_name == "RMC")
       {
@@ -357,7 +355,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
         hAttrib.add(nobs, "nobs");
         hAttrib.put(cur);
         max4ascii = nobs * H.sizeOfObservables() + 3;
-        add(new RMCLocalEnergyEstimator(H, nobs), MainEstimatorName);
+        add(std::make_unique<RMCLocalEnergyEstimator>(H, nobs), MainEstimatorName);
       }
       else if (est_name == "CSLocalEnergy")
       {
@@ -365,7 +363,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
         int nPsi = 1;
         hAttrib.add(nPsi, "nPsi");
         hAttrib.put(cur);
-        add(new CSEnergyEstimator(H, nPsi), MainEstimatorName);
+        add(std::make_unique<CSEnergyEstimator>(H, nPsi), MainEstimatorName);
         app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
       }
       else if (est_name == "SpinDensityNew")
@@ -390,7 +388,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
   {
     app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
     max4ascii = H.sizeOfObservables() + 3;
-    add(new LocalEnergyEstimator(H, true), MainEstimatorName);
+    add(std::make_unique<LocalEnergyEstimator>(H, true), MainEstimatorName);
   }
   //Collectables is special and should not be added to Estimators
   if (Collectables == 0 && H.sizeOfCollectables())
@@ -401,21 +399,20 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, xmlNod
   return true;
 }
 
-int EstimatorManagerNew::add(EstimatorType* newestimator, const std::string& aname)
+int EstimatorManagerNew::add(std::unique_ptr<EstimatorType> newestimator, const std::string& aname)
 {
   std::map<std::string, int>::iterator it = EstimatorMap.find(aname);
   int n                                   = Estimators.size();
   if (it == EstimatorMap.end())
   {
-    Estimators.push_back(newestimator);
+    Estimators.push_back(std::move(newestimator));
     EstimatorMap[aname] = n;
   }
   else
   {
     n = (*it).second;
     app_log() << "  EstimatorManagerNew::add replace " << aname << " estimator." << std::endl;
-    delete Estimators[n];
-    Estimators[n] = newestimator;
+    Estimators[n] = std::move(newestimator);
   }
   return n;
 }

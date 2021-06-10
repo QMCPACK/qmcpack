@@ -65,7 +65,7 @@ public:
 
   void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets);
 
-  RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }
+  RefVector<EstimatorType> get_scalar_estimators() { return convertUPtrToRefVector(scalar_estimators_); }
   RefVector<qmcplusplus::OperatorEstBase> get_operator_estimators() { return convertUPtrToRefVector(operator_ests_); }
 
   RealType get_block_num_samples() const { return block_num_samples_; }
@@ -78,7 +78,7 @@ private:
   RealType block_weight_;
 
   ///estimators of simple scalars
-  std::vector<EstimatorType*> scalar_estimators_;
+  std::vector<std::unique_ptr<EstimatorType>> scalar_estimators_;
 
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
 };

@@ -170,7 +170,7 @@ void QMCFiniteSize::initBreakup()
   P      = ptclPool.getParticleSet("e");
   AA     = LRCoulombSingleton::getHandler(*P);
   myRcut = AA->get_rc();
-  if (rVs == 0)
+  if (rVs == nullptr)
   {
     rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
   }

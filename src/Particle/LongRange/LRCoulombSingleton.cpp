@@ -196,11 +196,13 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getDerivH
 }
 
 template<typename T>
-OneDimCubicSpline<T>* createSpline4RbyVs_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
+std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVs_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
 {
   typedef OneDimCubicSpline<T> func_type;
+  bool delete_agrid = false;
   if (agrid == nullptr)
   {
+    delete_agrid = true;
     agrid = new LinearGrid<T>;
     agrid->set(0.0, rcut, 1001);
   }
@@ -216,18 +218,22 @@ OneDimCubicSpline<T>* createSpline4RbyVs_temp(LRHandlerBase* aLR, T rcut, Linear
   }
   v[0]          = 2.0 * v[1] - v[2];
   v[ng - 1]     = 0.0;
-  func_type* V0 = new func_type(agrid, v);
+  auto V0       = std::make_unique<func_type>(agrid, v);
   T deriv       = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
   V0->spline(0, deriv, ng - 1, 0.0);
+  if (delete_agrid)
+    delete agrid;
   return V0;
 }
 
 template<typename T>
-OneDimCubicSpline<T>* createSpline4RbyVsDeriv_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
+std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
 {
   typedef OneDimCubicSpline<T> func_type;
+  bool delete_agrid = false;
   if (agrid == nullptr)
   {
+    delete_agrid = true;
     agrid = new LinearGrid<T>;
     agrid->set(0.0, rcut, 1001);
   }
@@ -249,23 +255,25 @@ OneDimCubicSpline<T>* createSpline4RbyVsDeriv_temp(LRHandlerBase* aLR, T rcut, L
   }
   v[0]           = 2.0 * v[1] - v[2];
   v[ng - 1]      = 0.0;
-  func_type* dV0 = new func_type(agrid, v);
+  auto dV0       = std::make_unique<func_type>(agrid, v);
   T deriv        = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
   dV0->spline(0, deriv, ng - 1, 0.0);
+  if (delete_agrid)
+    delete agrid;
   return dV0;
 }
 
 
-LRCoulombSingleton::RadFunctorType* LRCoulombSingleton::createSpline4RbyVs(LRHandlerType* aLR,
-                                                                           mRealType rcut,
-                                                                           GridType* agrid)
+std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVs(LRHandlerType* aLR,
+                                                                                           mRealType rcut,
+                                                                                           GridType* agrid)
 {
   return createSpline4RbyVs_temp(aLR, static_cast<pRealType>(rcut), agrid);
 }
 
-LRCoulombSingleton::RadFunctorType* LRCoulombSingleton::createSpline4RbyVsDeriv(LRHandlerType* aLR,
-                                                                                mRealType rcut,
-                                                                                GridType* agrid)
+std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVsDeriv(LRHandlerType* aLR,
+                                                                                                mRealType rcut,
+                                                                                                GridType* agrid)
 {
   return createSpline4RbyVsDeriv_temp(aLR, static_cast<pRealType>(rcut), agrid);
 }

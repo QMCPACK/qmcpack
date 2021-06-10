@@ -19,7 +19,7 @@ EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
   // For now I'm going to try to refactor away the clone pattern only at the manager level.
   // i.e. not continue into the scalar_estimators and collectables
   for (int i = 0; i < em.Estimators.size(); i++)
-    scalar_estimators_.push_back(em.Estimators[i]->clone());
+    scalar_estimators_.push_back(std::unique_ptr<EstimatorType>{em.Estimators[i]->clone()});
   for (UPtr<OperatorEstBase>& upeb : em.operator_ests_)
   {
     operator_ests_.emplace_back(upeb->clone());
