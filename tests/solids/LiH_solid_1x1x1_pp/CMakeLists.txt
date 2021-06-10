@@ -119,7 +119,7 @@ if(QMC_COMPLEX)
     md_cc_vmc_LiH-gamma.xml
     1
     16
-    TRUE
+    ${SUCCESS_STATUS_CUDA}
     1
     LIH_MD_GAMMA_SCALARS # VMC
   )
@@ -132,7 +132,7 @@ else()
     md_rc_vmc_LiH-gamma.xml
     1
     16
-    TRUE
+    ${SUCCESS_STATUS_CUDA}
     1
     LIH_MD_GAMMA_SCALARS # VMC
   )
