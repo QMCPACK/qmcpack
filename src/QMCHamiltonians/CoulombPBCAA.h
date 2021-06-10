@@ -36,17 +36,13 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType mRealType;
 
-  // using shared_ptr on AA, dAA is a compromise
-  // When ion-ion is_active = false, makeClone calls the copy constructor.
-  // AA, dAA are shared between clones.
-  // When elec-elec is_active = true, makeClone calls the constructor
-  // AA, dAA are not shared between clones and behave more like unique_ptr
-
-  // energy-optimized
+  /// energy-optimized long range handle
   std::shared_ptr<LRHandlerType> AA;
+  /// energy-optimized short range pair potential
   std::shared_ptr<RadFunctorType> rVs;
-  // force-optimized
+  /// force-optimized long range handle
   std::shared_ptr<LRHandlerType> dAA;
+  /// force-optimized short range pair potential
   std::shared_ptr<RadFunctorType> rVsforce;
 
   bool is_active;
