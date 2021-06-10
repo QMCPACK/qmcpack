@@ -23,7 +23,7 @@ using mRealType = LRHandlerBase::mRealType;
 struct EslerCoulomb3D_ForSRCOUL
 { // stripped down version of LRCoulombSingleton::CoulombFunctor for 3D
   double norm;
-  inline double operator()(double r, double rinv) { return rinv; }
+  inline double operator()(double r, double rinv) const { return rinv; }
   inline double Vk(double k) { return 1. / (k * k); }
   inline double dVk_dk(double k) { return -2 * norm / (k * k * k); }
   void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.LRBox.Volume; }

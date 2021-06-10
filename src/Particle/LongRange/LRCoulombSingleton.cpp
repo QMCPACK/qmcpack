@@ -47,7 +47,7 @@ struct CoulombFunctor
   inline CoulombFunctor() {}
   void reset(ParticleSet& ref) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
   void reset(ParticleSet& ref, T rs) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
-  inline T operator()(T r, T rinv) { return rinv; }
+  inline T operator()(T r, T rinv) const { return rinv; }
   inline T df(T r) { return -1.0 / (r * r); }
   inline T df2(T r) { return 2.0 / (r * r * r); }
   inline T Vk(T k) { return NormFactor / (k * k); }
@@ -71,7 +71,7 @@ struct CoulombFunctor
   inline CoulombFunctor() {}
   void reset(ParticleSet& ref) { NormFactor = 2.0 * M_PI / ref.LRBox.Volume; }
   void reset(ParticleSet& ref, T rs) { NormFactor = 2.0 * M_PI / ref.LRBox.Volume; }
-  inline T operator()(T r, T rinv) { return rinv; }
+  inline T operator()(T r, T rinv) const { return rinv; }
   inline T df(T r) { return -1.0 / (r * r); }
   inline T df2(T r) { return 2 / (r * r * r); }
   inline T Fk(T k, T rc) { return NormFactor / k * std::cos(k * rc); }
@@ -81,31 +81,6 @@ struct CoulombFunctor
   inline T integrate_r2(T r) const { return 0.5 * r * r; }
 };
 #endif
-
-template<class T = double>
-struct PseudoCoulombFunctor
-{
-  //typedef OneDimCubicSpline<T> RadialFunctorType;
-  typedef OneDimLinearSpline<T> RadialFunctorType;
-  RadialFunctorType& radFunc;
-  T NormFactor;
-  inline PseudoCoulombFunctor(RadialFunctorType& rfunc) : radFunc(rfunc) {}
-  void reset(ParticleSet& ref) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
-  inline T operator()(T r, T rinv) { return radFunc.splint(r); }
-  inline T df(T r)
-  {
-    T du, d2u;
-    radFunc.splint(r, du, d2u);
-    return du;
-  }
-  inline T Fk(T k, T rc) { return NormFactor / (k * k) * std::cos(k * rc); }
-  inline T Xk(T k, T rc) { return -NormFactor / (k * k) * std::cos(k * rc); }
-  inline T integrate_r2(T r) const
-  {
-    //fix this to return the integration
-    return 0.5 * r * r;
-  }
-};
 
 
 std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandler(ParticleSet& ref)

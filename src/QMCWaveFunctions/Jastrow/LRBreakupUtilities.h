@@ -28,7 +28,7 @@ namespace qmcplusplus
  * A Func for LRHandlerTemp.  Four member functions have to be provided
  *
  * - reset(T volume) : reset the normalization factor
- * - operator() (T r, T rinv) : return a value of the original function e.g., 1.0/r
+ * - operator() (T r, T rinv) const : return a value of the original function e.g., 1.0/r
  * - Fk(T k, T rc)
  * - Xk(T k, T rc)
  *
@@ -61,7 +61,7 @@ struct YukawaBreakup
   }
 
 
-  inline T operator()(T r, T rinv)
+  inline T operator()(T r, T rinv) const
   {
     if (r < std::numeric_limits<T>::epsilon())
       return SqrtRs - 0.5 * r;
@@ -142,7 +142,7 @@ struct DerivRPABreakup
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
   inline T df(T r) { return 0.0; }
 
@@ -212,7 +212,7 @@ struct RPABreakup
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
   inline T df(T r) { return 0.0; }
 
@@ -291,7 +291,7 @@ struct DerivYukawaBreakup
   }
 
   /** need the df(r)/d(rs) */
-  inline T operator()(T r, T rinv)
+  inline T operator()(T r, T rinv) const
   {
     if (r < std::numeric_limits<T>::epsilon())
       return 0.5 * OneOverSqrtRs * (1.0 - r * OneOverSqrtRs);
@@ -362,7 +362,7 @@ struct EPRPABreakup
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
   inline T df(T r) { return 0.0; }
 
@@ -427,7 +427,7 @@ struct derivEPRPABreakup
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
   inline T df(T r) { return 0.0; }
 
@@ -543,7 +543,7 @@ struct RPABFeeBreakup
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
   inline T df(T r) { return 0.0; }
 

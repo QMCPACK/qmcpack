@@ -78,7 +78,7 @@ struct LRHandlerBase
    */
   inline mRealType evaluate(const std::vector<int>& kshell,
                             const pComplexType* restrict rk1,
-                            const pComplexType* restrict rk2)
+                            const pComplexType* restrict rk2) const
   {
     mRealType vk = 0.0;
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
@@ -108,7 +108,7 @@ struct LRHandlerBase
                             const pRealType* restrict rk1_r,
                             const pRealType* restrict rk1_i,
                             const pRealType* restrict rk2_r,
-                            const pRealType* restrict rk2_i)
+                            const pRealType* restrict rk2_i) const
   {
     mRealType vk = 0.0;
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
@@ -130,7 +130,7 @@ struct LRHandlerBase
     return 0.0;
   }
 
-  inline mRealType evaluate(const std::vector<int>& kshell, int iat, const pComplexType* restrict rk2, ParticleSet& P)
+  inline mRealType evaluate(const std::vector<int>& kshell, int iat, const pComplexType* restrict rk2, ParticleSet& P) const
   {
     mRealType vk = 0.0;
 #if !defined(USE_REAL_STRUCT_FACTOR)
@@ -152,7 +152,7 @@ struct LRHandlerBase
                             int iat,
                             const pRealType* restrict rk2_r,
                             const pRealType* restrict rk2_i,
-                            ParticleSet& P)
+                            ParticleSet& P) const
   {
     mRealType vk = 0.0;
 #if defined(USE_REAL_STRUCT_FACTOR)
@@ -267,9 +267,9 @@ struct LRHandlerBase
   virtual void Breakup(ParticleSet& ref, mRealType rs_in) = 0;
   virtual void resetTargetParticleSet(ParticleSet& ref)   = 0;
 
-  virtual mRealType evaluate(mRealType r, mRealType rinv) = 0;
-  virtual mRealType evaluateLR(mRealType r)               = 0;
-  virtual mRealType srDf(mRealType r, mRealType rinv)     = 0;
+  virtual mRealType evaluate(mRealType r, mRealType rinv) const = 0;
+  virtual mRealType evaluateLR(mRealType r)                     = 0;
+  virtual mRealType srDf(mRealType r, mRealType rinv)           = 0;
 
   virtual mRealType lrDf(mRealType r)
   {
@@ -278,7 +278,7 @@ struct LRHandlerBase
   };
 
   /** make clone */
-  virtual LRHandlerBase* makeClone(ParticleSet& ref) = 0;
+  virtual LRHandlerBase* makeClone(ParticleSet& ref) const = 0;
 
 protected:
   std::string ClassName;
@@ -326,12 +326,12 @@ struct DummyLRHandler : public LRHandlerBase
   }
 
   mRealType evaluate_vlr_k(mRealType k) override { return 0.0; }
-  mRealType evaluate(mRealType r, mRealType rinv) override { return 0.0; }
+  mRealType evaluate(mRealType r, mRealType rinv) const override { return 0.0; }
   mRealType evaluateLR(mRealType r) override { return 0.0; }
   mRealType srDf(mRealType r, mRealType rinv) override { return 0.0; }
   void Breakup(ParticleSet& ref, mRealType rs_in) override {}
   void resetTargetParticleSet(ParticleSet& ref) override {}
-  virtual LRHandlerBase* makeClone(ParticleSet& ref) override { return new DummyLRHandler<Func>(LR_kc); }
+  virtual LRHandlerBase* makeClone(ParticleSet& ref) const override { return new DummyLRHandler<Func>(LR_kc); }
 };
 
 } // namespace qmcplusplus

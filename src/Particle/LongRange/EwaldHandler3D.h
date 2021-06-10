@@ -55,7 +55,7 @@ public:
    */
   EwaldHandler3D(const EwaldHandler3D& aLR, ParticleSet& ref);
 
-  LRHandlerBase* makeClone(ParticleSet& ref) override { return new EwaldHandler3D(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new EwaldHandler3D(*this, ref); }
 
   void initBreakup(ParticleSet& ref) override;
 
@@ -63,7 +63,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& ref) override {}
 
-  inline mRealType evaluate(mRealType r, mRealType rinv) override { return erfc(r * Sigma) * rinv; }
+  inline mRealType evaluate(mRealType r, mRealType rinv) const override { return erfc(r * Sigma) * rinv; }
 
   /** evaluate the contribution from the long-range part for for spline
    */

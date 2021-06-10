@@ -77,7 +77,7 @@ public:
       : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
   {}
 
-  LRHandlerBase* makeClone(ParticleSet& ref)
+  LRHandlerBase* makeClone(ParticleSet& ref) const
   {
     LRHandlerSRCoulomb* tmp = new LRHandlerSRCoulomb<Func, BreakupBasis>(*this, ref);
     //    tmp->makeSplines(1001);
@@ -110,7 +110,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv) const
   {
     //Right now LRHandlerSRCoulomb is the force only handler.  This is why the gcoefs are used for evaluate.
     mRealType v = Basis.f(r, gcoefs);

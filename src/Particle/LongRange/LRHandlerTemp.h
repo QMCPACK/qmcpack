@@ -76,7 +76,7 @@ public:
     fillFk(ref.SK->KLists);
   }
 
-  LRHandlerBase* makeClone(ParticleSet& ref) { return new LRHandlerTemp<Func, BreakupBasis>(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const { return new LRHandlerTemp<Func, BreakupBasis>(*this, ref); }
 
   void initBreakup(ParticleSet& ref)
   {
@@ -99,7 +99,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv) const
   {
     mRealType v = 0.0;
     if (r >= LR_rc)

@@ -73,7 +73,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
     fillFk(ref.SK->KLists);
   }
 
-  LRHandlerBase* makeClone(ParticleSet& ref) override { return new LRRPAHandlerTemp<Func, BreakupBasis>(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new LRRPAHandlerTemp<Func, BreakupBasis>(*this, ref); }
 
   void initBreakup(ParticleSet& ref) override
   {
@@ -99,7 +99,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv) override
+  inline mRealType evaluate(mRealType r, mRealType rinv) const override
   {
     mRealType v = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -139,7 +139,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
    */
   inline mRealType evaluate(const std::vector<int>& kshell,
                             const pComplexType* restrict rk1,
-                            const pComplexType* restrict rk2)
+                            const pComplexType* restrict rk2) const
   {
     mRealType vk = 0.0;
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)

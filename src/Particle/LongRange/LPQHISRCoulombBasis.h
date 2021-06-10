@@ -38,14 +38,14 @@ private:
   std::vector<mRealType> tvec; //Coefficients
 
   //Helper functions for computing FT of basis functions (used in c(n,k))
-  inline std::complex<mRealType> Eplus(int i, mRealType k, int n);
-  inline std::complex<mRealType> Eminus(int i, mRealType k, int n);
-  inline std::complex<mRealType> Eplus_dG(int i, mRealType k, int n);
-  inline std::complex<mRealType> Eminus_dG(int i, mRealType k, int n);
-  inline mRealType Dplus(int i, mRealType k, int n);
-  inline mRealType Dminus(int i, mRealType k, int n);
-  inline mRealType Dplus_dG(int i, mRealType k, int n);
-  inline mRealType Dminus_dG(int i, mRealType k, int n);
+  inline std::complex<mRealType> Eplus(int i, mRealType k, int n) const;
+  inline std::complex<mRealType> Eminus(int i, mRealType k, int n) const;
+  inline std::complex<mRealType> Eplus_dG(int i, mRealType k, int n) const;
+  inline std::complex<mRealType> Eminus_dG(int i, mRealType k, int n) const;
+  inline mRealType Dplus(int i, mRealType k, int n) const;
+  inline mRealType Dminus(int i, mRealType k, int n) const;
+  inline mRealType Dplus_dG(int i, mRealType k, int n) const;
+  inline mRealType Dminus_dG(int i, mRealType k, int n) const;
 
 
 public:
@@ -186,9 +186,9 @@ public:
   //      }
   //    }
 
-  mRealType hintr2(int n);
-  mRealType c(int n, mRealType k);
-  mRealType dc_dk(int n, mRealType k);
+  mRealType hintr2(int n) const;
+  mRealType c(int n, mRealType k) const;
+  mRealType dc_dk(int n, mRealType k) const;
   //Constructor...fill S matrix...call correct base-class constructor
   LPQHISRCoulombBasis(ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
   {
