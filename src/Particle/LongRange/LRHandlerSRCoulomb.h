@@ -117,41 +117,41 @@ public:
     return v;
   }
 
-  inline mRealType evaluate_vlr_k(mRealType k) { return evalYk(k); }
+  inline mRealType evaluate_vlr_k(mRealType k) const { return evalYk(k); }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv) const
   {
     mRealType df = Basis.df_dr(r, gcoefs);
     return df;
   }
 
-  inline mRealType srDf_strain(mRealType r, mRealType rinv)
+  inline mRealType srDf_strain(mRealType r, mRealType rinv) const
   {
     APP_ABORT("Stresses not supported yet\n");
     mRealType df = Basis.df_dr(r, gstraincoefs);
     return df;
   }
 
-  inline mRealType lrDf(mRealType r)
+  inline mRealType lrDf(mRealType r) const
   {
     mRealType lr = myFunc.df(r) - srDf(r, 1.0 / r);
     return lr;
   }
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r)
+  inline mRealType evaluateLR(mRealType r) const
   {
     mRealType v = 0.0;
     v           = myFunc(r, 1.0 / r) - evaluate(r, 1.0 / r);
     return v;
   }
 
-  inline mRealType evaluateSR_k0()
+  inline mRealType evaluateSR_k0() const
   {
     mRealType v0 = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -160,7 +160,7 @@ public:
   }
 
 
-  inline mRealType evaluateLR_r0()
+  inline mRealType evaluateLR_r0() const
   {
     //this is because the constraint v(r)=sigma(r) as r-->0.
     // so v(r)-sigma(r)="0".  Divergence prevents me from coding this.
@@ -169,7 +169,7 @@ public:
   }
 
   //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag)
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag) const
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
@@ -185,7 +185,7 @@ public:
   }
 
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<mRealType, OHMMS_DIM> r, mRealType rmag)
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<mRealType, OHMMS_DIM> r, mRealType rmag) const
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
@@ -200,7 +200,7 @@ public:
     return deriv_tensor;
   }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain()
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain() const
   {
     APP_ABORT("Stresses not supported yet\n");
     mRealType v0   = 0.0;
@@ -217,14 +217,14 @@ public:
     return stress;
   }
 
-  inline mRealType evaluateLR_r0_dstrain(int i, int j)
+  inline mRealType evaluateLR_r0_dstrain(int i, int j) const
   {
     APP_ABORT("Stresses not supported yet\n");
     //the t derivative for the relevant basis elements are all zero because of constraints.
     return 0.0; //Basis.f(0,dcoefs(i,j));
   }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain()
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain() const
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> stress;
@@ -232,7 +232,7 @@ public:
   }
 
 private:
-  inline mRealType evalYk(mRealType k)
+  inline mRealType evalYk(mRealType k) const
   {
     //FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
     mRealType FatK = myFunc.Vk(k) - Basis.fk(k, coefs);
@@ -240,14 +240,14 @@ private:
     //    FatK -= coefs[n]*Basis.c(n,k);
     return FatK;
   }
-  inline mRealType evalYkg(mRealType k)
+  inline mRealType evalYkg(mRealType k) const
   {
     mRealType FatK = myFunc.Vk(k) - Basis.fk(k, gcoefs);
     //for(int n=0; n<Basis.NumBasisElem(); n++)
     //   FatK -= gcoefs[n]*Basis.c(n,k);
     return FatK;
   }
-  inline mRealType evalYkgstrain(mRealType k)
+  inline mRealType evalYkgstrain(mRealType k) const
   {
     APP_ABORT("Stresses not supported yet\n");
     mRealType FatK = myFunc.Vk(k) - Basis.fk(k, gstraincoefs);
@@ -256,7 +256,7 @@ private:
     return FatK;
   }
 
-  inline mRealType evaldYkgstrain(mRealType k)
+  inline mRealType evaldYkgstrain(mRealType k) const
   {
     APP_ABORT("Stresses not supported yet\n");
     mRealType dFk_dk = myFunc.dVk_dk(k) - Basis.dfk_dk(k, gstraincoefs);

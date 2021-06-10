@@ -80,20 +80,20 @@ public:
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r) override { return -erf(r * Sigma) / r; }
+  inline mRealType evaluateLR(mRealType r) const override { return -erf(r * Sigma) / r; }
 
-  inline mRealType evaluateSR_k0() override { return 0.0; }
+  inline mRealType evaluateSR_k0() const override { return 0.0; }
 
-  inline mRealType evaluateLR_r0() override { return 2.0 * Sigma / std::sqrt(M_PI) + PreFactors[3]; }
+  inline mRealType evaluateLR_r0() const override { return 2.0 * Sigma / std::sqrt(M_PI) + PreFactors[3]; }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv) override { return 0.0; }
+  inline mRealType srDf(mRealType r, mRealType rinv) const override { return 0.0; }
 
-  mRealType evaluate_vlr_k(mRealType k) override;
+  mRealType evaluate_vlr_k(mRealType k) const override;
 
   void fillFk(KContainer& KList);
 
@@ -102,7 +102,7 @@ public:
   mRealType evaluate_slab(pRealType z,
                           const std::vector<int>& kshell,
                           const pComplexType* restrict rk1,
-                          const pComplexType* restrict rk2) override;
+                          const pComplexType* restrict rk2) const override;
 
   /** evaluate k=0 term at z
    * @param z distance in the slab direction
@@ -111,7 +111,7 @@ public:
    *
    * Here \f$ X=\frac{2\pi}{A}\f$ and \f$ Y=\frac{2\sqrt{\pi}}{A*Simga}\f$
    */
-  inline mRealType SlabFunc0(mRealType z, mRealType zp)
+  inline mRealType SlabFunc0(mRealType z, mRealType zp) const
   {
     return PreFactors[0] * z * erf(zp) + PreFactors[1] * std::exp(-zp * zp);
   }
@@ -121,7 +121,7 @@ public:
    * @param z distance in the slab direction
    * @param zp z*Sigma
    */
-  inline mRealType SlabFuncK(int ks, mRealType z, mRealType zp)
+  inline mRealType SlabFuncK(int ks, mRealType z, mRealType zp) const
   {
     mRealType expkz = std::exp(kMag[ks] * z);
     mRealType kz0   = PreFactors[2] * kMag[ks]; //could save this

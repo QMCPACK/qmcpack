@@ -115,7 +115,7 @@ public:
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv) const
   {
     APP_ABORT("LRHandlerTemp::srDF not implemented (missing gcoefs)");
     mRealType df = 0.0;
@@ -128,12 +128,12 @@ public:
     return df;
   }
 
-  inline mRealType evaluate_vlr_k(mRealType k) { return evalFk(k); }
+  inline mRealType evaluate_vlr_k(mRealType k) const { return evalFk(k); }
 
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r)
+  inline mRealType evaluateLR(mRealType r) const
   {
     mRealType v = 0.0;
     if (r >= LR_rc)
@@ -142,9 +142,10 @@ public:
       v += coefs[n] * Basis.h(n, r);
     return v;
   }
+
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType lrDf(mRealType r)
+  inline mRealType lrDf(mRealType r) const
   {
     APP_ABORT("LRHandlerTemp::lrDF not implemented (missing gcoefs)");
     mRealType dv = 0.0;
@@ -160,7 +161,7 @@ public:
   }
 
 
-  inline mRealType evaluateSR_k0()
+  inline mRealType evaluateSR_k0() const
   {
     mRealType v0 = myFunc.integrate_r2(Basis.get_rc());
     for (int n = 0; n < coefs.size(); n++)
@@ -168,7 +169,7 @@ public:
     return v0 * 2.0 * TWOPI / Basis.get_CellVolume();
   }
 
-  inline mRealType evaluateLR_r0()
+  inline mRealType evaluateLR_r0() const
   {
     mRealType v0 = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -177,7 +178,7 @@ public:
   }
 
 private:
-  inline mRealType evalFk(mRealType k)
+  inline mRealType evalFk(mRealType k) const
   {
     //FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
     mRealType FatK = myFunc.Fk(k, Basis.get_rc());
@@ -185,7 +186,7 @@ private:
       FatK += coefs[n] * Basis.c(n, k);
     return FatK;
   }
-  inline mRealType evalXk(mRealType k)
+  inline mRealType evalXk(mRealType k) const
   {
     //RealType FatK;
     //FatK = -4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());

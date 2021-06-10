@@ -147,10 +147,10 @@ public:
 
   //May need extra functionality when resetting rc. Override this.
   virtual void set_rc(mRealType rc) = 0;
-  inline mRealType get_rc() { return m_rc; }
-  inline mRealType get_CellVolume() { return Lattice.Volume; }
-  inline ParticleLayout_t& get_Lattice() { return Lattice; }
+  inline mRealType get_rc() const { return m_rc; }
+  inline mRealType get_CellVolume() const { return Lattice.Volume; }
   inline void set_Lattice(ParticleLayout_t& ref) { Lattice = ref; }
+  inline ParticleLayout_t& get_Lattice() const { return Lattice; }
 };
 
 } // namespace qmcplusplus
