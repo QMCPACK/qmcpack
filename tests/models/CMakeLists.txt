@@ -46,7 +46,7 @@ if(NOT QMC_CUDA)
   )
 
 else()
-  message(
+  message_verbose(
     "Skipping SHO model potential and grid external potential tests because they are not supported by CUDA build (QMC_CUDA=1)"
   )
 endif()
