@@ -27,9 +27,6 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
       myTableIndex(elns.addTable(ions)),
       myConst(0.0),
       myGrid(nullptr),
-      V0(),
-      fV0(),
-      dfV0(nullptr),
       ComputeForces(computeForces),
       MaxGridPoints(10000),
       Peln(elns),
@@ -451,7 +448,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
     }
-    Vat.resize(NptclA);
+    Vat.resize(NptclA, V0.get());
     Vspec.resize(NumSpeciesA); //prepare for PP to overwrite it
   }
 
@@ -467,8 +464,8 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
     }
-    fVat.resize(NptclA);
-    fdVat.resize(NptclA);
+    fVat.resize(NptclA, fV0.get());
+    fdVat.resize(NptclA, dfV0.get());
     fVspec.resize(NumSpeciesA);
     fdVspec.resize(NumSpeciesA);
   }
