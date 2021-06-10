@@ -90,7 +90,7 @@ qmc_run_and_check(
   qmc_short_hybridrep.in.xml
   1
   16
-  TRUE
+  ${SUCCESS_STATUS_CUDA}
   0
   DIAMOND2_SCALARS # VMC
 )

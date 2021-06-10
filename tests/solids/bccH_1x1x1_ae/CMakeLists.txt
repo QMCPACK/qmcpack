@@ -171,7 +171,7 @@ if(NOT QMC_CUDA)
                 qmc_cpu_limit_rmc.xml)
 
 else()
-  message(
+  message_verbose(
     "Skipping bccH_1x1x1_ae tests for VMC all-particle moves, CSVMC, and RMC because they are not supported by CUDA build (QMC_CUDA=1)"
   )
 endif()
@@ -195,7 +195,7 @@ if(NOT QMC_CUDA)
     BCC_H_PW_SCALARS # VMC
   )
 else()
-  message("Skipping bccH_1x1x1_ae plane wave tests because they are not supported by CUDA build (QMC_CUDA=1)")
+  message_verbose("Skipping bccH_1x1x1_ae plane wave tests because they are not supported by CUDA build (QMC_CUDA=1)")
 endif()
 
 #

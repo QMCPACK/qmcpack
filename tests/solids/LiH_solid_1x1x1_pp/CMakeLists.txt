@@ -60,6 +60,7 @@ qmc_run_and_check(
   LIH_X_SCALARS # VMC
 )
 
+# Hybridrep is not implemented in legacy CUDA but should be correctly error trapped
 qmc_run_and_check(
   short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -67,7 +68,7 @@ qmc_run_and_check(
   hf_vmc_LiH-x_hybridrep.xml
   1
   16
-  TRUE
+  ${SUCCESS_STATUS_CUDA}
   0
   LIH_X_SCALARS # VMC
 )
@@ -118,7 +119,7 @@ if(QMC_COMPLEX)
     md_cc_vmc_LiH-gamma.xml
     1
     16
-    TRUE
+    ${SUCCESS_STATUS_CUDA}
     1
     LIH_MD_GAMMA_SCALARS # VMC
   )
@@ -131,7 +132,7 @@ else()
     md_rc_vmc_LiH-gamma.xml
     1
     16
-    TRUE
+    ${SUCCESS_STATUS_CUDA}
     1
     LIH_MD_GAMMA_SCALARS # VMC
   )

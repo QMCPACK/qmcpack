@@ -21,6 +21,7 @@ qmc_run_and_check(
   DIAMOND_SCALARS # VMC
 )
 
+# Hybridrep is not implemented in legacy CUDA but should be correctly error trapped
 qmc_run_and_check(
   short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -28,7 +29,7 @@ qmc_run_and_check(
   qmc_short_hybridrep.in.xml
   1
   16
-  TRUE
+  ${SUCCESS_STATUS_CUDA}
   0
   DIAMOND_SCALARS # VMC
 )
@@ -175,7 +176,7 @@ if(NOT QMC_CUDA)
     DIAMOND_DMC_SCALARS # DMC
   )
 else()
-  message(
+  message_verbose(
     "Skipping diamondC_1x1x1_pp all particle move VMC/DMC tests because they are not supported by CUDA build (QMC_CUDA=1)"
   )
 endif()
@@ -606,7 +607,7 @@ if(add_estimator_tests)
       -r
       qmc-ref/qmc_1rdm_J2_long${OFEXT}.s000.stat_ref_1rdm.dat)
   else()
-    message("Skipping diamond 1rdm test because CUDA is not supported")
+    message_verbose("Skipping diamond 1rdm test because CUDA is not supported")
   endif()
 
   if(NOT QMC_CUDA)
@@ -732,7 +733,7 @@ if(add_estimator_tests)
       qmc-ref/qmc_edens_cell_dmc_long.s001.stat_ref_energydensity.dat)
 
   else()
-    message("Skipping diamond 1rdm test because CUDA is not supported")
+    message_verbose("Skipping diamond 1rdm test because CUDA is not supported")
   endif()
 
 endif()
