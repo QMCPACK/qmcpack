@@ -60,7 +60,7 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///cutoff radius of the short-range part
   RealType myRcut;
   ///radial grid
-  GridType* myGrid;
+  std::shared_ptr<GridType> myGrid;
   ///Always mave a radial functor for the bare coulomb
   std::unique_ptr<RadFunctorType> V0;
   ///Radial functor for bare coulomb, optimized for forces
@@ -118,8 +118,10 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   Array<TraceReal, 1> Ve_const;
   Array<TraceReal, 1> Vi_const;
 #endif
-  ParticleSet& Peln;
   ParticleSet& Pion;
+  // FIXME: Coulomb class is walker agnositic, it should not record a particular electron particle set.
+  // kept for the trace manager.
+  ParticleSet& Peln;
 
   CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces = false);
 
@@ -169,7 +171,7 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///Computes the long-range contribution to the coulomb energy and forces.
   Return_t evalLRwithForces(ParticleSet& P);
   ///Evaluates madelung and background contributions to total energy.
-  Return_t evalConsts(bool report = true);
+  Return_t evalConsts(const ParticleSet& P, bool report = true);
   ///Adds a local pseudopotential channel "ppot" to all source species of type "groupID".
   void add(int groupID, std::unique_ptr<RadFunctorType>&& ppot);
 

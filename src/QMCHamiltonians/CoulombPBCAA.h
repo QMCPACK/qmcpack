@@ -44,11 +44,9 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
   // energy-optimized
   std::shared_ptr<LRHandlerType> AA;
-  GridType* myGrid;
   std::shared_ptr<RadFunctorType> rVs;
   // force-optimized
   std::shared_ptr<LRHandlerType> dAA;
-  GridType* myGridforce;
   std::shared_ptr<RadFunctorType> rVsforce;
 
   bool is_active;

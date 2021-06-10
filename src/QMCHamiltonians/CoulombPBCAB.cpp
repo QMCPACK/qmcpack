@@ -26,11 +26,10 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
       PtclA(ions),
       myTableIndex(elns.addTable(ions)),
       myConst(0.0),
-      myGrid(nullptr),
       ComputeForces(computeForces),
       MaxGridPoints(10000),
-      Peln(elns),
-      Pion(ions)
+      Pion(ions),
+      Peln(elns)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
   set_energy_domain(potential);
@@ -49,8 +48,6 @@ std::unique_ptr<OperatorBase> CoulombPBCAB::makeClone(ParticleSet& qp, TrialWave
   std::unique_ptr<CoulombPBCAB> myclone = std::make_unique<CoulombPBCAB>(PtclA, qp, ComputeForces);
 
   myclone->FirstForceIndex = FirstForceIndex;
-  if (myGrid)
-    myclone->myGrid = new GridType(*myGrid);
   for (int ig = 0; ig < Vspec.size(); ++ig)
   {
     if (Vspec[ig])
@@ -293,7 +290,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
  * \f$V_{bg}^{AB}=-\sum_{\alpha}\sum_{\beta} N^{\alpha} N^{\beta} q^{\alpha} q^{\beta} v_s(k=0) \f$
  * @todo Here is where the charge system has to be handled.
  */
-CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(bool report)
+CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(const ParticleSet& Peln, bool report)
 {
   int nelns = Peln.getTotalNum();
   int nions = Pion.getTotalNum();
@@ -438,12 +435,12 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   //initBreakup is called only once
   //AB = LRCoulombSingleton::getHandler(*PtclB);
   AB      = LRCoulombSingleton::getHandler(P);
-  myConst = evalConsts();
+  myConst = evalConsts(P);
   myRcut  = AB->get_rc(); //Basis.get_rc();
   // create the spline function for the short-range part assuming pure potential
   if (V0 == nullptr)
   {
-    V0 = LRCoulombSingleton::createSpline4RbyVs(AB.get(), myRcut, myGrid);
+    V0 = LRCoulombSingleton::createSpline4RbyVs(AB.get(), myRcut, myGrid.get());
     if (Vat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
@@ -457,9 +454,9 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   {
     dAB = LRCoulombSingleton::getDerivHandler(P);
     if (fV0 == nullptr)
-      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB.get(), myRcut, myGrid);
+      fV0 = LRCoulombSingleton::createSpline4RbyVs(dAB.get(), myRcut, myGrid.get());
     if (dfV0 == nullptr)
-      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB.get(), myRcut, myGrid);
+      dfV0 = LRCoulombSingleton::createSpline4RbyVsDeriv(dAB.get(), myRcut, myGrid.get());
     if (fVat.size())
     {
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
@@ -479,7 +476,7 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 {
   if (myGrid == nullptr)
   {
-    myGrid = new LinearGrid<RealType>;
+    myGrid = std::make_shared<LinearGrid<RealType>>();
     int ng = std::min(MaxGridPoints, static_cast<int>(myRcut / 1e-3) + 1);
     app_log() << "    CoulombPBCAB::add \n Setting a linear grid=[0," << myRcut << ") number of grid =" << ng
               << std::endl;
@@ -502,7 +499,7 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     //by construction, v has to go to zero at the boundary
     v[ng - 2]             = 0.0;
     v[ng - 1]             = 0.0;
-    auto rfunc            = std::make_unique<RadFunctorType>(myGrid, v);
+    auto rfunc            = std::make_unique<RadFunctorType>(myGrid.get(), v);
     RealType deriv        = (v[1] - v[0]) / ((*myGrid)[1] - (*myGrid)[0]);
     rfunc->spline(0, deriv, ng - 1, 0.0);
     for (int iat = 0; iat < NptclA; iat++)
@@ -543,8 +540,8 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     dv[ng - 2] = 0;
     dv[ng - 1] = 0;
 
-    auto ffunc  = std::make_unique<RadFunctorType>(myGrid, v);
-    auto fdfunc = std::make_unique<RadFunctorType>(myGrid, dv);
+    auto ffunc  = std::make_unique<RadFunctorType>(myGrid.get(), v);
+    auto fdfunc = std::make_unique<RadFunctorType>(myGrid.get(), dv);
 
     RealType fderiv = (dv[1] - dv[0]) / ((*myGrid)[1] - (*myGrid)[0]);
 

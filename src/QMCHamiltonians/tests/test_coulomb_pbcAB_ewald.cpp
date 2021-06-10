@@ -90,7 +90,7 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   CoulombPBCAB cab(ions, elec);
 
   // Self energy plus Background charge term
-  double consts = cab.evalConsts();
+  double consts = cab.evalConsts(elec);
   REQUIRE(consts == Approx(0.0523598776 * 2)); //not validated
 
   double val_ei = cab.evaluate(elec);
@@ -179,7 +179,7 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   CoulombPBCAB cab(ions, elec);
 
   // Background charge term
-  double consts = cab.evalConsts();
+  double consts = cab.evalConsts(elec);
   REQUIRE(consts == Approx(0.0277076538 * 4)); //not validated
 
 
