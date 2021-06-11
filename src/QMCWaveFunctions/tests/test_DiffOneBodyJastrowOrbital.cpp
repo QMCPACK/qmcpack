@@ -28,7 +28,7 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
-  ions_.create({1, 1});
+  ions_.create(1);
   ions_.R[0]                 = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies       = ions_.getSpeciesSet();
   int HIdx                   = ispecies.addSpecies("H");
@@ -57,10 +57,10 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
   ptcl.addParticleSet(std::move(ions_uptr));
 
 
+  ions_.update();
   elec_.addTable(elec_);
   elec_.addTable(ions_);
   elec_.update();
-  ions_.update();
 
   const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
   <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"ion0\"> \
