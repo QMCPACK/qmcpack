@@ -76,16 +76,16 @@ public:
     fillFk(ref.SK->KLists);
   }
 
-  LRHandlerBase* makeClone(ParticleSet& ref) const { return new LRHandlerTemp<Func, BreakupBasis>(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new LRHandlerTemp<Func, BreakupBasis>(*this, ref); }
 
-  void initBreakup(ParticleSet& ref)
+  void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.LRBox, 1);
     fillFk(ref.SK->KLists);
     LR_rc = Basis.get_rc();
   }
 
-  void Breakup(ParticleSet& ref, mRealType rs_ext)
+  void Breakup(ParticleSet& ref, mRealType rs_ext) override
   {
     //ref.LRBox.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs = rs_ext;
@@ -95,11 +95,11 @@ public:
     LR_rc = Basis.get_rc();
   }
 
-  void resetTargetParticleSet(ParticleSet& ref) { myFunc.reset(ref); }
+  void resetTargetParticleSet(ParticleSet& ref) override { myFunc.reset(ref); }
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv) const
+  inline mRealType evaluate(mRealType r, mRealType rinv) const override
   {
     mRealType v = 0.0;
     if (r >= LR_rc)
@@ -115,7 +115,7 @@ public:
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv) const
+  inline mRealType srDf(mRealType r, mRealType rinv) const override
   {
     APP_ABORT("LRHandlerTemp::srDF not implemented (missing gcoefs)");
     mRealType df = 0.0;
@@ -128,12 +128,12 @@ public:
     return df;
   }
 
-  inline mRealType evaluate_vlr_k(mRealType k) const { return evalFk(k); }
+  inline mRealType evaluate_vlr_k(mRealType k) const override { return evalFk(k); }
 
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r) const
+  inline mRealType evaluateLR(mRealType r) const override
   {
     mRealType v = 0.0;
     if (r >= LR_rc)
@@ -145,7 +145,7 @@ public:
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType lrDf(mRealType r) const
+  inline mRealType lrDf(mRealType r) const override
   {
     APP_ABORT("LRHandlerTemp::lrDF not implemented (missing gcoefs)");
     mRealType dv = 0.0;
@@ -161,7 +161,7 @@ public:
   }
 
 
-  inline mRealType evaluateSR_k0() const
+  inline mRealType evaluateSR_k0() const override
   {
     mRealType v0 = myFunc.integrate_r2(Basis.get_rc());
     for (int n = 0; n < coefs.size(); n++)
@@ -169,7 +169,7 @@ public:
     return v0 * 2.0 * TWOPI / Basis.get_CellVolume();
   }
 
-  inline mRealType evaluateLR_r0() const
+  inline mRealType evaluateLR_r0() const override
   {
     mRealType v0 = 0.0;
     for (int n = 0; n < coefs.size(); n++)

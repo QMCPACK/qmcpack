@@ -62,7 +62,7 @@ struct LRHandlerBase
   explicit LRHandlerBase(mRealType kc) : MaxKshell(0), LR_kc(kc), LR_rc(0), ClassName("LRHandlerBase") {}
 
   // virtual destructor
-  virtual ~LRHandlerBase() {}
+  virtual ~LRHandlerBase() = default;
 
   //return r cutoff
   inline mRealType get_rc() const { return LR_rc; }

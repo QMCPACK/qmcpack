@@ -77,14 +77,14 @@ public:
       : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.LRBox)
   {}
 
-  LRHandlerBase* makeClone(ParticleSet& ref) const
+  LRHandlerBase* makeClone(ParticleSet& ref) const override
   {
     LRHandlerSRCoulomb* tmp = new LRHandlerSRCoulomb<Func, BreakupBasis>(*this, ref);
     //    tmp->makeSplines(1001);
     return tmp;
   }
 
-  void initBreakup(ParticleSet& ref)
+  void initBreakup(ParticleSet& ref) override
   {
     InitBreakup(ref.LRBox, 1);
     //    fillYk(ref.SK->KLists);
@@ -94,7 +94,7 @@ public:
     LR_rc = Basis.get_rc();
   }
 
-  void Breakup(ParticleSet& ref, mRealType rs_ext)
+  void Breakup(ParticleSet& ref, mRealType rs_ext) override
   {
     rs = rs_ext;
     myFunc.reset(ref, rs);
@@ -106,25 +106,25 @@ public:
     LR_rc = Basis.get_rc();
   }
 
-  void resetTargetParticleSet(ParticleSet& ref) { myFunc.reset(ref); }
+  void resetTargetParticleSet(ParticleSet& ref) override { myFunc.reset(ref); }
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv) const
+  inline mRealType evaluate(mRealType r, mRealType rinv) const override
   {
     //Right now LRHandlerSRCoulomb is the force only handler.  This is why the gcoefs are used for evaluate.
     mRealType v = Basis.f(r, gcoefs);
     return v;
   }
 
-  inline mRealType evaluate_vlr_k(mRealType k) const { return evalYk(k); }
+  inline mRealType evaluate_vlr_k(mRealType k) const override { return evalYk(k); }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv) const
+  inline mRealType srDf(mRealType r, mRealType rinv) const override
   {
     mRealType df = Basis.df_dr(r, gcoefs);
     return df;
@@ -137,21 +137,21 @@ public:
     return df;
   }
 
-  inline mRealType lrDf(mRealType r) const
+  inline mRealType lrDf(mRealType r) const override
   {
     mRealType lr = myFunc.df(r) - srDf(r, 1.0 / r);
     return lr;
   }
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r) const
+  inline mRealType evaluateLR(mRealType r) const override
   {
     mRealType v = 0.0;
     v           = myFunc(r, 1.0 / r) - evaluate(r, 1.0 / r);
     return v;
   }
 
-  inline mRealType evaluateSR_k0() const
+  inline mRealType evaluateSR_k0() const override
   {
     mRealType v0 = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -160,7 +160,7 @@ public:
   }
 
 
-  inline mRealType evaluateLR_r0() const
+  inline mRealType evaluateLR_r0() const override
   {
     //this is because the constraint v(r)=sigma(r) as r-->0.
     // so v(r)-sigma(r)="0".  Divergence prevents me from coding this.
@@ -169,7 +169,7 @@ public:
   }
 
   //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag) const
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag) const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
@@ -185,7 +185,7 @@ public:
   }
 
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<mRealType, OHMMS_DIM> r, mRealType rmag) const
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<mRealType, OHMMS_DIM> r, mRealType rmag) const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
@@ -200,7 +200,7 @@ public:
     return deriv_tensor;
   }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain() const
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain() const override
   {
     APP_ABORT("Stresses not supported yet\n");
     mRealType v0   = 0.0;
@@ -224,7 +224,7 @@ public:
     return 0.0; //Basis.f(0,dcoefs(i,j));
   }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain() const
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain() const override
   {
     APP_ABORT("Stresses not supported yet\n");
     SymTensor<mRealType, OHMMS_DIM> stress;
