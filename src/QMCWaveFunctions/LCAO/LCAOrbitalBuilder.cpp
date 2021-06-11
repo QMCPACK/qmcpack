@@ -500,7 +500,8 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     const int orbital_set_size = lcos->getOrbitalSetSize();
     Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
-    bool valid = false;
+    /// use int instead of bool to handle MPI bcast properly.
+    int valid = false;
     if (myComm->rank() == 0)
       valid = readCuspInfo(cusp_file, id, orbital_set_size, info);
 
