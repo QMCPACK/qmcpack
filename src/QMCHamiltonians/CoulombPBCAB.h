@@ -62,11 +62,11 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///radial grid
   GridType* myGrid;
   ///Always mave a radial functor for the bare coulomb
-  RadFunctorType* V0;
+  std::unique_ptr<RadFunctorType> V0;
   ///Radial functor for bare coulomb, optimized for forces
-  RadFunctorType* fV0;
+  std::unique_ptr<RadFunctorType> fV0;
   ///Radial functor for derivative of bare coulomb, optimized for forces
-  RadFunctorType* dfV0;
+  std::unique_ptr<RadFunctorType> dfV0;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
   int MaxGridPoints;
@@ -86,14 +86,14 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///Short-range potential for each ion
   std::vector<RadFunctorType*> Vat;
   ///Short-range potential for each species
-  std::vector<RadFunctorType*> Vspec;
+  std::vector<std::unique_ptr<RadFunctorType>> Vspec;
   ///Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each ion
   ///Required for force evaluations.
   std::vector<RadFunctorType*> fVat;
   std::vector<RadFunctorType*> fdVat;
   ////Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each species
-  std::vector<RadFunctorType*> fVspec;
-  std::vector<RadFunctorType*> fdVspec;
+  std::vector<std::unique_ptr<RadFunctorType>> fVspec;
+  std::vector<std::unique_ptr<RadFunctorType>> fdVspec;
   /*@{
    * @brief temporary data for pbyp evaluation
    */

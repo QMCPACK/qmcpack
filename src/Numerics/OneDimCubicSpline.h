@@ -183,7 +183,7 @@ public:
   OneDimCubicSpline(const grid_type* gt = 0) : base_type(gt) {}
 
   template<class VV>
-  OneDimCubicSpline(grid_type* gt, const VV& nv) : base_type(gt), first_deriv(0.0), last_deriv(0.0)
+  OneDimCubicSpline(const grid_type* gt, const VV& nv) : base_type(gt), first_deriv(0.0), last_deriv(0.0)
   {
     m_Y.resize(nv.size());
     m_Y2.resize(nv.size());
@@ -192,8 +192,7 @@ public:
 
   OneDimCubicSpline* makeClone() const { return new OneDimCubicSpline(*this); }
 
-  OneDimCubicSpline(const OneDimCubicSpline& a)
-      : base_type(a)
+  OneDimCubicSpline(const OneDimCubicSpline& a) : base_type(a)
   {
     m_Y2.resize(a.m_Y2.size());
     m_Y2        = a.m_Y2;

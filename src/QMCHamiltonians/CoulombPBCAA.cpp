@@ -25,9 +25,7 @@ namespace qmcplusplus
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     : ForceBase(ref, ref),
       myGrid(0),
-      rVs(0),
       myGridforce(0),
-      rVsforce(0),
       is_active(active),
       FirstTime(true),
       myConst(0.0),
@@ -101,7 +99,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
   app_log() << "\n    e-e Madelung Const. =" << MC0 << "\n    Vtot     =" << Value << std::endl;
 }
 
-CoulombPBCAA::~CoulombPBCAA() {}
+CoulombPBCAA::~CoulombPBCAA() = default;
 
 void CoulombPBCAA::addObservables(PropertySetType& plist, BufferType& collectables)
 {
@@ -303,14 +301,14 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   //AA->initBreakup(*PtclRef);
   myConst = evalConsts();
   myRcut  = AA->get_rc(); //Basis.get_rc();
-  if (rVs == 0)
-  {
+
+  if (rVs == nullptr)
     rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
-  }
+
   if (ComputeForces)
   {
     dAA = LRCoulombSingleton::getDerivHandler(P);
-    if (rVsforce == 0)
+    if (rVsforce == nullptr)
     {
       rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut, myGridforce);
     }
