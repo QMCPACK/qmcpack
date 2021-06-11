@@ -18,7 +18,6 @@
 
 #include "Particle/ParticleSet.h"
 #include <limits>
-#include <bitset>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
