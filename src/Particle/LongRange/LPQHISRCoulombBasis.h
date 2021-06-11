@@ -69,8 +69,8 @@ public:
   inline mRealType get_delta() const { return delta; }
   //inline int NumBasisElem() const {return 3*NumKnots;}
   void set_NumKnots(int n); // n >= 2 required
-  void set_rc(mRealType rc);
-  inline mRealType h(int n, mRealType r) const
+  void set_rc(mRealType rc) override;
+  inline mRealType h(int n, mRealType r) const override
   {
     int i          = n / 3;
     int alpha      = n - 3 * i;
@@ -95,6 +95,7 @@ public:
           (Sa[0] + x * (Sa[1] + x * (Sa[2] + x * (Sa[3] + x * (Sa[4] + x * Sa[5])))));
     }
   }
+
   inline mRealType rh(int n, mRealType r) const
   {
     int i        = n / 3;
@@ -119,7 +120,7 @@ public:
     }
   }
 
-  inline mRealType dh_dr(int n, mRealType r) const
+  inline mRealType dh_dr(int n, mRealType r) const override
   {
     int i        = n / 3;
     int alpha    = n - 3 * i;
@@ -186,9 +187,10 @@ public:
   //      }
   //    }
 
-  mRealType hintr2(int n) const;
-  mRealType c(int n, mRealType k) const;
-  mRealType dc_dk(int n, mRealType k) const;
+  mRealType hintr2(int n) const override;
+  mRealType c(int n, mRealType k) const override;
+  mRealType dc_dk(int n, mRealType k) const override;
+
   //Constructor...fill S matrix...call correct base-class constructor
   LPQHISRCoulombBasis(ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
   {

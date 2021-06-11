@@ -63,9 +63,9 @@ public:
   inline mRealType get_delta() const { return delta; }
   //inline int NumBasisElem() const {return 3*NumKnots;}
   void set_NumKnots(int n); // n >= 2 required
-  void set_rc(mRealType rc);
+  void set_rc(mRealType rc) override;
 
-  inline mRealType h(int n, mRealType r) const
+  inline mRealType h(int n, mRealType r) const override
   {
     int i        = n / 3;
     int alpha    = n - 3 * i;
@@ -88,7 +88,7 @@ public:
     }
   }
 
-  inline mRealType dh_dr(int n, mRealType r) const
+  inline mRealType dh_dr(int n, mRealType r) const override
   {
     int i        = n / 3;
     int alpha    = n - 3 * i;
@@ -137,8 +137,9 @@ public:
   //      }
   //    }
 
-  mRealType hintr2(int n) const;
-  mRealType c(int n, mRealType k) const;
+  mRealType hintr2(int n) const override;
+  mRealType c(int n, mRealType k) const override;
+
   //Constructor...fill S matrix...call correct base-class constructor
   LPQHIBasis(ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
   {
