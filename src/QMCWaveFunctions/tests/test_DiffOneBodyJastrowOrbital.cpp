@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2021 QMCPACK developers.
 //
-// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
+// File developed by: Shiv Upadhyay, shivnupadhyay@gmail.com, University of Pittsburgh
 //
-// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
+// File created by: Shiv Upadhyay, shivnupadhyay@gmail.com, University of Pittsburgh
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
@@ -21,8 +21,7 @@ namespace qmcplusplus
 {
 TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 {
-  Communicate* c;
-  c              = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
   auto ions_uptr = std::make_unique<ParticleSet>();
   auto elec_uptr = std::make_unique<ParticleSet>();
   ParticleSet& ions_(*ions_uptr);
@@ -101,9 +100,10 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 
   // Numbers not validated
-  std::vector<ValueType> expected_dlogpsi = {-0.9336294487, -1.0196051794, 0.0, 0.0};
+  std::vector<ValueType> expected_dlogpsi      = {-0.9336294487, -1.0196051794, 0.0, 0.0};
   std::vector<ValueType> expected_dhpsioverpsi = {-1.1596433096, 0.7595492539, 0.0, 0.0};
-  for (int i = 0 ; i < nparam; i++){
+  for (int i = 0; i < nparam; i++)
+  {
     CHECK(dlogpsi[i] == ValueApprox(expected_dlogpsi[i]));
     CHECK(dhpsioverpsi[i] == ValueApprox(expected_dhpsioverpsi[i]));
   }
