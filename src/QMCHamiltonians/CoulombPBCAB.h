@@ -42,9 +42,9 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///source particle set
   ParticleSet& PtclA;
   ///long-range Handler
-  std::unique_ptr<LRHandlerType> AB;
+  std::shared_ptr<LRHandlerType> AB;
   ///long-range derivative handler
-  std::unique_ptr<LRHandlerType> dAB;
+  std::shared_ptr<LRHandlerType> dAB;
   ///locator of the distance table
   const int myTableIndex;
   ///number of species of A particle set
@@ -60,13 +60,13 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///cutoff radius of the short-range part
   RealType myRcut;
   ///radial grid
-  GridType* myGrid;
+  std::shared_ptr<GridType> myGrid;
   ///Always mave a radial functor for the bare coulomb
-  std::unique_ptr<RadFunctorType> V0;
+  std::shared_ptr<RadFunctorType> V0;
   ///Radial functor for bare coulomb, optimized for forces
-  std::unique_ptr<RadFunctorType> fV0;
+  std::shared_ptr<RadFunctorType> fV0;
   ///Radial functor for derivative of bare coulomb, optimized for forces
-  std::unique_ptr<RadFunctorType> dfV0;
+  std::shared_ptr<RadFunctorType> dfV0;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
   int MaxGridPoints;
@@ -86,14 +86,14 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///Short-range potential for each ion
   std::vector<RadFunctorType*> Vat;
   ///Short-range potential for each species
-  std::vector<std::unique_ptr<RadFunctorType>> Vspec;
+  std::vector<std::shared_ptr<RadFunctorType>> Vspec;
   ///Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each ion
   ///Required for force evaluations.
   std::vector<RadFunctorType*> fVat;
   std::vector<RadFunctorType*> fdVat;
   ////Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each species
-  std::vector<std::unique_ptr<RadFunctorType>> fVspec;
-  std::vector<std::unique_ptr<RadFunctorType>> fdVspec;
+  std::vector<std::shared_ptr<RadFunctorType>> fVspec;
+  std::vector<std::shared_ptr<RadFunctorType>> fdVspec;
   /*@{
    * @brief temporary data for pbyp evaluation
    */
@@ -118,8 +118,10 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   Array<TraceReal, 1> Ve_const;
   Array<TraceReal, 1> Vi_const;
 #endif
-  ParticleSet& Peln;
   ParticleSet& Pion;
+  // FIXME: Coulomb class is walker agnositic, it should not record a particular electron particle set.
+  // kept for the trace manager.
+  ParticleSet& Peln;
 
   CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces = false);
 
@@ -169,7 +171,7 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   ///Computes the long-range contribution to the coulomb energy and forces.
   Return_t evalLRwithForces(ParticleSet& P);
   ///Evaluates madelung and background contributions to total energy.
-  Return_t evalConsts(bool report = true);
+  Return_t evalConsts(const ParticleSet& P, bool report = true);
   ///Adds a local pseudopotential channel "ppot" to all source species of type "groupID".
   void add(int groupID, std::unique_ptr<RadFunctorType>&& ppot);
 

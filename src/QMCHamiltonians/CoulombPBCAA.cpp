@@ -24,8 +24,6 @@ namespace qmcplusplus
 {
 CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces)
     : ForceBase(ref, ref),
-      myGrid(0),
-      myGridforce(0),
       is_active(active),
       FirstTime(true),
       myConst(0.0),
@@ -303,14 +301,14 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   myRcut  = AA->get_rc(); //Basis.get_rc();
 
   if (rVs == nullptr)
-    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut, myGrid);
+    rVs = LRCoulombSingleton::createSpline4RbyVs(AA.get(), myRcut);
 
   if (ComputeForces)
   {
     dAA = LRCoulombSingleton::getDerivHandler(P);
     if (rVsforce == nullptr)
     {
-      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut, myGridforce);
+      rVsforce = LRCoulombSingleton::createSpline4RbyVs(dAA.get(), myRcut);
     }
   }
 }
@@ -506,12 +504,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   return res;
 }
 
-
 std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<CoulombPBCAA> myClone = is_active
-      ? std::make_unique<CoulombPBCAA>(qp, is_active, ComputeForces)
-      : std::make_unique<CoulombPBCAA>(*this); //nothing needs to be re-evaluated
-  return myClone;
+  return std::make_unique<CoulombPBCAA>(*this);
 }
 } // namespace qmcplusplus

@@ -62,12 +62,7 @@ void CoulombPBCAA_CUDA::initBreakup(ParticleSet& P, bool cloning)
 
 std::unique_ptr<OperatorBase> CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<CoulombPBCAA_CUDA> myclone = is_active
-      ? std::make_unique<CoulombPBCAA_CUDA>(qp, is_active, true)
-      : std::make_unique<CoulombPBCAA_CUDA>(*this); //nothing needs to be re-evaluated
-
-  myclone->SRSpline = SRSpline;
-  return myclone;
+  return std::make_unique<CoulombPBCAA_CUDA>(*this);
 }
 
 void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)

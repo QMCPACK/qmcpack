@@ -233,27 +233,7 @@ void CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType
 
 std::unique_ptr<OperatorBase> CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<CoulombPBCAB_CUDA> myclone = std::make_unique<CoulombPBCAB_CUDA>(PtclA, qp, true);
-  if (myGrid)
-  {
-    myclone->myGrid = new GridType(*myGrid);
-  }
-  for (int ig = 0; ig < Vspec.size(); ++ig)
-  {
-    if (Vspec[ig])
-    {
-      auto apot = std::unique_ptr<RadFunctorType>{Vspec[ig]->makeClone()};
-      for (int iat = 0; iat < PtclA.getTotalNum(); ++iat)
-      {
-        if (PtclA.GroupID[iat] == ig)
-          myclone->Vat[iat] = apot.get();
-      }
-      myclone->Vspec[ig] = std::move(apot);
-    }
-    myclone->V0Spline      = V0Spline;
-    myclone->SRSplines[ig] = SRSplines[ig];
-  }
-  return myclone;
+  return std::make_unique<CoulombPBCAB_CUDA>(*this);
 }
 
 } // namespace qmcplusplus

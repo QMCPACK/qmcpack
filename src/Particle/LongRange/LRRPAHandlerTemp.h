@@ -73,7 +73,10 @@ struct LRRPAHandlerTemp : public LRHandlerBase
     fillFk(ref.SK->KLists);
   }
 
-  LRHandlerBase* makeClone(ParticleSet& ref) override { return new LRRPAHandlerTemp<Func, BreakupBasis>(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override
+  {
+    return new LRRPAHandlerTemp<Func, BreakupBasis>(*this, ref);
+  }
 
   void initBreakup(ParticleSet& ref) override
   {
@@ -99,7 +102,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
 
   void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
 
-  inline mRealType evaluate(mRealType r, mRealType rinv) override
+  inline mRealType evaluate(mRealType r, mRealType rinv) const override
   {
     mRealType v = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -112,7 +115,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv) override
+  inline mRealType srDf(mRealType r, mRealType rinv) const override
   {
     mRealType df = 0.0;
     //mRealType df = myFunc.df(r, rinv);
@@ -123,7 +126,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r) override
+  inline mRealType evaluateLR(mRealType r) const override
   {
     mRealType vk = 0.0;
     return vk;
@@ -139,7 +142,7 @@ struct LRRPAHandlerTemp : public LRHandlerBase
    */
   inline mRealType evaluate(const std::vector<int>& kshell,
                             const pComplexType* restrict rk1,
-                            const pComplexType* restrict rk2)
+                            const pComplexType* restrict rk2) const
   {
     mRealType vk = 0.0;
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
@@ -157,10 +160,10 @@ struct LRRPAHandlerTemp : public LRHandlerBase
   }
 
   // use what is put in fillFk. Multiplies evalFk by -1
-  inline mRealType evaluate_vlr_k(mRealType k) override { return -1.0 * evalFk(k); }
+  inline mRealType evaluate_vlr_k(mRealType k) const override { return -1.0 * evalFk(k); }
 
 private:
-  inline mRealType evalFk(mRealType k)
+  inline mRealType evalFk(mRealType k) const
   {
     //FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
     mRealType FatK = myFunc.Fk(k, Basis.get_rc());
@@ -169,7 +172,7 @@ private:
     return FatK;
   }
 
-  inline mRealType evalXk(mRealType k)
+  inline mRealType evalXk(mRealType k) const
   {
     //mRealType FatK;
     //FatK = -4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
