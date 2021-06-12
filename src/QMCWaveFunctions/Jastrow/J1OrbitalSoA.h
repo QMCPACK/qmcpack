@@ -407,7 +407,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
         if (J1Unique[jg] == nullptr)
           continue;
         J1Unique[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist.data(), U.data(), dU.data(), d2U.data(),
-                           DistCompressed.data(), DistIndice.data());
+                                  DistCompressed.data(), DistIndice.data());
       }
     }
     else
