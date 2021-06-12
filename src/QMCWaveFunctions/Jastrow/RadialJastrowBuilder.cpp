@@ -20,7 +20,6 @@
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
 #endif
 
-#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
@@ -89,7 +88,6 @@ class JastrowTypeHelper
 public:
   using J1OrbitalType     = J1OrbitalSoA<RadFuncType>;
   using J2OrbitalType     = J2OrbitalSoA<RadFuncType>;
-  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 
@@ -106,7 +104,6 @@ public:
   using J1OrbitalType = J1OrbitalSoA<RadFuncType>;
   using J2OrbitalType = J2OrbitalSoA<RadFuncType>;
 #endif
-  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFuncType>;
   using DiffJ2OrbitalType = DiffTwoBodyJastrowOrbital<RadFuncType>;
 };
 
@@ -335,13 +332,11 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   ReportEngine PRE(ClassName, "createJ1(xmlNodePtr)");
   using RT                = typename RadFuncType::real_type;
   using J1OrbitalType     = typename JastrowTypeHelper<RadFuncType>::J1OrbitalType;
-  using DiffJ1OrbitalType = typename JastrowTypeHelper<RadFuncType>::DiffJ1OrbitalType;
 
   XMLAttrString input_name(cur, "name");
   std::string jname = input_name.empty() ? Jastfunction : input_name;
 
-  auto J1  = std::make_unique<J1OrbitalType>(jname, *SourcePtcl, targetPtcl);
-  auto dJ1 = std::make_unique<DiffJ1OrbitalType>(*SourcePtcl, targetPtcl);
+  auto J1                = std::make_unique<J1OrbitalType>(jname, *SourcePtcl, targetPtcl);
 
   xmlNodePtr kids = cur->xmlChildrenNode;
 
@@ -387,7 +382,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       functor->put(kids);
       app_summary() << std::endl;
       J1->addFunc(ig, functor, jg);
-      dJ1->addFunc(ig, functor, jg);
       success = true;
       if (is_manager())
       {
@@ -405,7 +399,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   }
   if (success)
   {
-    J1->dPsi = std::move(dJ1);
     J1->setOptimizable(Opt);
     return J1;
   }
@@ -426,7 +419,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   using GridType          = LinearGrid<RT>;
   using HandlerType       = LRHandlerBase;
   using J1OrbitalType     = J1OrbitalSoA<RadFunctorType>;
-  using DiffJ1OrbitalType = DiffOneBodyJastrowOrbital<RadFunctorType>;
 
   /*
   using J1OrbitalType = JastrowTypeHelper<RT, RadFunctorType>::J1OrbitalType;
@@ -483,16 +475,13 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   nfunc->initialize(SRA, myGrid);
 
   auto J1                = std::make_unique<J1OrbitalType>(jname, *SourcePtcl, targetPtcl);
-  auto dJ1               = std::make_unique<DiffJ1OrbitalType>(*SourcePtcl, targetPtcl);
 
   SpeciesSet& sSet = SourcePtcl->getSpeciesSet();
   for (int ig = 0; ig < sSet.getTotalNum(); ig++)
   {
     J1->addFunc(ig, nfunc);
-    dJ1->addFunc(ig, nfunc);
   }
 
-  J1->dPsi = std::move(dJ1);
   J1->setOptimizable(Opt);
   return J1;
 }
