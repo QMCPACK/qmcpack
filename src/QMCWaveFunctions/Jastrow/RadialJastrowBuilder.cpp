@@ -330,8 +330,8 @@ template<class RadFuncType>
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createJ1(xmlNodePtr)");
-  using RT                = typename RadFuncType::real_type;
-  using J1OrbitalType     = typename JastrowTypeHelper<RadFuncType>::J1OrbitalType;
+  using RT            = typename RadFuncType::real_type;
+  using J1OrbitalType = typename JastrowTypeHelper<RadFuncType>::J1OrbitalType;
 
   XMLAttrString input_name(cur, "name");
   std::string jname = input_name.empty() ? Jastfunction : input_name;
@@ -360,7 +360,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       rAttrib.add(speciesB, "speciesB");
       rAttrib.add(cusp, "cusp");
       rAttrib.put(kids);
-      auto* functor = new RadFuncType();
+      auto functor = std::make_unique<RadFuncType>();
       functor->setPeriodic(SourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN);
       functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
       functor->setCusp(cusp);
@@ -381,8 +381,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       app_summary() << "    Radial function for element: " << speciesA << std::endl;
       functor->put(kids);
       app_summary() << std::endl;
-      J1->addFunc(ig, functor, jg);
-      success = true;
       if (is_manager())
       {
         char fname[128];
@@ -392,8 +390,10 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
         else
           sprintf(fname, "%s.%s.%s.g%03d.dat", jname.c_str(), NameOpt.c_str(), speciesA.c_str(), getGroupID());
         std::ofstream os(fname);
-        print(*functor, os);
+        print(*functor.get(), os);
       }
+      J1->addFunc(ig, std::move(functor), jg);
+      success = true;
     }
     kids = kids->next;
   }
@@ -413,12 +413,12 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
 template<>
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor>(xmlNodePtr cur)
 {
-  using RT                = RealType;
-  using SplineEngineType  = CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>;
-  using RadFunctorType    = CubicSplineSingle<RT, SplineEngineType>;
-  using GridType          = LinearGrid<RT>;
-  using HandlerType       = LRHandlerBase;
-  using J1OrbitalType     = J1OrbitalSoA<RadFunctorType>;
+  using RT               = RealType;
+  using SplineEngineType = CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>;
+  using RadFunctorType   = CubicSplineSingle<RT, SplineEngineType>;
+  using GridType         = LinearGrid<RT>;
+  using HandlerType      = LRHandlerBase;
+  using J1OrbitalType    = J1OrbitalSoA<RadFunctorType>;
 
   /*
   using J1OrbitalType = JastrowTypeHelper<RT, RadFunctorType>::J1OrbitalType;
@@ -469,7 +469,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   myGrid->set(0, Rcut, npts);
 
   //create the numerical functor
-  RadFunctorType* nfunc          = new RadFunctorType;
+  auto nfunc                     = std::make_unique<RadFunctorType>();
   ShortRangePartAdapter<RT>* SRA = new ShortRangePartAdapter<RT>(myHandler);
   SRA->setRmax(Rcut);
   nfunc->initialize(SRA, myGrid);
@@ -479,7 +479,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   SpeciesSet& sSet = SourcePtcl->getSpeciesSet();
   for (int ig = 0; ig < sSet.getTotalNum(); ig++)
   {
-    J1->addFunc(ig, nfunc);
+    J1->addFunc(ig, std::move(nfunc));
   }
 
   J1->setOptimizable(Opt);

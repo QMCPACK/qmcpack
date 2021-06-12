@@ -72,7 +72,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///Container for \f$F[ig*NIons+jg]\f$
   std::vector<FT*> F;
   ///container for the unique Jastrow functions
-  std::vector<FT*> J1Unique;
+  std::vector<std::unique_ptr<FT>> J1Unique;
 
   std::vector<std::pair<int, int>> OffSet;
   Vector<RealType> dLogPsi;
@@ -93,7 +93,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   {
     for (int i = 0; i < J1Unique.size(); ++i)
       if (F[i] != nullptr)
-        delete J1Unique[i];
+        J1Unique[i].reset();
     delete_iter(gradLogPsi.begin(), gradLogPsi.end());
     delete_iter(lapLogPsi.begin(), lapLogPsi.end());
   }
@@ -104,7 +104,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     Nions     = Ions.getTotalNum();
     NumGroups = Ions.getSpeciesSet().getTotalNum();
     F.resize(std::max(Nions, 4), nullptr);
-    J1Unique.resize(std::max(NumGroups, 4), nullptr);
+    J1Unique.resize(std::max(NumGroups, 4));
     if (NumGroups > 1 && !Ions.IsGrouped)
     {
       NumGroups = 0;
@@ -122,14 +122,14 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     DistIndice.resize(Nions);
   }
 
-  void addFunc(int source_type, FT* afunc, int target_type = -1)
+  void addFunc(int source_type, std::unique_ptr<FT> afunc, int target_type = -1)
   {
     for (int i = 0; i < F.size(); i++)
       if (Ions.GroupID[i] == source_type)
-        F[i] = afunc;
+        F[i] = afunc.get();
     //if (J1Unique[source_type] != nullptr)
     //  delete J1Unique[source_type];
-    J1Unique[source_type] = afunc;
+    J1Unique[source_type] = std::move(afunc);
   }
 
   void recompute(const ParticleSet& P) override
@@ -166,7 +166,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       for (int iat = 0; iat < Nions; iat++)
       {
         int gid    = Ions.GroupID[iat];
-        auto* func = J1Unique[gid];
+        auto* func = J1Unique[gid].get();
         if (func != nullptr)
         {
           RealType r    = dist[iat];
@@ -259,7 +259,7 @@ struct J1OrbitalSoA : public WaveFunctionComponent
       for (size_t i = 0; i < ns; ++i)
       {
         FT* func = F[i];
-        if (func == 0)
+        if (func == nullptr)
           continue;
         int first(OffSet[i].first);
         int last(OffSet[i].second);
@@ -524,7 +524,10 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     for (size_t i = 0, n = J1Unique.size(); i < n; ++i)
     {
       if (J1Unique[i] != nullptr)
-        j1copy->addFunc(i, new FT(*F[i]));
+      {
+        auto fc = std::make_unique<FT>(*F[i]);
+        j1copy->addFunc(i, std::move(fc));
+      }
     }
     j1copy->setVars(myVars);
     j1copy->OffSet = OffSet;
