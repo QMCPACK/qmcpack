@@ -180,10 +180,11 @@ public:
   //  base_type(rhs), m_Y2(rhs.m_Y2)
   //  { }
 
-  OneDimCubicSpline(const grid_type* gt = 0) : base_type(gt) {}
+  OneDimCubicSpline(std::unique_ptr<grid_type> gt = std::unique_ptr<grid_type>()) : base_type(std::move(gt)) {}
 
   template<class VV>
-  OneDimCubicSpline(const grid_type* gt, const VV& nv) : base_type(gt), first_deriv(0.0), last_deriv(0.0)
+  OneDimCubicSpline(std::unique_ptr<grid_type> gt, const VV& nv)
+      : base_type(std::move(gt)), first_deriv(0.0), last_deriv(0.0)
   {
     m_Y.resize(nv.size());
     m_Y2.resize(nv.size());

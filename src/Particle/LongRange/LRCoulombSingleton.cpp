@@ -187,7 +187,7 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVs_temp(LRHandlerBase* aLR
   }
   v[0]      = 2.0 * v[1] - v[2];
   v[ng - 1] = 0.0;
-  auto V0   = std::make_unique<func_type>(agrid, v);
+  auto V0   = std::make_unique<func_type>(agrid->makeClone(), v);
   T deriv   = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
   V0->spline(0, deriv, ng - 1, 0.0);
   return V0;
@@ -224,7 +224,7 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(LRHandlerBase
   }
   v[0]      = 2.0 * v[1] - v[2];
   v[ng - 1] = 0.0;
-  auto dV0  = std::make_unique<func_type>(agrid, v);
+  auto dV0  = std::make_unique<func_type>(agrid->makeClone(), v);
   T deriv   = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
   dV0->spline(0, deriv, ng - 1, 0.0);
   return dV0;

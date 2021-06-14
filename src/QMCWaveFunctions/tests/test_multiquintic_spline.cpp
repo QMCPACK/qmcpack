@@ -62,11 +62,11 @@ TEST_CASE("MultiQuinticSpline", "[wavefunction][LCAO]")
   auto agrid = std::make_unique<LogGrid<double>>();
   agrid->set(.1, 1.0, 5);
 
-  OneDimQuinticSpline<double> spline1(agrid.get());
+  OneDimQuinticSpline<double> spline1(agrid->makeClone());
   spline1.set(data);
   spline1.spline();
 
-  OneDimQuinticSpline<double> spline2(agrid.get());
+  OneDimQuinticSpline<double> spline2(agrid->makeClone());
   spline2.set(data2);
   spline2.spline();
 

@@ -54,10 +54,11 @@ public:
   value_type last_deriv;
   value_type ConstValue;
 
-  OneDimQuinticSpline(const grid_type* gt = 0) : base_type(gt) {}
+  OneDimQuinticSpline(std::unique_ptr<grid_type> gt = std::unique_ptr<grid_type>()) : base_type(std::move(gt)) {}
 
   template<class VV>
-  OneDimQuinticSpline(const grid_type* gt, const VV& nv) : base_type(gt), first_deriv(0.0), last_deriv(0.0)
+  OneDimQuinticSpline(std::unique_ptr<grid_type> gt, const VV& nv)
+      : base_type(std::move(gt)), first_deriv(0.0), last_deriv(0.0)
   {
     int n = nv.size();
     m_Y.resize(nv.size());

@@ -28,7 +28,7 @@ namespace qmcplusplus
 TEST_CASE("double_1d_grid_functor", "[numerics]")
 {
   LinearGrid<double> grid;
-  OneDimGridFunctor<double> f(&grid);
+  OneDimGridFunctor<double> f(grid.makeClone());
 
   grid.set(0.0, 1.0, 3);
 

@@ -367,7 +367,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
         int ng          = npoints - 1;
         RealType rf     = 5.0;
         ng              = static_cast<int>(rf * 100) + 1; //use 1e-2 resolution
-        GridType* agrid = new LinearGrid<RealType>;
+        auto agrid      = std::make_unique<LinearGrid<RealType>>();
         agrid->set(0, rf, ng);
         std::vector<RealType> pp_temp(ng);
         pp_temp[0] = 0.0;
@@ -377,7 +377,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
           pp_temp[j] = r * zinv * inFunc.splint(r);
         }
         pp_temp[ng - 1] = 1.0;
-        auto app        = std::make_unique<RadialPotentialType>(agrid, pp_temp);
+        auto app        = std::make_unique<RadialPotentialType>(std::move(agrid), pp_temp);
         app->spline();
         localPot[ig] = std::move(app);
         app_log() << "    LocalECP l=" << angmom << std::endl;
@@ -390,7 +390,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
         if (!mynnloc)
           mynnloc = std::make_unique<NonLocalECPComponent>();
         RealType rf     = inFunc.rmax();
-        GridType* agrid = new LinearGrid<RealType>;
+        auto agrid      = std::make_unique<LinearGrid<RealType>>();
         int ng          = static_cast<int>(rf * 100) + 1;
         agrid->set(0.0, rf, ng);
         app_log() << "    NonLocalECP l=" << angmom << " rmax = " << rf << std::endl;
@@ -402,7 +402,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
         {
           pp_temp[j] = inFunc.splint((*agrid)[j]);
         }
-        RadialPotentialType* app = new RadialPotentialType(agrid, pp_temp);
+        auto app = new RadialPotentialType(std::move(agrid), pp_temp);
         app->spline();
         mynnloc->add(angmom, app);
         lmax = std::max(lmax, angmom);

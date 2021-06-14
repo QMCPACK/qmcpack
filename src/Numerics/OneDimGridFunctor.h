@@ -50,7 +50,7 @@ struct OneDimGridFunctor
   /** constructor
    *@param gt a radial grid. The pointer is treated as a reference
    */
-  OneDimGridFunctor(const grid_type* gt = 0) : m_grid(gt ? gt->makeClone() : nullptr)
+  OneDimGridFunctor(std::unique_ptr<grid_type> gt = std::unique_ptr<grid_type>()) : m_grid(std::move(gt))
   {
     if (m_grid)
       resize(m_grid->size());
@@ -59,7 +59,7 @@ struct OneDimGridFunctor
   OneDimGridFunctor(const OneDimGridFunctor& a)
   {
     if (a.m_grid)
-      m_grid.reset(a.m_grid->makeClone());
+      m_grid = a.m_grid->makeClone();
     Y           = a.Y;
     dY          = a.dY;
     d2Y         = a.d2Y;
