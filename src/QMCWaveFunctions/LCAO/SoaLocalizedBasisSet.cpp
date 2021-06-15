@@ -23,7 +23,7 @@ namespace qmcplusplus
 {
 template<class COT, typename ORBT>
 SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
-    : ions_(ions), myTableIndex(els.addTable(ions, true)), SuperTwist(0.0)
+    : ions_(ions), myTableIndex(els.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME)), SuperTwist(0.0)
 {
   NumCenters = ions.getTotalNum();
   NumTargets = els.getTotalNum();
