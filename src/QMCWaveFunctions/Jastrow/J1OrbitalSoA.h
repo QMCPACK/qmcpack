@@ -102,8 +102,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   {
     Nions     = Ions.getTotalNum();
     NumGroups = Ions.getSpeciesSet().getTotalNum();
-    F.resize(std::max(Nions, 4), nullptr);
-    J1Unique.resize(std::max(NumGroups, 4));
+    F.resize(Nions, nullptr);
+    J1Unique.resize(NumGroups);
     if (NumGroups > 1 && !Ions.IsGrouped)
     {
       NumGroups = 0;
