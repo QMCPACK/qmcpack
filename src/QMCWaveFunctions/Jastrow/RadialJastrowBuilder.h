@@ -65,6 +65,9 @@ private:
   std::unique_ptr<WaveFunctionComponent> createJ1(xmlNodePtr cur);
 
   template<class RadFuncType, unsigned Implementation = detail::CPU>
+  std::unique_ptr<WaveFunctionComponent> createJ1Spin(xmlNodePtr cur);
+
+  template<class RadFuncType, unsigned Implementation = detail::CPU>
   std::unique_ptr<WaveFunctionComponent> createJ2(xmlNodePtr cur);
 
   template<class RadFuncType>
