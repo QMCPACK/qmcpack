@@ -82,7 +82,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 #ifdef ENABLE_OFFLOAD
     NLPP_algo = "batched";
 #else
-    NLPP_algo = omp_get_nested() ? "batched" : "non-batched";
+    NLPP_algo = "non-batched";
 #endif
 
   bool doForces = (forces == "yes") || (forces == "true");
