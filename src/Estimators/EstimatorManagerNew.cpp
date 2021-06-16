@@ -27,7 +27,6 @@
 #include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"

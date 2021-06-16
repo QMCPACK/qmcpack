@@ -18,7 +18,6 @@
 #include "Message/OpenMP.h"
 #include "OhmmsData/AttributeSet.h"
 #include "RandomNumberControl.h"
-#include "Utilities/RandomGeneratorIO.h"
 #include "Utilities/Timer.h"
 #include "hdf/HDFVersion.h"
 #include "hdf/hdf_archive.h"
