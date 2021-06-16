@@ -17,7 +17,6 @@
 #include "HDFWalkerInputManager.h"
 #include "OhmmsData/AttributeSet.h"
 #if defined(HAVE_LIBHDF5)
-#include "Particle/HDFWalkerInput_0_0.h"
 #include "Particle/HDFWalkerInput_0_4.h"
 #endif
 #include "Message/Communicate.h"
@@ -57,28 +56,7 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
     cfile   = win.FileName;
   }
   else
-  {
-    //missing version or old file
-    if (froot[0] != '0') //use nprocs
-    {
-      anode = pid;
-      if (nprocs == 1)
-        cfile = froot;
-      else
-      {
-        char* h5name = new char[froot.size() + 10];
-        sprintf(h5name, "%s.p%03d", froot.c_str(), pid);
-        cfile = h5name;
-        delete[] h5name;
-      }
-    }
-    int pid_target = (anode < 0) ? pid : anode;
-    if (pid_target == pid && cfile[0] != '0')
-    {
-      HDFWalkerInput_0_0 win(targetW, cfile);
-      success = win.put(cur);
-    }
-  }
+    myComm->barrier_and_abort("Outdated restart file!");
   if (success)
     CurrentFileRoot = cfile;
   return success;

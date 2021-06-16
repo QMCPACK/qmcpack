@@ -48,7 +48,6 @@ set(PARTICLEIO
     ParticleIO/XMLParticleIO.cpp
     ParticleIO/ParticleIOUtility.cpp
     HDFWalkerOutput.cpp
-    HDFWalkerInput_0_0.cpp
     HDFWalkerInput_0_4.cpp)
 
 if(OHMMS_DIM MATCHES 3)
