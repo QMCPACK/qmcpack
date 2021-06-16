@@ -20,7 +20,6 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/qmc_common.h"

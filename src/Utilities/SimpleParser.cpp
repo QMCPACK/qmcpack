@@ -155,13 +155,13 @@ int getwordsWithMergedNumbers(std::vector<std::string>& slist,
 void readXmol(std::istream& fxmol, double* data, int numvar)
 {
   std::vector<std::string> slist;
-  int argc       = getwords(slist, fxmol);
+  getwords(slist, fxmol);
   unsigned natom = atoi(slist.front().c_str());
-  argc           = getwords(slist, fxmol);
+  getwords(slist, fxmol);
   int ii         = 0;
   for (int i = 0; i < natom; i++)
   {
-    argc = getwords(slist, fxmol);
+    getwords(slist, fxmol);
     for (int ivar = 1; ivar <= numvar; ivar++)
     {
       data[ii++] = atof(slist[ivar].c_str());

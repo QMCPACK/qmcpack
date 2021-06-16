@@ -17,11 +17,8 @@
 #define QMCPLUSPLUS_RADIAL_NUMERICALGRIDORBITALBUILDER_H
 
 #include "Configuration.h"
-#include "OhmmsData/HDFAttribIO.h"
 #include "hdf/HDFVersion.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include "Numerics/LibxmlNumericIO.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/GaussianBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
@@ -308,7 +305,7 @@ void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive& hin)
   int L          = m_nlms[1];
   using gto_type = GaussianCombo<OHMMS_PRECISION_FULL>;
   auto gset      = std::make_unique<gto_type>(L, Normalized);
-  gset->putBasisGroupH5(hin);
+  gset->putBasisGroupH5(hin, *myComm);
   //at least gamess derived xml seems to provide the max its grid goes to
   //So in priniciple this 100 should be coming in from input
   //m_rcut seems like it once served this purpose but is somehow

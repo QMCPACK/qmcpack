@@ -66,9 +66,6 @@ private:
   std::stack<hid_t> group_id;
 
 public:
-  ///Public pointer to communicator. Ugly. Relation between  MPI, hdf_archive, and other classed to be rethought.
-  Communicate* myComm;
-
   /** constructor
    * @param c communicator
    * @param request_pio turns on parallel I/O,
