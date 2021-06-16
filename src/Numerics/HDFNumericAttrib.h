@@ -413,6 +413,8 @@ struct HDFAttribIO<std::vector<TinyVector<double, D>>> : public HDFAttribIOBase
       H5Dclose(h1);
     }
     H5Eset_auto2(H5E_DEFAULT, func, client_data);
+    if (ret < 0)
+      throw std::runtime_error("HDFAttribIO<std::vector<TinyVector<double, D>>>::read failed!");
   }
 };
 

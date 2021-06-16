@@ -336,7 +336,7 @@ struct SplineSetReader : public BsplineReaderBase
 
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
-    // old implemenation burried in the history
+    // old implementation buried in the history
     myComm->barrier_and_abort("SplineSetReaderP initialize_spline_psi_r implementation not finished.");
   }
 };
