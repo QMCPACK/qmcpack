@@ -88,14 +88,6 @@ public:
    */
   inline PoolType& getPool() { return myPool; }
 
-  /** create a target particleset and other associated particlesets
-   * @param cur xml node
-   * @return A ParticleSet
-   *
-   * Introduced to avoid conflicting definitions of the particlesets
-   */
-  ParticleSet* createESParticleSet(xmlNodePtr cur, const std::string& target, ParticleSet* qp);
-
   /** randomize a particleset particleset/@random='yes' && particleset@random_source exists
    */
   void randomize();

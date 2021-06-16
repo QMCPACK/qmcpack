@@ -50,10 +50,6 @@ set(PARTICLEIO
     HDFWalkerOutput.cpp
     HDFWalkerInput_0_4.cpp)
 
-if(OHMMS_DIM MATCHES 3)
-  set(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
-endif(OHMMS_DIM MATCHES 3)
-
 if(USE_OBJECT_TARGET)
   add_library(qmcparticle OBJECT ${PARTICLE} ${PARTICLEIO})
 else(USE_OBJECT_TARGET)
