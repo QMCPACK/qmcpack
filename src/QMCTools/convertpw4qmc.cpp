@@ -12,8 +12,13 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include "config.h"
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 #include "XmlRep.h"
 #include "WriteEshdf.h"
+
 using namespace std;
 
 void convertToVecStrings(int argc, char* argv[], std::vector<std::string>& vec)

@@ -27,7 +27,7 @@
 #include <stack>
 #include <bitset>
 #ifdef HAVE_MPI
-#include "mpi3/communicator.hpp"
+namespace boost { namespace mpi3 { class communicator; } }
 #endif
 
 class Communicate;
@@ -65,6 +65,13 @@ private:
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
 
+  ///set the access property
+  void set_access_plist(Communicate* comm, bool request_pio);
+#ifdef HAVE_MPI
+  void set_access_plist(boost::mpi3::communicator& comm, bool request_pio);
+#endif
+  void set_access_plist();
+
 public:
   /** constructor
    * @param c communicator
@@ -78,7 +85,7 @@ public:
   {
     H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
     H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
-    set_access_plist(request_pio, c);
+    set_access_plist(c, request_pio);
   }
 
   hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
@@ -89,13 +96,6 @@ public:
   }
   ///destructor
   ~hdf_archive();
-
-  ///set the access property
-  void set_access_plist(bool request_pio, Communicate* comm);
-#ifdef HAVE_MPI
-  void set_access_plist(bool request_pio, boost::mpi3::communicator& comm);
-#endif
-  void set_access_plist();
 
   ///return true if parallel i/o
   inline bool is_parallel() const { return Mode[IS_PARALLEL]; }
