@@ -112,7 +112,7 @@ struct ConservedEnergy : public OperatorBase
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
   {
     // Value of LocalEnergy is not used in caller because this is auxiliary H.
-    std::vector<Walker_t*>& walkers = W.WalkerList;
+    auto& walkers = W.WalkerList;
     for (int iw = 0; iw < walkers.size(); iw++)
     {
       Walker_t& w = *(walkers[iw]);

@@ -874,11 +874,11 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivs(ParticleSet& 
 }
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministic(ParticleSet& P,
-                                                                   ParticleSet& ions,
-                                                                   TrialWaveFunction& psi,
-                                                                   ParticleSet::ParticlePos_t& hf_term,
-                                                                   ParticleSet::ParticlePos_t& pulay_terms,
-                                                                   ParticleSet::ParticlePos_t& wf_grad)
+                                                                                ParticleSet& ions,
+                                                                                TrialWaveFunction& psi,
+                                                                                ParticleSet::ParticlePos_t& hf_term,
+                                                                                ParticleSet::ParticlePos_t& pulay_terms,
+                                                                                ParticleSet::ParticlePos_t& wf_grad)
 {
   ParticleSet::ParticleGradient_t wfgradraw_(ions.getTotalNum());
   wfgradraw_           = 0.0;
@@ -1019,8 +1019,8 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
 void QMCHamiltonian::evaluate(MCWalkerConfiguration& W, std::vector<RealType>& energyVector)
 {
   ScopedTimer local_timer(ham_timer_);
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  int nw                          = walkers.size();
+  auto& walkers = W.WalkerList;
+  int nw        = walkers.size();
   if (LocalEnergyVector.size() != nw)
   {
     LocalEnergyVector.resize(nw);
@@ -1060,8 +1060,8 @@ void QMCHamiltonian::evaluate(MCWalkerConfiguration& W,
                               std::vector<std::vector<NonLocalData>>& Txy)
 {
   ScopedTimer local_timer(ham_timer_);
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  int nw                          = walkers.size();
+  auto& walkers = W.WalkerList;
+  int nw        = walkers.size();
   if (LocalEnergyVector.size() != nw)
   {
     LocalEnergyVector.resize(nw);

@@ -158,14 +158,14 @@ void WaveFunctionTester::runCloneTest()
     int nat = W.getTotalNum();
     MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);
     //pick the first walker
-    MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+    MCWalkerConfiguration::Walker_t& awalker = **W.begin();
     //copy the properties of the working walker
-    Properties = awalker->Properties;
-    W.R        = awalker->R;
+    Properties = awalker.Properties;
+    W.R        = awalker.R;
     W.update();
     ValueType logpsi1 = Psi.evaluateLog(W);
     RealType eloc1    = H.evaluate(W);
-    w_clone->R        = awalker->R;
+    w_clone->R        = awalker.R;
     w_clone->update();
     ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);
     RealType eloc2    = h_clone->evaluate(*w_clone);
@@ -173,7 +173,7 @@ void WaveFunctionTester::runCloneTest()
     app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
     app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << std::endl;
     app_log() << "Testing pbyp functions " << std::endl;
-    Walker_t::WFBuffer_t& wbuffer(awalker->DataSet);
+    Walker_t::WFBuffer_t& wbuffer(awalker.DataSet);
     wbuffer.clear();
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     Psi.registerData(W, wbuffer);
@@ -221,10 +221,10 @@ void WaveFunctionTester::printEloc()
   //    std::cout <<"2: " <<source.R[2] << std::endl;
   MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //copy the properties of the working walker
-  Properties = awalker->Properties;
-  W.R        = awalker->R;
+  Properties = awalker.Properties;
+  W.R        = awalker.R;
   W.update();
   //ValueType psi = Psi.evaluate(W);
   ValueType logpsi = Psi.evaluateLog(W);
@@ -926,7 +926,7 @@ void WaveFunctionTester::runBasicTest()
     fout << "Walker # " << nconfig << std::endl;
     std::stringstream fail_log1;
     bool ignore    = false;
-    bool this_okay = checkGradientAtConfiguration(*Wit, fail_log1, ignore);
+    bool this_okay = checkGradientAtConfiguration(Wit->get(), fail_log1, ignore);
     if (ignore)
     {
       nignore++;
@@ -1430,12 +1430,12 @@ void WaveFunctionTester::runGradSourceTest()
   ParticleSet::ParticlePos_t deltaR(nat);
   MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //copy the properties of the working walker
-  Properties = awalker->Properties;
+  Properties = awalker.Properties;
   //sample a new walker configuration and copy to ParticleSet::R
   //makeGaussRandom(deltaR);
-  W.R = awalker->R;
+  W.R = awalker.R;
   //W.R += deltaR;
   W.update();
   //ValueType psi = Psi.evaluate(W);
@@ -1578,12 +1578,12 @@ void WaveFunctionTester::runZeroVarianceTest()
   ParticleSet::ParticlePos_t deltaR(nat);
   MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //copy the properties of the working walker
-  Properties = awalker->Properties;
+  Properties = awalker.Properties;
   //sample a new walker configuration and copy to ParticleSet::R
   //makeGaussRandom(deltaR);
-  W.R = awalker->R;
+  W.R = awalker.R;
   //W.R += deltaR;
   W.update();
   //ValueType psi = Psi.evaluate(W);
@@ -1685,11 +1685,11 @@ void WaveFunctionTester::runDerivTest()
   int nat = W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //copy the properties of the working walker
-  Properties = awalker->Properties;
+  Properties = awalker.Properties;
   //sample a new walker configuration and copy to ParticleSet::R
-  W.R = awalker->R + deltaR;
+  W.R = awalker.R + deltaR;
 
   fout << "Position " << std::endl << W.R << std::endl;
 
@@ -1794,11 +1794,11 @@ void WaveFunctionTester::runDerivNLPPTest()
   int nat = W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties(0,0,1,WP::MAXPROPERTIES);;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //copy the properties of the working walker
-  Properties = awalker->Properties;
+  Properties = awalker.Properties;
   //sample a new walker configuration and copy to ParticleSet::R
-  W.R = awalker->R + deltaR;
+  W.R = awalker.R + deltaR;
 
   //W.R += deltaR;
   W.update();
@@ -1914,12 +1914,12 @@ void WaveFunctionTester::runDerivCloneTest()
   int nat = W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //   MCWalkerConfiguration::Walker_t* bwalker = *(w_clone->begin());
   //   bwalker->R = awalker->R;
-  W.R = awalker->R;
+  W.R = awalker.R;
   W.update();
-  w_clone->R = awalker->R;
+  w_clone->R = awalker.R;
   w_clone->update();
   opt_variables_type wfVars;
   //build optimizables from the wavefunction

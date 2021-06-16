@@ -154,8 +154,8 @@ void NonLocalECPotential_CUDA::resizeCUDA(int nw)
 
 void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  int nw                          = walkers.size();
+  auto& walkers = W.WalkerList;
+  int nw        = walkers.size();
   if (CurrentNumWalkers < nw)
     resizeCUDA(nw);
   std::vector<RealType> vrad;
@@ -339,8 +339,8 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
                                          std::vector<RealType>& LocalEnergy,
                                          std::vector<std::vector<NonLocalData>>& Txy)
 {
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  int nw                          = walkers.size();
+  auto& walkers = W.WalkerList;
+  int nw        = walkers.size();
   if (CurrentNumWalkers < nw)
     resizeCUDA(nw);
   std::vector<RealType> vrad;
