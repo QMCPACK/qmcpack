@@ -16,8 +16,8 @@
 
 #ifndef QMCPLUSPLUS_POLYNOMIAL3D_FUNCTOR_H
 #define QMCPLUSPLUS_POLYNOMIAL3D_FUNCTOR_H
+
 #include "Numerics/OptimizableFunctorBase.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/LinearFit.h"
@@ -988,7 +988,6 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
       xmlCoefs = xmlCoefs->next;
     }
     reset_gamma();
-    //print();
     return true;
   }
 
@@ -996,6 +995,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
   {
     if (notOpt)
       return;
+
     for (int i = 0; i < Parameters.size(); ++i)
     {
       int loc = myVars.where(i);
@@ -1003,58 +1003,16 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
         Parameters[i] = std::real( myVars[i] = active[loc] );
       }
     }
+
     if (ResetCount++ == 100)
-    {
       ResetCount = 0;
-      //print();
-    }
+
     reset_gamma();
   }
 
   void checkInVariables(opt_variables_type& active) { active.insertFrom(myVars); }
 
   void checkOutVariables(const opt_variables_type& active) { myVars.getIndex(active); }
-
-  void print()
-  {
-    const int N       = 100;
-    std::string fname = iSpecies + ".J3.h5";
-    hid_t hid         = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-    Array<real_type, 3> val(N, N, N);
-    for (int i = 0; i < N; i++)
-    {
-      double r_12 = (real_type)i / (real_type)(N - 1);
-      for (int j = 0; j < N; j++)
-      {
-        double r_1I = (real_type)j / (real_type)(N - 1) * 0.5 * cutoff_radius;
-        for (int k = 0; k < N; k++)
-        {
-          double r_2I  = (real_type)k / (real_type)(N - 1) * 0.5 * cutoff_radius;
-          double rmin  = std::abs(r_1I - r_2I);
-          double rmax  = std::abs(r_1I + r_2I);
-          double r     = rmin + r_12 * (rmax - rmin);
-          val(i, j, k) = evaluate(r, r_1I, r_2I);
-        }
-      }
-    }
-    // HDFAttribIO<Array<real_type,3> > coefs_attrib (SplineCoefs);
-    // HDFAttribIO<Array<real_type,3> > param_attrib (ParamArray);
-    Array<double, 3> val_DP(N, N, N);
-    val_DP = val;
-    HDFAttribIO<Array<double, 3>> val_attrib(val_DP);
-    val_attrib.write(hid, "val");
-    // coefs_attrib.write (hid, "coefs");
-    // param_attrib.write (hid, "params");
-    H5Fclose(hid);
-    // std::string fname = (elementType != "") ? elementType : pairType;
-    // fname = fname + ".dat";
-    // //cerr << "Writing " << fname << " file.\n";
-    // FILE *fout = fopen (fname.c_str(), "w");
-    // for (double r=0.0; r<cutoff_radius; r+=0.001)
-    // 	fprintf (fout, "%8.3f %16.10f\n", r, evaluate(r));
-    // fclose(fout);
-  }
-
 
   void print(std::ostream& os)
   {
