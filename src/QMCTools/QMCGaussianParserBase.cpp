@@ -18,7 +18,6 @@
 #include "QMCGaussianParserBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include <iterator>
 #include <algorithm>
 #include <numeric>

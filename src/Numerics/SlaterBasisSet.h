@@ -118,7 +118,7 @@ struct SlaterCombo
   }
 
   bool putBasisGroup(xmlNodePtr cur);
-  bool putBasisGroupH5(hdf_archive& hin)
+  bool putBasisGroupH5(hdf_archive& hin, Communicate& myComm)
   {
     APP_ABORT(" Error: Slater Orbitals with HDF5 not implemented. Please contact developers. Aborting.\n");
     return true;

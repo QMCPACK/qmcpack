@@ -24,7 +24,6 @@
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTableData.h"
 #include <fftw3.h>
