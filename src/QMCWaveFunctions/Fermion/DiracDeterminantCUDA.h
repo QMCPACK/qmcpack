@@ -253,7 +253,7 @@ public:
                 std::vector<GradType>& grad,
                 std::vector<ValueType>& lapl);
 
-  void ratio(std::vector<Walker_t*>& walkers,
+  void ratio(std::vector<std::unique_ptr<Walker_t>>& walkers,
              std::vector<int>& iatList,
              std::vector<PosType>& rNew,
              std::vector<ValueType>& psi_ratios,

@@ -63,9 +63,9 @@ std::unique_ptr<OperatorBase> MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunc
 void MPC_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
   init_Acuda();
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  const int nw                    = walkers.size();
-  const int N                     = NParticles;
+  auto& walkers = W.WalkerList;
+  const int nw  = walkers.size();
+  const int N   = NParticles;
   if (SumGPU.size() < nw)
   {
     SumGPU.resize(nw, 1.25);

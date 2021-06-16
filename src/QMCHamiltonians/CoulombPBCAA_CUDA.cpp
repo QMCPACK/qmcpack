@@ -85,7 +85,7 @@ void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)
 
 void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  std::vector<Walker_t*>& walkers = W.WalkerList;
+  auto& walkers = W.WalkerList;
   // Short-circuit for constant contribution (e.g. fixed ions)
   if (!is_active)
   {

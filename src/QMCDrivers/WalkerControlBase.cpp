@@ -299,7 +299,7 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
 int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
 {
   MCWalkerConfiguration::iterator it(W.begin());
-  std::vector<Walker_t*> good_rn;
+  std::vector<std::unique_ptr<Walker_t>> good_rn;
   std::vector<int> ncopy_rn;
   NumWalkers = 0;
   MCWalkerConfiguration::iterator it_end(W.end());
@@ -353,19 +353,19 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
     if ((nc) && (inFN))
     {
       NumWalkers += nc;
-      good_w.push_back(*it);
+      good_w.push_back(std::move(*it));
       ncopy_w.push_back(nc - 1);
     }
     else if (nc)
     {
       NumWalkers += nc;
       nrn += nc;
-      good_rn.push_back(*it);
+      good_rn.push_back(std::move(*it));
       ncopy_rn.push_back(nc - 1);
     }
     else
     {
-      bad_w.push_back(*it);
+      bad_w.push_back(std::move(*it));
     }
     ++it;
   }
@@ -400,7 +400,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
     int indy(0);
     while (it != it_end)
     {
-      good_w.push_back(*it);
+      good_w.push_back(std::move(*it));
       ncopy_w.push_back(ncopy_rn[indy]);
       it++, indy++;
     }
@@ -442,7 +442,7 @@ int WalkerControlBase::applyNmaxNmin(int current_population)
                           << "Removing good walkers." << std::endl;
             do
             {
-              bad_w.push_back(good_w.back());
+              bad_w.push_back(std::move(good_w.back()));
               good_w.pop_back();
               ncopy_w.pop_back();
               --n_remove;
@@ -533,7 +533,7 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
       }
       else
       {
-        good_w.push_back(bad_w.back());
+        good_w.push_back(std::move(bad_w.back()));
         bad_w.pop_back();
       }
       copy_list.push_back(i);
@@ -546,7 +546,7 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
     auto& wRef    = good_w[copy_list[i - size_good_w]];
     auto& awalker = good_w[i];
     if (awalker == nullptr)
-      awalker = new Walker_t(*wRef);
+      awalker = std::make_unique<Walker_t>(*wRef);
     else
       *awalker = *wRef;
     // not fully sure this is correct or even used
@@ -556,11 +556,7 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 
   //clear the WalkerList to populate them with the good walkers
   W.clear();
-  W.insert(W.begin(), good_w.begin(), good_w.end());
-
-  //remove bad walkers if there are any left
-  for (int i = 0; i < bad_w.size(); i++)
-    delete bad_w[i];
+  W.insert(W.begin(), std::make_move_iterator(good_w.begin()), std::make_move_iterator(good_w.end()));
 
   //clear good_w and ncopy_w for the next branch
   good_w.clear();
