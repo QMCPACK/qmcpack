@@ -39,9 +39,6 @@ namespace qmcplusplus
 {
 TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][dmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   MCWalkerConfiguration elec;
 
@@ -134,9 +131,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dmc]")
 
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   MCWalkerConfiguration elec;
 

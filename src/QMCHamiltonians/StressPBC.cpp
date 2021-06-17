@@ -83,11 +83,10 @@ void StressPBC::initBreakup(ParticleSet& P)
   }
 
   for (int spec = 0; spec < NumSpeciesA; spec++) {}
-  RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
-    totQ += Zat[iat] = Zspec[PtclA.GroupID[iat]];
+    Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
-    totQ += Qat[iat] = Qspec[P.GroupID[iat]];
+    Qat[iat] = Qspec[P.GroupID[iat]];
 
   AA = LRCoulombSingleton::getDerivHandler(P);
 }

@@ -267,21 +267,21 @@ void WaveFunctionTester::printEloc()
       //        W.R[closestElectron[iat]]=0.0;
       W.R[closestElectron[iat]][0] += x;
       W.update();
-      ValueType logpsi_p = Psi.evaluateLog(W);
+      Psi.evaluateLog(W);
       ValueType ene      = H.evaluate(W);
       out << ene << "  ";
       W.R[closestElectron[iat]] = source.R[iat];
       //        W.R[closestElectron[iat]]=0.0;
       W.R[closestElectron[iat]][1] += x;
       W.update();
-      logpsi_p = Psi.evaluateLog(W);
+      Psi.evaluateLog(W);
       ene      = H.evaluate(W);
       out << ene << "  ";
       W.R[closestElectron[iat]] = source.R[iat];
       //        W.R[closestElectron[iat]]=0.0;
       W.R[closestElectron[iat]][2] += x;
       W.update();
-      logpsi_p = Psi.evaluateLog(W);
+      Psi.evaluateLog(W);
       ene      = H.evaluate(W);
       out << ene << "  ";
       W.R[closestElectron[iat]] = tempR;
@@ -1696,7 +1696,7 @@ void WaveFunctionTester::runDerivTest()
   //W.R += deltaR;
   W.update();
   //ValueType psi = Psi.evaluate(W);
-  ValueType logpsi = Psi.evaluateLog(W);
+  Psi.evaluateLog(W);
   RealType eloc    = H.evaluate(W);
   app_log() << "  HamTest "
             << "  Total " << eloc << std::endl;
@@ -1734,7 +1734,7 @@ void WaveFunctionTester::runDerivTest()
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
-  logpsi = Psi.evaluateLog(W);
+  Psi.evaluateLog(W);
 
   //reuse the sphere
   H.setPrimary(false);
@@ -1803,7 +1803,7 @@ void WaveFunctionTester::runDerivNLPPTest()
   //W.R += deltaR;
   W.update();
   //ValueType psi = Psi.evaluate(W);
-  ValueType logpsi = Psi.evaluateLog(W);
+  Psi.evaluateLog(W);
   RealType eloc    = H.evaluate(W);
 
   app_log() << "  HamTest "
@@ -1844,7 +1844,7 @@ void WaveFunctionTester::runDerivNLPPTest()
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
 
-  logpsi = Psi.evaluateLog(W);
+  Psi.evaluateLog(W);
 
   //reuse the sphere for non-local pp
   H.setPrimary(false);

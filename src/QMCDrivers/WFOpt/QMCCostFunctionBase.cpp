@@ -162,8 +162,6 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << std::endl;
   // app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << std::endl;
   // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << std::endl;
-  Return_rt wgt_var = SumValue[SUM_WGTSQ] - SumValue[SUM_WGT] * SumValue[SUM_WGT];
-  wgt_var *= wgtinv;
   CostValue             = 0.0;
   const Return_rt small = 1.0e-10;
   if (std::abs(w_abs) > small)

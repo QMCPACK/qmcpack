@@ -214,10 +214,9 @@ int QMCHamiltonian::addObservables(ParticleSet& P)
     H[i]->addObservables(Observables, P.Collectables);
   for (int i = 0; i < auxH.size(); ++i)
     auxH[i]->addObservables(Observables, P.Collectables);
-  int last_obs;
   myIndex = P.PropertyList.add(Observables.Names[0]);
   for (int i = 1; i < Observables.size(); ++i)
-    last_obs = P.PropertyList.add(Observables.Names[i]);
+    P.PropertyList.add(Observables.Names[i]);
   numCollectables = P.Collectables.size();
   app_log() << "\n  QMCHamiltonian::add2WalkerProperty added"
             << "\n    " << Observables.size() << " to P::PropertyList "

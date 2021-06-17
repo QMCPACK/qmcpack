@@ -125,9 +125,6 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 // test SR and LR pieces separately
 TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);
@@ -228,9 +225,6 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 // 3 H atoms randomly distributed in a box
 TEST_CASE("fccz h3", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);

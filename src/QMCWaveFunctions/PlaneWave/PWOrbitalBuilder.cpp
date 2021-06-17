@@ -57,7 +57,6 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
   //no file, check the root
   if (hfileID < 0)
     hfileID = getH5(rootNode, "href");
-  bool success = true;
   //Move through the XML tree and read basis information
   cur = cur->children;
   while (cur != NULL)
@@ -84,7 +83,7 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
         APP_ABORT("  Cannot create a SlaterDet due to missing h5 file\n");
         OHMMS::Controller->abort();
       }
-      success = createPWBasis(cur);
+      createPWBasis(cur);
       slater_det = putSlaterDet(cur);
     }
     cur = cur->next;

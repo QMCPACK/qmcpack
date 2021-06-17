@@ -1667,22 +1667,17 @@ void EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P,
   for (int iat = first, i = 0; iat < last; iat++, i++)
   {
     const PosType& r(P.activeR(iat));
+
     // Do core states first
-    int icore = NumValenceOrbs;
-    for (int tin = 0; tin < MuffinTins.size(); tin++)
-    {
+    if (MuffinTins.size())
       APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
-      //        MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector,
-      //                                     StorageHessVector, icore);
-      icore += MuffinTins[tin].get_num_core();
-    }
+
     // Check if we are in the muffin tin;  if so, evaluate
     bool inTin = false, need2blend = false;
     PosType disp;
     for (int tin = 0; tin < MuffinTins.size(); tin++)
-    {
       APP_ABORT("MuffinTins not implemented with Hessian evaluation.\n");
-    }
+
     bool inAtom = false;
     // Otherwise, evaluate the B-splines
     if (!inTin || need2blend)

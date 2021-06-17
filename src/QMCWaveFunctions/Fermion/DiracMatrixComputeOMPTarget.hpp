@@ -26,7 +26,6 @@
 
 namespace qmcplusplus
 {
-
 /** helper class to compute matrix inversion and the log value of determinant
  *  of a batch of DiracMatrixes.
  * @tparam T_FP the datatype used in the actual computation of matrix inversion
@@ -66,7 +65,7 @@ class DiracMatrixComputeOMPTarget : public Resource
    *
    *  it smells that this is so complex.
    */
-  inline void reset(OffloadPinnedVector<T_FP>& psi_Ms, const int n,  const int lda, const int batch_size)
+  inline void reset(OffloadPinnedVector<T_FP>& psi_Ms, const int n, const int lda, const int batch_size)
   {
     int nw = batch_size;
     pivots_.resize(lda * nw);
@@ -89,7 +88,7 @@ class DiracMatrixComputeOMPTarget : public Resource
    *  it smells that this is so complex.
    */
   template<typename TREAL>
-  inline void reset(OffloadPinnedMatrix<TREAL>& psi_M, const int n,  const int lda)
+  inline void reset(OffloadPinnedMatrix<TREAL>& psi_M, const int n, const int lda)
   {
     pivots_.resize(lda);
     LU_diags_fp_.resize(lda);
@@ -109,20 +108,23 @@ class DiracMatrixComputeOMPTarget : public Resource
    * @param LogDet log determinant value of invMat before inversion
    */
   template<typename TREAL>
-  inline void computeInvertAndLog(OffloadPinnedMatrix<TREAL>& invMat, const int n, const int lda, std::complex<T_FP>& log_value)
+  inline void computeInvertAndLog(OffloadPinnedMatrix<TREAL>& invMat,
+                                  const int n,
+                                  const int lda,
+                                  std::complex<T_FP>& log_value)
   {
     BlasThreadingEnv knob(getNextLevelNumThreads());
     if (lwork_ < lda)
       reset(invMat, n, lda);
     Xgetrf(n, n, invMat.data(), lda, pivots_.data());
-    for(int i=0; i<n; i++)
-      LU_diags_fp_[i] = invMat.data()[i*lda+i];
-    log_value = {0.0,0.0};
+    for (int i = 0; i < n; i++)
+      LU_diags_fp_[i] = invMat.data()[i * lda + i];
+    log_value = {0.0, 0.0};
     computeLogDet(LU_diags_fp_.data(), n, pivots_.data(), log_value);
     Xgetri(n, invMat.data(), lda, pivots_.data(), m_work_.data(), lwork_);
   }
 
-  
+
   template<typename TREAL>
   inline void computeInvertAndLog(OffloadPinnedVector<TREAL>& psi_Ms,
                                   const int n,
@@ -183,7 +185,7 @@ public:
     const int n   = a_mat.rows();
     const int lda = a_mat.cols();
     const int ldb = inv_a_mat.cols();
-    
+
     psiM_fp_.resize(n * lda);
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
     computeInvertAndLog(psiM_fp_, n, lda, log_value);
@@ -194,7 +196,7 @@ public:
     //Because inv_a_mat is "aligned" this is unlikely to work.
     simd::remapCopy(n, n, psiM_fp_.data(), lda, inv_a_mat.data(), ldb);
   }
-  
+
   /** This covers both mixed and Full precision case.
    *  
    *  \todo measure if using the a_mats without a copy to contiguous vector is better.
@@ -214,15 +216,13 @@ public:
     psiM_fp_.resize(n * lda * nw);
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, lda, psiM_fp_.data() + nsqr * iw, n, lda);
-    
+
     computeInvertAndLog(psiM_fp_, n, lda, log_values);
     for (int iw = 0; iw < nw; ++iw)
     {
       simd::remapCopy(n, n, psiM_fp_.data() + nsqr * iw, lda, inv_a_mats[iw].get().data(), ldb);
     }
   }
-
-  
 };
 } // namespace qmcplusplus
 

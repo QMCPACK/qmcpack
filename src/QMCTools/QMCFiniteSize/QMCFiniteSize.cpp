@@ -67,7 +67,6 @@ bool QMCFiniteSize::validateXML()
   while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
-    bool inputnode = true;
     if (cname == "particleset")
     {
       ptclPool.put(cur);
@@ -83,7 +82,7 @@ bool QMCFiniteSize::validateXML()
       if (a)
       {
         pushDocument((const char*)a);
-        inputnode = processPWH(XmlDocStack.top()->getRoot());
+        processPWH(XmlDocStack.top()->getRoot());
         popDocument();
       }
     }

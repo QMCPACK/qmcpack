@@ -182,7 +182,6 @@ void MPC::init_f_G()
   f_0 += 0.4 * M_PI * L * L * volInv;
   // std::cerr << "f_0 = " << f_0/volInv << std::endl;
   double worst = 0.0, worstLin = 0.0, worstQuad = 0.0;
-  int iworst = 0;
   for (int iG = 0; iG < numG; iG++)
   {
     TinyVector<double, 2> g_12(g_G_2N[iG], g_G_4N[iG]);
@@ -193,7 +192,6 @@ void MPC::init_f_G()
     if (diff > worst)
     {
       worst     = diff;
-      iworst    = iG;
       worstLin  = linearExtrap;
       worstQuad = quadExtrap;
     }
