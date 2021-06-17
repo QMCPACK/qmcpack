@@ -248,8 +248,8 @@ public:
         for (int i = 0; i < norb; i++)
           rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
       }
-      ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr,
-                   1, Ainv_ptr, lda);
+      ompBLAS::ger(dummy_handle, norb, norb, static_cast<T>(RATIOT(-1) / c_ratio_in), rcopy_ptr, 1, temp_ptr, 1,
+                   Ainv_ptr, lda);
     }
   }
 
@@ -321,8 +321,8 @@ public:
       T* ratio_inv_mw   = reinterpret_cast<T*>(buffer_H2D_ptr + sizeof(T*) * n_accepted * 8);
 
       // invoke the Fahy's variant of Sherman-Morrison update.
-      ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1,
-                            czero_ptr, temp_mw_ptr, 1, n_accepted);
+      ompBLAS::gemv_batched(dummy_handle, 'T', norb, norb, cone_ptr, Ainv_mw_ptr, lda, phiV_mw_ptr, 1, czero_ptr,
+                            temp_mw_ptr, 1, n_accepted);
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(n_accepted) is_device_ptr(Ainv_mw_ptr, temp_mw_ptr, \
                      rcopy_mw_ptr, dpsiM_mw_out, d2psiM_mw_out, dpsiM_mw_in, d2psiM_mw_in)")
       for (int iw = 0; iw < n_accepted; iw++)
@@ -349,8 +349,8 @@ public:
         }
       }
 
-      ompBLAS::ger_batched(dummy_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1,
-                           Ainv_mw_ptr, lda, n_accepted);
+      ompBLAS::ger_batched(dummy_handle, norb, norb, ratio_inv_mw, rcopy_mw_ptr, 1, temp_mw_ptr, 1, Ainv_mw_ptr, lda,
+                           n_accepted);
     }
   }
 

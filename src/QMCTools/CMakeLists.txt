@@ -17,39 +17,25 @@
 
 project(qmctools)
 
-set(MOSRCS QMCGaussianParserBase.cpp GaussianFCHKParser.cpp GamesAsciiParser.cpp LCAOHDFParser.cpp)
+add_executable(convert4qmc convert4qmc.cpp QMCGaussianParserBase.cpp GaussianFCHKParser.cpp GamesAsciiParser.cpp
+                           LCAOHDFParser.cpp)
+target_link_libraries(convert4qmc PUBLIC qmcparticle)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(convert4qmc PUBLIC qmcutil containers platform_omptarget)
+endif()
 
-# create libmocommon
-add_library(mocommon ${MOSRCS})
-target_link_libraries(mocommon PUBLIC qmcparticle)
-
-set(QTOOLS convert4qmc qmc-extract-eshdf-kvectors)
-foreach(p ${QTOOLS})
-
-  add_executable(${p} ${p}.cpp)
-  target_link_libraries(${p} mocommon)
-  if(USE_OBJECT_TARGET)
-    target_link_libraries(${p} qmcparticle qmcutil containers platform_omptarget)
-  endif()
-
-  install(TARGETS ${p} RUNTIME DESTINATION bin)
-
-endforeach(p ${QTOOLS})
+add_executable(qmc-extract-eshdf-kvectors qmc-extract-eshdf-kvectors.cpp)
+target_link_libraries(qmc-extract-eshdf-kvectors PUBLIC qmcio)
 
 add_executable(qmc-get-supercell getSupercell.cpp)
-install(TARGETS qmc-get-supercell RUNTIME DESTINATION bin)
 
 add_executable(qmc-check-affinity check-affinity.cpp)
 if(HAVE_MPI)
   target_link_libraries(qmc-check-affinity MPI::MPI_CXX)
 endif()
 
-install(TARGETS qmc-check-affinity RUNTIME DESTINATION bin)
-
 add_executable(convertpw4qmc convertpw4qmc.cpp XmlRep.cpp WriteEshdf.cpp)
 target_link_libraries(convertpw4qmc qmcutil Math::FFTW3)
-
-install(TARGETS convertpw4qmc RUNTIME DESTINATION bin)
 
 set(FSSRCS QMCFiniteSize/QMCFiniteSize.cpp QMCFiniteSize/SkParserBase.cpp QMCFiniteSize/SkParserASCII.cpp
            QMCFiniteSize/SkParserScalarDat.cpp QMCFiniteSize/SkParserHDF5.cpp QMCFiniteSize/FSUtilities.cpp)
@@ -63,6 +49,7 @@ if(USE_OBJECT_TARGET)
   target_link_libraries(qmcfinitesize qmcparticle qmcutil containers platform_omptarget)
 endif()
 
-install(TARGETS qmcfinitesize RUNTIME DESTINATION bin)
+install(TARGETS convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc qmcfinitesize
+        RUNTIME DESTINATION bin)
 
 add_subdirectory(ppconvert)

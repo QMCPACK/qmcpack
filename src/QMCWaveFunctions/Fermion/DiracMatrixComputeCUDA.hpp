@@ -92,11 +92,11 @@ class DiracMatrixComputeCUDA : public Resource
    */
   template<typename TMAT, typename TREAL>
   inline void mw_computeInvertAndLog(cublasHandle_t h_cublas,
-                                  RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
-                                  RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
-                                  const int n,
-                                  const int lda,
-                                  OffloadPinnedVector<std::complex<TREAL>>& log_values)
+                                     RefVector<OffloadPinnedMatrix<TMAT>>& a_mats,
+                                     RefVector<OffloadPinnedMatrix<TMAT>>& inv_a_mats,
+                                     const int n,
+                                     const int lda,
+                                     OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
     // This is probably dodgy
     int nw = log_values.size();
@@ -153,7 +153,7 @@ class DiracMatrixComputeCUDA : public Resource
                    "cudaMemcpyAsync log_values failed!");
     cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
     // restore the pointer mode for this cublas handle.
-    cublasErrorCheck(cublasSetPointerMode(h_cublas, previous_pointer_mode), "cublasSetPointerMode failed");    
+    cublasErrorCheck(cublasSetPointerMode(h_cublas, previous_pointer_mode), "cublasSetPointerMode failed");
   }
 
 
@@ -169,11 +169,11 @@ class DiracMatrixComputeCUDA : public Resource
    */
   template<typename TREAL>
   inline void mw_computeInvertAndLog(cublasHandle_t h_cublas,
-                                  OffloadPinnedVector<TREAL>& psi_Ms,
-                                  OffloadPinnedVector<TREAL>& inv_Ms,
-                                  const int n,
-                                  const int lda,
-                                  OffloadPinnedVector<std::complex<TREAL>>& log_values)
+                                     OffloadPinnedVector<TREAL>& psi_Ms,
+                                     OffloadPinnedVector<TREAL>& inv_Ms,
+                                     const int n,
+                                     const int lda,
+                                     OffloadPinnedVector<std::complex<TREAL>>& log_values)
   {
     // This is probably dodgy
     int nw = log_values.size();
@@ -225,13 +225,11 @@ class DiracMatrixComputeCUDA : public Resource
   }
 
 public:
-  DiracMatrixComputeCUDA(cudaStream_t hstream) : Resource("DiracMatrixComputeCUDA"), hstream_(hstream)
-  {
-  }
+  DiracMatrixComputeCUDA(cudaStream_t hstream) : Resource("DiracMatrixComputeCUDA"), hstream_(hstream) {}
 
-  DiracMatrixComputeCUDA(const DiracMatrixComputeCUDA& other, cudaStream_t hstream) : Resource(other.getName()), hstream_(hstream)
-  {
-  }
+  DiracMatrixComputeCUDA(const DiracMatrixComputeCUDA& other, cudaStream_t hstream)
+      : Resource(other.getName()), hstream_(hstream)
+  {}
 
   Resource* makeClone(cudaStream_t hstream) const { return new DiracMatrixComputeCUDA(*this, hstream); }
   Resource* makeClone() const override { return new DiracMatrixComputeCUDA(*this, this->hstream_); }
