@@ -27,9 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("RandomNumberControl make_seeds", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   RandomNumberControl::make_seeds();
 
   REQUIRE(RandomNumberControl::Children.size() > 0);
@@ -37,9 +34,6 @@ TEST_CASE("RandomNumberControl make_seeds", "[ohmmsapp]")
 
 TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   const char* xml_input = "<tmp></tmp>";
 
   Libxml2Document doc;

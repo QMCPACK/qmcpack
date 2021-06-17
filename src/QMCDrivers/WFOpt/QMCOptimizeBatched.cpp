@@ -102,7 +102,7 @@ bool QMCOptimizeBatched::run()
   // Hopefully this was not affecting anything.
   //optTarget->setTargetEnergy(branch_engine_->getEref());
   t1.restart();
-  bool success = optSolver->optimize(optTarget.get());
+  optSolver->optimize(optTarget.get());
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   ;
   app_log() << "  </log>" << std::endl;
@@ -187,13 +187,12 @@ void QMCOptimizeBatched::process(xmlNodePtr q)
 
   optSolver->put(wfoptdriver_input_.get_opt_xml_node());
 
-  bool success = true;
   //allways reset optTarget
   optTarget =
       std::make_unique<QMCCostFunctionBatched>(W, population_.get_golden_twf(), population_.get_golden_hamiltonian(),
                                                samples_, opt_num_crowds, crowd_size, myComm);
   optTarget->setStream(&app_log());
-  success = optTarget->put(q);
+  optTarget->put(q);
 
   // This code is also called when setting up vmcEngine.  Would be nice to not duplicate the call.
   QMCDriverNew::AdjustedWalkerCounts awc =

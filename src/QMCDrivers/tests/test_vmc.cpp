@@ -39,9 +39,6 @@ namespace qmcplusplus
 {
 TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   MCWalkerConfiguration elec;
 

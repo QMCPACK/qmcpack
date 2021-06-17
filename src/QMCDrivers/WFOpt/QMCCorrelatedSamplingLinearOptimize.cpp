@@ -111,7 +111,6 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   //this is the small amount added to the diagonal to stabilize the eigenvalue equation. e^stabilityBase
   RealType stabilityBase(exp0);
   std::vector<std::vector<RealType>> LastDirections;
-  RealType deltaPrms(-1.0);
   bool acceptedOneMove(false);
   int failedTries(0);
   Matrix<RealType> Left(N, N);
@@ -166,13 +165,12 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         LeftT(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << std::endl;
     }
-    RealType lowestEV(0);
     RealType bigVec(0);
     eigenvalue_timer_.start();
     //                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
     if (GEVtype != "sd")
     {
-      lowestEV = getLowestEigenvector(LeftT, currentParameterDirections);
+      getLowestEigenvector(LeftT, currentParameterDirections);
       Lambda   = getNonLinearRescale(currentParameterDirections, Right);
     }
     else
@@ -278,7 +276,6 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         bestParameters[i] = std::real(optTarget->Params(i));
       lastCost        = newCost;
       acceptedOneMove = true;
-      deltaPrms       = Lambda;
     }
     else if ((stability > 0) && (newCost - lastCost > -1e-5))
       stability = nstabilizers;

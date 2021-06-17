@@ -607,11 +607,6 @@ template<typename S> class ETCompute {
       //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
       //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
-      // compute mean and variance 
-      double mean = 0.0;
-      if ( !_ground_state )
-        mean = _hd_shift - 1.0 / _target_fn_val;
-
       double le_mean = _energy;
           
       if (my_rank == 0) {

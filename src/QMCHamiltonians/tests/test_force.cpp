@@ -33,8 +33,7 @@ namespace qmcplusplus
 {
 TEST_CASE("Bare Force", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
   ParticleSet ions;
   ParticleSet elec;
@@ -140,9 +139,6 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
 // PBC case
 TEST_CASE("Chiesa Force", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(5.0);
@@ -277,9 +273,6 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
 // Open BC case
 TEST_CASE("Ceperley Force", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   //CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   //Lattice.BoxBConds = false; // periodic
   //Lattice.R.diagonal(5.0);
@@ -369,9 +362,6 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
 // Test construction of Coulomb forces in OBC
 TEST_CASE("Ion-ion Force", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ParticleSet ions;
   ParticleSet elec;
 

@@ -382,11 +382,10 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     Qspec[spec]       = tspeciesB(ChargeAttribIndxB, spec);
     NofSpeciesB[spec] = static_cast<int>(tspeciesB(MemberAttribIndxB, spec));
   }
-  RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
-    totQ += Zat[iat] = Zspec[PtclA.GroupID[iat]];
+    Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
-    totQ += Qat[iat] = Qspec[P.GroupID[iat]];
+    Qat[iat] = Qspec[P.GroupID[iat]];
   //    if(totQ>std::numeric_limits<RealType>::epsilon())
   //    {
   //      LOGMSG("PBCs not yet finished for non-neutral cells");

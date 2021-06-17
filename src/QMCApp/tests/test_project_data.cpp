@@ -54,9 +54,6 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
 
 TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ProjectData proj("test");
 
   const char* xml_input = "<project id='test1'></project>";
@@ -72,9 +69,6 @@ TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 
 TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   ProjectData proj("test");
 
   const char* xml_input = "<project id='test1' series='1'></project>";

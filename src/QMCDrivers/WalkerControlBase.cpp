@@ -182,9 +182,9 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
 {
   MCWalkerConfiguration::iterator it(W.begin());
   MCWalkerConfiguration::iterator it_end(W.end());
-  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0, besum = 0.0, bwgtsum = 0.0;
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
-  int nrn(0), ncr(0), nfn(0), ngoodfn(0), nc(0);
+  int nrn(0), ncr(0), nfn(0), nc(0);
   for (; it != it_end; ++it)
   {
     bool inFN = (((*it)->ReleasedNodeAge) == 0);
@@ -196,7 +196,6 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
       else if ((*it)->ReleasedNodeAge == 0)
       {
         nfn += 1;
-        ngoodfn += nc;
       }
       r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
       r2_proposed += (*it)->Properties(WP::R2PROPOSED);
@@ -207,7 +206,6 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
       esum += wgt * rnwgt * e;
       e2sum += wgt * rnwgt * e * e;
       wsum += rnwgt * wgt;
-      w2sum += rnwgt * rnwgt * wgt * wgt;
       ecum += e;
       besum += bfe * wgt;
       bwgtsum += wgt;
@@ -228,7 +226,6 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
       esum += wgt * e;
       e2sum += wgt * e * e;
       wsum += wgt;
-      w2sum += wgt * wgt;
       ecum += e;
     }
   }
@@ -303,9 +300,9 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   std::vector<int> ncopy_rn;
   NumWalkers = 0;
   MCWalkerConfiguration::iterator it_end(W.end());
-  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, w2sum = 0.0, besum = 0.0, bwgtsum = 0.0;
+  FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
-  int nfn(0), nrn(0), ngoodfn(0), ncr(0), nc(0);
+  int nfn(0), nrn(0), ncr(0), nc(0);
   while (it != it_end)
   {
     bool inFN = (((*it)->ReleasedNodeAge) == 0);
@@ -317,7 +314,6 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
       else if ((*it)->ReleasedNodeAge == 0)
       {
         nfn += 1;
-        ngoodfn += nc;
       }
       r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
       r2_proposed += (*it)->Properties(WP::R2PROPOSED);
@@ -328,7 +324,6 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
       esum += wgt * rnwgt * local_energy;
       e2sum += wgt * rnwgt * local_energy * local_energy;
       wsum += rnwgt * wgt;
-      w2sum += rnwgt * rnwgt * wgt * wgt;
       ecum += local_energy;
       besum += alternate_energy * wgt;
       bwgtsum += wgt;
@@ -346,7 +341,6 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
       esum += wgt * e;
       e2sum += wgt * e * e;
       wsum += wgt;
-      w2sum += wgt * wgt;
       ecum += e;
     }
 

@@ -121,12 +121,10 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
 
     // sum up the sigmoidal function expansion
     real_type sig_sum = 0.0;
-    real_type n = 2.0;
     real_type sn = s * s; // s^n
     for (int i = 0; i < B.size(); i++) {
       sig_sum += B[i] * sn / ( 1.0 + sn );
       sn *= s;  // update s^n
-      n += 1.0; // update n
     }
 
     // return U(r)
@@ -413,12 +411,10 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     // evaluate derivatives with respect to the sigmoidal expansion coefficients
     if (Opt_B)
     {
-      real_type n = 2.0;
       real_type sn = s * s; // s^n
       for (int j = 0; j < B.size(); j++) {
         derivs[i] = -ex * sn / ( 1.0 + sn ); // dU/dB_j
         sn *= s;  // update s^n
-        n += 1.0; // update n
         ++i;      // increment the index tracking where to put derivatives
       }
     }

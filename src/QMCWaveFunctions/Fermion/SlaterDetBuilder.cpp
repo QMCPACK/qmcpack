@@ -77,7 +77,6 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   ///save the current node
   xmlNodePtr curRoot = cur;
   xmlNodePtr BFnode  = nullptr;
-  bool success       = true;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
@@ -265,11 +264,11 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         }
 
         multislaterdetfast_0->initialize();
-        success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
-                                *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
-                                *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
-                                *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
-                                multislaterdetfast_0->CI_Optimizable, cur);
+        createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
+                      *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
+                      *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
+                      *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
+                      multislaterdetfast_0->CI_Optimizable, cur);
 
         // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
         // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
@@ -293,12 +292,12 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           app_summary() << "    Using backflow transformation." << std::endl;
           multislaterdet_0 =
               new MultiSlaterDeterminantWithBackflow(targetPtcl, std::move(spo_up), std::move(spo_dn), BFTrans);
-          success = createMSD(multislaterdet_0, cur);
+          createMSD(multislaterdet_0, cur);
         }
         else
         {
           multislaterdet_0 = new MultiSlaterDeterminant(targetPtcl, std::move(spo_up), std::move(spo_dn));
-          success          = createMSD(multislaterdet_0, cur);
+          createMSD(multislaterdet_0, cur);
         }
       }
     }
