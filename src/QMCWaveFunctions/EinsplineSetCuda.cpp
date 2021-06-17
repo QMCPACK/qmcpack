@@ -584,7 +584,7 @@ inline void eval_multi_multi_UBspline_3d_vgl_cuda(multi_UBspline_3d_z_cuda* spli
 //////////////////////////////////////////////
 
 template<>
-void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                             int iat,
                                             gpu::device_vector<CTS::RealType*>& phi)
 {
@@ -630,7 +630,7 @@ void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
 }
 
 template<>
-void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                           int iat,
                                                           gpu::device_vector<CTS::RealType*>& phi)
 {
@@ -682,7 +682,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
 
 #ifdef QMC_COMPLEX
 template<>
-void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                             int iat,
                                             gpu::device_vector<CTS::ComplexType*>& phi)
 {
@@ -692,7 +692,7 @@ void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
 }
 
 template<>
-void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                           int iat,
                                                           gpu::device_vector<CTS::ComplexType*>& phi)
 {
@@ -704,7 +704,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
 
 
 template<>
-void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                             std::vector<PosType>& newpos,
                                             gpu::device_vector<CTS::RealType*>& phi)
 {
@@ -897,7 +897,7 @@ void EinsplineSetExtended<T>::resize_cuda(int numWalkers)
 }
 
 template<>
-void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                           std::vector<PosType>& newpos,
                                                           gpu::device_vector<CTS::RealType*>& phi)
 {
@@ -949,7 +949,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
 
 #ifdef QMC_COMPLEX
 template<>
-void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                             std::vector<PosType>& newpos,
                                             gpu::device_vector<CTS::ComplexType*>& phi)
 {
@@ -959,7 +959,7 @@ void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
 }
 
 template<>
-void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                           std::vector<PosType>& newpos,
                                                           gpu::device_vector<CTS::ComplexType*>& phi)
 {
@@ -971,7 +971,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
 
 
 template<>
-void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                             std::vector<PosType>& newpos,
                                             gpu::device_vector<CTS::RealType*>& phi,
                                             gpu::device_vector<CTS::RealType*>& grad_lapl,
@@ -1037,7 +1037,7 @@ void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
 
 
 template<>
-void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                           std::vector<PosType>& newpos,
                                                           gpu::device_vector<CTS::RealType*>& phi,
                                                           gpu::device_vector<CTS::RealType*>& grad_lapl,
@@ -1185,7 +1185,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
 
 #ifdef QMC_COMPLEX
 template<>
-void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                             std::vector<PosType>& newpos,
                                             gpu::device_vector<CTS::ComplexType*>& phi,
                                             gpu::device_vector<CTS::ComplexType*>& grad_lapl,
@@ -1199,7 +1199,7 @@ void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
 }
 
 template<>
-void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                           std::vector<PosType>& newpos,
                                                           gpu::device_vector<CTS::ComplexType*>& phi,
                                                           gpu::device_vector<CTS::ComplexType*>& grad_lapl,
@@ -1676,52 +1676,52 @@ void EinsplineSetHybrid<std::complex<double>>::resize_cuda(int numwalkers)
 
 // Vectorized evaluation functions
 template<>
-void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                           int iat,
                                           gpu::device_vector<CTS::RealType*>& phi)
 {
-  app_error() << "EinsplineSetHybrid<double>::evaluate (std::vector<Walker_t*> &walkers, int iat,\n"
+  app_error() << "EinsplineSetHybrid<double>::evaluate (std::vector<std::unique_ptr<Walker_t>> &walkers, int iat,\n"
               << " gpu::device_vector<CTS::RealType*> &phi) not implemented.\n";
   abort();
 }
 
 
 template<>
-void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                           int iat,
                                           gpu::device_vector<CTS::ComplexType*>& phi)
 {
-  app_error() << "EinsplineSetHybrid<double>::evaluate (std::vector<Walker_t*> &walkers, int iat,\n"
+  app_error() << "EinsplineSetHybrid<double>::evaluate (std::vector<std::unique_ptr<Walker_t>> &walkers, int iat,\n"
               << " gpu::device_vector<CTS::ComplexType*> &phi) not implemented.\n";
   abort();
 }
 
 
 template<>
-void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                           std::vector<PosType>& newpos,
                                           gpu::device_vector<CTS::RealType*>& phi)
 {
   app_error() << "EinsplineSetHybrid<double>::evaluate \n"
-              << " (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos, \n"
+              << " (std::vector<std::unique_ptr<Walker_t>> &walkers, std::vector<PosType> &newpos, \n"
               << " gpu::device_vector<CTS::RealType*> &phi) not implemented.\n";
   abort();
 }
 
 template<>
-void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                           std::vector<PosType>& newpos,
                                           gpu::device_vector<CTS::ComplexType*>& phi)
 {
   app_error() << "EinsplineSetHybrid<double>::evaluate \n"
-              << "  (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,\n"
+              << "  (std::vector<std::unique_ptr<Walker_t>> &walkers, std::vector<PosType> &newpos,\n"
               << "   gpu::device_vector<CTS::ComplexType*> &phi) not implemented.\n";
   abort();
 }
 
 
 template<>
-void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                           std::vector<PosType>& newpos,
                                           gpu::device_vector<CTS::RealType*>& phi,
                                           gpu::device_vector<CTS::RealType*>& grad_lapl,
@@ -2018,14 +2018,14 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
 }
 
 template<>
-void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<double>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                           std::vector<PosType>& newpos,
                                           gpu::device_vector<CTS::ComplexType*>& phi,
                                           gpu::device_vector<CTS::ComplexType*>& grad_lapl,
                                           int row_stride)
 {
   app_error() << "EinsplineSetHybrid<double>::evaluate \n"
-              << "(std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos, \n"
+              << "(std::vector<std::unique_ptr<Walker_t<>> &walkers, std::vector<PosType> &newpos, \n"
               << " gpu::device_vector<CTS::ComplexType*> &phi,\n"
               << " gpu::device_vector<CTS::ComplexType*> &grad_lapl, int row_stride)\n"
               << "     is not yet implemented.\n";
@@ -2072,51 +2072,55 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<PosType>& pos, gpu::device
 }
 
 template<>
-void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                         int iat,
                                                         gpu::device_vector<CTS::RealType*>& phi)
 {
-  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, int iat,\n"
+  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<std::unique_ptr<Walker_t>> "
+                 "&walkers, int iat,\n"
               << "			                            gpu::device_vector<CTS::RealType*> &phi)\n"
               << "not yet implemented.\n";
 }
 
 
 template<>
-void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                         int iat,
                                                         gpu::device_vector<CTS::ComplexType*>& phi)
 {
-  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, int iat,\n"
+  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<std::unique_ptr<Walker_t>> "
+                 "&walkers, int iat,\n"
               << "			                            gpu::device_vector<CTS::ComplexType*> &phi)\n"
               << "not yet implemented.\n";
 }
 
 
 template<>
-void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                         std::vector<PosType>& newpos,
                                                         gpu::device_vector<CTS::RealType*>& phi)
 {
-  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, "
-                 "std::vector<PosType> &newpos,\n"
-              << "			                            gpu::device_vector<CTS::RealType*> &phi)\n"
-              << "not yet implemented.\n";
+  app_error()
+      << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<std::unique_ptr<Walker_t>> &walkers, "
+         "std::vector<PosType> &newpos,\n"
+      << "			                            gpu::device_vector<CTS::RealType*> &phi)\n"
+      << "not yet implemented.\n";
 }
 
 template<>
-void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                         std::vector<PosType>& newpos,
                                                         gpu::device_vector<CTS::ComplexType*>& phi)
 {
-  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, "
-                 "std::vector<PosType> ,\n"
-              << "			                            gpu::device_vector<CTS::ComplexType*> &phi)\n"
-              << "not yet implemented.\n";
+  app_error()
+      << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<std::unique_ptr<Walker_t>> &walkers, "
+         "std::vector<PosType> ,\n"
+      << "			                            gpu::device_vector<CTS::ComplexType*> &phi)\n"
+      << "not yet implemented.\n";
 }
 
 template<>
-void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                         std::vector<PosType>& newpos,
                                                         gpu::device_vector<CTS::RealType*>& phi,
                                                         gpu::device_vector<CTS::RealType*>& grad_lapl,
@@ -2393,14 +2397,14 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
 }
 
 template<>
-void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                                                         std::vector<PosType>& newpos,
                                                         gpu::device_vector<CTS::ComplexType*>& phi,
                                                         gpu::device_vector<CTS::ComplexType*>& grad_lapl,
                                                         int row_stride)
 {
   app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate \n"
-              << "(std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos, \n"
+              << "(std::vector<std::unique_ptr<Walker_t>> &walkers, std::vector<PosType> &newpos, \n"
               << " gpu::device_vector<CTS::ComplexType*> &phi,\n"
               << " gpu::device_vector<CTS::ComplexType*> &grad_lapl,\n"
               << " int row_stride)\n"
