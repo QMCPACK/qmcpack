@@ -27,8 +27,9 @@
  * - h5_space_type<Tensor<std::complex<T>,D>,RANK> // removed, picked up by template recursion
  */
 
-#include "hdf_datatype.h"
 #include <complex>
+#include <array>
+#include "hdf_datatype.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 
@@ -69,7 +70,7 @@ struct h5_space_type<std::complex<T>, RANK> : public h5_space_type<T, RANK + 1>
 
 /** specialization of h5_space_type for std::array<T,D> for any intrinsic type T
  */
-template<typename T, unsigned D, hsize_t RANK>
+template<typename T, std::size_t D, hsize_t RANK>
 struct h5_space_type<std::array<T, D>, RANK> : public h5_space_type<T, RANK + 1>
 {
   using Base = h5_space_type<T, RANK + 1>;
