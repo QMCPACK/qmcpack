@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "LongRange/EwaldHandler3D.h"
@@ -29,9 +28,6 @@ namespace qmcplusplus
 {
 TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(1.0);
@@ -81,8 +77,6 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   elec.update();
 
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
 
@@ -112,9 +106,6 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.77945227);
@@ -170,8 +161,6 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   elec.resetGroups();
   elec.update();
 
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
