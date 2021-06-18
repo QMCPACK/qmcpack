@@ -34,9 +34,17 @@ mkdir build_nersc_cori_hsw_cmplx
 cd build_nersc_cori_hsw_cmplx
 cmake -DQMC_SYMLINK_TEST_FILES=0 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment -DQMC_COMPLEX=1 ..
 nice make -j 8
-ls -l bin/qmcpack_complex
 cd ..
-ln -sf ./build_nersc_cori_hsw_cmplx/bin/qmcpack_complex ./qmcpack_nersc_cori_cpu_hsw_comp
+appendage=
+if [ -f "build_nersc_cori_hsw_cmplx/bin/qmcpack_complex" ]; then
+    appendage=_complex
+fi
+ls -l build_nersc_cori_hsw_cmplx/bin/qmcpack${appendage}
+ln -sf ./build_nersc_cori_hsw_cmplx/bin/qmcpack${appendage} ./qmcpack_nersc_cori_cpu_hsw_comp
+
+
+
+if [ -f "$FILE" ]; then
 
 # Haswell CPU Real
 mkdir build_nersc_cori_hsw
@@ -64,9 +72,13 @@ mkdir build_nersc_cori_knl_cmplx
 cd build_nersc_cori_knl_cmplx
 cmake -DQMC_SYMLINK_TEST_FILES=0 -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment -DQMC_COMPLEX=1 ..
 nice make -j 8
-ls -l bin/qmcpack_complex
 cd ..
-ln -sf ./build_nersc_cori_knl_cmplx/bin/qmcpack_complex ./qmcpack_nersc_cori_cpu_knl_comp
+appendage=
+if [ -f "build_nersc_cori_knl_cmplx/bin/qmcpack_complex" ]; then
+    appendage=_complex
+fi
+ls -l build_nersc_cori_knl_cmplx/bin/qmcpack${appendage}
+ln -sf ./build_nersc_cori_knl_cmplx/bin/qmcpack${appendage} ./qmcpack_nersc_cori_cpu_knl_comp
 
 # KNL CPU Real
 mkdir build_nersc_cori_knl
