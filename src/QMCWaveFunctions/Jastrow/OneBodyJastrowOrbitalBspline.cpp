@@ -40,17 +40,12 @@ void OneBodyJastrowOrbitalBspline<FT>::checkInVariables(opt_variables_type& acti
 }
 
 template<class FT>
-void OneBodyJastrowOrbitalBspline<FT>::addFunc(int ig, FT* j, int jg)
+void OneBodyJastrowOrbitalBspline<FT>::addFunc(int ig, std::unique_ptr<FT> j, int jg)
 {
-  J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::addFunc(ig, j, jg);
-  CudaSpline<CTS::RealType>* newSpline = new CudaSpline<CTS::RealType>(*j);
-  UniqueSplines.push_back(newSpline);
-  // if(i==0) { //first time, assign everything
-  //   for(int ig=0; ig<NumCenterGroups; ++ig)
-  // 	if(GPUSplines[ig]==0) GPUSplines[ig]=newSpline;
-  // }
-  // else
-  GPUSplines[ig] = newSpline;
+  auto newSpline = std::make_unique<CudaSpline<CTS::RealType>>(*j);
+  GPUSplines[ig] = newSpline.get();
+  UniqueSplines.push_back(std::move(newSpline));
+  J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::addFunc(ig, std::move(j), jg);
 }
 
 template<class FT>

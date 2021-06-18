@@ -45,7 +45,8 @@ private:
   using ValueMatrix_t = typename JBase::ValueMatrix_t;
   using RealMatrix_t  = typename JBase::RealMatrix_t;
 
-  std::vector<CudaSpline<CTS::RealType>*> GPUSplines, UniqueSplines;
+  std::vector<CudaSpline<CTS::RealType>*> GPUSplines;
+  std::vector<std::unique_ptr<CudaSpline<CTS::RealType>>> UniqueSplines;
   int MaxCoefs;
   ParticleSet& ElecRef;
   gpu::device_vector<CTS::RealType> L, Linv;
