@@ -43,9 +43,6 @@ ls -l build_nersc_cori_hsw_cmplx/bin/qmcpack${appendage}
 ln -sf ./build_nersc_cori_hsw_cmplx/bin/qmcpack${appendage} ./qmcpack_nersc_cori_cpu_hsw_comp
 
 
-
-if [ -f "$FILE" ]; then
-
 # Haswell CPU Real
 mkdir build_nersc_cori_hsw
 cd build_nersc_cori_hsw
