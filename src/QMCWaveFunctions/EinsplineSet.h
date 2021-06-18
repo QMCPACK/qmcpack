@@ -354,31 +354,31 @@ public:
   }
 
   // Real return values
-  void evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi);
   void evaluateVGL(const ParticleSet& P,
                    int iat,
                    RealValueVector_t& psi,
                    RealGradVector_t& dpsi,
-                   RealValueVector_t& d2psi) override;
+                   RealValueVector_t& d2psi);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             RealValueMatrix_t& psi,
                             RealGradMatrix_t& dpsi,
-                            RealValueMatrix_t& d2psi) override;
+                            RealValueMatrix_t& d2psi);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             RealValueMatrix_t& psi,
                             RealGradMatrix_t& dpsi,
-                            RealHessMatrix_t& grad_grad_psi) override;
+                            RealHessMatrix_t& grad_grad_psi);
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             RealValueMatrix_t& psi,
                             RealGradMatrix_t& dpsi,
                             RealHessMatrix_t& grad_grad_psi,
-                            RealGGGMatrix_t& grad_grad_grad_logdet) override;
+                            RealGGGMatrix_t& grad_grad_grad_logdet);
 
   //    void evaluate (const ParticleSet& P, const PosType& r, std::vector<double> &psi);
 #if !defined(QMC_COMPLEX)
@@ -388,7 +388,7 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          RealGradMatrix_t& gradphi) override;
+                          RealGradMatrix_t& gradphi);
   // Evaluate the gradient w.r.t. to ion iat of the gradient and
   // laplacian of the orbitals w.r.t. the electrons
   void evaluateGradSource(const ParticleSet& P,
@@ -398,7 +398,7 @@ public:
                           int iat_src,
                           RealGradMatrix_t& dphi,
                           RealHessMatrix_t& dgrad_phi,
-                          RealGradMatrix_t& dlaplphi) override;
+                          RealGradMatrix_t& dlaplphi);
   void evaluateGradSource(const ParticleSet& P,
                           int first,
                           int last,
