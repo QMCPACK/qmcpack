@@ -232,7 +232,7 @@ public:
    * use read() for inbuilt error checking
    * @return true if successful
    */
-  template<typename T>
+  template<typename T, typename = std::enable_if_t<!std::is_const<T>::value>>
   bool readEntry(T& data, const std::string& aname)
   {
     if (Mode[NOIO])
@@ -245,7 +245,7 @@ public:
   /** read the data from the group aname and check status
    * runtime error is issued on I/O error
    */
-  template<typename T>
+  template<typename T, typename = std::enable_if_t<!std::is_const<T>::value>>
   void read(T& data, const std::string& aname)
   {
     if (!readEntry(data, aname))
@@ -260,7 +260,7 @@ public:
    * @param aname dataset name in the file
    * runtime error is issued on I/O error
    */
-  template<typename T, typename IT, std::size_t RANK>
+  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<!std::is_const<T>::value>>
   void readSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
@@ -284,7 +284,7 @@ public:
    * for example, if the dataset was [5,2,6] and the vector contained (2,1,-1),
    * this would grab 6 elements corresponding to [2,1,:]
    */
-  template<typename T, typename IT, std::size_t RANK>
+  template<typename T, typename IT, std::size_t RANK, typename = std::enable_if_t<!std::is_const<T>::value>>
   void readSlabSelection(T& data, const std::array<IT, RANK>& readSpec, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
