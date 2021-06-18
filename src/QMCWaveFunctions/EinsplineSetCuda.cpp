@@ -704,7 +704,6 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<std::uniqu
 #endif
 
 
-
 template<typename T>
 void EinsplineSetExtended<T>::get_split_spline_pointers()
 {
@@ -1496,8 +1495,8 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<PosType>& 
   // Now, add on phases
   apply_phase_factors((CTS::RealType*)CudakPoints.data(), (CTS::RealType*)cudaphasepos.data(), CudaValuePointers.data(),
                       phi.data(), CudaMultiSpline->num_splines, N);
-// AT debug:
-/*  if(gpu::rank==1)
+  // AT debug:
+  /*  if(gpu::rank==1)
   {
     int M = CudaMultiSpline->num_splines;
     CTS::ValueType phi_orig[N*M], phi_new[N*M];

@@ -775,7 +775,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
         MuffinTins[tin].evaluate(r, StorageValueVector, StorageGradVector, StorageHessVector);
         if (need2blend)
         {
-          disp      = MuffinTins[tin].disp(r);
+          disp = MuffinTins[tin].disp(r);
         }
         break;
       }
