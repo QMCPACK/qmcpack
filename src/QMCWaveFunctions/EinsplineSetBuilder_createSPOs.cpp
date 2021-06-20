@@ -29,6 +29,9 @@
 #include <fftw3.h>
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/einspline_helper.hpp"
+#if !defined(MIXED_PRECISION)
+#include "QMCWaveFunctions/EinsplineSet.h"
+#endif
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
