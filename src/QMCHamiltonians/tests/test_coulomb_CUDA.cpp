@@ -16,7 +16,6 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
 #include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
 
@@ -32,9 +31,6 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
-
-  Communicate* c;
-  c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
@@ -78,10 +74,6 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   elec.addTable(ions);
   elec.update();
 
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
-
   CoulombPBCAB_CUDA cab(ions, elec);
 
   // Background charge term
@@ -97,8 +89,6 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
-  Communicate* c;
-  c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
@@ -155,9 +145,6 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   elec.copyWalkersToGPU();
   elec.updateLists_GPU();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
-
   CoulombPBCAB_CUDA cab(ions, elec);
 
   // Background charge term
@@ -183,9 +170,6 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
-
-  Communicate* c;
-  c = OHMMS::Controller;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic

@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/CoulombPotential.h"
@@ -79,8 +78,6 @@ TEST_CASE("Bare Force", "[hamiltonian]")
 
   elec.addTable(ions);
   elec.update();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   BareForce force(ions, elec);
   force.addionion = false;

@@ -33,7 +33,6 @@
 
 //for Hamiltonian manipulations.
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 
 #ifdef QMC_COMPLEX //This is for the spinor test.
@@ -227,8 +226,6 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   tspecies(massIdx, downIdx)   = 1.0;
 
   elec.createSK();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   ions.resetGroups();
 
@@ -485,10 +482,6 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   tspecies(massIdx, upIdx)   = 1.0;
 
   elec.createSK();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   ions.resetGroups();
   elec.resetGroups();
