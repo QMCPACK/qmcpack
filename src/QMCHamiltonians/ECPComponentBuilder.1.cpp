@@ -22,8 +22,8 @@ namespace qmcplusplus
 void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
 {
   std::unique_ptr<mGridType> grid_semilocal;
-  RealType rmax             = pp_nonloc->Rmax;
-  cur                       = cur->children;
+  RealType rmax = pp_nonloc->Rmax;
+  cur           = cur->children;
   while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
@@ -112,7 +112,8 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
 
   std::string vFormat("V");
   const XMLAttrString v_str(cur, "format");
-  if (!v_str.empty()) vFormat = v_str;
+  if (!v_str.empty())
+    vFormat = v_str;
 
   int vPowerCorrection = 1;
   if (vFormat == "r*V")

@@ -302,8 +302,8 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
   const int max_points = 100000;
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //this is a new grid
-  mRealType d                 = 1e-4;
-  auto agrid                  = std::make_unique<LinearGrid<RealType>>();
+  mRealType d = 1e-4;
+  auto agrid  = std::make_unique<LinearGrid<RealType>>();
   // If the global grid is already linear, do not interpolate the data
   int ng;
   if (grid_global->getGridTag() == LINEAR_1DGRID)
@@ -460,8 +460,8 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
 #endif
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //this is a new grid
-  mRealType d                 = 1e-4;
-  auto agrid                  = std::make_unique<LinearGrid<RealType>>();
+  mRealType d = 1e-4;
+  auto agrid  = std::make_unique<LinearGrid<RealType>>();
   // If the global grid is already linear, do not interpolate the data
   int ng;
   if (grid_global->getGridTag() == LINEAR_1DGRID)
@@ -515,9 +515,9 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
       mRealType r = d * i;
       newP[i]     = infunc.splint(r) / r;
     }
-    newP[0]                  = newP[1];
-    newP[ng - 1]             = 0.0;
-    auto app                 = new RadialPotentialType(agrid->makeClone(), newP);
+    newP[0]      = newP[1];
+    newP[ng - 1] = 0.0;
+    auto app     = new RadialPotentialType(agrid->makeClone(), newP);
     app->spline();
     pp_nonloc->add(angList[l], app);
   }
@@ -544,11 +544,11 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
     double dy0 = (newPin[1] - newPin[0]) / ((*grid_global)[1] - (*grid_global)[0]);
     OneDimCubicSpline<mRealType> infunc(grid_global->makeClone(), newPin);
     infunc.spline(0, dy0, ngIn - 1, 0.0);
-    int m                          = grid_global->size();
-    double loc_max                 = grid_global->r(m - 1);
-    int nloc                       = (int)std::floor(loc_max / d);
-    loc_max                        = (nloc - 1) * d;
-    auto grid_loc                  = std::make_unique<LinearGrid<RealType>>();
+    int m          = grid_global->size();
+    double loc_max = grid_global->r(m - 1);
+    int nloc       = (int)std::floor(loc_max / d);
+    loc_max        = (nloc - 1) * d;
+    auto grid_loc  = std::make_unique<LinearGrid<RealType>>();
     grid_loc->set(0.0, loc_max, nloc);
     app_log() << "   Making L=" << Llocal << " a local potential with a radial cutoff of " << loc_max << std::endl;
     std::vector<RealType> newPloc(nloc);

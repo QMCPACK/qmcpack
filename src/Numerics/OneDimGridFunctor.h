@@ -60,9 +60,9 @@ struct OneDimGridFunctor
   {
     if (a.m_grid)
       m_grid = a.m_grid->makeClone();
-    Y           = a.Y;
-    dY          = a.dY;
-    d2Y         = a.d2Y;
+    Y   = a.Y;
+    dY  = a.dY;
+    d2Y = a.d2Y;
     m_Y.resize(a.m_Y.size());
     m_Y      = a.m_Y;
     NumNodes = a.NumNodes;

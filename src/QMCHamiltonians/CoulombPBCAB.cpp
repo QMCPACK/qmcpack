@@ -460,10 +460,10 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     }
     v[0] = 2.0 * v[1] - v[2];
     //by construction, v has to go to zero at the boundary
-    v[ng - 2]             = 0.0;
-    v[ng - 1]             = 0.0;
-    RealType deriv        = (v[1] - v[0]) / ((*myGrid)[1] - (*myGrid)[0]);
-    auto rfunc            = std::make_unique<RadFunctorType>(myGrid->makeClone(), v);
+    v[ng - 2]      = 0.0;
+    v[ng - 1]      = 0.0;
+    RealType deriv = (v[1] - v[0]) / ((*myGrid)[1] - (*myGrid)[0]);
+    auto rfunc     = std::make_unique<RadFunctorType>(myGrid->makeClone(), v);
     rfunc->spline(0, deriv, ng - 1, 0.0);
     for (int iat = 0; iat < NptclA; iat++)
     {

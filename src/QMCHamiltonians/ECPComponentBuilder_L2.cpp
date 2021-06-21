@@ -91,8 +91,8 @@ void ECPComponentBuilder::buildL2(xmlNodePtr cur)
   RealType rmax        = rcut;
   const int max_points = 100000;
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
-  auto grid                  = std::make_unique<LinearGrid<RealType>>();
-  RealType d                 = 1e-4;
+  auto grid  = std::make_unique<LinearGrid<RealType>>();
+  RealType d = 1e-4;
   int ng;
   if (grid_global->getGridTag() == LINEAR_1DGRID)
   {
