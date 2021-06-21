@@ -77,8 +77,8 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
     for (int mo_idx = 0; mo_idx < orbital_set_size; mo_idx++)
     {
       computeRadialPhiBar(&targetPtcl, &sourcePtcl, mo_idx, ic, &phi, xgrid, rad_orb, info(ic, mo_idx));
-      OneDimQuinticSpline<RealType> radial_spline(radial_grid.get(), rad_orb);
       RealType yprime_i = (rad_orb[1] - rad_orb[0]) / (radial_grid->r(1) - radial_grid->r(0));
+      OneDimQuinticSpline<RealType> radial_spline(radial_grid->makeClone(), rad_orb);
       radial_spline.spline(0, yprime_i, rad_orb.size() - 1, 0.0);
       cot->addSpline(mo_idx, radial_spline);
 

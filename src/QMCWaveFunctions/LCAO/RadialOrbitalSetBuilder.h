@@ -63,7 +63,7 @@ struct A2NTransformer : TransformerBase<T>
   void convert(grid_type& agrid, FnOut& multiset, int ispline, int order)
   {
     typedef OneDimQuinticSpline<OHMMS_PRECISION_FULL> spline_type;
-    spline_type radorb(&agrid);
+    spline_type radorb(agrid.makeClone());
     Transform2GridFunctor<FnIn, spline_type> transform(*m_ref, radorb);
     transform.generate(agrid.rmin(), agrid.rmax(), agrid.size());
     multiset.add_spline(ispline, radorb);

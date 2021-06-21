@@ -106,7 +106,8 @@ OneDimGridFactory::RealType OneDimGridFactory::setSmoothCutoff(GridType* agrid, 
   if (cur != NULL)
   {
     const XMLAttrString rc(cur, "rc");
-    if (!rc.empty()) rcut = std::stod(rc);
+    if (!rc.empty())
+      rcut = std::stod(rc);
   }
   if (rcut > rmax)
   //set it to 0.99
