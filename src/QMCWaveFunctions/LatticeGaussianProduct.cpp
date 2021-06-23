@@ -57,7 +57,7 @@ void LatticeGaussianProduct::reportStatus(std::ostream& os) {}
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
-LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(ParticleSet& P,
+LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const ParticleSet& P,
                                                                          ParticleSet::ParticleGradient_t& G,
                                                                          ParticleSet::ParticleLaplacian_t& L)
 {
@@ -139,7 +139,7 @@ void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat, bool safe_to_de
   d2U[iat] = curLap;
 }
 
-void LatticeGaussianProduct::evaluateLogAndStore(ParticleSet& P,
+void LatticeGaussianProduct::evaluateLogAndStore(const ParticleSet& P,
                                                  ParticleSet::ParticleGradient_t& dG,
                                                  ParticleSet::ParticleLaplacian_t& dL)
 {

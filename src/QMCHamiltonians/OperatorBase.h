@@ -25,13 +25,14 @@
 #include "Particle/ParticleSet.h"
 #include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"
-#include "QMCHamiltonians/observable_helper.h"
+#include "QMCHamiltonians/ObservableHelper.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include <bitset>
+#include <memory> // std::unique_ptr
 
 namespace qmcplusplus
 {
@@ -44,6 +45,7 @@ class MCWalkerConfiguration;
 class DistanceTableData;
 class TrialWaveFunction;
 class QMCHamiltonian;
+class ResourceCollection;
 
 struct NonLocalData : public QMCTraits
 {
@@ -212,7 +214,7 @@ struct OperatorBase : public QMCTraits
    *
    * The default implementation is to register a scalar for this->Value
    */
-  virtual void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const;
+  virtual void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
 
   /*** add to collectables descriptor for hdf5
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
@@ -221,7 +223,7 @@ struct OperatorBase : public QMCTraits
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  virtual void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const {}
+  virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const {}
 
   /** set the values evaluated by this object to plist
    * @param plist RecordNameProperty
@@ -304,6 +306,25 @@ struct OperatorBase : public QMCTraits
   {
     return evaluate(P);
   }
+
+  /** evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  
+  * @param P target particle set (electrons)
+  * @param ions source particle set (ions)
+  * @param psi Trial wave function
+  * @param hf_terms  Adds OperatorBase's contribution to Re [(dH)Psi]/Psi
+  * @param pulay_terms Adds OperatorBase's contribution to Re [(H-E_L)dPsi]/Psi 
+  * @return Contribution of OperatorBase to Local Energy.
+  */
+  virtual Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
+                                                      ParticleSet& ions,
+                                                      TrialWaveFunction& psi,
+                                                      ParticleSet::ParticlePos_t& hf_term,
+                                                      ParticleSet::ParticlePos_t& pulay_term)
+  {
+    //If there's no stochastic component, defaults to above defined evaluateWithIonDerivs.
+    //If not otherwise specified, this defaults to evaluate().  
+    return evaluateWithIonDerivs(P,ions,psi,hf_term,pulay_term);
+  }
   /** update data associated with a particleset
    * @param s source particle set
    *
@@ -323,7 +344,21 @@ struct OperatorBase : public QMCTraits
   /** write about the class */
   virtual bool get(std::ostream& os) const = 0;
 
-  virtual OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
+  /** initialize a shared resource and hand it to a collection
+   */
+  virtual void createResource(ResourceCollection& collection) const {}
+
+  /** acquire a shared resource from a collection
+   */
+  virtual void acquireResource(ResourceCollection& collection) {}
+
+  /** return a shared resource to a collection
+   */
+  virtual void releaseResource(ResourceCollection& collection) {}
+
+  virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) = 0;
+
+  //virtual std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& H);
 
   virtual void setRandomGenerator(RandomGenerator_t* rng)
   {

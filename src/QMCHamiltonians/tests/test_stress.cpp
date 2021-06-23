@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "LongRange/EwaldHandler3D.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/StressPBC.h"
@@ -30,9 +29,6 @@ namespace qmcplusplus
 // PBC case
 TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
   Lattice.BoxBConds = true; // periodic
   Lattice.R.diagonal(3.24957306);
@@ -80,8 +76,6 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   tspecies(massIdx, upIdx)     = 1.0;
 
   elec.createSK();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   ions.resetGroups();
 

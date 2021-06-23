@@ -119,10 +119,10 @@ public:
   enum class SimpleBranchVectorParameter
   {
     TAU = 0,
-    TAUEFF,
-    ETRIAL,
-    EREF,
-    ENOW,
+    TAUEFF, // effective time step
+    ETRIAL, // Trial energy
+    EREF,   // Center of the branching cutoff energy window
+    ENOW,   // weighted average energy of the population in the current step
     BRANCHMAX,
     BRANCHCUTOFF,
     BRANCHFILTER,
@@ -151,7 +151,7 @@ public:
   SFNBranch(RealType tau, int nideal);
 
   ///copy constructor
-  SFNBranch(const SFNBranch& abranch);
+  SFNBranch(const SFNBranch& abranch) = delete;
 
   ~SFNBranch();
 
@@ -273,23 +273,6 @@ public:
     //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
   }
 
-  /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
-   * @param enew new energy
-   * @param eold old energy
-   * @param scnew  \f$ V_{sc}(R_{new})/V(R_{new}) \f$
-   * @param scold  \f$ V_{sc}(R_{old})/V(R_{old}) \f$
-   * @param taueff
-   */
-  inline RealType branchWeightTau(RealType enew, RealType eold, RealType scnew, RealType scold, RealType taueff)
-  {
-    ScaleSum += scnew + scold;
-    ScaleNum += 2;
-    FullPrecRealType scavg = (ScaleNum > 10000) ? ScaleSum / (RealType)ScaleNum : 1.0;
-    FullPrecRealType s1    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - enew) * scnew / scavg;
-    FullPrecRealType s0    = (vParam[SBVP::ETRIAL] - vParam[SBVP::EREF]) + (vParam[SBVP::EREF] - eold) * scold / scavg;
-    return std::exp(taueff * 0.5 * (s1 + s0));
-  }
-
   inline RealType getEref() const { return vParam[SBVP::EREF]; }
   inline RealType getEtrial() const { return vParam[SBVP::ETRIAL]; }
   inline RealType getTau() const { return vParam[SBVP::TAU]; }
@@ -323,11 +306,10 @@ private:
   IParamType iParam;
 
   VParamType vParam;
-  /** number of remaning steps for a specific tasks
-   *
-   * set differently for BranchMode[B_DMCSTAGE]
-   */
-  int ToDoSteps;
+  /// number of remaning steps in warmup, [0, iParam[B_WARMUPSTEPS]]
+  int WarmUpToDoSteps;
+  /// number of remaning steps in before adjusting ETRIAL, [0, iParam[B_ENERGYUPDATEINTERVAL]]
+  int EtrialUpdateToDoSteps;
   ///save xml element
   xmlNodePtr myNode;
   ///a simple accumulator for energy
@@ -341,8 +323,6 @@ private:
   ///a simple accumulator for reptation's center slice
   accumulator_set<RealType> R2Center;
   /////histogram of populations
-  //BlockHistogram<RealType> PopHist;
-  /////histogram of populations
   //BlockHistogram<RealType> DMCEnergyHist;
   ///scheme of branching cutoff
   std::string branching_cutoff_scheme;
@@ -350,18 +330,6 @@ private:
   ParameterSet m_param;
   ///string parameters
   std::vector<std::string> sParam;
-
-  /// Used for the average scaling
-  FullPrecRealType ScaleSum;
-  unsigned long ScaleNum;
-  //@TODO move these to private
-  ///LogJacob
-  RealType LogJacobRef;
-  ///LogNorm
-  std::vector<RealType> LogNorm;
-
-  ///Releasednode
-  bool RN;
 };
 
 std::ostream& operator<<(std::ostream& os, SFNBranch::VParamType& rhs);

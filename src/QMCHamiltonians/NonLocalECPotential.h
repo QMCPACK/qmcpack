@@ -26,6 +26,8 @@ namespace qmcplusplus
 template<typename T>
 struct NLPPJob;
 
+struct NonLocalECPotentialMultiWalkerResource;
+
 /** @ingroup hamiltonian
  * \brief Evaluate the semi local potentials
  */
@@ -33,6 +35,7 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
 {
 public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
+  ~NonLocalECPotential();
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
@@ -57,6 +60,13 @@ public:
                                  TrialWaveFunction& psi,
                                  ParticleSet::ParticlePos_t& hf_terms,
                                  ParticleSet::ParticlePos_t& pulay_terms) override;
+
+  Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
+                                              ParticleSet& ions,
+                                              TrialWaveFunction& psi,
+                                              ParticleSet::ParticlePos_t& hf_terms,
+                                              ParticleSet::ParticlePos_t& pulay_terms) override;
+
 
   /** set non local moves options
    * @param cur the xml input
@@ -90,7 +100,19 @@ public:
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
+  /** initialize a shared resource and hand it to a collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from a collection
+   */
+  void acquireResource(ResourceCollection& collection) override;
+
+  /** return a shared resource to a collection
+   */
+  void releaseResource(ResourceCollection& collection) override;
+
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
   void addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& pp);
 
@@ -105,8 +127,12 @@ public:
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
 
-  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const override;
+  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override;
 
+  /** Set the flag whether to compute forces or not.
+   * @param val The boolean value for computing forces
+   */ 
+  inline void setComputeForces(bool val) override {ComputeForces=val;}
 protected:
   ///random number generator
   RandomGenerator_t* myRNG;
@@ -149,6 +175,8 @@ private:
 #endif
   ///NLPP job list of ion-electron pairs by spin group
   std::vector<std::vector<NLPPJob<RealType>>> nlpp_jobs;
+  /// mult walker shared resource
+  std::unique_ptr<NonLocalECPotentialMultiWalkerResource> mw_res_;
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
@@ -166,6 +194,12 @@ private:
                               const RefVectorWithLeader<ParticleSet>& P_list,
                               bool Tmove);
 
+  void evalIonDerivsImpl(ParticleSet& P,
+                         ParticleSet& ions,
+                         TrialWaveFunction& psi,
+                         ParticleSet::ParticlePos_t& hf_terms,
+                         ParticleSet::ParticlePos_t& pulay_terms,
+                         bool keepGrid = false);
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
    * @param P particle set

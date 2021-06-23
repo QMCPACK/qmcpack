@@ -60,15 +60,9 @@ void CoulombPBCAA_CUDA::initBreakup(ParticleSet& P, bool cloning)
 #endif
 }
 
-OperatorBase* CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> CoulombPBCAA_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  CoulombPBCAA_CUDA* myclone;
-  if (is_active)
-    myclone = new CoulombPBCAA_CUDA(qp, is_active, true);
-  else
-    myclone = new CoulombPBCAA_CUDA(*this); //nothing needs to be re-evaluated
-  myclone->SRSpline = SRSpline;
-  return myclone;
+  return std::make_unique<CoulombPBCAA_CUDA>(*this);
 }
 
 void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)
@@ -91,7 +85,7 @@ void CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet& P)
 
 void CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  std::vector<Walker_t*>& walkers = W.WalkerList;
+  auto& walkers = W.WalkerList;
   // Short-circuit for constant contribution (e.g. fixed ions)
   if (!is_active)
   {

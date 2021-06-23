@@ -19,10 +19,10 @@
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "Message/CommOperators.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/RunTimeManager.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "ResourceCollection.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
 #include "MemoryUsage.h"
@@ -70,16 +70,37 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   auto& ps_dispatcher  = crowd.dispatchers_.ps_dispatcher_;
   auto& twf_dispatcher = crowd.dispatchers_.twf_dispatcher_;
   auto& ham_dispatcher = crowd.dispatchers_.ham_dispatcher_;
+
+  auto& walkers = crowd.get_walkers();
+  const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
+  const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
+  const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
+                                                                crowd.get_walker_hamiltonians());
+
+  ResourceCollectionTeamLock<ParticleSet> pset_res_lock(crowd.getSharedResource().pset_res, walker_elecs);
+
   {
-    CrowdResourceLock pbyp_lock(crowd);
-    assert(QMCDriverNew::checkLogAndGL(crowd));
+    DriverWalkerResourceCollectionLock pbyp_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
+                                                 crowd.get_walker_hamiltonians()[0]);
 
     int nnode_crossing(0);
-    auto& walkers = crowd.get_walkers();
-    const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
-    const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
-                                                                  crowd.get_walker_hamiltonians());
+
+    {
+      ScopedTimer recompute_timer(dmc_timers.step_begin_recompute_timer);
+      std::vector<bool> recompute_mask;
+      recompute_mask.reserve(walkers.size());
+      for (MCPWalker& awalker : walkers)
+        if (awalker.wasTouched)
+        {
+          recompute_mask.push_back(true);
+          awalker.wasTouched = false;
+        }
+        else
+          recompute_mask.push_back(false);
+      ps_dispatcher.flex_loadWalker(walker_elecs, walkers, recompute_mask, true);
+      twf_dispatcher.flex_recompute(walker_twfs, walker_elecs, recompute_mask);
+    }
+
     const int num_walkers = crowd.size();
 
     //This generates an entire steps worth of deltas.
@@ -273,13 +294,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   { // T-moves
     ScopedTimer tmove_timer(dmc_timers.tmove_timer);
 
-    auto& walkers = crowd.get_walkers();
-    const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
-    const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
-    const RefVectorWithLeader<QMCHamiltonian> walker_hamiltonians(crowd.get_walker_hamiltonians()[0],
-                                                                  crowd.get_walker_hamiltonians());
     const auto num_walkers = walkers.size();
-
     std::vector<int> walker_non_local_moves_accepted(num_walkers, 0);
     RefVector<MCPWalker> moved_nonlocal_walkers;
     RefVectorWithLeader<ParticleSet> moved_nonlocal_walker_elecs(crowd.get_walker_elecs()[0]);
@@ -290,7 +305,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     for (int iw = 0; iw < walkers.size(); ++iw)
     {
-      CrowdResourceLock pbyp_lock(crowd, iw);
+      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[iw],
+                                                    crowd.get_walker_hamiltonians()[iw]);
       walker_non_local_moves_accepted[iw] = walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw]);
 
       if (walker_non_local_moves_accepted[iw] > 0)
@@ -304,7 +320,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     if (moved_nonlocal_walkers.size())
     {
-      ResourceCollectionLock<TrialWaveFunction> resource_lock(crowd.getTWFSharedResource(), crowd.get_walker_twfs()[0]);
+      DriverWalkerResourceCollectionLock tmove_lock(crowd.getSharedResource(), crowd.get_walker_twfs()[0],
+                                                    crowd.get_walker_hamiltonians()[0]);
 
       twf_dispatcher.flex_evaluateGL(moved_nonlocal_walker_twfs, moved_nonlocal_walker_elecs, false);
       assert(QMCDriverNew::checkLogAndGL(crowd));
@@ -361,8 +378,7 @@ void DMCBatched::process(xmlNodePtr node)
     branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), population_.get_num_global_walkers());
     branch_engine_->put(node);
 
-    walker_controller_ =
-        std::make_unique<WalkerControl>(myComm, dispatchers_, Random, dmcdriver_input_.get_reconfiguration());
+    walker_controller_ = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
     walker_controller_->setMinMax(population_.get_num_global_walkers(), 0);
     walker_controller_->start();
     walker_controller_->put(node);
@@ -387,13 +403,15 @@ bool DMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
-  estimator_manager_->start(num_blocks);
+  estimator_manager_->startDriverRun();
   StateForThread dmc_state(qmcdriver_input_, dmcdriver_input_, *drift_modifier_, *branch_engine_, population_);
 
-  LoopTimer<> dmc_loop;
 
   int sample = 0;
-  RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs);
+
+  LoopTimer<> dmc_loop;
+  RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
+                                  myComm->rank() == 0);
 
   { // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
@@ -443,7 +461,7 @@ bool DMCBatched::run()
       {
         Crowd& crowd_ref = *crowd_ptr;
         if (crowd_ref.size() > 0)
-          crowd_ref.accumulate(population_.get_num_global_walkers());
+          crowd_ref.accumulate();
       }
 
       {
@@ -458,10 +476,29 @@ bool DMCBatched::run()
     }
     print_mem("DMCBatched after a block", app_debug_stream());
     endBlock();
+    dmc_loop.stop();
+
+    bool stop_requested = false;
+    // Rank 0 decides whether the time limit was reached
+    if (!myComm->rank())
+      stop_requested = runtimeControl.checkStop(dmc_loop);
+    myComm->bcast(stop_requested);
+
+    if (stop_requested)
+    {
+      if (!myComm->rank())
+        app_log() << runtimeControl.generateStopMessage("DMCBatched", block);
+      run_time_manager.markStop();
+      break;
+    }
   }
 
   branch_engine_->printStatus();
+
   print_mem("DMCBatched ends", app_log());
+
+  estimator_manager_->stopDriverRun();
+
   return finalize(num_blocks, true);
 }
 

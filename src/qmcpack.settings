@@ -1,5 +1,5 @@
 #qmcpack variables
-QMCPACK_VERSION    = @QMCPACK_VERSION@
+QMCPACK_VERSION    = @qmcpack_VERSION@
 # See qmcpack --version for the most up-to-date information about the
 # most recent git commit
 
@@ -8,6 +8,7 @@ QMC_OMP                = @QMC_OMP@
 QMC_CUDA               = @QMC_CUDA@
 QMC_COMPLEX            = @QMC_COMPLEX@
 QMC_MIXED_PRECISION    = @QMC_MIXED_PRECISION@
+QMC_SIMD_ALIGNMENT     = @QMC_SIMD_ALIGNMENT@
 BUILD_AFQMC            = @BUILD_AFQMC@
 BUILD_FCIQMC           = @BUILD_FCIQMC@
 ENABLE_OFFLOAD         = @ENABLE_OFFLOAD@

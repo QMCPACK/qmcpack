@@ -9,26 +9,25 @@
 #// File created by: Mark Dewing, mdewing@ganl.gov Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR} )
+set(SRC_DIR message)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRC_DIR message)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+add_executable(${UTEST_EXE} test_communciate.cpp)
+target_link_libraries(${UTEST_EXE} PUBLIC message catch_main)
 
-ADD_EXECUTABLE(${UTEST_EXE} test_communciate.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} PUBLIC message catch_main)
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-
-IF(HAVE_MPI)
-  SET(UTEST_EXE test_${SRC_DIR}_mpi)
-  SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
+if(HAVE_MPI)
+  set(UTEST_EXE test_${SRC_DIR}_mpi)
+  set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
   #this is dependent on the directory creation and sym linking of earlier driver tests
-  SET(MPI_UTILITY_TEST_SRC test_mpi_exception_wrapper.cpp)
-  ADD_EXECUTABLE(${UTEST_EXE} ${MPI_UTILITY_TEST_SRC})
+  set(MPI_UTILITY_TEST_SRC test_mpi_exception_wrapper.cpp)
+  add_executable(${UTEST_EXE} ${MPI_UTILITY_TEST_SRC})
   #Way too many depenedencies make for very slow test linking
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} PUBLIC message catch_main)
+  target_link_libraries(${UTEST_EXE} PUBLIC message catch_main)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-  ADD_UNIT_TEST(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-ENDIF(HAVE_MPI)
+  add_unit_test(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+endif(HAVE_MPI)

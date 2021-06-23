@@ -46,6 +46,7 @@ enum PSetTimers
   PS_newpos,
   PS_donePbyP,
   PS_accept,
+  PS_loadWalker,
   PS_update,
   PS_dt_move,
   PS_mw_copy
@@ -56,6 +57,7 @@ static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj
   return {{PS_newpos, "ParticleSet:" + obj_name + "::computeNewPosDT"},
           {PS_donePbyP, "ParticleSet:" + obj_name + "::donePbyP"},
           {PS_accept, "ParticleSet:" + obj_name + "::acceptMove"},
+          {PS_loadWalker, "ParticleSet:" + obj_name + "::loadWalker"},
           {PS_update, "ParticleSet:" + obj_name + "::update"},
           {PS_dt_move, "ParticleSet:" + obj_name + "::dt_move"},
           {PS_mw_copy, "ParticleSet:" + obj_name + "::mw_copy"}};
@@ -66,6 +68,7 @@ ParticleSet::ParticleSet(const DynamicCoordinateKind kind)
       IsGrouped(true),
       SameMass(true),
       ThreadID(0),
+      is_spinor_(false),
       activePtcl(-1),
       Properties(0, 0, 1, WP::MAXPROPERTIES),
       myTwist(0.0),
@@ -81,6 +84,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     : IsGrouped(p.IsGrouped),
       SameMass(true),
       ThreadID(0),
+      is_spinor_(false),
       activePtcl(-1),
       mySpecies(p.getSpeciesSet()),
       Properties(p.Properties),
@@ -104,7 +108,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   Collectables        = p.Collectables;
   //construct the distance tables with the same order
   for (int i = 0; i < p.DistTables.size(); ++i)
-    addTable(p.DistTables[i]->origin(), p.DistTables[i]->getFullTableNeeds());
+    addTable(p.DistTables[i]->origin(), p.DistTables[i]->getModes());
   if (p.SK)
   {
     LRBox = p.LRBox;                             //copy LRBox
@@ -352,7 +356,7 @@ void ParticleSet::reset() { app_log() << "<<<< going to set properties >>>> " <<
 ///read the particleset
 bool ParticleSet::put(xmlNodePtr cur) { return true; }
 
-int ParticleSet::addTable(const ParticleSet& psrc, bool need_full_table)
+int ParticleSet::addTable(const ParticleSet& psrc, DTModes modes)
 {
   if (myName == "none" || psrc.getName() == "none")
     APP_ABORT("ParticleSet::addTable needs proper names for both source and target particle sets.");
@@ -378,7 +382,7 @@ int ParticleSet::addTable(const ParticleSet& psrc, bool need_full_table)
     app_debug() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->getName() << std::endl;
   }
 
-  DistTables[tid]->setFullTableNeeds(DistTables[tid]->getFullTableNeeds() || need_full_table);
+  DistTables[tid]->setModes(DistTables[tid]->getModes() | modes);
 
   app_log().flush();
   return tid;
@@ -786,6 +790,7 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
+  ScopedTimer update_scope(myTimers[PS_loadWalker]);
   R     = awalker.R;
   spins = awalker.spins;
   coordinates_->setAllParticlePos(R);
@@ -795,11 +800,9 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 #endif
   if (pbyp)
   {
-    ScopedTimer update_scope(myTimers[PS_update]);
-
     // in certain cases, full tables must be ready
     for (int i = 0; i < DistTables.size(); i++)
-      if (DistTables[i]->getFullTableNeeds())
+      if (DistTables[i]->getModes() & DTModes::NEED_FULL_TABLE_ANYTIME)
         DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if (SK && SK->DoUpdate)
@@ -809,13 +812,40 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
   activePtcl = -1;
 }
 
-void ParticleSet::mw_loadWalker(const RefVectorWithLeader<ParticleSet>& psets,
+void ParticleSet::mw_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
                                 const RefVector<Walker_t>& walkers,
+                                const std::vector<bool>& recompute,
                                 bool pbyp)
 {
+  auto& p_leader = p_list.getLeader();
+  ScopedTimer load_scope(p_leader.myTimers[PS_loadWalker]);
+
+  auto loadWalkerConfig = [](ParticleSet& pset, Walker_t& awalker) {
+    pset.R     = awalker.R;
+    pset.spins = awalker.spins;
+    pset.coordinates_->setAllParticlePos(pset.R);
+  };
 #pragma omp parallel for
-  for (int iw = 0; iw < psets.size(); ++iw)
-    psets[iw].loadWalker(walkers[iw], pbyp);
+  for (int iw = 0; iw < p_list.size(); ++iw)
+    if (recompute[iw])
+      loadWalkerConfig(p_list[iw], walkers[iw]);
+
+  if (pbyp)
+  {
+    auto& dts = p_leader.DistTables;
+    for (int i = 0; i < dts.size(); ++i)
+    {
+      const auto dt_list(extractDTRefList(p_list, i));
+      dts[i]->mw_recompute(dt_list, p_list, recompute);
+    }
+
+    if (p_leader.SK && p_leader.SK->DoUpdate)
+    {
+#pragma omp parallel for
+      for (int iw = 0; iw < p_list.size(); iw++)
+        p_list[iw].SK->UpdateAllPart(p_list[iw]);
+    }
+  }
 }
 
 void ParticleSet::saveWalker(Walker_t& awalker)
@@ -908,6 +938,30 @@ int ParticleSet::addPropertyHistory(int leng)
 // //       PropertyHistory[dindex].pop_back();
 //       }
 //     }
+
+
+void ParticleSet::createResource(ResourceCollection& collection) const
+{
+  coordinates_->createResource(collection);
+  for (int i = 0; i < DistTables.size(); i++)
+    DistTables[i]->createResource(collection);
+}
+
+void ParticleSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
+{
+  auto& ps_leader = p_list.getLeader();
+  ps_leader.coordinates_->acquireResource(collection, extractCoordsRefList(p_list));
+  for (int i = 0; i < ps_leader.DistTables.size(); i++)
+    ps_leader.DistTables[i]->acquireResource(collection, extractDTRefList(p_list, i));
+}
+
+void ParticleSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
+{
+  auto& ps_leader = p_list.getLeader();
+  ps_leader.coordinates_->releaseResource(collection, extractCoordsRefList(p_list));
+  for (int i = 0; i < ps_leader.DistTables.size(); i++)
+    ps_leader.DistTables[i]->releaseResource(collection, extractDTRefList(p_list, i));
+}
 
 RefVectorWithLeader<DistanceTableData> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                      int id)

@@ -102,9 +102,10 @@ template<class M> decltype(auto) print(M const& C){
 }
 
 namespace multi = boost::multi;
-using complex = std::complex<double>; constexpr complex I{0, 1};
 
 BOOST_AUTO_TEST_CASE(m){
+	using complex = std::complex<double>; constexpr complex I{0., 1.};
+
 	namespace blas = multi::blas;
 	multi::array<complex, 2> const A = {
 		{1. - 3.*I, 6.  + 2.*I},

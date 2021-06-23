@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_n){
 		{5.,  6.,  7.,  8.},
 		{9., 10., 11., 12.}
 	};
-	BOOST_REQUIRE( A[0][2] == 3. and A[2][2] == 11. );
+	BOOST_REQUIRE( (A[0][2] == 3.) and (A[2][2] == 11.) );
 
 	blas::scal_n(2., A[2].begin(), A[2].size());
 	BOOST_REQUIRE( A[0][2] == 3. and A[2][2] == 11.*2. );
@@ -32,10 +32,12 @@ BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_it){
 		{5.,  6.,  7.,  8.},
 		{9., 10., 11., 12.}
 	};
-	BOOST_REQUIRE( A[0][2] == 3. and A[2][2] == 11. );
+	BOOST_REQUIRE( A[0][2] == 3. );
+	BOOST_REQUIRE( A[2][2] == 11.);
 
 	blas::scal(2., A[2].begin(), A[2].end());
-	BOOST_REQUIRE( A[0][2] == 3. and A[2][2] == 11.*2. );
+	BOOST_REQUIRE( A[0][2] == 3. );
+	BOOST_REQUIRE(A[2][2] == 11.*2. );
 }
 
 template<class T> void what(T&&) = delete;
@@ -46,7 +48,8 @@ BOOST_AUTO_TEST_CASE(multi_adaptors_blas_test_scal_real){
 		{5.,  6.,  7.,  8.},
 		{9., 10., 11., 12.}
 	};
-	BOOST_REQUIRE( A[0][2] == 3. and A[2][2] == 11. );
+	BOOST_REQUIRE( A[0][2] ==  3. );
+	BOOST_REQUIRE( A[2][2] == 11. );
 
 	BOOST_REQUIRE(  blas::scal(1., A[2]) ==  A[2] );
 	BOOST_REQUIRE( &blas::scal(1., A[2]) == &A[2] );

@@ -151,7 +151,12 @@ public:
                              const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** recompute the value of the orbitals which require critical accuracy */
-  void recompute(ParticleSet& P);
+  void recompute(const ParticleSet& P);
+
+  /** batched version of recompute*/
+  static void mw_recompute(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           const std::vector<bool>& recompute);
 
   /** evaluate the log value of a many-body wave function
    * @param P input configuration containing N particles
@@ -396,6 +401,8 @@ public:
    *  See WaveFunctionComponent::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
+  /// initialize a shared resource and hand it to a collection
+  void createResource(ResourceCollection& collection) const;
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
@@ -452,19 +459,11 @@ public:
 
   bool use_tasking() const { return use_tasking_; }
 
-  ResourceCollection& getResource() { return *twf_resource_; }
-  const ResourceCollection& getResource() const { return *twf_resource_; }
-
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
 
   ///getName is in the way
   const std::string myName;
-
-  /** a collection of shared resource used by TWF
-   * created for the gold object of TWF not clones.
-   */
-  std::unique_ptr<ResourceCollection> twf_resource_;
 
   ///starting index of the buffer
   size_t BufferCursor;

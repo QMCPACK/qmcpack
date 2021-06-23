@@ -13,15 +13,12 @@
 #include "../../../array.hpp"
 #include "../../../utility.hpp"
 
-#include "../../blas/dot.hpp"
 #include "../../blas/axpy.hpp"
-#include "../../blas/nrm2.hpp"
+#include "../../blas/dot.hpp"
 #include "../../blas/gemm.hpp"
+#include "../../blas/nrm2.hpp"
 
 #include<random>
-
-namespace utf = boost::unit_test;
-namespace tt = boost::test_tools;
 
 namespace multi = boost::multi;
 namespace blas = multi::blas;
@@ -61,7 +58,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv){//, *utf::tolerance(0.0001)){
 		multi::array<double, 1> w(size(M));
 		auto mv = blas::gemv(1., M, v);
 		copy_n(mv.begin(), mv.size(), w.begin());
-		BOOST_REQUIRE( w[1] == 91.3 );
+		BOOST_REQUIRE_CLOSE( w[1] , 91.3 , 0.00001 );
 		
 		multi::array<double, 1> w2(size(M));
 		MV(M, v, w2);
@@ -100,7 +97,8 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_real){//, *utf::tolerance(0.0001)){
 	multi::array<double, 1> const X = {1.1, 2.1, 3.1, 4.1};
 	{
 		multi::array<double, 1> Y = {4.,5.,6.};
-		double const a = 1.1, b = 1.2;
+		double const a = 1.1;
+		double const b = 1.2;
 		blas::gemv(a, M, X, b, Y); // y = a*M*x + b*y
 
 		multi::array<double, 1> const Y3 = {214.02, 106.43, 188.37};
@@ -119,8 +117,9 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_real){//, *utf::tolerance(0.0001)){
 		BOOST_REQUIRE( dot[0] == blas::dot(a, b) );
 	}
 	{
-		multi::array<double, 2> const MT = ~M;
-		using namespace blas::operators;
+		using blas::operators::operator%;
+		using blas::operators::operator-;
+		using blas::operators::operator^;
 		BOOST_REQUIRE_SMALL( ((~+~M)%X - M%X)^2 , 1e-13 );
 	}
 }
@@ -137,13 +136,15 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_real_complex){
 	multi::array<complex, 1> const X = {1.1, 2.1, 3.1, 4.1};
 	{
 		multi::array<complex, 1> Y = {4., 5., 6.};
-		double const a = 1.1, b = 1.2;
+		double const a = 1.1;
+		double const b = 1.2;
 		blas::gemv(a, M, X, b, Y); // y = a*M*x + b*y
 		
 		multi::array<complex, 1> const Y3 = {214.02, 106.43, 188.37};
 		
-		using namespace blas::operators;
-		//	BOOST_REQUIRE_CLOSE( ((Y - Y3)^2)  ,  0. , 1e-13);
+		using blas::operators::operator-;
+		double const n2 = blas::nrm2(Y - Y3);
+		BOOST_REQUIRE_SMALL( n2 , 1e-13);
 	}
 }
 
@@ -161,7 +162,8 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_real_complex_thrust){
 	multi::array<complex, 1> const X = {1.1, 2.1, 3.1, 4.1};
 	{
 		multi::array<complex, 1> Y = {4., 5., 6.};
-		double const a = 1.1, b = 1.2;
+		double const a = 1.1;
+		double const b = 1.2;
 		blas::gemv(a, M, X, b, Y); // y = a*M*x + b*y
 		
 		multi::array<complex, 1> const Y3 = {214.02, 106.43, 188.37};
@@ -208,20 +210,19 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_temporary){
 		{0., 0., 1.}
 	};
 	
-	auto const B = []{
-		multi::array<complex, 2> _({3, 3});
-		auto rand = [d=std::normal_distribution<>{}, g=std::mt19937{}]()mutable{return complex{d(g), d(g)};};
+	auto const B = [](auto _){
+		auto rand = [d=std::normal_distribution<>{}, g=std::mt19937{1}]()mutable{return complex{d(g), d(g)};}; // NOLINT(cert-msc32-c,cert-msc51-cpp): test purposes
 		std::generate(_.elements().begin(), _.elements().end(), rand);
 		return _;
-	}();
-	
-//	BOOST_REQUIRE( (+std::gemv(A, (~B)[0])[1] == ~
-//	
-//	namespace blas = multi::blas;
-//	
-//	using namespace blas::operators;
-//	BOOST_REQUIRE( ( (A%(~B)[0] - ( ~(A*B)  )[0])^2) == 0. );
-//	BOOST_REQUIRE( ( (A%(~B)[0] - ((~B)*(~A))[0])^2) == 0. );
+	}(multi::array<complex, 2>({3, 3}));
+
+	using blas::operators::operator*;
+	using blas::operators::operator-;
+	using blas::operators::operator^;
+	BOOST_REQUIRE( (((A*B)[0] - B[0])^2) == 0. );
+	BOOST_REQUIRE( (((A*B)[1] - B[1])^2) == 0. );
+	BOOST_REQUIRE( (((A*B)[2] - B[2])^2) == 0. );
+
 }
 
 BOOST_AUTO_TEST_CASE(multi_blas_gemv_context){//, *utf::tolerance(0.0001)){
@@ -237,7 +238,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_gemv_context){//, *utf::tolerance(0.0001)){
 	{
 		multi::array<double, 1>       w(size(M));
 		blas::gemv_n(ctxt, 1., begin(M), size(M), begin(v), 0., begin(w));
-		BOOST_REQUIRE( w[1] == 91.3 );
+		BOOST_REQUIRE_CLOSE( w[1] , 91.3 , 0.0001 );
 		BOOST_REQUIRE_CLOSE( w[2] , +blas::dot(M[2], v) , 0.0001 );
 	}
 	{

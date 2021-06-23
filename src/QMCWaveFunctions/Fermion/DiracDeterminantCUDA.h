@@ -155,7 +155,7 @@ public:
     return nullptr;
   }
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::evaluateLog is illegal!");
     return 0;
@@ -253,7 +253,7 @@ public:
                 std::vector<GradType>& grad,
                 std::vector<ValueType>& lapl);
 
-  void ratio(std::vector<Walker_t*>& walkers,
+  void ratio(std::vector<std::unique_ptr<Walker_t>>& walkers,
              std::vector<int>& iatList,
              std::vector<PosType>& rNew,
              std::vector<ValueType>& psi_ratios,

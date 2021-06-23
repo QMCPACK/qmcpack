@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
-  
+
 /** A fake Hamiltonian to check the sampling of the trial function.
  *
  * Integrating the expression
@@ -99,7 +99,10 @@ struct ConservedEnergy : public OperatorBase
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new ConservedEnergy; }
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
+  {
+    return std::make_unique<ConservedEnergy>();
+  }
 
 #ifdef QMC_CUDA
   ////////////////////////////////
@@ -109,7 +112,7 @@ struct ConservedEnergy : public OperatorBase
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
   {
     // Value of LocalEnergy is not used in caller because this is auxiliary H.
-    std::vector<Walker_t*>& walkers = W.WalkerList;
+    auto& walkers = W.WalkerList;
     for (int iw = 0; iw < walkers.size(); iw++)
     {
       Walker_t& w = *(walkers[iw]);

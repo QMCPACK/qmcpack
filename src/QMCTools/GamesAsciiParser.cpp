@@ -465,7 +465,6 @@ void GamesAsciiParser::getGeometry(std::istream& is)
 
 void GamesAsciiParser::getGaussianCenters(std::istream& is)
 {
-  int ng;
   gBound.resize(NumberOfAtoms + 1);
   std::string aline;
   std::map<std::string, int> basisDataMap;
@@ -522,7 +521,6 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
     if (currentWords[0] == "TOTAL" && currentWords[1] == "NUMBER" && currentWords[2] == "OF" &&
         currentWords[3] == "BASIS")
     {
-      ng = atoi(currentWords.back().c_str());
       break;
     }
     if (currentWords.size() == 1) //found Species

@@ -14,7 +14,7 @@
 /////////////////////////////////////////////////////////////
 
 #include "MatrixOps.h"
-#include <blitz/mstruct.h>
+
 #include "../config.h"
 
 //#ifdef NOUNDERSCORE 
@@ -125,11 +125,12 @@ const Array<double,2> operator*(const Array<double,2> &A,
   char transB = 'T';
   double alpha = 1.0;
   double beta = 0.0;
-  blitz::GeneralArrayStorage<2> colMajor;
-  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
-  Array<double,2> C(m,n,colMajor);
+//  blitz::GeneralArrayStorage<2> colMajor;
+//  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
+//  Array<double,2> C(m,n,colMajor);
+	Array<double, 2> C({m, n}, 0.);
   F77_DGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data(), &k, 
-	     B.data(), &n, &beta, C.data(), &m);
+           B.data(), &n, &beta, C.data(), &m);
   return C;
 }
 
@@ -146,11 +147,12 @@ const Array<std::complex<double>,2> operator*(const Array<std::complex<double>,2
   char transB = 'T';
   std::complex<double> alpha(1.0, 0.0);
   std::complex<double> beta(0.0, 0.0);
-  blitz::GeneralArrayStorage<2> colMajor;
-  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
-  Array<std::complex<double>,2> C(m,n,colMajor);
-  F77_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data(), &k, 
-	     B.data(), &n, &beta, C.data(), &m);
+//  blitz::GeneralArrayStorage<2> colMajor;
+//  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
+//  Array<std::complex<double>,2> C(m,n,colMajor);
+	Array<std::complex<double>, 2> C({m, n}, std::complex<double>{});
+  F77_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data_elements(), &k, 
+           B.data(), &n, &beta, C.data(), &m);
   return C;
 }
 
@@ -308,150 +310,6 @@ const Array<std::complex<double>,2> operator*(const Array<std::complex<double>,2
 //  }
 //}
 
-// Replaces A with its inverse by gauss-jordan elimination with full pivoting
-// Adapted from Numerical Recipes in C
-//double GJInverse (Array<double,2> &A)
-//{
-//  
-//  const int maxSize = 2000;
-//  assert (A.cols() == A.rows());
-//  assert (A.cols() <= maxSize);
-//  int n = A.rows();
-
-//  if (n == 2) { // Special case for 2x2
-//    double a=A(0,0); double b=A(0,1);
-//    double c=A(1,0); double d=A(1,1);
-//    double detInv = 1.0/(a*d-b*c);
-//    A(0,0) = d*detInv;
-//    A(0,1) = -b*detInv;
-//    A(1,0) = -c*detInv;
-//    A(1,1) = a*detInv;
-//    return 1.0/detInv;
-//  }
-//  double det = 1.0;
-
-
-//  int colIndex[maxSize], rowIndex[maxSize], ipiv[maxSize];
-//  double big, dum, pivInv, temp;
-//  int icol = 0, irow = 0;
-//  
-//  for (int j=0; j<n; j++)
-//    ipiv[j] = -1;
-
-//  for (int i=0; i<n; i++) {
-//    big = 0.0;
-//    for (int j=0; j<n; j++) 
-//      if (ipiv[j] != 0)
-//	for (int k=0; k<n; k++) {
-//	  if (ipiv[k] == -1) {
-//	    if (fabs(A(j,k)) >= big) {
-//	      big = fabs(A(j,k));
-//	      irow = j; 
-//	      icol = k;
-//	    }
-//	  }
-//	  else if (ipiv[k] > 0) {
-//	    std::cerr << "GJInverse: Singular matrix!\n";
-//	    std::cerr << "A = " << A << std::endl;
-//	    abort();
-//	  }
-//	}
-//    ++(ipiv[icol]); 
-//    
-//    if (irow != icol) 
-//      for (int l=0; l<n; l++) 
-//	std::swap (A(irow,l), A(icol,l));
-//    
-//    rowIndex[i] = irow;
-//    colIndex[i] = icol;
-//    if (A(icol,icol) == 0.0) { 
-//      std::cerr << "GJInverse: Singular matrix!\n";
-//      std::cerr << "A = " << A << std::endl;
-//      abort();
-//    }
-//    det *= A(icol,icol);
-//    pivInv = 1.0/A(icol,icol);
-//    A(icol,icol) = 1.0;
-//    for (int l=0; l<n; l++)
-//      A(icol,l) *= pivInv;
-//    for (int ll=0; ll<n; ll++)
-//      if (ll != icol) {
-//	double dum = A(ll,icol);
-//	A(ll,icol) = 0.0;
-//	for (int l=0; l<n; l++)
-//	  A(ll,l) -= A(icol,l)*dum;
-//      }
-//  }
-//  // Now unscramble the permutations
-//  for (int l=n-1; l>=0; l--) {
-//    if (rowIndex[l] != colIndex[l]) {
-//      for (int k=0; k<n ; k++)
-//	std::swap (A(k,rowIndex[l]),A(k, colIndex[l]));
-//      det *= -1.0;
-//    }
-//  }
-//  return det; 
-//}
-
-
-//double GJInversePartial (Array<double,2> &A)
-//{
-//  const int maxSize = 2000;
-//  assert (A.cols() == A.rows());
-//  assert (A.cols() <= maxSize);
-//  int n = A.rows();
-
-//  double det = 1.0;
-
-
-//  int colIndex[maxSize], rowIndex[maxSize], ipiv[maxSize];
-//  double big, dum, pivInv, temp;
-//  int icol, irow;
-//  
-//  for (int i=0; i<n; i++) {
-//    big = 0.0;
-//    int ipiv = 0;
-//    for (int j=i; j<n; j++) 
-//      if (fabs(A(j,i)) < big) {
-//	big = fabs(A(j,i));
-//	ipiv = j;
-//      }
-//    // HACK 
-//    // for (int j=0; j<n; j++)
-//    //   swap (A(i,j), A(ipiv,j));
-
-//    //ipiv = i;
-
-//    det *= A(ipiv,i);
-//    double pivInv = 1.0/A(ipiv,i);
-
-//    A(ipiv,i) = 1.0;
-//    for (int j=0; j<n; j++) 
-//      A(ipiv,j) *= pivInv;
-//    for (int j=0; j<n; j++)
-//      if (j != ipiv) {
-//	double tmp = A(j,i);
-//	A(j,i) = 0.0;
-//	for (int k=0; k<n; k++)
-//	  A(j,k) -= A(ipiv,k)*tmp;
-//      }
-//  }
-//  return det;
-//}
-
-
-
-
-//inline void SwapRow (Array<double,2> A, int row1, int row2)
-//{
-//  int m = A.cols();
-//  for (int col=0; col<m; col++) {
-//    double temp = A(row1,col);
-//    A(row1,col) = A(row2,col);
-//    A(row2,col) = temp;
-//  }
-//}
-
 
 // The cofactors of A are given by 
 // cof(A) = det(A) transpose(A^{-1})
@@ -577,117 +435,7 @@ void SVdecomp (Array<std::complex<double>,2> &A, Array<std::complex<double>,2> &
 //      V(i,j) = conj(V(i,j));
 //  A = U * V;
 //}
-	       
 
-      // Adapted from Numerical Recipes in C
-void LUdecomp (Array<double,2> &A, Array<int,1> &perm, 
-	       double &sign)
-{
-  int i, imax = 0, j, k;
-  int n = A.rows();
-  double big, dum, sum, temp;
-  Array<double,1> vv(n);
-  sign = 1.0;
-
-  perm.resize(n);
-
-  for (i=0; i<n; i++) {
-    big = 0.0;
-    for (int j=0; j<n; j++)
-      if (fabs(A(i,j)) > big) big = fabs(A(i,j));
-    if (big == 0.0) {
-      std::cerr << "Singularity in LUdecomp.\n";
-      abort();
-    }
-    vv(i) = 1.0/big;
-  }
-  for (j=0; j<n; j++) {
-    for (i=0; i<j; i++) {
-      sum=A(i,j);
-      for(k=0; k<i; k++) 
-	sum -= A(i,k)*A(k,j);
-      A(i,j) = sum;
-    }
-    big=0.0;
-    for (i=j; i<n; i++) {
-      sum = A(i,j);
-      for (k=0; k<j; k++)
-	sum-=A(i,k)*A(k,j);
-      A(i,j) = sum;
-      if ((dum=vv(i)*fabs(sum)) >= big) {
-	big = dum;
-	imax = i;
-      }
-    }
-    if (j != imax) {
-      for (k=0; k<n; k++) {
-	dum=A(imax,k);
-	A(imax,k) = A(j,k);
-	A(j,k) = dum;
-      }
-      sign = -sign;
-      vv(imax) = vv(j);
-    }
-    perm(j)=imax;
-    if (A(j,j) == 0.0)
-      A(j,j) = 1.0e-200;
-    if (j != (n-1)) {
-      dum=1.0/A(j,j);
-      for (i=j+1; i<n; i++)
-	A(i,j) *= dum;
-    }
-  }  
-}
-
-
-void LUsolve (Array<double,2> &LU, Array<int,1> &perm,
-	      Array<double,1> &b)
-{
-  int i, ii=-1,ip,j;
-  double sum;
-  int n = LU.rows();
-  
-  for (i=0; i<n; i++) {
-    ip = perm(i);
-    sum = b(ip);
-    b(ip) = b(i);
-    if (ii>=0)
-      for (j=ii; j<i; j++)
-	sum -= LU(i,j)*b(j);
-    else if (sum) 
-      ii = i;
-    b(i) = sum;
-  }
-  for (i=n-1; i>=0; i--) {
-    sum = b(i);
-    for (j=i+1; j<n; j++)
-      sum -= LU(i,j)*b(j);
-    b(i) = sum/LU(i,i);
-  }
-}
-
-
-//Array<double,2> Inverse (Array<double,2> &A)
-//{
-//  Array<double,2> LU(A.rows(), A.cols()), Ainv(A.rows(), A.cols());
-//  Array<double,1> col(A.rows());
-//  Array<int,1> perm;
-//  double sign;
-
-//  LU = A;
-//  LUdecomp (LU, perm, sign);
-//  for (int j=0; j<A.rows(); j++) {
-//    for (int i=0; i<A.rows(); i++)
-//      col(i) = 0.0;
-//    col(j) = 1.0;
-//    LUsolve (LU, perm, col);
-//    for (int i=0; i<A.rows(); i++)
-//      Ainv(i,j) = col(i);
-//  }
-//  return (Ainv);
-//}
-
-  
 //void SymmEigenPairs (const Array<scalar,2> &A, int NumPairs,
 //		     Array<scalar,1> &Vals,
 //		     Array<scalar,2> &Vectors)

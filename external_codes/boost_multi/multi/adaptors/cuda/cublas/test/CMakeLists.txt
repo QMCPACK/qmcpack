@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-project(boost-multi-adaptors-cuda-cublas-test VERSION 0.1 LANGUAGES CXX)
+project(boost-multi-adaptors-cuda-cublas-test VERSION 0.1 LANGUAGES CXX CUDA)
 
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 

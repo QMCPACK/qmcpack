@@ -40,6 +40,9 @@ public:
    */
   void setOrbitalSetSize(int norbs) override;
 
+  //gets the BasisSetSize from the underlying SPOSet that make up the spinor
+  int getBasisSetSize() const override;
+
 
   /** evaluate the values of this spinor set
    * @param P current ParticleSet
@@ -61,6 +64,21 @@ public:
                    GradVector_t& dpsi,
                    ValueVector_t& d2psi) override;
 
+  /** evaluate the values, gradients and laplacians of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param psi values of the SPO
+   * @param dpsi gradients of the SPO
+   * @param d2psi laplacians of the SPO
+   * @param dspin spin gradient of the SPO
+   */
+  void evaluateVGL_spin(const ParticleSet& P,
+                        int iat,
+                        ValueVector_t& psi,
+                        GradVector_t& dpsi,
+                        ValueVector_t& d2psi,
+                        ValueVector_t& dspin) override;
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
    * @param first starting index of the particles
@@ -76,6 +94,14 @@ public:
                             ValueMatrix_t& logdet,
                             GradMatrix_t& dlogdet,
                             ValueMatrix_t& d2logdet) override;
+
+  void evaluate_notranspose_spin(const ParticleSet& P,
+                                 int first,
+                                 int last,
+                                 ValueMatrix_t& logdet,
+                                 GradMatrix_t& dlogdet,
+                                 ValueMatrix_t& d2logdet,
+                                 ValueMatrix_t& dspinlogdet) override;
   /** Evaluate the values, spin gradients, and spin laplacians of single particle spinors corresponding to electron iat.
    *  @param P current particle set.
    *  @param iat electron index.

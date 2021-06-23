@@ -220,14 +220,14 @@ struct BareKineticEnergy : public OperatorBase
 #endif
         if (SameMass)
     {
-      //app_log() << "Here" << std::endl;
-      #ifdef QMC_COMPLEX  
-      Value = std::real( CplxDot(P.G, P.G) + CplxSum(P.L) );
+//app_log() << "Here" << std::endl;
+#ifdef QMC_COMPLEX
+      Value = std::real(CplxDot(P.G, P.G) + CplxSum(P.L));
       Value *= -OneOver2M;
-      #else
+#else
       Value = Dot(P.G, P.G) + Sum(P.L);
       Value *= -OneOver2M;
-      #endif
+#endif
     }
     else
     {
@@ -461,7 +461,10 @@ struct BareKineticEnergy : public OperatorBase
     return true;
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi) { return new BareKineticEnergy(*this); }
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
+  {
+    return std::make_unique<BareKineticEnergy>(*this);
+  }
 
 #ifdef QMC_CUDA
   ////////////////////////////////
@@ -470,11 +473,11 @@ struct BareKineticEnergy : public OperatorBase
   // Nothing is done on GPU here, just copy into vector
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
   {
-    std::vector<Walker_t*>& walkers = W.WalkerList;
+    auto& walkers = W.WalkerList;
     for (int iw = 0; iw < walkers.size(); iw++)
     {
-      Walker_t& w                                  = *(walkers[iw]);
-      RealType KE                                  = -OneOver2M * (Dot(w.G, w.G) + Sum(w.L));
+      Walker_t& w                                      = *(walkers[iw]);
+      RealType KE                                      = -OneOver2M * (Dot(w.G, w.G) + Sum(w.L));
       w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = KE;
       LocalEnergy[iw] += KE;
     }

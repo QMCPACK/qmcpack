@@ -12,6 +12,7 @@
 #include "EstimatorManagerNewTest.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Platforms/Host/OutputManager.h"
+#include "Estimators/tests/FakeEstimator.h"
 #include "FakeOperatorEstimator.h"
 
 namespace qmcplusplus
@@ -25,6 +26,20 @@ EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) :
     throw std::runtime_error("Bad Rank Count, test expects different number of ranks.");
 
   app_log() << "running on " << num_ranks << '\n';
+}
+
+bool EstimatorManagerNewTest::testAddGetEstimator()
+{
+  // Must create on heap since the EstimatorManager destructor deletes all estimators
+  auto fake_est_uptr      = std::make_unique<FakeEstimator>();
+  FakeEstimator* fake_est = fake_est_uptr.get();
+
+  em.add(std::move(fake_est_uptr), "fake");
+
+  ScalarEstimatorBase* est2 = em.getEstimator("fake");
+  FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
+
+  return fake_est2 == fake_est;
 }
 
 void EstimatorManagerNewTest::fakeSomeScalarSamples()
@@ -48,7 +63,6 @@ void EstimatorManagerNewTest::fakeSomeScalarSamples()
   estimators_[2].scalars[3](2.0);
 
   em.get_AverageCache().resize(4);
-  em.get_SquaredAverageCache().resize(4);
 }
 
 void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)

@@ -23,7 +23,7 @@ hdf5_vold=1.8.19  # Released 2017-06-16
 
 # CMake 
 # Dates at https://cmake.org/files/
-cmake_vnew=3.19.4 # Released 20210-01-28
+cmake_vnew=3.19.5 # Released 2021-02-15
 cmake_vold=3.13.2 # Released 2018-12-13
 
 # OpenMPI

@@ -106,11 +106,11 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
    </wavefunction> \
   ";
 
-  Libxml2Document* doc = new Libxml2Document;
-  bool okay            = doc->parseFromString(wf_input);
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(wf_input);
   REQUIRE(okay);
 
-  xmlNodePtr root = doc->getRoot();
+  xmlNodePtr root = doc.getRoot();
 
   wp.put(root);
 

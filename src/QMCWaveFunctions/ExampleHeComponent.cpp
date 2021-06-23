@@ -61,7 +61,7 @@ bool ExampleHeComponent::put(xmlNodePtr cur)
   return true;
 }
 
-ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(ParticleSet& P,
+ExampleHeComponent::LogValueType ExampleHeComponent::evaluateLog(const ParticleSet& P,
                                                                  ParticleSet::ParticleGradient_t& G,
                                                                  ParticleSet::ParticleLaplacian_t& L)
 {

@@ -27,9 +27,9 @@ namespace qmcplusplus
  * @brief Base base class for derivatives of WaveFunctionComponent
  *
  * Derived classes implement the differentiate function which evaluates
- * - \f$\fraction{\partial \log\Psi}{\partial \alpha}\f$
- * - \f$\nabla \fraction{\partial \log\Psi}{\partial \alpha}\f$
- * - \f$\nabla^2 \fraction{\partial \log\Psi}{\partial \alpha}\f$
+ * - \f${\partial \log \Psi}/{\partial \alpha}\f$
+ * - \f$\nabla {\partial \log \Psi}/{\partial \alpha}\f$
+ * - \f$\nabla^2 {\partial \log \Psi}/{\partial \alpha}\f$
  * Each object handles one or more parameters during the optimiation.
  * The data type of refOrbital, std::vector<WaveFunctionComponent*> is intended for the cases
  * when a common variable is used by several WaveFunctionComponent class, e.g.,

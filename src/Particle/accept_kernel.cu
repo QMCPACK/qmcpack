@@ -11,6 +11,10 @@
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include "config.h"
+#ifdef QMC_CUDA2HIP
+#include <hip/hip_runtime.h>
+#endif
 
 template<typename T, int BS>
 __global__ void accept_kernel(T** Rlist, T* Rnew, int* toAccept, int iat, int N, int k)

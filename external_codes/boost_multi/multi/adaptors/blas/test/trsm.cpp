@@ -20,19 +20,23 @@ $CXX $0 -o $0x -lcudart -lcublas `pkg-config --libs blas` -lboost_unit_test_fram
 
 namespace multi = boost::multi;
 
-namespace utf = boost::unit_test;
-
 template<class Matrix>
 auto triangular(multi::blas::filling f, Matrix const& m){
 	auto ret =+ m;
 	switch(f){
 	case multi::blas::filling::upper:
-		for(multi::size_type i = 0; i != size( ret); ++i)
-			for(multi::size_type j = 0; j != std::min(i, size(~ret)); ++j) ret[i][j] = 0.;
+		for(multi::size_type i = 0; i != size( ret); ++i){
+			for(multi::size_type j = 0; j != std::min(i, size(~ret)); ++j){
+				ret[i][j] = 0.;
+			}
+		}
 		break;
 	case multi::blas::filling::lower:
-		for(multi::size_type j = 0; j != size(~ret); ++j)
-			for(multi::size_type i = 0; i != std::min(j, size( ret)); ++i) ret[i][j] = 0.;
+		for(multi::size_type j = 0; j != size(~ret); ++j){
+			for(multi::size_type i = 0; i != std::min(j, size( ret)); ++i){
+				ret[i][j] = 0.;
+			}
+		}
 		break;
 	}
 	return ret;
@@ -134,7 +138,7 @@ BOOST_AUTO_TEST_CASE(multi_blas_trsm_real_square){//, *utf::tolerance(0.00001)){
 		BOOST_REQUIRE( (+blas::gemm(1., blas::T(AT_cpy), blas::T(BT)))[1][2] == B[1][2] );
 	}
 	{
-		auto const AT =+ ~A;
+	//	auto const AT =+ ~A;
 		multi::array<double, 2> const B = {
 			{1., 3., 4.},
 			{2., 7., 1.},
@@ -260,9 +264,9 @@ BOOST_AUTO_TEST_CASE(multi_blas_trsm_hydrogen_inq_case_complex){//, *utf::tolera
 		{3.},
 	};
 	{
-		auto const B_cpy = B1;
+	//	auto const B_cpy = B1;
 		blas::trsm(blas::side::left, blas::filling::lower, 1., A, blas::H(B1));
-	//	BOOST_REQUIRE( (+blas::gemm(1., A, blas::H(B)))[0][1] == blas::H(B_cpy)[0][1] );
+	//	BOOST_REQUIRE( (+blas::gemm(1., A, blas::H(B1)))[0][1] == blas::H(B_cpy)[0][1] );
 	}
 	{
 		auto const B_cpy = B2;

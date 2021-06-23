@@ -180,7 +180,7 @@ struct WaveFunctionComponent : public QMCTraits
    * Mainly for walker-by-walker move. The initial stage of particle-by-particle
    * move also uses this.
    */
-  virtual LogValueType evaluateLog(ParticleSet& P,
+  virtual LogValueType evaluateLog(const ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
                                    ParticleSet::ParticleLaplacian_t& L) = 0;
 
@@ -199,7 +199,11 @@ struct WaveFunctionComponent : public QMCTraits
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.
    * needed for Slater Determinants but not needed for most types of WaveFunctionComponents
    */
-  virtual void recompute(ParticleSet& P) {}
+  virtual void recompute(const ParticleSet& P);
+
+  virtual void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            const std::vector<bool>& recompute) const;
 
   // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
   // {
@@ -295,8 +299,6 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
-  virtual void ratioGradAsync(ParticleSet& P, int iat, PsiValueType& ratio, GradType& grad_iat);
-
   /** evaluate the ratio of the new to old WaveFunctionComponent value and the new spin gradient
    * Default implementation assumes that WaveFunctionComponent does not explicitly depend on Spin.
    * @param P the active ParticleSet
@@ -321,12 +323,6 @@ struct WaveFunctionComponent : public QMCTraits
                             int iat,
                             std::vector<PsiValueType>& ratios,
                             std::vector<GradType>& grad_new) const;
-
-  virtual void mw_ratioGradAsync(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                 const RefVectorWithLeader<ParticleSet>& p_list,
-                                 int iat,
-                                 std::vector<PsiValueType>& ratios,
-                                 std::vector<GradType>& grad_new) const;
 
   /** a move for iat-th particle is accepted. Update the current content.
    * @param P target ParticleSet
@@ -391,7 +387,7 @@ struct WaveFunctionComponent : public QMCTraits
    * @param fromscratch if true, all the internal data are recomputed from scratch
    * @return log(psi)
    */
-  virtual LogValueType evaluateGL(ParticleSet& P,
+  virtual LogValueType evaluateGL(const ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L,
                                   bool fromscratch);
@@ -435,15 +431,15 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) = 0;
 
-  /** initialize a shared resource and hand it to collection
+  /** initialize a shared resource and hand it to a collection
    */
-  virtual void createResource(ResourceCollection& collection) {}
+  virtual void createResource(ResourceCollection& collection) const {}
 
-  /** acquire a shared resource from collection
+  /** acquire a shared resource from a collection
    */
   virtual void acquireResource(ResourceCollection& collection) {}
 
-  /** return a shared resource to collection
+  /** return a shared resource to a collection
    */
   virtual void releaseResource(ResourceCollection& collection) {}
 
@@ -496,7 +492,7 @@ struct WaveFunctionComponent : public QMCTraits
     }
   }
 
-  /** Calculates the derivatives of \f$ \grad(\textrm{log}(\psif)) \f$ with respect to
+  /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then
       performed with the passed-in G_in gradient vector. This object is then
       returned as dgradlogpsi.

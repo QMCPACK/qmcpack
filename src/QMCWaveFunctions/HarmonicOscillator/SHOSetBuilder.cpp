@@ -42,7 +42,7 @@ void SHOSetBuilder::reset()
 }
 
 
-SPOSet* SHOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> SHOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   APP_ABORT("SHOSetBuilder::createSPOSetFromXML  SHOSetBuilder should not use legacy interface");
 
@@ -54,7 +54,7 @@ SPOSet* SHOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 }
 
 
-SPOSet* SHOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input)
+std::unique_ptr<SPOSet> SHOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input)
 {
   app_log() << "SHOSetBuilder::createSHOSet(indices) " << std::endl;
 
@@ -104,7 +104,7 @@ SPOSet* SHOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input)
     sho_states.push_back(basis_states[indices[i]]);
 
   // make the sposet
-  SHOSet* sho = new SHOSet(length, center, sho_states);
+  auto sho = std::make_unique<SHOSet>(length, center, sho_states);
 
   sho->report("  ");
   //sho->test_derivatives();

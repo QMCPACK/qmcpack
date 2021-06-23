@@ -10,85 +10,140 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
-
-SET(SRC_DIR drivers)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+set(SRC_DIR drivers)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 # test_drivers shouldn't be dependent on wavefunctions
-SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/drivers)
-SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
+set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/drivers)
+set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 
-SET(DRIVER_TEST_SRC test_vmc.cpp test_dmc.cpp test_drift.cpp test_clone_manager.cpp test_fixed_node_branch.cpp test_DescentEngine.cpp test_HybridEngine.cpp)
+set(DRIVER_TEST_SRC
+    test_vmc.cpp
+    test_dmc.cpp
+    test_drift.cpp
+    test_clone_manager.cpp
+    test_fixed_node_branch.cpp
+    test_DescentEngine.cpp
+    test_HybridEngine.cpp)
 
-IF (NOT QMC_CUDA)
-  SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_vmc_driver.cpp test_dmc_driver.cpp)
-ENDIF()
+if(NOT QMC_CUDA)
+  set(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_vmc_driver.cpp test_dmc_driver.cpp)
+endif()
 
 # legacy driver mpi, not tested in a meaningful way since the standard unit test is
 # just one rank with mpi.
-IF(HAVE_MPI)
-  SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_walker_control.cpp)
-ENDIF()
-ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
+if(HAVE_MPI)
+  set(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_walker_control.cpp)
+endif()
+add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
 
-IF(QMC_CUDA)
+if(QMC_CUDA)
   target_sources(${UTEST_EXE} PRIVATE test_QMCDriverFactory_CUDA.cpp)
-ELSE(QMC_CUDA)
+else(QMC_CUDA)
   target_sources(${UTEST_EXE} PRIVATE test_QMCDriverFactory.cpp)
-ENDIF(QMC_CUDA)
+endif(QMC_CUDA)
 
-USE_FAKE_RNG(${UTEST_EXE})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
-IF(USE_OBJECT_TARGET)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget)
-ENDIF()
+use_fake_rng(${UTEST_EXE})
+target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
+if(USE_OBJECT_TARGET)
+  target_link_libraries(
+    ${UTEST_EXE}
+    qmcestimators_unit
+    qmcham_unit
+    qmcwfs
+    qmcparticle
+    qmcutil
+    containers
+    platform_device
+    platform_omptarget)
+endif()
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+if("${ENABLE_SANITIZER}" STREQUAL "asan")
+  set_property(
+    TEST ${UTEST_NAME}
+    APPEND
+    PROPERTY LABELS noasan)
+endif()
 
-
-IF(NOT QMC_CUDA)
+if(NOT QMC_CUDA)
   # New Driver Only test program
   # to avoid dealing with the build dependencies
   # and memory leaks brought in by the old driver tests
 
-  SET(UTEST_EXE test_new_${SRC_DIR})
-  SET(UTEST_NAME deterministic-unit_test_new_${SRC_DIR})
-  SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/drivers)
-  SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+  set(UTEST_EXE test_new_${SRC_DIR})
+  set(UTEST_NAME deterministic-unit_test_new_${SRC_DIR})
+  set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/drivers)
+  set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
   #this is dependent on the directory creation and sym linking of earlier driver tests
 
-  SET(DRIVER_TEST_SRC SetupPools.cpp test_Crowd.cpp test_MCPopulation.cpp test_ContextForSteps.cpp test_QMCDriverInput.cpp test_QMCDriverNew.cpp test_VMCDriverInput.cpp test_VMCFactoryNew.cpp test_VMCBatched.cpp test_DMCBatched.cpp test_SimpleFixedNodeBranch.cpp test_SFNBranch.cpp test_QMCCostFunctionBatched.cpp)
-  ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
-  USE_FAKE_RNG(${UTEST_EXE})
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
-  IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget)
-  ENDIF()
+  set(DRIVER_TEST_SRC
+      SetupPools.cpp
+      test_Crowd.cpp
+      test_MCPopulation.cpp
+      test_ContextForSteps.cpp
+      test_QMCDriverInput.cpp
+      test_QMCDriverNew.cpp
+      test_VMCDriverInput.cpp
+      test_VMCFactoryNew.cpp
+      test_VMCBatched.cpp
+      test_DMCBatched.cpp
+      test_SimpleFixedNodeBranch.cpp
+      test_SFNBranch.cpp
+      test_QMCCostFunctionBatched.cpp
+      test_WFOptDriverInput.cpp)
+  add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
+  use_fake_rng(${UTEST_EXE})
+  target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
+  if(USE_OBJECT_TARGET)
+    target_link_libraries(
+      ${UTEST_EXE}
+      qmcestimators_unit
+      qmcham_unit
+      qmcwfs
+      qmcparticle
+      qmcutil
+      containers
+      platform_device
+      platform_omptarget)
+  endif()
 
-  ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-  SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+  set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  if("${ENABLE_SANITIZER}" STREQUAL "asan")
+    set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS noasan)
+  endif()
 
-
-  IF(HAVE_MPI)
-    SET(UTEST_EXE test_${SRC_DIR}_mpi)
-    SET(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
-    SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/drivers)
-    SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
+  if(HAVE_MPI)
+    set(UTEST_EXE test_${SRC_DIR}_mpi)
+    set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
+    set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/drivers)
+    set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
     #this is dependent on the directory creation and sym linking of earlier driver tests
-    SET(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControlMPI.cpp)
-    ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
-    TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
-    IF(USE_OBJECT_TARGET)
-    TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcestimators_unit qmcham_unit qmcwfs qmcparticle qmcutil containers platform_device platform_omptarget)
-    ENDIF()
+    set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp)
+    add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
+    use_fake_rng(${UTEST_EXE})
+    target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
+    if(USE_OBJECT_TARGET)
+      target_link_libraries(
+        ${UTEST_EXE}
+        qmcestimators_unit
+        qmcham_unit
+        qmcwfs
+        qmcparticle
+        qmcutil
+        containers
+        platform_device
+        platform_omptarget)
+    endif()
     # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
-    ADD_UNIT_TEST(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-    SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
-  ENDIF(HAVE_MPI)
-ENDIF(NOT QMC_CUDA)
+    add_unit_test(${UTEST_NAME} 3 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+    set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
+  endif(HAVE_MPI)
+endif(NOT QMC_CUDA)

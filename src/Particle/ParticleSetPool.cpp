@@ -20,9 +20,6 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
-#if OHMMS_DIM == 3
-#include "ParticleIO/ESHDFParticleParser.h"
-#endif
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -31,8 +28,7 @@
 
 namespace qmcplusplus
 {
-ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
-    : MPIObjectBase(c), TileMatrix(0)
+ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname) : MPIObjectBase(c), TileMatrix(0)
 {
   TileMatrix.diagonal(1);
   ClassName = "ParticleSetPool";
@@ -157,7 +153,8 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   std::string role("none");
   std::string randomR("no");
   std::string randomsrc;
-  std::string useGPU("no");
+  std::string useGPU;
+  std::string spinor;
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
@@ -165,8 +162,9 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   pAttrib.add(randomR, "random");
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
+  pAttrib.add(spinor, "spinor", {"no", "yes"});
 #if defined(ENABLE_OFFLOAD)
-  pAttrib.add(useGPU, "gpu");
+  pAttrib.add(useGPU, "gpu", {"yes", "no"});
 #endif
   pAttrib.put(cur);
   //backward compatibility
@@ -178,7 +176,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     app_summary() << std::endl;
     app_summary() << " Particle Set" << std::endl;
     app_summary() << " ------------" << std::endl;
-    app_summary() << "  Name: " << id << "  Offload : " << useGPU << std::endl;
+    app_summary() << "  Name: " << id << "   Offload : " << useGPU << std::endl;
     app_summary() << std::endl;
 
     // select OpenMP offload implementation in ParticleSet.
@@ -207,6 +205,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       randomize_nodes.push_back(anode);
     }
     pTemp->setName(id);
+    pTemp->is_spinor_ = spinor == "yes";
     app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
     app_summary() << std::endl;
     return success;
@@ -275,197 +274,4 @@ void ParticleSetPool::reset()
   }
 }
 
-/** Create particlesets from ES-HDF file
- */
-ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, const std::string& target, ParticleSet* qp)
-{
-  //TinyVector<int,OHMMS_DIM> tilefactor;
-  Tensor<int, OHMMS_DIM> eshdf_tilematrix(0);
-  eshdf_tilematrix.diagonal(1);
-  double lr_cut = 15;
-  std::string h5name;
-  std::string source("i");
-  std::string bc("p p p");
-  std::string spotype("0");
-  std::string lr_handler("opt_breakup");
-  OhmmsAttributeSet attribs;
-  attribs.add(h5name, "href");
-  attribs.add(eshdf_tilematrix, "tilematrix");
-  attribs.add(source, "source");
-  attribs.add(bc, "bconds");
-  attribs.add(lr_cut, "LR_dim_cutoff");
-  attribs.add(lr_handler, "LR_handler");
-  attribs.add(spotype, "type");
-  attribs.put(cur);
-
-  if (h5name.empty())
-    return qp;
-
-#if OHMMS_DIM == 3
-  ParticleSet* ions = getParticleSet(source);
-  if (ions == 0)
-  {
-    ions = new MCWalkerConfiguration;
-    ions->setName(source);
-    //set the boundary condition
-    ions->Lattice.LR_dim_cutoff = lr_cut;
-    std::istringstream is(bc);
-    char c;
-    int idim = 0;
-    while (!is.eof() && idim < OHMMS_DIM)
-    {
-      if (is >> c)
-        ions->Lattice.BoxBConds[idim++] = (c == 'p');
-    }
-
-    tolower(lr_handler);
-    if (lr_handler == "ewald")
-    {
-      LRCoulombSingleton::this_lr_type = LRCoulombSingleton::EWALD;
-    }
-    else if (lr_handler == "opt_breakup")
-    {
-      LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
-    }
-    else if (lr_handler == "opt_breakup_original")
-    {
-      LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
-    }
-    else
-    {
-      APP_ABORT("Long range breakup handler not recognized\n");
-    }
-
-    //initialize ions from hdf5
-    hid_t h5 = -1;
-    if (myComm->rank() == 0)
-    {
-      //Rather than turn off all H5errors, we're going to
-      //temporarily disable it.
-      //
-      //old_func:  function pointer to current function that
-      //           displays when H5 encounters error.
-      H5E_auto2_t old_func;
-      //old_client_data:  null pointer to associated error stream.
-      void* old_client_data;
-      //Grab the current handler info.
-      H5Eget_auto2(H5E_DEFAULT, &old_func, &old_client_data);
-      //Now kill error notifications.
-      H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
-      h5 = H5Fopen(h5name.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-      //and restore to defaults.
-      H5Eset_auto2(H5E_DEFAULT, old_func, old_client_data);
-      if (h5 < 0)
-      {
-        app_error() << "Could not open HDF5 file \"" << h5name
-                    << "\" in ParticleSetPool::createESParticleSet.  Aborting.\n"
-                    << "(Please ensure that your path is correct, the file exists, and that "
-                    << "you have read permissions.)\n";
-        APP_ABORT("ParticleSetPool::createESParticleSet");
-      }
-    }
-    ESHDFIonsParser ap(*ions, h5, myComm);
-    ap.put(cur);
-    ap.expand(eshdf_tilematrix);
-    if (h5 > -1)
-      H5Fclose(h5);
-    //failed to initialize the ions
-    if (ions->getTotalNum() == 0)
-      return 0;
-    typedef ParticleSet::SingleParticleIndex_t SingleParticleIndex_t;
-    std::vector<SingleParticleIndex_t> grid(OHMMS_DIM, SingleParticleIndex_t(1));
-    ions->Lattice.reset();
-
-    myPool[source] = ions;
-  }
-
-  if (SimulationCell == 0)
-  {
-    SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>(ions->Lattice);
-  }
-
-  if (qp == 0)
-  {
-    //create the electrons
-    qp = new MCWalkerConfiguration;
-    qp->setName(target);
-    qp->Lattice = ions->Lattice;
-
-    app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << std::endl;
-    app_log() << "  Wigner-Seitz cell radius = " << qp->Lattice.WignerSeitzRadius << std::endl;
-    SimulationCell->print(app_log());
-
-    // Goback to the // and OhmmsXPathObject handles it internally
-    OhmmsXPathObject det("//determinant", cur);
-
-    if (det.size() > 2)
-      APP_ABORT("Only two electron groups are supported.");
-
-    std::vector<int> num_spin(det.size(), 0);
-    for (int i = 0; i < det.size(); ++i)
-    {
-      OhmmsAttributeSet a;
-      a.add(num_spin[i], "size");
-      a.put(det[i]);
-    }
-
-    {
-      //create species
-      SpeciesSet& species = qp->getSpeciesSet();
-      //add up and down
-      species.addSpecies("u");
-      if (num_spin.size() > 1)
-        species.addSpecies("d");
-      int chid = species.addAttribute("charge");
-      for (int i = 0; i < num_spin.size(); ++i)
-        species(chid, i) = -1.0;
-      int mid = species.addAttribute("membersize");
-      for (int i = 0; i < num_spin.size(); ++i)
-        species(mid, i) = num_spin[i];
-      mid = species.addAttribute("mass");
-      for (int i = 0; i < num_spin.size(); ++i)
-        species(mid, i) = 1.0;
-      qp->create(num_spin);
-    }
-    //name it with the target
-    qp->setName(target);
-
-    //if(qp->getTotalNum() == 0 || ions->getTotalNum() == 0)
-    //{
-    //  delete qp;
-    //  delete ions;
-    //  APP_ABORT("ParticleSetPool failed to create particlesets for the electron structure calculation");
-    //  return 0;
-    //}
-    //for PPP, use uniform random
-    if (qp->Lattice.SuperCellEnum == SUPERCELL_BULK)
-    {
-      makeUniformRandom(qp->R);
-      qp->R.setUnit(PosUnit::Lattice);
-      qp->convert2Cart(qp->R);
-    }
-    else
-    {
-      //assign non-trivial positions for the quanmtum particles
-      InitMolecularSystem mole(*this);
-      mole.initMolecule(ions, qp);
-      qp->R.setUnit(PosUnit::Cartesian);
-    }
-    //for(int i=0; i<qp->getTotalNum(); ++i)
-    //  std::cout << qp->GroupID[i] << " " << qp->R[i] << std::endl;
-
-#if !defined(QMC_CUDA)
-    makeUniformRandom(qp->spins);
-    qp->spins *= 2 * M_PI;
-#endif
-
-    if (qp->Lattice.SuperCellEnum)
-      qp->createSK();
-    qp->resetGroups();
-    myPool[target] = qp;
-  }
-
-#endif
-  return qp;
-}
 } // namespace qmcplusplus

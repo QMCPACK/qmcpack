@@ -64,7 +64,6 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
   FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
-  RealType gf_acc      = 1.0;
   mPosType K;
   mTensorType D;
   mTensorType Dchol;
@@ -188,7 +187,6 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
             ++nAcceptTemp;
             Psi.acceptMove(W, iat, true);
             rr_accepted += rr;
-            gf_acc *= prob; //accumulate the ratio
           }
           else
           {
@@ -238,7 +236,6 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
     thisWalker.Weight = wtmp;
     ++nAllRejected;
     enew   = eold; //copy back old energy
-    gf_acc = 1.0;
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
   }
 #if !defined(REMOVE_TRACEMANAGER)

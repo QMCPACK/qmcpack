@@ -6,31 +6,30 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include<iostream>
-
-#include "../array_ref.hpp"
 #include "../array.hpp"
 
+#include<complex>
 #include<iostream>
 #include<vector>
-#include<complex>
 
 namespace multi = boost::multi;
-using std::cout; using std::cerr;
 
 namespace fake{
-typedef double fftw_complex[2];
+
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays, modernize-avoid-c-arrays): testing a legacy interface
+using fftw_complex = double[2];
+
 void fftw_plan_dft(
 	int rank, const int *n, 
 	fftw_complex *in, fftw_complex *out, int sign, unsigned flags){
 	(void)rank, (void)n, (void)in, (void)out, (void)sign, (void)flags;
 }
-}
+} // namespace fake
 
 BOOST_AUTO_TEST_CASE(array_legacy_c){
-	using std::complex;
 
-	multi::array<complex<double>, 2> const in = {
+	using complex = std::complex<double>;
+	multi::array<complex, 2> const in = {
 		{150., 16., 17., 18., 19.},
 		{  5.,  5.,  5.,  5.,  5.}, 
 		{100., 11., 12., 13., 14.}, 
@@ -38,21 +37,26 @@ BOOST_AUTO_TEST_CASE(array_legacy_c){
 	};
 	multi::array<std::complex<double>, 2> out(extensions(in));
 
-	assert( dimensionality(out) == dimensionality(in) );
-	assert( sizes(out) == sizes(in) );
+	BOOST_REQUIRE( dimensionality(out) == dimensionality(in) );
+	BOOST_REQUIRE( sizes(out) == sizes(in) );
 
 	using multi::sizes_as;
+
+	static_assert( sizeof(complex) == sizeof(fake::fftw_complex), "!" );
 	fake::fftw_plan_dft(
 		dimensionality(in), sizes_as<int>(in).data(),
-		(fake::fftw_complex*)in.data_elements(), (fake::fftw_complex*)out.data_elements(), 1, 0
+		reinterpret_cast<fake::fftw_complex*>(const_cast<complex*>(in .data_elements())), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast, cppcoreguidelines-pro-type-const-cast): testing legacy code
+		reinterpret_cast<fake::fftw_complex*>(                     out.data_elements() ), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast): testing legacy code
+		1, 0
 	);
 
-struct basic : multi::layout_t<2>{
-	double* p;
-};
+//struct basic : multi::layout_t<2>{
+//	double* p = {};
+//	basic() = default;
+//};
 
-struct ref : basic{
-};
+//struct ref : basic{
+//};
 
 
 	{
@@ -73,7 +77,6 @@ struct ref : basic{
 		BOOST_REQUIRE( not rotated(d2D)[2].is_compact() );
 	}
 	{
-		using complex = std::complex<double>;
 		multi::array<complex, 2> d2D({5, 3});
 		BOOST_REQUIRE( d2D.is_compact() );
 		BOOST_REQUIRE( rotated(d2D).is_compact() );

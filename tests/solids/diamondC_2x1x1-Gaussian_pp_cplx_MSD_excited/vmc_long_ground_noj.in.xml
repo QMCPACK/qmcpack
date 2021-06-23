@@ -2,7 +2,7 @@
 <simulation>
   <project id="vmc_long_ground_noj" series="0"/>
   <include href="C_diamond2x1x1-twist.structure.xml"/>
-  <include href="C_diamond2x1x1-twist-Ground.wfj.xml"/>
+  <include href="C_diamond2x1x1-twist-Ground.wfnoj.xml"/>
   <hamiltonian name="h0" type="generic" target="e">
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
     <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>

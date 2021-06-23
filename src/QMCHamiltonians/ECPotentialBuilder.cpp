@@ -62,24 +62,28 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     soPot.resize(ng);
     L2Pot.resize(ng);
   }
-  std::string ecpFormat("table");
-  std::string NLPP_algo(omp_get_nested() ? "batched" : "default");
-#ifdef ENABLE_OFFLOAD
-  NLPP_algo = "batched"; // set "batched" as the default
-#endif
-  std::string use_DLA("no");
-  std::string pbc("yes");
-  std::string forces("no");
-  std::string physicalSO("no");
+  std::string ecpFormat;
+  std::string NLPP_algo;
+  std::string use_DLA;
+  std::string pbc;
+  std::string forces;
+  std::string physicalSO;
 
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(ecpFormat, "format");
-  pAttrib.add(NLPP_algo, "algorithm");
-  pAttrib.add(use_DLA, "DLA");
-  pAttrib.add(pbc, "pbc");
-  pAttrib.add(forces, "forces");
-  pAttrib.add(physicalSO, "physicalSO");
+  pAttrib.add(ecpFormat, "format", {"table", "xml"});
+  pAttrib.add(NLPP_algo, "algorithm", {"", "batched", "non-batched"});
+  pAttrib.add(use_DLA, "DLA", {"no", "yes"});
+  pAttrib.add(pbc, "pbc", {"yes", "no"});
+  pAttrib.add(forces, "forces", {"no", "yes"});
+  pAttrib.add(physicalSO, "physicalSO", {"no", "yes"});
   pAttrib.put(cur);
+
+  if (NLPP_algo.empty())
+#ifdef ENABLE_OFFLOAD
+    NLPP_algo = "batched";
+#else
+    NLPP_algo = "non-batched";
+#endif
 
   bool doForces = (forces == "yes") || (forces == "true");
   if (use_DLA == "yes")
@@ -102,38 +106,41 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     if (IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
     {
 #ifdef QMC_CUDA
-      LocalECPotential_CUDA* apot = new LocalECPotential_CUDA(IonConfig, targetPtcl);
+      std::unique_ptr<LocalECPotential_CUDA> apot = std::make_unique<LocalECPotential_CUDA>(IonConfig, targetPtcl);
 #else
-      LocalECPotential* apot = new LocalECPotential(IonConfig, targetPtcl);
+      std::unique_ptr<LocalECPotential> apot = std::make_unique<LocalECPotential>(IonConfig, targetPtcl);
 #endif
       for (int i = 0; i < localPot.size(); i++)
         if (localPot[i])
           apot->add(i, std::move(localPot[i]), localZeff[i]);
-      targetH.addOperator(apot, "LocalECP");
+      targetH.addOperator(std::move(apot), "LocalECP");
     }
     else
     {
       if (doForces)
         app_log() << "  Will compute forces in CoulombPBCAB.\n" << std::endl;
 #ifdef QMC_CUDA
-      CoulombPBCAB_CUDA* apot = new CoulombPBCAB_CUDA(IonConfig, targetPtcl, doForces);
+      std::unique_ptr<CoulombPBCAB_CUDA> apot = std::make_unique<CoulombPBCAB_CUDA>(IonConfig, targetPtcl, doForces);
 #else
-      CoulombPBCAB* apot     = new CoulombPBCAB(IonConfig, targetPtcl, doForces);
+      std::unique_ptr<CoulombPBCAB> apot     = std::make_unique<CoulombPBCAB>(IonConfig, targetPtcl, doForces);
 #endif
       for (int i = 0; i < localPot.size(); i++)
       {
         if (localPot[i])
           apot->add(i, std::move(localPot[i]));
       }
-      targetH.addOperator(apot, "LocalECP");
+      targetH.addOperator(std::move(apot), "LocalECP");
     }
   }
   if (hasNonLocalPot)
   {
 #ifdef QMC_CUDA
-    NonLocalECPotential_CUDA* apot = new NonLocalECPotential_CUDA(IonConfig, targetPtcl, targetPsi, usePBC, doForces, use_DLA == "yes");
+    std::unique_ptr<NonLocalECPotential_CUDA> apot =
+        std::make_unique<NonLocalECPotential_CUDA>(IonConfig, targetPtcl, targetPsi, usePBC, doForces,
+                                                   use_DLA == "yes");
 #else
-    NonLocalECPotential* apot = new NonLocalECPotential(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
+    std::unique_ptr<NonLocalECPotential> apot =
+        std::make_unique<NonLocalECPotential>(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
 #endif
     int nknot_max = 0;
     for (int i = 0; i < nonLocalPot.size(); i++)
@@ -151,7 +158,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     if (NLPP_algo == "batched")
       app_log() << "    Using batched ratio computing in NonLocalECP" << std::endl;
 
-    targetH.addOperator(apot, "NonLocalECP");
+    targetH.addOperator(std::move(apot), "NonLocalECP");
   }
   if (hasSOPot)
   {
@@ -165,9 +172,9 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     else
       APP_ABORT("physicalSO must be set to yes/no. Unknown option given\n");
 
-    SOECPotential* apot = new SOECPotential(IonConfig, targetPtcl, targetPsi);
-    int nknot_max       = 0;
-    int sknot_max       = 0;
+    std::unique_ptr<SOECPotential> apot = std::make_unique<SOECPotential>(IonConfig, targetPtcl, targetPsi);
+    int nknot_max                       = 0;
+    int sknot_max                       = 0;
     for (int i = 0; i < soPot.size(); i++)
     {
       if (soPot[i])
@@ -182,18 +189,18 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
 
     if (physicalSO == "yes")
-      targetH.addOperator(apot, "SOECP"); //default is physical operator
+      targetH.addOperator(std::move(apot), "SOECP"); //default is physical operator
     else
-      targetH.addOperator(apot, "SOECP", false);
+      targetH.addOperator(std::move(apot), "SOECP", false);
   }
   if (hasL2Pot)
   {
-    L2Potential* apot = new L2Potential(IonConfig, targetPtcl, targetPsi);
+    std::unique_ptr<L2Potential> apot = std::make_unique<L2Potential>(IonConfig, targetPtcl, targetPsi);
     for (int i = 0; i < L2Pot.size(); i++)
       if (L2Pot[i])
         apot->add(i, std::move(L2Pot[i]));
     app_log() << "\n  Using L2 potential" << std::endl;
-    targetH.addOperator(apot, "L2");
+    targetH.addOperator(std::move(apot), "L2");
   }
 
   app_log().flush();
@@ -356,11 +363,11 @@ void ECPotentialBuilder::useSimpleTableFormat()
       if (angmom < 0)
       //local potential, input is rescale by -r/z
       {
-        RealType zinv   = -1.0 / Species(icharge, ig);
-        int ng          = npoints - 1;
-        RealType rf     = 5.0;
-        ng              = static_cast<int>(rf * 100) + 1; //use 1e-2 resolution
-        GridType* agrid = new LinearGrid<RealType>;
+        RealType zinv = -1.0 / Species(icharge, ig);
+        int ng        = npoints - 1;
+        RealType rf   = 5.0;
+        ng            = static_cast<int>(rf * 100) + 1; //use 1e-2 resolution
+        auto agrid    = std::make_unique<LinearGrid<RealType>>();
         agrid->set(0, rf, ng);
         std::vector<RealType> pp_temp(ng);
         pp_temp[0] = 0.0;
@@ -369,8 +376,8 @@ void ECPotentialBuilder::useSimpleTableFormat()
           RealType r((*agrid)[j]);
           pp_temp[j] = r * zinv * inFunc.splint(r);
         }
-        pp_temp[ng - 1]          = 1.0;
-        auto app = std::make_unique<RadialPotentialType>(agrid, pp_temp);
+        pp_temp[ng - 1] = 1.0;
+        auto app        = std::make_unique<RadialPotentialType>(std::move(agrid), pp_temp);
         app->spline();
         localPot[ig] = std::move(app);
         app_log() << "    LocalECP l=" << angmom << std::endl;
@@ -382,9 +389,9 @@ void ECPotentialBuilder::useSimpleTableFormat()
         hasNonLocalPot = true; //will create NonLocalECPotential
         if (!mynnloc)
           mynnloc = std::make_unique<NonLocalECPComponent>();
-        RealType rf     = inFunc.rmax();
-        GridType* agrid = new LinearGrid<RealType>;
-        int ng          = static_cast<int>(rf * 100) + 1;
+        RealType rf = inFunc.rmax();
+        auto agrid  = std::make_unique<LinearGrid<RealType>>();
+        int ng      = static_cast<int>(rf * 100) + 1;
         agrid->set(0.0, rf, ng);
         app_log() << "    NonLocalECP l=" << angmom << " rmax = " << rf << std::endl;
         app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << std::endl;
@@ -395,7 +402,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
         {
           pp_temp[j] = inFunc.splint((*agrid)[j]);
         }
-        RadialPotentialType* app = new RadialPotentialType(agrid, pp_temp);
+        auto app = new RadialPotentialType(std::move(agrid), pp_temp);
         app->spline();
         mynnloc->add(angmom, app);
         lmax = std::max(lmax, angmom);
@@ -429,7 +436,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
       }
       //cout << "Spherical grid : " << numsgridpts << " points" << std::endl;
       mynnloc->resize_warrays(numsgridpts, numnonloc, lmax);
-      nonLocalPot[ig]   = std::move(mynnloc);
+      nonLocalPot[ig] = std::move(mynnloc);
     }
   } //species
 }

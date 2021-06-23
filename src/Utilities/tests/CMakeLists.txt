@@ -9,17 +9,27 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR} )
+set(SRC_DIR utilities)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(SRC_DIR utilities)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+add_executable(
+  ${UTEST_EXE}
+  test_rng.cpp
+  test_parser.cpp
+  test_timer.cpp
+  test_runtime_manager.cpp
+  test_prime_set.cpp
+  test_partition.cpp
+  test_pooled_memory.cpp
+  test_ResourceCollection.cpp
+  test_infostream.cpp
+  test_output_manager.cpp
+  test_StdRandom.cpp)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil)
 
-ADD_EXECUTABLE(${UTEST_EXE} test_rng.cpp test_parser.cpp test_timer.cpp test_runtime_manager.cpp
-                            test_prime_set.cpp test_partition.cpp test_pooled_memory.cpp
-                            test_ResourceCollection.cpp
-                            test_infostream.cpp test_output_manager.cpp test_StdRandom.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} catch_main qmcutil)
+add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+subdirs(for_testing)

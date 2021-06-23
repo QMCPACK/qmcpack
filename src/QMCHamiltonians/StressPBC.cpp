@@ -83,11 +83,10 @@ void StressPBC::initBreakup(ParticleSet& P)
   }
 
   for (int spec = 0; spec < NumSpeciesA; spec++) {}
-  RealType totQ = 0.0;
   for (int iat = 0; iat < NptclA; iat++)
-    totQ += Zat[iat] = Zspec[PtclA.GroupID[iat]];
+    Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
-    totQ += Qat[iat] = Qspec[P.GroupID[iat]];
+    Qat[iat] = Qspec[P.GroupID[iat]];
 
   AA = LRCoulombSingleton::getDerivHandler(P);
 }
@@ -334,14 +333,14 @@ bool StressPBC::put(xmlNodePtr cur)
   return true;
 }
 
-OperatorBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  StressPBC* tmp       = new StressPBC(PtclA, qp, psi);
-  tmp->firstTimeStress = firstTimeStress;
-  tmp->stress_IonIon   = stress_IonIon;
-  tmp->stress_ee_const = stress_ee_const;
-  tmp->stress_eI_const = stress_eI_const;
-  tmp->addionion       = addionion;
+  std::unique_ptr<StressPBC> tmp = std::make_unique<StressPBC>(PtclA, qp, psi);
+  tmp->firstTimeStress           = firstTimeStress;
+  tmp->stress_IonIon             = stress_IonIon;
+  tmp->stress_ee_const           = stress_ee_const;
+  tmp->stress_eI_const           = stress_eI_const;
+  tmp->addionion                 = addionion;
   return tmp;
 }
 } // namespace qmcplusplus

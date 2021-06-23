@@ -77,11 +77,11 @@ public:
 
   /** standard interface
    */
-  OperatorEstBase* clone() override;
+  SpinDensityNew* clone() override;
 
   /** accumulate 1 or more walkers of SpinDensity samples
    */
-  void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) override;
+  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of SpinDensityNew's data.

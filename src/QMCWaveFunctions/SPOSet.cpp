@@ -60,6 +60,16 @@ void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
   }
 }
 
+void SPOSet::evaluateVGL_spin(const ParticleSet& P,
+                              int iat,
+                              ValueVector_t& psi,
+                              GradVector_t& dpsi,
+                              ValueVector_t& d2psi,
+                              ValueVector_t& dspin)
+{
+  APP_ABORT("Need specialization of SPOSet::evaluateVGL_spin");
+}
+
 void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                             const RefVectorWithLeader<ParticleSet>& P_list,
                             int iat,
@@ -100,6 +110,17 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix_t& grad_grad_grad_logdet)
 {
   APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
+}
+
+void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
+                                       int first,
+                                       int last,
+                                       ValueMatrix_t& logdet,
+                                       GradMatrix_t& dlogdet,
+                                       ValueMatrix_t& d2logdet,
+                                       ValueMatrix_t& dspinlogdet)
+{
+  APP_ABORT("Need specialization of " + className + "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
 }
 
 void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -205,14 +226,16 @@ void SPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi)
   APP_ABORT("Need specialization for SPOSet::evaluate(const ParticleSet& P, PosType &r)\n");
 }
 
-void SPOSet::evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi)
+void SPOSet::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+                      int iat,
+                      gpu::device_vector<CTS::ValueType*>& phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
-void SPOSet::evaluate(std::vector<Walker_t*>& walkers,
+void SPOSet::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                       std::vector<PosType>& new_pos,
                       gpu::device_vector<CTS::ValueType*>& phi)
 {
@@ -221,7 +244,7 @@ void SPOSet::evaluate(std::vector<Walker_t*>& walkers,
   abort();
 }
 
-void SPOSet::evaluate(std::vector<Walker_t*>& walkers,
+void SPOSet::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                       std::vector<PosType>& new_pos,
                       gpu::device_vector<CTS::ValueType*>& phi,
                       gpu::device_vector<CTS::ValueType*>& grad_lapl_list,
@@ -232,7 +255,7 @@ void SPOSet::evaluate(std::vector<Walker_t*>& walkers,
   abort();
 }
 
-void SPOSet::evaluate(std::vector<Walker_t*>& walkers,
+void SPOSet::evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                       std::vector<PosType>& new_pos,
                       gpu::device_vector<CTS::ValueType*>& phi,
                       gpu::device_vector<CTS::ValueType*>& grad_lapl_list,

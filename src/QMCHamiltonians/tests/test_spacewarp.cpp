@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "QMCHamiltonians/SpaceWarpTransformation.h"
 //#include "QMCWaveFunctions/SPOSetBuilderFactory.h"

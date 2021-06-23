@@ -29,12 +29,13 @@
 #include "Utilities/TimerManager.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
+#include "DTModes.h"
 
 namespace qmcplusplus
 {
 ///forward declaration of DistanceTableData
 class DistanceTableData;
-
+class ResourceCollection;
 class StructFact;
 
 /** Specialized paritlce class for atomistic simulations
@@ -104,6 +105,8 @@ public:
   bool SameMass;
   ///threa id
   Index_t ThreadID;
+  ///true is a dynamic spin calculation
+  bool is_spinor_;
   /** the index of the active particle during particle-by-particle moves
    *
    * when a single particle move is proposed, the particle id is assigned to activePtcl
@@ -223,11 +226,11 @@ public:
 
   /** add a distance table
    * @param psrc source particle set
-   * @param need_full_table if true, DT is fully computed in loadWalker() and maintained up-to-date during p-by-p moving
+   * @param modes bitmask DistanceTableData::DTModes
    *
    * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
    */
-  int addTable(const ParticleSet& psrc, bool need_full_table = false);
+  int addTable(const ParticleSet& psrc, DTModes modes = DTModes::ALL_OFF);
 
   /** get a distance table by table_ID
    */
@@ -278,7 +281,7 @@ public:
 
   /** return the position of the active particle
    *
-   * activePtcl=-1 is used to flag non-physical moves
+   * activePtcl=-1 is used to flag non-physical move
    */
   inline const PosType& activeR(int iat) const { return (activePtcl == iat) ? activePos : R[iat]; }
   inline const Scalar_t& activeSpin(int iat) const { return (activePtcl == iat) ? activeSpinVal : spins[iat]; }
@@ -337,6 +340,7 @@ public:
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
 
   bool makeMoveAllParticles(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
+
   /** move all the particles including the drift
    *
    * Otherwise, everything is the same as makeMove for a walker
@@ -418,8 +422,9 @@ public:
    */
   void loadWalker(Walker_t& awalker, bool pbyp);
   /** batched version of loadWalker */
-  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& psets,
+  static void mw_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
                             const RefVector<Walker_t>& walkers,
+                            const std::vector<bool>& recompute,
                             bool pbyp);
 
   /** save this to awalker
@@ -560,6 +565,7 @@ public:
     spins            = ptclin.spins;
     ID               = ptclin.ID;
     GroupID          = ptclin.GroupID;
+    is_spinor_       = ptclin.is_spinor_;
     if (ptclin.SubPtcl.size())
     {
       SubPtcl.resize(ptclin.SubPtcl.size());
@@ -638,6 +644,17 @@ public:
   }
 
   inline int getNumDistTables() const { return DistTables.size(); }
+
+  /// initialize a shared resource and hand it to a collection
+  void createResource(ResourceCollection& collection) const;
+  /** acquire external resource and assocaite it with the list of ParticleSet
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
+   */
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
+  /** release external resource
+   * Note: use RAII ResourceCollectionTeamLock whenever possible
+   */
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list);
 
   static RefVectorWithLeader<DistanceTableData> extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                  int id);

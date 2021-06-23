@@ -72,7 +72,7 @@ public:
   ///container type of the Properties of a Walker
   typedef Walker_t::PropertyContainer_t PropertyContainer_t;
   ///container type of Walkers
-  typedef std::vector<Walker_t*> WalkerList_t;
+  typedef std::vector<std::unique_ptr<Walker_t>> WalkerList_t;
   /// FIX: a type alias of iterator for an object should not be for just one of many objects it holds.
   typedef WalkerList_t::iterator iterator;
   ///const_iterator of Walker container
@@ -182,7 +182,7 @@ public:
   ///save the position of current walkers
   void saveEnsemble(iterator first, iterator last);
   /// load a single sample from SampleStack
-  void loadSample(ParticleSet::ParticlePos_t& Pos, size_t iw) const;
+  void loadSample(ParticleSet& pset, size_t iw) const;
   /** load SampleStack data to current walkers
    */
   void loadEnsemble();

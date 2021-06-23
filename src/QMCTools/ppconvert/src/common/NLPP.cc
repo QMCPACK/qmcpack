@@ -294,11 +294,12 @@ ChannelPotential::SetupProjector (double G_max, double G_FFT)
 //     fclose (fout);
 //   }
   // Now solve Mx = b
-  Array<int,1> perm;
-  double sign;
-  LUdecomp (M, perm, sign);
-  LUsolve (M, perm, b);
-  x = b;
+  Array<int, 1> perm({nb}, int{0});
+
+  auto const& LU = lup::decompose(M, perm);
+  assert(size(LU) == size(M)); // check it is invertible
+  x = lup::solve(LU, perm, b);
+
   for (int i=0; i<nb; i++) 
     chi_q(G_maxIndex+i) = x(i);
   chi_q(G_maxIndex+nb) = 0.0;

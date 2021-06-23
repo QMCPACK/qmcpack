@@ -57,8 +57,8 @@ public:
 	ptr(Other const& o) : rp_{o.rp_}{}
 	ptr& operator=(ptr const&) = default;
 	explicit operator bool() const{return rp_;}
-	bool operator==(ptr const& other) const{return rp_==other.rp_;}
-	bool operator!=(ptr const& other) const{return rp_!=other.rp_;}
+	friend constexpr bool operator==(ptr const& s, ptr const& o){return s.rp_==o.rp_;}
+	friend constexpr bool operator!=(ptr const& s, ptr const& o){return s.rp_!=o.rp_;}
 	friend ptr to_address(ptr const& p){return p;}
 };
 
@@ -90,9 +90,8 @@ public:
 	template<class Other, typename = decltype(raw_pointer{std::declval<Other const&>().rp_})>
 	ptr(Other const& o) : rp_{o.rp_}{}
 	ptr& operator=(ptr const&) = default;
-	bool operator==(ptr const& other) const{return rp_==other.rp_;}
-	bool operator!=(ptr const& other) const{return rp_!=other.rp_;}
-
+	friend constexpr bool operator==(ptr const& s, ptr const& o){return s.rp_==o.rp_;}
+	friend constexpr bool operator!=(ptr const& s, ptr const& o){return s.rp_!=o.rp_;}
 	using pointer = ptr<T>;
 	using element_type    = typename std::pointer_traits<raw_pointer>::element_type;
 	using difference_type = typename std::pointer_traits<raw_pointer>::difference_type;
@@ -136,16 +135,20 @@ public:
 	ptr(ptr const&) = default;
 	constexpr ptr(std::nullptr_t nu) : rp_{nu}{}
 	ptr& operator=(ptr const&) = default;
-	constexpr bool operator==(ptr const& other) const{return rp_==other.rp_;}
-	constexpr bool operator!=(ptr const& other) const{return rp_!=other.rp_;}
-	template<class Other>
-	auto operator==(ptr<Other> const& other) const
-	->decltype(rp_==other.rp_){
-		return rp_==other.rp_;}
-	template<class Other>
-	auto operator!=(ptr<Other> const& other) const
-	->decltype(rp_!=other.rp_){
-		return rp_!=other.rp_;}
+//	constexpr bool operator==(ptr const& other) const{return rp_==other.rp_;}
+//	constexpr bool operator!=(ptr const& other) const{return rp_!=other.rp_;}
+
+	friend constexpr bool operator==(ptr const& s, ptr const& o){return s.rp_==o.rp_;}
+	friend constexpr bool operator!=(ptr const& s, ptr const& o){return s.rp_!=o.rp_;}
+
+//	template<class Other>
+//	auto operator==(ptr<Other> const& other) const
+//	->decltype(rp_==other.rp_){
+//		return rp_==other.rp_;}
+//	template<class Other>
+//	auto operator!=(ptr<Other> const& other) const
+//	->decltype(rp_!=other.rp_){
+//		return rp_!=other.rp_;}
 
 	using element_type    = typename raw_pointer_traits::element_type;
 	using difference_type = typename raw_pointer_traits::difference_type;

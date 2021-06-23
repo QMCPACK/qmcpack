@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_1d){
 	#endif
 	}
 	{
-		double const a[3] = {1.1, 2.2, 3.3};
+		std::array<double, 3> const a = {1.1, 2.2, 3.3};
 		using multi::num_elements;
 		BOOST_REQUIRE( num_elements(a) == 3 );
 
@@ -85,7 +85,8 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_array){
 	{
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wc99-designator"
-		double const a[] = { [8] = 8., 9., 10. };
+//		double const a[] = { [8] = 8., 9., 10. };
+		std::array<double, 11> const a = {{ [8] = 8., 9., 10. }};
 #pragma GCC diagnostic pop
 		multi::array<double, 1> A = a;
 		BOOST_REQUIRE( A.size() == 11 );
@@ -95,20 +96,17 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_array){
 }
 
 BOOST_AUTO_TEST_CASE(multi_initialize_from_carray_1d){
-	{ // TODO not working, add a constructor for static_array
-//		multi::static_array<double, 1> const A = (double const[3])// warning: ISO C++ forbids compound-literals [-Wpedantic]
-//			{1.1, 2.2, 3.3}
-//		;
-//		BOOST_REQUIRE( size(A)==3 and A[1] == 2.2 );
+	{
+		multi::static_array<double, 1> const A = {1.1, 2.2, 3.3};
+		BOOST_REQUIRE( size(A) == 3 );
+		BOOST_REQUIRE( A[1] == 2.2 );
 	}
 	{
-//#pragma clang diagnostic push
-//#pragma clang diagnostic ignored "-Wc99-extensions"
-//		multi::array A = (double const[])// warning: ISO C++ forbids compound-literals [-Wpedantic]
-//			{1.1, 2.2, 3.3}
-//		;
-//#pragma clang diagnostic pop
+#if defined(__cpp_deduction_guides)
+//		multi::array A = {{1.1, 2.2, 3.3}};
+//		static_assert( decltype(A)::dimensionality == 1 , "!");
 //		BOOST_REQUIRE( size(A)==3 and A[1] == 2.2 );
+#endif
 	}
 	{
 		std::array<double, 3> a = {1.1, 2.2, 3.3};
@@ -174,10 +172,12 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_2d){
 		BOOST_REQUIRE( vec[1] == 5.5 );
 	}
 	{
-		double const a[3][2] = {
-			{ 1.2,  2.4},
-			{11.2, 34.4},
-			{15.2, 32.4}
+		std::array<std::array<double, 2>, 3> const a = {
+			{
+				{ 1.2,  2.4},
+				{11.2, 34.4},
+				{15.2, 32.4}
+			}
 		};
 		using std::begin; using std::end;
 		multi::static_array<double, 2> A(begin(a), end(a));
@@ -186,15 +186,21 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_2d){
 		BOOST_REQUIRE( A[1][0] == 11.2 );
 	}
 	{
-		double const staticA[3][2] = 
+		std::array<std::array<double, 2>, 3> const staticA = {
 			{
 				{ 1.2,  2.4},
 				{11.2, 34.4},
 				{15.2, 32.4}
 			}
-		;
+		};
 		multi::static_array<double, 2> const A(std::begin(staticA), std::end(staticA));
 		BOOST_REQUIRE(( A == multi::array<double, 2>{
+				{ 1.2,  2.4},
+				{11.2, 34.4},
+				{15.2, 32.4}
+			}
+		));
+		BOOST_REQUIRE(not( A != multi::array<double, 2>{
 				{ 1.2,  2.4},
 				{11.2, 34.4},
 				{15.2, 32.4}
@@ -244,6 +250,7 @@ BOOST_AUTO_TEST_CASE(multi_tests_static_array_initializer_list){
 		{1. , 2.},
 		{3. , 4.},
 	};
+	BOOST_REQUIRE( SA[1][1] == 4. );
 }
 
 BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_3d){

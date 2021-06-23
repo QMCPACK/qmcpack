@@ -13,7 +13,7 @@
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
+#include "config.h"
 #include "determinant_update.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -1412,7 +1412,7 @@ __global__ void calc_ratio_grad_lapl(T** Ainv_list,
   // ratio to make it w.r.t. new position
   if (tid < 4)
     ratio_prod[(tid + 1) * BS1] /= ratio_prod[0];
-  __syncthreads();  
+  __syncthreads();
   if (tid < 5)
     ratio_grad_lapl[5 * blockIdx.x + tid] = ratio_prod[tid * BS1];
 }
@@ -2811,99 +2811,33 @@ __global__ void woodbury_update_32(T** Ainv_trans, T** delta, T** Ainv_delta, in
 
 
 #ifdef CUDA_TEST_MAIN
-// Replaces A with its inverse by gauss-jordan elimination with full pivoting
-// Adapted from Numerical Recipes in C
-void GJInverse(double* A, int n)
-{
-  const int maxSize = 2000;
-  if (n == 2) // Special case for 2x2
-  {
-    double a      = A[0];
-    double b      = A[1];
-    double c      = A[2];
-    double d      = A[3];
-    double detInv = 1.0 / (a * d - b * c);
-    A[0]          = d * detInv;
-    A[1]          = -b * detInv;
-    A[2]          = -c * detInv;
-    A[3]          = a * detInv;
-    return;
-  }
-  int colIndex[maxSize], rowIndex[maxSize], ipiv[maxSize];
-  double big, pivInv;
-  int icol, irow;
-  for (int j = 0; j < n; j++)
-    ipiv[j] = -1;
-  for (int i = 0; i < n; i++)
-  {
-    big = 0.0;
-    for (int j = 0; j < n; j++)
-      if (ipiv[j] != 0)
-        for (int k = 0; k < n; k++)
-        {
-          if (ipiv[k] == -1)
-          {
-            if (fabs(A[n * j + k]) >= big)
-            {
-              big  = fabs(A[n * j + k]);
-              irow = j;
-              icol = k;
-            }
-          }
-          else if (ipiv[k] > 0)
-          {
-            fprintf(stderr, "GJInverse: Singular matrix!\n");
-            exit(1);
-          }
-        }
-    ++(ipiv[icol]);
-    if (irow != icol)
-      for (int l = 0; l < n; l++)
-      {
-        double tmp      = A[n * irow + l];
-        A[n * irow + l] = A[n * icol + l];
-        A[n * icol + l] = tmp;
-        // swap (A[n*irow+l], A[n*icol+l]);
-      }
-    rowIndex[i] = irow;
-    colIndex[i] = icol;
-    if (A[n * icol + icol] == 0.0)
-    {
-      fprintf(stderr, "GJInverse: Singular matrix!\n");
-      exit(1);
-    }
-    pivInv             = 1.0 / A[n * icol + icol];
-    A[n * icol + icol] = 1.0;
-    for (int l = 0; l < n; l++)
-      A[n * icol + l] *= pivInv;
-    for (int ll = 0; ll < n; ll++)
-      if (ll != icol)
-      {
-        double dum       = A[n * ll + icol];
-        A[n * ll + icol] = 0.0;
-        for (int l = 0; l < n; l++)
-          A[n * ll + l] -= A[n * icol + l] * dum;
-      }
-  }
-  // Now unscramble the permutations
-  for (int l = n - 1; l >= 0; l--)
-  {
-    if (rowIndex[l] != colIndex[l])
-      for (int k = 0; k < n; k++)
-      {
-        double tmp             = A[n * k + rowIndex[l]];
-        A[n * k + rowIndex[l]] = A[n * k + colIndex[l]];
-        A[n * k + colIndex[l]] = tmp;
-        // swap (A(k,rowIndex[l]),A(k, colIndex[l]));
-      }
-  }
-}
 
 #include <omp.h>
-
+#include "lapacke.h"
 
 #define MAT_SIZE 256
 #define NUM_MATS 512
+
+// Compute inverse of n*n matrix A via LAPACKE
+void MatrixInverse(double* A, int n)
+{
+  lapack_int* ipiv_array = new int[n];
+  lapack_int ierror;
+  ierror = LAPACKE_dgetrf(LAPACK_COL_MAJOR, n, n, A, n, ipiv_array);
+  if (ierror != 0)
+  {
+    fprintf(stderr, "dgetrf failure. Error %i\n", ierror);
+    exit(1);
+  }
+  ierror = LAPACKE_dgetri(LAPACK_COL_MAJOR, n, A, n, ipiv_array);
+  if (ierror != 0)
+  {
+    fprintf(stderr, "dgetri failure. Error %i\n", ierror);
+    exit(1);
+  }
+  delete[] ipiv_array;
+  return;
+}
 
 void test_update()
 {
@@ -2961,7 +2895,7 @@ void test_update()
       }
       // for (int i=0; i<N; i++)
       // 	u_h[i] = A_h[row*N+i];
-      GJInverse(Ainv, N);
+      MatrixInverse(Ainv, N);
       for (int i = 0; i < N; i++)
         for (int j = 0; j < N; j++)
           Ainv_h[i * N + j] = (float)Ainv[i * N + j];
@@ -3057,7 +2991,7 @@ void test_update_transpose()
       }
       for (int j = 0; j < N; j++)
         u_h[j] = drand48(); //A[N*row+j];
-      GJInverse(Ainv, N);
+      MatrixInverse(Ainv, N);
       for (int i = 0; i < N; i++)
         for (int j = 0; j < N; j++)
           Ainv_h[j * N + i] = (float)Ainv[i * N + j];
@@ -3080,8 +3014,7 @@ void test_update_transpose()
   }
   cudaDeviceSynchronize();
   clock_t end = clock();
-  fprintf(stderr,
-          "Rate = %12.8f updates per second.\n",
+  fprintf(stderr, "Rate = %12.8f updates per second.\n",
           (double)(1000 * NUM_MATS) / ((double)(end - start) / (double)CLOCKS_PER_SEC));
   cudaMemcpy(Ainv_h, AinvList[1], N * N * sizeof(float), cudaMemcpyDeviceToHost);
   for (int i = 0; i < N; i++)
@@ -3176,8 +3109,8 @@ void test_woodbury()
         }
       // for (int i=0; i<N; i++)
       // 	delta_h[i] = A_h[row*N+i];
-      GJInverse(Ainv, N);
-      GJInverse(Anew_inv, N);
+      MatrixInverse(Ainv, N);
+      MatrixInverse(Anew_inv, N);
       for (int i = 0; i < N; i++)
         for (int j = 0; j < N; j++)
         {
@@ -3272,8 +3205,8 @@ void test_woodbury()
 
 
 // Note: compile with:
-// nvcc -o determinant_update -DCUDA_TEST_MAIN -arch=sm_35 determinant_update.cu ../../CUDA/gpu_misc.cpp -I../../../build_titan_cuda_real/src -lcublas -Xcompiler -fopenmp
-
+// nvcc -o determinant_update -DCUDA_TEST_MAIN -arch=sm_70 determinant_update.cu ../../../Platforms/CUDA_legacy/gpu_misc.cpp -I../../../Platforms -I../../../../../build_llvmdev_legacy_cuda_full_precision/src/ -lcublas -lopenblas -Xcompiler -fopenmp
+// build_llvm.../src path on above line should be location of a config.h produced by QMCPACK cmake
 int main()
 {
   //test_all_ratios_kernel();
@@ -3284,6 +3217,5 @@ int main()
 
   return 0;
 }
-
 
 #endif

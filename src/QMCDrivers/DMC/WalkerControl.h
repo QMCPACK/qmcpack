@@ -20,15 +20,18 @@
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCDrivers/WalkerElementsRef.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
 #include "Utilities/RandomGenerator.h"
-#include "MultiWalkerDispatchers.h"
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class UnifiedDriverWalkerControlMPITest;
+}
+
 /** Class for controlling the walkers for DMC simulations.
  * w and w/o MPI. Fixed and dynamic population in one place.
  */
@@ -48,10 +51,7 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControl(Communicate* c,
-                const MultiWalkerDispatchers& dispatchers,
-                RandomGenerator_t& rng,
-                bool use_fixed_pop = false);
+  WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
   ~WalkerControl();
@@ -98,12 +98,12 @@ private:
    *
    *  populates the minus and plus vectors they contain 1 copy of a partition index 
    *  for each adjustment in population to the context.
-   *  \param[in] num_per_node as if all walkers were copied out to multiplicity
+   *  \param[in] num_per_rank as if all walkers were copied out to multiplicity
    *  \param[out] fair_offset running population count at each partition boundary
    *  \param[out] minus list of partition indexes one occurance for each walker removed
    *  \param[out] plus list of partition indexes one occurance for each walker added
    */
-  static void determineNewWalkerPopulation(const std::vector<int>& num_per_node,
+  static void determineNewWalkerPopulation(const std::vector<int>& num_per_rank,
                                            std::vector<int>& fair_offset,
                                            std::vector<int>& minus,
                                            std::vector<int>& plus);
@@ -152,8 +152,8 @@ private:
   IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
-  ///number of walkers on each node after branching before load balancing
-  std::vector<int> num_per_node_;
+  ///number of walkers on each MPI rank after branching before load balancing
+  std::vector<int> num_per_rank_;
   ///offset of the particle index for a fair distribution
   std::vector<int> fair_offset_;
   ///filename for dmc.dat
@@ -179,7 +179,7 @@ private:
   ///Number of walkers sent during the exchange
   IndexType saved_num_walkers_sent_;
 
-  const MultiWalkerDispatchers& dispatchers_;
+  friend testing::UnifiedDriverWalkerControlMPITest;
 };
 
 } // namespace qmcplusplus

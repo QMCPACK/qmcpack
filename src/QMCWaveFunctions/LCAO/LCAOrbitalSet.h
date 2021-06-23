@@ -271,7 +271,6 @@ private:
                                   GradMatrix_t& dlogdet,
                                   HessMatrix_t& dglogdet,
                                   GradMatrix_t& dllogdet) const;
-
 };
 } // namespace qmcplusplus
 #endif

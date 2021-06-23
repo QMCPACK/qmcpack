@@ -29,7 +29,7 @@ The single particle spinors used in QMCPACK take the form
 
 where :math:`s` is the spin variable and using the complex spin representation.
 In order to carry out spin-orbit calculations in solids, the single-particle spinors
-can be obtained using Quantum Espresso. After carrying out the spin-orbit calculation in QE
+can be obtained using Quantum ESPRESSO. After carrying out the spin-orbit calculation in QE
 (with flags ``noncolin`` = .true., ``lspinorb`` = .true., and a relativistic ``.UPF`` pseudopotential), 
 the spinors can be obtained by using the converter *convertpw4qmc*:
 
@@ -58,7 +58,7 @@ where we now utilize determinants of spinors, as opposed to the usual product of
   <?xml version="1.0"?>
   <qmcsystem>
     <wavefunction name="psi0" target="e">
-      <sposet_builder name="spo_builder" type="spinorbspline" href="eshdf.h5" tilematrix="100010001" twistnum="0" source="ion0" size="10">
+      <sposet_builder name="spo_builder" type="bspline" href="eshdf.h5" tilematrix="100010001" twistnum="0" source="ion0" size="10">
         <sposet type="bspline" name="myspo" size="10">
           <occupation mode="ground"/>
         </sposet>
@@ -95,7 +95,7 @@ We also make a small modification in the particleset specification:
   :caption: specification for the electron particle when performing spin-orbit calculations
   :name: slisting2
 
-  <particleset name="e" random="yes" randomsrc="ion0">
+  <particleset name="e" random="yes" randomsrc="ion0" spinor="yes">
      <group name="u" size="10" mass="1.0">
         <parameter name="charge"              >    -1                    </parameter>
         <parameter name="mass"                >    1.0                   </parameter>
@@ -103,6 +103,8 @@ We also make a small modification in the particleset specification:
   </particleset>
 
 Note that we only provide a single electron group to represent all electrons  in the system, as opposed to the usual separation of up and down electrons. 
+The additional keyword ``spinor=yes`` is the *only* required keyword for spinors.
+This will be used internally to determine which movers to use in QMC drivers (e.g. VMCUpdatePbyP vs SOVMCUpdatePbyP) and which SPOSets to use in the trial wave function (spinors vs. normal orbitals)
 
 *note*: In the current implementation, spinor wavefunctions are only 
 supported at the single determinant level. Multideterminant spinor wave functions will be supported in a future release. 
@@ -133,8 +135,7 @@ Green's function for the spatial evolution and the *spin kinetic energy*
 operator introduces a Green's function for the spin variables. 
 Note that this includes a contribution from the *spin drift* :math:`\mathbf{v}_{\mathbf{S}}(\mathbf{S}) =  \nabla_{\mathbf{S}} \ln \Psi_T(\mathbf{S})`.
 
-In both the VMC and DMC methods, the spin sampling is controlled by two input
-parameters in the ``xml`` blocks. 
+In both the VMC and DMC methods, there are no required changes to a typical input
 
 .. code-block::
 
@@ -143,14 +144,17 @@ parameters in the ``xml`` blocks.
     <parameter name="blocks"   >    50   </parameter>
     <parameter name="walkers"  >    10   </parameter>
     <parameter name="timestep" >  0.01   </parameter>
-    <parameter name="spinMoves">   yes   </parameter>
-    <parameter name="spinMass" >   1.0   </parameter>
   </qmc>
 
-The ``spinMoves`` flag turns on the spin sampling, which is off by default. 
-The ``spinMass`` flag sets the :math:`\mu_s` parameter used in the 
-particle updates, and effectively controls the rate of sampling for the spin 
-coordinates relative to the spatial coordinates. 
+Whether or not spin moves are used is determined internally by the ``spinor=yes`` flag in particleset.
+
+By default, the spin mass :math:`\mu_s` (which controls the rate of spin sampling relative to the spatial sampling) is set to 1.0. 
+This can be changed by adding an additional parameter to the QMC input
+
+.. code-block::
+
+ <parameter name="spinMass" > 0.25 </parameter>
+
 A larger/smaller spin mass corresponds to slower/faster spin sampling relative to the spatial coordinates.
 
 Spin-Orbit Effective Core Potentials

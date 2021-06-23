@@ -37,7 +37,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   std::string serialize_walkers;
 
   ParameterSet parameter_set;
-  parameter_set.add(RollBackBlocks_, "rewind");
   parameter_set.add(store_config_period_, "storeconfigs");
   parameter_set.add(store_config_period_, "store_configs");
   parameter_set.add(recalculate_properties_period_, "checkProperties");
@@ -55,14 +54,14 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(num_crowds_, "crowds");
   parameter_set.add(serialize_walkers, "crowd_serialize_walkers", {"no", "yes"});
   parameter_set.add(walkers_per_rank_, "walkers_per_rank");
+  parameter_set.add(walkers_per_rank_, "walkers", {}, TagStatus::UNSUPPORTED);
   parameter_set.add(total_walkers_, "total_walkers");
-  parameter_set.add(steps_between_samples_, "stepsbetweensamples");
-  parameter_set.add(samples_per_thread_, "samplesperthread");
+  parameter_set.add(steps_between_samples_, "stepsbetweensamples", {}, TagStatus::UNSUPPORTED);
+  parameter_set.add(samples_per_thread_, "samplesperthread", {}, TagStatus::UNSUPPORTED);
   parameter_set.add(requested_samples_, "samples");
   parameter_set.add(tau_, "timestep");
   parameter_set.add(tau_, "time_step");
   parameter_set.add(tau_, "tau");
-  parameter_set.add(max_cpu_secs_, "maxcpusecs");
   parameter_set.add(blocks_between_recompute_, "blocks_between_recompute");
   parameter_set.add(drift_modifier_, "drift_modifier");
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a");
@@ -119,6 +118,11 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   }
 
   crowd_serialize_walkers_ = serialize_walkers == "yes";
+  if (crowd_serialize_walkers_)
+    app_summary() << "  Batched operations are serialized over walkers." << std::endl;
+  if (scoped_profiling_)
+    app_summary() << "  Profiler data collection is enabled in this driver scope." << std::endl;
+
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;

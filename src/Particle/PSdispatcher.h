@@ -31,6 +31,7 @@ public:
 
   void flex_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
                        const RefVector<Walker_t>& walkers,
+                       const std::vector<bool>& recompute,
                        bool pbyp) const;
 
   void flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false) const;

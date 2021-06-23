@@ -17,15 +17,17 @@
 #define QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
 
 #include "Particle/ParticleSet.h"
+#include <limits>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include <limits>
-#include <bitset>
+#include "DTModes.h"
 
 namespace qmcplusplus
 {
+class ResourceCollection;
+
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
  *
@@ -46,9 +48,8 @@ public:
 protected:
   const ParticleSet* Origin;
 
-  int N_sources;
-  int N_targets;
-  int N_walkers;
+  const int N_sources;
+  const int N_targets;
 
   /**defgroup SoA data */
   /*@{*/
@@ -76,11 +77,8 @@ protected:
   DisplRow temp_dr_;
   /*@}*/
 
-  /** whether full table needs to be ready at anytime or not
-   * Optimization can be implemented during forward PbyP move when the full table is not needed all the time.
-   * DT consumers should know if full table is needed or not and request via addTable.
-   */
-  bool need_full_table_;
+  ///operation modes defined by DTModes
+  DTModes modes_;
 
   /** set to particle id after move() with prepare_old = true. -1 means not prepared.
    * It is intended only for safety checks, not for codepath selection.
@@ -88,28 +86,30 @@ protected:
   int old_prepared_elec_id;
 
   ///name of the table
-  std::string Name;
+  const std::string name_;
 
 public:
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(&source), N_sources(0), N_targets(0), N_walkers(0), need_full_table_(false), old_prepared_elec_id(-1)
+      : Origin(&source),
+        N_sources(source.getTotalNum()),
+        N_targets(target.getTotalNum()),
+        modes_(DTModes::ALL_OFF),
+        old_prepared_elec_id(-1),
+        name_(source.getName() + "_" + target.getName())
   {}
 
   ///virutal destructor
   virtual ~DistanceTableData() = default;
 
-  ///get need_full_table_
-  inline bool getFullTableNeeds() const { return need_full_table_; }
+  ///get modes
+  inline DTModes getModes() const { return modes_; }
 
-  ///set need_full_table_
-  inline void setFullTableNeeds(bool is_needed) { need_full_table_ = is_needed; }
+  ///set modes
+  inline void setModes(DTModes modes) { modes_ = modes; }
 
   ///return the name of table
-  inline const std::string& getName() const { return Name; }
-
-  ///set the name of table
-  inline void setName(const std::string& tname) { Name = tname; }
+  inline const std::string& getName() const { return name_; }
 
   ///returns the reference the origin particleset
   const ParticleSet& origin() const { return *Origin; }
@@ -173,6 +173,21 @@ public:
 #pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].evaluate(p_list[iw]);
+  }
+
+  /** recompute multi walker internal data, recompute
+   * @param dt_list the distance table batch
+   * @param p_list the target particle set batch
+   * @param recompute if true, must recompute. Otherwise, implementation dependent.
+   */
+  virtual void mw_recompute(const RefVectorWithLeader<DistanceTableData>& dt_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            const std::vector<bool>& recompute) const
+  {
+#pragma omp parallel for
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      if (recompute[iw])
+        dt_list[iw].evaluate(p_list[iw]);
   }
 
   /** evaluate the temporary pair relations when a move is proposed
@@ -253,21 +268,18 @@ public:
     //os << std::endl;
   }
 
-  /**resize the storage
-   *@param npairs number of pairs which is evaluated by a derived class
-   *@param nw number of copies
-   *
-   * The data for the pair distances, displacements
-   *and the distance inverses are stored in a linear storage.
-   * The logical view of these storages is (ipair,iwalker),
-   * where 0 <= ipair < M[N[SourceIndex]] and 0 <= iwalker < N[WalkerIndex]
-   * This scheme can handle both dense and sparse distance tables,
-   * and full or half of the pairs.
-   * Note that this function is protected and the derived classes are
-   * responsible to call this function for memory allocation and any
-   * change in the indices N.
-   */
-  void resize(int npairs, int nw) { N_walkers = nw; }
+  /// initialize a shared resource and hand it to a collection
+  virtual void createResource(ResourceCollection& collection) const {}
+
+  /// acquire a shared resource from a collection
+  virtual void acquireResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+  {}
+
+  /// return a shared resource to a collection
+  virtual void releaseResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<DistanceTableData>& dt_list) const
+  {}
 };
 } // namespace qmcplusplus
 #endif

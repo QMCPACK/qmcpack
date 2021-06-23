@@ -77,7 +77,6 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
   ///save the current node
   xmlNodePtr curRoot = cur;
   xmlNodePtr BFnode  = nullptr;
-  bool success       = true;
   std::string cname, tname;
   std::map<std::string, SPOSetPtr> spomap;
   bool multiDet = false;
@@ -216,19 +215,9 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         spoAttrib.add(spoNames[0], "spo_up");
         spoAttrib.add(spoNames[1], "spo_dn");
       }
-      spoAttrib.add(fastAlg, "Fast", {"", "yes", "no"}, TagStatus::DEPRECATED);
-      spoAttrib.add(msd_algorithm, "algorithm", {"", "precomputed_table_method", "table_method", "all_determinants"});
+      spoAttrib.add(fastAlg, "Fast", {"", "yes", "no"}, TagStatus::DELETED);
+      spoAttrib.add(msd_algorithm, "algorithm", {"precomputed_table_method", "table_method", "all_determinants"});
       spoAttrib.put(cur);
-
-      if (msd_algorithm.empty())
-      {
-        if (fastAlg.empty())
-          msd_algorithm = "precomputed_table_method";
-        else if (fastAlg == "yes")
-          msd_algorithm = "table_method";
-        else
-          msd_algorithm = "all_determinants";
-      }
 
       //new format
       std::vector<std::unique_ptr<SPOSet>> spo_clones;
@@ -255,11 +244,12 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           APP_ABORT("Backflow is not implemented with the table method.");
         }
 
+        bool spinor = targetPtcl.is_spinor_;
         std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
         for (int grp = 0; grp < nGroups; grp++)
         {
           app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
-          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), grp));
+          dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
         }
 
         if (msd_algorithm == "precomputed_table_method")
@@ -274,11 +264,11 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         }
 
         multislaterdetfast_0->initialize();
-        success = createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
-                                *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
-                                *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
-                                *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
-                                multislaterdetfast_0->CI_Optimizable, cur);
+        createMSDFast(multislaterdetfast_0->Dets, *multislaterdetfast_0->C2node, *multislaterdetfast_0->C,
+                      *multislaterdetfast_0->CSFcoeff, *multislaterdetfast_0->DetsPerCSF,
+                      *multislaterdetfast_0->CSFexpansion, multislaterdetfast_0->usingCSF,
+                      *multislaterdetfast_0->myVars, multislaterdetfast_0->Optimizable,
+                      multislaterdetfast_0->CI_Optimizable, cur);
 
         // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
         // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
@@ -302,12 +292,12 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
           app_summary() << "    Using backflow transformation." << std::endl;
           multislaterdet_0 =
               new MultiSlaterDeterminantWithBackflow(targetPtcl, std::move(spo_up), std::move(spo_dn), BFTrans);
-          success = createMSD(multislaterdet_0, cur);
+          createMSD(multislaterdet_0, cur);
         }
         else
         {
           multislaterdet_0 = new MultiSlaterDeterminant(targetPtcl, std::move(spo_up), std::move(spo_dn));
-          success          = createMSD(multislaterdet_0, cur);
+          createMSD(multislaterdet_0, cur);
         }
       }
     }
@@ -604,10 +594,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
 
   for (int grp = 0; grp < nGroups; grp++)
   {
-    // you should choose the det with highest weight for reference
-    Dets[grp]->ReferenceDeterminant      = 0; // for now
-    Dets[grp]->NumDets                   = uniqueConfgs[grp].size();
-    std::vector<ci_configuration2>& list = *Dets[grp]->ciConfigList;
+    std::vector<ci_configuration2>& list = Dets[grp]->getCIConfigList();
     list.resize(uniqueConfgs[grp].size());
     for (int i = 0; i < list.size(); i++)
     {
@@ -622,7 +609,8 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
                   << grp << ", problems with ci configuration list. \n");
       }
     }
-    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], Dets[grp]->Phi->getOrbitalSetSize());
+    // you should choose the det with highest weight for reference. for now choosing 0
+    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], 0);
   }
 
   if (CSFcoeff.size() == 1)
@@ -735,9 +723,11 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
   multiSD->C2node_up = C2nodes[0];
   multiSD->C2node_dn = C2nodes[1];
   multiSD->resize(uniqueConfgs[0].size(), uniqueConfgs[1].size());
+  // alpha dets
   {
     auto& spo = multiSD->spo_up;
     spo->occup.resize(uniqueConfgs[0].size(), multiSD->nels_up);
+    multiSD->dets_up.reserve(uniqueConfgs[0].size());
     for (int i = 0; i < uniqueConfgs[0].size(); i++)
     {
       int nq               = 0;
@@ -759,12 +749,14 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), 0);
       }
       adet->set(multiSD->FirstIndex_up, multiSD->nels_up);
-      multiSD->dets_up.push_back(adet);
+      multiSD->dets_up.emplace_back(adet);
     }
   }
+  // beta dets
   {
     auto& spo = multiSD->spo_dn;
     spo->occup.resize(uniqueConfgs[1].size(), multiSD->nels_dn);
+    multiSD->dets_dn.reserve(uniqueConfgs[1].size());
     for (int i = 0; i < uniqueConfgs[1].size(); i++)
     {
       int nq               = 0;
@@ -786,7 +778,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
         adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), 0);
       }
       adet->set(multiSD->FirstIndex_dn, multiSD->nels_dn);
-      multiSD->dets_dn.push_back(adet);
+      multiSD->dets_dn.emplace_back(adet);
     }
   }
   if (multiSD->CSFcoeff.size() == 1 || multiSD->C.size() == 1)

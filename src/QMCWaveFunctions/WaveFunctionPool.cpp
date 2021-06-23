@@ -42,52 +42,20 @@ WaveFunctionPool::~WaveFunctionPool()
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  std::string id("psi0"), target("e"), role("extra"), tasking("no");
+  std::string id("psi0"), target("e"), role("extra"), tasking;
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id, "id");
   pAttrib.add(id, "name");
   pAttrib.add(target, "target");
   pAttrib.add(target, "ref");
-  pAttrib.add(tasking, "tasking");
+  pAttrib.add(tasking, "tasking", {"no", "yes"});
   pAttrib.add(role, "role");
   pAttrib.put(cur);
 
-  if (tasking != "yes" && tasking != "no")
-    myComm->barrier_and_abort("Incorrect input value of 'tasking' attribute. It can only be 'yes' or 'no'.");
-
-#if defined(__INTEL_COMPILER)
-  if (tasking == "yes")
-  {
-    tasking = "no";
-    app_warning() << "Asynchronous tasking has to be turned off on builds using Intel compilers." << std::endl;
-  }
-#endif
-
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
-  // Ye: the overall logic of the "check" is still not clear to me.
-  // The following code path should only be used when there is no cell, ion, electron info provided in the XML input.
-  // As long as any info is provided in the XML file, no need to call createESParticleSet
-  // EinsplineBuilder has code to verify cell and ion position. No need to do here.
-  if (!qp)
-  { //check ESHDF should be used to initialize both target and associated ionic system
-    xmlNodePtr tcur = cur->children;
-    while (tcur != NULL)
-    { //check <determinantset/> or <sposet_builder/> or <sposet_collection/> to extract the ionic and electronic structure
-      std::string cname((const char*)tcur->name);
-      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder" ||
-          cname == "sposet_collection")
-      {
-        qp = ptcl_pool_.createESParticleSet(tcur, target, qp);
-      }
-      tcur = tcur->next;
-    }
-  }
-
-  if (qp == 0)
-  {
-    APP_ABORT("WaveFunctionPool::put Target ParticleSet is not found.");
-  }
+  if(qp == nullptr)
+    myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
   std::map<std::string, WaveFunctionFactory*>::iterator pit(myPool.find(id));
   WaveFunctionFactory* psiFactory = 0;

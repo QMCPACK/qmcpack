@@ -38,8 +38,19 @@ BOOST_AUTO_TEST_CASE(layout){
 	BOOST_REQUIRE( size(A3[0]) == 52   ); BOOST_REQUIRE( A3[0].size() == 52    );
 	BOOST_REQUIRE( size(A3[0][0]) == 53); BOOST_REQUIRE( A3[0][0].size() == 53 );
 }
-{		
+{
+	//NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays): testing feature
 	double DA[50][50][50];
+	using multi::size;
+	BOOST_REQUIRE( size(DA) == 50 );
+
+	using multi::extension;
+	BOOST_REQUIRE(( extension(DA) == multi::index_extension{0, 50} ));
+	BOOST_REQUIRE(( extension(DA) == multi::iextension{0, 50}      ));
+	BOOST_REQUIRE(( extension(DA) == multi::irange{0, 50} ));
+}
+{
+	std::array<std::array<std::array<double, 50>, 50>, 50> DA{};
 	using multi::size;
 	BOOST_REQUIRE( size(DA) == 50 );
 
@@ -73,6 +84,9 @@ BOOST_AUTO_TEST_CASE(layout){
 		 {4., 5., 6.}, 
 		 {7., 8., 9.}}
 	;
+
+	BOOST_REQUIRE( size(A2) == 3 );
+
 	multi::array<int, 2> B2(
 #if defined(__INTEL_COMPILER) or (defined(__GNUC__) and (__GNUC__ < 6))
 		multi::iextensions<2>
@@ -84,14 +98,21 @@ BOOST_AUTO_TEST_CASE(layout){
 	
 //	decltype(B2({0,2}, {0,2}))::decay_type B2copy = B2({0,2}, {0,2});
 	auto B2copy =+ B2({0,2}, {0,2});
+	
+	BOOST_REQUIRE( &B2copy[1][1] != &B2({0,2}, {0,2})[1][1] );
 
-	decltype(B2({0,2}, {0,2})) B2blk[2][2] = 
-		{{B2({0,2}, {0,2}), B2({0, 2}, {2, 4})},
-		 {B2({2,4}, {0,2}), B2({2, 4}, {2, 4})}};
-	std::cout << B2blk[1][1][1][1] << std::endl;
+	std::array<std::array<decltype(B2({0,2}, {0,2})), 2>, 2> B2blk = {
+//	decltype(B2({0,2}, {0,2})) B2blk[2][2] = 
+		{
+			{B2({0,2}, {0,2}), B2({0, 2}, {2, 4})},
+			{B2({2,4}, {0,2}), B2({2, 4}, {2, 4})}
+		}
+	};
+
 	BOOST_REQUIRE( &B2blk[1][1][1][1] == &B2[3][3] );
 }
 {
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays, hicpp-avoid-c-arrays,-warnings-as-errors, modernize-avoid-c-arrays,-warnings-as-errors): test
 	double A[3][4][5] = {};
 	using multi::dimensionality;
 	static_assert(dimensionality(A)==3, "!");
@@ -104,7 +125,7 @@ BOOST_AUTO_TEST_CASE(layout){
 
 	multi::array<double, 3> AA({3, 4, 5});
 	using multi::layout;
-	assert( layout(AA) == layout(A) );
+	BOOST_REQUIRE( layout(AA) == layout(A) );
 
 	using multi::stride;
 	BOOST_REQUIRE( stride(AA) == 20 );
@@ -112,6 +133,30 @@ BOOST_AUTO_TEST_CASE(layout){
 	static_assert( stride(A[0]) == 5 , "!" );
 	static_assert( stride(A[1]) == 5 , "!" );
 	static_assert( stride(A[0][0]) == 1 , "!" );
+//		assert( stride(A) == 20 );
+//		assert( stride(A[0]) == 20 );
+}
+{
+	std::array<std::array<std::array<double, 5>, 4>, 3> A = {};
+	using multi::dimensionality;
+	static_assert(dimensionality(A)==3, "!");
+	using multi::extensions;
+	auto xA = extensions(A);
+	using std::get;
+	BOOST_REQUIRE( size(get<0>(xA)) == 3 );
+	BOOST_REQUIRE( size(get<1>(xA)) == 4 );
+	BOOST_REQUIRE( size(get<2>(xA)) == 5 );
+
+	multi::array<double, 3> AA({3, 4, 5});
+	using multi::layout;
+	BOOST_REQUIRE( layout(AA) == layout(A) );
+
+	using multi::stride;
+	BOOST_REQUIRE( stride(AA) == 20 );
+	static_assert( stride(A) == 20 , "!" );
+	BOOST_REQUIRE( stride(A[0]) == 5 );
+	BOOST_REQUIRE( stride(A[1]) == 5 );
+	BOOST_REQUIRE( stride(A[0][0]) == 1 );
 //		assert( stride(A) == 20 );
 //		assert( stride(A[0]) == 20 );
 }

@@ -30,7 +30,6 @@
 
 namespace qmcplusplus
 {
-
 class ResourceCollection;
 
 /** base class for Single-particle orbital sets
@@ -233,6 +232,21 @@ public:
                            GradVector_t& dpsi,
                            ValueVector_t& d2psi) = 0;
 
+  /** evaluate the values, gradients and laplacians and spin gradient of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param psi values of the SPO
+   * @param dpsi gradients of the SPO
+   * @param d2psi laplacians of the SPO
+   * @param dspin spin gradients of the SPO
+   */
+  virtual void evaluateVGL_spin(const ParticleSet& P,
+                                int iat,
+                                ValueVector_t& psi,
+                                GradVector_t& dpsi,
+                                ValueVector_t& d2psi,
+                                ValueVector_t& dspin);
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
    * @param P_list the list of ParticleSet pointers in a walker batch
@@ -323,6 +337,26 @@ public:
                                     GradMatrix_t& dlogdet,
                                     ValueMatrix_t& d2logdet) = 0;
 
+  /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles, including the spin gradient
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param logdet determinant matrix to be inverted
+   * @param dlogdet gradients
+   * @param d2logdet laplacians
+   * @param dspinlogdet, spin gradients
+   *
+   * default implementation will abort for all SPOSets except SpinorSet
+   *
+   */
+  virtual void evaluate_notranspose_spin(const ParticleSet& P,
+                                         int first,
+                                         int last,
+                                         ValueMatrix_t& logdet,
+                                         GradMatrix_t& dlogdet,
+                                         ValueMatrix_t& d2logdet,
+                                         ValueMatrix_t& dspinlogdet);
+
   virtual void mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list,
                                        const RefVectorWithLeader<ParticleSet>& P_list,
                                        int first,
@@ -406,7 +440,7 @@ public:
 
   /** initialize a shared resource and hand it to collection
    */
-  virtual void createResource(ResourceCollection& collection) {}
+  virtual void createResource(ResourceCollection& collection) const {}
 
   /** acquire a shared resource from collection
    */
@@ -452,19 +486,21 @@ public:
   //////////////////////////////////////////
   virtual void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool) {}
 
-  virtual void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi);
+  virtual void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+                        int iat,
+                        gpu::device_vector<CTS::ValueType*>& phi);
 
-  virtual void evaluate(std::vector<Walker_t*>& walkers,
+  virtual void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                         std::vector<PosType>& new_pos,
                         gpu::device_vector<CTS::ValueType*>& phi);
 
-  virtual void evaluate(std::vector<Walker_t*>& walkers,
+  virtual void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                         std::vector<PosType>& new_pos,
                         gpu::device_vector<CTS::ValueType*>& phi,
                         gpu::device_vector<CTS::ValueType*>& grad_lapl_list,
                         int row_stride);
 
-  virtual void evaluate(std::vector<Walker_t*>& walkers,
+  virtual void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
                         std::vector<PosType>& new_pos,
                         gpu::device_vector<CTS::ValueType*>& phi,
                         gpu::device_vector<CTS::ValueType*>& grad_lapl_list,

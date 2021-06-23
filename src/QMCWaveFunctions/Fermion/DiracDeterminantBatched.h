@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -51,7 +51,7 @@ struct DiracDeterminantBatchedMultiWalkerResource : public Resource
   std::vector<GradType> grad_new_local;
 };
 
-template<typename DET_ENGINE_TYPE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
+template<typename DET_ENGINE = MatrixUpdateOMPTarget<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>
 class DiracDeterminantBatched : public DiracDeterminantBase
 {
 public:
@@ -170,7 +170,7 @@ public:
   /** evaluate log of a determinant for a particle set
    * This is the most defensive call. The psiM, dpsiM, d2psiM should be up-to-date on both device and host sides.
    */
-  LogValueType evaluateLog(ParticleSet& P,
+  LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
@@ -179,9 +179,9 @@ public:
                       const RefVector<ParticleSet::ParticleGradient_t>& G_list,
                       const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const override;
 
-  void recompute(ParticleSet& P) override;
+  void recompute(const ParticleSet& P) override;
 
-  LogValueType evaluateGL(ParticleSet& P,
+  LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch) override;
@@ -194,7 +194,7 @@ public:
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
-  void createResource(ResourceCollection& collection) override;
+  void createResource(ResourceCollection& collection) const override;
   void acquireResource(ResourceCollection& collection) override;
   void releaseResource(ResourceCollection& collection) override;
 
@@ -212,7 +212,12 @@ public:
   /// return  for testing
   auto& getPsiMinv() const { return psiMinv; }
 
-  /// inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$, actual memory owned by det_engine_
+  /** inverse transpose of psiM(j,i) \f$= \psi_j({\bf r}_i)\f$ memory view
+   * Actual memory is owned by det_engine_
+   * Only NumOrbitals x NumOrbitals subblock has meaningful data
+   * The number of rows is equal to NumOrbitals
+   * The number of columns in each row is padded to a multiple of QMC_SIMD_ALIGNMENT
+   */
   ValueMatrix_t psiMinv;
 
   /// memory for psiM, dpsiM and d2psiM. [5][norb*norb]
@@ -239,7 +244,7 @@ public:
   ValueVector_t d2psiV;
 
   /// delayed update engine
-  DET_ENGINE_TYPE det_engine_;
+  DET_ENGINE det_engine_;
 
   // psi(r')/psi(r) during a PbyP move
   PsiValueType curRatio;
@@ -256,8 +261,9 @@ private:
   static void mw_invertPsiM(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                             const RefVector<const ValueMatrix_t>& logdetT_list);
 
-  static void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                           const RefVectorWithLeader<ParticleSet>& p_list);
+  void mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    const std::vector<bool>& recompute) const override;
 
   // make this class unit tests friendly without the need of setup resources.
   void guardMultiWalkerRes()

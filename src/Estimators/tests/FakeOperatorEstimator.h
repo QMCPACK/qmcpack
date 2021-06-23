@@ -29,13 +29,13 @@ public:
 
   ~FakeOperatorEstimator() override {};
 
-  void accumulate(RefVector<MCPWalker>& walkers, RefVector<ParticleSet>& psets) override {}
+  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) override {}
 
   void registerOperatorEstimator(hid_t gid) override {}
 
   void startBlock(int nsteps) override {}
-  
-  OperatorEstBase* clone() override { return new FakeOperatorEstimator(*this); }
+
+  FakeOperatorEstimator* clone() override { return new FakeOperatorEstimator(*this); }
 
   void set_walker_weights(QMCT::RealType weight) { walkers_weight_ = weight; }
 };

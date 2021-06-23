@@ -1,65 +1,87 @@
-
-INCLUDE("${qmcpack_SOURCE_DIR}/CMake/test_labels.cmake")
+include("${qmcpack_SOURCE_DIR}/CMake/test_labels.cmake")
 
 # Runs Executable Tests
 
-IF (QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  FUNCTION(ADD_QE_TEST)
-  ENDFUNCTION()
-  FUNCTION(RUN_QE_TEST)
-  ENDFUNCTION()
-ELSE (QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+if(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  function(ADD_QE_TEST)
 
-FUNCTION( ADD_QE_TEST TESTNAME PROCS TEST_BINARY NPOOL WORKDIR TEST_INPUT)
-    IF ( HAVE_MPI )
-        ADD_TEST( NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS} ${TEST_BINARY} -npool ${NPOOL} -inp ${TEST_INPUT} )
-    ELSE()
-        ADD_TEST( NAME ${TESTNAME} COMMAND ${TEST_BINARY} -npool 1 -inp ${TEST_INPUT} )
-    ENDIF()
-    SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=1 PROCESSORS ${PROCS} PROCESSOR_AFFINITY TRUE WORKING_DIRECTORY ${WORKDIR} )
-    SET_PROPERTY( TEST ${TESTNAME} APPEND PROPERTY LABELS "converter" )
-ENDFUNCTION()
+  endfunction()
+  function(RUN_QE_TEST)
 
-FUNCTION( RUN_QE_TEST BASE_NAME SRC_DIR PROCS1 PROCS2 PROCS3 NPOOL1 NPOOL2 NPOOL3 TEST_INPUT_PREFIX TEST_NAME)
-    SET( FULL_NAME ${BASE_NAME}-np-${PROCS1}-${PROCS2}-${PROCS3}-nk-${NPOOL1}-${NPOOL2}-${NPOOL3} )
-    SET( ${TEST_NAME} ${FULL_NAME} PARENT_SCOPE)
-    SET( MY_WORKDIR ${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME} )
-    MESSAGE_VERBOSE("Adding test ${FULL_NAME}")
-    COPY_DIRECTORY( "${SRC_DIR}" "${MY_WORKDIR}" )
-    ADD_QE_TEST(${FULL_NAME}-scf  ${PROCS1} ${QE_BIN}/pw.x         ${NPOOL1} ${MY_WORKDIR} ${TEST_INPUT_PREFIX}-scf.in )
-    IF(PROCS2 EQUAL 0)
-        ADD_QE_TEST(${FULL_NAME}-pw2x ${PROCS3} ${QE_BIN}/pw2qmcpack.x ${NPOOL3} ${MY_WORKDIR} ${TEST_INPUT_PREFIX}-pw2x.in )
-        SET_TESTS_PROPERTIES(${FULL_NAME}-pw2x PROPERTIES DEPENDS ${FULL_NAME}-scf)
-    ELSE(PROCS2 EQUAL 0)
-        ADD_QE_TEST(${FULL_NAME}-nscf ${PROCS2} ${QE_BIN}/pw.x         ${NPOOL2} ${MY_WORKDIR} ${TEST_INPUT_PREFIX}-nscf.in )
-        SET_TESTS_PROPERTIES(${FULL_NAME}-nscf PROPERTIES DEPENDS ${FULL_NAME}-scf)
-        ADD_QE_TEST(${FULL_NAME}-pw2x ${PROCS3} ${QE_BIN}/pw2qmcpack.x ${NPOOL3} ${MY_WORKDIR} ${TEST_INPUT_PREFIX}-pw2x.in )
-        SET_TESTS_PROPERTIES(${FULL_NAME}-pw2x PROPERTIES DEPENDS ${FULL_NAME}-nscf)
-    ENDIF(PROCS2 EQUAL 0)
-ENDFUNCTION()
+  endfunction()
+else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
-ENDIF(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  function(
+    ADD_QE_TEST
+    TESTNAME
+    PROCS
+    TEST_BINARY
+    NPOOL
+    WORKDIR
+    TEST_INPUT)
+    if(HAVE_MPI)
+      add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
+                                        ${TEST_BINARY} -npool ${NPOOL} -inp ${TEST_INPUT})
+    else()
+      add_test(NAME ${TESTNAME} COMMAND ${TEST_BINARY} -npool 1 -inp ${TEST_INPUT})
+    endif()
+    set_tests_properties(
+      ${TESTNAME}
+      PROPERTIES ENVIRONMENT
+                 OMP_NUM_THREADS=1
+                 PROCESSORS
+                 ${PROCS}
+                 PROCESSOR_AFFINITY
+                 TRUE
+                 WORKING_DIRECTORY
+                 ${WORKDIR})
+    set_property(
+      TEST ${TESTNAME}
+      APPEND
+      PROPERTY LABELS "converter")
+  endfunction()
 
+  function(
+    RUN_QE_TEST
+    BASE_NAME
+    SRC_DIR
+    PROCS1
+    PROCS2
+    PROCS3
+    NPOOL1
+    NPOOL2
+    NPOOL3
+    TEST_INPUT_PREFIX
+    TEST_NAME)
+    set(FULL_NAME ${BASE_NAME}-np-${PROCS1}-${PROCS2}-${PROCS3}-nk-${NPOOL1}-${NPOOL2}-${NPOOL3})
+    set(${TEST_NAME}
+        ${FULL_NAME}
+        PARENT_SCOPE)
+    set(MY_WORKDIR ${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME})
+    message_verbose("Adding test ${FULL_NAME}")
+    copy_directory("${SRC_DIR}" "${MY_WORKDIR}")
+    add_qe_test(${FULL_NAME}-scf ${PROCS1} ${QE_PW_DIR}/pw.x ${NPOOL1} ${MY_WORKDIR} ${TEST_INPUT_PREFIX}-scf.in)
+    if(PROCS2 EQUAL 0)
+      add_qe_test(${FULL_NAME}-pw2x ${PROCS3} ${QE_PW2Q_DIR}/pw2qmcpack.x ${NPOOL3} ${MY_WORKDIR}
+                  ${TEST_INPUT_PREFIX}-pw2x.in)
+      set_tests_properties(${FULL_NAME}-pw2x PROPERTIES DEPENDS ${FULL_NAME}-scf)
+    else(PROCS2 EQUAL 0)
+      add_qe_test(${FULL_NAME}-nscf ${PROCS2} ${QE_PW_DIR}/pw.x ${NPOOL2} ${MY_WORKDIR} ${TEST_INPUT_PREFIX}-nscf.in)
+      set_tests_properties(${FULL_NAME}-nscf PROPERTIES DEPENDS ${FULL_NAME}-scf)
+      add_qe_test(${FULL_NAME}-pw2x ${PROCS3} ${QE_PW2Q_DIR}/pw2qmcpack.x ${NPOOL3} ${MY_WORKDIR}
+                  ${TEST_INPUT_PREFIX}-pw2x.in)
+      set_tests_properties(${FULL_NAME}-pw2x PROPERTIES DEPENDS ${FULL_NAME}-nscf)
+    endif(PROCS2 EQUAL 0)
+  endfunction()
 
-FUNCTION( SOFTLINK_H5 SOURCE TARGET PREFIX FILENAME TEST_NAME)
-    SET(${TEST_NAME} "LINK_${SOURCE}_TO_${TARGET}" PARENT_SCOPE)
-    ADD_TEST( NAME LINK_${SOURCE}_TO_${TARGET} COMMAND ${qmcpack_SOURCE_DIR}/tests/scripts/clean_and_link_h5.sh ${SOURCE}/out/${PREFIX}.pwscf.h5 ${SOURCE}-${TARGET}/${FILENAME} )
-    SET_TESTS_PROPERTIES(LINK_${SOURCE}_TO_${TARGET} PROPERTIES DEPENDS ${SOURCE}-pw2x)
-    SET_PROPERTY( TEST LINK_${SOURCE}_TO_${TARGET} APPEND PROPERTY LABELS "converter" )
-ENDFUNCTION()
+endif(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
-FUNCTION( VERIFY_QE_PRESENT QE_BIN )
- IF ( EXISTS "${QE_BIN}/pw.x" )
-  MESSAGE( STATUS "Found pw.x at ${QE_BIN}/pw.x")
- ELSE()
-  MESSAGE( "QE_BIN was specified but could not find ${QE_BIN}/pw.x" )
-  MESSAGE( FATAL_ERROR "QE should be built ahead of QMCPACK. See qmcpack/external_codes/quantum_espresso/README for details on building patched version." ) 
- ENDIF()
- IF ( EXISTS "${QE_BIN}/pw2qmcpack.x" )
-  MESSAGE( STATUS "Found pw2qmcpack.x at ${QE_BIN}/pw.x")
- ELSE()
-  MESSAGE( "QE_BIN was specified but could not find ${QE_BIN}/pw2qmcpack.x" )
-  MESSAGE( FATAL_ERROR "See qmcpack/external_codes/quantum_espresso/README for details on building patched version" ) 
- ENDIF()
-ENDFUNCTION()
-
+function(SOFTLINK_H5 SOURCE TARGET PREFIX FILENAME TEST_NAME)
+  set(${TEST_NAME}
+      "LINK_${SOURCE}_TO_${TARGET}"
+      PARENT_SCOPE)
+  add_test(NAME LINK_${SOURCE}_TO_${TARGET} COMMAND ${qmcpack_SOURCE_DIR}/tests/scripts/clean_and_link_h5.sh
+                                                    ${SOURCE}/out/${PREFIX}.pwscf.h5 ${SOURCE}-${TARGET}/${FILENAME})
+  set_tests_properties(LINK_${SOURCE}_TO_${TARGET} PROPERTIES DEPENDS ${SOURCE}-pw2x)
+  set_property(TEST LINK_${SOURCE}_TO_${TARGET} APPEND PROPERTY LABELS "converter")
+endfunction()

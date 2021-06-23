@@ -13,19 +13,13 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef OHMMS_HDF_NUMERICATTRIBIO_H
 #define OHMMS_HDF_NUMERICATTRIBIO_H
 #include "OhmmsData/HDFAttribIO.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#ifdef HAVE_LIBBLITZ
-#include <blitz/array.h>
-#else
 #include "OhmmsPETE/OhmmsArray.h"
-#endif
-
 
 namespace qmcplusplus
 {
@@ -419,6 +413,8 @@ struct HDFAttribIO<std::vector<TinyVector<double, D>>> : public HDFAttribIOBase
       H5Dclose(h1);
     }
     H5Eset_auto2(H5E_DEFAULT, func, client_data);
+    if (ret < 0)
+      throw std::runtime_error("HDFAttribIO<std::vector<TinyVector<double, D>>>::read failed!");
   }
 };
 
@@ -744,47 +740,6 @@ struct HDFAttribIO<Matrix<TinyVector<double, D>>> : public HDFAttribIOBase
   }
 };
 
-#ifdef HAVE_LIBBLITZ
-/** Specialization for blitz::Array<TinyVector<double,D>,2> */
-template<unsigned D>
-struct HDFAttribIO<blitz::Array<TinyVector<double, D>, 2>> : public HDFAttribIOBase
-{
-  typedef blitz::Array<TinyVector<double, D>, 2> ArrayType_t;
-  ArrayType_t& ref;
-
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
-
-  inline void write(hid_t grp, const char* name)
-  {
-    const int rank = 3;
-    hsize_t dim[rank];
-    dim[0]          = ref.extent(0);
-    dim[1]          = ref.extent(1);
-    dim[2]          = D;
-    hid_t dataspace = H5Screate_simple(rank, dim, NULL);
-    hid_t dataset   = H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-    hid_t ret       = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
-  }
-
-  inline void read(hid_t grp, const char* name)
-  {
-    hid_t h1        = H5Dopen(grp, name);
-    hid_t dataspace = H5Dget_space(h1);
-    hsize_t dims_out[3];
-    int rank     = H5Sget_simple_extent_ndims(dataspace);
-    int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
-    if ((ref.extent(0) != (unsigned long)dims_out[0]) || (ref.extent(1) != (unsigned long)dims_out[1]))
-    {
-      //   std::cout << "dimensions not equal" << std::endl;
-      ref.resize(dims_out[0], dims_out[1]);
-    }
-    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-    H5Dclose(h1);
-  }
-};
-#else
 /** Specialization for Array<double,D> */
 template<unsigned D>
 struct HDFAttribIO<Array<double, D>> : public HDFAttribIOBase
@@ -877,6 +832,6 @@ struct HDFAttribIO<Array<std::complex<double>, D>> : public HDFAttribIOBase
     }
   }
 };
-#endif
+
 } // namespace qmcplusplus
 #endif

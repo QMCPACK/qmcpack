@@ -344,23 +344,24 @@ constexpr auto alloc_uninitialized_copy(std::allocator<T>&, InputIt f, InputIt l
 	return adl_uninitialized_copy(f, l, d);
 }
 
-template<class Alloc, class InputIt, class ForwardIt>//, typename AT = std::allocator_traits<Alloc> >
+template<class Alloc, class InputIt, class ForwardIt, class=decltype(std::addressof(*std::declval<ForwardIt>())), class=std::enable_if_t<std::is_constructible<typename std::iterator_traits<ForwardIt>::value_type, typename std::iterator_traits<InputIt>::reference>{}> >
 auto alloc_uninitialized_copy(Alloc& a, InputIt first, InputIt last, ForwardIt d_first)
-->std::decay_t<decltype(a.construct(std::addressof(*d_first), *first), d_first)>
+//->std::decay_t<decltype(a.construct(std::addressof(*d_first), *first), d_first)> // problematic in clang-11 + gcc-9
 {
-//    typedef typename std::iterator_traits<ForwardIt>::value_type Value;
-    ForwardIt current = d_first;
-    try {
-        for (; first != last; ++first, (void) ++current) {
-			a.construct(std::addressof(*current), *first);
-        }
-        return current;
-    } catch (...) {
-        for (; d_first != current; ++d_first) {
-			a.destroy(std::addressof(*d_first));
-        }
-        throw;
-    }
+	ForwardIt current = d_first;
+	try{
+		for(; first != last; ++first, (void)++current){
+			std::allocator_traits<std::decay_t<Alloc>>::construct(a, std::addressof(*current), *first);
+		//	a.construct(std::addressof(*current), *first);
+		}
+		return current;
+	}catch(...){
+		for(; d_first != current; ++d_first){
+			std::allocator_traits<std::decay_t<Alloc>>::destroy(a, std::addressof(*d_first));
+		//	a.destroy(std::addressof(*d_first));
+		}
+		throw;
+	}
 }
 
 template<class Alloc, class ForwardIt, class Size, class T>

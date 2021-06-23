@@ -7,11 +7,11 @@ $CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X $@&&rm $0.$X;exit
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include<iostream>
-#include<vector>
-#include<numeric>
-
 #include "../array.hpp"
+
+#include<iostream>
+#include<numeric>
+#include<vector>
 
 namespace multi = boost::multi;
 
@@ -35,7 +35,14 @@ BOOST_AUTO_TEST_CASE(iterator_1d){
 		multi::array<double, 1> A({100}, 99.); 
 		BOOST_REQUIRE( size(A) == 100 );
 		BOOST_REQUIRE( begin(A) < end(A) );
+		
+		auto b = A.begin();
+		multi::array<double, 1>::const_iterator cbb = b;
+		BOOST_REQUIRE( cbb == b );
+		BOOST_REQUIRE( b == cbb );
 	}
+	
+	*begin( multi::array<double, 1>(10, 99.) ) = 44.;
 }
 
 BOOST_AUTO_TEST_CASE(iterator_2d){
@@ -61,12 +68,12 @@ BOOST_AUTO_TEST_CASE(iterator_2d){
 		std::vector<double> v(10000);
 		multi::array_ref<double, 2> A(v.data(), {100, 100}); 
 		BOOST_REQUIRE(size(A) == 100);
-		begin(std::move(A))[4][3] = 2.; // ok 
+		begin(A)[4][3] = 2.;
 	}
 }
 
 BOOST_AUTO_TEST_CASE(iterator_reverse){
-	multi::array<double, 3>::reverse_iterator rit;
+	multi::array<double, 3>::reverse_iterator rit = {};
 	BOOST_REQUIRE(( rit.base() == multi::array<double, 3>::reverse_iterator{}.base() ));
 	BOOST_REQUIRE(( multi::array<double, 3>::reverse_iterator{}.base() == multi::array<double, 3>::reverse_iterator{}.base() ));
 	BOOST_REQUIRE(( multi::array<double, 3>::reverse_iterator{} == multi::array<double, 3>::reverse_iterator{} ));
@@ -148,7 +155,7 @@ BOOST_AUTO_TEST_CASE(iterator_semantics){
 	cit = it3;
 	BOOST_REQUIRE( cit == it3 );
 
-	BOOST_REQUIRE((begin(A) == multi::array<double, 3>::iterator{rend(A)}));
+	BOOST_REQUIRE(( begin(A) == multi::array<double, 3>::iterator(rend(A)) ));
 
 }
 

@@ -11,6 +11,7 @@
 
 #include "ResourceCollection.h"
 #include <iostream>
+#include <Host/OutputManager.h>
 
 namespace qmcplusplus
 {
@@ -19,7 +20,7 @@ ResourceCollection::ResourceCollection(const std::string& name) : name_(name), c
 ResourceCollection::ResourceCollection(const ResourceCollection& ref) : name_(ref.getName()), cursor_index_(0)
 {
   for (auto& res : ref.collection_)
-    addResource(std::unique_ptr<Resource>(res->makeClone()));
+    addResource(std::unique_ptr<Resource>(res->makeClone()), true);
 }
 
 void ResourceCollection::printResources() const
@@ -32,10 +33,13 @@ void ResourceCollection::printResources() const
   std::cout << "-------------------------------" << std::endl << std::endl;
 }
 
-size_t ResourceCollection::addResource(std::unique_ptr<Resource>&& res)
+size_t ResourceCollection::addResource(std::unique_ptr<Resource>&& res, bool noprint)
 {
-  size_t index = collection_.size();
+  size_t index              = collection_.size();
   res->index_in_collection_ = index;
+  if (!noprint)
+    app_debug_stream() << "Multi walker shared resource \"" << res->getName() << "\" created in resource collection \""
+                << name_ << "\" index " << index << std::endl;
   collection_.emplace_back(std::move(res));
   return index;
 }
@@ -45,7 +49,8 @@ std::unique_ptr<Resource> ResourceCollection::lendResource()
   if (cursor_index_ >= collection_.size())
     throw std::runtime_error("ResourceCollection::lendResource BUG no more resource to lend.");
   if (cursor_index_ != collection_[cursor_index_]->index_in_collection_)
-    throw std::runtime_error("ResourceCollection::lendResource BUG mismatched cursor index and recorded index in the resource.");
+    throw std::runtime_error(
+        "ResourceCollection::lendResource BUG mismatched cursor index and recorded index in the resource.");
   return std::move(collection_[cursor_index_++]);
 }
 
@@ -54,7 +59,8 @@ void ResourceCollection::takebackResource(std::unique_ptr<Resource>&& res)
   if (cursor_index_ >= collection_.size())
     throw std::runtime_error("ResourceCollection::takebackResource BUG cannot take back resources more than owned.");
   if (cursor_index_ != res->index_in_collection_)
-    throw std::runtime_error("ResourceCollection::takebackResource BUG mismatched cursor index and recorded index in the resource.");
+    throw std::runtime_error(
+        "ResourceCollection::takebackResource BUG mismatched cursor index and recorded index in the resource.");
   collection_[cursor_index_++] = std::move(res);
 }
 

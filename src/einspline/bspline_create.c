@@ -13,7 +13,7 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
-#include <inttypes.h>
+#include <stdint.h>
 
 int posix_memalign(void **memptr, size_t alignment, size_t size);
 
@@ -1857,6 +1857,9 @@ destroy_Bspline (void *spline)
   else if (sp->sp_code <= MULTI_U3D)
     destroy_multi_UBspline (sp);
   else
+  {
     fprintf (stderr, "Error in destroy_Bspline:  invalide spline code %d.\n",
 	     sp->sp_code);
+    abort();
+  }
 }

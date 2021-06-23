@@ -35,7 +35,7 @@ struct RPAJastrow : public WaveFunctionComponent
   typedef BsplineFunctor<RealType> FuncType;
   typedef LinearGrid<RealType> GridType;
 
-  RPAJastrow(ParticleSet& target, bool is_manager);
+  RPAJastrow(ParticleSet& target);
 
   ~RPAJastrow();
 
@@ -69,7 +69,7 @@ struct RPAJastrow : public WaveFunctionComponent
     */
   void resetParameters(const opt_variables_type& active);
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   PsiValueType ratio(ParticleSet& P, int iat);
   GradType evalGrad(ParticleSet& P, int iat);
@@ -88,7 +88,6 @@ struct RPAJastrow : public WaveFunctionComponent
   WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
 
 private:
-  bool IsManager;
   bool IgnoreSpin;
   bool DropLongRange;
   bool DropShortRange;
@@ -111,8 +110,6 @@ private:
   ///numerical function owned by ShortRangeRPA
   FuncType* nfunc;
   GridType* myGrid;
-  ///adaptor function to initialize nfunc
-  ShortRangePartAdapter<RealType>* SRA;
   ParticleSet& targetPtcl;
   ///A list of WaveFunctionComponent*
   std::vector<WaveFunctionComponent*> Psi;

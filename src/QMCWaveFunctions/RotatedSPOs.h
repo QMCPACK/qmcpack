@@ -22,7 +22,7 @@ class RotatedSPOs : public SPOSet
 {
 public:
   //constructor
-  RotatedSPOs(SPOSet* spos);
+  RotatedSPOs(std::unique_ptr<SPOSet>&& spos);
   //destructor
   ~RotatedSPOs();
 
@@ -36,7 +36,7 @@ public:
   void exponentiate_antisym_matrix(ValueMatrix_t& mat);
 
   //A particular SPOSet used for Orbitals
-  SPOSet* Phi;
+  std::unique_ptr<SPOSet> Phi;
 
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;

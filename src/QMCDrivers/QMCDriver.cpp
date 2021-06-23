@@ -69,8 +69,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  RollBackBlocks = 0;
-  m_param.add(RollBackBlocks, "rewind");
   Period4CheckPoint = -1;
   storeConfigs      = 0;
   //m_param.add(storeConfigs,"storeConfigs");
@@ -119,9 +117,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 
   m_param.add(nTargetPopulation, "samples");
 
-  SpinMoves = "no";
-  SpinMass  = 1.0;
-  m_param.add(SpinMoves, "SpinMoves");
+  SpinMass = 1.0;
   m_param.add(SpinMass, "SpinMass");
 
   Tau = 0.1;
@@ -131,7 +127,8 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   //m_param.add(Tau,"Tau");
   m_param.add(Tau, "tau");
   MaxCPUSecs = 360000; //100 hours
-  m_param.add(MaxCPUSecs, "maxcpusecs");
+  m_param.add(MaxCPUSecs, "maxcpusecs", {}, TagStatus::DEPRECATED);
+  m_param.add(MaxCPUSecs, "max_seconds");
   // by default call recompute at the end of each block in the mixed precision case.
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
@@ -520,14 +517,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //reset CurrentStep to zero if qmc/@continue='no'
   if (!AppendRun)
     CurrentStep = 0;
-
-  tolower(SpinMoves);
-  if (SpinMoves != "yes" && SpinMoves != "no")
-    myComm->barrier_and_abort("SpinMoves must be yes/no!\n");
-#if defined(QMC_CUDA)
-  if (SpinMoves == "yes")
-    myComm->barrier_and_abort("Spin moves are not supported in legacy CUDA build.");
-#endif
 
   //if walkers are initialized via <mcwalkerset/>, use the existing one
   if (qmc_common.qmc_counter || qmc_common.is_restart)

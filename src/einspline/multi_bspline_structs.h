@@ -8,7 +8,7 @@
 #define MULTI_BSPLINE_STRUCTS_STD_H
 
 #include <stdlib.h>
-#include <inttypes.h>
+#include <stdint.h>
 
 ///////////////////////////
 // Single precision real //

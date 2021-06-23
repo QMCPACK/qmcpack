@@ -17,8 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 #include <stdio.h>
 #include <string>
@@ -68,9 +67,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.R[2][1] = 0.2;
   elec_.R[2][2] = 0.3;
 
-  elec_.spins[0] = 0.0;
-  elec_.spins[1] = 0.2;
-  elec_.spins[2] = 0.4;
+  elec_.spins[0]   = 0.0;
+  elec_.spins[1]   = 0.2;
+  elec_.spins[2]   = 0.4;
+  elec_.is_spinor_ = true;
 
   // O2 test example from pwscf non-collinear calculation.
   elec_.Lattice.R(0, 0) = 5.10509515;
@@ -97,7 +97,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
 
   const char* particles = "<tmp> \
-   <sposet_builder name=\"A\" type=\"spinorbspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\"> \
+   <sposet_builder name=\"A\" type=\"einspline\" href=\"o2_45deg_spins.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" size=\"3\" precision=\"float\"> \
      <sposet name=\"myspo\" size=\"3\"> \
        <occupation mode=\"ground\"/> \
      </sposet> \
@@ -113,8 +113,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSpinorSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  std::unique_ptr<SPOSet> spo(einSet.createSPOSetFromXML(ein1));
+  SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
+  SPOSetBuilder* builder = fac.createSPOSetBuilder(ein1);
+
+  SPOSet* spo = builder->createSPOSet(ein1);
   REQUIRE(spo);
 
   SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -308,7 +310,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     REQUIRE(d2psiM[iat][0] == ComplexApprox(d2psiM_ref[iat][0]));
     REQUIRE(d2psiM[iat][1] == ComplexApprox(d2psiM_ref[iat][1]));
-    REQUIRE(d2psiM[iat][2] == ComplexApprox(d2psiM_ref[iat][2]));
+    REQUIRE(d2psiM[iat][2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(3e-5));
   }
 
   //Now we're going to test evaluateValue and evaluateVGL:
@@ -323,12 +325,17 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   //temporary arrays for holding the laplacians of the up and down channels respectively.
   SPOSet::ValueVector_t d2psi_work;
 
+  //temporary arrays for holding the spin gradient
+  SPOSet::ValueVector_t dspsi_work;
+
 
   psi_work.resize(OrbitalSetSize);
 
   dpsi_work.resize(OrbitalSetSize);
 
   d2psi_work.resize(OrbitalSetSize);
+
+  dspsi_work.resize(OrbitalSetSize);
 
   //We worked hard to generate nice reference data above.  Let's generate a test for evaluateV
   //and evaluateVGL by perturbing the electronic configuration by dR, and then make
@@ -374,9 +381,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     psi_work   = 0.0;
     dpsi_work  = 0.0;
     d2psi_work = 0.0;
+    dspsi_work = 0.0;
 
     elec_.makeMove(iat, -dR[iat], false);
-    spo->evaluateVGL(elec_, iat, psi_work, dpsi_work, d2psi_work);
+    spo->evaluateVGL_spin(elec_, iat, psi_work, dpsi_work, d2psi_work, dspsi_work);
 
     REQUIRE(psi_work[0] == ComplexApprox(psiM_ref[iat][0]));
     REQUIRE(psi_work[1] == ComplexApprox(psiM_ref[iat][1]));
@@ -396,13 +404,16 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
 
     REQUIRE(d2psi_work[0] == ComplexApprox(d2psiM_ref[iat][0]));
     REQUIRE(d2psi_work[1] == ComplexApprox(d2psiM_ref[iat][1]));
-    REQUIRE(d2psi_work[2] == ComplexApprox(d2psiM_ref[iat][2]));
+    REQUIRE(d2psi_work[2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(3e-5));
+
+    REQUIRE(dspsi_work[0] == ComplexApprox(dspsiM_ref[iat][0]));
+    REQUIRE(dspsi_work[1] == ComplexApprox(dspsiM_ref[iat][1]));
+    REQUIRE(dspsi_work[2] == ComplexApprox(dspsiM_ref[iat][2]));
+
     elec_.rejectMove(iat);
   }
 
   //Now we test evaluateSpin:
-  SPOSet::ValueVector_t dspsi_work;
-  dspsi_work.resize(OrbitalSetSize);
 
   for (unsigned int iat = 0; iat < 3; iat++)
   {

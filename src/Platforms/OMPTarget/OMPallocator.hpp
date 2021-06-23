@@ -11,8 +11,8 @@
 // -*- C++ -*-
 /** @file OMPallocator.hpp
  */
-#ifndef QMCPLUSPLUS_OPENMP_ALLOCATOR_H
-#define QMCPLUSPLUS_OPENMP_ALLOCATOR_H
+#ifndef QMCPLUSPLUS_OMPTARGET_ALLOCATOR_H
+#define QMCPLUSPLUS_OMPTARGET_ALLOCATOR_H
 
 #include <memory>
 #include <type_traits>
@@ -22,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 extern std::atomic<size_t> OMPallocator_device_mem_allocated;
 
 inline size_t getOMPdeviceMemAllocated() { return OMPallocator_device_mem_allocated; }
@@ -31,10 +30,7 @@ template<typename T>
 T* getOffloadDevicePtr(T* host_ptr)
 {
   T* device_ptr;
-  PRAGMA_OFFLOAD("omp target data use_device_ptr(host_ptr)")
-  {
-    device_ptr = host_ptr;
-  }
+  PRAGMA_OFFLOAD("omp target data use_device_ptr(host_ptr)") { device_ptr = host_ptr; }
   return device_ptr;
 }
 
@@ -84,14 +80,14 @@ private:
 };
 
 template<typename T, class HostAllocator>
-struct allocator_traits<OMPallocator<T, HostAllocator>>
+struct qmc_allocator_traits<OMPallocator<T, HostAllocator>>
 {
   static const bool is_host_accessible = true;
-  static const bool is_dual_space = true;
+  static const bool is_dual_space      = true;
 
   static void fill_n(T* ptr, size_t n, const T& value)
   {
-    allocator_traits<HostAllocator>::fill_n(ptr, n, value);
+    qmc_allocator_traits<HostAllocator>::fill_n(ptr, n, value);
     //PRAGMA_OFFLOAD("omp target update to(ptr[:n])")
   }
 };

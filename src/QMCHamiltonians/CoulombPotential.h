@@ -16,15 +16,19 @@
 
 #ifndef QMCPLUSPLUS_COULOMBPOTENTIAL_H
 #define QMCPLUSPLUS_COULOMBPOTENTIAL_H
-#include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
-#include "Particle/DistanceTableData.h"
+#include "ParticleSet.h"
+#include "WalkerSetRef.h"
+#include "DistanceTableData.h"
+#include "MCWalkerConfiguration.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include <numeric>
 
 namespace qmcplusplus
 {
+using WP = WalkerProperties::Indexes;
+
 /** CoulombPotential
  * @tparam T type of the elementary data
  *
@@ -104,9 +108,9 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities() { request.contribute_array(myName); }
+  virtual void contribute_particle_quantities() override { request.contribute_array(myName); }
 
-  virtual void checkout_particle_quantities(TraceManager& tm)
+  virtual void checkout_particle_quantities(TraceManager& tm) override
   {
     streaming_particles = request.streaming_array(myName);
     if (streaming_particles)
@@ -121,7 +125,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     }
   }
 
-  virtual void delete_particle_quantities()
+  virtual void delete_particle_quantities() override
   {
     if (streaming_particles)
     {
@@ -132,7 +136,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   }
 #endif
 
-  inline void addObservables(PropertySetType& plist, BufferType& collectables)
+  inline void addObservables(PropertySetType& plist, BufferType& collectables) override
   {
     addValue(plist);
     if (ComputeForces)
@@ -312,14 +316,14 @@ struct CoulombPotential : public OperatorBase, public ForceBase
 #endif
 
 
-  void resetTargetParticleSet(ParticleSet& P)
+  void resetTargetParticleSet(ParticleSet& P) override
   {
     //myTableIndex is the same
   }
 
   ~CoulombPotential() {}
 
-  void update_source(ParticleSet& s)
+  void update_source(ParticleSet& s) override
   {
     if (is_AA)
     {
@@ -327,7 +331,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     }
   }
 
-  inline Return_t evaluate(ParticleSet& P)
+  inline Return_t evaluate(ParticleSet& P) override
   {
     if (is_active)
     {
@@ -343,7 +347,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
                                         ParticleSet& ions,
                                         TrialWaveFunction& psi,
                                         ParticleSet::ParticlePos_t& hf_terms,
-                                        ParticleSet::ParticlePos_t& pulay_terms)
+                                        ParticleSet::ParticlePos_t& pulay_terms) override
   {
     if (is_active)
       Value = evaluate(P); // No forces for the active
@@ -352,9 +356,9 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     return Value;
   }
 
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     if (myTableIndex)
       os << "CoulombAB source=" << Pa.getName() << std::endl;
@@ -363,33 +367,57 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     return true;
   }
 
-  void setObservables(PropertySetType& plist)
+  void setObservables(PropertySetType& plist) override
   {
     OperatorBase::setObservables(plist);
     if (ComputeForces)
       setObservablesF(plist);
   }
 
-  void setParticlePropertyList(PropertySetType& plist, int offset)
+  void setParticlePropertyList(PropertySetType& plist, int offset) override
   {
     OperatorBase::setParticlePropertyList(plist, offset);
     if (ComputeForces)
       setParticleSetF(plist, offset);
   }
 
-  OperatorBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override
   {
     if (is_AA)
     {
       if (is_active)
-        return new CoulombPotential(qp, true, ComputeForces);
+        return std::make_unique<CoulombPotential>(qp, true, ComputeForces);
       else
         // Ye Luo April 16th, 2015
         // avoid recomputing ion-ion DistanceTable when reusing ParticleSet
-        return new CoulombPotential(Pa, false, ComputeForces, true);
+        return std::make_unique<CoulombPotential>(Pa, false, ComputeForces, true);
     }
     else
-      return new CoulombPotential(Pa, qp, true);
+      return std::make_unique<CoulombPotential>(Pa, qp, true);
+  }
+
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override
+  {
+    auto& walkers = W.WalkerList;
+    if (is_active)
+    {
+      for (int iw = 0; iw < W.getActiveWalkers(); iw++)
+      {
+        W.loadWalker(*walkers[iw], false);
+        W.update();
+        Value = evaluate(W);
+        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
+        LocalEnergy[iw] += Value;
+      }
+    }
+    else
+      // assuminig the same results for all the walkers when the set is not active
+      for (int iw = 0; iw < LocalEnergy.size(); iw++)
+      {
+        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = Value;
+        LocalEnergy[iw] += Value;
+      }
   }
 };
 

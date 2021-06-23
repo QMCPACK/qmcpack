@@ -5,7 +5,7 @@
 ;; // This file is distributed under the University of Illinois/NCSA Open Source License.
 ;; // See LICENSE file in top directory for details.
 ;; //
-;; // Copyright (c) 2019 QMCPACK developers.
+;; // Copyright (c) 2021 QMCPACK developers.
 ;; //
 ;; // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 ;; //
@@ -21,6 +21,20 @@
 
 ;;  There is more copy pasting than there should be feel, free to refactor
 
+;;  To use you should load the functions
+;;
+;;  either put in your .emacs or
+;;  run from *scratch* or by other means after emacs startup
+;;
+;;  I use this by
+;;  (add-to-list 'load-path "/home/epd/qmcpack/utils/code_tools")
+;;  (require 'qmcpack-elisp-generators)
+;;
+;;  then in your c++ mode buffer
+;;  select the region with your variables
+;;  then M-x qmcp-add-getters
+;;  the generated code will appear after the end of the selected region in your buffer.
+;;
 ;;; Code:
 (defun qmcp-leading-indent ()
   "Amount of first line outside of REGION.

@@ -20,6 +20,7 @@
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/CUDATypes.h"
+#include "HamiltonianRef.h"
 
 namespace qmcplusplus
 {
@@ -51,6 +52,9 @@ protected:
   typedef TrialWaveFunction::RealMatrix_t RealMatrix_t;
   typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;
   typedef TrialWaveFunction::GradMatrix_t GradMatrix_t;
+
+  ///Hamiltonians that depend on the optimization: KE
+  HamiltonianRef H_KE;
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
   std::vector<std::vector<Return_rt>> TempDerivRecords;

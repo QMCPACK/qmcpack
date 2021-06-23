@@ -74,7 +74,7 @@ public:
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
-  void updateAfterSweep(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  void updateAfterSweep(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
@@ -152,7 +152,7 @@ public:
   void restore(int iat) override;
 
   ///evaluate log of a determinant for a particle set
-  LogValueType evaluateLog(ParticleSet& P,
+  LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L) override;
 
@@ -162,16 +162,16 @@ public:
   //                    const std::vector<ParticleSet::ParticleGradient_t*>& G_list,
   //                    const std::vector<ParticleSet::ParticleLaplacian_t*>& L_list) override;
 
-  void recompute(ParticleSet& P) override;
+  void recompute(const ParticleSet& P) override;
 
-  LogValueType evaluateGL(ParticleSet& P,
+  LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch) override;
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi) override;
 
-  void createResource(ResourceCollection& collection) override;
+  void createResource(ResourceCollection& collection) const override;
   void acquireResource(ResourceCollection& collection) override;
   void releaseResource(ResourceCollection& collection) override;
 

@@ -62,9 +62,9 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
   return Value;
 }
 
-OperatorBase* SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  SOECPotential* myclone = new SOECPotential(IonConfig, qp, psi);
+  std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(IonConfig, qp, psi);
   for (int ig = 0; ig < PPset.size(); ++ig)
     if (PPset[ig])
       myclone->addComponent(ig, std::unique_ptr<SOECPComponent>(PPset[ig]->makeClone(qp)));

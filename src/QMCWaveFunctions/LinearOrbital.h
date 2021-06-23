@@ -38,7 +38,7 @@ public:
     coeff[2] = 3.0;
   }
 
-  virtual LogValueType evaluateLog(ParticleSet& P,
+  virtual LogValueType evaluateLog(const ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
                                    ParticleSet::ParticleLaplacian_t& L)
   {

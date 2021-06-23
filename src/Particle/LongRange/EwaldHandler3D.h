@@ -55,7 +55,7 @@ public:
    */
   EwaldHandler3D(const EwaldHandler3D& aLR, ParticleSet& ref);
 
-  LRHandlerBase* makeClone(ParticleSet& ref) override { return new EwaldHandler3D(*this, ref); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new EwaldHandler3D(*this, ref); }
 
   void initBreakup(ParticleSet& ref) override;
 
@@ -63,28 +63,28 @@ public:
 
   void resetTargetParticleSet(ParticleSet& ref) override {}
 
-  inline mRealType evaluate(mRealType r, mRealType rinv) override { return erfc(r * Sigma) * rinv; }
+  inline mRealType evaluate(mRealType r, mRealType rinv) const override { return erfc(r * Sigma) * rinv; }
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline mRealType evaluateLR(mRealType r) override { return erf(r * Sigma) / r; }
+  inline mRealType evaluateLR(mRealType r) const override { return erf(r * Sigma) / r; }
 
-  inline mRealType evaluateSR_k0() override
+  inline mRealType evaluateSR_k0() const override
   {
     mRealType v0 = M_PI / Sigma / Sigma / Volume;
     return v0;
   }
 
-  mRealType evaluate_vlr_k(mRealType k) override;
+  mRealType evaluate_vlr_k(mRealType k) const override;
 
-  mRealType evaluateLR_r0() override { return 2.0 * Sigma / std::sqrt(M_PI); }
+  mRealType evaluateLR_r0() const override { return 2.0 * Sigma / std::sqrt(M_PI); }
 
   /**  evaluate the first derivative of the short range part at r
    *
    * @param r  radius
    * @param rinv 1/r
    */
-  inline mRealType srDf(mRealType r, mRealType rinv) override
+  inline mRealType srDf(mRealType r, mRealType rinv) const override
   {
     return -2.0 * Sigma * std::exp(-Sigma * Sigma * r * r) / (std::sqrt(M_PI) * r) - erfc(Sigma * r) * rinv * rinv;
   }
@@ -93,7 +93,7 @@ public:
    *
    * @param r  radius
    */
-  inline mRealType lrDf(mRealType r) override
+  inline mRealType lrDf(mRealType r) const override
   {
     mRealType rinv = 1.0 / r;
     return 2.0 * Sigma * std::exp(-Sigma * Sigma * r * r) / (std::sqrt(M_PI) * r) - erf(Sigma * r) * rinv * rinv;
@@ -113,6 +113,7 @@ public:
         Fkgstrain[ki++] = uk;
     }
   }
+
   void filldFk_dk(KContainer& KList)
   {
     dFk_dstrain.resize(KList.kpts_cart.size());
@@ -124,7 +125,8 @@ public:
   }
 
   //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k, pRealType kmag) override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k,
+                                                            pRealType kmag) const override
   {
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
 
@@ -143,7 +145,8 @@ public:
   }
 
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r, pRealType rmag) override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r,
+                                                            pRealType rmag) const override
   {
     SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
 
@@ -160,7 +163,7 @@ public:
     return deriv_tensor;
   }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain() override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain() const override
   {
     mRealType v0 = -M_PI / Sigma / Sigma / Volume;
     SymTensor<mRealType, OHMMS_DIM> stress;
@@ -170,16 +173,16 @@ public:
     return stress;
   }
 
-  inline mRealType evaluateLR_r0_dstrain(int i, int j) { return 0.0; }
+  inline mRealType evaluateLR_r0_dstrain(int i, int j) const { return 0.0; }
 
-  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain() override
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain() const override
   {
     SymTensor<mRealType, OHMMS_DIM> stress;
     return stress;
   }
 
 private:
-  inline mRealType evalYkgstrain(mRealType k)
+  inline mRealType evalYkgstrain(mRealType k) const
   {
     mRealType norm  = 4.0 * M_PI / Volume;
     mRealType denom = 4.0 * Sigma * Sigma;
@@ -187,7 +190,7 @@ private:
     return norm * std::exp(-k2 / denom) / k2;
   }
 
-  inline mRealType evaldYkgstrain(mRealType k)
+  inline mRealType evaldYkgstrain(mRealType k) const
   {
     mRealType norm   = 4.0 * M_PI / Volume;
     mRealType denom  = 4.0 * Sigma * Sigma;

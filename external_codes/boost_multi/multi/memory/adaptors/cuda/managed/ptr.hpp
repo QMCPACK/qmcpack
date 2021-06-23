@@ -69,11 +69,12 @@ public:
 	using difference_type = void;//typename std::pointer_traits<impl_t>::difference_type;
 	explicit operator bool() const{return rp_;}
 //	explicit operator raw_pointer&()&{return rp_;}
-	bool operator==(ptr const& other) const{return rp_==other.rp_;}
-	bool operator!=(ptr const& other) const{return rp_!=other.rp_;}
+	friend constexpr bool operator==(ptr const& self, ptr const& other){return self.rp_==other.rp_;}
+	friend constexpr bool operator!=(ptr const& self, ptr const& other){return self.rp_!=other.rp_;}
 	friend ptr to_address(ptr const& p){return p;}
 	void operator*() const = delete;
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
+	friend raw_pointer raw_pointer_cast(ptr const& self){return self.rp_;}
 };
 
 template<typename RawPtr>
@@ -88,7 +89,7 @@ private:
 	ptr(ptr<void const> const& p) : rp_{const_cast<void*>(p.rp_)}{}
 	template<class TT> friend ptr<TT> const_pointer_cast(ptr<TT const> const&);
 	template<class, class> friend struct ptr;
-	template<class> friend class allocator;
+	template<class TT, class DP> friend class allocator;
 public:
 	template<class Other> ptr(ptr<Other> const& p) : rp_{p.rp_}{}
 	explicit ptr(raw_pointer rp) : rp_{rp}{}
@@ -98,8 +99,8 @@ public:
 	template<class Other, typename = decltype(raw_pointer{std::declval<Other const&>().impl_})>
 	ptr(Other const& o) : rp_{o.rp_}{}
 	ptr& operator=(ptr const&) = default;
-	bool operator==(ptr const& other) const{return rp_==other.rp_;}
-	bool operator!=(ptr const& other) const{return rp_!=other.rp_;}
+	friend constexpr bool operator==(ptr const& self, ptr const& other){return self.rp_==other.rp_;}
+	friend constexpr bool operator!=(ptr const& self, ptr const& other){return self.rp_!=other.rp_;}
 	operator cuda::ptr<void>(){return {rp_};}
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
 
@@ -107,9 +108,10 @@ public:
 	explicit operator raw_pointer&()&{return rp_;}
 	friend ptr to_address(ptr const& p){return p;}
 	void operator*() = delete;
+	friend raw_pointer raw_pointer_cast(ptr const& self){return self.rp_;}
 };
 
-template<class T> class allocator;
+template<class T, class PrefetchDevice = std::integral_constant<int, -99> > class allocator;
 
 template<typename T, typename RawPtr>
 struct ptr : cuda::ptr<T, RawPtr>{
@@ -117,7 +119,7 @@ struct ptr : cuda::ptr<T, RawPtr>{
 //	raw_pointer rp_;
 protected:
 	friend struct cuda::ptr<T, RawPtr>; // to allow automatic conversions
-	template<class TT> friend class allocator;
+	template<class TT, class DP> friend class allocator;
 	template<typename, typename> friend struct ptr;
 //	template<class TT, typename = typename std::enable_if<not std::is_const<TT>{}>::type> 
 //	ptr(ptr<TT const> const& p) : rp_{const_cast<T*>(p.impl_)}{}
@@ -142,8 +144,8 @@ public:
 	ptr(ptr const&) = default;
 	constexpr ptr(std::nullptr_t n) : cuda::ptr<T, RawPtr>{n}{}
 	ptr& operator=(ptr const&) = default;
-	constexpr bool operator==(ptr const& other) const{return this->rp_==other.rp_;}
-	constexpr bool operator!=(ptr const& other) const{return this->rp_!=other.rp_;}
+	friend constexpr bool operator==(ptr const& s, ptr const& o){return s.rp_==o.rp_;}
+	friend constexpr bool operator!=(ptr const& s, ptr const& o){return s.rp_!=o.rp_;}
 
 	using element_type = typename std::pointer_traits<raw_pointer>::element_type;
 	using difference_type = typename std::pointer_traits<raw_pointer>::difference_type;
@@ -152,7 +154,11 @@ public:
 	using iterator_category = typename std::iterator_traits<raw_pointer>::iterator_category; //	using iterator_concept  = typename std::iterator_traits<impl_t>::iterator_concept;
 	explicit constexpr operator bool() const{return this->rp_;}
 //	bool operator not() const{return !rp_;}
-	constexpr operator raw_pointer()const&{return this->rp_;} // do not =delete
+	constexpr 
+#ifndef MULTI_ALLOW_IMPLICIT_CPU_CONVERSION
+	explicit
+#endif
+	operator raw_pointer()const&{return this->rp_;} // do not =delete
 	constexpr operator ptr<void>() const{return ptr<void>{this->rp_};}
 //	template<class PM>
 //	decltype(auto) operator->*(PM pm) const{return *ptr<std::decay_t<decltype(rp_->*pm)>, decltype(&(rp_->*pm))>{&(rp_->*pm)};}

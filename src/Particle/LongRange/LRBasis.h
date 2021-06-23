@@ -51,18 +51,18 @@ public:
   { /*Do nothing*/
   }
 
-  virtual ~LRBasis() {}
+  virtual ~LRBasis() = default;
 
   inline int NumBasisElem() const { return BasisSize; }
 
   //Real-space basis function + integral: override these
   virtual mRealType h(int n, mRealType r) const = 0;
-  virtual mRealType hintr2(int n)               = 0;
+  virtual mRealType hintr2(int n) const         = 0;
   virtual mRealType dh_dr(int n, mRealType r) const { return 0.0; };
   //k-space basis function: override this
-  virtual mRealType c(int m, mRealType k) = 0;
+  virtual mRealType c(int m, mRealType k) const = 0;
   //k-space basis function k space derivative.
-  virtual mRealType dc_dk(int m, mRealType k) { return 0.0; };
+  virtual mRealType dc_dk(int m, mRealType k) const { return 0.0; };
 
   //
   // df(m,r) is included for legacy reasons.  Please use dh_dr
@@ -83,7 +83,7 @@ public:
  * 
  */
 
-  inline mRealType f(mRealType r, std::vector<mRealType>& coefs)
+  inline mRealType f(mRealType r, const std::vector<mRealType>& coefs) const
   {
     mRealType f = 0.0;
     //RealType df = myFunc.df(r, rinv);
@@ -101,7 +101,7 @@ public:
  * 
  */
 
-  inline mRealType df_dr(mRealType r, std::vector<mRealType>& coefs)
+  inline mRealType df_dr(mRealType r, const std::vector<mRealType>& coefs) const
   {
     mRealType df = 0.0;
     //RealType df = myFunc.df(r, rinv);
@@ -120,7 +120,7 @@ public:
  */
 
 
-  inline mRealType fk(mRealType k, std::vector<mRealType> coefs)
+  inline mRealType fk(mRealType k, const std::vector<mRealType> coefs) const
   {
     mRealType fk = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -137,7 +137,7 @@ public:
  * 
  */
 
-  inline mRealType dfk_dk(mRealType k, std::vector<mRealType> coefs)
+  inline mRealType dfk_dk(mRealType k, const std::vector<mRealType> coefs) const
   {
     mRealType dfk = 0.0;
     for (int n = 0; n < coefs.size(); n++)
@@ -147,10 +147,10 @@ public:
 
   //May need extra functionality when resetting rc. Override this.
   virtual void set_rc(mRealType rc) = 0;
-  inline mRealType get_rc() { return m_rc; }
-  inline mRealType get_CellVolume() { return Lattice.Volume; }
-  inline ParticleLayout_t& get_Lattice() { return Lattice; }
+  inline mRealType get_rc() const { return m_rc; }
+  inline mRealType get_CellVolume() const { return Lattice.Volume; }
   inline void set_Lattice(ParticleLayout_t& ref) { Lattice = ref; }
+  inline ParticleLayout_t& get_Lattice() const { return Lattice; }
 };
 
 } // namespace qmcplusplus

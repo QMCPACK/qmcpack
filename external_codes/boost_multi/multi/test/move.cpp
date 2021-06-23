@@ -9,9 +9,18 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #include "../array.hpp"
 
 #include<vector>
-#include<complex>
 
 namespace multi = boost::multi;
+
+BOOST_AUTO_TEST_CASE(multi_array_clear){
+	multi::array<double, 2> A({10, 10}, 99.);
+	A.clear();
+	BOOST_REQUIRE(A.is_empty());
+	A.reextent({20, 20}, 99.);
+	BOOST_REQUIRE(not A.is_empty());
+	clear(A).reextent({30, 30}, 88.);
+	BOOST_REQUIRE(A[15][15] == 88.);
+}
 
 BOOST_AUTO_TEST_CASE(multi_array_move){
 	std::vector<multi::array<double, 2> > Av(10, multi::array<double, 2>({4, 5}, 99.));
@@ -24,10 +33,9 @@ BOOST_AUTO_TEST_CASE(multi_array_move){
 
 BOOST_AUTO_TEST_CASE(multi_array_move_into_vector){
 	std::vector<multi::array<double, 2> > Av(10, multi::array<double, 2>({4, 5}, 99.));
-	std::vector<multi::array<double, 2> > Bv;
+	std::vector<multi::array<double, 2> > Bv; Bv.reserve(size(Av));
 
-//	for(auto& v: Av) Bv.emplace_back(std::move(v), std::allocator<double>{}); // segfaults nvcc 11.0 but not nvcc 11.1
-	for(auto& v: Av) Bv.emplace_back(std::move(v));
+	std::move( begin(Av), end(Av), std::back_inserter(Bv) );
 
 	BOOST_REQUIRE( size(Bv) == size(Av) );
 	BOOST_REQUIRE( is_empty(Av[4]) );
@@ -37,11 +45,10 @@ BOOST_AUTO_TEST_CASE(multi_array_move_into_vector){
 
 BOOST_AUTO_TEST_CASE(multi_array_move_into_vector_reserve){
 	std::vector<multi::array<double, 2> > Av(10, multi::array<double, 2>({4, 5}, 99.));
-	std::vector<multi::array<double, 2> > Bv;
-	Bv.reserve(Av.size());
+	std::vector<multi::array<double, 2> > Bv; Bv.reserve(Av.size());
 
 //	for(auto& v: Av) Bv.emplace_back(std::move(v), std::allocator<double>{}); // segfaults nvcc 11.0 but not nvcc 11.1
-	for(auto& v: Av) Bv.emplace_back(std::move(v));
+	std::move(begin(Av), end(Av), std::back_inserter(Bv));
 
 	BOOST_REQUIRE( size(Bv) == size(Av) );
 	BOOST_REQUIRE( is_empty(Av[4]) );
@@ -53,6 +60,7 @@ BOOST_AUTO_TEST_CASE(multi_array_move_into_vector_move){
 	std::vector<multi::array<double, 2> > Av(10, multi::array<double, 2>({4, 5}, 99.));
 	std::vector<multi::array<double, 2> > Bv = std::move(Av);
 
+	Av.clear();
 	BOOST_REQUIRE( size(Av) == 0 );
 	BOOST_REQUIRE( size(Bv) == 10 );
 	BOOST_REQUIRE( size(Bv[5]) == 4 );

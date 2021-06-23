@@ -143,12 +143,9 @@ public:
         mygH(in.mygH)
   {}
 
-
-  void createResource(ResourceCollection& collection) override
+  void createResource(ResourceCollection& collection) const override
   {
     auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>());
-    app_log() << "    Multi walker shared memory resource created in SplineC2ROMPTarget. Index " << resource_index
-              << std::endl;
   }
 
   void acquireResource(ResourceCollection& collection) override

@@ -414,7 +414,7 @@ public:
       for (int J = I + 1; J < npol * NMO; J++)
       {
         // This is really cutoff dependent!!!
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         if (std::abs(P1[I][J] - ma::conj(P1[J][I])) * 2.0 > 1e-5)
         {
 #else
@@ -821,7 +821,7 @@ public:
       size_t mem_needs(nwalk*nkpts*nkpts*nspin*nocca_max*nmo_max);
       size_t cnt(0);  
       if(addEJ) { 
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         mem_needs += 2*nwalk*local_nCV;
 #else
         if(not getKr) mem_needs += nwalk*local_nCV;
@@ -837,7 +837,7 @@ public:
         Knr=nwalk;
         Knc=local_nCV;
         cnt=0;
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
           assert(KEright->stride(0) == KEright->size(1));
@@ -853,7 +853,7 @@ public:
           Krptr = BTMats.origin();
           cnt += nwalk*local_nCV;
         }
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
           assert(KEleft->stride(0) == KEleft->size(1));
@@ -1222,7 +1222,7 @@ public:
 
     // "rotate" X
     //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
-#if MIXED_PRECISION
+#if defined(MIXED_PRECISION)
     StaticMatrix Xdev(X.extensions(), device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     copy_n_cast(make_device_ptr(X.origin()), X.num_elements(), Xdev.origin());
 #else

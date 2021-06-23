@@ -14,14 +14,24 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTableData.h"
 #include "NonLocalECPotential.h"
-#include "QMCHamiltonians/NonLocalECPComponent.h"
-#include "QMCHamiltonians/NLPPJob.h"
-#include "Utilities/IteratorUtility.h"
+#include <DistanceTableData.h>
+#include <IteratorUtility.h>
+#include <ResourceCollection.h>
+#include "NonLocalECPComponent.h"
+#include "NLPPJob.h"
 
 namespace qmcplusplus
 {
+struct NonLocalECPotentialMultiWalkerResource : public Resource
+{
+  NonLocalECPotentialMultiWalkerResource() : Resource("NonLocalECPotential"), collection("NLPPcollection") {}
+
+  Resource* makeClone() const override { return new NonLocalECPotentialMultiWalkerResource(*this); }
+
+  ResourceCollection collection;
+};
+
 void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
 /** constructor
@@ -63,6 +73,8 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
     nlpp_jobs[ig].reserve(2 * els.groupsize(ig));
   }
 }
+
+NonLocalECPotential::~NonLocalECPotential() = default;
 
 #if !defined(REMOVE_TRACEMANAGER)
 void NonLocalECPotential::contribute_particle_quantities() { request.contribute_array(myName); }
@@ -288,6 +300,21 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     O.Value = 0.0;
   }
 
+  // make this class unit tests friendly without the need of setup resources.
+  if (!O_leader.mw_res_)
+  {
+    app_warning() << "NonLocalECPotential: This message should not be seen in production (performance bug) runs "
+                     "but only unit tests (expected)."
+                  << std::endl;
+    O_leader.mw_res_ = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
+    for (int ig = 0; ig < O_leader.PPset.size(); ++ig)
+      if (O_leader.PPset[ig]->getVP())
+      {
+        O_leader.PPset[ig]->getVP()->createResource(O_leader.mw_res_->collection);
+        break;
+      }
+  }
+
   auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
   assert(pp_component != std::end(O_leader.PPset));
 
@@ -336,7 +363,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       }
 
       NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
-                                           O_leader.use_DLA);
+                                           O_leader.mw_res_->collection, O_leader.use_DLA);
 
       for (size_t j = 0; j < ecp_potential_list.size(); j++)
       {
@@ -359,11 +386,13 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   }
 }
 
-NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
-                                                                         ParticleSet& ions,
-                                                                         TrialWaveFunction& psi,
-                                                                         ParticleSet::ParticlePos_t& hf_terms,
-                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+
+void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
+                                            ParticleSet& ions,
+                                            TrialWaveFunction& psi,
+                                            ParticleSet::ParticlePos_t& hf_terms,
+                                            ParticleSet::ParticlePos_t& pulay_terms,
+                                            bool keepGrid)
 {
   //We're going to ignore psi and use the internal Psi.
   //
@@ -375,10 +404,12 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
   PulayTerm = 0;
 
   Value = 0.0;
-
-  for (int ipp = 0; ipp < PPset.size(); ipp++)
-    if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
+  if (!keepGrid)
+  {
+    for (int ipp = 0; ipp < PPset.size(); ipp++)
+      if (PPset[ipp])
+        PPset[ipp]->randomize_grid(*myRNG);
+  }
   //loop over all the ions
   const auto& myTable = P.getDistTable(myTableIndex);
   // clear all the electron and ion neighbor lists
@@ -410,6 +441,26 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(Particl
 
   hf_terms -= forces;
   pulay_terms -= PulayTerm;
+}
+
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
+                                                                         ParticleSet& ions,
+                                                                         TrialWaveFunction& psi,
+                                                                         ParticleSet::ParticlePos_t& hf_terms,
+                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+{
+  evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms);
+  return Value;
+}
+
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivsDeterministic(
+    ParticleSet& P,
+    ParticleSet& ions,
+    TrialWaveFunction& psi,
+    ParticleSet::ParticlePos_t& hf_terms,
+    ParticleSet::ParticlePos_t& pulay_terms)
+{
+  evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms, true);
   return Value;
 }
 
@@ -569,9 +620,35 @@ void NonLocalECPotential::addComponent(int groupID, std::unique_ptr<NonLocalECPC
   PPset[groupID] = std::move(ppot);
 }
 
-OperatorBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+void NonLocalECPotential::createResource(ResourceCollection& collection) const
 {
-  NonLocalECPotential* myclone = new NonLocalECPotential(IonConfig, qp, psi, ComputeForces, use_DLA);
+  auto new_res = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
+  for (int ig = 0; ig < PPset.size(); ++ig)
+    if (PPset[ig]->getVP())
+    {
+      PPset[ig]->getVP()->createResource(new_res->collection);
+      break;
+    }
+  auto resource_index = collection.addResource(std::move(new_res));
+}
+
+void NonLocalECPotential::acquireResource(ResourceCollection& collection)
+{
+  auto res_ptr = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("NonLocalECPotential::acquireResource dynamic_cast failed");
+  mw_res_.reset(res_ptr);
+}
+
+void NonLocalECPotential::releaseResource(ResourceCollection& collection)
+{
+  collection.takebackResource(std::move(mw_res_));
+}
+
+std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  std::unique_ptr<NonLocalECPotential> myclone =
+      std::make_unique<NonLocalECPotential>(IonConfig, qp, psi, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
     if (PPset[ig])
       myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));
@@ -601,22 +678,18 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
   }
 }
 
-void NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
+void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const
 {
   OperatorBase::registerObservables(h5list, gid);
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
-    ndim[0]                 = Nnuc;
-    ndim[1]                 = OHMMS_DIM;
-    observable_helper* h5o1 = new observable_helper("FNL");
-    h5o1->set_dimensions(ndim, FirstForceIndex);
-    h5o1->open(gid);
-    h5list.push_back(h5o1);
-    //    observable_helper* h5o2 = new observable_helper("FNL_Pulay");
-    //    h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
-    //    h5o2->open(gid);
-    //    h5list.push_back(h5o2);
+    ndim[0] = Nnuc;
+    ndim[1] = OHMMS_DIM;
+    h5list.emplace_back("FNL");
+    auto& h5o1 = h5list.back();
+    h5o1.set_dimensions(ndim, FirstForceIndex);
+    h5o1.open(gid);
   }
 }
 

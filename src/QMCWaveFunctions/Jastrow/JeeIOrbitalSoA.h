@@ -21,6 +21,7 @@
 #include "CPU/SIMD/algorithm.hpp"
 #include <map>
 #include <numeric>
+#include <memory>
 
 namespace qmcplusplus
 {
@@ -69,7 +70,7 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   ///container for the Jastrow functions
   Array<FT*, 3> F;
 
-  std::map<std::string, FT*> J3Unique;
+  std::map<std::string, std::unique_ptr<FT>> J3Unique;
   //YYYY
   std::map<FT*, int> J3UniqueIndex;
 
@@ -113,7 +114,7 @@ public:
   JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
       : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
         ee_Table_ID_(elecs.addTable(elecs)),
-        ei_Table_ID_(elecs.addTable(ions, true)),
+        ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME)),
         Ions(ions),
         NumVars(0)
   {
@@ -132,14 +133,14 @@ public:
       for (int eG1 = 0; eG1 < eGroups; eG1++)
         for (int eG2 = 0; eG2 < eGroups; eG2++)
         {
-          if (F(iG, eG1, eG2) == 0)
+          if (F(iG, eG1, eG2) == nullptr)
             continue;
-          typename std::map<const FT*, FT*>::iterator fit = fcmap.find(F(iG, eG1, eG2));
+          auto fit = fcmap.find(F(iG, eG1, eG2));
           if (fit == fcmap.end())
           {
-            FT* fc = new FT(*F(iG, eG1, eG2));
-            eeIcopy->addFunc(iG, eG1, eG2, fc);
-            fcmap[F(iG, eG1, eG2)] = fc;
+            auto fc                = std::make_unique<FT>(*F(iG, eG1, eG2));
+            fcmap[F(iG, eG1, eG2)] = fc.get();
+            eeIcopy->addFunc(iG, eG1, eG2, std::move(fc));
           }
         }
     // Ye: I don't like the following memory allocated by default.
@@ -196,25 +197,24 @@ public:
 
   void initUnique()
   {
-    typename std::map<std::string, FT*>::iterator it(J3Unique.begin()), it_end(J3Unique.end());
     du_dalpha.resize(J3Unique.size());
     dgrad_dalpha.resize(J3Unique.size());
     dhess_dalpha.resize(J3Unique.size());
     int ifunc = 0;
-    while (it != it_end)
+
+    for (auto& j3UniquePair : J3Unique)
     {
-      J3UniqueIndex[it->second] = ifunc;
-      FT& functor               = *(it->second);
-      int numParams             = functor.getNumParameters();
+      auto functorPtr           = j3UniquePair.second.get();
+      J3UniqueIndex[functorPtr] = ifunc;
+      const int numParams       = functorPtr->getNumParameters();
       du_dalpha[ifunc].resize(numParams);
       dgrad_dalpha[ifunc].resize(numParams);
       dhess_dalpha[ifunc].resize(numParams);
-      ++it;
       ifunc++;
     }
   }
 
-  void addFunc(int iSpecies, int eSpecies1, int eSpecies2, FT* j)
+  void addFunc(int iSpecies, int eSpecies1, int eSpecies2, std::unique_ptr<FT> j)
   {
     if (eSpecies1 == eSpecies2)
     {
@@ -224,13 +224,13 @@ public:
           for (int eG2 = 0; eG2 < eGroups; eG2++)
           {
             if (F(iSpecies, eG1, eG2) == 0)
-              F(iSpecies, eG1, eG2) = j;
+              F(iSpecies, eG1, eG2) = j.get();
           }
     }
     else
     {
-      F(iSpecies, eSpecies1, eSpecies2) = j;
-      F(iSpecies, eSpecies2, eSpecies1) = j;
+      F(iSpecies, eSpecies1, eSpecies2) = j.get();
+      F(iSpecies, eSpecies2, eSpecies1) = j.get();
     }
     if (j)
     {
@@ -245,7 +245,7 @@ public:
     }
     std::stringstream aname;
     aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
-    J3Unique[aname.str()] = j;
+    J3Unique.emplace(aname.str(), std::move(j));
     initUnique();
   }
 
@@ -310,12 +310,11 @@ public:
   void checkInVariables(opt_variables_type& active)
   {
     myVars.clear();
-    typename std::map<std::string, FT*>::iterator it(J3Unique.begin()), it_end(J3Unique.end());
-    while (it != it_end)
+
+    for (auto& ftPair : J3Unique)
     {
-      (*it).second->checkInVariables(active);
-      (*it).second->checkInVariables(myVars);
-      ++it;
+      ftPair.second->checkInVariables(active);
+      ftPair.second->checkInVariables(myVars);
     }
   }
 
@@ -324,13 +323,13 @@ public:
   void checkOutVariables(const opt_variables_type& active)
   {
     myVars.clear();
-    typename std::map<std::string, FT*>::iterator it(J3Unique.begin()), it_end(J3Unique.end());
-    while (it != it_end)
+
+    for (auto& ftPair : J3Unique)
     {
-      (*it).second->myVars.getIndex(active);
-      myVars.insertFrom((*it).second->myVars);
-      ++it;
+      ftPair.second->myVars.getIndex(active);
+      myVars.insertFrom(ftPair.second->myVars);
     }
+
     myVars.getIndex(active);
     NumVars = myVars.size();
     if (NumVars)
@@ -358,11 +357,10 @@ public:
   {
     if (!Optimizable)
       return;
-    typename std::map<std::string, FT*>::iterator it(J3Unique.begin()), it_end(J3Unique.end());
-    while (it != it_end)
-    {
-      (*it++).second->resetParameters(active);
-    }
+
+    for (auto& ftPair : J3Unique)
+      ftPair.second->resetParameters(active);
+
     for (int i = 0; i < myVars.size(); ++i)
     {
       int ii = myVars.Index[i];
@@ -374,15 +372,11 @@ public:
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os)
   {
-    typename std::map<std::string, FT*>::iterator it(J3Unique.begin()), it_end(J3Unique.end());
-    while (it != it_end)
-    {
-      (*it).second->myVars.print(os);
-      ++it;
-    }
+    for (auto& ftPair : J3Unique)
+      ftPair.second->myVars.print(os);
   }
 
-  void build_compact_list(ParticleSet& P)
+  void build_compact_list(const ParticleSet& P)
   {
     const auto& eI_dists  = P.getDistTable(ei_Table_ID_).getDistances();
     const auto& eI_displs = P.getDistTable(ei_Table_ID_).getDisplacements();
@@ -406,7 +400,9 @@ public:
           }
   }
 
-  LogValueType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L)
   {
     return evaluateGL(P, G, L, true);
   }
@@ -501,7 +497,7 @@ public:
       valT* restrict save_g      = dUat.data(idim);
       const valT* restrict new_g = newdUk.data(idim);
       const valT* restrict old_g = olddUk.data(idim);
-#pragma omp simd aligned(save_g, new_g, old_g)
+#pragma omp simd aligned(save_g, new_g, old_g : QMC_SIMD_ALIGNMENT)
       for (int jel = 0; jel < Nelec; jel++)
         save_g[jel] += new_g[jel] - old_g[jel];
     }
@@ -567,7 +563,7 @@ public:
     }
   }
 
-  inline void recompute(ParticleSet& P)
+  inline void recompute(const ParticleSet& P)
   {
     const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
     const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
@@ -591,7 +587,7 @@ public:
       {
         valT* restrict save_g      = dUat.data(idim);
         const valT* restrict new_g = newdUk.data(idim);
-#pragma omp simd aligned(save_g, new_g)
+#pragma omp simd aligned(save_g, new_g : QMC_SIMD_ALIGNMENT)
         for (int kel = 0; kel < jel; kel++)
           save_g[kel] += new_g[kel];
       }
@@ -691,7 +687,7 @@ public:
       valT* restrict jI = Disp_jI_Compressed.data(idim);
       valT* restrict kI = Disp_kI_Compressed.data(idim);
       valT dUj_x(0);
-#pragma omp simd aligned(gradF0, gradF1, gradF2, hessF11, jk, jI, kI) reduction(+ : dUj_x)
+#pragma omp simd aligned(gradF0, gradF1, gradF2, hessF11, jk, jI, kI : QMC_SIMD_ALIGNMENT) reduction(+ : dUj_x)
       for (int kel_index = 0; kel_index < kel_counter; kel_index++)
       {
         // recycle hessF11
@@ -708,7 +704,7 @@ public:
       valT* restrict jk0 = Disp_jk_Compressed.data(0);
       if (idim > 0)
       {
-#pragma omp simd aligned(jk, jk0)
+#pragma omp simd aligned(jk, jk0 : QMC_SIMD_ALIGNMENT)
         for (int kel_index = 0; kel_index < kel_counter; kel_index++)
           jk0[kel_index] += jk[kel_index];
       }
@@ -719,12 +715,12 @@ public:
     }
     valT sum(0);
     valT* restrict jk0 = Disp_jk_Compressed.data(0);
-#pragma omp simd aligned(jk0, hessF01) reduction(+ : sum)
+#pragma omp simd aligned(jk0, hessF01 : QMC_SIMD_ALIGNMENT) reduction(+ : sum)
     for (int kel_index = 0; kel_index < kel_counter; kel_index++)
       sum += hessF01[kel_index] * jk0[kel_index];
     d2Uj -= ctwo * sum;
 
-#pragma omp simd aligned(hessF00, hessF22, gradF0, gradF2, hessF02, hessF11)
+#pragma omp simd aligned(hessF00, hessF22, gradF0, gradF2, hessF02, hessF11 : QMC_SIMD_ALIGNMENT)
     for (int kel_index = 0; kel_index < kel_counter; kel_index++)
       hessF00[kel_index] = hessF00[kel_index] + hessF22[kel_index] + lapfac * (gradF0[kel_index] + gradF2[kel_index]) -
           ctwo * hessF02[kel_index] * hessF11[kel_index];
@@ -846,7 +842,7 @@ public:
     build_compact_list(P);
   }
 
-  LogValueType evaluateGL(ParticleSet& P,
+  LogValueType evaluateGL(const ParticleSet& P,
                           ParticleSet::ParticleGradient_t& G,
                           ParticleSet::ParticleLaplacian_t& L,
                           bool fromscratch = false)

@@ -21,6 +21,7 @@
 #include "OhmmsPETE/OhmmsArray.h"
 #include "mpi/collectives.h"
 #include "CPU/SIMD/simd.hpp"
+#include "CPU/BLAS.hpp"
 #include "config/stdlib/math.hpp"
 
 namespace qmcplusplus
