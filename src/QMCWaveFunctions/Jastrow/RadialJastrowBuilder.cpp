@@ -511,6 +511,11 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       guardAgainstPBC();
       return createJ1<PadeFunctor<RealType>>(cur);
     }
+    else if (Jastfunction == "pade2")
+    {
+      guardAgainstPBC();
+      return createJ1<Pade2ndOrderFunctor<RealType>>(cur);
+    }
     else if (Jastfunction == "shortrangecusp")
     {
       //guardAgainstPBC(); // is this needed?
