@@ -294,19 +294,20 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
   }
 
   /**@param r the distance
-    @return \f$ u(r) = a*r/(1+b*r) \f$
+    @return \f$ u(r) = \frac{a*r+c*r^2}{1+b*r} \f$
     */
   inline real_type evaluate(real_type r) const
   {
-    real_type br(B * r);
-    return (A + br) * r / (1.0 + br);
+    real_type u = 1.0 / (1.0 + B * r);
+    real_type v = A * r + C * r * r;
+    return u * v;
   }
 
   /** evaluate the value at r
    * @param r the distance
    @param dudr return value  \f$ du/dr = a/(1+br)^2 \f$
    @param d2udr2 return value  \f$ d^2u/dr^2 = -2ab/(1+br)^3 \f$
-   @return \f$ u(r) = a*r/(1+b*r) \f$
+   @return \f$ u(r) = \frac{a*r+c*r^2}{1+b*r} \f$
    */
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
   {
