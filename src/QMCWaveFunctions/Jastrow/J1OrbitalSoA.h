@@ -45,11 +45,13 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   ///table index
   const int myTableID;
   ///number of ions
-  int Nions;
+  const int Nions;
   ///number of electrons
-  int Nelec;
-  ///number of groups
-  int NumGroups;
+  const int Nelec;
+  /* the number of ion groups if ions in 'Ions' particleset are grouped by species. 0 otherwise.
+   * 0 Use slow code path. >= 1 use the code path with ion grouping
+   */
+  const int NumGroups;
   ///reference to the sources (ions)
   const ParticleSet& Ions;
 
@@ -80,7 +82,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   std::vector<ValueVectorType*> lapLogPsi;
 
   J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
-      : WaveFunctionComponent("J1OrbitalSoA", obj_name), myTableID(els.addTable(ions)), Ions(ions), NumVars(0)
+      : WaveFunctionComponent("J1OrbitalSoA", obj_name), myTableID(els.addTable(ions)),
+        Nions(ions.getTotalNum()), Nelec(els.getTotalNum()), NumGroups(determineNumGroups(ions)), Ions(ions), NumVars(0)
   {
     if (myName.empty())
       throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
@@ -91,24 +94,27 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
   ~J1OrbitalSoA() override
   {
-    for (auto& J1Uniqueptr : J1Unique)
-      J1Uniqueptr.reset();
     delete_iter(gradLogPsi.begin(), gradLogPsi.end());
     delete_iter(lapLogPsi.begin(), lapLogPsi.end());
+  }
+
+  /* determine NumGroups which controls the use of optimized code path using ion groups or not */
+  static int determineNumGroups(const ParticleSet& ions)
+  {
+    const int num_species = ions.getSpeciesSet().getTotalNum();
+    if (num_species == 1)
+      return 1;
+    else if (num_species > 1 && !ions.IsGrouped)
+      return 0;
+    else
+      return num_species;
   }
 
   /* initialize storage */
   void initialize(const ParticleSet& els)
   {
-    Nions     = Ions.getTotalNum();
-    NumGroups = Ions.getSpeciesSet().getTotalNum();
     F.resize(Nions, nullptr);
-    J1Unique.resize(NumGroups);
-    if (NumGroups > 1 && !Ions.IsGrouped)
-    {
-      NumGroups = 0;
-    }
-    Nelec = els.getTotalNum();
+    J1Unique.resize(Ions.getSpeciesSet().getTotalNum());
     Vat.resize(Nelec);
     Grad.resize(Nelec);
     Lap.resize(Nelec);
