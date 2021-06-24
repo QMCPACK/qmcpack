@@ -117,7 +117,7 @@ struct OptimizableFunctorBase
   virtual void setGridManager(bool willmanage) {}
 };
 
-void print(OptimizableFunctorBase& func, std::ostream& os);
+void print(OptimizableFunctorBase& func, std::ostream& os, double extent = -1.0);
 
 
 #endif
