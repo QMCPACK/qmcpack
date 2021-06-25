@@ -346,7 +346,7 @@ The relevant portion of the input describing the linear optimization process is
       <parameter name="samples"        >  SAMPLES  </parameter>
       <parameter name="warmupSteps"    >  50       </parameter>
       <parameter name="blocks"         >  200      </parameter>
-      <parameter name="subSteps"       >  1        </parameter>
+      <parameter name="subSteps"       >  0        </parameter>
       <parameter name="nonlocalpp"     >  yes      </parameter>
       <parameter name="useBuffer"      >  yes      </parameter>
       ...
@@ -392,9 +392,10 @@ blocks
    (e.g., via ``qmca``).
 
 subSteps
-   Number of MC steps in between energy evaluations. Each energy
+   Number of MC steps in between energy and observable evaluations. This can be
+   used to reduce correlation between energy samples. In addition, each energy
    evaluation is expensive, so taking a few steps to decorrelate between
-   measurements can be more efficient. Will be less efficient with many
+   measurements can be more efficient. Efficiency is reduced with too many
    substeps.
 
 nonlocalpp,useBuffer
@@ -961,7 +962,7 @@ Objects representing QMCPACK simulations are then constructed with the ``generat
                   samples              = 61440,
                   warmupsteps          = 50,
                   blocks               = 200,
-                  substeps             = 1,
+                  substeps             = 0,
                   nonlocalpp           = True,
                   usebuffer            = True,
                   walkers              = 1,
@@ -993,7 +994,7 @@ Objects representing QMCPACK simulations are then constructed with the ``generat
               warmupsteps =  30,
               blocks      =  20,
               steps       =  10,
-              substeps    =   2,
+              substeps    =   1,
               timestep    =  .4,
               samples     = 2048
               ),

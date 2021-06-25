@@ -43,7 +43,7 @@
   <qmc method="vmc" move="not_pbyp_or_whatever">
     <parameter name="blocks">   256  </parameter>
     <parameter name="steps">    200  </parameter>
-    <parameter name="substeps">   2  </parameter>
+    <parameter name="substeps"> 1 </parameter>
     <parameter name="timestep"> 2.0  </parameter>
   </qmc>
 </simulation>

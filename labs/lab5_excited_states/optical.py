@@ -110,7 +110,7 @@ opt = generate_qmcpack(
                  walkers     = 1,
                  warmupsteps =  20,
                  blocks      =  25,
-                 substeps    =   5,
+                 substeps    =   4,
                  timestep    =  .4,
                  ),
              ),
@@ -133,7 +133,7 @@ qmc_ground = generate_qmcpack(
             warmupsteps =  20,
             blocks      = 800,
             steps       =   5,
-            substeps    =   2,
+            substeps    =   1,
             timestep    =  .4,
             )
         ],
@@ -157,7 +157,7 @@ qmc_optical = generate_qmcpack(
             warmupsteps =  20,
             blocks      = 800,
             steps       =   5,
-            substeps    =   2,
+            substeps    =   1,
             timestep    =  .4,
             )
         ],

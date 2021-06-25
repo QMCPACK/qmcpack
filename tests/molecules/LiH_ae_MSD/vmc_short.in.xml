@@ -12,7 +12,7 @@
       <parameter name="walkers"             >    1               </parameter>
       <parameter name="blocks"              >    200             </parameter>
       <parameter name="steps"               >    300            </parameter>
-      <parameter name="subSteps"            >    3               </parameter>
+      <parameter name="subSteps"            > 2 </parameter>
       <parameter name="timestep"            >    0.4             </parameter>
       <parameter name="warmupSteps"         >    50              </parameter>
    </qmc>

@@ -84,7 +84,7 @@
 
       <parameter name="warmupsteps"> 25 </parameter>
       <parameter name="steps"> 10 </parameter>
-      <parameter name="substeps"> 20 </parameter>
+      <parameter name="substeps"> 19 </parameter>
       <parameter name="timestep"> 0.5 </parameter>
       <cost name="energy">                   1.0 </cost>
       <cost name="reweightedvariance">       0.00 </cost>

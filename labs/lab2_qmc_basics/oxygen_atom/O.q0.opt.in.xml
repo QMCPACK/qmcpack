@@ -46,7 +46,7 @@
          <parameter name="samples"          >    SAMPLES       </parameter>
          <parameter name="warmupSteps"      >    50            </parameter>
          <parameter name="blocks"           >    200           </parameter>
-         <parameter name="subSteps"         >    1             </parameter>
+         <parameter name="subSteps"         >    0             </parameter>
          <parameter name="nonlocalpp"       >    yes           </parameter>
          <parameter name="useBuffer"        >    yes           </parameter>
          <parameter name="walkers"          >    1             </parameter>

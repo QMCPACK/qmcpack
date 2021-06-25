@@ -17,7 +17,7 @@
       <parameter name="samples"> 24960000 </parameter>
       <parameter name="stepsbetweensamples"> 1 </parameter>
       <parameter name="steps"> 195 </parameter>
-      <parameter name="substeps"> 10 </parameter>
+      <parameter name="substeps"> 9 </parameter>
       <parameter name="warmupsteps"> 5000 </parameter>
       <parameter name="blocks">  250  </parameter>
       <parameter name="timestep"> 1.0 </parameter>

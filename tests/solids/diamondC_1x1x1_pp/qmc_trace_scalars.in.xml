@@ -87,7 +87,7 @@
       <parameter name="warmupSteps"         >    2            </parameter>
       <parameter name="blocks"              >    4            </parameter>
       <parameter name="steps"               >    2            </parameter>
-      <parameter name="subSteps"            >    1            </parameter>
+      <parameter name="subSteps"            > 0 </parameter>
       <parameter name="timestep"            >    0.3          </parameter>
    </qmc>
    <qmc method="dmc" move="pbyp" checkpoint="-1">

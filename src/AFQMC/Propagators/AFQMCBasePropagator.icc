@@ -242,7 +242,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
       }
       if (wset.getBPPos() >= 0 && wset.getBPPos() < wset.NumBackProp())
         wset.advanceBPPos();
-      // MAM: BP will not work if the nsteps*nsubsteps per block is not consistent with
+      // MAM: BP will not work if the nsteps*(nsubsteps+1) per block is not consistent with
       //      steps in BP
       if (wset.getBPPos() >= 0)
         wset.advanceHistoryPos();

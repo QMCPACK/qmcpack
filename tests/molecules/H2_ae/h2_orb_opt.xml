@@ -17,7 +17,7 @@
       <parameter name="blocks"> 256 </parameter>
       <parameter name="warmupsteps"> 500 </parameter>
       <parameter name="steps"> 1 </parameter>
-      <parameter name="substeps"> 10 </parameter>
+      <parameter name="substeps"> 9 </parameter>
       <parameter name="timestep"> 0.05 </parameter>
       <parameter name="samples"> 64000  </parameter>
       <parameter name="useDrift">  yes </parameter>

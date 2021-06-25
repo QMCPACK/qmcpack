@@ -13,7 +13,7 @@
    <qmc method="vmc" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="walkers">    1  </parameter>
-     <parameter name="substeps">  10 </parameter>
+     <parameter name="substeps"> 9 </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="steps">  10 </parameter>
      <parameter name="blocks">  1 </parameter>

@@ -73,7 +73,7 @@
       <parameter name="walkers"             >    1               </parameter>
       <parameter name="blocks"              >    3             </parameter>
       <parameter name="steps"               >    3               </parameter>
-      <parameter name="substeps"            >    2               </parameter>
+      <parameter name="substeps"            > 1 </parameter>
       <parameter name="warmupsteps"         >    3               </parameter>
       <parameter name="timestep"            >    0.3             </parameter>
       <estimator name="LocalEnergy" hdf5="yes"/>

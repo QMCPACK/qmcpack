@@ -51,7 +51,7 @@ TEST_CASE("QMCDriverFactory create VMC_CUDA Driver", "[qmcapp]")
     <parameter name="walkers">                1 </parameter>
     <parameter name="stepsbetweensamples">    1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               5 </parameter>
+    <parameter name="substeps">               4 </parameter>
     <parameter name="steps">                  1 </parameter>
     <parameter name="blocks">                 2 </parameter>
     <parameter name="timestep">             1.0 </parameter>

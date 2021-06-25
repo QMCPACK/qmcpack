@@ -13,7 +13,7 @@
    <qmc method="vmc" move="pbyp">
       <parameter name="blocks"              >    200             </parameter>
       <parameter name="steps"               >    100             </parameter>
-      <parameter name="subSteps"            >    1               </parameter>
+      <parameter name="subSteps"            > 0 </parameter>
       <parameter name="timestep"            >    0.1             </parameter>
       <parameter name="warmupSteps"         >    50             </parameter>
    </qmc>

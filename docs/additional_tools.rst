@@ -170,7 +170,7 @@ prefix ``Mysim`` and output files will be
           <parameter name="warmupSteps">100</parameter>
           <parameter name="blocks">20</parameter>
           <parameter name="steps">50</parameter>
-          <parameter name="substeps">8</parameter>
+          <parameter name="substeps">7</parameter>
           <parameter name="timestep">0.5</parameter>
           <parameter name="usedrift">no</parameter>
         </qmc>
@@ -192,7 +192,7 @@ prefix ``Mysim`` and output files will be
           <parameter name="timestep">0.5</parameter>
           <parameter name="walkers">1</parameter>
           <parameter name="samples">16000</parameter>
-          <parameter name="substeps">4</parameter>
+          <parameter name="substeps">3</parameter>
           <parameter name="usedrift">no</parameter>
           <parameter name="MinMethod">OneShiftOnly</parameter>
           <parameter name="minwalkers">0.0001</parameter>
@@ -211,7 +211,7 @@ prefix ``Mysim`` and output files will be
           <parameter name="timestep">0.5</parameter>
           <parameter name="walkers">1</parameter>
           <parameter name="samples">64000</parameter>
-          <parameter name="substeps">4</parameter>
+          <parameter name="substeps">3</parameter>
           <parameter name="usedrift">no</parameter>
           <parameter name="MinMethod">OneShiftOnly</parameter>
           <parameter name="minwalkers">0.3</parameter>
@@ -231,7 +231,7 @@ prefix ``Mysim`` and output files will be
         <parameter name="warmupSteps">100</parameter>
         <parameter name="blocks">200</parameter>
         <parameter name="steps">50</parameter>
-        <parameter name="substeps">8</parameter>
+        <parameter name="substeps">7</parameter>
         <parameter name="timestep">0.5</parameter>
         <parameter name="usedrift">no</parameter>
         <!--Sample count should match targetwalker count for

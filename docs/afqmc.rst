@@ -251,9 +251,10 @@ trial wavefunctions for various roles.
   etc.
   Default: 1
 
-- **substep**. Number of substeps within a step. Only walker
-  propagation occurs in a substep.
-  Default: 1
+- **substep**. Number of substeps within a step. Typically used for
+  decorrelation, only walker propagation occurs in a substep. The total simulation 
+  time will be timestep*blocks*steps*(1+substep).
+  Default: 0
 
 - **ortho**. Number of steps between orthogonalization. Default: 1
 
@@ -805,7 +806,7 @@ The following is a growing list of useful advice for new users, followed by a sa
    the 2-electron integrals directly. The generation of the Cholesky
    factorization is faster and consumes less memory.
 
--  Use the hybrid algorithm for walker propagation. Set steps/substeps
+-  Use the hybrid algorithm for walker propagation. Set steps and substeps
    to adequate values to reduce the number of energy evaluations. This
    is essential when using large multideterminant expansions.
 
@@ -850,7 +851,7 @@ The following is a growing list of useful advice for new users, followed by a sa
       <parameter name="timestep">0.01</parameter>
       <parameter name="blocks">10000</parameter>
       <parameter name="steps">10</parameter>
-      <parameter name="substeps">5</parameter>
+      <parameter name="substeps">4</parameter>
       <parameter name="nWalkers">8</parameter>
       <parameter name="ortho">5</parameter>
     </execute>
@@ -943,7 +944,7 @@ parameters in ``execute``
 +--------------+--------------+-------------------------+-------------+---------------------------------------------------+
 | ``step``     | integer      | :math:`> 0`             | 1           | Number of steps within a block                    |
 +--------------+--------------+-------------------------+-------------+---------------------------------------------------+
-| ``substep``  | integer      | :math:`> 0`             | 1           | Number of substeps within a step                  |
+| ``substep``  | integer      | :math:`> 0`             | 0           | Number of substeps within a step                  |
 +--------------+--------------+-------------------------+-------------+---------------------------------------------------+
 | ``ortho``    | integer      | :math:`> 0`             | 1           | Number of steps between walker orthogonalization. |
 +--------------+--------------+-------------------------+-------------+---------------------------------------------------+

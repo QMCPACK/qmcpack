@@ -106,7 +106,7 @@
     <parameter name="walkers">               16 </parameter>
     <parameter name="stepsbetweensamples">    1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               4 </parameter>
+    <parameter name="substeps"> 3 </parameter>
     <parameter name="steps">                200 </parameter>
     <parameter name="blocks">               100 </parameter>
     <parameter name="timestep">             1.0 </parameter>

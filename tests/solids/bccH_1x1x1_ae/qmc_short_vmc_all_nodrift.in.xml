@@ -77,7 +77,7 @@
       <parameter name="usedrift"            >    no              </parameter>
       <parameter name="blocks"              >    1000            </parameter>
       <parameter name="steps"               >    60              </parameter>
-      <parameter name="substeps"            >    1               </parameter>
+      <parameter name="substeps"            > 0 </parameter>
       <parameter name="timestep"            >    1.0             </parameter>
       <parameter name="warmupsteps"         >    100             </parameter>
    </qmc>

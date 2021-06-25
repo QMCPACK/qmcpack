@@ -870,7 +870,7 @@ Appendix C: Wavefunction optimization XML block
       <parameter name="blocks">     10  </parameter>
         <parameter name="warmupsteps"> 25 </parameter>
         <parameter name="steps"> 1 </parameter>
-        <parameter name="substeps"> 20 </parameter>
+        <parameter name="substeps"> 19 </parameter>
         <parameter name="timestep"> 0.5 </parameter>
         <parameter name="samples"> 10240  </parameter>
         <cost name="energy">                   0.95 </cost>
@@ -932,10 +932,9 @@ Recommendations:
 
 -  Set samples to equal to (#threads)*blocks.
 
--  Set steps to 1. Use substeps to control correlation between samples.
+-  Set steps to 1. Use substeps to reduce correlation between samples.
 
--  For cases where equilibration is slow, increase both substeps and
-   warmupsteps.
+-  For cases where equilibration is slow, increase warmupsteps.
 
 -  For hard cases (e.g., simultaneous optimization of long MSD and
    3-Body J), set exp0 to 0 and do a single inner iteration (max its=1)
@@ -955,7 +954,7 @@ Appendix D: VMC and DMC XML block
       <parameter name="warmupsteps">100</parameter>
       <parameter name="blocks">100</parameter>
       <parameter name="steps">1</parameter>
-      <parameter name="substeps">20</parameter>
+      <parameter name="substeps">19</parameter>
       <parameter name="walkers">30</parameter>
       <parameter name="timestep">0.3</parameter>
       <estimator name="LocalEnergy" hdf5="no"/>
@@ -990,13 +989,14 @@ General Options:
 
 -  **steps**: (default 1) Number of steps per blocks (middle loop).
 
--  **sub steps**: (default 1) Number of substeps per step (inner loop).
-   During substeps, the local energy is not evaluated in VMC
-   calculations, which leads to faster execution. In VMC calculations,
-   set substeps to the average autocorrelation time of the desired
-   quantity.
+-  **substeps**: (default 0) Number of substeps per step (inner loop), usually used
+   to help with decorrelation.  In VMC, during substeps, the electrons are moved but 
+   the local energy and other observables are not evaluated. This leads to faster execution.
+   In VMC calculations, set substep to the average autocorrelation time/timestep of
+   the desired quantity.
 
--  **time step**: (default 0.1) Electronic time step in bohr.
+-  **time step**: (default 0.1) Electronic time step in bohr. The total
+   simulation time will be timestep*blocks*steps*(1+substeps).
 
 -  **samples**: (default 0) Number of walker configurations saved during
    the current calculation.

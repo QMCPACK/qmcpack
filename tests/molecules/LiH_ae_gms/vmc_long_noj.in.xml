@@ -12039,7 +12039,7 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
       <parameter name="walkers"             >    1               </parameter>
       <parameter name="blocks"              >    200             </parameter>
       <parameter name="steps"               >    30000            </parameter>
-      <parameter name="subSteps"            >    3               </parameter>
+      <parameter name="subSteps"            > 2 </parameter>
       <parameter name="timestep"            >    0.4             </parameter>
       <parameter name="warmupSteps"         >    50              </parameter>
    </qmc>

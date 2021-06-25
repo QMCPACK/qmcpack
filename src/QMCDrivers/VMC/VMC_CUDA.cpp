@@ -86,7 +86,7 @@ void VMCcuda::advanceWalkers()
   std::vector<ValueType> newL(nw * kd);
   std::vector<Walker_t*> accepted(nw);
 
-  for (int isub = 0; isub < nSubSteps; isub++)
+  for (int isub = 0; isub < nSubSteps + 1; isub++)
   {
 #ifdef SPLIT_SPLINE_DEBUG
     if (gpu::rank == 1)
@@ -354,7 +354,7 @@ void VMCcuda::advanceWalkersWithDrift()
   std::vector<Walker_t*> accepted(nw);
   std::vector<bool> acc(nw, true);
 
-  for (int isub = 0; isub < nSubSteps; isub++)
+  for (int isub = 0; isub < nSubSteps + 1; isub++)
   {
     int k = 0;
     for (int iat = 0; iat < nat; iat++)

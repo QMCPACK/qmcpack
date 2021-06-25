@@ -124,7 +124,7 @@ for kgrid in kgrids:
             samples              = 8192,
             warmupsteps          = 50,
             blocks               = 64,
-            substeps             = 4,
+            substeps             = 3,
             nonlocalpp           = True,
             usebuffer            = True,
             walkers              = 1,
@@ -180,7 +180,7 @@ for kgrid in kgrids:
                 warmupsteps =  30,
                 blocks      =  20,
                 steps       =  10,
-                substeps    =   2,
+                substeps    =   1,
                 timestep    =  .4,
                 samples     = 2048
                 ),

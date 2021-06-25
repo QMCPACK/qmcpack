@@ -64,7 +64,7 @@ my $vmcdrift;
 my $numsamples;
 $vmcwarmupsteps = 0;
 $vmcsteps = 1;
-$vmcSubsteps = 1;
+$vmcSubsteps = 0;
 
 ## Optimization keywords
 my ($optSamples, $optLoops);

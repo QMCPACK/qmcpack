@@ -52,7 +52,7 @@ void SOVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
 
   RealType invSqrtSpinMass = 1.0 / std::sqrt(spinMass);
 
-  for (int iter = 0; iter < nSubSteps; ++iter)
+  for (int iter = 0; iter < nSubSteps + 1; ++iter)
   { // make a few Monte-Carlo steps to decorrelate samples without calculating observables
     makeGaussRandomWithEngine(deltaR, RandomGen); // fill deltaR
     makeGaussRandomWithEngine(deltaS, RandomGen);

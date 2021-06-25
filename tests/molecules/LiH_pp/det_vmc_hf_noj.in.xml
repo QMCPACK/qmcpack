@@ -2443,7 +2443,7 @@ GAMESS numerical results:
       <parameter name="walkers"             >    1               </parameter>
       <parameter name="blocks"              >    3             </parameter>
       <parameter name="steps"               >    3            </parameter>
-      <parameter name="subSteps"            >    2               </parameter>
+      <parameter name="subSteps"            > 1 </parameter>
       <parameter name="timestep"            >    0.4             </parameter>
       <parameter name="warmupSteps"         >    3              </parameter>
    </qmc>

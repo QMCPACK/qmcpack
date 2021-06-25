@@ -122,7 +122,7 @@ qmc = generate_qmcpack(
             warmupsteps =  20,
             blocks      = 200,
             steps       =  10,
-            substeps    =   2,
+            substeps    =   1,
             timestep    =  .4
             )
         ],
@@ -147,7 +147,7 @@ run_project(sims)
 #    samples              = 5120,
 #    warmupsteps          = 50,
 #    blocks               = 200,
-#    substeps             = 1,
+#    substeps             = 0,
 #    nonlocalpp           = True,
 #    usebuffer            = True,
 #    walkers              = 1,
@@ -198,7 +198,7 @@ run_project(sims)
 #            warmupsteps =  30,
 #            blocks      =  20,
 #            steps       =  10,
-#            substeps    =   2,
+#            substeps    =   1,
 #            timestep    =  .4,
 #            samples     = 2048
 #            ),

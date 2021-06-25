@@ -49,7 +49,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   movepbyp_timer_.start();
   bool moved = false;
   constexpr RealType mhalf(-0.5);
-  for (int iter = 0; iter < nSubSteps; ++iter)
+  for (int iter = 0; iter < nSubSteps + 1; ++iter)
   {
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandomWithEngine(deltaR, RandomGen);

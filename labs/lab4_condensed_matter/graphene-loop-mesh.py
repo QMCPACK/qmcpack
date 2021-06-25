@@ -121,7 +121,7 @@ linopt1 = linear(
     samples              = 5000,
     warmupsteps          = 50,
     blocks               = 200,
-    substeps             = 1,
+    substeps             = 0,
     nonlocalpp           = True,
     usebuffer            = True,
     walkers              = 1,
@@ -180,7 +180,7 @@ for factor in factors:
                 warmupsteps =  30,
                 blocks      =  64,
                 steps       =  8,
-                substeps    =   4,
+                substeps    =   3,
                 timestep    =  .6,
                 samples     = 524288
                 ),

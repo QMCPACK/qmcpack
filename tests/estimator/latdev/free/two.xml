@@ -55,7 +55,7 @@
   <qmc method="vmc" move="whatever">
     <parameter name="blocks">    16  </parameter>
     <parameter name="steps">   1024  </parameter>
-    <parameter name="substeps">   8  </parameter>
+    <parameter name="substeps"> 7 </parameter>
     <parameter name="timestep"> 0.3  </parameter>
   </qmc>
 </simulation>

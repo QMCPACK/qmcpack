@@ -61,7 +61,7 @@
       <parameter name="walkers"             >    16              </parameter>
       <parameter name="blocks"              >    100            </parameter>
       <parameter name="steps"               >    40             </parameter>
-      <parameter name="subSteps"            >    4               </parameter>
+      <parameter name="subSteps"            > 3 </parameter>
       <parameter name="timestep"            >    0.3             </parameter>
       <parameter name="warmupSteps"         >    100             </parameter>
    </qmc>

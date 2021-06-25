@@ -135,7 +135,7 @@ Variational Monte Carlo
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``warmupsteps``                | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``substeps``                   | integer      | :math:`\geq 0`          | 1           | Number of substeps per step                   |
+  | ``substeps``                   | integer      | :math:`\geq 0`          | 0           | Number of substeps per step                   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                  |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
@@ -176,11 +176,14 @@ Additional information:
 
 - ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block.
 
-- ``substeps``  For each substep, an attempt is made to move each of the electrons once only by either particle-by-particle or an
-  all-electron move.  Because the local energy is evaluated only at
-  each full step and not each substep, ``substeps`` are computationally cheaper
-  and can be used to reduce the correlation between property measurements
-  at a lower cost.
+- ``substeps``  For each substep, an attempt is made to move each of the electrons
+  once only by either particle-by-particle or an all-electron move.  Because the
+  local energy is evaluated only at each full step and not each substep,
+  ``substeps`` are computationally cheaper and can be used to reduce the
+  correlation between property measurements at a lower cost. With a timestep of
+  0.3 a.u. and substeps=0 the energy is measured at times 0, 0.3, 0.6, 0.9...,
+  while with substeps=1, the energy is only measured at times 0, 0.6, 1.2...
+
 
 - ``usedrift`` The VMC is implemented in two algorithms with
   or without drift. In the no-drift algorithm, the move of each
@@ -237,14 +240,14 @@ An example VMC section for a simple VMC run:
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="walkers">    256 </parameter>
     <parameter name="warmupSteps">  100 </parameter>
-    <parameter name="substeps">  5 </parameter>
+    <parameter name="substeps">  4 </parameter>
     <parameter name="blocks">  20 </parameter>
     <parameter name="steps">  100 </parameter>
     <parameter name="timestep">  1.0 </parameter>
     <parameter name="usedrift">   yes </parameter>
   </qmc>
 
-Here we set 256 ``walkers`` per MPI, have a brief initial equilibration of 100 ``steps``, and then have 20 ``blocks`` of 100 ``steps`` with 5 ``substeps`` each.
+Here we set 256 ``walkers`` per MPI, have a brief initial equilibration of 100 ``steps``, and then have 20 ``blocks`` of 100 ``steps`` with 4 ``substeps`` each.
 
 The following is an example of VMC section storing configurations (walker samples) for optimization.
 
@@ -255,7 +258,7 @@ The following is an example of VMC section storing configurations (walker sample
      <parameter name="walkers">    256 </parameter>
      <parameter name="samples">    2867200 </parameter>
      <parameter name="stepsbetweensamples">    1 </parameter>
-     <parameter name="substeps">  5 </parameter>
+     <parameter name="substeps">  4 </parameter>
      <parameter name="warmupSteps">  5 </parameter>
      <parameter name="blocks">  70 </parameter>
      <parameter name="timestep">  1.0 </parameter>
@@ -282,7 +285,7 @@ The following is an example of VMC section storing configurations (walker sample
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``warmupsteps``                | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``substeps``                   | integer      | :math:`\geq 0`          | 1           | Number of substeps per step                   |
+  | ``substeps``                   | integer      | :math:`\geq 0`          | 0           | Number of substeps per step                   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                  |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
@@ -324,7 +327,7 @@ Additional information:
 - ``substeps``  For each substep, an attempt is made to move each of the electrons once only by either particle-by-particle or an
   all-electron move.  Because the local energy is evaluated only at
   each full step and not each substep, ``substeps`` are computationally cheaper
-  and can be used to de-correlation at a low computational cost.
+  and can be used to de-correlate at a lower computational cost.
 
 - ``usedrift`` The VMC is implemented in two algorithms with
   or without drift. In the no-drift algorithm, the move of each
@@ -357,14 +360,14 @@ An example VMC section for a simple ``vmc_batch`` run:
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="walkers_per_rank">    256 </parameter>
     <parameter name="warmupSteps">  100 </parameter>
-    <parameter name="substeps">  5 </parameter>
+    <parameter name="substeps">  4 </parameter>
     <parameter name="blocks">  20 </parameter>
     <parameter name="steps">  100 </parameter>
     <parameter name="timestep">  1.0 </parameter>
     <parameter name="usedrift">   yes </parameter>
   </qmc>
 
-Here we set 256 walkers per MPI rank, have a brief initial equilibration of 100 ``steps``, and then have 20 ``blocks`` of 100 ``steps`` with 5 ``substeps`` each.
+Here we set 256 walkers per MPI rank, have a brief initial equilibration of 100 ``steps``, and then have 20 ``blocks`` of 100 ``steps`` with 4 ``substeps`` each.
 
 .. _optimization:
 
@@ -391,7 +394,7 @@ A typical optimization block looks like the following. It starts with method="li
      <parameter name="walkers">              256 </parameter>
      <parameter name="samples">          2867200 </parameter>
      <parameter name="stepsbetweensamples">    1 </parameter>
-     <parameter name="substeps">               5 </parameter>
+     <parameter name="substeps">               4 </parameter>
      <parameter name="warmupSteps">            5 </parameter>
      <parameter name="blocks">                70 </parameter>
      <parameter name="timestep">             1.0 </parameter>
@@ -432,7 +435,7 @@ Recommendations:
 -  Run the inclusive VMC calculation correctly and efficiently because
    this takes a significant amount of time during optimization. For
    example, make sure the derived ``steps`` per block is 1 and use larger ``substeps`` to
-   control the correlation between ``samples``.
+   reduce the correlation between ``samples``.
 
 -  A reasonable starting wavefunction is necessary. A lot of
    optimization fails because of a bad wavefunction starting point. The
@@ -555,7 +558,7 @@ When the energy gradually converges, we can have a large ``minwalkers`` to avoid
      <parameter name="walkers">                1 </parameter>
      <parameter name="samples">            10000 </parameter>
      <parameter name="stepsbetweensamples">    1 </parameter>
-     <parameter name="substeps">               5 </parameter>
+     <parameter name="substeps">               4 </parameter>
      <parameter name="warmupSteps">            5 </parameter>
      <parameter name="blocks">                25 </parameter>
      <parameter name="timestep">             1.0 </parameter>
@@ -572,7 +575,7 @@ When the energy gradually converges, we can have a large ``minwalkers`` to avoid
      <parameter name="walkers">                1 </parameter>
      <parameter name="samples">            20000 </parameter>
      <parameter name="stepsbetweensamples">    1 </parameter>
-     <parameter name="substeps">               5 </parameter>
+     <parameter name="substeps">               4 </parameter>
      <parameter name="warmupSteps">            2 </parameter>
      <parameter name="blocks">                50 </parameter>
      <parameter name="timestep">             1.0 </parameter>
@@ -719,7 +722,7 @@ Recommendations:
      <parameter name="walkers">                1 </parameter>
      <parameter name="samples">            20000 </parameter>
      <parameter name="stepsbetweensamples">    1 </parameter>
-     <parameter name="substeps">               5 </parameter>
+     <parameter name="substeps">               4 </parameter>
      <parameter name="warmupSteps">            5 </parameter>
      <parameter name="blocks">                50 </parameter>
      <parameter name="timestep">             1.0 </parameter>
@@ -1210,8 +1213,6 @@ parameters:
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``branchInterval``          | integer      | :math:`\geq 0`          | 1           | Branching interval                      |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
-  | ``substeps``                | integer      | :math:`\geq 0`          | 1           | Branching interval                      |
-  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``MaxAge``                  | double       | :math:`\geq 0`          | 10          | Kill persistent walkers                 |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``MaxCopy``                 | double       | :math:`\geq 0`          | 2           | Limit population growth                 |
@@ -1316,8 +1317,6 @@ where :math:`N` is the current population.
 -  ``branchInterval``: This is the number of steps between branching.
    The total number of DMC steps in a block will be
    ``BranchInterval``\ \*Steps.
-
--  ``substeps``: This is the same as ``BranchInterval``.
 
 -  ``nonlocalmoves``: Evaluate pseudopotentials using one of the
    nonlocal move algorithms such as T-moves.

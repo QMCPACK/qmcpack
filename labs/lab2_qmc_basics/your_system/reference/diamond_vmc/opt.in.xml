@@ -106,7 +106,7 @@
          <parameter name="walkers"             >    1                  </parameter>
          <parameter name="nonlocalpp"          >    yes                </parameter>
          <parameter name="useBuffer"           >    yes                </parameter>
-         <parameter name="subSteps"            >    1                  </parameter>
+         <parameter name="subSteps"            >    0                  </parameter>
       </qmc>
    </loop>
    <loop max="4">
@@ -132,7 +132,7 @@
          <parameter name="walkers"             >    1                  </parameter>
          <parameter name="nonlocalpp"          >    yes                </parameter>
          <parameter name="useBuffer"           >    yes                </parameter>
-         <parameter name="subSteps"            >    1                  </parameter>
+         <parameter name="subSteps"            >    0                  </parameter>
       </qmc>
    </loop>
 </simulation>

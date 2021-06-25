@@ -76,7 +76,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
 
-  for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
+  for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps() + 1; sub_step++)
   {
     //This generates an entire steps worth of deltas.
     step_context.nextDeltaRs(num_walkers * sft.population.get_num_particles());

@@ -73,7 +73,7 @@ void QMCUpdateBase::setDefaults()
   UpdatePbyP = true;
   UseDrift   = true;
   NumPtcl    = 0;
-  nSubSteps  = 1;
+  nSubSteps  = 0;
   MaxAge     = 10;
   m_r2max    = -1;
   myParams.add(m_r2max, "maxDisplSq"); //maximum displacement

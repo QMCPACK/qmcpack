@@ -85,7 +85,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   VMC vmc_omp(elec, psi, h, c, false);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
-   <parameter name=\"substeps\">1</parameter> \
+   <parameter name=\"substeps\">0</parameter> \
    <parameter name=\"steps\">1</parameter> \
    <parameter name=\"blocks\">1</parameter> \
    <parameter name=\"timestep\">0.1</parameter> \
@@ -166,7 +166,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   VMC vmc_omp(elec, psi, h, c, false);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
-   <parameter name=\"substeps\">1</parameter> \
+   <parameter name=\"substeps\">0</parameter> \
    <parameter name=\"steps\">1</parameter> \
    <parameter name=\"blocks\">1</parameter> \
    <parameter name=\"timestep\">0.1</parameter> \
@@ -252,7 +252,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   VMC vmc_omp(elec, psi, h, c, false);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"alle\"> \
-   <parameter name=\"substeps\">1</parameter> \
+   <parameter name=\"substeps\">0</parameter> \
    <parameter name=\"steps\">1</parameter> \
    <parameter name=\"blocks\">1</parameter> \
    <parameter name=\"timestep\">0.1</parameter> \

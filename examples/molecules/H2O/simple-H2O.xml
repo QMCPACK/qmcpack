@@ -66,7 +66,7 @@
     <parameter name="walkers">    1 </parameter>
     <parameter name="samplesperthread">      64 </parameter>
     <parameter name="stepsbetweensamples">    1 </parameter>
-    <parameter name="substeps">  5 </parameter>
+    <parameter name="substeps">  4 </parameter>
     <parameter name="warmupSteps">  100 </parameter>
     <parameter name="blocks">  1 </parameter>
     <parameter name="timestep">  0.3 </parameter>

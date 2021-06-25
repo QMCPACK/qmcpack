@@ -92,7 +92,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   m_param.add(nBlocks, "blocks");
   nSteps = 1;
   m_param.add(nSteps, "steps");
-  nSubSteps = 1;
+  nSubSteps = 0;
   m_param.add(nSubSteps, "substeps");
   //m_param.add(nSubSteps,"subSteps");
   m_param.add(nSubSteps, "sub_steps");
@@ -504,11 +504,11 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   }
 
   //set the minimum nSubSteps
-  if (nSubSteps < 1)
+  if (nSubSteps < 0)
   {
-    app_warning() << "Input parameter \"substeps\" must be positive! Set to 1. User input value " << nSubSteps
+    app_warning() << "Input parameter \"substeps\" must be non-negative! Set to 0. User input value " << nSubSteps
                   << std::endl;
-    nSubSteps = 1;
+    nSubSteps = 0;
   }
 
   DumpConfig = (Period4CheckPoint >= 0);

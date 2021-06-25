@@ -59,7 +59,7 @@ int main(int argc, char** argv)
   int iseed     = 11;
   int nsteps    = 100;
   int ncrews    = 1;
-  int nsubsteps = 1;
+  int nsubsteps = 0;
   int delay     = 4;
 
   PrimeNumberSet<uint32_t> myPrimes;
@@ -251,9 +251,9 @@ int main(int argc, char** argv)
     cout << "# N K MPI OMP-walker OMP-det T_accept T_ratio T_total T_accept/call T_ratio/call T_total/step " << endl;
     cout << "Det " << nels << " " << delay << " " << myComm->size() << " " << nthreads << " " << nthreads_nested << " "
          << t_accept << " " << t_ratio << " " << (t_ratio + t_accept) << " " << t_accept / naccepted << " "
-         << t_ratio / (nsteps * nels) << " " << (t_ratio + t_accept) / (nsteps / nsubsteps) << endl;
+         << t_ratio / (nsteps * nels) << " " << (t_ratio + t_accept) / (nsteps / (nsubsteps + 1)) << endl;
   }
-  //t_diffusion*=1.0/static_cast<double>(nsteps*nsubsteps*nthreads);
+  //t_diffusion*=1.0/static_cast<double>(nsteps*(nsubsteps+1)*nthreads);
   //t_pseudo   *=1.0/static_cast<double>(nsteps*nthreads);
   //cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
   //cout << "diffusion_mc " << t_diffusion << " pseudo_mc  " << t_pseudo << endl;

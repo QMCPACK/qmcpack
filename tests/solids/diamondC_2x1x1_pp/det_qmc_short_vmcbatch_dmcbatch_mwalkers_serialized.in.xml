@@ -88,7 +88,7 @@
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers">    16   </parameter>
      <parameter name="crowd_serialize_walkers"> yes </parameter>
-     <parameter name="substeps">  2 </parameter>
+     <parameter name="substeps"> 1 </parameter>
      <parameter name="warmupSteps">  3  </parameter>
      <parameter name="steps">  3 </parameter>
      <parameter name="blocks">  3 </parameter>
@@ -99,7 +99,7 @@
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers">    16   </parameter>
      <parameter name="crowd_serialize_walkers"> yes </parameter>
-     <parameter name="substeps">  2 </parameter>
+     <parameter name="substeps"> 1 </parameter>
      <parameter name="warmupSteps">  3  </parameter>
      <parameter name="steps">  3 </parameter>
      <parameter name="blocks">  3 </parameter>

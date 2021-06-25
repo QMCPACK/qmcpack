@@ -87,7 +87,7 @@
      <parameter name="walkers"     > 256 </parameter>
      <parameter name="blocks"      > 125 </parameter>
      <parameter name="steps"       > 40   </parameter>
-     <parameter name="subSteps"    > 4   </parameter>
+     <parameter name="subSteps"    > 3 </parameter>
      <parameter name="timestep"    > 0.2 </parameter>
      <parameter name="warmupSteps" > 10  </parameter>
      <parameter name="usedrift"    > yes </parameter>
@@ -97,7 +97,7 @@
      <parameter name="walkers"     > 256 </parameter>
      <parameter name="blocks"      > 125 </parameter>
      <parameter name="steps"       > 40   </parameter>
-     <parameter name="subSteps"    > 8   </parameter>
+     <parameter name="subSteps"    > 7 </parameter>
      <parameter name="timestep"    > 0.1 </parameter>
      <parameter name="warmupSteps" > 10  </parameter>
      <parameter name="usedrift"    > no  </parameter>

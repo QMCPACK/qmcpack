@@ -29,7 +29,7 @@ bool AFQMCDriver::run(WalkerSet& wset)
             << "Initial Eshift: " << Eshift << std::endl;
 
   // problems with using step_tot to do ortho and load balance
-  double total_time = step0 * nSubstep * dt;
+  double total_time = step0 * (nSubstep + 1) * dt;
   int step_tot      = step0, iBlock;
   for (iBlock = block0; iBlock < nBlock; ++iBlock)
   {
@@ -38,8 +38,8 @@ bool AFQMCDriver::run(WalkerSet& wset)
       for (int iStep = 0; iStep < nStep; ++iStep, ++step_tot)
       {
         // propagate nSubstep
-        prop0.Propagate(nSubstep, wset, Eshift, dt, fix_bias);
-        total_time += nSubstep * dt;
+        prop0.Propagate(nSubstep + 1, wset, Eshift, dt, fix_bias);
+        total_time += (nSubstep + 1) * dt;
 
         if ((step_tot + 1) % nStabilize == 0)
         {
@@ -104,11 +104,13 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
     return false;
 
   // set defaults
-  nBlock = 100;
-  nStep = nSubstep = nStabilize = 1;
-  dt                            = 0.01;
-  nCheckpoint                   = -1;
-  hdf_write_restart             = "";
+  nBlock            = 100;
+  nStep             = 1;
+  nStabilize        = 1;
+  nSubstep          = 0;
+  dt                = 0.01;
+  nCheckpoint       = -1;
+  hdf_write_restart = "";
 
   dShift       = 1.0;
   samplePeriod = -1;
@@ -131,7 +133,7 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
 
   // write all the choices here ...
 
-  fix_bias = std::min(fix_bias, nSubstep);
+  fix_bias = std::min(fix_bias, nSubstep+1);
   if (fix_bias > 1)
     app_log() << " Keeping the bias potential fixed for " << fix_bias << " steps. \n";
 

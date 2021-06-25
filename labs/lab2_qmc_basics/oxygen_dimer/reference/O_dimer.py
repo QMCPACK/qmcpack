@@ -101,7 +101,7 @@ for scale in scales:
                         samples              = 61440,
                         warmupsteps          = 50,
                         blocks               = 200,
-                        substeps             = 1,
+                        substeps             = 0,
                         nonlocalpp           = True,
                         usebuffer            = True,
                         walkers              = 1,
@@ -140,7 +140,7 @@ for scale in scales:
                 warmupsteps =  30,
                 blocks      =  20,
                 steps       =  10,
-                substeps    =   2,
+                substeps    =   1,
                 timestep    =  .4,
                 samples     = 2048
                 ),

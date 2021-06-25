@@ -149,7 +149,7 @@ public:
     if (bp_step <= 0)
       APP_ABORT(" Error: Found bp_step <=0 in BackPropagate::accumulate_block. \n");
     if (bp_step > max_nback_prop)
-      APP_ABORT(" Error: max_nback_prop in back propagation estimator must be conmensuate with nStep*nSubStep.\n");
+      APP_ABORT(" Error: max_nback_prop in back propagation estimator must be conmensuate with nStep*(nSubStep+1).\n");
     if (max_nback_prop > wset.NumBackProp())
       APP_ABORT(" Error: max_nback_prop > wset.NumBackProp() \n");
 

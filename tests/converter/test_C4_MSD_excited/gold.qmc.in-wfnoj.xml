@@ -30,7 +30,7 @@ Example initial VMC to measure initial energy and variance
     <parameter name="warmupSteps">100</parameter>
     <parameter name="blocks">20</parameter>
     <parameter name="steps">50</parameter>
-    <parameter name="substeps">8</parameter>
+    <parameter name="substeps"> 7 </parameter>
     <parameter name="timestep">0.5</parameter>
     <parameter name="usedrift">no</parameter>
   </qmc>

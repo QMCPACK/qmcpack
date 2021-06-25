@@ -76,7 +76,7 @@
   <qmc method="vmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="walkers">    1 </parameter>
-    <parameter name="substeps">  2 </parameter>
+    <parameter name="substeps"> 1 </parameter>
     <parameter name="warmupSteps">  3 </parameter>
     <parameter name="steps">  3 </parameter>
     <parameter name="blocks">  3 </parameter>

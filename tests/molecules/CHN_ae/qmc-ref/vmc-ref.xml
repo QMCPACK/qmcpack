@@ -12,7 +12,7 @@
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="samplesperthread">1</parameter>
     <parameter name="stepsbetweensamples">100000</parameter>
-    <parameter name="substeps">5</parameter>
+    <parameter name="substeps"> 4 </parameter>
     <parameter name="warmupSteps">20</parameter>
     <parameter name="blocks">200</parameter>
     <parameter name="timestep">0.5</parameter>

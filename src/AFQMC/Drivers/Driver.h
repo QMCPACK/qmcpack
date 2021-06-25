@@ -29,7 +29,7 @@ public:
         TG(c, "DriverTG"),
         nBlock(100),
         nStep(1),
-        nSubstep(1),
+        nSubstep(0),
         nStabalize(1),
         nPopulationControl(1),
         nloadBalance(1),

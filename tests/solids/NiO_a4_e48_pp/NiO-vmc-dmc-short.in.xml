@@ -91,7 +91,7 @@
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="walkers">               16 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               4 </parameter>
+    <parameter name="substeps"> 3 </parameter>
     <parameter name="steps">                 16 </parameter>
     <parameter name="blocks">                 5 </parameter>
     <parameter name="timestep">             1.0 </parameter>

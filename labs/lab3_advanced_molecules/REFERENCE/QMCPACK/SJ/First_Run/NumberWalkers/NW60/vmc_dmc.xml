@@ -25,7 +25,7 @@
     <parameter name="warmupSteps">100</parameter>
     <parameter name="blocks">100</parameter>
     <parameter name="steps">1</parameter>
-    <parameter name="subSteps"> 20 </parameter>
+    <parameter name="substeps"> 19 </parameter>
     <parameter name="walkers">30</parameter>
     <parameter name="timestep">0.3</parameter>
     <estimator name="LocalEnergy" hdf5="no"/>

@@ -50,7 +50,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 
   //Now we compute sumratio and more importantly, ratioij.
   computeSumRatio(logpsi, avgNorm, RatioIJ, sumratio);
-  for (int iter = 0; iter < nSubSteps; ++iter)
+  for (int iter = 0; iter < nSubSteps + 1; ++iter)
   {
     makeGaussRandomWithEngine(deltaR, RandomGen);
     bool stucked = true;

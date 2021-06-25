@@ -31,7 +31,7 @@ constexpr std::array<const char*, 3> valid_vmc_input_sections{
     <parameter name="walkers">                1 </parameter>
     <parameter name="stepsbetweensamples">    1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               5 </parameter>
+    <parameter name="substeps">               4 </parameter>
     <parameter name="steps">                  1 </parameter>
     <parameter name="blocks">                 2 </parameter>
     <parameter name="timestep">             1.0 </parameter>
@@ -44,7 +44,7 @@ constexpr std::array<const char*, 3> valid_vmc_input_sections{
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="total_walkers">          32 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               5 </parameter>
+    <parameter name="substeps">               4 </parameter>
     <parameter name="steps">                  1 </parameter>
     <parameter name="blocks">                 2 </parameter>
     <parameter name="timestep">             1.0 </parameter>
@@ -57,7 +57,7 @@ constexpr std::array<const char*, 3> valid_vmc_input_sections{
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="total_walkers">          1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               5 </parameter>
+    <parameter name="substeps">               4 </parameter>
     <parameter name="steps">                  1 </parameter>
     <parameter name="blocks">                 2 </parameter>
     <parameter name="timestep">             1.0 </parameter>
@@ -91,7 +91,7 @@ constexpr std::array<const char*, 2> valid_dmc_input_sections{
     <parameter name="total_walkers">          8 </parameter>
     <parameter name="reserve">             1.25 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
-    <parameter name="substeps">               5 </parameter>
+    <parameter name="substeps">               4 </parameter>
     <parameter name="steps">                  1 </parameter>
     <parameter name="blocks">                 2 </parameter>
     <parameter name="timestep">             1.0 </parameter>
