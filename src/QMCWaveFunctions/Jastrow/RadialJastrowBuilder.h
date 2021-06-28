@@ -30,7 +30,7 @@ namespace qmcplusplus
  */
 
 
-struct RadialJastrowBuilder : public WaveFunctionComponentBuilder
+class RadialJastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:
   // one body constructor
@@ -38,7 +38,7 @@ public:
   // two body constructor
   RadialJastrowBuilder(Communicate* comm, ParticleSet& target);
 
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
 
 private:
   /// \xmla{jastrow,name}
@@ -54,10 +54,10 @@ private:
 
   // has a specialization for RPAFunctor in cpp file
   template<class RadFuncType>
-  WaveFunctionComponent* createJ1(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> createJ1(xmlNodePtr cur);
 
   template<class RadFuncType>
-  WaveFunctionComponent* createJ2(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> createJ2(xmlNodePtr cur);
 
   template<class RadFuncType>
   void initTwoBodyFunctor(RadFuncType& functor, double fac);
@@ -67,8 +67,6 @@ private:
 
   void guardAgainstOBC();
   void guardAgainstPBC();
-
-private:
 };
 
 } // namespace qmcplusplus

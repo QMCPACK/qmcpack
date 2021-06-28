@@ -78,7 +78,9 @@ public:
     }
   }
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override;
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
@@ -143,7 +145,7 @@ public:
     return ratio;
   }
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final;
 
   SPOSetPtr getPhi(int i = 0) override { return Dets[i]->getPhi(); }
 

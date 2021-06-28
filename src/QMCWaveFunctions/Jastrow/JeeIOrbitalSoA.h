@@ -125,9 +125,9 @@ public:
 
   ~JeeIOrbitalSoA() {}
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& elecs) const
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& elecs) const final
   {
-    JeeIOrbitalSoA<FT>* eeIcopy = new JeeIOrbitalSoA<FT>(myName, Ions, elecs, false);
+    auto eeIcopy = std::make_unique<JeeIOrbitalSoA<FT>>(myName, Ions, elecs, false);
     std::map<const FT*, FT*> fcmap;
     for (int iG = 0; iG < iGroups; iG++)
       for (int eG1 = 0; eG1 < eGroups; eG1++)

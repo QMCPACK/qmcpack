@@ -29,7 +29,7 @@ MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleS
   is_fermionic = true;
 }
 
-WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   // mmorales: the proxy classes read from the particle set inside BFTrans
   BackflowTransformation* tr = BFTrans->makeClone(tqp);
@@ -39,8 +39,7 @@ WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleS
                                                       FirstIndex_dn, LastIndex_dn);
   spo_up_C->occup            = spo_up->occup;
   spo_dn_C->occup            = spo_dn->occup;
-  MultiSlaterDeterminantWithBackflow* clone =
-      new MultiSlaterDeterminantWithBackflow(tqp, std::move(spo_up_C), std::move(spo_dn_C), tr);
+  auto clone = std::make_unique<MultiSlaterDeterminantWithBackflow>(tqp, std::move(spo_up_C), std::move(spo_dn_C), tr);
   clone->C2node_up = C2node_up;
   clone->C2node_dn = C2node_dn;
   clone->resize(dets_up.size(), dets_dn.size());

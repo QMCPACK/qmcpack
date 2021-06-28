@@ -71,7 +71,7 @@ SlaterDetBuilder::SlaterDetBuilder(Communicate* comm,
  *   - determinant 0..*
  * - ci
  */
-WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   ///save the current node
@@ -157,10 +157,10 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
       if (UseBackflow)
       {
         app_summary() << "    Using backflow transformation." << std::endl;
-        slaterdet_0 = new SlaterDetWithBackflow(targetPtcl, BFTrans);
+        slaterdet_0 = std::make_unique<SlaterDetWithBackflow>(targetPtcl, BFTrans);
       }
       else
-        slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
+        slaterdet_0 = std::make_unique<SlaterDeterminant_t>(targetPtcl);
 
       size_t spin_group = 0;
       xmlNodePtr tcur   = cur->children;
@@ -255,12 +255,12 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         if (msd_algorithm == "precomputed_table_method")
         {
           app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
-          multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), true);
+          multislaterdetfast_0 = std::make_unique<MultiSlaterDeterminantFast>(targetPtcl, std::move(dets), true);
         }
         else
         {
           app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
-          multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl, std::move(dets), false);
+          multislaterdetfast_0 = std::make_unique<MultiSlaterDeterminantFast>(targetPtcl, std::move(dets), false);
         }
 
         multislaterdetfast_0->initialize();
@@ -290,13 +290,13 @@ WaveFunctionComponent* SlaterDetBuilder::buildComponent(xmlNodePtr cur)
         if (UseBackflow)
         {
           app_summary() << "    Using backflow transformation." << std::endl;
-          multislaterdet_0 =
-              new MultiSlaterDeterminantWithBackflow(targetPtcl, std::move(spo_up), std::move(spo_dn), BFTrans);
+          multislaterdet_0 = std::make_unique<MultiSlaterDeterminantWithBackflow>(targetPtcl, std::move(spo_up),
+                                                                                  std::move(spo_dn), BFTrans);
           createMSD(multislaterdet_0, cur);
         }
         else
         {
-          multislaterdet_0 = new MultiSlaterDeterminant(targetPtcl, std::move(spo_up), std::move(spo_dn));
+          multislaterdet_0 = std::make_unique<MultiSlaterDeterminant>(targetPtcl, std::move(spo_up), std::move(spo_dn));
           createMSD(multislaterdet_0, cur);
         }
       }

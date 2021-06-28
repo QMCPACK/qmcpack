@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_TRIALORBITALBUILDERBASE_H
 
 #include <map>
+#include <memory>
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 
@@ -80,13 +81,11 @@ public:
    *
    * Each builder class builds an object for composing a many-body wavefunction.
    */
-  WaveFunctionComponentBuilder(Communicate* comm, ParticleSet& p)
-      : MPIObjectBase(comm), targetPtcl(p), myNode(NULL)
-  {}
+  WaveFunctionComponentBuilder(Communicate* comm, ParticleSet& p) : MPIObjectBase(comm), targetPtcl(p), myNode(NULL) {}
 
   virtual ~WaveFunctionComponentBuilder() = default;
   /// process a xml node at cur
-  virtual WaveFunctionComponent* buildComponent(xmlNodePtr cur) = 0;
+  virtual std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) = 0;
 
 protected:
   /// reference to the particle set on which targetPsi is defined

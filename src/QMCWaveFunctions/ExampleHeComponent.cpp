@@ -203,7 +203,10 @@ ExampleHeComponent::LogValueType ExampleHeComponent::updateBuffer(ParticleSet& P
   return evaluateLog(P, P.G, P.L);
 }
 
-WaveFunctionComponentPtr ExampleHeComponent::makeClone(ParticleSet& tpq) const { return new ExampleHeComponent(*this); }
+std::unique_ptr<WaveFunctionComponent> ExampleHeComponent::makeClone(ParticleSet& tpq) const
+{
+  return std::make_unique<ExampleHeComponent>(*this);
+}
 
 void ExampleHeComponent::resetParameters(const OptVariablesType& active)
 {

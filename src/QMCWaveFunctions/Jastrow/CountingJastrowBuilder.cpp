@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-CountingJastrowBuilder::CountingJastrowBuilder(Communicate *comm, ParticleSet& target, ParticleSet& source)
+CountingJastrowBuilder::CountingJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
     : WaveFunctionComponentBuilder(comm, target), SourcePtcl(&source)
 {
   ClassName = "CountingJastrowBuilder";
@@ -27,18 +27,18 @@ CountingJastrowBuilder::CountingJastrowBuilder(Communicate *comm, ParticleSet& t
   SourceOpt = SourcePtcl->getName();
 }
 
-CountingJastrowBuilder::CountingJastrowBuilder(Communicate *comm, ParticleSet& target)
+CountingJastrowBuilder::CountingJastrowBuilder(Communicate* comm, ParticleSet& target)
     : WaveFunctionComponentBuilder(comm, target)
 {
-  ClassName = "CountingJastrowBuilder";
-  NameOpt   = "0";
-  TypeOpt   = "Counting";
-  RegionOpt = "normalized_gaussian";
-  SourceOpt = "none";
+  ClassName  = "CountingJastrowBuilder";
+  NameOpt    = "0";
+  TypeOpt    = "Counting";
+  RegionOpt  = "normalized_gaussian";
+  SourceOpt  = "none";
   SourcePtcl = NULL;
 }
 
-WaveFunctionComponent* CountingJastrowBuilder::createCJ(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createCJ(xmlNodePtr)");
   using RegionType    = CountingGaussianRegion;
@@ -64,15 +64,15 @@ WaveFunctionComponent* CountingJastrowBuilder::createCJ(xmlNodePtr cur)
     {
       // read in opt_C option
       OhmmsAttributeSet oAttrib;
-      std::string opt = "true";
+      std::string opt  = "true";
       std::string type = RegionOpt;
-      oAttrib.add(opt,  "opt");
+      oAttrib.add(opt, "opt");
       oAttrib.add(type, "type");
       oAttrib.put(cur);
       opt_C = (opt == "true" || opt == "yes");
       // add based on <function /> tags
       xmlNodePtr cur2 = cur->xmlChildrenNode;
-      if(type == "normalized_gaussian")
+      if (type == "normalized_gaussian")
       {
         while (cur2 != NULL)
         {
@@ -106,7 +106,7 @@ WaveFunctionComponent* CountingJastrowBuilder::createCJ(xmlNodePtr cur)
             OhmmsAttributeSet oAttrib2;
             oAttrib2.add(vname, "name");
             oAttrib2.put(cur2);
-            if(vname == "alpha")
+            if (vname == "alpha")
             {
               putContent(alpha, cur2);
             }
@@ -114,30 +114,30 @@ WaveFunctionComponent* CountingJastrowBuilder::createCJ(xmlNodePtr cur)
           cur2 = cur2->next;
         }
         // read in source
-        if(SourcePtcl == NULL)
+        if (SourcePtcl == NULL)
         {
           // quit with error - need a valid source
         }
         std::ostringstream os;
         // add a function for each source particle
-        for(int i = 0; i < SourcePtcl->R.size(); ++i)
+        for (int i = 0; i < SourcePtcl->R.size(); ++i)
         {
           PosType gr = SourcePtcl->R[i];
           bool opt_g = opt_C && (i != 0);
           os.str("");
           os << "g" << i;
-          std::string fid = os.str();
+          std::string fid   = os.str();
           FunctorType* func = new FunctorType(fid, alpha, gr, opt_g);
           C->addFunc(func, fid);
         }
         // set default F value to all zeroes with appropriate dimension
-        if(F.size() == 0)
+        if (F.size() == 0)
         {
           int Fdim = SourcePtcl->R.size();
           F.resize(Fdim, Fdim);
-          for(int I = 0; I < Fdim; ++I)
-            for(int J = 0; J < Fdim; ++J)
-              F(I,J) = 0;
+          for (int I = 0; I < Fdim; ++I)
+            for (int J = 0; J < Fdim; ++J)
+              F(I, J) = 0;
         }
       }
       // read in the counting region
@@ -185,11 +185,11 @@ WaveFunctionComponent* CountingJastrowBuilder::createCJ(xmlNodePtr cur)
           putContent(F, cur);
 
         // transform the F matrix to put a zero in the lower-right corner
-        
-        RealType x = F(F.rows()-1, F.cols()-1);
-        for(int I = 0; I < F.rows(); ++I)
-          for(int J = 0; J < F.cols(); ++J)
-            F(I,J) -= x;
+
+        RealType x = F(F.rows() - 1, F.cols() - 1);
+        for (int I = 0; I < F.rows(); ++I)
+          for (int J = 0; J < F.cols(); ++J)
+            F(I, J) -= x;
       }
       if (namestr == "debug")
       {
@@ -203,7 +203,7 @@ WaveFunctionComponent* CountingJastrowBuilder::createCJ(xmlNodePtr cur)
     }
     cur = cur->next;
   }
-  auto* CJ = new CJOrbitalType(targetPtcl, C, F);
+  auto CJ = std::make_unique<CJOrbitalType>(targetPtcl, C, F);
 
   CJ->addDebug(debug_flag, seqlen, period);
   CJ->addOpt(opt_C, opt_F);
@@ -214,7 +214,7 @@ WaveFunctionComponent* CountingJastrowBuilder::createCJ(xmlNodePtr cur)
   return CJ;
 }
 
-WaveFunctionComponent* CountingJastrowBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> CountingJastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   OhmmsAttributeSet oAttrib;
   oAttrib.add(RegionOpt, "region");

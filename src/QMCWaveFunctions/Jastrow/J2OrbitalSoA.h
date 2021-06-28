@@ -181,7 +181,7 @@ public:
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os);
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient_t& G,

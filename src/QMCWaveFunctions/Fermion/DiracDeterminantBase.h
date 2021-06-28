@@ -133,10 +133,10 @@ public:
   }
 
   // Stop makeClone
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override final
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final
   {
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
-    return 0;
+    return std::unique_ptr<DiracDeterminantBase>();
   }
 
   virtual PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override

@@ -120,7 +120,9 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L)
   {
     return evaluateGL(P, G, L, true);
   }
@@ -365,10 +367,10 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     Lap.attachReference(buf.lendReference<valT>(Nelec), Nelec);
   }
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final
   {
-    J1OrbitalSoA<FT>* j1copy = new J1OrbitalSoA<FT>(myName, Ions, tqp);
-    j1copy->Optimizable      = Optimizable;
+    auto j1copy         = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp);
+    j1copy->Optimizable = Optimizable;
     for (size_t i = 0, n = F.size(); i < n; ++i)
     {
       if (F[i] != nullptr)

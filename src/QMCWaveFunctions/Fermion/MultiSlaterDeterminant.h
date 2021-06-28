@@ -101,7 +101,7 @@ public:
   virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  virtual std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,

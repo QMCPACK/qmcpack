@@ -24,7 +24,7 @@
 namespace qmcplusplus
 {
 AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset)
-    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset), mySPOSetBuilderFactory(0), agpDet(0)
+    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset), mySPOSetBuilderFactory(0), agpDet(nullptr)
 {}
 
 template<class BasisBuilderT>
@@ -93,12 +93,12 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT* abuilder, xmlNodePtr cur)
   return true;
 }
 
-WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
 {
   if (agpDet)
   {
     APP_ABORT("  AGPDeterminantBuilder::put exits. AGPDeterminant has been already created.\n");
-    return nullptr;
+    return std::unique_ptr<AGPDeterminant>();
   }
   app_log() << "  AGPDeterminantBuilder Creating AGPDeterminant." << std::endl;
   xmlNodePtr curRoot = cur;
@@ -114,7 +114,7 @@ WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
   while (cur != NULL)
   {
     getNodeName(cname, cur);
-if (cname.find("coeff") < cname.size())
+    if (cname.find("coeff") < cname.size())
     {
       cPtr = cur;
     }
@@ -144,7 +144,7 @@ if (cname.find("coeff") < cname.size())
   if (targetPtcl.groups() > 1)
     ndown = targetPtcl.first(2) - nup;
   myBasisSet->resize(nup + ndown);
-  agpDet = new AGPDeterminant(myBasisSet);
+  agpDet = std::make_unique<AGPDeterminant>(myBasisSet);
   agpDet->resize(nup, ndown);
   //set Lambda: possible to move to AGPDeterminant
   int offset      = 1;

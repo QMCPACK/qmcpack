@@ -100,7 +100,11 @@ struct RealEGOSet : public SPOSet
    * @param dpsi gradient row
    * @param d2psi laplacian row
    */
-  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
+  inline void evaluateVGL(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          ValueVector_t& d2psi) override
   {
     psi[0]           = 1.0;
     dpsi[0]          = 0.0;
@@ -127,7 +131,11 @@ struct RealEGOSet : public SPOSet
    * @param dpsi gradient row
    * @param hess hessian row
    */
-  inline void evaluateVGH(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& hess) override
+  inline void evaluateVGH(const ParticleSet& P,
+                          int iat,
+                          ValueVector_t& psi,
+                          GradVector_t& dpsi,
+                          HessVector_t& hess) override
   {
     psi[0]           = 1.0;
     dpsi[0]          = 0.0;
@@ -314,7 +322,7 @@ public:
   ElectronGasOrbitalBuilder(Communicate* comm, ParticleSet& els);
 
   ///implement vritual function
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
 
   bool UseBackflow;
   BackflowTransformation* BFTrans;

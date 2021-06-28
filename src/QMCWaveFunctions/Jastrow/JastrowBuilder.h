@@ -28,7 +28,7 @@ class JastrowBuilder : public WaveFunctionComponentBuilder
 public:
   JastrowBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
 
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
 
 private:
   ///particleset pool to get ParticleSet other than the target
@@ -50,15 +50,15 @@ private:
   ///reset the options
   void resetOptions();
   /// build one-body term
-  WaveFunctionComponent* buildOneBody(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> buildOneBody(xmlNodePtr cur);
   /// build two-body term
-  WaveFunctionComponent* buildTwoBody(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> buildTwoBody(xmlNodePtr cur);
   /// build electron-electron ion term
-  WaveFunctionComponent* build_eeI(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> build_eeI(xmlNodePtr cur);
   /// build k-Space term
-  WaveFunctionComponent* buildkSpace(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> buildkSpace(xmlNodePtr cur);
   /// build number-counting term
-  WaveFunctionComponent* buildCounting(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> buildCounting(xmlNodePtr cur);
 };
 
 } // namespace qmcplusplus

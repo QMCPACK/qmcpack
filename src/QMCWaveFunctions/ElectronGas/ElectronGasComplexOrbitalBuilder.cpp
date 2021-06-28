@@ -50,7 +50,7 @@ ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(Communicate* 
 {}
 
 
-WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc = 0;
   PosType twist(0.0);
@@ -77,7 +77,7 @@ WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodeP
   downdet->set(nup, nup);
   //create a Slater determinant
   //SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
-  SlaterDet* sdet = new SlaterDet(targetPtcl);
+  auto sdet = std::make_unique<SlaterDet>(targetPtcl);
   sdet->add(updet, 0);
   sdet->add(downdet, 1);
   return sdet;

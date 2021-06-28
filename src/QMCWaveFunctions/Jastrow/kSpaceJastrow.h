@@ -152,6 +152,7 @@ public:
                 std::string twobodyid,
                 bool twoBodySpin);
 
+  kSpaceJastrow(const ParticleSet& ions);
 
   void setCoefficients(std::vector<RealType>& oneBodyCoefs, std::vector<RealType>& twoBodyCoefs);
 
@@ -161,7 +162,9 @@ public:
   void resetParameters(const opt_variables_type& active);
   void reportStatus(std::ostream& os);
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L);
 
   PsiValueType ratio(ParticleSet& P, int iat);
 
@@ -189,7 +192,7 @@ public:
   // structure factors.  Used to sort the G-vectors according to
   // crystal symmetry
   bool operator()(PosType G1, PosType G2);
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
@@ -202,7 +205,6 @@ public:
 
 private:
   void copyFrom(const kSpaceJastrow& old);
-  kSpaceJastrow(const ParticleSet& ions);
   std::vector<int> TwoBodyVarMap;
   std::vector<int> OneBodyVarMap;
 };

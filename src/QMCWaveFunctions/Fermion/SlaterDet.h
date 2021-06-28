@@ -225,7 +225,7 @@ public:
     Dets[det_id]->mw_calcRatio(extract_DetRef_list(wfc_list, det_id), p_list, iat, ratios);
   }
 
-  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const override;
+  virtual std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   virtual SPOSetPtr getPhi(int i = 0) { return Dets[i]->getPhi(); }
 
@@ -335,7 +335,11 @@ public:
     Dets[getDetID(iat)]->addGradient(W, iat, grad);
   }
 
-  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k) override
+  void update(MCWalkerConfiguration* W,
+              std::vector<Walker_t*>& walkers,
+              int iat,
+              std::vector<bool>* acc,
+              int k) override
   {
     Dets[getDetID(iat)]->update(W, walkers, iat, acc, k);
   }

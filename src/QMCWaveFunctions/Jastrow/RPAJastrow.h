@@ -29,12 +29,13 @@ namespace qmcplusplus
  *  Modification of RPAJastrow
  *
  */
-struct RPAJastrow : public WaveFunctionComponent
+class RPAJastrow : public WaveFunctionComponent
 {
   typedef LRHandlerBase HandlerType;
   typedef BsplineFunctor<RealType> FuncType;
   typedef LinearGrid<RealType> GridType;
 
+public:
   RPAJastrow(ParticleSet& target);
 
   ~RPAJastrow();
@@ -69,7 +70,9 @@ struct RPAJastrow : public WaveFunctionComponent
     */
   void resetParameters(const opt_variables_type& active);
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L);
 
   PsiValueType ratio(ParticleSet& P, int iat);
   GradType evalGrad(ParticleSet& P, int iat);
@@ -85,7 +88,7 @@ struct RPAJastrow : public WaveFunctionComponent
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final;
 
 private:
   bool IgnoreSpin;

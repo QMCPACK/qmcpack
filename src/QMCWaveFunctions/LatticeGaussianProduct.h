@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 /** A composite Orbital
  */
-struct LatticeGaussianProduct : public WaveFunctionComponent
+class LatticeGaussianProduct : public WaveFunctionComponent
 {
 private:
   ParticleAttrib<RealType> U, d2U;
@@ -62,7 +62,9 @@ public:
    */
   void resetParameters(const opt_variables_type& active);
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L);
 
   PsiValueType ratio(ParticleSet& P, int iat);
 
@@ -81,9 +83,11 @@ public:
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
 
-  WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final;
 
-  void evaluateLogAndStore(const ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
+  void evaluateLogAndStore(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& dG,
+                           ParticleSet::ParticleLaplacian_t& dL);
 };
 } // namespace qmcplusplus
 #endif

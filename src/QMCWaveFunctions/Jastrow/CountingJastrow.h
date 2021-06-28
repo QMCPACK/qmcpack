@@ -209,7 +209,9 @@ public:
   }
 
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient_t& G,
+                           ParticleSet::ParticleLaplacian_t& L)
   {
     evaluateExponents(P);
     for (int i = 0; i < num_els; ++i)
@@ -453,9 +455,9 @@ public:
     return;
   }
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final
   {
-    CountingJastrow* cjc = new CountingJastrow(tqp, C->makeClone(), F);
+    auto cjc = std::make_unique<CountingJastrow>(tqp, C->makeClone(), F);
     cjc->setOptimizable(opt_C || opt_F);
     cjc->addOpt(opt_C, opt_F);
     cjc->addDebug(debug, debug_seqlen, debug_period);

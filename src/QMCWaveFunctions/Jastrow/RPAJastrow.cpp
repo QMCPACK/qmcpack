@@ -31,8 +31,7 @@
 
 namespace qmcplusplus
 {
-RPAJastrow::RPAJastrow(ParticleSet& target)
-    : WaveFunctionComponent("RPAJastrow"), targetPtcl(target)
+RPAJastrow::RPAJastrow(ParticleSet& target) : WaveFunctionComponent("RPAJastrow"), targetPtcl(target)
 {
   Optimizable = true;
 }
@@ -303,7 +302,7 @@ void RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 /** this is a great deal of logic for make clone I'm wondering what is going on
  */
-WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
+std::unique_ptr<WaveFunctionComponent> RPAJastrow::makeClone(ParticleSet& tpq) const
 {
   HandlerType* tempHandler = nullptr;
   if (rpafunc == "yukawa" || rpafunc == "breakup")
@@ -338,9 +337,9 @@ WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
                                          tpq);
   }
 
-  RPAJastrow* myClone = new RPAJastrow(tpq);
-  myClone->Rcut       = Rcut;
-  myClone->Kc         = Kc;
+  auto myClone  = std::make_unique<RPAJastrow>(tpq);
+  myClone->Rcut = Rcut;
+  myClone->Kc   = Kc;
   myClone->setHandler(tempHandler);
   if (!DropLongRange)
     myClone->makeLongRange();
