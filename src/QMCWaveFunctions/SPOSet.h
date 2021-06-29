@@ -486,21 +486,21 @@ public:
   //////////////////////////////////////////
   virtual void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool) {}
 
-  virtual void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  virtual void evaluate(std::vector<Walker_t*>& walkers,
                         int iat,
                         gpu::device_vector<CTS::ValueType*>& phi);
 
-  virtual void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  virtual void evaluate(std::vector<Walker_t*>& walkers,
                         std::vector<PosType>& new_pos,
                         gpu::device_vector<CTS::ValueType*>& phi);
 
-  virtual void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  virtual void evaluate(std::vector<Walker_t*>& walkers,
                         std::vector<PosType>& new_pos,
                         gpu::device_vector<CTS::ValueType*>& phi,
                         gpu::device_vector<CTS::ValueType*>& grad_lapl_list,
                         int row_stride);
 
-  virtual void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  virtual void evaluate(std::vector<Walker_t*>& walkers,
                         std::vector<PosType>& new_pos,
                         gpu::device_vector<CTS::ValueType*>& phi,
                         gpu::device_vector<CTS::ValueType*>& grad_lapl_list,
