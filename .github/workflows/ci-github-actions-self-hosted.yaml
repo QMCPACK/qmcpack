@@ -48,7 +48,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-    # Create a separate PR status pointing at GitHub Actions tab URL
+    # Create a separate PR status check pointing at GitHub Actions tab URL
     # just like any other third-party service
     - name: Create PR status
       if: steps.check.outputs.triggered == 'true'
