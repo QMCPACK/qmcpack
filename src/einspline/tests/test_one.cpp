@@ -204,11 +204,11 @@ TEST_CASE("multi_cuda_wrapper", "[einspline]")
   pos[0] = 0.0;
   float vals_output[1];
   test_multi(s.get(), pos, vals_output);
-  REQUIRE(vals_output[0] == 2.0);
+  REQUIRE(vals_output[0] == Approx(2.0));
 
   pos[0] = 9.99999999;
   test_multi(s.get(), pos, vals_output);
-  REQUIRE(vals_output[0] == 3.0);
+  REQUIRE(vals_output[0] == Approx(3.0));
 }
 
 #endif

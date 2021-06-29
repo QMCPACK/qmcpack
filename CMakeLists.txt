@@ -814,13 +814,14 @@ if(QMC_CUDA OR ENABLE_CUDA)
     set(ROCM_ROOT "/opt/rocm" CACHE PATH "Root directory of ROCM")
     message(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
     list(APPEND CMAKE_MODULE_PATH ${ROCM_ROOT}/hip/cmake)
+    list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
     find_package(HIP REQUIRED)
     find_package(hipblas REQUIRED)
     # architecture flags
     set(HIP_ARCH
         "gfx906,gfx908"
         CACHE STRING "HIP architecture gfxXXX")
-    list(APPEND HIP_HIPCC_FLAGS "-fPIC -fopenmp")
+    list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3")
     list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
     list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
     # warning suppression

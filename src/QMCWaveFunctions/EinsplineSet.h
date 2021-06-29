@@ -438,13 +438,13 @@ public:
 
   // Vectorized evaluation functions
 #if !defined(QMC_COMPLEX)
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 int iat,
                 gpu::device_vector<CTS::RealType*>& phi) override;
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::RealType*>& phi) override;
-  inline void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  inline void evaluate(std::vector<Walker_t*>& walkers,
                        std::vector<PosType>& newpos,
                        gpu::device_vector<CTS::RealType*>& phi,
                        gpu::device_vector<CTS::RealType*>& grad_lapl,
@@ -452,7 +452,7 @@ public:
   {
     evaluate(walkers, newpos, phi, grad_lapl, row_stride, 0, false);
   }
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::RealType*>& phi,
                 gpu::device_vector<CTS::RealType*>& grad_lapl,
@@ -462,13 +462,13 @@ public:
 
   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
 #else
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 int iat,
                 gpu::device_vector<CTS::ComplexType*>& phi) override;
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::ComplexType*>& phi) override;
-  inline void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  inline void evaluate(std::vector<Walker_t*>& walkers,
                        std::vector<PosType>& newpos,
                        gpu::device_vector<CTS::ComplexType*>& phi,
                        gpu::device_vector<CTS::ComplexType*>& grad_lapl,
@@ -476,7 +476,7 @@ public:
   {
     evaluate(walkers, newpos, phi, grad_lapl, row_stride, 0, false);
   }
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::ComplexType*>& phi,
                 gpu::device_vector<CTS::ComplexType*>& grad_lapl,
@@ -622,26 +622,26 @@ public:
 
   // Vectorized evaluation functions
 #if !defined(QMC_COMPLEX)
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 int iat,
                 gpu::device_vector<CTS::RealType*>& phi) override;
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::RealType*>& phi) override;
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::RealType*>& phi,
                 gpu::device_vector<CTS::RealType*>& grad_lapl,
                 int row_stride) override;
   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
 #else
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 int iat,
                 gpu::device_vector<CTS::ComplexType*>& phi) override;
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::ComplexType*>& phi) override;
-  void evaluate(std::vector<std::unique_ptr<Walker_t>>& walkers,
+  void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::ComplexType*>& phi,
                 gpu::device_vector<CTS::ComplexType*>& grad_lapl,
