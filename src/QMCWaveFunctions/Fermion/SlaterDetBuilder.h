@@ -76,7 +76,7 @@ private:
    */
   bool putDeterminant(xmlNodePtr cur, int firstIndex);
 
-  bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
+  bool createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur);
 
   bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
                      std::vector<std::vector<size_t>>& C2node,

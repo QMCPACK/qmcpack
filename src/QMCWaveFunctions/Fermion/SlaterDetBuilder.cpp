@@ -49,13 +49,7 @@ SlaterDetBuilder::SlaterDetBuilder(Communicate* comm,
                                    ParticleSet& els,
                                    TrialWaveFunction& psi,
                                    PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(comm, els),
-      sposet_builder_factory_(factory),
-      targetPsi(psi),
-      ptclPool(psets),
-      slaterdet_0(nullptr),
-      multislaterdet_0(nullptr),
-      multislaterdetfast_0(nullptr)
+    : WaveFunctionComponentBuilder(comm, els), sposet_builder_factory_(factory), targetPsi(psi), ptclPool(psets)
 {
   ClassName   = "SlaterDetBuilder";
   BFTrans     = 0;
@@ -292,12 +286,12 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
           app_summary() << "    Using backflow transformation." << std::endl;
           multislaterdet_0 = std::make_unique<MultiSlaterDeterminantWithBackflow>(targetPtcl, std::move(spo_up),
                                                                                   std::move(spo_dn), BFTrans);
-          createMSD(multislaterdet_0, cur);
+          createMSD(*multislaterdet_0, cur);
         }
         else
         {
           multislaterdet_0 = std::make_unique<MultiSlaterDeterminant>(targetPtcl, std::move(spo_up), std::move(spo_dn));
-          createMSD(multislaterdet_0, cur);
+          createMSD(*multislaterdet_0, cur);
         }
       }
     }
@@ -340,12 +334,12 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
   if (multiDet)
   {
     if (msd_algorithm == "all_determinants")
-      return multislaterdet_0;
+      return std::unique_ptr<WaveFunctionComponent>(std::move(multislaterdet_0));
     else
-      return multislaterdetfast_0;
+      return std::unique_ptr<WaveFunctionComponent>(std::move(multislaterdetfast_0));
   }
   else
-    return slaterdet_0;
+    return std::unique_ptr<WaveFunctionComponent>(std::move(slaterdet_0));
 }
 
 
@@ -683,15 +677,15 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   return success;
 }
 
-bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur)
+bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur)
 {
   bool success = true;
   std::vector<std::vector<ci_configuration>> uniqueConfgs(2);
   std::vector<std::string> CItags;
   bool optimizeCI;
   std::vector<int> nels(2);
-  nels[0] = multiSD->nels_up;
-  nels[1] = multiSD->nels_dn;
+  nels[0] = multiSD.nels_up;
+  nels[1] = multiSD.nels_dn;
   std::vector<std::vector<size_t>> C2nodes(2);
 
   //Check id multideterminants are in HDF5
@@ -712,22 +706,22 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
   if (HDF5Path != "")
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, multiSD->C, optimizeCI, nels);
+    success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, multiSD.C, optimizeCI, nels);
   }
   else
-    success = readDetList(cur, uniqueConfgs, C2nodes, CItags, multiSD->C, optimizeCI, nels, multiSD->CSFcoeff,
-                          multiSD->DetsPerCSF, multiSD->CSFexpansion, multiSD->usingCSF);
+    success = readDetList(cur, uniqueConfgs, C2nodes, CItags, multiSD.C, optimizeCI, nels, multiSD.CSFcoeff,
+                          multiSD.DetsPerCSF, multiSD.CSFexpansion, multiSD.usingCSF);
   if (!success)
     return false;
 
-  multiSD->C2node_up = C2nodes[0];
-  multiSD->C2node_dn = C2nodes[1];
-  multiSD->resize(uniqueConfgs[0].size(), uniqueConfgs[1].size());
+  multiSD.C2node_up = C2nodes[0];
+  multiSD.C2node_dn = C2nodes[1];
+  multiSD.resize(uniqueConfgs[0].size(), uniqueConfgs[1].size());
   // alpha dets
   {
-    auto& spo = multiSD->spo_up;
-    spo->occup.resize(uniqueConfgs[0].size(), multiSD->nels_up);
-    multiSD->dets_up.reserve(uniqueConfgs[0].size());
+    auto& spo = multiSD.spo_up;
+    spo->occup.resize(uniqueConfgs[0].size(), multiSD.nels_up);
+    multiSD.dets_up.reserve(uniqueConfgs[0].size());
     for (int i = 0; i < uniqueConfgs[0].size(); i++)
     {
       int nq               = 0;
@@ -748,15 +742,15 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
       {
         adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), 0);
       }
-      adet->set(multiSD->FirstIndex_up, multiSD->nels_up);
-      multiSD->dets_up.emplace_back(adet);
+      adet->set(multiSD.FirstIndex_up, multiSD.nels_up);
+      multiSD.dets_up.emplace_back(adet);
     }
   }
   // beta dets
   {
-    auto& spo = multiSD->spo_dn;
-    spo->occup.resize(uniqueConfgs[1].size(), multiSD->nels_dn);
-    multiSD->dets_dn.reserve(uniqueConfgs[1].size());
+    auto& spo = multiSD.spo_dn;
+    spo->occup.resize(uniqueConfgs[1].size(), multiSD.nels_dn);
+    multiSD.dets_dn.reserve(uniqueConfgs[1].size());
     for (int i = 0; i < uniqueConfgs[1].size(); i++)
     {
       int nq               = 0;
@@ -777,11 +771,11 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
       {
         adet = new DiracDeterminant<>(std::static_pointer_cast<SPOSet>(spo), 0);
       }
-      adet->set(multiSD->FirstIndex_dn, multiSD->nels_dn);
-      multiSD->dets_dn.emplace_back(adet);
+      adet->set(multiSD.FirstIndex_dn, multiSD.nels_dn);
+      multiSD.dets_dn.emplace_back(adet);
     }
   }
-  if (multiSD->CSFcoeff.size() == 1 || multiSD->C.size() == 1)
+  if (multiSD.CSFcoeff.size() == 1 || multiSD.C.size() == 1)
     optimizeCI = false;
   if (optimizeCI)
   {
@@ -792,40 +786,40 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     spoAttrib.put(cur);
     if (resetCI == "yes")
     {
-      if (multiSD->usingCSF)
-        for (int i = 1; i < multiSD->CSFcoeff.size(); i++)
-          multiSD->CSFcoeff[i] = 0;
+      if (multiSD.usingCSF)
+        for (int i = 1; i < multiSD.CSFcoeff.size(); i++)
+          multiSD.CSFcoeff[i] = 0;
       else
-        for (int i = 1; i < multiSD->C.size(); i++)
-          multiSD->C[i] = 0;
+        for (int i = 1; i < multiSD.C.size(); i++)
+          multiSD.C[i] = 0;
       app_log() << "CI coefficients are reset. \n";
     }
-    multiSD->Optimizable = true;
-    if (multiSD->usingCSF)
+    multiSD.Optimizable = true;
+    if (multiSD.usingCSF)
     {
       //          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
-      for (int i = 1; i < multiSD->CSFcoeff.size(); i++)
+      for (int i = 1; i < multiSD.CSFcoeff.size(); i++)
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        multiSD->myVars.insert(CItags[i], multiSD->CSFcoeff[i], true, optimize::LINEAR_P);
+        multiSD.myVars.insert(CItags[i], multiSD.CSFcoeff[i], true, optimize::LINEAR_P);
       }
     }
     else
     {
       //          multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
-      for (int i = 1; i < multiSD->C.size(); i++)
+      for (int i = 1; i < multiSD.C.size(); i++)
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        multiSD->myVars.insert(CItags[i], multiSD->C[i], true, optimize::LINEAR_P);
+        multiSD.myVars.insert(CItags[i], multiSD.C[i], true, optimize::LINEAR_P);
       }
     }
   }
   else
   {
     app_log() << "CI coefficients are not optimizable. \n";
-    multiSD->Optimizable = false;
+    multiSD.Optimizable = false;
   }
   return success;
 }

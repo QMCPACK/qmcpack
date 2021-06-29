@@ -38,13 +38,13 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT* abuilder, xmlNodePtr cur)
     std::string cname((const char*)(cur->name));
     if (cname == "coefficient" || cname == "coefficients")
     {
-      if (agpDet == 0)
+      if (agpDet == nullptr)
       {
         int nup = targetPtcl.first(1), ndown = 0;
         if (targetPtcl.groups() > 1)
           ndown = targetPtcl.first(2) - nup;
         basisSet->resize(nup + ndown);
-        agpDet = new AGPDeterminant(basisSet);
+        agpDet = std::make_unique<AGPDeterminant>(basisSet);
         agpDet->resize(nup, ndown);
       }
       int offset      = 1;
@@ -182,7 +182,7 @@ std::unique_ptr<WaveFunctionComponent> AGPDeterminantBuilder::buildComponent(xml
     app_log() << agpDet->LambdaUP << std::endl;
   }
   if (agpDet)
-    return agpDet;
+    return std::unique_ptr<WaveFunctionComponent>(std::move(agpDet));
 
   APP_ABORT("failed to create an AGP determinant!\n");
   return nullptr;
