@@ -124,7 +124,7 @@ void OneBodyJastrowOrbitalBspline<FT>::addLog(MCWalkerConfiguration& W, std::vec
       PosType r    = walkers[0]->R[eptcl];
       PosType disp = r - c;
       double dist  = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
-      host_sum -= Fs[cptcl]->evaluate(dist);
+      host_sum -= J1Unique[cptcl]->evaluate(dist);
     }
   }
   fprintf(stderr, "host = %25.16f\n", host_sum);
@@ -239,7 +239,7 @@ void OneBodyJastrowOrbitalBspline<FT>::ratio(MCWalkerConfiguration& W,
   double host_sum  = 0.0;
   for (int cptcl = 0; cptcl < CenterRef.getTotalNum(); cptcl++)
   {
-    FT* func     = Fs[cptcl];
+    FT* func     = J1Unique[cptcl];
     PosType disp = new_pos[iw] - CenterRef.R[cptcl];
     double dist  = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
     host_sum += func->evaluate(dist);
@@ -360,7 +360,7 @@ void OneBodyJastrowOrbitalBspline<FT>::addRatio(MCWalkerConfiguration& W,
   double host_sum  = 0.0;
   for (int cptcl = 0; cptcl < CenterRef.getTotalNum(); cptcl++)
   {
-    FT* func     = Fs[cptcl];
+    FT* func     = J1Unique[cptcl];
     PosType disp = new_pos[iw] - CenterRef.R[cptcl];
     double dist  = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
     host_sum += func->evaluate(dist);
@@ -559,7 +559,7 @@ void OneBodyJastrowOrbitalBspline<FT>::gradLapl(MCWalkerConfiguration& W, GradMa
     double lapl(0.0);
     for (int cptcl = 0; cptcl < CenterRef.getTotalNum(); cptcl++)
     {
-      FT* func     = Fs[cptcl];
+      FT* func     = J1Unique[cptcl];
       PosType disp = walkers[iw]->R[eptcl] - CenterRef.R[cptcl];
       double dist  = std::sqrt(bconds.apply(ElecRef.Lattice, disp));
       double u, du, d2u;
