@@ -94,7 +94,7 @@ public:
                            ParticleSet::ParticleGradient_t& G,
                            ParticleSet::ParticleLaplacian_t& L);
 
-  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   ///Total number of particles
   int NumPtcls;

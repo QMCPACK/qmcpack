@@ -24,7 +24,7 @@ public:
   // normalized gaussian constructor
   CountingJastrowBuilder(Communicate* comm, ParticleSet& target);
 
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   std::string NameOpt;

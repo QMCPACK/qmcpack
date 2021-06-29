@@ -154,7 +154,7 @@ public:
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& dlogpsi,

@@ -176,7 +176,7 @@ public:
    */
   void restore(int iat);
 
-  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   /****************************************************************************
    * These functions should not be called.

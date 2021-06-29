@@ -32,7 +32,7 @@ public:
   AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset);
 
   /// process a xml node at cur
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 protected:
   ///reference to a PtclPoolType

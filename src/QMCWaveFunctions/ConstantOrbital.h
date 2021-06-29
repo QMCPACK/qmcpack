@@ -57,7 +57,7 @@ public:
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 
-  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tpq) const final
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tpq) const override
   {
     return std::unique_ptr<WaveFunctionComponent>();
   }

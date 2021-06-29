@@ -113,7 +113,7 @@ public:
   //typedef VarRegistry<RealType> OptimizableSetType;
 
   ///implement vritual function
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 };
 
 /** OrbitalBuilder for Slater determinants of electron-gas

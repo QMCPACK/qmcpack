@@ -133,7 +133,7 @@ public:
   }
 
   // Stop makeClone
-  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
     APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
     return std::unique_ptr<DiracDeterminantBase>();
