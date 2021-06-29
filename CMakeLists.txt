@@ -814,6 +814,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
     set(ROCM_ROOT "/opt/rocm" CACHE PATH "Root directory of ROCM")
     message(STATUS "ROCM_ROOT: ${ROCM_ROOT}")
     list(APPEND CMAKE_MODULE_PATH ${ROCM_ROOT}/hip/cmake)
+    list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
     find_package(HIP REQUIRED)
     find_package(hipblas REQUIRED)
     # architecture flags
