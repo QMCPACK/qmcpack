@@ -503,7 +503,10 @@ void DiracDeterminantCUDA::update(const std::vector<Walker_t*>& walkers, const s
 
 void DiracDeterminantCUDA::recompute(MCWalkerConfiguration& W, bool firstTime)
 {
-  auto& walkers = W.WalkerList;
+  std::vector<Walker_t*> walkers;
+  walkers.reserve(W.WalkerList.size());
+  for(auto& walker_uptr : W.WalkerList)
+    walkers.push_back(walker_uptr.get());
   // HACK HACK HACK
   //     app_log() << "Before recompute:\n";
   //     gpu::host_vector<CUDA_PRECISION> host_data;
@@ -686,7 +689,10 @@ void DiracDeterminantCUDA::recompute(MCWalkerConfiguration& W, bool firstTime)
 
 void DiracDeterminantCUDA::addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi)
 {
-  auto& walkers = W.WalkerList;
+  std::vector<Walker_t*> walkers;
+  walkers.reserve(W.WalkerList.size());
+  for(auto& walker_uptr : W.WalkerList)
+    walkers.push_back(walker_uptr.get());
   if (AList.size() < walkers.size())
     resizeLists(walkers.size());
   std::vector<PosType> R(walkers.size());
@@ -850,7 +856,10 @@ void DiracDeterminantCUDA::addGradient(MCWalkerConfiguration& W, int iat, std::v
 
 void DiracDeterminantCUDA::ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios)
 {
-  auto& walkers = W.WalkerList;
+  std::vector<Walker_t*> walkers;
+  walkers.reserve(W.WalkerList.size());
+  for(auto& walker_uptr : W.WalkerList)
+    walkers.push_back(walker_uptr.get());
   if (AList.size() < walkers.size())
     resizeLists(walkers.size());
   // First evaluate orbitals
@@ -891,11 +900,14 @@ void DiracDeterminantCUDA::ratio(MCWalkerConfiguration& W,
                                  std::vector<GradType>& grad,
                                  std::vector<ValueType>& lapl)
 {
-  int N = W.Rnew.size();
-  int kd = W.getkDelay();
-  int kstart = W.getkstart();
-  auto& walkers = W.WalkerList;
-  int nw = walkers.size();
+  const int N = W.Rnew.size();
+  const int kd = W.getkDelay();
+  const int kstart = W.getkstart();
+  const int nw = W.WalkerList.size();
+  std::vector<Walker_t*> walkers;
+  walkers.reserve(nw);
+  for(auto& walker_uptr : W.WalkerList)
+    walkers.push_back(walker_uptr.get());
   if (AinvList.size() < N)
     resizeLists(nw, W.getkblocksize());
   //    if (iat-FirstIndex == 0) {
@@ -1041,7 +1053,10 @@ void DiracDeterminantCUDA::calcRatio(MCWalkerConfiguration& W,
                                      std::vector<GradType>& grad,
                                      std::vector<ValueType>& lapl)
 {
-  auto& walkers = W.WalkerList;
+  std::vector<Walker_t*> walkers;
+  walkers.reserve(W.WalkerList.size());
+  for(auto& walker_uptr : W.WalkerList)
+    walkers.push_back(walker_uptr.get());
   int nw        = walkers.size();
   int kd        = W.getkDelay();
   int kstart    = W.getkstart();
@@ -1213,7 +1228,7 @@ void DiracDeterminantCUDA::addRatio(MCWalkerConfiguration& W,
 
 // The gradient is (\nabla psi(Rnew))/psi(Rnew)
 // The laplaican is (\nabla^2 psi(Rnew))/psi(Rew)
-void DiracDeterminantCUDA::ratio(std::vector<std::unique_ptr<Walker_t>>& walkers,
+void DiracDeterminantCUDA::ratio(std::vector<Walker_t*>& walkers,
                                  std::vector<int>& iat_list,
                                  std::vector<PosType>& rNew,
                                  std::vector<ValueType>& psi_ratios,
