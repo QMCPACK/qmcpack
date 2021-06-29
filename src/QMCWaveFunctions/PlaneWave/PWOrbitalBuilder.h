@@ -63,7 +63,7 @@ public:
   ~PWOrbitalBuilder();
 
   ///implement vritual function
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   hid_t getH5(xmlNodePtr cur, const char* aname);

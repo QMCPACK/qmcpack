@@ -28,7 +28,7 @@ class JastrowBuilder : public WaveFunctionComponentBuilder
 public:
   JastrowBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
 
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   ///particleset pool to get ParticleSet other than the target

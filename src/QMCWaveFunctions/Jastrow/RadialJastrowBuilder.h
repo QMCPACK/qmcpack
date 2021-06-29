@@ -38,7 +38,7 @@ public:
   // two body constructor
   RadialJastrowBuilder(Communicate* comm, ParticleSet& target);
 
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   /// \xmla{jastrow,name}

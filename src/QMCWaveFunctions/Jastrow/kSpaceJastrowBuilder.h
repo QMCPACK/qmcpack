@@ -37,7 +37,7 @@ public:
     SymmMap["none"]      = kSpaceJastrow::NOSYMM;
   }
 
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
   void outputJastrow(kSpaceJastrow* jastrow);
 };
 

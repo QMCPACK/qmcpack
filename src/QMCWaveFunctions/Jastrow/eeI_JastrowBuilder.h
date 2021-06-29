@@ -27,7 +27,7 @@ public:
   // Two-body constructor
   eeI_JastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source);
 
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   template<typename J3type>

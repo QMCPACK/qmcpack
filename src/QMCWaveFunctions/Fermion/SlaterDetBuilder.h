@@ -53,7 +53,7 @@ public:
    *@param cur the current xml node
    *
    */
-  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) final;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   /// reference to the sposet_builder_factory, should be const once the legacy input style is removed

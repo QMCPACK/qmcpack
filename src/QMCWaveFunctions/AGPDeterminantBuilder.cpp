@@ -24,7 +24,7 @@
 namespace qmcplusplus
 {
 AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset)
-    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset), mySPOSetBuilderFactory(0), agpDet(nullptr)
+    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset), mySPOSetBuilderFactory(nullptr)
 {}
 
 template<class BasisBuilderT>
@@ -182,7 +182,7 @@ std::unique_ptr<WaveFunctionComponent> AGPDeterminantBuilder::buildComponent(xml
     app_log() << agpDet->LambdaUP << std::endl;
   }
   if (agpDet)
-    return std::unique_ptr<WaveFunctionComponent>(std::move(agpDet));
+    return std::move(agpDet);
 
   APP_ABORT("failed to create an AGP determinant!\n");
   return nullptr;

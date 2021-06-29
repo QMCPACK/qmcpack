@@ -145,7 +145,7 @@ public:
     return ratio;
   }
 
-  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   SPOSetPtr getPhi(int i = 0) override { return Dets[i]->getPhi(); }
 

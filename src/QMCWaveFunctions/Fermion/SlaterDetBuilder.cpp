@@ -334,12 +334,12 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
   if (multiDet)
   {
     if (msd_algorithm == "all_determinants")
-      return std::unique_ptr<WaveFunctionComponent>(std::move(multislaterdet_0));
+      return std::move(multislaterdet_0);
     else
-      return std::unique_ptr<WaveFunctionComponent>(std::move(multislaterdetfast_0));
+      return std::move(multislaterdetfast_0);
   }
   else
-    return std::unique_ptr<WaveFunctionComponent>(std::move(slaterdet_0));
+    return std::move(slaterdet_0);
 }
 
 
