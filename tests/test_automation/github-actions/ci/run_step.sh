@@ -68,6 +68,13 @@ case "$1" in
                       -DUSE_OBJECT_TARGET=ON -DQMC_MPI=0 \
                       ${GITHUB_WORKSPACE}
       ;;
+      *"gpu-cuda"*)
+        echo 'Configure for building GPU CUDA legacy'
+        cmake -GNinja -DQMC_CUDA=1 \
+                      -DQMC_MPI=0 \
+                      -DQMC_COMPLEX=$IS_COMPLEX \
+                      ${GITHUB_WORKSPACE}
+      ;;
       # Configure with default compilers
       *)
         echo 'Configure for default system compilers and options'
@@ -111,6 +118,11 @@ case "$1" in
        export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
        # Run only unit tests (reasonable for CI using openmp-offload)
        TEST_LABEL="-L unit"
+    fi
+    
+    if [[ "${GH_JOBNAME}" =~ (gpu-cuda) ]]
+    then
+       export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH}
     fi
     
     ctest --output-on-failure $TEST_LABEL
